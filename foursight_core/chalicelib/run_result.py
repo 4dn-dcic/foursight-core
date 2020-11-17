@@ -23,6 +23,8 @@ class RunResult(object):
     Generic class for CheckResult and ActionResult. Contains methods common
     to both.
     """
+    prefix = FOURSIGHT_PREFIX
+
     def __init__(self, connections, name):
         self.fs_conn = connections
         self.connections = connections.connections
@@ -167,7 +169,7 @@ class RunResult(object):
         Returns True on success, False otherwise
         """
         run_id = self.kwargs['_run_info']['run_id']
-        s3_connection = S3Connection(FOURSIGHT_PREFIX + '-runs')
+        s3_connection = S3Connection(self.prefix + '-runs')
         record_key = '/'.join([run_id, self.name])
         resp = s3_connection.put_object(record_key, json.dumps(self.status))
         return resp is not None
