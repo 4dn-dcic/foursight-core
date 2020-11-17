@@ -8,7 +8,7 @@ import sys
 import time
 import boto3
 import app
-from chalicelib import (
+from foursight_core.chalicelib import (
     app_utils,
     check_utils,
     utils,
@@ -17,6 +17,7 @@ from chalicelib import (
     s3_connection,
     es_connection
 )
+from foursight_core.chalicelib.vars import *
 from dcicutils import s3_utils, ff_utils
 from dateutil import tz
 from contextlib import contextmanager

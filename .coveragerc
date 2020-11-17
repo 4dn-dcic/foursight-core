@@ -3,11 +3,11 @@ branch = True
 omit =
     *virtualenv*
     ./docs/*
-    deploy.py
+    ./foursight_core/deploy.py
     ./tests/*
     conftest.py
-    app.py
-    ./chalicelib/abstract_connection.py
-    ./chalicelib/checks/helpers/*
-    ./chalicelib/*_checks.py
-    ./chalicelib/templates/*
+    ./foursight_core/app.py
+    ./foursight_core/chalicelib/abstract_connection.py
+    ./foursight_core/chalicelib/checks/helpers/*
+    ./foursight_core/chalicelib/*_checks.py
+    ./foursight_core/chalicelib/templates/*

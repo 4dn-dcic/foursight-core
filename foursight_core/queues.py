@@ -1,5 +1,5 @@
 import boto3
-from chalicelib.vars import FOURSIGHT_PREFIX
+from .chalicelib.vars import FOURSIGHT_PREFIX
 
 class Queues(object):
     """create and configure queues for foursight"""

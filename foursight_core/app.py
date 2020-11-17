@@ -4,7 +4,7 @@ import json
 import os
 import requests
 import datetime
-from chalicelib.app_utils import *
+from .chalicelib.app_utils import *
 
 app = Chalice(app_name='foursight-cgap')
 app.debug = True
@@ -347,7 +347,7 @@ def set_stage(stage):
 
 
 def set_timeout(timeout):
-    from chalicelib import utils
+    from .chalicelib import utils
     try:
         timeout = int(timeout)
     except ValueError:

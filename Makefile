@@ -11,7 +11,7 @@ update:
 	poetry update
 
 test:
-	pytest -vv --cov chalicelib tests
+	pytest -vv --cov foursight_core/chalicelib tests
 
 info:
 	@: $(info Here are some 'make' options:)
