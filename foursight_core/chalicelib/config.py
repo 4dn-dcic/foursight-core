@@ -11,7 +11,8 @@ class Config(object):
 
     prefix = FOURSIGHT_PREFIX
 
-    def get_stage_info():
+    @classmethod
+    def get_stage_info(cls):
         """
         Returns a dictionary with stage info and queue/check runner names that
         depend on that. If test=True, use the test runner_name
