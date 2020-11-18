@@ -18,6 +18,7 @@ from .s3_connection import S3Connection
 from .fs_connection import FSConnection
 from .utils import (
     basestring,
+    LAMBDA_MAX_BODY_SIZE,
 )
 from .vars import (
     FOURSIGHT_PREFIX,
@@ -184,7 +185,7 @@ class AppUtils(object):
         """
         Returns faviron
         """
-        return FAVICON  # want full HTTPS, so hard-coded in
+        return cls.FAVICON  # want full HTTPS, so hard-coded in
     
     @classmethod
     def get_domain_and_context(cls, request_dict):

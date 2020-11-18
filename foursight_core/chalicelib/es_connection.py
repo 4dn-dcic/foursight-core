@@ -192,14 +192,14 @@ class ESConnection(AbstractConnection):
         """
         Gets all checks for the main page. If primary is true then all checks will
         be primary, otherwise we use latest.
-        Only gets SEARCH_SIZE number of results, most recent first.
+        Only gets ES_SEARCH_SIZE number of results, most recent first.
         """
         if primary:
             t = 'primary'
         else:
             t = 'latest'
         doc = {
-            'size': SEARCH_SIZE,
+            'size': ES_SEARCH_SIZE,
             'query': {
                 'bool': {
                     'must': {
@@ -234,10 +234,10 @@ class ESConnection(AbstractConnection):
     def list_all_keys(self):
         """
         Generic search on es that will return all ids of indexed items
-        Only gets SEARCH_SIZE number of results, most recent first.
+        Only gets ES_SEARCH_SIZE number of results, most recent first.
         """
         doc = {
-            'size': SEARCH_SIZE,
+            'size': ES_SEARCH_SIZE,
             'query': {
                 'match_all' : {}
             },
@@ -254,10 +254,10 @@ class ESConnection(AbstractConnection):
     def list_all_keys_w_prefix(self, prefix):
         """
         Lists all id's in this ES that have the given prefix.
-        Only gets SEARCH_SIZE number of results, most recent first.
+        Only gets ES_SEARCH_SIZE number of results, most recent first.
         """
         doc = {
-            'size': SEARCH_SIZE,
+            'size': ES_SEARCH_SIZE,
             'query': {
                 'bool': {
                     'filter': {
@@ -278,7 +278,7 @@ class ESConnection(AbstractConnection):
     def get_all_objects(self):
         """
         Calls list_all_keys with full=True to get all the objects
-        Only gets SEARCH_SIZE number of results, most recent first.
+        Only gets ES_SEARCH_SIZE number of results, most recent first.
         """
         doc = {
             'size': ES_SEARCH_SIZE,

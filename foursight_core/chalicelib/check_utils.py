@@ -33,7 +33,7 @@ class CheckHandler(object):
     # these can be used as they are in inherited classes
 
     @classmethod
-    def import_check_module(cls, moddule_name):
+    def import_check_module(cls, module_name):
         return importlib.import_module('.chalicelib.checks.' + module_name, cls.check_package_name)
 
     def __init__(self):

@@ -4,9 +4,15 @@ import traceback
 import signal
 import time
 import os
+from datetime import datetime
 from functools import wraps
 from .run_result import CheckResult, ActionResult
-from .utils import CHECK_TIMEOUT, CHECK_DECO, ACTION_DECO
+from .utils import (
+    CHECK_TIMEOUT,
+    POLL_INTERVAL,
+    CHECK_DECO,
+    ACTION_DECO
+)
 from .exceptions import BadCheckOrAction
 from .sqs_utils import SQS
 
