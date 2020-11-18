@@ -6,7 +6,7 @@ import time
 import os
 from functools import wraps
 from .run_result import CheckResult, ActionResult
-from .vars import CHECK_TIMEOUT
+from .utils import CHECK_TIMEOUT
 from .exceptions import BadCheckOrAction
 from .sqs_utils import delete_message_and_propogate
 
