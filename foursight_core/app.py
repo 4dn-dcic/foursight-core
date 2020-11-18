@@ -347,7 +347,7 @@ def set_stage(stage):
 
 
 def set_timeout(timeout):
-    from .chalicelib.vars import CHECK_TIMEOUT
+    from .chalicelib.utils import CHECK_TIMEOUT
     try:
         timeout = int(timeout)
     except ValueError:
