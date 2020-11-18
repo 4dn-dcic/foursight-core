@@ -5,18 +5,8 @@ from abc import abstractmethod
 import json
 from .s3_connection import S3Connection
 from .vars import FOURSIGHT_PREFIX
+from .exceptions import BadCheckOrAction
 
-
-class BadCheckOrAction(Exception):
-    """
-    Generic exception for a badly written check or library.
-    __init__ takes some string error message
-    """
-    def __init__(self, message=None):
-        # default error message if none provided
-        if message is None:
-            message = "Check or action function seems to be malformed."
-        super().__init__(message)
 
 class RunResult(object):
     """

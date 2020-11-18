@@ -1,2 +1,4 @@
-FOURSIGHT_PREFIX = 'foursight'  # use 4dn as default so that testing on cgap would be useful
-DEV_ENV = 'mastertest'  # use 4dn as default so that testing on cgap would be useful
+FOURSIGHT_PREFIX = 'foursight-core'
+DEV_ENV = 'mastertest'
+HOST = 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
+

@@ -70,7 +70,7 @@ def migrate(env, stage):
 
     app.set_stage(stage)
     app.set_timeout(0)
-    es = ESConnection(index=index_name)
+    es = ESConnection(index=index_name, host=HOST)
     conn = app.init_connection(env)
     args = {'timeout': 1000000, 'check_name': None, 'called_by': None}
     migrate = app.run_check_or_action(conn, 'es_checks/migrate_checks_to_es', args)

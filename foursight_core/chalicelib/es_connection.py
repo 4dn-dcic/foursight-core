@@ -7,15 +7,11 @@ from elasticsearch import (
     )
 from elasticsearch_dsl import Search
 from dcicutils import es_utils
-from .utils import load_json
-from .check_utils import create_placeholder_check
+from .utils import create_placeholder_check, ES_SEARCH_SIZE
 import datetime
 import json
 import time
 
-# configure ES info from here
-HOST = 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
-SEARCH_SIZE = 10000
 
 class ElasticsearchException(Exception):
     """ Generic exception for an elasticsearch failure """
@@ -25,6 +21,7 @@ class ElasticsearchException(Exception):
         else:
             self.message = message
         super().__init__(message)
+
 
 class ESConnection(AbstractConnection):
     """
@@ -36,8 +33,8 @@ class ESConnection(AbstractConnection):
 
     Implements the AbstractConnection 'interface'
     """
-    def __init__(self, index=None, doc_type='result'):
-        self.es = es_utils.create_es_client(HOST, use_aws_url=True)
+    def __init__(self, index=None, doc_type='result', host=None):
+        self.es = es_utils.create_es_client(host, use_aws_url=True)
         self.index = index
         if index and not self.index_exists(index):
             self.create_index(index)
@@ -70,7 +67,14 @@ class ESConnection(AbstractConnection):
         Loads ES mapping from 'mapping.json' or another relative path from this
         file location.
         """
-        return load_json(__file__, fname)
+        return self.load_json(__file__, fname)
+
+    @classmethod
+    def load_json(cls, rel, fname):
+        """ Loads json file fname from rel/fname """
+        path = os.path.join(os.path.dirname(rel), fname)
+        with open(path, 'r') as f:
+            return json.load(f)
 
     def delete_index(self, name):
         """
@@ -277,7 +281,7 @@ class ESConnection(AbstractConnection):
         Only gets SEARCH_SIZE number of results, most recent first.
         """
         doc = {
-            'size': SEARCH_SIZE,
+            'size': ES_SEARCH_SIZE,
             'query': {
                 'match_all' : {}
             },

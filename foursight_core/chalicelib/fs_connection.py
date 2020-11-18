@@ -24,10 +24,10 @@ class FSConnection(object):
 
     If param test=True, then do not actually attempt to initate the FF connections
     """
-    def __init__(self, fs_environ, fs_environ_info, test=False, use_es=True):
+    def __init__(self, fs_environ, fs_environ_info, test=False, use_es=True, host=None):
         # FOURSIGHT information
         self.fs_env = fs_environ
-        es = ESConnection(index=fs_environ_info.get('bucket')) if use_es else None
+        es = ESConnection(index=fs_environ_info.get('bucket'), host=host) if use_es else None
         self.connections = {
             's3': S3Connection(fs_environ_info.get('bucket')),
             'es': es

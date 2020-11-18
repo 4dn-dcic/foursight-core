@@ -1,9 +1,10 @@
 from __future__ import print_function, unicode_literals
-from ..utils import (
+from ..sys_utils import (
     check_function,
-    basestring,
+    parse_datetime_to_utc,
     cat_indices
 )
+from ..utils import basestring
 from ..run_result import CheckResult
 from dcicutils import (
     ff_utils,
@@ -493,7 +494,7 @@ def process_download_tracking_items(connection, **kwargs):
     - If the user_agent looks to be a bot, set status=deleted
     - Change unused range query items to status=deleted
     """
-    from ..utils import get_stage_info, parse_datetime_to_utc
+    from ..utils import get_stage_info
     import geocoder
     check = CheckResult(connection, 'process_download_tracking_items')
     # maybe handle this in check_setup.json
@@ -625,8 +626,8 @@ def purge_download_tracking_items(connection, **kwargs):
     adapted; as it is, already handles recording for any number of item types.
     Ensure search includes limit, field=uuid, and status=deleted
     """
-    from ..utils import get_stage_info
-    from ..app_utils import init_connection
+    from ..config import Config
+    from ..app_utils import AppUtils
     check = CheckResult(connection, 'purge_download_tracking_items')
 
     # Don't run if staging deployment is running
@@ -634,13 +635,13 @@ def purge_download_tracking_items(connection, **kwargs):
     # XXX: Removing for now as we find the check can never run without this
     # if the staging deploy takes long enough or errors
     # if connection.fs_env == 'data':
-    #     staging_conn = init_connection('staging')
+    #     staging_conn = AppUtils.init_connection('staging')
     #     staging_deploy = CheckResult(staging_conn, 'staging_deployment').get_primary_result()
     #     if staging_deploy['status'] != 'PASS':
     #         check.summary = 'Staging deployment is running - skipping'
     #         return check
 
-    if get_stage_info()['stage'] != 'prod':
+    if Config.get_stage_info()['stage'] != 'prod':
         check.summary = check.description = 'This check only runs on Foursight prod'
         return check
 
