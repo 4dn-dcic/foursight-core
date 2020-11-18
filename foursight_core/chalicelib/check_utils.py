@@ -1,13 +1,4 @@
 from __future__ import print_function, unicode_literals
-from .config import Config
-from .run_result import CheckResult, ActionResult
-from .utils import (
-    CHECK_DECO,
-    ACTION_DECO,
-    basestring,
-    create_placeholder_check
-)
-from .exceptions import BadCheckSetup
 from os.path import dirname
 import glob
 import sys
@@ -15,6 +6,15 @@ import importlib
 import datetime
 import copy
 import json
+from .utils import (
+    CHECK_DECO,
+    ACTION_DECO,
+    basestring,
+    create_placeholder_check
+)
+from .exceptions import BadCheckSetup
+from .config import Config
+from .run_result import CheckResult, ActionResult
 
 
 class CheckHandler(object):
