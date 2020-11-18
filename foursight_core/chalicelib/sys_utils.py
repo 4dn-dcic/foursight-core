@@ -1,7 +1,7 @@
 from __future__ import print_function, unicode_literals
 from datetime import datetime, timedelta
 from dateutil import tz
-from .vars import (
+from .utils import (
     basestring
 )
 
