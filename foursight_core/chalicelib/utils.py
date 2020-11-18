@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 
 
 CHECK_DECO = 'check_function'
