@@ -19,14 +19,7 @@ from .fs_connection import FSConnection
 from .utils import (
     basestring,
 )
-from .sqs_utils import (
-    recover_message_and_propogate,
-    delete_message_and_propogate,
-    invoke_check_runner,
-    get_sqs_queue,
-    send_sqs_messages,
-    get_sqs_attributes
-)
+from .sqs_utils import SQS
 from .vars import (
     FOURSIGHT_PREFIX,
     HOST
@@ -404,7 +397,7 @@ class AppUtils(object):
         total_envs = sorted(total_envs, key=lambda v: env_order.index(v['environment']) if v['environment'] in env_order else 9999)
         template = cls.jin_env().get_template('view_groups.html')
         # get queue information
-        queue_attr = get_sqs_attributes(get_sqs_queue().url)
+        queue_attr = SQS.get_sqs_attributes(SQS.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         first_env_favicon = cls.get_favicon()
@@ -458,7 +451,7 @@ class AppUtils(object):
                     'checks': {title: processed_result}
                 })
         template = cls.jin_env().get_template('view_checks.html')
-        queue_attr = get_sqs_attributes(get_sqs_queue().url)
+        queue_attr = SQS.get_sqs_attributes(SQS.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         first_env_favicon = cls.get_favicon()
@@ -600,7 +593,7 @@ class AppUtils(object):
         template = cls.jin_env().get_template('history.html')
         check_title = cls.CheckHandler().get_check_title_from_setup(check)
         page_title = ''.join(['History for ', check_title, ' (', environ, ')'])
-        queue_attr = get_sqs_attributes(get_sqs_queue().url)
+        queue_attr = SQS.get_sqs_attributes(SQS.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         favicon = cls.get_favicon()
@@ -877,7 +870,7 @@ class AppUtils(object):
         Returns:
             dict: runner input of queued messages, used for testing
         """
-        queue = get_sqs_queue()
+        queue = SQS.get_sqs_queue()
         if schedule_name is not None:
             if sched_environ != 'all' and sched_environ not in Confnig.list_environments():
                 print('-RUN-> %s is not a valid environment. Cannot queue.' % sched_environ)
@@ -891,10 +884,10 @@ class AppUtils(object):
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
                 check_vals.extend(check_schedule.get(environ, []))
-                send_sqs_messages(queue, environ, check_vals)
+                SQS.send_sqs_messages(queue, environ, check_vals)
         runner_input = {'sqs_url': queue.url}
         for n in range(4): # number of parallel runners to kick off
-            invoke_check_runner(runner_input)
+            SQS.invoke_check_runner(runner_input)
         return runner_input # for testing purposes
     
     @classmethod
@@ -970,11 +963,11 @@ class AppUtils(object):
         Returns:
             str: uuid of the queued run (from send_single_to_queue)
         """
-        queue = get_sqs_queue()
-        queued_uuid = send_sqs_messages(queue, environ, [to_send], uuid=uuid)
+        queue = SQS.get_sqs_queue()
+        queued_uuid = SQS.send_sqs_messages(queue, environ, [to_send], uuid=uuid)
         # kick off a single check runner lambda
         if invoke_runner is True:
-            invoke_check_runner({'sqs_url': queue.url})
+            SQS.invoke_check_runner({'sqs_url': queue.url})
         return queued_uuid
     
     @classmethod
@@ -1027,7 +1020,7 @@ class AppUtils(object):
         check_list = json.loads(body)
         if not isinstance(check_list, list) or len(check_list) != 5:
             # if not a valid check str, remove the item from the SQS
-            delete_message_and_propogate(runner_input, receipt, propogate=propogate)
+            SQS.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
         [run_env, run_uuid, run_name, run_kwargs, run_deps] = check_list
         # find information from s3 about completed checks in this run
@@ -1053,7 +1046,7 @@ class AppUtils(object):
                 if found_rec is not None:
                     # the action record has been written. Abort and propogate
                     print('-RUN-> Found existing action record: %s. Skipping' % rec_key)
-                    delete_message_and_propogate(runner_input, receipt, propogate=propogate)
+                    SQS.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
                     return None
                 else:
                     # make a action record before running the action
@@ -1081,11 +1074,11 @@ class AppUtils(object):
                         print('-RUN-> Queued action %s on stage %s with kwargs: %s'
                               % (run_result['action'], stage, action_params))
             print('-RUN-> Finished: %s' % (run_name))
-            delete_message_and_propogate(runner_input, receipt, propogate=propogate)
+            SQS.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return run_result
         else:
             print('-RUN-> Recovered: %s' % (run_name))
-            recover_message_and_propogate(runner_input, receipt, propogate=propogate)
+            SQS.recover_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
     
     @classmethod

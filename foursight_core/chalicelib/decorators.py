@@ -8,7 +8,7 @@ from functools import wraps
 from .run_result import CheckResult, ActionResult
 from .utils import CHECK_TIMEOUT, CHECK_DECO, ACTION_DECO
 from .exceptions import BadCheckOrAction
-from .sqs_utils import delete_message_and_propogate
+from .sqs_utils import SQS
 
 
 class Decorators(object):
@@ -146,7 +146,7 @@ class Decorators(object):
         # need to delete the sqs message and propogate if this is using the queue
         if kwargs.get('_run_info') and {'receipt', 'sqs_url'} <= set(kwargs['_run_info'].keys()):
             runner_input = {'sqs_url': kwargs['_run_info']['sqs_url']}
-            delete_message_and_propogate(runner_input, kwargs['_run_info']['receipt'])
+            SQS.delete_message_and_propogate(runner_input, kwargs['_run_info']['receipt'])
         sys.exit('-RUN-> TIMEOUT for execution of %s. Elapsed time is %s seconds; keep under %s.'
               % (partials['name'], kwargs['runtime_seconds'], CHECK_TIMEOUT))
 

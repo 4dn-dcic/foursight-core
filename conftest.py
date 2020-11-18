@@ -30,7 +30,7 @@ import pytest
 def setup():
     app.set_stage('test')  # set the stage info for tests
     test_client = boto3.client('sqs')  # purge test queue
-    queue_url = sqs_utils.get_sqs_queue().url
+    queue_url = sqs_utils.SQS.get_sqs_queue().url
     try:
         test_client.purge_queue(
             QueueUrl=queue_url
