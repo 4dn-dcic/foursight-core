@@ -318,11 +318,10 @@ class CheckHandler(object):
             return ' '.join(['ERROR. Check kwargs must be a dict.', error_str])
         try:
             check_mod = cls.import_check_module(mod_name)
+        except ModuleNotFoundError:
+            return ' '.join(['ERROR. Check module is not valid.', error_str])
         except Exception as e:
-            if 'ModuleNotFoundError' in str(e):
-                return ' '.join(['ERROR. Check module is not valid.', error_str])
-            else:
-                raise(e)
+            raise(e)
         check_method = check_mod.__dict__.get(check_name)
         if not check_method:
             return ' '.join(['ERROR. Check name is not valid.', error_str])
