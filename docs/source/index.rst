@@ -1,38 +1,38 @@
 ==============
-Foursight-CGAP
+Foursight-CORE
 ==============
 
-A serverless chalice application to monitor and run tasks on `CGAP portal <https://github.com/dbmi-bgm/cgap-portal>`_. Essentially, the app provides an number of endpoints to run checks, fetch results, dynamically create environments to check, and more.
+A shared component for Foursight and Foursight-CGAP.
 
 
-.. image:: https://travis-ci.org/dbmi-bgm/foursight-cgap.svg?branch=production
-   :target: https://travis-ci.org/dbmi-bgm/foursight-cgap
+.. image:: https://travis-ci.org/4dn-dcic/foursight-core.svg?branch=master
+   :target: https://travis-ci.org/4dn-dcic/foursight-core
    :alt: Build Status
 
-.. image:: https://coveralls.io/repos/github/dbmi-bgm/foursight-cgap/badge.svg?branch=production
-   :target: https://coveralls.io/github/dbmi-bgm/foursight-cgap?branch=production
+.. image:: https://coveralls.io/repos/github/4dn-dcic/foursight-core/badge.svg?branch=master
+   :target: https://coveralls.io/github/4dn-dcic/foursight-core?branch=master
    :alt: Coverage
 
-.. image:: https://readthedocs.org/projects/foursight-cgap/badge/?version=latest
-   :target: https://foursight-cgap.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/foursight-core/badge/?version=latest
+   :target: https://foursight-core.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
 Beta version
 ------------
 
-Foursight-CGAP is under active development and features will likely change.
+Foursight-CORE is under active development and features will likely change.
 
 
 API Documentation
 -----------------
 
-Foursight-CGAP uses autodoc to generate documentation for both the core chalicelib and checks. You can find the autodocs in the ``Chalicelib API Documentation`` and ``Check Documentation`` files.
+Foursight-CORE uses autodoc to generate documentation for the foursight_core and chalicelib. You can find the autodocs in the ``Foursight_core API Documentation`` and ``Chalicelib API Documentation`` files.
 
 
-Foursight
----------
+Foursight and Foursight-CGAP
+----------------------------
 
-For the rest of the documentation, see `Foursight documantation <https://foursight.readthedocs.io/en/latest/>`_.
+For platform-specific documentation, see `Foursight documantation <https://foursight.readthedocs.io/en/latest/>`_ and `Foursight-CGAP documantation <https://foursight-cgap.readthedocs.io/en/latest/>`_.
 
 
 *Contents*
@@ -41,5 +41,5 @@ For the rest of the documentation, see `Foursight documantation <https://foursig
    :maxdepth: 4
 
    environments
+   parent_modules
    modules
-   check_modules
