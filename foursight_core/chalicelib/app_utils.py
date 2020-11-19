@@ -52,6 +52,9 @@ class AppUtils(object):
             autoescape=select_autoescape(['html', 'xml'])
         )
 
+    def __init__(self):
+        pass
+
     @classmethod
     def init_environments(cls, env='all', envs=None):
         """
