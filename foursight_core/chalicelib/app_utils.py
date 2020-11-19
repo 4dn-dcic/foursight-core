@@ -919,7 +919,7 @@ class AppUtils(object):
             }
             raise Exception(str(error_res))
         to_send = [check_str, params, deps]
-        return send_single_to_queue(environ, to_send, uuid)
+        return cls.send_single_to_queue(environ, to_send, uuid)
     
     @classmethod
     def queue_action(cls, environ, action, params={}, deps=[], uuid=None):
@@ -948,7 +948,7 @@ class AppUtils(object):
             }
             raise Exception(str(error_res))
         to_send = [action_str, params, deps]
-        return send_single_to_queue(environ, to_send, uuid)
+        return cls.send_single_to_queue(environ, to_send, uuid)
     
     @classmethod
     def send_single_to_queue(cls, environ, to_send, uuid, invoke_runner=True):
