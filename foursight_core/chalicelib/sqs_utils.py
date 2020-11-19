@@ -5,8 +5,14 @@ from .config import Config
 
 
 class SQS(object):
+    """
+    class SQS is a collection of utils related to Foursight queues
+    """
 
     Config = Config
+
+    def __init__(self):
+        pass
 
     @classmethod
     def invoke_check_runner(cls, runner_input):
