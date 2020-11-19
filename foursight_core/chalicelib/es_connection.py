@@ -34,6 +34,8 @@ class ESConnection(AbstractConnection):
     Implements the AbstractConnection 'interface'
     """
     def __init__(self, index=None, doc_type='result', host=None):
+        if not host:
+            raise ElasticsearchException("ESConnection error: Host must be specified")
         self.es = es_utils.create_es_client(host, use_aws_url=True)
         self.index = index
         if index and not self.index_exists(index):
