@@ -45,15 +45,15 @@ class AppUtils(object):
 
     TRIM_ERR_OUTPUT = 'Output too large to provide on main page - see check result directly'
 
+    def __init__(self):
+        pass
+
     @classmethod
     def jin_env(cls):
         return Environment(
             loader=FileSystemLoader('chalicelib/templates'),
             autoescape=select_autoescape(['html', 'xml'])
         )
-
-    def __init__(self):
-        pass
 
     @classmethod
     def init_environments(cls, env='all', envs=None):
