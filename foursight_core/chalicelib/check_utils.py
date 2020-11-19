@@ -23,6 +23,7 @@ class CheckHandler(object):
     setup_dir = dirname(__file__)
     CheckResult = CheckResult
     ActionResult = ActionResult
+    Config = Config
     check_package_name = 'foursight_core.chalicelib'
 
     @classmethod
@@ -42,9 +43,9 @@ class CheckHandler(object):
         if not len(setup_paths) == 1:
             raise BadCheckSetup('Exactly one check_setup.json must be present in chalicelib!')
         with open(setup_paths[0], 'r') as jfile:
-            CHECK_SETUP = json.load(jfile)
+            self.CHECK_SETUP = json.load(jfile)
         # Validate and finalize CHECK_SETUP
-        self.CHECK_SETUP = self.validate_check_setup(CHECK_SETUP)
+        self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
 
     @classmethod
     def get_check_strings(cls, specific_check=None):
@@ -94,7 +95,7 @@ class CheckHandler(object):
         """
         found_checks = {}
         all_check_strings = self.get_check_strings()
-        all_environments = Config.list_environments() + ['all']
+        all_environments = self.Config.list_environments() + ['all']
         # validate all checks
         for check_string in all_check_strings:
             mod_name, check_name = check_string.split('/')
