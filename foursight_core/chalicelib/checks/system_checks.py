@@ -1,10 +1,17 @@
 from __future__ import print_function, unicode_literals
-from ..sys_utils import (
-    check_function,
-    parse_datetime_to_utc,
+import re
+import requests
+import json
+import datetime
+import boto3
+import time
+from dcicutils.misc_utils import Retry
+from .utils import (
+    basestring,
+)
+from .sys_utils import (
     cat_indices
 )
-from ..utils import basestring
 from ..run_result import CheckResult
 from dcicutils import (
     ff_utils,
@@ -12,13 +19,9 @@ from dcicutils import (
     beanstalk_utils,
     env_utils
 )
-from dcicutils.misc_utils import Retry
-import re
-import requests
-import json
-import datetime
-import boto3
-import time
+from ..decorators import Decorators
+check_function = Decorators.check_function
+action_function = Decorators.action_function
 
 
 # XXX: put into utils?
@@ -275,10 +278,10 @@ def indexing_records(connection, **kwargs):
 
 @check_function(time_limit=480)
 def secondary_queue_deduplication(connection, **kwargs):
-    from ..utils import get_stage_info
+    from ..config import Config
     check = CheckResult(connection, 'secondary_queue_deduplication')
     # maybe handle this in check_setup.json
-    if get_stage_info()['stage'] != 'prod':
+    if Config.get_stage_info()['stage'] != 'prod':
         check.full_output = 'Will not run on dev foursight.'
         check.status = 'PASS'
         return check
@@ -494,11 +497,12 @@ def process_download_tracking_items(connection, **kwargs):
     - If the user_agent looks to be a bot, set status=deleted
     - Change unused range query items to status=deleted
     """
-    from ..utils import get_stage_info
+    from ..config import Config
+    from foursight_core.chalicelib.sys_utils import parse_datetime_to_utc
     import geocoder
     check = CheckResult(connection, 'process_download_tracking_items')
     # maybe handle this in check_setup.json
-    if get_stage_info()['stage'] != 'prod':
+    if Config.get_stage_info()['stage'] != 'prod':
         check.full_output = 'Will not run on dev foursight.'
         check.status = 'PASS'
         return check
@@ -693,9 +697,9 @@ def check_long_running_ec2s(connection, **kwargs):
     (FAIL) if any contain any strings from `flag_names` in their
     names, or if they have no name.
     """
-    from ..utils import get_stage_info
+    from ..config import Config
     check = CheckResult(connection, 'check_long_running_ec2s')
-    if get_stage_info()['stage'] != 'prod':
+    if Config.get_stage_info()['stage'] != 'prod':
         check.summary = check.description = 'This check only runs on Foursight prod'
         return check
 

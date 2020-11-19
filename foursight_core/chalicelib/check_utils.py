@@ -23,7 +23,7 @@ class CheckHandler(object):
     setup_dir = dirname(__file__)
     CheckResult = CheckResult
     ActionResult = ActionResult
-    check_package_name = 'foursight_core'
+    check_package_name = 'foursight_core.chalicelib'
 
     @classmethod
     def get_module_names(cls):
@@ -34,7 +34,7 @@ class CheckHandler(object):
 
     @classmethod
     def import_check_module(cls, module_name):
-        return importlib.import_module('.chalicelib.checks.' + module_name, cls.check_package_name)
+        return importlib.import_module('.checks.' + module_name, cls.check_package_name)
 
     def __init__(self):
         # read in the check_setup.json and parse it
