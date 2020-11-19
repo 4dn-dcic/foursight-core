@@ -3,7 +3,7 @@ Foursight_core API Documentation
 ================================
 
 chalicelib
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^
 
 .. automodule:: foursight_core.chalicelib
   :members:
