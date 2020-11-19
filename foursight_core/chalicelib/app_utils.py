@@ -878,7 +878,7 @@ class AppUtils(object):
         """
         queue = cls.SQS.get_sqs_queue()
         if schedule_name is not None:
-            if sched_environ != 'all' and sched_environ not in Confnig.list_environments():
+            if sched_environ != 'all' and sched_environ not in Config.list_environments():
                 print('-RUN-> %s is not a valid environment. Cannot queue.' % sched_environ)
                 return
             sched_environs = cls.Config.list_environments() if sched_environ == 'all' else [sched_environ]

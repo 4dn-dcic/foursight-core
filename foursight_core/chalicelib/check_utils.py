@@ -316,9 +316,13 @@ class CheckHandler(object):
         check_name = check_str.strip().split('/')[1]
         if not isinstance(check_kwargs, dict):
             return ' '.join(['ERROR. Check kwargs must be a dict.', error_str])
-        check_mod = cls.import_check_module(mod_name)
-        if not check_mod:
-            return ' '.join(['ERROR. Check module is not valid.', error_str])
+        try:
+            check_mod = cls.import_check_module(mod_name)
+        except Exception as e:
+            if 'ModuleNotFoundError' in str(e):
+                return ' '.join(['ERROR. Check module is not valid.', error_str])
+            else:
+                raise(e)
         check_method = check_mod.__dict__.get(check_name)
         if not check_method:
             return ' '.join(['ERROR. Check name is not valid.', error_str])
