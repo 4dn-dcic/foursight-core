@@ -44,12 +44,6 @@ run_result
 .. automodule:: foursight_core.chalicelib.run_result
   :members:
 
-utils
-^^^^^
-
-.. automodule:: foursight_core.chalicelib.utils
-  :members:
-
 sqs_utils
 ^^^^^^^^^
 
@@ -61,3 +55,10 @@ sys_utils
 
 .. automodule:: foursight_core.chalicelib.sys_utils
   :members:
+
+utils
+^^^^^
+
+.. automodule:: foursight_core.chalicelib.utils
+  :members:
+
