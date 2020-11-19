@@ -13,14 +13,6 @@ LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 ES_SEARCH_SIZE = 10000
 
 
-# compare strings in both python 2 and python 3
-# in other files, compare with vars.basestring
-try:
-    basestring = basestring
-except NameError:
-    basestring = str
-
-
 def create_placeholder_check(check_name):
     """
     Creates a placeholder check for the given check_name to be rendered on the UI

@@ -1,4 +1,3 @@
-from __future__ import print_function, unicode_literals
 from chalice import Chalice, Cron, Rate, Response
 import json
 import os
@@ -6,7 +5,7 @@ import requests
 import datetime
 from .chalicelib.app_utils import AppUtils
 
-app = Chalice(app_name='foursight-cgap')
+app = Chalice(app_name='foursight-core')
 app.debug = True
 STAGE = os.environ.get('chalice_stage', 'dev')
 DEFAULT_ENV = 'cgap'

@@ -1,4 +1,3 @@
-from __future__ import print_function, unicode_literals
 from chalice import Response
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import json
@@ -17,7 +16,6 @@ from dcicutils import ff_utils
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
 from .utils import (
-    basestring,
     LAMBDA_MAX_BODY_SIZE,
 )
 from .vars import (
@@ -517,12 +515,12 @@ class AppUtils(object):
         proc_ts = ''.join([str(ts_local.date()), ' at ', str(ts_local.time())])
         res['local_time'] = proc_ts
         if res.get('brief_output'):
-            res['brief_output'] = json.dumps(trim_output(res['brief_output']), indent=2)
+            res['brief_output'] = json.dumps(cls.trim_output(res['brief_output']), indent=2)
         if res.get('full_output'):
-            res['full_output'] = json.dumps(trim_output(res['full_output']), indent=2)
+            res['full_output'] = json.dumps(cls.trim_output(res['full_output']), indent=2)
         # only return admin_output if an admin is logged in
         if res.get('admin_output') and is_admin:
-            res['admin_output'] = json.dumps(trim_output(res['admin_output']), indent=2)
+            res['admin_output'] = json.dumps(cls.trim_output(res['admin_output']), indent=2)
         else:
             res['admin_output'] = None
     
@@ -701,7 +699,7 @@ class AppUtils(object):
                         prev_content.update(put_content)
                     elif isinstance(prev_content, list) and isinstance(put_content, list):
                         prev_content.extend(put_content)
-                    elif isinstance(prev_content, basestring) and isinstance(put_content, basestring):
+                    elif isinstance(prev_content, str) and isinstance(put_content, str):
                         prev_content = prev_content + put_content
                     else:
                         # cannot append, just update with new

@@ -1,9 +1,5 @@
-from __future__ import print_function, unicode_literals
 from datetime import datetime, timedelta
 from dateutil import tz
-from .utils import (
-    basestring
-)
 
 
 def parse_datetime_to_utc(time_str, manual_format=None):
@@ -14,7 +10,7 @@ def parse_datetime_to_utc(time_str, manual_format=None):
     Returns a datetime object of the string in UTC
     or None if the parsing was unsuccessful.
     """
-    if manual_format and isinstance(manual_format, basestring):
+    if manual_format and isinstance(manual_format, str):
         timeobj = datetime.strptime(time_str, manual_format)
     else:  # automatic parsing
         if len(time_str) > 26 and time_str[26] in ['+', '-']:

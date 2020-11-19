@@ -1,4 +1,3 @@
-from __future__ import print_function, unicode_literals
 from .s3_connection import S3Connection
 from .es_connection import ESConnection
 from dcicutils.s3_utils import s3Utils

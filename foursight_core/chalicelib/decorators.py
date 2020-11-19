@@ -1,5 +1,3 @@
-# General utils for foursight
-from __future__ import print_function, unicode_literals
 import traceback
 import signal
 import time

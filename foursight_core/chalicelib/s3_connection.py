@@ -1,4 +1,3 @@
-from __future__ import print_function, unicode_literals
 from .abstract_connection import AbstractConnection
 import json
 import requests

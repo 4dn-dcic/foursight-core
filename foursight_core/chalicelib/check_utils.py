@@ -1,4 +1,3 @@
-from __future__ import print_function, unicode_literals
 from os.path import dirname
 import glob
 import sys
@@ -9,7 +8,6 @@ import json
 from .utils import (
     CHECK_DECO,
     ACTION_DECO,
-    basestring,
     create_placeholder_check
 )
 from .exceptions import BadCheckSetup
@@ -112,7 +110,7 @@ class CheckHandler(object):
                 raise BadCheckSetup('Entry for "%s" in check_setup.json must have the required keys: "title", "group", and "schedule".' % check_name)
             # these fields must be strings
             for field in ['title', 'group']:
-                if not isinstance(check_setup[check_name][field], basestring):
+                if not isinstance(check_setup[check_name][field], str):
                     raise BadCheckSetup('Entry for "%s" in check_setup.json must have a string value for field "%s".' % (check_name, field))
             if not isinstance(check_setup[check_name]['schedule'], dict):
                 raise BadCheckSetup('Entry for "%s" in check_setup.json must have a dictionary value for field "schedule".' % check_name)

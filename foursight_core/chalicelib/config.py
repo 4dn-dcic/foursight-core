@@ -1,4 +1,3 @@
-from __future__ import print_function, unicode_literals
 import os
 import json
 from .s3_connection import S3Connection

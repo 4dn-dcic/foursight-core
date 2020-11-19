@@ -1,4 +1,3 @@
-from __future__ import print_function, unicode_literals
 from datetime import datetime
 import boto3
 import json
