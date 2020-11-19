@@ -16,6 +16,9 @@ from .run_result import CheckResult, ActionResult
 
 
 class CheckHandler(object):
+    """
+    Class CheckHandler is a collection of utils related to checks
+    """
 
     # these must be overwritten for inherited classes
     setup_dir = dirname(__file__)

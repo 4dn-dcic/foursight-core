@@ -29,6 +29,9 @@ from .config import Config
 
 
 class AppUtils(object):
+    """
+    Class AppUtils is a collection of utils used by app
+    """
     
     # these must be overwritten in inherited classes
     prefix = FOURSIGHT_PREFIX
