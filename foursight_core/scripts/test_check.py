@@ -4,8 +4,8 @@ import boto3
 import json
 import argparse
 sys.path.append('..')
-from foursight_core import app
-from foursight_core.chalicelib.vars import DEV_ENV
+from .. import app
+from ..vars import DEV_ENV
 
 
 EPILOG = __doc__

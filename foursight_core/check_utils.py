@@ -24,7 +24,7 @@ class CheckHandler(object):
     CheckResult = PlaceholderCheckResult
     ActionResult = PlaceholderActionResult
     Environment = PlaceholderEnvironment
-    check_package_name = 'foursight_core.chalicelib'
+    check_package_name = 'foursight_core'
 
     @classmethod
     def get_module_names(cls):

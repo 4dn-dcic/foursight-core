@@ -4,8 +4,8 @@ import boto3
 import json
 sys.path.append('..')
 import app
-from foursight_core.chalicelib.es_connection import ESConnection
-from foursight_core.chalicelib.vars import FOURSIGHT_PREFIX
+from ..es_connection import ESConnection
+from ..vars import FOURSIGHT_PREFIX
 
 # XXX: To use this script, run 'python migration.py <env> <stage>' in the root
 # directory of this repository.

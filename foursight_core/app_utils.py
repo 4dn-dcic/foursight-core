@@ -60,7 +60,7 @@ class AppUtils(object):
     @classmethod
     def jin_env(cls):
         return Environment(
-            loader=FileSystemLoader('chalicelib/templates'),
+            loader=FileSystemLoader('templates'),
             autoescape=select_autoescape(['html', 'xml'])
         )
 
@@ -291,7 +291,7 @@ class AppUtils(object):
             context (str): string context to use for Foursight routing
     
         Returns:
-            chalicelib.Response: redirect to future check landing page
+            chalice.Response: redirect to future check landing page
         """
         # convert string query params to literals
         params = self.query_params_to_literals(params)
@@ -315,7 +315,7 @@ class AppUtils(object):
             context (str): string context to use for Foursight routing
     
         Returns:
-            chalicelib.Response: redirect to check view that called this action
+            chalice.Response: redirect to check view that called this action
         """
         # convert string query params to literals
         params = self.query_params_to_literals(params)
