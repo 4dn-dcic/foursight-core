@@ -1,3 +1,4 @@
+import os
 from foursight_core import stage
 
 
