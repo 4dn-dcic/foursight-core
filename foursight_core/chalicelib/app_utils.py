@@ -15,38 +15,47 @@ from base64 import b64decode
 from dcicutils import ff_utils
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
-from .utils import (
-    LAMBDA_MAX_BODY_SIZE,
-)
 from .vars import (
-    FOURSIGHT_PREFIX,
-    HOST
+    FOURSIGHT_PREFIX as PlaceholderPrefix,
+    FAVICON as PlaceholderFavicon
+    HOST as PlaceholderHost
 )
-from .run_result import CheckResult, ActionResult
-from .check_utils import CheckHandler
-from .sqs_utils import SQS
-from .config import Config
+from .run_result import (
+    CheckResult as PlaceholderCheckResult,
+    ActionResult as PlaceholderActionResult,
+)
+from .check_utils import CheckHandler as PlaceholderCheckHandler
+from .sqs_utils import SQS as PlaceholderSQS
+from .stage import Stage as PlaceholderStage
+from .environment import Environment as PlaceholderEnvironment
 
 
 class AppUtils(object):
     """
-    Class AppUtils is a collection of utils used by app
+    Class AppUtils is the most high-level class that's used directy by Chalice object app.
+    This class mostly contains the functions defined in app_utils in original foursight.
     """
     
     # these must be overwritten in inherited classes
-    prefix = FOURSIGHT_PREFIX
-    FAVICON = 'https://cgap.hms.harvard.edu/static/img/favicon-fs.ico'
-    Config = Config
-    CheckHandler = CheckHandler
-    CheckResult = CheckResult
-    ActionResult = ActionResult
-    SQS = SQS
-    host = HOST
+    prefix = PlaceholderPrefix
+    FAVICON = PlaceholderFavicon
+    Stage = PlaceholderStage
+    Environment = PlaceholderEnvironment
+    CheckHandler = PlaceholderCheckHandler
+    CheckResult = PlaceholderCheckResult
+    ActionResult = PlaceholderActionResult
+    SQS = PlaceholderSQS
+    host = PlaceholderHost  # replace with e.g. 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
 
     TRIM_ERR_OUTPUT = 'Output too large to provide on main page - see check result directly'
+    LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
     def __init__(self):
-        pass
+        self.check_handler = CheckHandler()
+
+    def set_timeout(self, timeout):
+        """Set timeout as environment variable. Decorator instances will pick up this value"""
+        os.environ['CHECK_TIMEOUT'] = str(timeout)
 
     @classmethod
     def jin_env(cls):
@@ -65,31 +74,8 @@ class AppUtils(object):
         :param env: allows you to specify a single env to be initialized
         :param envs: allows you to specify multiple envs to be initialized
         """
-        stage = cls.Config.get_stage_info()['stage']
-        s3_connection = S3Connection(cls.prefix + '-envs')
-        env_keys = s3_connection.list_all_keys()
-        print("env_keys=%s from bucket %s" % (env_keys, cls.prefix + '-envs'))
-        environments = {}
-        if env != 'all':
-            if env in env_keys:
-                env_keys = [env]
-            else:
-                return {}  # provided env is not in s3
-        elif envs is not None:
-            env_keys = envs
-        for env_key in env_keys:
-            env_res = s3_connection.get_object(env_key)
-            print("env_res for env_key %s from s3_connection = %s" % (env_key, str(env_res)))
-            # check that the keys we need are in the object
-            if isinstance(env_res, dict) and {'fourfront', 'es'} <= set(env_res):
-                env_entry = {
-                    'fourfront': env_res['fourfront'],
-                    'es': env_res['es'],
-                    'ff_env': env_res.get('ff_env', ''.join(['fourfront-', env_key])),
-                    'bucket': ''.join([cls.prefix + '-', stage, '-', env_key])
-                }
-                environments[env_key] = env_entry
-        return environments
+        stage = cls.Stage.get_stage()
+        return cls.Environment().get_environment_and_bucket_info_in_batch(stage=stage, env=env, envs=envs)
     
     @classmethod
     def init_connection(cls, environ, _environments=None):
@@ -213,7 +199,7 @@ class AppUtils(object):
         Does any final processing of a Foursight response before returning it. Right now, this includes:
         * Changing the response body if it is greater than 5.5 MB (Lambda body max is 6 MB)
         """
-        if cls.get_size(response.body) > LAMBDA_MAX_BODY_SIZE:  # should be much faster than json.dumps
+        if cls.get_size(response.body) > cls.LAMBDA_MAX_BODY_SIZE:  # should be much faster than json.dumps
             response.body = 'Body size exceeded 6 MB maximum.'
             response.status_code = 413
         return response
@@ -290,8 +276,7 @@ class AppUtils(object):
     
     ##### ROUTE RUNNING FUNCTIONS #####
     
-    @classmethod
-    def view_run_check(cls, environ, check, params, context="/"):
+    def view_run_check(self, environ, check, params, context="/"):
         """
         Called from the view endpoint (or manually, I guess), this queues the given
         check for the given environment and redirects to the view_foursight result
@@ -309,15 +294,14 @@ class AppUtils(object):
             chalicelib.Response: redirect to future check landing page
         """
         # convert string query params to literals
-        params = cls.query_params_to_literals(params)
-        queued_uuid = cls.queue_check(environ, check, params)
+        params = self.query_params_to_literals(params)
+        queued_uuid = self.queue_check(environ, check, params)
         # redirect to view page with a 302 so it isn't cached
         resp_headers = {'Location': '/'.join([context + 'view', environ, check, queued_uuid])}
         return Response(status_code=302, body=json.dumps(resp_headers),
                         headers=resp_headers)
     
-    @classmethod
-    def view_run_action(cls, environ, action, params, context="/"):
+    def view_run_action(self, environ, action, params, context="/"):
         """
         Called from the view endpoint (or manually, I guess), this runs the given
         action for the given environment and refreshes the foursight view.
@@ -334,8 +318,8 @@ class AppUtils(object):
             chalicelib.Response: redirect to check view that called this action
         """
         # convert string query params to literals
-        params = cls.query_params_to_literals(params)
-        queued_uuid = cls.queue_action(environ, action, params)
+        params = self.query_params_to_literals(params)
+        queued_uuid = self.queue_action(environ, action, params)
         # redirect to calling check view page with a 302 so it isn't cached
         if 'check_name' in params and 'called_by' in params:
             check_detail = '/'.join([params['check_name'], params['called_by']])
@@ -354,8 +338,7 @@ class AppUtils(object):
         return Response(status_code=302, body=json.dumps(resp_headers),
                         headers=resp_headers)
     
-    @classmethod
-    def view_foursight(cls, environ, is_admin=False, domain="", context="/"):
+    def view_foursight(self, environ, is_admin=False, domain="", context="/"):
         """
         View a template of all checks from the given environment(s).
         Environ may be 'all' or a specific FS environments separated by commas.
@@ -368,7 +351,7 @@ class AppUtils(object):
         html_resp = Response('Foursight viewing suite')
         html_resp.headers = {'Content-Type': 'text/html'}
         requested_envs = [e.strip() for e in environ.split(',')]
-        environments = cls.init_environments(envs=requested_envs)  # cached at start of page load
+        environments = self.init_environments(envs=requested_envs)  # cached at start of page load
         total_envs = []
         servers = []
         view_envs = environments.keys() if environ == 'all' else [e.strip() for e in environ.split(',')]
@@ -376,12 +359,12 @@ class AppUtils(object):
             try:
                 if not is_admin:  # no view permissions for non-admins on CGAP
                     continue
-                connection = cls.init_connection(this_environ, _environments=environments)
+                connection = self.init_connection(this_environ, _environments=environments)
             except Exception:
                 connection = None
             if connection:
                 servers.append(connection.ff_server)
-                grouped_results = cls.CheckHandler().get_grouped_check_results(connection)
+                grouped_results = self.check_handler.get_grouped_check_results(connection)
                 for group in grouped_results:
                     for title, result in group.items():
                         if title == '_name':
@@ -392,7 +375,7 @@ class AppUtils(object):
                                 group[title][stat] = str(val)
                             continue
                         else:
-                            group[title] = cls.process_view_result(connection, result, is_admin)
+                            group[title] = self.process_view_result(connection, result, is_admin)
                 total_envs.append({
                     'status': 'success',
                     'environment': this_environ,
@@ -401,17 +384,17 @@ class AppUtils(object):
         # prioritize these environments
         env_order = ['data', 'staging', 'webdev', 'hotseat', 'cgap']
         total_envs = sorted(total_envs, key=lambda v: env_order.index(v['environment']) if v['environment'] in env_order else 9999)
-        template = cls.jin_env().get_template('view_groups.html')
+        template = self.jin_env().get_template('view_groups.html')
         # get queue information
-        queue_attr = cls.SQS.get_sqs_attributes(cls.SQS.get_sqs_queue().url)
+        queue_attr = self.SQS.get_sqs_attributes(self.SQS.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
-        first_env_favicon = cls.get_favicon()
+        first_env_favicon = self.get_favicon()
         html_resp.body = template.render(
             env=environ,
             view_envs=total_envs,
-            stage=cls.Config.get_stage_info()['stage'],
-            load_time=cls.get_load_time(),
+            stage=self.Stage.get_stage(),
+            load_time=self.get_load_time(),
             is_admin=is_admin,
             domain=domain,
             context=context,
@@ -420,10 +403,9 @@ class AppUtils(object):
             favicon=first_env_favicon
         )
         html_resp.status_code = 200
-        return cls.process_response(html_resp)
+        return self.process_response(html_resp)
     
-    @classmethod
-    def view_foursight_check(cls, environ, check, uuid, is_admin=False, domain="", context="/"):
+    def view_foursight_check(self, environ, check, uuid, is_admin=False, domain="", context="/"):
         """
         View a formatted html response for a single check (environ, check, uuid)
         """
@@ -432,12 +414,12 @@ class AppUtils(object):
         total_envs = []
         servers = []
         try:
-            connection = cls.init_connection(environ)
+            connection = self.init_connection(environ)
         except Exception:
             connection = None
         if connection:
             servers.append(connection.ff_server)
-            res_check = cls.CheckResult(connection, check)
+            res_check = self.CheckResult(connection, check)
             if res_check:
                 data = res_check.get_result_by_uuid(uuid)
                 if data is None:
@@ -449,23 +431,23 @@ class AppUtils(object):
                         'summary': 'Check has not yet run',
                         'description': 'Check has not yet run'
                     }
-                title = cls.CheckHandler().get_check_title_from_setup(check)
-                processed_result = cls.process_view_result(connection, data, is_admin)
+                title = self.check_handler.get_check_title_from_setup(check)
+                processed_result = self.process_view_result(connection, data, is_admin)
                 total_envs.append({
                     'status': 'success',
                     'environment': environ,
                     'checks': {title: processed_result}
                 })
-        template = cls.jin_env().get_template('view_checks.html')
-        queue_attr = cls.SQS.get_sqs_attributes(cls.SQS.get_sqs_queue().url)
+        template = self.jin_env().get_template('view_checks.html')
+        queue_attr = self.SQS.get_sqs_attributes(self.SQS.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
-        first_env_favicon = cls.get_favicon()
+        first_env_favicon = self.get_favicon()
         html_resp.body = template.render(
             env=environ,
             view_envs=total_envs,
-            stage=cls.Config.get_stage_info()['stage'],
-            load_time=cls.get_load_time(),
+            stage=self.Stage.get_stage(),
+            load_time=self.get_load_time(),
             is_admin=is_admin,
             domain=domain,
             context=context,
@@ -474,7 +456,7 @@ class AppUtils(object):
             favicon=first_env_favicon
         )
         html_resp.status_code = 200
-        return cls.process_response(html_resp)
+        return self.process_response(html_resp)
     
     @classmethod
     def get_load_time(cls):
@@ -572,8 +554,7 @@ class AppUtils(object):
                 del res['action']
         return res
     
-    @classmethod
-    def view_foursight_history(cls, environ, check, start=0, limit=25, is_admin=False,
+    def view_foursight_history(self, environ, check, start=0, limit=25, is_admin=False,
                                domain="", context="/"):
         """
         View a tabular format of the history of a given check or action (str name
@@ -587,33 +568,33 @@ class AppUtils(object):
         html_resp.headers = {'Content-Type': 'text/html'}
         server = None
         try:
-            connection = cls.init_connection(environ)
+            connection = self.init_connection(environ)
         except Exception:
             connection = None
         if connection:
             server = connection.ff_server
-            history = cls.get_foursight_history(connection, check, start, limit)
+            history = self.get_foursight_history(connection, check, start, limit)
             history_kwargs = list(set(chain.from_iterable([l[2] for l in history])))
         else:
             history, history_kwargs = [], []
-        template = cls.jin_env().get_template('history.html')
-        check_title = cls.CheckHandler().get_check_title_from_setup(check)
+        template = self.jin_env().get_template('history.html')
+        check_title = self.check_handler.get_check_title_from_setup(check)
         page_title = ''.join(['History for ', check_title, ' (', environ, ')'])
-        queue_attr = cls.SQS.get_sqs_attributes(cls.SQS.get_sqs_queue().url)
+        queue_attr = self.SQS.get_sqs_attributes(cls.SQS.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
-        favicon = cls.get_favicon()
+        favicon = self.get_favicon()
         html_resp.body = template.render(
             env=environ,
             check=check,
-            load_time=cls.get_load_time(),
+            load_time=self.get_load_time(),
             history=history,
             history_kwargs=history_kwargs,
             res_start=start,
             res_limit=limit,
             res_actual=len(history),
             page_title=page_title,
-            stage=cls.Config.get_stage_info()['stage'],
+            stage=self.Stage.get_stage(),
             is_admin=is_admin,
             domain=domain,
             context=context,
@@ -622,10 +603,9 @@ class AppUtils(object):
             favicon=favicon
         )
         html_resp.status_code = 200
-        return cls.process_response(html_resp)
+        return self.process_response(html_resp)
 
-    @classmethod
-    def get_foursight_history(cls, connection, check, start, limit):
+    def get_foursight_history(self, connection, check, start, limit):
         """
         Get a brief form of the historical results for a check, including
         UUID, status, kwargs. Limit the number of results recieved to 500, unless
@@ -636,22 +616,21 @@ class AppUtils(object):
         """
         # limit 'limit' param to 500
         limit = 500 if limit > 500 else limit
-        result_obj = cls.CheckHandler.init_check_or_action_res(connection, check)
+        result_obj = self.check_handler.init_check_or_action_res(connection, check)
         if not result_obj:
             return []
         return result_obj.get_result_history(start, limit)
     
-    @classmethod
-    def run_get_check(cls, environ, check, uuid=None):
+    def run_get_check(self, environ, check, uuid=None):
         """
         Loads a specific check or action result given an environment, check or
         action name, and uuid (all strings).
         If uuid is not provided, get the primary_result.
         """
-        connection, response = cls.init_response(environ)
+        connection, response = self.init_response(environ)
         if not connection:
             return response
-        res_obj = cls.CheckHandler.init_check_or_action_res(connection, check)
+        res_obj = self.check_handler.init_check_or_action_res(connection, check)
         if not res_obj:
             response.body = {
                 'status': 'error',
@@ -668,7 +647,7 @@ class AppUtils(object):
                 'data': data
             }
             response.status_code = 200
-        return cls.process_response(response)
+        return self.process_response(response)
 
     @classmethod
     def run_put_check(cls, environ, check, put_data):
@@ -726,8 +705,7 @@ class AppUtils(object):
         response.status_code = 200
         return cls.process_response(response)
     
-    @classmethod
-    def run_put_environment(cls, environ, env_data):
+    def run_put_environment(self, environ, env_data):
         """
         Abstraction of the functionality of put_environment without the current_request
         to allow for testing.
@@ -743,10 +721,10 @@ class AppUtils(object):
                 'es': es_address,
                 'ff_env': ff_env
             }
-            s3_connection = S3Connection(cls.prefix + '-envs')
+            s3_connection = S3Connection(self.prefix + '-envs')
             s3_connection.put_object(proc_environ, json.dumps(env_entry))
-            stage = cls.Config.get_stage_info()['stage']
-            s3_bucket = ''.join([cls.prefix + '-', stage, '-', proc_environ])
+            stage = self.Stage.get_stage()
+            s3_bucket = ''.join([self.prefix + '-', stage, '-', proc_environ])
             bucket_res = s3_connection.create_bucket(s3_bucket)
             if not bucket_res:
                 response = Response(
@@ -759,9 +737,9 @@ class AppUtils(object):
                 )
             else:
                 # if not testing, queue checks with 'put_env' condition for the new env
-                if 'test' not in cls.Config.get_stage_info()['queue_name']:
-                    for sched in cls.get_schedule_names():
-                        cls.queue_scheduled_checks(environ, sched, conditions=['put_env'])
+                if 'test' not in self.Stage.get_quene_name():
+                    for sched in self.get_schedule_names():
+                        self.queue_scheduled_checks(environ, sched, conditions=['put_env'])
                 response = Response(
                     body = {
                         'status': 'success',
@@ -780,7 +758,7 @@ class AppUtils(object):
                 },
                 status_code = 400
             )
-        return cls.process_response(response)
+        return self.process_response(response)
     
     @classmethod
     def run_get_environment(cls, environ):
@@ -853,14 +831,13 @@ class AppUtils(object):
     
     ##### QUEUE / CHECK RUNNER FUNCTIONS #####
     
-    @classmethod
-    def queue_scheduled_checks(cls, sched_environ, schedule_name, conditions=None):
+    def queue_scheduled_checks(self, sched_environ, schedule_name, conditions=None):
         """
         Given a str environment and schedule name, add the check info to the
         existing queue (or creates a new one if there is none). Then initiates 4
         check runners that are linked to the queue that are self-propogating.
     
-        If sched_environ == 'all', then loop through all in Config.list_environments()
+        If sched_environ == 'all', then loop through all in Environment.list_environments()
     
         Run with schedule_name = None to skip adding the check group to the queue
         and just initiate the check runners.
@@ -876,13 +853,13 @@ class AppUtils(object):
         Returns:
             dict: runner input of queued messages, used for testing
         """
-        queue = cls.SQS.get_sqs_queue()
+        queue = self.SQS.get_sqs_queue()
         if schedule_name is not None:
-            if sched_environ != 'all' and sched_environ not in cls.Config.list_environments():
+            if sched_environ != 'all' and self.Environment().is_valid_environment_name(sched_environ) == False:
                 print('-RUN-> %s is not a valid environment. Cannot queue.' % sched_environ)
                 return
-            sched_environs = cls.Config.list_environments() if sched_environ == 'all' else [sched_environ]
-            check_schedule = cls.CheckHandler().get_check_schedule(schedule_name, conditions)
+            sched_environs = self.Environment().list_environment_names() if sched_environ == 'all' else [sched_environ]
+            check_schedule = self.check_handler.get_check_schedule(schedule_name, conditions)
             if not check_schedule:
                 print('-RUN-> %s is not a valid schedule. Cannot queue.' % schedule_name)
                 return
@@ -890,14 +867,13 @@ class AppUtils(object):
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
                 check_vals.extend(check_schedule.get(environ, []))
-                cls.SQS.send_sqs_messages(queue, environ, check_vals)
+                self.SQS.send_sqs_messages(queue, environ, check_vals)
         runner_input = {'sqs_url': queue.url}
         for n in range(4): # number of parallel runners to kick off
-            cls.SQS.invoke_check_runner(runner_input)
+            self.SQS.invoke_check_runner(runner_input)
         return runner_input # for testing purposes
     
-    @classmethod
-    def queue_check(cls, environ, check, params={}, deps=[], uuid=None):
+    def queue_check(self, environ, check, params={}, deps=[], uuid=None):
         """
         Queue a single check, given by check function name, with given parameters
         and dependencies (both optional). Also optionally pass in a uuid, which
@@ -913,7 +889,7 @@ class AppUtils(object):
         Returns:
             str: uuid of the queued check (from send_single_to_queue)
         """
-        check_str = cls.CheckHandler.get_check_strings(check)
+        check_str = self.check_handler.get_check_strings(check)
         if not check_str:
             error_res = {
                 'status': 'error',
@@ -923,10 +899,9 @@ class AppUtils(object):
             }
             raise Exception(str(error_res))
         to_send = [check_str, params, deps]
-        return cls.send_single_to_queue(environ, to_send, uuid)
+        return self.send_single_to_queue(environ, to_send, uuid)
     
-    @classmethod
-    def queue_action(cls, environ, action, params={}, deps=[], uuid=None):
+    def queue_action(self, environ, action, params={}, deps=[], uuid=None):
         """
         Queue a single action, given by action function name, with given parameters
         and dependencies (both optional). Also optionally pass in a uuid, which
@@ -942,7 +917,7 @@ class AppUtils(object):
         Returns:
             str: uuid of the queued action (from send_single_to_queue)
         """
-        action_str = cls.CheckHandler.get_action_strings(action)
+        action_str = self.check_handler.get_action_strings(action)
         if not action_str:
             error_res = {
                 'status': 'error',
@@ -952,7 +927,7 @@ class AppUtils(object):
             }
             raise Exception(str(error_res))
         to_send = [action_str, params, deps]
-        return cls.send_single_to_queue(environ, to_send, uuid)
+        return self.send_single_to_queue(environ, to_send, uuid)
     
     @classmethod
     def send_single_to_queue(cls, environ, to_send, uuid, invoke_runner=True):
@@ -976,8 +951,7 @@ class AppUtils(object):
             cls.SQS.invoke_check_runner({'sqs_url': queue.url})
         return queued_uuid
     
-    @classmethod
-    def run_check_runner(cls, runner_input, propogate=True):
+    def run_check_runner(self, runner_input, propogate=True):
         """
         Run logic for a check runner. Used to run checks and actions.
     
@@ -1026,7 +1000,7 @@ class AppUtils(object):
         check_list = json.loads(body)
         if not isinstance(check_list, list) or len(check_list) != 5:
             # if not a valid check str, remove the item from the SQS
-            cls.SQS.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
+            self.SQS.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
         [run_env, run_uuid, run_name, run_kwargs, run_deps] = check_list
         # find information from s3 about completed checks in this run
@@ -1039,7 +1013,7 @@ class AppUtils(object):
                 print('-RUN-> Not ready for: %s' % (run_name))
         else:
             finished_dependencies = True
-        connection = cls.init_connection(run_env)
+        connection = self.init_connection(run_env)
         if finished_dependencies:
             # add the run uuid as the uuid to kwargs so that checks will coordinate
             if 'uuid' not in run_kwargs:
@@ -1052,7 +1026,7 @@ class AppUtils(object):
                 if found_rec is not None:
                     # the action record has been written. Abort and propogate
                     print('-RUN-> Found existing action record: %s. Skipping' % rec_key)
-                    cls.SQS.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
+                    self.SQS.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
                     return None
                 else:
                     # make a action record before running the action
@@ -1061,18 +1035,18 @@ class AppUtils(object):
                     rec_body = ''.join([act_name, '/', run_uuid, '.json'])
                     connection.put_object(rec_key, rec_body)
                     print('-RUN-> Wrote action record: %s' % rec_key)
-            run_result = cls.CheckHandler.run_check_or_action(connection, run_name, run_kwargs)
+            run_result = self.check_handler.run_check_or_action(connection, run_name, run_kwargs)
             print('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))
             # invoke action if running a check and kwargs['queue_action'] matches stage
-            stage = cls.Config.get_stage_info()['stage']
+            stage = self.Stage.get_stage()
             if run_result['type'] == 'check' and run_result['kwargs']['queue_action'] == stage:
                 # must also have check.action and check.allow_action set
                 if run_result['allow_action'] and run_result['action']:
                     action_params = {'check_name': run_result['name'],
                                      'called_by': run_result['kwargs']['uuid']}
                     try:
-                        queue_action(run_env, run_result['action'],
-                                     params=action_params, uuid=run_uuid)
+                        self.queue_action(run_env, run_result['action'],
+                                          params=action_params, uuid=run_uuid)
                     except Exception as exc:
                         print('-RUN-> Could not queue action %s on stage %s with kwargs: %s. Error: %s'
                               % (run_result['action'], stage, action_params, str(exc)))
@@ -1080,11 +1054,11 @@ class AppUtils(object):
                         print('-RUN-> Queued action %s on stage %s with kwargs: %s'
                               % (run_result['action'], stage, action_params))
             print('-RUN-> Finished: %s' % (run_name))
-            cls.SQS.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
+            self.SQS.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return run_result
         else:
             print('-RUN-> Recovered: %s' % (run_name))
-            cls.SQS.recover_message_and_propogate(runner_input, receipt, propogate=propogate)
+            self.SQS.recover_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
     
     @classmethod

@@ -7,8 +7,7 @@ from elasticsearch import (
     )
 from elasticsearch_dsl import Search
 from dcicutils import es_utils
-from .utils import create_placeholder_check, ES_SEARCH_SIZE
-import datetime
+from .check import Check
 import json
 import time
 
@@ -33,6 +32,9 @@ class ESConnection(AbstractConnection):
 
     Implements the AbstractConnection 'interface'
     """
+
+    ES_SEARCH_SIZE = 10000
+
     def __init__(self, index=None, doc_type='result', host=None):
         if not host:
             raise ElasticsearchException("ESConnection error: Host must be specified")
@@ -201,7 +203,7 @@ class ESConnection(AbstractConnection):
         else:
             t = 'latest'
         doc = {
-            'size': ES_SEARCH_SIZE,
+            'size': self.ES_SEARCH_SIZE,
             'query': {
                 'bool': {
                     'must': {
@@ -230,7 +232,7 @@ class ESConnection(AbstractConnection):
             found_checks = set(res['name'] for res in raw_result)
             for check_name in checks:
                 if check_name not in found_checks:
-                    raw_result.append(create_placeholder_check(check_name))
+                    raw_result.append(Check().create_placeholder_check(check_name))
         return raw_result
 
     def list_all_keys(self):
@@ -239,7 +241,7 @@ class ESConnection(AbstractConnection):
         Only gets ES_SEARCH_SIZE number of results, most recent first.
         """
         doc = {
-            'size': ES_SEARCH_SIZE,
+            'size': self.ES_SEARCH_SIZE,
             'query': {
                 'match_all' : {}
             },
@@ -259,7 +261,7 @@ class ESConnection(AbstractConnection):
         Only gets ES_SEARCH_SIZE number of results, most recent first.
         """
         doc = {
-            'size': ES_SEARCH_SIZE,
+            'size': self.ES_SEARCH_SIZE,
             'query': {
                 'bool': {
                     'filter': {
@@ -283,7 +285,7 @@ class ESConnection(AbstractConnection):
         Only gets ES_SEARCH_SIZE number of results, most recent first.
         """
         doc = {
-            'size': ES_SEARCH_SIZE,
+            'size': self.ES_SEARCH_SIZE,
             'query': {
                 'match_all' : {}
             },

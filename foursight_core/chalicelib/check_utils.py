@@ -5,14 +5,13 @@ import importlib
 import datetime
 import copy
 import json
+from .decorators import Decorators
 from .utils import (
-    CHECK_DECO,
-    ACTION_DECO,
     create_placeholder_check
 )
 from .exceptions import BadCheckSetup
-from .config import Config
-from .run_result import CheckResult, ActionResult
+from .environment import Environment as PlaceholderEnvironment
+from .run_result import PlaceholderCheckResult, PlaceholderActionResult
 
 
 class CheckHandler(object):
@@ -20,11 +19,11 @@ class CheckHandler(object):
     Class CheckHandler is a collection of utils related to checks
     """
 
-    # these must be overwritten for inherited classes
+    # These must be overwritten for inherited classes
     setup_dir = dirname(__file__)
-    CheckResult = CheckResult
-    ActionResult = ActionResult
-    Config = Config
+    CheckResult = PlaceholderCheckResult
+    ActionResult = PlaceholderActionResult
+    Environment = PlaceholderEnvironment
     check_package_name = 'foursight_core.chalicelib'
 
     @classmethod
@@ -32,7 +31,7 @@ class CheckHandler(object):
         from .checks import __all__ as check_modules
         return check_modules
 
-    # these can be used as they are in inherited classes
+    # Methods below can be used as they are in inherited classes
 
     @classmethod
     def import_check_module(cls, module_name):
@@ -60,7 +59,7 @@ class CheckHandler(object):
         all_checks = []
         for mod_name in cls.get_module_names():
             mod = cls.import_check_module(mod_name)
-            methods = cls.get_methods_by_deco(mod, CHECK_DECO)
+            methods = cls.get_methods_by_deco(mod, Decorators.CHECK_DECO)
             for method in methods:
                 check_str = '/'.join([mod_name, method.__name__])
                 if specific_check and specific_check == method.__name__:
@@ -96,7 +95,7 @@ class CheckHandler(object):
         """
         found_checks = {}
         all_check_strings = self.get_check_strings()
-        all_environments = self.Config.list_environments() + ['all']
+        all_environments = self.Environment().list_valid_schedule_environment_names()
         # validate all checks
         for check_string in all_check_strings:
             mod_name, check_name = check_string.split('/')
@@ -160,7 +159,7 @@ class CheckHandler(object):
         all_actions = []
         for mod_name in cls.get_module_names():
             mod = cls.import_check_module(mod_name)
-            methods = cls.get_methods_by_deco(mod, ACTION_DECO)
+            methods = cls.get_methods_by_deco(mod, Decorators.ACTION_DECO)
             for method in methods:
                 act_str = '/'.join([mod_name, method.__name__])
                 if specific_action and specific_action == method.__name__:
@@ -325,8 +324,8 @@ class CheckHandler(object):
         check_method = check_mod.__dict__.get(check_name)
         if not check_method:
             return ' '.join(['ERROR. Check name is not valid.', error_str])
-        if not cls.check_method_deco(check_method, CHECK_DECO) and \
-           not cls.check_method_deco(check_method, ACTION_DECO):
+        if not cls.check_method_deco(check_method, Decorators.CHECK_DECO) and \
+           not cls.check_method_deco(check_method, Decorators.ACTION_DECO):
             return ' '.join(['ERROR. Check or action must use a decorator.', error_str])
         return check_method(connection, **check_kwargs)
 

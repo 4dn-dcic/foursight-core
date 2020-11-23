@@ -274,10 +274,10 @@ def indexing_records(connection, **kwargs):
 
 @check_function(time_limit=480)
 def secondary_queue_deduplication(connection, **kwargs):
-    from ..config import Config
+    from ..stage import Stage
     check = CheckResult(connection, 'secondary_queue_deduplication')
     # maybe handle this in check_setup.json
-    if Config.get_stage_info()['stage'] != 'prod':
+    if Stage.is_stag_prod() is False:
         check.full_output = 'Will not run on dev foursight.'
         check.status = 'PASS'
         return check
@@ -493,12 +493,12 @@ def process_download_tracking_items(connection, **kwargs):
     - If the user_agent looks to be a bot, set status=deleted
     - Change unused range query items to status=deleted
     """
-    from ..config import Config
+    from ..stage import Stage
     from foursight_core.chalicelib.sys_utils import parse_datetime_to_utc
     import geocoder
     check = CheckResult(connection, 'process_download_tracking_items')
     # maybe handle this in check_setup.json
-    if Config.get_stage_info()['stage'] != 'prod':
+    if Stage.is_stag_prod() is False:
         check.full_output = 'Will not run on dev foursight.'
         check.status = 'PASS'
         return check
@@ -626,8 +626,8 @@ def purge_download_tracking_items(connection, **kwargs):
     adapted; as it is, already handles recording for any number of item types.
     Ensure search includes limit, field=uuid, and status=deleted
     """
-    from ..config import Config
-    from ..app_utils import AppUtils
+    from ..stage import Stage
+    from ..foursight import Foursight
     check = CheckResult(connection, 'purge_download_tracking_items')
 
     # Don't run if staging deployment is running
@@ -635,13 +635,13 @@ def purge_download_tracking_items(connection, **kwargs):
     # XXX: Removing for now as we find the check can never run without this
     # if the staging deploy takes long enough or errors
     # if connection.fs_env == 'data':
-    #     staging_conn = AppUtils.init_connection('staging')
+    #     staging_conn = Foursight.init_connection('staging')
     #     staging_deploy = CheckResult(staging_conn, 'staging_deployment').get_primary_result()
     #     if staging_deploy['status'] != 'PASS':
     #         check.summary = 'Staging deployment is running - skipping'
     #         return check
 
-    if Config.get_stage_info()['stage'] != 'prod':
+    if Stage.is_stag_prod() is False:
         check.summary = check.description = 'This check only runs on Foursight prod'
         return check
 
@@ -693,9 +693,9 @@ def check_long_running_ec2s(connection, **kwargs):
     (FAIL) if any contain any strings from `flag_names` in their
     names, or if they have no name.
     """
-    from ..config import Config
+    from ..stage import Stage
     check = CheckResult(connection, 'check_long_running_ec2s')
-    if Config.get_stage_info()['stage'] != 'prod':
+    if Stage.is_stag_prod() is False:
         check.summary = check.description = 'This check only runs on Foursight prod'
         return check
 

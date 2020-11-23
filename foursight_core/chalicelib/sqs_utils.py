@@ -1,7 +1,7 @@
 from datetime import datetime
 import boto3
 import json
-from .config import Config
+from .stage import Stage as PlaceholderStage
 
 
 class SQS(object):
@@ -9,7 +9,7 @@ class SQS(object):
     class SQS is a collection of utils related to Foursight queues
     """
 
-    Config = Config
+    Stage = PlaceholderStage
 
     def __init__(self):
         pass
@@ -25,13 +25,13 @@ class SQS(object):
         # try/except while async invokes are problematic
         try:
             response = client.invoke(
-                FunctionName=cls.Config.get_stage_info()['runner_name'],
+                FunctionName=cls.Stage.get_runner_name(),
                 InvocationType='Event',
                 Payload=json.dumps(runner_input)
             )
         except:
             response = client.invoke(
-                FunctionName=cls.Config.get_stage_info()['runner_name'],
+                FunctionName=cls.Stage.get_runner_name(),
                 Payload=json.dumps(runner_input)
             )
         return response
@@ -97,7 +97,7 @@ class SQS(object):
         """
         Returns boto3 sqs resource
         """
-        queue_name = cls.Config.get_stage_info()['queue_name']
+        queue_name = cls.Stage.get_queue_name()
         sqs = boto3.resource('sqs')
         try:
             queue = sqs.get_queue_by_name(QueueName=queue_name)
