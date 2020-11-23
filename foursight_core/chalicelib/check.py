@@ -6,11 +6,10 @@ class Check(object):
     UUID_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 
     def __init__(self):
-        self.uuid = datetime.datetime.utcnow().strftime(UUID_FORMAT)
+        self.uuid = self.create_uuid()
 
-    @classmethod
-    def uuid2time(cls, uuid):
-        return datetime.datetime.strptime(uuid, UUID_FORMAT)
+    def create_uuid(self):
+        return datetime.datetime.utcnow().strftime(self.UUID_FORMAT)
 
     def create_placeholder_check(self, check_name):
         return {
