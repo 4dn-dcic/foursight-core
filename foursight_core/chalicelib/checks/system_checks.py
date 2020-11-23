@@ -5,7 +5,8 @@ import datetime
 import boto3
 import time
 from dcicutils.misc_utils import Retry
-from .sys_utils import (
+from .helpers.sys_utils import (
+    parse_datetime_to_utc,
     cat_indices
 )
 from ..run_result import CheckResult
