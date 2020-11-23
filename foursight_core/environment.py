@@ -45,8 +45,8 @@ class Environment(object):
             env_entry = {
                 'fourfront': env_res['fourfront'],
                 'es': env_res['es'],
-                'ff_env': env_res.get('ff_env', ''.join(['fourfront-', env_key])),
-                'bucket': ''.join([cls.prefix + '-', stage, '-', env_key])
+                'ff_env': env_res.get('ff_env', ''.join(['fourfront-', env_name])),
+                'bucket': ''.join([cls.prefix + '-', stage, '-', env_name])
             }
             return env_entry
         else:
