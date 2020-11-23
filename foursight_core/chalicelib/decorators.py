@@ -73,7 +73,7 @@ class Decorators(object):
                                 'start_time': start_time, 'connection': args[0]}
                     self.do_timeout(parent_pid, partials)
     
-            wrapper.check_decorator = CHECK_DECO
+            wrapper.check_decorator = self.CHECK_DECO
             return wrapper
         return check_deco
     
@@ -117,7 +117,7 @@ class Decorators(object):
                                 'start_time': start_time, 'connection': args[0]}
                     self.do_timeout(parent_pid, partials)
     
-            wrapper.check_decorator = ACTION_DECO
+            wrapper.check_decorator = self.ACTION_DECO
             return wrapper
         return action_deco
 

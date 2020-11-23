@@ -9,8 +9,10 @@ from .decorators import Decorators
 from .check_schema import CheckSchema
 from .exceptions import BadCheckSetup
 from .environment import Environment as PlaceholderEnvironment
-from .run_result import PlaceholderCheckResult, PlaceholderActionResult
-
+from .run_result import (
+    CheckResult as PlaceholderCheckResult,
+    ActionResult as PlaceholderActionResult
+)
 
 class CheckHandler(object):
     """

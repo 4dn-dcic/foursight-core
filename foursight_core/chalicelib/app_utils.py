@@ -51,7 +51,7 @@ class AppUtils(object):
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
     def __init__(self):
-        self.check_handler = CheckHandler()
+        self.check_handler = self.CheckHandler()
 
     def set_timeout(self, timeout):
         """Set timeout as environment variable. Decorator instances will pick up this value"""
@@ -788,7 +788,7 @@ class AppUtils(object):
         return cls.process_response(response)
     
     @classmethod
-    def run_delete_environment(cls, environ, bucket=FOURSIGHT_PREFIX + '-envs'):
+    def run_delete_environment(cls, environ, bucket=PlaceholderPrefix + '-envs'):
         """
         Removes the environ entry from the Foursight envs bucket. This effectively de-schedules all checks
         but does not remove any data.

@@ -36,7 +36,7 @@ class Environment(object):
             return False
 
     def get_environment_info_from_s3(self, env_name):
-        return self.3_connection.get_object(env_name)
+        return self.s3_connection.get_object(env_name)
 
     def get_environment_and_bucket_info(self, env_name, stage):
         env_res = self.get_environment_info_from_s3(env_name)
