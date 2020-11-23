@@ -5,7 +5,6 @@ import datetime
 import tempfile
 from git import Repo
 from ..run_result import CheckResult, ActionResult
-from ..utils import check_function, action_function
 from ..vars import FOURSIGHT_PREFIX, DEV_ENV
 from dcicutils.ff_utils import get_metadata
 from dcicutils.deployment_utils import EBDeployer
@@ -16,6 +15,9 @@ from dcicutils.env_utils import (
 from dcicutils.beanstalk_utils import (
     compute_cgap_prd_env, compute_ff_prd_env, beanstalk_info, is_indexing_finished
 )
+from ..decorators import Decorators
+check_function = Decorators().check_function
+action_function = Decorators().action_function
 
 
 def try_to_describe_indexer_env(env):

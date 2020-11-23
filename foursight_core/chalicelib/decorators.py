@@ -2,8 +2,8 @@ import traceback
 import signal
 import time
 import os
-from datetime import datetime
 from functools import wraps
+from .check import Check
 from .run_result import (
     CheckResult as PlaceholderCheckResult,
     ActionResult as PlaceholderActionResult
@@ -173,7 +173,7 @@ class Decorators(object):
             if key not in kwargs:
                 kwargs[key] = default_kwargs[key]
         if 'uuid' not in kwargs:
-            kwargs['uuid'] = datetime.utcnow().isoformat()
+            kwargs['uuid'] = Check().create_uuid()
         if 'primary' not in kwargs:
             kwargs['primary'] = False
         return kwargs

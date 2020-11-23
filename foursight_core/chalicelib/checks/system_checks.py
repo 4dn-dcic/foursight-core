@@ -17,8 +17,8 @@ from dcicutils import (
     env_utils
 )
 from ..decorators import Decorators
-check_function = Decorators.check_function
-action_function = Decorators.action_function
+check_function = Decorators().check_function
+action_function = Decorators().action_function
 
 
 # XXX: put into utils?

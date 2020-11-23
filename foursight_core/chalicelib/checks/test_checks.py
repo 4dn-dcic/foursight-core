@@ -1,10 +1,9 @@
-from ..utils import (
-    check_function,
-    action_function,
-)
 from ..run_result import CheckResult, ActionResult
 import random
 import time
+from ..decorators import Decorators
+check_function = Decorators().check_function
+action_function = Decorators().action_function
 
 
 def test_function_unused():

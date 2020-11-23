@@ -122,7 +122,7 @@ class SQS(object):
             queue: boto3 sqs resource (from get_sqs_queue)
             environ (str): foursight environment name
             check_vals (list): list of formatted check vals, like those from
-                check_utils.CheckHandler.get_check_schedule
+                check_utils.CheckHandler().get_check_schedule
             uuid (str): optional string uuid
     
         Returns:
