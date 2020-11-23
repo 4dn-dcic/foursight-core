@@ -17,7 +17,7 @@ from .s3_connection import S3Connection
 from .fs_connection import FSConnection
 from .vars import (
     FOURSIGHT_PREFIX as PlaceholderPrefix,
-    FAVICON as PlaceholderFavicon
+    FAVICON as PlaceholderFavicon,
     HOST as PlaceholderHost
 )
 from .run_result import (
