@@ -1,11 +1,13 @@
 [tool.poetry]
 name = "foursight_core"
-version = "0.0.1b31"
+version = "0.0.1b33"
 description = "Serverless Chalice Application for Monitoring"
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
 packages = [
-  { include = "foursight_core" }
+  { include = "foursight_core" },
+  { include = "foursight_core/checks" },
+  { include = "foursight_core/checks/helpers" },
 ]
 
 [tool.poetry.dependencies]
