@@ -1,4 +1,4 @@
-from foursight_core.chalice import stage
+from foursight_core.chalicelib import stage
 
 
 class TestStage():

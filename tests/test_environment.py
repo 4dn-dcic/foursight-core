@@ -1,4 +1,4 @@
-from foursight_core.chalice import environment
+from foursight_core.chalicelib import environment
 
 class TestEnvironment():
     def test_list_environments(self):
