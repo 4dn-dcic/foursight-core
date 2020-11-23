@@ -24,8 +24,8 @@ class Decorators(object):
 
     def __init__(self):
         self.CHECK_TIMEOUT = 870  # in seconds. set to less than lambda limit (900 s)
-        if os.environ('CHECK_TIMEOUT'):
-            self.set_timeout(os.environ('CHECK_TIMEOUT')) 
+        if os.environ.get('CHECK_TIMEOUT'):
+            self.set_timeout(os.environ.get('CHECK_TIMEOUT')) 
 
     def set_timeout(self, timeout):
         try:
