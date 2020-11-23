@@ -1,7 +1,7 @@
 import datetime
 
 
-class Check(object):
+class CheckSchema(object):
 
     UUID_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 

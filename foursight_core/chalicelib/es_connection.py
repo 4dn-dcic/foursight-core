@@ -7,7 +7,7 @@ from elasticsearch import (
     )
 from elasticsearch_dsl import Search
 from dcicutils import es_utils
-from .check import Check
+from .check_schema import CheckSchema
 import json
 import time
 
@@ -232,7 +232,7 @@ class ESConnection(AbstractConnection):
             found_checks = set(res['name'] for res in raw_result)
             for check_name in checks:
                 if check_name not in found_checks:
-                    raw_result.append(Check().create_placeholder_check(check_name))
+                    raw_result.append(CheckSchema().create_placeholder_check(check_name))
         return raw_result
 
     def list_all_keys(self):

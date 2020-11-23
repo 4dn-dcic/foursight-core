@@ -6,7 +6,7 @@ import datetime
 import copy
 import json
 from .decorators import Decorators
-from .check import Check
+from .check_schema import CheckSchema
 from .exceptions import BadCheckSetup
 from .environment import Environment as PlaceholderEnvironment
 from .run_result import PlaceholderCheckResult, PlaceholderActionResult
@@ -242,7 +242,7 @@ class CheckHandler(object):
                 if found and found.get('status') != 'IGNORE':
                     check_results.append(found)
                 if not found: # add placeholder check
-                    check_results.append(Check().create_placeholder_check(check_name))
+                    check_results.append(CheckSchema().create_placeholder_check(check_name))
 
         else:
             if use_latest:
