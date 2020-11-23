@@ -350,10 +350,3 @@ def set_stage(stage):
 
 def set_timeout(timeout):
     app_utils_ojb.set_timeout(timeout)
-    from .chalicelib.decorators import Decorators
-    try:
-        timeout = int(timeout)
-    except ValueError:
-        print('ERROR! Timeout must be an integer. You gave: %s' % timeout)
-    else:
-        CHECK_TIMEOUT = timeout
