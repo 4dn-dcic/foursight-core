@@ -1,6 +1,6 @@
-============================
-Chalicelib API Documentation
-============================
+================================
+Foursight-core API Documentation
+================================
 
 abstract_connection
 ^^^^^^^^^^^^^^^^^^^
