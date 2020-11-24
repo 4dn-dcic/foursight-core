@@ -10,7 +10,21 @@ sys_utils
 
 
 wrangler_utils
-^^^^^^^^^
+^^^^^^^^^^^^^^
 
 .. automodule:: foursight_core.checks.helpers.wrangler_utils
+  :members:
+
+
+wfr_utils
+^^^^^^^^^
+
+.. automodule:: foursight_core.checks.helpers.wfr_utils
+  :members:
+
+
+wfrset_utils
+^^^^^^^^^^^^
+
+.. automodule:: foursight_core.checks.helpers.wfrset_utils
   :members:
