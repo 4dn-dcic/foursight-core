@@ -26,7 +26,7 @@ Foursight-CORE is under active development and features will likely change.
 API Documentation
 -----------------
 
-Foursight-CORE uses autodoc to generate documentation for the foursight_core and chalicelib. You can find the autodocs in the ``Foursight_core API Documentation`` and ``Chalicelib API Documentation`` files.
+Foursight-CORE uses autodoc to generate documentation. You can find the autodocs in the ``Foursight_core API Documentation`` file.
 
 
 Foursight and Foursight-CGAP
