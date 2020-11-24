@@ -63,7 +63,7 @@ class AppUtils(object):
 
     @classmethod
     def get_template_path(cls):
-        return os.path.join(template_dir, 'templates')
+        return os.path.join(cls.template_dir, 'templates')
 
     @classmethod
     def jin_env(cls):

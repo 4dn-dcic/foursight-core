@@ -1,12 +1,12 @@
 import boto3
 import json
-from .chalicelib.vars import FOURSIGHT_PREFIX
+from .chalicelib.vars import FOURSIGHT_PREFIX as PlaceholderPrefix
 
 class Buckets(object):
     """create and configure buckets for foursight"""
 
-    prefix = FOURSIGHT_PREFIX
-    envs = ['cgap', 'cgapdev', 'cgaptest', 'cgapwolf']
+    prefix = PlaceholderPrefix
+    envs = ['placeholder_env1', 'placeholder_env2']  # replace w/ e.g.  ['cgap', 'cgapdev', 'cgaptest', 'cgapwolf']
     default_acl = 'private'
     region = 'us-east-1'
 
