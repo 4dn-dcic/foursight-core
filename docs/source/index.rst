@@ -41,5 +41,4 @@ For platform-specific documentation, see `Foursight documantation <https://fours
    :maxdepth: 4
 
    environments
-   parent_modules
    modules
