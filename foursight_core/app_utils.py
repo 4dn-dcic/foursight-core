@@ -30,7 +30,6 @@ from .sqs_utils import SQS as PlaceholderSQS
 from .stage import Stage as PlaceholderStage
 from .environment import Environment as PlaceholderEnvironment
 
-
 class AppUtils(object):
     """
     Class AppUtils is the most high-level class that's used directy by Chalice object app.
