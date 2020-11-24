@@ -580,7 +580,7 @@ class AppUtils(object):
         template = self.jin_env().get_template('history.html')
         check_title = self.check_handler.get_check_title_from_setup(check)
         page_title = ''.join(['History for ', check_title, ' (', environ, ')'])
-        queue_attr = self.SQS.get_sqs_attributes(cls.SQS.get_sqs_queue().url)
+        queue_attr = self.SQS.get_sqs_attributes(self.SQS.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         favicon = self.get_favicon()
@@ -737,7 +737,7 @@ class AppUtils(object):
                 )
             else:
                 # if not testing, queue checks with 'put_env' condition for the new env
-                if 'test' not in self.Stage.get_quene_name():
+                if 'test' not in self.Stage.get_queue_name():
                     for sched in self.get_schedule_names():
                         self.queue_scheduled_checks(environ, sched, conditions=['put_env'])
                 response = Response(
