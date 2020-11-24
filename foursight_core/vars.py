@@ -1,8 +1,6 @@
 # replace with 'foursight', 'foursight-cgap' etc
 FOURSIGHT_PREFIX = 'placeholder_prefix'
 
-DEV_ENV = 'mastertest'
-
 # replace with e.g. 'https://cgap.hms.harvard.edu/static/img/favicon-fs.ico'
 FAVICON = 'placeholder_favicon'
 
