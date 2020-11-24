@@ -40,6 +40,5 @@ For platform-specific documentation, see `Foursight documantation <https://fours
  .. toctree::
    :maxdepth: 4
 
-   environments
    modules
    helper_modules
