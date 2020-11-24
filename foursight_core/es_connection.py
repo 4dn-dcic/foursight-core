@@ -1,3 +1,6 @@
+import os
+import json
+import time
 from .abstract_connection import AbstractConnection
 from elasticsearch import (
     Elasticsearch,
@@ -8,8 +11,6 @@ from elasticsearch import (
 from elasticsearch_dsl import Search
 from dcicutils import es_utils
 from .check_schema import CheckSchema
-import json
-import time
 
 
 class ElasticsearchException(Exception):

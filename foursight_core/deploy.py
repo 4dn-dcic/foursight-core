@@ -39,8 +39,12 @@ class Deploy(object):
           "arn:aws:lambda:us-east-1:553035198032:layer:git:11"
       ]
     }
-    
-    
+
+    @classmethod
+    def get_config_filename(cls):
+        file_dir, _ = os.path.split(os.path.abspath(__file__))
+        return os.path.join(file_dir, '.chalice/config.json')
+ 
     @classmethod
     def build_config_and_deploy(cls, stage):
         # key to de-encrypt access key
@@ -60,8 +64,7 @@ class Deploy(object):
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_SECRET'] = client_secret
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['DEV_SECRET'] = dev_secret
     
-        file_dir, _ = os.path.split(os.path.abspath(__file__))
-        filename = os.path.join(file_dir, '.chalice/config.json')
+        filename = cls.get_config_filename()
         print(''.join(['Writing: ', filename]))
         with open(filename, 'w') as config_file:
             config_file.write(json.dumps(cls.CONFIG_BASE))
