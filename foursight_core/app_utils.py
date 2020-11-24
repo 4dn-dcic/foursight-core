@@ -30,6 +30,7 @@ from .sqs_utils import SQS as PlaceholderSQS
 from .stage import Stage as PlaceholderStage
 from .environment import Environment as PlaceholderEnvironment
 
+
 class AppUtils(object):
     """
     Class AppUtils is the most high-level class that's used directy by Chalice object app.
@@ -46,7 +47,6 @@ class AppUtils(object):
     ActionResult = PlaceholderActionResult
     SQS = PlaceholderSQS
     host = PlaceholderHost  # replace with e.g. 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
-
     template_dir = dirname(__file__)
 
     # these can be used directly by inherited classes

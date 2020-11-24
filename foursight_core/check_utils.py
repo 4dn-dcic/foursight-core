@@ -32,11 +32,6 @@ class CheckHandler(object):
         return check_modules
 
     # Methods below can be used as they are in inherited classes
-
-    @classmethod
-    def import_check_module(cls, module_name):
-        return importlib.import_module('.checks.' + module_name, cls.check_package_name)
-
     def __init__(self):
         # read in the check_setup.json and parse it
         setup_paths = glob.glob(self.setup_dir + "/check_setup.json")
@@ -46,6 +41,10 @@ class CheckHandler(object):
             self.CHECK_SETUP = json.load(jfile)
         # Validate and finalize CHECK_SETUP
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
+
+    @classmethod
+    def import_check_module(cls, module_name):
+        return importlib.import_module('.checks.' + module_name, cls.check_package_name)
 
     @classmethod
     def get_check_strings(cls, specific_check=None):
