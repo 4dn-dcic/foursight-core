@@ -42,3 +42,4 @@ For platform-specific documentation, see `Foursight documantation <https://fours
 
    environments
    modules
+   helper_modules
