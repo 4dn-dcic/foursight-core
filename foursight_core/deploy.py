@@ -2,8 +2,8 @@
 Generate gitignored .chalice/config.json for deploy and then run deploy.
 Takes on parameter for now: stage (either "dev" or "prod")
 """
-
 import os
+from os.path import dirname
 import sys
 import argparse
 import json
@@ -40,10 +40,11 @@ class Deploy(object):
       ]
     }
 
+    config_dir = dirname(__file__)
+
     @classmethod
-    def get_config_filename(cls):
-        file_dir, _ = os.path.split(os.path.abspath(__file__))
-        return os.path.join(file_dir, '.chalice/config.json')
+    def get_config_filepath(cls):
+        return os.path.join(cls.config_dir, '.chalice/config.json')
  
     @classmethod
     def build_config_and_deploy(cls, stage):
@@ -64,7 +65,7 @@ class Deploy(object):
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_SECRET'] = client_secret
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['DEV_SECRET'] = dev_secret
     
-        filename = cls.get_config_filename()
+        filename = cls.get_config_filepath()
         print(''.join(['Writing: ', filename]))
         with open(filename, 'w') as config_file:
             config_file.write(json.dumps(cls.CONFIG_BASE))

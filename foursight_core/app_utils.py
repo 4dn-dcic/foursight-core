@@ -2,6 +2,7 @@ from chalice import Response
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import json
 import os
+from os.path import dirname
 import jwt
 import boto3
 import datetime
@@ -47,6 +48,9 @@ class AppUtils(object):
     SQS = PlaceholderSQS
     host = PlaceholderHost  # replace with e.g. 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
 
+    template_dir = dirname(__file__)
+
+    # these can be used directly by inherited classes
     TRIM_ERR_OUTPUT = 'Output too large to provide on main page - see check result directly'
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
@@ -58,9 +62,13 @@ class AppUtils(object):
         os.environ['CHECK_TIMEOUT'] = str(timeout)
 
     @classmethod
+    def get_template_path(cls):
+        return os.path.join(template_dir, 'templates')
+
+    @classmethod
     def jin_env(cls):
         return Environment(
-            loader=FileSystemLoader('templates'),
+            loader=FileSystemLoader(cls.get_template_path()),
             autoescape=select_autoescape(['html', 'xml'])
         )
 
