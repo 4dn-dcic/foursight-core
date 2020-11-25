@@ -1,4 +1,4 @@
-from .wfrset_utils import lambda_limit
+lambda_limit = 800
 
 
 def check_runs_without_output(res, check, run_name, my_auth, start):

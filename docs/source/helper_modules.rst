@@ -21,10 +21,3 @@ wfr_utils
 
 .. automodule:: foursight_core.checks.helpers.wfr_utils
   :members:
-
-
-wfrset_utils
-^^^^^^^^^^^^
-
-.. automodule:: foursight_core.checks.helpers.wfrset_utils
-  :members:
