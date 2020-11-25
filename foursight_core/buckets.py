@@ -1,6 +1,6 @@
 import boto3
 import json
-from .chalicelib.vars import FOURSIGHT_PREFIX as PlaceholderPrefix
+from .vars import FOURSIGHT_PREFIX as PlaceholderPrefix
 
 class Buckets(object):
     """create and configure buckets for foursight"""
