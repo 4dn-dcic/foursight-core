@@ -96,7 +96,7 @@ class CheckHandler(object):
         """
         found_checks = {}
         all_check_strings = self.get_check_strings()
-        all_environments = self.Environment().list_valid_schedule_environment_names()
+        all_environments = self.environment.list_valid_schedule_environment_names()
         # validate all checks
         for check_string in all_check_strings:
             mod_name, check_name = check_string.split('/')
