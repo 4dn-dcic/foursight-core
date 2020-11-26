@@ -1,6 +1,7 @@
 import traceback
 import signal
 import time
+import sys
 import os
 from functools import wraps
 from .check_schema import CheckSchema
