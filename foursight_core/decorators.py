@@ -27,13 +27,13 @@ class Decorators(object):
             self.set_timeout(os.environ.get('CHECK_TIMEOUT')) 
         self.sqs = SQS(self.prefix)
 
-    def CheckResult(self, **kwargs):
-        check = CheckResultBase(**kwargs)
+    def CheckResult(self, *args, **kwargs):
+        check = CheckResultBase(*args, **kwargs)
         check.set_prefix(self.prefix)
         return check
 
-    def ActionResult(self, **kwargs):
-        action = ActionResultBase(**kwargs)
+    def ActionResult(self, *args, **kwargs):
+        action = ActionResultBase(*args, **kwargs)
         action.set_prefix(self.prefix)
         return action
 
