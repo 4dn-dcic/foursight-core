@@ -5,8 +5,8 @@ import os
 from functools import wraps
 from .check_schema import CheckSchema
 from .run_result import (
-    CheckResult as PlaceholderCheckResult,
-    ActionResult as PlaceholderActionResult
+    CheckResult as CheckResultBase,
+    ActionResult as ActionResultBase
 )
 from .exceptions import BadCheckOrAction
 from .sqs_utils import SQS
@@ -17,9 +17,6 @@ class Decorators(object):
 
     prefix = PlaceholderPrefix
 
-    CheckResult = PlaceholderCheckResult
-    ActionResult = PlaceholderActionResult
-
     CHECK_DECO = 'check_function'
     ACTION_DECO = 'action_function'
     POLL_INTERVAL = 10  # check child process every 10 seconds
@@ -29,6 +26,16 @@ class Decorators(object):
         if os.environ.get('CHECK_TIMEOUT'):
             self.set_timeout(os.environ.get('CHECK_TIMEOUT')) 
         self.sqs = SQS(self.prefix)
+
+    def CheckResult(self, **kwargs):
+        check = CheckResultBase(**kwargs)
+        check.set_prefix(self.prefix)
+        return check
+
+    def ActionResult(self, **kwargs):
+        action = ActionResultBase(**kwargs)
+        action.set_prefix(self.prefix)
+        return action
 
     def set_timeout(self, timeout):
         try:
@@ -151,10 +158,10 @@ class Decorators(object):
         or action with the appropriate information and then exits using sys.exit
         """
         if partials['is_check']:
-            result = CheckResult(partials['connection'], partials['name'])
+            result = self.CheckResult(partials['connection'], partials['name'])
             result.status = 'ERROR'
         else:
-            result = ActionResult(partials['connection'], partials['name'])
+            result = self.ActionResult(partials['connection'], partials['name'])
             result.status = 'FAIL'
         result.description = 'AWS lambda execution reached the time limit. Please see check/action code.'
         kwargs = partials['kwargs']

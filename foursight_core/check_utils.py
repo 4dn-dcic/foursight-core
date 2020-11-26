@@ -5,15 +5,16 @@ import importlib
 import datetime
 import copy
 import json
-from .vars import FOURSIGHT_PREFIX as PlaceholderPrefix
 from .decorators import Decorators
 from .check_schema import CheckSchema
 from .exceptions import BadCheckSetup
 from .environment import Environment
 from .run_result import (
-    CheckResult as PlaceholderCheckResult,
-    ActionResult as PlaceholderActionResult
+    CheckResult as CheckResultBase,
+    ActionResult as CheckResultBase
 )
+from .vars import FOURSIGHT_PREFIX as PlaceholderPrefix
+
 
 class CheckHandler(object):
     """
@@ -23,8 +24,6 @@ class CheckHandler(object):
     # These must be overwritten for inherited classes
     prefix = PlaceholderPrefix
     setup_dir = dirname(__file__)
-    CheckResult = PlaceholderCheckResult
-    ActionResult = PlaceholderActionResult
     check_package_name = 'foursight_core'
 
     @classmethod
@@ -43,6 +42,8 @@ class CheckHandler(object):
             self.CHECK_SETUP = json.load(jfile)
         # Validate and finalize CHECK_SETUP
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
+        self.CheckResult = CheckResultBase
+        self.ActionResult = ActionResultBase
 
     @classmethod
     def import_check_module(cls, module_name):
@@ -330,8 +331,7 @@ class CheckHandler(object):
             return ' '.join(['ERROR. Check or action must use a decorator.', error_str])
         return check_method(connection, **check_kwargs)
 
-    @classmethod
-    def init_check_or_action_res(cls, connection, check):
+    def init_check_or_action_res(self, connection, check):
         """
         Use in cases where a string is provided that could be a check or an action
         Returns None if neither are valid. Tries checks first then actions.
@@ -339,13 +339,13 @@ class CheckHandler(object):
         """
         is_action = False
         # determine whether it is a check or action
-        check_str = cls.get_check_strings(check)
+        check_str = self.get_check_strings(check)
         if not check_str:
-            check_str = cls.get_action_strings(check)
+            check_str = self.get_action_strings(check)
             is_action = True
         if not check_str: # not a check or an action. abort
             return None
-        return cls.ActionResult(connection, check) if is_action else cls.CheckResult(connection, check)
+        return self.ActionResult(connection, check) if is_action else self.CheckResult(connection, check)
 
     @classmethod
     def get_methods_by_deco(cls, mod, decorator):

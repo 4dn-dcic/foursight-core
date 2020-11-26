@@ -21,10 +21,6 @@ from .vars import (
     FAVICON as PlaceholderFavicon,
     HOST as PlaceholderHost
 )
-from .run_result import (
-    CheckResult as PlaceholderCheckResult,
-    ActionResult as PlaceholderActionResult,
-)
 from .check_utils import CheckHandler as PlaceholderCheckHandler
 from .sqs_utils import SQS
 from .stage import Stage
@@ -41,8 +37,6 @@ class AppUtils(object):
     prefix = PlaceholderPrefix
     FAVICON = PlaceholderFavicon
     CheckHandler = PlaceholderCheckHandler
-    CheckResult = PlaceholderCheckResult
-    ActionResult = PlaceholderActionResult
     host = PlaceholderHost  # replace with e.g. 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
 
     # optionally change this one
@@ -57,6 +51,12 @@ class AppUtils(object):
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
         self.sqs = SQS(self.prefix)
+        self.CheckResult = self.check_handler.CheckResult
+        self.ActionResult = self.check_handler.ActionResult
+        self.jin_env = Environment(
+            loader=FileSystemLoader(self.get_template_path()),
+            autoescape=select_autoescape(['html', 'xml'])
+        )
 
     def set_timeout(self, timeout):
         """Set timeout as environment variable. Decorator instances will pick up this value"""
@@ -66,13 +66,6 @@ class AppUtils(object):
     def get_template_path(cls):
         template_dir = dirname(__file__)
         return os.path.join(template_dir, 'templates')
-
-    @classmethod
-    def jin_env(cls):
-        return Environment(
-            loader=FileSystemLoader(cls.get_template_path()),
-            autoescape=select_autoescape(['html', 'xml'])
-        )
 
     def init_environments(self, env='all', envs=None):
         """
@@ -391,7 +384,7 @@ class AppUtils(object):
         # prioritize these environments
         env_order = ['data', 'staging', 'webdev', 'hotseat', 'cgap']
         total_envs = sorted(total_envs, key=lambda v: env_order.index(v['environment']) if v['environment'] in env_order else 9999)
-        template = self.jin_env().get_template('view_groups.html')
+        template = self.jin_env.get_template('view_groups.html')
         # get queue information
         queue_attr = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
@@ -446,7 +439,7 @@ class AppUtils(object):
                     'environment': environ,
                     'checks': {title: processed_result}
                 })
-        template = self.jin_env().get_template('view_checks.html')
+        template = self.jin_env.get_template('view_checks.html')
         queue_attr = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
@@ -478,8 +471,7 @@ class AppUtils(object):
         ts_local = ts_utc.astimezone(tz.gettz('America/New_York'))
         return ''.join([str(ts_local.date()), ' at ', str(ts_local.time()), ' (', str(ts_local.tzname()), ')'])
     
-    @classmethod
-    def process_view_result(cls, connection, res, is_admin):
+    def process_view_result(self, connection, res, is_admin):
         """
         Do some processing on the content of one check result (res arg, a dict)
         Processes timestamp string, trims output fields, and adds action info.
@@ -512,12 +504,12 @@ class AppUtils(object):
         proc_ts = ''.join([str(ts_local.date()), ' at ', str(ts_local.time())])
         res['local_time'] = proc_ts
         if res.get('brief_output'):
-            res['brief_output'] = json.dumps(cls.trim_output(res['brief_output']), indent=2)
+            res['brief_output'] = json.dumps(self.trim_output(res['brief_output']), indent=2)
         if res.get('full_output'):
-            res['full_output'] = json.dumps(cls.trim_output(res['full_output']), indent=2)
+            res['full_output'] = json.dumps(self.trim_output(res['full_output']), indent=2)
         # only return admin_output if an admin is logged in
         if res.get('admin_output') and is_admin:
-            res['admin_output'] = json.dumps(cls.trim_output(res['admin_output']), indent=2)
+            res['admin_output'] = json.dumps(self.trim_output(res['admin_output']), indent=2)
         else:
             res['admin_output'] = None
     
@@ -526,7 +518,7 @@ class AppUtils(object):
         # action to be run.
         # For now also get the latest result for the checks action
         if res.get('action'):
-            action = cls.ActionResult(connection, res.get('action'))
+            action = self.ActionResult(connection, res.get('action'))
             if action:
                 action_record_key = '/'.join([res['name'], 'action_records', res['uuid']])
                 assc_action_key = connection.connections['s3'].get_object(action_record_key)
@@ -586,7 +578,7 @@ class AppUtils(object):
             history_kwargs = list(set(chain.from_iterable([l[2] for l in history])))
         else:
             history, history_kwargs = [], []
-        template = self.jin_env().get_template('history.html')
+        template = self.jin_env.get_template('history.html')
         check_title = self.check_handler.get_check_title_from_setup(check)
         page_title = ''.join(['History for ', check_title, ' (', environ, ')'])
         queue_attr = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
@@ -659,13 +651,12 @@ class AppUtils(object):
             response.status_code = 200
         return self.process_response(response)
 
-    @classmethod
-    def run_put_check(cls, environ, check, put_data):
+    def run_put_check(self, environ, check, put_data):
         """
         Abstraction of put_check functionality to allow for testing outside of chalice
         framework. Returns a response object
         """
-        connection, response = cls.init_response(environ)
+        connection, response = self.init_response(environ)
         if not connection:
             return response
         if not isinstance(put_data, dict):
@@ -679,7 +670,7 @@ class AppUtils(object):
             response.status_code = 400
             return response
         put_uuid = put_data.get('uuid', datetime.datetime.utcnow().isoformat())
-        putCheck = cls.CheckResult(connection, check, init_uuid=put_uuid)
+        putCheck = self.CheckResult(connection, check, init_uuid=put_uuid)
         # set valid fields from the PUT body. should this be dynamic?
         # if status is not included, it will be set to ERROR
         for field in ['title', 'status', 'summary', 'description', 'brief_output', 'full_output', 'admin_output']:
@@ -713,7 +704,7 @@ class AppUtils(object):
             'environment': environ
         }
         response.status_code = 200
-        return cls.process_response(response)
+        return self.process_response(response)
     
     def run_put_environment(self, environ, env_data):
         """
