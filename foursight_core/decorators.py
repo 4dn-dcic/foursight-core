@@ -9,14 +9,16 @@ from .run_result import (
     ActionResult as PlaceholderActionResult
 )
 from .exceptions import BadCheckOrAction
-from .sqs_utils import SQS as PlaceholderSQS
+from .sqs_utils import SQS
+from .vars import FOURSIGHT_PREFIX as PlaceholderPRefix
 
 
 class Decorators(object):
 
+    prefix = PlaceholderPrefix
+
     CheckResult = PlaceholderCheckResult
     ActionResult = PlaceholderActionResult
-    SQS = PlaceholderSQS
 
     CHECK_DECO = 'check_function'
     ACTION_DECO = 'action_function'
@@ -26,6 +28,7 @@ class Decorators(object):
         self.CHECK_TIMEOUT = 870  # in seconds. set to less than lambda limit (900 s)
         if os.environ.get('CHECK_TIMEOUT'):
             self.set_timeout(os.environ.get('CHECK_TIMEOUT')) 
+        self.sqs = SQS(self.prefix)
 
     def set_timeout(self, timeout):
         try:
@@ -161,7 +164,7 @@ class Decorators(object):
         # need to delete the sqs message and propogate if this is using the queue
         if kwargs.get('_run_info') and {'receipt', 'sqs_url'} <= set(kwargs['_run_info'].keys()):
             runner_input = {'sqs_url': kwargs['_run_info']['sqs_url']}
-            SQS.delete_message_and_propogate(runner_input, kwargs['_run_info']['receipt'])
+            self.sqs.delete_message_and_propogate(runner_input, kwargs['_run_info']['receipt'])
         sys.exit('-RUN-> TIMEOUT for execution of %s. Elapsed time is %s seconds; keep under %s.'
               % (partials['name'], kwargs['runtime_seconds'], self.CHECK_TIMEOUT))
 

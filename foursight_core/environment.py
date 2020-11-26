@@ -1,22 +1,16 @@
 import os
 import json
 from .s3_connection import S3Connection
-from .vars import (
-    FOURSIGHT_PREFIX as PlaceholderPrefix
-)
 
 
 class Environment(object):
 
-    # overwrite below in inherited classes
-    prefix = PlaceholderPrefix
-
-    def __init__(self):
+    def __init__(self, foursight_prefix):
+        self.prefix = foursight_prefix
         self.s3_connection = S3Connection(self.get_env_bucket_name())
 
-    @classmethod
-    def get_env_bucket_name(cls):
-        return cls.prefix + '-envs'
+    def get_env_bucket_name(self):
+        return self.prefix + '-envs'
 
     def list_environment_names(self):
         """

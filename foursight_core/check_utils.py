@@ -5,10 +5,11 @@ import importlib
 import datetime
 import copy
 import json
+from .vars import FOURSIGHT_PREFIX as PlaceholderPrefix
 from .decorators import Decorators
 from .check_schema import CheckSchema
 from .exceptions import BadCheckSetup
-from .environment import Environment as PlaceholderEnvironment
+from .environment import Environment
 from .run_result import (
     CheckResult as PlaceholderCheckResult,
     ActionResult as PlaceholderActionResult
@@ -20,10 +21,10 @@ class CheckHandler(object):
     """
 
     # These must be overwritten for inherited classes
+    prefix = PlaceholderPrefix
     setup_dir = dirname(__file__)
     CheckResult = PlaceholderCheckResult
     ActionResult = PlaceholderActionResult
-    Environment = PlaceholderEnvironment
     check_package_name = 'foursight_core'
 
     @classmethod
@@ -33,6 +34,7 @@ class CheckHandler(object):
 
     # Methods below can be used as they are in inherited classes
     def __init__(self):
+        self.environment = Environment(self.prefix)
         # read in the check_setup.json and parse it
         setup_paths = glob.glob(self.setup_dir + "/check_setup.json")
         if not len(setup_paths) == 1:

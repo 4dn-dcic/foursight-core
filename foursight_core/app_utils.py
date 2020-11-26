@@ -19,16 +19,17 @@ from .fs_connection import FSConnection
 from .vars import (
     FOURSIGHT_PREFIX as PlaceholderPrefix,
     FAVICON as PlaceholderFavicon,
-    HOST as PlaceholderHost
+    HOST as PlaceholderHost,
+    HTML_MAIN_TITLE
 )
 from .run_result import (
     CheckResult as PlaceholderCheckResult,
     ActionResult as PlaceholderActionResult,
 )
 from .check_utils import CheckHandler as PlaceholderCheckHandler
-from .sqs_utils import SQS as PlaceholderSQS
-from .stage import Stage as PlaceholderStage
-from .environment import Environment as PlaceholderEnvironment
+from .sqs_utils import SQS
+from .stage import Stage
+from .environment import Environment
 
 
 class AppUtils(object):
@@ -40,14 +41,13 @@ class AppUtils(object):
     # these must be overwritten in inherited classes
     prefix = PlaceholderPrefix
     FAVICON = PlaceholderFavicon
-    Stage = PlaceholderStage
-    Environment = PlaceholderEnvironment
     CheckHandler = PlaceholderCheckHandler
     CheckResult = PlaceholderCheckResult
     ActionResult = PlaceholderActionResult
-    SQS = PlaceholderSQS
     host = PlaceholderHost  # replace with e.g. 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
-    template_dir = dirname(__file__)
+
+    # optionally change this one
+    html_main_title = HTML_MAIN_TITLE
 
     # these can be used directly by inherited classes
     TRIM_ERR_OUTPUT = 'Output too large to provide on main page - see check result directly'
@@ -55,6 +55,9 @@ class AppUtils(object):
 
     def __init__(self):
         self.check_handler = self.CheckHandler()
+        self.environment = Environment(self.prefix)
+        self.stage = Stage(self.prefix)
+        self.sqs = SQS(self.prefix)
 
     def set_timeout(self, timeout):
         """Set timeout as environment variable. Decorator instances will pick up this value"""
@@ -62,7 +65,8 @@ class AppUtils(object):
 
     @classmethod
     def get_template_path(cls):
-        return os.path.join(cls.template_dir, 'templates')
+        template_dir = dirname(__file__)
+        return os.path.join(template_dir, 'templates')
 
     @classmethod
     def jin_env(cls):
@@ -71,8 +75,7 @@ class AppUtils(object):
             autoescape=select_autoescape(['html', 'xml'])
         )
 
-    @classmethod
-    def init_environments(cls, env='all', envs=None):
+    def init_environments(self, env='all', envs=None):
         """
         Generate environment information from the envs bucket in s3.
         Returns a dictionary keyed by environment name with value of a sub-dict
@@ -81,18 +84,17 @@ class AppUtils(object):
         :param env: allows you to specify a single env to be initialized
         :param envs: allows you to specify multiple envs to be initialized
         """
-        stage = cls.Stage.get_stage()
-        return cls.Environment().get_environment_and_bucket_info_in_batch(stage=stage, env=env, envs=envs)
+        stage_name = self.stage.get_stage()
+        return self.environment.get_environment_and_bucket_info_in_batch(stage=stage_name, env=env, envs=envs)
     
-    @classmethod
-    def init_connection(cls, environ, _environments=None):
+    def init_connection(self, environ, _environments=None):
         """
         Initialize the fourfront/s3 connection using the FSConnection object
         and the given environment.
         Returns an FSConnection object or raises an error.
         """
         error_res = {}
-        environments = cls.init_environments(environ) if _environments is None else _environments
+        environments = self.init_environments(environ) if _environments is None else _environments
         print("environments = %s" % str(environments))
         # if still not there, return an error
         if environ not in environments:
@@ -103,7 +105,7 @@ class AppUtils(object):
                 'checks': {}
             }
             raise Exception(str(error_res))
-        connection = FSConnection(environ, environments[environ], host=cls.host)
+        connection = FSConnection(environ, environments[environ], host=self.host)
         return connection
     
     @classmethod
@@ -120,8 +122,7 @@ class AppUtils(object):
             response.status_code = 400
         return connection, response
     
-    @classmethod
-    def check_authorization(cls, request_dict, env=None):
+    def check_authorization(self, request_dict, env=None):
         """
         Manual authorization, since the builtin chalice @app.authorizer() was not
         working for me and was limited by a requirement that the authorization
@@ -141,7 +142,7 @@ class AppUtils(object):
         src_ip = request_dict.get('context', {}).get('identity', {}).get('sourceIp', '')
         if src_ip == '127.0.0.1':
             return True
-        token = cls.get_jwt(request_dict)
+        token = self.get_jwt(request_dict)
         auth0_client = os.environ.get('CLIENT_ID', None)
         auth0_secret = os.environ.get('CLIENT_SECRET', None)
         if auth0_client and auth0_secret and token:
@@ -150,7 +151,7 @@ class AppUtils(object):
                     return False  # we have no env to check auth
                 # leeway accounts for clock drift between us and auth0
                 payload = jwt.decode(token, b64decode(auth0_secret, '-_'), audience=auth0_client, leeway=30)
-                for env_info in cls.init_environments(env).values():
+                for env_info in self.init_environments(env).values():
                     user_res = ff_utils.get_metadata('users/' + payload.get('email').lower(),
                                                 ff_env=env_info['ff_env'], add_on='frame=object')
                     if not ('admin' in user_res['groups'] and payload.get('email_verified')):
@@ -393,21 +394,22 @@ class AppUtils(object):
         total_envs = sorted(total_envs, key=lambda v: env_order.index(v['environment']) if v['environment'] in env_order else 9999)
         template = self.jin_env().get_template('view_groups.html')
         # get queue information
-        queue_attr = self.SQS.get_sqs_attributes(self.SQS.get_sqs_queue().url)
+        queue_attr = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         first_env_favicon = self.get_favicon()
         html_resp.body = template.render(
             env=environ,
             view_envs=total_envs,
-            stage=self.Stage.get_stage(),
+            stage=self.stage.get_stage(),
             load_time=self.get_load_time(),
             is_admin=is_admin,
             domain=domain,
             context=context,
             running_checks=running_checks,
             queued_checks=queued_checks,
-            favicon=first_env_favicon
+            favicon=first_env_favicon,
+            main_title=self.html_main_title
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
@@ -446,21 +448,22 @@ class AppUtils(object):
                     'checks': {title: processed_result}
                 })
         template = self.jin_env().get_template('view_checks.html')
-        queue_attr = self.SQS.get_sqs_attributes(self.SQS.get_sqs_queue().url)
+        queue_attr = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         first_env_favicon = self.get_favicon()
         html_resp.body = template.render(
             env=environ,
             view_envs=total_envs,
-            stage=self.Stage.get_stage(),
+            stage=self.stage.get_stage(),
             load_time=self.get_load_time(),
             is_admin=is_admin,
             domain=domain,
             context=context,
             running_checks=running_checks,
             queued_checks=queued_checks,
-            favicon=first_env_favicon
+            favicon=first_env_favicon,
+            main_title=self.html_main_title
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
@@ -587,7 +590,7 @@ class AppUtils(object):
         template = self.jin_env().get_template('history.html')
         check_title = self.check_handler.get_check_title_from_setup(check)
         page_title = ''.join(['History for ', check_title, ' (', environ, ')'])
-        queue_attr = self.SQS.get_sqs_attributes(self.SQS.get_sqs_queue().url)
+        queue_attr = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         favicon = self.get_favicon()
@@ -601,13 +604,14 @@ class AppUtils(object):
             res_limit=limit,
             res_actual=len(history),
             page_title=page_title,
-            stage=self.Stage.get_stage(),
+            stage=self.stage.get_stage(),
             is_admin=is_admin,
             domain=domain,
             context=context,
             running_checks=running_checks,
             queued_checks=queued_checks,
-            favicon=favicon
+            favicon=favicon,
+            main_title=self.html_main_title
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
@@ -730,7 +734,7 @@ class AppUtils(object):
             }
             s3_connection = S3Connection(self.prefix + '-envs')
             s3_connection.put_object(proc_environ, json.dumps(env_entry))
-            stage = self.Stage.get_stage()
+            stage = self.stage.get_stage()
             s3_bucket = ''.join([self.prefix + '-', stage, '-', proc_environ])
             bucket_res = s3_connection.create_bucket(s3_bucket)
             if not bucket_res:
@@ -744,7 +748,7 @@ class AppUtils(object):
                 )
             else:
                 # if not testing, queue checks with 'put_env' condition for the new env
-                if 'test' not in self.Stage.get_queue_name():
+                if 'test' not in self.stage.get_queue_name():
                     for sched in self.get_schedule_names():
                         self.queue_scheduled_checks(environ, sched, conditions=['put_env'])
                 response = Response(
@@ -767,13 +771,12 @@ class AppUtils(object):
             )
         return self.process_response(response)
     
-    @classmethod
-    def run_get_environment(cls, environ):
+    def run_get_environment(self, environ):
         """
         Return config information about a given environment, or throw an error
         if it is not valid.
         """
-        environments = cls.init_environments()
+        environments = self.init_environments()
         if environ in environments:
             response = Response(
                 body = {
@@ -792,7 +795,7 @@ class AppUtils(object):
                 },
                 status_code = 400
             )
-        return cls.process_response(response)
+        return self.process_response(response)
     
     @classmethod
     def run_delete_environment(cls, environ, bucket=PlaceholderPrefix + '-envs'):
@@ -860,12 +863,12 @@ class AppUtils(object):
         Returns:
             dict: runner input of queued messages, used for testing
         """
-        queue = self.SQS.get_sqs_queue()
+        queue = self.sqs.get_sqs_queue()
         if schedule_name is not None:
-            if sched_environ != 'all' and self.Environment().is_valid_environment_name(sched_environ) == False:
+            if sched_environ != 'all' and self.environment.is_valid_environment_name(sched_environ) == False:
                 print('-RUN-> %s is not a valid environment. Cannot queue.' % sched_environ)
                 return
-            sched_environs = self.Environment().list_environment_names() if sched_environ == 'all' else [sched_environ]
+            sched_environs = self.environment.list_environment_names() if sched_environ == 'all' else [sched_environ]
             check_schedule = self.check_handler.get_check_schedule(schedule_name, conditions)
             if not check_schedule:
                 print('-RUN-> %s is not a valid schedule. Cannot queue.' % schedule_name)
@@ -874,10 +877,10 @@ class AppUtils(object):
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
                 check_vals.extend(check_schedule.get(environ, []))
-                self.SQS.send_sqs_messages(queue, environ, check_vals)
+                self.sqs.send_sqs_messages(queue, environ, check_vals)
         runner_input = {'sqs_url': queue.url}
         for n in range(4): # number of parallel runners to kick off
-            self.SQS.invoke_check_runner(runner_input)
+            self.sqs.invoke_check_runner(runner_input)
         return runner_input # for testing purposes
     
     def queue_check(self, environ, check, params={}, deps=[], uuid=None):
@@ -936,8 +939,7 @@ class AppUtils(object):
         to_send = [action_str, params, deps]
         return self.send_single_to_queue(environ, to_send, uuid)
     
-    @classmethod
-    def send_single_to_queue(cls, environ, to_send, uuid, invoke_runner=True):
+    def send_single_to_queue(self, environ, to_send, uuid, invoke_runner=True):
         """
         Send a single formatted check/action to SQS for given environ. Pass
         the given uuid to send_sqs_messages. Invoke a single check runner lambda
@@ -951,11 +953,11 @@ class AppUtils(object):
         Returns:
             str: uuid of the queued run (from send_single_to_queue)
         """
-        queue = cls.SQS.get_sqs_queue()
-        queued_uuid = cls.SQS.send_sqs_messages(queue, environ, [to_send], uuid=uuid)
+        queue = self.sqs.get_sqs_queue()
+        queued_uuid = self.sqs.send_sqs_messages(queue, environ, [to_send], uuid=uuid)
         # kick off a single check runner lambda
         if invoke_runner is True:
-            cls.SQS.invoke_check_runner({'sqs_url': queue.url})
+            self.sqs.invoke_check_runner({'sqs_url': queue.url})
         return queued_uuid
     
     def run_check_runner(self, runner_input, propogate=True):
@@ -1007,7 +1009,7 @@ class AppUtils(object):
         check_list = json.loads(body)
         if not isinstance(check_list, list) or len(check_list) != 5:
             # if not a valid check str, remove the item from the SQS
-            self.SQS.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
+            self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
         [run_env, run_uuid, run_name, run_kwargs, run_deps] = check_list
         # find information from s3 about completed checks in this run
@@ -1033,7 +1035,7 @@ class AppUtils(object):
                 if found_rec is not None:
                     # the action record has been written. Abort and propogate
                     print('-RUN-> Found existing action record: %s. Skipping' % rec_key)
-                    self.SQS.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
+                    self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
                     return None
                 else:
                     # make a action record before running the action
@@ -1045,7 +1047,7 @@ class AppUtils(object):
             run_result = self.check_handler.run_check_or_action(connection, run_name, run_kwargs)
             print('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))
             # invoke action if running a check and kwargs['queue_action'] matches stage
-            stage = self.Stage.get_stage()
+            stage = self.stage.get_stage()
             if run_result['type'] == 'check' and run_result['kwargs']['queue_action'] == stage:
                 # must also have check.action and check.allow_action set
                 if run_result['allow_action'] and run_result['action']:
@@ -1061,11 +1063,11 @@ class AppUtils(object):
                         print('-RUN-> Queued action %s on stage %s with kwargs: %s'
                               % (run_result['action'], stage, action_params))
             print('-RUN-> Finished: %s' % (run_name))
-            self.SQS.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
+            self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return run_result
         else:
             print('-RUN-> Recovered: %s' % (run_name))
-            self.SQS.recover_message_and_propogate(runner_input, receipt, propogate=propogate)
+            self.sqs.recover_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
     
     @classmethod

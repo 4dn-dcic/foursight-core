@@ -1,13 +1,12 @@
 import os
-from .vars import FOURSIGHT_PREFIX as PlaceholderPrefix
 
 
 class Stage(object):
 
-    # overwrite the following in an inherited class
-    prefix = PlaceholderPrefix
-
     prod_stage_name = 'prod'
+
+    def __init__(self, foursight_prefix):
+        self.prefix = foursight_prefix
 
     @classmethod
     def get_stage_from_env_variable(cls):
@@ -21,13 +20,11 @@ class Stage(object):
             stage = 'dev'
         return stage
 
-    @classmethod
-    def get_queue_name(cls):
-        return '-'.join([cls.prefix, cls.get_stage_from_env_variable(), 'check_queue'])
+    def get_queue_name(self):
+        return '-'.join([self.prefix, self.get_stage_from_env_variable(), 'check_queue'])
 
-    @classmethod
-    def get_runner_name(cls):
-        return '-'.join([cls.prefix, cls.get_stage(), 'check_runner'])
+    def get_runner_name(self):
+        return '-'.join([self.prefix, self.get_stage(), 'check_runner'])
 
     @classmethod
     def is_stage_prod(cls):
