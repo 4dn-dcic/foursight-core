@@ -1,7 +1,7 @@
 from datetime import datetime
 import boto3
 import json
-from . import Stage
+from .stage import Stage
 
 
 class SQS(object):
