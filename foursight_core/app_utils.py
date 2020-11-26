@@ -19,8 +19,7 @@ from .fs_connection import FSConnection
 from .vars import (
     FOURSIGHT_PREFIX as PlaceholderPrefix,
     FAVICON as PlaceholderFavicon,
-    HOST as PlaceholderHost,
-    HTML_MAIN_TITLE
+    HOST as PlaceholderHost
 )
 from .run_result import (
     CheckResult as PlaceholderCheckResult,
@@ -47,7 +46,7 @@ class AppUtils(object):
     host = PlaceholderHost  # replace with e.g. 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
 
     # optionally change this one
-    html_main_title = HTML_MAIN_TITLE
+    html_main_title = 'Foursight'
 
     # these can be used directly by inherited classes
     TRIM_ERR_OUTPUT = 'Output too large to provide on main page - see check result directly'
