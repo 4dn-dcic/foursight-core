@@ -1,5 +1,5 @@
 from chalice import Response
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+import jinja2
 import json
 import os
 from os.path import dirname
@@ -53,9 +53,9 @@ class AppUtils(object):
         self.sqs = SQS(self.prefix)
         self.CheckResult = self.check_handler.CheckResult
         self.ActionResult = self.check_handler.ActionResult
-        self.jin_env = Environment(
-            loader=FileSystemLoader(self.get_template_path()),
-            autoescape=select_autoescape(['html', 'xml'])
+        self.jin_env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(self.get_template_path()),
+            autoescape=jinja2.select_autoescape(['html', 'xml'])
         )
 
     def set_timeout(self, timeout):
