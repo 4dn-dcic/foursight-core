@@ -11,7 +11,7 @@ from .exceptions import BadCheckSetup
 from .environment import Environment
 from .run_result import (
     CheckResult as CheckResultBase,
-    ActionResult as CheckResultBase
+    ActionResult as ActionResultBase
 )
 from .vars import FOURSIGHT_PREFIX as PlaceholderPrefix
 
