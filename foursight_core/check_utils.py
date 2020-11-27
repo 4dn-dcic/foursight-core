@@ -42,9 +42,8 @@ class CheckHandler(object):
         check_modules = importlib.import_module('.checks', self.check_package_name)
         return check_modules.__dict__["__all__"]
 
-    @classmethod
-    def import_check_module(cls, module_name):
-        return importlib.import_module('.checks.' + module_name, cls.check_package_name)
+    def import_check_module(self, module_name):
+        return importlib.import_module('.checks.' + module_name, self.check_package_name)
 
     def get_check_strings(self, specific_check=None):
         """
@@ -289,8 +288,7 @@ class CheckHandler(object):
         grouped_list = [group for group in grouped_results.values()]
         return sorted(grouped_list, key=lambda v: v['_name'])
  
-    @classmethod
-    def run_check_or_action(cls, connection, check_str, check_kwargs):
+    def run_check_or_action(self, connection, check_str, check_kwargs):
         """
         Does validation of provided check_str, it's module, and kwargs.
         Determines by decorator whether the method is a check or action, then runs
@@ -313,7 +311,7 @@ class CheckHandler(object):
         if not isinstance(check_kwargs, dict):
             return ' '.join(['ERROR. Check kwargs must be a dict.', error_str])
         try:
-            check_mod = cls.import_check_module(mod_name)
+            check_mod = self.import_check_module(mod_name)
         except ModuleNotFoundError:
             return ' '.join(['ERROR. Check module is not valid.', error_str])
         except Exception as e:
@@ -321,8 +319,8 @@ class CheckHandler(object):
         check_method = check_mod.__dict__.get(check_name)
         if not check_method:
             return ' '.join(['ERROR. Check name is not valid.', error_str])
-        if not cls.check_method_deco(check_method, CHECK_DECO) and \
-           not cls.check_method_deco(check_method, ACTION_DECO):
+        if not self.check_method_deco(check_method, CHECK_DECO) and \
+           not self.check_method_deco(check_method, ACTION_DECO):
             return ' '.join(['ERROR. Check or action must use a decorator.', error_str])
         return check_method(connection, **check_kwargs)
 
