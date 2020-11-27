@@ -38,17 +38,15 @@ class CheckHandler(object):
         # Validate and finalize CHECK_SETUP
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
 
-    @classmethod
-    def get_module_names(cls):
-        check_modules = importlib.import_module('.checks', cls.check_package_name)
+    def get_module_names(self):
+        check_modules = importlib.import_module('.checks', self.check_package_name)
         return check_modules.__dict__["__all__"]
 
     @classmethod
     def import_check_module(cls, module_name):
         return importlib.import_module('.checks.' + module_name, cls.check_package_name)
 
-    @classmethod
-    def get_check_strings(cls, specific_check=None):
+    def get_check_strings(self, specific_check=None):
         """
         Return a list of all formatted check strings (<module>/<check_name>) in system.
         By default runs on all checks (specific_check == None), but can be used
@@ -57,9 +55,9 @@ class CheckHandler(object):
         IMPORTANT: any checks in test_checks module are excluded.
         """
         all_checks = []
-        for mod_name in cls.get_module_names():
-            mod = cls.import_check_module(mod_name)
-            methods = cls.get_methods_by_deco(mod, CHECK_DECO)
+        for mod_name in self.get_module_names():
+            mod = self.import_check_module(mod_name)
+            methods = self.get_methods_by_deco(mod, CHECK_DECO)
             for method in methods:
                 check_str = '/'.join([mod_name, method.__name__])
                 if specific_check and specific_check == method.__name__:
@@ -151,15 +149,14 @@ class CheckHandler(object):
             check_setup[check_name]['module'] = found_checks[check_name]
         return check_setup
 
-    @classmethod
-    def get_action_strings(cls, specific_action=None):
+    def get_action_strings(self, specific_action=None):
         """
         Basically the same thing as get_check_strings, but for actions...
         """
         all_actions = []
-        for mod_name in cls.get_module_names():
-            mod = cls.import_check_module(mod_name)
-            methods = cls.get_methods_by_deco(mod, ACTION_DECO)
+        for mod_name in self.get_module_names():
+            mod = self.import_check_module(mod_name)
+            methods = self.get_methods_by_deco(mod, ACTION_DECO)
             for method in methods:
                 act_str = '/'.join([mod_name, method.__name__])
                 if specific_action and specific_action == method.__name__:
