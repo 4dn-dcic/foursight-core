@@ -1,11 +1,10 @@
 import boto3
 import json
-from .vars import FOURSIGHT_PREFIX as PlaceholderPrefix
 
 class Buckets(object):
     """create and configure buckets for foursight"""
 
-    prefix = PlaceholderPrefix
+    prefix = 'placeholder_prefix'  # replace w/ e.g. 'foursight-cgap'
     envs = ['placeholder_env1', 'placeholder_env2']  # replace w/ e.g.  ['cgap', 'cgapdev', 'cgaptest', 'cgapwolf']
     default_acl = 'private'
     region = 'us-east-1'

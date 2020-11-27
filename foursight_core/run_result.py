@@ -3,7 +3,6 @@ from dateutil import tz
 from abc import abstractmethod
 import json
 from .s3_connection import S3Connection
-from .vars import FOURSIGHT_PREFIX as PlaceholderPrefix
 from .exceptions import BadCheckOrAction
 
 

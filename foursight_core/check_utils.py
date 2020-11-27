@@ -5,7 +5,6 @@ import importlib
 import datetime
 import copy
 import json
-from .decorators import Decorators
 from .check_schema import CheckSchema
 from .exceptions import BadCheckSetup
 from .environment import Environment
@@ -13,37 +12,36 @@ from .run_result import (
     CheckResult as CheckResultBase,
     ActionResult as ActionResultBase
 )
-from .vars import FOURSIGHT_PREFIX as PlaceholderPrefix
+from .decorators import Decorators
+CHECK_DECO = Decorators.CHECK_DECO
+ACTION_DECO = Decorators.ACTION_DECO
 
 
 class CheckHandler(object):
     """
     Class CheckHandler is a collection of utils related to checks
     """
-
-    # These must be overwritten for inherited classes
-    prefix = PlaceholderPrefix
-    setup_dir = dirname(__file__)
-    check_package_name = 'foursight_core'
-
-    @classmethod
-    def get_module_names(cls):
-        from .checks import __all__ as check_modules
-        return check_modules
-
-    # Methods below can be used as they are in inherited classes
-    def __init__(self):
+    def __init__(self, foursight_prefix, check_package_name='foursight_core',
+                 check_setup_dir=dirname(__file__)):
+        self.prefix = foursight_prefix
+        self.check_package_name = check_package_name
+        self.CheckResult = CheckResultBase
+        self.ActionResult = ActionResultBase
         self.environment = Environment(self.prefix)
+
         # read in the check_setup.json and parse it
-        setup_paths = glob.glob(self.setup_dir + "/check_setup.json")
+        setup_paths = glob.glob(check_setup_dir + "/check_setup.json")
         if not len(setup_paths) == 1:
             raise BadCheckSetup('Exactly one check_setup.json must be present in chalicelib!')
         with open(setup_paths[0], 'r') as jfile:
             self.CHECK_SETUP = json.load(jfile)
         # Validate and finalize CHECK_SETUP
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
-        self.CheckResult = CheckResultBase
-        self.ActionResult = ActionResultBase
+
+    @classmethod
+    def get_module_names(cls):
+        check_modules = importlib.import_module('.checks', cls.check_package_name)
+        return check_modules.__dict__["__all__"]
 
     @classmethod
     def import_check_module(cls, module_name):
@@ -61,7 +59,7 @@ class CheckHandler(object):
         all_checks = []
         for mod_name in cls.get_module_names():
             mod = cls.import_check_module(mod_name)
-            methods = cls.get_methods_by_deco(mod, Decorators.CHECK_DECO)
+            methods = cls.get_methods_by_deco(mod, CHECK_DECO)
             for method in methods:
                 check_str = '/'.join([mod_name, method.__name__])
                 if specific_check and specific_check == method.__name__:
@@ -161,7 +159,7 @@ class CheckHandler(object):
         all_actions = []
         for mod_name in cls.get_module_names():
             mod = cls.import_check_module(mod_name)
-            methods = cls.get_methods_by_deco(mod, Decorators.ACTION_DECO)
+            methods = cls.get_methods_by_deco(mod, ACTION_DECO)
             for method in methods:
                 act_str = '/'.join([mod_name, method.__name__])
                 if specific_action and specific_action == method.__name__:
@@ -326,8 +324,8 @@ class CheckHandler(object):
         check_method = check_mod.__dict__.get(check_name)
         if not check_method:
             return ' '.join(['ERROR. Check name is not valid.', error_str])
-        if not cls.check_method_deco(check_method, Decorators.CHECK_DECO) and \
-           not cls.check_method_deco(check_method, Decorators.ACTION_DECO):
+        if not cls.check_method_deco(check_method, CHECK_DECO) and \
+           not cls.check_method_deco(check_method, ACTION_DECO):
             return ' '.join(['ERROR. Check or action must use a decorator.', error_str])
         return check_method(connection, **check_kwargs)
 

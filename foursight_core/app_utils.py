@@ -16,12 +16,7 @@ from base64 import b64decode
 from dcicutils import ff_utils
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
-from .vars import (
-    FOURSIGHT_PREFIX as PlaceholderPrefix,
-    FAVICON as PlaceholderFavicon,
-    HOST as PlaceholderHost
-)
-from .check_utils import CheckHandler as PlaceholderCheckHandler
+from .check_utils import CheckHandler
 from .sqs_utils import SQS
 from .stage import Stage
 from .environment import Environment
@@ -33,24 +28,34 @@ class AppUtils(object):
     This class mostly contains the functions defined in app_utils in original foursight.
     """
     
-    # these must be overwritten in inherited classes
-    prefix = PlaceholderPrefix
-    FAVICON = PlaceholderFavicon
-    CheckHandler = PlaceholderCheckHandler
-    host = PlaceholderHost  # replace with e.g. 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
+    # These must be overwritten in inherited classes
+    # replace with 'foursight', 'foursight-cgap' etc
+    prefix = 'placeholder_prefix'
+
+    # replace with e.g. 'https://cgap.hms.harvard.edu/static/img/favicon-fs.ico'
+    FAVICON = 'placeholder_favicon'
+
+    # replace with e.g. 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
+    host = 'placeholder_favicon'
+
+    # replace with e.g. 'chalicelib'
+    package_name = 'foursight_core'
+
+    # repeat the same line to use __file__ relative to the inherited class
+    check_setup_dir=dirname(__file__)
 
     # optionally change this one
     html_main_title = 'Foursight'
 
-    # these can be used directly by inherited classes
+    # Stuff below can be used directly by inherited classes
     TRIM_ERR_OUTPUT = 'Output too large to provide on main page - see check result directly'
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
     def __init__(self):
-        self.check_handler = self.CheckHandler()
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
         self.sqs = SQS(self.prefix)
+        self.check_handler = CheckHandler(self.prefix, self.package_name, self.check_setup_dir)
         self.CheckResult = self.check_handler.CheckResult
         self.ActionResult = self.check_handler.ActionResult
         self.jin_env = jinja2.Environment(
