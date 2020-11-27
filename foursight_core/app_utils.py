@@ -36,7 +36,7 @@ class AppUtils(object):
     FAVICON = 'placeholder_favicon'
 
     # replace with e.g. 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
-    host = 'placeholder_favicon'
+    host = 'placeholder_host'
 
     # replace with e.g. 'chalicelib'
     package_name = 'foursight_core'
@@ -792,11 +792,13 @@ class AppUtils(object):
         return self.process_response(response)
     
     @classmethod
-    def run_delete_environment(cls, environ, bucket=PlaceholderPrefix + '-envs'):
+    def run_delete_environment(cls, environ, bucket=None):
         """
         Removes the environ entry from the Foursight envs bucket. This effectively de-schedules all checks
         but does not remove any data.
         """
+        if not bucket:
+            bucket = cls.prefix + '-envs'
         s3_connection = S3Connection(bucket)
         s3_resp = s3_connection.delete_keys([environ])
         keys_deleted = s3_resp['Deleted']
