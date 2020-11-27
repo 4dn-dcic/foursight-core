@@ -15,17 +15,15 @@ from .sqs_utils import SQS
 
 class Decorators(object):
 
-    # replace w/ e.g. 'foursight' or 'foursight-cgap'
-    prefix = 'placeholder_prefix'
-
     CHECK_DECO = 'check_function'
     ACTION_DECO = 'action_function'
     POLL_INTERVAL = 10  # check child process every 10 seconds
+    CHECK_TIMEOUT = 870  # in seconds. set to less than lambda limit (900 s)
 
-    def __init__(self):
-        self.CHECK_TIMEOUT = 870  # in seconds. set to less than lambda limit (900 s)
+    def __init__(self, prefix):
         if os.environ.get('CHECK_TIMEOUT'):
             self.set_timeout(os.environ.get('CHECK_TIMEOUT')) 
+        self.prefix = prefix
         self.sqs = SQS(self.prefix)
 
     def CheckResult(self, *args, **kwargs):
