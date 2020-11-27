@@ -11,12 +11,12 @@ from .run_result import (
 )
 from .exceptions import BadCheckOrAction
 from .sqs_utils import SQS
-from .vars import FOURSIGHT_PREFIX as PlaceholderPrefix
 
 
 class Decorators(object):
 
-    prefix = PlaceholderPrefix
+    # replace w/ e.g. 'foursight' or 'foursight-cgap'
+    prefix = 'placeholder_prefix'
 
     CHECK_DECO = 'check_function'
     ACTION_DECO = 'action_function'
