@@ -100,14 +100,13 @@ class AppUtils(object):
         connection = FSConnection(environ, environments[environ], host=self.host)
         return connection
     
-    @classmethod
-    def init_response(cls, environ):
+    def init_response(self, environ):
         """
         Generalized function to init response given an environment
         """
         response = Response('Foursight response')
         try:
-            connection = cls.init_connection(environ)
+            connection = self.init_connection(environ)
         except Exception as e:
             connection = None
             response.body = str(e)
