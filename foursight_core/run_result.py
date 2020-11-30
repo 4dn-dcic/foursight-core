@@ -3,8 +3,10 @@ from dateutil import tz
 from abc import abstractmethod
 import json
 from .s3_connection import S3Connection
-from .vars import FOURSIGHT_PREFIX
-from .exceptions import BadCheckOrAction
+from .exceptions import (
+  BadCheckOrAction,
+  MissingFoursightPrefixException
+)
 
 
 class RunResult(object):
@@ -12,8 +14,6 @@ class RunResult(object):
     Generic class for CheckResult and ActionResult. Contains methods common
     to both.
     """
-    prefix = FOURSIGHT_PREFIX
-
     def __init__(self, connections, name):
         self.fs_conn = connections
         self.connections = connections.connections
@@ -23,6 +23,9 @@ class RunResult(object):
         self.name = name
         self.extension = ".json"
         self.kwargs = {}
+
+    def set_prefix(self, foursight_prefix):
+        self.prefix = foursight_prefix
 
     def get_s3_object(self, key):
         """
@@ -158,6 +161,8 @@ class RunResult(object):
         Returns True on success, False otherwise
         """
         run_id = self.kwargs['_run_info']['run_id']
+        if not hasattr(self, 'prefix'):
+            raise MissingFoursightPrefixException("foursight prefix must be defined using set_prefix")
         s3_connection = S3Connection(self.prefix + '-runs')
         record_key = '/'.join([run_id, self.name])
         resp = s3_connection.put_object(record_key, json.dumps(self.status))

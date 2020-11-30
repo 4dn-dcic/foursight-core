@@ -1,7 +1,7 @@
 from datetime import datetime
 import boto3
 import json
-from .stage import Stage as PlaceholderStage
+from .stage import Stage
 
 
 class SQS(object):
@@ -9,13 +9,10 @@ class SQS(object):
     class SQS is a collection of utils related to Foursight queues
     """
 
-    Stage = PlaceholderStage
+    def __init__(self, foursight_prefix):
+        self.stage = Stage(foursight_prefix)
 
-    def __init__(self):
-        pass
-
-    @classmethod
-    def invoke_check_runner(cls, runner_input):
+    def invoke_check_runner(self, runner_input):
         """
         Simple function to invoke the next check_runner lambda with runner_input
         (dict containing {'sqs_url': <str>})
@@ -25,19 +22,18 @@ class SQS(object):
         # try/except while async invokes are problematic
         try:
             response = client.invoke(
-                FunctionName=cls.Stage.get_runner_name(),
+                FunctionName=self.stage.get_runner_name(),
                 InvocationType='Event',
                 Payload=json.dumps(runner_input)
             )
         except:
             response = client.invoke(
-                FunctionName=cls.Stage.get_runner_name(),
+                FunctionName=self.stage.get_runner_name(),
                 Payload=json.dumps(runner_input)
             )
         return response
 
-    @classmethod
-    def delete_message_and_propogate(cls, runner_input, receipt, propogate=True):
+    def delete_message_and_propogate(self, runner_input, receipt, propogate=True):
         """
         Delete the message with given receipt from sqs queue and invoke the next
         lambda runner.
@@ -59,10 +55,9 @@ class SQS(object):
             ReceiptHandle=receipt
         )
         if propogate is True:
-            cls.invoke_check_runner(runner_input)  
+            self.invoke_check_runner(runner_input)  
 
-    @classmethod
-    def recover_message_and_propogate(cls, runner_input, receipt, propogate=True):
+    def recover_message_and_propogate(self, runner_input, receipt, propogate=True):
         """
         Recover the message with given receipt to sqs queue and invoke the next
         lambda runner.
@@ -90,14 +85,13 @@ class SQS(object):
             VisibilityTimeout=15
         )
         if propogate is True:
-            cls.invoke_check_runner(runner_input)
+            self.invoke_check_runner(runner_input)
 
-    @classmethod
-    def get_sqs_queue(cls):
+    def get_sqs_queue(self):
         """
         Returns boto3 sqs resource
         """
-        queue_name = cls.Stage.get_queue_name()
+        queue_name = self.stage.get_queue_name()
         sqs = boto3.resource('sqs')
         try:
             queue = sqs.get_queue_by_name(QueueName=queue_name)

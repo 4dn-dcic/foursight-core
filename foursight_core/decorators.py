@@ -1,31 +1,40 @@
 import traceback
 import signal
 import time
+import sys
 import os
 from functools import wraps
 from .check_schema import CheckSchema
 from .run_result import (
-    CheckResult as PlaceholderCheckResult,
-    ActionResult as PlaceholderActionResult
+    CheckResult as CheckResultBase,
+    ActionResult as ActionResultBase
 )
 from .exceptions import BadCheckOrAction
-from .sqs_utils import SQS as PlaceholderSQS
+from .sqs_utils import SQS
 
 
 class Decorators(object):
 
-    CheckResult = PlaceholderCheckResult
-    ActionResult = PlaceholderActionResult
-    SQS = PlaceholderSQS
-
     CHECK_DECO = 'check_function'
     ACTION_DECO = 'action_function'
     POLL_INTERVAL = 10  # check child process every 10 seconds
+    CHECK_TIMEOUT = 870  # in seconds. set to less than lambda limit (900 s)
 
-    def __init__(self):
-        self.CHECK_TIMEOUT = 870  # in seconds. set to less than lambda limit (900 s)
+    def __init__(self, foursight_prefix):
         if os.environ.get('CHECK_TIMEOUT'):
             self.set_timeout(os.environ.get('CHECK_TIMEOUT')) 
+        self.prefix = foursight_prefix
+        self.sqs = SQS(self.prefix)
+
+    def CheckResult(self, *args, **kwargs):
+        check = CheckResultBase(*args, **kwargs)
+        check.set_prefix(self.prefix)
+        return check
+
+    def ActionResult(self, *args, **kwargs):
+        action = ActionResultBase(*args, **kwargs)
+        action.set_prefix(self.prefix)
+        return action
 
     def set_timeout(self, timeout):
         try:
@@ -148,10 +157,10 @@ class Decorators(object):
         or action with the appropriate information and then exits using sys.exit
         """
         if partials['is_check']:
-            result = CheckResult(partials['connection'], partials['name'])
+            result = self.CheckResult(partials['connection'], partials['name'])
             result.status = 'ERROR'
         else:
-            result = ActionResult(partials['connection'], partials['name'])
+            result = self.ActionResult(partials['connection'], partials['name'])
             result.status = 'FAIL'
         result.description = 'AWS lambda execution reached the time limit. Please see check/action code.'
         kwargs = partials['kwargs']
@@ -161,7 +170,7 @@ class Decorators(object):
         # need to delete the sqs message and propogate if this is using the queue
         if kwargs.get('_run_info') and {'receipt', 'sqs_url'} <= set(kwargs['_run_info'].keys()):
             runner_input = {'sqs_url': kwargs['_run_info']['sqs_url']}
-            SQS.delete_message_and_propogate(runner_input, kwargs['_run_info']['receipt'])
+            self.sqs.delete_message_and_propogate(runner_input, kwargs['_run_info']['receipt'])
         sys.exit('-RUN-> TIMEOUT for execution of %s. Elapsed time is %s seconds; keep under %s.'
               % (partials['name'], kwargs['runtime_seconds'], self.CHECK_TIMEOUT))
 
