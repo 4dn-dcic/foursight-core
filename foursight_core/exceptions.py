@@ -23,7 +23,7 @@ class BadCheckSetup(Exception):
 
 
 class MissingFoursightPrefixException(Exception):
-     """
+    """
     Generic exception for an issue with foursight prefix
     not defined or initialized before using a method that
     requires it.
