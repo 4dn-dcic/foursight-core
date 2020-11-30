@@ -22,7 +22,7 @@ Dependency structure
 --------------------
 
 .. image:: images/foursight-core-dependency-diagram-20201130.png
-   :height: 500
+   :height: 700
    :target: _images/foursight-core-dependency-diagram-20201130.png
 
 
