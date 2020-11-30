@@ -3,7 +3,10 @@ from dateutil import tz
 from abc import abstractmethod
 import json
 from .s3_connection import S3Connection
-from .exceptions import BadCheckOrAction
+from .exceptions import (
+  BadCheckOrAction,
+  MissingFoursightPrefixException
+)
 
 
 class RunResult(object):
@@ -159,7 +162,7 @@ class RunResult(object):
         """
         run_id = self.kwargs['_run_info']['run_id']
         if not hasattr(self, 'prefix'):
-            raise Exception("foursight prefix must be defined using set_prefix")
+            raise MissingFoursightPrefixException("foursight prefix must be defined using set_prefix")
         s3_connection = S3Connection(self.prefix + '-runs')
         record_key = '/'.join([run_id, self.name])
         resp = s3_connection.put_object(record_key, json.dumps(self.status))
