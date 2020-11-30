@@ -25,7 +25,7 @@ Dependency structure
    :height: 700
    :target: dependency_diagram_pdf_
 
-.. _dependency_diagram_pdf: _images/foursight-core-dependency-diagram-20201130.pdf
+.. _dependency_diagram_pdf: images/foursight-core-dependency-diagram-20201130.pdf
 
 
 Beta version
