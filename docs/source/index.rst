@@ -21,11 +21,13 @@ A shared component for Foursight and Foursight-CGAP.
 Dependency structure
 --------------------
 
+pdf_
+
 .. image:: images/foursight-core-dependency-diagram-20201130.png
    :height: 700
-   :target: dependency_diagram_pdf_
+   :target: _images/foursight-core-dependency-diagram-20201130.png
 
-.. _dependency_diagram_pdf: images/foursight-core-dependency-diagram-20201130.pdf
+.. _pdf: images/foursight-core-dependency-diagram-20201130.pdf
 
 
 Beta version
