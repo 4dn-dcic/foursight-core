@@ -157,7 +157,48 @@ class AppUtils(object):
             except:
                 pass
         return False
-    
+
+    @classmethod
+    def auth0_callback(cls, request, env):
+        req_dict = request.to_dict()
+        domain, context = cls.get_domain_and_context(req_dict)
+        # extract redir cookie
+        cookies = req_dict.get('headers', {}).get('cookie')
+        redir_url = context + 'view/' + env
+        for cookie in cookies.split(';'):
+            name, val = cookie.strip().split('=')
+            if name == 'redir':
+                redir_url = val
+        resp_headers = {'Location': redir_url}
+        params = req_dict.get('query_params')
+        if not params:
+            return cls.forbidden_response()
+        auth0_code = params.get('code', None)
+        auth0_client = os.environ.get('CLIENT_ID', None)
+        auth0_secret = os.environ.get('CLIENT_SECRET', None)
+        if not (domain and auth0_code and auth0_client and auth0_secret):
+            return Response(status_code=301, body=json.dumps(resp_headers),
+                            headers=resp_headers)
+        payload = {
+            'grant_type': 'authorization_code',
+            'client_id': auth0_client,
+            'client_secret': auth0_secret,
+            'code': auth0_code,
+            'redirect_uri': ''.join(['https://', domain, context, 'callback/'])
+        }
+        json_payload = json.dumps(payload)
+        headers = { 'content-type': "application/json" }
+        res = requests.post("https://hms-dbmi.auth0.com/oauth/token", data=json_payload, headers=headers)
+        id_token = res.json().get('id_token', None)
+        if id_token:
+            cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
+            expires_in = res.json().get('expires_in', None)
+            if expires_in:
+                expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
+                cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
+            resp_headers['Set-Cookie'] = cookie_str
+        return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
+
     @classmethod
     def get_jwt(cls, request_dict):
         """
