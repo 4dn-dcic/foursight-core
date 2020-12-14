@@ -784,7 +784,7 @@ class AppUtils(object):
             else:
                 # if not testing, queue checks with 'put_env' condition for the new env
                 if 'test' not in self.stage.get_queue_name():
-                    for sched in self.get_schedule_names():
+                    for sched in self.check_handler.get_schedule_names():
                         self.queue_scheduled_checks(environ, sched, conditions=['put_env'])
                 response = Response(
                     body = {
