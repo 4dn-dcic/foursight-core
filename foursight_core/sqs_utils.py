@@ -37,12 +37,12 @@ class SQS(object):
         """
         Delete the message with given receipt from sqs queue and invoke the next
         lambda runner.
-    
+
         Args:
             runner_input (dict): runner info, should minimally have 'sqs_url'
             receipt (str): SQS message receipt
             propogate (bool): if True (default), invoke another check runner lambda
-    
+
         Returns:
             None
         """
@@ -55,23 +55,23 @@ class SQS(object):
             ReceiptHandle=receipt
         )
         if propogate is True:
-            self.invoke_check_runner(runner_input)  
+            self.invoke_check_runner(runner_input)
 
     def recover_message_and_propogate(self, runner_input, receipt, propogate=True):
         """
         Recover the message with given receipt to sqs queue and invoke the next
         lambda runner.
-    
+
         Changing message VisibilityTimeout to 15 seconds means the message will be
         available to the queue in that much time. This is a slight lag to allow
         dependencies to process.
         NOTE: VisibilityTimeout should be less than WaitTimeSeconds in run_check_runner
-    
+
         Args:
             runner_input (dict): runner info, should minimally have 'sqs_url'
             receipt (str): SQS message receipt
             propogate (bool): if True (default), invoke another check runner lambda
-    
+
         Returns:
             None
         """
@@ -99,7 +99,7 @@ class SQS(object):
             queue = sqs.create_queue(
                 QueueName=queue_name,
                 Attributes={
-                    'VisibilityTimeout': '300',
+                    'VisibilityTimeout': '900',
                     'MessageRetentionPeriod': '3600'
                 }
             )
@@ -111,14 +111,14 @@ class SQS(object):
         Send messages to SQS queue. Check_vals are entries within a check_group.
         Optionally, provide a uuid that will be queued as the uuid for the run; if
         not provided, datetime.utcnow is used
-    
+
         Args:
             queue: boto3 sqs resource (from get_sqs_queue)
             environ (str): foursight environment name
             check_vals (list): list of formatted check vals, like those from
                 check_utils.CheckHandler().get_check_schedule
             uuid (str): optional string uuid
-    
+
         Returns:
             str: uuid of queued messages
         """
