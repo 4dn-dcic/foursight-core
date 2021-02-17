@@ -1052,7 +1052,7 @@ class AppUtils(object):
         # find information from s3 about completed checks in this run
         # actual id stored in s3 has key: <run_uuid>/<run_name>
         if run_deps and isinstance(run_deps, list):
-            already_run = collect_run_info(run_uuid)
+            already_run = self.collect_run_info(run_uuid)
             deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
             finished_dependencies = set(deps_w_uuid).issubset(already_run)
             if not finished_dependencies:
