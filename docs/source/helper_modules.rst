@@ -14,10 +14,3 @@ wrangler_utils
 
 .. automodule:: foursight_core.checks.helpers.wrangler_utils
   :members:
-
-
-wfr_utils
-^^^^^^^^^
-
-.. automodule:: foursight_core.checks.helpers.wfr_utils
-  :members:

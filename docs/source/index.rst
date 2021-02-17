@@ -23,11 +23,11 @@ Dependency structure
 
 pdf_
 
-.. image:: images/foursight-core-dependency-diagram-20201130.png
+.. image:: images/foursight-core-dependency-diagram-20210119.png
    :height: 700
-   :target: _images/foursight-core-dependency-diagram-20201130.png
+   :target: _images/foursight-core-dependency-diagram-20210119.png
 
-.. _pdf: _images/foursight-core-dependency-diagram-20201130.pdf
+.. _pdf: _images/foursight-core-dependency-diagram-20210119.pdf
 
 
 Beta version
