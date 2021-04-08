@@ -45,9 +45,9 @@ class Deploy(object):
     @classmethod
     def get_config_filepath(cls):
         return os.path.join(cls.config_dir, '.chalice/config.json')
- 
+
     @classmethod
-    def build_config_and_deploy(cls, stage):
+    def build_config(cls, stage):
         # key to de-encrypt access key
         s3_enc_secret = os.environ.get("S3_ENCRYPT_KEY")
         client_id = os.environ.get("CLIENT_ID")
@@ -64,17 +64,32 @@ class Deploy(object):
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_ID'] = client_id
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_SECRET'] = client_secret
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['DEV_SECRET'] = dev_secret
-    
+
         filename = cls.get_config_filepath()
         print(''.join(['Writing: ', filename]))
         with open(filename, 'w') as config_file:
             config_file.write(json.dumps(cls.CONFIG_BASE))
         # export poetry into requirements
-        subprocess.check_call(['poetry', 'export', '-f', 'requirements.txt', '--without-hashes', '-o', 'requirements.txt'])
+        subprocess.check_call(
+            ['poetry', 'export', '-f', 'requirements.txt', '--without-hashes', '-o', 'requirements.txt'])
+
+    @classmethod
+    def build_config_and_deploy(cls, stage):
+        cls.build_config(stage)
         # actually deploy
         subprocess.call(['chalice', 'deploy', '--stage', stage])
-    
-    
+
+    @classmethod
+    def build_config_and_package(cls, args):
+        cls.build_config(args.stage)
+        # actually package cloudformation templates
+        # add --single-file ?
+        flags = ['--stage', args.stage, '--pkg-format', 'cloudformation', '--template-format', 'yaml']
+        if args.merge_template:
+            flags.append('--merge-template', args.merge_template)
+        subprocess.call(['chalice', 'package', *flags, args.output_file])
+
+
 def main():
     parser = argparse.ArgumentParser('chalice_deploy')
     parser.add_argument(
