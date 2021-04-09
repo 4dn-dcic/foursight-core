@@ -69,9 +69,6 @@ class Deploy(object):
         print(''.join(['Writing: ', filename]))
         with open(filename, 'w') as config_file:
             config_file.write(json.dumps(cls.CONFIG_BASE))
-
-    @classmethod
-    def poetry_export_call(cls):
         # export poetry into requirements
         subprocess.check_call(
             ['poetry', 'export', '-f', 'requirements.txt', '--without-hashes', '-o', 'requirements.txt'])
@@ -79,7 +76,6 @@ class Deploy(object):
     @classmethod
     def build_config_and_deploy(cls, stage):
         cls.build_config(stage)
-        cls.poetry_export_call()
         # actually deploy
         subprocess.call(['chalice', 'deploy', '--stage', stage])
 
