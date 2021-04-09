@@ -5,7 +5,8 @@ from sys import stdout
 from os.path import dirname
 
 class PackageDeploy(Deploy):
-    config_dir = dirname(dirname(__file__))
+    pass
+    # config_dir = dirname(dirname(__file__))
 
 def main():
     print(dirname(__file__))
