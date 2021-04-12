@@ -1,6 +1,6 @@
 import argparse
 import subprocess
-from deploy import Deploy
+from foursight_core.deploy import Deploy
 from sys import stdout
 from os.path import dirname
 
