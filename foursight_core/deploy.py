@@ -86,7 +86,7 @@ class Deploy(object):
         # add --single-file ?
         flags = ['--stage', args.stage, '--pkg-format', 'cloudformation', '--template-format', 'yaml']
         if args.merge_template:
-            flags.append('--merge-template', args.merge_template)
+            flags.extend(['--merge-template', args.merge_template])
         subprocess.call(['chalice', 'package', *flags, args.output_file])
 
 
