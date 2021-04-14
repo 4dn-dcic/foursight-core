@@ -1,6 +1,7 @@
 import boto3
 import json
 
+
 class Buckets(object):
     """create and configure buckets for foursight"""
 
