@@ -4,10 +4,12 @@ from foursight_core.deploy import Deploy
 from sys import stdout
 from os.path import dirname
 
+
 class PackageDeploy(Deploy):
     config_dir = dirname(dirname(__file__))
 
-def main():
+
+def main(package_deploy=PackageDeploy):
     parser = argparse.ArgumentParser('chalice_package')
     parser.add_argument(
         'stage',
@@ -17,7 +19,7 @@ def main():
     parser.add_argument(
         'output_file',
         type=str,
-        help = 'Directory where generated template should be written')
+        help='Directory where generated template should be written')
     parser.add_argument(
         '--merge_template',
         type=str,
@@ -27,7 +29,7 @@ def main():
         action='store_true',
         help='Use TRIAL creds when building the config (experimental)')
     args = parser.parse_args()
-    PackageDeploy.build_config_and_package(args)
+    package_deploy.build_config_and_package(args)
 
 
 if __name__ == '__main__':
