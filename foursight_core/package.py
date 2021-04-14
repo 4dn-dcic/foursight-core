@@ -5,11 +5,9 @@ from sys import stdout
 from os.path import dirname
 
 class PackageDeploy(Deploy):
-    pass
-    # config_dir = dirname(dirname(__file__))
+    config_dir = dirname(dirname(__file__))
 
 def main():
-    print(dirname(__file__))
     parser = argparse.ArgumentParser('chalice_package')
     parser.add_argument(
         'stage',
@@ -24,6 +22,10 @@ def main():
         '--merge_template',
         type=str,
         help='Location of a YAML template to be merged into the generated template')
+    parser.add_argument(
+        '--trial',
+        action='store_true',
+        help='Use TRIAL creds when building the config (experimental)')
     args = parser.parse_args()
     PackageDeploy.build_config_and_package(args)
 

@@ -47,18 +47,30 @@ class Deploy(object):
         return os.path.join(cls.config_dir, '.chalice/config.json')
 
     @classmethod
-    def build_config(cls, stage):
+    def build_config(cls, stage, trial_creds=False):
         # key to de-encrypt access key
-        s3_enc_secret = os.environ.get("S3_ENCRYPT_KEY")
-        client_id = os.environ.get("CLIENT_ID")
-        client_secret = os.environ.get("CLIENT_SECRET")
-        dev_secret = os.environ.get("DEV_SECRET")
-        if not (s3_enc_secret and client_id and client_secret and dev_secret):
-            print(''.join(['ERROR. You are missing one more more environment ',
-                           'variables needed to deploy Foursight.\n',
-                           'Need: S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, DEV_SECRET.'])
-                  )
-            sys.exit()
+        if trial_creds:
+            s3_enc_secret = os.environ.get("TRIAL_S3_ENCRYPT_KEY")
+            client_id = os.environ.get("TRIAL_CLIENT_ID")
+            client_secret = os.environ.get("TRIAL_CLIENT_SECRET")
+            dev_secret = os.environ.get("TRIAL_DEV_SECRET")
+            if not (s3_enc_secret and client_id and client_secret and dev_secret):
+                print(''.join(['ERROR. You are missing one more more environment ',
+                               'variables needed to deploy the Foursight trial.\n',
+                               'Need: TRIAL_S3_ENCRYPT_KEY, TRIAL_CLIENT_ID, TRIAL_CLIENT_SECRET, TRIAL_DEV_SECRET.'])
+                      )
+                sys.exit()
+        else:
+            s3_enc_secret = os.environ.get("S3_ENCRYPT_KEY")
+            client_id = os.environ.get("CLIENT_ID")
+            client_secret = os.environ.get("CLIENT_SECRET")
+            dev_secret = os.environ.get("DEV_SECRET")
+            if not (s3_enc_secret and client_id and client_secret and dev_secret):
+                print(''.join(['ERROR. You are missing one more more environment ',
+                               'variables needed to deploy Foursight.\n',
+                               'Need: S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, DEV_SECRET.'])
+                      )
+                sys.exit()
         for curr_stage in ['dev', 'prod']:
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['S3_ENCRYPT_KEY'] = s3_enc_secret
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_ID'] = client_id
@@ -81,7 +93,10 @@ class Deploy(object):
 
     @classmethod
     def build_config_and_package(cls, args):
-        cls.build_config(args.stage)
+        if args.trial:
+            cls.build_config(args.stage, trial_creds=True)
+        else:
+            cls.build_config(args.stage)
         # actually package cloudformation templates
         # add --single-file ?
         flags = ['--stage', args.stage, '--pkg-format', 'cloudformation', '--template-format', 'yaml']
