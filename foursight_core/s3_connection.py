@@ -4,6 +4,7 @@ import requests
 import boto3
 import datetime
 
+
 class S3Connection(AbstractConnection):
     def __init__(self, bucket_name):
         self.client = boto3.client('s3')
