@@ -8,6 +8,7 @@ import boto3
 import datetime
 import ast
 import copy
+import logging
 import requests
 import sys
 from itertools import chain
@@ -20,6 +21,9 @@ from .check_utils import CheckHandler
 from .sqs_utils import SQS
 from .stage import Stage
 from .environment import Environment
+
+logging.basicConfig()
+logger = logging.getLogger()
 
 
 class AppUtils(object):
@@ -427,7 +431,7 @@ class AppUtils(object):
                     'groups': grouped_results
                 })
         # prioritize these environments
-        env_order = ['data', 'staging', 'webdev', 'hotseat', 'cgap']
+        env_order = ['data', 'staging', 'webdev', 'hotseat', 'cgap', 'cgap-mastertest']
         total_envs = sorted(total_envs, key=lambda v: env_order.index(v['environment']) if v['environment'] in env_order else 9999)
         template = self.jin_env.get_template('view_groups.html')
         # get queue information

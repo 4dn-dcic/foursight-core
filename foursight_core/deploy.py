@@ -47,7 +47,7 @@ class Deploy(object):
         return os.path.join(cls.config_dir, '.chalice/config.json')
 
     @classmethod
-    def build_config(cls, stage, trial_creds=False):
+    def build_config(cls, stage, trial_creds=False, trial_global_env_bucket=False):
         # key to de-encrypt access key
         if trial_creds:
             s3_enc_secret = os.environ.get("TRIAL_S3_ENCRYPT_KEY")
@@ -76,6 +76,13 @@ class Deploy(object):
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_ID'] = client_id
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_SECRET'] = client_secret
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['DEV_SECRET'] = dev_secret
+            if trial_global_env_bucket:
+                global_bucket = os.environ.get('GLOBAL_BUCKET_ENV')
+                if global_bucket:
+                    cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['GLOBAL_BUCKET_ENV'] = global_bucket
+                else:
+                    print('ERROR. GLOBAL_BUCKET_ENV must be set when building the trial config.')
+                    sys.exit()
 
         filename = cls.get_config_filepath()
         print(''.join(['Writing: ', filename]))
@@ -94,7 +101,7 @@ class Deploy(object):
     @classmethod
     def build_config_and_package(cls, args):
         if args.trial:
-            cls.build_config(args.stage, trial_creds=True)
+            cls.build_config(args.stage, trial_creds=True, trial_global_env_bucket=True)
         else:
             cls.build_config(args.stage)
         # actually package cloudformation templates

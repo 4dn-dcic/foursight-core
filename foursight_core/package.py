@@ -27,7 +27,7 @@ def main(package_deploy=PackageDeploy):
     parser.add_argument(
         '--trial',
         action='store_true',
-        help='Use TRIAL creds when building the config (experimental)')
+        help='Use TRIAL creds when building the config and the trial S3 global env bucket (experimental)')
     args = parser.parse_args()
     package_deploy.build_config_and_package(args)
 
