@@ -11,6 +11,7 @@ import copy
 import logging
 import requests
 import sys
+import logging
 from itertools import chain
 from dateutil import tz
 from base64 import b64decode
@@ -26,12 +27,15 @@ logging.basicConfig()
 logger = logging.getLogger()
 
 
+logger = logging.getLogger(__name__)
+
+
 class AppUtils(object):
     """
     Class AppUtils is the most high-level class that's used directy by Chalice object app.
     This class mostly contains the functions defined in app_utils in original foursight.
     """
-    
+
     # These must be overwritten in inherited classes
     # replace with 'foursight', 'foursight-cgap' etc
     prefix = 'placeholder_prefix'
@@ -81,13 +85,13 @@ class AppUtils(object):
         Generate environment information from the envs bucket in s3.
         Returns a dictionary keyed by environment name with value of a sub-dict
         with the fields needed to initiate a connection.
-    
+
         :param env: allows you to specify a single env to be initialized
         :param envs: allows you to specify multiple envs to be initialized
         """
         stage_name = self.stage.get_stage()
         return self.environment.get_environment_and_bucket_info_in_batch(stage=stage_name, env=env, envs=envs)
-    
+
     def init_connection(self, environ, _environments=None):
         """
         Initialize the fourfront/s3 connection using the FSConnection object
@@ -108,7 +112,7 @@ class AppUtils(object):
             raise Exception(str(error_res))
         connection = FSConnection(environ, environments[environ], host=self.host)
         return connection
-    
+
     def init_response(self, environ):
         """
         Generalized function to init response given an environment
@@ -121,13 +125,13 @@ class AppUtils(object):
             response.body = str(e)
             response.status_code = 400
         return connection, response
-    
+
     def check_authorization(self, request_dict, env=None):
         """
         Manual authorization, since the builtin chalice @app.authorizer() was not
         working for me and was limited by a requirement that the authorization
         be in a token. Check the cookies of the request for jwtToken using utils
-    
+
         Take in a dictionary format of the request (app.current_request) so we
         can test this.
         """
@@ -154,6 +158,8 @@ class AppUtils(object):
                 for env_info in self.init_environments(env).values():
                     user_res = ff_utils.get_metadata('users/' + payload.get('email').lower(),
                                                 ff_env=env_info['ff_env'], add_on='frame=object')
+                    logger.error(env_info)
+                    logger.error(user_res)
                     if not ('admin' in user_res['groups'] and payload.get('email_verified')):
                         # if unauthorized for one, unauthorized for all
                         return False
@@ -218,14 +224,14 @@ class AppUtils(object):
                     cookie_dict[cookie_split[0]] = cookie_split[1]
         token = cookie_dict.get('jwtToken', None)
         return token
-    
+
     @classmethod
     def get_favicon(cls):
         """
         Returns faviron
         """
         return cls.FAVICON  # want full HTTPS, so hard-coded in
-    
+
     @classmethod
     def get_domain_and_context(cls, request_dict):
         """
@@ -236,12 +242,12 @@ class AppUtils(object):
         domain = request_dict.get('headers', {}).get('host')
         context = '/api/' if request_dict.get('context', {}).get('path', '').startswith('/api/') else '/'
         return domain, context
-    
+
     @classmethod
     def forbidden_response(cls, context="/"):
         return Response(status_code=403,
                         body='Forbidden. Login on the %s page.' % (context + 'view/<environment>'))
-    
+
     @classmethod
     def process_response(cls, response):
         """
@@ -252,7 +258,7 @@ class AppUtils(object):
             response.body = 'Body size exceeded 6 MB maximum.'
             response.status_code = 413
         return response
-    
+
     @classmethod
     def query_params_to_literals(cls, params):
         """
@@ -273,7 +279,7 @@ class AppUtils(object):
         for key in to_delete:
             del params[key]
         return params
-    
+
     @classmethod
     def get_size(cls, obj, seen=None):
         """ Recursively finds size of objects
@@ -296,20 +302,20 @@ class AppUtils(object):
         elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
             size += sum([cls.get_size(i, seen) for i in obj])
         return size
-    
+
     @classmethod
     def trim_output(cls, output, max_size=100000):
         """ Uses the helper above with sys.getsizeof to determine the output size and remove it if it is too large.
             Instead of encoding as JSON as that is very slow.
-    
+
         Old docstring below:
-    
+
         AWS lambda has a maximum body response size of 6MB. Since results are currently delivered entirely
         in the body of the response, let's limit the size of the 'full_output', 'brief_output', and
         'admin_output' fields to 100 KB (see if this is a reasonable amount).
         Slice the dictionaries, lists, or string to achieve this.
         max_size input integer is in bites
-    
+
         Takes in the non-json formatted version of the fields. For now, just use this for /view/.
         """
         # formatted = json.dumps(output, indent=4)
@@ -321,10 +327,10 @@ class AppUtils(object):
         if size > max_size:
             return cls.TRIM_ERR_OUTPUT
         return output
-    
-    
+
+
     ##### ROUTE RUNNING FUNCTIONS #####
-    
+
     def view_run_check(self, environ, check, params, context="/"):
         """
         Called from the view endpoint (or manually, I guess), this queues the given
@@ -332,13 +338,13 @@ class AppUtils(object):
         for the new check.
         Params are kwargs that are read from the url query_params; they will be
         added to the kwargs used to run the check.
-    
+
         Args:
             environ (str): Foursight environment name
             check (str): check function name
             params (dict): kwargs to use for check
             context (str): string context to use for Foursight routing
-    
+
         Returns:
             chalice.Response: redirect to future check landing page
         """
@@ -349,20 +355,20 @@ class AppUtils(object):
         resp_headers = {'Location': '/'.join([context + 'view', environ, check, queued_uuid])}
         return Response(status_code=302, body=json.dumps(resp_headers),
                         headers=resp_headers)
-    
+
     def view_run_action(self, environ, action, params, context="/"):
         """
         Called from the view endpoint (or manually, I guess), this runs the given
         action for the given environment and refreshes the foursight view.
         Params are kwargs that are read from the url query_params; they will be
         added to the kwargs used to run the check.
-    
+
         Args:
             environ (str): Foursight environment name
             action (str): action function name
             params (dict): kwargs to use for check
             context (str): string context to use for Foursight routing
-    
+
         Returns:
             chalice.Response: redirect to check view that called this action
         """
@@ -386,7 +392,7 @@ class AppUtils(object):
             )
         return Response(status_code=302, body=json.dumps(resp_headers),
                         headers=resp_headers)
-    
+
     def view_foursight(self, environ, is_admin=False, domain="", context="/"):
         """
         View a template of all checks from the given environment(s).
@@ -454,7 +460,7 @@ class AppUtils(object):
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
-    
+
     def view_foursight_check(self, environ, check, uuid, is_admin=False, domain="", context="/"):
         """
         View a formatted html response for a single check (environ, check, uuid)
@@ -508,7 +514,7 @@ class AppUtils(object):
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
-    
+
     @classmethod
     def get_load_time(cls):
         """
@@ -519,12 +525,12 @@ class AppUtils(object):
         # change timezone to EST (specific location needed for daylight savings)
         ts_local = ts_utc.astimezone(tz.gettz('America/New_York'))
         return ''.join([str(ts_local.date()), ' at ', str(ts_local.time()), ' (', str(ts_local.tzname()), ')'])
-    
+
     def process_view_result(self, connection, res, is_admin):
         """
         Do some processing on the content of one check result (res arg, a dict)
         Processes timestamp string, trims output fields, and adds action info.
-    
+
         For action info, if the check has an action, try to find the associated
         action by looking for '<check name>/action_records<check uuid>' object in
         s3. The contents will be the path to the action. If found, display as
@@ -561,7 +567,7 @@ class AppUtils(object):
             res['admin_output'] = json.dumps(self.trim_output(res['admin_output']), indent=2)
         else:
             res['admin_output'] = None
-    
+
         # ### LOGIC FOR VIEWING ACTION ###
         # if this check has already run an action, display that. Otherwise, allow
         # action to be run.
@@ -595,15 +601,15 @@ class AppUtils(object):
                     # if there is an action + allow action is set but the action has
                     # not yet run, display an icon status to signify this
                     res['assc_action_status'] = 'ready'
-    
+
                 # This used to try to get the latest result and only populate 'latest_action' if one exists.
                 # Doing so makes the main page take 2-3x as long to load, so we won't be doing that anymore.
                 res['action_history'] = res.get('action')  # = action name
-    
+
             else:
                 del res['action']
         return res
-    
+
     def view_foursight_history(self, environ, check, start=0, limit=25, is_admin=False,
                                domain="", context="/"):
         """
@@ -662,7 +668,7 @@ class AppUtils(object):
         UUID, status, kwargs. Limit the number of results recieved to 500, unless
         otherwise specified ('limit' arg). 'start' arg determines where the start
         of the results grabbed is, with idx = 0 being the most recent one.
-    
+
         'check' may be a check or an action (string name)
         """
         # limit 'limit' param to 500
@@ -671,7 +677,7 @@ class AppUtils(object):
         if not result_obj:
             return []
         return result_obj.get_result_history(start, limit)
-    
+
     def run_get_check(self, environ, check, uuid=None):
         """
         Loads a specific check or action result given an environment, check or
@@ -754,7 +760,7 @@ class AppUtils(object):
         }
         response.status_code = 200
         return self.process_response(response)
-    
+
     def run_put_environment(self, environ, env_data):
         """
         Abstraction of the functionality of put_environment without the current_request
@@ -809,7 +815,7 @@ class AppUtils(object):
                 status_code = 400
             )
         return self.process_response(response)
-    
+
     def run_get_environment(self, environ):
         """
         Return config information about a given environment, or throw an error
@@ -835,7 +841,7 @@ class AppUtils(object):
                 status_code = 400
             )
         return self.process_response(response)
-    
+
     @classmethod
     def run_delete_environment(cls, environ, bucket=None):
         """
@@ -877,30 +883,30 @@ class AppUtils(object):
                     status_code = 200
                 )
         return cls.process_response(response)
-    
-    
-    
+
+
+
     ##### QUEUE / CHECK RUNNER FUNCTIONS #####
-    
+
     def queue_scheduled_checks(self, sched_environ, schedule_name, conditions=None):
         """
         Given a str environment and schedule name, add the check info to the
         existing queue (or creates a new one if there is none). Then initiates 4
         check runners that are linked to the queue that are self-propogating.
-    
+
         If sched_environ == 'all', then loop through all in Environment.list_environments()
-    
+
         Run with schedule_name = None to skip adding the check group to the queue
         and just initiate the check runners.
-    
+
         Can optionally provide a list of conditions that will be used as used to
         filter the checks to schedule based on the 'conditions' list in check_setup
-    
+
         Args:
             sched_environ (str): Foursight environment name to schedule on
             schedule_name (str): schedule name from check_setup / app
             conditions (list): optional list of one or more conditions to filter by
-    
+
         Returns:
             dict: runner input of queued messages, used for testing
         """
@@ -923,20 +929,20 @@ class AppUtils(object):
         for n in range(4): # number of parallel runners to kick off
             self.sqs.invoke_check_runner(runner_input)
         return runner_input # for testing purposes
-    
+
     def queue_check(self, environ, check, params={}, deps=[], uuid=None):
         """
         Queue a single check, given by check function name, with given parameters
         and dependencies (both optional). Also optionally pass in a uuid, which
         will be used for the run if provided
-    
+
         Args:
             environ (str): Foursight environment name
             check (str): check function name
             params (dict): kwargs to use for check. Defaults to {}
             deps (list): list of dependencies for the check. Defaults to []
             uuid (str): optional uuid to pass to the run. Defaults to None
-    
+
         Returns:
             str: uuid of the queued check (from send_single_to_queue)
         """
@@ -951,20 +957,20 @@ class AppUtils(object):
             raise Exception(str(error_res))
         to_send = [check_str, params, deps]
         return self.send_single_to_queue(environ, to_send, uuid)
-    
+
     def queue_action(self, environ, action, params={}, deps=[], uuid=None):
         """
         Queue a single action, given by action function name, with given parameters
         and dependencies (both optional). Also optionally pass in a uuid, which
         will be used for the run if provided
-    
+
         Args:
             environ (str): Foursight environment name
             action (str): action function name
             params (dict): kwargs to use for action. Defaults to {}
             deps (list): list of dependencies for the action. Defaults to []
             uuid (str): optional uuid to pass to the run. Defaults to None
-    
+
         Returns:
             str: uuid of the queued action (from send_single_to_queue)
         """
@@ -979,18 +985,18 @@ class AppUtils(object):
             raise Exception(str(error_res))
         to_send = [action_str, params, deps]
         return self.send_single_to_queue(environ, to_send, uuid)
-    
+
     def send_single_to_queue(self, environ, to_send, uuid, invoke_runner=True):
         """
         Send a single formatted check/action to SQS for given environ. Pass
         the given uuid to send_sqs_messages. Invoke a single check runner lambda
-    
+
         Args:
             environ (str): Foursight environment name
             to_send (list): check/action entry in form [check_str, params, deps]
             uuid (str): uuid to pass to run. If None, generate a new uuid
             invoke_runner (bool): If True, invoke a check_runner lambda
-    
+
         Returns:
             str: uuid of the queued run (from send_single_to_queue)
         """
@@ -1000,33 +1006,33 @@ class AppUtils(object):
         if invoke_runner is True:
             self.sqs.invoke_check_runner({'sqs_url': queue.url})
         return queued_uuid
-    
+
     def run_check_runner(self, runner_input, propogate=True):
         """
         Run logic for a check runner. Used to run checks and actions.
-    
+
         runner_input should be a dict containing one
         key: sqs_url that corresponds to the aws url for the queue.
         This function attempts to recieve one message from the standard SQS queue
         using long polling, checks the run dependencies for that check/action, and then
         will run the check.
-    
+
         If the run was a check and the 'queue_action' parameter is set, along with
         check.action and check.allow_action, will attempt to queue the associated
         action.
-    
+
         If dependencies are not met, the check is not run and
         the run info is put back in the queue. Otherwise, the message is deleted
         from the queue.
-    
+
         If there are no messages left (should always be true when nothing is
         recieved from sqs with long polling), then exit and do not propogate another
         check runner. Otherwise, initiate another check_runner to continue the process.
-    
+
         Args:
             runner_input (dict): body of SQS message
             propogate (bool): if True (default), invoke another check runner lambda
-    
+
         Returns:
             dict: run result if something was run, else None
         """
@@ -1110,7 +1116,7 @@ class AppUtils(object):
             print('-RUN-> Recovered: %s' % (run_name))
             self.sqs.recover_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
-    
+
     @classmethod
     def collect_run_info(cls, run_uuid):
         """
