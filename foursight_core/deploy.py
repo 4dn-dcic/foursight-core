@@ -47,7 +47,9 @@ class Deploy(object):
         return os.path.join(cls.config_dir, '.chalice/config.json')
 
     @classmethod
-    def build_config(cls, stage, trial_creds=False, trial_global_env_bucket=False):
+    def build_config(cls, stage, trial_creds=False, trial_global_env_bucket=False,
+                     security_group_ids=None, subnet_ids=None):
+        """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
         # key to de-encrypt access key
         if trial_creds:
             s3_enc_secret = os.environ.get("TRIAL_S3_ENCRYPT_KEY")
@@ -83,6 +85,10 @@ class Deploy(object):
                 else:
                     print('ERROR. GLOBAL_BUCKET_ENV must be set when building the trial config.')
                     sys.exit()
+            if security_group_ids:
+                cls.CONFIG_BASE['stages'][curr_stage]['security_group_ids'] = security_group_ids
+            if subnet_ids:
+                cls.CONFIG_BASE['stages'][curr_stage]['subnet_ids'] = subnet_ids
 
         filename = cls.get_config_filepath()
         print(''.join(['Writing: ', filename]))
@@ -101,7 +107,10 @@ class Deploy(object):
     @classmethod
     def build_config_and_package(cls, args):
         if args.trial:
-            cls.build_config(args.stage, trial_creds=True, trial_global_env_bucket=True)
+            hardcoded_security_ids = ['sg-06bb5c4df5a1a9a04']  # TODO fetch these dynamically
+            hardcoded_subnet_ids = ['subnet-0a137caf0516c45b3', 'subnet-00b408971fc21de17']
+            cls.build_config(args.stage, trial_creds=True, trial_global_env_bucket=True,
+                             security_group_ids=hardcoded_security_ids, subnet_ids=hardcoded_subnet_ids)
         else:
             cls.build_config(args.stage)
         # actually package cloudformation templates
