@@ -79,6 +79,8 @@ class Deploy(object):
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_SECRET'] = client_secret
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['DEV_SECRET'] = dev_secret
             if trial_global_env_bucket:
+                # in the trial account setup, use a shorter timeout
+                cls.CONFIG_BASE['stages'][curr_stage]['lambda_timeout'] = 60
                 global_bucket = os.environ.get('GLOBAL_BUCKET_ENV')
                 if global_bucket:
                     cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['GLOBAL_BUCKET_ENV'] = global_bucket
