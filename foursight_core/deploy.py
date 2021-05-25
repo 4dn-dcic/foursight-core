@@ -50,8 +50,8 @@ class Deploy(object):
     def build_config(cls, stage, trial_creds=None, trial_global_env_bucket=False,
                      security_group_ids=None, subnet_ids=None):
         """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
-        # key to de-encrypt access key
         if trial_creds:
+            # key to de-encrypt access key
             s3_enc_secret = trial_creds['S3_ENCRYPT_KEY']
             client_id = trial_creds['CLIENT_ID']
             client_secret = trial_creds['CLIENT_SECRET']
@@ -118,7 +118,7 @@ class Deploy(object):
         if args.trial:
             if trial_creds and security_ids and subnet_ids:
                 cls.build_config(args.stage, trial_creds=trial_creds, trial_global_env_bucket=True,
-                    security_group_ids=security_ids, subnet_ids=subnet_ids, s3_encrypt_key=s3_encrypt_key)
+                    security_group_ids=security_ids, subnet_ids=subnet_ids)
             else:
                 raise Exception('Build config requires trial_creds, sg id, and subnet ids to run in trial account')
         else:
