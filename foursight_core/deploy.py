@@ -107,12 +107,13 @@ class Deploy(object):
         subprocess.call(['chalice', 'deploy', '--stage', stage])
 
     @classmethod
-    def build_config_and_package(cls, args):
+    def build_config_and_package(cls, args, security_ids=None, subnet_ids=None):
         if args.trial:
-            hardcoded_security_ids = ['sg-06bb5c4df5a1a9a04']  # TODO fetch these dynamically
-            hardcoded_subnet_ids = ['subnet-0a137caf0516c45b3', 'subnet-00b408971fc21de17']
-            cls.build_config(args.stage, trial_creds=True, trial_global_env_bucket=True,
-                             security_group_ids=hardcoded_security_ids, subnet_ids=hardcoded_subnet_ids)
+            if security_ids and subnet_ids:
+                cls.build_config(args.stage, trial_creds=True, trial_global_env_bucket=True,
+                    security_group_ids=security_ids, subnet_ids=subnet_ids)
+            else:
+                raise Exception('Build config requires subnet and sg ids to run in trial account')
         else:
             cls.build_config(args.stage)
         # actually package cloudformation templates
