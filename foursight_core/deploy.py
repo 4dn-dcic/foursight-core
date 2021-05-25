@@ -47,19 +47,20 @@ class Deploy(object):
         return os.path.join(cls.config_dir, '.chalice/config.json')
 
     @classmethod
-    def build_config(cls, stage, trial_creds=False, trial_global_env_bucket=False,
+    def build_config(cls, stage, trial_creds=None, trial_global_env_bucket=False,
                      security_group_ids=None, subnet_ids=None):
         """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
         # key to de-encrypt access key
         if trial_creds:
-            s3_enc_secret = os.environ.get("TRIAL_S3_ENCRYPT_KEY")
-            client_id = os.environ.get("TRIAL_CLIENT_ID")
-            client_secret = os.environ.get("TRIAL_CLIENT_SECRET")
-            dev_secret = os.environ.get("TRIAL_DEV_SECRET")
-            if not (s3_enc_secret and client_id and client_secret and dev_secret):
-                print(''.join(['ERROR. You are missing one more more environment ',
-                               'variables needed to deploy the Foursight trial.\n',
-                               'Need: TRIAL_S3_ENCRYPT_KEY, TRIAL_CLIENT_ID, TRIAL_CLIENT_SECRET, TRIAL_DEV_SECRET.'])
+            s3_enc_secret = trial_creds['S3_ENCRYPT_KEY']
+            client_id = trial_creds['CLIENT_ID']
+            client_secret = trial_creds['CLIENT_SECRET']
+            dev_secret = trial_creds['DEV_SECRET']
+            es_host = trial_creds['ES_HOST']
+            if not (s3_enc_secret and client_id and client_secret and dev_secret and es_host):
+                print(''.join(['ERROR. You are missing one more more environment',
+                               'variables needed to deploy the Foursight trial. Need:\n',
+                               'S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, DEV_SECRET, ES_HOST in trial_creds dict.'])
                       )
                 sys.exit()
         else:
@@ -67,6 +68,7 @@ class Deploy(object):
             client_id = os.environ.get("CLIENT_ID")
             client_secret = os.environ.get("CLIENT_SECRET")
             dev_secret = os.environ.get("DEV_SECRET")
+            es_host = None  # not previously passed to config
             if not (s3_enc_secret and client_id and client_secret and dev_secret):
                 print(''.join(['ERROR. You are missing one more more environment ',
                                'variables needed to deploy Foursight.\n',
@@ -78,6 +80,8 @@ class Deploy(object):
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_ID'] = client_id
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_SECRET'] = client_secret
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['DEV_SECRET'] = dev_secret
+            if es_host:
+                cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['ES_HOST'] = es_host
             if trial_global_env_bucket:
                 # in the trial account setup, use a shorter timeout
                 cls.CONFIG_BASE['stages'][curr_stage]['lambda_timeout'] = 60
@@ -107,13 +111,16 @@ class Deploy(object):
         subprocess.call(['chalice', 'deploy', '--stage', stage])
 
     @classmethod
-    def build_config_and_package(cls, args, security_ids=None, subnet_ids=None):
+    def build_config_and_package(cls, args, trial_creds=None, security_ids=None, subnet_ids=None):
+        """ Builds a config with a special case for the trial account. For the trial account, expects a dictionary of
+            environment variables, a list of security group ids, and a list of subnet ids. Finally, packages as a
+            Cloudformation template."""
         if args.trial:
-            if security_ids and subnet_ids:
-                cls.build_config(args.stage, trial_creds=True, trial_global_env_bucket=True,
-                    security_group_ids=security_ids, subnet_ids=subnet_ids)
+            if trial_creds and security_ids and subnet_ids:
+                cls.build_config(args.stage, trial_creds=trial_creds, trial_global_env_bucket=True,
+                    security_group_ids=security_ids, subnet_ids=subnet_ids, s3_encrypt_key=s3_encrypt_key)
             else:
-                raise Exception('Build config requires subnet and sg ids to run in trial account')
+                raise Exception('Build config requires trial_creds, sg id, and subnet ids to run in trial account')
         else:
             cls.build_config(args.stage)
         # actually package cloudformation templates
