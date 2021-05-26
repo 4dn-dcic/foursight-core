@@ -28,7 +28,8 @@ class CheckHandler(object):
         # that the passed path exists - Will 5/26/21
         setup_path = os.path.join(check_setup_dir, 'check_setup.json')
         if not os.path.exists(setup_path):
-            raise BadCheckSetup('Did not locate the sepecified check_setup: %s' % setup_path)
+            raise BadCheckSetup('Did not locate the specified check_setup: %s, looking in: %s' %
+                                (setup_path, os.listdir(check_setup_dir)))
         with open(setup_path, 'r') as jfile:
             self.CHECK_SETUP = json.load(jfile)
         # Validate and finalize CHECK_SETUP
