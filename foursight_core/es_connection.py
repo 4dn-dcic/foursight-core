@@ -209,7 +209,7 @@ class ESConnection(AbstractConnection):
                 'bool': {
                     'must': {
                         'wildcard': {
-                            '_uid': '*' + t + '.json'
+                            '_id': '*' + t + '.json'
                         }
                     },
                     'filter': {
