@@ -113,14 +113,14 @@ class Deploy(object):
         subprocess.call(['chalice', 'deploy', '--stage', stage])
 
     @classmethod
-    def build_config_and_package(cls, args, trial_creds=None, security_ids=None, subnet_ids=None):
+    def build_config_and_package(cls, args, trial_creds=None, security_ids=None, subnet_ids=None, check_runner=None):
         """ Builds a config with a special case for the trial account. For the trial account, expects a dictionary of
             environment variables, a list of security group ids, and a list of subnet ids. Finally, packages as a
             Cloudformation template."""
         if args.trial:
-            if trial_creds and security_ids and subnet_ids:
+            if trial_creds and security_ids and subnet_ids and check_runner:
                 cls.build_config(args.stage, trial_creds=trial_creds, trial_global_env_bucket=True,
-                    security_group_ids=security_ids, subnet_ids=subnet_ids)
+                                 security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner)
             else:
                 raise Exception('Build config requires trial_creds, sg id, and subnet ids to run in trial account')
         else:
