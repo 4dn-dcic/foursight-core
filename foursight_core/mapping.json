@@ -1,6 +1,9 @@
 {
   "mappings": {
       "result": {
+        "_id": {
+          "copy_to": ["id_alias"]
+        },
         "properties": {
           "action": {
             "type": "text",
@@ -50,6 +53,15 @@
             "enabled": false,
             "type": "object",
             "include_in_all": false
+          },
+          "id_alias": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
           },
           "kwargs": {
             "properties": {

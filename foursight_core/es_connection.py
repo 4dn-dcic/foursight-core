@@ -44,6 +44,8 @@ class ESConnection(AbstractConnection):
         self.index = index
         if index and not self.index_exists(index):
             self.create_index(index)
+        elif index:  # if we hit this branch, index must exist so let's update it's mapping
+            self.update_mapping(index_name=index)
         self.doc_type = doc_type
 
     def index_exists(self, name):
@@ -58,12 +60,26 @@ class ESConnection(AbstractConnection):
         """
         try:
             mapping = self.load_mapping()
-            self.es.indices.create(index=name,body={
+            self.es.indices.create(index=name, body={
                 "settings": {
                     "index.mapper.dynamic": False
                 },
                 "mappings": mapping.get('mappings')
             }, ignore=400)
+            return True
+        except Exception as e:
+            raise ElasticsearchException(str(e))
+
+    def update_mapping(self, index_name):
+        """ Updates the mapping - take care when modifying the mapping! """
+        try:
+            mapping = self.load_mapping()
+            self.es.indices.put_mapping(index=index_name, body={
+                "settings": {
+                    "index.mapper.dynamic": False
+                },
+                "mappings": mapping.get('mappings')
+            })
             return True
         except Exception as e:
             raise ElasticsearchException(str(e))
@@ -210,7 +226,7 @@ class ESConnection(AbstractConnection):
                 'bool': {
                     'must': {
                         'query_string': {
-                            'query': '_id:"*' + t + '.json"'
+                            'query': 'id_alias:"*' + t + '.json"'
                         }
                     },
                     'filter': {
