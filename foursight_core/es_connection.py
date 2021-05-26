@@ -210,8 +210,7 @@ class ESConnection(AbstractConnection):
                 'bool': {
                     'must': {
                         'query_string': {
-                            'fields': ['_uid'],
-                            'query': '*' + t + '.json'
+                            'query': '_id:*' + t + '.json'
                         }
                     },
                     'filter': {
