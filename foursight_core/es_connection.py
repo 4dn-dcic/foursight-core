@@ -10,6 +10,7 @@ from elasticsearch import (
     )
 from elasticsearch_dsl import Search
 from dcicutils import es_utils
+from dcicutils.misc_utils import PRINT
 from .check_schema import CheckSchema
 
 
@@ -227,6 +228,8 @@ class ESConnection(AbstractConnection):
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
         raw_result = self.search(search)
+        PRINT('Main page result: %s' % raw_result)
+        PRINT(self.es.cat.indices())
         if checks is not None:
             # figure out which checks we didn't find, add a placeholder check so
             # that check is still rendered on the UI
