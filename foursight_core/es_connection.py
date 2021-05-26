@@ -227,6 +227,9 @@ class ESConnection(AbstractConnection):
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
         raw_result = self.search(search)
+        PRINT('Search: %s' % search.to_dict())
+        PRINT('Result: %s' % raw_result)
+        PRINT('All: %s' % self.list_all_keys())
         if checks is not None:
             # figure out which checks we didn't find, add a placeholder check so
             # that check is still rendered on the UI
