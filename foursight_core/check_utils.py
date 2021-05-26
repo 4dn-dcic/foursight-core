@@ -26,7 +26,7 @@ class CheckHandler(object):
         # read in the check_setup.json and parse it
         # NOTE: previously, we globbed for all possible paths - no reason to do this IMO, just check
         # that the passed path exists - Will 5/26/21
-        setup_path = os.path.join(check_setup_dir, "/check_setup.json")
+        setup_path = os.path.join(check_setup_dir, 'check_setup.json')
         if not os.path.exists(setup_path):
             raise BadCheckSetup('Did not locate the sepecified check_setup: %s' % setup_path)
         with open(setup_path, 'r') as jfile:
