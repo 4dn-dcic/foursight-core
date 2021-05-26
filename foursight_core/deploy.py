@@ -11,7 +11,7 @@ import subprocess
 
 
 class Deploy(object):
-    
+
     CONFIG_BASE = {
       "stages": {
         "dev": {
@@ -48,10 +48,10 @@ class Deploy(object):
 
     @classmethod
     def build_config(cls, stage, trial_creds=None, trial_global_env_bucket=False,
-                     security_group_ids=None, subnet_ids=None):
+                     security_group_ids=None, subnet_ids=None, check_runner=None):
         """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
         if trial_creds:
-            # key to de-encrypt access key
+            # key to decrypt access key
             s3_enc_secret = trial_creds['S3_ENCRYPT_KEY']
             client_id = trial_creds['CLIENT_ID']
             client_secret = trial_creds['CLIENT_SECRET']
@@ -95,6 +95,8 @@ class Deploy(object):
                 cls.CONFIG_BASE['stages'][curr_stage]['security_group_ids'] = security_group_ids
             if subnet_ids:
                 cls.CONFIG_BASE['stages'][curr_stage]['subnet_ids'] = subnet_ids
+            if check_runner:
+                cls.CONFIG_BASE['stages'][curr_stage]['CHECK_RUNNER'] = check_runner
 
         filename = cls.get_config_filepath()
         print(''.join(['Writing: ', filename]))
