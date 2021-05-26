@@ -210,7 +210,7 @@ class ESConnection(AbstractConnection):
                 'bool': {
                     'must': {
                         'query_string': {
-                            'fields': ['_id'],
+                            'fields': ['_uid'],
                             'query': '*' + t + '.json'
                         }
                     },
@@ -228,7 +228,6 @@ class ESConnection(AbstractConnection):
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
         raw_result = self.search(search)
-        PRINT('index: %s, query: %s' % (self.index, search.to_dict()))
         if checks is not None:
             # figure out which checks we didn't find, add a placeholder check so
             # that check is still rendered on the UI
