@@ -1,9 +1,6 @@
 {
   "mappings": {
       "result": {
-        "_id": {
-          "copy_to": ["id_alias"]
-        },
         "properties": {
           "action": {
             "type": "text",
