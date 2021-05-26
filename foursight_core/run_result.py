@@ -1,4 +1,5 @@
 import datetime
+import time
 from dateutil import tz
 from abc import abstractmethod
 import json
@@ -209,6 +210,7 @@ class RunResult(object):
         # batch delete calls at aws maximum of 1000 if necessary
         # if timeout is given and reached, return how many we did
         num_deleted_s3, num_deleted_es = 0, 0
+        t0 = time.time()
         for i in range(0, len(keys_to_delete), 1000):
             if timeout and round(time.time() - t0, 2) > timeout:
                 return num_deleted_s3, num_deleted_es
@@ -269,18 +271,25 @@ class RunResult(object):
         Store the result in s3/ES. Always makes an entry with key equal to the
         uuid timestamp. Will also store under (i.e. overwrite)the 'latest' key.
         If is_primary, will also overwrite the 'primary' key.
+
+        NOTE: id_alias is an alias of the _id field, which is not searchable in ES >5, which breaks the main page.
         """
         time_key = ''.join([self.name, '/', uuid, self.extension])
         latest_key = ''.join([self.name, '/latest', self.extension])
         primary_key = ''.join([self.name, '/primary', self.extension])
-        s3_formatted = json.dumps(formatted)
+
         # store the timestamped result
-        self.put_object(time_key, s3_formatted)
+        formatted['id_alias'] = time_key
+        self.put_object(time_key, json.dumps(formatted))
+
         # put result as 'latest' key
-        self.put_object(latest_key, s3_formatted)
+        formatted['id_alias'] = latest_key
+        self.put_object(latest_key, json.dumps(formatted))
+
         # if primary, store as the primary result
         if primary:
-            self.put_object(primary_key, s3_formatted)
+            formatted['id_alias'] = primary_key
+            self.put_object(primary_key, json.dumps(formatted))
         # return stored data in case we're interested
         return formatted
 
@@ -291,7 +300,7 @@ class RunResult(object):
         We presume that timezone info is not important to allow us to use strptime.
         '''
         prefixlen = len(self.name) + 1
-        keydatestr = key[prefixlen:-5] # Remove prefix and .json from key.
+        keydatestr = key[prefixlen:-5]  # Remove prefix and .json from key.
         return datetime.datetime.strptime(keydatestr, '%Y-%m-%dT%H:%M:%S.%f')
 
     @abstractmethod
@@ -300,6 +309,7 @@ class RunResult(object):
         Validation method that must be implemented by the subclass
         """
         raise NotImplementedError
+
 
 class CheckResult(RunResult):
     """

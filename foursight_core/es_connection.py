@@ -106,7 +106,6 @@ class ESConnection(AbstractConnection):
         if not self.index:
             return False
         try:
-            value['id_alias'] = key  # IMPORTANT: alias the _id field, which is not searchable in ES >5
             res = self.es.index(index=self.index, id=key, doc_type=self.doc_type, body=value)
             return res['result'] == 'created'
         except Exception as e:
