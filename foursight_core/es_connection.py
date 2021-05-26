@@ -228,8 +228,7 @@ class ESConnection(AbstractConnection):
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
         raw_result = self.search(search)
-        PRINT('Main page result: %s' % raw_result)
-        PRINT(self.es.cat.indices())
+        PRINT('index: %s, query: %s' % (self.index, search.to_dict()))
         if checks is not None:
             # figure out which checks we didn't find, add a placeholder check so
             # that check is still rendered on the UI
@@ -248,7 +247,7 @@ class ESConnection(AbstractConnection):
         doc = {
             'size': self.ES_SEARCH_SIZE,
             'query': {
-                'match_all' : {}
+                'match_all': {}
             },
             'sort': {
                 'uuid': {
