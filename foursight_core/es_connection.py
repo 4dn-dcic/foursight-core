@@ -208,8 +208,9 @@ class ESConnection(AbstractConnection):
             'query': {
                 'bool': {
                     'must': {
-                        'wildcard': {
-                            '_id': '*' + t + '.json'
+                        'query_string': {
+                            'fields': ['_id'],
+                            'query': '*' + t + '.json'
                         }
                     },
                     'filter': {
