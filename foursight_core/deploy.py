@@ -96,7 +96,7 @@ class Deploy(object):
             if subnet_ids:
                 cls.CONFIG_BASE['stages'][curr_stage]['subnet_ids'] = subnet_ids
             if check_runner:
-                cls.CONFIG_BASE['stages'][curr_stage]['CHECK_RUNNER'] = check_runner
+                cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CHECK_RUNNER'] = check_runner
 
         filename = cls.get_config_filepath()
         print(''.join(['Writing: ', filename]))
