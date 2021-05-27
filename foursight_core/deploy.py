@@ -36,9 +36,7 @@ class Deploy(object):
       "version": "2.0",
       "app_name": "foursight-cgap",
       "layers": [
-          "arn:aws:lambda:us-east-1:553035198032:layer:git:11",  # required for Deployment Checks - Will 5/20/2020
-          "arn:aws:lambda:us-east-1:123456789012:layer:shared-lib-layer:1",  # required for Docker - Will 5/27/21
-          "arn:aws:lambda:us-east-1:987654321987:extensions-layer:1"
+          "arn:aws:lambda:us-east-1:553035198032:layer:git:11"  # required for Deployment Checks - Will 5/20/2020
       ]
     }
 
