@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "foursight_core"
-version = "0.1.10"
+version = "0.1.11"
 description = "Serverless Chalice Application for Monitoring"
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
@@ -19,10 +19,8 @@ Jinja2 = "2.10.1"
 MarkupSafe = "1.1.1"
 google-api-python-client = "1.7.4"
 geocoder = "1.38.1"
-fuzzywuzzy = "0.17.0"
 elasticsearch = "^6.8.1"
 elasticsearch-dsl = "^6.4.0"
-python-Levenshtein = "0.12.0"
 gitpython = "^3.1.2"
 pytz = "^2020.1"
 
