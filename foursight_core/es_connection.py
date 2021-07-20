@@ -106,7 +106,7 @@ class ESConnection(AbstractConnection):
         if not self.index:
             return False
         try:
-            res = self.es.index(index=self.index, id=key, body=value)
+            res = self.es.index(index=self.index, id=key, doc_type=self.doc_type, body=value)
             return res['result'] == 'created'
         except Exception as e:
             print('Failed to add object id: %s with error: %s and body %s' % (key, str(e), value))
