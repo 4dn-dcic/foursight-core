@@ -414,9 +414,9 @@ class CheckResult(RunResult):
         if '_run_info' in self.kwargs and 'run_id' in self.kwargs['_run_info']:
             self.record_run_info()
         formatted = self.format_result(self.kwargs['uuid'])
-        is_primary = self.kwargs.get('primary', False) == True
+        is_primary = self.kwargs.get('primary', False) is True
         # if do_not_store is set, just return result without storing in s3
-        if self.kwargs.get('do_not_store', False) == True:
+        if self.kwargs.get('do_not_store', False) is True:
             return formatted
         return self.store_formatted_result(self.kwargs['uuid'], formatted, is_primary)
 
@@ -477,7 +477,7 @@ class ActionResult(RunResult):
             self.record_run_info()
         formatted = self.format_result(self.kwargs['uuid'])
         # if do_not_store is set, just return result without storing in s3
-        if self.kwargs.get('do_not_store', False) == True:
+        if self.kwargs.get('do_not_store', False) is True:
             return formatted
         # action results are always stored as 'primary' and 'latest' and can be
         # fetched with the get_latest_result method.
