@@ -14,7 +14,6 @@ import sys
 import logging
 from itertools import chain
 from dateutil import tz
-from base64 import b64decode
 from dcicutils import ff_utils
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
@@ -154,7 +153,7 @@ class AppUtils(object):
                 if env is None:
                     return False  # we have no env to check auth
                 # leeway accounts for clock drift between us and auth0
-                payload = jwt.decode(token, b64decode(auth0_secret, '-_'), audience=auth0_client, leeway=30)
+                payload = jwt.decode(token, auth0_secret, audience=auth0_client, leeway=30)
                 for env_info in self.init_environments(env).values():
                     user_res = ff_utils.get_metadata('users/' + payload.get('email').lower(),
                                                 ff_env=env_info['ff_env'], add_on='frame=object')
