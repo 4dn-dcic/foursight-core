@@ -57,6 +57,7 @@ class Deploy(object):
             client_secret = trial_creds['CLIENT_SECRET']
             dev_secret = trial_creds['DEV_SECRET']
             es_host = trial_creds['ES_HOST']
+            env_name = trial_creds['ENV_NAME']
             if not (s3_enc_secret and client_id and client_secret and dev_secret and es_host):
                 print(''.join(['ERROR. You are missing one more more environment',
                                'variables needed to deploy the Foursight trial. Need:\n',
@@ -69,6 +70,7 @@ class Deploy(object):
             client_secret = os.environ.get("CLIENT_SECRET")
             dev_secret = os.environ.get("DEV_SECRET")
             es_host = None  # not previously passed to config
+            env_name = None
             if not (s3_enc_secret and client_id and client_secret and dev_secret):
                 print(''.join(['ERROR. You are missing one more more environment ',
                                'variables needed to deploy Foursight.\n',
@@ -80,6 +82,8 @@ class Deploy(object):
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_ID'] = client_id
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_SECRET'] = client_secret
             cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['DEV_SECRET'] = dev_secret
+            if env_name:
+                cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['ENV_NAME'] = env_name
             if es_host:
                 cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['ES_HOST'] = es_host
             if trial_global_env_bucket:
