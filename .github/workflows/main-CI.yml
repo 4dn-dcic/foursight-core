@@ -1,4 +1,4 @@
-# CI for Foursight-coret
+# CI for Foursight-core
 
 name: CI
 
@@ -40,4 +40,4 @@ jobs:
         env:
           S3_ENCRYPT_KEY: ${{ secrets.S3_ENCRYPT_KEY }}
           DEV_SECRET: ${{ secrets.DEV_SECRET }}
-        run: poetry run pytest -vv tests -m "not integratedx"
+        run: make automated-test

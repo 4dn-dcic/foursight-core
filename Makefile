@@ -11,7 +11,10 @@ update:
 	poetry update
 
 test:
-	pytest -vv --cov foursight_core tests
+	pytest -vv --cov foursight_core
+
+automated-test:
+	poetry run pytest --cov foursight_core -vv -m "not integratedx"
 
 info:
 	@: $(info Here are some 'make' options:)

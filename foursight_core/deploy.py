@@ -3,16 +3,17 @@ Generate gitignored .chalice/config.json for deploy and then run deploy.
 Takes on parameter for now: stage (either "dev" or "prod")
 """
 import os
-from os.path import dirname
 import sys
 import argparse
 import json
 import subprocess
 
+from dcicutils.misc_utils import as_seconds
+
 
 class Deploy(object):
 
-    DEFAULT_LAMBDA_TIMEOUT = 60 * 15  # 900 seconds = 15 minutes
+    DEFAULT_LAMBDA_TIMEOUT = as_seconds(minutes=15)
 
     CONFIG_BASE = {
       "stages": {
@@ -42,7 +43,7 @@ class Deploy(object):
       ]
     }
 
-    config_dir = dirname(__file__)
+    config_dir = os.path.dirname(__file__)
 
     @classmethod
     def get_config_filepath(cls):
