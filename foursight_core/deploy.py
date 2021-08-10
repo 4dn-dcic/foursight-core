@@ -12,13 +12,15 @@ import subprocess
 
 class Deploy(object):
 
+    DEFAULT_LAMBDA_TIMEOUT = 60 * 15  # 900 seconds = 15 minutes
+
     CONFIG_BASE = {
       "stages": {
         "dev": {
           "api_gateway_stage": "api",
           "autogen_policy": False,
           "lambda_memory_size": 512,
-          "lambda_timeout": 900,  # 15 mins in seconds
+          "lambda_timeout": DEFAULT_LAMBDA_TIMEOUT,  # 15 mins in seconds
           "environment_variables": {
               "chalice_stage": "dev"
           }
@@ -27,7 +29,7 @@ class Deploy(object):
           "api_gateway_stage": "api",
           "autogen_policy": False,
           "lambda_memory_size": 512,
-          "lambda_timeout": 900,  # 15 mins in seconds
+          "lambda_timeout": DEFAULT_LAMBDA_TIMEOUT,  # 15 mins in seconds
           "environment_variables": {
               "chalice_stage": "prod"
           }
@@ -48,7 +50,8 @@ class Deploy(object):
 
     @classmethod
     def build_config(cls, stage, trial_creds=None, trial_global_env_bucket=False, global_env_bucket=None,
-                     security_group_ids=None, subnet_ids=None, check_runner=None, lambda_timeout=60):
+                     security_group_ids=None, subnet_ids=None, check_runner=None,
+                     lambda_timeout=DEFAULT_LAMBDA_TIMEOUT):
         """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
         if trial_creds:
             # key to decrypt access key
@@ -131,7 +134,8 @@ class Deploy(object):
 
     @classmethod
     def build_config_and_package(cls, args, trial_creds=None, global_env_bucket=None,
-                                 security_ids=None, subnet_ids=None, check_runner=None, lambda_timeout=60,
+                                 security_ids=None, subnet_ids=None, check_runner=None,
+                                 lambda_timeout=DEFAULT_LAMBDA_TIMEOUT,
                                  # These next args are preferred over passing 'args'.
                                  merge_template=None, output_file=None, stage=None, trial=None,
                                  ):
