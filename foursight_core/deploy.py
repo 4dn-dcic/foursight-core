@@ -48,7 +48,7 @@ class Deploy(object):
 
     @classmethod
     def build_config(cls, stage, trial_creds=None, trial_global_env_bucket=False, global_env_bucket=None,
-                     security_group_ids=None, subnet_ids=None, check_runner=None):
+                     security_group_ids=None, subnet_ids=None, check_runner=None, lambda_timeout=60):
         """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
         if trial_creds:
             # key to decrypt access key
@@ -91,7 +91,7 @@ class Deploy(object):
                 curr_stage_environ['ES_HOST'] = es_host
             if trial_global_env_bucket:
                 # in the trial account setup, use a shorter timeout
-                curr_stage['lambda_timeout'] = 60
+                curr_stage['lambda_timeout'] = lambda_timeout
                 if not global_env_bucket:
                     global_bucket_env_from_environ = os.environ.get('GLOBAL_BUCKET_ENV')
                     global_env_bucket_from_environ = os.environ.get('GLOBAL_ENV_BUCKET')
@@ -131,7 +131,7 @@ class Deploy(object):
 
     @classmethod
     def build_config_and_package(cls, args, trial_creds=None, global_env_bucket=None,
-                                 security_ids=None, subnet_ids=None, check_runner=None,
+                                 security_ids=None, subnet_ids=None, check_runner=None, lambda_timeout=60,
                                  # These next args are preferred over passing 'args'.
                                  merge_template=None, output_file=None, stage=None, trial=None,
                                  ):
@@ -152,7 +152,7 @@ class Deploy(object):
         if trial:
             if trial_creds and security_ids and subnet_ids and check_runner:
                 cls.build_config(stage, trial_creds=trial_creds, trial_global_env_bucket=True,
-                                 global_env_bucket=global_env_bucket,
+                                 global_env_bucket=global_env_bucket, lambda_timeout=lambda_timeout,
                                  security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner)
             else:
                 raise Exception('Build config requires trial_creds, sg id, and subnet ids to run in trial account')
