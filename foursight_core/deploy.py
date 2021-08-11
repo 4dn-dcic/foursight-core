@@ -3,14 +3,17 @@ Generate gitignored .chalice/config.json for deploy and then run deploy.
 Takes on parameter for now: stage (either "dev" or "prod")
 """
 import os
-from os.path import dirname
 import sys
 import argparse
 import json
 import subprocess
 
+from dcicutils.misc_utils import as_seconds
+
 
 class Deploy(object):
+
+    DEFAULT_LAMBDA_TIMEOUT = as_seconds(minutes=15)
 
     CONFIG_BASE = {
       "stages": {
@@ -18,7 +21,7 @@ class Deploy(object):
           "api_gateway_stage": "api",
           "autogen_policy": False,
           "lambda_memory_size": 512,
-          "lambda_timeout": 900,  # 15 mins in seconds
+          "lambda_timeout": DEFAULT_LAMBDA_TIMEOUT,  # 15 mins in seconds
           "environment_variables": {
               "chalice_stage": "dev"
           }
@@ -27,7 +30,7 @@ class Deploy(object):
           "api_gateway_stage": "api",
           "autogen_policy": False,
           "lambda_memory_size": 512,
-          "lambda_timeout": 900,  # 15 mins in seconds
+          "lambda_timeout": DEFAULT_LAMBDA_TIMEOUT,  # 15 mins in seconds
           "environment_variables": {
               "chalice_stage": "prod"
           }
@@ -40,15 +43,16 @@ class Deploy(object):
       ]
     }
 
-    config_dir = dirname(__file__)
+    config_dir = os.path.dirname(__file__)
 
     @classmethod
     def get_config_filepath(cls):
         return os.path.join(cls.config_dir, '.chalice/config.json')
 
     @classmethod
-    def build_config(cls, stage, trial_creds=None, trial_global_env_bucket=False,
-                     security_group_ids=None, subnet_ids=None, check_runner=None):
+    def build_config(cls, stage, trial_creds=None, trial_global_env_bucket=False, global_env_bucket=None,
+                     security_group_ids=None, subnet_ids=None, check_runner=None,
+                     lambda_timeout=DEFAULT_LAMBDA_TIMEOUT):
         """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
         if trial_creds:
             # key to decrypt access key
@@ -77,30 +81,43 @@ class Deploy(object):
                                'Need: S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, DEV_SECRET.'])
                       )
                 sys.exit()
-        for curr_stage in ['dev', 'prod']:
-            cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['S3_ENCRYPT_KEY'] = s3_enc_secret
-            cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_ID'] = client_id
-            cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CLIENT_SECRET'] = client_secret
-            cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['DEV_SECRET'] = dev_secret
+        for curr_stage_name in ['dev', 'prod']:
+            curr_stage = cls.CONFIG_BASE['stages'][curr_stage_name]
+            curr_stage_environ = curr_stage['environment_variables']
+
+            curr_stage_environ['S3_ENCRYPT_KEY'] = s3_enc_secret
+            curr_stage_environ['CLIENT_ID'] = client_id
+            curr_stage_environ['CLIENT_SECRET'] = client_secret
+            curr_stage_environ['DEV_SECRET'] = dev_secret
             if env_name:
-                cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['ENV_NAME'] = env_name
+                curr_stage_environ['ENV_NAME'] = env_name
             if es_host:
-                cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['ES_HOST'] = es_host
+                curr_stage_environ['ES_HOST'] = es_host
             if trial_global_env_bucket:
                 # in the trial account setup, use a shorter timeout
-                cls.CONFIG_BASE['stages'][curr_stage]['lambda_timeout'] = 60
-                global_bucket = os.environ.get('GLOBAL_BUCKET_ENV')
-                if global_bucket:
-                    cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['GLOBAL_BUCKET_ENV'] = global_bucket
+                curr_stage['lambda_timeout'] = lambda_timeout
+                if not global_env_bucket:
+                    global_bucket_env_from_environ = os.environ.get('GLOBAL_BUCKET_ENV')
+                    global_env_bucket_from_environ = os.environ.get('GLOBAL_ENV_BUCKET')
+                    if (global_bucket_env_from_environ
+                            and global_env_bucket_from_environ
+                            and global_bucket_env_from_environ != global_env_bucket_from_environ):
+                        print('ERROR. GLOBAL_BUCKET_ENV and GLOBAL_ENV_BUCKET are both set, but inconsistently.')
+                        sys.exit()
+                    global_env_bucket = global_bucket_env_from_environ or global_env_bucket_from_environ
+                if global_env_bucket:
+                    curr_stage_environ['GLOBAL_BUCKET_ENV'] = global_env_bucket  # legacy compatibility
+                    curr_stage_environ['GLOBAL_ENV_BUCKET'] = global_env_bucket
                 else:
-                    print('ERROR. GLOBAL_BUCKET_ENV must be set when building the trial config.')
+                    print('ERROR. GLOBAL_ENV_BUCKET must be set or global_env_bucket= must be passed'
+                          ' when building the trial config.')
                     sys.exit()
             if security_group_ids:
-                cls.CONFIG_BASE['stages'][curr_stage]['security_group_ids'] = security_group_ids
+                curr_stage['security_group_ids'] = security_group_ids
             if subnet_ids:
-                cls.CONFIG_BASE['stages'][curr_stage]['subnet_ids'] = subnet_ids
+                curr_stage['subnet_ids'] = subnet_ids
             if check_runner:
-                cls.CONFIG_BASE['stages'][curr_stage]['environment_variables']['CHECK_RUNNER'] = check_runner
+                curr_stage_environ['CHECK_RUNNER'] = check_runner
 
         filename = cls.get_config_filepath()
         print(''.join(['Writing: ', filename]))
@@ -117,24 +134,41 @@ class Deploy(object):
         subprocess.call(['chalice', 'deploy', '--stage', stage])
 
     @classmethod
-    def build_config_and_package(cls, args, trial_creds=None, security_ids=None, subnet_ids=None, check_runner=None):
+    def build_config_and_package(cls, args, trial_creds=None, global_env_bucket=None,
+                                 security_ids=None, subnet_ids=None, check_runner=None,
+                                 lambda_timeout=DEFAULT_LAMBDA_TIMEOUT,
+                                 # These next args are preferred over passing 'args'.
+                                 merge_template=None, output_file=None, stage=None, trial=None,
+                                 ):
         """ Builds a config with a special case for the trial account. For the trial account, expects a dictionary of
             environment variables, a list of security group ids, and a list of subnet ids. Finally, packages as a
             Cloudformation template."""
-        if args.trial:
+
+        # For compatibility during transition, we allow these argument to be passed in lieu of args.
+        if merge_template is None:
+            merge_template = args.merge_template
+        if output_file is None:
+            output_file = args.output_file
+        if stage is None:
+            stage = args.stage
+        if trial is None:
+            trial = args.trial
+
+        if trial:
             if trial_creds and security_ids and subnet_ids and check_runner:
-                cls.build_config(args.stage, trial_creds=trial_creds, trial_global_env_bucket=True,
+                cls.build_config(stage, trial_creds=trial_creds, trial_global_env_bucket=True,
+                                 global_env_bucket=global_env_bucket, lambda_timeout=lambda_timeout,
                                  security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner)
             else:
                 raise Exception('Build config requires trial_creds, sg id, and subnet ids to run in trial account')
         else:
-            cls.build_config(args.stage)
+            cls.build_config(stage=stage)
         # actually package cloudformation templates
         # add --single-file ?
-        flags = ['--stage', args.stage, '--pkg-format', 'cloudformation', '--template-format', 'yaml']
-        if args.merge_template:
-            flags.extend(['--merge-template', args.merge_template])
-        subprocess.call(['chalice', 'package', *flags, args.output_file])
+        flags = ['--stage', stage, '--pkg-format', 'cloudformation', '--template-format', 'yaml']
+        if merge_template:
+            flags.extend(['--merge-template', merge_template])
+        subprocess.call(['chalice', 'package', *flags, output_file])
 
 
 def main():
@@ -145,7 +179,7 @@ def main():
         choices=['dev', 'prod'],
         help="chalice deployment stage. Must be one of 'prod' or 'dev'")
     args = parser.parse_args()
-    Deploy.build_config_and_deploy(args.stage)
+    Deploy.build_config_and_deploy(stage=args.stage)
 
 
 if __name__ == '__main__':

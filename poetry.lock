@@ -175,7 +175,7 @@ toml = ["toml"]
 
 [[package]]
 name = "dcicutils"
-version = "1.19.0"
+version = "1.20.0"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 category = "main"
 optional = false
@@ -893,7 +893,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6,<3.7"
-content-hash = "6e71d84a3a19d4e21fdecee7d190b92d610fa2b71f8a032de164db76cac4422a"
+content-hash = "e9093fc0a7ec2b7a6bbe8709867e82c1b5c04b1315cfb736f90bf6a5318fda51"
 
 [metadata.files]
 ansicon = [
@@ -1008,8 +1008,8 @@ coverage = [
     {file = "coverage-5.5.tar.gz", hash = "sha256:ebe78fe9a0e874362175b02371bdfbee64d8edc42a044253ddf4ee7d3c15212c"},
 ]
 dcicutils = [
-    {file = "dcicutils-1.19.0-py3-none-any.whl", hash = "sha256:af6e2b13ea92857140fe98a18a06bfe41e7fdd1c4c065e0f74368aed5b2983c4"},
-    {file = "dcicutils-1.19.0.tar.gz", hash = "sha256:883bbaa442a6c410fe1278cc39d2b0b0d808be2e14cb55e9adc1751e3bd232f1"},
+    {file = "dcicutils-1.20.0-py3-none-any.whl", hash = "sha256:4330e56d1ca534ee4b3956213e821e17615df12ea36b48f02df85696fd06a028"},
+    {file = "dcicutils-1.20.0.tar.gz", hash = "sha256:22cb34628845afa2f9a13e341958dc9e4789351f1935e2f323203416d4abfca0"},
 ]
 decorator = [
     {file = "decorator-5.0.9-py3-none-any.whl", hash = "sha256:6e5c199c16f7a9f0e3a61a4a54b3d27e7dad0dbdde92b944426cb20914376323"},
