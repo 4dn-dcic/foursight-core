@@ -10,6 +10,7 @@ from elasticsearch import (
     )
 from elasticsearch_dsl import Search
 from dcicutils import es_utils
+from dcicutils.misc_utils import PRINT
 from .check_schema import CheckSchema
 
 
@@ -57,7 +58,7 @@ class ESConnection(AbstractConnection):
         """
         try:
             mapping = self.load_mapping()
-            self.es.indices.create(index=name,body={
+            self.es.indices.create(index=name, body={
                 "settings": {
                     "index.mapper.dynamic": False
                 },
@@ -108,7 +109,7 @@ class ESConnection(AbstractConnection):
             res = self.es.index(index=self.index, id=key, doc_type=self.doc_type, body=value)
             return res['result'] == 'created'
         except Exception as e:
-            print('Failed to add object id: %s with error: %s' % (key, str(e)))
+            print('Failed to add object id: %s with error: %s and body %s' % (key, str(e), value))
             return False
 
     def get_object(self, key):
@@ -208,8 +209,8 @@ class ESConnection(AbstractConnection):
             'query': {
                 'bool': {
                     'must': {
-                        'wildcard': {
-                            '_uid': '*' + t + '.json'
+                        'query_string': {
+                            'query': 'id_alias:"*' + t + '.json"'
                         }
                     },
                     'filter': {
@@ -244,7 +245,7 @@ class ESConnection(AbstractConnection):
         doc = {
             'size': self.ES_SEARCH_SIZE,
             'query': {
-                'match_all' : {}
+                'match_all': {}
             },
             'sort': {
                 'uuid': {

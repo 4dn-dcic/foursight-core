@@ -1,8 +1,5 @@
-from os.path import dirname
-import glob
-import sys
+import os
 import importlib
-import datetime
 import copy
 import json
 from .check_schema import CheckSchema
@@ -16,7 +13,7 @@ class CheckHandler(object):
     Class CheckHandler is a collection of utils related to checks
     """
     def __init__(self, foursight_prefix, check_package_name='foursight_core',
-                 check_setup_dir=dirname(__file__)):
+                 check_setup_dir=os.path.dirname(__file__)):
         self.prefix = foursight_prefix
         self.check_package_name = check_package_name
         self.decorators = Decorators(foursight_prefix)
@@ -27,10 +24,13 @@ class CheckHandler(object):
         self.environment = Environment(self.prefix)
 
         # read in the check_setup.json and parse it
-        setup_paths = glob.glob(check_setup_dir + "/check_setup.json")
-        if not len(setup_paths) == 1:
-            raise BadCheckSetup('Exactly one check_setup.json must be present in chalicelib!')
-        with open(setup_paths[0], 'r') as jfile:
+        # NOTE: previously, we globbed for all possible paths - no reason to do this IMO, just check
+        # that the passed path exists - Will 5/26/21
+        setup_path = os.path.join(check_setup_dir, 'check_setup.json')
+        if not os.path.exists(setup_path):
+            raise BadCheckSetup('Did not locate the specified check_setup: %s, looking in: %s' %
+                                (setup_path, os.listdir(check_setup_dir)))
+        with open(setup_path, 'r') as jfile:
             self.CHECK_SETUP = json.load(jfile)
         # Validate and finalize CHECK_SETUP
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
@@ -94,7 +94,8 @@ class CheckHandler(object):
         for check_string in all_check_strings:
             mod_name, check_name = check_string.split('/')
             if check_name in found_checks:
-                raise BadCheckSetup('More than one check with name "%s" was found. See module "%s"' % (check_name, check_mod))
+                raise BadCheckSetup('More than one check with name "%s" was found. See module "%s"' % (check_name,
+                                                                                                       mod_name))
             found_checks[check_name] = mod_name
         for check_name in check_setup:
             if check_name not in found_checks:
@@ -140,7 +141,7 @@ class CheckHandler(object):
                             for dep_id in env_detail['dependencies']:
                                 if dep_id not in self.get_checks_within_schedule(sched_name):
                                     raise BadCheckSetup('Environment "%s" in schedule "%s" for "%s" in check_setup.json must has a dependency "%s" that is not a valid check name that shares the same schedule.' % (env_name, sched_name, check_name, dep_id))
-    
+
             # lastly, add the check module information to each check in the setup
             check_setup[check_name]['module'] = found_checks[check_name]
         return check_setup
@@ -245,7 +246,7 @@ class CheckHandler(object):
             else:
                 check_results = connection.connections['es'].get_main_page_checks(checks)
             check_results = list(filter(lambda obj: obj['status'] != 'IGNORE' and obj['name'] in checks, check_results))
- 
+
         # sort them by status and then alphabetically by check_setup title
         stat_order = ['ERROR', 'FAIL', 'WARN', 'PASS']
         return sorted(
@@ -284,13 +285,13 @@ class CheckHandler(object):
         # format into a list and sort alphabetically
         grouped_list = [group for group in grouped_results.values()]
         return sorted(grouped_list, key=lambda v: v['_name'])
- 
+
     def run_check_or_action(self, connection, check_str, check_kwargs):
         """
         Does validation of provided check_str, it's module, and kwargs.
         Determines by decorator whether the method is a check or action, then runs
         it. All errors are taken care of within the running of the check/action.
-    
+
         Takes a FS_connection object, a check string formatted as: <str check module/name>
         and a dictionary of check arguments.
         For example:
@@ -349,7 +350,7 @@ class CheckHandler(object):
                 if maybeDecorated.check_decorator == decorator:
                     methods.append(maybeDecorated)
         return methods
-    
+
     @classmethod
     def check_method_deco(cls, method, decorator):
         """

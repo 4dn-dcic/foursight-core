@@ -51,6 +51,15 @@
             "type": "object",
             "include_in_all": false
           },
+          "id_alias": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          },
           "kwargs": {
             "properties": {
               "called_by": {

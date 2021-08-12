@@ -8,8 +8,10 @@ import boto3
 import datetime
 import ast
 import copy
+import logging
 import requests
 import sys
+import logging
 from itertools import chain
 from dateutil import tz
 from dcicutils import ff_utils
@@ -19,6 +21,10 @@ from .check_utils import CheckHandler
 from .sqs_utils import SQS
 from .stage import Stage
 from .environment import Environment
+
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 
 class AppUtils(object):
@@ -149,6 +155,8 @@ class AppUtils(object):
                 for env_info in self.init_environments(env).values():
                     user_res = ff_utils.get_metadata('users/' + payload.get('email').lower(),
                                                 ff_env=env_info['ff_env'], add_on='frame=object')
+                    logger.error(env_info)
+                    logger.error(user_res)
                     if not ('admin' in user_res['groups'] and payload.get('email_verified')):
                         # if unauthorized for one, unauthorized for all
                         return False
@@ -426,7 +434,7 @@ class AppUtils(object):
                     'groups': grouped_results
                 })
         # prioritize these environments
-        env_order = ['data', 'staging', 'webdev', 'hotseat', 'cgap']
+        env_order = ['data', 'staging', 'webdev', 'hotseat', 'cgap', 'cgap-mastertest']
         total_envs = sorted(total_envs, key=lambda v: env_order.index(v['environment']) if v['environment'] in env_order else 9999)
         template = self.jin_env.get_template('view_groups.html')
         # get queue information
