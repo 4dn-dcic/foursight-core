@@ -22,10 +22,8 @@ from .sqs_utils import SQS
 from .stage import Stage
 from .environment import Environment
 
+
 logging.basicConfig()
-logger = logging.getLogger()
-
-
 logger = logging.getLogger(__name__)
 
 
