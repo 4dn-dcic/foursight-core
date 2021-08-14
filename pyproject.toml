@@ -12,7 +12,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.6,<3.7"
-dcicutils = "^1.20.0"
+dcicutils = "1.20.0.1b14"  # "^1.21.0" before final check-in when utils is out of beta
 click = "^7.1.2"
 PyJWT = "1.5.3"
 Jinja2 = "2.10.1"
