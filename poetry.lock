@@ -69,20 +69,23 @@ wcwidth = ">=0.1.4"
 
 [[package]]
 name = "boto3"
-version = "1.18.2"
+version = "1.18.23"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 3.6"
 
 [package.dependencies]
-botocore = ">=1.21.2,<1.22.0"
+botocore = ">=1.21.23,<1.22.0"
 jmespath = ">=0.7.1,<1.0.0"
 s3transfer = ">=0.5.0,<0.6.0"
 
+[package.extras]
+crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
+
 [[package]]
 name = "botocore"
-version = "1.21.2"
+version = "1.21.23"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
@@ -114,7 +117,7 @@ python-versions = "*"
 
 [[package]]
 name = "chalice"
-version = "1.24.0"
+version = "1.24.1"
 description = "Microframework"
 category = "dev"
 optional = false
@@ -137,7 +140,7 @@ event-file-poller = ["watchdog (==0.9.0)"]
 
 [[package]]
 name = "charset-normalizer"
-version = "2.0.3"
+version = "2.0.4"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
 category = "main"
 optional = false
@@ -175,7 +178,7 @@ toml = ["toml"]
 
 [[package]]
 name = "dcicutils"
-version = "1.20.0"
+version = "2.0.0"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 category = "main"
 optional = false
@@ -297,7 +300,7 @@ smmap = ">=3.0.1,<5"
 
 [[package]]
 name = "gitpython"
-version = "3.1.18"
+version = "3.1.20"
 description = "Python Git Library"
 category = "main"
 optional = false
@@ -305,11 +308,11 @@ python-versions = ">=3.6"
 
 [package.dependencies]
 gitdb = ">=4.0.1,<5"
-typing-extensions = {version = ">=3.7.4.0", markers = "python_version < \"3.8\""}
+typing-extensions = {version = ">=3.7.4.3", markers = "python_version < \"3.10\""}
 
 [[package]]
 name = "google-api-core"
-version = "1.31.0"
+version = "1.31.2"
 description = "Google API client core library"
 category = "main"
 optional = false
@@ -347,7 +350,7 @@ uritemplate = ">=3.0.0,<4dev"
 
 [[package]]
 name = "google-auth"
-version = "1.33.0"
+version = "1.35.0"
 description = "Google Authentication Library"
 category = "main"
 optional = false
@@ -412,7 +415,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "importlib-metadata"
-version = "4.6.1"
+version = "4.6.4"
 description = "Read metadata from Python packages"
 category = "dev"
 optional = false
@@ -854,11 +857,15 @@ testing = ["pytest (>=3.1.0)", "coverage", "pytest-cov", "pytest-xdist"]
 
 [[package]]
 name = "websocket-client"
-version = "1.1.0"
+version = "1.2.1"
 description = "WebSocket client for Python with low level API options"
 category = "main"
 optional = false
 python-versions = ">=3.6"
+
+[package.extras]
+optional = ["python-socks", "wsaccel"]
+test = ["websockets"]
 
 [[package]]
 name = "webtest"
@@ -893,7 +900,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6,<3.7"
-content-hash = "e9093fc0a7ec2b7a6bbe8709867e82c1b5c04b1315cfb736f90bf6a5318fda51"
+content-hash = "c941cdf1e45ddadb88492ec273d159d1c20546384ceefc5d722ebe74534d50ce"
 
 [metadata.files]
 ansicon = [
@@ -922,12 +929,12 @@ blessed = [
     {file = "blessed-1.17.6.tar.gz", hash = "sha256:a9a774fc6eda05248735b0d86e866d640ca2fef26038878f7e4d23f7749a1e40"},
 ]
 boto3 = [
-    {file = "boto3-1.18.2-py3-none-any.whl", hash = "sha256:d3f7a8cba655de000e46660d314abb867faf8648686e8c979121c674f98bfcc2"},
-    {file = "boto3-1.18.2.tar.gz", hash = "sha256:d3299d6f64cd6bd57b11e6b9c23310bbcfb6a604660201809b2ba2277bd91a93"},
+    {file = "boto3-1.18.23-py3-none-any.whl", hash = "sha256:1b08ace99e7b92965780e5ce759430ad62b7b7e037560bc772f9a8789f4f36d2"},
+    {file = "boto3-1.18.23.tar.gz", hash = "sha256:31cc69e665f773390c4c17ce340d2420e45fbac51d46d945cc4a58d483ec5da6"},
 ]
 botocore = [
-    {file = "botocore-1.21.2-py3-none-any.whl", hash = "sha256:dc74f2c1a6582f053b95a14949945390b1b6bb9cff2ec1a6f25235831ebbe31f"},
-    {file = "botocore-1.21.2.tar.gz", hash = "sha256:f78d2a9cb8a2385b8b4de93f2b901e404ecee663ee2d290ae00d682e216af196"},
+    {file = "botocore-1.21.23-py3-none-any.whl", hash = "sha256:3877d69e0b718b786f1696cd04ddbdb3a57aef6adb0239a29aa88754489849a4"},
+    {file = "botocore-1.21.23.tar.gz", hash = "sha256:d0146d31dbc475942b578b47dd5bcf94d18fbce8c6d2ce5f12195e005de9b754"},
 ]
 cachetools = [
     {file = "cachetools-4.2.2-py3-none-any.whl", hash = "sha256:2cc0b89715337ab6dbba85b5b50effe2b0c74e035d83ee8ed637cf52f12ae001"},
@@ -938,12 +945,12 @@ certifi = [
     {file = "certifi-2021.5.30.tar.gz", hash = "sha256:2bbf76fd432960138b3ef6dda3dde0544f27cbf8546c458e60baf371917ba9ee"},
 ]
 chalice = [
-    {file = "chalice-1.24.0-py3-none-any.whl", hash = "sha256:0fea830b90eb2ca269133b226abcf58be534e2e6e15dd79d28ea1985200e78af"},
-    {file = "chalice-1.24.0.tar.gz", hash = "sha256:c7021b4c096ee9a28b64de6f1d9ceae1e3ad4a308b5df01e8b025f10fe5449d9"},
+    {file = "chalice-1.24.1-py3-none-any.whl", hash = "sha256:2d0e7f441b4e98c744edbe3ef7a6cd642703257ae6c839198e1160dbc4233709"},
+    {file = "chalice-1.24.1.tar.gz", hash = "sha256:cc61396dd0d7ffb5f773e879cce6ed5e5802a7d919c874a61418a1f7a7434eaa"},
 ]
 charset-normalizer = [
-    {file = "charset-normalizer-2.0.3.tar.gz", hash = "sha256:c46c3ace2d744cfbdebceaa3c19ae691f53ae621b39fd7570f59d14fb7f2fd12"},
-    {file = "charset_normalizer-2.0.3-py3-none-any.whl", hash = "sha256:88fce3fa5b1a84fdcb3f603d889f723d1dd89b26059d0123ca435570e848d5e1"},
+    {file = "charset-normalizer-2.0.4.tar.gz", hash = "sha256:f23667ebe1084be45f6ae0538e4a5a865206544097e4e8bbcacf42cd02a348f3"},
+    {file = "charset_normalizer-2.0.4-py3-none-any.whl", hash = "sha256:0c8911edd15d19223366a194a513099a302055a962bca2cec0f54b8b63175d8b"},
 ]
 click = [
     {file = "click-7.1.2-py2.py3-none-any.whl", hash = "sha256:dacca89f4bfadd5de3d7489b7c8a566eee0d3676333fbb50030263894c38c0dc"},
@@ -1008,8 +1015,8 @@ coverage = [
     {file = "coverage-5.5.tar.gz", hash = "sha256:ebe78fe9a0e874362175b02371bdfbee64d8edc42a044253ddf4ee7d3c15212c"},
 ]
 dcicutils = [
-    {file = "dcicutils-1.20.0-py3-none-any.whl", hash = "sha256:4330e56d1ca534ee4b3956213e821e17615df12ea36b48f02df85696fd06a028"},
-    {file = "dcicutils-1.20.0.tar.gz", hash = "sha256:22cb34628845afa2f9a13e341958dc9e4789351f1935e2f323203416d4abfca0"},
+    {file = "dcicutils-2.0.0-py3-none-any.whl", hash = "sha256:0995a1e00389fd5fbba9364e3e850f82e9525d4c8ea3bfd4a366571b5a17a2f8"},
+    {file = "dcicutils-2.0.0.tar.gz", hash = "sha256:c5e4d8ef3fec4b06a97921d3ff6e03952d18b8ade86051990305003418d35356"},
 ]
 decorator = [
     {file = "decorator-5.0.9-py3-none-any.whl", hash = "sha256:6e5c199c16f7a9f0e3a61a4a54b3d27e7dad0dbdde92b944426cb20914376323"},
@@ -1043,20 +1050,20 @@ gitdb = [
     {file = "gitdb-4.0.7.tar.gz", hash = "sha256:96bf5c08b157a666fec41129e6d327235284cca4c81e92109260f353ba138005"},
 ]
 gitpython = [
-    {file = "GitPython-3.1.18-py3-none-any.whl", hash = "sha256:fce760879cd2aebd2991b3542876dc5c4a909b30c9d69dfc488e504a8db37ee8"},
-    {file = "GitPython-3.1.18.tar.gz", hash = "sha256:b838a895977b45ab6f0cc926a9045c8d1c44e2b653c1fcc39fe91f42c6e8f05b"},
+    {file = "GitPython-3.1.20-py3-none-any.whl", hash = "sha256:b1e1c269deab1b08ce65403cf14e10d2ef1f6c89e33ea7c5e5bb0222ea593b8a"},
+    {file = "GitPython-3.1.20.tar.gz", hash = "sha256:df0e072a200703a65387b0cfdf0466e3bab729c0458cf6b7349d0e9877636519"},
 ]
 google-api-core = [
-    {file = "google-api-core-1.31.0.tar.gz", hash = "sha256:7c8ba88e2b893ef4f67d67e229aade51a2db5053023b73b1394a5ee3dcdb561c"},
-    {file = "google_api_core-1.31.0-py2.py3-none-any.whl", hash = "sha256:a9f979b5c6a9cad31a4120ca6be712df76adc32336a7bf4bc2f4331a1b527fe7"},
+    {file = "google-api-core-1.31.2.tar.gz", hash = "sha256:8500aded318fdb235130bf183c726a05a9cb7c4b09c266bd5119b86cdb8a4d10"},
+    {file = "google_api_core-1.31.2-py2.py3-none-any.whl", hash = "sha256:384459a0dc98c1c8cd90b28dc5800b8705e0275a673a7144a513ae80fc77950b"},
 ]
 google-api-python-client = [
     {file = "google-api-python-client-1.12.8.tar.gz", hash = "sha256:f3b9684442eec2cfe9f9bb48e796ef919456b82142c7528c5fd527e5224f08bb"},
     {file = "google_api_python_client-1.12.8-py2.py3-none-any.whl", hash = "sha256:3c4c4ca46b5c21196bec7ee93453443e477d82cbfa79234d1ce0645f81170eaf"},
 ]
 google-auth = [
-    {file = "google-auth-1.33.0.tar.gz", hash = "sha256:9bd25d835c01ca3dd9045ea0b50f036e3fe3868ee2c5a9773a661925bbdf46ca"},
-    {file = "google_auth-1.33.0-py2.py3-none-any.whl", hash = "sha256:a756a33978fac611e4f00b69715b80e35467c30cc6262132d29d33a0e398ac55"},
+    {file = "google-auth-1.35.0.tar.gz", hash = "sha256:b7033be9028c188ee30200b204ea00ed82ea1162e8ac1df4aa6ded19a191d88e"},
+    {file = "google_auth-1.35.0-py2.py3-none-any.whl", hash = "sha256:997516b42ecb5b63e8d80f5632c1a61dddf41d2a4c2748057837e06e00014258"},
 ]
 google-auth-httplib2 = [
     {file = "google-auth-httplib2-0.1.0.tar.gz", hash = "sha256:a07c39fd632becacd3f07718dfd6021bf396978f03ad3ce4321d060015cc30ac"},
@@ -1075,8 +1082,8 @@ idna = [
     {file = "idna-3.2.tar.gz", hash = "sha256:467fbad99067910785144ce333826c71fb0e63a425657295239737f7ecd125f3"},
 ]
 importlib-metadata = [
-    {file = "importlib_metadata-4.6.1-py3-none-any.whl", hash = "sha256:9f55f560e116f8643ecf2922d9cd3e1c7e8d52e683178fecd9d08f6aa357e11e"},
-    {file = "importlib_metadata-4.6.1.tar.gz", hash = "sha256:079ada16b7fc30dfbb5d13399a5113110dab1aa7c2bc62f66af75f0b717c8cac"},
+    {file = "importlib_metadata-4.6.4-py3-none-any.whl", hash = "sha256:ed5157fef23a4bc4594615a0dd8eba94b2bb36bf2a343fa3d8bb2fa0a62a99d5"},
+    {file = "importlib_metadata-4.6.4.tar.gz", hash = "sha256:7b30a78db2922d78a6f47fb30683156a14f3c6aa5cc23f77cc8967e9ab2d002f"},
 ]
 inquirer = [
     {file = "inquirer-2.7.0-py2.py3-none-any.whl", hash = "sha256:d15e15de1ad5696f1967e7a23d8e2fce69d2e41a70b008948d676881ed94c3a5"},
@@ -1378,8 +1385,8 @@ webob = [
     {file = "WebOb-1.8.7.tar.gz", hash = "sha256:b64ef5141be559cfade448f044fa45c2260351edcb6a8ef6b7e00c7dcef0c323"},
 ]
 websocket-client = [
-    {file = "websocket-client-1.1.0.tar.gz", hash = "sha256:b68e4959d704768fa20e35c9d508c8dc2bbc041fd8d267c0d7345cffe2824568"},
-    {file = "websocket_client-1.1.0-py2.py3-none-any.whl", hash = "sha256:e5c333bfa9fa739538b652b6f8c8fc2559f1d364243c8a689d7c0e1d41c2e611"},
+    {file = "websocket-client-1.2.1.tar.gz", hash = "sha256:8dfb715d8a992f5712fff8c843adae94e22b22a99b2c5e6b0ec4a1a981cc4e0d"},
+    {file = "websocket_client-1.2.1-py2.py3-none-any.whl", hash = "sha256:0133d2f784858e59959ce82ddac316634229da55b498aac311f1620567a710ec"},
 ]
 webtest = [
     {file = "WebTest-2.0.35-py2.py3-none-any.whl", hash = "sha256:44ddfe99b5eca4cf07675e7222c81dd624d22f9a26035d2b93dc8862dc1153c6"},
