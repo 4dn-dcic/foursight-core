@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "foursight_core"
-version = "0.3.0.1b1"  # version 0.3.0 is compatible with both legacy and alpha - Will Aug 12 2021 (but alas not the stuff on kmp's branch -kmp Aug 14 2021)
+version = "0.4.0"
 description = "Serverless Chalice Application for Monitoring"
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
