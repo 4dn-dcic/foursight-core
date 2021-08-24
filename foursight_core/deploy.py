@@ -59,13 +59,13 @@ class Deploy(object):
             s3_enc_secret = trial_creds['S3_ENCRYPT_KEY']
             client_id = trial_creds['CLIENT_ID']
             client_secret = trial_creds['CLIENT_SECRET']
-            dev_secret = trial_creds['DEV_SECRET']
+            dev_secret = None
             es_host = trial_creds['ES_HOST']
             env_name = trial_creds['ENV_NAME']
-            if not (s3_enc_secret and client_id and client_secret and dev_secret and es_host):
+            if not (s3_enc_secret and client_id and client_secret and es_host):
                 print(''.join(['ERROR. You are missing one more more environment',
                                'variables needed to deploy the Foursight trial. Need:\n',
-                               'S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, DEV_SECRET, ES_HOST in trial_creds dict.'])
+                               'S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, ES_HOST in trial_creds dict.'])
                       )
                 sys.exit()
         else:
@@ -88,7 +88,8 @@ class Deploy(object):
             curr_stage_environ['S3_ENCRYPT_KEY'] = s3_enc_secret
             curr_stage_environ['CLIENT_ID'] = client_id
             curr_stage_environ['CLIENT_SECRET'] = client_secret
-            curr_stage_environ['DEV_SECRET'] = dev_secret
+            if dev_secret:  # still pass in main account, ignored in alpha infra - Will Aug 24 2021
+                curr_stage_environ['DEV_SECRET'] = dev_secret
             if env_name:
                 curr_stage_environ['ENV_NAME'] = env_name
             if es_host:
