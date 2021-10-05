@@ -178,25 +178,25 @@ toml = ["toml"]
 
 [[package]]
 name = "dcicutils"
-version = "2.0.0"
+version = "3.0.1"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 category = "main"
 optional = false
-python-versions = ">=3.5,<3.8"
+python-versions = ">=3.6.1,<3.8"
 
 [package.dependencies]
 aws-requests-auth = ">=0.4.2,<1"
-boto3 = ">=1.10.46,<2.0.0"
-botocore = ">=1.13.46,<2.0.0"
+boto3 = ">=1.17.39,<2.0.0"
+botocore = ">=1.20.39,<2.0.0"
 docker = ">=4.4.4,<5.0.0"
 elasticsearch = "6.8.1"
 gitpython = ">=3.1.2,<4.0.0"
-pytz = ">=2016.4"
+pytz = ">=2020.4"
 requests = ">=2.21.0,<3.0.0"
 rfc3986 = ">=1.4.0,<2.0.0"
 structlog = ">=19.2.0,<20.0.0"
-toml = ">=0.10.0,<1"
-urllib3 = ">=1.24.3,<2.0.0"
+toml = ">=0.10.1,<1"
+urllib3 = ">=1.26.6,<2.0.0"
 webtest = ">=2.0.34,<3.0.0"
 
 [[package]]
@@ -899,8 +899,8 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 
 [metadata]
 lock-version = "1.1"
-python-versions = ">=3.6,<3.7"
-content-hash = "c941cdf1e45ddadb88492ec273d159d1c20546384ceefc5d722ebe74534d50ce"
+python-versions = ">=3.6.1,<3.7"
+content-hash = "d11234d03d2350eaf3508cd66c8949aaed2711f620eb32391ab1e2a9b4f7982a"
 
 [metadata.files]
 ansicon = [
@@ -1015,8 +1015,8 @@ coverage = [
     {file = "coverage-5.5.tar.gz", hash = "sha256:ebe78fe9a0e874362175b02371bdfbee64d8edc42a044253ddf4ee7d3c15212c"},
 ]
 dcicutils = [
-    {file = "dcicutils-2.0.0-py3-none-any.whl", hash = "sha256:0995a1e00389fd5fbba9364e3e850f82e9525d4c8ea3bfd4a366571b5a17a2f8"},
-    {file = "dcicutils-2.0.0.tar.gz", hash = "sha256:c5e4d8ef3fec4b06a97921d3ff6e03952d18b8ade86051990305003418d35356"},
+    {file = "dcicutils-3.0.1-py3-none-any.whl", hash = "sha256:169e4367088baa1bba717694db0a53330da6087a111dd75117bfee4eb70aaebb"},
+    {file = "dcicutils-3.0.1.tar.gz", hash = "sha256:0a5660a6c8f2a86e9471fab4ea57e42fe79c54c3da0f43dbbf9ce1bc9398ea1e"},
 ]
 decorator = [
     {file = "decorator-5.0.9-py3-none-any.whl", hash = "sha256:6e5c199c16f7a9f0e3a61a4a54b3d27e7dad0dbdde92b944426cb20914376323"},
