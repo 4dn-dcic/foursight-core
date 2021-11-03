@@ -169,7 +169,7 @@ class RunResult(object):
         resp = s3_connection.put_object(record_key, json.dumps(self.status))
         return resp is not None
 
-    def delete_results(self, prior_date=None, primary=True, custom_filter=None, timeout=None):
+    def delete_results(self, prior_date=None, primary=True, custom_filter=None, timeout=None, es_only=False):
         """
         Goes through all check files deleting by default all non-primary
         checks. If a prior_date (datetime) is given then all results prior to the
@@ -177,6 +177,7 @@ class RunResult(object):
         primary results will be cleaned as well.
         If a custom filter is given, that filter will be applied as well, prior
         to the above filters. Note that this argument can be a function or a lambda
+        If es_only is specified, only delete the check from ES
         Returns a pair of the number of results deleted from s3 and es respectively
         """
 
@@ -214,10 +215,11 @@ class RunResult(object):
         for i in range(0, len(keys_to_delete), 1000):
             if timeout and round(time.time() - t0, 2) > timeout:
                 return num_deleted_s3, num_deleted_es
-            s3_resp = self.connections['s3'].delete_keys(keys_to_delete[i:i+1000])
             if self.es:
                 num_deleted_es += self.connections['es'].delete_keys(keys_to_delete[i:i+1000])
-            num_deleted_s3 += len(s3_resp['Deleted'])
+            if not es_only:
+                s3_resp = self.connections['s3'].delete_keys(keys_to_delete[i:i+1000])
+                num_deleted_s3 += len(s3_resp['Deleted'])
 
         return num_deleted_s3, num_deleted_es
 
