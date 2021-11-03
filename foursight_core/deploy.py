@@ -51,7 +51,7 @@ class Deploy(object):
 
     @classmethod
     def build_config(cls, stage, trial_creds=None, trial_global_env_bucket=False, global_env_bucket=None,
-                     security_group_ids=None, subnet_ids=None, check_runner=None,
+                     security_group_ids=None, subnet_ids=None, check_runner=None, rds_name=None,
                      lambda_timeout=DEFAULT_LAMBDA_TIMEOUT):
         """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
         if trial_creds:
@@ -62,10 +62,11 @@ class Deploy(object):
             dev_secret = None
             es_host = trial_creds['ES_HOST']
             env_name = trial_creds['ENV_NAME']
-            if not (s3_enc_secret and client_id and client_secret and es_host):
+            rds_name = trial_creds['RDS_NAME']
+            if not (s3_enc_secret and client_id and client_secret and es_host and rds_name):
                 print(''.join(['ERROR. You are missing one more more environment',
                                'variables needed to deploy the Foursight trial. Need:\n',
-                               'S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, ES_HOST in trial_creds dict.'])
+                               'S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, ES_HOST, RDS_NAME in trial_creds dict.'])
                       )
                 sys.exit()
         else:
@@ -86,6 +87,7 @@ class Deploy(object):
             curr_stage_environ = curr_stage['environment_variables']
 
             curr_stage_environ['S3_ENCRYPT_KEY'] = s3_enc_secret
+            curr_stage_environ['RDS_NAME'] = rds_name
             curr_stage_environ['CLIENT_ID'] = client_id
             curr_stage_environ['CLIENT_SECRET'] = client_secret
             if dev_secret:  # still pass in main account, ignored in alpha infra - Will Aug 24 2021
@@ -137,7 +139,7 @@ class Deploy(object):
     @classmethod
     def build_config_and_package(cls, args, trial_creds=None, global_env_bucket=None,
                                  security_ids=None, subnet_ids=None, check_runner=None,
-                                 lambda_timeout=DEFAULT_LAMBDA_TIMEOUT,
+                                 lambda_timeout=DEFAULT_LAMBDA_TIMEOUT, rds_name=None,
                                  # These next args are preferred over passing 'args'.
                                  merge_template=None, output_file=None, stage=None, trial=None,
                                  ):
@@ -159,7 +161,8 @@ class Deploy(object):
             if trial_creds and security_ids and subnet_ids and check_runner:
                 cls.build_config(stage, trial_creds=trial_creds, trial_global_env_bucket=True,
                                  global_env_bucket=global_env_bucket, lambda_timeout=lambda_timeout,
-                                 security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner)
+                                 security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner,
+                                 rds_name=rds_name)
             else:
                 raise Exception('Build config requires trial_creds, sg id, and subnet ids to run in trial account')
         else:
