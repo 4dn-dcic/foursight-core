@@ -176,7 +176,7 @@ class RunResult(object):
         given time will be delete (including primaries). If primary is False then
         primary results will be cleaned as well.
         If a custom filter is given, that filter will be applied as well, prior
-        to the above filters.
+        to the above filters. Note that this argument can be a function or a lambda
         Returns a pair of the number of results deleted from s3 and es respectively
         """
 
@@ -205,7 +205,7 @@ class RunResult(object):
         # if there is nothing to delete return 0 instead of throwing an Exception
         # in botocore
         if len(keys_to_delete) == 0:
-            return 0
+            return 0, 0
 
         # batch delete calls at aws maximum of 1000 if necessary
         # if timeout is given and reached, return how many we did
