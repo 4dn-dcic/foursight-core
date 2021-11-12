@@ -38,12 +38,7 @@ class S3Connection(AbstractConnection):
     def get_object(self, key):
         # return found bucket content or None on an error
         try:
-            if self.encryption:
-                response = self.client.get_object(Bucket=self.bucket, Key=key,
-                                                  ServerSideEncryption='aws:kms',
-                                                  SSEKMSKeyId=self.encryption)
-            else:
-                response = self.client.get_object(Bucket=self.bucket, Key=key)
+            response = self.client.get_object(Bucket=self.bucket, Key=key)
             body = response['Body'].read()
             return json.loads(body)
         except json.JSONDecodeError:
