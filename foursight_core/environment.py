@@ -44,7 +44,8 @@ class Environment(object):
             }
             return env_entry
         else:
-            raise Exception("malformatted environment info on s3 for key %s" % env_name)
+            raise Exception(f'malformatted environment info on s3 for key {env_name}\n'
+                            f'{env_res}')
 
     def get_selected_environment_names(self, env_name):
         if env_name == 'all':
