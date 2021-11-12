@@ -1,6 +1,6 @@
 from .abstract_connection import AbstractConnection
+import os
 import json
-import requests
 import boto3
 import datetime
 
@@ -12,6 +12,7 @@ class S3Connection(AbstractConnection):
         self.cw = boto3.client('cloudwatch') # for s3 bucket stats
         self.bucket = bucket_name
         self.location = 'us-east-1'
+        self.encryption = os.environ.get('S3_ENCRYPT_KEY_ID')
         # create the bucket if it doesn't exist
         self.head_info = self.test_connection()
         self.status_code = self.head_info.get('ResponseMetadata', {}).get("HTTPStatusCode", 404)
@@ -23,16 +24,26 @@ class S3Connection(AbstractConnection):
 
     def put_object(self, key, value):
         try:
-            self.client.put_object(Bucket=self.bucket, Key=key, Body=value)
+            if self.encryption:
+                self.client.put_object(Bucket=self.bucket, key=key, Body=value,
+                                       ServerSideEncryption='aws:kms',
+                                       SSEKMSKeyId=self.encryption)
+            else:
+                self.client.put_object(Bucket=self.bucket, Key=key, Body=value)
         except:
             return None
         else:
-            return (key, value)
+            return key, value
 
     def get_object(self, key):
         # return found bucket content or None on an error
         try:
-            response = self.client.get_object(Bucket=self.bucket, Key=key)
+            if self.encryption:
+                response = self.client.get_object(Bucket=self.bucket, Key=key,
+                                                  ServerSideEncryption='aws:kms',
+                                                  SSEKMSKeyId=self.encryption)
+            else:
+                response = self.client.get_object(Bucket=self.bucket, Key=key)
             body = response['Body'].read()
             return json.loads(body)
         except json.JSONDecodeError:
