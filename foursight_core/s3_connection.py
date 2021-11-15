@@ -3,6 +3,11 @@ import os
 import json
 import boto3
 import datetime
+import logging
+
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 
 class S3Connection(AbstractConnection):
@@ -43,7 +48,8 @@ class S3Connection(AbstractConnection):
             return json.loads(body)
         except json.JSONDecodeError:
             return body
-        except:
+        except Exception as e:
+            logger.error(e)
             return None
 
     def get_size(self):
