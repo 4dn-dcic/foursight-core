@@ -30,7 +30,7 @@ class S3Connection(AbstractConnection):
     def put_object(self, key, value):
         try:
             if self.encryption:
-                self.client.put_object(Bucket=self.bucket, key=key, Body=value,
+                self.client.put_object(Bucket=self.bucket, Key=key, Body=value,
                                        ServerSideEncryption='aws:kms',
                                        SSEKMSKeyId=self.encryption)
             else:
