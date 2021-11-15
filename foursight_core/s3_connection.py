@@ -35,7 +35,8 @@ class S3Connection(AbstractConnection):
                                        SSEKMSKeyId=self.encryption)
             else:
                 self.client.put_object(Bucket=self.bucket, Key=key, Body=value)
-        except:
+        except Exception as e:
+            logger.error(e)
             return None
         else:
             return key, value
