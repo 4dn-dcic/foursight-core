@@ -87,9 +87,10 @@ class Deploy(object):
             curr_stage_environ = curr_stage['environment_variables']
 
             curr_stage_environ['S3_ENCRYPT_KEY'] = s3_enc_secret
-            curr_stage_environ['RDS_NAME'] = rds_name
             curr_stage_environ['CLIENT_ID'] = client_id
             curr_stage_environ['CLIENT_SECRET'] = client_secret
+            if rds_name:
+                curr_stage_environ['RDS_NAME'] = rds_name
             if dev_secret:  # still pass in main account, ignored in alpha infra - Will Aug 24 2021
                 curr_stage_environ['DEV_SECRET'] = dev_secret
             if env_name:
