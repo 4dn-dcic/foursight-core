@@ -63,6 +63,7 @@ class Deploy(object):
             es_host = trial_creds['ES_HOST']
             env_name = trial_creds['ENV_NAME']
             rds_name = trial_creds['RDS_NAME']
+            s3_key_id = trial_creds.get('S3_ENCRYPT_KEY_ID')
             if not (s3_enc_secret and client_id and client_secret and es_host and rds_name):
                 print(''.join(['ERROR. You are missing one more more environment',
                                'variables needed to deploy the Foursight trial. Need:\n',
@@ -76,6 +77,7 @@ class Deploy(object):
             dev_secret = os.environ.get("DEV_SECRET")
             es_host = None  # not previously passed to config
             env_name = None
+            s3_key_id = None  # not supported in legacy
             if not (s3_enc_secret and client_id and client_secret and dev_secret):
                 print(''.join(['ERROR. You are missing one more more environment ',
                                'variables needed to deploy Foursight.\n',
@@ -97,6 +99,8 @@ class Deploy(object):
                 curr_stage_environ['ENV_NAME'] = env_name
             if es_host:
                 curr_stage_environ['ES_HOST'] = es_host
+            if s3_key_id:
+                curr_stage_environ['S3_ENCRYPT_KEY_ID'] = s3_key_id
             if trial_global_env_bucket:
                 # in the trial account setup, use a shorter timeout
                 curr_stage['lambda_timeout'] = lambda_timeout
