@@ -26,7 +26,7 @@ class SQS(object):
                 InvocationType='Event',
                 Payload=json.dumps(runner_input)
             )
-        except:
+        except Exception:
             response = client.invoke(
                 FunctionName=self.stage.get_runner_name(),
                 Payload=json.dumps(runner_input)
@@ -95,7 +95,7 @@ class SQS(object):
         sqs = boto3.resource('sqs')
         try:
             queue = sqs.get_queue_by_name(QueueName=queue_name)
-        except:
+        except Exception:
             queue = sqs.create_queue(
                 QueueName=queue_name,
                 Attributes={
@@ -128,7 +128,7 @@ class SQS(object):
         # append environ and uuid as first elements to all check_vals
         proc_vals = [[environ, uuid] + val for val in check_vals]
         for val in proc_vals:
-            response = queue.send_message(MessageBody=json.dumps(val))
+            queue.send_message(MessageBody=json.dumps(val))
         return uuid
 
     @classmethod
@@ -149,6 +149,6 @@ class SQS(object):
                     'ApproximateNumberOfMessagesNotVisible'
                 ]
             )
-        except:
+        except Exception:
             return backup
         return result.get('Attributes', backup)

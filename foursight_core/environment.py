@@ -1,6 +1,3 @@
-# import os
-# import json
-
 from .s3_connection import S3Connection
 from dcicutils.env_base import EnvManager
 from dcicutils.env_utils import get_foursight_bucket, get_foursight_bucket_prefix

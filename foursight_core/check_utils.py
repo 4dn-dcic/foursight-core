@@ -77,7 +77,7 @@ class CheckHandler(object):
             checks_in_schedule.append(check_name)
         return checks_in_schedule
 
-    def validate_check_setup(self, check_setup):
+    def validate_check_setup(self, check_setup, allow_env_template=False):
         """
         Go through the check_setup json that was read in and make sure everything
         is properly formatted. Since scheduled kwargs and dependencies are
@@ -119,7 +119,8 @@ class CheckHandler(object):
                 if not isinstance(schedule, dict):
                     raise BadCheckSetup('Schedule "%s" for "%s" in check_setup.json must have a dictionary value.' % (sched_name, check_name))
                 for env_name, env_detail in schedule.items():
-                    if not env_name in all_environments:
+                    if not (env_name in all_environments or
+                            (allow_env_template and env_name == '<env-name>')):
                         raise BadCheckSetup('Environment "%s" in schedule "%s" for "%s" in check_setup.json is not an existing'
                                             ' environment. Create with PUT to /environments endpoint.'
                                             % (env_name, sched_name, check_name))
