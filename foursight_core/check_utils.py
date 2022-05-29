@@ -30,8 +30,11 @@ class CheckHandler(object):
         if not os.path.exists(setup_path):
             raise BadCheckSetup('Did not locate the specified check_setup: %s, looking in: %s' %
                                 (setup_path, os.listdir(check_setup_dir)))
-        with open(setup_path, 'r') as jfile:
-            self.CHECK_SETUP = json.load(jfile)
+        if os.environ['chalice_stage'] == 'test':
+            self.CHECK_SETUP = {}
+        else:
+            with open(setup_path, 'r') as jfile:
+                self.CHECK_SETUP = json.load(jfile)
         # Validate and finalize CHECK_SETUP
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
 
@@ -87,7 +90,6 @@ class CheckHandler(object):
         same name and adds check module information to the check setup. Accordingly,
         verifies that each check in the check_setup is a real check.
         """
-        running_tests = os.environ['chalice_stage'] == 'test'
         found_checks = {}
         all_check_strings = self.get_check_strings()
         all_environments = self.environment.list_valid_schedule_environment_names()
@@ -120,7 +122,7 @@ class CheckHandler(object):
                 if not isinstance(schedule, dict):
                     raise BadCheckSetup('Schedule "%s" for "%s" in check_setup.json must have a dictionary value.' % (sched_name, check_name))
                 for env_name, env_detail in schedule.items():
-                    if not (env_name in all_environments or (running_tests and env_name == '<env-name>')):
+                    if env_name not in all_environments:
                         raise BadCheckSetup('Environment "%s" in schedule "%s" for "%s" in check_setup.json is not an existing'
                                             ' environment. Create with PUT to /environments endpoint.'
                                             % (env_name, sched_name, check_name))
