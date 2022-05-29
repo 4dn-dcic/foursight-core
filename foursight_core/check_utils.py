@@ -30,11 +30,8 @@ class CheckHandler(object):
         if not os.path.exists(setup_path):
             raise BadCheckSetup('Did not locate the specified check_setup: %s, looking in: %s' %
                                 (setup_path, os.listdir(check_setup_dir)))
-        if os.environ['chalice_stage'] == 'test':
-            self.CHECK_SETUP = {}
-        else:
-            with open(setup_path, 'r') as jfile:
-                self.CHECK_SETUP = json.load(jfile)
+        with open(setup_path, 'r') as jfile:
+            self.CHECK_SETUP = json.load(jfile)
         # Validate and finalize CHECK_SETUP
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
 
