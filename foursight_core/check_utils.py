@@ -77,7 +77,7 @@ class CheckHandler(object):
             checks_in_schedule.append(check_name)
         return checks_in_schedule
 
-    def validate_check_setup(self, check_setup, allow_env_template=False):
+    def validate_check_setup(self, check_setup):
         """
         Go through the check_setup json that was read in and make sure everything
         is properly formatted. Since scheduled kwargs and dependencies are
@@ -87,6 +87,7 @@ class CheckHandler(object):
         same name and adds check module information to the check setup. Accordingly,
         verifies that each check in the check_setup is a real check.
         """
+        running_tests = os.environ['chalice_stage'] == 'test'
         found_checks = {}
         all_check_strings = self.get_check_strings()
         all_environments = self.environment.list_valid_schedule_environment_names()
@@ -119,8 +120,7 @@ class CheckHandler(object):
                 if not isinstance(schedule, dict):
                     raise BadCheckSetup('Schedule "%s" for "%s" in check_setup.json must have a dictionary value.' % (sched_name, check_name))
                 for env_name, env_detail in schedule.items():
-                    if not (env_name in all_environments or
-                            (allow_env_template and env_name == '<env-name>')):
+                    if not (env_name in all_environments or (running_tests and env_name == '<env-name>')):
                         raise BadCheckSetup('Environment "%s" in schedule "%s" for "%s" in check_setup.json is not an existing'
                                             ' environment. Create with PUT to /environments endpoint.'
                                             % (env_name, sched_name, check_name))
