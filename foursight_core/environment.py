@@ -1,6 +1,6 @@
 from .s3_connection import S3Connection
 from dcicutils.env_base import EnvManager
-from dcicutils.env_utils import get_foursight_bucket, get_foursight_bucket_prefix
+from dcicutils.env_utils import get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 
 
 class Environment(object):
@@ -61,8 +61,16 @@ class Environment(object):
 
     def get_environment_info_from_s3(self, env_name):
 
-        # This call requires no changes. -kmp 24-May-2022
-        return self.s3_connection.get_object(env_name)
+        computed_result = self.s3_connection.get_object(env_name)
+
+        env_full_name = full_env_name(env_name)
+        declared_result = self.s3_connection.get_object(env_full_name)
+        if declared_result != computed_result:
+            raise RuntimeError(f"get_environment_info_from_s3 has consistency problems."
+                               f" env_name={env_name} env_full_name={env_full_name}"
+                               f" computed_result={computed_result} declared_result={declared_result}")
+
+        return computed_result
 
     def get_environment_and_bucket_info(self, env_name, stage):
         env_info = self.get_environment_info_from_s3(env_name)
