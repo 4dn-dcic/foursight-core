@@ -117,15 +117,18 @@ class Environment(object):
 
         :param stage: a chalice stage (generally one of 'dev' or 'prod')
         :param env: allows you to specify a single env to be initialized, or the token 'all'.
+        :param env: allows you to specify a single env to be initialized
         :param envs: allows you to specify multiple envs to be initialized
         """
-        if env and envs:
+        if env is not None and envs is not None:
             ValueError("get_environment_and_bucket_info_in_batch accepts either 'env=' or 'envs=' but not both.")
-
-        try:
-            env_keys = envs or self.get_selected_environment_names(env or 'all')
-        except Exception:
-            env_keys = []  # provided env is not in s3, so behave like no envs were requested
+        if envs is not None:
+            env_keys = envs
+        else:
+            try:
+                env_keys = self.get_selected_environment_names(env or 'all')
+            except Exception:
+                return {}  # provided env is not in s3
 
         return {
             env_key: self.get_environment_and_bucket_info(env_key, stage)

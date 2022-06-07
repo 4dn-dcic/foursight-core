@@ -3,6 +3,7 @@ import signal
 import time
 import sys
 import os
+from dcicutils.misc_utils import ignored
 from functools import wraps
 from .check_schema import CheckSchema
 from .run_result import (
@@ -22,7 +23,7 @@ class Decorators(object):
 
     def __init__(self, foursight_prefix):
         if os.environ.get('CHECK_TIMEOUT'):
-            self.set_timeout(os.environ.get('CHECK_TIMEOUT')) 
+            self.set_timeout(os.environ.get('CHECK_TIMEOUT'))
         self.prefix = foursight_prefix
         self.sqs = SQS(self.prefix)
 
@@ -40,7 +41,7 @@ class Decorators(object):
         try:
             timeout = int(timeout)
         except ValueError:
-            print('ERROR! Timeout must be an integer. You gave: %s' % timeout)
+            print(f'ERROR! Timeout must be an integer. You gave: {timeout}')
         else:
             self.CHECK_TIMEOUT = timeout
 
@@ -56,6 +57,8 @@ class Decorators(object):
         If an exception is raised, will store the result in full_output and
         return an ERROR CheckResult.
         """
+        ignored(default_args)
+
         def check_deco(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
@@ -67,7 +70,7 @@ class Decorators(object):
                     try:
                         check = func(*args, **kwargs)
                         check.validate()
-                    except Exception as e:
+                    except Exception:
                         # connection should be the first (and only) positional arg
                         check = self.CheckResult(args[0], func.__name__)
                         check.status = 'ERROR'
@@ -81,11 +84,12 @@ class Decorators(object):
                     partials = {'name': func.__name__, 'kwargs': kwargs, 'is_check': True,
                                 'start_time': start_time, 'connection': args[0]}
                     self.do_timeout(parent_pid, partials)
-    
+
             wrapper.check_decorator = self.CHECK_DECO
             return wrapper
+
         return check_deco
-    
+
     def action_function(self, *default_args, **default_kwargs):
         """
         Import decorator, used to decorate all actions.
@@ -98,6 +102,8 @@ class Decorators(object):
         If an exception is raised, will store the result in output and return an
         ActionResult with status FAIL.
         """
+        ignored(default_args)
+
         def action_deco(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
@@ -111,7 +117,7 @@ class Decorators(object):
                             raise BadCheckOrAction('Action requires check_name and called_by in its kwargs.')
                         action = func(*args, **kwargs)
                         action.validate()
-                    except Exception as e:
+                    except Exception:
                         # connection should be the first (and only) positional arg
                         action = self.ActionResult(args[0], func.__name__)
                         action.status = 'FAIL'
@@ -125,9 +131,10 @@ class Decorators(object):
                     partials = {'name': func.__name__, 'kwargs': kwargs, 'is_check': False,
                                 'start_time': start_time, 'connection': args[0]}
                     self.do_timeout(parent_pid, partials)
-    
+
             wrapper.check_decorator = self.ACTION_DECO
             return wrapper
+
         return action_deco
 
     def do_timeout(self, parent_pid, partials):
@@ -136,7 +143,7 @@ class Decorators(object):
                 2. Exiting if we succeeded (the parent process died)
                 3. Killing the parent if it timed out
                 4. Invoking the timeout handler if it timed out
-    
+
             :arg parent_pid: parent pid to check on/kill if necessary
             :arg partials: partial result to be passed to timeout handler if necessary
         """
@@ -144,18 +151,19 @@ class Decorators(object):
             time.sleep(self.POLL_INTERVAL)
             if not self.pid_is_alive(parent_pid):
                 sys.exit(0)
-    
+
         # We have timed out. Kill the parent and invoke the timeout handler.
         # NOTE: Timeouts in Pytest will trigger undefined behavior since the parent is Pytest, not the thing
         # executing the check. Execute Pytest with --forked option to override this.
         os.kill(parent_pid, signal.SIGTERM)
         self.timeout_handler(partials)
-    
+
     def timeout_handler(self, partials, signum=None, frame=None):
         """
         Custom handler for signal that stores the current check
         or action with the appropriate information and then exits using sys.exit
         """
+        ignored(signum, frame)
         if partials['is_check']:
             result = self.CheckResult(partials['connection'], partials['name'])
             result.status = 'ERROR'
@@ -171,8 +179,9 @@ class Decorators(object):
         if kwargs.get('_run_info') and {'receipt', 'sqs_url'} <= set(kwargs['_run_info'].keys()):
             runner_input = {'sqs_url': kwargs['_run_info']['sqs_url']}
             self.sqs.delete_message_and_propogate(runner_input, kwargs['_run_info']['receipt'])
-        sys.exit('-RUN-> TIMEOUT for execution of %s. Elapsed time is %s seconds; keep under %s.'
-              % (partials['name'], kwargs['runtime_seconds'], self.CHECK_TIMEOUT))
+        sys.exit(f"-RUN-> TIMEOUT for execution of {partials['name']}."
+                 f" Elapsed time is {kwargs['runtime_seconds']} seconds;"
+                 f" keep under {self.CHECK_TIMEOUT}.")
 
     @classmethod
     def handle_kwargs(cls, kwargs, default_kwargs):

@@ -94,53 +94,67 @@ class CheckHandler(object):
         for check_string in all_check_strings:
             mod_name, check_name = check_string.split('/')
             if check_name in found_checks:
-                raise BadCheckSetup('More than one check with name "%s" was found. See module "%s"' % (check_name,
-                                                                                                       mod_name))
+                raise BadCheckSetup(f'More than one check with name "{check_name}" was found. See module "{mod_name}"')
             found_checks[check_name] = mod_name
         for check_name in check_setup:
             if check_name not in found_checks:
-                raise BadCheckSetup('Check with name %s was in check_setup.json but does not have a proper check function defined.' % check_name)
+                raise BadCheckSetup(f'Check with name {check_name} was in check_setup.json'
+                                    f' but does not have a proper check function defined.')
             if not isinstance(check_setup[check_name], dict):
-                raise BadCheckSetup('Entry for "%s" in check_setup.json must be a dictionary.' % check_name)
+                raise BadCheckSetup(f'Entry for "{check_name}" in check_setup.json must be a dictionary.')
             # these fields are required
             if not {'title', 'group', 'schedule'} <= set(check_setup[check_name].keys()):
-                raise BadCheckSetup('Entry for "%s" in check_setup.json must have the required keys: "title", "group", and "schedule".' % check_name)
+                raise BadCheckSetup(f'Entry for "{check_name}" in check_setup.json must have'
+                                    f' the required keys: "title", "group", and "schedule".')
             # these fields must be strings
             for field in ['title', 'group']:
                 if not isinstance(check_setup[check_name][field], str):
-                    raise BadCheckSetup('Entry for "%s" in check_setup.json must have a string value for field "%s".' % (check_name, field))
+                    raise BadCheckSetup(f'Entry for "{check_name}" in check_setup.json'
+                                        f' must have a string value for field "{field}".')
             if not isinstance(check_setup[check_name]['schedule'], dict):
-                raise BadCheckSetup('Entry for "%s" in check_setup.json must have a dictionary value for field "schedule".' % check_name)
+                raise BadCheckSetup(f'Entry for "{check_name}" in check_setup.json'
+                                    f' must have a dictionary value for field "schedule".')
             # make sure a display is set up if there is no schedule
             if check_setup[check_name]['schedule'] == {} and check_setup[check_name].get('display') is None:
-                raise BadCheckSetup('Entry for "%s" in check_setup.json must have a list of "display" environments if it lacks a schedule.' % check_name)
+                raise BadCheckSetup(f'Entry for "{check_name}" in check_setup.json'
+                                    f' must have a list of "display" environments if it lacks a schedule.')
             # now validate and add defaults to the schedule
             for sched_name, schedule in check_setup[check_name]['schedule'].items():
                 if not isinstance(schedule, dict):
-                    raise BadCheckSetup('Schedule "%s" for "%s" in check_setup.json must have a dictionary value.' % (sched_name, check_name))
+                    raise BadCheckSetup(f'Schedule "{sched_name}" for "{check_name}" in check_setup.json'
+                                        f' must have a dictionary value.')
                 for env_name, env_detail in schedule.items():
                     if env_name not in all_environments:
-                        raise BadCheckSetup('Environment "%s" in schedule "%s" for "%s" in check_setup.json is not an existing'
-                                            ' environment. Create with PUT to /environments endpoint.'
-                                            % (env_name, sched_name, check_name))
+                        raise BadCheckSetup(f'Environment "{env_name}" in schedule "{sched_name}" for "{check_name}"'
+                                            f' in check_setup.json is not an existing'
+                                            f' environment. Create with PUT to /environments endpoint.')
                     if not isinstance(env_detail, dict):
-                        raise BadCheckSetup('Environment "%s" in schedule "%s" for "%s" in check_setup.json must have a dictionary value.' % (env_name, sched_name, check_name))
+                        raise BadCheckSetup(f'Environment "{env_name}" in schedule "{sched_name}"'
+                                            f' for "{check_name}" in check_setup.json'
+                                            f' must have a dictionary value.')
                     # default values
-                    if not 'kwargs' in env_detail:
+                    if 'kwargs' not in env_detail:
                         env_detail['kwargs'] = {'primary': True}
                     else:
                         if not isinstance(env_detail['kwargs'], dict):
-                            raise BadCheckSetup('Environment "%s" in schedule "%s" for "%s" in check_setup.json must have a dictionary value for "kwargs".' % (env_name, sched_name, check_name))
-                    if not 'dependencies' in env_detail:
+                            raise BadCheckSetup(f'Environment "{env_name}" in schedule "{sched_name}"'
+                                                f' for "{check_name}" in check_setup.json'
+                                                f' must have a dictionary value for "kwargs".')
+                    if 'dependencies' not in env_detail:
                         env_detail['dependencies'] = []
                     else:
                         if not isinstance(env_detail['dependencies'], list):
-                            raise BadCheckSetup('Environment "%s" in schedule "%s" for "%s" in check_setup.json must have a list value for "dependencies".' % (env_name, sched_name, check_name))
+                            raise BadCheckSetup(f'Environment "{env_name}" in schedule "{sched_name}"'
+                                                f' for "{check_name}" in check_setup.json'
+                                                f' must have a list value for "dependencies".')
                         else:
                             # confirm all dependencies are legitimate check names
                             for dep_id in env_detail['dependencies']:
                                 if dep_id not in self.get_checks_within_schedule(sched_name):
-                                    raise BadCheckSetup('Environment "%s" in schedule "%s" for "%s" in check_setup.json must has a dependency "%s" that is not a valid check name that shares the same schedule.' % (env_name, sched_name, check_name, dep_id))
+                                    raise BadCheckSetup(f'Environment "{env_name}" in schedule "{sched_name}"'
+                                                        f' for "{check_name}" in check_setup.json'
+                                                        f' must has a dependency "{dep_id}" that'
+                                                        f' is not a valid check name that shares the same schedule.')
 
             # lastly, add the check module information to each check in the setup
             check_setup[check_name]['module'] = found_checks[check_name]
@@ -197,7 +211,7 @@ class CheckHandler(object):
         """
         check_schedule = {}
         for check_name, detail in self.CHECK_SETUP.items():
-            if not schedule_name in detail['schedule']:
+            if schedule_name not in detail['schedule']:
                 continue
             # skip the check if conditions provided and any are not met
             if conditions and isinstance(conditions, list):
@@ -214,7 +228,7 @@ class CheckHandler(object):
         # although not strictly necessary right now, this is a precaution
         return copy.deepcopy(check_schedule)
 
-    def get_check_results(self, connection, checks=[], use_latest=False):
+    def get_check_results(self, connection, checks=None, use_latest=False):
         """
         Initialize check results for each desired check and get results stored
         in s3, sorted by status and then alphabetically by title.
@@ -223,6 +237,7 @@ class CheckHandler(object):
         By default, gets the 'primary' results. If use_latest is True, get the
         'latest' results instead.
         """
+        checks = checks or []
         check_results = []
         if not checks:
             checks = [check_str.split('/')[1] for check_str in self.get_check_strings()]
@@ -237,7 +252,7 @@ class CheckHandler(object):
                 # checks with no records will return None. Skip IGNORE checks
                 if found and found.get('status') != 'IGNORE':
                     check_results.append(found)
-                if not found: # add placeholder check
+                if not found:  # add placeholder check
                     check_results.append(CheckSchema().create_placeholder_check(check_name))
 
         else:
@@ -251,7 +266,9 @@ class CheckHandler(object):
         stat_order = ['ERROR', 'FAIL', 'WARN', 'PASS']
         return sorted(
             check_results,
-            key=lambda v: (stat_order.index(v['status']) if v['status'] in stat_order else 9, self.get_check_title_from_setup(v['name']).lower())
+            key=lambda v: (stat_order.index(v['status'])
+                           if v['status'] in stat_order
+                           else 9, self.get_check_title_from_setup(v['name']).lower())
         )
 
     def get_grouped_check_results(self, connection):
@@ -313,7 +330,7 @@ class CheckHandler(object):
         except ModuleNotFoundError:
             return ' '.join(['ERROR. Check module is not valid.', error_str])
         except Exception as e:
-            raise(e)
+            raise e
         check_method = check_mod.__dict__.get(check_name)
         if not check_method:
             return ' '.join(['ERROR. Check name is not valid.', error_str])
@@ -334,7 +351,7 @@ class CheckHandler(object):
         if not check_str:
             check_str = self.get_action_strings(check)
             is_action = True
-        if not check_str: # not a check or an action. abort
+        if not check_str:  # not a check or an action. abort
             return None
         return self.ActionResult(connection, check) if is_action else self.CheckResult(connection, check)
 

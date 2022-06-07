@@ -1,6 +1,8 @@
-from datetime import datetime
 import boto3
 import json
+
+from datetime import datetime
+from dcicutils.misc_utils import ignored
 from .stage import Stage
 
 
@@ -128,7 +130,8 @@ class SQS(object):
         # append environ and uuid as first elements to all check_vals
         proc_vals = [[environ, uuid] + val for val in check_vals]
         for val in proc_vals:
-            queue.send_message(MessageBody=json.dumps(val))
+            response = queue.send_message(MessageBody=json.dumps(val))
+            ignored(response)
         return uuid
 
     @classmethod

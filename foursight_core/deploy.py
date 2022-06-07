@@ -8,7 +8,7 @@ import argparse
 import json
 import subprocess
 
-from dcicutils.misc_utils import as_seconds
+from dcicutils.misc_utils import as_seconds, ignored
 
 
 class Deploy(object):
@@ -54,6 +54,7 @@ class Deploy(object):
                      security_group_ids=None, subnet_ids=None, check_runner=None, rds_name=None,
                      lambda_timeout=DEFAULT_LAMBDA_TIMEOUT):
         """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
+        ignored(stage)
         if trial_creds:
             # key to decrypt access key
             s3_enc_secret = trial_creds['S3_ENCRYPT_KEY']

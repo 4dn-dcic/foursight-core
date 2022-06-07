@@ -52,17 +52,17 @@ def parse_datetime_to_utc(time_str, manual_format=None):
     else:  # automatic parsing
         if len(time_str) > 26 and time_str[26] in ['+', '-']:
             try:
-                timeobj = datetime.strptime(time_str[:26],'%Y-%m-%dT%H:%M:%S.%f')
+                timeobj = datetime.strptime(time_str[:26], '%Y-%m-%dT%H:%M:%S.%f')
             except ValueError:
                 return None
-            if time_str[26]=='+':
+            if time_str[26] == '+':
                 timeobj -= timedelta(hours=int(time_str[27:29]), minutes=int(time_str[30:]))
-            elif time_str[26]=='-':
+            elif time_str[26] == '-':
                 timeobj += timedelta(hours=int(time_str[27:29]), minutes=int(time_str[30:]))
         elif len(time_str) == 26 and '+' not in time_str[-6:] and '-' not in time_str[-6:]:
             # nothing known about tz, just parse it without tz in this cause
             try:
-                timeobj = datetime.strptime(time_str[0:26],'%Y-%m-%dT%H:%M:%S.%f')
+                timeobj = datetime.strptime(time_str[0:26], '%Y-%m-%dT%H:%M:%S.%f')
             except ValueError:
                 return None
         else:

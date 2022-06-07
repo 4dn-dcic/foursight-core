@@ -3,6 +3,11 @@
 configure:  # does any pre-requisite installs
 	pip install poetry
 
+lint:
+	@echo "Running flake8..."
+	@flake8 foursight_core || echo "'flake8 foursight_core' failed."
+	@flake8 tests || echo "'flake8 tests' failed."
+
 build:  # builds
 	make configure
 	poetry install

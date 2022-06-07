@@ -112,13 +112,14 @@ class RunResult(object):
                     check_time = datetime.datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%S.%f")
                 except ValueError:
                     continue
-                check_time = check_time.replace(tzinfo=tz.tzutc()) # always UTC
+                check_time = check_time.replace(tzinfo=tz.tzutc())  # always UTC
                 check_tuples.append((check, check_time))
         if override_date:
             desired_time = override_date.replace(tzinfo=tz.tzutc())
         else:
-            desired_time = (datetime.datetime.utcnow() -
-                datetime.timedelta(hours=diff_hours, minutes=diff_mins)).replace(tzinfo=tz.tzutc())
+            desired_time = (
+                    datetime.datetime.utcnow() - datetime.timedelta(hours=diff_hours, minutes=diff_mins)
+            ).replace(tzinfo=tz.tzutc())
         best_match = get_closest(check_tuples, desired_time)
         # ensure that the does not have status 'ERROR'
         match_res = None
@@ -234,6 +235,7 @@ class RunResult(object):
         """
         if self.es:
             history = self.connections['es'].get_result_history(self.name, start, limit)
+
             def wrapper(obj):
                 filename = obj.get('_id')
                 if filename is None:
@@ -296,11 +298,11 @@ class RunResult(object):
         return formatted
 
     def filename_to_datetime(self, key):
-        '''
+        """
         Utility function.
         Key might look like `sync_google_analytics_data/2018-10-15T19:08:32.734656.json`
         We presume that timezone info is not important to allow us to use strptime.
-        '''
+        """
         prefixlen = len(self.name) + 1
         keydatestr = key[prefixlen:-5]  # Remove prefix and .json from key.
         return datetime.datetime.strptime(keydatestr, '%Y-%m-%dT%H:%M:%S.%f')
@@ -333,7 +335,7 @@ class CheckResult(RunResult):
             stamp_res = self.get_object(ts_key)
             if stamp_res:
                 for key, val in stamp_res.items():
-                    if key not in ['uuid', 'kwargs']: # dont copy these
+                    if key not in ['uuid', 'kwargs']:  # dont copy these
                         setattr(self, key, val)
                 return
         # summary will be displayed next to title when set
@@ -349,7 +351,7 @@ class CheckResult(RunResult):
         self.ff_link = ''
         # self.action_name is the function name of the action to link to check
         self.action = ''
-        self.allow_action = False # by default do not allow the action to be run
+        self.allow_action = False  # by default do not allow the action to be run
         self.action_message = 'Are you sure you want to run this action?'
 
     def format_result(self, uuid):
@@ -385,9 +387,11 @@ class CheckResult(RunResult):
         store_method = getattr(self, 'store_result', None)
         if not callable(store_method):
             error_msg.append('Do not overwrite the store_result method.')
+
         def _validate(attr, t):
             if not isinstance(attr, t):
                 error_msg.append('%s is not of type %s' % (str(attr), str(t)))
+
         _validate(self.name, str)
         _validate(self.summary, str)
         _validate(self.description, str)
@@ -456,9 +460,11 @@ class ActionResult(RunResult):
         store_method = getattr(self, 'store_result', None)
         if not callable(store_method):
             error_msg.append('Do not overwrite the store_result method.')
+
         def _validate(attr, t):
             if not isinstance(attr, t):
                 error_msg.append('%s is not of type %s' % (str(attr), str(t)))
+
         _validate(self.status, str)
         _validate(self.description, str)
         _validate(self.name, str)
@@ -499,7 +505,8 @@ class ActionResult(RunResult):
         return check.get_result_by_uuid(called_by)
 
 
-### Utility functions for check_result
+# ===== Utility functions for check_result =====
+
 def get_closest(items, pivot):
     """
     Return the item in the list of items closest to the given pivot.
