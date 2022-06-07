@@ -28,7 +28,7 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
-class AppUtils(object):
+class AppUtils:
     """
     Class AppUtils is the most high-level class that's used directy by Chalice object app.
     This class mostly contains the functions defined in app_utils in original foursight.
@@ -43,6 +43,8 @@ class AppUtils(object):
 
     # replace with e.g. 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
     host = 'placeholder_host'
+
+    OAUTH_TOKEN_URL = "https://hms-dbmi.auth0.com/oauth/token"
 
     # replace with e.g. 'chalicelib'
     package_name = 'foursight_core'
@@ -196,7 +198,7 @@ class AppUtils(object):
         }
         json_payload = json.dumps(payload)
         headers = {'content-type': "application/json"}
-        res = requests.post("https://hms-dbmi.auth0.com/oauth/token", data=json_payload, headers=headers)
+        res = requests.post(cls.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
         id_token = res.json().get('id_token', None)
         if id_token:
             cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
@@ -1088,7 +1090,9 @@ class AppUtils(object):
                     # action name is the second part of run_name
                     act_name = run_name.split('/')[-1]
                     rec_body = ''.join([act_name, '/', run_uuid, '.json'])
-                    connection.put_object(rec_key, rec_body)
+                    # This was changed per Will's suggestion in code review. -kmp 7-Jun-2022
+                    # connection.put_object(rec_key, rec_body)
+                    connection.connections['s3'].put_object(rec_key, rec_body)
                     print(f'-RUN-> Wrote action record: {rec_key}')
             run_result = self.check_handler.run_check_or_action(connection, run_name, run_kwargs)
             print('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))

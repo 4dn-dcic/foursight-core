@@ -5,6 +5,8 @@ import boto3
 import datetime
 import logging
 
+from dcicutils.misc_utils import full_class_name
+
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -42,10 +44,8 @@ class S3Connection(AbstractConnection):
             return key, value
 
     def get_all_objects(self):
-        # In fact, the parent does not implement this and will raise NotImplementedError,
-        # but adding this definition reminds us that that we didn't accidentally not implement this.
-        # (We didn't, did we?)  -kmp 7-Jun-2022
-        return super().get_all_objects()
+        raise NotImplementedError(f"The get_all_objects operation is not allowed"
+                                  f" for objects of type {full_class_name(self)}.")
 
     def get_object(self, key):
         # return found bucket content or None on an error
