@@ -1,6 +1,8 @@
 import boto3
 import json
 
+from dcicutils.misc_utils import ignored
+
 
 class Buckets(object):
     """create and configure buckets for foursight"""
@@ -25,16 +27,23 @@ class Buckets(object):
     def env_bucket(self):
         return self.prefix + '-envs'
 
-    def ff_env(self, env):
-        return 'fourfront-%s' % env
+    @classmethod
+    def ff_env(cls, env):
+        return 'fourfront-%s' % env  # TODO: Should we use dcicutils.env_utils.full_env_name?
 
-    def ff_url(self, env):
+    @classmethod
+    def ff_url(cls, env):
+        ignored(env)
         # replace this with the correct url in the child class
-        return 'http://placeholder_url'  # e.g. 'https://cgap.hms.harvard.edu/'
+        # e.g. 'https://cgap.hms.harvard.edu/'
+        return 'http://placeholder_url'
 
-    def es_url(self, env):
+    @classmethod
+    def es_url(cls, env):
+        ignored(env)
         # replace this with the correct url in the child class
-        return 'https://placeholder_url'  # e.g. "https://search-cgap-testing-6-8-vo4mdkmkshvmyddc65ux7dtaou.us-east-1.es.amazonaws.com"
+        # e.g. "https://search-cgap-testing-6-8-vo4mdkmkshvmyddc65ux7dtaou.us-east-1.es.amazonaws.com"
+        return 'https://placeholder_url'
 
     def create_buckets(self):
         s3 = boto3.client('s3')

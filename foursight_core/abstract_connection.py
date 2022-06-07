@@ -1,3 +1,6 @@
+from dcicutils.misc_utils import ignored
+
+
 class AbstractConnection(object):
     """
     AbstractConnection is an 'abstract' representation of the methods a
@@ -38,10 +41,11 @@ class AbstractConnection(object):
         """
         raise NotImplementedError
 
-    def list_all_keys_w_prefix(self):
+    def list_all_keys_w_prefix(self, prefix):
         """
         Given a prefix, return all keys that have that prefix.
         """
+        ignored(prefix)
         raise NotImplementedError
 
     def get_all_objects(self):
