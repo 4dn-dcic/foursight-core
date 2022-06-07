@@ -10,8 +10,12 @@ Change Log
 0.6.1
 =====
 
-* Address many PEP8 problems.
-* Bring CHANGELOG.rst up to date.
+**PR #23: Mostly PEP8**
+
+* Address many PEP8 issues.
+* Include ``flake8`` among dev dependencies.
+* Add ``make lint`` to run ``flake8``.
+* Bring ``CHANGELOG.rst`` up to date.
 
 
 0.6.0
