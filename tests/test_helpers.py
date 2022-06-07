@@ -3,9 +3,9 @@ from foursight_core.checks.helpers import sys_utils
 
 
 class TestHelpers():
-    timestr_1 = '2017-04-09T17:34:53.423589+00:00' # UTC
-    timestr_2 = '2017-04-09T17:34:53.423589+05:00' # 5 hours ahead of UTC
-    timestr_3 = '2017-04-09T17:34:53.423589-05:00' # 5 hours behind of UTC
+    timestr_1 = '2017-04-09T17:34:53.423589+00:00'  # UTC
+    timestr_2 = '2017-04-09T17:34:53.423589+05:00'  # 5 hours ahead of UTC
+    timestr_3 = '2017-04-09T17:34:53.423589-05:00'  # 5 hours behind of UTC
     timestr_4 = '2017-04-09T17:34:53.423589'
     timestr_5 = '2017-04-09T17:34:53'
     timestr_bad_1 = '2017-04-0589+00:00'

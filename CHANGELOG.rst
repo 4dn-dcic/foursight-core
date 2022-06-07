@@ -7,8 +7,84 @@ Change Log
 ----------
 
 
+0.6.1
+=====
+
+* Address many PEP8 problems.
+* Bring CHANGELOG.rst up to date.
+
+
+0.6.0
+=====
+
+**PR #21: Python 3.7 support (C4-765)**
+
+* Adjusts python requirement to permit Python 3.7, but still allow 3.6.1 and above.
+  No known incompatibilities.
+
+0.5.0
+=====
+
+**PR #20: Support Encrypted Buckets**
+
+* Small changes needed for encrypted buckets
+
+
+0.4.5
+=====
+
+(Records are uncertain here.)
+
+
+0.4.4
+=====
+
+**PR #19: Repair delete_results**
+
+* Fix for problem where``delete_results`` had inconsistent return type,
+  causing ``foursight-cgap`` to crash in the scenario where no checks are to be cleaned.
+  With this change, it returns a tuple as the docstring says.
+
+
+0.4.3
+=====
+
+**PR #18: Enable RDS Snapshots (1/3)**
+
+* *Needs update*
+
+
+0.4.2
+=====
+
+**PR #17: Changes to remove variable imports from env_utils (C4-700)**
+
+* *Needs update*
+
+
+0.4.1
+=====
+
+**PR #16: Remove dev_secret**
+
+
+0.4.0
+=====
+
+There was no version 0.4.0.
+
+
 0.3.0
 =====
+
+**PR #15: Update for dcicutils 2.0**
+
+**PR #14: Add publishing support**
+
+**PR #13: Fix C4-691 and C4-692 regarding information passing into foursight-core building operations**
+
+**PR #9: foursight-core: chalice package support C4-554 (1/3)**
+
 
 Compatible/transitional support for:
 
@@ -24,16 +100,85 @@ Compatible/transitional support for:
   and ``stage=`` gets used instead of ``args.stage``, and ``trial=`` gets used in place of ``args.trial``.
 
 
-Older Versions
-==============
+0.2.0
+=====
 
-A record of older changes can be found
-`in GitHub <https://github.com/4dn-dcic/foursight-core/pulls?q=is%3Apr+is%3Aclosed>`_.
-To find the specific version numbers, see the ``version`` value in
-the ``poetry.app`` section of ``pyproject.toml``, as in::
+**PR #12: Repair Auth0**
 
-   [poetry.app]
-   name = "foursight-core"
-   version = "100.200.300"
-   ...etc.
+
+0.1.11
+======
+
+**PR #11: remove fuzzywuzzy dependency**
+
+
+0.1.10
+======
+
+* **Needs more info**
+
+
+0.1.9
+=====
+
+**PR #10: Update buckets.py**
+
+
+0.1.8
+=====
+
+**PR #8: Collect run info**
+
+
+0.1.7
+=====
+
+**PR #6: delete check_runs_without_output function wfr_utils.py**
+
+
+0.1.6:
+======
+
+**PR #7: Fix visibility timeout**
+
+* SQS visibility timeout was set to 5 mins but should be 15 mins to reflect the updated lambda timeout.
+
+
+0.1.5
+=====
+
+There was no version 0.1.5
+
+
+0.1.4
+=====
+
+**PR #5: fix for bug AppUtils object has no attribute get_schedule_names**
+
+
+0.1.3
+=====
+
+**PR #4: Core3**
+
+
+0.1.2
+=====
+
+**PR #3: Add GA Workflows**
+
+
+0.1.1
+=====
+
+**PR #2: Core2**
+
+* minor fixes
+
+
+0.1.0
+=====
+
+**PR #1: Core2**
+
 

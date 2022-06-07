@@ -5,7 +5,13 @@ import time
 # rather than importing check_function, action_function, CheckResult, ActionResult
 # individually - they're now part of class Decorators in foursight-core::decorators
 # that requires initialization with foursight prefix.
-from .helpers.confchecks import *
+
+from dcicutils.misc_utils import ignored
+# from .helpers.confchecks import *
+from .helpers.confchecks import (
+    check_function, CheckResult,
+    action_function, ActionResult,
+)
 
 
 def test_function_unused():
@@ -15,12 +21,14 @@ def test_function_unused():
 # meant to raise an error on execution by dividing by 0
 @check_function()
 def test_check_error(connection, **kwargs):
+    ignored(connection, kwargs)
     bad_op = 10 * 1/0
     return bad_op
 
 
 @action_function()
 def test_action_error(connection, **kwargs):
+    ignored(connection, kwargs)
     bad_op = 10 * 1/0
     return bad_op
 
@@ -28,6 +36,7 @@ def test_action_error(connection, **kwargs):
 # silly check that stores random numbers in a list
 @check_function()
 def test_random_nums(connection, **kwargs):
+    ignored(kwargs)
     check = CheckResult(connection, 'test_random_nums')
     check.status = 'IGNORE'
     check.action = 'add_random_test_nums'
@@ -45,6 +54,7 @@ def test_random_nums(connection, **kwargs):
 # same as above
 @check_function()
 def test_random_nums_2(connection, **kwargs):
+    ignored(kwargs)
     check = CheckResult(connection, 'test_random_nums_2')
     check.status = 'IGNORE'
     output = []
