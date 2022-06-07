@@ -3,14 +3,13 @@ import json
 import time
 from .abstract_connection import AbstractConnection
 from elasticsearch import (
-    Elasticsearch,
-    TransportError,
+    # Elasticsearch,
+    # TransportError,
     RequestError,
     ConnectionTimeout
     )
 from elasticsearch_dsl import Search
 from dcicutils import es_utils
-from dcicutils.misc_utils import PRINT
 from .check_schema import CheckSchema
 
 
@@ -88,7 +87,7 @@ class ESConnection(AbstractConnection):
         """
         try:
             self.es.indices.delete(index=name, ignore=[400, 404])
-        except:
+        except Exception:
             return False
         return True
 
@@ -121,7 +120,7 @@ class ESConnection(AbstractConnection):
             return None
         try:
             return self.es.get(index=self.index, doc_type=self.doc_type, id=key)['_source']
-        except:
+        except Exception:
             return None
 
     def get_size(self):
@@ -131,7 +130,7 @@ class ESConnection(AbstractConnection):
         """
         try:
             return self.es.count(self.index).get('count')
-        except:
+        except Exception:
             return 0
 
     def get_size_bytes(self):
@@ -153,19 +152,20 @@ class ESConnection(AbstractConnection):
         err_msg = None
         try:
             res = search.execute().to_dict()
-        except ConnectionTimeout as exc:
+        except ConnectionTimeout:
             err_msg = 'The search failed due to a timeout. Please try a different query.'
         except RequestError as exc:
             try:
                 err_detail = str(exc.info['error']['root_cause'][0]['reason'])
-            except:
+            except Exception:
                 err_detail = str(exc)
             err_msg = 'The search failed due to a request error: ' + err_detail
         except Exception as exc:
             err_msg = 'Search failed. Error: %s' % str(exc)
         if err_msg:
             raise ElasticsearchException(message=err_msg)
-        return [obj[key] for obj in res['hits']['hits']] if len(res['hits']['hits']) > 0 else []
+        # In next line, PyCharm's linter wrongly worries that 'res' might not be reliably set above. -kmp 6-Jun-2022
+        return [obj[key] for obj in res['hits']['hits']] if len(res['hits']['hits']) > 0 else []  # noQA
 
     def get_result_history(self, prefix, start, limit):
         """
@@ -289,7 +289,7 @@ class ESConnection(AbstractConnection):
         doc = {
             'size': self.ES_SEARCH_SIZE,
             'query': {
-                'match_all' : {}
+                'match_all': {}
             },
             'sort': {
                 'uuid': {
@@ -314,7 +314,7 @@ class ESConnection(AbstractConnection):
         try:
             res = self.es.delete_by_query(index=self.index, body=query)
             return res['deleted']
-        except Exception as e:
+        except Exception:
             return 0
 
     def test_connection(self):

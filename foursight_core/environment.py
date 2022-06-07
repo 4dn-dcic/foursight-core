@@ -1,5 +1,3 @@
-import os
-import json
 from .s3_connection import S3Connection
 
 
@@ -61,6 +59,7 @@ class Environment(object):
         Returns a dictionary keyed by environment name with value of a sub-dict
         with the fields needed to initiate a connection.
 
+        :param stage: the relevant chalice stage
         :param env: allows you to specify a single env to be initialized
         :param envs: allows you to specify multiple envs to be initialized
         """
@@ -69,7 +68,7 @@ class Environment(object):
         else:
             try:
                 env_keys = self.get_selected_environment_names(env)
-            except:
+            except Exception:
                 return {}  # provided env is not in s3
 
         environments = {}

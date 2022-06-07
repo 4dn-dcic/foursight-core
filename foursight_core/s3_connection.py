@@ -14,7 +14,7 @@ class S3Connection(AbstractConnection):
     def __init__(self, bucket_name):
         self.client = boto3.client('s3')
         self.resource = boto3.resource('s3')
-        self.cw = boto3.client('cloudwatch') # for s3 bucket stats
+        self.cw = boto3.client('cloudwatch')  # for s3 bucket stats
         self.bucket = bucket_name
         self.location = 'us-east-1'
         self.encryption = os.environ.get('S3_ENCRYPT_KEY_ID')
@@ -41,14 +41,21 @@ class S3Connection(AbstractConnection):
         else:
             return key, value
 
+    def get_all_objects(self):
+        # In fact, the parent does not implement this and will raise NotImplementedError,
+        # but adding this definition reminds us that that we didn't accidentally not implement this.
+        # (We didn't, did we?)  -kmp 7-Jun-2022
+        return super().get_all_objects()
+
     def get_object(self, key):
         # return found bucket content or None on an error
         try:
             response = self.client.get_object(Bucket=self.bucket, Key=key)
             body = response['Body'].read()
-            return json.loads(body)
-        except json.JSONDecodeError:
-            return body
+            try:
+                return json.loads(body)
+            except json.JSONDecodeError:
+                return body
         except Exception as e:
             logger.error(e)
             return None
@@ -72,12 +79,13 @@ class S3Connection(AbstractConnection):
         resp = self.cw.get_metric_statistics(Namespace='AWS/S3',
                                              MetricName='BucketSizeBytes',
                                              Dimensions=[
-                                            {'Name': 'BucketName', 'Value': self.bucket},
-                                            {'Name': 'StorageType', 'Value': 'StandardStorage'}],
-                                            Statistics=['Average'],
-                                            Period=86400,
-                                            StartTime=(now-datetime.timedelta(days=1)).isoformat(),
-                                            EndTime=now.isoformat())
+                                                 {'Name': 'BucketName', 'Value': self.bucket},
+                                                 {'Name': 'StorageType', 'Value': 'StandardStorage'}
+                                             ],
+                                             Statistics=['Average'],
+                                             Period=86400,
+                                             StartTime=(now-datetime.timedelta(days=1)).isoformat(),
+                                             EndTime=now.isoformat())
         return resp['Datapoints']
 
     def list_all_keys_w_prefix(self, prefix, records_only=False):
@@ -101,7 +109,7 @@ class S3Connection(AbstractConnection):
         prefix = ''.join([prefix, '/']) if not prefix.endswith('/') else prefix
         # this will exclude 'primary' and 'latest' in records_only == True
         # use '2' because is is the first digit of year (in uuid)
-        use_prefix = ''.join([prefix, '2' ])if records_only else prefix
+        use_prefix = ''.join([prefix, '2']) if records_only else prefix
         bucket = self.resource.Bucket(self.bucket)
         for obj in bucket.objects.filter(Prefix=use_prefix):
             all_keys.append(obj.key)
@@ -120,13 +128,16 @@ class S3Connection(AbstractConnection):
 
     def delete_keys(self, key_list):
         # boto3 requires this setup
-        to_delete = {'Objects' : [{'Key': key} for key in key_list]}
+        to_delete = {
+            'Objects': [{'Key': key}
+                        for key in key_list]
+        }
         return self.client.delete_objects(Bucket=self.bucket, Delete=to_delete)
 
     def test_connection(self):
         try:
             bucket_resp = self.client.head_bucket(Bucket=self.bucket)
-        except:
+        except Exception:
             return {'ResponseMetadata': {'HTTPStatusCode': 404}}
         return bucket_resp
 
@@ -137,7 +148,7 @@ class S3Connection(AbstractConnection):
         bucket = manual_bucket if manual_bucket else self.bucket
         try:
             self.client.create_bucket(Bucket=bucket)
-        except:
+        except Exception:
             return None
         else:
             return bucket

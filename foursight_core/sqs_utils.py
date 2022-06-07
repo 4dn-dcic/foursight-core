@@ -1,6 +1,8 @@
-from datetime import datetime
 import boto3
 import json
+
+from datetime import datetime
+from dcicutils.misc_utils import ignored
 from .stage import Stage
 
 
@@ -26,7 +28,7 @@ class SQS(object):
                 InvocationType='Event',
                 Payload=json.dumps(runner_input)
             )
-        except:
+        except Exception:
             response = client.invoke(
                 FunctionName=self.stage.get_runner_name(),
                 Payload=json.dumps(runner_input)
@@ -95,7 +97,7 @@ class SQS(object):
         sqs = boto3.resource('sqs')
         try:
             queue = sqs.get_queue_by_name(QueueName=queue_name)
-        except:
+        except Exception:
             queue = sqs.create_queue(
                 QueueName=queue_name,
                 Attributes={
@@ -129,6 +131,7 @@ class SQS(object):
         proc_vals = [[environ, uuid] + val for val in check_vals]
         for val in proc_vals:
             response = queue.send_message(MessageBody=json.dumps(val))
+            ignored(response)
         return uuid
 
     @classmethod
@@ -149,6 +152,6 @@ class SQS(object):
                     'ApproximateNumberOfMessagesNotVisible'
                 ]
             )
-        except:
+        except Exception:
             return backup
         return result.get('Attributes', backup)

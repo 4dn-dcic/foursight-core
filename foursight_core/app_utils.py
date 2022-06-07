@@ -8,13 +8,14 @@ import boto3
 import datetime
 import ast
 import copy
-import logging
 import requests
 import sys
 import logging
 from itertools import chain
 from dateutil import tz
 from dcicutils import ff_utils
+from dcicutils.lang_utils import disjoined_list
+from typing import Optional
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
 from .check_utils import CheckHandler
@@ -47,7 +48,7 @@ class AppUtils(object):
     package_name = 'foursight_core'
 
     # repeat the same line to use __file__ relative to the inherited class
-    check_setup_dir=dirname(__file__)
+    check_setup_dir = dirname(__file__)
 
     # optionally change this one
     html_main_title = 'Foursight'
@@ -68,7 +69,8 @@ class AppUtils(object):
             autoescape=jinja2.select_autoescape(['html', 'xml'])
         )
 
-    def set_timeout(self, timeout):
+    @classmethod
+    def set_timeout(cls, timeout):
         """Set timeout as environment variable. Decorator instances will pick up this value"""
         os.environ['CHECK_TIMEOUT'] = str(timeout)
 
@@ -95,14 +97,13 @@ class AppUtils(object):
         and the given environment.
         Returns an FSConnection object or raises an error.
         """
-        error_res = {}
         environments = self.init_environments(environ) if _environments is None else _environments
         print("environments = %s" % str(environments))
         # if still not there, return an error
         if environ not in environments:
             error_res = {
                 'status': 'error',
-                'description': 'environment %s is not valid!' % environ,
+                'description': f'environment {environ} is not valid!',
                 'environment': environ,
                 'checks': {}
             }
@@ -154,14 +155,14 @@ class AppUtils(object):
                 payload = jwt.decode(token, auth0_secret, audience=auth0_client, leeway=30)
                 for env_info in self.init_environments(env).values():
                     user_res = ff_utils.get_metadata('users/' + payload.get('email').lower(),
-                                                ff_env=env_info['ff_env'], add_on='frame=object')
+                                                     ff_env=env_info['ff_env'], add_on='frame=object')
                     logger.error(env_info)
                     logger.error(user_res)
                     if not ('admin' in user_res['groups'] and payload.get('email_verified')):
                         # if unauthorized for one, unauthorized for all
                         return False
                 return True
-            except:
+            except Exception:
                 pass
         return False
 
@@ -194,7 +195,7 @@ class AppUtils(object):
             'redirect_uri': ''.join(['https://', domain, context, 'callback/'])
         }
         json_payload = json.dumps(payload)
-        headers = { 'content-type': "application/json" }
+        headers = {'content-type': "application/json"}
         res = requests.post("https://hms-dbmi.auth0.com/oauth/token", data=json_payload, headers=headers)
         id_token = res.json().get('id_token', None)
         if id_token:
@@ -242,8 +243,9 @@ class AppUtils(object):
 
     @classmethod
     def forbidden_response(cls, context="/"):
+        sample_page = context + 'view/<environment>'
         return Response(status_code=403,
-                        body='Forbidden. Login on the %s page.' % (context + 'view/<environment>'))
+                        body=f'Forbidden. Login on the {sample_page} page.')
 
     @classmethod
     def process_response(cls, response):
@@ -325,8 +327,7 @@ class AppUtils(object):
             return cls.TRIM_ERR_OUTPUT
         return output
 
-
-    ##### ROUTE RUNNING FUNCTIONS #####
+    # ===== ROUTE RUNNING FUNCTIONS =====
 
     def view_run_check(self, environ, check, params, context="/"):
         """
@@ -380,12 +381,12 @@ class AppUtils(object):
             # no check so cannot redirect
             act_path = '/'.join([context + 'checks', action, queued_uuid])
             return Response(
-                body = {
+                body={
                     'status': 'success',
-                    'details': 'Action is queued. When finished, view at: %s' % act_path,
+                    'details': f'Action is queued. When finished, view at: {act_path}',
                     'environment': environ
                 },
-                status_code = 200
+                status_code=200
             )
         return Response(status_code=302, body=json.dumps(resp_headers),
                         headers=resp_headers)
@@ -435,7 +436,8 @@ class AppUtils(object):
                 })
         # prioritize these environments
         env_order = ['data', 'staging', 'webdev', 'hotseat', 'cgap', 'cgap-mastertest']
-        total_envs = sorted(total_envs, key=lambda v: env_order.index(v['environment']) if v['environment'] in env_order else 9999)
+        total_envs = sorted(total_envs,
+                            key=lambda v: env_order.index(v['environment']) if v['environment'] in env_order else 9999)
         template = self.jin_env.get_template('view_groups.html')
         # get queue information
         queue_attr = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
@@ -619,15 +621,15 @@ class AppUtils(object):
         """
         html_resp = Response('Foursight history view')
         html_resp.headers = {'Content-Type': 'text/html'}
-        server = None
+        # server = None
         try:
             connection = self.init_connection(environ)
         except Exception:
             connection = None
         if connection:
-            server = connection.ff_server
+            # server = connection.ff_server
             history = self.get_foursight_history(connection, check, start, limit)
-            history_kwargs = list(set(chain.from_iterable([l[2] for l in history])))
+            history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
         else:
             history, history_kwargs = [], []
         template = self.jin_env.get_template('history.html')
@@ -764,7 +766,6 @@ class AppUtils(object):
         to allow for testing.
         """
         proc_environ = environ.split('-')[-1] if environ.startswith('fourfront-') else environ
-        response = None
         if isinstance(env_data, dict) and {'fourfront', 'es'} <= set(env_data):
             ff_address = env_data['fourfront'] if env_data['fourfront'].endswith('/') else env_data['fourfront'] + '/'
             es_address = env_data['es'] if env_data['es'].endswith('/') else env_data['es'] + '/'
@@ -781,12 +782,12 @@ class AppUtils(object):
             bucket_res = s3_connection.create_bucket(s3_bucket)
             if not bucket_res:
                 response = Response(
-                    body = {
+                    body={
                         'status': 'error',
-                        'description': ' '.join(['Could not create bucket:', s3_bucket]),
+                        'description': f'Could not create bucket: {s3_bucket}',
                         'environment': proc_environ
                     },
-                    status_code = 500
+                    status_code=500
                 )
             else:
                 # if not testing, queue checks with 'put_env' condition for the new env
@@ -794,22 +795,22 @@ class AppUtils(object):
                     for sched in self.check_handler.get_schedule_names():
                         self.queue_scheduled_checks(environ, sched, conditions=['put_env'])
                 response = Response(
-                    body = {
+                    body={
                         'status': 'success',
                         'description': ' '.join(['Succesfully made:', proc_environ]),
                         'environment': proc_environ
                     },
-                    status_code = 200
+                    status_code=200
                 )
         else:
             response = Response(
-                body = {
+                body={
                     'status': 'error',
                     'description': 'Environment creation failed',
                     'body': env_data,
                     'environment': proc_environ
                 },
-                status_code = 400
+                status_code=400
             )
         return self.process_response(response)
 
@@ -821,21 +822,22 @@ class AppUtils(object):
         environments = self.init_environments()
         if environ in environments:
             response = Response(
-                body = {
+                body={
                     'status': 'success',
                     'details': environments[environ],
                     'environment': environ
                 },
-                status_code = 200
+                status_code=200
             )
         else:
+            env_names = list(environments.keys())
             response = Response(
-                body = {
+                body={
                     'status': 'error',
-                    'description': 'Invalid environment provided. Should be one of: %s' % (str(list(environments.keys()))),
+                    'description': f'Invalid environment provided. Should be one of {disjoined_list(env_names)}.',
                     'environment': environ
                 },
-                status_code = 400
+                status_code=400
             )
         return self.process_response(response)
 
@@ -852,38 +854,36 @@ class AppUtils(object):
         keys_deleted = s3_resp['Deleted']
         if not keys_deleted:
             response = Response(
-                body = {
+                body={
                     'status': 'error',
                     'description': 'Unable to comply with request',
                     'environment': environ
                 },
-                status_code = 400
+                status_code=400
             )
         else:
-            our_key = keys_deleted[0]  # since we only passed one key to be deleted, the response will be a length 1 list
+            our_key = keys_deleted[0]  # since we only passed one key to be deleted, response will be a length 1 list
             if our_key['Key'] != environ:
                 response = Response(
-                    body = {
+                    body={
                         'status': 'error',
                         'description': 'An error occurred during environment deletion, please check S3 directly',
                         'environment': environ
                     },
-                    status_code = 400
+                    status_code=400
                 )
             else:  # we were successful
                 response = Response(
-                    body = {
+                    body={
                         'status': 'success',
-                        'details': 'Successfully deleted environment %s' % environ,
+                        'details': f'Successfully deleted environment {environ}',
                         'environment': environ
                     },
-                    status_code = 200
+                    status_code=200
                 )
         return cls.process_response(response)
 
-
-
-    ##### QUEUE / CHECK RUNNER FUNCTIONS #####
+    # ===== QUEUE / CHECK RUNNER FUNCTIONS =====
 
     def queue_scheduled_checks(self, sched_environ, schedule_name, conditions=None):
         """
@@ -909,13 +909,13 @@ class AppUtils(object):
         """
         queue = self.sqs.get_sqs_queue()
         if schedule_name is not None:
-            if sched_environ != 'all' and self.environment.is_valid_environment_name(sched_environ) == False:
-                print('-RUN-> %s is not a valid environment. Cannot queue.' % sched_environ)
+            if sched_environ != 'all' and not self.environment.is_valid_environment_name(sched_environ):
+                print(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
                 return
             sched_environs = self.environment.list_environment_names() if sched_environ == 'all' else [sched_environ]
             check_schedule = self.check_handler.get_check_schedule(schedule_name, conditions)
             if not check_schedule:
-                print('-RUN-> %s is not a valid schedule. Cannot queue.' % schedule_name)
+                print(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
                 return
             for environ in sched_environs:
                 # add the run info from 'all' as well as this specific environ
@@ -923,11 +923,12 @@ class AppUtils(object):
                 check_vals.extend(check_schedule.get(environ, []))
                 self.sqs.send_sqs_messages(queue, environ, check_vals)
         runner_input = {'sqs_url': queue.url}
-        for n in range(4): # number of parallel runners to kick off
+        for n in range(4):  # number of parallel runners to kick off
             self.sqs.invoke_check_runner(runner_input)
-        return runner_input # for testing purposes
+        return runner_input  # for testing purposes
 
-    def queue_check(self, environ, check, params={}, deps=[], uuid=None):
+    def queue_check(self, environ, check,
+                    params: Optional[dict] = None, deps: Optional[list] = None, uuid: Optional[str] = None):
         """
         Queue a single check, given by check function name, with given parameters
         and dependencies (both optional). Also optionally pass in a uuid, which
@@ -947,15 +948,16 @@ class AppUtils(object):
         if not check_str:
             error_res = {
                 'status': 'error',
-                'description': 'could not find check %s' % check,
+                'description': f'could not find check {check}',
                 'environment': environ,
                 'checks': {}
             }
             raise Exception(str(error_res))
-        to_send = [check_str, params, deps]
+        to_send = [check_str, params or {}, deps or []]
         return self.send_single_to_queue(environ, to_send, uuid)
 
-    def queue_action(self, environ, action, params={}, deps=[], uuid=None):
+    def queue_action(self, environ, action,
+                     params: Optional[dict] = None, deps: Optional[list] = None, uuid: Optional[str] = None):
         """
         Queue a single action, given by action function name, with given parameters
         and dependencies (both optional). Also optionally pass in a uuid, which
@@ -975,12 +977,12 @@ class AppUtils(object):
         if not action_str:
             error_res = {
                 'status': 'error',
-                'description': 'could not find action %s' % action,
+                'description': f'could not find action {action}',
                 'environment': environ,
                 'checks': {}
             }
             raise Exception(str(error_res))
-        to_send = [action_str, params, deps]
+        to_send = [action_str, params or {}, deps or []]
         return self.send_single_to_queue(environ, to_send, uuid)
 
     def send_single_to_queue(self, environ, to_send, uuid, invoke_runner=True):
@@ -1063,7 +1065,7 @@ class AppUtils(object):
             deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
             finished_dependencies = set(deps_w_uuid).issubset(already_run)
             if not finished_dependencies:
-                print('-RUN-> Not ready for: %s' % (run_name))
+                print(f'-RUN-> Not ready for: {run_name}')
         else:
             finished_dependencies = True
         connection = self.init_connection(run_env)
@@ -1078,7 +1080,7 @@ class AppUtils(object):
                 found_rec = connection.get_object(rec_key)
                 if found_rec is not None:
                     # the action record has been written. Abort and propogate
-                    print('-RUN-> Found existing action record: %s. Skipping' % rec_key)
+                    print(f'-RUN-> Found existing action record: {rec_key}. Skipping')
                     self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
                     return None
                 else:
@@ -1087,7 +1089,7 @@ class AppUtils(object):
                     act_name = run_name.split('/')[-1]
                     rec_body = ''.join([act_name, '/', run_uuid, '.json'])
                     connection.put_object(rec_key, rec_body)
-                    print('-RUN-> Wrote action record: %s' % rec_key)
+                    print(f'-RUN-> Wrote action record: {rec_key}')
             run_result = self.check_handler.run_check_or_action(connection, run_name, run_kwargs)
             print('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))
             # invoke action if running a check and kwargs['queue_action'] matches stage
@@ -1106,11 +1108,11 @@ class AppUtils(object):
                     else:
                         print('-RUN-> Queued action %s on stage %s with kwargs: %s'
                               % (run_result['action'], stage, action_params))
-            print('-RUN-> Finished: %s' % (run_name))
+            print(f'-RUN-> Finished: {run_name}')
             self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return run_result
         else:
-            print('-RUN-> Recovered: %s' % (run_name))
+            print(f'-RUN-> Recovered: {run_name}')
             self.sqs.recover_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
 
