@@ -120,9 +120,9 @@ class Environment(object):
         :param env: allows you to specify a single env to be initialized
         :param envs: allows you to specify multiple envs to be initialized
         """
-        if env is not None and envs is not None:
-            ValueError("get_environment_and_bucket_info_in_batch accepts either 'env=' or 'envs=' but not both.")
         if envs is not None:
+            if env is not None:
+                ValueError("get_environment_and_bucket_info_in_batch accepts either 'env=' or 'envs=' but not both.")
             env_keys = envs
         else:
             try:
