@@ -132,7 +132,6 @@ jmespath = ">=0.9.3,<1.0.0"
 mypy-extensions = "0.4.3"
 pyyaml = ">=5.3.1,<7.0.0"
 six = ">=1.10.0,<2.0.0"
-typing = {version = "3.6.4", markers = "python_version < \"3.7\""}
 
 [package.extras]
 cdk = ["aws-cdk.aws-iam (>=1.85.0,<2.0)", "aws-cdk.aws-s3-assets (>=1.85.0,<2.0)", "aws-cdk.cloudformation-include (>=1.85.0,<2.0)", "aws-cdk.core (>=1.85.0,<2.0)"]
@@ -178,7 +177,7 @@ toml = ["tomli"]
 
 [[package]]
 name = "dcicutils"
-version = "3.13.1.2b35"
+version = "3.14.0.2b38"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 category = "main"
 optional = false
@@ -822,14 +821,6 @@ optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
-name = "typing"
-version = "3.6.4"
-description = "Type Hints for Python"
-category = "dev"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "typing-extensions"
 version = "4.1.1"
 description = "Backported and Experimental Type Hints for Python 3.6+"
@@ -935,8 +926,8 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 
 [metadata]
 lock-version = "1.1"
-python-versions = ">=3.6.1,<3.8"
-content-hash = "8155be4e59f6990c21bf5f2b1f23e89696cc514580898a20adc8def8c5586dec"
+python-versions = ">=3.7,<3.9"
+content-hash = "0de2e7f86dc9975ebecc4e0cf0f402e47726ab271c931e7a233871671f4632ad"
 
 [metadata.files]
 ansicon = [
@@ -1045,8 +1036,8 @@ coverage = [
     {file = "coverage-6.2.tar.gz", hash = "sha256:e2cad8093172b7d1595b4ad66f24270808658e11acf43a8f95b41276162eb5b8"},
 ]
 dcicutils = [
-    {file = "dcicutils-3.13.1.2b35-py3-none-any.whl", hash = "sha256:d0d8f22c3c25f87c1d6d7054f9d84bfb46fe79e91aa77fe497c279558b4e3ed0"},
-    {file = "dcicutils-3.13.1.2b35.tar.gz", hash = "sha256:97ca392ac2f3b4086e5baf6957818090d236188a76e07339ad9244cc0211fb8d"},
+    {file = "dcicutils-3.14.0.2b38-py3-none-any.whl", hash = "sha256:605a12f88fd319076046e15788dccca3a015bbd6019e597e110a70e0924d3d57"},
+    {file = "dcicutils-3.14.0.2b38.tar.gz", hash = "sha256:99a533d8a175aa825bc6a4d9308a5fa8353ddb11723b3c0df13dbc25e9e0a408"},
 ]
 decorator = [
     {file = "decorator-5.1.1-py3-none-any.whl", hash = "sha256:b8c3f85900b9dc423225913c5aace94729fe1fa9763b38939a95226f02d37186"},
@@ -1402,11 +1393,6 @@ structlog = [
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
     {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},
-]
-typing = [
-    {file = "typing-3.6.4-py2-none-any.whl", hash = "sha256:b2c689d54e1144bbcfd191b0832980a21c2dbcf7b5ff7a66248a60c90e951eb8"},
-    {file = "typing-3.6.4-py3-none-any.whl", hash = "sha256:3a887b021a77b292e151afb75323dea88a7bc1b3dfa92176cff8e44c8b68bddf"},
-    {file = "typing-3.6.4.tar.gz", hash = "sha256:d400a9344254803a2368533e4533a4200d21eb7b6b729c173bc38201a74db3f2"},
 ]
 typing-extensions = [
     {file = "typing_extensions-4.1.1-py3-none-any.whl", hash = "sha256:21c85e0fe4b9a155d0799430b0ad741cdce7e359660ccbd8b530613e8df88ce2"},
