@@ -1,7 +1,6 @@
 import os
 import json
 import time
-from .abstract_connection import AbstractConnection
 from elasticsearch import (
     # Elasticsearch,
     # TransportError,
@@ -10,7 +9,8 @@ from elasticsearch import (
     )
 from elasticsearch_dsl import Search
 from dcicutils import es_utils
-from .check_schema import CheckSchema
+from foursight_core.abstract_connection import AbstractConnection
+from foursight_core.check_schema import CheckSchema
 
 
 class ElasticsearchException(Exception):

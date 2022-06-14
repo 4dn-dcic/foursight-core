@@ -1,15 +1,13 @@
 import logging
 
-from .s3_connection import S3Connection
 from dcicutils.common import EnvName, ChaliceStage
 from dcicutils.env_manager import EnvManager
-from dcicutils.env_utils import (
-    get_foursight_bucket, get_foursight_bucket_prefix, full_env_name, infer_foursight_from_env,
-    get_env_real_url,
-)
 from dcicutils.misc_utils import full_class_name
-from dcicutils.s3_utils import s3Utils, HealthPageKey
+from dcicutils.s3_utils import s3Utils
 from typing import Optional, List
+from foursight_core.s3_connection import S3Connection
+from dcicutils.env_base import EnvManager
+from dcicutils.env_utils import get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 
 
 logging.basicConfig()

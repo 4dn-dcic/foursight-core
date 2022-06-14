@@ -3,7 +3,7 @@ import json
 
 from datetime import datetime
 from dcicutils.misc_utils import ignored
-from .stage import Stage
+from foursight_core.stage import Stage
 
 
 class SQS(object):
