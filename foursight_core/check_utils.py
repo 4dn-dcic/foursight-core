@@ -2,10 +2,10 @@ import os
 import importlib
 import copy
 import json
-from .check_schema import CheckSchema
-from .exceptions import BadCheckSetup
-from .environment import Environment
-from .decorators import Decorators
+from foursight_core.check_schema import CheckSchema
+from foursight_core.exceptions import BadCheckSetup
+from environment import Environment
+from decorators import Decorators
 
 
 class CheckHandler(object):

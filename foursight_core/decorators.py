@@ -5,13 +5,13 @@ import sys
 import os
 from dcicutils.misc_utils import ignored
 from functools import wraps
-from .check_schema import CheckSchema
-from .run_result import (
+from foursight_core.check_schema import CheckSchema
+from foursight_core.run_result import (
     CheckResult as CheckResultBase,
     ActionResult as ActionResultBase
 )
-from .exceptions import BadCheckOrAction
-from .sqs_utils import SQS
+from foursight_core.exceptions import BadCheckOrAction
+from foursight_core.sqs_utils import SQS
 
 
 class Decorators(object):

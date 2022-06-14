@@ -1,5 +1,5 @@
-from .s3_connection import S3Connection
-from .es_connection import ESConnection
+from foursight_core.s3_connection import S3Connection
+from foursight_core.es_connection import ESConnection
 from dcicutils.s3_utils import s3Utils
 
 

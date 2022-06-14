@@ -16,12 +16,12 @@ from dateutil import tz
 from dcicutils import ff_utils
 from dcicutils.lang_utils import disjoined_list
 from typing import Optional
-from .s3_connection import S3Connection
-from .fs_connection import FSConnection
-from .check_utils import CheckHandler
-from .sqs_utils import SQS
-from .stage import Stage
-from .environment import Environment
+from foursight_core.s3_connection import S3Connection
+from foursight_core.fs_connection import FSConnection
+from foursight_core.check_utils import CheckHandler
+from foursight_core.sqs_utils import SQS
+from foursight_core.stage import Stage
+from foursight_core.environment import Environment
 
 
 logging.basicConfig()
