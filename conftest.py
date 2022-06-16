@@ -18,7 +18,7 @@ SIMULATED_ENV_CONFIG = {
     'simulated': {
         'fourfront': 'dummy-url',
         'es': ES_HOST,  # maybe dont even need this?
-        'ff_env': 'fourfront-core-simulated',
+        'ff_env': 'fourfront-simulated',
         'bucket': 'foursight-core-simulated-results',
     }
 }
@@ -85,7 +85,13 @@ def global_env_bucket():
 @pytest.yield_fixture(scope='session')
 def app_utils_obj_conn(global_env_bucket):  # noQA pytest fixture
     """ Mocks appropriate operations such that we can generate a simulated app_utils
-        object for a non-existent foursight environment
+        object for a non-existent foursight environment.
+
+        Description of mocks:
+            * FOURSIGHT_BUCKET_PREFIX so consistency checks are passed
+            * verify_and_get_env_config to simulate an env entry
+            * fetch_health_page_json to simulate a portal health page API call
+            * queue_check to
     """
     ignored(global_env_bucket)
     with mock.patch.object(EnvUtils, 'FOURSIGHT_BUCKET_PREFIX', FOURSIGHT_PREFIX):
