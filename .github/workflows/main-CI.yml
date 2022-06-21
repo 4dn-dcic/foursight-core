@@ -42,4 +42,5 @@ jobs:
         env:
           S3_ENCRYPT_KEY: ${{ secrets.S3_ENCRYPT_KEY }}
           DEV_SECRET: ${{ secrets.DEV_SECRET }}
+          GLOBAL_ENV_BUCKET: foursight-envs
         run: make test-for-ga
