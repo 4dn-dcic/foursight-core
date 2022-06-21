@@ -1,6 +1,8 @@
 from .s3_connection import S3Connection
 from dcicutils.env_base import EnvManager
-from dcicutils.env_utils import get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
+from dcicutils.env_utils import (
+    get_foursight_bucket, get_foursight_bucket_prefix, full_env_name, infer_foursight_from_env,
+)
 
 
 class Environment(object):
@@ -21,28 +23,35 @@ class Environment(object):
         self.s3_connection = S3Connection(self.get_env_bucket_name())
 
     def get_env_bucket_name(self):
+
         computed_result = self.prefix + '-envs'
 
         # Consistency check, but accessing the declared value might be a better way to get this.
         declared_result = EnvManager.global_env_bucket_name()
-        if declared_result != computed_result:
-            raise RuntimeError(f"get_env_bucket_name computed {computed_result},"
-                               f" but the declared result was {declared_result}.")
 
-        return computed_result
+        # This would be the normal error checking...
+        if declared_result != computed_result:
+            # Note the inconsistency, but don't flag an error.
+            print(f"WARNING: get_env_bucket_name computed {computed_result},"
+                  f" but the declared result was {declared_result}.")
+
+        return declared_result
 
     def list_environment_names(self):
         """
         Lists all environments in the foursight-envs s3. Returns a list of names
         """
-        computed_result = [key for key in self.s3_connection.list_all_keys() if not key.endswith(".ecosystem")]
+        computed_result = sorted([key for key in self.s3_connection.list_all_keys() if not key.endswith(".ecosystem")])
 
         # Consistency check. The declared result would be a more abstract way to compute this.
-        declared_result = EnvManager.get_all_environments(self.get_env_bucket_name())
-        if declared_result != computed_result:
+        declared_result = [infer_foursight_from_env(envname=env)
+                           for env in sorted(EnvManager.get_all_environments(env_bucket=self.get_env_bucket_name()))]
+        declared_full = list(map(full_env_name, declared_result))
+        computed_full = list(map(full_env_name, computed_result))
+        if declared_full != computed_full:
             raise RuntimeError("list_environment_names has consistency problems.")
 
-        return computed_result
+        return declared_result
 
     def list_valid_schedule_environment_names(self):
         """Lists all valid environ names used in schedules including 'all'"""
@@ -60,10 +69,10 @@ class Environment(object):
             return False
 
     def get_environment_info_from_s3(self, env_name):
-
-        computed_result = self.s3_connection.get_object(env_name)
-
         env_full_name = full_env_name(env_name)
+
+        computed_result = self.s3_connection.get_object(env_full_name)
+
         declared_result = self.s3_connection.get_object(env_full_name)
         if declared_result != computed_result:
             raise RuntimeError(f"get_environment_info_from_s3 has consistency problems."

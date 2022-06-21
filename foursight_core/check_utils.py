@@ -2,6 +2,7 @@ import os
 import importlib
 import copy
 import json
+from dcicutils.env_utils import infer_foursight_from_env
 from .check_schema import CheckSchema
 from .exceptions import BadCheckSetup
 from .environment import Environment
@@ -124,6 +125,7 @@ class CheckHandler(object):
                     raise BadCheckSetup(f'Schedule "{sched_name}" for "{check_name}" in check_setup.json'
                                         f' must have a dictionary value.')
                 for env_name, env_detail in schedule.items():
+                    env_name = infer_foursight_from_env(envname=env_name, short=False)
                     if env_name not in all_environments:
                         raise BadCheckSetup(f'Environment "{env_name}" in schedule "{sched_name}" for "{check_name}"'
                                             f' in check_setup.json is not an existing'
