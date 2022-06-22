@@ -1,10 +1,13 @@
 import logging
 
 from .s3_connection import S3Connection
+from dcicutils.common import EnvName, ChaliceStage
 from dcicutils.env_manager import EnvManager
 from dcicutils.env_utils import (
     get_foursight_bucket, get_foursight_bucket_prefix, full_env_name, infer_foursight_from_env,
 )
+from dcicutils.misc_utils import full_class_name
+from typing import Optional, List
 
 
 logging.basicConfig()
@@ -13,60 +16,85 @@ logger = logging.getLogger(__name__)
 
 class Environment(object):
 
-    def __init__(self, foursight_prefix):
+    def __init__(self, foursight_prefix: Optional[str] = None):  # the foursight_prefix argument can go away.
 
-        # This consistency check can go away later, but when it does we can also get
+        prefix = get_foursight_bucket_prefix()
+
+        # This consistency check AND INTERIM HEURISTIC ERROR CORRECTION can go away later,
+        # but when it does we can also get
         # rid of the argument that is passed, since it should be possible to look up.
-        declared_bucket_prefix = get_foursight_bucket_prefix()
-        if not declared_bucket_prefix:
-            raise RuntimeError(f"There is no declared foursight bucket prefix."
-                               f" It should probably be {foursight_prefix!r}.")
-        elif declared_bucket_prefix != foursight_prefix:
-            raise RuntimeError(f"The value of foursight_prefix, {foursight_prefix},"
-                               f" does not match the declared foursight bucket prefix, {declared_bucket_prefix}.")
+        # For now we have made the argument optional so that it can be gradually phased out,
+        # but failing to pass it causes a requirement to declare the "foursight_bucket_prefix"
+        # in the ecosystem file of the global env bucket. -kmp 22-Jun-2022
+        if not prefix:
+            if foursight_prefix is not None:
+                prefix = foursight_prefix
+                logger.error(f"There is no declared foursight bucket prefix."
+                             f" The value from a deprecated data flow path, {foursight_prefix!r}, will be used.")
+            else:
+                raise RuntimeError(f"There is no declared foursight bucket prefix,"
+                                   f" and no suitable substitute can be inferred through legacy means.")
+        elif foursight_prefix and prefix != foursight_prefix:
+            logger.error(f"A value of deprecated argument 'foursight_prefix', {foursight_prefix},"
+                         f" was given when initializing an instance of the class {full_class_name(self)},"
+                         f" but the value does not match the declared foursight bucket prefix, {prefix}.")
 
-        self.prefix = foursight_prefix
+        self.prefix = prefix
         self.s3_connection = S3Connection(self.get_env_bucket_name())
 
-    def get_env_bucket_name(self):
+    def get_env_bucket_name(self) -> Optional[str]:
 
-        computed_result = self.prefix + '-envs'
+        bucket_name = EnvManager.global_env_bucket_name()
 
-        # Consistency check, but accessing the declared value might be a better way to get this.
-        declared_result = EnvManager.global_env_bucket_name()
-
-        # This would be the normal error checking...
-        if declared_result != computed_result:
+        # This consistency check can go away later but has been downgraded to a warning after initial testing
+        # confirms this approach can work.
+        legacy_bucket_name = self.prefix + '-envs'
+        if bucket_name != legacy_bucket_name:
             # Note the inconsistency, but don't flag an error.
-            logger.warning(f"get_env_bucket_name computed {computed_result},"
-                           f" but the declared result was {declared_result}.")
+            logger.warning(f"{full_class_name(self)}.get_env_bucket_name is returning {bucket_name!r},"
+                           f" where it previously would have returned {legacy_bucket_name!r}.")
 
-        return declared_result
+        return bucket_name
 
-    def list_environment_names(self):
+    def list_environment_names(self) -> List[EnvName]:
         """
-        Lists all environments in the foursight-envs s3. Returns a list of names
+        Lists all environments in the foursight-envs s3.
+
+        Returns: a list of names
         """
-        computed_result = sorted([key for key in self.s3_connection.list_all_keys() if not key.endswith(".ecosystem")])
 
-        # Consistency check. The declared result would be a more abstract way to compute this.
-        declared_result = [infer_foursight_from_env(envname=env)
-                           for env in sorted(EnvManager.get_all_environments(env_bucket=self.get_env_bucket_name()))]
-        declared_full = list(map(full_env_name, declared_result))
-        computed_full = list(map(full_env_name, computed_result))
-        if declared_full != computed_full:
-            raise RuntimeError("list_environment_names has consistency problems.")
+        environment_names = [infer_foursight_from_env(envname=env)
+                             for env in sorted(EnvManager.get_all_environments(env_bucket=self.get_env_bucket_name()))]
 
-        return declared_result
+        # This consistency check can go away later..
+        legacy_return_value = sorted([key
+                                      for key in self.s3_connection.list_all_keys()
+                                      if not key.endswith(".ecosystem")])
+        modern_full_names = list(map(full_env_name, environment_names))
+        legacy_full_names = list(map(full_env_name, legacy_return_value))
+        if modern_full_names != legacy_full_names:
+            logger.warning(f"{full_class_name(self)}.list_environment_names has consistency problems.")
 
-    def list_valid_schedule_environment_names(self):
-        """Lists all valid environ names used in schedules including 'all'"""
+        return environment_names
 
-        # This call requires no changes. -kmp 24-May-2022
+    def list_valid_schedule_environment_names(self) -> List[EnvName]:
+        """
+        Lists all valid environ names used in schedules including 'all'.
+
+        Returns: A list of names.
+        """
+
         return self.list_environment_names() + ['all']
 
-    def is_valid_environment_name(self, env):
-        """check if env is a valid environment name"""
+    def is_valid_environment_name(self, env: Optional[EnvName]) -> bool:
+        """
+        Returns True if env is a valid environment name, and False otherwise.
+
+        :param env: The name of an environment.
+        """
+
+        # TODO: Figure out whether callers mean this to return True for all possible forms of an environment
+        #       or only the actually-declared name. -kmp 22-Jun-2022
 
         # This call requires no changes. -kmp 24-May-2022
         if env in self.list_environment_names():
@@ -74,46 +102,44 @@ class Environment(object):
         else:
             return False
 
-    def get_environment_info_from_s3(self, env_name):
+    def get_environment_info_from_s3(self, env_name: EnvName) -> dict:
+
         env_full_name = full_env_name(env_name)
+        env_info = self.s3_connection.get_object(env_full_name)
 
-        computed_result = self.s3_connection.get_object(env_full_name)
+        # Check that we got a dictionary with the necessary keys.
+        if not (isinstance(env_info, dict) and {'fourfront', 'es', 'ff_env'} <= set(env_info)):
+            raise RuntimeError(f'In {full_class_name(self)}.get_environment_info_from_s3:'
+                               f' Malformatted environment info on S3 for key {env_name}: {env_info}')
 
-        declared_result = self.s3_connection.get_object(env_full_name)
-        if declared_result != computed_result:
-            raise RuntimeError(f"get_environment_info_from_s3 has consistency problems."
-                               f" env_name={env_name} env_full_name={env_full_name}"
-                               f" computed_result={computed_result} declared_result={declared_result}")
+        return env_info
 
-        return computed_result
+    def get_environment_and_bucket_info(self, env_name: EnvName, stage: ChaliceStage) -> dict:
 
-    def get_environment_and_bucket_info(self, env_name, stage):
         env_info = self.get_environment_info_from_s3(env_name)
-        # check that the keys we need are in the object
-        if isinstance(env_info, dict) and {'fourfront', 'es'} <= set(env_info):
-            portal_url = env_info['fourfront']
-            es_url = env_info['es']
 
-            # Isn't the ff_env required? Does this defaulting ever matter? -kmp 24-May-2022
-            defaulted_ff_env = env_info.get('ff_env', ''.join(['fourfront-', env_name]))
+        portal_url = env_info['fourfront']
+        es_url = env_info['es']
+        ff_env = env_info['ff_env']
 
-            computed_bucket_name = ''.join([self.prefix + '-', stage, '-', env_name])
-            declared_bucket_name = get_foursight_bucket(envname=env_name, stage=stage)
-            if declared_bucket_name != computed_bucket_name:
-                logger.warning(f"For environment {env_name}, the computed bucket name, {computed_bucket_name},"
-                               f" does not match the declared result, {declared_bucket_name}.")
+        bucket_name = get_foursight_bucket(envname=env_name, stage=stage)
 
-            env_and_bucket_info = {
-                'fourfront': portal_url,
-                'es': es_url,
-                'ff_env': defaulted_ff_env,
-                'bucket': computed_bucket_name,
-            }
-            return env_and_bucket_info
-        else:
-            raise Exception(f'Malformatted environment info on S3 for key {env_name}: {env_info}')
+        # This consistency check can go away later. -kmp 22-Jun-2022
+        legacy_bucket_name = ''.join([self.prefix + '-', stage, '-', env_name])
+        if bucket_name != legacy_bucket_name:
+            logger.warning(f"{full_class_name(self)}.get_environment_and_bucket_info({env_name!r}, {stage!r})"
+                           f" is returning {bucket_name!r},"
+                           f" but it previously would have returned {legacy_bucket_name!r}.")
 
-    def get_selected_environment_names(self, env_name):
+        env_and_bucket_info = {
+            'fourfront': portal_url,
+            'es': es_url,
+            'ff_env': ff_env,
+            'bucket': legacy_bucket_name,
+        }
+        return env_and_bucket_info
+
+    def get_selected_environment_names(self, env_name: EnvName):
 
         # This is weirdly named. A better name would be expand_environment_names or get_matching_environment_names.
         # But it doesn't need to change. -kmp 24-May-2022
@@ -122,9 +148,10 @@ class Environment(object):
         elif self.is_valid_environment_name(env_name):
             return [env_name]
         else:
-            raise Exception("not a valid env name")
+            raise ValueError(f"Not a valid env name: {env_name}")
 
-    def get_environment_and_bucket_info_in_batch(self, stage, env=None, envs=None):
+    def get_environment_and_bucket_info_in_batch(self, stage: ChaliceStage, env: Optional[EnvName] = None,
+                                                 envs: Optional[List[EnvName]] = None):
         """
         Generate environment information from the envs bucket in s3.
         Returns a dictionary keyed by environment name with value of a sub-dict
@@ -137,7 +164,8 @@ class Environment(object):
         """
         if envs is not None:
             if env is not None:
-                ValueError("get_environment_and_bucket_info_in_batch accepts either 'env=' or 'envs=' but not both.")
+                ValueError(f"{full_class_name(self)}.get_environment_and_bucket_info_in_batch"
+                           f" accepts either 'env=' or 'envs=' but not both.")
             env_keys = envs
         else:
             try:
