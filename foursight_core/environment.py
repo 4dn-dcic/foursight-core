@@ -1,8 +1,14 @@
+import logging
+
 from .s3_connection import S3Connection
 from dcicutils.env_manager import EnvManager
 from dcicutils.env_utils import (
     get_foursight_bucket, get_foursight_bucket_prefix, full_env_name, infer_foursight_from_env,
 )
+
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 
 class Environment(object):
@@ -32,8 +38,8 @@ class Environment(object):
         # This would be the normal error checking...
         if declared_result != computed_result:
             # Note the inconsistency, but don't flag an error.
-            print(f"WARNING: get_env_bucket_name computed {computed_result},"
-                  f" but the declared result was {declared_result}.")
+            logger.warning(f"get_env_bucket_name computed {computed_result},"
+                           f" but the declared result was {declared_result}.")
 
         return declared_result
 
@@ -94,8 +100,8 @@ class Environment(object):
             computed_bucket_name = ''.join([self.prefix + '-', stage, '-', env_name])
             declared_bucket_name = get_foursight_bucket(envname=env_name, stage=stage)
             if declared_bucket_name != computed_bucket_name:
-                raise RuntimeError(f"For environment {env_name}, the computed bucket name, {computed_bucket_name},"
-                                   f" does not match the declared result, {declared_bucket_name}.")
+                logger.warning(f"For environment {env_name}, the computed bucket name, {computed_bucket_name},"
+                               f" does not match the declared result, {declared_bucket_name}.")
 
             env_and_bucket_info = {
                 'fourfront': portal_url,
