@@ -74,7 +74,7 @@ class Stage(object):
 
         if encache:
             # Discovery is slow. We could encache this value so it's faster next time. I defaulted this to off for now.
-            logger.warn(f"Setting environment variable CHECK_RUNNER={check_runner}.")
+            logger.warning(f"Setting environment variable CHECK_RUNNER={check_runner}.")
             os.environ['CHECK_RUNNER'] = check_runner
 
         return check_runner
