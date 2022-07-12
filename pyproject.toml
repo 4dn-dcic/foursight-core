@@ -12,7 +12,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.7,<3.9"
-dcicutils = "^3.14.0.3b43"  # "^3.1.0"
+dcicutils = "^3.14.2.3b52"  # "^3.1.0"
 click = "^7.1.2"
 PyJWT = "1.5.3"
 Jinja2 = "2.10.1"
