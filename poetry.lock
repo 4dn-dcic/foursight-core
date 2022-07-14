@@ -177,7 +177,7 @@ toml = ["tomli"]
 
 [[package]]
 name = "dcicutils"
-version = "3.14.2.3b52"
+version = "3.15.0.3b57"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 category = "main"
 optional = false
@@ -927,7 +927,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.9"
-content-hash = "57bff146bdf4858fe1abdc1af3ac5c8ecf89c3666a1c97d485d64412af816d38"
+content-hash = "2b42a8a8ced3244a4d747a66d328e8de80f175fd51cffd44de1d33e23098b24f"
 
 [metadata.files]
 ansicon = [
