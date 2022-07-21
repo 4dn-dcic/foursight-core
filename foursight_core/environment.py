@@ -104,26 +104,10 @@ class Environment(object):
         else:
             return False
 
-    # TODO: This functionality should move to s3_utils so it's not duplicated and the techniques are harmonized.
-    def get_environment_info_from_s3(self, env_name: EnvName) -> dict:
+    @classmethod
+    def get_environment_info_from_s3(cls, env_name: EnvName) -> dict:
 
-        env_full_name = full_env_name(env_name)
-        portal_url = get_env_real_url(env_full_name)
-        s3u = s3Utils(env=env_full_name)
-        es_url = s3u.health_page_get(HealthPageKey.ELASTICSEARCH)
-        if not isinstance(es_url, str):
-            raise RuntimeError(f"Health page for {env_full_name} has no {HealthPageKey.ELASTICSEARCH} entry.")
-
-        if not es_url.startswith('http'):
-            es_url = ('https://' if es_url.endswith(":443") else 'http://') + es_url
-
-        env_info = {
-            'ff_env': env_full_name,
-            'fourfront': portal_url,
-            'es': es_url
-        }
-
-        return env_info
+        return s3Utils.get_synthetic_env_config(env_name)
 
     def get_environment_and_bucket_info(self, env_name: EnvName, stage: ChaliceStage) -> dict:
 
