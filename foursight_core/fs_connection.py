@@ -29,7 +29,7 @@ class FSConnection(object):
         # With the new EnvUtils, FS schedules conform to the full env name,
         # so expand to full_env_name if we are rendering a (legacy) short name
         # ie: webdev --> fourfront-webdev - Will July 22 2022
-        self.fs_env = full_env_name(fs_environ) if not is_stg_or_prd_env(fs_environ_info) else fs_environ
+        self.fs_env = full_env_name(fs_environ) if not is_stg_or_prd_env(fs_environ) else fs_environ
         es = ESConnection(index=fs_environ_info.get('bucket'), host=host) if use_es else None
         self.connections = {
             's3': S3Connection(fs_environ_info.get('bucket')),
