@@ -28,10 +28,10 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
-class AppUtils:
+class AppUtilsCore:
     """
-    Class AppUtils is the most high-level class that's used directy by Chalice object app.
-    This class mostly contains the functions defined in app_utils in original foursight.
+    This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
+    so that a class named AppUtils is easier to define in libraries that import foursight-core.
     """
 
     # These must be overwritten in inherited classes
@@ -1130,3 +1130,13 @@ class AppUtils:
         complete = s3_connection.list_all_keys_w_prefix(run_prefix)
         # eliminate duplicates
         return set(complete)
+
+
+class AppUtils(AppUtilsCore):  # for compatibility with older imports
+    """
+    Class AppUtils is the most high-level class that's used directy by Chalice object app.
+    This class mostly contains the functionality defined in app_utils in original foursight,
+    but the details are now inherited from AppUtilsCore, which is the recommended class to
+    import if you're making an AppUtils in some other library.
+    """
+    pass

@@ -7,6 +7,15 @@ Change Log
 ----------
 
 
+0.7.0
+=====
+
+**PR #22: Miscellaneous changes in support of using new env_utils**
+
+* This tries to make use of the support in a recent utils beta to get a foothold on the foursight environment
+  in a more abstract and configurable way.
+
+
 0.6.1
 =====
 
