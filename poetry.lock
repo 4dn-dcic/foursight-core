@@ -178,7 +178,7 @@ toml = ["tomli"]
 
 [[package]]
 name = "dcicutils"
-version = "3.16.0.3b68"
+version = "4.0.0"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 category = "main"
 optional = false
@@ -928,7 +928,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.9"
-content-hash = "965fd9c8d69ad60364b19134fcad0bf0500233161409028fedda979a5d561fa0"
+content-hash = "ebf0ad824742e15506819390e0f0bebae82d086725fa456c4836117ac1531799"
 
 [metadata.files]
 ansicon = []
@@ -951,7 +951,10 @@ decorator = []
 docker = []
 elasticsearch = []
 elasticsearch-dsl = []
-flake8 = []
+flake8 = [
+    {file = "flake8-4.0.1-py2.py3-none-any.whl", hash = "sha256:479b1304f72536a55948cb40a32dce8bb0ffe3501e26eaf292c7e60eb5e0428d"},
+    {file = "flake8-4.0.1.tar.gz", hash = "sha256:806e034dda44114815e23c16ef92f95c91e4c71100ff52813adf7132a6ad870d"},
+]
 flaky = []
 future = []
 geocoder = []
@@ -983,7 +986,10 @@ pycodestyle = []
 pyflakes = []
 pyjwt = []
 pyparsing = []
-pytest = []
+pytest = [
+    {file = "pytest-5.1.2-py3-none-any.whl", hash = "sha256:95d13143cc14174ca1a01ec68e84d76ba5d9d493ac02716fd9706c949a505210"},
+    {file = "pytest-5.1.2.tar.gz", hash = "sha256:b78fe2881323bd44fd9bd76e5317173d4316577e7b1cddebae9136a4495ec865"},
+]
 pytest-cov = []
 python-dateutil = []
 python-editor = []
