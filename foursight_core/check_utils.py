@@ -5,6 +5,7 @@ import json
 from dcicutils.env_utils import infer_foursight_from_env
 from foursight_core.check_schema import CheckSchema
 from foursight_core.exceptions import BadCheckSetup
+from dcicutils.env_utils import full_env_name
 from environment import Environment
 from decorators import Decorators
 

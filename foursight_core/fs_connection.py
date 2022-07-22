@@ -1,6 +1,7 @@
 from foursight_core.s3_connection import S3Connection
 from foursight_core.es_connection import ESConnection
 from dcicutils.s3_utils import s3Utils
+from dcicutils.env_utils import full_env_name, is_stg_or_prd_env
 
 
 class FSConnection(object):
@@ -25,7 +26,10 @@ class FSConnection(object):
     """
     def __init__(self, fs_environ, fs_environ_info, test=False, use_es=True, host=None):
         # FOURSIGHT information
-        self.fs_env = fs_environ
+        # With the new EnvUtils, FS schedules conform to the full env name,
+        # so expand to full_env_name if we are rendering a (legacy) short name
+        # ie: webdev --> fourfront-webdev - Will July 22 2022
+        self.fs_env = full_env_name(fs_environ) if not is_stg_or_prd_env(fs_environ_info) else fs_environ
         es = ESConnection(index=fs_environ_info.get('bucket'), host=host) if use_es else None
         self.connections = {
             's3': S3Connection(fs_environ_info.get('bucket')),
