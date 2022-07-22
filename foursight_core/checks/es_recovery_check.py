@@ -4,7 +4,7 @@ from .helpers.confchecks import (
 from time import sleep
 from dcicutils.ff_utils import get_counts_page, get_indexing_status
 from dcicutils.es_utils import create_es_client
-from elasticsearch.exceptions import NotFoundError, TransportError
+from elasticsearch.exceptions import NotFoundError
 
 
 AUTOMATED_ES_SNAPSHOT_REPOSITORIES = ['cs-automated-enc', 'cs-automated']
