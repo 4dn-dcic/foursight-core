@@ -24,3 +24,7 @@ coverage.xml
 
 # our build
 out/*
+
+# venv stuff
+.python-version
+.python-cmd
