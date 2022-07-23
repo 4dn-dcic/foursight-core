@@ -7,10 +7,14 @@ Change Log
 ----------
 
 
+0.7.2
+=====
+
 0.7.1
 =====
 
-No change from 0.7.0 except version. Trying to debug a problem at pypi.
+Versions 0.7.1 and 0.7.2 offer no change from 0.7.0 except version.
+Just trying to debug a problem at pypi.
 
 
 0.7.0
