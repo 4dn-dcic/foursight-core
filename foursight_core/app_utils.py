@@ -15,6 +15,12 @@ from itertools import chain
 from dateutil import tz
 from dcicutils import ff_utils
 from dcicutils.lang_utils import disjoined_list
+from dcicutils.secrets_utils import (
+    apply_identity,
+    get_identity_name,
+    GLOBAL_APPLICATION_CONFIGURATION,
+    SecretsTable,
+)
 from typing import Optional
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
@@ -59,7 +65,47 @@ class AppUtilsCore:
     TRIM_ERR_OUTPUT = 'Output too large to provide on main page - see check result directly'
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
+    # dmichaels/2022-07-20: New to apply the IDENTITY values globally to os.environ (C4-826).
+    def apply_identity_globally(self):
+
+        # This maps key names in the global application configuration (GAC) to names used here.
+        IDENTITY_KEY_MAP = {
+            "ENCODED_AUTH0_CLIENT": "CLIENT_ID",
+            "ENCODED_AUTH0_SECRET": "CLIENT_SECRET",
+            "ENCODED_S3_ENCRYPT_KEY_ID": "S3_ENCRYPT_KEY_ID",
+            "ENCODED_ES_SERVER": "ES_HOST",
+        }
+
+        # Make sure the IDENTITY (environment variable) is set (via Foursight CloudFormation template);
+        # this is the name of the global application configuration (GAC) secret.
+        identity_name = get_identity_name(identity_kind=GLOBAL_APPLICATION_CONFIGURATION)
+        if not identity_name:
+            raise Exception("Foursight {GLOBAL_APPLICATION_CONFIGURATION} environment variable not set!")
+        logger.info(f"Foursight {GLOBAL_APPLICATION_CONFIGURATION} environment variable value is: {identity_name}")
+
+        # Apply the GAC secrets values globally to os.environ.
+        apply_identity(identity_kind=GLOBAL_APPLICATION_CONFIGURATION, rename_keys=IDENTITY_KEY_MAP)
+
+        # Get the RDS secrets name; could pass this in via envrionment variable
+        # in Foursight CloudFormation template, like IDENTITY.
+        # We look here only for the RDS_NAME value; should probably move to GAC.
+        # And if were to get it from RDS secrets then should probably pass that secrets name in.
+        # TODO
+        rds_secrets_name = identity_name.replace("ApplicationConfiguration", "RDSSecret")
+        rds_secrets = SecretsTable(rds_secrets_name)
+        os.environ["RDS_NAME"] = rds_secrets.get("dbInstanceIdentifier")
+
+        # dmichaels/2022-07-20: Set to proxy for local testing (e.g. http://localhost:9200).
+        es_host_local = os.environ.get("ES_HOST_LOCAL")
+        if es_host_local:
+            os.environ["ES_HOST"] = es_host_local
+            logger.info(f"Foursight ES_HOST local environment variable value is: {os.environ.get('ES_HOST')}")
+        else:
+            logger.info(f"Foursight ES_HOST environment variable value is: {os.environ.get('ES_HOST')}")
+
     def __init__(self):
+        # dmichaels/2022-07-20: apply identity globally (C4-826).
+        self.apply_identity_globally()
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
         self.sqs = SQS(self.prefix)

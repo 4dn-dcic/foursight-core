@@ -50,58 +50,69 @@ class Deploy(object):
         return os.path.join(cls.config_dir, '.chalice/config.json')
 
     @classmethod
-    def build_config(cls, stage, trial_creds=None, trial_global_env_bucket=False, global_env_bucket=None,
+    # dmichaels/2022-07-22:
+    # Added identity arg for the Foursight CloudFormation template; get other values from GAC at runtime (C4-826).
+    def build_config(cls, stage, identity=None, trial_creds=None, trial_global_env_bucket=False, global_env_bucket=None,
                      security_group_ids=None, subnet_ids=None, check_runner=None, rds_name=None,
                      lambda_timeout=DEFAULT_LAMBDA_TIMEOUT):
         """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
+        # dmichaels/2022-07-22:
+        # Removed value from the Foursight CloudFormation template; get from GAC at runtime (C4-826).
         ignored(stage)
         if trial_creds:
             # key to decrypt access key
-            s3_enc_secret = trial_creds['S3_ENCRYPT_KEY']
-            client_id = trial_creds['CLIENT_ID']
-            client_secret = trial_creds['CLIENT_SECRET']
+            # s3_enc_secret = trial_creds['S3_ENCRYPT_KEY']
+            # client_id = trial_creds['CLIENT_ID']
+            # client_secret = trial_creds['CLIENT_SECRET']
             dev_secret = None
-            es_host = trial_creds['ES_HOST']
-            env_name = trial_creds['ENV_NAME']
-            rds_name = trial_creds['RDS_NAME']
-            s3_key_id = trial_creds.get('S3_ENCRYPT_KEY_ID')
-            if not (s3_enc_secret and client_id and client_secret and es_host and rds_name):
-                print(''.join(['ERROR. You are missing one more more environment',
-                               'variables needed to deploy the Foursight trial. Need:\n',
-                               'S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, ES_HOST, RDS_NAME in trial_creds dict.'])
-                      )
-                sys.exit()
+            # es_host = trial_creds['ES_HOST']
+            # env_name = trial_creds['ENV_NAME']
+            # rds_name = trial_creds['RDS_NAME']
+            # s3_key_id = trial_creds.get('S3_ENCRYPT_KEY_ID')
+            # if not (s3_enc_secret and client_id and client_secret and es_host and rds_name):
+            #     print(''.join(['ERROR. You are missing one more more environment',
+            #                    'variables needed to deploy the Foursight trial. Need:\n',
+            #                    'S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, ES_HOST, RDS_NAME in trial_creds dict.'])
+            #           )
+            #     sys.exit()
         else:
-            s3_enc_secret = os.environ.get("S3_ENCRYPT_KEY")
-            client_id = os.environ.get("CLIENT_ID")
-            client_secret = os.environ.get("CLIENT_SECRET")
+            # s3_enc_secret = os.environ.get("S3_ENCRYPT_KEY")
+            # client_id = os.environ.get("CLIENT_ID")
+            # client_secret = os.environ.get("CLIENT_SECRET")
             dev_secret = os.environ.get("DEV_SECRET")
-            es_host = None  # not previously passed to config
-            env_name = None
-            s3_key_id = None  # not supported in legacy
-            if not (s3_enc_secret and client_id and client_secret and dev_secret):
-                print(''.join(['ERROR. You are missing one more more environment ',
-                               'variables needed to deploy Foursight.\n',
-                               'Need: S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, DEV_SECRET.'])
-                      )
-                sys.exit()
+            # es_host = None  # not previously passed to config
+            # env_name = None
+            # s3_key_id = None  # not supported in legacy
+            # if not (s3_enc_secret and client_id and client_secret and dev_secret):
+            #     print(''.join(['ERROR. You are missing one more more environment ',
+            #                    'variables needed to deploy Foursight.\n',
+            #                    'Need: S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, DEV_SECRET.'])
+            #           )
+            #     sys.exit()
         for curr_stage_name in ['dev', 'prod']:
             curr_stage = cls.CONFIG_BASE['stages'][curr_stage_name]
             curr_stage_environ = curr_stage['environment_variables']
 
-            curr_stage_environ['S3_ENCRYPT_KEY'] = s3_enc_secret
-            curr_stage_environ['CLIENT_ID'] = client_id
-            curr_stage_environ['CLIENT_SECRET'] = client_secret
-            if rds_name:
-                curr_stage_environ['RDS_NAME'] = rds_name
+            # dmichaels/2022-07-22:
+            # Added this to the Foursight CloudFormation template; get other values from GAC at runtime (C4-826).
+            curr_stage_environ['IDENTITY'] = identity
+            # dmichaels/2022-07-22:
+            # Removed these from the Foursight CloudFormation template; get from GAC at runtime (C4-826).
+            # curr_stage_environ['S3_ENCRYPT_KEY'] = s3_enc_secret
+            # curr_stage_environ['CLIENT_ID'] = client_id
+            # curr_stage_environ['CLIENT_SECRET'] = client_secret
+            # if rds_name:
+            #     curr_stage_environ['RDS_NAME'] = rds_name
             if dev_secret:  # still pass in main account, ignored in alpha infra - Will Aug 24 2021
                 curr_stage_environ['DEV_SECRET'] = dev_secret
-            if env_name:
-                curr_stage_environ['ENV_NAME'] = env_name
-            if es_host:
-                curr_stage_environ['ES_HOST'] = es_host
-            if s3_key_id:
-                curr_stage_environ['S3_ENCRYPT_KEY_ID'] = s3_key_id
+            # dmichaels/2022-07-22:
+            # Removed these from the Foursight CloudFormation template; get from GAC at runtime (C4-826).
+            # if env_name:
+            #     curr_stage_environ['ENV_NAME'] = env_name
+            # if es_host:
+            #     curr_stage_environ['ES_HOST'] = es_host
+            # if s3_key_id:
+            #     curr_stage_environ['S3_ENCRYPT_KEY_ID'] = s3_key_id
             if trial_global_env_bucket:
                 # in the trial account setup, use a shorter timeout
                 curr_stage['lambda_timeout'] = lambda_timeout
@@ -143,7 +154,9 @@ class Deploy(object):
         subprocess.call(['chalice', 'deploy', '--stage', stage])
 
     @classmethod
-    def build_config_and_package(cls, args, trial_creds=None, global_env_bucket=None,
+    # dmichaels/2022-07-22:
+    # Added identity arg for the Foursight CloudFormation template; get other values from GAC at runtime (C4-826).
+    def build_config_and_package(cls, args, identity=None, trial_creds=None, global_env_bucket=None,
                                  security_ids=None, subnet_ids=None, check_runner=None,
                                  lambda_timeout=DEFAULT_LAMBDA_TIMEOUT, rds_name=None,
                                  # These next args are preferred over passing 'args'.
@@ -165,7 +178,9 @@ class Deploy(object):
 
         if trial:
             if trial_creds and security_ids and subnet_ids and check_runner:
-                cls.build_config(stage, trial_creds=trial_creds, trial_global_env_bucket=True,
+                # dmichaels/2022-07-22:
+                # Added identity arg for the Foursight CloudFormation template (C4-826).
+                cls.build_config(stage, identity=identity, trial_creds=trial_creds, trial_global_env_bucket=True,
                                  global_env_bucket=global_env_bucket, lambda_timeout=lambda_timeout,
                                  security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner,
                                  rds_name=rds_name)
