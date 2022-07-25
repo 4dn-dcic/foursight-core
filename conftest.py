@@ -3,10 +3,11 @@ from unittest import mock
 import app
 import boto3
 from dcicutils.env_utils import EnvUtils
-from dcicutils.env_base import EnvManager
+from dcicutils.env_manager import EnvManager
 from dcicutils.misc_utils import override_environ, ignored
 from foursight_core.app_utils import AppUtils
 from foursight_core.sqs_utils import SQS
+from foursight_core.environment import Environment
 
 
 GLOBAL_ENV_BUCKET = 'GLOBAL_ENV_BUCKET'
@@ -20,6 +21,21 @@ SIMULATED_ENV_CONFIG = {
         'es': ES_HOST,  # maybe dont even need this?
         'ff_env': 'fourfront-simulated',
         'bucket': 'foursight-core-simulated-results',
+    },
+    'main.ecosystem': {
+        'public_url_table': [
+            {
+                'name': 'simulated',
+                'url': 'dummy-url',
+                'host': 'dummy-host',
+                'environment': 'fourfront-simulated'
+            }
+        ],
+        'foursight_bucket_table': {
+            'simulated': {
+                'dev': 'foursight-core-simulated-results'
+            }
+        }
     }
 }
 SIMULATED_ENV_HEALTH_PAGE = {
@@ -96,9 +112,11 @@ def app_utils_obj_conn(global_env_bucket):  # noQA pytest fixture
     ignored(global_env_bucket)
     with mock.patch.object(EnvUtils, 'FOURSIGHT_BUCKET_PREFIX', FOURSIGHT_PREFIX):
         apputils = SimulatedAppUtils()
-        with mock.patch.object(EnvManager, 'verify_and_get_env_config',
-                               return_value=SIMULATED_ENV_CONFIG['simulated']):
+        with mock.patch.object(EnvUtils, '_get_config_object_from_s3',
+                               return_value=SIMULATED_ENV_CONFIG['main.ecosystem']):
             with mock.patch.object(EnvManager, 'fetch_health_page_json',
                                    return_value=SIMULATED_ENV_HEALTH_PAGE):
-                conn = apputils.init_connection(DEV_ENV)
-                yield apputils, conn
+                with mock.patch.object(Environment, 'get_environment_and_bucket_info',
+                                       return_value=SIMULATED_ENV_CONFIG['simulated']):
+                    conn = apputils.init_connection(DEV_ENV)
+                    yield apputils, conn
