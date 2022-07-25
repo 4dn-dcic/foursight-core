@@ -7,6 +7,23 @@ Change Log
 ----------
 
 
+0.7.3
+=====
+
+Relocked pyproject.toml from scratch.
+No other changes.
+
+
+0.7.2
+=====
+
+0.7.1
+=====
+
+Versions 0.7.1 and 0.7.2 offer no change from 0.7.0 except version.
+Just trying to debug a problem at pypi.
+
+
 0.7.0
 =====
 
