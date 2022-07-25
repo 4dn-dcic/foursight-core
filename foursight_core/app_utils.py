@@ -98,14 +98,14 @@ class AppUtilsCore:
         # Apply the GAC secrets values globally to os.environ.
         apply_identity(identity_kind=GLOBAL_APPLICATION_CONFIGURATION, rename_keys=IDENTITY_KEY_MAP)
 
-        # Get the RDS secrets name; could pass this in via envrionment variable
-        # in Foursight CloudFormation template, like IDENTITY.
-        # We look here only for the RDS_NAME value; should probably move to GAC.
-        # And if were to get it from RDS secrets then should probably pass that secrets name in.
-        # TODO
-        rds_secrets_name = identity_name.replace("ApplicationConfiguration", "RDSSecret")
-        rds_secrets = SecretsTable(rds_secrets_name)
-        os.environ["RDS_NAME"] = rds_secrets.get("dbInstanceIdentifier")
+        # Get RDS_NAME from the GAC. But just added this recently (late July 2022), so to avoid
+        # issues with release timing, at least for testing period, if it is not set then get it
+        # from the RDS secrets. Temporary hack. TODO: Remove when fully tested and ready to go.
+        rds_name = os.environ.get("RDS_NAME")
+        if not rds_name:
+            rds_secrets_name = identity_name.replace("ApplicationConfiguration", "RDSSecret")
+            rds_secrets = SecretsTable(rds_secrets_name)
+            os.environ["RDS_NAME"] = rds_secrets.get("dbInstanceIdentifier")
 
         # dmichaels/2022-07-20: Set to proxy for local testing (e.g. http://localhost:9200).
         es_host_local = os.environ.get("ES_HOST_LOCAL")
