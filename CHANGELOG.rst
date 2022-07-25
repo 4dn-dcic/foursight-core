@@ -7,6 +7,12 @@ Change Log
 ----------
 
 
+0.7.4
+=====
+
+Fix a bug in Environment.get_environment_and_bucket_info
+
+
 0.7.3
 =====
 
