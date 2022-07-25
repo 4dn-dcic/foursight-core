@@ -131,6 +131,9 @@ def test_get_environment_and_bucket_info():
                 full_env = full_env_name(env)
                 foursight_env = infer_foursight_from_env(envname=env)
                 assert re.match(f"{LEGACY_PREFIX}{stage}-({full_env}|{foursight_env})", info_bucket)
+                # Make sure it's invariant over what the name is
+                assert (environment.get_environment_and_bucket_info(env_name='mastertest', stage='prod')
+                        == environment.get_environment_and_bucket_info('fourfront-mastertest', stage='prod'))
 
 
 def test_get_selected_environment_names():

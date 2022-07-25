@@ -130,7 +130,7 @@ class Environment(object):
             'fourfront': portal_url,
             'es': es_url,
             'ff_env': ff_env,
-            'bucket': legacy_bucket_name,
+            'bucket': bucket_name,
         }
         return env_and_bucket_info
 
