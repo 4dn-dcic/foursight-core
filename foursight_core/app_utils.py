@@ -65,7 +65,19 @@ class AppUtilsCore:
     TRIM_ERR_OUTPUT = 'Output too large to provide on main page - see check result directly'
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
-    # dmichaels/2022-07-20: New to apply the IDENTITY values globally to os.environ (C4-826).
+    # dmichaels/2022-07-20: New to apply the IDENTITY values globally to os.environ (C4-826)
+    # from the global application configuraiton (GAC). Will count on getting these values:
+    #
+    # Foursight Name     GAC Name
+    # --------------     --------
+    # CLIENT_ID          ENCODED_AUTH0_CLIENT
+    # CLIENT_SECRET      ENCODED_AUTH0_SECRET
+    # ES_HOST            ENCODED_ES_SERVER
+    # ENV_NAME           ENV_NAME
+    # RDS_NAME           RDS_NAME (new in 4dn-cloud-infra as of late July 2022)
+    # S3_ENCRYPT_KEY     S3_ENCRYPT_KEY
+    # S3_ENCRYPT_KEY_ID  ENCODED_S3_ENCRYPT_KEY_ID
+    #
     def apply_identity_globally(self):
 
         # This maps key names in the global application configuration (GAC) to names used here.
