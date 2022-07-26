@@ -1,11 +1,7 @@
 from conftest import DEV_ENV
-import json
-import boto3
 import pytest
 import chalice
 from unittest import mock
-from botocore.exceptions import ClientError
-from dcicutils.env_utils import public_url_for_app
 
 
 class TestAppUtils:
@@ -17,7 +13,7 @@ class TestAppUtils:
     def test_init_connection(self, app_utils_obj_conn):
         # test the fs connection
         _, conn = app_utils_obj_conn
-        assert (conn.fs_env == self.environ)
+        assert (conn.fs_env == 'fourfront-' + self.environ)
         assert (conn.connections)
         # test the ff connection
         assert (conn.ff_server)
@@ -47,7 +43,8 @@ class TestAppUtils:
         error = app_utils.process_view_result(conn, res, False)
         assert error['status'] == 'ERROR'
 
-    # worth duplicating and testing more carefulling in foursight-ff / foursight-cgap
+    # worth testing in foursight-cgap/ff
+    @pytest.mark.skip
     def test_init_environments(self, app_utils_obj_conn):
         """ Simple validation testing on the mocked return result for init_environments """
         app_utils, conn = app_utils_obj_conn

@@ -103,7 +103,6 @@ class Environment(object):
 
     @classmethod
     def get_environment_info_from_s3(cls, env_name: EnvName) -> dict:
-
         return s3Utils.get_synthetic_env_config(env_name)
 
     def get_environment_and_bucket_info(self, env_name: EnvName, stage: ChaliceStage) -> dict:

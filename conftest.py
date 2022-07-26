@@ -92,13 +92,13 @@ def setup():
         print('Cannot purge test queue; purge already in progress')
 
 
-@pytest.yield_fixture(scope='session', autouse=True)
+@pytest.yield_fixture(scope='function')
 def global_env_bucket():
     with override_environ(GLOBAL_ENV_BUCKET=SIMULATED_GLOBAL_ENV_BUCKET):
         yield
 
 
-@pytest.yield_fixture(scope='session')
+@pytest.yield_fixture(scope='function')
 def app_utils_obj_conn(global_env_bucket):  # noQA pytest fixture
     """ Mocks appropriate operations such that we can generate a simulated app_utils
         object for a non-existent foursight environment.
@@ -119,4 +119,5 @@ def app_utils_obj_conn(global_env_bucket):  # noQA pytest fixture
                 with mock.patch.object(Environment, 'get_environment_and_bucket_info',
                                        return_value=SIMULATED_ENV_CONFIG['simulated']):
                     conn = apputils.init_connection(DEV_ENV)
-                    yield apputils, conn
+                    with EnvUtils.temporary_state():
+                        yield apputils, conn

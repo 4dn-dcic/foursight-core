@@ -72,47 +72,6 @@ class TestAppRoutes:
         assert (res.status_code == 200)
         assert ('Previous 2' in res.body)
 
-    def test_get_foursight_history(self, app_utils_obj_conn):
-        test_check = 'test_random_nums'
-        app_utils_obj, connection = app_utils_obj_conn
-        with mock.patch.object(app_utils_obj, 'get_foursight_history',
-                               return_value=[[
-                                   {
-                                       'uuid': 'dummy-uuid1',
-                                   },
-                                   {
-                                       'uuid': 'dummy-uuid2'
-                                   },
-                                   {
-                                       'uuid': 'dummy-uuid3',
-                                   },
-                                   {
-                                       'uuid': 'dummy-uuid4',
-                                       'primary': True
-                                   }
-                               ]]):
-            history = app_utils_obj.get_foursight_history(connection, test_check, 0, 3)
-        assert (isinstance(history, list))
-        assert (len(history[0]) == 4)
-        assert (isinstance(history[0][0], str))
-        assert (isinstance(history[0][1], str) or history[0][1] is None)
-        assert (isinstance(history[0][2], dict))
-        assert ('uuid' in history[0][2])
-        assert ('primary' in history[0][2])
-        assert (history[0][3] is True)
-        first_uuid_1 = history[0][2]['uuid']
-        second_uuid_1 = history[1][2]['uuid']
-        assert (len(history) == 3)
-        # different start and limit
-        history = app_utils_obj.get_foursight_history(connection, test_check, 1, 4)
-        first_uuid_2 = history[0][2]['uuid']
-        assert (first_uuid_1 != first_uuid_2)
-        assert (second_uuid_1 == first_uuid_2)
-        assert (len(history) == 4)
-        # bad check
-        bad_history = app_utils_obj.get_foursight_history(connection, 'not_a_real_check', 0, 3)
-        assert (bad_history == [])
-
     def test_run_get_environment(self, app_utils_obj_conn):
         app_utils_obj, connection = app_utils_obj_conn
         environments = app_utils_obj.init_environments()
@@ -123,7 +82,7 @@ class TestAppRoutes:
         assert (body.get('status') == 'success')
         details = body.get('details')
         assert (details.get('bucket').startswith('foursight-'))
-        assert (details.get('bucket').endswith(DEV_ENV))
+        assert (DEV_ENV in details.get('bucket'))
         this_env = environments.get(DEV_ENV)
         assert (this_env == details)
         # bad environment
@@ -155,20 +114,6 @@ class TestAppRoutes:
         # make sure they match after run_put_environment
         get_res2 = app_utils_obj.run_get_environment(DEV_ENV)
         assert (get_res.body == get_res2.body)
-
-    def test_run_get_check(self, app_utils_obj_conn):
-        app_utils_obj, connection = app_utils_obj_conn
-        test_check = 'indexing_progress'
-        res = app_utils_obj.run_get_check(DEV_ENV, test_check)
-        assert (res.status_code == 200)
-        assert (set(res.body.keys()) == {'status', 'data'})
-        assert (res.body['status'] == 'success')
-        assert (isinstance(res.body['data'], dict) and res.body['data']['name'] == test_check)
-        # bad response
-        res = app_utils_obj.run_get_check(DEV_ENV, 'not_a_real_check')
-        assert (res.status_code == 400)
-        assert (res.body['status'] == 'error')
-        assert (res.body['description'] == 'Not a valid check or action.')
 
     def test_put_check(self, app_utils_obj_conn):
         app_utils_obj, connection = app_utils_obj_conn
@@ -218,3 +163,8 @@ class TestAppRoutes:
         assert (res.status_code == 400)
         assert (res.body['status'] == 'error')
         assert (res.body['description'] == 'PUT request is malformed: NOT_A_DICT')
+        # bad response
+        res = app_utils_obj.run_get_check(DEV_ENV, 'not_a_real_check')
+        assert (res.status_code == 400)
+        assert (res.body['status'] == 'error')
+        assert (res.body['description'] == 'Not a valid check or action.')

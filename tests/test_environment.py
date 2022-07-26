@@ -70,7 +70,6 @@ def test_get_environment_info_from_s3():
     with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
 
         for test_env in LEGACY_ENVS + PUBLIC_ENV_NAMES:
-
             full_test_env = full_env_name(test_env)
 
             config = Environment.get_environment_info_from_s3(test_env)
