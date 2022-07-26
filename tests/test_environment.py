@@ -4,7 +4,7 @@ import re
 from foursight_core.environment import Environment
 from dcicutils.common import CHALICE_STAGES
 from dcicutils.env_base import EnvBase
-from dcicutils.env_utils import full_env_name, infer_foursight_from_env
+from dcicutils.env_utils import full_env_name, short_env_name, infer_foursight_from_env
 from dcicutils.lang_utils import disjoined_list
 
 
@@ -154,6 +154,9 @@ def test_get_environment_and_bucket_info_in_batch():
         assert isinstance(d, dict)
         for k, v in d.items():
             assert environment.is_valid_environment_name(k)
+            assert environment.is_valid_environment_name(full_env_name(k))
+            assert environment.is_valid_environment_name(short_env_name(k))
+            assert environment.is_valid_environment_name(infer_foursight_from_env(envname=k))
             assert isinstance(v, dict)
             for key in CONFIG_KEYS:
                 assert key in v
