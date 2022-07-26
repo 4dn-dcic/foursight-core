@@ -7,7 +7,7 @@ Change Log
 ----------
 
 
-1.0.0.1b0
+0.7.4.2b0
 =========
 
 IDENTITY-ized Foursight; i.e. get secrets and other configuration data from the global application configuration (GAC)
