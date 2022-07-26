@@ -43,16 +43,16 @@ def test_list_valid_schedule_environment_names():
 
 def check_environment_names(envs, *, with_all):
 
-        full_envs = [full_env_name(env) for env in envs if env != 'all']
+    full_envs = [full_env_name(env) for env in envs if env != 'all']
 
-        for env in envs:
-            assert not env.endswith(".ecosystem")
+    for env in envs:
+        assert not env.endswith(".ecosystem")
 
-        for env in LEGACY_ENVS:
-            assert env in full_envs
+    for env in LEGACY_ENVS:
+        assert env in full_envs
 
-        if with_all:
-            assert 'all' in envs
+    if with_all:
+        assert 'all' in envs
 
 
 def test_is_valid_environment_name():
