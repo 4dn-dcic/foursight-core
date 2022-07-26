@@ -3,6 +3,7 @@ import importlib
 import copy
 import json
 from dcicutils.env_utils import infer_foursight_from_env
+from dcicutils.misc_utils import PRINT
 from foursight_core.check_schema import CheckSchema
 from foursight_core.exceptions import BadCheckSetup
 from .environment import Environment
@@ -37,11 +38,20 @@ class CheckHandler(object):
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
 
     def get_module_names(self):
-        check_modules = importlib.import_module('.checks', self.check_package_name)
-        return check_modules.__dict__["__all__"]
+        """ Pulls checks from both the pass check_package_name and foursight_core itself (if they differ) """
+        check_modules = importlib.import_module('.checks', self.check_package_name).__dict__["__all__"]
+        if self.check_package_name != 'foursight_core':
+            core_modules = importlib.import_module('.checks', 'foursight_core').__dict__["__all__"]
+            return {
+                self.check_package_name: check_modules,
+                'foursight_core': core_modules
+            }
+        return {
+            self.check_package_name: check_modules
+        }
 
-    def import_check_module(self, module_name):
-        return importlib.import_module('.checks.' + module_name, self.check_package_name)
+    def import_check_module(self, module_package, module_name):
+        return importlib.import_module('.checks.' + module_name, module_package)
 
     def get_check_strings(self, specific_check=None):
         """
@@ -52,15 +62,16 @@ class CheckHandler(object):
         IMPORTANT: any checks in test_checks module are excluded.
         """
         all_checks = []
-        for mod_name in self.get_module_names():
-            mod = self.import_check_module(mod_name)
-            methods = self.get_methods_by_deco(mod, self.CHECK_DECO)
-            for method in methods:
-                check_str = '/'.join([mod_name, method.__name__])
-                if specific_check and specific_check == method.__name__:
-                    return check_str
-                elif mod_name != 'test_checks':
-                    all_checks.append(check_str)
+        for mod_package, mods in self.get_module_names().items():
+            for mod_name in mods:
+                mod = self.import_check_module(mod_package, mod_name)
+                methods = self.get_methods_by_deco(mod, self.CHECK_DECO)
+                for method in methods:
+                    check_str = '/'.join([mod_name, method.__name__])
+                    if specific_check and specific_check == method.__name__:
+                        return check_str
+                    elif mod_name != 'test_checks':
+                        all_checks.append(check_str)
         if specific_check:
             # if we've gotten here, it means the specific check was not checks_found
             return None
@@ -167,15 +178,16 @@ class CheckHandler(object):
         Basically the same thing as get_check_strings, but for actions...
         """
         all_actions = []
-        for mod_name in self.get_module_names():
-            mod = self.import_check_module(mod_name)
-            methods = self.get_methods_by_deco(mod, self.ACTION_DECO)
-            for method in methods:
-                act_str = '/'.join([mod_name, method.__name__])
-                if specific_action and specific_action == method.__name__:
-                    return act_str
-                elif mod_name != 'test_checks':
-                    all_actions.append(act_str)
+        for mod_package, mods in self.get_module_names().items():
+            for mod_name in mods:
+                mod = self.import_check_module(mod_package, mod_name)
+                methods = self.get_methods_by_deco(mod, self.ACTION_DECO)
+                for method in methods:
+                    act_str = '/'.join([mod_name, method.__name__])
+                    if specific_action and specific_action == method.__name__:
+                        return act_str
+                    elif mod_name != 'test_checks':
+                        all_actions.append(act_str)
         if specific_action:
             # if we've gotten here, it means the specific action was not found
             return None
@@ -327,12 +339,16 @@ class CheckHandler(object):
         check_name = check_str.strip().split('/')[1]
         if not isinstance(check_kwargs, dict):
             return ' '.join(['ERROR. Check kwargs must be a dict.', error_str])
-        try:
-            check_mod = self.import_check_module(mod_name)
-        except ModuleNotFoundError:
+        check_mod = None
+        for package_name in [self.check_package_name, 'foursight_core']:
+            try:
+                check_mod = self.import_check_module(package_name, mod_name)
+            except ModuleNotFoundError:
+                PRINT(' '.join(['ERROR. Check module is not valid.', error_str]))
+            except Exception as e:
+                raise e
+        if not check_mod:
             return ' '.join(['ERROR. Check module is not valid.', error_str])
-        except Exception as e:
-            raise e
         check_method = check_mod.__dict__.get(check_name)
         if not check_method:
             return ' '.join(['ERROR. Check name is not valid.', error_str])
