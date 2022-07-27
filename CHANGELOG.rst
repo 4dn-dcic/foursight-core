@@ -7,6 +7,14 @@ Change Log
 ----------
 
 
+0.7.4.2b1
+=========
+Added STACK_NAME (in addition to IDENTITY introduced in 0.7.4.2b0) to the environment variables
+required (via the Foursight CloudFormation template) to get a foothold for other Foursight info,
+e.g. to get the CHECK_RUNNER AWS lambda function name. See AppUtilsCore.apply_identity_globally
+in app_utils.py and Deploy.build_config in deploy.py.
+
+
 0.7.4.2b0
 =========
 
