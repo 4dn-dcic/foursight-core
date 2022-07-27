@@ -344,7 +344,7 @@ class CheckHandler(object):
             try:
                 check_mod = self.import_check_module(package_name, mod_name)
             except ModuleNotFoundError:
-                PRINT(' '.join(['ERROR. Check module is not valid.', error_str]))
+                continue
             except Exception as e:
                 raise e
         if not check_mod:
