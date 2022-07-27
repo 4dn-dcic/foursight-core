@@ -187,7 +187,7 @@ class Deploy(object):
             if trial_creds and security_ids and subnet_ids and check_runner:
                 # dmichaels/2022-07-22/C4-826:
                 # Added identity arg for the Foursight CloudFormation template.
-                cls.build_config(stage, identity=identity, trial_creds=trial_creds, trial_global_env_bucket=True,
+                cls.build_config(stage, identity=identity, stack_name=stack_name, trial_creds=trial_creds, trial_global_env_bucket=True,
                                  global_env_bucket=global_env_bucket, lambda_timeout=lambda_timeout,
                                  security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner,
                                  rds_name=rds_name)
