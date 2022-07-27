@@ -91,15 +91,7 @@ class Environment(object):
 
         :param env: The name of an environment.
         """
-
-        # TODO: Figure out whether callers mean this to return True for all possible forms of an environment
-        #       or only the actually-declared name. -kmp 22-Jun-2022
-
-        # This call requires no changes. -kmp 24-May-2022
-        if env in self.list_environment_names():
-            return True
-        else:
-            return False
+        return infer_foursight_from_env(envname=env) in self.list_environment_names()
 
     @classmethod
     def get_environment_info_from_s3(cls, env_name: EnvName) -> dict:
@@ -161,7 +153,8 @@ class Environment(object):
         else:
             try:
                 env_keys = self.get_selected_environment_names(env or 'all')
-            except Exception:
+            except Exception as e:
+                logger.warning(f"Returning {{}} from get_environment_and_bucket_info_in_batch due to error: {e}.")
                 return {}  # provided env is not in s3
 
         return {
