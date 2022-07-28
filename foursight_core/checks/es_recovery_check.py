@@ -58,7 +58,7 @@ def rollback_es_to_snapshot(connection, **kwargs):
         ES cluster, and we need to do a snapshot restore to rapidly bring the cluster back online.
     """
     check = CheckResult(connection, 'rollback_es_to_snapshot')
-    env = kwargs.get('env_name')
+    env = kwargs.get('env_name') or connection.fs_env
     counts, indexing_status = get_counts_page(ff_env=env), get_indexing_status(ff_env=env)
     es_total = counts['db_es_total'].split()[3]  # dependent on page structure
     # if es is empty and indexing status is clear, we have detected

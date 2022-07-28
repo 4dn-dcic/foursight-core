@@ -157,7 +157,8 @@ class AppUtilsCore:
                 payload = jwt.decode(token, auth0_secret, audience=auth0_client, leeway=30)
                 for env_info in self.init_environments(env).values():
                     user_res = ff_utils.get_metadata('users/' + payload.get('email').lower(),
-                                                     ff_env=env_info['ff_env'], add_on='frame=object')
+                                                     ff_env=env_info['ff_env'],
+                                                     add_on='frame=object&datastore=database')
                     logger.error(env_info)
                     logger.error(user_res)
                     if not ('admin' in user_res['groups'] and payload.get('email_verified')):
