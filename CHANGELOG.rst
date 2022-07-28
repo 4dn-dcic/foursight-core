@@ -7,6 +7,11 @@ Change Log
 ----------
 
 
+0.7.4.2b4
+=========
+* Merged from master.
+
+
 0.7.4.2b3
 =========
 * Moved apply_identity_globally to its own identity.py module and
