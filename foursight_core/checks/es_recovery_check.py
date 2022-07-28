@@ -82,9 +82,9 @@ def rollback_es_to_snapshot(connection, **kwargs):
                 return check
             else:
                 foursight_index = connection.ff_bucket
-                fs_result = restore_snapshot(es_client, snapshot_repo, snapshot, index=foursight_index)
+                fs_result = restore_snapshot(es_client, snapshot_repo, snapshot['id'], index=foursight_index)
                 sleep(15)  # allow snapshot restore of FS index to proceed
-                ff_result = restore_snapshot(es_client, snapshot_repo, snapshot, index=env + '*')
+                ff_result = restore_snapshot(es_client, snapshot_repo, snapshot['id'], index=env + '*')
                 check.status = 'WARN'
                 check.summary = f'Restored snapshot for foursight {fs_result} and portal {ff_result}'
                 check.brief_output = check.full_output = check.summary
