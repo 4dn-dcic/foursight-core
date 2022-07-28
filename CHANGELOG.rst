@@ -32,6 +32,11 @@ in app_utils.py and Deploy.build_config in deploy.py. C4-826.
 IDENTITY-ized Foursight; i.e. get secrets and other configuration data from the global application configuration (GAC)
 rather than having them encoded in the environment via the CloudFormation template (for the lambdas). C4-826.
 
+0.7.4
+=====
+
+Fix a bug in Environment.get_environment_and_bucket_info
+
 
 0.7.3
 =====
