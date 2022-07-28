@@ -14,15 +14,9 @@ import logging
 from itertools import chain
 from dateutil import tz
 from dcicutils import ff_utils
-from dcicutils.cloudformation_utils import AbstractOrchestrationManager
 from dcicutils.lang_utils import disjoined_list
-from dcicutils.secrets_utils import (
-    apply_identity,
-    get_identity_name,
-    GLOBAL_APPLICATION_CONFIGURATION,
-    SecretsTable,
-)
 from typing import Optional
+from .identity import apply_identity_globally
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
 from .check_utils import CheckHandler
@@ -40,6 +34,9 @@ class AppUtilsCore:
     This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
     so that a class named AppUtils is easier to define in libraries that import foursight-core.
     """
+
+    # dmichaels/2022-07-20/C4-826: Apply identity globally.
+    apply_identity_globally()
 
     # These must be overwritten in inherited classes
     # replace with 'foursight', 'foursight-cgap' etc
@@ -66,79 +63,7 @@ class AppUtilsCore:
     TRIM_ERR_OUTPUT = 'Output too large to provide on main page - see check result directly'
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
-    # dmichaels/2022-07-20/C4-826: New to apply the IDENTITY values globally to os.environ
-    # from the global application configuraiton (GAC). Will count on getting these values:
-    #
-    # Foursight Name     GAC Name
-    # --------------     --------
-    # CLIENT_ID          ENCODED_AUTH0_CLIENT
-    # CLIENT_SECRET      ENCODED_AUTH0_SECRET
-    # ES_HOST            ENCODED_ES_SERVER
-    # ENV_NAME           ENV_NAME
-    # RDS_NAME           RDS_NAME (new in 4dn-cloud-infra as of late July 2022)
-    # S3_ENCRYPT_KEY     S3_ENCRYPT_KEY
-    # S3_ENCRYPT_KEY_ID  ENCODED_S3_ENCRYPT_KEY_ID
-    #
-    def apply_identity_globally(self):
-
-        # This maps key names in the global application configuration (GAC) to names used here.
-        IDENTITY_KEY_MAP = {
-            "ENCODED_AUTH0_CLIENT": "CLIENT_ID",
-            "ENCODED_AUTH0_SECRET": "CLIENT_SECRET",
-            "ENCODED_S3_ENCRYPT_KEY_ID": "S3_ENCRYPT_KEY_ID",
-            "ENCODED_ES_SERVER": "ES_HOST",
-        }
-
-        # Make sure the IDENTITY (environment variable) is set (via Foursight CloudFormation template);
-        # this is the name of the global application configuration (GAC) secret.
-        identity_name = get_identity_name(identity_kind=GLOBAL_APPLICATION_CONFIGURATION)
-        if not identity_name:
-            raise Exception("Foursight {GLOBAL_APPLICATION_CONFIGURATION} environment variable not set!")
-        logger.info(f"Foursight {GLOBAL_APPLICATION_CONFIGURATION} environment variable value is: {identity_name}")
-
-        # Make sure the STACK_NAME (environment variable) is set (via Foursight CloudFormation template);
-        # from this we are able to find the CHECK_RUNNER lambda function name.
-        stack_name = os.environ.get("STACK_NAME")
-        if not stack_name:
-            raise Exception("Foursight STACK_NAME environment variable not set!")
-        logger.info(f"Foursight STACK_NAME environment variable value is: {stack_name}")
-
-        # Apply the GAC secrets values globally to os.environ.
-        apply_identity(identity_kind=GLOBAL_APPLICATION_CONFIGURATION, rename_keys=IDENTITY_KEY_MAP)
-
-        # Get RDS_NAME from the GAC. But just added this recently (late July 2022), so to avoid
-        # issues with release timing, at least for testing period, if it is not set then get it
-        # from the RDS secrets. Temporary hack. TODO: Remove when fully tested and ready to go.
-        rds_name = os.environ.get("RDS_NAME")
-        if not rds_name:
-            rds_secrets_name = identity_name.replace("ApplicationConfiguration", "RDSSecret")
-            rds_secrets = SecretsTable(rds_secrets_name)
-            os.environ["RDS_NAME"] = rds_secrets.get("dbInstanceIdentifier")
-
-        # Get the CHECK_RUNNER lambda function name, using the stack_name as a prefix; for example,
-        # this name looks like: c4-foursight-cgap-supertest-stack-CheckRunner-8pYO8J9Tzb2P
-        # where c4-foursight-cgap-supertest-stack is the stack_name.
-        check_runner_lambda_function_name_pattern = stack_name + "-CheckRunner-.*"
-        check_runner_lambda_function_names = (
-            AbstractOrchestrationManager.find_lambda_function_names(check_runner_lambda_function_name_pattern))
-        if not check_runner_lambda_function_names:
-            raise Exception("Foursight CheckRunner lambda not found: {check_runner_lambda_function_name_pattern}")
-        elif len(check_runner_lambda_function_names) != 1:
-            raise Exception("Unique Foursight CheckRunner lambda not found: {check_runner_lambda_function_name_pattern}")
-        os.environ["CHECK_RUNNER"] = check_runner_lambda_function_names[0]
-        logger.info(f"Foursight CHECK_RUNNER environment variable value is: {os.environ['CHECK_RUNNER']}")
-
-        # Set ES_HOST to proxy for local testing (e.g. http://localhost:9200) via ES_HOST_LOCAL environment variable.
-        es_host_local = os.environ.get("ES_HOST_LOCAL")
-        if es_host_local:
-            os.environ["ES_HOST"] = es_host_local
-            logger.info(f"Foursight ES_HOST local environment variable value is: {os.environ.get('ES_HOST')}")
-        else:
-            logger.info(f"Foursight ES_HOST environment variable value is: {os.environ.get('ES_HOST')}")
-
     def __init__(self):
-        # dmichaels/2022-07-20: apply identity globally (C4-826).
-        self.apply_identity_globally()
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
         self.sqs = SQS(self.prefix)

@@ -7,6 +7,12 @@ Change Log
 ----------
 
 
+0.7.4.2b3
+=========
+* Moved apply_identity_globally to its own identity.py module and
+  call it statically from app_utils.py/AppUtilsCore class. C4-826.
+
+
 0.7.4.2b2
 =========
 Minor fix for previous beta (0.7.4.2b1). C4-826.
