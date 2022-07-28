@@ -39,6 +39,7 @@ class FSConnection(object):
         self.ff_server = fs_environ_info['fourfront']
         self.ff_env = fs_environ_info['ff_env']
         self.ff_es = fs_environ_info['es']
+        self.ff_bucket = fs_environ_info['bucket']
         if not test:
             self.ff_s3 = s3Utils(env=self.ff_env)
             try:  # TODO: make this configurable from env variables?

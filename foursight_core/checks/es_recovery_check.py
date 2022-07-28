@@ -71,7 +71,9 @@ def rollback_es_to_snapshot(connection, **kwargs):
         indexing_status = ff_utils.get_metadata('/indexing_status', ff_env=env, add_on='datastore=database')
         if indexing_status_is_clear(indexing_status):
             es = connection.ff_es
-            es_client = create_es_client(es_url=es)
+            es_client = create_es_client(es_url=es, options={
+               'request_timeout': 30
+            })
             snapshot_repo, snapshot = resolve_most_recent_snapshot(es_client)
             if not snapshot:
                 check.status = 'FAIL'
@@ -79,7 +81,7 @@ def rollback_es_to_snapshot(connection, **kwargs):
                 check.brief_output = check.full_output = check.summary
                 return check
             else:
-                foursight_index = connection.fs_env['bucket']
+                foursight_index = connection.ff_bucket
                 fs_result = restore_snapshot(es_client, snapshot_repo, snapshot, index=foursight_index)
                 sleep(15)  # allow snapshot restore of FS index to proceed
                 ff_result = restore_snapshot(es_client, snapshot_repo, snapshot, index=env + '*')
