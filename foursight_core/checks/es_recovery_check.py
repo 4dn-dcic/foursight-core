@@ -64,7 +64,7 @@ def rollback_es_to_snapshot(connection, **kwargs):
     indexing_status = ff_utils.get_metadata('/indexing_status', ff_env=env, add_on='datastore=database')
     PRINT(f'Response from counts {counts}')
     PRINT(f'Response from indexing_status: {indexing_status}')
-    es_total = counts['db_es_total'].split()[3]  # dependent on page structure
+    es_total = int(counts['db_es_total'].split()[3])  # dependent on page structure
     # if es is empty and indexing status is clear, we have detected
     if es_total == 0 and indexing_status_is_clear(indexing_status):
         sleep(30)  # give create_mapping 30 seconds to catch up...
