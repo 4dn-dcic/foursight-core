@@ -2,7 +2,7 @@ from .helpers.confchecks import (
     check_function, CheckResult,
 )
 from time import sleep
-from dcicutils.ff_utils import get_counts_page, get_indexing_status
+from dcicutils import ff_utils
 from dcicutils.es_utils import create_es_client
 from dcicutils.misc_utils import PRINT
 from elasticsearch.exceptions import NotFoundError
@@ -60,14 +60,15 @@ def rollback_es_to_snapshot(connection, **kwargs):
     """
     check = CheckResult(connection, 'rollback_es_to_snapshot')
     env = kwargs.get('env_name') or connection.fs_env
-    counts, indexing_status = get_counts_page(ff_env=env), get_indexing_status(ff_env=env)
+    counts = ff_utils.get_metadata('/counts', ff_env=env, add_on='datastore=database')
+    indexing_status = ff_utils.get_metadata('/indexing_status', ff_env=env, add_on='datastore=database')
     PRINT(f'Response from counts {counts}')
     PRINT(f'Response from indexing_status: {indexing_status}')
     es_total = counts['db_es_total'].split()[3]  # dependent on page structure
     # if es is empty and indexing status is clear, we have detected
     if es_total == 0 and indexing_status_is_clear(indexing_status):
         sleep(30)  # give create_mapping 30 seconds to catch up...
-        indexing_status = get_indexing_status(ff_env=env)
+        indexing_status = ff_utils.get_metadata('/indexing_status', ff_env=env, add_on='datastore=database')
         if indexing_status_is_clear(indexing_status):
             es = connection.ff_es
             es_client = create_es_client(es_url=es)
