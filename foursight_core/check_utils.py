@@ -2,6 +2,7 @@ import os
 import importlib
 import copy
 import json
+from dcicutils.env_base import EnvBase
 from dcicutils.env_utils import infer_foursight_from_env
 from .check_schema import CheckSchema
 from .exceptions import BadCheckSetup
@@ -125,10 +126,11 @@ class CheckHandler(object):
                                         f' must have a dictionary value.')
                 for env_name, env_detail in schedule.items():
                     env_name = infer_foursight_from_env(envname=env_name)
-                    if not self.environment.is_valid_environment_name(env_name, or_all=True):
+                    if not self.environment.is_valid_environment_name(env_name, or_all=True, strict=True):
                         raise BadCheckSetup(f'Environment "{env_name}" in schedule "{sched_name}" for "{check_name}"'
-                                            f' in check_setup.json is not an existing'
-                                            f' environment. Create with PUT to /environments endpoint.')
+                                            f' in check_setup.json is not an existing environment.'
+                                            f' Environments are defined in the global env bucket'
+                                            f' ({EnvBase.global_env_bucket_name()}) in S3.')
                     if not isinstance(env_detail, dict):
                         raise BadCheckSetup(f'Environment "{env_name}" in schedule "{sched_name}"'
                                             f' for "{check_name}" in check_setup.json'
