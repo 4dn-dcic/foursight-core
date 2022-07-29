@@ -2,6 +2,7 @@ import os
 import importlib
 import copy
 import json
+from dcicutils.env_base import EnvBase
 from dcicutils.env_utils import infer_foursight_from_env
 from .check_schema import CheckSchema
 from .exceptions import BadCheckSetup
@@ -90,7 +91,6 @@ class CheckHandler(object):
         """
         found_checks = {}
         all_check_strings = self.get_check_strings()
-        all_environments = self.environment.list_valid_schedule_environment_names()
         # validate all checks
         for check_string in all_check_strings:
             mod_name, check_name = check_string.split('/')
@@ -125,11 +125,12 @@ class CheckHandler(object):
                     raise BadCheckSetup(f'Schedule "{sched_name}" for "{check_name}" in check_setup.json'
                                         f' must have a dictionary value.')
                 for env_name, env_detail in schedule.items():
-                    env_name = infer_foursight_from_env(envname=env_name, short=False)
-                    if env_name not in all_environments:
+                    env_name = infer_foursight_from_env(envname=env_name)
+                    if not self.environment.is_valid_environment_name(env_name, or_all=True, strict=True):
                         raise BadCheckSetup(f'Environment "{env_name}" in schedule "{sched_name}" for "{check_name}"'
-                                            f' in check_setup.json is not an existing'
-                                            f' environment. Create with PUT to /environments endpoint.')
+                                            f' in check_setup.json is not an existing environment.'
+                                            f' Environments are defined in the global env bucket'
+                                            f' ({EnvBase.global_env_bucket_name()}) in S3.')
                     if not isinstance(env_detail, dict):
                         raise BadCheckSetup(f'Environment "{env_name}" in schedule "{sched_name}"'
                                             f' for "{check_name}" in check_setup.json'

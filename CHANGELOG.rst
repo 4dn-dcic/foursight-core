@@ -7,6 +7,12 @@ Change Log
 ----------
 
 
+0.7.5
+=====
+
+Fix Environment.is_valid_environment_name to return true of various environments.
+
+
 0.7.4
 =====
 
