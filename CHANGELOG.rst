@@ -7,6 +7,11 @@ Change Log
 ----------
 
 
+0.7.4.2b6
+=========
+* Merged in more of Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).
+
+
 0.7.4.2b5
 =========
 * Merged in Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).

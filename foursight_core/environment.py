@@ -93,16 +93,19 @@ class Environment(object):
 
         return self.list_unique_environment_names() + ['all']
 
-    def is_valid_environment_name(self, env: Optional[EnvName], or_all: bool = False) -> bool:
+    def is_valid_environment_name(self, env: Optional[EnvName], or_all: bool = False, strict: bool = False) -> bool:
         """
         Returns True if env is a valid environment name, and False otherwise.
 
         :param env: The name of an environment.
+        :param or_all: if True, allows 'all' as a valid name, otherwise does not.
+        :param strict: if True, restricts valid names to exactly the set of foursight names.
+                       Otherwise allows all declared names.
         """
 
         if or_all and env == 'all':
             return True
-
+        valid_envs = self.list_unique_environment_names() if strict else self.list_environment_names()
         return infer_foursight_from_env(envname=env) in self.list_environment_names()
 
     @classmethod
