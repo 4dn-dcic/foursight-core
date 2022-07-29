@@ -90,7 +90,6 @@ class CheckHandler(object):
         """
         found_checks = {}
         all_check_strings = self.get_check_strings()
-        all_environments = self.environment.list_valid_schedule_environment_names()
         # validate all checks
         for check_string in all_check_strings:
             mod_name, check_name = check_string.split('/')
@@ -125,8 +124,8 @@ class CheckHandler(object):
                     raise BadCheckSetup(f'Schedule "{sched_name}" for "{check_name}" in check_setup.json'
                                         f' must have a dictionary value.')
                 for env_name, env_detail in schedule.items():
-                    env_name = infer_foursight_from_env(envname=env_name, short=False)
-                    if env_name not in all_environments:
+                    env_name = infer_foursight_from_env(envname=env_name)
+                    if not self.environment.is_valid_environment_name(env_name, or_all=True):
                         raise BadCheckSetup(f'Environment "{env_name}" in schedule "{sched_name}" for "{check_name}"'
                                             f' in check_setup.json is not an existing'
                                             f' environment. Create with PUT to /environments endpoint.')

@@ -5,10 +5,9 @@ from dcicutils.common import EnvName, ChaliceStage
 from dcicutils.env_manager import EnvManager
 from dcicutils.env_utils import (
     get_foursight_bucket, get_foursight_bucket_prefix, full_env_name, infer_foursight_from_env,
-    get_env_real_url,
 )
 from dcicutils.misc_utils import full_class_name
-from dcicutils.s3_utils import s3Utils, HealthPageKey
+from dcicutils.s3_utils import s3Utils
 from typing import Optional, List
 
 
@@ -58,6 +57,12 @@ class Environment(object):
 
         return bucket_name
 
+    def list_unique_environment_names(self) -> List[EnvName]:
+        result = set()
+        for env in self.list_environment_names():
+            result.add(infer_foursight_from_env(envname=env))
+        return sorted(result)  # a list and sorted
+
     def list_environment_names(self) -> List[EnvName]:
         """
         Lists all environments in the foursight-envs s3.
@@ -86,23 +91,19 @@ class Environment(object):
         Returns: A list of names.
         """
 
-        return self.list_environment_names() + ['all']
+        return self.list_unique_environment_names() + ['all']
 
-    def is_valid_environment_name(self, env: Optional[EnvName]) -> bool:
+    def is_valid_environment_name(self, env: Optional[EnvName], or_all: bool = False) -> bool:
         """
         Returns True if env is a valid environment name, and False otherwise.
 
         :param env: The name of an environment.
         """
 
-        # TODO: Figure out whether callers mean this to return True for all possible forms of an environment
-        #       or only the actually-declared name. -kmp 22-Jun-2022
-
-        # This call requires no changes. -kmp 24-May-2022
-        if env in self.list_environment_names():
+        if or_all and env == 'all':
             return True
-        else:
-            return False
+
+        return infer_foursight_from_env(envname=env) in self.list_environment_names()
 
     @classmethod
     def get_environment_info_from_s3(cls, env_name: EnvName) -> dict:
@@ -139,7 +140,7 @@ class Environment(object):
         # This is weirdly named. A better name would be expand_environment_names or get_matching_environment_names.
         # But it doesn't need to change. -kmp 24-May-2022
         if env_name == 'all':
-            return self.list_environment_names()
+            return self.list_unique_environment_names()
         elif self.is_valid_environment_name(env_name):
             return [env_name]
         else:
@@ -165,7 +166,8 @@ class Environment(object):
         else:
             try:
                 env_keys = self.get_selected_environment_names(env or 'all')
-            except Exception:
+            except Exception as e:
+                logger.warning(f"Returning {{}} from get_environment_and_bucket_info_in_batch due to error: {e}.")
                 return {}  # provided env is not in s3
 
         return {
