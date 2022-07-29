@@ -57,6 +57,12 @@ class Environment(object):
 
         return bucket_name
 
+    def list_unique_environment_names(self) -> List[EnvName]:
+        result = set()
+        for env in self.list_environment_names():
+            result.add(infer_foursight_from_env(envname=env))
+        return sorted(result)  # a list and sorted
+
     def list_environment_names(self) -> List[EnvName]:
         """
         Lists all environments in the foursight-envs s3.
@@ -85,14 +91,17 @@ class Environment(object):
         Returns: A list of names.
         """
 
-        return self.list_environment_names() + ['all']
+        return self.list_unique_environment_names() + ['all']
 
-    def is_valid_environment_name(self, env: Optional[EnvName]) -> bool:
+    def is_valid_environment_name(self, env: Optional[EnvName], or_all: bool = False) -> bool:
         """
         Returns True if env is a valid environment name, and False otherwise.
 
         :param env: The name of an environment.
         """
+
+        if or_all and env == 'all':
+            return True
 
         return infer_foursight_from_env(envname=env) in self.list_environment_names()
 
@@ -131,7 +140,7 @@ class Environment(object):
         # This is weirdly named. A better name would be expand_environment_names or get_matching_environment_names.
         # But it doesn't need to change. -kmp 24-May-2022
         if env_name == 'all':
-            return self.list_environment_names()
+            return self.list_unique_environment_names()
         elif self.is_valid_environment_name(env_name):
             return [env_name]
         else:

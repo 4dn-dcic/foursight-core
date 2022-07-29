@@ -6,6 +6,7 @@ from dcicutils.common import CHALICE_STAGES
 from dcicutils.env_base import EnvBase
 from dcicutils.env_utils import full_env_name, short_env_name, infer_foursight_from_env
 from dcicutils.lang_utils import disjoined_list
+from unittest import mock
 
 
 LEGACY_GLOBAL_ENV_BUCKET = 'foursight-prod-envs'
@@ -41,6 +42,20 @@ def test_list_valid_schedule_environment_names():
         check_environment_names(envs, with_all=True)
 
 
+def test_list_unique_environment_names():
+
+    with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
+        environment = Environment()
+        with mock.patch.object(environment, 'list_environment_names') as mock_list_environment_names:
+            def mocked_list_environment_names():
+                return ['data', 'staging', 'fourfront-mastertest', 'mastertest']
+            mock_list_environment_names.side_effect = mocked_list_environment_names
+
+            unique = environment.list_unique_environment_names()
+            assert isinstance(unique, list)
+            assert unique == ['data', 'mastertest', 'staging']  # they will be alphabetical and in foursight-form
+
+
 def check_environment_names(envs, *, with_all):
 
     full_envs = [full_env_name(env) for env in envs if env != 'all']
@@ -63,6 +78,8 @@ def test_is_valid_environment_name():
         for env in envs:
             assert environment.is_valid_environment_name(env)
             assert not environment.is_valid_environment_name("not-" + env)
+        assert environment.is_valid_environment_name('all') is False
+        assert environment.is_valid_environment_name('all', or_all=True) is True
 
 
 def test_get_environment_info_from_s3():

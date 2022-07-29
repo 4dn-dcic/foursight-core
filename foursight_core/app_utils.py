@@ -911,10 +911,10 @@ class AppUtilsCore:
         """
         queue = self.sqs.get_sqs_queue()
         if schedule_name is not None:
-            if sched_environ != 'all' and not self.environment.is_valid_environment_name(sched_environ):
+            if not self.environment.is_valid_environment_name(sched_environ, or_all=True):
                 print(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
                 return
-            sched_environs = self.environment.list_environment_names() if sched_environ == 'all' else [sched_environ]
+            sched_environs = self.environment.get_selected_environment_names(sched_environ)
             check_schedule = self.check_handler.get_check_schedule(schedule_name, conditions)
             if not check_schedule:
                 print(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
