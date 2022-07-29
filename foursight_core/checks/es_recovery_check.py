@@ -21,7 +21,10 @@ def indexing_status_is_clear(indexing_status):
 
 
 def resolve_most_recent_snapshot(client):
-    """ Calls out to ES to determine the most recent snapshot of the cluster """
+    """ Calls out to ES to determine the most recent snapshot of the cluster
+        IMPORTANT: note that for the purposes of snapshot restore we roll back 2 snapshots
+        as the most recent snapshot could have occurred after the failure!
+    """
     snapshots, snapshot_repo = [], None
     for snapshot_repo in AUTOMATED_ES_SNAPSHOT_REPOSITORIES:
         try:
@@ -33,7 +36,8 @@ def resolve_most_recent_snapshot(client):
             continue
         if snapshots:
             break
-    return (snapshot_repo, snapshots[-1]) if snapshots else (None, None)  # most recent snapshot shows up last
+    # most recent snapshot shows up last, want 2nd most recent since the most recent could've been of the failed cluster
+    return (snapshot_repo, snapshots[-2]) if snapshots else (None, None)
 
 
 def restore_snapshot(client, snapshot_repo, snapshot_id, index=None, include_global_state=False):
@@ -82,6 +86,7 @@ def rollback_es_to_snapshot(connection, **kwargs):
                 return check
             else:
                 foursight_index = connection.ff_bucket
+                es_client.indices.delete(foursight_index)  # must clear out prior to restore
                 fs_result = restore_snapshot(es_client, snapshot_repo, snapshot['id'], index=foursight_index)
                 sleep(15)  # allow snapshot restore of FS index to proceed
                 ff_result = restore_snapshot(es_client, snapshot_repo, snapshot['id'], index=env + '*')

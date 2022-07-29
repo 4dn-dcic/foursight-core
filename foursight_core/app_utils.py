@@ -911,6 +911,7 @@ class AppUtilsCore:
             dict: runner input of queued messages, used for testing
         """
         queue = self.sqs.get_sqs_queue()
+        print(f'-RUN-> target queue: {queue}')
         if schedule_name is not None:
             if sched_environ != 'all' and not self.environment.is_valid_environment_name(sched_environ):
                 print(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
@@ -920,7 +921,11 @@ class AppUtilsCore:
             if not check_schedule:
                 print(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
                 return
+            if not sched_environs:
+                print(f'-RUN-> No scheduled environs detected! {sched_environs}, {check_schedule}')
+                return
             for environ in sched_environs:
+                print(f'-RUN-> Sending messages for {environ}')
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
                 check_vals.extend(check_schedule.get(environ, []))
