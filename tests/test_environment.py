@@ -158,7 +158,8 @@ def test_get_selected_environment_names():
     with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
         environment = Environment()
         envs = environment.list_environment_names()
-        assert environment.get_selected_environment_names('all') == envs
+        assert environment.get_selected_environment_names('all') == sorted({infer_foursight_from_env(envname=env)
+                                                                            for env in envs})
         for env in envs:
             assert environment.get_selected_environment_names(env) == [env]
             with pytest.raises(Exception):
