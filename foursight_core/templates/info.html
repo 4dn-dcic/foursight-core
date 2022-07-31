@@ -1,0 +1,78 @@
+{% extends "header.html" %}
+
+<!-- Macro for toggle button to display _output fields of checks -->
+{% macro name_value_box(title, dictionary) %}
+    <b>{{title}}</b>
+    <div class="check-pass boxstyle">
+        <h5 style='margin:10px 5px 10px 5px;'}}>
+            {% for key, value in dictionary.items() %}
+            <div class='row'>
+                <div class="col-sm-4">
+                    <div style="padding:0;" align="left">
+                        <b>{{key}}</b>
+                    </div>
+                </div>
+                <div class="col-sm-8" style="word-wrap: break-word;" align="left">
+                    {{value}}
+                </div>
+            </div>
+            {% endfor %}
+        </h5>
+    </div>
+{% endmacro %}
+
+{% macro list_box(title, list) %}
+    <b>{{title}}</b>
+    <div class="check-pass boxstyle">
+        <h5 style='margin:10px 5px 10px 5px;'}}>
+            {% for value in list %}
+            <div class='row'>
+                <div class="col-sm-8">
+                    <div style="padding:0;" align="left">
+                        <b>{{value}}</b>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </h5>
+    </div>
+{% endmacro %}
+
+{% block content %}
+    <ul class="top-level-list">
+        {{list_box('env_name', [env_name])}}
+    </ul>
+    <ul class="top-level-list">
+        {{list_box('env_bucket_name', [env_bucket_name])}}
+    </ul>
+    <ul class="top-level-list">
+        {{list_box('environment_names', environment_names)}}
+    </ul>
+    <ul class="top-level-list">
+        {{list_box('unique_environment_names', unique_environment_names)}}
+    </ul>
+    <ul class="top-level-list">
+        {{list_box('full_env_name', [full_env_name])}}
+    </ul>
+    <ul class="top-level-list">
+        {{list_box('short_env_name', [short_env_name])}}
+    </ul>
+    <ul class="top-level-list">
+        {{name_value_box('environment_and_bucket_info', environment_and_bucket_info)}}
+    </ul>
+    <ul class="top-level-list">
+        {{list_box('foursight_bucket_prefix', [foursight_bucket_prefix])}}
+    </ul>
+    <ul class="top-level-list">
+        {{list_box('foursight_bucket', [foursight_bucket])}}
+    </ul>
+    <ul class="top-level-list">
+        {{list_box('infer_foursight_from_env', [infer_foursight_from_env])}}
+    </ul>
+    <ul class="top-level-list">
+       {{name_value_box('declared_data', declared_data)}}
+    </ul>
+    <ul class="top-level-list">
+        {{name_value_box('os.environ', os_environ)}}
+    </ul>
+{% endblock %}

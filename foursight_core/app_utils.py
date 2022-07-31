@@ -14,6 +14,14 @@ import logging
 from itertools import chain
 from dateutil import tz
 from dcicutils import ff_utils
+from dcicutils.env_utils import (
+    EnvUtils,
+    get_foursight_bucket,
+    get_foursight_bucket_prefix,
+    infer_foursight_from_env,
+    full_env_name,
+    short_env_name,
+)
 from dcicutils.lang_utils import disjoined_list
 from typing import Optional
 from .identity import apply_identity_globally
@@ -462,6 +470,47 @@ class AppUtilsCore:
             queued_checks=queued_checks,
             favicon=first_env_favicon,
             main_title=self.html_main_title
+        )
+        html_resp.status_code = 200
+        return self.process_response(html_resp)
+
+    @staticmethod
+    def sorted_dict(dictionary: dict) -> dict:
+        result = {}
+        for key, value in sorted(dict(dictionary).items()):
+            result[key] = value
+        return result
+
+    # dmichaels/2020-07-30
+    def view_info(self, domain="", context="/"):
+        html_resp = Response('Foursight viewing suite')
+        html_resp.headers = {'Content-Type': 'text/html'}
+        template = self.jin_env.get_template('info.html')
+        env_name = os.environ.get("ENV_NAME")
+        stage_name=self.stage.get_stage()
+        html_resp.body = template.render(
+            env='all',
+            domain=domain,
+            context=context,
+            stage=stage_name,
+            is_admin=True,
+            main_title=self.html_main_title,
+            favicon = self.get_favicon(),
+            load_time=self.get_load_time(),
+            running_checks='0',
+            queued_checks='0',
+            env_name=env_name,
+            env_bucket_name=self.environment.get_env_bucket_name(),
+            environment_and_bucket_info=self.environment.get_environment_and_bucket_info(env_name, stage_name),
+            foursight_bucket=get_foursight_bucket(envname=env_name, stage=stage_name),
+            foursight_bucket_prefix=get_foursight_bucket_prefix(),
+            full_env_name=full_env_name(env_name),
+            short_env_name=short_env_name(env_name),
+            infer_foursight_from_env=infer_foursight_from_env(envname=env_name),
+            environment_names=self.environment.list_environment_names(),
+            unique_environment_names=self.environment.list_unique_environment_names(),
+            declared_data=AppUtilsCore.sorted_dict(EnvUtils.declared_data()),
+            os_environ=AppUtilsCore.sorted_dict(os.environ),
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
