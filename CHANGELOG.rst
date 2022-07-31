@@ -7,9 +7,14 @@ Change Log
 ----------
 
 
+0.7.4.2b8
+=========
+* Forgot to obfuscate_dict on os.environ for /debug/info view/route.
+
+
 0.7.4.2b7
 =========
-* Added /debug/info route with sundry debugging/troubleshooting info.
+* Added /debug/info view/route with sundry debugging/troubleshooting info.
 
 
 0.7.4.2b6

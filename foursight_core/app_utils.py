@@ -23,6 +23,7 @@ from dcicutils.env_utils import (
     short_env_name,
 )
 from dcicutils.lang_utils import disjoined_list
+from dcicutils.obfuscation_utils import obfuscate_dict
 from typing import Optional
 from .identity import apply_identity_globally
 from .s3_connection import S3Connection
@@ -510,7 +511,7 @@ class AppUtilsCore:
             environment_names=self.environment.list_environment_names(),
             unique_environment_names=self.environment.list_unique_environment_names(),
             declared_data=AppUtilsCore.sorted_dict(EnvUtils.declared_data()),
-            os_environ=AppUtilsCore.sorted_dict(os.environ),
+            os_environ=AppUtilsCore.sorted_dict(obfuscate_dict(dict(os.environ))),
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
