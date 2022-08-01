@@ -7,55 +7,20 @@ Change Log
 ----------
 
 
-0.7.4.2b8
+0.7.4.2b9
 =========
-* Forgot to obfuscate_dict on os.environ for /debug/info view/route.
-
-
-0.7.4.2b7
-=========
-* Added /debug/info view/route with sundry debugging/troubleshooting info.
-
-
-0.7.4.2b6
-=========
-* Merged in more of Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).
-
-
-0.7.4.2b5
-=========
-* Merged in Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).
-
-
-0.7.4.2b4
-=========
-* Merged from master.
-
-
-0.7.4.2b3
-=========
+* IDENTITY-ized Foursight; i.e. get secrets and other configuration data from the global application configuration (GAC)
+  rather than having them encoded in the environment via the CloudFormation template (for the lambdas). C4-826.
+* Added STACK_NAME (in addition to IDENTITY introduced in 0.7.4.2b0) to the environment variables
+  required (via the Foursight CloudFormation template) to get a foothold for other Foursight info,
+  e.g. to get the CHECK_RUNNER AWS lambda function name. See AppUtilsCore.apply_identity_globally
+  in app_utils.py and Deploy.build_config in deploy.py. C4-826.
 * Moved apply_identity_globally to its own identity.py module and
   call it statically from app_utils.py/AppUtilsCore class. C4-826.
+* Merged in Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).
+* Merged from master.
+* Merged in more of Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).
 
-
-0.7.4.2b2
-=========
-Minor fix for previous beta (0.7.4.2b1). C4-826.
-
-
-0.7.4.2b1
-=========
-Added STACK_NAME (in addition to IDENTITY introduced in 0.7.4.2b0) to the environment variables
-required (via the Foursight CloudFormation template) to get a foothold for other Foursight info,
-e.g. to get the CHECK_RUNNER AWS lambda function name. See AppUtilsCore.apply_identity_globally
-in app_utils.py and Deploy.build_config in deploy.py. C4-826.
-
-
-0.7.4.2b0
-=========
-
-IDENTITY-ized Foursight; i.e. get secrets and other configuration data from the global application configuration (GAC)
-rather than having them encoded in the environment via the CloudFormation template (for the lambdas). C4-826.
 
 0.7.4
 =====
