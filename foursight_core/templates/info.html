@@ -14,7 +14,11 @@
                 <div class="col-sm-8" style="word-wrap: break-word;" align="left">
                     {% if value.__class__.__name__ == 'list' %}
                         {% for v in value %}
-                            {{v}} <br />
+                            {% if v.__class__.__name__ == 'dict' %}
+                                <b><code style="margin-left:-3pt;background:#dff0d8;color:#3c763d;">{{v}}</code></b>
+                            {% else %}
+                                {{v}} <br />
+                            {% endif %}
                         {% endfor %}
                     {% elif value.__class__.__name__ == 'dict' %}
                         <b><code style="margin-left:-3pt;background:#dff0d8;color:#3c763d;">{{value}}</code></b>
