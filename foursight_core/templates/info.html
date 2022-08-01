@@ -16,6 +16,8 @@
                         {% for v in value %}
                             {{v}} <br />
                         {% endfor %}
+                    {% elif value.__class__.__name__ == 'dict' %}
+                        <b><code style="margin-left:-3pt;background:#dff0d8;color:#3c763d;">{{value}}</code></b>
                     {% else %}
                         {{value}}
                     {% endif %}

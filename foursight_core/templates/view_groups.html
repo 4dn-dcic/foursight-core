@@ -10,7 +10,7 @@
             <ul class="top-level-list">
                 {% for group in env['groups'] %}
                     {% set group_title = '_'.join(group['_name'].split(' ')) %}
-                    <div onclick="{{"return collapse_group(event, '" + env['environment'] + "-" + group_title + "');" | safe}}" class="group-boxstyle">
+                    <div onclick="{{"return collapse_group(event, '" + env['environment'] + "-" + group_title + "');" | safe}}" class="group-boxstyle" style="cursor:pointer">
                         <h5 style='margin:10px 5px 10px 5px; color:#666'}}>
                             <span>
                                 {{group['_name']}}
