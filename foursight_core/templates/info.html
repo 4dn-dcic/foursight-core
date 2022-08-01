@@ -1,0 +1,74 @@
+{% extends "header.html" %}
+
+<!-- Macro for toggle button to display _output fields of checks -->
+{% macro name_value_box(dictionary) %}
+    <div class="check-pass boxstyle">
+        <h5 style='margin:10px 5px 10px 5px;'}}>
+            {% for key, value in dictionary.items() %}
+            <div class='row'>
+                <div class="col-sm-4">
+                    <div style="padding:0;" align="left">
+                        <b>{{key}}</b>
+                    </div>
+                </div>
+                <div class="col-sm-8" style="word-wrap: break-word;" align="left">
+                    {% if value.__class__.__name__ == 'list' %}
+                        {% for v in value %}
+                            {{v}} <br />
+                        {% endfor %}
+                    {% else %}
+                        {{value}}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </h5>
+    </div>
+{% endmacro %}
+
+{% macro list_box(list) %}
+    <div class="check-pass boxstyle">
+        <h5 style='margin:10px 5px 10px 5px;'}}>
+            {% for value in list %}
+            <div class='row'>
+                <div class="col-sm-4">
+                    <div style="padding:0;" align="left">
+                        <b>{{value}}</b>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </h5>
+    </div>
+{% endmacro %}
+
+{% block content %}
+    <ul class="top-level-list">
+        <b>Environment Names</b>
+        {{name_value_box(environment_names)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>Bucket Names</b>
+        {{name_value_box(bucket_names)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>Environment &amp; Bucket Names</b>
+        {{name_value_box(environment_and_bucket_info)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>Declared Data</b>
+       {{name_value_box(declared_data)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>AWS Credentials Info</b>
+       {{name_value_box(aws_credentials)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>GAC: {{identity_name}}</b>
+        {{name_value_box(identity_secrets)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>Environment Variables</b>
+        {{name_value_box(os_environ)}}
+    </ul>
+{% endblock %}

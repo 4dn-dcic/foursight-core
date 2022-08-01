@@ -14,8 +14,17 @@ import logging
 from itertools import chain
 from dateutil import tz
 from dcicutils import ff_utils
+from dcicutils.env_utils import (
+    EnvUtils,
+    get_foursight_bucket,
+    get_foursight_bucket_prefix,
+    infer_foursight_from_env,
+    full_env_name,
+    short_env_name,
+)
 from dcicutils.lang_utils import disjoined_list
-from dcicutils.obfuscation_utils import obfuscate_dict
+from dcicutils.obfuscation_utils import obfuscate, obfuscate_dict
+from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from typing import Optional
 from .identity import apply_identity_globally
 from .s3_connection import S3Connection
@@ -463,6 +472,104 @@ class AppUtilsCore:
             queued_checks=queued_checks,
             favicon=first_env_favicon,
             main_title=self.html_main_title
+        )
+        html_resp.status_code = 200
+        return self.process_response(html_resp)
+
+    @staticmethod
+    def sorted_dict(dictionary: dict) -> dict:
+        result = {}
+        for key, value in sorted(dict(dictionary).items()):
+            result[key] = value
+        return result
+
+    @staticmethod
+    def obfuscate_and_sort_dict(dictionary: dict) -> dict:
+        dictionary = obfuscate_dict(dict(dictionary))
+        # not currently obfuscated by obfuscate_dict, but probably should be, are the session related values.
+        aws_session_token = dictionary.get("AWS_SESSION_TOKEN")
+        if aws_session_token:
+            dictionary["AWS_SESSION_TOKEN"] = len(aws_session_token) * '*'
+        securitysessionid = dictionary.get("SECURITYSESSIONID")
+        if securitysessionid:
+            dictionary["SECURITYSESSIONID"] = len(securitysessionid) * '*'
+        term_session_id = dictionary.get("TERM_SESSION_ID")
+        if term_session_id:
+            dictionary["TERM_SESSION_ID"] = len(term_session_id) * '*'
+        iterm_session_id = dictionary.get("ITERM_SESSION_ID")
+        if iterm_session_id:
+            dictionary["ITERM_SESSION_ID"] = len(iterm_session_id) * '*'
+        return AppUtilsCore.sorted_dict(dictionary)
+
+    @staticmethod
+    def get_aws_credentials_info() -> dict:
+        try:
+            session = boto3.session.Session()
+            credentials = session.get_credentials()
+            access_key_id = credentials.access_key
+            secret_access_key = credentials.secret_key
+            region_name = session.region_name
+            session_token = credentials.token
+            caller_identity = boto3.client("sts").get_caller_identity()
+            user_arn = caller_identity["Arn"]
+            account_number = caller_identity["Account"]
+            aws_credentials_info = {
+                "AWS Account Number:": account_number,
+                "AWS User ARN:": user_arn,
+                "AWS Access Key ID:": access_key_id,
+                "AWS Secret Access Key:": obfuscate(secret_access_key),
+                "AWS Region Name:": region_name,
+                "AWS Session Token:": obfuscate(session_token)
+            }
+            return aws_credentials_info
+        except:
+            return {}
+
+    # dmichaels/2020-07-30
+    def view_info(self, domain="", context="/"):
+        html_resp = Response('Foursight viewing suite')
+        html_resp.headers = {'Content-Type': 'text/html'}
+        template = self.jin_env.get_template('info.html')
+        env_name = os.environ.get("ENV_NAME")
+        stage_name = self.stage.get_stage()
+        environment_names = {
+            "Environment Name:": env_name,
+            "Environment Name (Full):": full_env_name(env_name),
+            "Environment Name (Short):": short_env_name(env_name),
+            "Environment Name (Inferred):": infer_foursight_from_env(envname=env_name),
+            "Environment Name List:": self.environment.list_environment_names(),
+            "Environment Name List (Unique):": self.environment.list_unique_environment_names()
+        }
+        bucket_names = {
+            "Environment Bucket Name": self.environment.get_env_bucket_name(),
+            "Foursight Bucket Name": get_foursight_bucket(envname=env_name, stage=stage_name),
+            "Foursight Bucket Prefix": get_foursight_bucket_prefix()
+        }
+        environment_and_bucket_info = self.environment.get_environment_and_bucket_info(env_name, stage_name)
+        declared_data=AppUtilsCore.sorted_dict(EnvUtils.declared_data())
+        identity_name = get_identity_name()
+        identity_secrets = AppUtilsCore.obfuscate_and_sort_dict(get_identity_secrets())
+        os_environ = AppUtilsCore.obfuscate_and_sort_dict(os.environ)
+        aws_credentials = AppUtilsCore.get_aws_credentials_info()
+        html_resp.body = template.render(
+            env='all',
+            domain=domain,
+            context=context,
+            stage=stage_name,
+            is_admin=True,
+            main_title=self.html_main_title,
+            favicon = self.get_favicon(),
+            load_time=self.get_load_time(),
+            running_checks='0',
+            queued_checks='0',
+            environment_names=environment_names,
+            bucket_names=bucket_names,
+            environment_and_bucket_info=environment_and_bucket_info,
+            declared_data=declared_data,
+            identity_name=identity_name,
+            identity_secrets=identity_secrets,
+            aws_credentials=aws_credentials,
+            os_environ=os_environ
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
