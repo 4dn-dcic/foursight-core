@@ -9,6 +9,7 @@ import datetime
 import ast
 import copy
 import requests
+import socket
 import sys
 import logging
 from itertools import chain
@@ -523,18 +524,25 @@ class AppUtilsCore:
             "Environment Name List (Unique):": self.environment.list_unique_environment_names()
         }
         bucket_names = {
-            "Environment Bucket Name": self.environment.get_env_bucket_name(),
-            "Foursight Bucket Name": get_foursight_bucket(envname=env_name, stage=stage_name),
-            "Foursight Bucket Prefix": get_foursight_bucket_prefix()
+            "Environment Bucket Name:": self.environment.get_env_bucket_name(),
+            "Foursight Bucket Name:": get_foursight_bucket(envname=env_name, stage=stage_name),
+            "Foursight Bucket Prefix:": get_foursight_bucket_prefix()
+        }
+        gac_name = get_identity_name()
+        gac_values = sorted_dict(obfuscate_dict(get_identity_secrets()))
+        es_host = os.environ.get("ES_HOST")
+        encoded_es_server = gac_values.get("ENCODED_ES_SERVER")
+        resources = {
+            "Foursight Server:": socket.gethostname(),
+            "ElasticSearch Server:": [es_host, encoded_es_server] if es_host != encoded_es_server else es_host,
+            "RDS Server:": os.environ["RDS_HOSTNAME"]
         }
         environment_and_bucket_info = self.environment.get_environment_and_bucket_info(env_name, stage_name)
         declared_data=sorted_dict(EnvUtils.declared_data())
-        identity_name = get_identity_name()
-        identity_secrets = sorted_dict(obfuscate_dict(get_identity_secrets()))
         os_environ = sorted_dict(obfuscate_dict(dict(os.environ)))
         aws_credentials = get_obfuscated_aws_credentials_info()
         html_resp.body = template.render(
-            env='all',
+            env=env_name,
             domain=domain,
             context=context,
             stage=stage_name,
@@ -548,9 +556,10 @@ class AppUtilsCore:
             bucket_names=bucket_names,
             environment_and_bucket_info=environment_and_bucket_info,
             declared_data=declared_data,
-            identity_name=identity_name,
-            identity_secrets=identity_secrets,
+            identity_name=gac_name,
+            identity_secrets=gac_values,
             aws_credentials=aws_credentials,
+            resources=resources,
             os_environ=os_environ
         )
         html_resp.status_code = 200
