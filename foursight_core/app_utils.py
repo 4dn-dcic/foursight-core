@@ -476,57 +476,39 @@ class AppUtilsCore:
         html_resp.status_code = 200
         return self.process_response(html_resp)
 
-    @staticmethod
-    def sorted_dict(dictionary: dict) -> dict:
-        result = {}
-        for key, value in sorted(dict(dictionary).items()):
-            result[key] = value
-        return result
-
-    @staticmethod
-    def obfuscate_and_sort_dict(dictionary: dict) -> dict:
-        dictionary = obfuscate_dict(dict(dictionary))
-        # not currently obfuscated by obfuscate_dict, but probably should be, are the session related values.
-        aws_session_token = dictionary.get("AWS_SESSION_TOKEN")
-        if aws_session_token:
-            dictionary["AWS_SESSION_TOKEN"] = len(aws_session_token) * '*'
-        securitysessionid = dictionary.get("SECURITYSESSIONID")
-        if securitysessionid:
-            dictionary["SECURITYSESSIONID"] = len(securitysessionid) * '*'
-        term_session_id = dictionary.get("TERM_SESSION_ID")
-        if term_session_id:
-            dictionary["TERM_SESSION_ID"] = len(term_session_id) * '*'
-        iterm_session_id = dictionary.get("ITERM_SESSION_ID")
-        if iterm_session_id:
-            dictionary["ITERM_SESSION_ID"] = len(iterm_session_id) * '*'
-        return AppUtilsCore.sorted_dict(dictionary)
-
-    @staticmethod
-    def get_aws_credentials_info() -> dict:
-        try:
-            session = boto3.session.Session()
-            credentials = session.get_credentials()
-            access_key_id = credentials.access_key
-            secret_access_key = credentials.secret_key
-            region_name = session.region_name
-            session_token = credentials.token
-            caller_identity = boto3.client("sts").get_caller_identity()
-            user_arn = caller_identity["Arn"]
-            account_number = caller_identity["Account"]
-            aws_credentials_info = {
-                "AWS Account Number:": account_number,
-                "AWS User ARN:": user_arn,
-                "AWS Access Key ID:": access_key_id,
-                "AWS Secret Access Key:": obfuscate(secret_access_key),
-                "AWS Region Name:": region_name,
-                "AWS Session Token:": obfuscate(session_token)
-            }
-            return aws_credentials_info
-        except:
-            return {}
-
-    # dmichaels/2020-07-30
+    # dmichaels/2020-08-01:
+    # Added /view/info for debugging/troubleshooting purposes.
     def view_info(self, domain="", context="/"):
+
+        def sorted_dict(dictionary: dict) -> dict:
+            result = {}
+            for key in sorted(dict(dictionary).keys(), key=lambda key: key.lower()):
+                result[key] = dictionary[key]
+            return result
+
+        def get_obfuscated_aws_credentials_info() -> dict:
+            try:
+                session = boto3.session.Session()
+                credentials = session.get_credentials()
+                access_key_id = credentials.access_key
+                secret_access_key = credentials.secret_key
+                region_name = session.region_name
+                session_token = credentials.token
+                caller_identity = boto3.client("sts").get_caller_identity()
+                user_arn = caller_identity["Arn"]
+                account_number = caller_identity["Account"]
+                aws_credentials_info = {
+                    "AWS Account Number:": account_number,
+                    "AWS User ARN:": user_arn,
+                    "AWS Access Key ID:": access_key_id,
+                    "AWS Secret Access Key:": obfuscate(secret_access_key),
+                    "AWS Region Name:": region_name,
+                    "AWS Session Token:": obfuscate(session_token)
+                }
+                return aws_credentials_info
+            except:
+                return {}
+
         html_resp = Response('Foursight viewing suite')
         html_resp.headers = {'Content-Type': 'text/html'}
         template = self.jin_env.get_template('info.html')
@@ -546,11 +528,11 @@ class AppUtilsCore:
             "Foursight Bucket Prefix": get_foursight_bucket_prefix()
         }
         environment_and_bucket_info = self.environment.get_environment_and_bucket_info(env_name, stage_name)
-        declared_data=AppUtilsCore.sorted_dict(EnvUtils.declared_data())
+        declared_data=sorted_dict(EnvUtils.declared_data())
         identity_name = get_identity_name()
-        identity_secrets = AppUtilsCore.obfuscate_and_sort_dict(get_identity_secrets())
-        os_environ = AppUtilsCore.obfuscate_and_sort_dict(os.environ)
-        aws_credentials = AppUtilsCore.get_aws_credentials_info()
+        identity_secrets = sorted_dict(obfuscate_dict(get_identity_secrets()))
+        os_environ = sorted_dict(obfuscate_dict(dict(os.environ)))
+        aws_credentials = get_obfuscated_aws_credentials_info()
         html_resp.body = template.render(
             env='all',
             domain=domain,
