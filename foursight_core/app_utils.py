@@ -8,6 +8,7 @@ import boto3
 import datetime
 import ast
 import copy
+import platform
 import requests
 import socket
 import sys
@@ -532,15 +533,17 @@ class AppUtilsCore:
         gac_values = sorted_dict(obfuscate_dict(get_identity_secrets()))
         es_host = os.environ.get("ES_HOST")
         encoded_es_server = gac_values.get("ENCODED_ES_SERVER")
+        environment_and_bucket_info = sorted_dict(obfuscate_dict(self.environment.get_environment_and_bucket_info(env_name, stage_name)))
+        declared_data=sorted_dict(EnvUtils.declared_data())
         resources = {
+            "Python Version:": platform.python_version(),
             "Foursight Server:": socket.gethostname(),
+            "Fourfront Server:": environment_and_bucket_info.get("fourfront"),
             "ElasticSearch Server:": [es_host, encoded_es_server] if es_host != encoded_es_server else es_host,
             "RDS Server:": os.environ["RDS_HOSTNAME"]
         }
-        environment_and_bucket_info = self.environment.get_environment_and_bucket_info(env_name, stage_name)
-        declared_data=sorted_dict(EnvUtils.declared_data())
-        os_environ = sorted_dict(obfuscate_dict(dict(os.environ)))
         aws_credentials = get_obfuscated_aws_credentials_info()
+        os_environ = sorted_dict(obfuscate_dict(dict(os.environ)))
         html_resp.body = template.render(
             env=env_name,
             domain=domain,
