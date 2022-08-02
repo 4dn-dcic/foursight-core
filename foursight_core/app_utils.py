@@ -412,7 +412,7 @@ class AppUtilsCore:
         return Response(status_code=302, body=json.dumps(resp_headers),
                         headers=resp_headers)
 
-    def view_foursight(self, environ, is_admin=False, domain="", context="/"):
+    def view_foursight(self, request, environ, is_admin=False, domain="", context="/"):
         """
         View a template of all checks from the given environment(s).
         Environ may be 'all' or a specific FS environments separated by commas.
@@ -466,6 +466,7 @@ class AppUtilsCore:
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         first_env_favicon = self.get_favicon()
         html_resp.body = template.render(
+            request=request,
             version=version,
             env=environ,
             view_envs=total_envs,
@@ -484,7 +485,7 @@ class AppUtilsCore:
 
     # dmichaels/2020-08-01:
     # Added /view/info for debugging/troubleshooting purposes.
-    def view_info(self, domain="", context="/"):
+    def view_info(self, request, domain="", context="/"):
 
         def sorted_dict(dictionary: dict) -> dict:
             result = {}
@@ -556,6 +557,7 @@ class AppUtilsCore:
         aws_credentials = get_obfuscated_aws_credentials_info()
         os_environ = sorted_dict(obfuscate_dict(dict(os.environ)))
         html_resp.body = template.render(
+            request=request,
             version=version,
             env=env_name,
             domain=domain,
@@ -581,7 +583,7 @@ class AppUtilsCore:
         html_resp.status_code = 200
         return self.process_response(html_resp)
 
-    def view_foursight_check(self, environ, check, uuid, is_admin=False, domain="", context="/"):
+    def view_foursight_check(self, request, environ, check, uuid, is_admin=False, domain="", context="/"):
         """
         View a formatted html response for a single check (environ, check, uuid)
         """
@@ -620,6 +622,7 @@ class AppUtilsCore:
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         first_env_favicon = self.get_favicon()
         html_resp.body = template.render(
+            request=request,
             version=version,
             env=environ,
             view_envs=total_envs,
@@ -732,7 +735,7 @@ class AppUtilsCore:
                 del res['action']
         return res
 
-    def view_foursight_history(self, environ, check, start=0, limit=25, is_admin=False,
+    def view_foursight_history(self, request, environ, check, start=0, limit=25, is_admin=False,
                                domain="", context="/"):
         """
         View a tabular format of the history of a given check or action (str name
@@ -763,6 +766,7 @@ class AppUtilsCore:
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         favicon = self.get_favicon()
         html_resp.body = template.render(
+            request=request,
             version=version,
             env=environ,
             check=check,

@@ -157,7 +157,7 @@
                     </a>
                 </td>
                 <td align="center" style="white-space:nowrap;">
-                    <span style="margin-left:-10px;font-family:arial;font-size:19pt;color:white;">{{main_title}}</span>
+                    <span style="font-family:arial;font-size:19pt;color:white;">{{main_title}}</span>
                 </td>
                 <td align="right" width="140px" style="white-space:nowrap;">
                 </td>
@@ -166,14 +166,22 @@
         <table width="100%">
             <tr style="background:#c5d1d8;color:black;">
                 <td width="280" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
-                    <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
-                    <a href="/view/info" style="text-decoration:none;">INFO</a> &nbsp;<b>|</b>&nbsp;
+                        {% if request.path.endswith('/view/info') %}
+                            <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
+                            <a href="/view/info" style="text-decoration:none;color:black;"><b>INFO</b></a> &nbsp;<b>|</b>&nbsp;
+                        {% elif request.path.endswith('/view/{environ}') %}
+                            <a href="{{context + 'view/' + env}}" style="text-decoration:none;color:black;"><b>HOME</b></a> &nbsp;<b>|</b>&nbsp;
+                            <a href="/view/info" style="text-decoration:none;">INFO</a> &nbsp;<b>|</b>&nbsp;
+                        {% else %}
+                            <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
+                            <a href="/view/info" style="text-decoration:none;">INFO</a> &nbsp;<b>|</b>&nbsp;
+                        {% endif %}
                     <span title="Page load time.">{{load_time}}</span>
                 </td>
                 <td align="center" style="white-space:nowrap;">
                     <b title="Version of: foursight-cgap">{{version}}</b>
                 </td>
-                <td width="280" style="padding-right:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;" align="right">
+                <td width="280" style="padding-right:10pt;padding-top:2pt;padding-bottom:0pt;white-space:nowrap;" align="right">
                     STAGE: <b>{{stage}}</b> &nbsp;<b>|</b>&nbsp;
                     {% if is_admin %}
                         LOGIN: <b>admin</b>
