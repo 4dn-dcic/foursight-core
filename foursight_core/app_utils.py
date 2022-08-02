@@ -542,10 +542,10 @@ class AppUtilsCore:
         dcicutils_version = pkg_resources.get_distribution('dcicutils').version
         foursight_core_version = pkg_resources.get_distribution('foursight-core').version
         versions = {
-            "Python Version:": platform.python_version(),
-            "DCIC-Utils Version:": dcicutils_version,
-            "Foursight-Core Version:": foursight_core_version,
             "Foursight-CGAP Version:": version,
+            "Foursight-Core Version:": foursight_core_version,
+            "DCIC-Utils Version:": dcicutils_version,
+            "Python Version:": platform.python_version()
         }
         resources = {
             "Foursight Server:": socket.gethostname(),

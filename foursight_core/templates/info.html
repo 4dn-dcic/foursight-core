@@ -24,19 +24,19 @@
                         <b><code style="margin-left:-3pt;background:#D6EAF8;color:#263A48;">{{value}}</code></b>
                     {% else %}
                         {% if key == "Python Version:" %}
-                            <a target="_blank" href="https://docs.python.org/release/{{value}}/">{{value}}</a>
+                        <a target="_blank" href="https://docs.python.org/release/{{value}}/">{{value}}</a>
                         {% elif key == "DCIC-Utils Version:" %}
-                            <a target="_blank" href="https://pypi.org/project/dcicutils/{{value}}/">{{value}}</a> <b>|</b>
-                            <a target="_blank" href="https://pypi.org/project/dcicutils/{{value}}/">PyPi</a> <b>|</b>
-                            <a target="_blank" href="https://github.com/4dn-dcic/utils/releases/tag/v{{value}}">GitHub</a>
+                            <a target="_blank" href="https://pypi.org/project/dcicutils/{{value}}/">{{value}}</a> &nbsp;&nbsp;
+                            <a target="_blank" href="https://pypi.org/project/dcicutils/{{value}}/"><img src="https://cdn-images-1.medium.com/max/1064/1*8Zh-mzLnVMDsbvXdKsU4lw.png" height="21" /></a> &nbsp;
+                            <a target="_blank" href="https://github.com/4dn-dcic/utils/releases/tag/v{{value}}"><img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" /></a>
                         {% elif key == "Foursight-Core Version:" %}
-                            <a target="_blank" href="https://pypi.org/project/foursight-core/{{value}}/">{{value}}</a> <b>|</b>
-                            <a target="_blank" href="https://pypi.org/project/foursight-core/{{value}}/">PyPi</a> <b>|</b>
-                            <a target="_blank" href="https://github.com/4dn-dcic/foursight-core/releases/tag/v{{value}}">GitHub</a>
+                            <a target="_blank" href="https://pypi.org/project/foursight-core/{{value}}/">{{value}}</a> &nbsp;&nbsp;
+                            <a target="_blank" href="https://pypi.org/project/foursight-core/{{value}}/"><img src="https://cdn-images-1.medium.com/max/1064/1*8Zh-mzLnVMDsbvXdKsU4lw.png" height="21" /></a> &nbsp;
+                            <a target="_blank" href="https://github.com/4dn-dcic/foursight-core/releases/tag/v{{value}}"><img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" /></a>
                         {% elif key == "Foursight-CGAP Version:" %}
-                            <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{value}}/">{{value}}</a> <b>|</b>
-                            <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{value}}/">PyPi</a> <b>|</b>
-                            <a target="_blank" href="https://github.com/dbmi-bgm/foursight-cgap/releases/tag/v{{value}}">GitHub</a>
+                            <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{value}}/">{{value}}</a> &nbsp;&nbsp;
+                            <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{value}}/"><img src="https://cdn-images-1.medium.com/max/1064/1*8Zh-mzLnVMDsbvXdKsU4lw.png" height="21" /></a> &nbsp;
+                            <a target="_blank" href="https://github.com/dbmi-bgm/foursight-cgap/releases/tag/v{{value}}"><img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" /></a>
                         {% else %}
                             {{value}}
                         {% endif %}
