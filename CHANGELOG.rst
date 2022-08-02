@@ -20,6 +20,7 @@ Change Log
 * Merged in Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).
 * Merged from master.
 * Merged in more of Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).
+* Added better error message for NoSuchKey for S3 bucket key access (s3_connection.py/get_object).
 
 
 0.7.4
