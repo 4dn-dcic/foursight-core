@@ -1,5 +1,4 @@
 from .abstract_connection import AbstractConnection
-import botocore
 import os
 import json
 import boto3
