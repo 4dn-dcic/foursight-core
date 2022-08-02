@@ -2,7 +2,7 @@
 
 <!-- Macro for toggle button to display _output fields of checks -->
 {% macro name_value_box(dictionary) %}
-    <div class="check-pass boxstyle">
+    <div class="info boxstyle">
         <h5 style='margin:10px 5px 10px 5px;'}}>
             {% for key, value in dictionary.items() %}
             <div class='row'>
@@ -15,15 +15,31 @@
                     {% if value.__class__.__name__ == 'list' %}
                         {% for v in value %}
                             {% if v.__class__.__name__ == 'dict' %}
-                                <b><code style="margin-left:-3pt;background:#dff0d8;color:#3c763d;">{{v}}</code></b>
+                                <b><code style="margin-left:-3pt;background:#D6EAF8;color:#263A48;">{{v}}</code></b>
                             {% else %}
                                 {{v}} <br />
                             {% endif %}
                         {% endfor %}
                     {% elif value.__class__.__name__ == 'dict' %}
-                        <b><code style="margin-left:-3pt;background:#dff0d8;color:#3c763d;">{{value}}</code></b>
+                        <b><code style="margin-left:-3pt;background:#D6EAF8;color:#263A48;">{{value}}</code></b>
                     {% else %}
-                        {{value}}
+                        {% if key == "Python Version:" %}
+                            <a target="_blank" href="https://docs.python.org/release/{{value}}/">{{value}}</a>
+                        {% elif key == "DCIC-Utils Version:" %}
+                            <a target="_blank" href="https://pypi.org/project/dcicutils/{{value}}/">{{value}}</a> <b>|</b>
+                            <a target="_blank" href="https://pypi.org/project/dcicutils/{{value}}/">PyPi</a> <b>|</b>
+                            <a target="_blank" href="https://github.com/4dn-dcic/utils/releases/tag/v{{value}}">GitHub</a>
+                        {% elif key == "Foursight-Core Version:" %}
+                            <a target="_blank" href="https://pypi.org/project/foursight-core/{{value}}/">{{value}}</a> <b>|</b>
+                            <a target="_blank" href="https://pypi.org/project/foursight-core/{{value}}/">PyPi</a> <b>|</b>
+                            <a target="_blank" href="https://github.com/4dn-dcic/foursight-core/releases/tag/v{{value}}">GitHub</a>
+                        {% elif key == "Foursight-CGAP Version:" %}
+                            <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{value}}/">{{value}}</a> <b>|</b>
+                            <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{value}}/">PyPi</a> <b>|</b>
+                            <a target="_blank" href="https://github.com/dbmi-bgm/foursight-cgap/releases/tag/v{{value}}">GitHub</a>
+                        {% else %}
+                            {{value}}
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>

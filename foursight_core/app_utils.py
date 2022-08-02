@@ -8,6 +8,7 @@ import boto3
 import datetime
 import ast
 import copy
+import pkg_resources
 import platform
 import requests
 import socket
@@ -39,6 +40,8 @@ from .environment import Environment
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
+
+version = pkg_resources.get_distribution('foursight-cgap').version
 
 
 class AppUtilsCore:
@@ -463,6 +466,7 @@ class AppUtilsCore:
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         first_env_favicon = self.get_favicon()
         html_resp.body = template.render(
+            version=version,
             env=environ,
             view_envs=total_envs,
             stage=self.stage.get_stage(),
@@ -535,8 +539,13 @@ class AppUtilsCore:
         encoded_es_server = gac_values.get("ENCODED_ES_SERVER")
         environment_and_bucket_info = sorted_dict(obfuscate_dict(self.environment.get_environment_and_bucket_info(env_name, stage_name)))
         declared_data=sorted_dict(EnvUtils.declared_data())
+        dcicutils_version = pkg_resources.get_distribution('dcicutils').version
+        foursight_core_version = pkg_resources.get_distribution('foursight-core').version
         resources = {
             "Python Version:": platform.python_version(),
+            "DCIC-Utils Version:": dcicutils_version,
+            "Foursight-Core Version:": foursight_core_version,
+            "Foursight-CGAP Version:": version,
             "Foursight Server:": socket.gethostname(),
             "Fourfront Server:": environment_and_bucket_info.get("fourfront"),
             "ElasticSearch Server:": [es_host, encoded_es_server] if es_host != encoded_es_server else es_host,
@@ -545,6 +554,7 @@ class AppUtilsCore:
         aws_credentials = get_obfuscated_aws_credentials_info()
         os_environ = sorted_dict(obfuscate_dict(dict(os.environ)))
         html_resp.body = template.render(
+            version=version,
             env=env_name,
             domain=domain,
             context=context,
@@ -607,6 +617,7 @@ class AppUtilsCore:
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         first_env_favicon = self.get_favicon()
         html_resp.body = template.render(
+            version=version,
             env=environ,
             view_envs=total_envs,
             stage=self.stage.get_stage(),
@@ -631,7 +642,8 @@ class AppUtilsCore:
         ts_utc = ts_utc.replace(tzinfo=tz.tzutc())
         # change timezone to EST (specific location needed for daylight savings)
         ts_local = ts_utc.astimezone(tz.gettz('America/New_York'))
-        return ''.join([str(ts_local.date()), ' at ', str(ts_local.time()), ' (', str(ts_local.tzname()), ')'])
+        #return ''.join([str(ts_local.date()), ' at ', str(ts_local.time()), ' (', str(ts_local.tzname()), ')'])
+        return ''.join([str(ts_local.date()), ' ', str(ts_local.time()), ' ', str(ts_local.tzname())])
 
     def process_view_result(self, connection, res, is_admin):
         """
@@ -748,6 +760,7 @@ class AppUtilsCore:
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         favicon = self.get_favicon()
         html_resp.body = template.render(
+            version=version,
             env=environ,
             check=check,
             load_time=self.get_load_time(),

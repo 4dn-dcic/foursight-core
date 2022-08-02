@@ -81,6 +81,10 @@
     .assc-action-ready {
         background-color: #b6b5b5;
     }
+    .info {
+        background-color: #D6EAF8;
+        color: #263A48;
+    }
     .check-pass, .check-done {
         background-color: #dff0d8;
         color: #3c763d;
@@ -143,45 +147,62 @@
     </style>
 </head>
 <body>
+<div>
+    <div width="100%" height="70" style="background:#143c53;">
+        <table width="100%">
+            <tr>
+                <td width="140px">
+                    <a href={{context + 'view/' + env}}>
+                        <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="140" />
+                    </a>
+                </td>
+                <td align="center">
+                    <span style="font-family:arial;font-size:22pt;color:white;">{{main_title}}</span>
+                </td>
+                <td align="right" width="140px">
+                </td>
+            </tr>
+        </table>
+        <table width="100%">
+            <tr style="background:#c5d1d8;color:black;">
+                <td width="290" style="padding-left:8pt;padding-top:3pt;padding-bottom:3pt" nowrap="1">
+                    <b title="Page load time.">{{load_time}}</b> &nbsp;<b>|</b>&nbsp;
+                    <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
+                    <a href="/view/info" style="text-decoration:none;">INFO</a>
+                </td>
+                <td align="center">
+                    <b title="Version of: foursight-cgap">{{version}}</b>
+                </td>
+                <td width="290" style="padding-right:8pt;padding-top:3pt;padding-bottom:3pt" align="right" nowrap="1">
+                    STAGE: <b>{{stage}}</b> &nbsp;<b>|</b>&nbsp;
+                    {% if is_admin %}
+                        LOGIN: <b>admin</b>
+                    {% else %}
+                        <span style="cursor:pointer;font-weight:bold;text-decoration:underline;color:darkred;" title="Not logged in. Click to login." onclick="create_redir_cookie(); lock.show();">LOGIN</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if running_checks != '0' or queued_checks != '0' %}
+                <table width="100%">
+                    <tr style="background:#F9E79F;">
+                        <td style="padding-right:8pt;padding-top:2pt;padding-bottom:2pt" align="right" nowrap="1">
+                            running: <b>{{running_checks}}</b> &nbsp;<b>|</b>&nbsp;
+                            queued: <b>{{queued_checks}}</b>
+                        </td>
+                    </tr>
+                </table>
+            {% endif %}
+        </table>
+    </div>
     <div class="container">
-        <h3 class="center-element">
-            <a class="title-image-hover opacity-transition" href={{context + 'view/' + env}}>
-                <img class="in-line" alt="FS logo" style="margin:-5px 2px 0px 0px;" height="30" src={{favicon}}></img>
-            </a>
-            <span>{{main_title}}</span>
-        </h3>
-        {% if load_time %}
-            <h5 class="center-element">
-                <span>{{'Loaded on ' + load_time}}</span>
-            </h5>
-        {% endif %}
-        {% if is_admin %}
-            <h5 class="center-element">
-                <span>{{'Currently logged in as admin'}}</span> <br />
-                <span>{{'Deployment Stage is ' + stage + ''}}</span>
-            </h5>
-        {% else %}
-            <h5 class="center-element">
-                <span>{{'Not logged in as admin'}}</span>
-                <button class="login-w-hover in-line" onclick="create_redir_cookie(); lock.show();">Log in</button>
-            </h5>
-        {% endif %}
-        {% if running_checks != '0' or queued_checks != '0' %}
-            <div class='center-element'>
-                <span style='margin-right:10px; color:#777'>
-                    {{'Running: ' + running_checks}}
-                </span>
-                <span style='color:#777'>
-                    {{'Queued: ' + queued_checks}}
-                </span>
-            </div>
-        {% endif %}
         <div id="content">{% block content %}{% endblock %}</div>
     </div>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-    <script src="https://cdn.auth0.com/js/lock/10.24.1/lock.min.js"></script>
-    <script type="text/javascript">
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="https://cdn.auth0.com/js/lock/10.24.1/lock.min.js"></script>
+<script type="text/javascript">
       // set cookie containing the location we were at when we tried to Login
       // this cookie is re-loaded at /callback and parsed for the url, which
       // it redirects to upon finishing authentication
@@ -190,8 +211,8 @@
         expr.setFullYear(expr.getFullYear() + 1);
         document.cookie = "redir=" + window.location.href + "; path=/; expires=" + expr.toUTCString();
       }
-    </script>
-    <script type="text/javascript">
+</script>
+<script type="text/javascript">
         var domain = "{{domain}}";
         var context = "{{context}}";
         var lock = new Auth0Lock('DPxEwsZRnKDpk0VfVAxrStRKukN14ILB', 'hms-dbmi.auth0.com', {
@@ -206,8 +227,8 @@
             theme: { logo: "{{favicon}}" },
             allowedConnections: ['github', 'google-oauth2']
         });
-    </script>
-    <script type="text/javascript">
+</script>
+<script type="text/javascript">
         function collapse_group(e, id){
             // Do not trigger collapse if click is on or a child of a check-result
             var isCheck = $(e.target).hasClass("check-result")
@@ -216,8 +237,8 @@
                 $('#' + id).collapse('toggle');
             }
         }
-    </script>
-    <script type="text/javascript">
+</script>
+<script type="text/javascript">
         function confirm_action(uuid, message){
             var actionMessage = document.getElementById("action-message-" + uuid);
             actionMessage.innerHTML = '<pre class="commonstyle"><code>' + message + '</code></pre>';
@@ -231,8 +252,8 @@
                 actionButton.type = "submit";
             },1000);
         }
-    </script>
-    <script>
+</script>
+<script>
         // Toggle opacity of a check result summary when the anchor to open/close result is used
         $(document).ready(function() {
             $('.title-hover').click(function(){
@@ -246,7 +267,7 @@
                 }
             });
         });
-    </script>
-    {% block script %}{% endblock %}
+</script>
+{% block script %}{% endblock %}
 </body>
 </html>
