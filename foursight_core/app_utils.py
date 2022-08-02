@@ -541,11 +541,13 @@ class AppUtilsCore:
         declared_data=sorted_dict(EnvUtils.declared_data())
         dcicutils_version = pkg_resources.get_distribution('dcicutils').version
         foursight_core_version = pkg_resources.get_distribution('foursight-core').version
-        resources = {
+        versions = {
             "Python Version:": platform.python_version(),
             "DCIC-Utils Version:": dcicutils_version,
             "Foursight-Core Version:": foursight_core_version,
             "Foursight-CGAP Version:": version,
+        }
+        resources = {
             "Foursight Server:": socket.gethostname(),
             "Fourfront Server:": environment_and_bucket_info.get("fourfront"),
             "ElasticSearch Server:": [es_host, encoded_es_server] if es_host != encoded_es_server else es_host,
@@ -573,6 +575,7 @@ class AppUtilsCore:
             identity_secrets=gac_values,
             aws_credentials=aws_credentials,
             resources=resources,
+            versions=versions,
             os_environ=os_environ
         )
         html_resp.status_code = 200

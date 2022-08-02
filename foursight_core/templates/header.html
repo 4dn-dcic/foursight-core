@@ -151,29 +151,29 @@
     <div width="100%" height="70" style="background:#143c53;">
         <table width="100%">
             <tr>
-                <td width="140px">
+                <td width="140px" style="padding-left:2pt;white-space:nowrap;">
                     <a href={{context + 'view/' + env}}>
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="140" />
                     </a>
                 </td>
-                <td align="center">
-                    <span style="font-family:arial;font-size:22pt;color:white;">{{main_title}}</span>
+                <td align="center" style="white-space:nowrap;">
+                    <span style="margin-left:-10px;font-family:arial;font-size:19pt;color:white;">{{main_title}}</span>
                 </td>
-                <td align="right" width="140px">
+                <td align="right" width="140px" style="white-space:nowrap;">
                 </td>
             </tr>
         </table>
         <table width="100%">
             <tr style="background:#c5d1d8;color:black;">
-                <td width="290" style="padding-left:8pt;padding-top:3pt;padding-bottom:3pt" nowrap="1">
-                    <b title="Page load time.">{{load_time}}</b> &nbsp;<b>|</b>&nbsp;
+                <td width="280" style="padding-left:8pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
                     <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
-                    <a href="/view/info" style="text-decoration:none;">INFO</a>
+                    <a href="/view/info" style="text-decoration:none;">INFO</a> &nbsp;<b>|</b>&nbsp;
+                    <span title="Page load time.">{{load_time}}</span>
                 </td>
-                <td align="center">
+                <td align="center" style="white-space:nowrap;">
                     <b title="Version of: foursight-cgap">{{version}}</b>
                 </td>
-                <td width="290" style="padding-right:8pt;padding-top:3pt;padding-bottom:3pt" align="right" nowrap="1">
+                <td width="280" style="padding-right:8pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;" align="right">
                     STAGE: <b>{{stage}}</b> &nbsp;<b>|</b>&nbsp;
                     {% if is_admin %}
                         LOGIN: <b>admin</b>
@@ -185,7 +185,7 @@
             {% if running_checks != '0' or queued_checks != '0' %}
                 <table width="100%">
                     <tr style="background:#F9E79F;">
-                        <td style="padding-right:8pt;padding-top:2pt;padding-bottom:2pt" align="right" nowrap="1">
+                        <td style="padding-right:8pt;padding-top:2pt;padding-bottom:2pt;white-space:nowrap;" align="right">
                             running: <b>{{running_checks}}</b> &nbsp;<b>|</b>&nbsp;
                             queued: <b>{{queued_checks}}</b>
                         </td>
