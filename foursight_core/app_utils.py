@@ -491,7 +491,7 @@ class AppUtilsCore:
 
     # dmichaels/2020-08-01:
     # Added /view/info for debugging/troubleshooting purposes.
-    def view_info(self, request, domain="", context="/"):
+    def view_info(self, request, is_admin=False, domain="", context="/"):
 
         def sorted_dict(dictionary: dict) -> dict:
             result = {}
@@ -571,7 +571,7 @@ class AppUtilsCore:
             context=context,
             base_path=self.get_base_path(context),
             stage=stage_name,
-            is_admin=True,
+            is_admin=is_admin,
             main_title=self.html_main_title,
             favicon = self.get_favicon(),
             load_time=self.get_load_time(),
@@ -636,9 +636,9 @@ class AppUtilsCore:
             view_envs=total_envs,
             stage=self.stage.get_stage(),
             load_time=self.get_load_time(),
-            is_admin=is_admin,
             domain=domain,
             context=context,
+            is_admin=is_admin,
             base_path=self.get_base_path(context),
             running_checks=running_checks,
             queued_checks=queued_checks,

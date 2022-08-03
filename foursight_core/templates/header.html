@@ -205,9 +205,17 @@
             {% endif %}
         </table>
     </div>
-    <div class="container">
-        <div id="content">{% block content %}{% endblock %}</div>
-    </div>
+    {% if not is_admin %}
+        <div class="container">
+            <div class="boxstyle check-warn" style="margin:20pt;padding:10pt;">
+                Not logged in. Click <u style="cursor:pointer" onclick="create_redir_cookie(); lock.show();"><b>here</b></u> to <span onclick="create_redir_cookie(); lock.show();">login</span>.
+            </div>
+        </div>
+    {% else %}
+        <div class="container">
+            <div id="content">{% block content %}{% endblock %}</div>
+        </div>
+    {% endif %}
 </div>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
