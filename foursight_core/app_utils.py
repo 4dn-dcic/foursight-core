@@ -262,7 +262,7 @@ class AppUtilsCore:
         context = '/api/' if request_dict.get('context', {}).get('path', '').startswith('/api/') else '/'
         return domain, context
 
-    def get_base_path(self):
+    def get_base_path(self, context):
         # TODO: Have not been able to figure out where/how it is that when running
         # in production the base path is '/api' and running in locally it is '/'.
         return 'api/' if self.stage.get_stage() != 'dev' and context != '/api' else ''
@@ -480,7 +480,7 @@ class AppUtilsCore:
             is_admin=is_admin,
             domain=domain,
             context=context,
-            base_path=self.get_base_path(),
+            base_path=self.get_base_path(context),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
@@ -569,7 +569,7 @@ class AppUtilsCore:
             env=env_name,
             domain=domain,
             context=context,
-            base_path=self.get_base_path(),
+            base_path=self.get_base_path(context),
             stage=stage_name,
             is_admin=True,
             main_title=self.html_main_title,
@@ -639,7 +639,7 @@ class AppUtilsCore:
             is_admin=is_admin,
             domain=domain,
             context=context,
-            base_path=self.get_base_path(),
+            base_path=self.get_base_path(context),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
@@ -790,7 +790,7 @@ class AppUtilsCore:
             is_admin=is_admin,
             domain=domain,
             context=context,
-            base_path=self.get_base_path(),
+            base_path=self.get_base_path(context),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=favicon,
