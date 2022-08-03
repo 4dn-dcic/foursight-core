@@ -1,6 +1,7 @@
 <!-- Main body template. Define the base template, <style> and <script> here -->
 <!DOCTYPE html>
 <html class="html-scroll">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <head>
     <meta charset="utf-8">
     <title>{{main_title}}</title>
@@ -153,35 +154,35 @@
             <tr>
                 <td width="140px" style="padding-left:2pt;white-space:nowrap;">
                     <a href={{context + 'view/' + env}}>
-                        <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="140" />
+                        <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                     </a>
                 </td>
                 <td align="center" style="white-space:nowrap;">
-                    <span style="font-family:arial;font-size:19pt;color:white;">{{main_title}}</span>
+                    <span style="margin-left:20pt;font-family:arial;font-size:18pt;color:white;">{{main_title}}</span>
                 </td>
-                <td align="right" width="140px" style="white-space:nowrap;">
+                <td align="right" width="140px" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;">
+                    <small title="Page load time.">{{load_time}}</small>
                 </td>
             </tr>
         </table>
         <table width="100%">
             <tr style="background:#c5d1d8;color:black;">
-                <td width="280" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
+                <td width="250" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
                         {% if request.path.endswith('/view/info') %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
-                            <a href="/view/info" style="text-decoration:none;color:black;"><b>INFO</b></a> &nbsp;<b>|</b>&nbsp;
+                            <a href="/view/info" style="text-decoration:none;color:black;"><b>INFO</b></a>
                         {% elif request.path.endswith('/view/{environ}') %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;color:black;"><b>HOME</b></a> &nbsp;<b>|</b>&nbsp;
-                            <a href="/view/info" style="text-decoration:none;">INFO</a> &nbsp;<b>|</b>&nbsp;
+                            <a href="/view/info" style="text-decoration:none;">INFO</a>
                         {% else %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
-                            <a href="/view/info" style="text-decoration:none;">INFO</a> &nbsp;<b>|</b>&nbsp;
+                            <a href="/view/info" style="text-decoration:none;">INFO</a>
                         {% endif %}
-                    <span title="Page load time.">{{load_time}}</span>
                 </td>
                 <td align="center" style="white-space:nowrap;">
-                    <b title="Version of: foursight-cgap">{{version}}</b>
+                    <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{version}}/"><b title="Version of: foursight-cgap" style="text-decoration:none;color:#263A48;">{{version}}</b></a>
                 </td>
-                <td width="280" style="padding-right:10pt;padding-top:2pt;padding-bottom:0pt;white-space:nowrap;" align="right">
+                <td width="250" style="padding-right:10pt;padding-top:2pt;padding-bottom:0pt;white-space:nowrap;" align="right">
                     STAGE: <b>{{stage}}</b> &nbsp;<b>|</b>&nbsp;
                     {% if is_admin %}
                         LOGIN: <b>admin</b>
@@ -275,6 +276,17 @@
                 }
             });
         });
+</script>
+<script>
+function copy_to_clipboard(id)
+{
+var r = document.createRange();
+r.selectNode(document.getElementById(id));
+window.getSelection().removeAllRanges();
+window.getSelection().addRange(r);
+document.execCommand('copy');
+window.getSelection().removeAllRanges();
+}
 </script>
 {% block script %}{% endblock %}
 </body>

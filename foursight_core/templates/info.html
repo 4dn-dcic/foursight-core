@@ -11,34 +11,38 @@
                         <b>{{key}}</b>
                     </div>
                 </div>
-                <div class="col-sm-8" style="word-wrap: break-word;" align="left">
+                <div class="col-sm-8" style="word-wrap:break-word;" align="left">
                     {% if value.__class__.__name__ == 'list' %}
                         {% for v in value %}
                             {% if v.__class__.__name__ == 'dict' %}
-                                <b><code style="margin-left:-3pt;background:#D6EAF8;color:#263A48;">{{v}}</code></b>
+                                <b><code id="{{value}}" onclick="copy_to_clipboard(this.id)" style="cursor:copy;margin-left:-3pt;background:#D6EAF8;color:#263A48;">{{v}}</code></b>
                             {% else %}
-                                {{v}} <br />
+                                <span id="{{value}}" onclick="copy_to_clipboard(this.id)" style="cursor:copy;">{{v}}</span> <br />
                             {% endif %}
                         {% endfor %}
                     {% elif value.__class__.__name__ == 'dict' %}
-                        <b><code style="margin-left:-3pt;background:#D6EAF8;color:#263A48;">{{value}}</code></b>
+                        <b><code id="{{value}}" onclick="copy_to_clipboard(this.id)" style="cursor:copy;margin-left:-3pt;background:#D6EAF8;color:#263A48;">{{value}}</code></b>
                     {% else %}
                         {% if key == "Python Version:" %}
-                        <a target="_blank" href="https://docs.python.org/release/{{value}}/">{{value}}</a>
+                            <b style="cursor:copy;font-family:monospace;font-size:12pt;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</b> &nbsp;&nbsp;
+                            <a target="_blank" href="https://docs.python.org/release/{{value}}/"><img src="https://logos-download.com/wp-content/uploads/2016/10/Python_logo_wordmark.png" height="19" /></a> &nbsp;
                         {% elif key == "DCIC-Utils Version:" %}
-                            <a target="_blank" href="https://pypi.org/project/dcicutils/{{value}}/">{{value}}</a> &nbsp;&nbsp;
+                            <b style="cursor:copy;font-family:monospace;font-size:12pt;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</b> &nbsp;&nbsp;
                             <a target="_blank" href="https://pypi.org/project/dcicutils/{{value}}/"><img src="https://cdn-images-1.medium.com/max/1064/1*8Zh-mzLnVMDsbvXdKsU4lw.png" height="21" /></a> &nbsp;
                             <a target="_blank" href="https://github.com/4dn-dcic/utils/releases/tag/v{{value}}"><img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" /></a>
                         {% elif key == "Foursight-Core Version:" %}
-                            <a target="_blank" href="https://pypi.org/project/foursight-core/{{value}}/">{{value}}</a> &nbsp;&nbsp;
+                            <b style="cursor:copy;font-family:monospace;font-size:12pt;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</b> &nbsp;&nbsp;
                             <a target="_blank" href="https://pypi.org/project/foursight-core/{{value}}/"><img src="https://cdn-images-1.medium.com/max/1064/1*8Zh-mzLnVMDsbvXdKsU4lw.png" height="21" /></a> &nbsp;
                             <a target="_blank" href="https://github.com/4dn-dcic/foursight-core/releases/tag/v{{value}}"><img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" /></a>
                         {% elif key == "Foursight-CGAP Version:" %}
-                            <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{value}}/">{{value}}</a> &nbsp;&nbsp;
+                            <b style="cursor:copy;font-family:monospace;font-size:12pt;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</b> &nbsp;&nbsp;
                             <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{value}}/"><img src="https://cdn-images-1.medium.com/max/1064/1*8Zh-mzLnVMDsbvXdKsU4lw.png" height="21" /></a> &nbsp;
                             <a target="_blank" href="https://github.com/dbmi-bgm/foursight-cgap/releases/tag/v{{value}}"><img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" /></a>
+                        {% elif key == "Fourfront Server:" %}
+                        <span style="cursor:copy;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>&nbsp;
+                            <a target="_blank" href="{{value}}"><span class="fa fa-external-link" style="font-size:16px;"></span></a>
                         {% else %}
-                            {{value}}
+                        <span style="cursor:copy;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -70,6 +74,14 @@
        {{name_value_box(versions)}}
     </ul>
     <ul class="top-level-list">
+        <b>AWS Credentials Info</b>
+       {{name_value_box(aws_credentials)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>Resources</b>
+       {{name_value_box(resources)}}
+    </ul>
+    <ul class="top-level-list">
         <b>Environment Names</b>
         {{name_value_box(environment_names)}}
     </ul>
@@ -84,14 +96,6 @@
     <ul class="top-level-list">
         <b>Declared Data</b>
        {{name_value_box(declared_data)}}
-    </ul>
-    <ul class="top-level-list">
-        <b>AWS Credentials Info</b>
-       {{name_value_box(aws_credentials)}}
-    </ul>
-    <ul class="top-level-list">
-        <b>Resources</b>
-       {{name_value_box(resources)}}
     </ul>
     <ul class="top-level-list">
         <b>GAC: {{identity_name}}</b>

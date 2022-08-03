@@ -552,7 +552,8 @@ class AppUtilsCore:
             "Foursight Server:": socket.gethostname(),
             "Fourfront Server:": environment_and_bucket_info.get("fourfront"),
             "ElasticSearch Server:": [es_host, encoded_es_server] if es_host != encoded_es_server else es_host,
-            "RDS Server:": os.environ["RDS_HOSTNAME"]
+            "RDS Server:": os.environ["RDS_HOSTNAME"],
+            "SQS Server:": self.sqs.get_sqs_queue().url
         }
         aws_credentials = get_obfuscated_aws_credentials_info()
         os_environ = sorted_dict(obfuscate_dict(dict(os.environ)))
