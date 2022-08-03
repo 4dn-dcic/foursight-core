@@ -190,11 +190,14 @@
                     <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{version}}/"><b title="Version of: foursight-cgap" style="text-decoration:none;color:#263A48;">{{version}}</b></a>
                 </td>
                 <td width="400" style="padding-right:10pt;padding-top:2pt;padding-bottom:1pt;white-space:nowrap;" align="right">
-                    STAGE:
                     {% if stage == 'prod' %}
                         <b title="Deployment stage: PROD!" style="color:red;">PROD</b> &nbsp;<b>|</b>&nbsp;
                     {% elif stage == 'dev' %}
-                        <b title="Deployment stage: DEV" style="color:green;">DEV</b> &nbsp;<b>|</b>&nbsp;
+                        {% if is_running_locally %}
+                            <b title="Deployment stage: LOCAL" style="color:purple;">LOCAL</b> &nbsp;<b>|</b>&nbsp;
+                        {% else %}
+                            <b title="Deployment stage: DEV" style="color:green;">DEV</b> &nbsp;<b>|</b>&nbsp;
+                        {% endif %}
                     {% else %}
                         <b title="Deployment stage: {{stage}}">{{stage}}</b> &nbsp;<b>|</b>&nbsp;
                     {% endif %}
@@ -202,7 +205,7 @@
                         {% if logged_in_as %}
                             <b style="color:darkblue;" title="Logged in as.">{{logged_in_as}}</b>
                         {% else %}
-                            LOGIN: <b style="color:darkblue;">admin</b>
+                            <b style="color:darkblue;">ADMIN</b>
                         {% endif %}
                     {% else %}
                         <span style="cursor:pointer;font-weight:bold;color:darkred;" title="Not logged in. Click to login." onclick="create_redir_cookie(); lock.show();">LOGIN</span>
