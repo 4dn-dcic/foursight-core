@@ -153,7 +153,7 @@
         <table width="100%">
             <tr>
                 <td width="140px" style="padding-left:2pt;white-space:nowrap;">
-                    <a href={{context + 'view/' + env}}>
+                    <a href={{context + base_path + 'view/' + env}}>
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                     </a>
                 </td>
@@ -169,14 +169,14 @@
             <tr style="background:#c5d1d8;color:black;">
                 <td width="250" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
                         {% if request.path.endswith('/view/info') %}
-                            <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
-                            <a href="/view/info" style="text-decoration:none;color:black;"><b>INFO</b></a>
+                            <a href="{{context + base_path + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
+                            <a href="{{context + base_path + 'view/info'}}" style="text-decoration:none;color:black;"><b>INFO</b></a>
                         {% elif request.path.endswith('/view/{environ}') %}
-                            <a href="{{context + 'view/' + env}}" style="text-decoration:none;color:black;"><b>HOME</b></a> &nbsp;<b>|</b>&nbsp;
-                            <a href="/view/info" style="text-decoration:none;">INFO</a>
+                            <a href="{{context + base_path + 'view/' + env}}" style="text-decoration:none;color:black;"><b>HOME</b></a> &nbsp;<b>|</b>&nbsp;
+                            <a href="{{context + base_path + 'view/info'}}" style="text-decoration:none;">INFO</a>
                         {% else %}
-                            <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
-                            <a href="/view/info" style="text-decoration:none;">INFO</a>
+                            <a href="{{context + base_path + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
+                            <a href="{{context + base_path + 'view/info'}}" style="text-decoration:none;">INFO</a>
                         {% endif %}
                 </td>
                 <td align="center" style="white-space:nowrap;">

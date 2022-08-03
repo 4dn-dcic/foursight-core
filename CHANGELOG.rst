@@ -7,8 +7,8 @@ Change Log
 ----------
 
 
-0.7.4.2b9
-=========
+0.7.4.2b11
+==========
 * IDENTITY-ized Foursight; i.e. get secrets and other configuration data from the global application configuration (GAC)
   rather than having them encoded in the environment via the CloudFormation template (for the lambdas). C4-826.
 * Added STACK_NAME (in addition to IDENTITY introduced in 0.7.4.2b0) to the environment variables
