@@ -162,6 +162,9 @@
                 </td>
                 <td align="right" width="140px" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;">
                     <small title="Page load time.">{{load_time}}</small>
+                    {% if is_running_locally %}
+                        &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:#D6EAF8;" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
+                    {% endif %}
                 </td>
             </tr>
         </table>
@@ -288,15 +291,17 @@
         });
 </script>
 <script>
-function copy_to_clipboard(id)
-{
-var r = document.createRange();
-r.selectNode(document.getElementById(id));
-window.getSelection().removeAllRanges();
-window.getSelection().addRange(r);
-document.execCommand('copy');
-window.getSelection().removeAllRanges();
-}
+    function copy_to_clipboard(id) {
+        var r = document.createRange();
+        r.selectNode(document.getElementById(id));
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(r);
+        document.execCommand('copy');
+        window.getSelection().removeAllRanges();
+    }
+    function delete_login_cookies() {
+        document.cookie = "jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    }
 </script>
 {% block script %}{% endblock %}
 </body>

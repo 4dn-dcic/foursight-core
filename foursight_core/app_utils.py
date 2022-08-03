@@ -145,6 +145,9 @@ class AppUtilsCore:
             response.status_code = 400
         return connection, response
 
+    def is_running_locally(self, request_dict):
+        return request_dict.get('context', {}).get('identity', {}).get('sourceIp', '') == "127.0.0.1"
+
     def check_authorization(self, request_dict, env=None):
         """
         Manual authorization, since the builtin chalice @app.authorizer() was not
@@ -162,8 +165,7 @@ class AppUtilsCore:
         # if we're on localhost, automatically grant authorization
         # this looks bad but isn't because request authentication will
         # still fail if local keys are not configured
-        src_ip = request_dict.get('context', {}).get('identity', {}).get('sourceIp', '')
-        if src_ip == '127.0.0.1':
+        if self.is_running_locally(request_dict):
             return True
         token = self.get_jwt(request_dict)
         auth0_client = os.environ.get('CLIENT_ID', None)
@@ -478,6 +480,7 @@ class AppUtilsCore:
             stage=self.stage.get_stage(),
             load_time=self.get_load_time(),
             is_admin=is_admin,
+            is_running_locally=self.is_running_locally(request.to_dict()),
             domain=domain,
             context=context,
             base_path=self.get_base_path(context),
@@ -572,6 +575,7 @@ class AppUtilsCore:
             base_path=self.get_base_path(context),
             stage=stage_name,
             is_admin=is_admin,
+            is_running_locally=self.is_running_locally(request.to_dict()),
             main_title=self.html_main_title,
             favicon = self.get_favicon(),
             load_time=self.get_load_time(),
@@ -639,6 +643,7 @@ class AppUtilsCore:
             domain=domain,
             context=context,
             is_admin=is_admin,
+            is_running_locally=self.is_running_locally(request.to_dict()),
             base_path=self.get_base_path(context),
             running_checks=running_checks,
             queued_checks=queued_checks,
@@ -788,6 +793,7 @@ class AppUtilsCore:
             page_title=page_title,
             stage=self.stage.get_stage(),
             is_admin=is_admin,
+            is_running_locally=self.is_running_locally(request.to_dict()),
             domain=domain,
             context=context,
             base_path=self.get_base_path(context),
