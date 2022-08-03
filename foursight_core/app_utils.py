@@ -265,7 +265,7 @@ class AppUtilsCore:
     def get_base_path(self, context):
         # TODO: Have not been able to figure out where/how it is that when running
         # in production the base path is '/api' and running in locally it is '/'.
-        return 'api/' if self.stage.get_stage() != 'dev' and context != '/api' else ''
+        return "api/" if self.stage.get_stage() != "dev" and "api" not in context else ""
 
     @classmethod
     def forbidden_response(cls, context="/"):
