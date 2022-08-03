@@ -148,6 +148,16 @@ class AppUtilsCore:
     def is_running_locally(self, request_dict):
         return request_dict.get('context', {}).get('identity', {}).get('sourceIp', '') == "127.0.0.1"
 
+    def get_email_from_jwt_token_cookie(self, request_dict):
+        try:
+            jwt_token = self.get_jwt(request_dict)
+            if jwt_token:
+                jwt_decoded = jwt.decode(jwt_token, 'secret', algorithms=["HS256"], options={"verify_signature": False, "verify_aud": False})
+                return jwt_decoded.get("email") if jwt_decoded else ""
+        except:
+            pass
+        return ""
+
     def check_authorization(self, request_dict, env=None):
         """
         Manual authorization, since the builtin chalice @app.authorizer() was not
@@ -481,6 +491,7 @@ class AppUtilsCore:
             load_time=self.get_load_time(),
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request.to_dict()),
+            logged_in_as=self.get_email_from_jwt_token_cookie(request.to_dict()),
             domain=domain,
             context=context,
             base_path=self.get_base_path(context),
@@ -576,6 +587,7 @@ class AppUtilsCore:
             stage=stage_name,
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request.to_dict()),
+            logged_in_as=self.get_email_from_jwt_token_cookie(request.to_dict()),
             main_title=self.html_main_title,
             favicon = self.get_favicon(),
             load_time=self.get_load_time(),
@@ -644,6 +656,7 @@ class AppUtilsCore:
             context=context,
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request.to_dict()),
+            logged_in_as=self.get_email_from_jwt_token_cookie(request.to_dict()),
             base_path=self.get_base_path(context),
             running_checks=running_checks,
             queued_checks=queued_checks,
@@ -794,6 +807,7 @@ class AppUtilsCore:
             stage=self.stage.get_stage(),
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request.to_dict()),
+            logged_in_as=self.get_email_from_jwt_token_cookie(request.to_dict()),
             domain=domain,
             context=context,
             base_path=self.get_base_path(context),

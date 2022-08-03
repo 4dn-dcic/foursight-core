@@ -152,7 +152,7 @@
     <div width="100%" height="70" style="background:#143c53;">
         <table width="100%">
             <tr>
-                <td width="200" style="padding-left:2pt;white-space:nowrap;">
+                <td width="400" style="padding-left:2pt;white-space:nowrap;">
                     <a href={{context + base_path + 'view/' + env}}>
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                     </a>
@@ -160,17 +160,17 @@
                 <td align="center" style="white-space:nowrap;">
                     <span style="font-family:arial;font-size:18pt;color:white;">{{main_title}}</span>
                 </td>
-                <td width="200" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;" align="right">
+                <td width="400" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;" align="right">
                     <small title="Page load time.">{{load_time}}</small>
-                    {% if not is_running_locally %}
+                    {% if not is_running_locally and not is_admin %}
                         &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:#D6EAF8;" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
                     {% endif %}
                 </td>
             </tr>
         </table>
         <table width="100%">
-            <tr style="background:#c5d1d8;color:black;">
-                <td width="200" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
+            <tr style="background:#c5d1d8;">
+                <td width="400" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
                         {% if request.path.endswith('/view/info') %}
                             <a href="{{context + base_path + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
                             <a href="{{context + base_path + 'view/info'}}" style="text-decoration:none;color:#263A48;"><b>INFO</b></a>
@@ -185,10 +185,14 @@
                 <td align="center" style="white-space:nowrap;">
                     <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{version}}/"><b title="Version of: foursight-cgap" style="text-decoration:none;color:#263A48;">{{version}}</b></a>
                 </td>
-                <td width="200" style="padding-right:10pt;padding-top:2pt;padding-bottom:1pt;white-space:nowrap;" align="right">
+                <td width="400" style="padding-right:10pt;padding-top:2pt;padding-bottom:1pt;white-space:nowrap;" align="right">
                     STAGE: <b>{{stage}}</b> &nbsp;<b>|</b>&nbsp;
                     {% if is_admin %}
-                        LOGIN: <b>admin</b>
+                        {% if logged_in_as %}
+                            <b style="color:darkblue;">{{logged_in_as}}</b>
+                        {% else %}
+                            LOGIN: <b style="color:darkblue;">admin</b>
+                        {% endif %}
                     {% else %}
                         <span style="cursor:pointer;font-weight:bold;color:darkred;" title="Not logged in. Click to login." onclick="create_redir_cookie(); lock.show();">LOGIN</span>
                     {% endif %}
