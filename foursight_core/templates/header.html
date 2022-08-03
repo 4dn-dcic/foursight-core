@@ -158,7 +158,11 @@
                     </a>
                 </td>
                 <td align="center" style="white-space:nowrap;">
-                    <span style="font-family:arial;font-size:18pt;color:white;">{{main_title}}</span>
+                        <span style="font-family:arial;font-size:18pt;color:white;">
+                            {% if stage == 'prod' %}<span style="color:lightyellow;">&#x273B;</span>{% endif %}
+                            {{main_title}}
+                            {% if stage == 'prod' %}<span style="color:lightyellow;">&#x273B;</span>{% endif %}
+                        </span>
                 </td>
                 <td width="400" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;" align="right">
                     <small title="Page loaded time.">{{load_time}}</small>
@@ -169,7 +173,7 @@
             </tr>
         </table>
         <table width="100%">
-            <tr style="background:#c5d1d8;">
+                <tr style="background:{% if stage == 'prod' %}#AED6F1{% else %}#c0c0c0;{% endif %}">
                 <td width="400" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
                         {% if request.path.endswith('/view/info') %}
                             <a href="{{context + base_path + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
@@ -186,7 +190,14 @@
                     <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{version}}/"><b title="Version of: foursight-cgap" style="text-decoration:none;color:#263A48;">{{version}}</b></a>
                 </td>
                 <td width="400" style="padding-right:10pt;padding-top:2pt;padding-bottom:1pt;white-space:nowrap;" align="right">
-                    STAGE: <b title="Deployment stage.">{{stage}}</b> &nbsp;<b>|</b>&nbsp;
+                    STAGE:
+                    {% if stage == 'prod' %}
+                        <b title="Deployment stage: PROD!" style="color:red;">PROD</b> &nbsp;<b>|</b>&nbsp;
+                    {% elif stage == 'dev' %}
+                        <b title="Deployment stage: DEV" style="color:green;">DEV</b> &nbsp;<b>|</b>&nbsp;
+                    {% else %}
+                        <b title="Deployment stage: {{stage}}">{{stage}}</b> &nbsp;<b>|</b>&nbsp;
+                    {% endif %}
                     {% if is_admin %}
                         {% if logged_in_as %}
                             <b style="color:darkblue;" title="Logged in as.">{{logged_in_as}}</b>
