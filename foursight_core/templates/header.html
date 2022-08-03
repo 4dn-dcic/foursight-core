@@ -161,8 +161,8 @@
                     <span style="font-family:arial;font-size:18pt;color:white;">{{main_title}}</span>
                 </td>
                 <td width="400" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;" align="right">
-                    <small title="Page load time.">{{load_time}}</small>
-                    {% if not is_running_locally and not is_admin %}
+                    <small title="Page loaded time.">{{load_time}}</small>
+                    {% if not is_running_locally and is_admin %}
                         &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:#D6EAF8;" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
                     {% endif %}
                 </td>
@@ -186,10 +186,10 @@
                     <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{version}}/"><b title="Version of: foursight-cgap" style="text-decoration:none;color:#263A48;">{{version}}</b></a>
                 </td>
                 <td width="400" style="padding-right:10pt;padding-top:2pt;padding-bottom:1pt;white-space:nowrap;" align="right">
-                    STAGE: <b>{{stage}}</b> &nbsp;<b>|</b>&nbsp;
+                    STAGE: <b title="Deployment stage.">{{stage}}</b> &nbsp;<b>|</b>&nbsp;
                     {% if is_admin %}
                         {% if logged_in_as %}
-                            <b style="color:darkblue;">{{logged_in_as}}</b>
+                            <b style="color:darkblue;" title="Logged in as.">{{logged_in_as}}</b>
                         {% else %}
                             LOGIN: <b style="color:darkblue;">admin</b>
                         {% endif %}
