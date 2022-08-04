@@ -26,7 +26,7 @@ from dcicutils.env_utils import (
     short_env_name,
 )
 from dcicutils.lang_utils import disjoined_list
-from dcicutils.obfuscation_utils import obfuscate, obfuscate_dict
+from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from typing import Optional
 from .identity import apply_identity_globally
@@ -41,6 +41,8 @@ from .environment import Environment
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
+# TODO/dmichaels/2022-08-04: Get the "foursight-cgap" value some other way,
+# as the package might not be "foursight-cgap" (might be for example just "foursight").
 version = pkg_resources.get_distribution('foursight-cgap').version
 
 
@@ -89,6 +91,8 @@ class AppUtilsCore:
             loader=jinja2.FileSystemLoader(self.get_template_path()),
             autoescape=jinja2.select_autoescape(['html', 'xml'])
         )
+        self.portal_url = None
+        self.auth0_client_id = None
 
     @classmethod
     def set_timeout(cls, timeout):
@@ -152,11 +156,37 @@ class AppUtilsCore:
         try:
             jwt_token = self.get_jwt(request_dict)
             if jwt_token:
-                jwt_decoded = jwt.decode(jwt_token, 'secret', algorithms=["HS256"], options={"verify_signature": False, "verify_aud": False})
+                options = {"verify_signature": False, "verify_aud": False}
+                algorithms = ["HS256"]
+                jwt_decoded = jwt.decode(jwt_token, 'secret', algorithms=algorithms, options=options)
                 return jwt_decoded.get("email") if jwt_decoded else ""
-        except:
-            pass
+        except Exception as e:
+            logger.warn("Cannot get email from JWT token (not fatal - just for Foursight UI display).")
+            logger.warn(e)
         return ""
+
+    def get_portal_url(self, env_name: str, stage_name: str) -> str:
+        if not self.portal_url:
+            try:
+                environment_and_bucket_info = self.environment.get_environment_and_bucket_info(env_name, stage_name)
+                self.portal_url = environment_and_bucket_info.get("fourfront")
+            except Exception as e:
+                logger.error(f"Error determining portal URL")
+                logger.error(e)
+        return self.portal_url
+
+    def get_auth0_client_id(self, env_name: str, stage_name: str) -> str:
+        if not self.auth0_client_id:
+            try:
+                portal_url = self.get_portal_url(env_name, stage_name)
+                auth0_config_url = portal_url + "/auth0_config?format=json"
+                response = requests.get(auth0_config_url).json()
+                self.auth0_client_id = response.get("auth0Client")
+            except Exception as e:
+                logger.error(f"Error fetching auth0 client from portal (using default value): {auth0_config_url}")
+                logger.error(e)
+                self.auth0_client_id = "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB"
+        return self.auth0_client_id
 
     def check_authorization(self, request_dict, env=None):
         """
@@ -274,10 +304,10 @@ class AppUtilsCore:
         context = '/api/' if request_dict.get('context', {}).get('path', '').startswith('/api/') else '/'
         return domain, context
 
-    def get_base_path(self, context):
-        # TODO: Have not been able to figure out where/how it is that when running
+    def get_base_path(self, request_dict):
+        # TODO/dmichaels/2022-08-03: Have not been able to figure out where/how it is that when running
         # in production the base path is '/api' and running in locally it is '/'.
-        return "api/" if self.stage.get_stage() != "dev" and "api" not in context else ""
+        return "api/" if not self.is_running_locally(request_dict) else ""
 
     @classmethod
     def forbidden_response(cls, context="/"):
@@ -482,6 +512,7 @@ class AppUtilsCore:
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         first_env_favicon = self.get_favicon()
+        request_dict = request.to_dict()
         html_resp.body = template.render(
             request=request,
             version=version,
@@ -490,11 +521,12 @@ class AppUtilsCore:
             stage=self.stage.get_stage(),
             load_time=self.get_load_time(),
             is_admin=is_admin,
-            is_running_locally=self.is_running_locally(request.to_dict()),
-            logged_in_as=self.get_email_from_jwt_token_cookie(request.to_dict()),
+            is_running_locally=self.is_running_locally(request_dict),
+            logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
+            auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
             domain=domain,
             context=context,
-            base_path=self.get_base_path(context),
+            base_path=self.get_base_path(request_dict),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
@@ -506,6 +538,13 @@ class AppUtilsCore:
     # dmichaels/2020-08-01:
     # Added /view/info for debugging/troubleshooting purposes.
     def view_info(self, request, is_admin=False, domain="", context="/"):
+        """
+        Displays and /view/info page containing sundry info about the running Foursight instance.
+        Any sensitive data is obfuscated. This is a protected route.
+        :param domain: Current FS domain, needed for Auth0 redirect.
+        :param context: Current context, usually "/api/" or "/" (some confusion running locally; see get_base_path).
+        :return: Response with html content.
+        """
 
         def sorted_dict(dictionary: dict) -> dict:
             result = {}
@@ -518,9 +557,7 @@ class AppUtilsCore:
                 session = boto3.session.Session()
                 credentials = session.get_credentials()
                 access_key_id = credentials.access_key
-                secret_access_key = credentials.secret_key
                 region_name = session.region_name
-                session_token = credentials.token
                 caller_identity = boto3.client("sts").get_caller_identity()
                 user_arn = caller_identity["Arn"]
                 account_number = caller_identity["Account"]
@@ -528,12 +565,12 @@ class AppUtilsCore:
                     "AWS Account Number:": account_number,
                     "AWS User ARN:": user_arn,
                     "AWS Access Key ID:": access_key_id,
-                    "AWS Secret Access Key:": obfuscate(secret_access_key),
-                    "AWS Region Name:": region_name,
-                    "AWS Session Token:": obfuscate(session_token)
+                    "AWS Region Name:": region_name
                 }
                 return aws_credentials_info
-            except:
+            except Exception as e:
+                logger.warn("Cannot determin AWS credentisl token (not fatal - just for Foursight UI display).")
+                logger.warn(e)
                 return {}
 
         html_resp = Response('Foursight viewing suite')
@@ -558,11 +595,14 @@ class AppUtilsCore:
         gac_values = sorted_dict(obfuscate_dict(get_identity_secrets()))
         es_host = os.environ.get("ES_HOST")
         encoded_es_server = gac_values.get("ENCODED_ES_SERVER")
-        environment_and_bucket_info = sorted_dict(obfuscate_dict(self.environment.get_environment_and_bucket_info(env_name, stage_name)))
-        declared_data=sorted_dict(EnvUtils.declared_data())
+        environment_and_bucket_info = sorted_dict(obfuscate_dict(
+                                        self.environment.get_environment_and_bucket_info(env_name, stage_name)))
+        declared_data = sorted_dict(EnvUtils.declared_data())
         dcicutils_version = pkg_resources.get_distribution('dcicutils').version
         foursight_core_version = pkg_resources.get_distribution('foursight-core').version
         versions = {
+            # TODO/dmichaels/2022-08-04: Get the "Foursight-CGAP" value some other way,
+            # as the package might not be "Foursight-CGAP" (might be for example just "Foursight").
             "Foursight-CGAP Version:": version,
             "Foursight-Core Version:": foursight_core_version,
             "DCIC-Utils Version:": dcicutils_version,
@@ -570,26 +610,29 @@ class AppUtilsCore:
         }
         resources = {
             "Foursight Server:": socket.gethostname(),
-            "Fourfront Server:": environment_and_bucket_info.get("fourfront"),
+            "Portal Server:": self.get_portal_url(env_name, stage_name),
             "ElasticSearch Server:": [es_host, encoded_es_server] if es_host != encoded_es_server else es_host,
             "RDS Server:": os.environ["RDS_HOSTNAME"],
-            "SQS Server:": self.sqs.get_sqs_queue().url
+            "SQS Server:": self.sqs.get_sqs_queue().url,
+            "Auth0 Client ID:": self.get_auth0_client_id(env_name, stage_name)
         }
         aws_credentials = get_obfuscated_aws_credentials_info()
         os_environ = sorted_dict(obfuscate_dict(dict(os.environ)))
+        request_dict = request.to_dict()
         html_resp.body = template.render(
             request=request,
             version=version,
             env=env_name,
             domain=domain,
             context=context,
-            base_path=self.get_base_path(context),
+            base_path=self.get_base_path(request_dict),
             stage=stage_name,
             is_admin=is_admin,
-            is_running_locally=self.is_running_locally(request.to_dict()),
-            logged_in_as=self.get_email_from_jwt_token_cookie(request.to_dict()),
+            is_running_locally=self.is_running_locally(request_dict),
+            logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
+            auth0_client_id=self.get_auth0_client_id(env_name, stage_name),
             main_title=self.html_main_title,
-            favicon = self.get_favicon(),
+            favicon=self.get_favicon(),
             load_time=self.get_load_time(),
             running_checks='0',
             queued_checks='0',
@@ -645,6 +688,7 @@ class AppUtilsCore:
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         first_env_favicon = self.get_favicon()
+        request_dict = request.to_dict()
         html_resp.body = template.render(
             request=request,
             version=version,
@@ -655,9 +699,10 @@ class AppUtilsCore:
             domain=domain,
             context=context,
             is_admin=is_admin,
-            is_running_locally=self.is_running_locally(request.to_dict()),
-            logged_in_as=self.get_email_from_jwt_token_cookie(request.to_dict()),
-            base_path=self.get_base_path(context),
+            is_running_locally=self.is_running_locally(request_dict),
+            logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
+            auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
+            base_path=self.get_base_path(request_dict),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
@@ -675,7 +720,6 @@ class AppUtilsCore:
         ts_utc = ts_utc.replace(tzinfo=tz.tzutc())
         # change timezone to EST (specific location needed for daylight savings)
         ts_local = ts_utc.astimezone(tz.gettz('America/New_York'))
-        #return ''.join([str(ts_local.date()), ' at ', str(ts_local.time()), ' (', str(ts_local.tzname()), ')'])
         return ''.join([str(ts_local.date()), ' ', str(ts_local.time()), ' ', str(ts_local.tzname())])
 
     def process_view_result(self, connection, res, is_admin):
@@ -792,6 +836,7 @@ class AppUtilsCore:
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         favicon = self.get_favicon()
+        request_dict = request.to_dict()
         html_resp.body = template.render(
             request=request,
             version=version,
@@ -806,11 +851,12 @@ class AppUtilsCore:
             page_title=page_title,
             stage=self.stage.get_stage(),
             is_admin=is_admin,
-            is_running_locally=self.is_running_locally(request.to_dict()),
-            logged_in_as=self.get_email_from_jwt_token_cookie(request.to_dict()),
+            is_running_locally=self.is_running_locally(request_dict),
+            logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
+            auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
             domain=domain,
             context=context,
-            base_path=self.get_base_path(context),
+            base_path=self.get_base_path(request_dict),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=favicon,

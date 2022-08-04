@@ -159,9 +159,8 @@
                 </td>
                 <td align="center" style="white-space:nowrap;">
                         <span style="font-family:arial;font-size:18pt;color:white;">
-                            {% if stage == 'dev' %}<span style="color:#D6EAF8;">&#x00AB;</span>{% endif %}
                             <span style="color:default;">{{main_title}}</span>
-                            {% if stage == 'dev' %}<span style="color:#D6EAF8;">&#x00BB;</span>{% endif %}
+                            {% if stage == 'dev' %}<span style="font-size:22pt;color:lightgreen;">&#x269B;</span>{% endif %}
                         </span>
                 </td>
                 <td width="400" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;" align="right">
@@ -197,9 +196,9 @@
                         <b title="Deployment stage: PROD!" style="color:red;">PROD</b> &nbsp;|&nbsp;
                     {% elif stage == 'dev' %}
                         {% if is_running_locally %}
-                            <b title="Deployment stage: LOCAL" style="color:purple;">LOCAL</b> &nbsp;|&nbsp;
+                            <b title="Deployment stage: LOCAL" style="color:darkgreen;">LOCAL</b> &nbsp;|&nbsp;
                         {% else %}
-                            <b title="Deployment stage: DEV" style="color:green;">DEV</b> &nbsp;|&nbsp;
+                            <b title="Deployment stage: DEV" style="color:darkgreen;">DEV</b> &nbsp;|&nbsp;
                         {% endif %}
                     {% else %}
                         <b title="Deployment stage: {{stage}}">{{stage}}</b> &nbsp;|&nbsp;
@@ -256,7 +255,12 @@
 <script type="text/javascript">
         var domain = "{{domain}}";
         var context = "{{context}}";
-        var lock = new Auth0Lock('DPxEwsZRnKDpk0VfVAxrStRKukN14ILB', 'hms-dbmi.auth0.com', {
+        // TODO/dmichaels/2022-08-04: Get this hardcoded value from (for example):
+        // http://cgap-supertest-1972715139.us-east-1.elb.amazonaws.com/auth0_config?format=json
+        // which returns: { "title": "Auth0 Config", "auth0Client": "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB" }
+        // where that base URL is for the portal.
+        // var lock = new Auth0Lock('DPxEwsZRnKDpk0VfVAxrStRKukN14ILB', 'hms-dbmi.auth0.com', {
+        var lock = new Auth0Lock('{{auth0_client_id}}', 'hms-dbmi.auth0.com', {
             auth: {
                 redirectUrl: 'https://' + domain + context + 'callback/',
                 responseType: 'code',
