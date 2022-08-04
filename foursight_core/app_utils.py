@@ -307,7 +307,7 @@ class AppUtilsCore:
     def get_base_path(self, request_dict):
         # TODO/dmichaels/2022-08-03: Have not been able to figure out where/how it is that when running
         # in production the base path is '/api' and running in locally it is '/'.
-        return "api/" if not self.is_running_locally(request_dict) else ""
+        return "api/" if not self.is_running_locally(request_dict) and "api" not in context else ""
 
     @classmethod
     def forbidden_response(cls, context="/"):
