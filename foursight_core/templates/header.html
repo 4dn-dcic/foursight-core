@@ -159,9 +159,9 @@
                 </td>
                 <td align="center" style="white-space:nowrap;">
                         <span style="font-family:arial;font-size:18pt;color:white;">
-                            {% if stage == 'prod' %}<span style="color:lightyellow;">&#x273B;</span>{% endif %}
-                            {{main_title}}
-                            {% if stage == 'prod' %}<span style="color:lightyellow;">&#x273B;</span>{% endif %}
+                            {% if stage == 'dev' %}<span style="color:#D6EAF8;">&#x00AB;</span>{% endif %}
+                            <span style="color:default;">{{main_title}}</span>
+                            {% if stage == 'dev' %}<span style="color:#D6EAF8;">&#x00BB;</span>{% endif %}
                         </span>
                 </td>
                 <td width="400" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;" align="right">
@@ -176,14 +176,17 @@
                 <tr style="background:{% if stage == 'prod' %}#AED6F1{% else %}#c0c0c0;{% endif %}">
                 <td width="400" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
                         {% if request.path.endswith('/view/info') %}
-                            <a href="{{context + base_path + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
+                            <a href="{{context + base_path + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;|&nbsp;
                             <a href="{{context + base_path + 'view/info'}}" style="text-decoration:none;color:#263A48;"><b>INFO</b></a>
                         {% elif request.path.endswith('/view/{environ}') %}
-                            <a href="{{context + base_path + 'view/' + env}}" style="text-decoration:none;color:#263A48;"><b>HOME</b></a> &nbsp;<b>|</b>&nbsp;
+                            <a href="{{context + base_path + 'view/' + env}}" style="text-decoration:none;color:#263A48;"><b>HOME</b></a> &nbsp;|&nbsp;
                             <a href="{{context + base_path + 'view/info'}}" style="text-decoration:none;">INFO</a>
                         {% else %}
-                            <a href="{{context + base_path + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;<b>|</b>&nbsp;
+                            <a href="{{context + base_path + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;|&nbsp;
                             <a href="{{context + base_path + 'view/info'}}" style="text-decoration:none;">INFO</a>
+                        {% endif %}
+                        {% if stage == 'prod' %}
+                             &nbsp;|&nbsp; <b title="Deployment stage: PROD!" style="color:red;">PROD</b>
                         {% endif %}
                 </td>
                 <td align="center" style="white-space:nowrap;">
@@ -191,15 +194,15 @@
                 </td>
                 <td width="400" style="padding-right:10pt;padding-top:2pt;padding-bottom:1pt;white-space:nowrap;" align="right">
                     {% if stage == 'prod' %}
-                        <b title="Deployment stage: PROD!" style="color:red;">PROD</b> &nbsp;<b>|</b>&nbsp;
+                        <b title="Deployment stage: PROD!" style="color:red;">PROD</b> &nbsp;|&nbsp;
                     {% elif stage == 'dev' %}
                         {% if is_running_locally %}
-                            <b title="Deployment stage: LOCAL" style="color:purple;">LOCAL</b> &nbsp;<b>|</b>&nbsp;
+                            <b title="Deployment stage: LOCAL" style="color:purple;">LOCAL</b> &nbsp;|&nbsp;
                         {% else %}
-                            <b title="Deployment stage: DEV" style="color:green;">DEV</b> &nbsp;<b>|</b>&nbsp;
+                            <b title="Deployment stage: DEV" style="color:green;">DEV</b> &nbsp;|&nbsp;
                         {% endif %}
                     {% else %}
-                        <b title="Deployment stage: {{stage}}">{{stage}}</b> &nbsp;<b>|</b>&nbsp;
+                        <b title="Deployment stage: {{stage}}">{{stage}}</b> &nbsp;|&nbsp;
                     {% endif %}
                     {% if is_admin %}
                         {% if logged_in_as %}
@@ -216,7 +219,7 @@
                 <table width="100%">
                     <tr style="background:#F9E79F;">
                         <td style="padding-right:8pt;padding-top:2pt;padding-bottom:2pt;white-space:nowrap;" align="right">
-                            running: <b>{{running_checks}}</b> &nbsp;<b>|</b>&nbsp;
+                            running: <b>{{running_checks}}</b> &nbsp;|&nbsp;
                             queued: <b>{{queued_checks}}</b>
                         </td>
                     </tr>
