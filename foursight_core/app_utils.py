@@ -304,7 +304,7 @@ class AppUtilsCore:
         context = '/api/' if request_dict.get('context', {}).get('path', '').startswith('/api/') else '/'
         return domain, context
 
-    def get_base_path(self, request_dict):
+    def get_base_path(self, request_dict, context):
         # TODO/dmichaels/2022-08-03: Have not been able to figure out where/how it is that when running
         # in production the base path is '/api' and running in locally it is '/'.
         return "api/" if not self.is_running_locally(request_dict) and "api" not in context else ""
@@ -526,7 +526,7 @@ class AppUtilsCore:
             auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
             domain=domain,
             context=context,
-            base_path=self.get_base_path(request_dict),
+            base_path=self.get_base_path(request_dict, context),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
@@ -625,7 +625,7 @@ class AppUtilsCore:
             env=env_name,
             domain=domain,
             context=context,
-            base_path=self.get_base_path(request_dict),
+            base_path=self.get_base_path(request_dict, context),
             stage=stage_name,
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
@@ -702,7 +702,7 @@ class AppUtilsCore:
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
             auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
-            base_path=self.get_base_path(request_dict),
+            base_path=self.get_base_path(request_dict, context),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
@@ -856,7 +856,7 @@ class AppUtilsCore:
             auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
             domain=domain,
             context=context,
-            base_path=self.get_base_path(request_dict),
+            base_path=self.get_base_path(request_dict, context),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=favicon,
