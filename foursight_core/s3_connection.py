@@ -56,6 +56,9 @@ class S3Connection(AbstractConnection):
                 return json.loads(body)
             except json.JSONDecodeError:
                 return body
+        except self.client.exceptions.NoSuchKey as e_no_such_key:
+            logger.error(f"No such key found for S3 bucket ({self.bucket}): {key}")
+            logger.error(e_no_such_key)
         except Exception as e:
             logger.error(e)
             return None

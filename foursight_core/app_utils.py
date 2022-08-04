@@ -15,7 +15,9 @@ from itertools import chain
 from dateutil import tz
 from dcicutils import ff_utils
 from dcicutils.lang_utils import disjoined_list
+from dcicutils.obfuscation_utils import obfuscate_dict
 from typing import Optional
+from .identity import apply_identity_globally
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
 from .check_utils import CheckHandler
@@ -33,6 +35,9 @@ class AppUtilsCore:
     This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
     so that a class named AppUtils is easier to define in libraries that import foursight-core.
     """
+
+    # dmichaels/2022-07-20/C4-826: Apply identity globally.
+    apply_identity_globally()
 
     # These must be overwritten in inherited classes
     # replace with 'foursight', 'foursight-cgap' etc
