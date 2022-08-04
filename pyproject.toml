@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "foursight_core"
+name = "foursight-core"
 version = "1.0.0"
 description = "Serverless Chalice Application for Monitoring"
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
