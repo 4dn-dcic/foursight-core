@@ -7,8 +7,8 @@ Change Log
 ----------
 
 
-0.7.4.2b9
-=========
+1.0.0
+=====
 * IDENTITY-ized Foursight; i.e. get secrets and other configuration data from the global application configuration (GAC)
   rather than having them encoded in the environment via the CloudFormation template (for the lambdas). C4-826.
 * Added STACK_NAME (in addition to IDENTITY introduced in 0.7.4.2b0) to the environment variables
@@ -21,6 +21,7 @@ Change Log
 * Merged from master.
 * Merged in more of Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).
 * Added better error message for NoSuchKey for S3 bucket key access (s3_connection.py/get_object).
+* Updated dcicutils to 4.0.2.
 
 
 0.7.4
