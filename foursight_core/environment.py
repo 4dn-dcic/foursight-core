@@ -106,7 +106,7 @@ class Environment(object):
         if or_all and env == 'all':
             return True
         valid_envs = self.list_unique_environment_names() if strict else self.list_environment_names()
-        return infer_foursight_from_env(envname=env) in self.list_environment_names()
+        return infer_foursight_from_env(envname=env) in valid_envs
 
     @classmethod
     def get_environment_info_from_s3(cls, env_name: EnvName) -> dict:
