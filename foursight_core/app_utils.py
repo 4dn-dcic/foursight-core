@@ -41,16 +41,18 @@ from .environment import Environment
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
-# TODO/dmichaels/2022-08-04: Get the "foursight-cgap" value some other way,
-# as the package might not be "foursight-cgap" (might be for example just "foursight").
-version = pkg_resources.get_distribution('foursight-cgap').version
-
 
 class AppUtilsCore:
     """
     This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
     so that a class named AppUtils is easier to define in libraries that import foursight-core.
     """
+
+    # Define in subclass.
+    APP_PACKAGE_NAME = None
+
+    def get_app_version(self):
+        return pkg_resources.get_distribution(self.APP_PACKAGE_NAME).version
 
     # dmichaels/2022-07-20/C4-826: Apply identity globally.
     apply_identity_globally()
@@ -515,7 +517,7 @@ class AppUtilsCore:
         request_dict = request.to_dict()
         html_resp.body = template.render(
             request=request,
-            version=version,
+            version=self.get_app_version(),
             env=environ,
             view_envs=total_envs,
             stage=self.stage.get_stage(),
@@ -552,7 +554,7 @@ class AppUtilsCore:
                 result[key] = dictionary[key]
             return result
 
-        def get_obfuscated_aws_credentials_info() -> dict:
+        def get_obfuscated_credentials_info(env_name: str, stage_name: str) -> dict:
             try:
                 session = boto3.session.Session()
                 credentials = session.get_credentials()
@@ -561,13 +563,15 @@ class AppUtilsCore:
                 caller_identity = boto3.client("sts").get_caller_identity()
                 user_arn = caller_identity["Arn"]
                 account_number = caller_identity["Account"]
-                aws_credentials_info = {
+                auth0_client_id = self.get_auth0_client_id(env_name, stage_name)
+                credentials_info = {
                     "AWS Account Number:": account_number,
                     "AWS User ARN:": user_arn,
                     "AWS Access Key ID:": access_key_id,
-                    "AWS Region Name:": region_name
+                    "AWS Region Name:": region_name,
+                    "Auth0 Client ID:": auth0_client_id
                 }
-                return aws_credentials_info
+                return credentials_info
             except Exception as e:
                 logger.warn("Cannot determin AWS credentisl token (not fatal - just for Foursight UI display).")
                 logger.warn(e)
@@ -603,10 +607,10 @@ class AppUtilsCore:
         versions = {
             # TODO/dmichaels/2022-08-04: Get the "Foursight-CGAP" value some other way,
             # as the package might not be "Foursight-CGAP" (might be for example just "Foursight").
-            "Foursight-CGAP Version:": version,
-            "Foursight-Core Version:": foursight_core_version,
-            "DCIC-Utils Version:": dcicutils_version,
-            "Python Version:": platform.python_version()
+            f"{self.html_main_title}:": self.get_app_version(),
+            "Foursight-Core:": foursight_core_version,
+            "DCIC-Utils:": dcicutils_version,
+            "Python:": platform.python_version()
         }
         resources = {
             "Foursight Server:": socket.gethostname(),
@@ -614,14 +618,13 @@ class AppUtilsCore:
             "ElasticSearch Server:": [es_host, encoded_es_server] if es_host != encoded_es_server else es_host,
             "RDS Server:": os.environ["RDS_HOSTNAME"],
             "SQS Server:": self.sqs.get_sqs_queue().url,
-            "Auth0 Client ID:": self.get_auth0_client_id(env_name, stage_name)
         }
-        aws_credentials = get_obfuscated_aws_credentials_info()
+        aws_credentials = get_obfuscated_credentials_info(env_name, stage_name)
         os_environ = sorted_dict(obfuscate_dict(dict(os.environ)))
         request_dict = request.to_dict()
         html_resp.body = template.render(
             request=request,
-            version=version,
+            version=self.get_app_version(),
             env=env_name,
             domain=domain,
             context=context,
@@ -691,7 +694,7 @@ class AppUtilsCore:
         request_dict = request.to_dict()
         html_resp.body = template.render(
             request=request,
-            version=version,
+            version=self.get_app_version(),
             env=environ,
             view_envs=total_envs,
             stage=self.stage.get_stage(),
@@ -839,7 +842,7 @@ class AppUtilsCore:
         request_dict = request.to_dict()
         html_resp.body = template.render(
             request=request,
-            version=version,
+            version=self.get_app_version(),
             env=environ,
             check=check,
             load_time=self.get_load_time(),
