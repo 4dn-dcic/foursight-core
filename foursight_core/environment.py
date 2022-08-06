@@ -119,6 +119,8 @@ class Environment(object):
 
         portal_url = env_info['fourfront']
         es_url = env_info['es']
+        # dmichaels/TODO/2022-08-06:
+        # es_url = os.environ["ES_HOST"]
         ff_env = env_info['ff_env']
 
         bucket_name = get_foursight_bucket(envname=env_name, stage=stage)

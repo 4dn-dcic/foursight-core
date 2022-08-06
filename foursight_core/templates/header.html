@@ -162,7 +162,10 @@
                             <span style="color:default;">{{main_title}}</span>
                             {% if stage == 'dev' %}
                                 <span style="position:relative;left:4px;top:2px;font-size:23pt;color:lightgreen;">&#x269B;</span>
-                             {% endif %}
+                            {% endif %}
+                            {% if is_running_locally %}
+                                <span style="position:relative;left:4px;top:2px;font-size:23pt;color:lightgreen;">&#x2299;</span>
+                            {% endif %}
                         </span>
                 </td>
                 <td width="400" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;" align="right">
@@ -186,14 +189,14 @@
                             <a href="{{context + base_path + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;|&nbsp;
                             <a href="{{context + base_path + 'view/info'}}" style="text-decoration:none;">INFO</a>
                         {% endif %}
-                        {% if stage == 'prod' %}
-                             &nbsp;|&nbsp; <b title="Deployment stage: PROD!" style="color:red;">PROD</b>
-                        {% endif %}
                 </td>
                 <td align="center" style="white-space:nowrap;">
                     <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{version}}/"><b title="Version of: foursight-cgap" style="text-decoration:none;color:#263A48;">{{version}}</b></a>
                 </td>
                 <td width="400" style="padding-right:10pt;padding-top:2pt;padding-bottom:1pt;white-space:nowrap;" align="right">
+                    {% if is_running_locally %}
+                        <b title="Running locally." style="color:purple;">LOCAL</b> &nbsp;|&nbsp;
+                    {% endif %}
                     {% if stage == 'prod' %}
                         <b title="Deployment stage: PROD!" style="color:red;">PROD</b> &nbsp;|&nbsp;
                     {% elif stage == 'dev' %}

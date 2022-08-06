@@ -87,3 +87,6 @@ def apply_identity_globally():
         logger.info(f"Foursight ES_HOST local environment variable value is: {os.environ.get('ES_HOST')}")
     else:
         logger.info(f"Foursight ES_HOST environment variable value is: {os.environ.get('ES_HOST')}")
+
+    # dmichaels/TODO/2022-08-06:
+    # os.environ["ENCODED_ES_SERVER"] = os.environ.get("ES_HOST")
