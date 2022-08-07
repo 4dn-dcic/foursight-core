@@ -599,7 +599,7 @@ class AppUtilsCore:
         gac_values = sorted_dict(obfuscate_dict(get_identity_secrets()))
         rds_secrets_name = gac_name.replace("ApplicationConfiguration", "RDSSecret")
         rds_secrets = SecretsTable(rds_secrets_name)
-        rds_secrets = rds_secrets.as_dict() if rds_secrets else {}
+        rds_secrets = obfuscate_dict(rds_secrets.as_dict()) if rds_secrets else {}
         es_host = os.environ.get("ES_HOST")
         encoded_es_server = gac_values.get("ENCODED_ES_SERVER")
         environment_and_bucket_info = sorted_dict(obfuscate_dict(
