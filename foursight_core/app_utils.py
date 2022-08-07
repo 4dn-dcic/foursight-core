@@ -27,7 +27,7 @@ from dcicutils.env_utils import (
 )
 from dcicutils.lang_utils import disjoined_list
 from dcicutils.obfuscation_utils import obfuscate_dict
-from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
+from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets, SecretsTable)
 from typing import Optional
 from .identity import apply_identity_globally
 from .s3_connection import S3Connection
@@ -597,6 +597,9 @@ class AppUtilsCore:
         }
         gac_name = get_identity_name()
         gac_values = sorted_dict(obfuscate_dict(get_identity_secrets()))
+        rds_secrets_name = gac_name.replace("ApplicationConfiguration", "RDSSecret")
+        rds_secrets = SecretsTable(rds_secrets_name)
+        rds_secrets = rds_secrets.as_dict() if rds_secrets else {}
         es_host = os.environ.get("ES_HOST")
         encoded_es_server = gac_values.get("ENCODED_ES_SERVER")
         environment_and_bucket_info = sorted_dict(obfuscate_dict(
@@ -646,6 +649,8 @@ class AppUtilsCore:
             declared_data=declared_data,
             identity_name=gac_name,
             identity_secrets=gac_values,
+            rds_secrets_name=rds_secrets_name,
+            rds_secrets=rds_secrets,
             aws_credentials=aws_credentials,
             resources=resources,
             versions=versions,

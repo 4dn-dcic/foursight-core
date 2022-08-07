@@ -140,8 +140,12 @@
        {{json_as_yaml_box(declared_data)}}
     </ul>
     <ul class="top-level-list">
-        <b>GAC: {{identity_name}}</b>
+        <b>Global Application Configuration: {{identity_name}}</b>
         {{name_value_box(identity_secrets)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>RDS Application Configuration: {{rds_secrets_name}}</b>
+        {{name_value_box(rds_secrets)}}
     </ul>
     <ul class="top-level-list">
         <b>Environment Variables</b>
