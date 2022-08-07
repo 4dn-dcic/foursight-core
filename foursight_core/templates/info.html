@@ -68,34 +68,41 @@
     </div>
 {% endmacro %}
 
-{% macro json_as_yaml_box(json) %}
-    <div class="info boxstyle" style="font-family:monospace">
-        {% for key, value in json.items() recursive %}
-            {% set mainloop = loop %}
-                {% if value.__class__.__name__ == 'dict' %}
-                    <b>{{key}}</b>:
+{% macro json_as_yaml_box(value) %}
+    {% macro json_as_yaml_box_nested(value) %}
+        {% if value.__class__.__name__ == 'dict' %}
+            {% for dict_key, dict_value in value.items() recursive %}
+                <b>{{dict_key}}</b>:
+                {% if dict_value.__class__.__name__ == 'dict' %}
                     <ul style="padding-left:12pt">
-                        {{mainloop(value.items())}}
+                        {{json_as_yaml_box_nested(dict_value)}}
                     </ul>
-                {% elif value.__class__.__name__ == 'list' %}
-                    <b>{{key}}</b>:
-                    {% if value|length == 0 %}
-                        <b>[]</b>
-                    {% else %}
-                        <ul style="padding-left:12pt">
-                            {% for item in value %}
-                                <table><tr><td style="vertical-align:top;">-&nbsp;</td><td>
-                                    {{mainloop(item.items())}}
-                                </td></tr></table>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
                 {% else %}
-                    <li>
-                    <b>{{key}}</b>: {{value}}
-                    </li>
+                    {{json_as_yaml_box_nested(dict_value)}}
                 {% endif %}
-        {% endfor %}
+            {% endfor %}
+        {% elif value.__class__.__name__ == 'list' %}
+            {% if value|length == 0 %}
+                [] <br />
+            {% else %}
+                <ul style="padding-left:12pt">
+                    {% for item in value %}
+                        <table><tr><td style="vertical-align:top;">-&nbsp;</td><td>
+                            {{json_as_yaml_box_nested(item)}}
+                        </td></tr></table>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% elif value.__class__.__name__ == 'bool' %}
+            {% if value %} true {% else %} false {% endif %} <br />
+        {% elif value.__class__.__name__ == 'NoneType' %}
+            null <br />
+        {% else %}
+            <span id="{{value}}" style="cursor:copy" onclick="copy_to_clipboard(this.id)">{{value}}</span> <br />
+        {% endif %}
+    {% endmacro %}
+    <div class="info boxstyle" style="font-family:monospace;">
+        {{json_as_yaml_box_nested(value)}}
     </div>
 {% endmacro %}
 
@@ -125,7 +132,9 @@
         {{json_as_yaml_box(environment_and_bucket_info)}}
     </ul>
     <ul class="top-level-list">
-        <b>Declared Data</b>
+        <b>Declared Data</b> (main.ecosystem)
+        <span name="declared_data" id="declared_data" style="font-size:0;opacity:0;">{{declared_data}}</span>
+        <img onclick="copy_to_clipboard('declared_data')" style="cursor:copy;font-family:monospace;position:relative;bottom:1pt;" src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="18" />
        {{json_as_yaml_box(declared_data)}}
     </ul>
     <ul class="top-level-list">

@@ -622,6 +622,7 @@ class AppUtilsCore:
         aws_credentials = get_obfuscated_credentials_info(env_name, stage_name)
         os_environ = sorted_dict(obfuscate_dict(dict(os.environ)))
         request_dict = request.to_dict()
+
         html_resp.body = template.render(
             request=request,
             version=self.get_app_version(),
