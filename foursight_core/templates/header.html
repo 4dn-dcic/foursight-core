@@ -189,6 +189,7 @@
                             <a href="{{context + base_path + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;|&nbsp;
                             <a href="{{context + base_path + 'view/info'}}" style="text-decoration:none;">INFO</a>
                         {% endif %}
+                        &nbsp;|&nbsp; <a target="_blank" style="text-decoration:none;" href="https://{{aws_account_number}}.signin.aws.amazon.com/console/">AWS</a>
                 </td>
                 <td align="center" style="white-space:nowrap;">
                     <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{version}}/"><b title="Version of: foursight-cgap" style="text-decoration:none;color:#263A48;">{{version}}</b></a>
@@ -200,11 +201,7 @@
                     {% if stage == 'prod' %}
                         <b title="Deployment stage: PROD!" style="color:red;">PROD</b> &nbsp;|&nbsp;
                     {% elif stage == 'dev' %}
-                        {% if is_running_locally %}
-                            <b title="Deployment stage: LOCAL" style="color:darkgreen;">LOCAL</b> &nbsp;|&nbsp;
-                        {% else %}
-                            <b title="Deployment stage: DEV" style="color:darkgreen;">DEV</b> &nbsp;|&nbsp;
-                        {% endif %}
+                        <b title="Deployment stage: DEV" style="color:darkgreen;">DEV</b> &nbsp;|&nbsp;
                     {% else %}
                         <b title="Deployment stage: {{stage}}">{{stage}}</b> &nbsp;|&nbsp;
                     {% endif %}

@@ -397,6 +397,45 @@ class AppUtilsCore:
             return cls.TRIM_ERR_OUTPUT
         return output
 
+    def sorted_dict(self, dictionary: dict) -> dict:
+        result = {}
+        for key in sorted(dict(dictionary).keys(), key=lambda key: key.lower()):
+            result[key] = dictionary[key]
+        return result
+
+    def get_aws_account_number(self) -> dict:
+        try:
+            session = boto3.session.Session()
+            credentials = session.get_credentials()
+            caller_identity = boto3.client("sts").get_caller_identity()
+            return caller_identity["Account"]
+        except Exception as e:
+            logger.warn("Cannot determine AWS credentials token (not fatal - just for Foursight UI display).")
+            return None
+
+    def get_obfuscated_credentials_info(self, env_name: str, stage_name: str) -> dict:
+        try:
+            session = boto3.session.Session()
+            credentials = session.get_credentials()
+            access_key_id = credentials.access_key
+            region_name = session.region_name
+            caller_identity = boto3.client("sts").get_caller_identity()
+            user_arn = caller_identity["Arn"]
+            account_number = caller_identity["Account"]
+            auth0_client_id = self.get_auth0_client_id(env_name, stage_name)
+            credentials_info = {
+                "AWS Account Number:": account_number,
+                "AWS User ARN:": user_arn,
+                "AWS Access Key ID:": access_key_id,
+                "AWS Region Name:": region_name,
+                "Auth0 Client ID:": auth0_client_id
+            }
+            return credentials_info
+        except Exception as e:
+            logger.warn("Cannot determine AWS credentials token (not fatal - just for Foursight UI display).")
+            logger.warn(e)
+            return {}
+
     # ===== ROUTE RUNNING FUNCTIONS =====
 
     def view_run_check(self, environ, check, params, context="/"):
@@ -526,6 +565,7 @@ class AppUtilsCore:
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
             auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
+            aws_account_number=self.get_aws_account_number(),
             domain=domain,
             context=context,
             base_path=self.get_base_path(request_dict, context),
@@ -548,35 +588,6 @@ class AppUtilsCore:
         :return: Response with html content.
         """
 
-        def sorted_dict(dictionary: dict) -> dict:
-            result = {}
-            for key in sorted(dict(dictionary).keys(), key=lambda key: key.lower()):
-                result[key] = dictionary[key]
-            return result
-
-        def get_obfuscated_credentials_info(env_name: str, stage_name: str) -> dict:
-            try:
-                session = boto3.session.Session()
-                credentials = session.get_credentials()
-                access_key_id = credentials.access_key
-                region_name = session.region_name
-                caller_identity = boto3.client("sts").get_caller_identity()
-                user_arn = caller_identity["Arn"]
-                account_number = caller_identity["Account"]
-                auth0_client_id = self.get_auth0_client_id(env_name, stage_name)
-                credentials_info = {
-                    "AWS Account Number:": account_number,
-                    "AWS User ARN:": user_arn,
-                    "AWS Access Key ID:": access_key_id,
-                    "AWS Region Name:": region_name,
-                    "Auth0 Client ID:": auth0_client_id
-                }
-                return credentials_info
-            except Exception as e:
-                logger.warn("Cannot determin AWS credentisl token (not fatal - just for Foursight UI display).")
-                logger.warn(e)
-                return {}
-
         html_resp = Response('Foursight viewing suite')
         html_resp.headers = {'Content-Type': 'text/html'}
         template = self.jin_env.get_template('info.html')
@@ -587,8 +598,8 @@ class AppUtilsCore:
             "Environment Name (Full):": full_env_name(env_name),
             "Environment Name (Short):": short_env_name(env_name),
             "Environment Name (Inferred):": infer_foursight_from_env(envname=env_name),
-            "Environment Name List:": self.environment.list_environment_names(),
-            "Environment Name List (Unique):": self.environment.list_unique_environment_names()
+            "Environment Name List:": sorted(self.environment.list_environment_names()),
+            "Environment Name List (Unique):": sorted(self.environment.list_unique_environment_names())
         }
         bucket_names = {
             "Environment Bucket Name:": self.environment.get_env_bucket_name(),
@@ -596,15 +607,12 @@ class AppUtilsCore:
             "Foursight Bucket Prefix:": get_foursight_bucket_prefix()
         }
         gac_name = get_identity_name()
-        gac_values = sorted_dict(obfuscate_dict(get_identity_secrets()))
-        rds_secrets_name = gac_name.replace("ApplicationConfiguration", "RDSSecret")
-        rds_secrets = SecretsTable(rds_secrets_name)
-        rds_secrets = obfuscate_dict(rds_secrets.as_dict()) if rds_secrets else {}
+        gac_values = self.sorted_dict(obfuscate_dict(get_identity_secrets()))
         es_host = os.environ.get("ES_HOST")
         encoded_es_server = gac_values.get("ENCODED_ES_SERVER")
-        environment_and_bucket_info = sorted_dict(obfuscate_dict(
+        environment_and_bucket_info = self.sorted_dict(obfuscate_dict(
                                         self.environment.get_environment_and_bucket_info(env_name, stage_name)))
-        declared_data = sorted_dict(EnvUtils.declared_data())
+        declared_data = self.sorted_dict(EnvUtils.declared_data())
         dcicutils_version = pkg_resources.get_distribution('dcicutils').version
         foursight_core_version = pkg_resources.get_distribution('foursight-core').version
         versions = {
@@ -622,8 +630,9 @@ class AppUtilsCore:
             "RDS Server:": os.environ["RDS_HOSTNAME"],
             "SQS Server:": self.sqs.get_sqs_queue().url,
         }
-        aws_credentials = get_obfuscated_credentials_info(env_name, stage_name)
-        os_environ = sorted_dict(obfuscate_dict(dict(os.environ)))
+        aws_credentials = self.get_obfuscated_credentials_info(env_name, stage_name)
+        aws_account_number = aws_credentials.get("AWS Account Number:")
+        os_environ = self.sorted_dict(obfuscate_dict(dict(os.environ)))
         request_dict = request.to_dict()
 
         html_resp.body = template.render(
@@ -638,6 +647,8 @@ class AppUtilsCore:
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
             auth0_client_id=self.get_auth0_client_id(env_name, stage_name),
+            aws_credentials=aws_credentials,
+            aws_account_number=aws_account_number,
             main_title=self.html_main_title,
             favicon=self.get_favicon(),
             load_time=self.get_load_time(),
@@ -649,9 +660,6 @@ class AppUtilsCore:
             declared_data=declared_data,
             identity_name=gac_name,
             identity_secrets=gac_values,
-            rds_secrets_name=rds_secrets_name,
-            rds_secrets=rds_secrets,
-            aws_credentials=aws_credentials,
             resources=resources,
             versions=versions,
             os_environ=os_environ
@@ -711,6 +719,7 @@ class AppUtilsCore:
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
             auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
+            aws_account_number=self.get_aws_account_number(),
             base_path=self.get_base_path(request_dict, context),
             running_checks=running_checks,
             queued_checks=queued_checks,
@@ -863,6 +872,7 @@ class AppUtilsCore:
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
             auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
+            aws_account_number=self.get_aws_account_number(),
             domain=domain,
             context=context,
             base_path=self.get_base_path(request_dict, context),
