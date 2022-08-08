@@ -557,6 +557,7 @@ class AppUtilsCore:
         html_resp.body = template.render(
             request=request,
             version=self.get_app_version(),
+            package=self.APP_PACKAGE_NAME,
             env=environ,
             view_envs=total_envs,
             stage=self.stage.get_stage(),
@@ -638,6 +639,7 @@ class AppUtilsCore:
         html_resp.body = template.render(
             request=request,
             version=self.get_app_version(),
+            package=self.APP_PACKAGE_NAME,
             env=env_name,
             domain=domain,
             context=context,
@@ -709,6 +711,7 @@ class AppUtilsCore:
         html_resp.body = template.render(
             request=request,
             version=self.get_app_version(),
+            package=self.APP_PACKAGE_NAME,
             env=environ,
             view_envs=total_envs,
             stage=self.stage.get_stage(),
@@ -858,6 +861,7 @@ class AppUtilsCore:
         html_resp.body = template.render(
             request=request,
             version=self.get_app_version(),
+            package=self.APP_PACKAGE_NAME,
             env=environ,
             check=check,
             load_time=self.get_load_time(),
