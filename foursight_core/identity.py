@@ -118,9 +118,9 @@ def apply_identity_globally():
     # but we added it (as RDS_NAME) to the GAC (circa August 2022).
     rds_name = os.environ.get("RDS_NAME")
     if rds_name:
-        logger.info("Foursight RDS_NAME environment variable value is: {rds_name}")
+        logger.info(f"Foursight RDS_NAME environment variable value is: {rds_name}")
     else:
-        logger.info("Foursight RDS_NAME environment variable is not set.")
+        logger.info(f"Foursight RDS_NAME environment variable is not set.")
 
     # Get the CHECK_RUNNER lambda function name; using the stack_name as a prefix; for example,
     # this lambda name looks like: c4-foursight-cgap-supertest-stack-CheckRunner-pKsOvziDT7QI
