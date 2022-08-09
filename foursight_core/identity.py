@@ -110,7 +110,7 @@ def apply_identity_globally():
     apply_identity(identity_kind=GLOBAL_APPLICATION_CONFIGURATION, rename_keys=IDENTITY_KEY_MAP_REQUIRED)
     try:
         apply_identity(identity_kind=GLOBAL_APPLICATION_CONFIGURATION, rename_keys=IDENTITY_KEY_MAP_NOT_REQUIRED)
-    except KeyError as e:
+    except (KeyError, ValueError) as e:
         pass
 
     # Note that we will assume RDS_NAME is in the GAC.
