@@ -83,6 +83,7 @@ class AppUtilsCore:
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
     def __init__(self):
+        self.init_load_time = self.get_load_time()
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
         self.sqs = SQS(self.prefix)
@@ -562,6 +563,7 @@ class AppUtilsCore:
             view_envs=total_envs,
             stage=self.stage.get_stage(),
             load_time=self.get_load_time(),
+            init_load_time=self.init_load_time,
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
@@ -654,6 +656,7 @@ class AppUtilsCore:
             main_title=self.html_main_title,
             favicon=self.get_favicon(),
             load_time=self.get_load_time(),
+            init_load_time=self.init_load_time,
             running_checks='0',
             queued_checks='0',
             environment_names=environment_names,
@@ -716,6 +719,7 @@ class AppUtilsCore:
             view_envs=total_envs,
             stage=self.stage.get_stage(),
             load_time=self.get_load_time(),
+            init_load_time=self.init_load_time,
             domain=domain,
             context=context,
             is_admin=is_admin,
@@ -865,6 +869,7 @@ class AppUtilsCore:
             env=environ,
             check=check,
             load_time=self.get_load_time(),
+            init_load_time=self.init_load_time,
             history=history,
             history_kwargs=history_kwargs,
             res_start=start,

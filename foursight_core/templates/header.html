@@ -169,7 +169,7 @@
                         </span>
                 </td>
                 <td width="400" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;" align="right">
-                    <small title="Page loaded time.">{{load_time}}</small>
+                    <small title="Page loaded time. App loaded time: {{init_load_time}} ">{{load_time}}</small>
                     {% if not is_running_locally and is_admin %}
                         &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:#D6EAF8;" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
                     {% endif %}

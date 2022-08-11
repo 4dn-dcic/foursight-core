@@ -147,4 +147,31 @@
         <b>Environment Variables</b>
         {{name_value_box(os_environ)}}
     </ul>
+    <ul class="top-level-list">
+        <b>Miscellany</b>
+        <div class="info boxstyle">
+            <h5 style='margin:10px 5px 10px 5px;'}}>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>App Loaded Time:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                            {{init_load_time}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Page Loaded Time:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                            {{load_time}}
+                    </div>
+                </div>
+            </h5>
+        </div>
+    </ul>
 {% endblock %}
