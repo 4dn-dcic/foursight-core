@@ -41,13 +41,6 @@
                         {% elif key == "Portal Server:" %}
                             <span style="cursor:copy;font-family:monospace;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>
                             <a target="_blank" href="{{value}}"><span class="fa fa-external-link" style="font-size:14px;"></span></a>
-                        {% elif key == "ElasticSearch Server:" %}
-                            <span style="cursor:copy;font-family:monospace;"  title="{{elasticsearch_connection_error}}" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>
-                            {% if elasticsearch_connection_okay %}
-                                &nbsp;<b style="color:green;">&#x2713;</b>
-                            {% else %}
-                                &nbsp;<b style="color:red;" title="{{elasticsearch_connection_error}}">&#x2717;</b>
-                            {% endif %}
                         {% else %}
                             <span style="cursor:copy;font-family:monospace;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>
                         {% endif %}
