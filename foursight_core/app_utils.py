@@ -437,6 +437,49 @@ class AppUtilsCore:
             logger.warn(e)
             return {}
 
+    def ping_elasticsearch(self) -> (bool, str):
+        connection_okay = False
+        connection_error = None
+        try:
+            elasticsearch_url = self.host
+            if not elasticsearch_url.startswith("http://") and not elasticsearch_url.startswith("https://"):
+                if elasticsearch_url.endswith(":443"):
+                    elasticsearch_url = "https://" + elasticsearch_url
+                else:
+                    elasticsearch_url = "http://" + elasticsearch_url
+            logger.error(f"Pinging ElasticSearch: {elasticsearch_url}")
+            response = requests.get(elasticsearch_url, timeout=4)
+            connection_okay = (response.status_code == 200)
+            logger.error(f"Pinged ElasticSearch: {elasticsearch_url} -> {'OK' if connection_okay else response.status_code}")
+        except Exception as e:
+            logger.error(f"Exception on ping of ElasticSearch: {elasticsearch_url} -> {e}")
+            connection_error = str(e)
+        return connection_okay, connection_error
+
+    def ping_database(self) -> (bool, str):
+        connection_okay = False
+        connection_error = None
+        try:
+            import pymysql
+            rds_hostname = os.environ["RDS_HOSTNAME"]
+            rds_port = int(os.environ["RDS_PORT"])
+            rds_username = os.environ["RDS_USERNAME"]
+            rds_password = os.environ["RDS_PASSWORD"]
+            rds_database = os.environ["RDS_DB_NAME"]
+            logger.error(f"Pinging RDS: {rds_username}:{rds_password}@{rds_hostname}:{rds_port}/{rds_database}")
+            rds_connection = pymysql.connect(host=rds_hostname, user=rds_username, password=rds_password, database=rds_database, port=rds_port, connect_timeout=4, read_timeout=3)
+            with rds_connection:
+                rds_cursor = rds_connection.cursor()
+                rds_cursor.execute("SELECT VERSION()")
+                rds_version = rds_cursor.fetchone()
+                logger.error(f"RDS Version: {rds_version[0]}")
+            connection_okay = True
+        except Exception as e:
+            connection_error = str(e)
+            logger.error(f"Exception on RDS connection/ping: {rds_username}:{rds_password}@{rds_hostname}:{rds_port}/{rds_database}: {e}")
+        return connection_okay, connection_error
+
+
     # ===== ROUTE RUNNING FUNCTIONS =====
 
     def view_run_check(self, environ, check, params, context="/"):
@@ -638,6 +681,10 @@ class AppUtilsCore:
         os_environ = self.sorted_dict(obfuscate_dict(dict(os.environ)))
         request_dict = request.to_dict()
 
+        if is_admin:
+            elasticsearch_connection_okay, elasticsearch_connection_error = self.ping_elasticsearch()
+            database_connection_okay, database_connection_error = self.ping_database()
+
         html_resp.body = template.render(
             request=request,
             version=self.get_app_version(),
@@ -659,6 +706,10 @@ class AppUtilsCore:
             init_load_time=self.init_load_time,
             running_checks='0',
             queued_checks='0',
+            elasticsearch_connection_okay=elasticsearch_connection_okay,
+            elasticsearch_connection_error=elasticsearch_connection_error,
+            database_connection_okay=database_connection_okay,
+            database_connection_error=database_connection_error,
             environment_names=environment_names,
             bucket_names=bucket_names,
             environment_and_bucket_info=environment_and_bucket_info,
