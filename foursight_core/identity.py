@@ -22,8 +22,7 @@ from dcicutils.cloudformation_utils import AbstractOrchestrationManager
 from dcicutils.secrets_utils import (
     apply_identity,
     get_identity_name,
-    GLOBAL_APPLICATION_CONFIGURATION,
-    SecretsTable,
+    GLOBAL_APPLICATION_CONFIGURATION
 )
 
 
@@ -110,7 +109,7 @@ def apply_identity_globally():
     apply_identity(identity_kind=GLOBAL_APPLICATION_CONFIGURATION, rename_keys=IDENTITY_KEY_MAP_REQUIRED)
     try:
         apply_identity(identity_kind=GLOBAL_APPLICATION_CONFIGURATION, rename_keys=IDENTITY_KEY_MAP_NOT_REQUIRED)
-    except (KeyError, ValueError) as e:
+    except (KeyError, ValueError):
         pass
 
     # Note that we will assume RDS_NAME is in the GAC.

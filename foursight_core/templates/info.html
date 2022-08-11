@@ -48,13 +48,6 @@
                             {% else %}
                                 &nbsp;<b style="color:red;" title="{{elasticsearch_connection_error}}">&#x2717;</b>
                             {% endif %}
-                        {% elif key == "RDS Server:" %}
-                            <span style="cursor:copy;font-family:monospace;"  title="{{database_connection_error}}" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>
-                            {% if database_connection_okay %}
-                                &nbsp;<b style="color:green;">&#x2713;</b>
-                            {% else %}
-                            &nbsp;<b style="color:red;" title="{{database_connection_error}}">&#x2717;</b>
-                            {% endif %}
                         {% else %}
                             <span style="cursor:copy;font-family:monospace;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>
                         {% endif %}
