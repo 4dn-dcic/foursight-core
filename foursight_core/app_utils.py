@@ -627,7 +627,7 @@ class AppUtilsCore:
         resources = {
             "Foursight Server:": socket.gethostname(),
             "Portal Server:": self.get_portal_url(env_name, stage_name),
-            "ElasticSearch Server:": [es_host, encoded_es_server] if es_host != encoded_es_server else es_host,
+            "ElasticSearch Server:": self.host,
             "RDS Server:": os.environ["RDS_HOSTNAME"],
             "SQS Server:": self.sqs.get_sqs_queue().url,
         }
