@@ -435,6 +435,34 @@ class AppUtilsCore:
             logger.warn(e)
             return {}
 
+    def reload_lambda(self, lambda_name: str) -> bool:
+        """
+        Experimental.
+        """
+        if not lambda_name or lambda_name.lower() == "current" or lambda_name.lower() == "this":
+            lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+            if not lambda_name:
+                return False
+        try:
+            boto_lambda = boto3.client("lambda")
+            lambda_info = boto_lambda.get_function(FunctionName=lambda_name)
+            if lambda_info:
+                lambda_description = lambda_info["Configuration"]["Description"]
+                if not lambda_description:
+                    lambda_description = "Reload"
+                else:
+                    if lambda_description.endswith("."):
+                        lambda_description = lambda_description[:-1]
+                    else:
+                        lambda_description = lambda_description + "."
+                logger.warn(f"Reloading lambda: {lambda_name}")
+                boto_lambda.update_function_configuration(FunctionName=lambda_name, Description=lambda_description)
+                logger.warn(f"Reloaded lambda: {lambda_name}")
+        except Exception:
+            logger.warn(f"Error reloading lambda: {lambda_name}")
+            pass
+        return False
+
     # ===== ROUTE RUNNING FUNCTIONS =====
 
     def view_run_check(self, environ, check, params, context="/"):
@@ -577,6 +605,11 @@ class AppUtilsCore:
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
+
+    def view_reload_lambda(self, request, is_admin=False, domain="", context="/", lambda_name: str = None):
+        self.reload_lambda(lambda_name)
+        resp_headers = {'Location': '/'.join([context + 'view', 'info'])}
+        return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
     # dmichaels/2020-08-01:
     # Added /view/info for debugging/troubleshooting purposes.
