@@ -228,7 +228,7 @@
             {% endif %}
         </table>
     </div>
-    {% if is_admin %}
+    {% if not is_admin %}
         <div class="container">
             <div class="boxstyle check-warn" style="margin:20pt;padding:10pt;">
                 Not logged in. Click <u style="cursor:pointer" onclick="create_redir_cookie(); lock.show();"><b>here</b></u> to <span style="cursor:pointer" onclick="create_redir_cookie(); lock.show();">login</span>.
