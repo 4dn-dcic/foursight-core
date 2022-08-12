@@ -13,6 +13,7 @@ import platform
 import requests
 import socket
 import sys
+import time
 import logging
 from itertools import chain
 from dateutil import tz
@@ -608,6 +609,7 @@ class AppUtilsCore:
 
     def view_reload_lambda(self, request, is_admin=False, domain="", context="/", lambda_name: str = None):
         self.reload_lambda(lambda_name)
+        time.sleep(3)
         resp_headers = {'Location': '/'.join([context + 'view', 'info'])}
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
