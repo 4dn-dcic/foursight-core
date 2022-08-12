@@ -151,7 +151,7 @@
 <div>
     <div width="100%" height="70" style="background:#143c53;">
         <table width="100%">
-            <tr title="Page loaded time. App loaded time: {{init_load_time}}">
+                <tr title="Page loaded time: {{load_time}} / App loaded time: {{init_load_time}}">
                 <td width="400" style="padding-left:2pt;white-space:nowrap;">
                     <a href={{context + base_path + 'view/' + env}}>
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
@@ -169,7 +169,7 @@
                         </span>
                 </td>
                 <td width="400" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;" align="right">
-                    <small title="Page loaded time. App loaded time: {{init_load_time}} ">{{load_time}}</small>
+                    <small>{{load_time}}</small>
                     {% if not is_running_locally and is_admin %}
                         &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:#D6EAF8;" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
                     {% endif %}
