@@ -171,7 +171,7 @@
                 <td width="400" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;" align="right">
                     <small>{{load_time}}</small>
                     &nbsp;<b>|</b>&nbsp;
-                    <a style="text-decoration:none;color:#D6EAF8;" href="{{context + base_path + 'view/reload_lambda/current'}}">&#x2318;</a>
+                    <a style="text-decoration:none;color:#D6EAF8;" href="{{context + base_path + 'view/reload_lambda/current'}}" onclick="if (window.confirm('Do you want to reload this app?')){return true;}else{event.stopPropagation(); event.preventDefault()}">&#x2318;</a>
                     {% if not is_running_locally and is_admin %}
                         &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:#D6EAF8;" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
                     {% endif %}
