@@ -2,12 +2,6 @@ import logging
 
 from dcicutils.common import EnvName, ChaliceStage
 from dcicutils.env_manager import EnvManager
-<<<<<<< HEAD
-=======
-from dcicutils.env_utils import (
-    get_foursight_bucket, get_foursight_bucket_prefix, full_env_name, infer_foursight_from_env,
-)
->>>>>>> master
 from dcicutils.misc_utils import full_class_name
 from dcicutils.s3_utils import s3Utils
 from typing import Optional, List

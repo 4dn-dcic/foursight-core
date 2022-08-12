@@ -15,9 +15,8 @@ from itertools import chain
 from dateutil import tz
 from dcicutils import ff_utils
 from dcicutils.lang_utils import disjoined_list
-from dcicutils.obfuscation_utils import obfuscate_dict
 from typing import Optional
-from .identity import apply_identity_globally
+from .identity import apply_identity_globally, get_identity_name, GLOBAL_APPLICATION_CONFIGURATION
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
 from .check_utils import CheckHandler
@@ -37,7 +36,10 @@ class AppUtilsCore:
     """
 
     # dmichaels/2022-07-20/C4-826: Apply identity globally.
-    apply_identity_globally()
+    # wrr/2022-08-12: backwards compatibility, do not try if it's not set
+    identity_name = get_identity_name(identity_kind=GLOBAL_APPLICATION_CONFIGURATION)
+    if identity_name:
+        apply_identity_globally()
 
     # These must be overwritten in inherited classes
     # replace with 'foursight', 'foursight-cgap' etc
