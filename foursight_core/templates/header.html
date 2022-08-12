@@ -151,7 +151,7 @@
 <div>
     <div width="100%" height="70" style="background:#143c53;">
         <table width="100%">
-            <tr>
+            <tr title="Page loaded time. App loaded time: {{init_load_time}}">
                 <td width="400" style="padding-left:2pt;white-space:nowrap;">
                     <a href={{context + base_path + 'view/' + env}}>
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
@@ -228,10 +228,14 @@
             {% endif %}
         </table>
     </div>
-    {% if not is_admin %}
+    {% if is_admin %}
         <div class="container">
             <div class="boxstyle check-warn" style="margin:20pt;padding:10pt;">
                 Not logged in. Click <u style="cursor:pointer" onclick="create_redir_cookie(); lock.show();"><b>here</b></u> to <span style="cursor:pointer" onclick="create_redir_cookie(); lock.show();">login</span>.
+                {% if aws_account_number %}
+                    <br />
+                    <small> AWS Account: {{aws_account_number}} </small>
+                {% endif %}
             </div>
         </div>
     {% else %}
