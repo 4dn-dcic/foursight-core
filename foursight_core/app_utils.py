@@ -15,13 +15,15 @@ from itertools import chain
 from dateutil import tz
 from dcicutils import ff_utils
 from dcicutils.lang_utils import disjoined_list
+from dcicutils.obfuscation_utils import obfuscate_dict
 from typing import Optional
-from foursight_core.s3_connection import S3Connection
-from foursight_core.fs_connection import FSConnection
-from foursight_core.check_utils import CheckHandler
-from foursight_core.sqs_utils import SQS
-from foursight_core.stage import Stage
-from foursight_core.environment import Environment
+from .identity import apply_identity_globally
+from .s3_connection import S3Connection
+from .fs_connection import FSConnection
+from .check_utils import CheckHandler
+from .sqs_utils import SQS
+from .stage import Stage
+from .environment import Environment
 
 
 logging.basicConfig()
@@ -33,6 +35,9 @@ class AppUtilsCore:
     This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
     so that a class named AppUtils is easier to define in libraries that import foursight-core.
     """
+
+    # dmichaels/2022-07-20/C4-826: Apply identity globally.
+    apply_identity_globally()
 
     # These must be overwritten in inherited classes
     # replace with 'foursight', 'foursight-cgap' etc
@@ -913,10 +918,10 @@ class AppUtilsCore:
         queue = self.sqs.get_sqs_queue()
         print(f'-RUN-> target queue: {queue}')
         if schedule_name is not None:
-            if sched_environ != 'all' and not self.environment.is_valid_environment_name(sched_environ):
+            if not self.environment.is_valid_environment_name(sched_environ, or_all=True):
                 print(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
                 return
-            sched_environs = self.environment.list_environment_names() if sched_environ == 'all' else [sched_environ]
+            sched_environs = self.environment.get_selected_environment_names(sched_environ)
             check_schedule = self.check_handler.get_check_schedule(schedule_name, conditions)
             if not check_schedule:
                 print(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')

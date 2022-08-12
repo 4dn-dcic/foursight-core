@@ -7,6 +7,37 @@ Change Log
 ----------
 
 
+1.0.0
+=====
+
+* IDENTITY-ized Foursight; i.e. get secrets and other configuration data from the global application configuration (GAC)
+  rather than having them encoded in the environment via the CloudFormation template (for the lambdas). C4-826.
+* Added STACK_NAME (in addition to IDENTITY introduced in 0.7.4.2b0) to the environment variables
+  required (via the Foursight CloudFormation template) to get a foothold for other Foursight info,
+  e.g. to get the CHECK_RUNNER AWS lambda function name. See AppUtilsCore.apply_identity_globally
+  in app_utils.py and Deploy.build_config in deploy.py. C4-826.
+* Moved apply_identity_globally to its own identity.py module and
+  call it statically from app_utils.py/AppUtilsCore class. C4-826.
+* Merged in Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).
+* Merged from master.
+* Merged in more of Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).
+* Added better error message for NoSuchKey for S3 bucket key access (s3_connection.py/get_object).
+* Updated dcicutils to 4.0.2.
+
+
+0.7.5
+=====
+
+Fix Environment.is_valid_environment_name to return true of various environments.
+
+
+
+0.7.4
+=====
+
+Fix a bug in Environment.get_environment_and_bucket_info
+
+
 0.7.3
 =====
 

@@ -1,9 +1,6 @@
-import boto3
 import logging
 import os
-import re
 
-from dcicutils.lang_utils import conjoined_list
 from dcicutils.cloudformation_utils import AbstractOrchestrationManager
 
 
@@ -35,7 +32,7 @@ class Stage(object):
 
     ENCACHE_RUNNER_NAME = True
 
-    def  get_runner_name(self, encache=ENCACHE_RUNNER_NAME):
+    def get_runner_name(self, encache=ENCACHE_RUNNER_NAME):
         """
         Gets the name of the Lambda function to use as a check runner.
         """

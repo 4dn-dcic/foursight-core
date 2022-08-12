@@ -4,8 +4,9 @@ import re
 from foursight_core.environment import Environment
 from dcicutils.common import CHALICE_STAGES
 from dcicutils.env_base import EnvBase
-from dcicutils.env_utils import full_env_name, infer_foursight_from_env
+from dcicutils.env_utils import full_env_name, short_env_name, infer_foursight_from_env
 from dcicutils.lang_utils import disjoined_list
+from unittest import mock
 
 
 LEGACY_GLOBAL_ENV_BUCKET = 'foursight-prod-envs'
@@ -41,18 +42,32 @@ def test_list_valid_schedule_environment_names():
         check_environment_names(envs, with_all=True)
 
 
+def test_list_unique_environment_names():
+
+    with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
+        environment = Environment()
+        with mock.patch.object(environment, 'list_environment_names') as mock_list_environment_names:
+            def mocked_list_environment_names():
+                return ['data', 'staging', 'fourfront-mastertest', 'mastertest']
+            mock_list_environment_names.side_effect = mocked_list_environment_names
+
+            unique = environment.list_unique_environment_names()
+            assert isinstance(unique, list)
+            assert unique == ['data', 'mastertest', 'staging']  # they will be alphabetical and in foursight-form
+
+
 def check_environment_names(envs, *, with_all):
 
-        full_envs = [full_env_name(env) for env in envs if env != 'all']
+    full_envs = [full_env_name(env) for env in envs if env != 'all']
 
-        for env in envs:
-            assert not env.endswith(".ecosystem")
+    for env in envs:
+        assert not env.endswith(".ecosystem")
 
-        for env in LEGACY_ENVS:
-            assert env in full_envs
+    for env in LEGACY_ENVS:
+        assert env in full_envs
 
-        if with_all:
-            assert 'all' in envs
+    if with_all:
+        assert 'all' in envs
 
 
 def test_is_valid_environment_name():
@@ -63,6 +78,8 @@ def test_is_valid_environment_name():
         for env in envs:
             assert environment.is_valid_environment_name(env)
             assert not environment.is_valid_environment_name("not-" + env)
+        assert environment.is_valid_environment_name('all') is False
+        assert environment.is_valid_environment_name('all', or_all=True) is True
 
 
 def test_get_environment_info_from_s3():
@@ -130,6 +147,9 @@ def test_get_environment_and_bucket_info():
                 full_env = full_env_name(env)
                 foursight_env = infer_foursight_from_env(envname=env)
                 assert re.match(f"{LEGACY_PREFIX}{stage}-({full_env}|{foursight_env})", info_bucket)
+                # Make sure it's invariant over what the name is
+                assert (environment.get_environment_and_bucket_info(env_name='mastertest', stage='prod')
+                        == environment.get_environment_and_bucket_info('fourfront-mastertest', stage='prod'))
 
 
 def test_get_selected_environment_names():
@@ -137,7 +157,8 @@ def test_get_selected_environment_names():
     with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
         environment = Environment()
         envs = environment.list_environment_names()
-        assert environment.get_selected_environment_names('all') == envs
+        assert environment.get_selected_environment_names('all') == sorted({infer_foursight_from_env(envname=env)
+                                                                            for env in envs})
         for env in envs:
             assert environment.get_selected_environment_names(env) == [env]
             with pytest.raises(Exception):
@@ -150,6 +171,9 @@ def test_get_environment_and_bucket_info_in_batch():
         assert isinstance(d, dict)
         for k, v in d.items():
             assert environment.is_valid_environment_name(k)
+            assert environment.is_valid_environment_name(full_env_name(k))
+            assert environment.is_valid_environment_name(short_env_name(k))
+            assert environment.is_valid_environment_name(infer_foursight_from_env(envname=k))
             assert isinstance(v, dict)
             for key in CONFIG_KEYS:
                 assert key in v
