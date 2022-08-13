@@ -436,11 +436,11 @@ class AppUtilsCore:
             logger.warn(e)
             return {}
 
-    def reload_lambda(self, lambda_name: str) -> bool:
+    def reload_lambda(self, lambda_name: str = None) -> bool:
         """
         Experimental.
         """
-        if not lambda_name or lambda_name.lower() == "current" or lambda_name.lower() == "this":
+        if not lambda_name or lambda_name.lower() == "current":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
             if not lambda_name:
                 return False
@@ -614,10 +614,10 @@ class AppUtilsCore:
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
     # dmichaels/2020-08-01:
-    # Added /view/info for debugging/troubleshooting purposes.
+    # Added /info for debugging/troubleshooting purposes.
     def view_info(self, request, is_admin=False, domain="", context="/"):
         """
-        Displays and /view/info page containing sundry info about the running Foursight instance.
+        Displays and /info page containing sundry info about the running Foursight instance.
         Any sensitive data is obfuscated. This is a protected route.
         :param domain: Current FS domain, needed for Auth0 redirect.
         :param context: Current context, usually "/api/" or "/" (some confusion running locally; see get_base_path).
