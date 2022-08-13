@@ -439,10 +439,15 @@ class AppUtilsCore:
     @staticmethod
     def convert_utc_datetime_string_to_local_datetime_string(t: str) -> str:
         t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
+        t = t.replace(microsecond=0)
         t = t.astimezone(tz.gettz('America/New_York'))
         return "".join([str(t.date()), " ", str(t.time()), " ", str(t.tzname())])
 
     def get_lambda_last_modified(self, lambda_name: str = None) -> str:
+        """
+        Returns the last modified time for the given lambda name.
+        See comments in reload_lambda on this.
+        """
         if not lambda_name or lambda_name.lower() == "current":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
             if not lambda_name:
@@ -466,6 +471,13 @@ class AppUtilsCore:
     def reload_lambda(self, lambda_name: str = None) -> bool:
         """
         Experimental.
+        Reloads the lambda code for the given lambda name. We do this by making an innocuous change
+        to it, namely, by adding/removing a trailing dot to its description. This causes the lambda
+        to be reloaded, however this also changes its last modified date, which we would also like to
+        to accurately get (get_lambda_last_modified), so we store its original value in a lambda tag,
+        the updating of which does not update the modified time; so the code (get_lambda_last_modified)
+        to get the last modified time of the lambda needs to look first at this tag and take that
+        if it exists before looking at the real last modified time. 
         """
         if not lambda_name or lambda_name.lower() == "current":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
