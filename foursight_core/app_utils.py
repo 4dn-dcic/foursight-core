@@ -436,6 +436,33 @@ class AppUtilsCore:
             logger.warn(e)
             return {}
 
+    @staticmethod
+    def convert_utc_datetime_string_to_local_datetime_string(t: str) -> str:
+        t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
+        t = t.astimezone(tz.gettz('America/New_York'))
+        return "".join([str(t.date()), " ", str(t.time()), " ", str(t.tzname())])
+
+    def get_lambda_last_modified(self, lambda_name: str = None) -> str:
+        if not lambda_name or lambda_name.lower() == "current":
+            lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+            if not lambda_name:
+                return None
+        try:
+            boto_lambda = boto3.client("lambda")
+            lambda_info = boto_lambda.get_function(FunctionName=lambda_name)
+            if lambda_info:
+                lambda_arn = lambda_info["Configuration"]["FunctionArn"]
+                lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
+                lambda_last_modified_tag = lambda_tags.get("last_modified")
+                if lambda_last_modified_tag:
+                    return self.convert_utc_datetime_string_to_local_datetime_string(lambda_last_modified_tag)
+                return self.convert_utc_datetime_string_to_local_datetime_string(lambda_info["Configuration"]["LastModified"])
+        except Exception as e:
+            logger.warn(f"Error getting lambda last modified time: {lambda_name}")
+            logger.warn(e)
+            pass
+        return None
+
     def reload_lambda(self, lambda_name: str = None) -> bool:
         """
         Experimental.
@@ -448,6 +475,12 @@ class AppUtilsCore:
             boto_lambda = boto3.client("lambda")
             lambda_info = boto_lambda.get_function(FunctionName=lambda_name)
             if lambda_info:
+                lambda_arn = lambda_info["Configuration"]["FunctionArn"]
+                lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
+                lambda_last_modified_tag = lambda_tags.get("last_modified")
+                if not lambda_last_modified_tag:
+                    lambda_last_modified = lambda_info["Configuration"]["LastModified"]
+                    boto_lambda.tag_resource(Resource=lambda_arn, Tags={"last_modified": lambda_last_modified})
                 lambda_description = lambda_info["Configuration"]["Description"]
                 if not lambda_description:
                     lambda_description = "Reload"
@@ -459,9 +492,9 @@ class AppUtilsCore:
                 logger.warn(f"Reloading lambda: {lambda_name}")
                 boto_lambda.update_function_configuration(FunctionName=lambda_name, Description=lambda_description)
                 logger.warn(f"Reloaded lambda: {lambda_name}")
-        except Exception:
+        except Exception as e:
             logger.warn(f"Error reloading lambda: {lambda_name}")
-            pass
+            logger.warn(e)
         return False
 
     # ===== ROUTE RUNNING FUNCTIONS =====
@@ -610,7 +643,7 @@ class AppUtilsCore:
     def view_reload_lambda(self, request, is_admin=False, domain="", context="/", lambda_name: str = None):
         self.reload_lambda(lambda_name)
         time.sleep(3)
-        resp_headers = {'Location': '/'.join([context + 'view', 'info'])}
+        resp_headers = {'Location': f"{context}info"}
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
     # dmichaels/2020-08-01:
@@ -688,6 +721,7 @@ class AppUtilsCore:
             favicon=self.get_favicon(),
             load_time=self.get_load_time(),
             init_load_time=self.init_load_time,
+            lambda_deployed_time=self.get_lambda_last_modified(),
             running_checks='0',
             queued_checks='0',
             environment_names=environment_names,
