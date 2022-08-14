@@ -97,6 +97,7 @@ class AppUtilsCore:
         )
         self.portal_url = None
         self.auth0_client_id = None
+        self.lambda_last_modified = None
 
     @classmethod
     def set_timeout(cls, timeout):
@@ -514,10 +515,15 @@ class AppUtilsCore:
         Returns the last modified time for the given lambda name.
         See comments in reload_lambda on this.
         """
+        lambda_current = False
         if not lambda_name or lambda_name.lower() == "current":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
             if not lambda_name:
                 return None
+            lambda_current = True
+        if lambda_current:
+            if self.lambda_last_modified:
+                return self.lambda_last_modified
         try:
             boto_lambda = boto3.client("lambda")
             lambda_info = boto_lambda.get_function(FunctionName=lambda_name)
@@ -526,8 +532,12 @@ class AppUtilsCore:
                 lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
                 lambda_last_modified_tag = lambda_tags.get("last_modified")
                 if lambda_last_modified_tag:
-                    return self.convert_utc_datetime_string_to_local_datetime_string(lambda_last_modified_tag)
-                return self.convert_utc_datetime_string_to_local_datetime_string(lambda_info["Configuration"]["LastModified"])
+                    lambda_last_modified = self.convert_utc_datetime_string_to_local_datetime_string(lambda_last_modified_tag)
+                else:
+                    lambda_last_modified = self.convert_utc_datetime_string_to_local_datetime_string(lambda_info["Configuration"]["LastModified"])
+                if lambda_current:
+                    self.lambda_last_modified = lambda_last_modified
+                return lambda_last_modified
         except Exception as e:
             logger.warn(f"Error getting lambda last modified time: {lambda_name}")
             logger.warn(e)
@@ -661,6 +671,7 @@ class AppUtilsCore:
             stage=self.stage.get_stage(),
             load_time=self.get_load_time(),
             init_load_time=self.init_load_time,
+            lambda_deployed_time=self.get_lambda_last_modified(),
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
@@ -825,6 +836,7 @@ class AppUtilsCore:
             stage=self.stage.get_stage(),
             load_time=self.get_load_time(),
             init_load_time=self.init_load_time,
+            lambda_deployed_time=self.get_lambda_last_modified(),
             domain=domain,
             context=context,
             is_admin=is_admin,
@@ -975,6 +987,7 @@ class AppUtilsCore:
             check=check,
             load_time=self.get_load_time(),
             init_load_time=self.init_load_time,
+            lambda_deployed_time=self.get_lambda_last_modified(),
             history=history,
             history_kwargs=history_kwargs,
             res_start=start,
