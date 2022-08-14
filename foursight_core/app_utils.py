@@ -443,30 +443,32 @@ class AppUtilsCore:
         t = t.astimezone(tz.gettz('America/New_York'))
         return "".join([str(t.date()), " ", str(t.time()), " ", str(t.tzname())])
 
-    def get_lambda_last_modified(self, lambda_name: str = None) -> str:
-        """
-        Returns the last modified time for the given lambda name.
-        See comments in reload_lambda on this.
-        """
-        if not lambda_name or lambda_name.lower() == "current":
-            lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
-            if not lambda_name:
-                return None
+    def ping_elasticsearch(self, env_name: str) -> bool:
         try:
-            boto_lambda = boto3.client("lambda")
-            lambda_info = boto_lambda.get_function(FunctionName=lambda_name)
-            if lambda_info:
-                lambda_arn = lambda_info["Configuration"]["FunctionArn"]
-                lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
-                lambda_last_modified_tag = lambda_tags.get("last_modified")
-                if lambda_last_modified_tag:
-                    return self.convert_utc_datetime_string_to_local_datetime_string(lambda_last_modified_tag)
-                return self.convert_utc_datetime_string_to_local_datetime_string(lambda_info["Configuration"]["LastModified"])
+            return self.init_connection(env_name).connections["es"].test_connection()
         except Exception as e:
-            logger.warn(f"Error getting lambda last modified time: {lambda_name}")
-            logger.warn(e)
-            pass
-        return None
+            print(f"Exception pinging ElasticSearch ({self.host}): {e}")
+            return False
+
+    def ping_portal(self, env_name: str, stage_name: str) -> bool:
+        portal_url = self.get_portal_url(env_name, stage_name)
+        try:
+            response = requests.get(portal_url, timeout=4)
+            return (response.status_code == 200)
+        except Exception as e:
+            print(f"Exception pinging portal ({portal_url}): {e}")
+            return False
+
+    def ping_sqs(self) -> bool:
+        sqs_url = self.sqs.get_sqs_queue().url
+        try:
+            sqs_attributes = self.sqs.get_sqs_attributes(sqs_url)
+            print('xyzzy')
+            print(sqs_attributes)
+            return (sqs_attributes is not None)
+        except Exception as e:
+            print(f"Exception pinging SQS ({sqs_url}): {e}")
+            return False
 
     def reload_lambda(self, lambda_name: str = None) -> bool:
         """
@@ -508,6 +510,31 @@ class AppUtilsCore:
             logger.warn(f"Error reloading lambda: {lambda_name}")
             logger.warn(e)
         return False
+
+    def get_lambda_last_modified(self, lambda_name: str = None) -> str:
+        """
+        Returns the last modified time for the given lambda name.
+        See comments in reload_lambda on this.
+        """
+        if not lambda_name or lambda_name.lower() == "current":
+            lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+            if not lambda_name:
+                return None
+        try:
+            boto_lambda = boto3.client("lambda")
+            lambda_info = boto_lambda.get_function(FunctionName=lambda_name)
+            if lambda_info:
+                lambda_arn = lambda_info["Configuration"]["FunctionArn"]
+                lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
+                lambda_last_modified_tag = lambda_tags.get("last_modified")
+                if lambda_last_modified_tag:
+                    return self.convert_utc_datetime_string_to_local_datetime_string(lambda_last_modified_tag)
+                return self.convert_utc_datetime_string_to_local_datetime_string(lambda_info["Configuration"]["LastModified"])
+        except Exception as e:
+            logger.warn(f"Error getting lambda last modified time: {lambda_name}")
+            logger.warn(e)
+            pass
+        return None
 
     # ===== ROUTE RUNNING FUNCTIONS =====
 
@@ -743,6 +770,9 @@ class AppUtilsCore:
             identity_name=gac_name,
             identity_secrets=gac_values,
             resources=resources,
+            ping_portal=self.ping_portal(env_name, stage_name),
+            ping_elasticsearch=self.ping_elasticsearch(env_name),
+            ping_sqs=self.ping_sqs(),
             versions=versions,
             os_environ=os_environ
         )
