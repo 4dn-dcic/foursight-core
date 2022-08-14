@@ -447,7 +447,7 @@ class AppUtilsCore:
         try:
             return self.init_connection(env_name).connections["es"].test_connection()
         except Exception as e:
-            print(f"Exception pinging ElasticSearch ({self.host}): {e}")
+            logger.warn(f"Exception pinging ElasticSearch ({self.host}): {e}")
             return False
 
     def ping_portal(self, env_name: str, stage_name: str) -> bool:
@@ -456,18 +456,16 @@ class AppUtilsCore:
             response = requests.get(portal_url, timeout=4)
             return (response.status_code == 200)
         except Exception as e:
-            print(f"Exception pinging portal ({portal_url}): {e}")
+            logger.warn(f"Exception pinging portal ({portal_url}): {e}")
             return False
 
     def ping_sqs(self) -> bool:
         sqs_url = self.sqs.get_sqs_queue().url
         try:
             sqs_attributes = self.sqs.get_sqs_attributes(sqs_url)
-            print('xyzzy')
-            print(sqs_attributes)
             return (sqs_attributes is not None)
         except Exception as e:
-            print(f"Exception pinging SQS ({sqs_url}): {e}")
+            logger.warn(f"Exception pinging SQS ({sqs_url}): {e}")
             return False
 
     def reload_lambda(self, lambda_name: str = None) -> bool:
