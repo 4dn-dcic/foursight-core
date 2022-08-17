@@ -159,6 +159,7 @@ class AppUtilsCore:
 
     def get_logged_in_user_info_from_jwt_token_cookie(self, request_dict):
         email_address = ""
+        email_verified = ""
         first_name = ""
         last_name = ""
         issuer = ""
@@ -166,6 +167,7 @@ class AppUtilsCore:
         audience = ""
         issued_time = ""
         expiration_time = ""
+        jwt_decoded = ""
         try:
             jwt_token = self.get_jwt(request_dict)
             if jwt_token:
@@ -174,20 +176,30 @@ class AppUtilsCore:
                 jwt_decoded = jwt.decode(jwt_token, 'secret', algorithms=algorithms, options=options)
                 if jwt_decoded:
                     email_address = jwt_decoded.get("email")
-                    iss = jwt_decoded.get("iss")
-                    if iss:
-                        name = jwt_decoded.get(iss + "name")
+                    email_verified = jwt_decoded.get("email_verified")
+                    issuer = jwt_decoded.get("iss")
+                    if issuer:
+                        name = jwt_decoded.get(issuer + "name")
                         if name:
                             first_name = name.get("name_first")
                             last_name = name.get("name_last")
                     subject = jwt_decoded.get("sub")
                     audience = jwt_decoded.get("aud")
-                    issued_time = convert_time_t_to_useastern_datetime(jwt_decoded.get("iat"))
-                    expiration_time = convert_time_t_to_useastern_datetime(jwt_decoded.get("exp"))
+                    issued_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("iat"))
+                    expiration_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("exp"))
         except Exception as e:
             logger.warn("Cannot get logged in user info from JWT token (not fatal - just for Foursight UI display).")
             logger.warn(e)
-        return {"email_address": email_address, "first_name": first_name, "last_name": last_name, "subject": subject, "audience": audience, "issued_time": issued_time, "expiration_time": expiration_time}
+        return {"email_address": email_address,
+                "email_verified": email_verified,
+                "first_name": first_name,
+                "last_name": last_name,
+                "issuer": issuer,
+                "subject": subject,
+                "audience": audience,
+                "issued_time": issued_time,
+                "expiration_time": expiration_time,
+                "jwt": jwt_decoded}
 
     def get_portal_url(self, env_name: str, stage_name: str) -> str:
         if not self.portal_url:
@@ -451,23 +463,27 @@ class AppUtilsCore:
             logger.warn(e)
             return {}
 
-    @staticmethod
-    def convert_utc_datetime_to_useastern_datetime(t: str) -> str:
+    def convert_utc_datetime_to_useastern_datetime(self, t: str) -> str:
         try:
-            t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
-            t = t.replace(microsecond=0)
-            t = t.astimezone(tz.gettz('America/New_York'))
-            return "".join([str(t.date()), " ", str(t.time()), " ", str(t.tzname())])
-        except:
+            tt = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
+            tt = tt.replace(microsecond=0)
+            tt = tt.astimezone(tz.gettz('America/New_York'))
+            return "".join([str(tt.date()), " ", str(tt.time()), " ", str(tt.tzname())])
+        except Exception as e:
+            logger.warn(f"Cannot convert UTC datetime {t} to US/Eastern datetime (not fatal).")
+            logger.warn(e)
             return ""
 
-    @staticmethod
-    def convert_time_t_to_useastern_datetime(timet: int) -> str:
+    def convert_time_t_to_useastern_datetime(self, time_t: int) -> str:
         try:
+            if not isinstance(time_t, int):
+                time_t = int(time_t)
             t = time.localtime(time_t)
             t = time.strftime('%Y-%m-%dT%H:%M:%S.000%z', t)
-            return convert_utc_datetime_to_useastern_datetime(t)
-        except:
+            return self.convert_utc_datetime_to_useastern_datetime(t)
+        except Exception as e:
+            logger.warn(f"Cannot convert time_t {time_t} to US/Eastern datetime (not fatal).")
+            logger.warn(e)
             return ""
 
     def ping_elasticsearch(self, env_name: str) -> bool:
@@ -487,8 +503,9 @@ class AppUtilsCore:
             return False
 
     def ping_sqs(self) -> bool:
-        sqs_url = self.sqs.get_sqs_queue().url
+        sqs_url = ""
         try:
+            sqs_url = self.sqs.get_sqs_queue().url
             sqs_attributes = self.sqs.get_sqs_attributes(sqs_url)
             return (sqs_attributes is not None)
         except Exception as e:
@@ -735,25 +752,25 @@ class AppUtilsCore:
         html_resp = Response('Foursight viewing suite')
         html_resp.headers = {'Content-Type': 'text/html'}
         template = self.jin_env.get_template('info.html')
-        env_name = os.environ.get("ENV_NAME")
+      # env_name = os.environ.get("ENV_NAME")
         stage_name = self.stage.get_stage()
         environment_names = {
-            "Environment Name:": env_name,
-            "Environment Name (Full):": full_env_name(env_name),
-            "Environment Name (Short):": short_env_name(env_name),
-            "Environment Name (Inferred):": infer_foursight_from_env(envname=env_name),
+            "Environment Name:": environ,
+            "Environment Name (Full):": full_env_name(environ),
+            "Environment Name (Short):": short_env_name(environ),
+            "Environment Name (Inferred):": infer_foursight_from_env(envname=environ),
             "Environment Name List:": sorted(self.environment.list_environment_names()),
             "Environment Name List (Unique):": sorted(self.environment.list_unique_environment_names())
         }
         bucket_names = {
             "Environment Bucket Name:": self.environment.get_env_bucket_name(),
-            "Foursight Bucket Name:": get_foursight_bucket(envname=env_name, stage=stage_name),
+            "Foursight Bucket Name:": get_foursight_bucket(envname=environ, stage=stage_name),
             "Foursight Bucket Prefix:": get_foursight_bucket_prefix()
         }
         gac_name = get_identity_name()
         gac_values = self.sorted_dict(obfuscate_dict(get_identity_secrets()))
         environment_and_bucket_info = self.sorted_dict(obfuscate_dict(
-                                        self.environment.get_environment_and_bucket_info(env_name, stage_name)))
+                                        self.environment.get_environment_and_bucket_info(environ, stage_name)))
         declared_data = self.sorted_dict(EnvUtils.declared_data())
         dcicutils_version = pkg_resources.get_distribution('dcicutils').version
         foursight_core_version = pkg_resources.get_distribution('foursight-core').version
@@ -767,12 +784,12 @@ class AppUtilsCore:
         }
         resources = {
             "Foursight Server:": socket.gethostname(),
-            "Portal Server:": self.get_portal_url(env_name, stage_name),
+            "Portal Server:": self.get_portal_url(environ, stage_name),
             "ElasticSearch Server:": self.host,
             "RDS Server:": os.environ["RDS_HOSTNAME"],
             "SQS Server:": self.sqs.get_sqs_queue().url,
         }
-        aws_credentials = self.get_obfuscated_credentials_info(env_name, stage_name)
+        aws_credentials = self.get_obfuscated_credentials_info(environ, stage_name)
         aws_account_number = aws_credentials.get("AWS Account Number:")
         os_environ = self.sorted_dict(obfuscate_dict(dict(os.environ)))
         request_dict = request.to_dict()
@@ -781,7 +798,7 @@ class AppUtilsCore:
             request=request,
             version=self.get_app_version(),
             package=self.APP_PACKAGE_NAME,
-            env=env_name,
+            env=environ,
             domain=domain,
             context=context,
             environments=sorted(self.environment.list_unique_environment_names()),
@@ -789,7 +806,7 @@ class AppUtilsCore:
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
-            auth0_client_id=self.get_auth0_client_id(env_name, stage_name),
+            auth0_client_id=self.get_auth0_client_id(environ, stage_name),
             aws_credentials=aws_credentials,
             aws_account_number=aws_account_number,
             main_title=self.html_main_title,
@@ -806,8 +823,8 @@ class AppUtilsCore:
             identity_name=gac_name,
             identity_secrets=gac_values,
             resources=resources,
-            ping_portal=self.ping_portal(env_name, stage_name),
-            ping_elasticsearch=self.ping_elasticsearch(env_name),
+            ping_portal=self.ping_portal(environ, stage_name),
+            ping_elasticsearch=self.ping_elasticsearch(environ),
             ping_sqs=self.ping_sqs(),
             versions=versions,
             os_environ=os_environ
