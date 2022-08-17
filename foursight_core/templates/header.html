@@ -239,7 +239,7 @@
                     <span class="dropdown">
                         <b class="dropdown-button" style="color:#143c53" title="Environment: {{env}}">{{env.upper()}}</b>
                         <span class="dropdown-content">
-                            {% for environment in ['abc', 'supertest', 'def'] %}
+                            {% for environment in environments %}
                                 {% if environment == env %}
                                     <b>{{environment}}</b>
                                 {% else %}
