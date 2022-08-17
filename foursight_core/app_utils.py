@@ -157,18 +157,37 @@ class AppUtilsCore:
     def is_running_locally(self, request_dict):
         return request_dict.get('context', {}).get('identity', {}).get('sourceIp', '') == "127.0.0.1"
 
-    def get_email_from_jwt_token_cookie(self, request_dict):
+    def get_logged_in_user_info_from_jwt_token_cookie(self, request_dict):
+        email_address = ""
+        first_name = ""
+        last_name = ""
+        issuer = ""
+        subject = ""
+        audience = ""
+        issued_time = ""
+        expiration_time = ""
         try:
             jwt_token = self.get_jwt(request_dict)
             if jwt_token:
                 options = {"verify_signature": False, "verify_aud": False}
                 algorithms = ["HS256"]
                 jwt_decoded = jwt.decode(jwt_token, 'secret', algorithms=algorithms, options=options)
-                return jwt_decoded.get("email") if jwt_decoded else ""
+                if jwt_decoded:
+                    email_address = jwt_decoded.get("email")
+                    iss = jwt_decoded.get("iss")
+                    if iss:
+                        name = jwt_decoded.get(iss + "name")
+                        if name:
+                            first_name = name.get("name_first")
+                            last_name = name.get("name_last")
+                    subject = jwt_decoded.get("sub")
+                    audience = jwt_decoded.get("aud")
+                    issued_time = convert_time_t_to_useastern_datetime(jwt_decoded.get("iat"))
+                    expiration_time = convert_time_t_to_useastern_datetime(jwt_decoded.get("exp"))
         except Exception as e:
-            logger.warn("Cannot get email from JWT token (not fatal - just for Foursight UI display).")
+            logger.warn("Cannot get logged in user info from JWT token (not fatal - just for Foursight UI display).")
             logger.warn(e)
-        return ""
+        return {"email_address": email_address, "first_name": first_name, "last_name": last_name, "subject": subject, "audience": audience, "issued_time": issued_time, "expiration_time": expiration_time}
 
     def get_portal_url(self, env_name: str, stage_name: str) -> str:
         if not self.portal_url:
@@ -309,11 +328,6 @@ class AppUtilsCore:
         context = '/api/' if request_dict.get('context', {}).get('path', '').startswith('/api/') else '/'
         return domain, context
 
-    def get_base_path(self, request_dict, context):
-        # TODO/dmichaels/2022-08-03: Have not been able to figure out where/how it is that when running
-        # in production the base path is '/api' and running in locally it is '/'.
-        return "api/" if not self.is_running_locally(request_dict) and "api" not in context else ""
-
     @classmethod
     def forbidden_response(cls, context="/"):
         sample_page = context + 'view/<environment>'
@@ -438,11 +452,23 @@ class AppUtilsCore:
             return {}
 
     @staticmethod
-    def convert_utc_datetime_string_to_local_datetime_string(t: str) -> str:
-        t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
-        t = t.replace(microsecond=0)
-        t = t.astimezone(tz.gettz('America/New_York'))
-        return "".join([str(t.date()), " ", str(t.time()), " ", str(t.tzname())])
+    def convert_utc_datetime_to_useastern_datetime(t: str) -> str:
+        try:
+            t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
+            t = t.replace(microsecond=0)
+            t = t.astimezone(tz.gettz('America/New_York'))
+            return "".join([str(t.date()), " ", str(t.time()), " ", str(t.tzname())])
+        except:
+            return ""
+
+    @staticmethod
+    def convert_time_t_to_useastern_datetime(timet: int) -> str:
+        try:
+            t = time.localtime(time_t)
+            t = time.strftime('%Y-%m-%dT%H:%M:%S.000%z', t)
+            return convert_utc_datetime_to_useastern_datetime(t)
+        except:
+            return ""
 
     def ping_elasticsearch(self, env_name: str) -> bool:
         try:
@@ -532,9 +558,10 @@ class AppUtilsCore:
                 lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
                 lambda_last_modified_tag = lambda_tags.get("last_modified")
                 if lambda_last_modified_tag:
-                    lambda_last_modified = self.convert_utc_datetime_string_to_local_datetime_string(lambda_last_modified_tag)
+                    lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified_tag)
                 else:
-                    lambda_last_modified = self.convert_utc_datetime_string_to_local_datetime_string(lambda_info["Configuration"]["LastModified"])
+                    lambda_last_modified = lambda_info["Configuration"]["LastModified"]
+                    lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified)
                 if lambda_current:
                     self.lambda_last_modified = lambda_last_modified
                 return lambda_last_modified
@@ -674,12 +701,12 @@ class AppUtilsCore:
             lambda_deployed_time=self.get_lambda_last_modified(),
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
-            logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
+            logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
             auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
             context=context,
-            base_path=self.get_base_path(request_dict, context),
+            environments=sorted(self.environment.list_unique_environment_names()),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
@@ -695,13 +722,13 @@ class AppUtilsCore:
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
     # dmichaels/2020-08-01:
-    # Added /info for debugging/troubleshooting purposes.
-    def view_info(self, request, is_admin=False, domain="", context="/"):
+    # Added /info/{environ} for debugging/troubleshooting purposes.
+    def view_info(self, request, environ, is_admin=False, domain="", context="/"):
         """
-        Displays and /info page containing sundry info about the running Foursight instance.
+        Displays a /{environ}/info page containing sundry info about the running Foursight instance.
         Any sensitive data is obfuscated. This is a protected route.
         :param domain: Current FS domain, needed for Auth0 redirect.
-        :param context: Current context, usually "/api/" or "/" (some confusion running locally; see get_base_path).
+        :param context: Current context, usually "/api/" or "/".
         :return: Response with html content.
         """
 
@@ -757,11 +784,11 @@ class AppUtilsCore:
             env=env_name,
             domain=domain,
             context=context,
-            base_path=self.get_base_path(request_dict, context),
+            environments=sorted(self.environment.list_unique_environment_names()),
             stage=stage_name,
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
-            logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
+            logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
             auth0_client_id=self.get_auth0_client_id(env_name, stage_name),
             aws_credentials=aws_credentials,
             aws_account_number=aws_account_number,
@@ -839,12 +866,12 @@ class AppUtilsCore:
             lambda_deployed_time=self.get_lambda_last_modified(),
             domain=domain,
             context=context,
+            environments=sorted(self.environment.list_unique_environment_names()),
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
-            logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
+            logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
             auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
             aws_account_number=self.get_aws_account_number(),
-            base_path=self.get_base_path(request_dict, context),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
@@ -997,12 +1024,12 @@ class AppUtilsCore:
             stage=self.stage.get_stage(),
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
-            logged_in_as=self.get_email_from_jwt_token_cookie(request_dict),
+            logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
             auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
             context=context,
-            base_path=self.get_base_path(request_dict, context),
+            environments=sorted(self.environment.list_unique_environment_names()),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=favicon,

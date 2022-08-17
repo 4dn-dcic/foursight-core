@@ -173,21 +173,21 @@
                 <div class='row'>
                     <div class="col-sm-4">
                         <div style="padding:0;" align="left">
-                            <b>Lambda Deployed At:</b>
+                            <b>App Deployed At:</b>
                         </div>
                     </div>
                     <div class="col-sm-8" style="word-wrap:break-word;" align="left">
-                            {{lambda_deployed_time}}
+                        {{lambda_deployed_time}}
                     </div>
                 </div>
                 <div class='row'>
                     <div class="col-sm-4">
                         <div style="padding:0;" align="left">
-                            <b>Application Launched At:</b>
+                            <b>App Launched At:</b>
                         </div>
                     </div>
                     <div class="col-sm-8" style="word-wrap:break-word;" align="left">
-                            {{init_load_time}}
+                        {{init_load_time}}
                     </div>
                 </div>
                 <div class='row'>
@@ -197,27 +197,7 @@
                         </div>
                     </div>
                     <div class="col-sm-8" style="word-wrap:break-word;" align="left">
-                            {{load_time}}
-                    </div>
-                </div>
-                <div class='row'>
-                    <div class="col-sm-4">
-                        <div style="padding:0;" align="left">
-                            <b>Domain:</b>
-                        </div>
-                    </div>
-                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
-                            {{domain}}
-                    </div>
-                </div>
-                <div class='row'>
-                    <div class="col-sm-4">
-                        <div style="padding:0;" align="left">
-                            <b>Context:</b>
-                        </div>
-                    </div>
-                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
-                            {{context}}
+                        {{load_time}}
                     </div>
                 </div>
                 <div class='row'>
@@ -227,7 +207,7 @@
                         </div>
                     </div>
                     <div class="col-sm-8" style="word-wrap:break-word;" align="left">
-                            {{package}}
+                        {{package}}
                     </div>
                 </div>
                 <div class='row'>
@@ -237,10 +217,129 @@
                         </div>
                     </div>
                     <div class="col-sm-8" style="word-wrap:break-word;" align="left">
-                            {{stage}}
+                        {{stage}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Environment:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{env}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Domain:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{domain}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Context:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{context}}
                     </div>
                 </div>
             </h5>
         </div>
     </ul>
+    {% if not is_running_locally %}
+    <ul class="top-level-list">
+        <b>Logged In User Info</b>
+        <div class="info boxstyle">
+            <h5 style='margin:10px 5px 10px 5px;'}}>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Email:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["email_address"]}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>First Name:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["first_name"]}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Last Name:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["last_name"]}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Issuer:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["issuer"]}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Subject:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["subject"]}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Audience:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["audience"]}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Issued At:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["issued_time"]}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Expires At:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["expiration_time"]}}
+                    </div>
+                </div>
+            </h5>
+        </div>
+    </ul>
+    {% endif %}
 {% endblock %}

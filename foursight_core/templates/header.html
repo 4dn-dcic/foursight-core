@@ -145,6 +145,25 @@
         margin-left: 20px;
         margin-bottom: 5px;
     }
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        padding: 12px 16px;
+        z-index: 1;
+    }
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+    .foo:hover span{
+        display: block;
+    }
     </style>
 </head>
 <body>
@@ -183,13 +202,13 @@
                 <td width="400" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
                         {% if request.path.endswith('/info') %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;|&nbsp;
-                            <a href="{{context + 'info'}}" style="text-decoration:none;color:#263A48;"><b>INFO</b></a>
+                            <a href="{{context + 'info/' + env}}" style="text-decoration:none;color:#263A48;"><b>INFO</b></a>
                         {% elif request.path.endswith('/view/{environ}') %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;color:#263A48;"><b>HOME</b></a> &nbsp;|&nbsp;
-                            <a href="{{context + 'info'}}" style="text-decoration:none;">INFO</a>
+                            <a href="{{context + 'info/' + env}}" style="text-decoration:none;">INFO</a>
                         {% else %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;|&nbsp;
-                            <a href="{{context + 'info'}}" style="text-decoration:none;">INFO</a>
+                            <a href="{{context + 'info/' + env}}" style="text-decoration:none;">INFO</a>
                         {% endif %}
                         &nbsp;|&nbsp; <a target="_blank" style="text-decoration:none;" href="https://{{aws_account_number}}.signin.aws.amazon.com/console/">AWS</a>
                 </td>
@@ -197,6 +216,11 @@
                     <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{version}}/"><b title="Version of: foursight-cgap" style="text-decoration:none;color:#263A48;">{{version}}</b></a>
                 </td>
                 <td width="400" style="padding-right:10pt;padding-top:2pt;padding-bottom:1pt;white-space:nowrap;" align="right">
+                    <select class="foo" style="border:0;background-color:inherit;font-weight:bold;font-family:inherit;hover:display;" name="environments" onchange="this.options[this.selectedIndex].value && (window.location = this.options[this.selectedIndex].value);" selected="def">
+                        {% for environment in ['abc','cgap-supertest','ghi'] %}
+                            <option value="/info/{{environment}}" {% if environment == env %} selected {% endif %}>{{environment.upper()}}</option>
+                        {% endfor %}     
+                    </select>
                     {% if is_running_locally %}
                         <b title="Running locally." style="color:purple;">LOCAL</b> &nbsp;|&nbsp;
                     {% endif %}
@@ -208,8 +232,8 @@
                         <b title="Deployment stage: {{stage}}">{{stage}}</b> &nbsp;|&nbsp;
                     {% endif %}
                     {% if is_admin %}
-                        {% if logged_in_as %}
-                            <b style="color:darkblue;" title="Logged in as.">{{logged_in_as}}</b>
+                        {% if logged_in_as["email_address"] %}
+                        <b title="Logged in as {{logged_in_as['first_name']}} {{logged_in_as['last_name']}}<br />{{logged_in_as['email_address']}}" style="color:darkblue;" title="Logged in as.">{{logged_in_as["email_address"]}}</b>
                         {% else %}
                             <b style="color:darkblue;">ADMIN</b>
                         {% endif %}

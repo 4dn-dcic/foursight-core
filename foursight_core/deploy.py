@@ -150,15 +150,20 @@ class Deploy(object):
         print(''.join(['Writing: ', filename]))
         with open(filename, 'w') as config_file:
             config_file.write(json.dumps(cls.CONFIG_BASE))
+        print(''.join(['Done writing: ', filename]))
         # export poetry into requirements
+        print('Executing: poetry export -f requirements --without-hashes -o requirements.txt')
         subprocess.check_call(
             ['poetry', 'export', '-f', 'requirements.txt', '--without-hashes', '-o', 'requirements.txt'])
+        print('Done executing: poetry export -f requirements --without-hashes -o requirements.txt')
 
     @classmethod
     def build_config_and_deploy(cls, stage):
         cls.build_config(stage)
         # actually deploy
+        print(f'Executing: chalice deploy --stage {stage}')
         subprocess.call(['chalice', 'deploy', '--stage', stage])
+        print(f'Done executing: chalice deploy --stage {stage}')
 
     @classmethod
     # dmichaels/2022-07-22/C4-826:
@@ -201,7 +206,9 @@ class Deploy(object):
         flags = ['--stage', stage, '--pkg-format', 'cloudformation', '--template-format', 'yaml']
         if merge_template:
             flags.extend(['--merge-template', merge_template])
+        print(f"Executing: chalice package {' '.join(flags)} {output_file}")
         subprocess.call(['chalice', 'package', *flags, output_file])
+        print(f"Done executing: chalice package {' '.join(flags)} {output_file}")
 
 
 def main():
