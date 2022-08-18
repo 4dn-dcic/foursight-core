@@ -47,17 +47,10 @@
                                 &nbsp;<b style="font-size:13pt;color:red;">&#x2717;</b>
                             {% endif %}
                         {% elif key == "ElasticSearch Server:" %}
-                            <span style="cursor:copy;font-family:monospace;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>
-                            {% if ping_elasticsearch %}
-                                &nbsp;<b style="font-size:13pt;color:green;">&#x2713;</b>
-                            {% else %}
-                                &nbsp;<b style="font-size:13pt;color:red;">&#x2717;</b>
+                            <span style="cursor:copy;font-family:monospace;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>{% if ping_elasticsearch %}&nbsp;<b style="font-size:13pt;color:green;">&#x2713;</b>{% else %}&nbsp;<b style="font-size:13pt;color:red;">&#x2717;</b>
                             {% endif %}
                         {% elif key == "SQS Server:" %}
-                            <span style="cursor:copy;font-family:monospace;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>
-                            {% if ping_sqs %}
-                                &nbsp;<b style="font-size:13pt;color:green;">&#x2713;</b>
-                            {% else %}
+                            <span style="cursor:copy;font-family:monospace;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>{% if ping_sqs %}&nbsp;<b style="font-size:13pt;color:green;">&#x2713;</b>{% else %}
                                 &nbsp;<b style="font-size:13pt;color:red;">&#x2717;</b>
                             {% endif %}
                         {% else %}
@@ -358,6 +351,16 @@
                     <div class="col-sm-4">
                         <div style="padding:0;" align="left">
                             <b>Path:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{request.context.path}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Endpoint:</b>
                         </div>
                     </div>
                     <div class="col-sm-8" style="word-wrap:break-word;" align="left">

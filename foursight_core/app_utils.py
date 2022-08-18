@@ -780,6 +780,9 @@ class AppUtilsCore:
         return Response(status_code=302, body=json.dumps(resp_headers),
                         headers=resp_headers)
 
+    def get_unique_full_environment_names(self):
+        return sorted([full_env_name(env) for env in self.environment.list_unique_environment_names()])
+
     def view_foursight(self, request, environ, is_admin=False, domain="", context="/"):
         """
         View a template of all checks from the given environment(s).
@@ -851,7 +854,7 @@ class AppUtilsCore:
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
             context=context,
-            environments=sorted(self.environment.list_unique_environment_names()),
+            environments=self.get_unique_full_environment_names(),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
@@ -929,7 +932,7 @@ class AppUtilsCore:
             env=environ,
             domain=domain,
             context=context,
-            environments=sorted(self.environment.list_unique_environment_names()),
+            environments=self.get_unique_full_environment_names(),
             stage=stage_name,
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
@@ -981,7 +984,7 @@ class AppUtilsCore:
             env=environ,
             domain=domain,
             context=context,
-            environments=sorted(self.environment.list_unique_environment_names()),
+            environments=self.get_unique_full_environment_names(),
             stage=stage_name,
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
@@ -1052,7 +1055,7 @@ class AppUtilsCore:
             lambda_deployed_time=self.get_lambda_last_modified(),
             domain=domain,
             context=context,
-            environments=sorted(self.environment.list_unique_environment_names()),
+            environments=self.get_unique_full_environment_names(),
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
@@ -1215,7 +1218,7 @@ class AppUtilsCore:
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
             context=context,
-            environments=sorted(self.environment.list_unique_environment_names()),
+            environments=self.get_unique_full_environment_names(),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=favicon,

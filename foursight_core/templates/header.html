@@ -171,17 +171,15 @@
       text-decoration: none;
       display: block;
     }
-    .dropdown-content b {
+    .dropdown-content span {
       text-align: left;
       color: black;
-      background-color: inherit;
       padding: 4px 80px 4px 8px;
       text-decoration: none;
       display: block;
-      font-weight: bold;
+      cursor: default;
     }
-    .dropdown-content a:hover {background-color: #365e75; color:white; cursor:pointer;}
-    .dropdown-content b:hover {background-color: #143c53; color:yellow; cursor:pointer;}
+    .dropdown-content a:hover {background-color: #365e75; color:yellow; cursor:pointer;}
     .dropdown:hover .dropdown-content {display: block;}
     .dropdown:hover .dropdown-button {color: black;}
     </style>
@@ -190,7 +188,7 @@
 <div>
     <div width="100%" height="70" style="background:#143c53;">
         <table width="100%">
-                <tr title="{% if lambda_deployed_time %} App Deployed: {{lambda_deployed_time}}&#013;{% endif %}App Launched: {{init_load_time}}&#013;Page Loaded: {{load_time}}">
+                <tr title="{% if lambda_deployed_time %}App Deployed: {{lambda_deployed_time}}&#013;{% endif %}App Launched: {{init_load_time}}&#013;Page Loaded: {{load_time}}">
                 <td width="400" style="padding-left:2pt;white-space:nowrap;">
                     <a href={{context + 'view/' + env}}>
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
@@ -236,16 +234,15 @@
                     <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{version}}/"><b title="Version of: foursight-cgap" style="text-decoration:none;color:#263A48;">{{version}}</b></a>
                 </td>
                 <td width="400" style="padding-right:10pt;padding-top:2pt;padding-bottom:1pt;white-space:nowrap;" align="right" nowrap="1">
-                    {% if environments|length > 1 %}
+                    {% if environments|length > 0 %} <!-- xyzzy -->
                         <span class="dropdown">
-                            <b class="dropdown-button" style="color:#143c53" title="Environment: {{env}}">{{env.upper()}}</b>
+                            <b class="dropdown-button" onclick="this.nextSibling.display = 'block';" onmouseover="this.style.display = 'block';" style="color:#143c53" title="Environment: {{env}}">{{env.upper()}}</b>
                             <span class="dropdown-content">
                                 {% for environment in environments %}
-                                    {% if environment == env %}
-                                        <b onclick="this.parentElement.style.display = 'none'; return true;">{{environment}}</b>
+                                    {% if environment.upper() == env.upper() %}
+                                        <span>{{environment}}&nbsp;&nbsp;&#x2713;</span>
                                     {% else %}
-                                    <!-- <a onclick="this.parentElement.style.display = 'none'; return true;" href="{{context + 'info/' + environment}}" onclick="this.style.color = 'yellow'; this.style.backgroundColor = '#143c53'; this.style.fontWeight = 'bold';">{{environment}}</a> -->
-                                        <a onclick="this.parentElement.style.display = 'none'; return true;" href="{{request.path.replace('{environ}', env)}}" onclick="this.style.color = 'yellow'; this.style.backgroundColor = '#143c53'; this.style.fontWeight = 'bold';">{{environment}}</a>
+                                        <a href="{{request.context.path.replace('/' + env, '/' + environment)}}" onclick="this.style.color = 'yellow'; this.style.backgroundColor = '#143c53'; this.style.fontWeight = 'bold';">{{environment}}</a>
                                     {% endif %}
                                 {% endfor %}     
                             </span>
