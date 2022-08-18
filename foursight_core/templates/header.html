@@ -190,7 +190,7 @@
 <div>
     <div width="100%" height="70" style="background:#143c53;">
         <table width="100%">
-                <tr title="Lambda deployed time: {{lambda_deployed_time}} / App launched time: {{init_load_time}} / Page loaded time: {{load_time}}">
+                <tr title="{% if lambda_deployed_time %} App Deployed: {{lambda_deployed_time}}&#013;{% endif %}App Launched: {{init_load_time}}&#013;Page Loaded: {{load_time}}">
                 <td width="400" style="padding-left:2pt;white-space:nowrap;">
                     <a href={{context + 'view/' + env}}>
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
@@ -200,17 +200,17 @@
                         <span style="font-family:arial;font-size:18pt;color:white;">
                             <span style="color:default;">{{main_title}}</span>
                             {% if stage == 'dev' %}
-                                <span style="position:relative;left:4px;top:2px;font-size:23pt;color:lightgreen;">&#x269B;</span>
+                                <span title="Stage is DEV." style="position:relative;left:4px;top:2px;font-size:23pt;color:lightgreen;">&#x269B;</span>
                             {% endif %}
                             {% if is_running_locally %}
-                                <span style="position:relative;left:4px;top:2px;font-size:23pt;color:lightgreen;">&#x2299;</span>
+                                <span title="Running locally." style="position:relative;left:4px;top:2px;font-size:23pt;color:lightgreen;">&#x2299;</span>
                             {% endif %}
                         </span>
                 </td>
                 <td width="400" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;" align="right">
                     <small>{{load_time}}</small>
                     &nbsp;<b>|</b>&nbsp;
-                    <a style="text-decoration:none;color:#D6EAF8;" href="{{context + 'reload_lambda/current'}}" title="Click to relaunch this app." onclick="if (window.confirm('Do you want to relaunch this app?')){return true;}else{event.stopPropagation(); event.preventDefault()}">&#x2318;</a>
+                    <a style="text-decoration:none;color:#D6EAF8;" href="{{context + 'reload_lambda/' + env + '/current'}}" title="Click to relaunch this app." onclick="if (window.confirm('Do you want to relaunch this app?')){return true;}else{event.stopPropagation(); event.preventDefault()}">&#x2318;</a>
                     {% if not is_running_locally and is_admin %}
                         &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:#D6EAF8;" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
                     {% endif %}
@@ -244,7 +244,8 @@
                                     {% if environment == env %}
                                         <b onclick="this.parentElement.style.display = 'none'; return true;">{{environment}}</b>
                                     {% else %}
-                                        <a onclick="this.parentElement.style.display = 'none'; return true;" href="{{context + 'info/' + environment}}" onclick="this.style.color = 'yellow'; this.style.backgroundColor = '#143c53'; this.style.fontWeight = 'bold';">{{environment}}</a>
+                                    <!-- <a onclick="this.parentElement.style.display = 'none'; return true;" href="{{context + 'info/' + environment}}" onclick="this.style.color = 'yellow'; this.style.backgroundColor = '#143c53'; this.style.fontWeight = 'bold';">{{environment}}</a> -->
+                                        <a onclick="this.parentElement.style.display = 'none'; return true;" href="{{request.path.replace('{environ}', env)}}" onclick="this.style.color = 'yellow'; this.style.backgroundColor = '#143c53'; this.style.fontWeight = 'bold';">{{environment}}</a>
                                     {% endif %}
                                 {% endfor %}     
                             </span>
@@ -262,7 +263,7 @@
                     {% endif %}
                     {% if is_admin %}
                         {% if logged_in_as["email_address"] %}
-                        <b title="Logged in as {{logged_in_as['first_name']}} {{logged_in_as['last_name']}}<br />{{logged_in_as['email_address']}}" style="color:darkblue;" title="Logged in as.">{{logged_in_as["email_address"]}}</b>
+                        <a href="{{context + 'view/' + env + '/user/' + logged_in_as['email_address']}}" style="text-decoration:none;"><b title="Logged in as {{logged_in_as['first_name']}} {{logged_in_as['last_name']}}&#013;{{logged_in_as['email_address']}}" style="color:darkblue;" title="Logged in as.">{{logged_in_as["email_address"]}}</b>
                         {% else %}
                             <b style="color:darkblue;">ADMIN</b>
                         {% endif %}

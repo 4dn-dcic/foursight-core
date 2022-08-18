@@ -860,10 +860,10 @@ class AppUtilsCore:
         html_resp.status_code = 200
         return self.process_response(html_resp)
 
-    def view_reload_lambda(self, request, is_admin=False, domain="", context="/", lambda_name: str = None):
+    def view_reload_lambda(self, request, environ, is_admin=False, domain="", context="/", lambda_name: str = None):
         self.reload_lambda(lambda_name)
         time.sleep(3)
-        resp_headers = {'Location': f"{context}info"}
+        resp_headers = {'Location': f"{context}info/{environ}"}
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
     # dmichaels/2020-08-01:
@@ -962,7 +962,43 @@ class AppUtilsCore:
         return self.process_response(html_resp)
 
     def view_user(self, request, environ, is_admin=False, domain="", context="/", email=None):
-        print("foursight_core.view_user: TODO")
+        html_resp = Response('Foursight viewing suite')
+        html_resp.headers = {'Content-Type': 'text/html'}
+        request_dict = request.to_dict()
+        stage_name = self.stage.get_stage()
+        users = []
+        for this_email in email.split(","):
+            try:
+                this_user = ff_utils.get_metadata('users/' + this_email.lower(), ff_env=full_env_name(environ), add_on='frame=object')
+                users.append({"email": this_email, "record": this_user})
+            except Exception as e:
+                users.append({"email": this_email, "record": {"error": str(e)}})
+        template = self.jin_env.get_template('user.html')
+        html_resp.body = template.render(
+            request=request,
+            version=self.get_app_version(),
+            package=self.APP_PACKAGE_NAME,
+            env=environ,
+            domain=domain,
+            context=context,
+            environments=sorted(self.environment.list_unique_environment_names()),
+            stage=stage_name,
+            is_admin=is_admin,
+            is_running_locally=self.is_running_locally(request_dict),
+            logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
+            users=users,
+            auth0_client_id=self.get_auth0_client_id(environ, stage_name),
+            aws_account_number=self.get_aws_account_number(),
+            main_title=self.html_main_title,
+            favicon=self.get_favicon(),
+            load_time=self.get_load_time(),
+            init_load_time=self.init_load_time,
+            lambda_deployed_time=self.get_lambda_last_modified(),
+            running_checks='0',
+            queued_checks='0'
+        )
+        html_resp.status_code = 200
+        return self.process_response(html_resp)
         pass
 
     def view_foursight_check(self, request, environ, check, uuid, is_admin=False, domain="", context="/"):
