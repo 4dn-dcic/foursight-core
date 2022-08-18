@@ -97,6 +97,7 @@ class AppUtilsCore:
         )
         self.portal_url = None
         self.auth0_client_id = None
+        self.user_record = None
         self.lambda_last_modified = None
 
     @classmethod
@@ -212,6 +213,7 @@ class AppUtilsCore:
         return self.portal_url
 
     def get_auth0_client_id(self, env_name: str, stage_name: str) -> str:
+        logger.warn(f"Fetching auth0 client from portal")
         if not self.auth0_client_id:
             try:
                 portal_url = self.get_portal_url(env_name, stage_name)
@@ -222,6 +224,7 @@ class AppUtilsCore:
                 logger.error(f"Error fetching auth0 client from portal (using default value): {auth0_config_url}")
                 logger.error(e)
                 self.auth0_client_id = "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB"
+        logger.warn(f"Done fetching auth0 client from portal ({self.auth0_client_id}).")
         return self.auth0_client_id
 
     def check_authorization(self, request_dict, env=None):
@@ -255,14 +258,132 @@ class AppUtilsCore:
                 for env_info in self.init_environments(env).values():
                     user_res = ff_utils.get_metadata('users/' + payload.get('email').lower(),
                                                      ff_env=env_info['ff_env'], add_on='frame=object')
-                    logger.error(env_info)
-                    logger.error(user_res)
-                    if not ('admin' in user_res['groups'] and payload.get('email_verified')):
+                    logger.warn("foursight_core.check_authorization: env_info ...")
+                    logger.warn(env_info)
+                    logger.warn("foursight_core.check_authorization: user_res ...")
+                    logger.warn(user_res)
+                    logger.warn("foursight_core.check_authorization: payload ...")
+                    logger.warn(payload)
+                    #
+                    # The following tries to referent 'groups' in the JSON returned by the get_metadata call above,
+                    # but there is no such element. The JSON we get looks like this:
+                    # {
+                    #     "email": "david_michaels@hms.harvard.edu",
+                    #     "status": "current",
+                    #     "timezone": "US/Eastern",
+                    #     "last_name": "Michaels",
+                    #     "first_name": "David",
+                    #     "date_created": "2022-05-09T19:29:04.053460+00:00",
+                    #     "subscriptions": [],
+                    #     "schema_version": "1",
+                    #     "was_unauthorized": true,
+                    #     "@id": "/users/04bf103b-5a61-4ff9-96ac-e8d104f8b7ee/",
+                    #     "@type": [
+                    #         "User",
+                    #         "Item"
+                    #     ],
+                    #     "uuid": "04bf103b-5a61-4ff9-96ac-e8d104f8b7ee",
+                    #     "principals_allowed": {
+                    #         "view": [
+                    #             "group.admin",
+                    #             "group.read-only-admin",
+                    #             "remoteuser.EMBED",
+                    #             "remoteuser.INDEXER",
+                    #             "userid.04bf103b-5a61-4ff9-96ac-e8d104f8b7ee"
+                    #         ],
+                    #         "edit": [
+                    #             "group.admin",
+                    #             "userid.04bf103b-5a61-4ff9-96ac-e8d104f8b7ee"
+                    #         ]
+                    #     },
+                    #     "display_title": "David Michaels",
+                    #     "external_references": [],
+                    #     "title": "David Michaels",
+                    #     "contact_email": "david_michaels@hms.harvard.edu"
+                    # }
+                    #
+                    # Looks like we want to check principals_allowed/{view,edit} for 'group.admin' ...
+                    # For now only check the 'groups' element if present otherwise ignore that part of the check below.
+                    #
+                    # And BTW here is another sample record from the same source:
+                    # {
+                    #       "lab": "/labs/4dn-dcic-lab/",
+                    #       "tags": [
+                    #            "skip_oh_synchronization"
+                    #        ],
+                    #        "email": "kent_pitman@hms.harvard.edu",
+                    #        "groups": [
+                    #            "admin"
+                    #        ],
+                    #        "status": "current",
+                    #        "timezone": "US/Eastern",
+                    #        "job_title": "Software Developer",
+                    #        "last_name": "Pitman",
+                    #        "first_name": "Kent",
+                    #        "submits_for": [
+                    #            "/labs/4dn-dcic-lab/"
+                    #        ],
+                    #        "date_created": "2020-01-06T21:24:22.260908+00:00",
+                    #        "submitted_by": "/users/1a12362f-4eb6-4a9c-8173-776667226988/",
+                    #        "last_modified": {
+                    #            "modified_by": "/users/986b362f-4eb6-4a9c-8173-3ab267307e3a/",
+                    #            "date_modified": "2021-03-04T21:20:45.428320+00:00"
+                    #        },
+                    #        "subscriptions": [
+                    #            {
+                    #                "url": "?submitted_by.uuid=1a12362f-4eb6-4a9c-8173-776667226962&sort=-date_created",
+                    #                "title": "My submissions"
+                    #            },
+                    #            {
+                    #                "url": "?lab.uuid=828cd4fe-ebb0-4b36-a94a-d2e3a36cc989&sort=-date_created",
+                    #                "title": "Submissions for my lab"
+                    #            }
+                    #        ],
+                    #        "schema_version": "1",
+                    #        "viewing_groups": [
+                    #            "4DN"
+                    #        ],
+                    #        "@id": "/users/1a12362f-4eb6-4a9c-8173-776667226962/",
+                    #        "@type": [
+                    #            "User",
+                    #            "Item"
+                    #        ],
+                    #        "uuid": "1a12362f-4eb6-4a9c-8173-776667226962",
+                    #        "principals_allowed": {
+                    #            "view": [
+                    #                "group.admin",
+                    #                "group.read-only-admin",
+                    #                "remoteuser.EMBED",
+                    #                "remoteuser.INDEXER",
+                    #                "userid.1a12362f-4eb6-4a9c-8173-776667226962"
+                    #            ],
+                    #            "edit": [
+                    #                "group.admin",
+                    #                "userid.1a12362f-4eb6-4a9c-8173-776667226962"
+                    #             ]
+                    #        },
+                    #        "display_title": "Kent Pitman",
+                    #        "external_references": [],
+                    #        "title": "Kent Pitman",
+                    #        "contact_email": "kent_pitman@hms.harvard.edu"
+                    # }
+                    #
+                    # if not ('admin' in user_res.get('groups') and payload.get('email_verified')):
+                    #
+                    groups = user_res.get('groups')
+                    if not groups:
+                        logger.warn("foursight_core.check_authorization: No 'groups' element for user record!")
+                    if not ((not groups or 'admin' in groups) and payload.get('email_verified')):
+                        logger.error("foursight_core.check_authorization: Returning False")
                         # if unauthorized for one, unauthorized for all
                         return False
+                self.user_record = user_res
+                logger.warn("foursight_core.check_authorization: Returning True")
                 return True
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error("foursight_core.check_authorization: Exception on check_authorization")
+                logger.error(e)
+        logger.error("foursight_core.check_authorization: Returning False ")
         return False
 
     @classmethod
@@ -487,26 +608,34 @@ class AppUtilsCore:
             return ""
 
     def ping_elasticsearch(self, env_name: str) -> bool:
+        logger.warn(f"foursight_core: Pinging ElasticSearch ({self.host})")
         try:
-            return self.init_connection(env_name).connections["es"].test_connection()
+            response = self.init_connection(env_name).connections["es"].test_connection()
+            logger.warn(f"foursight_core: Done pinging ElasticSearch ({self.host})")
+            return response
         except Exception as e:
             logger.warn(f"Exception pinging ElasticSearch ({self.host}): {e}")
             return False
 
     def ping_portal(self, env_name: str, stage_name: str) -> bool:
-        portal_url = self.get_portal_url(env_name, stage_name)
+        logger.warn(f"foursight_core.ping_portal: Pinging portal")
+        portal_url = ""
         try:
+            portal_url = self.get_portal_url(env_name, stage_name)
             response = requests.get(portal_url, timeout=4)
+            logger.warn(f"foursight_core.ping_portal: Done pinging portal")
             return (response.status_code == 200)
         except Exception as e:
-            logger.warn(f"Exception pinging portal ({portal_url}): {e}")
+            logger.warn(f"foursight_core.ping_portal: Exception pinging portal ({portal_url}): {e}")
             return False
 
     def ping_sqs(self) -> bool:
+        logger.warn(f"foursight_core.ping_portal: Pinging SQS")
         sqs_url = ""
         try:
             sqs_url = self.sqs.get_sqs_queue().url
             sqs_attributes = self.sqs.get_sqs_attributes(sqs_url)
+            logger.warn(f"foursight_core.ping_portal: Done pinging SQS")
             return (sqs_attributes is not None)
         except Exception as e:
             logger.warn(f"Exception pinging SQS ({sqs_url}): {e}")
@@ -585,7 +714,6 @@ class AppUtilsCore:
         except Exception as e:
             logger.warn(f"Error getting lambda last modified time: {lambda_name}")
             logger.warn(e)
-            pass
         return None
 
     # ===== ROUTE RUNNING FUNCTIONS =====
@@ -806,6 +934,7 @@ class AppUtilsCore:
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
+            user_record=self.user_record,
             auth0_client_id=self.get_auth0_client_id(environ, stage_name),
             aws_credentials=aws_credentials,
             aws_account_number=aws_account_number,
@@ -831,6 +960,10 @@ class AppUtilsCore:
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
+
+    def view_user(self, request, environ, is_admin=False, domain="", context="/", email=None):
+        print("foursight_core.view_user: TODO")
+        pass
 
     def view_foursight_check(self, request, environ, check, uuid, is_admin=False, domain="", context="/"):
         """

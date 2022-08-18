@@ -168,7 +168,7 @@
     </ul>
     {% if not is_running_locally %}
     <ul class="top-level-list" title="{{logged_in_as['jwt']}}">
-        <b>Login Info</b>
+        <b>Login Auth0 Info</b>
         <span name="jwt" id="jwt" style="font-size:0;opacity:0;">{{logged_in_as['jwt']}}</span>
         <img onclick="copy_to_clipboard('jwt')" style="cursor:copy;font-family:monospace;position:relative;bottom:2pt;" src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="18" />
         <div class="info boxstyle">
@@ -264,6 +264,13 @@
         </div>
     </ul>
     <ul class="top-level-list">
+        <b>Login User Record</b>
+        <span name="user_record" id="user_record" style="font-size:0;opacity:0;">{{user_record}}</span>
+        <img onclick="copy_to_clipboard('user_record')" style="cursor:copy;font-family:monospace;position:relative;bottom:2pt;" src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="18" />
+       {{json_as_yaml_box(user_record)}}
+    </ul>
+    {% endif %}
+    <ul class="top-level-list">
         <b>Miscellany</b>
         <div class="info boxstyle">
             <h5 style='margin:10px 5px 10px 5px;'}}>
@@ -350,5 +357,4 @@
             </h5>
         </div>
     </ul>
-    {% endif %}
 {% endblock %}
