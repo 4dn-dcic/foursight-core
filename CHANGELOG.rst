@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+1.0.1
+=====
+
+* Make pyproject.toml and poetry.lock consistent.
+
 
 1.0.0
 =====
@@ -29,7 +34,6 @@ Change Log
 =====
 
 Fix Environment.is_valid_environment_name to return true of various environments.
-
 
 
 0.7.4
