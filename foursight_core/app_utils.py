@@ -331,7 +331,7 @@ class AppUtilsCore:
                     #        },
                     #        "subscriptions": [
                     #            {
-                    #                "url": "?submitted_by.uuid=1a12362f-4eb6-4a9c-8173-776667226962&sort=-date_created",
+                    #                "url": "?submitted_by.uuid=1a12362f-4eb6-4a9c-8173-776667226&sort=-date_created",
                     #                "title": "My submissions"
                     #            },
                     #            {
@@ -650,7 +650,7 @@ class AppUtilsCore:
         to accurately get (get_lambda_last_modified), so we store its original value in a lambda tag,
         the updating of which does not update the modified time; so the code (get_lambda_last_modified)
         to get the last modified time of the lambda needs to look first at this tag and take that
-        if it exists before looking at the real last modified time. 
+        if it exists before looking at the real last modified time.
         """
         if not lambda_name or lambda_name.lower() == "current":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
@@ -883,7 +883,7 @@ class AppUtilsCore:
         html_resp = Response('Foursight viewing suite')
         html_resp.headers = {'Content-Type': 'text/html'}
         template = self.jin_env.get_template('info.html')
-      # env_name = os.environ.get("ENV_NAME")
+        # env_name = os.environ.get("ENV_NAME")
         stage_name = self.stage.get_stage()
         environment_names = {
             "Environment Name:": environ,
@@ -972,14 +972,8 @@ class AppUtilsCore:
         users = []
         for this_email in email.split(","):
             try:
-                this_user = ff_utils.get_metadata('users/' + this_email.lower(), ff_env=full_env_name(environ), add_on='frame=object')
-                try:
-                    xyzzy = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000')
-                    print('xyzzy')
-                    print(xyzzy)
-                except Exception as e:
-                    print('xyzzy-error')
-                    print(e)
+                this_user = ff_utils.get_metadata('users/' + this_email.lower(),
+                                                  ff_env=full_env_name(environ), add_on='frame=object')
                 users.append({"email": this_email, "record": this_user})
             except Exception as e:
                 users.append({"email": this_email, "record": {"error": str(e)}})
@@ -1021,12 +1015,18 @@ class AppUtilsCore:
             last_modified = user_record.get("last_modified")
             if last_modified:
                 last_modified = last_modified.get("date_modified")
+            #TODO
+            #roles = []
+            #project_roles = user_record.get("project_roles")
+            #if project_roles:
+            #    role = role.get("date_modified")
             users.append({
                 "email_address": user_record.get("email"),
                 "first_name": user_record.get("first_name"),
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
                 "modified": self.convert_utc_datetime_to_useastern_datetime(last_modified)})
+        users = sorted(users, key=lambda key: key["email_address"])
         template = self.jin_env.get_template('users.html')
         html_resp.body = template.render(
             request=request,

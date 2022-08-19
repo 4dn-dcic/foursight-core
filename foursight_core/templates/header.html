@@ -220,19 +220,19 @@
                 <td width="400" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
                         {% if request.path.startswith('/info') %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;|&nbsp;
-                            <a href="{{context + 'view/' + env + '/users'}}" style="text-decoration:none;">USERS</a> &nbsp;|&nbsp;
+                            <a href="{{context + 'users/' + env}}" style="text-decoration:none;">USERS</a> &nbsp;|&nbsp;
                             <a href="{{context + 'info/' + env}}" style="text-decoration:none;color:#263A48;"><b>INFO</b></a>
                         {% elif request.path.endswith('/view/{environ}') %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;color:#263A48;"><b>HOME</b></a> &nbsp;|&nbsp;
-                            <a href="{{context + 'view/' + env + '/users'}}" style="text-decoration:none;">USERS</a> &nbsp;|&nbsp;
+                            <a href="{{context + 'users/' + env}}" style="text-decoration:none;">USERS</a> &nbsp;|&nbsp;
                             <a href="{{context + 'info/' + env}}" style="text-decoration:none;">INFO</a>
-                        {% elif request.path.endswith('/users') %}
+                        {% elif request.path.startswith('/users') %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;"><b>HOME</b></a> &nbsp;|&nbsp;
-                            <a href="{{context + 'view/' + env + '/users'}}" style="text-decoration:none;color:#263A48;"><b>USERS</b></a> &nbsp;|&nbsp;
+                            <a href="{{context + 'users/' + env}}" style="text-decoration:none;color:#263A48;"><b>USERS</b></a> &nbsp;|&nbsp;
                             <a href="{{context + 'info/' + env}}" style="text-decoration:none;">INFO</a>
                         {% else %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;|&nbsp;
-                            <a href="{{context + 'view/' + env}}" style="text-decoration:none;">USERS</a> &nbsp;|&nbsp;
+                            <a href="{{context + 'users/' + env}}" style="text-decoration:none;">USERS</a> &nbsp;|&nbsp;
                             <a href="{{context + 'info/' + env}}" style="text-decoration:none;">INFO</a>
                         {% endif %}
                         &nbsp;|&nbsp; <a target="_blank" style="text-decoration:none;" href="https://{{aws_account_number}}.signin.aws.amazon.com/console/">AWS</a>
@@ -267,7 +267,7 @@
                     {% endif %}
                     {% if is_admin %}
                         {% if logged_in_as["email_address"] %}
-                        <a href="{{context + 'view/' + env + '/user/' + logged_in_as['email_address']}}" style="text-decoration:none;"><b title="Logged in as {{logged_in_as['first_name']}} {{logged_in_as['last_name']}}&#013;{{logged_in_as['email_address']}}" style="color:darkblue;" title="Logged in as.">{{logged_in_as["email_address"]}}</b>
+                        <a href="{{context + 'users/' + env + '/' + logged_in_as['email_address']}}" style="text-decoration:none;"><b title="Logged in as {{logged_in_as['first_name']}} {{logged_in_as['last_name']}}&#013;{{logged_in_as['email_address']}}" style="color:darkblue;" title="Logged in as.">{{logged_in_as["email_address"]}}</b>
                         {% else %}
                             <b style="color:darkblue;">ADMIN</b>
                         {% endif %}
