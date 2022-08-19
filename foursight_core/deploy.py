@@ -64,7 +64,12 @@ class Deploy(object):
         """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
         # dmichaels/2022-07-22/C4-826:
         # Removed value from the Foursight CloudFormation template; get from GAC/etc at runtime.
-        ignored(stage)
+        # TODO: Is it in fact correct that we are not using rds_name here? The changelog for 1.0.0 doesn't mention it,
+        #       and should be retroactively modified to explain any changes in environment variable use due to the
+        #       1.0.0 change so that users can better adapt to this upgrade. (I noticed that one or more FF
+        #       environments were missing this env variable and was searching all over for clues about why
+        #       that might be.) -kmp 19-Aug-2022
+        ignored(stage, rds_name)
         if trial_creds:
             # key to decrypt access key
             # s3_enc_secret = trial_creds['S3_ENCRYPT_KEY']
@@ -173,6 +178,9 @@ class Deploy(object):
             environment variables, a list of security group ids, and a list of subnet ids. Finally, packages as a
             Cloudformation template."""
 
+        # TODO: This passes rds_name through, but build_config is no longer using it. Is that correct?
+        #       Should this be just marking that arg ignored or just not receiving such an arg?
+        #       Something is weird in that data flow chain. -kmp 19-Aug-2022
         # For compatibility during transition, we allow these argument to be passed in lieu of args.
         if merge_template is None:
             merge_template = args.merge_template
@@ -187,7 +195,8 @@ class Deploy(object):
             if trial_creds and security_ids and subnet_ids and check_runner:
                 # dmichaels/2022-07-22/C4-826:
                 # Added identity arg for the Foursight CloudFormation template.
-                cls.build_config(stage, identity=identity, stack_name=stack_name, trial_creds=trial_creds, trial_global_env_bucket=True,
+                cls.build_config(stage, identity=identity, stack_name=stack_name, trial_creds=trial_creds,
+                                 trial_global_env_bucket=True,
                                  global_env_bucket=global_env_bucket, lambda_timeout=lambda_timeout,
                                  security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner,
                                  rds_name=rds_name)

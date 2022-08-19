@@ -15,7 +15,7 @@ from itertools import chain
 from dateutil import tz
 from dcicutils import ff_utils
 from dcicutils.lang_utils import disjoined_list
-from dcicutils.obfuscation_utils import obfuscate_dict
+# from dcicutils.obfuscation_utils import obfuscate_dict
 from typing import Optional
 from .identity import apply_identity_globally
 from .s3_connection import S3Connection
