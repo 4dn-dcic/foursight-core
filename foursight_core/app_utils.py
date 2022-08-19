@@ -973,10 +973,61 @@ class AppUtilsCore:
         for this_email in email.split(","):
             try:
                 this_user = ff_utils.get_metadata('users/' + this_email.lower(), ff_env=full_env_name(environ), add_on='frame=object')
+                try:
+                    xyzzy = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000')
+                    print('xyzzy')
+                    print(xyzzy)
+                except Exception as e:
+                    print('xyzzy-error')
+                    print(e)
                 users.append({"email": this_email, "record": this_user})
             except Exception as e:
                 users.append({"email": this_email, "record": {"error": str(e)}})
         template = self.jin_env.get_template('user.html')
+        html_resp.body = template.render(
+            request=request,
+            version=self.get_app_version(),
+            package=self.APP_PACKAGE_NAME,
+            env=environ,
+            domain=domain,
+            context=context,
+            environments=self.get_unique_full_environment_names(),
+            stage=stage_name,
+            is_admin=is_admin,
+            is_running_locally=self.is_running_locally(request_dict),
+            logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
+            users=users,
+            auth0_client_id=self.get_auth0_client_id(environ, stage_name),
+            aws_account_number=self.get_aws_account_number(),
+            main_title=self.html_main_title,
+            favicon=self.get_favicon(),
+            load_time=self.get_load_time(),
+            init_load_time=self.init_load_time,
+            lambda_deployed_time=self.get_lambda_last_modified(),
+            running_checks='0',
+            queued_checks='0'
+        )
+        html_resp.status_code = 200
+        return self.process_response(html_resp)
+
+    def view_users(self, request, environ, is_admin=False, domain="", context="/"):
+        html_resp = Response('Foursight viewing suite')
+        html_resp.headers = {'Content-Type': 'text/html'}
+        request_dict = request.to_dict()
+        stage_name = self.stage.get_stage()
+        users = []
+        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000')
+        for user_record in user_records["@graph"]:
+            last_modified = user_record.get("last_modified")
+            if last_modified:
+                last_modified = last_modified.get("date_modified")
+            users.append({
+                "email_address": user_record.get("email"),
+                "first_name": user_record.get("first_name"),
+                "last_name": user_record.get("last_name"),
+                "uuid": user_record.get("uuid"),
+                "modified": self.convert_utc_datetime_to_useastern_datetime(last_modified)})
+        template = self.jin_env.get_template('users.html')
         html_resp.body = template.render(
             request=request,
             version=self.get_app_version(),
