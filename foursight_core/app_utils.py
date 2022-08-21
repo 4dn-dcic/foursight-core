@@ -2,6 +2,7 @@ from chalice import Response
 import jinja2
 import json
 import os
+import io
 from os.path import dirname
 import jwt
 import boto3
@@ -780,8 +781,14 @@ class AppUtilsCore:
         return Response(status_code=302, body=json.dumps(resp_headers),
                         headers=resp_headers)
 
-    def get_unique_full_environment_names(self):
-        return sorted([full_env_name(env) for env in self.environment.list_unique_environment_names()])
+    def get_unique_annotated_environment_names(self):
+        unique_environment_names = self.environment.list_unique_environment_names()
+        unique_annotated_environment_names = [
+            {"name": env,
+             "short": short_env_name(env),
+             "full": full_env_name(env),
+             "inferred": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
+        return sorted(unique_annotated_environment_names, key=lambda key: key["full"])
 
     def view_foursight(self, request, environ, is_admin=False, domain="", context="/"):
         """
@@ -854,7 +861,7 @@ class AppUtilsCore:
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
             context=context,
-            environments=self.get_unique_full_environment_names(),
+            environments=self.get_unique_annotated_environment_names(),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
@@ -932,7 +939,7 @@ class AppUtilsCore:
             env=environ,
             domain=domain,
             context=context,
-            environments=self.get_unique_full_environment_names(),
+            environments=self.get_unique_annotated_environment_names(),
             stage=stage_name,
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
@@ -985,7 +992,7 @@ class AppUtilsCore:
             env=environ,
             domain=domain,
             context=context,
-            environments=self.get_unique_full_environment_names(),
+            environments=self.get_unique_annotated_environment_names(),
             stage=stage_name,
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
@@ -1015,11 +1022,17 @@ class AppUtilsCore:
             last_modified = user_record.get("last_modified")
             if last_modified:
                 last_modified = last_modified.get("date_modified")
-            #TODO
-            #roles = []
-            #project_roles = user_record.get("project_roles")
-            #if project_roles:
-            #    role = role.get("date_modified")
+            # TODO
+            roles = []
+            project_roles = user_record.get("project_roles")
+            if project_roles:
+                role = role.get("date_modified")
+                roles.append({
+                    "groups": groups,
+                    "project_roles": project_roles,
+                    "principals_view": principals_view,
+                    "principals_edit": principals_edit
+                })
             users.append({
                 "email_address": user_record.get("email"),
                 "first_name": user_record.get("first_name"),
@@ -1035,7 +1048,7 @@ class AppUtilsCore:
             env=environ,
             domain=domain,
             context=context,
-            environments=self.get_unique_full_environment_names(),
+            environments=self.get_unique_annotated_environment_names(),
             stage=stage_name,
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
@@ -1053,7 +1066,62 @@ class AppUtilsCore:
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
-        pass
+
+    # Experimental React UI stuff.
+    def serve_react_file(self, environ, is_admin=False, domain="", context="/", **kwargs):
+
+        print(f"Serve React file called with: environ={environ}, is_admin={is_admin}")
+        environ = environ.replace("{environ}", environ)
+
+        BASE_DIR = os.path.dirname(__file__)
+        REACT_BASE_DIR = "react"
+        REACT_DEFAULT_FILE = "index.html"
+
+        if environ == "static":
+            # If the environ is 'static' then we take this to mean the 'static'
+            # sub-directory; this is the directory where the static (js, css, etc)
+            # React files live. Note that this means 'environ' may be 'static'.
+            file = os.path.join(BASE_DIR, REACT_BASE_DIR, "static")
+        else:
+            file = os.path.join(BASE_DIR, REACT_BASE_DIR)
+        args = kwargs.values()
+        if not args:
+            if environ.endswith(".json") or environ.endswith(".txt") or environ.endswith(".png") or environ.endswith(".html"):
+                # If the 'environ' appears to refer to a file then we take this
+                # to mean the file in the main React directory. Note that this
+                # means 'environ' may be a value ending in the above suffixes.
+                args = [environ]
+        for path in args:
+            file = os.path.join(file, path)
+        if file.endswith(".html"):
+            content_type = "text/html"
+        elif file.endswith(".js"):
+            content_type = "text/javascript"
+        elif file.endswith(".css"):
+            content_type = "application/css"
+        elif file.endswith(".json") or file.endswith(".map"):
+            content_type = "application/json"
+        elif file.endswith(".png"):
+            content_type = "image/png"
+        elif file.endswith(".svg"):
+            content_type = "image/svg+xml"
+        elif file.endswith(".ico"):
+            content_type = "image/x-icon"
+        else:
+            file = os.path.join(BASE_DIR, REACT_BASE_DIR, REACT_DEFAULT_FILE)
+            content_type = "text/html"
+        response = Response("Experimental React UI")
+        response.headers = {"Content-Type": content_type}
+        print(f"Serving React file: {file} (content-type: {content_type}).")
+        with io.open(file, "rb") as f:
+            try:
+                response.body = f.read()
+                print(f"Served React file: {file} (content-type: {content_type}).")
+            except Exception as e:
+                print(f"ERROR: Exception on serving React file: {file} (content-type: {content_type}).")
+                print(e)
+        response.status_code = 200
+        return self.process_response(response)
 
     def view_foursight_check(self, request, environ, check, uuid, is_admin=False, domain="", context="/"):
         """
@@ -1106,7 +1174,7 @@ class AppUtilsCore:
             lambda_deployed_time=self.get_lambda_last_modified(),
             domain=domain,
             context=context,
-            environments=self.get_unique_full_environment_names(),
+            environments=self.get_unique_annotated_environment_names(),
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
@@ -1269,7 +1337,7 @@ class AppUtilsCore:
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
             context=context,
-            environments=self.get_unique_full_environment_names(),
+            environments=self.get_unique_annotated_environment_names(),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=favicon,

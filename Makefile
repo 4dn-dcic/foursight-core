@@ -27,6 +27,14 @@ publish:
 publish-for-ga:
 	scripts/publish --noconfirm
 
+.PHONY: react
+
+react:
+	cd react ; rm -rf build ; npm install ; PUBLIC_URL=/react npm run build
+	rm -rf foursight_core/react
+	mkdir foursight_core/react
+	cp -pR react/build/* foursight_core/react
+
 info:
 	@: $(info Here are some 'make' options:)
 	   $(info - Use 'make configure' to install poetry, though 'make build' will do it automatically.)
