@@ -1023,16 +1023,16 @@ class AppUtilsCore:
             if last_modified:
                 last_modified = last_modified.get("date_modified")
             # TODO
-            roles = []
-            project_roles = user_record.get("project_roles")
-            if project_roles:
-                role = role.get("date_modified")
-                roles.append({
-                    "groups": groups,
-                    "project_roles": project_roles,
-                    "principals_view": principals_view,
-                    "principals_edit": principals_edit
-                })
+            #roles = []
+            #project_roles = user_record.get("project_roles")
+            #if project_roles:
+            #    role = role.get("date_modified")
+            #    roles.append({
+            #        "groups": groups,
+            #        "project_roles": project_roles,
+            #        "principals_view": principals_view,
+            #        "principals_edit": principals_edit
+            #    })
             users.append({
                 "email_address": user_record.get("email"),
                 "first_name": user_record.get("first_name"),
@@ -1095,25 +1095,33 @@ class AppUtilsCore:
             file = os.path.join(file, path)
         if file.endswith(".html"):
             content_type = "text/html"
+            open_mode = "r"
         elif file.endswith(".js"):
             content_type = "text/javascript"
+            open_mode = "r"
         elif file.endswith(".css"):
             content_type = "application/css"
+            open_mode = "r"
         elif file.endswith(".json") or file.endswith(".map"):
             content_type = "application/json"
+            open_mode = "r"
         elif file.endswith(".png"):
             content_type = "image/png"
+            open_mode = "rb"
         elif file.endswith(".svg"):
             content_type = "image/svg+xml"
+            open_mode = "r"
         elif file.endswith(".ico"):
             content_type = "image/x-icon"
+            open_mode = "rb"
         else:
             file = os.path.join(BASE_DIR, REACT_BASE_DIR, REACT_DEFAULT_FILE)
             content_type = "text/html"
+            open_mode = "r"
         response = Response("Experimental React UI")
         response.headers = {"Content-Type": content_type}
         print(f"Serving React file: {file} (content-type: {content_type}).")
-        with io.open(file, "rb") as f:
+        with io.open(file, open_mode) as f:
             try:
                 response.body = f.read()
                 print(f"Served React file: {file} (content-type: {content_type}).")
