@@ -11,6 +11,8 @@ Change Log
 =====
 
 * Spruced up Foursight UI a bit.
+  * New header/footer.
+  * Added new /info and /users pages.
 
 
 1.0.0
