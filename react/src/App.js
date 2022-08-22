@@ -60,7 +60,7 @@ const Contact = (props) => {
 const Users = (props) => {
   useScrollToTop();
   console.log("XYZZY:USERS!")
-  var users = fetch("http://localhost:8000/users/cgap-supertest/david_michaels@hms.harvard.edu").then(response => response.text()).then(text => console.log(text));
+  var users = fetch("http://localhost:8000/api/users/cgap-supertest/david_michaels@hms.harvard.edu").then(response => response.text()).then(text => console.log(text));
   return (
     <>
       <h1>Users</h1>
@@ -137,10 +137,10 @@ const App = () => {
     <div style={{ padding: 50 }}>
       <Router>
         <Routes>
-          <Route path="/react/:environ" element={<XApp />} />
-          <Route path="/react/:environ/contact" element={<Contact />}/>
-          <Route path="/react/:environ/users" element={<Users />}/>
-          <Route path="/react/:environ/users/:email" element={<Users />}/>
+          <Route path="/api/react/:environ" element={<XApp />} />
+          <Route path="/api/react/:environ/contact" element={<Contact />}/>
+          <Route path="/api/react/:environ/users" element={<Users />}/>
+          <Route path="/api/react/:environ/users/:email" element={<Users />}/>
         </Routes>
       </Router>
     </div>

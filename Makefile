@@ -30,15 +30,7 @@ publish-for-ga:
 .PHONY: react
 
 react:
-	cp react/src/App.js-prod react/src/App.js
 	cd react ; rm -rf build ; npm install ; PUBLIC_URL=/api/react npm run build
-	rm -rf foursight_core/react
-	mkdir foursight_core/react
-	cp -pR react/build/* foursight_core/react
-
-react-dev:
-	cp react/src/App.js-dev react/src/App.js
-	cd react ; rm -rf build ; npm install ; PUBLIC_URL=/react npm run build
 	rm -rf foursight_core/react
 	mkdir foursight_core/react
 	cp -pR react/build/* foursight_core/react
