@@ -439,7 +439,7 @@ class AppUtilsCore:
             resp_headers['Set-Cookie'] = cookie_str
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
-    def get_jwt_token(self, request_dict):
+    def get_jwt_token(self, request_dict) -> str:
         """
         Simple function to extract a jwt from a request that has already been
         dict-transformed
@@ -454,8 +454,10 @@ class AppUtilsCore:
         token = cookie_dict.get('jwtToken', None)
         return token
 
-    def get_decoded_jwt_token(self, env_name: str, request_dict):
+    def get_decoded_jwt_token(self, env_name: str, request_dict) -> dict:
         jwt_token = self.get_jwt_token(request_dict)
+        if not jwt_token:
+            return None
         auth0_client_id = self.get_auth0_client_id(env_name)
         auth0_secret = self.get_auth0_secret(env_name)
         # leeway accounts for clock drift between us and auth0
