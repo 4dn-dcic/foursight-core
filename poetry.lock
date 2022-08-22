@@ -134,9 +134,9 @@ pyyaml = ">=5.3.1,<7.0.0"
 six = ">=1.10.0,<2.0.0"
 
 [package.extras]
-cdk = ["aws-cdk.aws-iam (>=1.85.0,<2.0)", "aws-cdk.aws-s3-assets (>=1.85.0,<2.0)", "aws-cdk.cloudformation-include (>=1.85.0,<2.0)", "aws-cdk.core (>=1.85.0,<2.0)"]
-cdkv2 = ["aws-cdk-lib (>2.0,<3.0)"]
 event-file-poller = ["watchdog (==0.9.0)"]
+cdkv2 = ["aws-cdk-lib (>2.0,<3.0)"]
+cdk = ["aws-cdk.core (>=1.85.0,<2.0)", "aws-cdk.cloudformation-include (>=1.85.0,<2.0)", "aws-cdk.aws-s3-assets (>=1.85.0,<2.0)", "aws-cdk.aws-iam (>=1.85.0,<2.0)"]
 
 [[package]]
 name = "charset-normalizer"
@@ -178,7 +178,7 @@ toml = ["tomli"]
 
 [[package]]
 name = "dcicutils"
-version = "4.0.2"
+version = "4.4.0"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 category = "main"
 optional = false
@@ -224,8 +224,8 @@ six = ">=1.4.0"
 websocket-client = ">=0.32.0"
 
 [package.extras]
-tls = ["idna (>=2.0.0)", "cryptography (>=1.3.4)", "pyOpenSSL (>=17.5.0)"]
 ssh = ["paramiko (>=2.4.2)"]
+tls = ["pyOpenSSL (>=17.5.0)", "cryptography (>=1.3.4)", "idna (>=2.0.0)"]
 
 [[package]]
 name = "elasticsearch"
@@ -609,18 +609,6 @@ flake8 = ["flake8", "flake8-import-order", "pep8-naming"]
 test = ["pytest (>3,<4)", "pytest-cov", "pytest-runner"]
 
 [[package]]
-name = "pymysql"
-version = "1.0.2"
-description = "Pure Python MySQL Driver"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.extras]
-rsa = ["cryptography"]
-ed25519 = ["PyNaCl (>=1.4.0)"]
-
-[[package]]
 name = "pyparsing"
 version = "3.0.9"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
@@ -666,7 +654,7 @@ coverage = ">=4.4"
 pytest = ">=3.6"
 
 [package.extras]
-testing = ["fields", "hunter", "process-tests (==2.0.2)", "six", "virtualenv"]
+testing = ["virtualenv", "six", "process-tests (==2.0.2)", "hunter", "fields"]
 
 [[package]]
 name = "python-dateutil"
@@ -820,10 +808,10 @@ python-versions = "*"
 six = "*"
 
 [package.extras]
-azure-pipelines = ["coverage", "freezegun (>=0.2.8)", "pretend", "pytest (>=3.3.0)", "simplejson", "pytest-azurepipelines", "python-rapidjson"]
-dev = ["coverage", "freezegun (>=0.2.8)", "pretend", "pytest (>=3.3.0)", "simplejson", "sphinx", "twisted", "pre-commit", "python-rapidjson"]
-docs = ["sphinx", "twisted"]
-tests = ["coverage", "freezegun (>=0.2.8)", "pretend", "pytest (>=3.3.0)", "simplejson", "python-rapidjson"]
+tests = ["python-rapidjson", "simplejson", "pytest (>=3.3.0)", "pretend", "freezegun (>=0.2.8)", "coverage"]
+docs = ["twisted", "sphinx"]
+dev = ["python-rapidjson", "pre-commit", "twisted", "sphinx", "simplejson", "pytest (>=3.3.0)", "pretend", "freezegun (>=0.2.8)", "coverage"]
+azure-pipelines = ["python-rapidjson", "pytest-azurepipelines", "simplejson", "pytest (>=3.3.0)", "pretend", "freezegun (>=0.2.8)", "coverage"]
 
 [[package]]
 name = "toml"
@@ -858,9 +846,9 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4"
 
 [package.extras]
+brotli = ["brotlicffi (>=0.8.0)", "brotli (>=1.0.9)", "brotlipy (>=0.6.0)"]
+secure = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "certifi", "ipaddress"]
 socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
-secure = ["ipaddress", "certifi", "idna (>=2.0.0)", "cryptography (>=1.3.4)", "pyOpenSSL (>=0.14)"]
-brotli = ["brotlipy (>=0.6.0)", "brotli (>=1.0.9)", "brotlicffi (>=0.8.0)"]
 
 [[package]]
 name = "waitress"
@@ -891,8 +879,8 @@ optional = false
 python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*"
 
 [package.extras]
-testing = ["pytest-xdist", "pytest-cov", "coverage", "pytest (>=3.1.0)"]
-docs = ["pylons-sphinx-themes", "Sphinx (>=1.7.5)"]
+docs = ["Sphinx (>=1.7.5)", "pylons-sphinx-themes"]
+testing = ["pytest (>=3.1.0)", "coverage", "pytest-cov", "pytest-xdist"]
 
 [[package]]
 name = "websocket-client"
@@ -940,7 +928,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.9"
-content-hash = "f03d01dce6d8db31753960cc9a843544be632746b2fa5701feb4f01998b93ba4"
+content-hash = "c9bbe58f17a445ad229e51b722d5d50c88c73f12498286989290777ddf43bbe0"
 
 [metadata.files]
 ansicon = [
@@ -1042,8 +1030,8 @@ coverage = [
     {file = "coverage-6.4.2.tar.gz", hash = "sha256:6c3ccfe89c36f3e5b9837b9ee507472310164f352c9fe332120b764c9d60adbe"},
 ]
 dcicutils = [
-    {file = "dcicutils-4.0.2-py3-none-any.whl", hash = "sha256:0054b2161f131f536a2da68c7f3a08cbafb8feb1a09d88ccd71e03a357095943"},
-    {file = "dcicutils-4.0.2.tar.gz", hash = "sha256:2a115d35651005f2bfb35d0f6599022eedb0647849bc817addf2ffe4b95b3f3f"},
+    {file = "dcicutils-4.4.0-py3-none-any.whl", hash = "sha256:995a7b0fb68cc2fd3cf886b56e48d9699346d14a212f632f22588b2e1662811d"},
+    {file = "dcicutils-4.4.0.tar.gz", hash = "sha256:bc198aceb9894d9809d12703374cd1e64a10f55ed84fba5555195c6b450c7e9c"},
 ]
 decorator = [
     {file = "decorator-5.1.1-py3-none-any.whl", hash = "sha256:b8c3f85900b9dc423225913c5aace94729fe1fa9763b38939a95226f02d37186"},
@@ -1267,10 +1255,6 @@ pyflakes = [
 pyjwt = [
     {file = "PyJWT-1.5.3-py2.py3-none-any.whl", hash = "sha256:a4e5f1441e3ca7b382fd0c0b416777ced1f97c64ef0c33bfa39daf38505cfd2f"},
     {file = "PyJWT-1.5.3.tar.gz", hash = "sha256:500be75b17a63f70072416843dc80c8821109030be824f4d14758f114978bae7"},
-]
-pymysql = [
-    {file = "PyMySQL-1.0.2-py3-none-any.whl", hash = "sha256:41fc3a0c5013d5f039639442321185532e3e2c8924687abe6537de157d403641"},
-    {file = "PyMySQL-1.0.2.tar.gz", hash = "sha256:816927a350f38d56072aeca5dfb10221fe1dc653745853d30a216637f5d7ad36"},
 ]
 pyparsing = [
     {file = "pyparsing-3.0.9-py3-none-any.whl", hash = "sha256:5026bae9a10eeaefb61dab2f09052b9f4307d44aee4eda64b309723d8d206bbc"},

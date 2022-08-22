@@ -10,10 +10,12 @@ import ast
 import copy
 import pkg_resources
 import platform
+import pytz
 import requests
 import socket
 import sys
 import time
+import types
 import logging
 from itertools import chain
 from dateutil import tz
@@ -27,6 +29,7 @@ from dcicutils.env_utils import (
     short_env_name,
 )
 from dcicutils.lang_utils import disjoined_list
+from dcicutils.misc_utils import get_error_message
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from typing import Optional
@@ -100,6 +103,14 @@ class AppUtilsCore:
         self.user_record = None
         self.lambda_last_modified = None
 
+    @staticmethod
+    def note_non_fatal_error_for_ui_info(error_object, calling_function):
+        if isinstance(calling_function, types.FunctionType):
+            calling_function = calling_function.__name__
+        logger.warn(f"Non-fatal error in function ({calling_function})."
+                    f" Missing information via this function used only for Foursight UI display."
+                    f" Underlying error: {get_error_message(error_object)}")
+
     @classmethod
     def set_timeout(cls, timeout):
         """Set timeout as environment variable. Decorator instances will pick up this value"""
@@ -155,10 +166,10 @@ class AppUtilsCore:
             response.status_code = 400
         return connection, response
 
-    def is_running_locally(self, request_dict):
+    def is_running_locally(self, request_dict) -> bool:
         return request_dict.get('context', {}).get('identity', {}).get('sourceIp', '') == "127.0.0.1"
 
-    def get_logged_in_user_info_from_jwt_token_cookie(self, request_dict):
+    def get_logged_in_user_info(self, environ: str, request_dict: dict) -> str:
         email_address = ""
         email_verified = ""
         first_name = ""
@@ -170,27 +181,22 @@ class AppUtilsCore:
         expiration_time = ""
         jwt_decoded = ""
         try:
-            jwt_token = self.get_jwt(request_dict)
-            if jwt_token:
-                options = {"verify_signature": False, "verify_aud": False}
-                algorithms = ["HS256"]
-                jwt_decoded = jwt.decode(jwt_token, 'secret', algorithms=algorithms, options=options)
-                if jwt_decoded:
-                    email_address = jwt_decoded.get("email")
-                    email_verified = jwt_decoded.get("email_verified")
-                    issuer = jwt_decoded.get("iss")
-                    if issuer:
-                        name = jwt_decoded.get(issuer + "name")
-                        if name:
-                            first_name = name.get("name_first")
-                            last_name = name.get("name_last")
-                    subject = jwt_decoded.get("sub")
-                    audience = jwt_decoded.get("aud")
-                    issued_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("iat"))
-                    expiration_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("exp"))
+            jwt_decoded = self.get_decoded_jwt_token(environ, request_dict)
+            if jwt_decoded:
+                email_address = jwt_decoded.get("email")
+                email_verified = jwt_decoded.get("email_verified")
+                issuer = jwt_decoded.get("iss")
+                if issuer:
+                    name = jwt_decoded.get(issuer + "name")
+                    if name:
+                        first_name = name.get("name_first")
+                        last_name = name.get("name_last")
+                subject = jwt_decoded.get("sub")
+                audience = jwt_decoded.get("aud")
+                issued_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("iat"))
+                expiration_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("exp"))
         except Exception as e:
-            logger.warn("Cannot get logged in user info from JWT token (not fatal - just for Foursight UI display).")
-            logger.warn(e)
+            self.note_non_fatal_error_for_ui_info(e, 'get_logged_in_user_info')
         return {"email_address": email_address,
                 "email_verified": email_verified,
                 "first_name": first_name,
@@ -202,30 +208,44 @@ class AppUtilsCore:
                 "expiration_time": expiration_time,
                 "jwt": jwt_decoded}
 
-    def get_portal_url(self, env_name: str, stage_name: str) -> str:
+    def get_portal_url(self, env_name: str) -> str:
         if not self.portal_url:
             try:
-                environment_and_bucket_info = self.environment.get_environment_and_bucket_info(env_name, stage_name)
+                environment_and_bucket_info = \
+                    self.environment.get_environment_and_bucket_info(env_name, self.stage.get_stage())
                 self.portal_url = environment_and_bucket_info.get("fourfront")
+                return self.portal_url
             except Exception as e:
-                logger.error(f"Error determining portal URL")
-                logger.error(e)
-        return self.portal_url
+                logger.error(f"Error determining portal URL: {e}")
+                raise e
 
-    def get_auth0_client_id(self, env_name: str, stage_name: str) -> str:
-        logger.warn(f"Fetching auth0 client from portal")
+    def get_auth0_client_id(self, env_name: str) -> str:
+        auth0_client_id = os.environ.get("CLIENT_ID")
+        if not auth0_client_id:
+            # TODO: Confirm that we do not actually need to do this.
+            # Just in case. We should already have this value from the GAC.
+            # But Will said get it from the portal (was hardcoded in the template),
+            # so I had written code to do that; just call as fallback for now.
+            auth0_client_id = self.get_auth0_client_id_from_portal(env_name)
+        return auth0_client_id
+
+    def get_auth0_client_id_from_portal(self, env_name: str) -> str:
+        logger.warn(f"Fetching Auth0 client ID from portal.")
+        portal_url = self.get_portal_url(env_name)
+        auth0_config_url = portal_url + "/auth0_config?format=json"
         if not self.auth0_client_id:
             try:
-                portal_url = self.get_portal_url(env_name, stage_name)
-                auth0_config_url = portal_url + "/auth0_config?format=json"
                 response = requests.get(auth0_config_url).json()
                 self.auth0_client_id = response.get("auth0Client")
             except Exception as e:
-                logger.error(f"Error fetching auth0 client from portal (using default value): {auth0_config_url}")
-                logger.error(e)
+                # TODO: Fallback behavior to old hardcoded value (previously in templates/header.html).
                 self.auth0_client_id = "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB"
-        logger.warn(f"Done fetching auth0 client from portal ({self.auth0_client_id}).")
+                logger.error(f"Error fetching Auth0 client ID from portal ({auth0_config_url}); using default value: {e}")
+        logger.warn(f"Done fetching Auth0 client ID from portal ({auth0_config_url}): {self.auth0_client_id}")
         return self.auth0_client_id
+
+    def get_auth0_secret(self, env_name: str) -> str:
+        return os.environ.get("CLIENT_SECRET")
 
     def check_authorization(self, request_dict, env=None):
         """
@@ -246,24 +266,18 @@ class AppUtilsCore:
         # still fail if local keys are not configured
         if self.is_running_locally(request_dict):
             return True
-        token = self.get_jwt(request_dict)
-        auth0_client = os.environ.get('CLIENT_ID', None)
-        auth0_secret = os.environ.get('CLIENT_SECRET', None)
-        if auth0_client and auth0_secret and token:
+        jwt_decoded = self.get_decoded_jwt_token(env, request_dict)
+        if jwt_decoded:
             try:
                 if env is None:
                     return False  # we have no env to check auth
-                # leeway accounts for clock drift between us and auth0
-                payload = jwt.decode(token, auth0_secret, audience=auth0_client, leeway=30)
                 for env_info in self.init_environments(env).values():
-                    user_res = ff_utils.get_metadata('users/' + payload.get('email').lower(),
+                    user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
                                                      ff_env=env_info['ff_env'], add_on='frame=object')
                     logger.warn("foursight_core.check_authorization: env_info ...")
                     logger.warn(env_info)
                     logger.warn("foursight_core.check_authorization: user_res ...")
                     logger.warn(user_res)
-                    logger.warn("foursight_core.check_authorization: payload ...")
-                    logger.warn(payload)
                     #
                     # The following tries to referent 'groups' in the JSON returned by the get_metadata call above,
                     # but there is no such element. The JSON we get looks like this:
@@ -373,7 +387,7 @@ class AppUtilsCore:
                     groups = user_res.get('groups')
                     if not groups:
                         logger.warn("foursight_core.check_authorization: No 'groups' element for user record!")
-                    if not ((not groups or 'admin' in groups) and payload.get('email_verified')):
+                    if not ((not groups or 'admin' in groups) and jwt_decoded.get('email_verified')):
                         logger.error("foursight_core.check_authorization: Returning False")
                         # if unauthorized for one, unauthorized for all
                         return False
@@ -386,10 +400,9 @@ class AppUtilsCore:
         logger.error("foursight_core.check_authorization: Returning False ")
         return False
 
-    @classmethod
-    def auth0_callback(cls, request, env):
+    def auth0_callback(self, request, env):
         req_dict = request.to_dict()
-        domain, context = cls.get_domain_and_context(req_dict)
+        domain, context = self.get_domain_and_context(req_dict)
         # extract redir cookie
         cookies = req_dict.get('headers', {}).get('cookie')
         redir_url = context + 'view/' + env
@@ -400,13 +413,12 @@ class AppUtilsCore:
         resp_headers = {'Location': redir_url}
         params = req_dict.get('query_params')
         if not params:
-            return cls.forbidden_response()
+            return self.forbidden_response()
         auth0_code = params.get('code', None)
-        auth0_client = os.environ.get('CLIENT_ID', None)
-        auth0_secret = os.environ.get('CLIENT_SECRET', None)
+        auth0_client = self.get_auth0_client_id(env)
+        auth0_secret = self.get_auth0_secret(env)
         if not (domain and auth0_code and auth0_client and auth0_secret):
-            return Response(status_code=301, body=json.dumps(resp_headers),
-                            headers=resp_headers)
+            return Response(status_code=301, body=json.dumps(resp_headers), headers=resp_headers)
         payload = {
             'grant_type': 'authorization_code',
             'client_id': auth0_client,
@@ -416,7 +428,7 @@ class AppUtilsCore:
         }
         json_payload = json.dumps(payload)
         headers = {'content-type': "application/json"}
-        res = requests.post(cls.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
+        res = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
         id_token = res.json().get('id_token', None)
         if id_token:
             cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
@@ -427,8 +439,7 @@ class AppUtilsCore:
             resp_headers['Set-Cookie'] = cookie_str
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
-    @classmethod
-    def get_jwt(cls, request_dict):
+    def get_jwt_token(self, request_dict):
         """
         Simple function to extract a jwt from a request that has already been
         dict-transformed
@@ -443,6 +454,13 @@ class AppUtilsCore:
         token = cookie_dict.get('jwtToken', None)
         return token
 
+    def get_decoded_jwt_token(self, env_name: str, request_dict):
+        jwt_token = self.get_jwt_token(request_dict)
+        auth0_client_id = self.get_auth0_client_id(env_name)
+        auth0_secret = self.get_auth0_secret(env_name)
+        # leeway accounts for clock drift between us and auth0
+        return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30)
+
     @classmethod
     def get_favicon(cls):
         """
@@ -450,8 +468,7 @@ class AppUtilsCore:
         """
         return cls.FAVICON  # want full HTTPS, so hard-coded in
 
-    @classmethod
-    def get_domain_and_context(cls, request_dict):
+    def get_domain_and_context(self, request_dict):
         """
         Given a request that has already been dict-transformed, get the host
         and the url context for endpoints. Context will basically either be
@@ -548,20 +565,24 @@ class AppUtilsCore:
         return output
 
     def sorted_dict(self, dictionary: dict) -> dict:
-        result = {}
-        for key in sorted(dict(dictionary).keys(), key=lambda key: key.lower()):
-            result[key] = dictionary[key]
-        return result
+        """
+        Returns the given dictionary sorted by key values (yes, dictionaries are ordered as of Python 3.7).
+        If the given value is not a dictionary it will be coerced to one.
+        :param dictionary: Dictionary to sort.
+        :return: Given dictionary sorted by key value.
+        """
+        dictionary = dict(dictionary)
+        return {key: dictionary[key] for key in sorted(dictionary.keys(), key=lambda key: key.lower())}
 
     def get_aws_account_number(self) -> dict:
         try:
             caller_identity = boto3.client("sts").get_caller_identity()
             return caller_identity["Account"]
-        except Exception:
-            logger.warn("Cannot determine AWS credentials token (not fatal - just for Foursight UI display).")
+        except Exception as e:
+            self.note_non_fatal_error_for_ui_info(e, 'get_aws_account_number')
             return None
 
-    def get_obfuscated_credentials_info(self, env_name: str, stage_name: str) -> dict:
+    def get_obfuscated_credentials_info(self, env_name: str) -> dict:
         try:
             session = boto3.session.Session()
             credentials = session.get_credentials()
@@ -570,7 +591,7 @@ class AppUtilsCore:
             caller_identity = boto3.client("sts").get_caller_identity()
             user_arn = caller_identity["Arn"]
             account_number = caller_identity["Account"]
-            auth0_client_id = self.get_auth0_client_id(env_name, stage_name)
+            auth0_client_id = self.get_auth0_client_id(env_name)
             credentials_info = {
                 "AWS Account Number:": account_number,
                 "AWS User ARN:": user_arn,
@@ -580,62 +601,76 @@ class AppUtilsCore:
             }
             return credentials_info
         except Exception as e:
-            logger.warn("Cannot determine AWS credentials token (not fatal - just for Foursight UI display).")
-            logger.warn(e)
+            self.note_non_fatal_error_for_ui_info(e, 'get_obfuscated_credentials_info')
             return {}
 
-    def convert_utc_datetime_to_useastern_datetime(self, t: str) -> str:
+    def convert_utc_datetime_to_useastern_datetime(self, t) -> str:
+        """
+        Converts the given UTC datetime object or string into a US/Eastern datetime string
+        and returns its value in a form that looks like 2022-08-22 13:25:34 EDT.
+        If the argument is a string it is ASSUMED to have a value which looks
+        like 2022-08-22T14:24:49.000+0000; this is the datetime string format
+        we get from AWS via boto3 (e.g. for a lambda last-modified value).
+
+        :param t: UTC datetime object or string value.
+        :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
+        """
         try:
-            tt = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
-            tt = tt.replace(microsecond=0)
-            tt = tt.astimezone(tz.gettz('America/New_York'))
-            return "".join([str(tt.date()), " ", str(tt.time()), " ", str(tt.tzname())])
+            if isinstance(t, str):
+                t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
+            t = t.replace(tzinfo=pytz.UTC).astimezone(pytz.timezone("US/Eastern"))
+            return t.strftime("%Y-%m-%d %H:%M:%S %Z")
         except Exception as e:
-            logger.warn(f"Cannot convert UTC datetime {t} to US/Eastern datetime (not fatal).")
-            logger.warn(e)
+            self.note_non_fatal_error_for_ui_info(e, 'convert_utc_datetime_to_useastern_datetime')
             return ""
 
     def convert_time_t_to_useastern_datetime(self, time_t: int) -> str:
+        """
+        Converts the given "epoch" time (seconds since 1970-01-01T00:00:00Z)
+        integer value to a US/Eastern datetime string and returns its value
+        in a form that looks like 2022-08-22 13:25:34 EDT.
+
+        :param time_t: Epoch time value (i.e. seconds since 1970-01-01T00:00:00Z)
+        :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
+        """
         try:
             if not isinstance(time_t, int):
-                time_t = int(time_t)
-            t = time.localtime(time_t)
-            t = time.strftime('%Y-%m-%dT%H:%M:%S.000%z', t)
+                return ""
+            t = datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
             return self.convert_utc_datetime_to_useastern_datetime(t)
         except Exception as e:
-            logger.warn(f"Cannot convert time_t {time_t} to US/Eastern datetime (not fatal).")
-            logger.warn(e)
+            self.note_non_fatal_error_for_ui_info(e, 'convert_time_t_to_useastern_datetime')
             return ""
 
     def ping_elasticsearch(self, env_name: str) -> bool:
-        logger.warn(f"foursight_core: Pinging ElasticSearch ({self.host})")
+        logger.warn(f"foursight_core: Pinging ElasticSearch: {self.host}")
         try:
             response = self.init_connection(env_name).connections["es"].test_connection()
-            logger.warn(f"foursight_core: Done pinging ElasticSearch ({self.host})")
+            logger.warn(f"foursight_core: Done pinging ElasticSearch: {self.host}")
             return response
         except Exception as e:
             logger.warn(f"Exception pinging ElasticSearch ({self.host}): {e}")
             return False
 
-    def ping_portal(self, env_name: str, stage_name: str) -> bool:
-        logger.warn(f"foursight_core.ping_portal: Pinging portal")
+    def ping_portal(self, env_name: str) -> bool:
         portal_url = ""
         try:
-            portal_url = self.get_portal_url(env_name, stage_name)
+            portal_url = self.get_portal_url(env_name)
+            logger.warn(f"foursight_core: Pinging portal: {portal_url}")
             response = requests.get(portal_url, timeout=4)
-            logger.warn(f"foursight_core.ping_portal: Done pinging portal")
+            logger.warn(f"foursight_core: Done pinging portal: {portal_url}")
             return (response.status_code == 200)
         except Exception as e:
-            logger.warn(f"foursight_core.ping_portal: Exception pinging portal ({portal_url}): {e}")
+            logger.warn(f"foursight_core: Exception pinging portal ({portal_url}): {e}")
             return False
 
     def ping_sqs(self) -> bool:
-        logger.warn(f"foursight_core.ping_portal: Pinging SQS")
         sqs_url = ""
         try:
             sqs_url = self.sqs.get_sqs_queue().url
+            logger.warn(f"foursight_core: Pinging SQS: {sqs_url}")
             sqs_attributes = self.sqs.get_sqs_attributes(sqs_url)
-            logger.warn(f"foursight_core.ping_portal: Done pinging SQS")
+            logger.warn(f"foursight_core: Done pinging SQS: {sqs_url}")
             return (sqs_attributes is not None)
         except Exception as e:
             logger.warn(f"Exception pinging SQS ({sqs_url}): {e}")
@@ -678,8 +713,7 @@ class AppUtilsCore:
                 boto_lambda.update_function_configuration(FunctionName=lambda_name, Description=lambda_description)
                 logger.warn(f"Reloaded lambda: {lambda_name}")
         except Exception as e:
-            logger.warn(f"Error reloading lambda: {lambda_name}")
-            logger.warn(e)
+            logger.warn(f"Error reloading lambda ({lambda_name}): {e}")
         return False
 
     def get_lambda_last_modified(self, lambda_name: str = None) -> str:
@@ -712,8 +746,7 @@ class AppUtilsCore:
                     self.lambda_last_modified = lambda_last_modified
                 return lambda_last_modified
         except Exception as e:
-            logger.warn(f"Error getting lambda last modified time: {lambda_name}")
-            logger.warn(e)
+            logger.warn(f"Error getting lambda ({lambda_name}) last modified time: {e}")
         return None
 
     # ===== ROUTE RUNNING FUNCTIONS =====
@@ -855,8 +888,8 @@ class AppUtilsCore:
             lambda_deployed_time=self.get_lambda_last_modified(),
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
-            logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
-            auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
+            logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
             context=context,
@@ -921,12 +954,12 @@ class AppUtilsCore:
         }
         resources = {
             "Foursight Server:": socket.gethostname(),
-            "Portal Server:": self.get_portal_url(environ, stage_name),
+            "Portal Server:": self.get_portal_url(environ),
             "ElasticSearch Server:": self.host,
             "RDS Server:": os.environ["RDS_HOSTNAME"],
             "SQS Server:": self.sqs.get_sqs_queue().url,
         }
-        aws_credentials = self.get_obfuscated_credentials_info(environ, stage_name)
+        aws_credentials = self.get_obfuscated_credentials_info(environ)
         aws_account_number = aws_credentials.get("AWS Account Number:")
         os_environ = self.sorted_dict(obfuscate_dict(dict(os.environ)))
         request_dict = request.to_dict()
@@ -942,9 +975,9 @@ class AppUtilsCore:
             stage=stage_name,
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
-            logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
+            logged_in_as=self.get_logged_in_user_info(environ, request_dict),
             user_record=self.user_record,
-            auth0_client_id=self.get_auth0_client_id(environ, stage_name),
+            auth0_client_id=self.get_auth0_client_id(environ),
             aws_credentials=aws_credentials,
             aws_account_number=aws_account_number,
             main_title=self.html_main_title,
@@ -961,7 +994,7 @@ class AppUtilsCore:
             identity_name=gac_name,
             identity_secrets=gac_values,
             resources=resources,
-            ping_portal=self.ping_portal(environ, stage_name),
+            ping_portal=self.ping_portal(environ),
             ping_elasticsearch=self.ping_elasticsearch(environ),
             ping_sqs=self.ping_sqs(),
             versions=versions,
@@ -995,9 +1028,9 @@ class AppUtilsCore:
             stage=stage_name,
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
-            logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
+            logged_in_as=self.get_logged_in_user_info(environ, request_dict),
             users=users,
-            auth0_client_id=self.get_auth0_client_id(environ, stage_name),
+            auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             main_title=self.html_main_title,
             favicon=self.get_favicon(),
@@ -1016,6 +1049,7 @@ class AppUtilsCore:
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         users = []
+        # TODO: Support paging.
         user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000')
         for user_record in user_records["@graph"]:
             last_modified = user_record.get("last_modified")
@@ -1051,9 +1085,9 @@ class AppUtilsCore:
             stage=stage_name,
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
-            logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
+            logged_in_as=self.get_logged_in_user_info(environ, request_dict),
             users=users,
-            auth0_client_id=self.get_auth0_client_id(environ, stage_name),
+            auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             main_title=self.html_main_title,
             favicon=self.get_favicon(),
@@ -1120,8 +1154,8 @@ class AppUtilsCore:
             environments=self.get_unique_annotated_environment_names(),
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
-            logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
-            auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
+            logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             running_checks=running_checks,
             queued_checks=queued_checks,
@@ -1275,8 +1309,8 @@ class AppUtilsCore:
             stage=self.stage.get_stage(),
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
-            logged_in_as=self.get_logged_in_user_info_from_jwt_token_cookie(request_dict),
-            auth0_client_id=self.get_auth0_client_id(environ, self.stage.get_stage()),
+            logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
             context=context,
