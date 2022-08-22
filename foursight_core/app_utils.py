@@ -378,7 +378,7 @@ class AppUtilsCore:
                         logger.error("foursight_core.check_authorization: Returning False")
                         # if unauthorized for one, unauthorized for all
                         return False
-                self.user_record = user_res
+                    self.user_record = user_res
                 logger.warn("foursight_core.check_authorization: Returning True")
                 return True
             except Exception as e:
@@ -1086,7 +1086,7 @@ class AppUtilsCore:
             file = os.path.join(BASE_DIR, REACT_BASE_DIR)
         args = kwargs.values()
         if not args:
-            if environ.endswith(".json") or environ.endswith(".txt") or environ.endswith(".png") or environ.endswith(".html"):
+            if environ.endswith(".html") or environ.endswith(".json") or environ.endswith(".map") or environ.endswith(".txt") or environ.endswith(".png") or environ.endswith(".ico"):
                 # If the 'environ' appears to refer to a file then we take this
                 # to mean the file in the main React directory. Note that this
                 # means 'environ' may be a value ending in the above suffixes.
