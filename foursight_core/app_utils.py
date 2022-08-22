@@ -2,7 +2,6 @@ from chalice import Response
 import jinja2
 import json
 import os
-import io
 from os.path import dirname
 import jwt
 import boto3
@@ -1023,16 +1022,16 @@ class AppUtilsCore:
             if last_modified:
                 last_modified = last_modified.get("date_modified")
             # TODO
-            #roles = []
-            #project_roles = user_record.get("project_roles")
-            #if project_roles:
-            #    role = role.get("date_modified")
-            #    roles.append({
-            #        "groups": groups,
-            #        "project_roles": project_roles,
-            #        "principals_view": principals_view,
-            #        "principals_edit": principals_edit
-            #    })
+            # roles = []
+            # project_roles = user_record.get("project_roles")
+            # if project_roles:
+            #     role = role.get("date_modified")
+            #     roles.append({
+            #         "groups": groups,
+            #         "project_roles": project_roles,
+            #         "principals_view": principals_view,
+            #         "principals_edit": principals_edit
+            #     })
             users.append({
                 "email_address": user_record.get("email"),
                 "first_name": user_record.get("first_name"),
