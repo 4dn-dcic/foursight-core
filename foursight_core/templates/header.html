@@ -219,15 +219,15 @@
         <table width="100%">
             <tr style="background:#AED6F1">
                 <td width="400" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
-                        {% if request.path.startswith('/info') %}
+                        {% if request.context.path.startswith(context + 'info') %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;|&nbsp;
                             <a href="{{context + 'users/' + env}}" style="text-decoration:none;">USERS</a> &nbsp;|&nbsp;
                             <a href="{{context + 'info/' + env}}" style="text-decoration:none;color:#263A48;"><b>INFO</b></a>
-                        {% elif request.path.endswith('/view/{environ}') %}
+                        {% elif request.context.path.endswith('/view/' + env) %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;color:#263A48;"><b>HOME</b></a> &nbsp;|&nbsp;
                             <a href="{{context + 'users/' + env}}" style="text-decoration:none;">USERS</a> &nbsp;|&nbsp;
                             <a href="{{context + 'info/' + env}}" style="text-decoration:none;">INFO</a>
-                        {% elif request.path.startswith('/users') %}
+                        {% elif request.context.path.startswith(context + 'users') %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;|&nbsp;
                             <a href="{{context + 'users/' + env}}" style="text-decoration:none;color:#263A48;"><b>USERS</b></a> &nbsp;|&nbsp;
                             <a href="{{context + 'info/' + env}}" style="text-decoration:none;">INFO</a>
