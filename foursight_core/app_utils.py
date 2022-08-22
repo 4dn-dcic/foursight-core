@@ -218,6 +218,7 @@ class AppUtilsCore:
             except Exception as e:
                 logger.error(f"Error determining portal URL: {e}")
                 raise e
+        return self.portal_url
 
     def get_auth0_client_id(self, env_name: str) -> str:
         auth0_client_id = os.environ.get("CLIENT_ID")
