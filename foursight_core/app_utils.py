@@ -1865,7 +1865,116 @@ class AppUtilsCore:
         response.status_code = 200
         return self.process_response(response)
 
+    # TODO: Refactor.
+    def react_get_obfuscated_credentials_info(self, env_name: str) -> dict:
+        try:
+            session = boto3.session.Session()
+            credentials = session.get_credentials()
+            access_key_id = credentials.access_key
+            region_name = session.region_name
+            caller_identity = boto3.client("sts").get_caller_identity()
+            user_arn = caller_identity["Arn"]
+            account_number = caller_identity["Account"]
+            auth0_client_id = self.get_auth0_client_id(env_name)
+            return {
+                "aws_account_number:": account_number,
+                "aws_user_arn:": user_arn,
+                "aws_access_key_id:": access_key_id,
+                "aws_region:": region_name,
+                "auth0_client_id:": auth0_client_id
+            }
+        except Exception as e:
+            self.note_non_fatal_error_for_ui_info(e, 'get_obfuscated_credentials_info')
+            return {}
+
     # Experimental React UI (API) stuff.
+    def react_get_info(self, request, environ, is_admin=False, domain="", context="/"):
+        request_dict = request.to_dict()
+        stage_name = self.stage.get_stage()
+        login = self.get_logged_in_user_info(environ, request_dict)
+        login["admin"] = is_admin
+        login["auth0"] = self.get_auth0_client_id(environ)
+        print('xyzzy......................')
+        print(request)
+        print(type(request))
+        print(dir(request))
+        print(request.context)
+        print(type(request.context))
+        print(dir(request.context))
+        print(request_dict)
+        print(type(request_dict))
+        print(dir(request_dict))
+        if self.user_record:
+            login["user"] = self.user_record
+        info = {
+            "version": {
+                "foursight": self.get_app_version(),
+                "foursight_core": pkg_resources.get_distribution('foursight-core').version,
+                "dcicutils": pkg_resources.get_distribution('dcicutils').version,
+                "python": platform.python_version()
+            },
+            "time": {
+                "loaded": self.get_load_time(),
+                "launched": self.init_load_time,
+                "deployed": self.get_lambda_last_modified()
+            },
+            "page": {
+                "title": self.html_main_title,
+                "favicon": self.get_favicon(),
+                "domain": domain,
+                "context": context,
+                "path": request_dict.get("context").get("path"),
+                "endpoint": request.path,
+            },
+            "login": login,
+            "app": {
+                "package": self.APP_PACKAGE_NAME,
+                "stage": stage_name,
+                "env:": environ,
+                "local": self.is_running_locally(request_dict),
+                "credentials": self.react_get_obfuscated_credentials_info(environ)
+            },
+            "server": {
+                "foursight": socket.gethostname(),
+                "portal": self.get_portal_url(environ),
+                "es": self.host,
+                "rds": os.environ["RDS_HOSTNAME"],
+                "sqs": self.sqs.get_sqs_queue().url
+            },
+            "env": {
+                "name:": environ,
+                "full_name:": full_env_name(environ),
+                "short_name:": short_env_name(environ),
+                "inferred_name:": infer_foursight_from_env(envname=environ),
+            },
+            "envs": {
+                "all": sorted(self.environment.list_environment_names()),
+                "unique:": sorted(self.environment.list_unique_environment_names()),
+                "unique_annotated": self.get_unique_annotated_environment_names(),
+            },
+            "bucket": {
+                "env": self.environment.get_env_bucket_name(),
+                "foursight": get_foursight_bucket(envname=environ, stage=stage_name),
+                "foursight_prefix": get_foursight_bucket_prefix(),
+                "info": self.sorted_dict(obfuscate_dict(self.environment.get_environment_and_bucket_info(environ, stage_name))),
+                "ecosystem": self.sorted_dict(EnvUtils.declared_data()),
+            },
+            "checks": {
+                "running": 0,
+                "queued": 0
+            },
+            "gac": {
+                "name": get_identity_name(),
+                "values": self.sorted_dict(obfuscate_dict(get_identity_secrets())),
+             },
+            "environ": self.sorted_dict(obfuscate_dict(dict(os.environ)))
+        }
+        response = Response('react_get_info')
+        response.body = info
+        response.headers = {'Content-Type': 'application/json'}
+        response.status_code = 200
+        return self.process_response(response)
+
     def react_get_users(self, request, environ, is_admin=False, domain="", context="/"):
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()

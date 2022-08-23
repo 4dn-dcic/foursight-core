@@ -13,6 +13,7 @@ const Users = (props) => {
 
     return (<>
         <h1>All Users:</h1>
+        <hr />
         <div>
             {users.length > 0 && (
                 <ul>
