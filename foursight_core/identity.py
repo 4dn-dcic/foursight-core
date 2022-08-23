@@ -51,7 +51,9 @@ def find_lambda_names(stack_name: str, lambda_name_pattern: str) -> list:
     lambda_name_regex = f".*{lambda_name_pattern}.*"
     lambda_names = AbstractOrchestrationManager.find_lambda_function_names(lambda_name_regex)
     for lambda_name in lambda_names:
-        lambda_name_prefix_end_index = lambda_name.index(lambda_name_pattern)
+        lambda_name_prefix_end_index = lambda_name.find(lambda_name_pattern)
+        if lambda_name_prefix_end_index < 0:
+            continue
         lambda_name_prefix = lambda_name[:lambda_name_prefix_end_index]
         if stack_name.startswith(lambda_name_prefix):
             response.append(lambda_name)
@@ -79,7 +81,30 @@ def find_check_runner_lambda_name(stack_name: str) -> str:
     return check_runner_lambda_names[0]
 
 
-def apply_identity_globally():
+def verify_identity_name_environment_variable_exists() -> None:
+    identity_name = get_identity_name(identity_kind=GLOBAL_APPLICATION_CONFIGURATION)
+    if not identity_name:
+        raise Exception(f"Foursight {GLOBAL_APPLICATION_CONFIGURATION} environment variable not set!")
+    logger.info(f"Foursight {GLOBAL_APPLICATION_CONFIGURATION} environment variable value is: {identity_name}")
+
+
+def get_stack_name_from_environment_variable() -> str:
+    stack_name = os.environ.get("STACK_NAME")
+    if not stack_name:
+        raise Exception(f"Foursight STACK_NAME environment variable not set!")
+    logger.info(f"Foursight STACK_NAME environment variable value is: {stack_name}")
+    return stack_name
+
+
+def verify_rds_name_environment_variable_exists() -> None:
+    rds_name = os.environ.get("RDS_NAME")
+    if rds_name:
+        logger.info(f"Foursight RDS_NAME environment variable value is: {rds_name}")
+    else:
+        logger.info(f"Foursight RDS_NAME environment variable is not set.")
+
+
+def apply_identity_environment_variables() -> None:
 
     # This maps key names in the global application configuration (GAC) to names used here.
     IDENTITY_KEY_MAP_REQUIRED = {
@@ -87,55 +112,58 @@ def apply_identity_globally():
         "ENCODED_AUTH0_SECRET": "CLIENT_SECRET",
         "ENCODED_ES_SERVER": "ES_HOST",
     }
-    IDENTITY_KEY_MAP_NOT_REQUIRED = {
+    IDENTITY_KEY_MAP_OPTIONAL = {
         "ENCODED_S3_ENCRYPT_KEY_ID": "S3_ENCRYPT_KEY_ID"
     }
 
-    # Make sure the IDENTITY (environment variable) is set (via Foursight CloudFormation template);
-    # this is the name of the global application configuration (GAC) secret.
-    identity_name = get_identity_name(identity_kind=GLOBAL_APPLICATION_CONFIGURATION)
-    if not identity_name:
-        raise Exception(f"Foursight {GLOBAL_APPLICATION_CONFIGURATION} environment variable not set!")
-    logger.info(f"Foursight {GLOBAL_APPLICATION_CONFIGURATION} environment variable value is: {identity_name}")
-
-    # Make sure the STACK_NAME (environment variable) is set (via Foursight CloudFormation template);
-    # from this we are able to find the CHECK_RUNNER lambda function name.
-    stack_name = os.environ.get("STACK_NAME")
-    if not stack_name:
-        raise Exception(f"Foursight STACK_NAME environment variable not set!")
-    logger.info(f"Foursight STACK_NAME environment variable value is: {stack_name}")
-
-    # Apply the GAC secrets values globally to os.environ.
-    # First do the required ones and then the non-required ones;
-    # like this because apply_identity will throw an exception of the given key name does not exist.
-    # Could enhance apply_identity to handle this optional-key scenario, but for now just do it like this.
     apply_identity(identity_kind=GLOBAL_APPLICATION_CONFIGURATION, rename_keys=IDENTITY_KEY_MAP_REQUIRED)
     try:
-        apply_identity(identity_kind=GLOBAL_APPLICATION_CONFIGURATION, rename_keys=IDENTITY_KEY_MAP_NOT_REQUIRED)
+        apply_identity(identity_kind=GLOBAL_APPLICATION_CONFIGURATION, rename_keys=IDENTITY_KEY_MAP_OPTIONAL)
     except (KeyError, ValueError):
         pass
 
-    # Note that we will assume RDS_NAME is in the GAC.
-    # Previously it was (and still is) in the RDSSecret (as dbInstanceIdentifier)
-    # but we added it (as RDS_NAME) to the GAC (circa August 2022).
-    rds_name = os.environ.get("RDS_NAME")
-    if rds_name:
-        logger.info(f"Foursight RDS_NAME environment variable value is: {rds_name}")
-    else:
-        logger.info(f"Foursight RDS_NAME environment variable is not set.")
 
-    # Get the CHECK_RUNNER lambda function name; using the stack_name as a prefix; for example,
-    # this lambda name looks like: c4-foursight-cgap-supertest-stack-CheckRunner-pKsOvziDT7QI
-    # where c4-foursight-cgap-supertest-stack is the stack_name. See find_check_runner_lambda_name
-    # above which hides handling of details related to the fact that chalice may have truncated
-    # the stack name (prefix) portion of the lambda function name.
+def set_check_runner_lambda_environment_variable(stack_name) -> None:
     os.environ["CHECK_RUNNER"] = find_check_runner_lambda_name(stack_name)
     logger.info(f"Foursight CHECK_RUNNER environment variable value is: {os.environ['CHECK_RUNNER']}")
 
-    # Set ES_HOST to proxy for local testing (e.g. http://localhost:9200) via ES_HOST_LOCAL environment variable.
+
+def set_elasticsearch_host_environment_variable() -> None:
     es_host_local = os.environ.get("ES_HOST_LOCAL")
     if es_host_local:
         os.environ["ES_HOST"] = es_host_local
         logger.info(f"Foursight ES_HOST local environment variable value is: {os.environ.get('ES_HOST')}")
     else:
         logger.info(f"Foursight ES_HOST environment variable value is: {os.environ.get('ES_HOST')}")
+
+
+def apply_identity_globally():
+
+    # Make sure the IDENTITY (environment variable) is set (via Foursight CloudFormation template);
+    # this is the name of the global application configuration (GAC) secret.
+    verify_identity_name_environment_variable_exists()
+
+    # Make sure the STACK_NAME (environment variable) is set (via Foursight CloudFormation template);
+    # from this we are able to find the CHECK_RUNNER lambda function name.
+    stack_name = get_stack_name_from_environment_variable()
+
+    # Apply the GAC secrets values globally to os.environ.
+    # First do the required ones and then the non-required ones;
+    # like this because apply_identity will throw an exception of the given key name does not exist.
+    # Could enhance apply_identity to handle this optional-key scenario, but for now just do it like this.
+    apply_identity_environment_variables()
+
+    # Note that we will assume RDS_NAME is in the GAC.
+    # Previously it was (and still is) in the RDSSecret (as dbInstanceIdentifier)
+    # but we added it (as RDS_NAME) to the GAC (circa August 2022).
+    verify_rds_name_environment_variable_exists()
+
+    # Get the CHECK_RUNNER lambda function name; using the stack_name as a prefix; for example,
+    # this lambda name looks like: c4-foursight-cgap-supertest-stack-CheckRunner-pKsOvziDT7QI
+    # where c4-foursight-cgap-supertest-stack is the stack_name. See find_check_runner_lambda_name
+    # above which hides handling of details related to the fact that chalice may have truncated
+    # the stack name (prefix) portion of the lambda function name.
+    set_check_runner_lambda_environment_variable(stack_name)
+
+    # Set ES_HOST to proxy for local testing (e.g. http://localhost:9200) via ES_HOST_LOCAL environment variable.
+    set_elasticsearch_host_environment_variable()
