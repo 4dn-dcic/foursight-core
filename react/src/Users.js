@@ -2,12 +2,14 @@ import './App.css';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation, useParams } from 'react-router-dom';
 import { fetchData } from './Utils.js';
+import Loader from "./Loader.js";
 
 const Users = (props) => {
 
     const url = "http://localhost:8000/api/reactapi/cgap-supertest/users"
-    const [ users, setUsers ] = useState([]);
-    useEffect(() => { fetchData(url, setUsers)}, []);
+    let [ users, setUsers ] = useState([]);
+    let [ loading, setLoading ] = useState(true);
+    useEffect(() => { fetchData(url, setUsers, setLoading)}, []);
 
     return (<>
         <h1>All Users:</h1>
@@ -20,6 +22,7 @@ const Users = (props) => {
                 </ul>
             )}
         </div>
+        <Loader loading={loading} />
     </>);
 
 };
