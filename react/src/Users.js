@@ -1,7 +1,6 @@
-import React from 'react';
 import { useState, useEffect, useContext } from 'react';
-import { NavLink, Link, useNavigate, useSearchParams, useLocation, useParams } from 'react-router-dom';
-import { fetchData } from './Utils.js';
+import { Link } from 'react-router-dom';
+import { fetchData, URL } from './Utils.js';
 import Loader from "./Loader.js";
 import GlobalContext from "./GlobalContext.js";
 
@@ -20,7 +19,7 @@ const Users = (props) => {
             {users.length > 0 && (
                 <ul>
                     {users.map(user => (
-                        <li key={user.email_address}><b><Link to={"/api/react/cgap-supertest/users/" + user.email_address}>{user.email_address}</Link></b><br />{user.first_name} {user.last_name}</li>
+                        <li key={user.email_address}><b><Link to={URL("/users/" + user.email_address)}>{user.email_address}</Link></b><br />{user.first_name} {user.last_name}</li>
                     ))}
                 </ul>
             )}

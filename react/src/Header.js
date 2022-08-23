@@ -1,20 +1,11 @@
-import logo from './logo.svg';
 import React from 'react';
-import { useState, useEffect, useContext } from 'react';
-import { NavLink, Link, useNavigate, useSearchParams, useLocation, useParams } from 'react-router-dom';
-import { fetchData } from './Utils.js';
+import { useContext } from 'react';
+import { Link } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 
 const Header = (props) => {
 
-    const url = "http://localhost:8000/api/reactapi/cgap-supertest/info"
-    // let [ info, setInfo ] = useState([]);
-    // let [ loading, setLoading ] = useState(true);
-    // useEffect(() => { fetchData(url, setInfo, setLoading)}, []);
-
-    // const globalContext = useContext(GlobalContext);
     const info = useContext(GlobalContext);
-
     const path = window.location.pathname;
 
     function deleteLoginCookies() {
@@ -22,8 +13,6 @@ const Header = (props) => {
     }
 
     function renderNavigationLinks(info) {
-            console.log(`NAV:[${info.page.path}][${info.page.context}][${path}]`);
-        // http://localhost:3000/api/react/cgap-supertest/users/david_michaels@hms.harvard.edu
         if (path.startsWith(info.page.context + "info")) {
             return <span>
                 <Link to={info.page.context + 'react/' + info.app.env + '/view'} style={{textDecoration:"none"}}>HOME</Link> &nbsp;|&nbsp;

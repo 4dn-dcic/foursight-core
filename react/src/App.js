@@ -1,9 +1,7 @@
 import './App.css';
-import React from 'react';
-import ReactDOM from 'react-dom/client';
 import { useState, useEffect} from 'react';
-import { Link, useNavigate, useSearchParams, useLocation, useParams } from 'react-router-dom';
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import GlobalContext from "./GlobalContext.js";
 import Home from './Home.js';
 import Info from './Info.js';
 import User from './User.js';
@@ -11,7 +9,6 @@ import Users from './Users.js';
 import Demo from './Demo.js';
 import Header from './Header';
 import { fetchData } from './Utils.js';
-import GlobalContext from "./GlobalContext.js";
 
 
 const App = () => {

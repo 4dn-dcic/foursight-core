@@ -1,6 +1,4 @@
-import logo from './logo.svg';
-import { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams, useLocation, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const Home = (props) => {
   return (
