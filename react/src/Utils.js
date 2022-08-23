@@ -20,3 +20,11 @@ export const useScrollToTop = () => {
     // the window object is a normal DOM object and is safe to use in React.
   }, [location]);
 };
+
+export const fetchData = (url, setData) => {
+    fetch(url).then(response => {
+        return response.json();
+    }).then(responseJson => {
+        setData(responseJson);
+    })
+}

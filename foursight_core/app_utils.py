@@ -1796,7 +1796,7 @@ class AppUtilsCore:
         return set(complete)
 
     # Experimental React UI stuff.
-    def serve_react_file(self, environ, is_admin=False, domain="", context="/", **kwargs):
+    def react_serve_file(self, environ, is_admin=False, domain="", context="/", **kwargs):
 
         print(f"Serve React file called with: environ={environ}, is_admin={is_admin}")
         environ = environ.replace("{environ}", environ)
@@ -1858,6 +1858,55 @@ class AppUtilsCore:
             except Exception as e:
                 print(f"ERROR: Exception on serving React file: {file} (content-type: {content_type}).")
                 print(e)
+        response.status_code = 200
+        return self.process_response(response)
+
+    # Experimental React UI (API) stuff.
+    def react_get_users(self, request, environ, is_admin=False, domain="", context="/"):
+        request_dict = request.to_dict()
+        stage_name = self.stage.get_stage()
+        users = []
+        # TODO: Support paging.
+        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000')
+        for user_record in user_records["@graph"]:
+            last_modified = user_record.get("last_modified")
+            if last_modified:
+                last_modified = last_modified.get("date_modified")
+            # TODO
+            # roles = []
+            # project_roles = user_record.get("project_roles")
+            # if project_roles:
+            #     role = role.get("date_modified")
+            #     roles.append({
+            #         "groups": groups,
+            #         "project_roles": project_roles,
+            #         "principals_view": principals_view,
+            #         "principals_edit": principals_edit
+            #     })
+            users.append({
+                "email_address": user_record.get("email"),
+                "first_name": user_record.get("first_name"),
+                "last_name": user_record.get("last_name"),
+                "uuid": user_record.get("uuid"),
+                "modified": self.convert_utc_datetime_to_useastern_datetime(last_modified)})
+        response = Response('react_get_users')
+        response.body = sorted(users, key=lambda key: key["email_address"])
+        response.headers = {'Content-Type': 'application/json'}
+        response.status_code = 200
+        return self.process_response(response)
+
+    def react_get_user(self, request, environ, is_admin=False, domain="", context="/", email=None):
+        users = []
+        for email_address in email.split(","):
+            try:
+                user = ff_utils.get_metadata('users/' + email_address.lower(),
+                                             ff_env=full_env_name(environ), add_on='frame=object')
+                users.append({"email_address": email_address, "record": user})
+            except Exception as e:
+                users.append({"email_address": email_address, "record": {"error": str(e)}})
+        response = Response('react_get_user')
+        response.body = sorted(users, key=lambda key: key["email_address"])
+        response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
         return self.process_response(response)
 
