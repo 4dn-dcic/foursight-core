@@ -1,3 +1,177 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <style type="text/css">
+    .html-scroll {
+        overflow-y: scroll;
+    }
+    .container {
+        max-width: 1900px;
+        padding-top: 10px;
+    }
+    .control-form {
+        display: inline;
+        margin-right: 20px;
+        margin-top: -8px;
+    }
+    .boxstyle {
+        border: 1px solid #ccc;
+        margin-bottom: 5px;
+        border-radius: 8px;
+        padding: 2px 10px 2px 10px;
+    }
+    .group-boxstyle {
+        border: 1px solid #ccc;
+        margin-bottom: 5px;
+        border-radius: 8px;
+        padding: 0px 0px 0px 0px;
+        background-color: #f8f8f8;
+    }
+    .group-boxstyle:hover {
+        background-color: #f2f2f2;
+    }
+    .login-w-hover {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background-color: #f8f8f8;
+        font-weight: 350;
+    }
+    .login-w-hover:hover {
+        background-color: #d9d9d9;
+    }
+    .commonstyle {
+        margin: 0px 10px 5px 10px;
+    }
+    .collapse-div{
+        overflow: hidden;
+        clear: both;
+    }
+    .own-line {
+        display: block;
+    }
+    .in-line{
+        display: inline-block;
+    }
+    .action-icon {
+        height: 11px;
+        width: 11px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .assc-action-done {
+        background-color: #55aa57;
+    }
+    .assc-action-fail {
+        background-color: #b84947;
+    }
+    .assc-action-pend {
+        background-color: #e7c418;
+    }
+    .assc-action-ready {
+        background-color: #b6b5b5;
+    }
+    .info {
+        background-color: #D6EAF8;
+        color: #263A48;
+    }
+    .check-pass, .check-done {
+        background-color: #dff0d8;
+        color: #3c763d;
+    }
+    .check-warn, .check-pend {
+        background-color: #fcf8e3;
+        color: #8a6d3b;
+    }
+    .check-fail {
+        background-color: #f2dede;
+        color: #a94442;
+    }
+    .check-error {
+        background-color: #fbdcbd;
+        color: #b75c00;
+    }
+    .check-ignore {
+        display: none;
+    }
+    .center-element {
+        text-align: center;
+    }
+    .opacity-transition {
+        -webkit-transition: opacity 0.5s;
+        transition: opacity 0.5s;
+    }
+    .title-image-hover, .title-image-hover:visited, .title-image-hover:active {
+        text-decoration: none;
+        opacity: 0.7;
+    }
+    .title-image-hover:hover, .title-image-hover:focus {
+        text-decoration: none;
+        opacity: 1.0;
+    }
+    .title-hover, .title-hover:visited, .title-hover:active {
+        color: inherit;
+    }
+    .title-hover:hover, .title-hover:focus{
+        text-decoration: none;
+        color: #000;
+    }
+    .top-level-list {
+        padding: 0px;
+    }
+    .no-border {
+        border: none;
+    }
+    li {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+    dl {
+        margin-bottom: 0px;
+    }
+    dd {
+        margin-left: 20px;
+        margin-bottom: 5px;
+    }
+    .dropdown-button {
+      background-color: inherit;
+      color: inherit;
+      border: none;
+      cursor: pointer;
+    }
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #9DC5E0;
+      min-width: 160px;
+      box-shadow: 10px 10px 10px #476f86;
+      z-index: 1;
+    }
+    .dropdown-content a {
+      text-align: left;
+      color: inherit;
+      background-color: inherit;
+      padding: 4px 80px 4px 8px;
+      text-decoration: none;
+      display: block;
+    }
+    .dropdown-content span {
+      text-align: left;
+      color: black;
+      padding: 4px 80px 4px 8px;
+      text-decoration: none;
+      display: block;
+      cursor: default;
+    }
+    .dropdown-content a:hover {background-color: #365e75; color:yellow; cursor:pointer;}
+    .dropdown-content span:hover {color:blue;}
+    .dropdown:hover .dropdown-content {display: block;}
+    .dropdown:hover .dropdown-button {color: black;}
+    </style>
 .App {
   text-align: center;
 }

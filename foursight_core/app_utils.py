@@ -695,10 +695,12 @@ class AppUtilsCore:
         to get the last modified time of the lambda needs to look first at this tag and take that
         if it exists before looking at the real last modified time.
         """
+        lambda_current = False
         if not lambda_name or lambda_name.lower() == "current":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
             if not lambda_name:
                 return False
+            lambda_current = True
         try:
             boto_lambda = boto3.client("lambda")
             lambda_info = boto_lambda.get_function(FunctionName=lambda_name)
@@ -720,6 +722,8 @@ class AppUtilsCore:
                 logger.warn(f"Reloading lambda: {lambda_name}")
                 boto_lambda.update_function_configuration(FunctionName=lambda_name, Description=lambda_description)
                 logger.warn(f"Reloaded lambda: {lambda_name}")
+                if lambda_current:
+                    self.lambda_last_modified = None
         except Exception as e:
             logger.warn(f"Error reloading lambda ({lambda_name}): {e}")
         return False
@@ -1866,7 +1870,7 @@ class AppUtilsCore:
         return self.process_response(response)
 
     # TODO: Refactor.
-    def react_get_obfuscated_credentials_info(self, env_name: str) -> dict:
+    def react_get_credentials_info(self, env_name: str) -> dict:
         try:
             session = boto3.session.Session()
             credentials = session.get_credentials()
@@ -1894,27 +1898,17 @@ class AppUtilsCore:
         login = self.get_logged_in_user_info(environ, request_dict)
         login["admin"] = is_admin
         login["auth0"] = self.get_auth0_client_id(environ)
-        print('xyzzy......................')
-        print(request)
-        print(type(request))
-        print(dir(request))
-        print(request.context)
-        print(type(request.context))
-        print(dir(request.context))
-        print(request_dict)
-        print(type(request_dict))
-        print(dir(request_dict))
         if self.user_record:
             login["user"] = self.user_record
-        info = {
-            "version": {
-                "foursight": self.get_app_version(),
-                "foursight_core": pkg_resources.get_distribution('foursight-core').version,
-                "dcicutils": pkg_resources.get_distribution('dcicutils').version,
-                "python": platform.python_version()
-            },
-            "time": {
-                "loaded": self.get_load_time(),
+        response = Response('react_get_info')
+        response.body = {
+            "app": {
+                "package": self.APP_PACKAGE_NAME,
+                "stage": stage_name,
+                "env": environ,
+                "version": self.get_app_version(),
+                "local": self.is_running_locally(request_dict),
+                "credentials": self.react_get_credentials_info(environ),
                 "launched": self.init_load_time,
                 "deployed": self.get_lambda_last_modified()
             },
@@ -1925,15 +1919,15 @@ class AppUtilsCore:
                 "context": context,
                 "path": request_dict.get("context").get("path"),
                 "endpoint": request.path,
+                "loaded": self.get_load_time()
+            },
+            "versions": {
+                "foursight": self.get_app_version(),
+                "foursight_core": pkg_resources.get_distribution('foursight-core').version,
+                "dcicutils": pkg_resources.get_distribution('dcicutils').version,
+                "python": platform.python_version()
             },
             "login": login,
-            "app": {
-                "package": self.APP_PACKAGE_NAME,
-                "stage": stage_name,
-                "env:": environ,
-                "local": self.is_running_locally(request_dict),
-                "credentials": self.react_get_obfuscated_credentials_info(environ)
-            },
             "server": {
                 "foursight": socket.gethostname(),
                 "portal": self.get_portal_url(environ),
@@ -1942,17 +1936,17 @@ class AppUtilsCore:
                 "sqs": self.sqs.get_sqs_queue().url
             },
             "env": {
-                "name:": environ,
-                "full_name:": full_env_name(environ),
-                "short_name:": short_env_name(environ),
-                "inferred_name:": infer_foursight_from_env(envname=environ),
+                "name": environ,
+                "full_name": full_env_name(environ),
+                "short_name": short_env_name(environ),
+                "inferred_name": infer_foursight_from_env(envname=environ),
             },
             "envs": {
                 "all": sorted(self.environment.list_environment_names()),
-                "unique:": sorted(self.environment.list_unique_environment_names()),
+                "unique": sorted(self.environment.list_unique_environment_names()),
                 "unique_annotated": self.get_unique_annotated_environment_names(),
             },
-            "bucket": {
+            "buckets": {
                 "env": self.environment.get_env_bucket_name(),
                 "foursight": get_foursight_bucket(envname=environ, stage=stage_name),
                 "foursight_prefix": get_foursight_bucket_prefix(),
@@ -1969,8 +1963,6 @@ class AppUtilsCore:
              },
             "environ": self.sorted_dict(obfuscate_dict(dict(os.environ)))
         }
-        response = Response('react_get_info')
-        response.body = info
         response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
         return self.process_response(response)
