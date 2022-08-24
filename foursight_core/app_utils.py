@@ -59,6 +59,9 @@ class AppUtilsCore:
         return pkg_resources.get_distribution(self.APP_PACKAGE_NAME).version
 
     # dmichaels/2022-07-20/C4-826: Apply identity globally.
+    # TODO: Find a way to do this not from the top-level here.
+    # It is here because if it is not then we fail to get the ES_HOST
+    # environment variable in foursight-cgap/fourfront where this class is subclassed..
     apply_identity_globally()
 
     # These must be overwritten in inherited classes
