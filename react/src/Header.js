@@ -100,12 +100,13 @@ if (!info.loading) {
                         { (info.envs.unique_annotated.length > 0) ? (
                         <span className="dropdown">
                             <b className="dropdown-button" onClick={()=>{this.nextSibling.display='block';}} style={{color:"#143c53"}} title="Environment: {getEnvFromUrlPath()}">{getEnvFromUrlPath().toUpperCase()}</b>
-                            <span className="dropdown-content">
+                            <span className="dropdown-content" id="xyzzy" name="xyzzy">
                                 { info.envs.unique_annotated.map(env => 
                                     env.name.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.full.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.short.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.inferred.toUpperCase() == getEnvFromUrlPath().toUpperCase() ? (
                                         <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
-                                        <Link key={env.full} to={URLE(env.full)} xnClick={()=>{this.style.color="yellow";this.style.backgroundColor="#143c53";this.style.fontWeight="bold";window.event.stopPropagation();window.event.preventDefault()}}>{env.full}</Link>
+                                        
+                                        <Link key={env.full} to={URLE(env.full)}><span key={env.full} onClick={()=>{document.getElementById("xyzzy").style.display="none";}}>{env.full}</span></Link>
                                     )
                                 )}
                             </span>
