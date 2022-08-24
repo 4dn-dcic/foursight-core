@@ -39,7 +39,6 @@ const Header = (props) => {
             </tr>
             </tbody></table>
         ):(<React.Fragment>
-                FOO[{info["loading"]}][{info["currentPage"]}][{info["app"]["env"]}]
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr>
                 <td width="400" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
