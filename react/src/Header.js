@@ -20,11 +20,13 @@ const Header = (props) => {
                 console.log(path.startsWith(info.page.context + "react/" + info.app.env + page) ? "bold" : "normal");
             return path.startsWith(info.page.context + "react/" + info.app.env + page) ? "bold" : "normal";
         }
-            console.log('renderheader');
         return <span>
-            <Link to={URL("/view")} style={{textDecoration:"none",fontWeight:weight("/view")}}>HOME</Link> &nbsp;|&nbsp;
-            <Link to={URL("/users")} style={{textDecoration:"none",fontWeight:weight("/users")}}>USERS</Link> &nbsp;|&nbsp;
-            <Link to={URL("/info")} style={{textDecoration:"none",fontWeight:weight("/info")}}>INFO</Link>
+            <Link to={URL("/view")} style={{textDecoration:"none",fontWeight:weight("/view")}}>HOME</Link>&nbsp;|&nbsp;
+            <Link to={URL("/users")} style={{textDecoration:"none",fontWeight:weight("/users")}}>USERS</Link>&nbsp;|&nbsp;
+            <Link to={URL("/info")} style={{textDecoration:"none",fontWeight:weight("/info")}}>INFO</Link>&nbsp;|&nbsp;
+            <a target="_blank" title="Open AWS Console for this account ({info.app.credentials.aws_account_number}) in another tab."
+                style={{textDecoration:"none"}}
+                href={"https://" + info.app.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span></a>
         </span>
     }
 
