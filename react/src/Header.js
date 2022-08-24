@@ -105,7 +105,7 @@ if (!info.loading) {
                                     env.name.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.full.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.short.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.inferred.toUpperCase() == getEnvFromUrlPath().toUpperCase() ? (
                                         <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
-                                        <Link key={env.full} to={URLE(env.full)} onClick={()=>{this.style.color="yellow";this.style.backgroundColor="#143c53";this.style.fontWeight="bold"}}>{env.full}</Link>
+                                        <Link key={env.full} to={URLE(env.full)} xnClick={()=>{this.style.color="yellow";this.style.backgroundColor="#143c53";this.style.fontWeight="bold";window.event.stopPropagation();window.event.preventDefault()}}>{env.full}</Link>
                                     )
                                 )}
                             </span>
@@ -113,6 +113,25 @@ if (!info.loading) {
                         ):(
                             <b style={{color:"#143c53"}} title="Environment: {getEnvFromUrlPath()}">asdfadfadf{getEnvFromUrlPath().toUpperCase()}</b>
                         )}
+                        &nbsp;|&nbsp;
+                        { (info.app.stage == 'prod') ? (<span>
+                            <b title="Deployment stage: PROD!" style={{color:"red"}}>PROD</b> &nbsp;|&nbsp;
+                        </span>):(<span></span>)}
+                        { (info.app.stage == 'dev') ? (<span>
+                            <b title="Deployment stage: DEV" style={{color:"darkgreen"}}>DEV</b> &nbsp;|&nbsp;
+                        </span>):(<span></span>)}
+                        { (info.app.stage != 'prod' && info.app.stage != 'dev') ? (<span>
+                            <b title="Deployment stage: {info.app.stage}">{info.app.stage}}</b> &nbsp;|&nbsp;
+                        </span>):(<span></span>)}
+                        { (info.login.admin) ? (<span>
+                            { (info.login.email_address) ? (<span>
+                                <span style={{textDecoration:"none"}}><b title="" style={{color:"darkblue;"}} title="Logged in as.">{info.login.email_address}</b></span>
+                            </span>):(<span>
+                                <b style={{color:"darkblue"}}>ADMIN</b>
+                            </span>)}
+                        </span>):(<span>
+                            <span style={{cursor:"pointer",fontWeight:"bold",color:"darkred;"}} title="Not logged in. Click to login." onClick={()=>{}}>LOGIN</span>
+                        </span>)}
                     </td>
                 </tr>
             </tbody></table>
