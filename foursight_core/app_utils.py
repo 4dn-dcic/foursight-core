@@ -1903,8 +1903,8 @@ class AppUtilsCore:
         login["auth0"] = self.get_auth0_client_id(environ)
         if self.user_record:
             login["user"] = self.user_record
-        xyzzy = self.get_unique_annotated_environment_names()
-        xyzzy.append({"name":"foo", "full":"bar", "short":"dfadfa", "inferred":"iadfad"})
+        // xyzzy = self.get_unique_annotated_environment_names()
+        // xyzzy.append({"name":"foo-bar-suptest", "full":"foo-bar-suptestful", "short":"sfafdfa-short", "inferred":"iadfad-nf"})
         response = Response('react_get_info')
         response.body = {
             "app": {
@@ -1949,7 +1949,7 @@ class AppUtilsCore:
             "envs": {
                 "all": sorted(self.environment.list_environment_names()),
                 "unique": sorted(self.environment.list_unique_environment_names()),
-                "unique_annotated": xyzzy # self.get_unique_annotated_environment_names(),
+                "unique_annotated": self.get_unique_annotated_environment_names() # xyzzy
             },
             "buckets": {
                 "env": self.environment.get_env_bucket_name(),
