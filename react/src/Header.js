@@ -61,9 +61,9 @@ if (!info.loading) {
             </tbody></table>
         ):(<React.Fragment>
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
-            <tr>
+            <tr title={"App Deployed:" + info.app.deployed + " | App Launched: " + info.app.launched + " | Page Loaded: " + info.page.loaded}>
                 <td width="400" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
-                    <a href={info.page.context + 'view/' + info.app.env} title={'abc' + info.env.name + 'def'}>
+                    <a href={info.page.context + 'view/' + info.app.env}>
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                     </a>
                 </td>
