@@ -1,13 +1,14 @@
 import './App.css';
 import React from 'react';
 import { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 import { BASE_URL_PATH, URL, URLE, getEnvFromUrlPath } from "./Utils.js";
 import { RingSpinner, BarSpinner } from "./Spinners.js";
 
 const Header = (props) => {
 
+    let navigate = useNavigate();
     const [ info, setInfo ] = useContext(GlobalContext);
     const path = window.location.pathname;
         console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
@@ -33,7 +34,6 @@ const Header = (props) => {
                 href={"https://" + info.app.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span></a>
         </span>
     }
-console.log('xyz');
 if (!info.loading) {
             console.log(info.envs.unique_annotated)
         console.log('foo')
@@ -99,14 +99,14 @@ if (!info.loading) {
                     <td width="400" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (info.envs.unique_annotated.length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" onClick={()=>{this.nextSibling.display='block';}} style={{color:"#143c53"}} title="Environment: {getEnvFromUrlPath()}">{getEnvFromUrlPath().toUpperCase()}</b>
-                            <span className="dropdown-content" id="xyzzy" name="xyzzy">
+                            <b className="dropdown-button" style={{color:"#143c53"}} title="Environment: {getEnvFromUrlPath()}">{getEnvFromUrlPath().toUpperCase()}</b>
+                            <span className="dropdown-content">
                                 { info.envs.unique_annotated.map(env => 
                                     env.name.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.full.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.short.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.inferred.toUpperCase() == getEnvFromUrlPath().toUpperCase() ? (
                                         <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
                                         
-                                        <Link key={env.full} to={URLE(env.full)}><span key={env.full} onClick={()=>{document.getElementById("xyzzy").style.display="none";}}>{env.full}</span></Link>
+                                        <a key={env.full} onClick={()=>{navigate(URLE(env.full))}}>{env.full}</a>
                                     )
                                 )}
                             </span>

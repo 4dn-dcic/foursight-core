@@ -143,7 +143,7 @@
       display: none;
       position: absolute;
       background-color: #9DC5E0;
-      min-width: 160px;
+      width: fit-content;
       box-shadow: 10px 10px 10px #476f86;
       z-index: 1;
     }
