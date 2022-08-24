@@ -100,16 +100,15 @@ if (!info.loading) {
                         { (info.envs.unique_annotated.length > 0) ? (
                         <span className="dropdown">
                             <b className="dropdown-button" style={{color:"#143c53"}} title="Environment: {getEnvFromUrlPath()}">{getEnvFromUrlPath().toUpperCase()}</b>
-                            <span className="dropdown-content">
+                            <div className="dropdown-content">
                                 { info.envs.unique_annotated.map(env => 
                                     env.name.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.full.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.short.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.inferred.toUpperCase() == getEnvFromUrlPath().toUpperCase() ? (
                                         <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
-                                        
                                         <a key={env.full} onClick={()=>{navigate(URLE(env.full))}}>{env.full}</a>
                                     )
                                 )}
-                            </span>
+                            </div>
                          </span>
                         ):(
                             <b style={{color:"#143c53"}} title="Environment: {getEnvFromUrlPath()}">asdfadfadf{getEnvFromUrlPath().toUpperCase()}</b>
