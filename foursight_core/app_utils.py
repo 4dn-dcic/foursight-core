@@ -103,6 +103,7 @@ class AppUtilsCore:
         self.auth0_client_id = None
         self.user_record = None
         self.lambda_last_modified = None
+        self.react_cache_info = None
 
     @staticmethod
     def note_non_fatal_error_for_ui_info(error_object, calling_function):
@@ -1893,6 +1894,8 @@ class AppUtilsCore:
 
     # Experimental React UI (API) stuff.
     def react_get_info(self, request, environ, is_admin=False, domain="", context="/"):
+        if self.react_cache_info:
+            return self.react_cache_info
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         login = self.get_logged_in_user_info(environ, request_dict)
@@ -1900,6 +1903,8 @@ class AppUtilsCore:
         login["auth0"] = self.get_auth0_client_id(environ)
         if self.user_record:
             login["user"] = self.user_record
+        xyzzy = self.get_unique_annotated_environment_names()
+        xyzzy.append({"name":"foo", "full":"bar", "short":"dfadfa", "inferred":"iadfad"})
         response = Response('react_get_info')
         response.body = {
             "app": {
@@ -1944,7 +1949,7 @@ class AppUtilsCore:
             "envs": {
                 "all": sorted(self.environment.list_environment_names()),
                 "unique": sorted(self.environment.list_unique_environment_names()),
-                "unique_annotated": self.get_unique_annotated_environment_names(),
+                "unique_annotated": xyzzy # self.get_unique_annotated_environment_names(),
             },
             "buckets": {
                 "env": self.environment.get_env_bucket_name(),
@@ -1965,6 +1970,7 @@ class AppUtilsCore:
         }
         response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
+        self.react_cache_info = response.body
         return self.process_response(response)
 
     def react_get_users(self, request, environ, is_admin=False, domain="", context="/"):

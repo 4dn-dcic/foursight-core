@@ -1,13 +1,17 @@
+import './App.css';
 import React from 'react';
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
-import { URL } from "./Utils.js";
+import { BASE_URL_PATH, URL, URLE, getEnvFromUrlPath } from "./Utils.js";
+import { RingSpinner, BarSpinner } from "./Spinners.js";
 
 const Header = (props) => {
 
     const [ info, setInfo ] = useContext(GlobalContext);
     const path = window.location.pathname;
+        console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
+        console.log(BASE_URL_PATH);
 
     function deleteLoginCookies() {
         document.cookie = "jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname + ";";
@@ -15,32 +19,43 @@ const Header = (props) => {
 
     function renderNavigationLinks(info) {
         function weight(page) {
-                console.log("WIGITH:");
-                console.log(info.page.context + "react/" + info.app.env + page);
-                console.log(path.startsWith(info.page.context + "react/" + info.app.env + page) ? "bold" : "normal");
-            return path.startsWith(info.page.context + "react/" + info.app.env + page) ? "bold" : "normal";
+            return path.startsWith(BASE_URL_PATH + getEnvFromUrlPath() + page) ? "bold" : "normal";
+        }
+        function color(page) {
+            return path.startsWith(BASE_URL_PATH + getEnvFromUrlPath() + page) ? "black" : "blue";
         }
         return <span>
-            <Link to={URL("/view")} style={{textDecoration:"none",fontWeight:weight("/view")}}>HOME</Link>&nbsp;|&nbsp;
-            <Link to={URL("/users")} style={{textDecoration:"none",fontWeight:weight("/users")}}>USERS</Link>&nbsp;|&nbsp;
-            <Link to={URL("/info")} style={{textDecoration:"none",fontWeight:weight("/info")}}>INFO</Link>&nbsp;|&nbsp;
+            <Link to={URL("/view")} style={{textDecoration:"none",color:color("/view"),fontWeight:weight("/view")}}>HOME</Link>&nbsp;|&nbsp;
+            <Link to={URL("/users")} style={{textDecoration:"none",color:color("/users"),fontWeight:weight("/users")}}>USERS</Link>&nbsp;|&nbsp;
+            <Link to={URL("/info")} style={{textDecoration:"none",color:color("/info"),fontWeight:weight("/info")}}>INFO</Link>&nbsp;|&nbsp;
             <a target="_blank" title="Open AWS Console for this account ({info.app.credentials.aws_account_number}) in another tab."
                 style={{textDecoration:"none"}}
                 href={"https://" + info.app.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span></a>
         </span>
     }
+console.log('xyz');
+if (!info.loading) {
+            console.log(info.envs.unique_annotated)
+        console.log('foo')
+            info.envs.unique_annotated.map(env => console.log(env.name.toUpperCase()))
+}
 
     return (<>
-        <div width="100%" height="70" style={{background:"#143c53"}}>{ info.loading ? (
-            <table width="100%"><tbody>
+        <div style={{width:"100%",background:"#143c53"}}>{ info.loading ? (
+            <table style={{width:"100%",height:"42px"}}><tbody>
             <tr>
-                <td width="400" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
+                <td width="400" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href="">
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                     </a>
                 </td>
-                <td width="400" style={{color:"white"}}>
-                    Foursight Loading ...
+                <td width="400" style={{color:"white", nowrap:"1"}}>
+                    <i style={{fontSize:"16pt",color:"yellow"}}>
+                        Foursight Loading ...
+                    </i>
+                </td>
+                <td width="10%" align="right">
+                    <span style={{position:"relative",bottom:"5pt"}}>&nbsp;<BarSpinner loading={info.loading} color={'lightyellow'} size={150} /></span>
                 </td>
             </tr>
             </tbody></table>
@@ -77,6 +92,27 @@ const Header = (props) => {
                 <tr style={{background:"#AED6F1"}}>
                     <td width="400" style={{paddingLeft:"10pt",paddingTop:"3pt",paddingBottom:"3pt",whiteSpace:"nowrap"}}>
                         {renderNavigationLinks(info)}
+                    </td>
+                    <td align="center" style={{whiteSpace:"nowrap"}}>
+                        <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{info.app.version}}/"><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{info.app.version}</b></a>
+                    </td>
+                    <td width="400" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
+                        { (info.envs.unique_annotated.length > 0) ? (
+                        <span className="dropdown">
+                            <b className="dropdown-button" onClick={()=>{this.nextSibling.display='block';}} style={{color:"#143c53"}} title="Environment: {getEnvFromUrlPath()}">{getEnvFromUrlPath().toUpperCase()}</b>
+                            <span className="dropdown-content">
+                                { info.envs.unique_annotated.map(env => 
+                                    env.name.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.full.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.short.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.inferred.toUpperCase() == getEnvFromUrlPath().toUpperCase() ? (
+                                        <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
+                                    ):(
+                                        <Link key={env.full} to={URLE(env.full)} onClick={()=>{this.style.color="yellow";this.style.backgroundColor="#143c53";this.style.fontWeight="bold"}}>{env.full}</Link>
+                                    )
+                                )}
+                            </span>
+                         </span>
+                        ):(
+                            <b style={{color:"#143c53"}} title="Environment: {getEnvFromUrlPath()}">asdfadfadf{getEnvFromUrlPath().toUpperCase()}</b>
+                        )}
                     </td>
                 </tr>
             </tbody></table>

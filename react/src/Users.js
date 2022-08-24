@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchData, URL } from './Utils.js';
-import Loader from "./Loader.js";
+import { RingSpinner } from "./Spinners.js";
 import GlobalContext from "./GlobalContext.js";
 
 const Users = (props) => {
@@ -35,7 +35,7 @@ const Users = (props) => {
                 </ul>
             )}
         </div>
-        <Loader loading={loading} />
+        <RingSpinner loading={loading} color={'blue'} size={400} />
     </>);
 
 };

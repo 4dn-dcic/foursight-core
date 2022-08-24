@@ -9,20 +9,36 @@ export const fetchData = (url, setData, setLoading) => {
     })
 }
 
+export const BASE_URL_PATH = "/api/react/";
+
 export const getEnvFromUrlPath = () => {
-    const path = window.location.pathname.replace("/api/react/", "");
-    const slash = path.indexOf("/")
+    const path = window.location.pathname.replace(BASE_URL_PATH, "");
+    const slash = path.indexOf("/");
     if (slash > 0) {
-        return path.substring(0, slash)
+        return path.substring(0, slash);
+    } else {
+        return "";
+    }
+}
+
+export const getLogicalPathFromUrlPath = () => {
+    const path = window.location.pathname.replace(BASE_URL_PATH, "");
+    const slash = path.indexOf("/");
+    if (slash > 0) {
+        return path.substring(slash);
     } else {
         return "";
     }
 }
 
 export const getBaseUrlPath = () => {
-    return "/api/react/" + getEnvFromUrlPath()
+    return BASE_URL_PATH + getEnvFromUrlPath();
 }
 
 export const URL = (path) => {
-    return getBaseUrlPath() + path
+    return getBaseUrlPath() + path;
+}
+
+export const URLE = (env) => {
+    return BASE_URL_PATH + env + getLogicalPathFromUrlPath();
 }
