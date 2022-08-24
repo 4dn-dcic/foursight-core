@@ -59,7 +59,9 @@ class AppUtilsCore:
         return pkg_resources.get_distribution(self.APP_PACKAGE_NAME).version
 
     # dmichaels/2022-07-20/C4-826: Apply identity globally.
-    apply_identity_globally()
+    # NOTE (2022-08-24): No longer call from the top-level here (not polite);
+    # rather call from (AppUtils) sub-classes in foursight-cgap and foursight.
+    # apply_identity_globally()
 
     # These must be overwritten in inherited classes
     # replace with 'foursight', 'foursight-cgap' etc
