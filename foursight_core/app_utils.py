@@ -18,7 +18,6 @@ from dcicutils.env_utils import full_env_name, public_env_name, short_env_name
 from dcicutils.lang_utils import disjoined_list
 # from dcicutils.obfuscation_utils import obfuscate_dict
 from typing import Optional
-from .identity import apply_identity_globally
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
 from .check_utils import CheckHandler
@@ -63,8 +62,6 @@ class AppUtilsCore:
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
     def __init__(self):
-        # dmichaels/2022-07-20/C4-826: Apply identity globally.
-        apply_identity_globally()
 
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
