@@ -2,10 +2,11 @@ import React from 'react';
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
+import { URL } from "./Utils.js";
 
 const Header = (props) => {
 
-    const info = useContext(GlobalContext);
+    const [ info, setInfo ] = useContext(GlobalContext);
     const path = window.location.pathname;
 
     function deleteLoginCookies() {
@@ -13,31 +14,14 @@ const Header = (props) => {
     }
 
     function renderNavigationLinks(info) {
-        if (path.startsWith(info.page.context + "info")) {
-            return <span>
-                <Link to={info.page.context + 'react/' + info.app.env + '/view'} style={{textDecoration:"none"}}>HOME</Link> &nbsp;|&nbsp;
-                <Link to={info.page.context + 'react/' + info.app.env + '/users'} style={{textDecoration:"none"}}>USERS</Link> &nbsp;|&nbsp;
-                <Link to={info.page.context + 'react/' + info.app.env + '/info'} style={{textDecoration:"none",color:"#263A48"}}><b>INFO</b></Link>
-            </span>
-        } else if (path.endsWith("/view" + info.app.env)) {
-            return <span>
-                <Link to={info.page.context + 'react/' + info.app.env + '/view'} style={{textDecoration:"none",color:"#263A48"}}><b>HOME</b></Link> &nbsp;|&nbsp;
-                <Link to={info.page.context + 'react/' + info.app.env + '/users'} style={{textDecoration:"none"}}>USERS</Link> &nbsp;|&nbsp;
-                <Link to={info.page.context + 'react/' + info.app.env + '/info'} style={{textDecoration:"none"}}>INFO</Link>
-            </span>
-        } else if (path.startsWith(info.page.context + "react/" + info.app.env + "/users")) {
-            return <span>
-                <Link to={info.page.context + 'react/' + info.app.env + '/view'} style={{textDecoration:"none"}}>HOME</Link> &nbsp;|&nbsp;
-                <Link to={info.page.context + 'react/' + info.app.env + '/users'} style={{textDecoration:"none",color:"#263A48"}}><b>USERS</b></Link> &nbsp;|&nbsp;
-                <Link to={info.page.context + 'react/' + info.app.env + '/info'} style={{textDecoration:"none"}}>INFO</Link>
-            </span>
-        } else {
-            return <span>
-                <Link to={info.page.context + 'react/' + info.app.env + '/view'} style={{textDecoration:"none"}}>HOME</Link> &nbsp;|&nbsp;
-                <Link to={info.page.context + 'react/' + info.app.env + '/users'} style={{textDecoration:"none"}}>USERS</Link> &nbsp;|&nbsp;
-                <Link to={info.page.context + 'react/' + info.app.env + '/info'} style={{textDecoration:"none"}}>INFO</Link>
-            </span>
+        function weight(page) {
+            return path.startsWith(info.page.context + "react/" + info.app.env + page) ? "bold" : "normal";
         }
+        return <span>
+            <Link to={URL("/view")} style={{textDecoration:"none",fontWeight:weight("/view")}}>HOME</Link> &nbsp;|&nbsp;
+            <Link to={URL("/users")} style={{textDecoration:"none",fontWeight:weight("/users")}}>USERS</Link> &nbsp;|&nbsp;
+            <Link to={URL("/info")} style={{textDecoration:"none",fontWeight:weight("/info")}}>INFO</Link>
+        </span>
     }
 
     return (<>
@@ -55,6 +39,7 @@ const Header = (props) => {
             </tr>
             </tbody></table>
         ):(<React.Fragment>
+                FOO[{info["loading"]}][{info["currentPage"]}][{info["app"]["env"]}]
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr>
                 <td width="400" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>

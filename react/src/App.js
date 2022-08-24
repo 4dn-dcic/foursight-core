@@ -20,7 +20,7 @@ const App = () => {
 
     return (<div>
         <Router>
-            <GlobalContext.Provider value={info}>
+            <GlobalContext.Provider value={[info, setInfo]}>
             <Header />
             <Routes>
                 <Route path="/api/react/:environ" element={<Home />} />

@@ -1,13 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchData } from './Utils.js';
+import GlobalContext from "./GlobalContext.js";
 
 const User = (props) => {
 
+    console.log("User Page")
+    const [ info, setInfo ] = useContext(GlobalContext);
+        if (!info.loading) info.currentPage = "users";
+    info.currentPage = "users"
     const { email } = useParams()
     const url = `http://localhost:8000/api/reactapi/cgap-supertest/users/${email}`
     const [ users, setUsers ] = useState([]);
     useEffect(() => { fetchData(url, setUsers)}, []);
+    useEffect(() => {
+         console.log('USE-EFFECT!! User')
+         info.homePageStyle = "normal"
+         info.infoPageStyle = "normal"
+         info.usersPageStyle = "bold"
+         info.currentPage  = "users"
+         if (!info.loading) {
+            setInfo(JSON.parse(JSON.stringify(info)))
+         }
+    }, []);
 
     return (<>
         <h1>User:</h1>
