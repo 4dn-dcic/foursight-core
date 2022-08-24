@@ -59,9 +59,6 @@ class AppUtilsCore:
         return pkg_resources.get_distribution(self.APP_PACKAGE_NAME).version
 
     # dmichaels/2022-07-20/C4-826: Apply identity globally.
-    # TODO: Find a way to do this not from the top-level here.
-    # It is here because if it is not then we fail to get the ES_HOST
-    # environment variable in foursight-cgap/fourfront where this class is subclassed..
     apply_identity_globally()
 
     # These must be overwritten in inherited classes
@@ -1579,13 +1576,19 @@ class AppUtilsCore:
         Returns:
             dict: runner input of queued messages, used for testing
         """
+        logger.warn(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
         queue = self.sqs.get_sqs_queue()
+        logger.warn(f"queue_scheduled_checks: queue={queue}")
         if schedule_name is not None:
+            logger.warn(f"queue_scheduled_checks: have schedule_name")
+            logger.warn(f"queue_scheduled_checks: environment.is_valid_environment_name(sched_environ, or_all=True)={self.environment.is_valid_environment_name(sched_environ, or_all=True)}")
             if not self.environment.is_valid_environment_name(sched_environ, or_all=True):
                 print(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
                 return
             sched_environs = self.environment.get_selected_environment_names(sched_environ)
+            logger.warn(f"queue_scheduled_checks: sched_environs={sched_environs}")
             check_schedule = self.check_handler.get_check_schedule(schedule_name, conditions)
+            logger.warn(f"queue_scheduled_checks: sched_environs={check_schedule}")
             if not check_schedule:
                 print(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
                 return
@@ -1593,10 +1596,16 @@ class AppUtilsCore:
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
                 check_vals.extend(check_schedule.get(environ, []))
+                logger.warn(f"queue_scheduled_checks: calling send_sqs_messages({environ}) ... check_values:")
+                logger.warn(check_vals)
                 self.sqs.send_sqs_messages(queue, environ, check_vals)
+                logger.warn(f"queue_scheduled_checks: after calling send_sqs_messages({environ})")
         runner_input = {'sqs_url': queue.url}
         for n in range(4):  # number of parallel runners to kick off
+            logger.warn(f"queue_scheduled_checks: calling invoke_check_runner({runner_input})")
             self.sqs.invoke_check_runner(runner_input)
+            logger.warn(f"queue_scheduled_checks: after calling invoke_check_runner({runner_input})")
+        logger.warn(f"queue_scheduled_checks: returning({runner_input})")
         return runner_input  # for testing purposes
 
     def queue_check(self, environ, check,
