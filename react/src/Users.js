@@ -12,11 +12,13 @@ const Users = (props) => {
     let [ loading, setLoading ] = useState(true);
     useEffect(() => { fetchData(url, setUsers, setLoading)}, []);
 
-    if (!info.loading) info.currentPage = "users";
+    // For some reason we need this to cause the font weight changes (bold/normal)
+    // for the header links (HOME, USERS, INFO) to take. And we do need to actually
+    // reaload the info object (stringify/parse)
+    // TODO: Figure this out more fullly.
     useEffect(() => {
          console.log('USE-EFFECT!! User')
          if (!info.loading) {
-            info.currentPage  = "users"
             setInfo(JSON.parse(JSON.stringify(info)))
          }
     }, []);

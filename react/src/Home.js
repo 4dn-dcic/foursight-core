@@ -6,11 +6,9 @@ const Home = (props) => {
     console.log("Home Page")
     const [ info, setInfo ] = useContext(GlobalContext);
 
-    if (!info.loading) info.currentPage = "info";
     useEffect(() => {
          console.log('USE-EFFECT!! Info')
          if (!info.loading) {
-            info.currentPage  = "info"
             setInfo(JSON.parse(JSON.stringify(info)))
          }
     }, []);

@@ -12,11 +12,9 @@ const User = (props) => {
     const [ users, setUsers ] = useState([]);
     useEffect(() => { fetchData(url, setUsers)}, []);
 
-    if (!info.loading) info.currentPage = "users";
     useEffect(() => {
          console.log('USE-EFFECT!! User')
          if (!info.loading) {
-            info.currentPage  = "users"
             setInfo(JSON.parse(JSON.stringify(info)))
          }
     }, []);
