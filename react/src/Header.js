@@ -15,8 +15,12 @@ const Header = (props) => {
 
     function renderNavigationLinks(info) {
         function weight(page) {
+                console.log("WIGITH:");
+                console.log(info.page.context + "react/" + info.app.env + page);
+                console.log(path.startsWith(info.page.context + "react/" + info.app.env + page) ? "bold" : "normal");
             return path.startsWith(info.page.context + "react/" + info.app.env + page) ? "bold" : "normal";
         }
+            console.log('renderheader');
         return <span>
             <Link to={URL("/view")} style={{textDecoration:"none",fontWeight:weight("/view")}}>HOME</Link> &nbsp;|&nbsp;
             <Link to={URL("/users")} style={{textDecoration:"none",fontWeight:weight("/users")}}>USERS</Link> &nbsp;|&nbsp;

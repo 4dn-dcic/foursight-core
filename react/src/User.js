@@ -7,19 +7,16 @@ const User = (props) => {
 
     console.log("User Page")
     const [ info, setInfo ] = useContext(GlobalContext);
-        if (!info.loading) info.currentPage = "users";
-    info.currentPage = "users"
     const { email } = useParams()
     const url = `http://localhost:8000/api/reactapi/cgap-supertest/users/${email}`
     const [ users, setUsers ] = useState([]);
     useEffect(() => { fetchData(url, setUsers)}, []);
+
+    if (!info.loading) info.currentPage = "users";
     useEffect(() => {
          console.log('USE-EFFECT!! User')
-         info.homePageStyle = "normal"
-         info.infoPageStyle = "normal"
-         info.usersPageStyle = "bold"
-         info.currentPage  = "users"
          if (!info.loading) {
+            info.currentPage  = "users"
             setInfo(JSON.parse(JSON.stringify(info)))
          }
     }, []);

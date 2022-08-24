@@ -5,17 +5,16 @@ import GlobalContext from "./GlobalContext.js";
 const Info = (props) => {
     console.log("Info Page")
     const [info, setInfo] = useContext(GlobalContext);
-        if (!info.loading) info.currentPage = "info";
- useEffect(() => {
+
+    if (!info.loading) info.currentPage = "info";
+    useEffect(() => {
          console.log('USE-EFFECT!! Info')
-         info.homePageStyle = "normal"
-         info.infoPageStyle = "bold"
-         info.usersPageStyle = "normal"
-         info.currentPage  = "info"
          if (!info.loading) {
+            info.currentPage  = "info"
             setInfo(JSON.parse(JSON.stringify(info)))
          }
     }, []);
+
   return (
     <>
       <h1>Info:</h1>

@@ -14,9 +14,9 @@ import { fetchData } from './Utils.js';
 const App = () => {
 
     let [ info, setInfo ] = useState({loading: true});
-    //let [ loading, setLoading ] = useState(true);
+    let [ loading, setLoading ] = useState(true);
     const url = "http://localhost:8000/api/reactapi/cgap-supertest/info"
-    useEffect(() => { fetchData(url, setInfo /*, setLoading */)}, []);
+    useEffect(() => { fetchData(url, setInfo , setLoading)}, []);
 
     return (<div><Router>
         <GlobalContext.Provider value={[info, setInfo]}>

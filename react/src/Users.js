@@ -6,21 +6,17 @@ import GlobalContext from "./GlobalContext.js";
 
 const Users = (props) => {
 
-    console.log("Users Page")
     const [ info, setInfo ] = useContext(GlobalContext);
-        if (!info.loading) info.currentPage = "users";
-    info.currentPage = "users"
     const url = "http://localhost:8000/api/reactapi/cgap-supertest/users"
     let [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     useEffect(() => { fetchData(url, setUsers, setLoading)}, []);
-     useEffect(() => {
-         console.log('USE-EFFECT!! Users')
-         info.homePageStyle = "normal"
-         info.infoPageStyle = "normal"
-         info.usersPageStyle = "bold"
-         info.currentPage  = "users"
+
+    if (!info.loading) info.currentPage = "users";
+    useEffect(() => {
+         console.log('USE-EFFECT!! User')
          if (!info.loading) {
+            info.currentPage  = "users"
             setInfo(JSON.parse(JSON.stringify(info)))
          }
     }, []);
