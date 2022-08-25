@@ -22,10 +22,11 @@ from dateutil import tz
 from dcicutils import ff_utils
 from dcicutils.env_utils import (
     EnvUtils,
+    full_env_name,
     get_foursight_bucket,
     get_foursight_bucket_prefix,
     infer_foursight_from_env,
-    full_env_name,
+    public_env_name,
     short_env_name,
 )
 from dcicutils.lang_utils import disjoined_list
@@ -937,6 +938,7 @@ class AppUtilsCore:
             "Environment Name:": environ,
             "Environment Name (Full):": full_env_name(environ),
             "Environment Name (Short):": short_env_name(environ),
+            "Environment Name (Public):": public_env_name(envname=environ),
             "Environment Name (Foursight):": infer_foursight_from_env(envname=environ),
             "Environment Name List:": sorted(self.environment.list_environment_names()),
             "Environment Name List (Unique):": sorted(self.environment.list_unique_environment_names())
@@ -1597,7 +1599,7 @@ class AppUtilsCore:
             for environ in sched_environs:
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
-                check_vals.extend(check_schedule.get(environ, []))
+                check_vals.extend(self.get_env_schedule(check_schedule, environ))
                 logger.warn(f"queue_scheduled_checks: calling send_sqs_messages({environ}) ... check_values:")
                 logger.warn(check_vals)
                 self.sqs.send_sqs_messages(queue, environ, check_vals)
@@ -1609,6 +1611,13 @@ class AppUtilsCore:
             logger.warn(f"queue_scheduled_checks: after calling invoke_check_runner({runner_input})")
         logger.warn(f"queue_scheduled_checks: returning({runner_input})")
         return runner_input  # for testing purposes
+
+    @classmethod
+    def get_env_schedule(cls, check_schedule, environ):
+        return (check_schedule.get(public_env_name(environ))
+                or check_schedule.get(full_env_name(environ))
+                or check_schedule.get(short_env_name(environ))
+                or [])
 
     def queue_check(self, environ, check,
                     params: Optional[dict] = None, deps: Optional[list] = None, uuid: Optional[str] = None):
