@@ -9,6 +9,7 @@ import Users from './Users.js';
 import Demo from './Demo.js';
 import Header from './Header';
 import { fetchData } from './Utils.js';
+import AppRoutes from './AppRoutes';
 
 
 const App = () => {
@@ -18,19 +19,15 @@ const App = () => {
     const url = "http://localhost:8000/api/reactapi/cgap-supertest/info"
     useEffect(() => { fetchData(url, setInfo , setLoading)}, []);
 
-    return (<div><Router>
+
+    return (<Router>
         <GlobalContext.Provider value={[info, setInfo]}>
             <Header />
-            <Routes>
-                <Route path="/api/react/:environ" element={<Home />} />
-                <Route path="/api/react/:environ/demo" element={<Demo />}/>
-                <Route path="/api/react/:environ/view" element={<Home />}/>
-                <Route path="/api/react/:environ/info" element={<Info />}/>
-                <Route path="/api/react/:environ/users" element={<Users />}/>
-                <Route path="/api/react/:environ/users/:email" element={<User />}/>
-            </Routes>
+            <div style={{margin:"20px"}}>
+                <AppRoutes />
+            </div>
         </GlobalContext.Provider>
-    </Router></div>);
+    </Router>);
 };
 
 export default App;

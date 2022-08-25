@@ -11,8 +11,6 @@ const Header = (props) => {
     let navigate = useNavigate();
     const [ info, setInfo ] = useContext(GlobalContext);
     const path = window.location.pathname;
-        console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
-        console.log(BASE_URL_PATH);
 
     function deleteLoginCookies() {
         document.cookie = "jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname + ";";
@@ -94,7 +92,7 @@ if (!info.loading) {
                         {renderNavigationLinks(info)}
                     </td>
                     <td align="center" style={{whiteSpace:"nowrap"}}>
-                        <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{info.app.version}}/"><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{info.app.version}</b></a>
+                        <a target="_blank" href={"https://pypi.org/project/foursight-cgap/" + info.app.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{info.app.version}</b></a>
                     </td>
                     <td width="400" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (info.envs.unique_annotated.length > 0) ? (
