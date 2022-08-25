@@ -934,6 +934,12 @@ class AppUtilsCore:
 
     @classmethod
     def get_env_schedule(cls, check_schedule, environ):
+        """
+        Gets schedules from the check_schedule table for the given environ, which may be a short, full, or public name.
+
+        In the new environment configuration, there are multiple aliases that refer to the same environment.
+        This function ensures that when writing a check schedule you can refer to any of the aliases.
+        """
         return (check_schedule.get(public_env_name(environ))
                 or check_schedule.get(full_env_name(environ))
                 or check_schedule.get(short_env_name(environ))
