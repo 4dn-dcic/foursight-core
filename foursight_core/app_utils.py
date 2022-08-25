@@ -828,7 +828,7 @@ class AppUtilsCore:
             {"name": env,
              "short": short_env_name(env),
              "full": full_env_name(env),
-             "inferred": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
+             "foursight": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
         return sorted(unique_annotated_environment_names, key=lambda key: key["full"])
 
     def view_foursight(self, request, environ, is_admin=False, domain="", context="/"):
@@ -937,7 +937,7 @@ class AppUtilsCore:
             "Environment Name:": environ,
             "Environment Name (Full):": full_env_name(environ),
             "Environment Name (Short):": short_env_name(environ),
-            "Environment Name (Inferred):": infer_foursight_from_env(envname=environ),
+            "Environment Name (Foursight):": infer_foursight_from_env(envname=environ),
             "Environment Name List:": sorted(self.environment.list_environment_names()),
             "Environment Name List (Unique):": sorted(self.environment.list_unique_environment_names())
         }
