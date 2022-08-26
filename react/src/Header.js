@@ -27,6 +27,8 @@ const Header = (props) => {
         if (info.loading) return
         //const callback = "https://" + info.page.domain + info.page.context + "callback/";
         const loginCallback = "https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/callback/";
+        console.log('asdfadf')
+        console.log(info.app.credentials);
         const loginClientId = info.app.credentials.auth0_client_id;
         const loginPayload = {
             container: 'login-container',
@@ -67,7 +69,6 @@ const Header = (props) => {
     }
 if (!info.loading) {
             console.log(info.envs.unique_annotated)
-        console.log('foo')
             info.envs.unique_annotated.map(env => console.log(env.name.toUpperCase()))
 }
 
@@ -163,8 +164,7 @@ if (!info.loading) {
                                 <b style={{color:"darkblue"}}>ADMIN</b>
                             </span>)}
                         </span>):(<span>
-                            <span style={{cursor:"pointer",fontWeight:"bold",color:"darkred"}} title="Not logged in. Click to login." onClick={()=>{login();}}>LOGIN</span>
-                            <Link to={URL("/login")}>LOGIN</Link>
+                            <Link to={URL("/login")} style={{cursor:"pointer",fontWeight:"bold",color:"darkred"}} title="Not logged in. Click to login.">LOGIN</Link>
                         </span>)}
                     </td>
                 </tr>

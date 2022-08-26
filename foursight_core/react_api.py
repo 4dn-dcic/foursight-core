@@ -45,6 +45,15 @@ class ReactApi:
 
     def react_serve_file(self, environ, is_admin=False, domain="", context="/", **kwargs):
 
+        #xyzzy
+        if False and not is_admin:
+            redirect_path = context + environ + "/login/"
+            print(f'React redirecting to: {redirect_path}')
+            response_headers = {'Location': redirect_path}
+            response = Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
+            return response
+        #xyzzy
+
         # TODO: Maybe cache output. But if so provide backdoor way of invalidating cache.
 
         print(f"Serve React file called with: environ={environ}, is_admin={is_admin}")
