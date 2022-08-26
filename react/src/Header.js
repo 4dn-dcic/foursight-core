@@ -15,6 +15,7 @@ const Header = (props) => {
     function deleteLoginCookies() {
         document.cookie = "jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname + ";";
     }
+        function XX(){this.style.fontWeight ="bold"}
 
     function renderNavigationLinks(info) {
         function weight(page) {
@@ -98,7 +99,7 @@ if (!info.loading) {
                         { (info.envs.unique_annotated.length > 0) ? (
                         <span className="dropdown">
                             <b className="dropdown-button" style={{color:"#143c53"}} title="Environment: {getEnvFromUrlPath()}">{getEnvFromUrlPath().toUpperCase()}</b>
-                            <div className="dropdown-content">
+                            <div className="dropdown-content" id="dropdown-content-id">
                                 { info.envs.unique_annotated.map(env => 
                                     env.name.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.full.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.short.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.inferred.toUpperCase() == getEnvFromUrlPath().toUpperCase() ? (
                                         <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
@@ -106,6 +107,8 @@ if (!info.loading) {
                                         <a key={env.full} onClick={()=>{navigate(URLE(env.full))}}>{env.full}</a>
                                     )
                                 )}
+                                <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
+                                <a id="__envinfo__" onClick={()=>{navigate(URL("/info"));document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments Info</a>
                             </div>
                          </span>
                         ):(
@@ -131,6 +134,9 @@ if (!info.loading) {
                             <span style={{cursor:"pointer",fontWeight:"bold",color:"darkred;"}} title="Not logged in. Click to login." onClick={()=>{}}>LOGIN</span>
                         </span>)}
                     </td>
+                </tr>
+                <tr>
+                    <td style={{height:"1px",background:"darkblue"}}></td>
                 </tr>
             </tbody></table>
         </React.Fragment>)}</div>
