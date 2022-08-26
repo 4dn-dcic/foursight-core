@@ -1,44 +1,11 @@
-export const fetchData = (url, setData, setLoading) => {
-    fetch(url).then(response => {
-        return response.json();
-    }).then(responseJson => {
-        setData(responseJson);
-        if (setLoading) {
-            setLoading(false);
-        }
-    })
+export const isString = (value) => {
+    return value != undefined && value != null && value.constructor == String;
 }
 
-export const BASE_URL_PATH = "/api/react/";
-
-export const getEnvFromUrlPath = () => {
-    const path = window.location.pathname.replace(BASE_URL_PATH, "");
-    const slash = path.indexOf("/");
-    if (slash > 0) {
-        return path.substring(0, slash);
-    } else {
-        return "";
-    }
+export const isNonEmptyString = (value) => {
+    return value != undefined && value != null && value.constructor == String && value.length > 0;
 }
 
-export const getLogicalPathFromUrlPath = () => {
-    const path = window.location.pathname.replace(BASE_URL_PATH, "");
-    const slash = path.indexOf("/");
-    if (slash > 0) {
-        return path.substring(slash);
-    } else {
-        return "";
-    }
-}
-
-export const getBaseUrlPath = () => {
-    return BASE_URL_PATH + getEnvFromUrlPath();
-}
-
-export const URL = (path) => {
-    return getBaseUrlPath() + path;
-}
-
-export const URLE = (env) => {
-    return BASE_URL_PATH + env + getLogicalPathFromUrlPath();
+export const isObject = (value) => {
+    return value != undefined && value != null && typeof value == "object";
 }

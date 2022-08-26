@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchData } from './Utils.js';
+import { fetchData } from './FetchUtils.js';
 import GlobalContext from "./GlobalContext.js";
 
 const User = (props) => {

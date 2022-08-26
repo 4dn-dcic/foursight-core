@@ -8,7 +8,7 @@ import User from './User.js';
 import Users from './Users.js';
 import Demo from './Demo.js';
 import Header from './Header';
-import { fetchData } from './Utils.js';
+import { fetchData } from './FetchUtils.js';
 import AppRoutes from './AppRoutes';
 
 
