@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 import { BASE_URL_PATH, URL, URLE, getEnvFromUrlPath } from "./UrlUtils.js";
 import { RingSpinner, BarSpinner } from "./Spinners.js";
+import { IsLoggedIn } from "./LoginUtils.js";
 import Auth0Lock from 'auth0-lock';
 
 const Header = (props) => {

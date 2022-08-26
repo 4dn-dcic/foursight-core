@@ -4,8 +4,11 @@ import { fetchData } from './FetchUtils.js';
 import { URL } from './UrlUtils.js';
 import { RingSpinner } from "./Spinners.js";
 import GlobalContext from "./GlobalContext.js";
+import { VerifyLogin } from "./LoginUtils.js";
 
 const Users = (props) => {
+
+    VerifyLogin()
 
     const [ info, setInfo ] = useContext(GlobalContext);
     const url = "http://localhost:8000/api/reactapi/cgap-supertest/users"

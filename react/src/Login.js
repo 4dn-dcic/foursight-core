@@ -6,8 +6,8 @@ import GlobalContext from "./GlobalContext.js";
 import { BASE_URL_PATH, URL, URLE, getEnvFromUrlPath } from "./Utils.js";
 import { RingSpinner, BarSpinner } from "./Spinners.js";
 import Auth0Lock from 'auth0-lock';
-import { GetCookie, SetCookie, DeleteCookie, GetJwtTokenCookie, GetDecodedJwtTokenCookie } from './CookieUtils.js';
-import { IsLoggedIn } from './LoginUtils.js';
+import { GetCookie, SetCookie, DeleteCookie, GetJwtTokenCookie, GetDecodedJwtTokenCookie, CreateSampleJwtTokenCookie } from './CookieUtils.js';
+import { IsLoggedIn, Logout, GetLoginInfo } from './LoginUtils.js';
 
 const Login = (props) => {
 
@@ -74,14 +74,20 @@ const Login = (props) => {
     }
 
     return (<>
+        { (IsLoggedIn()) ? (<React.Fragment>
+                Logged in as {JSON.stringify(GetLoginInfo())}
+        </React.Fragment>):(<React.Fragment>
+                goo
+        </React.Fragment>)}
         <div id="login-container">
             <span>Login <span onClick={()=>{login();}}>here</span> ...<br/></span>
             <span>JWT: [{GetJwtTokenCookie()}]<br/></span>
             <span>Decoded JWT: [{JSON.stringify(GetDecodedJwtTokenCookie())}]<br/></span>
             <span onClick={()=>{DeleteCookie("jwtToken");}}>Delete</span><br />
-            <span onClick={()=>{SetCookie("jwtToken", "foobarxyzzy");}}>Create</span><br />
+            <span onClick={()=>{CreateSampleJwtTokenCookie()}}>Create</span><br />
             <span onClick={()=>{window.alert(GetCookie("jwtToken"));}}>Show</span><br />
             <span onClick={()=>{window.alert(IsLoggedIn());}}>logged in</span><br />
+            <span onClick={()=>{Logout()}}>logout</span><br />
         </div>
         <div id="login-auth-container" className="foo" style={{verticalAlign:"top",align:"top",backgroundColor:"#143c53", height: "fit-content", borderRadius: "8px", borderStyle: "solid", borderWidth: "1px", display: "none", width:"fit-content", padding:"0px", margin: "auto"}}></div>
     </>);

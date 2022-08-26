@@ -1,6 +1,6 @@
-import Cookies from 'universal-cookie';
-import { decodeToken as DecodeJwtToken } from "react-jwt";
-import { GetJwtTokenCookie } from './CookieUtils.js';
+import { DeleteJwtTokenCookie, GetJwtTokenCookie, GetDecodedJwtTokenCookie } from './CookieUtils.js';
+import { useNavigate } from 'react-router-dom';
+import { URL } from './UrlUtils.js';
 import * as Utils from './Utils.js';
 
 export const IsLoggedIn = () => {
@@ -12,13 +12,8 @@ export const IsLoggedIn = () => {
     // it as a general is-logged-in flag. Probably some security issues here I'm not taking
     // into account but good for now, at least for development. Marking this as TODO.
     //
-    const jwtToken = GetJwtTokenCookie();
-    if (!Utils.isNonEmptyString(jwtToken)) {
-        return false;
-    }
-    const decodedJwtToken = DecodeJwtToken(jwtToken);
+    const decodedJwtToken = GetDecodedJwtTokenCookie();
     if (!Utils.isObject(decodedJwtToken)) {
-            console.log('xyz2');
         return false;
     }
     //
@@ -33,4 +28,19 @@ export const IsLoggedIn = () => {
         }
     }
     return true;
+}
+
+export const GetLoginInfo = () => {
+    return GetDecodedJwtTokenCookie();
+}
+
+export const Logout = () => {
+    DeleteJwtTokenCookie();
+}
+
+export const VerifyLogin = () => {
+    let navigate = useNavigate();
+    if (!IsLoggedIn()) {
+        navigate(URL("/login"))
+    }
 }
