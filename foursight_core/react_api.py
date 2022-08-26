@@ -126,7 +126,7 @@ class ReactApi:
                 "aws_user_arn:": user_arn,
                 "aws_access_key_id:": access_key_id,
                 "aws_region:": region_name,
-                "auth0_client_id:": auth0_client_id
+                "auth0_client_id": auth0_client_id
             }
         except Exception as e:
             self.note_non_fatal_error_for_ui_info(e, 'get_obfuscated_credentials_info')
@@ -270,3 +270,6 @@ class ReactApi:
         response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
         return self.process_response(response)
+
+    def react_clear_cache(self, request, environ, is_admin=False, domain="", context="/"):
+        self.react_info_cache = {}

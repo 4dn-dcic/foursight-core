@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 import { BASE_URL_PATH, URL, URLE, getEnvFromUrlPath } from "./Utils.js";
 import { RingSpinner, BarSpinner } from "./Spinners.js";
+import Auth0Lock from 'auth0-lock';
 
 const Header = (props) => {
 
@@ -12,10 +13,41 @@ const Header = (props) => {
     const [ info, setInfo ] = useContext(GlobalContext);
     const path = window.location.pathname;
 
+    function createRedirectCookie() {
+        var expr = new Date();
+        expr.setFullYear(expr.getFullYear() + 1);
+        document.cookie = "redir=" + window.location.href + "; path=/; expires=" + expr.toUTCString();
+    }
+
     function deleteLoginCookies() {
         document.cookie = "jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname + ";";
     }
-        function XX(){this.style.fontWeight ="bold"}
+
+    function login() {
+        if (info.loading) return
+        //const callback = "https://" + info.page.domain + info.page.context + "callback/";
+        const loginCallback = "https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/callback/";
+        const loginClientId = info.app.credentials.auth0_client_id;
+        const loginPayload = {
+            container: 'login-container',
+            auth: {
+                redirectUrl: loginCallback,
+                responseType: 'code',
+                sso: false,
+                params: {scope: 'openid email', prompt: 'select_account'}
+            },
+            languageDictionary: { title: "Foursight Login" },
+            socialButtonStyle: 'big',
+            theme: {
+                primaryColor: "blue",
+                logo: info.page.favicon,
+            },
+            allowedConnections: ['github', 'google-oauth2']
+        };
+        document.getElementById("login-container").style.display = "block";
+        let auth0Lock = new Auth0Lock(loginClientId, 'hms-dbmi.auth0.com', loginPayload);
+        auth0Lock.show()
+    }
 
     function renderNavigationLinks(info) {
         function weight(page) {
@@ -80,7 +112,7 @@ if (!info.loading) {
                 <td width="400" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
                     <small>{info.page.loaded}</small>
                     &nbsp;<b>|</b>&nbsp;
-                    <a style={{textDecoration:"none",color:"#D6EAF8"}} href="{info.page.context + 'reload_lambda/' + info.app.env + '/current'}" title="Click to relaunch this app." onClick={() => { if (window.confirm('Do you want to relaunch this app?')){return true;}else{window.event.stopPropagation();window.event.preventDefault()}}}>&#x2318;</a>
+                    <a style={{textDecoration:"none",color:"#D6EAF8"}} href="{info.page.context + '__reload_lambda__/' + info.app.env + '/current'}" title="Click to relaunch this app." onClick={() => { if (window.confirm('Do you want to relaunch this app?')){return true;}else{window.event.stopPropagation();window.event.preventDefault()}}}>&#x2318;</a>
                     { info.app.local && info.login.admin ? (<span>
                         &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {deleteLoginCookies();window.location.reload();}}>LOGOUT</span>
                     </span>):(<span></span>)}
@@ -131,7 +163,8 @@ if (!info.loading) {
                                 <b style={{color:"darkblue"}}>ADMIN</b>
                             </span>)}
                         </span>):(<span>
-                            <span style={{cursor:"pointer",fontWeight:"bold",color:"darkred;"}} title="Not logged in. Click to login." onClick={()=>{}}>LOGIN</span>
+                            <span style={{cursor:"pointer",fontWeight:"bold",color:"darkred"}} title="Not logged in. Click to login." onClick={()=>{login();}}>LOGIN</span>
+                            <Link to={URL("/login")}>LOGIN</Link>
                         </span>)}
                     </td>
                 </tr>
@@ -140,6 +173,7 @@ if (!info.loading) {
                 </tr>
             </tbody></table>
         </React.Fragment>)}</div>
+                    <div id="login-container" style={{display: "none", width: "320px", height:"fit-content", margin: "40px auto", padding: "10px", borderStyle: "dashed", borderWidth: "1px", boxSizing: "border-box"}}></div>
     </>);
 };
 

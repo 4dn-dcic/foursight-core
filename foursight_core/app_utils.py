@@ -2,7 +2,6 @@ from chalice import Response
 import jinja2
 import json
 import os
-import io
 from os.path import dirname
 import jwt
 import boto3
@@ -23,10 +22,11 @@ from dateutil import tz
 from dcicutils import ff_utils
 from dcicutils.env_utils import (
     EnvUtils,
+    full_env_name,
     get_foursight_bucket,
     get_foursight_bucket_prefix,
     infer_foursight_from_env,
-    full_env_name,
+    public_env_name,
     short_env_name,
 )
 from dcicutils.lang_utils import disjoined_list
@@ -61,7 +61,9 @@ class AppUtilsCore(ReactApi):
         return pkg_resources.get_distribution(self.APP_PACKAGE_NAME).version
 
     # dmichaels/2022-07-20/C4-826: Apply identity globally.
-    apply_identity_globally()
+    # NOTE (2022-08-24): No longer call from the top-level here (not polite);
+    # rather call from (AppUtils) sub-classes in foursight-cgap and foursight.
+    # apply_identity_globally()
 
     # These must be overwritten in inherited classes
     # replace with 'foursight', 'foursight-cgap' etc
@@ -169,6 +171,7 @@ class AppUtilsCore(ReactApi):
         return connection, response
 
     def is_running_locally(self, request_dict) -> bool:
+        return False
         return request_dict.get('context', {}).get('identity', {}).get('sourceIp', '') == "127.0.0.1"
 
     def get_logged_in_user_info(self, environ: str, request_dict: dict) -> str:
@@ -696,12 +699,10 @@ class AppUtilsCore(ReactApi):
         to get the last modified time of the lambda needs to look first at this tag and take that
         if it exists before looking at the real last modified time.
         """
-        lambda_current = False
         if not lambda_name or lambda_name.lower() == "current":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
             if not lambda_name:
                 return False
-            lambda_current = True
         try:
             boto_lambda = boto3.client("lambda")
             lambda_info = boto_lambda.get_function(FunctionName=lambda_name)
@@ -723,8 +724,6 @@ class AppUtilsCore(ReactApi):
                 logger.warn(f"Reloading lambda: {lambda_name}")
                 boto_lambda.update_function_configuration(FunctionName=lambda_name, Description=lambda_description)
                 logger.warn(f"Reloaded lambda: {lambda_name}")
-                if lambda_current:
-                    self.lambda_last_modified = None
         except Exception as e:
             logger.warn(f"Error reloading lambda ({lambda_name}): {e}")
         return False
@@ -734,17 +733,14 @@ class AppUtilsCore(ReactApi):
         Returns the last modified time for the given lambda name.
         See comments in reload_lambda on this.
         """
-        print(f'xyzzy: get_lambda_last_modified: 1: {datetime.datetime.utcnow()}')
         lambda_current = False
         if not lambda_name or lambda_name.lower() == "current":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
             if not lambda_name:
-                print(f'xyzzy: get_lambda_last_modified: 2: {datetime.datetime.utcnow()}')
                 return None
             lambda_current = True
         if lambda_current:
             if self.lambda_last_modified:
-                print(f'xyzzy: get_lambda_last_modified: 3: {datetime.datetime.utcnow()}')
                 return self.lambda_last_modified
         try:
             boto_lambda = boto3.client("lambda")
@@ -760,7 +756,6 @@ class AppUtilsCore(ReactApi):
                     lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified)
                 if lambda_current:
                     self.lambda_last_modified = lambda_last_modified
-                print(f'xyzzy: get_lambda_last_modified: 4: {datetime.datetime.utcnow()}')
                 return lambda_last_modified
         except Exception as e:
             logger.warn(f"Error getting lambda ({lambda_name}) last modified time: {e}")
@@ -836,7 +831,7 @@ class AppUtilsCore(ReactApi):
             {"name": env,
              "short": short_env_name(env),
              "full": full_env_name(env),
-             "inferred": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
+             "foursight": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
         return sorted(unique_annotated_environment_names, key=lambda key: key["full"])
 
     def view_foursight(self, request, environ, is_admin=False, domain="", context="/"):
@@ -898,6 +893,8 @@ class AppUtilsCore(ReactApi):
             version=self.get_app_version(),
             package=self.APP_PACKAGE_NAME,
             env=environ,
+            env_short=short_env_name(environ),
+            env_full=full_env_name(environ),
             view_envs=total_envs,
             stage=self.stage.get_stage(),
             load_time=self.get_load_time(),
@@ -945,7 +942,8 @@ class AppUtilsCore(ReactApi):
             "Environment Name:": environ,
             "Environment Name (Full):": full_env_name(environ),
             "Environment Name (Short):": short_env_name(environ),
-            "Environment Name (Inferred):": infer_foursight_from_env(envname=environ),
+            "Environment Name (Public):": public_env_name(envname=environ),
+            "Environment Name (Foursight):": infer_foursight_from_env(envname=environ),
             "Environment Name List:": sorted(self.environment.list_environment_names()),
             "Environment Name List (Unique):": sorted(self.environment.list_unique_environment_names())
         }
@@ -986,6 +984,8 @@ class AppUtilsCore(ReactApi):
             version=self.get_app_version(),
             package=self.APP_PACKAGE_NAME,
             env=environ,
+            env_short=short_env_name(environ),
+            env_full=full_env_name(environ),
             domain=domain,
             context=context,
             environments=self.get_unique_annotated_environment_names(),
@@ -1039,6 +1039,8 @@ class AppUtilsCore(ReactApi):
             version=self.get_app_version(),
             package=self.APP_PACKAGE_NAME,
             env=environ,
+            env_short=short_env_name(environ),
+            env_full=full_env_name(environ),
             domain=domain,
             context=context,
             environments=self.get_unique_annotated_environment_names(),
@@ -1096,6 +1098,8 @@ class AppUtilsCore(ReactApi):
             version=self.get_app_version(),
             package=self.APP_PACKAGE_NAME,
             env=environ,
+            env_short=short_env_name(environ),
+            env_full=full_env_name(environ),
             domain=domain,
             context=context,
             environments=self.get_unique_annotated_environment_names(),
@@ -1161,6 +1165,8 @@ class AppUtilsCore(ReactApi):
             version=self.get_app_version(),
             package=self.APP_PACKAGE_NAME,
             env=environ,
+            env_short=short_env_name(environ),
+            env_full=full_env_name(environ),
             view_envs=total_envs,
             stage=self.stage.get_stage(),
             load_time=self.get_load_time(),
@@ -1313,6 +1319,8 @@ class AppUtilsCore(ReactApi):
             version=self.get_app_version(),
             package=self.APP_PACKAGE_NAME,
             env=environ,
+            env_short=short_env_name(environ),
+            env_full=full_env_name(environ),
             check=check,
             load_time=self.get_load_time(),
             init_load_time=self.init_load_time,
@@ -1586,25 +1594,44 @@ class AppUtilsCore(ReactApi):
         Returns:
             dict: runner input of queued messages, used for testing
         """
+        logger.warn(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
         queue = self.sqs.get_sqs_queue()
+        logger.warn(f"queue_scheduled_checks: queue={queue}")
         if schedule_name is not None:
+            logger.warn(f"queue_scheduled_checks: have schedule_name")
+            logger.warn(f"queue_scheduled_checks: environment.is_valid_environment_name(sched_environ, or_all=True)={self.environment.is_valid_environment_name(sched_environ, or_all=True)}")
             if not self.environment.is_valid_environment_name(sched_environ, or_all=True):
                 print(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
                 return
             sched_environs = self.environment.get_selected_environment_names(sched_environ)
+            logger.warn(f"queue_scheduled_checks: sched_environs={sched_environs}")
             check_schedule = self.check_handler.get_check_schedule(schedule_name, conditions)
+            logger.warn(f"queue_scheduled_checks: sched_environs={check_schedule}")
             if not check_schedule:
                 print(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
                 return
             for environ in sched_environs:
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
-                check_vals.extend(check_schedule.get(environ, []))
+                check_vals.extend(self.get_env_schedule(check_schedule, environ))
+                logger.warn(f"queue_scheduled_checks: calling send_sqs_messages({environ}) ... check_values:")
+                logger.warn(check_vals)
                 self.sqs.send_sqs_messages(queue, environ, check_vals)
+                logger.warn(f"queue_scheduled_checks: after calling send_sqs_messages({environ})")
         runner_input = {'sqs_url': queue.url}
         for n in range(4):  # number of parallel runners to kick off
+            logger.warn(f"queue_scheduled_checks: calling invoke_check_runner({runner_input})")
             self.sqs.invoke_check_runner(runner_input)
+            logger.warn(f"queue_scheduled_checks: after calling invoke_check_runner({runner_input})")
+        logger.warn(f"queue_scheduled_checks: returning({runner_input})")
         return runner_input  # for testing purposes
+
+    @classmethod
+    def get_env_schedule(cls, check_schedule, environ):
+        return (check_schedule.get(public_env_name(environ))
+                or check_schedule.get(full_env_name(environ))
+                or check_schedule.get(short_env_name(environ))
+                or [])
 
     def queue_check(self, environ, check,
                     params: Optional[dict] = None, deps: Optional[list] = None, uuid: Optional[str] = None):

@@ -8,12 +8,14 @@ import User from './User.js';
 import Users from './Users.js';
 import Demo from './Demo.js';
 import Header from './Header';
+import Login from './Login';
 import { fetchData } from './Utils.js';
 
 
 const AppRoutes = () => {
     return (
             <Routes>
+                <Route path="/api/react/:environ/login" element={<Login />} />
                 <Route path="/api/react/:environ" element={<Home />} />
                 <Route path="/api/react/:environ/demo" element={<Demo />}/>
                 <Route path="/api/react/:environ/view" element={<Home />}/>

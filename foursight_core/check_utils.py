@@ -32,10 +32,15 @@ class CheckHandler(object):
         if not os.path.exists(setup_path):
             raise BadCheckSetup('Did not locate the specified check_setup: %s, looking in: %s' %
                                 (setup_path, os.listdir(check_setup_dir)))
+        print(f"foursight_core/CheckHandler: Loading check_setup.json file: {setup_path}")
         with open(setup_path, 'r') as jfile:
             self.CHECK_SETUP = json.load(jfile)
+        print(f"foursight_core/CheckHandler: Loaded check_setup.json file: {setup_path} ...")
+        print(self.CHECK_SETUP)
         # Validate and finalize CHECK_SETUP
+        print(f"foursight_core/CheckHandler: Validating check_setup.json file: {setup_path}")
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
+        print(f"foursight_core/CheckHandler: Done validating check_setup.json file: {setup_path}")
 
     def get_module_names(self):
         check_modules = importlib.import_module('.checks', self.check_package_name)
