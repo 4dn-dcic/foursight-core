@@ -1,6 +1,6 @@
 import { DeleteJwtTokenCookie, GetJwtTokenCookie, GetDecodedJwtTokenCookie } from './CookieUtils.js';
 import { useNavigate } from 'react-router-dom';
-import { URL } from './UrlUtils.js';
+import * as URL from './URL.js';
 import * as Utils from './Utils.js';
 
 export const IsLoggedIn = () => {
@@ -41,6 +41,6 @@ export const Logout = () => {
 export const VerifyLogin = () => {
     let navigate = useNavigate();
     if (!IsLoggedIn()) {
-        navigate(URL("/login"))
+        navigate(URL.Url("/login", true))
     }
 }

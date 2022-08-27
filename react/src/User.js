@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { fetchData } from './FetchUtils.js';
 import GlobalContext from "./GlobalContext.js";
 import { VerifyLogin } from "./LoginUtils.js";
+import * as API from "./API.js";
 
 const User = (props) => {
 
@@ -12,7 +13,8 @@ const User = (props) => {
     const [ info, setInfo ] = useContext(GlobalContext);
     const { email } = useParams()
     //const url = `http://localhost:8000/api/reactapi/cgap-supertest/users/${email}`
-    const url = `https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/reactapi/cgap-supertest/users/${email}`
+    //const url = `https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/reactapi/cgap-supertest/users/${email}`
+    const url = API.Url(`/users/${email}`, true);
     const [ users, setUsers ] = useState([]);
     useEffect(() => { fetchData(url, setUsers)}, []);
 

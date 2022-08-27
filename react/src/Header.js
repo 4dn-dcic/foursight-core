@@ -3,7 +3,7 @@ import React from 'react';
 import { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
-import { BASE_URL_PATH, URL, URLE, getEnvFromUrlPath } from "./UrlUtils.js";
+import * as URL from "./URL.js";
 import { RingSpinner, BarSpinner } from "./Spinners.js";
 import { IsLoggedIn } from "./LoginUtils.js";
 import Auth0Lock from 'auth0-lock';
@@ -24,14 +24,10 @@ const Header = (props) => {
         document.cookie = "jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname + ";";
     }
 
-        console.log('a')
     function login() {
-        console.log('e')
         if (info.loading) return
         //const callback = "https://" + info.page?.domain + info.page?.context + "callback/";
         const loginCallback = "https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/callback/";
-        console.log('asdfadf')
-        console.log(info.app?.credentials);
         const loginClientId = info.app?.credentials.auth0_client_id;
         const loginPayload = {
             container: 'login-container',
@@ -53,20 +49,18 @@ const Header = (props) => {
         let auth0Lock = new Auth0Lock(loginClientId, 'hms-dbmi.auth0.com', loginPayload);
         auth0Lock.show()
     }
-        console.log('b')
 
     function renderNavigationLinks(info) {
-        console.log('d')
         function weight(page) {
-            return path.startsWith(BASE_URL_PATH + getEnvFromUrlPath() + page) ? "bold" : "normal";
+            return path.startsWith(URL.BASE_URL_PATH + URL.Env() + page) ? "bold" : "normal";
         }
         function color(page) {
-            return path.startsWith(BASE_URL_PATH + getEnvFromUrlPath() + page) ? "black" : "blue";
+            return path.startsWith(URL.BASE_URL_PATH + URL.Env() + page) ? "black" : "blue";
         }
         return <span>
-            <Link to={URL("/view")} style={{textDecoration:"none",color:color("/view"),fontWeight:weight("/view")}}>HOME</Link>&nbsp;|&nbsp;
-            <Link to={URL("/users")} style={{textDecoration:"none",color:color("/users"),fontWeight:weight("/users")}}>USERS</Link>&nbsp;|&nbsp;
-            <Link to={URL("/info")} style={{textDecoration:"none",color:color("/info"),fontWeight:weight("/info")}}>INFO</Link>&nbsp;|&nbsp;
+            <Link to={URL.Url("/view", true)} style={{textDecoration:"none",color:color("/view"),fontWeight:weight("/view")}}>HOME</Link>&nbsp;|&nbsp;
+            <Link to={URL.Url("/users", true)} style={{textDecoration:"none",color:color("/users"),fontWeight:weight("/users")}}>USERS</Link>&nbsp;|&nbsp;
+            <Link to={URL.Url("/info", true)} style={{textDecoration:"none",color:color("/info"),fontWeight:weight("/info")}}>INFO</Link>&nbsp;|&nbsp;
             <a target="_blank" title="Open AWS Console for this account ({info.app?.credentials.aws_account_number}) in another tab."
                 style={{textDecoration:"none"}}
                 href={"https://" + info.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span></a>
@@ -137,21 +131,21 @@ if (!info.loading) {
                     <td width="400" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (info.envs?.unique_annotated.length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:"#143c53"}} title="Environment: {getEnvFromUrlPath()}">{getEnvFromUrlPath().toUpperCase()}</b>
+                            <b className="dropdown-button" style={{color:"#143c53"}} title="Environment: {URL.Env()}">{URL.Env().toUpperCase()}</b>
                             <div className="dropdown-content" id="dropdown-content-id">
                                 { info.envs?.unique_annotated.map(env => 
-                                    env.name.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.full.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.short.toUpperCase() == getEnvFromUrlPath().toUpperCase() || env.inferred.toUpperCase() == getEnvFromUrlPath().toUpperCase() ? (
+                                    env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.inferred.toUpperCase() == URL.Env().toUpperCase() ? (
                                         <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
-                                        <a key={env.full} onClick={()=>{navigate(URLE(env.full))}}>{env.full}</a>
+                                        <a key={env.full} onClick={()=>{navigate(URL.Url(env.full, true))}}>{env.full}</a>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
-                                <a id="__envinfo__" onClick={()=>{navigate(URL("/info"));document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments Info</a>
+                                <a id="__envinfo__" onClick={()=>{navigate(URL.Url("/info"));document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments Info</a>
                             </div>
                          </span>
                         ):(
-                            <b style={{color:"#143c53"}} title="Environment: {getEnvFromUrlPath()}">asdfadfadf{getEnvFromUrlPath().toUpperCase()}</b>
+                            <b style={{color:"#143c53"}} title="Environment: {URL.Env()}">asdfadfadf{URL.Env().toUpperCase()}</b>
                         )}
                         &nbsp;|&nbsp;
                         { (info.app?.stage == 'prod') ? (<span>
@@ -170,7 +164,7 @@ if (!info.loading) {
                                 <b style={{color:"darkblue"}}>ADMIN</b>
                             </span>)}
                         </span>):(<span>
-                            <Link to={URL("/login")} style={{cursor:"pointer",fontWeight:"bold",color:"darkred"}} title="Not logged in. Click to login.">LOGIN</Link>
+                            <Link to={URL.Url("/login", true)} style={{cursor:"pointer",fontWeight:"bold",color:"darkred"}} title="Not logged in. Click to login.">LOGIN</Link>
                         </span>)}
                     </td>
                 </tr>

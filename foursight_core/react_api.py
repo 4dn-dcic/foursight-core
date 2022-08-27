@@ -131,10 +131,10 @@ class ReactApi:
             account_number = caller_identity["Account"]
             auth0_client_id = self.get_auth0_client_id(env_name)
             return {
-                "aws_account_number:": account_number,
-                "aws_user_arn:": user_arn,
-                "aws_access_key_id:": access_key_id,
-                "aws_region:": region_name,
+                "aws_account_number": account_number,
+                "aws_user_arn": user_arn,
+                "aws_access_key_id": access_key_id,
+                "aws_region": region_name,
                 "auth0_client_id": auth0_client_id
             }
         except Exception as e:

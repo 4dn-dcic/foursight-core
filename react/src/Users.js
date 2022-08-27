@@ -1,18 +1,22 @@
 import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchData } from './FetchUtils.js';
-import { URL } from './UrlUtils.js';
 import { RingSpinner } from "./Spinners.js";
 import GlobalContext from "./GlobalContext.js";
 import { VerifyLogin } from "./LoginUtils.js";
+import * as URL from './URL.js';
+import * as API from "./API.js";
 
 const Users = (props) => {
 
-    VerifyLogin();
+    //VerifyLogin();
 
     const [ info, setInfo ] = useContext(GlobalContext);
     //const url = "http://localhost:8000/api/reactapi/cgap-supertest/users"
-    const url = "https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/reactapi/cgap-supertest/users"
+    //const url = "https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/reactapi/cgap-supertest/users"
+    const url = API.Url("/users", true);
+        console.log('url....');
+        console.log(url);
     let [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     useEffect(() => { fetchData(url, setUsers, setLoading)}, []);
@@ -35,7 +39,7 @@ const Users = (props) => {
             {users.length > 0 && (
                 <ul>
                     {users.map(user => (
-                        <li key={user.email_address}><b><Link to={URL("/users/" + user.email_address)}>{user.email_address}</Link></b><br />{user.first_name} {user.last_name}</li>
+                        <li key={user.email_address}><b><Link to={URL.Url("/users/" + user.email_address, true)}>{user.email_address}</Link></b><br />{user.first_name} {user.last_name}</li>
                     ))}
                 </ul>
             )}
