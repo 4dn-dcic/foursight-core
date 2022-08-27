@@ -9,7 +9,7 @@ import * as API from "./API.js";
 
 const Users = (props) => {
 
-    let loggedIn = VerifyLogin()
+    //let loggedIn = VerifyLogin()
 
     const [ info, setInfo ] = useContext(GlobalContext);
     //const url = "http://localhost:8000/api/reactapi/cgap-supertest/users"
@@ -24,7 +24,8 @@ const Users = (props) => {
     // reaload the info object (stringify/parse)
     // TODO: Figure this out more fullly.
 
-    if (!loggedIn) return <></>; if (info.loading) return <>Loading ...</>; return <>
+    // if (!loggedIn) return <></>; if (info.loading) return <>Loading ...</>; return <>
+    if (info.loading) return <>Loading ...</>; return <>
         <h1>All Users:</h1>
         <hr />
         <div>

@@ -2,10 +2,10 @@ import './App.css';
 import React from 'react';
 import { useContext, useEffect} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import GlobalContext from "./GlobalContext.js";
+import GlobalContext from './GlobalContext.js';
 import Auth0Lock from 'auth0-lock';
-import * as API from "./API.js";
-import * as URL from "./URL.js";
+import * as API from './API.js';
+import * as URL from './URL.js';
 import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, Logout } from './LoginUtils.js';
 
 const Login = (props) => {
@@ -21,35 +21,34 @@ const Login = (props) => {
     }
 
     function login() {
-        if (info.loading) return
+        if (info?.loading) return;
         const loginCallback = Auth0CallbackUrl("/api/callback/");
         const loginClientId = info?.app?.credentials?.auth0_client_id;
         const loginPayload = {
-            container: 'login_auth_container',
+            container: "login_auth_container",
             auth: {
                 redirectUrl: loginCallback,
-                responseType: 'code',
+                responseType: "code",
                 sso: false,
-                params: {scope: 'openid email', prompt: 'select_account'}
+                params: { scope: "openid email", prompt: "select_account" }
             },
-            socialButtonStyle: 'big',
+            socialButtonStyle: "big",
             languageDictionary: { title: "Foursight Login" },
             theme: {
                 primaryColor: "blue",
                 backgroundColor: "blue",
                 logo: "",
             },
-            allowedConnections: ['google-oauth2', 'github']
+            allowedConnections: [ "google-oauth2", "github" ]
         };
-            console.log('jjj')
         document.getElementById("login_container").style.display = "none";
         document.getElementById("login_auth_container").style.display = "block";
-        let authLock = new Auth0Lock(loginClientId, 'hms-dbmi.auth0.com', loginPayload);
+        let authLock = new Auth0Lock(loginClientId, "hms-dbmi.auth0.com", loginPayload);
         authLock.show()
         //
         // Hacking styles for (now) embeded (rather than popup) Auth0 login box.
         //
-        const isFirefoxBrowser = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+        const isFirefoxBrowser = navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
         if (isFirefoxBrowser) {
             // Firefox doesn't respect the fit-content on height so just disable the border entirely.
             document.getElementById("login_auth_container").style.height = "200";
@@ -65,22 +64,22 @@ const Login = (props) => {
     }
 
     if (info?.loading) {
-        return (<>
+        return <>
             Loading ...
-        </>)
+        </>
     }
     if (IsLoggedIn()) {
         const loginInfo = GetLoginInfo();
-        return (<>
+        return <>
             <div className="container">
                 <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt"}}>
                     Logged in as: <Link to={URL.Url("/users/" + loginInfo?.email, true)}><b style={{color:"#38250E"}}>{loginInfo?.email}</b></Link>
                     <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=>{Logout(navigate);}}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small>
                 </div>
             </div>
-        </>);
+        </>
     }
-    return (<>
+    return <>
         <div className="container" id="login_container">
             <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt"}}>
                 Not logged in. Click <u style={{cursor:"pointer"}} onClick={()=>{login();}}><b>here</b></u> to <span style={{cursor:"pointer"}}>login</span>.
@@ -93,7 +92,7 @@ const Login = (props) => {
         </div>
         <br /><br /><br />
         <div id="login_auth_container" style={{verticalAlign:"top",align:"top",backgroundColor:"#143c53", height: "fit-content", borderRadius: "8px", borderStyle: "solid", borderWidth: "1px", display: "none", width:"fit-content", padding:"0px", margin: "auto"}}></div>
-    </>);
+    </>
 };
 
 export default Login;
