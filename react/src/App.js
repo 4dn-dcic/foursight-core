@@ -15,6 +15,7 @@ import Demo from './Demo.js';
 import Header from './Header';
 import Login from './Login';
 import Test from './Test';
+import NotFound from './NotFound';
 
 const App = () => {
 
@@ -39,6 +40,7 @@ const App = () => {
                     <Route path="/api/react/:environ/users" element={<Users/>} />
                     <Route path="/api/react/:environ/users/:email" element={<User />}/>
                     <Route path="/api/react/:environ/test" element={<Test />}/>
+                    <Route path="*" element={<NotFound />}/>
                 </Routes>
             </div>
         </GlobalContext.Provider>
