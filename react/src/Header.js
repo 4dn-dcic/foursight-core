@@ -5,50 +5,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 import * as URL from "./URL.js";
 import { BarSpinner } from "./Spinners.js";
-import { IsLoggedIn, Logout } from "./LoginUtils.js";
-import Auth0Lock from 'auth0-lock';
+import { Logout } from "./LoginUtils.js";
 
 const Header = (props) => {
 
     let navigate = useNavigate();
     const [ info, setInfo ] = useContext(GlobalContext);
     const path = window.location.pathname;
-
-    function createRedirectCookie() {
-        var expr = new Date();
-        expr.setFullYear(expr.getFullYear() + 1);
-        document.cookie = "redir=" + window.location.href + "; path=/; expires=" + expr.toUTCString();
-    }
-
-    function deleteLoginCookies() {
-        document.cookie = "jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname + ";";
-    }
-
-    function login() {
-        if (info.loading) return
-        //const callback = "https://" + info.page?.domain + info.page?.context + "callback/";
-        const loginCallback = "https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/callback/";
-        const loginClientId = info.app?.credentials.auth0_client_id;
-        const loginPayload = {
-            container: 'login-container',
-            auth: {
-                redirectUrl: loginCallback,
-                responseType: 'code',
-                sso: false,
-                params: {scope: 'openid email', prompt: 'select_account'}
-            },
-            languageDictionary: { title: "Foursight Login" },
-            socialButtonStyle: 'big',
-            theme: {
-                primaryColor: "blue",
-                logo: info.page?.favicon,
-            },
-            allowedConnections: ['github', 'google-oauth2']
-        };
-        document.getElementById("login-container").style.display = "block";
-        let auth0Lock = new Auth0Lock(loginClientId, 'hms-dbmi.auth0.com', loginPayload);
-        auth0Lock.show()
-    }
 
     function renderNavigationLinks(info) {
         function weight(page) {
@@ -66,13 +29,8 @@ const Header = (props) => {
                 href={"https://" + info.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span></a>
         </span>
     }
-if (!info.loading) {
-            console.log(info.envs?.unique_annotated)
-            info.envs?.unique_annotated.map(env => console.log(env.name.toUpperCase()))
-}
 
-        console.log('c')
-    return (<>
+    return <>
         <div style={{width:"100%",background:"#143c53"}}>{ info.loading ? (
             <table style={{width:"100%",height:"42px"}}><tbody>
             <tr>
@@ -171,8 +129,7 @@ if (!info.loading) {
                 </tr>
             </tbody></table>
         </React.Fragment>)}</div>
-                    <div id="login-container" style={{display: "none", width: "320px", height:"fit-content", margin: "40px auto", padding: "10px", borderStyle: "dashed", borderWidth: "1px", boxSizing: "border-box"}}></div>
-    </>);
+    </>
 };
 
 export default Header;

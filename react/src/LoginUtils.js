@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { DeleteJwtTokenCookie, GetCookie, GetDecodedJwtTokenCookie } from './CookieUtils.js';
 import * as URL from './URL.js';
 import * as API from './API.js';
@@ -75,4 +75,8 @@ export const Auth0CallbackUrl = () => {
     else {
         return API.UrlAbs("/api/callback/");
     }
+}
+
+export const LoginRequired = ({ children }) => {
+    return IsLoggedIn() ? children : <Navigate to={URL.Url("/login", true)} replace />;
 }

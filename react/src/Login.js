@@ -14,14 +14,34 @@ const Login = (props) => {
     const [ info, setInfo ] = useContext(GlobalContext);
     const path = window.location.pathname;
 
-    function createRedirectCookie() {
-        var expr = new Date();
-        expr.setFullYear(expr.getFullYear() + 1);
-        document.cookie = "redir=" + window.location.href + "; path=/; expires=" + expr.toUTCString();
+    function login() {
+        showAuthBox();
     }
 
-    function login() {
-        if (info?.loading) return;
+    function showAuthBox() {
+        document.getElementById("login_container").style.display = "none";
+        document.getElementById("login_auth_container").style.display = "block";
+        document.getElementById("login_auth_cancel").style.display = "block";
+        createAuth0Lock().show();
+        //
+        // Hacking styles for (now) embeded (rather than popup) Auth0 login box.
+        //
+        const isFirefoxBrowser = navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
+        if (isFirefoxBrowser) {
+            // Firefox doesn't respect the fit-content on height so just disable the border entirely.
+            document.getElementById("login_auth_container").style.height = "200";
+            document.getElementById("login_auth_container").style.background = "white";
+            document.getElementById("login_auth_container").style.borderStyle = "none";
+        }
+        document.getElementById("login_auth_container").firstChild.firstChild.style.paddingLeft = "1";
+        document.getElementById("login_auth_container").firstChild.firstChild.style.paddingRight = "1";
+        document.getElementById("login_auth_container").firstChild.firstChild.style.paddingTop = "1";
+        document.getElementById("login_auth_container").firstChild.firstChild.style.paddingBottom = "1";
+        document.getElementById("login_auth_container").firstChild.firstChild.style.fontWeight = "bold";
+        document.getElementById("login_auth_container").firstChild.firstChild.style.fontWeight = "bold";
+    }
+
+    function createAuth0Lock() {
         const loginCallback = Auth0CallbackUrl("/api/callback/");
         const loginClientId = info?.app?.credentials?.auth0_client_id;
         const loginPayload = {
@@ -41,39 +61,23 @@ const Login = (props) => {
             },
             allowedConnections: [ "google-oauth2", "github" ]
         };
-        document.getElementById("login_container").style.display = "none";
-        document.getElementById("login_auth_container").style.display = "block";
-        let authLock = new Auth0Lock(loginClientId, "hms-dbmi.auth0.com", loginPayload);
-        authLock.show()
-        //
-        // Hacking styles for (now) embeded (rather than popup) Auth0 login box.
-        //
-        const isFirefoxBrowser = navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
-        if (isFirefoxBrowser) {
-            // Firefox doesn't respect the fit-content on height so just disable the border entirely.
-            document.getElementById("login_auth_container").style.height = "200";
-            document.getElementById("login_auth_container").style.background = "white";
-            document.getElementById("login_auth_container").style.borderStyle = "none";
-        }
-        document.getElementById("login_auth_container").firstChild.firstChild.style.paddingLeft = "1";
-        document.getElementById("login_auth_container").firstChild.firstChild.style.paddingRight = "1";
-        document.getElementById("login_auth_container").firstChild.firstChild.style.paddingTop = "1";
-        document.getElementById("login_auth_container").firstChild.firstChild.style.paddingBottom = "1";
-        document.getElementById("login_auth_container").firstChild.firstChild.style.fontWeight = "bold";
-        document.getElementById("login_auth_container").firstChild.firstChild.style.fontWeight = "bold";
+        return new Auth0Lock(loginClientId, "hms-dbmi.auth0.com", loginPayload);
     }
 
-    if (info?.loading) {
-        return <>
-            Loading ...
-        </>
+    function showLoginBox() {
+        document.getElementById("login_auth_cancel").style.display = "none";
+        document.getElementById("login_auth_container").style.display = "none";
+        document.getElementById("login_container").style.display = "block";
     }
+
+    if (info?.loading) return <>Loading ...</>
+
     if (IsLoggedIn()) {
         const loginInfo = GetLoginInfo();
         return <>
             <div className="container">
-                <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt"}}>
-                    Logged in as: <Link to={URL.Url("/users/" + loginInfo?.email, true)}><b style={{color:"#38250E"}}>{loginInfo?.email}</b></Link>
+                <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
+                    Logged in as: <Link to={URL.Url("/users/" + loginInfo?.email, true)}><b style={{color:"darkblue"}}>{loginInfo?.email}</b></Link>
                     <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=>{Logout(navigate);}}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small>
                 </div>
             </div>
@@ -91,7 +95,17 @@ const Login = (props) => {
             </div>
         </div>
         <br /><br /><br />
-        <div id="login_auth_container" style={{verticalAlign:"top",align:"top",backgroundColor:"#143c53", height: "fit-content", borderRadius: "8px", borderStyle: "solid", borderWidth: "1px", display: "none", width:"fit-content", padding:"0px", margin: "auto"}}></div>
+        <div>
+            <div id="login_auth_container" style={{verticalAlign:"top",align:"top",backgroundColor:"#143c53", height: "fit-content", borderRadius: "8px", borderStyle: "solid", borderWidth: "1px", display: "none", width:"fit-content", padding:"0px", margin: "auto"}}></div>
+                <center id="login_auth_cancel" style={{display:"none",marginTop:"10px"}}>
+                    <a href={URL.Url("/login", true)} style={{fontSize:"small",cursor:"pointer",color:"blue"}}>Cancel</a>
+                </center>
+                {/*
+                    <center id="login_auth_cancel" style={{display:"none",marginTop:"10px"}}>
+                        <span style={{fontSize:"small",cursor:"pointer",color:"blue"}} onClick={()=>{showLoginBox();}}>Cancel</span>
+                    </center>
+                */}
+        </div>
     </>
 };
 

@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import { fetchData } from './FetchUtils.js';
 import { RingSpinner } from "./Spinners.js";
 import GlobalContext from "./GlobalContext.js";
-import { VerifyLogin } from "./LoginUtils.js";
+import { VerifyLogin, LoginRequired } from "./LoginUtils.js";
 import * as URL from './URL.js';
 import * as API from "./API.js";
 
-const Users = (props) => {
+const Users = () => {
 
     //let loggedIn = VerifyLogin()
 
@@ -24,8 +24,7 @@ const Users = (props) => {
     // reaload the info object (stringify/parse)
     // TODO: Figure this out more fullly.
 
-    // if (!loggedIn) return <></>; if (info.loading) return <>Loading ...</>; return <>
-    if (info.loading) return <>Loading ...</>; return <>
+    if (info?.loading) return <>Loading ...</>; return <LoginRequired>
         <h1>All Users:</h1>
         <hr />
         <div>
@@ -38,7 +37,7 @@ const Users = (props) => {
             )}
         </div>
         <RingSpinner loading={loading} color={'blue'} size={400} />
-    </>
+    </LoginRequired>
 };
 
 export default Users;

@@ -1,13 +1,10 @@
 import { useContext, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
-import { VerifyLogin } from "./LoginUtils.js";
+import { VerifyLogin, LoginRequired } from "./LoginUtils.js";
 
-const Info = (props) => {
+const Info = () => {
 
-    let loggedIn = VerifyLogin();
-
-    console.log("Info Page")
     const [info, setInfo] = useContext(GlobalContext);
 
     useEffect(() => {
@@ -17,9 +14,8 @@ const Info = (props) => {
          }
     }, []);
 
-    if (!loggedIn) return <></>; if (info.loading) return <>Loading ...</>; return <>
+    if (info?.loading) return <>Loading ...</>; return <LoginRequired>
         <h1>Info:</h1>
-                adfa
         <ul className="top-level-list">
             <b>Miscellany</b>
             <div className="info boxstyle">
@@ -37,7 +33,7 @@ const Info = (props) => {
                 </h5>
             </div>
         </ul>
-    </>;
+    </LoginRequired>
 };
 
 export default Info;
