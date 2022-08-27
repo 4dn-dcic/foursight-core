@@ -14,9 +14,11 @@ const User = (props) => {
     useEffect(() => { fetchData(url, setUsers, setLoading)}, []);
 
     if (loading) {
-        return <div style={{marginTop:"10px"}}>
-            <RingSpinner loading={loading} color={'blue'} size={80} />
-        </div>
+        return <LoginRequired>
+            <div style={{marginTop:"30px"}}>
+                <RingSpinner loading={loading} color={'blue'} size={90} />
+            </div>
+        </LoginRequired>
     }
     return <LoginRequired>
         <h3>User:</h3>
