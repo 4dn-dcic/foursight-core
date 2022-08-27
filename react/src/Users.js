@@ -8,7 +8,7 @@ import { VerifyLogin } from "./LoginUtils.js";
 
 const Users = (props) => {
 
-    VerifyLogin()
+    VerifyLogin();
 
     const [ info, setInfo ] = useContext(GlobalContext);
     const url = "http://localhost:8000/api/reactapi/cgap-supertest/users"

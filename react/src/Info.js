@@ -1,8 +1,12 @@
 import { useContext, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
+import { VerifyLogin } from "./LoginUtils.js";
 
 const Info = (props) => {
+
+    VerifyLogin();
+
     console.log("Info Page")
     const [info, setInfo] = useContext(GlobalContext);
 

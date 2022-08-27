@@ -2,8 +2,11 @@ import { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchData } from './FetchUtils.js';
 import GlobalContext from "./GlobalContext.js";
+import { VerifyLogin } from "./LoginUtils.js";
 
 const User = (props) => {
+
+    VerifyLogin();
 
     console.log("User Page")
     const [ info, setInfo ] = useContext(GlobalContext);
