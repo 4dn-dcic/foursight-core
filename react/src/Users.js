@@ -1,31 +1,25 @@
-import { useState, useEffect, useContext, useNavigate } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchData } from './FetchUtils.js';
 import { RingSpinner } from "./Spinners.js";
-import GlobalContext from "./GlobalContext.js";
-import { VerifyLogin, LoginRequired } from "./LoginUtils.js";
+import { LoginRequired } from "./LoginUtils.js";
 import * as URL from './URL.js';
 import * as API from "./API.js";
 
 const Users = () => {
 
-    //let loggedIn = VerifyLogin()
-
-    const [ info, setInfo ] = useContext(GlobalContext);
-    //const url = "http://localhost:8000/api/reactapi/cgap-supertest/users"
-    //const url = "https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/reactapi/cgap-supertest/users"
     const url = API.Url("/users", true);
     let [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     useEffect(() => { fetchData(url, setUsers, setLoading)}, []);
 
-    // For some reason we need this to cause the font weight changes (bold/normal)
-    // for the header links (HOME, USERS, INFO) to take. And we do need to actually
-    // reaload the info object (stringify/parse)
-    // TODO: Figure this out more fullly.
-
-    if (info?.loading) return <>Loading ...</>; return <LoginRequired>
-        <h1>All Users:</h1>
+    if (loading) {
+        return <div style={{marginTop:"10px"}}>
+            <RingSpinner loading={loading} color={'blue'} size={80} />
+        </div>
+    }
+    return <LoginRequired>
+        <h3>All Users (TODO - Paging):</h3>
         <hr />
         <div>
             {users.length > 0 && (
@@ -36,7 +30,6 @@ const Users = () => {
                 </ul>
             )}
         </div>
-        <RingSpinner loading={loading} color={'blue'} size={400} />
     </LoginRequired>
 };
 

@@ -7,7 +7,7 @@ const _jwtTokenCookieName = "jwtToken";
 
 export const GetCookie = (name) => {
     const value = _cookies.get(name);
-    return (value == "") ? undefined : value;
+    return (value === "") ? undefined : value;
 }
 
 export const SetCookie = (name, value) => {

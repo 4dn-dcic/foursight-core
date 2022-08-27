@@ -1,18 +1,16 @@
 import './App.css';
 import React from 'react';
-import { useContext, useEffect} from 'react';
+import { useContext } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import GlobalContext from './GlobalContext.js';
 import Auth0Lock from 'auth0-lock';
-import * as API from './API.js';
 import * as URL from './URL.js';
 import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, Logout } from './LoginUtils.js';
 
 const Login = (props) => {
 
     let navigate = useNavigate();
-    const [ info, setInfo ] = useContext(GlobalContext);
-    const path = window.location.pathname;
+    const [ info ] = useContext(GlobalContext);
 
     function login() {
         showAuthBox();
@@ -62,12 +60,6 @@ const Login = (props) => {
             allowedConnections: [ "google-oauth2", "github" ]
         };
         return new Auth0Lock(loginClientId, "hms-dbmi.auth0.com", loginPayload);
-    }
-
-    function showLoginBox() {
-        document.getElementById("login_auth_cancel").style.display = "none";
-        document.getElementById("login_auth_container").style.display = "none";
-        document.getElementById("login_container").style.display = "block";
     }
 
     if (info?.loading) return <>Loading ...</>

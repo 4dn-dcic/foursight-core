@@ -1,10 +1,7 @@
 import logo from './logo.svg';
 import React from 'react';
-import { Link, useSearchParams, useParams } from 'react-router-dom';
 
 const Demo = () => {
-  const [search] = useSearchParams();
-  let { environ } = useParams();
   return (
     <div className="App">
       <header className="App-header">

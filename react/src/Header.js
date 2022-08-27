@@ -10,7 +10,7 @@ import { Logout } from "./LoginUtils.js";
 const Header = (props) => {
 
     let navigate = useNavigate();
-    const [ info, setInfo ] = useContext(GlobalContext);
+    const [ info ] = useContext(GlobalContext);
     const path = window.location.pathname;
 
     function renderNavigationLinks(info) {
