@@ -16,7 +16,8 @@ const App = () => {
 
     let [ info, setInfo ] = useState({loading: true});
     let [ loading, setLoading ] = useState(true);
-    const url = "http://localhost:8000/api/reactapi/cgap-supertest/info"
+    //const url = "http://localhost:8000/api/reactapi/cgap-supertest/info"
+    const url = "https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/reactapi/cgap-supertest/info"
     useEffect(() => { fetchData(url, setInfo , setLoading)}, []);
 
 

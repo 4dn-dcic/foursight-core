@@ -11,7 +11,8 @@ const Users = (props) => {
     VerifyLogin();
 
     const [ info, setInfo ] = useContext(GlobalContext);
-    const url = "http://localhost:8000/api/reactapi/cgap-supertest/users"
+    //const url = "http://localhost:8000/api/reactapi/cgap-supertest/users"
+    const url = "https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/reactapi/cgap-supertest/users"
     let [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     useEffect(() => { fetchData(url, setUsers, setLoading)}, []);

@@ -20,7 +20,6 @@ const Info = (props) => {
   return (<>
 
     { (info.loading) ? (<span>
-            foo
         loading
     </span>):(<span>
 
@@ -37,7 +36,7 @@ const Info = (props) => {
                         </div>
                     </div>
                     <div className="col-sm-8" style={{wordWrap:"break-word"}} align="left">
-                        {info.app.launched}
+                        {info.app?.launched}
                     </div>
                 </div>
             </h5>

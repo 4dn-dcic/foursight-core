@@ -11,7 +11,8 @@ const User = (props) => {
     console.log("User Page")
     const [ info, setInfo ] = useContext(GlobalContext);
     const { email } = useParams()
-    const url = `http://localhost:8000/api/reactapi/cgap-supertest/users/${email}`
+    //const url = `http://localhost:8000/api/reactapi/cgap-supertest/users/${email}`
+    const url = `https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/reactapi/cgap-supertest/users/${email}`
     const [ users, setUsers ] = useState([]);
     useEffect(() => { fetchData(url, setUsers)}, []);
 
