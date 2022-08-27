@@ -99,8 +99,8 @@ const Login = (props) => {
         <div className="container" id="login_container">
             <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt"}}>
                 Not logged in. Click <u style={{cursor:"pointer"}} onClick={()=>{login();}}><b>here</b></u> to <span style={{cursor:"pointer"}}>login</span>.
-                {(info?.app?.credentials["aws_account_number:"]) ? (<React.Fragment>
-                    <br /> <small> AWS Account: {info?.app?.credentials["aws_account_number:"]} </small>
+                {(info?.app?.credentials?.aws_account_number) ? (<React.Fragment>
+                    <br /> <small> AWS Account: {info?.app?.credentials?.aws_account_number} </small>
                     <br/>
                 </React.Fragment>):(<React.Fragment>
                 </React.Fragment>)}
