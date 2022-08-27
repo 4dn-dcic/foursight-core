@@ -1,6 +1,6 @@
 import './App.css';
 import { useState, useEffect, Redirect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, NavLink } from 'react-router-dom';
 import GlobalContext from './GlobalContext.js';
 import { fetchData } from './FetchUtils.js';
 import * as API from './API.js';

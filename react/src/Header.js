@@ -1,7 +1,7 @@
 import './App.css';
 import React from 'react';
 import { useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 import * as URL from "./URL.js";
 import { BarSpinner } from "./Spinners.js";
@@ -14,18 +14,20 @@ const Header = (props) => {
     const path = window.location.pathname;
 
     function renderNavigationLinks(info) {
-        function weight(page) {
-            return path.startsWith(URL.BASE_URL_PATH + URL.Env() + page) ? "bold" : "normal";
-        }
-        function color(page) {
-            return path.startsWith(URL.BASE_URL_PATH + URL.Env() + page) ? "black" : "blue";
+        function style(isActive) {
+            if (isActive) {
+                return { textDecoration: "none", color: "black", fontWeight: "bold" }
+            }
+            else {
+                return { textDecoration: "none", color: "blue", fontWeight: "normal" }
+            }
         }
         return <span>
-            <Link to={URL.Url("/view", true)} style={{textDecoration:"none",color:color("/view"),fontWeight:weight("/view")}}>HOME</Link>&nbsp;|&nbsp;
-            <Link to={URL.Url("/users", true)} style={{textDecoration:"none",color:color("/users"),fontWeight:weight("/users")}}>USERS</Link>&nbsp;|&nbsp;
-            <Link to={URL.Url("/info", true)} style={{textDecoration:"none",color:color("/info"),fontWeight:weight("/info")}}>INFO</Link>&nbsp;|&nbsp;
+            <NavLink to={URL.Url("/view", true)} style={({isActive}) => style(isActive)}>HOME</NavLink>&nbsp;|&nbsp;
+            <NavLink to={URL.Url("/users", true)} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
+            <NavLink to={URL.Url("/info", true)} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
             <a target="_blank" title="Open AWS Console for this account ({info.app?.credentials.aws_account_number}) in another tab."
-                style={{textDecoration:"none"}}
+                style={{textDecoration:"none",color:"darkgreen"}}
                 href={"https://" + info.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span></a>
         </span>
     }
