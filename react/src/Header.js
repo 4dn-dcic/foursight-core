@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 import * as URL from "./URL.js";
 import { RingSpinner, BarSpinner } from "./Spinners.js";
-import { IsLoggedIn } from "./LoginUtils.js";
+import { IsLoggedIn, Logout } from "./LoginUtils.js";
 import Auth0Lock from 'auth0-lock';
 
 const Header = (props) => {
@@ -114,9 +114,7 @@ if (!info.loading) {
                     <small>{info.page?.loaded}</small>
                     &nbsp;<b>|</b>&nbsp;
                     <a style={{textDecoration:"none",color:"#D6EAF8"}} href="{info.page?.context + '__reload_lambda__/' + info.app?.env + '/current'}" title="Click to relaunch this app." onClick={() => { if (window.confirm('Do you want to relaunch this app?')){return true;}else{window.event.stopPropagation();window.event.preventDefault()}}}>&#x2318;</a>
-                    { info.app?.local && info.login?.admin ? (<span>
-                        &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {deleteLoginCookies();window.location.reload();}}>LOGOUT</span>
-                    </span>):(<span></span>)}
+                    &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {Logout(navigate);}}>LOGOUT</span>
                 </td>
             </tr>
             </tbody></table>
@@ -159,7 +157,7 @@ if (!info.loading) {
                         </span>):(<span></span>)}
                         { (info.login?.admin) ? (<span>
                             { (info.login?.email_address) ? (<span>
-                                <span style={{textDecoration:"none"}}><b title="" style={{color:"darkblue;"}} title="Logged in as.">{info.login?.email_address}</b></span>
+                                <Link to={URL.Url("/login", true)} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{info?.login?.email_address}</b></Link>
                             </span>):(<span>
                                 <b style={{color:"darkblue"}}>ADMIN</b>
                             </span>)}

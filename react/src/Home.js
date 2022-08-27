@@ -17,12 +17,12 @@ const Home = (props) => {
          }
     }, []);
 
-  if (!loggedIn) return <></>; return <>
-      <h1>Home:</h1>
-      <hr />
-      <p style={{ marginTop: "150vh" }}>
-        <Link to="/contact">Go to contact page</Link>
-      </p>
+    if (!loggedIn) return <></>; if (info.loading) return <>Loading ...</>; return <>
+        <h1>Home:</h1>
+        <hr />
+        <p style={{ marginTop: "150vh" }}>
+            <Link to="/contact">Go to contact page</Link>
+        </p>
     </>
 };
 

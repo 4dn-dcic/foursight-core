@@ -25,7 +25,7 @@ const User = (props) => {
          }
     }, []);
 
-    if (!loggedIn) return <></>; return <>
+    if (!loggedIn) return <></>; if (info.loading) return <>Loading ...</>; return <>
         <h1>User:</h1>
         <div>
             { users.length > 0 && (

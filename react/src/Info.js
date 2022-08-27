@@ -5,7 +5,7 @@ import { VerifyLogin } from "./LoginUtils.js";
 
 const Info = (props) => {
 
-    VerifyLogin();
+    let loggedIn = VerifyLogin();
 
     console.log("Info Page")
     const [info, setInfo] = useContext(GlobalContext);
@@ -17,35 +17,27 @@ const Info = (props) => {
          }
     }, []);
 
-  return (<>
-
-    { (info.loading) ? (<span>
-        loading
-    </span>):(<span>
-
-      <h1>Info:</h1>
-
-    <ul className="top-level-list">
-        <b>Miscellany</b>
-        <div className="info boxstyle">
-            <h5 style={{margin:"10px 5px 10px 5px"}}>
-                <div className="row">
-                    <div className="col-sm-4">
-                        <div style={{padding:"0",align:"left"}}>
-                            <b>App Launched At:</b>
+    if (!loggedIn) return <></>; if (info.loading) return <>Loading ...</>; return <>
+        <h1>Info:</h1>
+                adfa
+        <ul className="top-level-list">
+            <b>Miscellany</b>
+            <div className="info boxstyle">
+                <h5 style={{margin:"10px 5px 10px 5px"}}>
+                    <div className="row">
+                        <div className="col-sm-4">
+                            <div style={{padding:"0",align:"left"}}>
+                                <b>App Launched At:</b>
+                            </div>
+                        </div>
+                        <div className="col-sm-8" style={{wordWrap:"break-word"}} align="left">
+                            {info.app?.launched}
                         </div>
                     </div>
-                    <div className="col-sm-8" style={{wordWrap:"break-word"}} align="left">
-                        {info.app?.launched}
-                    </div>
-                </div>
-            </h5>
-        </div>
-    </ul>
-
-    </span>)}
-
-    </>);
+                </h5>
+            </div>
+        </ul>
+    </>;
 };
 
 export default Info;

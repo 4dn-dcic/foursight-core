@@ -51,7 +51,15 @@ export const Logout = (navigate) => {
 }
 
 export const VerifyLogin = () => {
-    let navigate = useNavigate();
+    //
+    // TODO
+    // Not the way to do this I think. More investigation.
+    // Get warning/errors like:
+    // You should call navigate() in a React.useEffect(), not when your component is first rendered.
+    // Warning: Cannot update a component (`BrowserRouter`) while rendering a different component (`Info`).
+    // To locate the bad setState() call inside `Info`, follow the stack trace as described in https://reactjs.org/link/setstate-in-render
+    //
+    let navigate = useNavigate()
     if (!IsLoggedIn()) {
         navigate(URL.Url("/login", true));
         return false;

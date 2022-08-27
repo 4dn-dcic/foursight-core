@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useNavigate } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchData } from './FetchUtils.js';
 import { RingSpinner } from "./Spinners.js";
@@ -24,7 +24,7 @@ const Users = (props) => {
     // reaload the info object (stringify/parse)
     // TODO: Figure this out more fullly.
 
-    if (!loggedIn) return <></>; return <>
+    if (!loggedIn) return <></>; if (info.loading) return <>Loading ...</>; return <>
         <h1>All Users:</h1>
         <hr />
         <div>
@@ -37,7 +37,7 @@ const Users = (props) => {
             )}
         </div>
         <RingSpinner loading={loading} color={'blue'} size={400} />
-    </>;
+    </>
 };
 
 export default Users;
