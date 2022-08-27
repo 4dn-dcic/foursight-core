@@ -5,9 +5,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 import { RingSpinner, BarSpinner } from "./Spinners.js";
 import Auth0Lock from 'auth0-lock';
+import * as API from "./API.js";
 import * as URL from "./URL.js";
 import { GetCookie, SetCookie, DeleteCookie, GetJwtTokenCookie, GetDecodedJwtTokenCookie, CreateSampleJwtTokenCookie } from './CookieUtils.js';
-import { IsLoggedIn, Logout, GetLoginInfo } from './LoginUtils.js';
+import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, Logout } from './LoginUtils.js';
 
 const Login = (props) => {
 
@@ -34,7 +35,7 @@ const Login = (props) => {
         if (info.loading) return
         //const callback = "https://" + info.page.domain + info.page.context + "callback/";
         //const loginCallback = "https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/callback/";
-        const loginCallback = URL.Url("/api/callback/");
+        const loginCallback = Auth0CallbackUrl("/api/callback/");
             console.log('AUTH0CALL:')
             console.log(loginCallback)
         const loginClientId = info?.app?.credentials?.auth0_client_id;
@@ -78,44 +79,35 @@ const Login = (props) => {
         document.getElementById("login_auth_container").firstChild.firstChild.style.fontWeight = "bold";
     }
 
-  return (<>
-
-    {(info.loading) ? (<span>
-        Loading ...
-    </span>):(<span>
+    if (info?.loading) {
+        return (<>
+            Loading ...
+        </>)
+    }
+    if (IsLoggedIn()) {
+        const loginInfo = GetLoginInfo();
+        return (<>
+            <div className="container">
+                <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt"}}>
+                    Logged in as: <Link to={URL.Url("/users/" + loginInfo?.email, true)}><b>{loginInfo?.email}</b></Link>
+                    <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=>{Logout(navigate);}}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small>
+                </div>
+            </div>
+        </>);
+    }
+    return (<>
         <div className="container" id="login_container">
             <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt"}}>
                 Not logged in. Click <u style={{cursor:"pointer"}} onClick={()=>{login();}}><b>here</b></u> to <span style={{cursor:"pointer"}}>login</span>.
                 {(info?.app?.credentials["aws_account_number:"]) ? (<React.Fragment>
                     <br /> <small> AWS Account: {info?.app?.credentials["aws_account_number:"]} </small>
+                    <br/>
                 </React.Fragment>):(<React.Fragment>
                 </React.Fragment>)}
             </div>
         </div>
         <br /><br /><br />
         <div id="login_auth_container" style={{verticalAlign:"top",align:"top",backgroundColor:"#143c53", height: "fit-content", borderRadius: "8px", borderStyle: "solid", borderWidth: "1px", display: "none", width:"fit-content", padding:"0px", margin: "auto"}}></div>
-
-    </span>)}
-
-    </>);
-
-    return (<>
-        { (IsLoggedIn()) ? (<React.Fragment>
-                Logged in as {JSON.stringify(GetLoginInfo())}
-        </React.Fragment>):(<React.Fragment>
-                goo
-        </React.Fragment>)}
-        <div id="xlogin-container">
-            <span>Login <span onClick={()=>{login();}}>here</span> ...<br/></span>
-            <span>JWT: [{GetJwtTokenCookie()}]<br/></span>
-            <span>Decoded JWT: [{JSON.stringify(GetDecodedJwtTokenCookie())}]<br/></span>
-            <span onClick={()=>{DeleteCookie("jwtToken");}}>Delete</span><br />
-            <span onClick={()=>{CreateSampleJwtTokenCookie()}}>Create</span><br />
-            <span onClick={()=>{window.alert(GetCookie("jwtToken"));}}>Show</span><br />
-            <span onClick={()=>{window.alert(IsLoggedIn());}}>logged in</span><br />
-            <span onClick={()=>{Logout()}}>logout</span><br />
-        </div>
-        <div id="login_auth_container" className="foo" style={{verticalAlign:"top",align:"top",backgroundColor:"#143c53", height: "fit-content", borderRadius: "8px", borderStyle: "solid", borderWidth: "1px", display: "none", width:"fit-content", padding:"0px", margin: "auto"}}></div>
     </>);
 };
 

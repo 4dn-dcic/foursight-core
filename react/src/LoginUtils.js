@@ -1,6 +1,7 @@
-import { DeleteJwtTokenCookie, GetJwtTokenCookie, GetDecodedJwtTokenCookie } from './CookieUtils.js';
 import { useNavigate } from 'react-router-dom';
+import { DeleteJwtTokenCookie, GetCookie, GetJwtTokenCookie, GetDecodedJwtTokenCookie } from './CookieUtils.js';
 import * as URL from './URL.js';
+import * as API from './API.js';
 import * as Utils from './Utils.js';
 
 export const IsLoggedIn = () => {
@@ -21,10 +22,13 @@ export const IsLoggedIn = () => {
     //
     const jwtTokenExpirationTimeT = decodedJwtToken.exp;
     if (jwtTokenExpirationTimeT) {
-        const jwtTokenExpirationDateTime = new Date(jwtTokenExpirationTimeT * 1000);
+        const leewaySeconds = 30;
+        const jwtTokenExpirationDateTime = new Date((jwtTokenExpirationTimeT + leewaySeconds) * 1000);
         const jwtTokenTimeTillExpirationMs = jwtTokenExpirationDateTime - new Date();
         if (jwtTokenTimeTillExpirationMs <= 0) {
-            return false;
+            console.log("JWT token expired -> " + jwtTokenExpirationDateTime + " [" + jwtTokenExpirationTimeT + "]" + " [" + jwtTokenTimeTillExpirationMs + "]");
+            console.log(new Date());
+            return false
         }
     }
     return true;
@@ -34,13 +38,33 @@ export const GetLoginInfo = () => {
     return GetDecodedJwtTokenCookie();
 }
 
-export const Logout = () => {
+export const Logout = (navigate) => {
     DeleteJwtTokenCookie();
+    if (navigate) {
+        //
+        // Cannot create useNavigate locally here:
+        // Hooks can only be called inside of the body of a function component.
+        // So caller passes it in.
+        //
+        navigate(URL.Url("/login", true));
+    }
 }
 
 export const VerifyLogin = () => {
     let navigate = useNavigate();
     if (!IsLoggedIn()) {
-        navigate(URL.Url("/login", true))
+        navigate(URL.Url("/login", true));
+        return false;
+    }
+    return true;
+}
+
+export const Auth0CallbackUrl = () => {
+    const auth0CallbackCookie = GetCookie("auth0CallbackUrl");
+    if (Utils.isNonEmptyString(auth0CallbackCookie)) {
+        return auth0CallbackCookie;
+    }
+    else {
+        return API.UrlAbs("/api/callback/");
     }
 }

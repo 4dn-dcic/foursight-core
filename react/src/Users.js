@@ -9,14 +9,12 @@ import * as API from "./API.js";
 
 const Users = (props) => {
 
-    //VerifyLogin();
+    let loggedIn = VerifyLogin()
 
     const [ info, setInfo ] = useContext(GlobalContext);
     //const url = "http://localhost:8000/api/reactapi/cgap-supertest/users"
     //const url = "https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/reactapi/cgap-supertest/users"
     const url = API.Url("/users", true);
-        console.log('url....');
-        console.log(url);
     let [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     useEffect(() => { fetchData(url, setUsers, setLoading)}, []);
@@ -25,14 +23,8 @@ const Users = (props) => {
     // for the header links (HOME, USERS, INFO) to take. And we do need to actually
     // reaload the info object (stringify/parse)
     // TODO: Figure this out more fullly.
-    useEffect(() => {
-         console.log('USE-EFFECT!! User')
-         if (!info.loading) {
-            setInfo(JSON.parse(JSON.stringify(info)))
-         }
-    }, []);
 
-    return (<>
+    if (!loggedIn) return <></>; return <>
         <h1>All Users:</h1>
         <hr />
         <div>
@@ -45,8 +37,7 @@ const Users = (props) => {
             )}
         </div>
         <RingSpinner loading={loading} color={'blue'} size={400} />
-    </>);
-
+    </>;
 };
 
 export default Users;

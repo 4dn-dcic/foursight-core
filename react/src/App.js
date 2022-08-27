@@ -14,16 +14,10 @@ import * as API from './API.js';
 
 
 const App = () => {
-        console.log('xxx')
-        console.log(window.location)
-        console.log(window.location.origin)
 
     let [ info, setInfo ] = useState({loading: true});
     let [ loading, setLoading ] = useState(true);
-        console.log('fetchinfo................')
     const url = API.Url("/info", true);
-        console.log('fetchinfo2................')
-        console.log(url)
     useEffect(() => { fetchData(url, setInfo , setLoading)}, []);
 
 

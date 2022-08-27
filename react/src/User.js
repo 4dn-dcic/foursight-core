@@ -7,7 +7,7 @@ import * as API from "./API.js";
 
 const User = (props) => {
 
-    VerifyLogin();
+    let loggedIn = VerifyLogin()
 
     console.log("User Page")
     const [ info, setInfo ] = useContext(GlobalContext);
@@ -25,7 +25,7 @@ const User = (props) => {
          }
     }, []);
 
-    return (<>
+    if (!loggedIn) return <></>; return <>
         <h1>User:</h1>
         <div>
             { users.length > 0 && (
@@ -36,8 +36,7 @@ const User = (props) => {
                 </ul>
             )}
         </div>
-    </>);
-
+    </>;
 };
 
 export default User;
