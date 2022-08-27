@@ -4,7 +4,7 @@ import { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 import * as URL from "./URL.js";
-import { RingSpinner, BarSpinner } from "./Spinners.js";
+import { BarSpinner } from "./Spinners.js";
 import { IsLoggedIn, Logout } from "./LoginUtils.js";
 import Auth0Lock from 'auth0-lock';
 

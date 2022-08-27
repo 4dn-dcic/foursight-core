@@ -2,7 +2,8 @@ import Cookies from 'universal-cookie';
 import { decodeToken } from "react-jwt";
 import * as Utils from './Utils.js';
 
-let _cookies = new Cookies()
+const _cookies = new Cookies()
+const _jwtTokenCookieName = "jwtToken";
 
 export const GetCookie = (name) => {
     const value = _cookies.get(name);
@@ -24,8 +25,6 @@ export const DeleteCookie = (name) => {
     // Issues with leading dot on domain name in cookie ...
     document.cookie = "jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + document.location.hostname + ";";
 }
-
-const _jwtTokenCookieName = "jwtToken";
 
 export const GetJwtTokenCookie = (name) => {
     return GetCookie(_jwtTokenCookieName);

@@ -1,13 +1,11 @@
 import './App.css';
 import React from 'react';
-import { Component, useContext, useEffect} from 'react';
+import { useContext, useEffect} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
-import { RingSpinner, BarSpinner } from "./Spinners.js";
 import Auth0Lock from 'auth0-lock';
 import * as API from "./API.js";
 import * as URL from "./URL.js";
-import { GetCookie, SetCookie, DeleteCookie, GetJwtTokenCookie, GetDecodedJwtTokenCookie, CreateSampleJwtTokenCookie } from './CookieUtils.js';
 import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, Logout } from './LoginUtils.js';
 
 const Login = (props) => {
@@ -15,15 +13,6 @@ const Login = (props) => {
     let navigate = useNavigate();
     const [ info, setInfo ] = useContext(GlobalContext);
     const path = window.location.pathname;
-
-    console.log("LOGGED IN");
-    console.log(IsLoggedIn());
-
-    if (!info.loading) {
-    }
-
-    function isLoggedIn() {
-    }
 
     function createRedirectCookie() {
         var expr = new Date();
@@ -33,11 +22,7 @@ const Login = (props) => {
 
     function login() {
         if (info.loading) return
-        //const callback = "https://" + info.page.domain + info.page.context + "callback/";
-        //const loginCallback = "https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/callback/";
         const loginCallback = Auth0CallbackUrl("/api/callback/");
-            console.log('AUTH0CALL:')
-            console.log(loginCallback)
         const loginClientId = info?.app?.credentials?.auth0_client_id;
         const loginPayload = {
             container: 'login_auth_container',
@@ -89,7 +74,7 @@ const Login = (props) => {
         return (<>
             <div className="container">
                 <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt"}}>
-                    Logged in as: <Link to={URL.Url("/users/" + loginInfo?.email, true)}><b>{loginInfo?.email}</b></Link>
+                    Logged in as: <Link to={URL.Url("/users/" + loginInfo?.email, true)}><b style={{color:"#38250E"}}>{loginInfo?.email}</b></Link>
                     <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=>{Logout(navigate);}}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small>
                 </div>
             </div>
