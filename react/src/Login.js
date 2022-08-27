@@ -1,7 +1,7 @@
 import './App.css';
 import React from 'react';
 import { useContext, useEffect} from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import GlobalContext from './GlobalContext.js';
 import Auth0Lock from 'auth0-lock';
 import * as API from './API.js';
@@ -98,13 +98,8 @@ const Login = (props) => {
         <div>
             <div id="login_auth_container" style={{verticalAlign:"top",align:"top",backgroundColor:"#143c53", height: "fit-content", borderRadius: "8px", borderStyle: "solid", borderWidth: "1px", display: "none", width:"fit-content", padding:"0px", margin: "auto"}}></div>
                 <center id="login_auth_cancel" style={{display:"none",marginTop:"10px"}}>
-                    <a href={URL.Url("/login", true)} style={{fontSize:"small",cursor:"pointer",color:"blue"}}>Cancel</a>
+                    <NavLink to={URL.Url("/info", true)} style={{fontSize:"small",cursor:"pointer",color:"blue"}}>Cancel</NavLink>
                 </center>
-                {/*
-                    <center id="login_auth_cancel" style={{display:"none",marginTop:"10px"}}>
-                        <span style={{fontSize:"small",cursor:"pointer",color:"blue"}} onClick={()=>{showLoginBox();}}>Cancel</span>
-                    </center>
-                */}
         </div>
     </>
 };

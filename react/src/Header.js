@@ -122,7 +122,7 @@ const Header = (props) => {
                                 <b style={{color:"darkblue"}}>ADMIN</b>
                             </span>)}
                         </span>):(<span>
-                            <Link to={URL.Url("/login", true)} style={{cursor:"pointer",fontWeight:"bold",color:"darkred"}} title="Not logged in. Click to login.">LOGIN</Link>
+                            <NavLink to={URL.Url("/login", true)} style={{cursor:"pointer",fontWeight:"bold",color:"darkred"}} title="Not logged in. Click to login.">LOGIN</NavLink>
                         </span>)}
                     </td>
                 </tr>
