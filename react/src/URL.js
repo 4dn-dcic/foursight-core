@@ -31,7 +31,7 @@ export const getBaseUrlPath = () => {
 
 export const Url = (path, env) => {
     if (!Utils.isNonEmptyString(path)) {
-        path = "/";
+        path = getLogicalPathFromUrlPath();
     }
     else if (!path.startsWith("/")) {
         path = "/" + path;

@@ -21,6 +21,8 @@ export const SetCookie = (name, value) => {
 
 export const DeleteCookie = (name) => {
     _cookies.remove(name, { path: "/" });
+    // Issues with leading dot on domain name in cookie ...
+    document.cookie = "jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + document.location.hostname + ";";
 }
 
 const _jwtTokenCookieName = "jwtToken";

@@ -135,11 +135,11 @@ if (!info.loading) {
                                     env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.inferred.toUpperCase() == URL.Env().toUpperCase() ? (
                                         <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
-                                        <a key={env.full} onClick={()=>{navigate(URL.Url(env.full, true))}}>{env.full}</a>
+                                        <a key={env.full} onClick={()=>{navigate(URL.Url(null, env.full))}}>{env.full}</a>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
-                                <a id="__envinfo__" onClick={()=>{navigate(URL.Url("/info"));document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments Info</a>
+                                <a id="__envinfo__" onClick={()=>{navigate(URL.Url("/info", true));document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments Info</a>
                             </div>
                          </span>
                         ):(
