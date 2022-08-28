@@ -95,7 +95,16 @@ function IsUnknownEnv(env, info) {
     }
 }
 
-export const LoginRequired = ({ children }) => {
+export const ValidEnvRequired = ({ children }) => {
     const [ info ] = useContext(GlobalContext);
-    return !info.env_unknown && IsLoggedIn() ? children : <Navigate to={URL.Url("/login", true)} replace />;
+    return URL.Env() == "" || info.env_unknown ? <Navigate to={URL.Url("/envs")} replace /> : children;
+    //return URL.Env() == "" || info.env_unknown ? <Navigate to={URL.Url("/envs", true)} replace /> : <Navigate to={URL.Url("/info", true)} replace />
+}
+
+export const LoginRequired = ({ children }) => {
+        console.log('-----------------------')
+        console.log(URL.Url("/login", true))
+        console.log(URL.Url("/login", false))
+    const [ info ] = useContext(GlobalContext);
+    return !info.error && !info.env_unknown && IsLoggedIn() ? children : <Navigate to={URL.Url("/login", true)} replace />;
 }

@@ -8,6 +8,7 @@ import { IsLoggedIn, LoginRequired } from './LoginUtils.js';
 import * as URL from './URL.js';
 
 import Home from './Home.js';
+import Envs from './Envs.js';
 import Info from './Info.js';
 import User from './User.js';
 import Users from './Users.js';
@@ -41,6 +42,7 @@ const App = () => {
             <Header />
             <div style={{margin:"20px"}}>
                 <Routes>
+                    <Route path="/api/react/envs" element={<Envs />} />
                     <Route path="/api/react/login" element={<Login />} />
                     <Route path="/api/react/:environ/login" element={<Login />} />
                     <Route path="/api/react/:environ" element={<Home />} />

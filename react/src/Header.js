@@ -101,7 +101,8 @@ const Header = (props) => {
                                     env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.foursight.toUpperCase() == URL.Env().toUpperCase() ? (
                                         <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
-                                        <a key={env.full} onClick={()=>{navigate(URL.Url(null, env.full))}}>{env.full}</a>
+                                        /* <a key={env.full} onClick={()=>{navigate(URL.Url(null, env.full))}}>{env.full}</a> */
+                                        <a key={env.full} href={URL.Url(null, env.full)}>{env.full}</a>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>

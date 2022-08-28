@@ -5,7 +5,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import GlobalContext from './GlobalContext.js';
 import Auth0Lock from 'auth0-lock';
 import * as URL from './URL.js';
-import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, Logout } from './LoginUtils.js';
+import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, Logout, ValidEnvRequired } from './LoginUtils.js';
 
 const Login = (props) => {
 
@@ -62,24 +62,28 @@ const Login = (props) => {
         return new Auth0Lock(loginClientId, "hms-dbmi.auth0.com", loginPayload);
     }
 
-    if (info.loading) return <>Loading ...</>
+    if (info.loading && !info.error) return <>Loading ...</>
 
-    if (info.env_unknown) {
+    if (false && (info.env_unknown || URL.Env() == "")) {
         return <>
             <div className="container">
                 <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
-                    Unknown environment: <b style={{color:"red"}}>{info.app.env}</b>
+                    Unknown environment: <b style={{color:"darkred"}}>{info?.app?.env}</b>
                     <br />
                     <small>
                         Known environments are: <br />
-                        {info.envs.unique_annotated.map((env) => <span>&#x2192;&nbsp;<a key={env.full} href={URL.Url(null, env.full)}><b style={{color:"darkblue"}}>{env.full}</b></a> ({env.short})</span>)}
+                        {info?.envs?.unique_annotated.map((env) => <span>&#x2192;&nbsp;&nbsp;<a key={env.full} href={URL.Url(null, env.full)}><b style={{color:"darkblue"}}>{env.full}</b></a> ({env.short})</span>)}
                     </small>
                 </div>
             </div>
         </>
     }
-    if (IsLoggedIn()) {
-        const loginInfo = GetLoginInfo();
+    if (info.error) {
+        return <>Cannot load Foursight.</>;
+    }
+    const loginInfo = IsLoggedIn() ? GetLoginInfo() : undefined;;
+    if (false && IsLoggedIn()) {
+        loginInfo = GetLoginInfo();
         return <>
             <div className="container">
                 <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
@@ -89,7 +93,15 @@ const Login = (props) => {
             </div>
         </>
     }
-    return <>
+    return <><ValidEnvRequired>
+        { IsLoggedIn() ? (<React.Fragment>
+            <div className="container">
+                <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
+                    Logged in as: <Link to={URL.Url("/users/" + loginInfo?.email, true)}><b style={{color:"darkblue"}}>{loginInfo?.email}</b></Link>
+                    <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=>{Logout(navigate);}}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small>
+                </div>
+            </div>
+        </React.Fragment>):(<React.Fragment>
         <div className="container" id="login_container">
             <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt"}}>
                 Not logged in. Click <u style={{cursor:"pointer"}} onClick={()=>{login();}}><b>here</b></u> to <span style={{cursor:"pointer"}}>login</span>.
@@ -107,7 +119,8 @@ const Login = (props) => {
                     <NavLink to={URL.Url("/info", true)} style={{fontSize:"small",cursor:"pointer",color:"blue"}}>Cancel</NavLink>
                 </center>
         </div>
-    </>
+        </React.Fragment>)}
+    </ValidEnvRequired></>
 };
 
 export default Login;

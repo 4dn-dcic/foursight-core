@@ -4,7 +4,7 @@ import { instanceOf } from 'prop-types';
 import { Component, useContext, useEffect, useCookies} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
-import { BASE_URL_PATH, URL, URLE, getEnvFromUrlPath } from "./Utils.js";
+import { URL, URLE, getEnvFromUrlPath } from "./Utils.js";
 import { RingSpinner, BarSpinner } from "./Spinners.js";
 import { Cookies } from 'react-cookie';
 import Auth0Lock from 'auth0-lock';

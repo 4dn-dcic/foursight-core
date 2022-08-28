@@ -43,6 +43,13 @@ export const Url = (path, env) => {
         return BASE_URL_PATH + env + path;
     }
     else {
-        return BASE_URL_PATH + path;
+        let url;
+        if (path.startsWith("/")) {
+            url = BASE_URL_PATH + path.substring(1);
+        }
+        else {
+            url = BASE_URL_PATH + path;
+        }
+        return url
     }
 }

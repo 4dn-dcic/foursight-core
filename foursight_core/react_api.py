@@ -27,6 +27,7 @@ from dcicutils.env_utils import (
     get_foursight_bucket_prefix,
     infer_foursight_from_env,
     full_env_name,
+    public_env_name,
     short_env_name,
 )
 from dcicutils.lang_utils import disjoined_list
