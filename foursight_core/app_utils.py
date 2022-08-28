@@ -831,6 +831,7 @@ class AppUtilsCore(ReactApi):
             {"name": env,
              "short": short_env_name(env),
              "full": full_env_name(env),
+             "public": public_env_name(env),
              "foursight": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
         return sorted(unique_annotated_environment_names, key=lambda key: key["full"])
 

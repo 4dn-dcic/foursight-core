@@ -93,12 +93,12 @@ const Header = (props) => {
                         <a target="_blank" href={"https://pypi.org/project/foursight-cgap/" + info.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{info.app?.version}</b></a>
                     </td>
                     <td width="400" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
-                        { (info.envs?.unique_annotated.length > 0) ? (
+                        { (info.envs.unique_annotated.length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:"#143c53"}} title="Environment: {URL.Env()}">{URL.Env().toUpperCase()}</b>
+                            <b className="dropdown-button" style={{color:"#143c53"}} title={"Environment: " + URL.Env() + (info.env_unknown ? " -> UNKNOWN" : "")}>{URL.Env().toUpperCase()}</b>
                             <div className="dropdown-content" id="dropdown-content-id">
-                                { info.envs?.unique_annotated.map(env => 
-                                    env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.inferred.toUpperCase() == URL.Env().toUpperCase() ? (
+                                { info.envs.unique_annotated.map(env => 
+                                    env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.foursight.toUpperCase() == URL.Env().toUpperCase() ? (
                                         <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
                                         <a key={env.full} onClick={()=>{navigate(URL.Url(null, env.full))}}>{env.full}</a>

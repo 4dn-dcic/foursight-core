@@ -1,4 +1,6 @@
+import { useContext } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
+import GlobalContext from './GlobalContext.js';
 import { DeleteJwtTokenCookie, GetCookie, GetDecodedJwtTokenCookie } from './CookieUtils.js';
 import * as URL from './URL.js';
 import * as API from './API.js';
@@ -94,5 +96,6 @@ function IsUnknownEnv(env, info) {
 }
 
 export const LoginRequired = ({ children }) => {
-    return IsLoggedIn() ? children : <Navigate to={URL.Url("/login", true)} replace />;
+    const [ info ] = useContext(GlobalContext);
+    return !info.env_unknown && IsLoggedIn() ? children : <Navigate to={URL.Url("/login", true)} replace />;
 }

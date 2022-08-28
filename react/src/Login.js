@@ -64,6 +64,20 @@ const Login = (props) => {
 
     if (info.loading) return <>Loading ...</>
 
+    if (info.env_unknown) {
+        return <>
+            <div className="container">
+                <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
+                    Unknown environment: <b style={{color:"red"}}>{info.app.env}</b>
+                    <br />
+                    <small>
+                        Known environments are: <br />
+                        {info.envs.unique_annotated.map((env) => <span>&#x2192;&nbsp;<a key={env.full} href={URL.Url(null, env.full)}><b style={{color:"darkblue"}}>{env.full}</b></a> ({env.short})</span>)}
+                    </small>
+                </div>
+            </div>
+        </>
+    }
     if (IsLoggedIn()) {
         const loginInfo = GetLoginInfo();
         return <>

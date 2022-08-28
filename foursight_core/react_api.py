@@ -143,6 +143,22 @@ class ReactApi:
 
     react_info_cache = {}
 
+    def is_known_environment_name(self, env_name: str) -> bool:
+        env_name = env_name.upper()
+        unique_annotated_environment_names = self.get_unique_annotated_environment_names()
+        for environment_name in unique_annotated_environment_names:
+            if environment_name["name"].upper() == env_name:
+                return True
+            if environment_name["short"].upper() == env_name:
+                return True
+            if environment_name["full"].upper() == env_name:
+                return True
+            if environment_name["public"].upper() == env_name:
+                return True
+            if environment_name["foursight"].upper() == env_name:
+                return True
+        return False
+
     # Experimental React UI (API) stuff.
     def react_get_info(self, request, environ, is_admin=False, domain="", context="/"):
         # TODO: Do some kind of caching for speed, but probably on individual data items which may take
@@ -151,7 +167,6 @@ class ReactApi:
         react_env_info_cache = self.react_info_cache.get(environ)
         if react_env_info_cache:
             return react_env_info_cache
-        print(f'xyzzy: react_get_info: 0: {datetime.datetime.utcnow()}')
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         login = self.get_logged_in_user_info(environ, request_dict)
@@ -159,10 +174,21 @@ class ReactApi:
         login["auth0"] = self.get_auth0_client_id(environ)
         if self.user_record:
             login["user"] = self.user_record
-        # xyzzy = self.get_unique_annotated_environment_names()
-        # xyzzy.append({"name":"foo-bar-suptest", "full":"foo-bar-suptestful", "short":"sfafdfa-short", "inferred":"iadfad-nf"})
+        if not self.is_known_environment_name(environ):
+            env_unknown = True
+        else:
+            env_unknown = False
+        if not env_unknown:
+            try:
+                environment_and_bucket_info = self.sorted_dict(obfuscate_dict(self.environment.get_environment_and_bucket_info(environ, stage_name))),
+                portal_url = self.get_portal_url(environ)
+            except:
+                environment_and_bucket_info = None
+                portal_url = None
+        else:
+            environment_and_bucket_info = None
+            portal_url = None
         response = Response('react_get_info')
-        print(f'xyzzy: react_get_info: 1: {datetime.datetime.utcnow()}')
         response.body = {
             "app": {
                 "package": self.APP_PACKAGE_NAME,
@@ -192,7 +218,7 @@ class ReactApi:
             "login": login,
             "server": {
                 "foursight": socket.gethostname(),
-                "portal": self.get_portal_url(environ),
+                "portal": portal_url,
                 "es": self.host,
                 "rds": os.environ["RDS_HOSTNAME"],
                 "sqs": self.sqs.get_sqs_queue().url
@@ -201,6 +227,7 @@ class ReactApi:
                 "name": environ,
                 "full_name": full_env_name(environ),
                 "short_name": short_env_name(environ),
+                "public_name": public_env_name(environ),
                 "inferred_name": infer_foursight_from_env(envname=environ),
             },
             "envs": {
@@ -212,7 +239,7 @@ class ReactApi:
                 "env": self.environment.get_env_bucket_name(),
                 "foursight": get_foursight_bucket(envname=environ, stage=stage_name),
                 "foursight_prefix": get_foursight_bucket_prefix(),
-                "info": self.sorted_dict(obfuscate_dict(self.environment.get_environment_and_bucket_info(environ, stage_name))),
+                "info": environment_and_bucket_info,
                 "ecosystem": self.sorted_dict(EnvUtils.declared_data()),
             },
             "checks": {
@@ -225,6 +252,8 @@ class ReactApi:
              },
             "environ": self.sorted_dict(obfuscate_dict(dict(os.environ)))
         }
+        if env_unknown:
+            response.body["env_unknown"] = True
         print(f'xyzzy: react_get_info: 2: {datetime.datetime.utcnow()}')
         response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
