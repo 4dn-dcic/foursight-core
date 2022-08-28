@@ -1,6 +1,6 @@
 import * as Utils from './Utils.js';
 
-const BASE_URL_PATH = "/api/react/";
+const _BASE_URL_PATH = "/api/react/";
 
 function getCurrentUrlPath() {
     return window.location.pathname;
@@ -34,7 +34,7 @@ function normalizePath(value) {
 }
 
 export const Env = () => {
-    const path = window.location?.pathname?.replace(BASE_URL_PATH, "");
+    const path = window.location?.pathname?.replace(_BASE_URL_PATH, "");
     if (!Utils.isNonEmptyString(path)) {
         return "";
     }
@@ -47,7 +47,7 @@ export const Env = () => {
 }
 
 export const getLogicalPathFromUrlPath = () => {
-    const path = window.location.pathname.replace(BASE_URL_PATH, "");
+    const path = window.location.pathname.replace(_BASE_URL_PATH, "");
     const slash = path.indexOf("/");
     if (slash > 0) {
         return path.substring(slash);
@@ -56,7 +56,13 @@ export const getLogicalPathFromUrlPath = () => {
     }
 }
 
-export const Url = (path, env) => {
+export const Url = (path, env = undefined, info = undefined) => {
+    //
+    // TODO: Document this thoroughly and rename to Path.
+    // If env is true and info is an objec then assume that object is the info objet from the 
+    // server from which we will get the default environment name; if env is true and info
+    // is null then get the environment name from the current URL.
+    //
     if (!Utils.isNonEmptyString(path)) {
         path = getLogicalPathFromUrlPath();
     }
@@ -65,17 +71,22 @@ export const Url = (path, env) => {
     }
     if (Utils.isBoolean(env) && env) {
         env = Env();
+        if (!Utils.isNonEmptyString(env) && Utils.isObject(info)) {
+            if (info?.environ) {
+                env = info?.environ["ENV_NAME"];
+            }
+        }
     }
     if (Utils.isNonEmptyString(env)) {
-        return BASE_URL_PATH + env + path;
+        return _BASE_URL_PATH + env + path;
     }
     else {
         let url;
         if (path.startsWith("/")) {
-            url = BASE_URL_PATH + path.substring(1);
+            url = _BASE_URL_PATH + path.substring(1);
         }
         else {
-            url = BASE_URL_PATH + path;
+            url = _BASE_URL_PATH + path;
         }
         return url
     }
