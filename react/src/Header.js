@@ -106,7 +106,7 @@ const Header = (props) => {
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
-                                <a id="__envinfo__" onClick={()=>{navigate(URL.Url("/info", true));document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments Info</a>
+                                <a id="__envinfo__" onClick={()=>{navigate(URL.Url("/envs", true));document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments Info</a>
                             </div>
                          </span>
                         ):(
