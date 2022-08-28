@@ -262,16 +262,23 @@ class AppUtilsCore(ReactApi):
         Take in a dictionary format of the request (app.current_request) so we
         can test this.
         """
+        print('xyzzy:check_auth:1')
         # first check the Authorization header
         dev_auth = request_dict.get('headers', {}).get('authorization')
+        print('xyzzy:check_auth:2')
+        print(dev_auth)
         # grant admin if dev_auth equals secret value
         if dev_auth and dev_auth == os.environ.get('DEV_SECRET'):
+            print('xyzzy:check_auth:3')
             return True
+        print('xyzzy:check_auth:4')
         # if we're on localhost, automatically grant authorization
         # this looks bad but isn't because request authentication will
         # still fail if local keys are not configured
         if self.is_running_locally(request_dict):
+            print('xyzzy:check_auth:5:local')
             return True
+        print('xyzzy:check_auth:5:local')
         jwt_decoded = self.get_decoded_jwt_token(env, request_dict)
         if jwt_decoded:
             try:

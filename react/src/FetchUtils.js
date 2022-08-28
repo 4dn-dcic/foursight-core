@@ -13,7 +13,12 @@ export const fetchData = (url, setData, setLoading, setError) => {
     else {
         console.log("FETCHING: " + url);
     }
-    fetch(url).then(response => {
+    const headers = {
+        authorization: GetCookie("jwtToken")
+    }
+        console.log("HEAD")
+        console.log(headers)
+    fetch(url, { headers: headers }).then(response => {
         console.log("FETCH STATUS CODE IS " + response.status + ": " + url);
         if (response.status == 200) {
             response.json().then(responseJson => {

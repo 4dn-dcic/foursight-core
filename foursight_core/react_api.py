@@ -44,6 +44,33 @@ from .stage import Stage
 
 class ReactApi:
 
+    # TODO
+    # Better authorization needed,
+    # For now client (React) just send its JWT token we gave it on login,
+    # and we decode it here and sanity check it. Better than nothing.
+    def authorize(self, request_dict, environ) -> bool:
+        try:
+            authorization_token = request_dict.get('headers', {}).get('authorization')
+            print('authorization_token')
+            print(authorization_token)
+            auth0_client_id = self.get_auth0_client_id(environ)
+            auth0_secret = self.get_auth0_secret(environ)
+            jwt_decoded = jwt.decode(authorization_token, auth0_secret, audience=auth0_client_id, leeway=30)
+            print('jwt_decoded')
+            print(jwt_decoded)
+            aud = jwt_decoded.get("aud")
+            if aud != auth0_client_id:
+                print('xyzzy:auth:return False')
+                print(aud)
+                print(auth0_client_id)
+                return False
+            print('xyzzy:auth:return True')
+            return True
+        except Exception as e:
+            print('xyzzy:auth:error')
+            print(e)
+            return False
+
     def react_serve_file(self, environ, is_admin=False, domain="", context="/", **kwargs):
 
         #xyzzy
@@ -160,6 +187,7 @@ class ReactApi:
                 return True
         return False
 
+    # TODO: Not protecte for now. TODO: make this protected and make a non-protecte one that just returns env name info for React header.
     # Experimental React UI (API) stuff.
     def react_get_info(self, request, environ, is_admin=False, domain="", context="/"):
         # TODO: Do some kind of caching for speed, but probably on individual data items which may take
@@ -263,6 +291,11 @@ class ReactApi:
         return self.process_response(response)
 
     def react_get_users(self, request, environ, is_admin=False, domain="", context="/"):
+        print('XYZZY:CHECK-AUTHORIZED')
+        if not self.authorize(request.to_dict(), environ):
+            print('XYZZY:NOT-AUTHORIZED')
+            return self.forbidden_response()
+        print('XYZZY:AUTHORIZED')
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         users = []
@@ -296,6 +329,11 @@ class ReactApi:
         return self.process_response(response)
 
     def react_get_user(self, request, environ, is_admin=False, domain="", context="/", email=None):
+        print('XYZZY:CHECK-AUTHORIZED')
+        if not self.authorize(request.to_dict(), environ):
+            print('XYZZY:NOT-AUTHORIZED')
+            return self.forbidden_response()
+        print('XYZZY:AUTHORIZED')
         users = []
         for email_address in email.split(","):
             try:
