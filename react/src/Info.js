@@ -6,7 +6,9 @@ const Info = () => {
 
     const [ info ] = useContext(GlobalContext);
 
-    if (info?.loading) return <>Loading ...</>; return <LoginRequired>
+    if (info.error) return <>Cannot load Foursight.</>;
+    if (info.loading) return <>Loading ...</>;
+    return <LoginRequired>
         <h1>Info:</h1>
         <ul className="top-level-list">
             <b>Miscellany</b>

@@ -1,6 +1,5 @@
 import { useNavigate, Navigate } from 'react-router-dom';
 import { DeleteJwtTokenCookie, GetCookie, GetDecodedJwtTokenCookie } from './CookieUtils.js';
-import GlobalContext from './GlobalContext.js';
 import * as URL from './URL.js';
 import * as API from './API.js';
 import * as Utils from './Utils.js';
@@ -83,7 +82,7 @@ function IsUnknownEnv(env, info) {
         env = env.toUpperCase();
         for (let i = info.envs ; i < info.envs.unique_annotated.length ; i++) {
             let knownEnv = info.envs.unique_annotated[i];
-            if (knownEnv.toUpperCase() == env) {
+            if (knownEnv.toUpperCase() === env) {
                 return false;
             }
         }
