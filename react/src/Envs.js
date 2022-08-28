@@ -40,13 +40,13 @@ const Envs = (props) => {
                         All known environments are listed below: <br />
                         {info?.envs?.unique_annotated.map((env) =>
                             <span key={env.full} >&#x2192;&nbsp;&nbsp;
-                                <a href={URL.Url(null, env.full)}> <b style={{color:"#6F4E37"}}>{env.full}</b></a>
+                                <a href={URL.Url("/view", env.full)}> <b style={{color:"#6F4E37"}}>{env.full}</b></a>
                                 { env.short != env.full ? (<span>
                                     &nbsp;({env.short})
                                 </span>):(<span>
                                 </span>)}
                                 { isDefaultEnv(env, info) ? (<span>
-                                        &nbsp;&nbsp;&#x272e;
+                                    &nbsp;&nbsp;&#x272e;
                                 </span>):(<span>
                                 </span>)}
                             </span>
@@ -62,7 +62,7 @@ const Envs = (props) => {
                         All known environments are listed below: <br />
                         {info?.envs?.unique_annotated.map((env) =>
                             <span key={env.full}>&#x2192;&nbsp;&nbsp;
-                                <a href={URL.Url(null, env.full)}><b style={{color:"darkblue"}}>{env.full}</b></a>
+                                <a href={URL.Url("/view", env.full)}><b style={{color:"darkblue"}}>{env.full}</b></a>
                                 { env.short != env.full ? (<span>
                                     &nbsp;({env.short})
                                 </span>):(<span>

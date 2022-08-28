@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import GlobalContext from "./GlobalContext.js";
-import { LoginRequired } from "./LoginUtils.js";
+import { LoginAndValidEnvRequired } from "./LoginUtils.js";
 
 const Info = () => {
 
@@ -8,7 +8,7 @@ const Info = () => {
 
     if (info.error) return <>Cannot load Foursight.</>;
     if (info.loading) return <>Loading ...</>;
-    return <LoginRequired>
+    return <LoginAndValidEnvRequired>
             <div className="container">
             <b>Info</b>
         <ul className="top-level-list">
@@ -28,7 +28,7 @@ const Info = () => {
             </div>
         </ul>
                 </div>
-    </LoginRequired>
+    </LoginAndValidEnvRequired>
 };
 
 export default Info;

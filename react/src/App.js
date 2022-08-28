@@ -48,6 +48,7 @@ const App = () => {
                     <Route path="/api/react/:environ/login" element={<Login />} />
                     <Route path="/api/react/:environ" element={<Home />} />
                     <Route path="/api/react/:environ/demo" element={<Demo />}/>
+                    <Route path="/api/react/:environ/home" element={<Home />}/>
                     <Route path="/api/react/:environ/view" element={<Home />}/>
                     <Route path="/api/react/:environ/info" element={<Info />}/>
                     <Route path="/api/react/:environ/users" element={<Users/>} />

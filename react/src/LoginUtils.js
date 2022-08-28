@@ -114,7 +114,7 @@ export const LoginAndValidEnvRequired = ({ children }) => {
         console.log('AAALOGREQ')
         console.log(URL.Url("/login", true))
     if (URL.Env() === "" || info.env_unknown) {
-        return <Navigate to={URL.Url("/envs")} replace />
+        return <Navigate to={URL.Url("/envs", true)} replace />
     }
     else if (!IsLoggedIn()) {
         return <Navigate to={URL.Url("/login", true)} replace />
