@@ -20,11 +20,21 @@ import NotFound from './NotFound';
 const App = () => {
 
     let [ info, setInfo ] = useState({loading: true});
-    let [ loading, setLoading ] = useState(true);
     const url = API.Url("/info", true);
-    useEffect(() => { fetchData(url, setInfo , setLoading)}, []);
-
-        console.log(URL.Url('/login', true))
+    // useEffect(() => { fetchData(url, setInfo , setLoaded)}, []);
+    // useEffect(() => { fetchData(url, setInfo , () => { info.loading = true; })}, []);
+    useEffect(() => {
+        fetchData(
+            url,
+            data => {
+                info.loading = false;
+                setInfo(data);
+            },
+            loading => {},
+            error => {
+                setInfo(info => ({...info, ...{error:true}}));
+            })
+    }, []);
 
     return <Router>
         <GlobalContext.Provider value={[info, setInfo]}>

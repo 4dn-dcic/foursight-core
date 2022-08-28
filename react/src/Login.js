@@ -62,7 +62,7 @@ const Login = (props) => {
         return new Auth0Lock(loginClientId, "hms-dbmi.auth0.com", loginPayload);
     }
 
-    if (info?.loading) return <>Loading ...</>
+    if (info.loading) return <>Loading ...</>
 
     if (IsLoggedIn()) {
         const loginInfo = GetLoginInfo();

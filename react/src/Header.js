@@ -41,13 +41,19 @@ const Header = (props) => {
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                     </a>
                 </td>
-                <td width="400" style={{color:"white", nowrap:"1"}}>
-                    <i style={{fontSize:"16pt",color:"yellow"}}>
-                        Foursight Loading ...
-                    </i>
+                <td width="400" style={{fontSize:"16pt",color:"white", nowrap:"1"}}>
+                    { info.error ? (<span>
+                        <b style={{color:"red"}}>
+                            Foursight Load Error
+                        </b>
+                    </span>):(<span>
+                        <i style={{color:"yellow"}}>
+                            Foursight Loading ...
+                        </i>
+                    </span>)}
                 </td>
                 <td width="10%" align="right">
-                    <span style={{position:"relative",bottom:"5pt"}}>&nbsp;<BarSpinner loading={info.loading} color={'lightyellow'} size={150} /></span>
+                    <span style={{position:"relative",bottom:"5pt"}}>&nbsp;<BarSpinner loading={info.loading && !info.error} color={'lightyellow'} size={150} /></span>
                 </td>
             </tr>
             </tbody></table>

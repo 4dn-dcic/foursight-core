@@ -1032,6 +1032,8 @@ class AppUtilsCore(ReactApi):
                                                   ff_env=full_env_name(environ), add_on='frame=object')
                 users.append({"email": this_email, "record": this_user})
             except Exception as e:
+                # TODO
+                # Pass this error back to caller (status code not 200).
                 users.append({"email": this_email, "record": {"error": str(e)}})
         template = self.jin_env.get_template('user.html')
         html_resp.body = template.render(

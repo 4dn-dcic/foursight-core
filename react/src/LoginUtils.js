@@ -1,5 +1,6 @@
 import { useNavigate, Navigate } from 'react-router-dom';
 import { DeleteJwtTokenCookie, GetCookie, GetDecodedJwtTokenCookie } from './CookieUtils.js';
+import GlobalContext from './GlobalContext.js';
 import * as URL from './URL.js';
 import * as API from './API.js';
 import * as Utils from './Utils.js';
@@ -74,6 +75,22 @@ export const Auth0CallbackUrl = () => {
     }
     else {
         return API.UrlAbs("/api/callback/");
+    }
+}
+
+function IsUnknownEnv(env, info) {
+    if (env && info?.envs?.unique_annotated) {
+        env = env.toUpperCase();
+        for (let i = info.envs ; i < info.envs.unique_annotated.length ; i++) {
+            let knownEnv = info.envs.unique_annotated[i];
+            if (knownEnv.toUpperCase() == env) {
+                return false;
+            }
+        }
+        return true;
+    }
+    else {
+        return false;
     }
 }
 
