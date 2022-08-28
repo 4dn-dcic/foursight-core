@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 import { fetchData } from './FetchUtils.js';
 import { RingSpinner } from "./Spinners.js";
-import { LoginRequired } from "./LoginUtils.js";
+import { LoginAndValidEnvRequired } from "./LoginUtils.js";
 import * as URL from './URL.js';
 import * as API from "./API.js";
 
@@ -15,15 +15,16 @@ const Users = () => {
     let [ loading, setLoading ] = useState(true);
     useEffect(() => { fetchData(url, setUsers, setLoading)}, []);
 
+        console.log("USERS......................");
     if (info.error) return <>Cannot load Foursight.</>;
     if (loading) {
-        return <LoginRequired>
+        return <LoginAndValidEnvRequired>
             <div style={{marginTop:"30px"}}>
                 <RingSpinner loading={loading} color={'blue'} size={90} />
             </div>
-        </LoginRequired>
+        </LoginAndValidEnvRequired>
     }
-    return <LoginRequired>
+    return <LoginAndValidEnvRequired>
         <h3>All Users (TODO - Paging):</h3>
         <hr />
         <div>
@@ -35,7 +36,7 @@ const Users = () => {
                 </ul>
             )}
         </div>
-    </LoginRequired>
+    </LoginAndValidEnvRequired>
 };
 
 export default Users;

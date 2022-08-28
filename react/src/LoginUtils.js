@@ -97,14 +97,29 @@ function IsUnknownEnv(env, info) {
 
 export const ValidEnvRequired = ({ children }) => {
     const [ info ] = useContext(GlobalContext);
-    return URL.Env() == "" || info.env_unknown ? <Navigate to={URL.Url("/envs")} replace /> : children;
+    return URL.Env() === "" || info.env_unknown ? <Navigate to={URL.Url("/envs")} replace /> : children;
     //return URL.Env() == "" || info.env_unknown ? <Navigate to={URL.Url("/envs", true)} replace /> : <Navigate to={URL.Url("/info", true)} replace />
 }
 
 export const LoginRequired = ({ children }) => {
-        console.log('-----------------------')
-        console.log(URL.Url("/login", true))
-        console.log(URL.Url("/login", false))
     const [ info ] = useContext(GlobalContext);
-    return !info.error && !info.env_unknown && IsLoggedIn() ? children : <Navigate to={URL.Url("/login", true)} replace />;
+    //return !info.error && !info.env_unknown && IsLoggedIn() ? children : <Navigate to={URL.Url("/login", true)} replace />;
+        console.log('LOGREQ')
+        console.log(URL.Url("/login", true))
+    return !IsLoggedIn() ? <Navigate to={URL.Url("/login", true)} replace /> : children;
+}
+
+export const LoginAndValidEnvRequired = ({ children }) => {
+    const [ info ] = useContext(GlobalContext);
+        console.log('AAALOGREQ')
+        console.log(URL.Url("/login", true))
+    if (URL.Env() === "" || info.env_unknown) {
+        return <Navigate to={URL.Url("/envs")} replace />
+    }
+    else if (!IsLoggedIn()) {
+        return <Navigate to={URL.Url("/login", true)} replace />
+    }
+    else {
+        return children;
+    }
 }

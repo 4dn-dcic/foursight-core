@@ -1,12 +1,18 @@
-import { LoginRequired } from "./LoginUtils.js";
+import { useContext } from 'react';
+import GlobalContext from "./GlobalContext.js";
+import { LoginAndValidEnvRequired } from "./LoginUtils.js";
+import * as URL from "./URL";
 
 const Home = (props) => {
 
-    return <LoginRequired>
-        <h3>Home:</h3>
-        <hr />
-        TODO
-    </LoginRequired>
+    const [ info ] = useContext(GlobalContext);
+    return <LoginAndValidEnvRequired>
+        <div className="container">
+            <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt",color:"#6F4E37"}}>
+                <b>Home Page</b>: TODO
+            </div>
+        </div>
+    </LoginAndValidEnvRequired>
 };
 
 export default Home;

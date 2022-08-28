@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchData } from './FetchUtils.js';
 import { RingSpinner } from "./Spinners.js";
-import { LoginRequired } from "./LoginUtils.js";
+import { LoginAndValidEnvRequired } from "./LoginUtils.js";
 import * as API from "./API.js";
 
 const User = (props) => {
@@ -14,13 +14,13 @@ const User = (props) => {
     useEffect(() => { fetchData(url, setUsers, setLoading)}, []);
 
     if (loading) {
-        return <LoginRequired>
+        return <LoginAndValidEnvRequired>
             <div style={{marginTop:"30px"}}>
                 <RingSpinner loading={loading} color={'blue'} size={90} />
             </div>
-        </LoginRequired>
+        </LoginAndValidEnvRequired>
     }
-    return <LoginRequired>
+    return <LoginAndValidEnvRequired>
         <h3>User:</h3>
         <div>
             { users.length > 0 && (
@@ -31,7 +31,7 @@ const User = (props) => {
                 </ul>
             )}
         </div>
-    </LoginRequired>
+    </LoginAndValidEnvRequired>
 };
 
 export default User;

@@ -14,7 +14,7 @@ const NotFound = (props) => {
                 <b>Page not found</b>.
                 <br />
                 <small>
-                Click <Link to={URL.Url("/view", true)} style={{color:"6F4E37"}}><b>here</b></Link> to go to return to the <Link to={URL.Url("/view", true)}><b style={{color:"6F4E37"}}>home</b></Link> page.
+                Click <Link to={URL.Url("/view", true)} style={{color:"#6F4E37"}}><b>here</b></Link> to go to return to the <Link to={URL.Url("/view", true)}><b style={{color:"6F4E37"}}>home</b></Link> page.
                 </small>
             </div>
         </div>

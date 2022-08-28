@@ -24,6 +24,7 @@ const Header = (props) => {
         }
         return <span>
             <NavLink to={URL.Url("/view", true)} style={({isActive}) => style(isActive)}>HOME</NavLink>&nbsp;|&nbsp;
+            <NavLink to={URL.Url("/envs", true)} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
             <NavLink to={URL.Url("/users", true)} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
             <NavLink to={URL.Url("/info", true)} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
             <a target="_blank" title="Open AWS Console for this account ({info.app?.credentials.aws_account_number}) in another tab."
@@ -61,7 +62,7 @@ const Header = (props) => {
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr title={"App Deployed:" + info.app?.deployed + " | App Launched: " + info.app?.launched + " | Page Loaded: " + info.page?.loaded}>
                 <td width="400" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
-                    <a href={info.page?.context + 'view/' + info.app?.env}>
+                    <a href={URL.Url("/view", true)}>
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                     </a>
                 </td>

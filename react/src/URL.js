@@ -1,6 +1,37 @@
 import * as Utils from './Utils.js';
 
-export const BASE_URL_PATH = "/api/react/";
+const BASE_URL_PATH = "/api/react/";
+
+function getCurrentUrlPath() {
+    return window.location.pathname;
+}
+
+function normalizePath(value) {
+    if (!Utils.isNonEmptyString(value)) {
+        return "";
+    }
+    const valueLowerCase = value.toLowerCase();
+    if (valueLowerCase.startsWith("http://")) {
+        value = value.substring(7);
+        const slash = value.indexOf("/")
+        if (slash === -1) return "/";
+        value = value.substring(slash);
+    }
+    else if (valueLowerCase.startsWith("https://")) {
+        value = value.substring(8);
+        const slash = value.indexOf("/")
+        if (slash === -1) return "/";
+        value = value.substring(slash);
+    }
+    value = value.replace(/\/+/g, "/");
+    if (value.endsWith("/")) {
+        value = value.substring(0, value.length - 1)
+    }
+    if (!value.startsWith("/")) {
+        value = "/" + value;
+    }
+    return value;
+}
 
 export const Env = () => {
     const path = window.location?.pathname?.replace(BASE_URL_PATH, "");
@@ -23,10 +54,6 @@ export const getLogicalPathFromUrlPath = () => {
     } else {
         return "";
     }
-}
-
-export const getBaseUrlPath = () => {
-    return BASE_URL_PATH + Env();
 }
 
 export const Url = (path, env) => {

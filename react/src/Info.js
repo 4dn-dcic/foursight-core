@@ -9,9 +9,9 @@ const Info = () => {
     if (info.error) return <>Cannot load Foursight.</>;
     if (info.loading) return <>Loading ...</>;
     return <LoginRequired>
-        <h1>Info:</h1>
+            <div className="container">
+            <b>Info</b>
         <ul className="top-level-list">
-            <b>Miscellany</b>
             <div className="info boxstyle">
                 <h5 style={{margin:"10px 5px 10px 5px"}}>
                     <div className="row">
@@ -27,6 +27,7 @@ const Info = () => {
                 </h5>
             </div>
         </ul>
+                </div>
     </LoginRequired>
 };
 
