@@ -1,7 +1,11 @@
 import { useContext } from 'react';
+import { Link } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 import { LoginAndValidEnvRequired } from "./LoginUtils.js";
 import { CopyToClipboard } from "./Utils";
+import * as URL from "./URL.js";
+import uuid from 'react-uuid';
+let YAML = require('json-to-pretty-yaml');
 
 const Info = () => {
 
@@ -20,7 +24,7 @@ const Info = () => {
         </>
     }
 
-    const InfoRow = ({name, value, monospace = false, copy = true, pypi = null, github = null, python = false, check = false, optional = false}) => {
+    const InfoRow = ({name, value, monospace = false, copy = true, pypi = null, github = null, python = false, check = false, link = null, optional = false}) => {
         let nameStyle = {
             fontSize: "11pt",
             fontFamily: "inherit",
@@ -65,14 +69,18 @@ const Info = () => {
                     <div className="row">
                         <div className="col-sm-4">
                             <div style={nameStyle}>
-                                {name}
+                                {name}:
                             </div>
                         </div>
                         <div id={name} className="col-sm-8" style={valueStyle} align="left" {...valueOnClick}>
                             {pypiElement}
                             {githubElement}
                             {pythonElement}
-                            {value}
+                            { link && value ? (<span>
+                                <Link to={link}>{value}</Link>
+                            </span>):(<span>
+                                {value || <span>&#x2205;</span>}
+                            </span>)}
                             {checkElement}
                         </div>
                     </div>
@@ -116,8 +124,20 @@ const Info = () => {
             <InfoRow name={"Foursight Bucket Name"} value={info?.buckets?.foursight} monospace={true} copy={true} />
             <InfoRow name={"Foursight Bucket Prefix"} value={info?.buckets?.foursight_prefix} monospace={true} copy={true} />
         </InfoBox>
+        <InfoBox title="Environment & Bucket Names">
+            <pre className="info" style={{border:"0",margin:"0",padding:"8",paddingBottom:"8",marginTop:"0"}}>
+                { info.buckets?.info && info.buckets.info.map(bucket_info => {
+                    return <span key={uuid()}>{YAML.stringify(bucket_info)}{info.buckets.info.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
+                })}
+            </pre>
+        </InfoBox>
+        <InfoBox title="Ecosystem">
+            <pre className="info" style={{border:"0",margin:"0",paddingTop:"8",paddingBottom:"8",marginTop:"0"}}>
+                {YAML.stringify(info.buckets.ecosystem)}
+            </pre>
+        </InfoBox>
         <InfoBox title="Login Auth0 Info">
-            <InfoRow name={"Email"} value={info.login?.jwt?.email} monospace={true} copy={true} check={info.login?.jwt?.email_verified} />
+            <InfoRow name={"Email"} value={info.login?.jwt?.email} monospace={true} copy={true} check={info.login?.jwt?.email_verified} link={URL.Url("/users/" + info.login?.jwt?.email, true)} />
             <InfoRow name={"Issuer"} value={info.login?.jwt?.iss} monospace={true} copy={true} />
             <InfoRow name={"Subject"} value={info.login?.jwt?.sub} monospace={true} copy={true} />
             <InfoRow name={"Audience"} value={info.login?.jwt?.aud} monospace={true} copy={true} />

@@ -4,6 +4,7 @@ import { fetchData } from './FetchUtils.js';
 import { RingSpinner } from "./Spinners.js";
 import { LoginAndValidEnvRequired } from "./LoginUtils.js";
 import * as API from "./API.js";
+let YAML = require('json-to-pretty-yaml');
 
 const User = (props) => {
 
@@ -12,6 +13,9 @@ const User = (props) => {
     const [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     useEffect(() => { fetchData(url, setUsers, setLoading)}, []);
+        console.log('asdfadfasdfasdfas................................')
+        if (users?.length > 0)
+        console.log(users[0].record.uuid)
 
     if (loading) {
         return <LoginAndValidEnvRequired>
@@ -21,15 +25,15 @@ const User = (props) => {
         </LoginAndValidEnvRequired>
     }
     return <LoginAndValidEnvRequired>
-        <h3>User:</h3>
-        <div>
-            { users.length > 0 && (
-                <ul>
-                    {users.map(user => (
-                        <li key={user.email_address}><b>{user.email_address}</b><br />{user.record.first_name} {user.record.last_name}</li>
-                    ))}
-                </ul>
-            )}
+        <div className="container">
+            {users.length > 0 && users.map(user => (
+                <div key={user.record.uuid}>
+                    <div style={{fontWeight:"bold",marginBottom:"6px"}}>{user.email_address}</div>
+                        <pre className="info">
+                            {YAML.stringify(user.record)}
+                        </pre>
+                </div>
+            ))}
         </div>
     </LoginAndValidEnvRequired>
 };
