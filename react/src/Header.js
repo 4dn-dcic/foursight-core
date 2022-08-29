@@ -44,12 +44,12 @@ const Header = (props) => {
         <div style={{width:"100%",background:"#143c53"}}>{ info.loading ? (
             <table style={{width:"100%",height:"42px"}}><tbody>
             <tr>
-                <td width="49%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
+                <td width="1%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href="">
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                     </a>
                 </td>
-                <td width="2%" style={{fontSize:"16pt",color:"white", nowrap:"1"}}>
+                <td width="98%" align="center" style={{fontSize:"16pt",color:"white", nowrap:"1"}}>
                     { info.error ? (<span>
                         <b style={{color:"red"}}>
                             Foursight Load Error
@@ -60,7 +60,7 @@ const Header = (props) => {
                         </i>
                     </span>)}
                 </td>
-                <td width="49%" align="right">
+                <td width="1%" align="right">
                     <span style={{position:"relative",bottom:"5pt"}}>&nbsp;<BarSpinner loading={info.loading && !info.error} color={'lightyellow'} size={150} /></span>
                 </td>
             </tr>
