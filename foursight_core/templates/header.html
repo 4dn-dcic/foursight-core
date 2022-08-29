@@ -316,7 +316,7 @@
       function create_redir_cookie() {
         var expr = new Date();
         expr.setFullYear(expr.getFullYear() + 1);
-        document.cookie = "redir=" + window.location.href + "; path=/; expires=" + expr.toUTCString();
+        document.cookie = "redir=" + window.location.href + "; path=/; expires=" + expr.toUTCString() + "; domain=" + window.location.host + ";";
       }
 </script>
 <script type="text/javascript">

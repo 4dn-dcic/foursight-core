@@ -5,6 +5,11 @@ import * as URL from "./URL";
 
 const Home = (props) => {
 
+        console.log("HOME")
+        console.log(window.location)
+        console.log(window.location.domain)
+        console.log(window.location.origin)
+
     const [ info ] = useContext(GlobalContext);
     return <LoginAndValidEnvRequired>
         <div className="container">
