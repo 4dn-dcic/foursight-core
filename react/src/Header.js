@@ -44,12 +44,12 @@ const Header = (props) => {
         <div style={{width:"100%",background:"#143c53"}}>{ info.loading ? (
             <table style={{width:"100%",height:"42px"}}><tbody>
             <tr>
-                <td width="400" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
+                <td width="49%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href="">
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                     </a>
                 </td>
-                <td width="400" style={{fontSize:"16pt",color:"white", nowrap:"1"}}>
+                <td width="2%" style={{fontSize:"16pt",color:"white", nowrap:"1"}}>
                     { info.error ? (<span>
                         <b style={{color:"red"}}>
                             Foursight Load Error
@@ -60,7 +60,7 @@ const Header = (props) => {
                         </i>
                     </span>)}
                 </td>
-                <td width="10%" align="right">
+                <td width="49%" align="right">
                     <span style={{position:"relative",bottom:"5pt"}}>&nbsp;<BarSpinner loading={info.loading && !info.error} color={'lightyellow'} size={150} /></span>
                 </td>
             </tr>
@@ -68,12 +68,12 @@ const Header = (props) => {
         ):(<React.Fragment>
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr title={"App Deployed:" + info.app?.deployed + " | App Launched: " + info.app?.launched + " | Page Loaded: " + info.page?.loaded}>
-                <td width="400" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
+                <td width="49%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={URL.Url("/view", true)}>
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                     </a>
                 </td>
-                <td align="center" style={{whiteSpace:"nowrap"}}>
+                <td width="2%" align="center" style={{whiteSpace:"nowrap"}}>
                     <span style={{fontSize:"20pt",color:"white"}}>
                         <span style={{color:"default"}}>{info.page?.title}</span>&nbsp;
                         { info.app?.stage == 'dev' ? (<span>
@@ -84,7 +84,7 @@ const Header = (props) => {
                         </span>):(<span></span>)}
                     </span>
                 </td>
-                <td width="400" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
+                <td width="49%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
                     <small>{info.page?.loaded}</small>
                     &nbsp;<b>|</b>&nbsp;
                     <span style={{textDecoration:"none",color:"#D6EAF8",cursor:"pointer"}} title="Click to relaunch this app." onClick={() => { if (window.confirm('Do you want to relaunch this app?')){initiateAppReload();return true;}else{window.event.stopPropagation();window.event.preventDefault()}}}>&#x2318;</span>
@@ -94,13 +94,13 @@ const Header = (props) => {
             </tbody></table>
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
                 <tr style={{background:"#AED6F1"}}>
-                    <td width="400" style={{paddingLeft:"10pt",paddingTop:"3pt",paddingBottom:"3pt",whiteSpace:"nowrap"}}>
+                    <td width="49%" style={{paddingLeft:"10pt",paddingTop:"3pt",paddingBottom:"3pt",whiteSpace:"nowrap"}}>
                         {renderNavigationLinks(info)}
                     </td>
-                    <td align="center" style={{whiteSpace:"nowrap"}}>
+                    <td width="2%" align="center" style={{whiteSpace:"nowrap",margin:"0 auto"}}>
                         <a target="_blank" href={"https://pypi.org/project/foursight-cgap/" + info.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{info.app?.version}</b></a>
                     </td>
-                    <td width="400" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
+                    <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (info.envs.unique_annotated.length > 0) ? (
                         <span className="dropdown">
                             <b className="dropdown-button" style={{color:!URL.Env() || info.env_unknown ? "red" : "#143c53"}} title={"Environment: " + URL.Env() + (!URL.Env() || info.env_unknown ? " -> UNKNOWN" : "")}>{URL.Env().toUpperCase() || "UNKNOWN ENV"}</b>

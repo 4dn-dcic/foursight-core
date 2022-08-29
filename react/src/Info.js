@@ -16,8 +16,8 @@ const Info = () => {
             <div className="container">
                 <b>{title}</b>
                 <ul className="top-level-list">
-                    <div className="info boxstyle">
-                    {children}
+                    <div className="info boxstyle" style={{paddingLeft:"8pt",paddingTop:"6pt",paddingBottom:"8pt",paddingBottom:"6pt"}}>
+                        {children}
                     </div>
                 </ul>
             </div>
@@ -64,7 +64,7 @@ const Info = () => {
                     <img src="https://logos-download.com/wp-content/uploads/2016/10/Python_logo_wordmark.png" height="19" />
             </a>&nbsp;</span> : <span/>
         return <>
-            <div style={{margin:"4px 4px 4px 4px"}}>
+            <div style={{marginTop:"1px"}}>
                 { !optional || value ? (
                     <div className="row">
                         <div className="col-sm-4">
