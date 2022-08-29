@@ -131,6 +131,7 @@ const Header = (props) => {
                             <b title="Deployment stage: {info.app?.stage}">{info.app?.stage}}</b> &nbsp;|&nbsp;
                         </span>):(<span></span>)}
                         { (info.login?.admin) ? (<span>
+                            {/* TODO: on first login the email does not appear but rather LOGIN - on refresh OK */}
                             { (info.login?.email_address) ? (<span>
                                 <Link to={URL.Url("/login", true)} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{info?.login?.email_address}</b></Link>
                             </span>):(<span>
