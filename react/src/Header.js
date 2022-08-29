@@ -68,12 +68,12 @@ const Header = (props) => {
         ):(<React.Fragment>
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr title={"App Deployed:" + info.app?.deployed + " | App Launched: " + info.app?.launched + " | Page Loaded: " + info.page?.loaded}>
-                <td width="49%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
+                <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={URL.Url("/view", true)}>
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                     </a>
                 </td>
-                <td width="2%" align="center" style={{whiteSpace:"nowrap"}}>
+                <td width="34%" align="center" style={{whiteSpace:"nowrap"}}>
                     <span style={{fontSize:"20pt",color:"white"}}>
                         <span style={{color:"default"}}>{info.page?.title}</span>&nbsp;
                         { info.app?.stage == 'dev' ? (<span>
@@ -84,7 +84,7 @@ const Header = (props) => {
                         </span>):(<span></span>)}
                     </span>
                 </td>
-                <td width="49%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
+                <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
                     <small>{info.page?.loaded}</small>
                     &nbsp;<b>|</b>&nbsp;
                     <span style={{textDecoration:"none",color:"#D6EAF8",cursor:"pointer"}} title="Click to relaunch this app." onClick={() => { if (window.confirm('Do you want to relaunch this app?')){initiateAppReload();return true;}else{window.event.stopPropagation();window.event.preventDefault()}}}>&#x2318;</span>
