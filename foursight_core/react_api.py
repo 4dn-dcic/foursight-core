@@ -1,6 +1,4 @@
 from chalice import Response
-import jinja2
-import json
 import os
 import io
 from os.path import dirname
@@ -40,6 +38,8 @@ from .fs_connection import FSConnection
 from .check_utils import CheckHandler
 from .sqs_utils import SQS
 from .stage import Stage
+
+
 
 
 class ReactApi:

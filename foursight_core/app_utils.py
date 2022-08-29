@@ -5,6 +5,7 @@ import os
 from os.path import dirname
 import jwt
 import boto3
+from cryptography.fernet import Fernet
 import datetime
 import ast
 import copy
@@ -56,6 +57,15 @@ class AppUtilsCore(ReactApi):
 
     # Define in subclass.
     APP_PACKAGE_NAME = None
+
+    encryption_password = Fernet.generate_key()
+    encryption_cipher = Fernet(encryption_password)
+
+    def encrypt(self, plaintext_value: str) -> str:
+        return self.encryption_cipher.encrypt(bytes(plaintext_value))
+
+    def decrypt(self, encoded_value: str) -> str:
+        return self.encryption_cipher.decrypt(encoded_value)
 
     def get_app_version(self):
         return pkg_resources.get_distribution(self.APP_PACKAGE_NAME).version
@@ -450,6 +460,11 @@ class AppUtilsCore(ReactApi):
                 expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
                 cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
             resp_headers['Set-Cookie'] = cookie_str
+            authtoken_cookie = ''.join(['authtoken=', self.encrypt(id_token), '; Domain=', domain, '; Path=/;'])
+            authtoken_cookie += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
+            resp_headers['Set-Cookie'] = authtoken_cookie
+
+
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
     def get_jwt_token(self, request_dict) -> str:

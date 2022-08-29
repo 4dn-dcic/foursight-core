@@ -69,11 +69,20 @@ export const Url = (path, env = undefined, info = undefined) => {
     else if (!path.startsWith("/")) {
         path = "/" + path;
     }
-    if (Utils.isBoolean(env) && env) {
-        env = Env();
-        if (!Utils.isNonEmptyString(env) && Utils.isObject(info)) {
-            if (info?.environ) {
-                env = info?.environ["ENV_NAME"];
+    if (Utils.isBoolean(env)) {
+        if (env) {
+            env = Env();
+            if (!Utils.isNonEmptyString(env) && Utils.isObject(info)) {
+                if (info?.environ) {
+                    env = info?.environ["ENV_NAME"];
+                }
+            }
+        }
+        else {
+            if (Utils.isObject(info)) {
+                if (info?.environ) {
+                    env = info?.environ["ENV_NAME"];
+                }
             }
         }
     }
