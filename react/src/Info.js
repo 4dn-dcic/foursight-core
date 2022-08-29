@@ -20,7 +20,7 @@ const Info = () => {
         </>
     }
 
-    const InfoRow = ({name, value, monospace = false, copy = true, pypi = null, github = null, python = false, optional = false}) => {
+    const InfoRow = ({name, value, monospace = false, copy = true, pypi = null, github = null, python = false, check = false, optional = false}) => {
         let nameStyle = {
             fontSize: "11pt",
             fontFamily: "inherit",
@@ -40,6 +40,10 @@ const Info = () => {
             onClick: () => CopyToClipboard(name)
             
         } : {};
+        let checkElement = check ?
+            <span>
+                &nbsp;&nbsp;<b style={{fontSize:"13pt",color:"green"}}>&#x2713;</b>
+            </span> : <span/>
         const pypiElement = pypi ?
             <span>
                 <a target="_blank" href={"https://pypi.org/project/" + name + "/" + value + "/"}>
@@ -69,6 +73,7 @@ const Info = () => {
                             {githubElement}
                             {pythonElement}
                             {value}
+                            {checkElement}
                         </div>
                     </div>
                 ):(<span/>)}
@@ -111,6 +116,14 @@ const Info = () => {
             <InfoRow name={"Foursight Bucket Name"} value={info?.buckets?.foursight} monospace={true} copy={true} />
             <InfoRow name={"Foursight Bucket Prefix"} value={info?.buckets?.foursight_prefix} monospace={true} copy={true} />
         </InfoBox>
+        <InfoBox title="Login Auth0 Info">
+            <InfoRow name={"Email"} value={info.login?.jwt?.email} monospace={true} copy={true} check={info.login?.jwt?.email_verified} />
+            <InfoRow name={"Issuer"} value={info.login?.jwt?.iss} monospace={true} copy={true} />
+            <InfoRow name={"Subject"} value={info.login?.jwt?.sub} monospace={true} copy={true} />
+            <InfoRow name={"Audience"} value={info.login?.jwt?.aud} monospace={true} copy={true} />
+            <InfoRow name={"Issued At"} value={info.login?.jwt?.iat} monospace={true} copy={true} />
+            <InfoRow name={"Expires At"} value={info.login?.jwt?.exp} monospace={true} copy={true} />
+        </InfoBox>
         <InfoBox title="Miscellany">
             <InfoRow name={"App Deployed At"} value={info.app?.deployed} monospace={true} copy={true} optional={true} />
             <InfoRow name={"App Launched At"} value={info.app?.launched} monospace={true}/>
@@ -122,6 +135,20 @@ const Info = () => {
             <InfoRow name={"Context"} value={info.page?.context} monospace={true}/>
             <InfoRow name={"Path"} value={info.page?.path} monospace={true}/>
             <InfoRow name={"Endpoint"} value={info.page?.endpoint} monospace={true}/>
+        </InfoBox>
+        <InfoBox title="GAC">
+            { info.gac?.values ? (<span>
+                { Object.keys(info.gac?.values).map((key) => {
+                    return <InfoRow key={key} name={key} value={info.gac.values[key]} monospace={true} copy={true} />
+                })}
+            </span>):(<span/>)}
+        </InfoBox>
+        <InfoBox title="Environment Variables">
+            { info.environ ? (<span>
+                { Object.keys(info.environ).map((key) => {
+                    return <InfoRow key={key} name={key} value={info.gac.values[key]} monospace={true} copy={true} />
+                })}
+            </span>):(<span/>)}
         </InfoBox>
     </LoginAndValidEnvRequired>
 };
