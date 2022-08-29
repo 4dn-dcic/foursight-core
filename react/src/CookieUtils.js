@@ -1,9 +1,10 @@
 import Cookies from 'universal-cookie';
 import { decodeToken } from "react-jwt";
-import * as Utils from './Utils.js';
+import * as Utils from './Utils';
 
 const _cookies = new Cookies()
 const _jwtTokenCookieName = "jwtToken";
+const _authTokenCookieName = "authtoken";
 
 export const GetCookie = (name) => {
     const value = _cookies.get(name);
@@ -62,7 +63,6 @@ export const DeleteJwtTokenCookie = (name) => {
     DeleteCookie(_jwtTokenCookieName)
 }
 
-export const CreateSampleJwtTokenCookie = () => {
-    const sampleJwtToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImRhdmlkX21pY2hhZWxzQGhtcy5oYXJ2YXJkLmVkdSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJpc3MiOiJodHRwczovL2htcy1kYm1pLmF1dGgwLmNvbS8iLCJzdWIiOiJnb29nbGUtb2F1dGgyfDExNzMwMDIwNjAxMzAwNzM5ODkyNCIsImF1ZCI6IkRQeEV3c1pSbktEcGswVmZWQXhyU3RSS3VrTjE0SUxCIiwiaWF0IjoxNjYxNTI0NzQxLCJleHAiOjE2NjE1NjA3NDF9.ebubhh7VZbkah36bwuBHkgUKEAg6S8JLksVo_ui6ID8";
-    SetCookie(_jwtTokenCookieName, sampleJwtToken);
+export const GetAuthTokenCookie = (name) => {
+    return GetCookie(_authTokenCookieName);
 }

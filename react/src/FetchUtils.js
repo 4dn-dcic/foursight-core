@@ -1,4 +1,4 @@
-import { GetCookie } from './CookieUtils.js';
+import { GetCookie, GetAuthTokenCookie } from './CookieUtils';
 
 function _sleep (time) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -23,10 +23,8 @@ export const fetchData = (url, setData, setLoading, setError) => {
         console.log("FETCHING: " + url);
     }
     const headers = {
-        authorization: GetCookie("authtoken")
+        authorization: GetAuthTokenCookie()
     }
-        console.log("HEAD")
-        console.log(headers)
     fetch(url, { headers: headers }).then(response => {
         console.log("FETCH STATUS CODE IS " + response.status + ": " + url);
         if (response.status == 200) {

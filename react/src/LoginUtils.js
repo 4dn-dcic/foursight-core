@@ -1,10 +1,10 @@
 import { useContext } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import GlobalContext from './GlobalContext.js';
-import { DeleteJwtTokenCookie, GetCookie, GetDecodedJwtTokenCookie } from './CookieUtils.js';
-import * as URL from './URL.js';
-import * as API from './API.js';
-import * as Utils from './Utils.js';
+import GlobalContext from './GlobalContext';
+import { DeleteJwtTokenCookie, GetAuthTokenCookie, GetCookie, GetDecodedJwtTokenCookie } from './CookieUtils';
+import * as URL from './URL';
+import * as API from './API';
+import * as Utils from './Utils';
 
 export const IsLoggedIn = () => {
     //
@@ -30,8 +30,12 @@ export const IsLoggedIn = () => {
         if (jwtTokenTimeTillExpirationMs <= 0) {
             console.log("JWT token expired -> " + jwtTokenExpirationDateTime + " [" + jwtTokenExpirationTimeT + "]" + " [" + jwtTokenTimeTillExpirationMs + "]");
             console.log(new Date());
-            return false
+            return false;
         }
+    }
+    const authToken = GetAuthTokenCookie();
+    if (!Utils.isNonEmptyString(authToken)) {
+        return false;
     }
     return true;
 }
