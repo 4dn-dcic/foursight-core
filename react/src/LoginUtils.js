@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import GlobalContext from './GlobalContext';
-import { DeleteJwtTokenCookie, GetAuthTokenCookie, GetCookie, GetDecodedJwtTokenCookie } from './CookieUtils';
+import { DeleteAuthTokenCookie, DeleteJwtTokenCookie, GetAuthTokenCookie, GetCookie, GetDecodedJwtTokenCookie } from './CookieUtils';
 import * as URL from './URL';
 import * as API from './API';
 import * as Utils from './Utils';
@@ -46,6 +46,7 @@ export const GetLoginInfo = () => {
 
 export const Logout = (navigate) => {
     DeleteJwtTokenCookie();
+    DeleteAuthTokenCookie();
     if (navigate) {
         //
         // Cannot create useNavigate locally here:

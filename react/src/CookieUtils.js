@@ -66,3 +66,7 @@ export const DeleteJwtTokenCookie = (name) => {
 export const GetAuthTokenCookie = (name) => {
     return GetCookie(_authTokenCookieName);
 }
+
+export const DeleteAuthTokenCookie = (name) => {
+    return DeleteCookie(_authTokenCookieName);
+}
