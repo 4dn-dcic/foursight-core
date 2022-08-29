@@ -104,15 +104,11 @@ export const ValidEnvRequired = ({ children }) => {
 export const LoginRequired = ({ children }) => {
     const [ info ] = useContext(GlobalContext);
     //return !info.error && !info.env_unknown && IsLoggedIn() ? children : <Navigate to={URL.Url("/login", true)} replace />;
-        console.log('LOGREQ')
-        console.log(URL.Url("/login", true))
     return !IsLoggedIn() ? <Navigate to={URL.Url("/login", true)} replace /> : children;
 }
 
 export const LoginAndValidEnvRequired = ({ children }) => {
     const [ info ] = useContext(GlobalContext);
-        console.log('AAALOGREQ')
-        console.log(URL.Url("/login", true))
     if (URL.Env() === "" || info.env_unknown) {
         return <Navigate to={URL.Url("/envs", true)} replace />
     }

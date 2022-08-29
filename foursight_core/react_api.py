@@ -195,6 +195,7 @@ class ReactApi:
         # environment basis, and need to take into account invalidating (at least) login stuff on logout etc.
         react_env_info_cache = self.react_info_cache.get(environ)
         if react_env_info_cache:
+            react_env_info_cache["page"]["loaded"] = self.get_load_time()
             return react_env_info_cache
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()

@@ -21,3 +21,16 @@ export const isBoolean = (value) => {
 export const isRunningLocally = () => {
     return window.origin?.startsWith("http://localhost:");
 }
+
+export const CopyToClipboard = (id) => {
+        console.log("COPY")
+        console.log(id)
+    const r = document.createRange();
+    if (r) {
+        r.selectNode(document.getElementById(id));
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(r);
+        document.execCommand('copy');
+        window.getSelection().removeAllRanges();
+    }
+}
