@@ -14,7 +14,7 @@ export const fetchData = (url, setData, setLoading, setError) => {
         console.log("FETCHING: " + url);
     }
     const headers = {
-        authorization: GetCookie("jwtToken")
+        authorization: GetCookie("authtoken")
     }
         console.log("HEAD")
         console.log(headers)

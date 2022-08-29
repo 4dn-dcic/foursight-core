@@ -1,22 +1,25 @@
 from chalice import Response
+import base64
 import jinja2
 import json
 import os
 from os.path import dirname
 import jwt
 import boto3
-from cryptography.fernet import Fernet
 import datetime
 import ast
 import copy
+from http.cookies import SimpleCookie
 import pkg_resources
 import platform
+from pyDes import *
 import pytz
 import requests
 import socket
 import sys
 import time
 import types
+import uuid
 import logging
 from itertools import chain
 from dateutil import tz
@@ -58,14 +61,31 @@ class AppUtilsCore(ReactApi):
     # Define in subclass.
     APP_PACKAGE_NAME = None
 
-    encryption_password = Fernet.generate_key()
-    encryption_cipher = Fernet(encryption_password)
-
+    encryption_password = None
+    def get_encryption_password(self):
+        if not self.encryption_password:
+            self.encryption_password = os.environ.get("S3_AWS_SECRET_ACCESS_KEY")
+            if not self.encryption_password:
+                self.encryption_password = str(uuid.uuid4()).replace('-','')[0:24]
+            elif len(self.encryption_password) < 24:
+                self.encryption_password = self.encryption_password.ljust(24, 'x')
+            elif len(self.encryption_password) > 24:
+                self.encryption_password = self.encryption_password[0:24]
+        return self.encryption_password
     def encrypt(self, plaintext_value: str) -> str:
-        return self.encryption_cipher.encrypt(bytes(plaintext_value))
-
-    def decrypt(self, encoded_value: str) -> str:
-        return self.encryption_cipher.decrypt(encoded_value)
+        try:
+            return base64.b64encode(triple_des(self.get_encryption_password()).encrypt(plaintext_value, padmode=2)).decode('utf-8')
+        except Exception as e:
+            print('xyzzy:encrypt error')
+            print(e)
+            return None
+    def decrypt(self, encrypted_value: str) -> str:
+        try:
+            return triple_des(self.get_encryption_password()).decrypt(base64.b64decode(encrypted_value)).decode("utf-8")
+        except Exception as e:
+            print('xyzzy:decrypt error')
+            print(e)
+            return None
 
     def get_app_version(self):
         return pkg_resources.get_distribution(self.APP_PACKAGE_NAME).version
@@ -286,13 +306,14 @@ class AppUtilsCore(ReactApi):
         # this looks bad but isn't because request authentication will
         # still fail if local keys are not configured
         if self.is_running_locally(request_dict):
-            print('xyzzy:check_auth:5:local')
+            print('xyzzy:check_auth:5:local-fooey')
             return True
-        print('xyzzy:check_auth:5:local')
+        print('xyzzy:check_auth:6')
         jwt_decoded = self.get_decoded_jwt_token(env, request_dict)
         if jwt_decoded:
             try:
                 if env is None:
+                    print('xyzzy:check_auth:7:env is None')
                     return False  # we have no env to check auth
                 for env_info in self.init_environments(env).values():
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
@@ -429,11 +450,23 @@ class AppUtilsCore(ReactApi):
         # extract redir cookie
         cookies = req_dict.get('headers', {}).get('cookie')
         redir_url = context + 'view/' + env
-        for cookie in cookies.split(';'):
-            name, val = cookie.strip().split('=')
-            if name == 'redir':
-                print(f"XYZZY:REDIRECT COOKIE [{name}] IS: [{val}]")
-                redir_url = val
+        print(f'XYZZY:COOKIES:')
+        print(cookies)
+
+#       for cookie in cookies.split(';'):
+#           name, val = cookie.strip().split('=')
+#           if name == 'redir':
+#               print(f"XYZZY:REDIRECT COOKIE [{name}] IS: [{val}]")
+#               redir_url = val
+        simple_cookies = SimpleCookie()
+        simple_cookies.load(cookies)
+        simple_cookies = {k: v.value for k, v in simple_cookies.items()}
+        print('xyzzy:simple-cookies')
+        print(simple_cookies)
+        redir_url = simple_cookies.get("redir")
+        print('xyzzy:redir-cookie')
+        print(redir_url)
+
         resp_headers = {'Location': redir_url}
         params = req_dict.get('query_params')
         if not params:
@@ -456,16 +489,17 @@ class AppUtilsCore(ReactApi):
         id_token = res.json().get('id_token', None)
         if id_token:
             cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
+            authtoken_cookie = ''.join(['authtoken=', self.encrypt(id_token), '; Domain=', domain, '; Path=/;'])
             expires_in = res.json().get('expires_in', None)
             if expires_in:
+                print(f"xyzzy:id_token:[{id_token}]")
                 expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
                 cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
+                authtoken_cookie += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
+            resp_headers['set-cookie'] = authtoken_cookie
             resp_headers['Set-Cookie'] = cookie_str
-            authtoken_cookie = ''.join(['authtoken=', self.encrypt(id_token), '; Domain=', domain, '; Path=/;'])
-            authtoken_cookie += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
-            resp_headers['Set-Cookie'] = authtoken_cookie
-
-
+            print("xyzzy:set-headers:")
+            print(resp_headers)
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
     def get_jwt_token(self, request_dict) -> str:

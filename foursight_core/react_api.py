@@ -51,11 +51,14 @@ class ReactApi:
     def authorize(self, request_dict, environ) -> bool:
         try:
             authorization_token = request_dict.get('headers', {}).get('authorization')
-            print('authorization_token')
+            print('xyzzy:authorization_token')
             print(authorization_token)
+            jwt_token = self.decrypt(authorization_token)
+            print('xyzzy:jwt_token')
+            print(jwt_token)
             auth0_client_id = self.get_auth0_client_id(environ)
             auth0_secret = self.get_auth0_secret(environ)
-            jwt_decoded = jwt.decode(authorization_token, auth0_secret, audience=auth0_client_id, leeway=30)
+            jwt_decoded = jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30)
             print('jwt_decoded')
             print(jwt_decoded)
             aud = jwt_decoded.get("aud")
