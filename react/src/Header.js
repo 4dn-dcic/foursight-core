@@ -96,14 +96,14 @@ const Header = (props) => {
                     <td width="400" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (info.envs.unique_annotated.length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:"#143c53"}} title={"Environment: " + URL.Env() + (info.env_unknown ? " -> UNKNOWN" : "")}>{URL.Env().toUpperCase()}</b>
+                            <b className="dropdown-button" style={{color:!URL.Env() || info.env_unknown ? "red" : "#143c53"}} title={"Environment: " + URL.Env() + (!URL.Env() || info.env_unknown ? " -> UNKNOWN" : "")}>{URL.Env().toUpperCase() || "UNKNOWN ENV"}</b>
                             <div className="dropdown-content" id="dropdown-content-id">
                                 { info.envs.unique_annotated.map(env => 
                                     env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.foursight.toUpperCase() == URL.Env().toUpperCase() ? (
                                         <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
                                         /* <a key={env.full} onClick={()=>{navigate(URL.Url(null, env.full))}}>{env.full}</a> */
-                                        <a key={env.full} href={URL.Url(null, env.full)}>{env.full}</a>
+                                        <a key={env.full} href={URL.Url("/envs", env.full)}>{env.full}</a>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
@@ -111,11 +111,11 @@ const Header = (props) => {
                             </div>
                          </span>
                         ):(
-                            <b style={{color:"#143c53"}} title="Environment: {URL.Env()}">asdfadfadf{URL.Env().toUpperCase()}</b>
+                            <b style={{color:"#143c53"}} title="Environment: {URL.Env()}">{URL.Env().toUpperCase()}</b>
                         )}
                         &nbsp;|&nbsp;
                         { (info.app?.stage == 'prod') ? (<span>
-                            <b title="Deployment stage: PROD!" style={{color:"red"}}>PROD</b> &nbsp;|&nbsp;
+                            <b title="Deployment stage: PROD!" style={{color:"darkred"}}>PROD</b> &nbsp;|&nbsp;
                         </span>):(<span></span>)}
                         { (info.app?.stage == 'dev') ? (<span>
                             <b title="Deployment stage: DEV" style={{color:"darkgreen"}}>DEV</b> &nbsp;|&nbsp;

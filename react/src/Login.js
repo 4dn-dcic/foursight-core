@@ -4,7 +4,8 @@ import { useContext } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import GlobalContext from './GlobalContext.js';
 import Auth0Lock from 'auth0-lock';
-import * as URL from './URL.js';
+import * as URL from './URL';
+import { GetCookie, SetCookie } from './CookieUtils';
 import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, Logout, ValidEnvRequired } from './LoginUtils.js';
 
 const Login = (props) => {
@@ -20,6 +21,7 @@ const Login = (props) => {
         document.getElementById("login_container").style.display = "none";
         document.getElementById("login_auth_container").style.display = "block";
         document.getElementById("login_auth_cancel").style.display = "block";
+        createRedirectCookie();
         createAuth0Lock().show();
         //
         // Hacking styles for (now) embeded (rather than popup) Auth0 login box.
@@ -60,6 +62,18 @@ const Login = (props) => {
             allowedConnections: [ "google-oauth2", "github" ]
         };
         return new Auth0Lock(loginClientId, "hms-dbmi.auth0.com", loginPayload);
+    }
+
+    function createRedirectCookie() {
+        let expires = new Date();
+        expires.setFullYear(expires.getFullYear() + 1);
+        expires = expires.toUTCString();
+        const redirectUrl = window.location.origin + URL.Url("/home", true);
+        console.log("REDIR:")
+        console.log(redirectUrl)
+        SetCookie("redir", redirectUrl, expires);
+        let x = GetCookie("redir", redirectUrl);
+        console.log(x)
     }
 
     if (info.loading && !info.error) return <>Loading ...</>

@@ -432,6 +432,7 @@ class AppUtilsCore(ReactApi):
         for cookie in cookies.split(';'):
             name, val = cookie.strip().split('=')
             if name == 'redir':
+                print(f"XYZZY:REDIRECT COOKIE [{name}] IS: [{val}]")
                 redir_url = val
         resp_headers = {'Location': redir_url}
         params = req_dict.get('query_params')

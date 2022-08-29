@@ -10,10 +10,20 @@ export const GetCookie = (name) => {
     return (value === "") ? undefined : value;
 }
 
-export const SetCookie = (name, value) => {
+export const SetCookie = (name, value, expires = undefined) => {
     if (Utils.isNonEmptyString(name)) {
         if (Utils.isNonEmptyString(value)) {
-            _cookies.set(name, value, { path: "/"});
+            // Issues with setting cookie with URL value - it (universial-cookie) URL-encodes it for some reason)
+            // _cookies.set(name, value, { path: "/"});
+            if (expires) {
+                console.log("SET COOKIE: [" + name + "] = [" + value + "] EXPIRES = [" + expires + "]")
+            //document.cookie = "redir=" + window.location.href + "; path=/; expires=" + expires.toUTCString();
+                document.cookie = name + "=" + value + "; expires=" + expires + ";" + "path=/; domain=" + document.location.hostname + ";";
+            }
+            else {
+                console.log("SET COOKIE: [" + name + "] = [" + value + "]")
+                document.cookie = name + "=" + value + "; path=/; domain=" + document.location.hostname + ";";
+            }
         } else {
             DeleteCookie(name);
         }

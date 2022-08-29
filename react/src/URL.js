@@ -1,6 +1,6 @@
 import * as Utils from './Utils.js';
 
-const _BASE_URL_PATH = "/api/react/";
+const BASE_URL_PATH = "/api/react/";
 
 function getCurrentUrlPath() {
     return window.location.pathname;
@@ -33,41 +33,52 @@ function normalizePath(value) {
     return value;
 }
 
-export const Env = () => {
-    const path = window.location?.pathname?.replace(_BASE_URL_PATH, "");
+// Returns the environment portion of the path.
+// Assume the path has the form: /api/react/{environment}/{path}
+//
+export const Env = (path = undefined) => {
+    if (!Utils.isNonEmptyString(path)) {
+        path = getCurrentUrlPath();
+    }
+    path = normalizePath(path);
+    if (path.startsWith(BASE_URL_PATH)) {
+        path = path.replace(BASE_URL_PATH, "");
+    }
+    else if (path.startsWith("/")) {
+        path = path.substring(1);
+    }
     if (!Utils.isNonEmptyString(path)) {
         return "";
     }
     const slash = path.indexOf("/");
-    if (slash > 0) {
-        return path.substring(0, slash);
-    } else {
-        return "";
-    }
+    return (slash === -1) ? "" : path.substring(0, slash);
 }
 
-export const getLogicalPathFromUrlPath = () => {
-    const path = window.location.pathname.replace(_BASE_URL_PATH, "");
-    const slash = path.indexOf("/");
-    if (slash > 0) {
-        return path.substring(slash);
-    } else {
-        return "";
-    }
-}
-
-export const Url = (path, env = undefined, info = undefined) => {
-    //
-    // TODO: Document this thoroughly and rename to Path.
-    // If env is true and info is an objec then assume that object is the info objet from the 
-    // server from which we will get the default environment name; if env is true and info
-    // is null then get the environment name from the current URL.
-    //
+// Returns the path portion of the path minus the environment and the App URL prefix (i.e. /api/react).
+// Assume the path has the form: /api/react/{environment}/{path}
+//
+const getLogicalPathFromUrlPath = (path = undefined) => {
     if (!Utils.isNonEmptyString(path)) {
-        path = getLogicalPathFromUrlPath();
+        path = getCurrentUrlPath();
     }
-    else if (!path.startsWith("/")) {
-        path = "/" + path;
+    path = normalizePath(path);
+    if (path.startsWith(BASE_URL_PATH)) {
+        path = path.replace(BASE_URL_PATH, "");
+    }
+    else if (path.startsWith("/")) {
+        path = path.substring(1);
+    }
+    const slash = path.indexOf("/");
+    return (slash == -1) ? "/" : path.substring(slash);
+}
+
+export const Url = (path = undefined, env = undefined, info = undefined) => {
+    if (!Utils.isNonEmptyString(path)) {
+        path = getLogicalPathFromUrlPath()
+    }
+    path = normalizePath(path);
+    if (path.startsWith(BASE_URL_PATH)) {
+        path = path.replace(BASE_URL_PATH, "/");
     }
     if (Utils.isBoolean(env)) {
         if (env) {
@@ -86,17 +97,8 @@ export const Url = (path, env = undefined, info = undefined) => {
             }
         }
     }
-    if (Utils.isNonEmptyString(env)) {
-        return _BASE_URL_PATH + env + path;
+    if (!Utils.isNonEmptyString(env)) {
+        env = ""
     }
-    else {
-        let url;
-        if (path.startsWith("/")) {
-            url = _BASE_URL_PATH + path.substring(1);
-        }
-        else {
-            url = _BASE_URL_PATH + path;
-        }
-        return url
-    }
+    return normalizePath(BASE_URL_PATH + env + path);
 }
