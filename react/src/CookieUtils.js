@@ -4,7 +4,7 @@ import * as Utils from './Utils';
 
 const _cookies = new Cookies()
 const _jwtTokenCookieName = "jwtToken";
-const _authTokenCookieName = "authtoken";
+const _authTokenCookieName = "authToken";
 
 export const GetCookie = (name) => {
     const value = _cookies.get(name);
@@ -17,12 +17,12 @@ export const SetCookie = (name, value, expires = undefined) => {
             // Issues with setting cookie with URL value - it (universial-cookie) URL-encodes it for some reason)
             // _cookies.set(name, value, { path: "/"});
             if (expires) {
-                console.log("SET COOKIE: [" + name + "] = [" + value + "] EXPIRES = [" + expires + "]")
+                console.log("SET COOKIE: [" + name + "] = [" + value + "] EXPIRES = [" + expires + "]");
             //document.cookie = "redir=" + window.location.href + "; path=/; expires=" + expires.toUTCString();
                 document.cookie = name + "=" + value + "; expires=" + expires + ";" + "path=/; domain=" + document.location.hostname + ";";
             }
             else {
-                console.log("SET COOKIE: [" + name + "] = [" + value + "]")
+                console.log("SET COOKIE: [" + name + "] = [" + value + "]");
                 document.cookie = name + "=" + value + "; path=/; domain=" + document.location.hostname + ";";
             }
         } else {
@@ -32,6 +32,7 @@ export const SetCookie = (name, value, expires = undefined) => {
 }
 
 export const DeleteCookie = (name) => {
+    console.log("DELETE COOKIE: [" + name + "]");
     _cookies.remove(name, { path: "/" });
     // Issues with leading dot on domain name in cookie ...
     document.cookie = "jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + document.location.hostname + ";";

@@ -489,7 +489,7 @@ class AppUtilsCore(ReactApi):
         id_token = res.json().get('id_token', None)
         if id_token:
             cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
-            authtoken_cookie = ''.join(['authtoken=', self.encrypt(id_token), '; Domain=', domain, '; Path=/;'])
+            authtoken_cookie = ''.join(['authToken=', self.encrypt(id_token), '; Domain=', domain, '; Path=/;'])
             expires_in = res.json().get('expires_in', None)
             if expires_in:
                 print(f"xyzzy:id_token:[{id_token}]")

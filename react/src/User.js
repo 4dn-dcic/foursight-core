@@ -13,9 +13,6 @@ const User = (props) => {
     const [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     useEffect(() => { fetchData(url, setUsers, setLoading)}, []);
-        console.log('asdfadfasdfasdfas................................')
-        if (users?.length > 0)
-        console.log(users[0].record.uuid)
 
     if (loading) {
         return <LoginAndValidEnvRequired>

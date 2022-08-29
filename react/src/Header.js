@@ -4,8 +4,10 @@ import { useContext } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 import * as URL from "./URL.js";
+import * as API from "./API.js";
 import { BarSpinner } from "./Spinners.js";
 import { Logout } from "./LoginUtils.js";
+import { fetchData } from "./FetchUtils.js";
 
 const Header = (props) => {
 
@@ -31,6 +33,11 @@ const Header = (props) => {
                 style={{textDecoration:"none",color:"darkgreen"}}
                 href={"https://" + info.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span></a>
         </span>
+    }
+
+    function initiateAppReload() {
+        const url = API.Url("/__reload_lambda__/", true);
+        fetchData(url);
     }
 
     return <>
@@ -80,7 +87,7 @@ const Header = (props) => {
                 <td width="400" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
                     <small>{info.page?.loaded}</small>
                     &nbsp;<b>|</b>&nbsp;
-                    <a style={{textDecoration:"none",color:"#D6EAF8"}} href="{info.page?.context + '__reload_lambda__/' + info.app?.env + '/current'}" title="Click to relaunch this app." onClick={() => { if (window.confirm('Do you want to relaunch this app?')){return true;}else{window.event.stopPropagation();window.event.preventDefault()}}}>&#x2318;</a>
+                    <span style={{textDecoration:"none",color:"#D6EAF8",cursor:"pointer"}} title="Click to relaunch this app." onClick={() => { if (window.confirm('Do you want to relaunch this app?')){initiateAppReload();return true;}else{window.event.stopPropagation();window.event.preventDefault()}}}>&#x2318;</span>
                     &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {Logout(navigate);}}>LOGOUT</span>
                 </td>
             </tr>

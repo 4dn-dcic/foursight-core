@@ -17,13 +17,12 @@ import Header from './Header';
 import Login from './Login';
 import Test from './Test';
 import NotFound from './NotFound';
+import { LoginAndValidEnvRequired } from './LoginUtils';
 
 const App = () => {
 
     let [ info, setInfo ] = useState({loading: true});
     const url = API.Url("/info", true);
-    // useEffect(() => { fetchData(url, setInfo , setLoaded)}, []);
-    // useEffect(() => { fetchData(url, setInfo , () => { info.loading = true; })}, []);
     useEffect(() => {
         fetchData(
             url,
@@ -46,13 +45,13 @@ const App = () => {
                     <Route path="/api/react/:environ/envs" element={<Envs />} />
                     <Route path="/api/react/login" element={<Login />} />
                     <Route path="/api/react/:environ/login" element={<Login />} />
-                    <Route path="/api/react/:environ" element={<Home />} />
+                    <Route path="/api/react/:environ" element={<LoginAndValidEnvRequired><Home /></LoginAndValidEnvRequired>} />
                     <Route path="/api/react/:environ/demo" element={<Demo />}/>
-                    <Route path="/api/react/:environ/home" element={<Home />}/>
-                    <Route path="/api/react/:environ/view" element={<Home />}/>
-                    <Route path="/api/react/:environ/info" element={<Info />}/>
-                    <Route path="/api/react/:environ/users" element={<Users/>} />
-                    <Route path="/api/react/:environ/users/:email" element={<User />}/>
+                    <Route path="/api/react/:environ/home" element={<LoginAndValidEnvRequired><Home /></LoginAndValidEnvRequired>}/>
+                    <Route path="/api/react/:environ/view" element={<LoginAndValidEnvRequired><Home /></LoginAndValidEnvRequired>}/>
+                    <Route path="/api/react/:environ/info" element={<LoginAndValidEnvRequired><Info /></LoginAndValidEnvRequired>}/>
+                    <Route path="/api/react/:environ/users" element={<LoginAndValidEnvRequired><Users/></LoginAndValidEnvRequired>} />
+                    <Route path="/api/react/:environ/users/:email" element={<LoginAndValidEnvRequired><User /></LoginAndValidEnvRequired>}/>
                     <Route path="/api/react/:environ/test" element={<Test />}/>
                     <Route path="*" element={<NotFound />}/>
                 </Routes>
