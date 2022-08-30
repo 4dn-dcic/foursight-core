@@ -357,3 +357,83 @@ class ReactApi:
 
     def react_clear_cache(self, request, environ, is_admin=False, domain="", context="/"):
         self.react_info_cache = {}
+
+    # NEW ...
+    react_header_info_cache = {}
+    def react_get_header_info(self, request, environ, domain="", context="/"):
+        react_header_info_cache = self.react_header_info_cache.get(environ)
+        print('xyzzy-cache-hit-yesno')
+        print(react_header_info_cache)
+        if react_header_info_cache:
+            print('xyzzy-cache-hit')
+            return react_header_info_cache
+        else:
+            print('xyzzy-cache-hit-no')
+        request_dict = request.to_dict()
+        stage_name = self.stage.get_stage()
+        if not self.is_known_environment_name(environ):
+            env_unknown = True
+        else:
+            env_unknown = False
+        if not env_unknown:
+            try:
+                environment_and_bucket_info = self.sorted_dict(obfuscate_dict(self.environment.get_environment_and_bucket_info(environ, stage_name))),
+            except:
+                environment_and_bucket_info = None
+        else:
+            environment_and_bucket_info = None
+        response = Response('react_get_header_info')
+        response.body = {
+            "app": {
+                "package": self.APP_PACKAGE_NAME,
+                "stage": stage_name,
+                "env": environ,
+                "version": self.get_app_version(),
+                "domain": domain,
+                "local": self.is_running_locally(request_dict),
+                "credentials": self.react_get_credentials_info(environ),
+                "launched": self.init_load_time,
+                "deployed": self.get_lambda_last_modified()
+            },
+            "page": {
+                "title": self.html_main_title,
+                "favicon": self.get_favicon(),
+                "context": context
+            },
+            "versions": {
+                "foursight": self.get_app_version(),
+                "foursight_core": pkg_resources.get_distribution('foursight-core').version,
+                "dcicutils": pkg_resources.get_distribution('dcicutils').version,
+                "python": platform.python_version()
+            },
+            "env": {
+                "name": environ,
+                "full_name": full_env_name(environ),
+                "short_name": short_env_name(environ),
+                "public_name": public_env_name(environ),
+                "foursight_name": infer_foursight_from_env(envname=environ),
+                "default": os.environ.get("ENV_NAME"),
+            },
+            "envs": {
+                "all": sorted(self.environment.list_environment_names()),
+                "unique": sorted(self.environment.list_unique_environment_names()),
+                "unique_annotated": self.get_unique_annotated_environment_names() # xyzzy
+            },
+            "buckets": {
+                "env": self.environment.get_env_bucket_name(),
+                "foursight": get_foursight_bucket(envname=environ, stage=stage_name),
+                "foursight_prefix": get_foursight_bucket_prefix(),
+                "info": environment_and_bucket_info,
+                "ecosystem": self.sorted_dict(EnvUtils.declared_data()),
+            }
+        }
+        if env_unknown:
+            response.body["env"]["unknown"] = True
+            response.body["env_unknown"] = True
+        print(f'xyzzy: react_get_info: 2: {datetime.datetime.utcnow()}')
+        response.headers = {'Content-Type': 'application/json'}
+        response.status_code = 200
+        print(f'xyzzy: react_get_info: 3: {datetime.datetime.utcnow()}')
+        response = self.process_response(response)
+        self.react_header_info_cache[environ] = response
+        return response
