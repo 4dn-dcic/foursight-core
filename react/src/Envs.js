@@ -1,12 +1,15 @@
 import React from 'react';
 import { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
+import Select from "react-select";
 import { IsLoggedIn } from "./LoginUtils.js";
 import * as URL from './URL';
+import { UUID } from './Utils';
 
 const Envs = (props) => {
 
+    let navigate = useNavigate();
     const [ info ] = useContext(GlobalContext);
 
     function getDefaultEnv(env, info) {
@@ -25,9 +28,22 @@ const Envs = (props) => {
             return false;
         }
     }
+        function onChange(arg) {
+            navigate(URL.Url("/gac/" + arg.target.value, true))
+        }
+
+        let options = [
+            { value: 'cgap-supertest', label: 'cgap-supertest' },
+            { value: 'cgap-supertest', label: 'cgap-supertest' }
+        ];
 
     const boxClass = !info.env_unknown && URL.Env() != "" ? "boxstyle info" : "boxstyle check-warn";
     const boxTextColor = !info.env_unknown && URL.Env() != "" ? "darkblue" : "#6F4E37";
+
+//xyzzy
+if (info.envs?.unique_annotated && info.envs?.unique_annotated.length > 0) {
+    info.envs?.unique_annotated.push(info.envs?.unique_annotated[0])
+}
 
     // This page is unprotected.
 
@@ -64,22 +80,35 @@ const Envs = (props) => {
             <div className="container">
                 <b>&nbsp;Available Environments</b>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
-                        {info?.envs?.unique_annotated.map((env) =>
-                            <span key={env.full}>&#x2192;&nbsp;&nbsp;
-                                <a href={URL.Url("/home", env.full)}><b style={{color:boxTextColor}}>{env.full}</b></a>
-                                    <br />
-                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;</span> Full Name: {env.full} <br />
-                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;</span> Short Name: {env.short} <br />
-                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;</span> GAC Name: {env.gac_name} <br />
-                                { isDefaultEnv(env, info) ? (<span>
-                                    &nbsp;&nbsp;&#x272e;
-                                </span>):(<span>
-                                </span>)}
-                            </span>
+                    <table style={{color:"inherit"}}><thead></thead><tbody>
+                        {info?.envs?.unique_annotated.map((env, envIndex) =>
+                            <tr key={UUID()}>
+                                <td style={{verticalAlign:"top"}}><span>&#x2192;&nbsp;&nbsp;</span></td>
+                                <td>
+                                    <Link style={{color:URL.Env() == env.full ? "black" : "inherit"}} to={URL.Url("/envs", env.full)}><b>{env.full}</b></Link>
+                                        <br />
+                                        Full Name: {env.full} <br />
+                                        Short Name: {env.short} <br />
+                                        GAC Name: {env.gac_name} <br />
+                                        <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected)}>
+                                            <option>GAC Compare &#x2193;</option>
+                                            { info.envs?.unique_annotated.map((env) =>
+                                                <option key={UUID()}>{env.full}</option>
+                                            )}
+                                        </select>
+                                    { isDefaultEnv(env, info) ? (<span>
+                                        &nbsp;&nbsp;&#x272e;
+                                    </span>):(<span>
+                                    </span>)}
+                                    { (envIndex < info.envs.unique_annotated.length - 1) ? (<span>
+                                        <br /><br />
+                                    </span>):(<span/>)}
+                                </td>
+                            </tr>
                         )}
+                    </tbody></table>
                 </div>
             </div>
-
     </div>
 };
 

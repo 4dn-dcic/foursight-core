@@ -1,3 +1,5 @@
+import uuid from 'react-uuid';
+
 export const isString = (value) => {
     return value != undefined && value != null && value.constructor == String;
 }
@@ -33,4 +35,8 @@ export const CopyToClipboard = (id) => {
         document.execCommand('copy');
         window.getSelection().removeAllRanges();
     }
+}
+
+export const UUID = () => {
+    return uuid();
 }
