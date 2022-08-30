@@ -40,11 +40,6 @@ const Envs = (props) => {
     const boxClass = !info.env_unknown && URL.Env() != "" ? "boxstyle info" : "boxstyle check-warn";
     const boxTextColor = !info.env_unknown && URL.Env() != "" ? "darkblue" : "#6F4E37";
 
-//xyzzy
-if (info.envs?.unique_annotated && info.envs?.unique_annotated.length > 0) {
-    info.envs?.unique_annotated.push(info.envs?.unique_annotated[0])
-}
-
     // This page is unprotected.
 
     if (info.error) return <>Cannot load Foursight</>;
