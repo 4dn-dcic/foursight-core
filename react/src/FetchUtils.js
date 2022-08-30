@@ -15,6 +15,9 @@ let _artificialSleepForTesting = GetCookie("test_mode_fetch_sleep");
 // decrypted value looks like a valid JWT token and that it's not expired, etc.
 // I think this is reasonably secure.
 //
+// TODO
+// Handle case of forbidden response from server and what ... logout ?
+//
 export const fetchData = (url, setData, setLoading, setError) => {
     if (_artificialSleepForTesting > 0) {
         console.log("FETCHING WITH " + _artificialSleepForTesting + "ms SLEEP: " + url);

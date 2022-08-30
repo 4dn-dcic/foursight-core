@@ -52,6 +52,8 @@ class ReactApi:
     # For now client (React) just send its JWT token we gave it on login,
     # and we decode it here and sanity check it. Better than nothing.
     def authorize(self, request_dict, environ) -> bool:
+        if self.is_running_locally(request_dict):
+            return True
         try:
             authorization_token = request_dict.get('headers', {}).get('authorization')
             print('xyzzy:authorization_token')

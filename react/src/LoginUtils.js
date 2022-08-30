@@ -9,6 +9,9 @@ import * as Utils from './Utils';
 // Do some caching maybe of logged in state ... maybe not ...
 // depending on how expensive really it is to read cookie and decode JWT.
 
+export const IsRunningLocally = () => {
+    return window.location.hostname == "localhost";
+}
 export const IsLoggedIn = () => {
     //
     // N.B. We do not validate the JWT cookie because (1) could not get anything to work,
@@ -18,6 +21,10 @@ export const IsLoggedIn = () => {
     // it as a general is-logged-in flag. Probably some security issues here I'm not taking
     // into account but good for now, at least for development. Marking this as TODO.
     //
+
+    if (IsRunningLocally()) {
+        return true;
+    }
     const decodedJwtToken = GetDecodedJwtTokenCookie();
     if (!Utils.isObject(decodedJwtToken)) {
         return false;
@@ -44,6 +51,9 @@ export const IsLoggedIn = () => {
 }
 
 export const GetLoginInfo = () => {
+    if (IsRunningLocally()) {
+        return { "email": "localhost" }
+    }
     return GetDecodedJwtTokenCookie();
 }
 

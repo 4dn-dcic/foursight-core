@@ -64,13 +64,25 @@ class AppUtilsCore(ReactApi):
     encryption_password = None
     def get_encryption_password(self):
         if not self.encryption_password:
-            self.encryption_password = os.environ.get("S3_AWS_SECRET_ACCESS_KEY")
-            if not self.encryption_password:
-                self.encryption_password = str(uuid.uuid4()).replace('-','')[0:24]
-            elif len(self.encryption_password) < 24:
-                self.encryption_password = self.encryption_password.ljust(24, 'x')
-            elif len(self.encryption_password) > 24:
-                self.encryption_password = self.encryption_password[0:24]
+            encryption_password = os.environ.get("ENCODED_AUTH0_SECRET")
+            if not encryption_password:
+                encryption_password = os.environ.get("S3_AWS_SECRET_ACCESS_KEY")
+                if not encryption_password:
+                    #
+                    # If we cannot find a password to use from the GAC we will
+                    # use a random one (a UUID) which just means that when
+                    # this server restarts (or this app reloads) it will
+                    # not be able to decrypt any authTokens existing out
+                    # there, meaning users will have to login again.
+                    #
+                    encryption_password = str(uuid.uuid4()).replace('-','')
+            if not encryption_password:
+                encryption_password = str(uuid.uuid4()).replace('-','')[0:24]
+            elif len(encryption_password) < 24:
+                encryption_password = encryption_password.ljust(24, 'x')
+            elif len(encryption_password) > 24:
+                encryption_password = encryption_password[0:24]
+            encryption_password = encryption_password
         return self.encryption_password
     def encrypt(self, plaintext_value: str) -> str:
         try:

@@ -6,7 +6,7 @@ import GlobalContext from './GlobalContext.js';
 import Auth0Lock from 'auth0-lock';
 import * as URL from './URL';
 import { GetCookie, SetCookie } from './CookieUtils';
-import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, Logout, ValidEnvRequired } from './LoginUtils.js';
+import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, IsRunningLocally, Logout, ValidEnvRequired } from './LoginUtils.js';
 
 const Login = (props) => {
 
@@ -96,23 +96,17 @@ const Login = (props) => {
         return <>Cannot load Foursight.</>;
     }
     const loginInfo = IsLoggedIn() ? GetLoginInfo() : undefined;;
-    if (false && IsLoggedIn()) {
-        loginInfo = GetLoginInfo();
-        return <>
-            <div className="container">
-                <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
-                    Logged in as: <Link to={URL.Url("/users/" + loginInfo?.email, true)}><b style={{color:"darkblue"}}>{loginInfo?.email}</b></Link>
-                    <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=>{Logout(navigate);}}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small>
-                </div>
-            </div>
-        </>
-    }
     return <>
         { IsLoggedIn() ? (<React.Fragment>
             <div className="container">
                 <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
-                    Logged in as: <Link to={URL.Url("/users/" + loginInfo?.email, true)}><b style={{color:"darkblue"}}>{loginInfo?.email}</b></Link>
-                    <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=>{Logout(navigate);}}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small>
+                    Logged in as:
+                    { IsRunningLocally() ? (<span>
+                        &nbsp;<b>localhost</b>
+                    </span>):(<span>
+                        <Link to={URL.Url("/users/" + loginInfo?.email, true)}><b style={{color:"darkblue"}}>{loginInfo?.email}</b></Link>
+                        <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=>{Logout(navigate);}}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small>
+                    </span>)}
                 </div>
             </div>
         </React.Fragment>):(<React.Fragment>

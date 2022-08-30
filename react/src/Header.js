@@ -137,8 +137,8 @@ const Header = (props) => {
                         { (IsLoggedIn()) ? (<span>
                             {/* TODO: on first login the email does not appear but rather LOGIN - on refresh OK */}
                             {/* TODO: also on LOGOUT the emai remains even on refresh - think that's the server-side caching which is bad idea - need to cache just a new /header endpoint */}
-                            { GetLoginInfo().email ? (<span>
-                                <Link to={URL.Url("/login", true)} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{GetLoginInfo().email}</b></Link>
+                            { GetLoginInfo()?.email ? (<span>
+                                <Link to={URL.Url("/login", true)} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{GetLoginInfo()?.email}</b></Link>
                             </span>):(<span>
                                 { info.login?.admin ? (<span>
                                     <b style={{color:"darkblue"}}>ADMIN</b>
