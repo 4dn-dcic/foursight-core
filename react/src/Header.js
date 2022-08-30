@@ -6,7 +6,7 @@ import GlobalContext from "./GlobalContext.js";
 import * as URL from "./URL.js";
 import * as API from "./API.js";
 import { BarSpinner } from "./Spinners.js";
-import { Logout } from "./LoginUtils.js";
+import { GetLoginInfo, IsLoggedIn, Logout } from "./LoginUtils.js";
 import { fetchData } from "./FetchUtils.js";
 
 const Header = (props) => {
@@ -88,7 +88,10 @@ const Header = (props) => {
                     <small>{info.page?.loaded}</small>
                     &nbsp;<b>|</b>&nbsp;
                     <span style={{textDecoration:"none",color:"#D6EAF8",cursor:"pointer"}} title="Click to relaunch this app." onClick={() => { if (window.confirm('Do you want to relaunch this app?')){initiateAppReload();return true;}else{window.event.stopPropagation();window.event.preventDefault()}}}>&#x2318;</span>
-                    &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {Logout(navigate);}}>LOGOUT</span>
+                    { (IsLoggedIn()) ? (<span>
+                        &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {Logout(navigate);}}>LOGOUT</span>
+                    </span>):(<span>
+                    </span>)}
                 </td>
             </tr>
             </tbody></table>
@@ -130,13 +133,17 @@ const Header = (props) => {
                         { (info.app?.stage != 'prod' && info.app?.stage != 'dev') ? (<span>
                             <b title="Deployment stage: {info.app?.stage}">{info.app?.stage}}</b> &nbsp;|&nbsp;
                         </span>):(<span></span>)}
-                        { (info.login?.admin) ? (<span>
+                        { (IsLoggedIn()) ? (<span>
                             {/* TODO: on first login the email does not appear but rather LOGIN - on refresh OK */}
                             {/* TODO: also on LOGOUT the emai remains even on refresh - think that's the server-side caching which is bad idea - need to cache just a new /header endpoint */}
-                            { (info.login?.email_address) ? (<span>
-                                <Link to={URL.Url("/login", true)} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{info?.login?.email_address}</b></Link>
+                            { GetLoginInfo().email ? (<span>
+                                <Link to={URL.Url("/login", true)} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{GetLoginInfo().email}</b></Link>
                             </span>):(<span>
-                                <b style={{color:"darkblue"}}>ADMIN</b>
+                                { info.login?.admin ? (<span>
+                                    <b style={{color:"darkblue"}}>ADMIN</b>
+                                </span>):(<span>
+                                    <b style={{color:"darkblue"}}>SOMEUSER</b>
+                                </span>)}
                             </span>)}
                         </span>):(<span>
                             <NavLink to={URL.Url("/login", true)} style={{cursor:"pointer",fontWeight:"bold",color:"darkred"}} title="Not logged in. Click to login.">LOGIN</NavLink>

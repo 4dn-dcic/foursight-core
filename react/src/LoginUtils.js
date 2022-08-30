@@ -6,6 +6,9 @@ import * as URL from './URL';
 import * as API from './API';
 import * as Utils from './Utils';
 
+// Do some caching maybe of logged in state ... maybe not ...
+// depending on how expensive really it is to read cookie and decode JWT.
+
 export const IsLoggedIn = () => {
     //
     // N.B. We do not validate the JWT cookie because (1) could not get anything to work,
