@@ -7,6 +7,20 @@ Change Log
 ----------
 
 
+1.0.2
+=====
+
+* Repair changelong for 1.0.1
+
+(There was also a need for this version to be higher than some beta versions that are in play.)
+
+
+1.0.1
+=====
+
+* Fix the way check lookup works
+
+
 1.0.0
 =====
 
