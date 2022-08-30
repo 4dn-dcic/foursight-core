@@ -452,6 +452,7 @@ class ReactApi:
         except Exception as e:
             print("XYZZY:EXCEPTION GETTING SECRETS")
             print(e)
+            return []
 
     def get_gac_names(self) -> list:
         secrets_names = self.get_secrets_names()

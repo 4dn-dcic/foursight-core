@@ -28,6 +28,7 @@ const Header = (props) => {
             <NavLink to={URL.Url("/home", true)} style={({isActive}) => style(isActive)}>HOME</NavLink>&nbsp;|&nbsp;
             <NavLink to={URL.Url("/checks", true)} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
             <NavLink to={URL.Url("/users", true)} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
+            <NavLink to={URL.Url("/envs", true)} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
             <NavLink to={URL.Url("/info", true)} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
             <a target="_blank" title="Open AWS Console for this account ({info.app?.credentials.aws_account_number}) in another tab."
                 style={{textDecoration:"none",color:"darkgreen"}}
