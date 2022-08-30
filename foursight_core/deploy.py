@@ -2,6 +2,7 @@
 Generate gitignored .chalice/config.json for deploy and then run deploy.
 Takes on parameter for now: stage (either "dev" or "prod")
 """
+from dcicutils.misc_utils import PRINT
 import os
 import sys
 import argparse
@@ -9,6 +10,37 @@ import json
 import subprocess
 
 from dcicutils.misc_utils import as_seconds, ignored
+
+
+# TODO: Move to dcicutils.command_utils.
+def subprocess_call(command: list, verbose: bool = False, **kwargs) -> int:
+    """
+    Executes the given command (list of arguments, the main command as the zeroth)
+    in a sub-process and returns the return code from the command execution.
+    Prints (to stdout) before/after execution messages if ``verbose`` is True.
+    If general (not command execution related) exception occurs raises that exception.
+
+    :param command: Command as list with zeroth item being the main command.
+    :param verbose: If True prints (to stdout) before/after execution messages.
+    :return: Return code from the command execution.
+    """
+    if verbose:
+        command_string = " ".join(command)
+    try:
+        if verbose:
+            PRINT(f"Executing command in sub-process: {command_string}")
+        return_code = subprocess.check_call(command, **kwargs)
+        if verbose:
+            PRINT(f"Done executing (return-code: {return_code}) command in sub-process: {command_string}")
+    except subprocess.CalledProcessError as command_exception:
+        return_code = command_exception.returncode
+        if verbose:
+            PRINT(f"Error executing (return-code: {return_code}) command in sub-process: {command_string}")
+    except Exception as general_exception:
+        if verbose:
+            PRINT(f"Exception executing command ({command_string}) in sub-process: {general_exception}")
+        raise general_exception
+    return return_code
 
 
 class Deploy(object):
@@ -76,7 +108,7 @@ class Deploy(object):
             # rds_name = trial_creds['RDS_NAME']
             # s3_key_id = trial_creds.get('S3_ENCRYPT_KEY_ID')
             # if not (s3_enc_secret and client_id and client_secret and es_host and rds_name):
-            #     print(''.join(['ERROR. You are missing one more more environment',
+            #     PRINT(''.join(['ERROR. You are missing one more more environment',
             #                    'variables needed to deploy the Foursight trial. Need:\n',
             #                    'S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, ES_HOST, RDS_NAME in trial_creds dict.'])
             #           )
@@ -90,7 +122,7 @@ class Deploy(object):
             # env_name = None
             # s3_key_id = None  # not supported in legacy
             # if not (s3_enc_secret and client_id and client_secret and dev_secret):
-            #     print(''.join(['ERROR. You are missing one more more environment ',
+            #     PRINT(''.join(['ERROR. You are missing one more more environment ',
             #                    'variables needed to deploy Foursight.\n',
             #                    'Need: S3_ENCRYPT_KEY, CLIENT_ID, CLIENT_SECRET, DEV_SECRET.'])
             #           )
@@ -129,14 +161,14 @@ class Deploy(object):
                     if (global_bucket_env_from_environ
                             and global_env_bucket_from_environ
                             and global_bucket_env_from_environ != global_env_bucket_from_environ):
-                        print('ERROR. GLOBAL_BUCKET_ENV and GLOBAL_ENV_BUCKET are both set, but inconsistently.')
+                        PRINT('ERROR. GLOBAL_BUCKET_ENV and GLOBAL_ENV_BUCKET are both set, but inconsistently.')
                         sys.exit()
                     global_env_bucket = global_bucket_env_from_environ or global_env_bucket_from_environ
                 if global_env_bucket:
                     curr_stage_environ['GLOBAL_BUCKET_ENV'] = global_env_bucket  # legacy compatibility
                     curr_stage_environ['GLOBAL_ENV_BUCKET'] = global_env_bucket
                 else:
-                    print('ERROR. GLOBAL_ENV_BUCKET must be set or global_env_bucket= must be passed'
+                    PRINT('ERROR. GLOBAL_ENV_BUCKET must be set or global_env_bucket= must be passed'
                           ' when building the trial config.')
                     sys.exit()
             if security_group_ids:
@@ -147,18 +179,19 @@ class Deploy(object):
                 curr_stage_environ['CHECK_RUNNER'] = check_runner
 
         filename = cls.get_config_filepath()
-        print(''.join(['Writing: ', filename]))
+        PRINT(''.join(['Writing: ', filename]))
         with open(filename, 'w') as config_file:
             config_file.write(json.dumps(cls.CONFIG_BASE))
+        PRINT(''.join(['Done writing: ', filename]))
         # export poetry into requirements
-        subprocess.check_call(
-            ['poetry', 'export', '-f', 'requirements.txt', '--without-hashes', '-o', 'requirements.txt'])
+        subprocess_call(
+            ['poetry', 'export', '-f', 'requirements.txt', '--without-hashes', '-o', 'requirements.txt'], verbose=True)
 
     @classmethod
     def build_config_and_deploy(cls, stage):
         cls.build_config(stage)
         # actually deploy
-        subprocess.call(['chalice', 'deploy', '--stage', stage])
+        subprocess_call(['chalice', 'deploy', '--stage', stage], verbose=True)
 
     @classmethod
     # dmichaels/2022-07-22/C4-826:
@@ -187,7 +220,8 @@ class Deploy(object):
             if trial_creds and security_ids and subnet_ids and check_runner:
                 # dmichaels/2022-07-22/C4-826:
                 # Added identity arg for the Foursight CloudFormation template.
-                cls.build_config(stage, identity=identity, stack_name=stack_name, trial_creds=trial_creds, trial_global_env_bucket=True,
+                cls.build_config(stage, identity=identity, stack_name=stack_name, trial_creds=trial_creds,
+                                 trial_global_env_bucket=True,
                                  global_env_bucket=global_env_bucket, lambda_timeout=lambda_timeout,
                                  security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner,
                                  rds_name=rds_name)
@@ -200,7 +234,7 @@ class Deploy(object):
         flags = ['--stage', stage, '--pkg-format', 'cloudformation', '--template-format', 'yaml']
         if merge_template:
             flags.extend(['--merge-template', merge_template])
-        subprocess.call(['chalice', 'package', *flags, output_file])
+        subprocess_call(['chalice', 'package', *flags, output_file], verbose=True)
 
 
 def main():
