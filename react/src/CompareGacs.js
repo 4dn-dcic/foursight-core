@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchData } from './FetchUtils';
@@ -66,6 +67,9 @@ const CompareGacs = (props) => {
 
     if (error) return <>Cannot load GAC comparison from Foursight: {error}</>;
     if (loading) return <>Loading content ...</>;
+
+    let unique_keys = getUniqueKeys(data?.gac, data?.gac_compare);
+
     return <LoginAndValidEnvRequired>
             <b>GAC Comparison</b>:&nbsp;&nbsp;
             <small>
@@ -87,8 +91,9 @@ const CompareGacs = (props) => {
                     <tr><td style={{height:"8px"}} colSpan="4"></td></tr>
                     </thead>
                     <tbody style={{fontSize:"10pt"}}>
-                    { getUniqueKeys(data.gac, data.gac_compare).map((key) => {
-                        return <tr key={key} style={{color:sameGacValue(key, data) ? "inherit" : "red"}}>
+                    { unique_keys.map((key, keyIndex) => {
+                        return <React.Fragment>
+                            <tr key={key} style={{color:sameGacValue(key, data) ? "inherit" : "red"}}>
                             <td>
                                 {sameGacValue(key, data) ? <span>&#x2713;</span> : <span>&#x2717;</span>}&nbsp;
                             </td>
@@ -101,8 +106,13 @@ const CompareGacs = (props) => {
                             <td>
                                 <span>{removedGacValue(key, data) ? <b>MISSING</b> : ((appearsToBeObfuscated(data.gac_compare[key]) ? <b>OBFUSCATED</b> : data.gac_compare[key]) || <b>&#x2205;</b>)}</span>
                             </td>
-                        </tr>
-                    })}
+                            </tr>
+                            { keyIndex < unique_keys.length - 1 ? (<React.Fragment>
+                                <tr><td style={{height:"4px"}}></td></tr>
+                                <tr><td style={{height:"1px",background:"lightblue"}} colSpan="4"></td></tr>
+                                <tr><td style={{height:"3px"}}></td></tr>
+                             </React.Fragment>):(<span/>)}
+                        </React.Fragment>})}
                     <tr><td style={{height:"8px"}} colSpan="4"></td></tr>
                     </tbody>
                 </table>

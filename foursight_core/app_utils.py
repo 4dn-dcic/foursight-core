@@ -213,7 +213,6 @@ class AppUtilsCore(ReactApi):
         return connection, response
 
     def is_running_locally(self, request_dict) -> bool:
-        return False
         return request_dict.get('context', {}).get('identity', {}).get('sourceIp', '') == "127.0.0.1"
 
     def get_logged_in_user_info(self, environ: str, request_dict: dict) -> str:
