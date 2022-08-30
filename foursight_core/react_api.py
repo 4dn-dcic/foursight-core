@@ -16,10 +16,11 @@ import socket
 import sys
 import time
 import types
+import uuid
 import logging
 from itertools import chain
 from dateutil import tz
-from dcicutils import ff_utils
+from dcicutils.diff_utils import DiffManager
 from dcicutils.env_utils import (
     EnvUtils,
     get_foursight_bucket,
@@ -29,8 +30,9 @@ from dcicutils.env_utils import (
     public_env_name,
     short_env_name,
 )
+from dcicutils import ff_utils
 from dcicutils.lang_utils import disjoined_list
-from dcicutils.misc_utils import get_error_message
+from dcicutils.misc_utils import get_error_message, override_environ
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from typing import Optional
@@ -477,3 +479,37 @@ class ReactApi:
             print('313333xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
             env["gac_name"] = self.get_gac_name(env["full"])
         return envs
+
+    def react_compare_gacs(self, request, environ, environ_compare, is_admin=False, domain="", context="/"):
+        request_dict = request.to_dict()
+        stage_name = self.stage.get_stage()
+        response = Response('react_compare_gacs')
+        response.body = self.compare_gacs(environ, environ_compare)
+        response.headers = {
+            "Content-Type": "application/json"
+        }     
+        print(response.headers)
+        response.status_code = 200
+        response = self.process_response(response)
+        return response
+
+    def compare_gacs(self, env_name_a: str, env_name_b: str) -> dict:
+        gac_name_a = self.get_gac_name(env_name_a)
+        gac_name_b = self.get_gac_name(env_name_b)
+        with override_environ(IDENTITY=gac_name_a):
+            gac_values_a = get_identity_secrets()
+        with override_environ(IDENTITY=gac_name_b):
+            gac_values_b = get_identity_secrets()
+        if gac_name_a == gac_name_b:
+            gac_values_b = self.munge_gac_for_testing(gac_values_b)
+        diff = DiffManager(label=None)
+        diffs = diff.diffs(gac_values_a, gac_values_b)
+        return diffs
+
+    def munge_gac_for_testing(self, gac_values):
+        if gac_values.get("ENCODED_AUTH0_CLIENT"):
+            gac_values["ENCODED_AUTH0_CLIENT"] = uuid.uuid4()
+        if gac_values.get("ENCODED_AUTH0_SECRET"):
+            gac_values.pop("ENCODED_AUTH0_SECRET")
+        gac_values["SOME_VALUE_XYZZY"] = uuid.uuid4()
+        return gac_values

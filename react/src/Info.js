@@ -1,11 +1,11 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import GlobalContext from "./GlobalContext.js";
-import { LoginAndValidEnvRequired } from "./LoginUtils.js";
+import GlobalContext from "./GlobalContext";
+import { LoginAndValidEnvRequired } from "./LoginUtils";
 import { CopyToClipboard } from "./Utils";
-import { fetchData } from './FetchUtils.js';
-import * as API from "./API.js";
-import * as URL from "./URL.js";
+import { fetchData } from './FetchUtils';
+import * as API from "./API";
+import * as URL from "./URL";
 import uuid from 'react-uuid';
 let YAML = require('json-to-pretty-yaml');
 
@@ -141,7 +141,7 @@ const Info = () => {
         </InfoBox>
         <InfoBox title="Ecosystem">
             <pre className="info" style={{border:"0",margin:"0",paddingTop:"8",paddingBottom:"8",marginTop:"0"}}>
-                {YAML.stringify(header.buckets.ecosystem)}
+                {YAML.stringify(header.buckets?.ecosystem)}
             </pre>
         </InfoBox>
         <InfoBox title="Login Auth0 Info">

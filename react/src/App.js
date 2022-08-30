@@ -16,6 +16,7 @@ import Users from './Users';
 import Demo from './Demo';
 import Header from './Header';
 import Login from './Login';
+import CompareGacs from './CompareGacs';
 import Test from './Test';
 import NotFound from './NotFound';
 import { LoginAndValidEnvRequired } from './LoginUtils';
@@ -53,6 +54,7 @@ const App = () => {
                     <Route path="/api/react/:environ/info" element={<LoginAndValidEnvRequired><Info /></LoginAndValidEnvRequired>}/>
                     <Route path="/api/react/:environ/users" element={<LoginAndValidEnvRequired><Users/></LoginAndValidEnvRequired>} />
                     <Route path="/api/react/:environ/users/:email" element={<LoginAndValidEnvRequired><User /></LoginAndValidEnvRequired>}/>
+                    <Route path="/api/react/:environ/gac/:environCompare" element={<LoginAndValidEnvRequired><CompareGacs /></LoginAndValidEnvRequired>}/>
                     <Route path="/api/react/:environ/test" element={<Test />}/>
                     <Route path="*" element={<NotFound />}/>
                 </Routes>

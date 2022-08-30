@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchData } from './FetchUtils.js';
-import { RingSpinner } from "./Spinners.js";
-import { LoginAndValidEnvRequired } from "./LoginUtils.js";
-import * as API from "./API.js";
+import { fetchData } from './FetchUtils';
+import { RingSpinner } from "./Spinners";
+import { LoginAndValidEnvRequired } from "./LoginUtils";
+import * as API from "./API";
 let YAML = require('json-to-pretty-yaml');
 
 const User = (props) => {
