@@ -11,6 +11,7 @@ import pkg_resources
 import platform
 import pytz
 import requests
+import re
 import socket
 import sys
 import time
@@ -176,7 +177,7 @@ class ReactApi:
 
     def is_known_environment_name(self, env_name: str) -> bool:
         env_name = env_name.upper()
-        unique_annotated_environment_names = self.get_unique_annotated_environment_names()
+        unique_annotated_environment_names = self.get_unique_annotated_environments()
         for environment_name in unique_annotated_environment_names:
             if environment_name["name"].upper() == env_name:
                 return True
@@ -265,12 +266,13 @@ class ReactApi:
                 "short_name": short_env_name(environ),
                 "public_name": public_env_name(environ),
                 "foursight_name": infer_foursight_from_env(envname=environ),
-                "default": os.environ.get("ENV_NAME")
+                "default": os.environ.get("ENV_NAME"),
+                "gac_name": self.get_gac_name(environ)
             },
             "envs": {
                 "all": sorted(self.environment.list_environment_names()),
                 "unique": sorted(self.environment.list_unique_environment_names()),
-                "unique_annotated": self.get_unique_annotated_environment_names() # xyzzy
+                "unique_annotated": self.get_unique_annotated_environments() # xyzzy
             },
             "buckets": {
                 "env": self.environment.get_env_bucket_name(),
@@ -418,7 +420,7 @@ class ReactApi:
             "envs": {
                 "all": sorted(self.environment.list_environment_names()),
                 "unique": sorted(self.environment.list_unique_environment_names()),
-                "unique_annotated": self.get_unique_annotated_environment_names() # xyzzy
+                "unique_annotated": self.get_unique_annotated_environments() # xyzzy
             },
             "buckets": {
                 "env": self.environment.get_env_bucket_name(),
@@ -433,11 +435,7 @@ class ReactApi:
             response.body["env_unknown"] = True
         print(f'xyzzy: react_get_info: 2: {datetime.datetime.utcnow()}')
         response.headers = {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Allow-Methods": "GET,HEAD,OPTIONS,POST,PUT",
-            "Access-Control-Allow-Headers": "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"
+            "Content-Type": "application/json"
         }     
         print("xyzzy:headers:")
         print(response.headers)
@@ -446,3 +444,35 @@ class ReactApi:
         response = self.process_response(response)
         self.react_header_info_cache[environ] = response
         return response
+
+    def get_secrets_names(self) -> list:
+        try:
+            boto_secrets_manager = boto3.client('secretsmanager')
+            return [secrets['Name'] for secrets in boto_secrets_manager.list_secrets()['SecretList']]
+        except Exception as e:
+            print("XYZZY:EXCEPTION GETTING SECRETS")
+            print(e)
+
+    def get_gac_names(self) -> list:
+        secrets_names = self.get_secrets_names()
+        return [secret_name for secret_name in secrets_names if re.match('.*App(lication)?Config(uration)?.*', secret_name, re.IGNORECASE)]
+
+    def get_gac_name(self, env_name: str) -> str:
+        gac_names = self.get_gac_names()
+        env_name_short = short_env_name(env_name)
+        pattern = re.compile(".*" + env_name_short.replace('-', '.*').replace('_', '.*') + ".*", re.IGNORECASE)
+        matching_gac_names = [gac_name for gac_name in gac_names if pattern.match(gac_name)]
+        if len(matching_gac_names):
+            return matching_gac_names[0]
+        else:
+            return " OR ".join(matching_gac_names)
+
+    def get_unique_annotated_environments(self):
+        print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+        envs = self.get_unique_annotated_environment_names()
+        print('11111xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+        print(envs)
+        for env in envs:
+            print('313333xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+            env["gac_name"] = self.get_gac_name(env["full"])
+        return envs

@@ -107,7 +107,7 @@ const Login = (props) => {
             </div>
         </>
     }
-    return <><ValidEnvRequired>
+    return <>
         { IsLoggedIn() ? (<React.Fragment>
             <div className="container">
                 <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
@@ -134,7 +134,7 @@ const Login = (props) => {
                 </center>
         </div>
         </React.Fragment>)}
-    </ValidEnvRequired></>
+    </>
 };
 
 export default Login;
