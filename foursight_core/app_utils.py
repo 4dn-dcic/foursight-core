@@ -14,10 +14,10 @@ import logging
 from itertools import chain
 from dateutil import tz
 from dcicutils import ff_utils
+from dcicutils.env_utils import full_env_name, public_env_name, short_env_name
 from dcicutils.lang_utils import disjoined_list
-from dcicutils.obfuscation_utils import obfuscate_dict
+# from dcicutils.obfuscation_utils import obfuscate_dict
 from typing import Optional
-from .identity import apply_identity_globally
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
 from .check_utils import CheckHandler
@@ -35,9 +35,6 @@ class AppUtilsCore:
     This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
     so that a class named AppUtils is easier to define in libraries that import foursight-core.
     """
-
-    # dmichaels/2022-07-20/C4-826: Apply identity globally.
-    apply_identity_globally()
 
     # These must be overwritten in inherited classes
     # replace with 'foursight', 'foursight-cgap' etc
@@ -65,6 +62,7 @@ class AppUtilsCore:
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
     def __init__(self):
+
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
         self.sqs = SQS(self.prefix)
@@ -927,12 +925,25 @@ class AppUtilsCore:
             for environ in sched_environs:
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
-                check_vals.extend(check_schedule.get(environ, []))
+                check_vals.extend(self.get_env_schedule(check_schedule, environ))
                 self.sqs.send_sqs_messages(queue, environ, check_vals)
         runner_input = {'sqs_url': queue.url}
         for n in range(4):  # number of parallel runners to kick off
             self.sqs.invoke_check_runner(runner_input)
         return runner_input  # for testing purposes
+
+    @classmethod
+    def get_env_schedule(cls, check_schedule, environ):
+        """
+        Gets schedules from the check_schedule table for the given environ, which may be a short, full, or public name.
+
+        In the new environment configuration, there are multiple aliases that refer to the same environment.
+        This function ensures that when writing a check schedule you can refer to any of the aliases.
+        """
+        return (check_schedule.get(public_env_name(environ))
+                or check_schedule.get(full_env_name(environ))
+                or check_schedule.get(short_env_name(environ))
+                or [])
 
     def queue_check(self, environ, check,
                     params: Optional[dict] = None, deps: Optional[list] = None, uuid: Optional[str] = None):
