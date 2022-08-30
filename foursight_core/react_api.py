@@ -196,10 +196,13 @@ class ReactApi:
         # TODO: Do some kind of caching for speed, but probably on individual data items which may take
         # time rather than this whole thing, or if we do do this whole thing needs to at least be on a per
         # environment basis, and need to take into account invalidating (at least) login stuff on logout etc.
-        react_env_info_cache = self.react_info_cache.get(environ)
-        if react_env_info_cache:
-            react_env_info_cache["page"]["loaded"] = self.get_load_time()
-            return react_env_info_cache
+        #
+        # Not ready for this yet - caching user stuff which is not appropriate for the server.
+        # Need an endipont to cach just stuff we need for the UI header.
+#       react_env_info_cache = self.react_info_cache.get(environ)
+#       if react_env_info_cache:
+#           react_env_info_cache["page"]["loaded"] = self.get_load_time()
+#           return react_env_info_cache
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         login = self.get_logged_in_user_info(environ, request_dict)
@@ -291,7 +294,7 @@ class ReactApi:
         response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
         print(f'xyzzy: react_get_info: 3: {datetime.datetime.utcnow()}')
-        self.react_info_cache[environ] = response.body
+#       self.react_info_cache[environ] = response.body
         return self.process_response(response)
 
     def react_get_users(self, request, environ, is_admin=False, domain="", context="/"):
