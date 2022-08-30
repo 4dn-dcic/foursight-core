@@ -2,7 +2,6 @@ import React from 'react';
 import { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
-import Select from "react-select";
 import { IsLoggedIn } from "./LoginUtils.js";
 import * as URL from './URL';
 import { UUID } from './Utils';
@@ -28,14 +27,10 @@ const Envs = (props) => {
             return false;
         }
     }
-        function onChange(arg) {
-            navigate(URL.Url("/gac/" + arg.target.value, true))
-        }
 
-        let options = [
-            { value: 'cgap-supertest', label: 'cgap-supertest' },
-            { value: 'cgap-supertest', label: 'cgap-supertest' }
-        ];
+    function onChange(arg) {
+        navigate(URL.Url("/gac/" + arg.target.value, true))
+    }
 
     const boxClass = !info.env_unknown && URL.Env() != "" ? "boxstyle info" : "boxstyle check-warn";
     const boxTextColor = !info.env_unknown && URL.Env() != "" ? "darkblue" : "#6F4E37";

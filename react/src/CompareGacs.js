@@ -1,6 +1,8 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import GlobalContext from "./GlobalContext.js";
 import { fetchData } from './FetchUtils';
 import { RingSpinner } from "./Spinners";
 import { LoginAndValidEnvRequired } from "./LoginUtils";
@@ -16,7 +18,9 @@ const CompareGacs = (props) => {
     const [ showingRaw, setShowingRaw ] = useState(false);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
+    const [ info ] = useContext(GlobalContext);
     useEffect(() => { fetchData(url, setData, setLoading, setError)}, []);
+    let navigate = useNavigate();
 
     function getUniqueKeys(gac, gac_compare) {
         let uniqueKeys = []
@@ -65,8 +69,14 @@ const CompareGacs = (props) => {
         setShowingRaw(false);
     }
 
+    function onChange(arg) {
+        navigate(URL.Url("/gac/" + arg.target.value, true))
+    }
+
     if (error) return <>Cannot load GAC comparison from Foursight: {error}</>;
     if (loading) return <>Loading content ...</>;
+
+    info.envs?.unique_annotated.push(info.envs?.unique_annotated[0])
 
     let unique_keys = getUniqueKeys(data?.gac, data?.gac_compare);
 
@@ -83,8 +93,24 @@ const CompareGacs = (props) => {
                     <tr style={{fontWeight:"bold"}}>
                         <td></td>
                         <td width="30%" style={{verticalAlign:"bottom"}}>Key</td>
-                        <td><span style={{fontWeight:"normal"}}><i>{URL.Env()}</i></span> <br /> {getGacName(data?.gac)}</td>
-                        <td><span style={{fontWeight:"normal"}}><i>{environCompare}</i></span> <br /> {getGacName(data?.gac_compare)}</td>
+                        <td>
+                            <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected)}>
+                                { info.envs?.unique_annotated.map((env) =>
+                                    <option key={env.full}>{env.full}</option>
+                                )}
+                            </select>
+                            <br />
+                            {getGacName(data?.gac)}
+                        </td>
+                        <td>
+                            <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected)}>
+                                { info.envs?.unique_annotated.map((env) =>
+                                    <option key={env.full}>{env.full}</option>
+                                )}
+                            </select>
+                            <br />
+                            {getGacName(data?.gac_compare)}
+                        </td>
                     </tr>
                     <tr><td style={{height:"3px"}} colSpan="4"></td></tr>
                     <tr><td style={{height:"1px",background:"darkblue"}} colSpan="4"></td></tr>
