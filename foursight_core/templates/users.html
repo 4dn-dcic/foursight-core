@@ -1,0 +1,38 @@
+{% extends "header.html" %}
+
+{% block content %}
+<br />
+<div style="padding-bottom:10px;">
+    <b style="font-size:large;padding-bottom:45px;">Users</b>
+    <span name="users" id="users" style="font-size:0;opacity:0;">{{users}}</span>
+    <img onclick="copy_to_clipboard('users')" style="cursor:copy;font-family:monospace;position:relative;bottom:2pt;" src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="18" />
+</div>
+<div class="info boxstyle">
+    <table style="width:100%;">
+        <tr style="border-bottom:2px solid darkblue;">
+            <td style="padding:10px;font-weight:bold;width:20%">
+                User
+            </td>
+            <td style="padding:10px;font-weight:bold;width:20;">
+                Roles
+            </td>
+            <td style="padding:10px;font-weight:bold;width:60%;">
+                Modified
+            </td>
+        </tr>
+        {% for user in users %} <tr style="border-bottom:1px solid gray;">
+            <td style="border-bottom:1px solid gray;padding:10px;">
+                <a href="{{context + 'users/' + env + '/' + user['email_address']}}"><b>{{user['email_address']}}</b></a> <br />
+                {{user['first_name']}} {{user['last_name']}} <br />
+                <small id="{{user['uuid']}}" onclick="copy_to_clipboard(this.id);" style="cursor:copy;">{{user['uuid']}}</small>
+            </td>
+            <td style="padding:10px;vertical-align:top;">
+                TODO
+            </td>
+            <td style="padding:10px;vertical-align:top;">
+                {{user['modified']}}
+            </td>
+        </tr> {% endfor %}
+    </table>
+</div>
+{% endblock %}

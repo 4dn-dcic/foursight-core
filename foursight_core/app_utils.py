@@ -82,7 +82,7 @@ class AppUtilsCore(ReactApi):
                 encryption_password = encryption_password.ljust(24, 'x')
             elif len(encryption_password) > 24:
                 encryption_password = encryption_password[0:24]
-            encryption_password = encryption_password
+            self.encryption_password = encryption_password
         return self.encryption_password
     def encrypt(self, plaintext_value: str) -> str:
         try:
