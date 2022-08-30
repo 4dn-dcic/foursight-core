@@ -10,12 +10,12 @@ import * as API from "./API.js";
 const Users = () => {
 
     const url = API.Url("/users", true);
-    const [ info ] = useContext(GlobalContext);
     let [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
-    useEffect(() => { fetchData(url, setUsers, setLoading)}, []);
+    let [ error, setError ] = useState(false);
+    useEffect(() => { fetchData(url, setUsers, setLoading, setError)}, []);
 
-    if (info.error) return <>Cannot load Foursight.</>;
+    if (error) return <>Cannot load users from Foursight: {error}</>;
     if (loading) {
         return <LoginAndValidEnvRequired>
             <div style={{marginTop:"30px"}}>

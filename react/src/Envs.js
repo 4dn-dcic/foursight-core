@@ -10,7 +10,7 @@ const Envs = (props) => {
     const [ info ] = useContext(GlobalContext);
 
     function getDefaultEnv(env, info) {
-        return info?.environ["ENV_NAME"]?.toUpperCase();
+        return info?.env?.default?.toUpperCase();
     }
 
     function isDefaultEnv(env, info) {
@@ -31,6 +31,7 @@ const Envs = (props) => {
 
     // This page is unprotected.
 
+    if (info.error) return <>Cannot load Foursight</>;
     if (info.loading) return <>Loading ...</>;
     return <div>
             <div className="container">
@@ -48,7 +49,7 @@ const Envs = (props) => {
                         All known environments are listed below: <br />
                         {info?.envs?.unique_annotated.map((env) =>
                             <span key={env.full} >&#x2192;&nbsp;&nbsp;
-                                <a href={URL.Url("/view", env.full)}> <b style={{color:boxTextColor}}>{env.full}</b></a>
+                                <a href={URL.Url("/home", env.full)}> <b style={{color:boxTextColor}}>{env.full}</b></a>
                                 { env.short != env.full ? (<span>
                                     &nbsp;({env.short})
                                 </span>):(<span>
@@ -76,7 +77,7 @@ const Envs = (props) => {
                         All known environments are listed below: <br />
                         {info?.envs?.unique_annotated.map((env) =>
                             <span key={env.full}>&#x2192;&nbsp;&nbsp;
-                                <a href={URL.Url("/view", env.full)}><b style={{color:boxTextColor}}>{env.full}</b></a>
+                                <a href={URL.Url("/home", env.full)}><b style={{color:boxTextColor}}>{env.full}</b></a>
                                 { env.short != env.full ? (<span>
                                     &nbsp;({env.short})
                                 </span>):(<span>

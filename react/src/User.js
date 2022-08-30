@@ -12,8 +12,10 @@ const User = (props) => {
     const url = API.Url(`/users/${email}`, true);
     const [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
-    useEffect(() => { fetchData(url, setUsers, setLoading)}, []);
+    let [ error, setError ] = useState(false);
+    useEffect(() => { fetchData(url, setUsers, setLoading, setError)}, []);
 
+    if (error) return <>Cannot load user ({email}) from Foursight: {error}</>;
     if (loading) {
         return <LoginAndValidEnvRequired>
             <div style={{marginTop:"30px"}}>

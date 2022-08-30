@@ -264,7 +264,8 @@ class ReactApi:
                 "full_name": full_env_name(environ),
                 "short_name": short_env_name(environ),
                 "public_name": public_env_name(environ),
-                "inferred_name": infer_foursight_from_env(envname=environ),
+                "foursight_name": infer_foursight_from_env(envname=environ),
+                "default": os.environ.get("ENV_NAME")
             },
             "envs": {
                 "all": sorted(self.environment.list_environment_names()),
@@ -431,7 +432,15 @@ class ReactApi:
             response.body["env"]["unknown"] = True
             response.body["env_unknown"] = True
         print(f'xyzzy: react_get_info: 2: {datetime.datetime.utcnow()}')
-        response.headers = {'Content-Type': 'application/json'}
+        response.headers = {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "GET,HEAD,OPTIONS,POST,PUT",
+            "Access-Control-Allow-Headers": "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"
+        }     
+        print("xyzzy:headers:")
+        print(response.headers)
         response.status_code = 200
         print(f'xyzzy: react_get_info: 3: {datetime.datetime.utcnow()}')
         response = self.process_response(response)
