@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import GlobalContext from "./GlobalContext";
-import { LoginAndValidEnvRequired } from "./LoginUtils";
+import { GetLoginInfo, LoginAndValidEnvRequired } from "./LoginUtils";
 import { CopyToClipboard } from "./Utils";
 import { fetchData } from './FetchUtils';
 import * as API from "./API";
@@ -32,7 +32,7 @@ const Info = () => {
         </>
     }
 
-    const InfoRow = ({name, value, monospace = false, copy = true, pypi = null, github = null, python = false, check = false, link = null, optional = false}) => {
+    const InfoRow = ({name, value, monospace = false, copy = true, size = "4", pypi = null, github = null, python = false, check = false, link = null, optional = false}) => {
         let nameStyle = {
             fontSize: "11pt",
             fontFamily: "inherit",
@@ -75,7 +75,7 @@ const Info = () => {
             <div style={{marginTop:"1px"}}>
                 { !optional || value ? (
                     <div className="row">
-                        <div className="col-sm-4">
+                        <div className={"col-sm-" + size}>
                             <div style={nameStyle}>
                                 {name}:
                             </div>
@@ -101,36 +101,36 @@ const Info = () => {
     if (header.loading) return <>Loading ...</>;
     return <LoginAndValidEnvRequired>
         <InfoBox title="Versions">
-            <InfoRow name={"dcicutils"} value={header.versions?.dcicutils} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} />
-            <InfoRow name={"foursight-core"} value={header.versions?.foursight_core} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} />
-            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={"dbmi-bgm"} />
-            <InfoRow name={"python"} value={header.versions?.python} monospace={true} copy={true} python={true} />
+            <InfoRow name={"dcicutils"} value={header.versions?.dcicutils} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
+            <InfoRow name={"foursight-core"} value={header.versions?.foursight_core} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
+            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={"dbmi-bgm"} size="2" />
+            <InfoRow name={"python"} value={header.versions?.python} monospace={true} copy={true} python={true} size="2" />
         </InfoBox>
         <InfoBox title="Credentials Info">
-            <InfoRow name={"AWS Account Number"} value={header.app?.credentials?.aws_account_number} monospace={true} copy={true} />
-            <InfoRow name={"AWS User ARN"} value={header.app?.credentials?.aws_user_arn} monospace={true} copy={true} />
-            <InfoRow name={"AWS Access Key ID"} value={header.app?.credentials?.aws_access_key_id} monospace={true} copy={true} />
-            <InfoRow name={"AWS Region Name"} value={header.app?.credentials?.aws_region} monospace={true} copy={true} />
-            <InfoRow name={"Auth0 Client ID"} value={header.app?.credentials?.auth0_client_id} monospace={true} copy={true} />
+            <InfoRow name={"AWS Account Number"} value={header.app?.credentials?.aws_account_number} monospace={true} copy={true} size="2" />
+            <InfoRow name={"AWS User ARN"} value={header.app?.credentials?.aws_user_arn} monospace={true} copy={true} size="2" />
+            <InfoRow name={"AWS Access Key ID"} value={header.app?.credentials?.aws_access_key_id} monospace={true} copy={true} size="2" />
+            <InfoRow name={"AWS Region Name"} value={header.app?.credentials?.aws_region} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Auth0 Client ID"} value={header.app?.credentials?.auth0_client_id} monospace={true} copy={true} size="2" />
         </InfoBox>
         <InfoBox title="Resources">
-            <InfoRow name={"Foursight Server"} value={header?.server?.foursight} monospace={true} copy={true} />
-            <InfoRow name={"Portal Server"} value={header?.server?.portal} monospace={true} copy={true} />
-            <InfoRow name={"ElasticSearch Server"} value={header?.server?.es} monospace={true} copy={true} />
-            <InfoRow name={"RDS Server"} value={header?.server?.rds} monospace={true} copy={true} />
-            <InfoRow name={"SQS Server"} value={header?.server?.sqs} monospace={true} copy={true} />
+            <InfoRow name={"Foursight Server"} value={info?.server?.foursight} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Portal Server"} value={info?.server?.portal} monospace={true} copy={true} size="2" />
+            <InfoRow name={"ElasticSearch Server"} value={info?.server?.es} monospace={true} copy={true} size="2" />
+            <InfoRow name={"RDS Server"} value={info?.server?.rds} monospace={true} copy={true} size="2" />
+            <InfoRow name={"SQS Server"} value={info?.server?.sqs} monospace={true} copy={true} size="2" />
         </InfoBox>
         <InfoBox title="Environment Names">
-            <InfoRow name={"Environment Name"} value={header?.env?.name} monospace={true} copy={true} />
-            <InfoRow name={"Environment Name (Full)"} value={header?.env?.full_name} monospace={true} copy={true} />
-            <InfoRow name={"Environment Name (Short)"} value={header?.env?.short_name} monospace={true} copy={true} />
-            <InfoRow name={"Environment Name (Public)"} value={header?.env?.public_name} monospace={true} copy={true} />
-            <InfoRow name={"Environment Name (Foursight)"} value={header?.env?.foursight_name} monospace={true} copy={true} />
+            <InfoRow name={"Environment Name"} value={header?.env?.name} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Full)"} value={header?.env?.full_name} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Short)"} value={header?.env?.short_name} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Public)"} value={header?.env?.public_name} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Foursight)"} value={header?.env?.foursight_name} monospace={true} copy={true} size="3" />
         </InfoBox>
         <InfoBox title="Bucket Names">
-            <InfoRow name={"Environment Bucket Name"} value={header?.buckets?.env} monospace={true} copy={true} />
-            <InfoRow name={"Foursight Bucket Name"} value={header?.buckets?.foursight} monospace={true} copy={true} />
-            <InfoRow name={"Foursight Bucket Prefix"} value={header?.buckets?.foursight_prefix} monospace={true} copy={true} />
+            <InfoRow name={"Environment Bucket Name"} value={header?.buckets?.env} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Foursight Bucket Name"} value={header?.buckets?.foursight} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Foursight Bucket Prefix"} value={header?.buckets?.foursight_prefix} monospace={true} copy={true} size="3" />
         </InfoBox>
         <InfoBox title="Environment & Bucket Names">
             <pre className="info" style={{border:"0",margin:"0",padding:"8",paddingBottom:"8",marginTop:"0"}}>
@@ -145,24 +145,24 @@ const Info = () => {
             </pre>
         </InfoBox>
         <InfoBox title="Login Auth0 Info">
-            <InfoRow name={"Email"} value={header.login?.jwt?.email} monospace={true} copy={true} check={header.login?.jwt?.email_verified} link={URL.Url("/users/" + header.login?.jwt?.email, true)} />
-            <InfoRow name={"Issuer"} value={header.login?.jwt?.iss} monospace={true} copy={true} />
-            <InfoRow name={"Subject"} value={header.login?.jwt?.sub} monospace={true} copy={true} />
-            <InfoRow name={"Audience"} value={header.login?.jwt?.aud} monospace={true} copy={true} />
-            <InfoRow name={"Issued At"} value={header.login?.jwt?.iat} monospace={true} copy={true} />
-            <InfoRow name={"Expires At"} value={header.login?.jwt?.exp} monospace={true} copy={true} />
+            <InfoRow name={"Email"} value={GetLoginInfo()?.email} monospace={true} copy={true} check={info.login?.jwt?.email_verified} link={URL.Url("/users/" + info.login?.jwt?.email, true)} size="2" />
+            <InfoRow name={"Issuer"} value={GetLoginInfo()?.iss} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Subject"} value={GetLoginInfo()?.sub} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Audience"} value={GetLoginInfo()?.aud} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Issued At"} value={GetLoginInfo()?.iat} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Expires At"} value={GetLoginInfo()?.exp} monospace={true} copy={true} size="2" />
         </InfoBox>
         <InfoBox title="Miscellany">
-            <InfoRow name={"App Deployed At"} value={header.app?.deployed} monospace={true} copy={true} optional={true} />
-            <InfoRow name={"App Launched At"} value={header.app?.launched} monospace={true}/>
-            <InfoRow name={"Page Loaded At"} value={header.app?.launched} monospace={true}/>
-            <InfoRow name={"Package"} value={header.app?.package} monospace={true}/>
-            <InfoRow name={"Stage"} value={header.app?.stage} monospace={true}/>
-            <InfoRow name={"Environment"} value={header.app?.env} monospace={true}/>
-            <InfoRow name={"Domain"} value={header.page?.domain} monospace={true}/>
-            <InfoRow name={"Context"} value={header.page?.context} monospace={true}/>
-            <InfoRow name={"Path"} value={header.page?.path} monospace={true}/>
-            <InfoRow name={"Endpoint"} value={header.page?.endpoint} monospace={true}/>
+            <InfoRow name={"App Deployed At"} value={header.app?.deployed} monospace={true} copy={true} optional={true} size="2" />
+            <InfoRow name={"App Launched At"} value={header.app?.launched} monospace={true} size="2" />
+            <InfoRow name={"Page Loaded At"} value={header.app?.launched} monospace={true} size="2" />
+            <InfoRow name={"Package"} value={header.app?.package} monospace={true} size="2" />
+            <InfoRow name={"Stage"} value={header.app?.stage} monospace={true} size="2" />
+            <InfoRow name={"Environment"} value={header.app?.env} monospace={true} size="2" />
+            <InfoRow name={"Domain"} value={header.page?.domain} monospace={true} size="2" />
+            <InfoRow name={"Context"} value={header.page?.context} monospace={true} size="2" />
+            <InfoRow name={"Path"} value={header.page?.path} monospace={true} size="2" />
+            <InfoRow name={"Endpoint"} value={header.page?.endpoint} monospace={true} size="2" />
         </InfoBox>
         <InfoBox title="GAC">
             { info.gac?.values ? (<span>

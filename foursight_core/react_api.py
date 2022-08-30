@@ -504,12 +504,16 @@ class ReactApi:
             gac_values_b = self.munge_gac_for_testing(gac_values_b)
         diff = DiffManager(label=None)
         diffs = diff.diffs(gac_values_a, gac_values_b)
-        return diffs
+        return {
+            "gac": self.sorted_dict(obfuscate_dict(gac_values_a)),
+            "gac_compare": self.sorted_dict(obfuscate_dict(gac_values_b)),
+            "gac_diffs": diffs
+        }
 
     def munge_gac_for_testing(self, gac_values):
         if gac_values.get("ENCODED_AUTH0_CLIENT"):
-            gac_values["ENCODED_AUTH0_CLIENT"] = uuid.uuid4()
+            gac_values["ENCODED_AUTH0_CLIENT"] = str(uuid.uuid4()).replace('-','')
         if gac_values.get("ENCODED_AUTH0_SECRET"):
             gac_values.pop("ENCODED_AUTH0_SECRET")
-        gac_values["SOME_VALUE_XYZZY"] = uuid.uuid4()
+        gac_values["SOME_VALUE_XYZZY"] = str(uuid.uuid4()).replace('-','')
         return gac_values
