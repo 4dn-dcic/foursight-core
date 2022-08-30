@@ -6,13 +6,26 @@ foursight-core
 Change Log
 ----------
 
-
-1.0.1
+1.0.3
 =====
 
 * Spruced up Foursight UI a bit.
   * New header/footer.
   * Added new /info and /users pages.
+
+
+1.0.2
+=====
+
+* Repair changelong for 1.0.1
+
+(There was also a need for this version to be higher than some beta versions that are in play.)
+
+
+1.0.1
+=====
+
+* Fix the way check lookup works
 
 
 1.0.0
@@ -31,7 +44,6 @@ Change Log
 * Merged in more of Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).
 * Added better error message for NoSuchKey for S3 bucket key access (s3_connection.py/get_object).
 * Updated dcicutils to ^4.0.2.
-* Various Foursight UI changes; slight (header) makeover; new /info and /user and /users pages.
 
 
 0.7.5
