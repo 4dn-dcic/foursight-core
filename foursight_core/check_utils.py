@@ -32,6 +32,7 @@ class CheckHandler(object):
         if not os.path.exists(setup_path):
             raise BadCheckSetup('Did not locate the specified check_setup: %s, looking in: %s' %
                                 (setup_path, os.listdir(check_setup_dir)))
+        print(f"XYZZY:LOAD-CHECK-SETUP-ACTION")
         print(f"foursight_core/CheckHandler: Loading check_setup.json file: {setup_path}")
         with open(setup_path, 'r') as jfile:
             self.CHECK_SETUP = json.load(jfile)

@@ -185,6 +185,7 @@ class AppUtilsCore(ReactApi):
         and the given environment.
         Returns an FSConnection object or raises an error.
         """
+        print("XYZZY:INIT-CONNECTION-ACTION-1")
         environments = self.init_environments(environ) if _environments is None else _environments
         print("environments = %s" % str(environments))
         # if still not there, return an error
@@ -196,6 +197,7 @@ class AppUtilsCore(ReactApi):
                 'checks': {}
             }
             raise Exception(str(error_res))
+        print("XYZZY:FS-CONNECTION-1")
         connection = FSConnection(environ, environments[environ], host=self.host)
         return connection
 
@@ -1320,6 +1322,7 @@ class AppUtilsCore(ReactApi):
             action = self.ActionResult(connection, res.get('action'))
             if action:
                 action_record_key = '/'.join([res['name'], 'action_records', res['uuid']])
+                print("XYZZY:S3-ACTION-1")
                 assc_action_key = connection.connections['s3'].get_object(action_record_key)
                 if assc_action_key:
                     assc_action_key = assc_action_key.decode()  # in bytes
@@ -1533,6 +1536,7 @@ class AppUtilsCore(ReactApi):
                 'es': es_address,
                 'ff_env': ff_env
             }
+            print("XYZZY:S3-ACTION-2")
             s3_connection = S3Connection(self.prefix + '-envs')
             s3_connection.put_object(proc_environ, json.dumps(env_entry))
             stage = self.stage.get_stage()
@@ -1607,6 +1611,7 @@ class AppUtilsCore(ReactApi):
         """
         if not bucket:
             bucket = cls.prefix + '-envs'
+        print("XYZZY:S3-ACTION-3")
         s3_connection = S3Connection(bucket)
         s3_resp = s3_connection.delete_keys([environ])
         keys_deleted = s3_resp['Deleted']
@@ -1900,6 +1905,7 @@ class AppUtilsCore(ReactApi):
         """
         Returns a set of run checks under this run uuid
         """
+        print("XYZZY:S3-ACTION-4")
         s3_connection = S3Connection(cls.prefix + '-runs')
         run_prefix = ''.join([run_uuid, '/'])
         complete = s3_connection.list_all_keys_w_prefix(run_prefix)

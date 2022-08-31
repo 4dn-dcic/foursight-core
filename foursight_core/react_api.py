@@ -79,16 +79,8 @@ class ReactApi:
             print(e)
             return False
 
+    react_file_cache = {}
     def react_serve_file(self, environ, is_admin=False, domain="", context="/", **kwargs):
-
-        #xyzzy
-        if False and not is_admin:
-            redirect_path = context + environ + "/login/"
-            print(f'React redirecting to: {redirect_path}')
-            response_headers = {'Location': redirect_path}
-            response = Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
-            return response
-        #xyzzy
 
         # TODO: Maybe cache output. But if so provide backdoor way of invalidating cache.
 
@@ -107,13 +99,14 @@ class ReactApi:
         else:
             file = os.path.join(BASE_DIR, REACT_BASE_DIR)
         args = kwargs.values()
+        print(f"XYZZY:react_serve_file:args: {args}")
         if not args:
             if (environ.endswith(".html") or environ.endswith(".json")
                or environ.endswith(".map") or environ.endswith(".txt")
                or environ.endswith(".png") or environ.endswith(".ico")):
                 # If the 'environ' appears to refer to a file then we take this
                 # to mean the file in the main React directory. Note that this
-                # means 'environ' may be a value ending in the above suffixes.
+                # means 'environ' may NOT be a value ending in the above suffixes.
                 args = [environ]
         for path in args:
             file = os.path.join(file, path)
@@ -142,6 +135,14 @@ class ReactApi:
             file = os.path.join(BASE_DIR, REACT_BASE_DIR, REACT_DEFAULT_FILE)
             content_type = "text/html"
             open_mode = "r"
+
+        react_file_cache = self.react_file_cache.get(file)
+        if react_file_cache:
+            print(f"XYZZY:react_serve_file: returning cached file: [{file}]")
+            return react_file_cache
+        else:
+            print(f"XYZZY:react_serve_file: file not cached: [{file}]")
+
         response = Response("Experimental React UI")
         response.headers = {"Content-Type": content_type}
         print(f"Serving React file: {file} (content-type: {content_type}).")
@@ -153,7 +154,9 @@ class ReactApi:
                 print(f"ERROR: Exception on serving React file: {file} (content-type: {content_type}).")
                 print(e)
         response.status_code = 200
-        return self.process_response(response)
+        response = self.process_response(response)
+        self.react_file_cache[file] = response
+        return response
 
     # TODO: Refactor.
     def react_get_credentials_info(self, env_name: str) -> dict:

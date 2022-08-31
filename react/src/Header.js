@@ -37,7 +37,7 @@ const Header = (props) => {
     }
 
     function initiateAppReload() {
-        const url = API.Url("/__reload_lambda__/", true);
+        const url = API.Url("/reloadlambda", false);
         fetchData(url);
     }
 
