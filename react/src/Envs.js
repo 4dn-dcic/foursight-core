@@ -81,12 +81,15 @@ const Envs = (props) => {
                                         Full Name: {env.full} <br />
                                         Short Name: {env.short} <br />
                                         GAC Name: {env.gac_name} <br />
-                                        <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected, env.full)}>
-                                            <option>GAC Compare &#x2193;</option>
-                                            { info.envs?.unique_annotated.map((env) =>
-                                                <option key={UUID()}>{env.full}</option>
-                                            )}
-                                        </select>
+                                        { !info.env_unknown ? (<React.Fragment>
+                                            <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected, env.full)}>
+                                                <option>GAC Compare &#x2193;</option>
+                                                { info.envs?.unique_annotated.map((env) =>
+                                                    <option key={UUID()}>{env.full}</option>
+                                                )}
+                                            </select>
+                                        </React.Fragment>):(<React.Fragment>
+                                        </React.Fragment>)}
                                     { isDefaultEnv(env, info) ? (<span>
                                         &nbsp;&nbsp;&#x272e;
                                     </span>):(<span>
