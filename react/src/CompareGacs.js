@@ -13,8 +13,10 @@ let YAML = require('json-to-pretty-yaml');
 
 const CompareGacs = (props) => {
 
-    const { environCompare } = useParams()
-    const url = API.Url(`/gac/${environCompare}`, true);
+    let environ = URL.Env();
+    let { environCompare } = useParams();
+    console.log("CompareGAC(" + environ + "," + environCompare +")")
+    const url = API.Url(`/gac/${environCompare}`, environ);
     const [ data, setData ] = useState([]);
     const [ showingRaw, setShowingRaw ] = useState(false);
     let [ loading, setLoading ] = useState(true);
@@ -71,10 +73,54 @@ const CompareGacs = (props) => {
         setShowingRaw(false);
     }
 
+    let OnChangeEnv = (arg) => {
+        environ = arg.target.value;
+        console.log('CompareGacs:onChangeEnv(' + arg.target.value + ')')
+        let url = API.Url("/gac/" + environCompare, environ);
+        const path = "/api/react/" + environ + "/gac/" + environCompare;
+        console.log("CompareGacs:onChangeEnv(" + arg.target.value + "): Navigate(" + path + ")")
+        navigate(path);
+        fetchData(url, setData, setLoading, setError)
+    }
+
+    let OnChangeEnvCompare = (arg) => {
+        environCompare = arg.target.value;
+        console.log('CompareGacs:onChangeEnvCompare(' + arg.target.value + ')')
+        let url = API.Url("/gac/" + environCompare, environ);
+        const path = "/api/react/" + environ + "/gac/" + environCompare;
+        console.log("CompareGacs:onChangeEnv(" + arg.target.value + "): Navigate(" + path + ")")
+        navigate(path);
+        fetchData(url, setData, setLoading, setError)
+    }
+
     if (error) return <>Cannot load GAC comparison from Foursight: {error}</>;
     if (loading) return <>Loading content ...</>;
 
     let unique_keys = getUniqueKeys(data?.gac, data?.gac_compare);
+    let unique_annotated_envs = info.envs?.unique_annotated;
+
+//xyzzy
+/*
+unique_annotated_envs.push(
+{
+"name": "xyzzy",
+"short": "xyzzy",
+"full": "cgap-xyzzy",
+"public": "xyzzy",
+"foursight": "xyzzy",
+"gac_name": "C4DatastoreCgapXyzzyApplicationConfiguration"
+});
+unique_annotated_envs.push(
+{
+"name": "abc",
+"short": "abc",
+"full": "cgap-abc",
+"public": "abc",
+"foursight": "abc",
+"gac_name": "C4DatastoreCgapAbcApplicationConfiguration"
+});
+//xyzzy
+*/
 
     return <LoginAndValidEnvRequired>
             <b>GAC Comparison</b>:&nbsp;&nbsp;
@@ -90,9 +136,9 @@ const CompareGacs = (props) => {
                         <td></td>
                         <td width="30%" style={{verticalAlign:"bottom"}}>Key</td>
                         <td>
-                            <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => {navigate(URL.Url(null, arg.target.value));forceUpdate();}}>
-                                { info.envs?.unique_annotated.map((env) =>
-                                    env.full == environCompare ?
+                            <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnv(arg)}>
+                                { unique_annotated_envs.map((env) =>
+                                    env.full == environ ?
                                         <option selected key={env.full}>{env.full}</option> :
                                         <option key={env.full}>{env.full}</option>
                                 )}
@@ -101,8 +147,8 @@ const CompareGacs = (props) => {
                             {getGacName(data?.gac)}
                         </td>
                         <td>
-                            <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => {navigate(URL.Url("/gac/" + URL.Env(), arg.target.value));forceUpdate();}}>
-                                { info.envs?.unique_annotated.map((env) =>
+                            <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnvCompare(arg)}>
+                                { unique_annotated_envs.map((env) =>
                                     env.full == environCompare ?
                                         <option selected key={env.full}>{env.full}</option> :
                                         <option          key={env.full}>{env.full}</option>
