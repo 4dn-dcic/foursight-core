@@ -19,6 +19,7 @@ const CompareGacs = (props) => {
     const url = API.Url(`/gac/${environCompare}`, environ);
     const [ data, setData ] = useState([]);
     const [ showingRaw, setShowingRaw ] = useState(false);
+    const [ showingType, setShowingType ] = useState("all");
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
     const [ info ] = useContext(GlobalContext);
@@ -73,6 +74,48 @@ const CompareGacs = (props) => {
         setShowingRaw(false);
     }
 
+    function showAll() {
+        setShowingType("all");
+    }
+    function showingAll() {
+        return showingType == "all"
+    }
+    function showingAllLinkStyle() {
+        return {
+            cursor: "pointer",
+            color: showingAll() ? "black" : "blue",
+            fontWeight: showingAll() ? "bold" : "normal"
+        };
+    }
+
+    function showDifferences() {
+        setShowingType("differences");
+    }
+    function showingDifferences() {
+        return showingType == "differences"
+    }
+    function showingDifferencesLinkStyle() {
+        return {
+            cursor: "pointer",
+            color: showingDifferences() ? "black" : "blue",
+            fontWeight: showingDifferences() ? "bold" : "normal"
+        };
+    }
+
+    function showMissing() {
+        setShowingType("missing");
+    }
+    function showingMissing() {
+        return showingType == "missing"
+    }
+    function showingMissingLinkStyle() {
+        return {
+            cursor: "pointer",
+            color: showingMissing() ? "black" : "blue",
+            fontWeight: showingMissing() ? "bold" : "normal"
+        };
+    }
+
     let OnChangeEnv = (arg) => {
         environ = arg.target.value;
         console.log('CompareGacs:onChangeEnv(' + arg.target.value + ')')
@@ -99,34 +142,19 @@ const CompareGacs = (props) => {
     let unique_keys = getUniqueKeys(data?.gac, data?.gac_compare);
     let unique_annotated_envs = info.envs?.unique_annotated;
 
-//xyzzy
-/*
-unique_annotated_envs.push(
-{
-"name": "xyzzy",
-"short": "xyzzy",
-"full": "cgap-xyzzy",
-"public": "xyzzy",
-"foursight": "xyzzy",
-"gac_name": "C4DatastoreCgapXyzzyApplicationConfiguration"
-});
-unique_annotated_envs.push(
-{
-"name": "abc",
-"short": "abc",
-"full": "cgap-abc",
-"public": "abc",
-"foursight": "abc",
-"gac_name": "C4DatastoreCgapAbcApplicationConfiguration"
-});
-//xyzzy
-*/
-
     return <LoginAndValidEnvRequired>
-            <b>GAC Comparison</b>:&nbsp;&nbsp;
+            <b>&nbsp;GAC Comparison</b>:&nbsp;&nbsp;
             <small>
-                <span style={{cursor:"pointer",color:showingRaw ? "black" : "blue",fontWeight:showingRaw ? "bold" : "normal"}} onClick={() => showRawData()}>RAW</span>&nbsp;|&nbsp;
-                <span style={{cursor:"pointer",color:showingRaw ? "blue" : "black",fontWeight:showingRaw ? "normal" : "bold"}} onClick={() =>showFormattedData()}>FORMATTED</span>
+                { !showingRaw ? (<React.Fragment>
+                <span style={showingAllLinkStyle()} onClick={() => showAll()}>ALL</span>&nbsp;|&nbsp;
+                <span style={showingDifferencesLinkStyle()} onClick={() => showDifferences()}>DIFFERENCES</span>&nbsp;|&nbsp;
+                <span style={showingMissingLinkStyle()} onClick={() => showMissing()}>MISSING</span>
+                </React.Fragment>):(<React.Fragment>
+                </React.Fragment>)}
+                <span style={{float:"right"}}>
+                    <span style={{cursor:"pointer",color:showingRaw ? "black" : "blue",fontWeight:showingRaw ? "bold" : "normal"}} onClick={() => showRawData()}>RAW</span>&nbsp;|&nbsp;
+                    <span style={{cursor:"pointer",color:showingRaw ? "blue" : "black",fontWeight:showingRaw ? "normal" : "bold"}} onClick={() =>showFormattedData()}>FORMATTED</span>&nbsp;
+                </span>
             </small>
             <div style={{marginBottom:"4px"}} />
             <div id="cooked" className="boxstyle info">
@@ -165,7 +193,11 @@ unique_annotated_envs.push(
                     <tbody style={{fontSize:"10pt"}}>
                     { unique_keys.map((key, keyIndex) => {
                         return <React.Fragment key={UUID()}>
-                            <tr key={UUID()} style={{color:sameGacValue(key, data) ? "inherit" : "red"}}>
+                            { (showingAll() ||
+                               (showingDifferences() && !sameGacValue(key, data) && !(addedGacValue(key, data) || removedGacValue(key, data))) ||
+                               (showingMissing() && (addedGacValue(key, data) || removedGacValue(key, data)))) ?
+                            (<React.Fragment>
+                            <tr key={UUID()} style={{color:sameGacValue(key, data) ? "inherit" : (removedGacValue(key, data) || addedGacValue(key, data) ? "red" : "darkred")}}>
                             <td>
                                 {sameGacValue(key, data) ? <span>&#x2713;</span> : <span>&#x2717;</span>}&nbsp;
                             </td>
@@ -184,6 +216,7 @@ unique_annotated_envs.push(
                                 <tr><td style={{height:"1px",background:"lightblue"}} colSpan="4"></td></tr>
                                 <tr><td style={{height:"3px"}}></td></tr>
                              </React.Fragment>):(<tr/>)}
+                            </React.Fragment>):(<React.Fragment/>)}
                         </React.Fragment>})}
                     <tr><td style={{height:"8px"}} colSpan="4"></td></tr>
                     </tbody>
