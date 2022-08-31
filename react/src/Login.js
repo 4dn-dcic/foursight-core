@@ -77,26 +77,9 @@ const Login = (props) => {
     }
 
     if (info.loading && !info.error) return <>Loading ...</>
-
-    if (false && (info.env_unknown || URL.Env() == "")) {
-        return <>
-            <div className="container">
-                <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
-                    Unknown environment: <b style={{color:"darkred"}}>{info?.app?.env}</b>
-                    <br />
-                    <small>
-                        Known environments are: <br />
-                        {info?.envs?.unique_annotated.map((env) => <span>&#x2192;&nbsp;&nbsp;<a key={env.full} href={URL.Url(null, env.full)}><b style={{color:"darkblue"}}>{env.full}</b></a> ({env.short})</span>)}
-                    </small>
-                </div>
-            </div>
-        </>
-    }
-    if (info.error) {
-        return <>Cannot load Foursight.</>;
-    }
+    if (info.error) return <>Cannot load Foursight.</>
     const loginInfo = IsLoggedIn() ? GetLoginInfo() : undefined;;
-    return <>
+    return <ValidEnvRequired>
         { IsLoggedIn() ? (<React.Fragment>
             <div className="container">
                 <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
@@ -128,7 +111,7 @@ const Login = (props) => {
                 </center>
         </div>
         </React.Fragment>)}
-    </>
+    </ValidEnvRequired>
 };
 
 export default Login;

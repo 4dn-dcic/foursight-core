@@ -112,11 +112,29 @@ function IsUnknownEnv(env, info) {
         return false;
     }
 }
+    // TODO: Refactor WRT Env.js
+    function isKnownEnv(env, header) {
+        if (!env) return false;
+        env = env.toLowerCase();
+        for (let i = 0 ; i < header.envs?.unique_annotated?.length ; i++) {
+            const env_annotated = header.envs?.unique_annotated[i];
+            if ((env_annotated.name.toLowerCase() == env) ||
+                (env_annotated.full.toLowerCase() == env) ||
+                (env_annotated.short.toLowerCase() == env) ||
+                (env_annotated.public.toLowerCase() == env) ||
+                (env_annotated.foursight.toLowerCase() == env)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 export const ValidEnvRequired = ({ children }) => {
-    const [ info ] = useContext(GlobalContext);
-    return URL.Env() === "" || info.env_unknown ? <Navigate to={URL.Url("/envs")} replace /> : children;
-    //return URL.Env() == "" || info.env_unknown ? <Navigate to={URL.Url("/envs", true)} replace /> : <Navigate to={URL.Url("/info", true)} replace />
+    // TODO: Change to look at current env in the URL this by looping through header.env.unique_annototated.
+    const [ header ] = useContext(GlobalContext);
+    return !isKnownEnv(URL.Env(), header) ? <Navigate to={URL.Url("/envs", true)} replace /> : children;
+    // return URL.Env() === "" || header.env_unknown ? <Navigate to={URL.Url("/envs", header.env?.default)} replace /> : children;
+    //return URL.Env() == "" || header.env_unknown ? <Navigate to={URL.Url("/envs", true)} replace /> : <Navigate to={URL.Url("/info", true)} replace />
 }
 
 export const LoginRequired = ({ children }) => {
