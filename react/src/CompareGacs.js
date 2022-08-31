@@ -78,7 +78,6 @@ const CompareGacs = (props) => {
 
     return <LoginAndValidEnvRequired>
             <b>GAC Comparison</b>:&nbsp;&nbsp;
-        <b onClick={() => forceUpdate()}>render</b>
             <small>
                 <span style={{cursor:"pointer",color:showingRaw ? "black" : "blue",fontWeight:showingRaw ? "bold" : "normal"}} onClick={() => showRawData()}>RAW</span>&nbsp;|&nbsp;
                 <span style={{cursor:"pointer",color:showingRaw ? "blue" : "black",fontWeight:showingRaw ? "normal" : "bold"}} onClick={() =>showFormattedData()}>FORMATTED</span>
@@ -93,7 +92,9 @@ const CompareGacs = (props) => {
                         <td>
                             <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => {navigate(URL.Url(null, arg.target.value));forceUpdate();}}>
                                 { info.envs?.unique_annotated.map((env) =>
-                                    <option key={env.full}>{env.full}</option>
+                                    env.full == environCompare ?
+                                        <option selected key={env.full}>{env.full}</option> :
+                                        <option key={env.full}>{env.full}</option>
                                 )}
                             </select>
                             <br />
@@ -102,7 +103,9 @@ const CompareGacs = (props) => {
                         <td>
                             <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => {navigate(URL.Url("/gac/" + URL.Env(), arg.target.value));forceUpdate();}}>
                                 { info.envs?.unique_annotated.map((env) =>
-                                    <option key={env.full}>{env.full}</option>
+                                    env.full == environCompare ?
+                                        <option selected key={env.full}>{env.full}</option> :
+                                        <option          key={env.full}>{env.full}</option>
                                 )}
                             </select>
                             <br />
