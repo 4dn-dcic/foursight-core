@@ -29,12 +29,15 @@ const CompareGacs = (props) => {
 
     function getUniqueKeys(gac, gac_compare) {
         let uniqueKeys = []
-        Object.keys(gac).map((key) => {
+        if (!gac || !gac_compare) {
+            return uniqueKeys;
+        }
+        Object.keys(gac)?.map((key) => {
             if (!uniqueKeys.includes(key)) {
                 uniqueKeys.push(key)
             }
         });
-        Object.keys(gac_compare).map((key) => {
+        Object.keys(gac_compare)?.map((key) => {
             if (!uniqueKeys.includes(key)) {
                 uniqueKeys.push(key)
             }
@@ -165,7 +168,7 @@ const CompareGacs = (props) => {
                         <td width="30%" style={{verticalAlign:"bottom"}}>Key</td>
                         <td>
                             <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnv(arg)}>
-                                { unique_annotated_envs.map((env) =>
+                                { unique_annotated_envs?.map((env) =>
                                     env.full == environ ?
                                         <option selected key={env.full}>{env.full}</option> :
                                         <option key={env.full}>{env.full}</option>
@@ -176,7 +179,7 @@ const CompareGacs = (props) => {
                         </td>
                         <td>
                             <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnvCompare(arg)}>
-                                { unique_annotated_envs.map((env) =>
+                                { unique_annotated_envs?.map((env) =>
                                     env.full == environCompare ?
                                         <option selected key={env.full}>{env.full}</option> :
                                         <option          key={env.full}>{env.full}</option>
@@ -191,7 +194,7 @@ const CompareGacs = (props) => {
                     <tr><td style={{height:"8px"}} colSpan="4"></td></tr>
                     </thead>
                     <tbody style={{fontSize:"10pt"}}>
-                    { unique_keys.map((key, keyIndex) => {
+                    { unique_keys?.map((key, keyIndex) => {
                         return <React.Fragment key={UUID()}>
                             { (showingAll() ||
                                (showingDifferences() && !sameGacValue(key, data) && !(addedGacValue(key, data) || removedGacValue(key, data))) ||
