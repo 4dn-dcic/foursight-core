@@ -75,7 +75,7 @@ const Envs = (props) => {
                             <tr key={UUID()}>
                                 <td style={{verticalAlign:"top"}}><span>&#x2192;&nbsp;&nbsp;</span></td>
                                 <td>
-                                    <Link style={{color:URL.Env() == env.full ? "black" : "inherit"}} to={URL.Url("/envs", env.full)}><b>{env.full}</b></Link>
+                                    <a style={{color:URL.Env() == env.full ? "black" : "inherit"}} href={URL.Url("/envs", env.full)}><b>{env.full}</b></a>
                                         <br />
                                         Full Name: {env.full} <br />
                                         Short Name: {env.short} <br />

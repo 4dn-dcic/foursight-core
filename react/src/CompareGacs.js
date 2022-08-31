@@ -1,5 +1,5 @@
 import React from 'react';
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect, useReducer } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
@@ -8,6 +8,7 @@ import { RingSpinner } from "./Spinners";
 import { LoginAndValidEnvRequired } from "./LoginUtils";
 import * as API from "./API";
 import * as URL from "./URL";
+import { UUID } from './Utils';
 let YAML = require('json-to-pretty-yaml');
 
 const CompareGacs = (props) => {
@@ -19,6 +20,7 @@ const CompareGacs = (props) => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
     const [ info ] = useContext(GlobalContext);
+    const [, forceUpdate] = useReducer(x => x + 1, 0);
     useEffect(() => { fetchData(url, setData, setLoading, setError)}, []);
     let navigate = useNavigate();
 
@@ -69,10 +71,6 @@ const CompareGacs = (props) => {
         setShowingRaw(false);
     }
 
-    function onChange(arg) {
-        navigate(URL.Url("/gac/" + arg.target.value, true))
-    }
-
     if (error) return <>Cannot load GAC comparison from Foursight: {error}</>;
     if (loading) return <>Loading content ...</>;
 
@@ -80,6 +78,7 @@ const CompareGacs = (props) => {
 
     return <LoginAndValidEnvRequired>
             <b>GAC Comparison</b>:&nbsp;&nbsp;
+        <b onClick={() => forceUpdate()}>render</b>
             <small>
                 <span style={{cursor:"pointer",color:showingRaw ? "black" : "blue",fontWeight:showingRaw ? "bold" : "normal"}} onClick={() => showRawData()}>RAW</span>&nbsp;|&nbsp;
                 <span style={{cursor:"pointer",color:showingRaw ? "blue" : "black",fontWeight:showingRaw ? "normal" : "bold"}} onClick={() =>showFormattedData()}>FORMATTED</span>
@@ -92,7 +91,7 @@ const CompareGacs = (props) => {
                         <td></td>
                         <td width="30%" style={{verticalAlign:"bottom"}}>Key</td>
                         <td>
-                            <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected)}>
+                            <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => {navigate(URL.Url(null, arg.target.value));forceUpdate();}}>
                                 { info.envs?.unique_annotated.map((env) =>
                                     <option key={env.full}>{env.full}</option>
                                 )}
@@ -101,7 +100,7 @@ const CompareGacs = (props) => {
                             {getGacName(data?.gac)}
                         </td>
                         <td>
-                            <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected)}>
+                            <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => {navigate(URL.Url("/gac/" + URL.Env(), arg.target.value));forceUpdate();}}>
                                 { info.envs?.unique_annotated.map((env) =>
                                     <option key={env.full}>{env.full}</option>
                                 )}
@@ -116,8 +115,8 @@ const CompareGacs = (props) => {
                     </thead>
                     <tbody style={{fontSize:"10pt"}}>
                     { unique_keys.map((key, keyIndex) => {
-                        return <React.Fragment>
-                            <tr key={key} style={{color:sameGacValue(key, data) ? "inherit" : "red"}}>
+                        return <React.Fragment key={UUID()}>
+                            <tr key={UUID()} style={{color:sameGacValue(key, data) ? "inherit" : "red"}}>
                             <td>
                                 {sameGacValue(key, data) ? <span>&#x2713;</span> : <span>&#x2717;</span>}&nbsp;
                             </td>
@@ -135,7 +134,7 @@ const CompareGacs = (props) => {
                                 <tr><td style={{height:"4px"}}></td></tr>
                                 <tr><td style={{height:"1px",background:"lightblue"}} colSpan="4"></td></tr>
                                 <tr><td style={{height:"3px"}}></td></tr>
-                             </React.Fragment>):(<span/>)}
+                             </React.Fragment>):(<tr/>)}
                         </React.Fragment>})}
                     <tr><td style={{height:"8px"}} colSpan="4"></td></tr>
                     </tbody>
