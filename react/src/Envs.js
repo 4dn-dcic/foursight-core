@@ -28,8 +28,9 @@ const Envs = (props) => {
         }
     }
 
-    function onChange(arg) {
-        navigate(URL.Url("/gac/" + arg.target.value, true))
+    function onChange(arg, environ) {
+        const environCompare = arg.target.value;
+        navigate(URL.Url("/gac/" + environCompare, environ))
     }
 
     const boxClass = !info.env_unknown && URL.Env() != "" ? "boxstyle info" : "boxstyle check-warn";
@@ -80,7 +81,7 @@ const Envs = (props) => {
                                         Full Name: {env.full} <br />
                                         Short Name: {env.short} <br />
                                         GAC Name: {env.gac_name} <br />
-                                        <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected)}>
+                                        <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected, env.full)}>
                                             <option>GAC Compare &#x2193;</option>
                                             { info.envs?.unique_annotated.map((env) =>
                                                 <option key={UUID()}>{env.full}</option>
