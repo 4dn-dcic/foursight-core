@@ -100,7 +100,7 @@ const Login = (props) => {
         { IsLoggedIn() ? (<React.Fragment>
             <div className="container">
                 <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
-                    Logged in as:
+                    Logged in as:&nbsp;
                     { IsRunningLocally() ? (<span>
                         &nbsp;<b>localhost</b>
                     </span>):(<span>

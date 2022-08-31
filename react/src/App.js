@@ -23,6 +23,7 @@ import { LoginAndValidEnvRequired } from './LoginUtils';
 
 const App = () => {
 
+    // TODO: Change this name 'info' to 'header'!
     let [ info, setInfo ] = useState({loading: true});
     const url = API.Url("/header", true);
     useEffect(() => {

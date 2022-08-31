@@ -9,6 +9,7 @@ import { UUID } from './Utils';
 const Envs = (props) => {
 
     let navigate = useNavigate();
+    // TODO: Change this name 'info' to 'header'!
     const [ info ] = useContext(GlobalContext);
 
     function getDefaultEnv(env, info) {
@@ -17,10 +18,10 @@ const Envs = (props) => {
 
     function isDefaultEnv(env, info) {
         const defaultEnv = getDefaultEnv();
-        if ((env?.full?.toUpperCase() == defaultEnv) ||
-            (env?.short?.toUpperCase() == defaultEnv) ||
-            (env?.public?.toUpperCase() == defaultEnv) ||
-            (env?.foursight?.toUpperCase() == defaultEnv)) {
+        if ((env?.full_name?.toUpperCase() == defaultEnv) ||
+            (env?.short_name?.toUpperCase() == defaultEnv) ||
+            (env?.public_name?.toUpperCase() == defaultEnv) ||
+            (env?.foursight_name?.toUpperCase() == defaultEnv)) {
             return true;
         }
         else {
@@ -52,11 +53,10 @@ const Envs = (props) => {
     return <div>
             { !IsLoggedIn() ? (
                 <div className="container">
-                    <b>&nbsp;Note</b>
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>
                         <b>Not Logged In</b> <br />
                         <small>
-                            Click <Link to={URL.Url("/login", true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>here</b></Link> to go to the <Link to={URL.Url("/login", true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
+                            Click <Link to={URL.Url("/login", info.env_unknown ? info.env?.default : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>here</b></Link> to go to the <Link to={URL.Url("/login", info.env_unknown ? info.env?.default : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
                         </small>
                         </div>
                 </div>
@@ -82,10 +82,11 @@ const Envs = (props) => {
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
                     <table style={{color:"inherit"}}><thead></thead><tbody>
                         {info?.envs?.unique_annotated.map((env, envIndex) =>
-                            <tr key={UUID()}>
+                            <tr key={UUID()} title={isDefaultEnv(env, info) ? "This is the default environment" : ""}>
                                 <td style={{verticalAlign:"top"}}><span>&#x2192;&nbsp;&nbsp;</span></td>
                                 <td>
-                                    <a style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} href={URL.Url("/envs", env.full)}><b>{env.full}</b></a>
+                                    <a  style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} href={URL.Url("/envs", env.full)}><b>{env.full}</b></a>
+                                    { isDefaultEnv(env, info) ? <b style={{color:"darkred"}}>&nbsp;&#x272e;</b> : <span/> }
                                         <br />
                                         Full Name: {env.full} <br />
                                         Short Name: {env.short} <br />
@@ -100,10 +101,6 @@ const Envs = (props) => {
                                             </select>
                                         </React.Fragment>):(<React.Fragment>
                                         </React.Fragment>)}
-                                    { isDefaultEnv(env, info) ? (<span>
-                                        &nbsp;&nbsp;&#x272e;
-                                    </span>):(<span>
-                                    </span>)}
                                     { (envIndex < info.envs.unique_annotated.length - 1) ? (<span>
                                         <br /><br />
                                     </span>):(<span/>)}

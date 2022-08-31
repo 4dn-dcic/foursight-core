@@ -159,10 +159,10 @@ const Info = () => {
             <InfoRow name={"Package"} value={header.app?.package} monospace={true} size="2" />
             <InfoRow name={"Stage"} value={header.app?.stage} monospace={true} size="2" />
             <InfoRow name={"Environment"} value={header.app?.env} monospace={true} size="2" />
-            <InfoRow name={"Domain"} value={header.page?.domain} monospace={true} size="2" />
+            <InfoRow name={"Domain"} value={header.app?.domain} monospace={true} size="2" />
             <InfoRow name={"Context"} value={header.page?.context} monospace={true} size="2" />
-            <InfoRow name={"Path"} value={header.page?.path} monospace={true} size="2" />
-            <InfoRow name={"Endpoint"} value={header.page?.endpoint} monospace={true} size="2" />
+            <InfoRow name={"Path"} value={info.page?.path} monospace={true} size="2" />
+            <InfoRow name={"Endpoint"} value={info.page?.endpoint} monospace={true} size="2" />
         </InfoBox>
         <InfoBox title="GAC">
             { info.gac?.values ? (<span>
