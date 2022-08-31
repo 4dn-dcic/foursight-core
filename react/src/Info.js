@@ -155,7 +155,7 @@ const Info = () => {
         <InfoBox title="Miscellany">
             <InfoRow name={"App Deployed At"} value={header.app?.deployed} monospace={true} copy={true} optional={true} size="2" />
             <InfoRow name={"App Launched At"} value={header.app?.launched} monospace={true} size="2" />
-            <InfoRow name={"Page Loaded At"} value={header.app?.launched} monospace={true} size="2" />
+            <InfoRow name={"Page Loaded At"} value={header.page?.loaded} monospace={true} size="2" />
             <InfoRow name={"Package"} value={header.app?.package} monospace={true} size="2" />
             <InfoRow name={"Stage"} value={header.app?.stage} monospace={true} size="2" />
             <InfoRow name={"Environment"} value={header.app?.env} monospace={true} size="2" />

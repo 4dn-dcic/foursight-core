@@ -91,6 +91,34 @@ const CompareGacs = (props) => {
         };
     }
 
+    function showMatches() {
+        setShowingType("matches");
+    }
+    function showingMatches() {
+        return showingType == "matches"
+    }
+    function showingMatchesLinkStyle() {
+        return {
+            cursor: "pointer",
+            color: showingMatches() ? "black" : "blue",
+            fontWeight: showingMatches() ? "bold" : "normal"
+        };
+    }
+
+    function showNonMatches() {
+        setShowingType("nonmatches");
+    }
+    function showingNonMatches() {
+        return showingType == "nonmatches"
+    }
+    function showingNonMatchesLinkStyle() {
+        return {
+            cursor: "pointer",
+            color: showingNonMatches() ? "black" : "blue",
+            fontWeight: showingNonMatches() ? "bold" : "normal"
+        };
+    }
+
     function showDifferences() {
         setShowingType("differences");
     }
@@ -150,6 +178,8 @@ const CompareGacs = (props) => {
             <small>
                 { !showingRaw ? (<React.Fragment>
                 <span style={showingAllLinkStyle()} onClick={() => showAll()}>ALL</span>&nbsp;|&nbsp;
+                <span style={showingMatchesLinkStyle()} onClick={() => showMatches()}>MATCHES</span>&nbsp;|&nbsp;
+                <span style={showingNonMatchesLinkStyle()} onClick={() => showNonMatches()}>NON-MATCHES</span>&nbsp;|&nbsp;
                 <span style={showingDifferencesLinkStyle()} onClick={() => showDifferences()}>DIFFERENCES</span>&nbsp;|&nbsp;
                 <span style={showingMissingLinkStyle()} onClick={() => showMissing()}>MISSING</span>
                 </React.Fragment>):(<React.Fragment>
@@ -197,6 +227,8 @@ const CompareGacs = (props) => {
                     { unique_keys?.map((key, keyIndex) => {
                         return <React.Fragment key={UUID()}>
                             { (showingAll() ||
+                               (showingMatches() && sameGacValue(key, data)) ||
+                               (showingNonMatches() && !sameGacValue(key, data)) ||
                                (showingDifferences() && !sameGacValue(key, data) && !(addedGacValue(key, data) || removedGacValue(key, data))) ||
                                (showingMissing() && (addedGacValue(key, data) || removedGacValue(key, data)))) ?
                             (<React.Fragment>
