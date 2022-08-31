@@ -28,6 +28,15 @@ const Envs = (props) => {
         }
     }
 
+    function isSameEnv(env, env_annotated) {
+        env = env.toLowerCase()
+        return (env_annotated.name.toLowerCase() == env) ||
+               (env_annotated.full.toLowerCase() == env) ||
+               (env_annotated.short.toLowerCase() == env) ||
+               (env_annotated.public.toLowerCase() == env) ||
+               (env_annotated.foursight.toLowerCase() == env);
+    }
+
     function onChange(arg, environ) {
         const environCompare = arg.target.value;
         navigate(URL.Url("/gac/" + environCompare, environ))
@@ -76,10 +85,11 @@ const Envs = (props) => {
                             <tr key={UUID()}>
                                 <td style={{verticalAlign:"top"}}><span>&#x2192;&nbsp;&nbsp;</span></td>
                                 <td>
-                                    <a style={{color:URL.Env() == env.full ? "black" : "inherit"}} href={URL.Url("/envs", env.full)}><b>{env.full}</b></a>
+                                    <a style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} href={URL.Url("/envs", env.full)}><b>{env.full}</b></a>
                                         <br />
                                         Full Name: {env.full} <br />
                                         Short Name: {env.short} <br />
+                                        Public Name: {env.public} <br />
                                         GAC Name: {env.gac_name} <br />
                                         { !info.env_unknown ? (<React.Fragment>
                                             <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected, env.full)}>
