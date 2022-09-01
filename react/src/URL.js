@@ -51,7 +51,12 @@ export const Env = (path = undefined) => {
         return "";
     }
     const slash = path.indexOf("/");
-    return (slash === -1) ? "" : path.substring(0, slash);
+    const env = (slash === -1) ? "" : path.substring(0, slash);
+    path = (slash === -1) ? "" : path.substring(slash);
+    if ((env == "api") && (path == "/react")) {
+        return "";
+    }
+    return env;
 }
 
 // Returns the path portion of the path minus the environment and the App URL prefix (i.e. /api/react).

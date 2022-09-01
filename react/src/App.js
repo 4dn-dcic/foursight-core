@@ -44,6 +44,7 @@ const App = () => {
             <Header />
             <div style={{margin:"20px"}}>
                 <Routes>
+                    <Route path="/api/react" element={<Envs />} />
                     <Route path="/api/react/envs" element={<Envs />} />
                     <Route path="/api/react/:environ/envs" element={<Envs />} />
                     <Route path="/api/react/login" element={<Login />} />

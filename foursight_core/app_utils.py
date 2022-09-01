@@ -2182,6 +2182,11 @@ def react_serve_file(environ, **kwargs):
     return AppUtilsCore.singleton().react_serve_file(environ, **kwargs)
 
 
+@app.route(ROUTE_PREFIX + 'react', cors=CORS)
+def get_react_0():
+    return react_serve_file(DEFAULT_ENV, **{})
+
+
 @app.route(ROUTE_PREFIX + 'react/{environ}', cors=CORS)
 def get_react_0(environ):
     return react_serve_file(environ, **{})

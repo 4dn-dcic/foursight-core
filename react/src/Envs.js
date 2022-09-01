@@ -1,6 +1,6 @@
 import React from 'react';
 import { useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 import { IsLoggedIn } from "./LoginUtils.js";
 import * as URL from './URL';
@@ -8,6 +8,9 @@ import { UUID } from './Utils';
 
 const Envs = (props) => {
 
+    // TODO: why not just get current env from useParams?
+    // Relics of getting this kind of info from server.
+    const { environ } = useParams() // TODO: use this
     let navigate = useNavigate();
     // TODO: Change this name 'info' to 'header'!
     const [ info ] = useContext(GlobalContext);
@@ -61,8 +64,16 @@ const Envs = (props) => {
         navigate(URL.Url("/gac/" + environCompare, environ))
     }
 
+    // TODO: clean up this styles stuff.
+
     const boxClass = isKnownEnv() ? "boxstyle info" : "boxstyle check-warn";
     const boxTextColor = isKnownEnv() ? "darkblue" : "#6F4E37";
+
+    function envNameTextStyles(env) {
+        return {
+            fontWeight: env == currentEnv ? "bold" : "inherit"
+        };
+    }
 
     // This page is unprotected.
 
@@ -88,6 +99,13 @@ const Envs = (props) => {
                     </span>):(<span>
                         Unknown environment: <b style={{color:"darkred"}}>{currentEnv}</b>
                     </span>)}
+                    <br />
+                    <small>
+                        {/* TODO: Use Link instead of anchor - some issue where not updating the nav links with correct URL or something */}
+                        {/* though refresh (anchor rather than Link) isnt' so so bad when switching environments */}
+                        Click <a style={{fontWeight:"bold",color:"darkred"}} href={URL.Url("/envs", getDefaultEnv())}>here</a> to use this default environment:
+                        &nbsp;<a style={{fontWeight:"bold",color:"darkred"}} href={URL.Url("/envs", getDefaultEnv())}>{getDefaultEnv()}</a>
+                    </small>
                 </div>
                 </React.Fragment>):(<React.Fragment>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
@@ -107,9 +125,9 @@ const Envs = (props) => {
                                     <a  style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} href={URL.Url("/envs", env.full)}><b>{env.full}</b></a>
                                     { isDefaultEnv(env, info) ? <b style={{color:!isKnownEnv() ? "darkred" : "darkblue"}}>&nbsp;&#x272e;</b> : <span/> }
                                         <br />
-                                        Full Name: {env.full} <br />
-                                        Short Name: {env.short} <br />
-                                        Public Name: {env.public} <br />
+                                        Full Name: <span style={envNameTextStyles(env.full)}>{env.full}</span> <br />
+                                        Short Name: <span style={envNameTextStyles(env.short)}>{env.short}</span> <br />
+                                        Public Name: <span style={envNameTextStyles(env.public)}>{env.public}</span> <br />
                                         GAC Name: {env.gac_name} <br />
                                         { isKnownEnv() ? (<React.Fragment>
                                             <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected, env.full)}>
