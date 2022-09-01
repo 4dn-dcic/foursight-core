@@ -469,7 +469,8 @@ class AppUtilsCore(ReactApi):
                     #
                     groups = user_res.get('groups')
                     if not groups:
-                        logger.warn("foursight_core.check_authorization: No 'groups' element for user record!")
+                        logger.warn("foursight_core.check_authorization: No 'groups' element for user record! Returning False.")
+                        return False
                     if not ((not groups or 'admin' in groups) and jwt_decoded.get('email_verified')):
                         logger.error("foursight_core.check_authorization: Returning False")
                         # if unauthorized for one, unauthorized for all
