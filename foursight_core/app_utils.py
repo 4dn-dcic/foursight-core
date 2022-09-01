@@ -1,4 +1,6 @@
 from chalice import Response
+# xyzzy
+from chalice import Chalice
 import base64
 import jinja2
 import json
@@ -12,6 +14,7 @@ import copy
 from http.cookies import SimpleCookie
 import pkg_resources
 import platform
+# TODO: do not import start import specific thing which i think is triple_des
 from pyDes import *
 import pytz
 import requests
@@ -47,6 +50,20 @@ from .stage import Stage
 from .environment import Environment
 from .react_api import ReactApi
 
+# XYZZY
+app = Chalice(app_name='foursight-core')
+DEFAULT_ENV = os.environ.get("ENV_NAME", "env-name-unintialized")
+CHALICE_LOCAL = (os.environ.get("CHALICE_LOCAL") == "1")
+if CHALICE_LOCAL:
+    print("XYZZY:foursight_core:CHALICE_LOCAL!!!")
+    ROUTE_PREFIX = "/api/"
+    ROUTE_EMPTY_PREFIX = "/api"
+    CORS = True
+else:
+    print("XYZZY:foursight_core:NOT_CHALICE_LOCAL!!!")
+    ROUTE_PREFIX = "/"
+    ROUTE_EMPTY_PREFIX = "/"
+    CORS = False
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -1911,6 +1928,363 @@ class AppUtilsCore(ReactApi):
         complete = s3_connection.list_all_keys_w_prefix(run_prefix)
         # eliminate duplicates
         return set(complete)
+
+    # XYZZY:EXPERIMENTAL
+    _app_utils = None
+    @staticmethod
+    def singleton(cls = None):
+        print("XYZZY:EXPERIMENTAL:singleton-1")
+        if not AppUtilsCore._app_utils:
+            print("XYZZY:EXPERIMENTAL:singleton-2")
+            if not cls:
+                print("XYZZY:EXPERIMENTAL:singleton-3!")
+                cls = AppUtilsCore
+            print("XYZZY:EXPERIMENTAL:singleton-4")
+            AppUtilsCore._app_utils = cls()
+            print("XYZZY:EXPERIMENTAL:singleton-5")
+        print("XYZZY:EXPERIMENTAL:singleton-6")
+        print("XYZZY:EXPERIMENTAL:singleton-class:")
+        print(type(AppUtilsCore._app_utils))
+        return AppUtilsCore._app_utils
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/{environ}/xyzzy', methods=["GET"], cors=CORS)
+def react_route_xyzzy(environ):
+    print(f"XYZZY:UNIFY-EXPERIMENT:/reactapi/xyzzy/{environ}/xyzzy")
+    request = app.current_request
+    request_dict = request.to_dict()
+    response = Response('react_get_header_info')
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
+    return AppUtilsCore.singleton().react_get_header_info(request=request, environ=environ, domain=domain, context=context)
+
+@app.route(ROUTE_PREFIX + 'callback', cors=CORS)
+def auth0_callback():
+    """
+    Special callback route, only to be used as a callback from auth0
+    Will return a redirect to view on error/any missing callback info.
+    """
+    request = app.current_request
+    return AppUtilsCore.singleton().auth0_callback(request, DEFAULT_ENV)
+
+
+if CHALICE_LOCAL:
+    @app.route("/", methods=['GET'], cors=CORS)
+    def index():
+        """
+        Redirect with 302 to view page of DEFAULT_ENV
+        Non-protected route
+        """
+        domain, context = AppUtilsCore.singleton().get_domain_and_context(app.current_request.to_dict())
+        redirect_path = ROUTE_PREFIX + 'view/' + DEFAULT_ENV
+        print(f'foursight-cgap: Redirecting to: {redirect_path}')
+        resp_headers = {'Location': redirect_path}
+        return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
+
+
+@app.route(ROUTE_EMPTY_PREFIX, methods=['GET'], cors=CORS)
+def index():
+    """
+    Redirect with 302 to view page of DEFAULT_ENV
+    Non-protected route
+    """
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(app.current_request.to_dict())
+    if CHALICE_LOCAL:
+        redirect_path = ROUTE_PREFIX + 'view/' + DEFAULT_ENV
+    else:
+        redirect_path = context + 'view/' + DEFAULT_ENV
+    print(f'foursight-cgap: Redirecting to: {redirect_path}')
+    resp_headers = {'Location': redirect_path}
+    return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
+
+
+@app.route(ROUTE_PREFIX + 'introspect', methods=['GET'], cors=CORS)
+def introspect(environ):
+    """
+    Test route
+    """
+    auth = AppUtilsCore.singleton().check_authorization(app.current_request.to_dict(), environ)
+    if auth:
+        return Response(status_code=200, body=json.dumps(app.current_request.to_dict()))
+    else:
+        return AppUtilsCore.singleton().forbidden_response()
+
+
+@app.route(ROUTE_PREFIX + 'view_run/{environ}/{check}/{method}', methods=['GET'], cors=CORS)
+def view_run_route(environ, check, method):
+    """
+    Protected route
+    """
+    req_dict = app.current_request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
+    query_params = req_dict.get('query_params', {})
+    if AppUtilsCore.singleton().check_authorization(req_dict, environ):
+        if method == 'action':
+            return AppUtilsCore.singleton().view_run_action(environ, check, query_params, context)
+        else:
+            return AppUtilsCore.singleton().view_run_check(environ, check, query_params, context)
+    else:
+        return AppUtilsCore.singleton().forbidden_response(context)
+
+
+@app.route(ROUTE_PREFIX + 'view/{environ}', methods=['GET'], cors=CORS)
+def view_route(environ):
+    """
+    Non-protected route
+    """
+    req_dict = app.current_request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
+    return AppUtilsCore.singleton().view_foursight(app.current_request, environ, AppUtilsCore.singleton().check_authorization(req_dict, environ), domain, context)
+
+
+@app.route(ROUTE_PREFIX + 'view/{environ}/{check}/{uuid}', methods=['GET'], cors=CORS)
+def view_check_route(environ, check, uuid):
+    """
+    Protected route
+    """
+    req_dict = app.current_request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
+    if AppUtilsCore.singleton().check_authorization(req_dict, environ):
+        return AppUtilsCore.singleton().view_foursight_check(app.current_request, environ, check, uuid, True, domain, context)
+    else:
+        return AppUtilsCore.singleton().forbidden_response()
+
+
+@app.route(ROUTE_PREFIX + 'history/{environ}/{check}', methods=['GET'], cors=CORS)
+def history_route(environ, check):
+    """
+    Non-protected route
+    """
+    # get some query params
+    req_dict = app.current_request.to_dict()
+    query_params = req_dict.get('query_params')
+    start = int(query_params.get('start', '0')) if query_params else 0
+    limit = int(query_params.get('limit', '25')) if query_params else 25
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
+    return AppUtilsCore.singleton().view_foursight_history(app.current_request, environ, check, start, limit,
+                                  AppUtilsCore.singleton().check_authorization(req_dict, environ), domain, context)
+
+
+@app.route(ROUTE_PREFIX + 'checks/{environ}/{check}/{uuid}', methods=['GET'], cors=CORS)
+def get_check_with_uuid_route(environ, check, uuid):
+    """
+    Protected route
+    """
+    if AppUtilsCore.singleton().check_authorization(app.current_request.to_dict(), environ):
+        return AppUtilsCore.singleton().run_get_check(environ, check, uuid)
+    else:
+        return AppUtilsCore.singleton().forbidden_response()
+
+
+@app.route(ROUTE_PREFIX + 'checks/{environ}/{check}', methods=['GET'], cors=CORS)
+def get_check_route(environ, check):
+    """
+    Protected route
+    """
+    if AppUtilsCore.singleton().check_authorization(app.current_request.to_dict(), environ):
+        return AppUtilsCore.singleton().run_get_check(environ, check, None)
+    else:
+        return AppUtilsCore.singleton().forbidden_response()
+
+
+@app.route(ROUTE_PREFIX + 'checks/{environ}/{check}', methods=['PUT'], cors=CORS)
+def put_check_route(environ, check):
+    """
+    Take a PUT request. Body of the request should be a json object with keys
+    corresponding to the fields in CheckResult, namely:
+    title, status, description, brief_output, full_output, uuid.
+    If uuid is provided and a previous check is found, the default
+    behavior is to append brief_output and full_output.
+
+    Protected route
+    """
+    request = app.current_request
+    if app_utils_obAppUtilsCore.singleton().check_authorization(request.to_dict(), environ):
+        put_data = request.json_body
+        return AppUtilsCore.singleton().run_put_check(environ, check, put_data)
+    else:
+        return AppUtilsCore.singleton().forbidden_response()
+
+
+@app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['PUT'], cors=CORS)
+def put_environment(environ):
+    """
+    Take a PUT request that has a json payload with 'fourfront' (ff server)
+    and 'es' (es server).
+    Attempts to generate an new environment and runs all checks initially
+    if successful.
+
+    Protected route
+    """
+    request = app.current_request
+    if AppUtilsCore.singleton().check_authorization(request.to_dict(), environ):
+        env_data = request.json_body
+        return AppUtilsCore.singleton().run_put_environment(environ, env_data)
+    else:
+        return AppUtilsCore.singleton().forbidden_response()
+
+
+@app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['GET'], cors=CORS)
+def get_environment_route(environ):
+    """
+    Protected route
+    """
+    if AppUtilsCore.singleton().check_authorization(app.current_request.to_dict(), environ):
+        return AppUtilsCore.singleton().run_get_environment(environ)
+    else:
+        return AppUtilsCore.singleton().forbidden_response()
+
+
+@app.route(ROUTE_PREFIX + 'environments/{environ}/delete', methods=['DELETE'], cors=CORS)
+def delete_environment(environ):
+    """
+    Takes a DELETE request and purges the foursight environment specified by 'environ'.
+    NOTE: This only de-schedules all checks, it does NOT wipe data associated with this
+    environment - that can only be done directly from S3 (for safety reasons).
+
+    Protected route
+    """
+    if AppUtilsCore.singleton().check_authorization(app.current_request.to_dict(), environ):  # TODO (C4-138) Centralize authorization check
+        return AppUtilsCore.singleton().run_delete_environment(environ)
+    else:
+        return AppUtilsCore.singleton().forbidden_response()
+
+
+# dmichaels/2022-07-31:
+# For testing/debugging/troubleshooting.
+@app.route(ROUTE_PREFIX + 'info/{environ}', methods=['GET'], cors=CORS)
+def get_view_info_route(environ):
+    req_dict = app.current_request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
+    return AppUtilsCore.singleton().view_info(request=app.current_request, environ=environ, is_admin=AppUtilsCore.singleton().check_authorization(req_dict, environ), domain=domain, context=context)
+
+
+@app.route(ROUTE_PREFIX + 'users/{environ}/{email}', cors=CORS)
+def get_view_user_route(environ, email):
+    req_dict = app.current_request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
+    return AppUtilsCore.singleton().view_user(request=app.current_request, environ=environ, is_admin=AppUtilsCore.singleton().check_authorization(req_dict, environ), domain=domain, context=context, email=email)
+
+
+@app.route(ROUTE_PREFIX + 'users/{environ}', cors=CORS)
+def get_view_users_route(environ):
+    req_dict = app.current_request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
+    return AppUtilsCore.singleton().view_users(request=app.current_request, environ=environ, is_admin=AppUtilsCore.singleton().check_authorization(req_dict, environ), domain=domain, context=context)
+
+
+# dmichaels/2022-07-31:
+# For testing/debugging/troubleshooting.
+#@app.route(ROUTE_PREFIX + 'reactapi/reloadlambda', methods=['GET'], cors=CORS)
+#def get_view_reload_lambda_route():
+#    print("XYZZY:/REACTAPI/RELOADLAMBDA!!!!")
+#    req_dict = app.current_request.to_dict()
+#    domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
+#    return AppUtilsCore.singleton().view_reload_lambda(request=app.current_request, environ=DEFAULT_ENV, is_admin=True, lambda_name='default', domain=domain, context=context)
+
+
+######### EXPERIMENTAL REACT API FUNCTIONS #########
+# Experimental React UI.
+def react_serve_file(environ, **kwargs):
+    req_dict = app.current_request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
+    is_admin = AppUtilsCore.singleton().check_authorization(req_dict, environ)
+    return AppUtilsCore.singleton().react_serve_file(environ, **kwargs)
+
+
+@app.route(ROUTE_PREFIX + 'react/{environ}', cors=CORS)
+def get_react_0(environ):
+    return react_serve_file(environ, **{})
+
+
+@app.route(ROUTE_PREFIX + 'react/{environ}/{path1}', cors=CORS)
+def get_react_1(environ, path1):
+    return react_serve_file(environ, **{"path1": path1})
+
+
+@app.route(ROUTE_PREFIX + 'react/{environ}/{path1}/{path2}', cors=CORS)
+def get_react_2(environ, path1, path2):
+    return react_serve_file(environ, **{"path1": path1, "path2": path2})
+
+
+@app.route(ROUTE_PREFIX + 'react/{environ}/{path1}/{path2}/{path3}', cors=CORS)
+def get_react_3(environ, path1, path2, path3):
+    return react_serve_file(environ, **{"path1": path1, "path2": path2, "path3": path3})
+
+
+@app.route(ROUTE_PREFIX + 'react/{environ}/{path1}/{path2}/{path3}/{path4}', cors=CORS)
+def get_react_4(environ, path1, path2, path3, path4):
+    return react_serve_file(environ, **{"path1": path1, "path2": path2, "path3": path3, "path4": path4})
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/{environ}/users', cors=CORS)
+def react_get_users_route(environ):
+    request = app.current_request
+    request_dict = request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
+    is_admin = AppUtilsCore.singleton().check_authorization(request_dict, environ)
+    return AppUtilsCore.singleton().react_get_users(request=request, environ=environ, is_admin=is_admin, domain=domain, context=context)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/{environ}/users/{email}', cors=CORS)
+def react_get_user_route(environ, email):
+    request = app.current_request
+    request_dict = request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
+    is_admin = AppUtilsCore.singleton().check_authorization(request_dict, environ)
+    return AppUtilsCore.singleton().react_get_user(request=request, environ=environ, is_admin=is_admin, domain=domain, context=context, email=email)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/{environ}/info', cors=CORS)
+def react_get_info(environ):
+    request = app.current_request
+    request_dict = request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
+    is_admin = AppUtilsCore.singleton().check_authorization(request_dict, environ)
+    return AppUtilsCore.singleton().react_get_info(request=request, environ=environ, is_admin=is_admin, domain=domain, context=context)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/info', cors=CORS)
+def react_get_info_noenv():
+    request = app.current_request
+    request_dict = request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
+    is_admin = AppUtilsCore.singleton().check_authorization(request_dict, DEFAULT_ENV)
+    return AppUtilsCore.singleton().react_get_info(request=request, environ=DEFAULT_ENV, is_admin=is_admin, domain=domain, context=context)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/{environ}/header', methods=["GET"], cors=CORS)
+def react_get_header(environ):
+    print('XYZZY:/REACTAPI/ENV/HEADER')
+    request = app.current_request
+    request_dict = request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
+    return AppUtilsCore.singleton().react_get_header_info(request=request, environ=environ, domain=domain, context=context)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/header', methods=["GET"], cors=CORS)
+def react_get_header_noenv():
+    request = app.current_request
+    request_dict = request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
+    return AppUtilsCore.singleton().react_get_header_info(request=request, environ=DEFAULT_ENV, domain=domain, context=context)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/__clearcache__', cors=CORS)
+def react_clear_cach(environ):
+    request = app.current_request
+    request_dict = request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
+    is_admin = AppUtilsCore.singleton().check_authorization(request_dict, environ)
+    return AppUtilsCore.singleton().react_clear_cache(request=request, environ=environ, is_admin=is_admin, domain=domain, context=context)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/{environ}/gac/{environ_compare}', cors=CORS)
+def react_compare_gacs(environ, environ_compare):
+    request = app.current_request
+    request_dict = request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
+    is_admin = AppUtilsCore.singleton().check_authorization(request_dict, environ)
+    return AppUtilsCore.singleton().react_compare_gacs(request=request, environ=environ, environ_compare=environ_compare, is_admin=is_admin, domain=domain, context=context)
 
 
 class AppUtils(AppUtilsCore):  # for compatibility with older imports
