@@ -8,6 +8,7 @@ import boto3
 import datetime
 import ast
 import copy
+from http.cookies import SimpleCookie
 import pkg_resources
 import platform
 import pytz
@@ -411,10 +412,22 @@ class AppUtilsCore:
         # extract redir cookie
         cookies = req_dict.get('headers', {}).get('cookie')
         redir_url = context + 'view/' + env
-        for cookie in cookies.split(';'):
-            name, val = cookie.strip().split('=')
-            if name == 'redir':
-                redir_url = val
+
+#       for cookie in cookies.split(';'):
+#           name, val = cookie.strip().split('=')
+#           if name == 'redir':
+#               redir_url = val
+        try:
+            simple_cookies = SimpleCookie()
+            simple_cookies.load(cookies)
+            simple_cookies = {k: v.value for k, v in simple_cookies.items()}
+            redir_url_cookie = simple_cookies.get("redir")
+            if redir_url_cookie:
+                redir_url = redir_url_cookie
+        except Exception as e:
+            print("Exception loading cookies: {cookies}")
+            print(e)
+
         resp_headers = {'Location': redir_url}
         params = req_dict.get('query_params')
         if not params:
