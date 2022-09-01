@@ -101,6 +101,8 @@ class ReactApi:
         args = kwargs.values()
         print(f"XYZZY:react_serve_file:args: {args}")
         if not args:
+            # TODO: png not downloading right!
+            # Running chalice local it works though.
             if (environ.endswith(".html") or environ.endswith(".json")
                or environ.endswith(".map") or environ.endswith(".txt")
                or environ.endswith(".png") or environ.endswith(".ico")):
