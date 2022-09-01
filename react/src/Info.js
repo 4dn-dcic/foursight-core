@@ -32,7 +32,7 @@ const Info = () => {
         </>
     }
 
-    const InfoRow = ({name, value, monospace = false, copy = true, size = "4", pypi = null, github = null, python = false, check = false, link = null, optional = false}) => {
+    const InfoRow = ({name, value, monospace = false, copy = true, size = "4", pypi = null, github = null, python = false, chalice = null, check = false, link = null, optional = false}) => {
         let nameStyle = {
             fontSize: "11pt",
             fontFamily: "inherit",
@@ -71,6 +71,11 @@ const Info = () => {
                 <a target="_blank" href={"https://docs.python.org/release/" + value + "/"}>
                     <img src="https://logos-download.com/wp-content/uploads/2016/10/Python_logo_wordmark.png" height="19" />
             </a>&nbsp;</span> : <span/>
+        const chaliceElement = false /*chalice*/ ?
+            <span>
+                <a target="_blank" href={"https://pypi.org/project/" + name + "/" + value + "/"}>
+                    <img src="https://www.gliffy.com/sites/default/files/image/2020-06/AWS-Lambda_Lambda-Function_dark-bg_0.png" height="14" />
+                </a>&nbsp;</span> : <span/>
         return <>
             <div style={{marginTop:"1px"}}>
                 { !optional || value ? (
@@ -84,6 +89,7 @@ const Info = () => {
                             {pypiElement}
                             {githubElement}
                             {pythonElement}
+                            {chaliceElement}
                             { link && value ? (<span>
                                 <Link to={link}>{value}</Link>
                             </span>):(<span>
@@ -105,7 +111,7 @@ const Info = () => {
             <InfoRow name={"foursight-core"} value={header.versions?.foursight_core} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={"dbmi-bgm"} size="2" />
             <InfoRow name={"python"} value={header.versions?.python} monospace={true} copy={true} python={true} size="2" />
-            <InfoRow name={"chalice"} value={header.versions?.chalice} monospace={true} copy={true} size="2" />
+            <InfoRow name={"chalice"} value={header.versions?.chalice} monospace={true} copy={true} chalice={true} size="2" />
         </InfoBox>
         <InfoBox title="Credentials Info">
             <InfoRow name={"AWS Account Number"} value={header.app?.credentials?.aws_account_number} monospace={true} copy={true} size="2" />

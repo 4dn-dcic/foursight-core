@@ -101,6 +101,13 @@ class ReactApi:
         if not args:
             # TODO: png not downloading right!
             # Running chalice local it works though.
+            # Actually it also works in cgap-supertest:
+            # https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/react/logo192.png
+            # But not in 4dn/foursight-development:
+            # https://cm3dqx36s7.execute-api.us-east-1.amazonaws.com/api/react/logo192.png
+            # The correct one has: content-length: 7132
+            # The incorrect one has: content-length: 5347
+            # The file itself (oddly) is 5347.
             if (environ.endswith(".html") or environ.endswith(".json")
                or environ.endswith(".map") or environ.endswith(".txt")
                or environ.endswith(".png") or environ.endswith(".ico")):
