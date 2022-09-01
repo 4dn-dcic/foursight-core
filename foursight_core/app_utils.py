@@ -53,6 +53,15 @@ from .react_api import ReactApi
 # XYZZY
 app = Chalice(app_name='foursight-core')
 DEFAULT_ENV = os.environ.get("ENV_NAME", "env-name-unintialized")
+
+# When running 'chalice local' we do not get the same "/api" prefix as we see when deployed to AWS (Lambda).
+# So we set it explicitly here if your CHALICE_LOCAL environment variable is set.
+# Seems to be a known issue: https://github.com/aws/chalice/issues/838
+#
+# Also set CORS to True if CHALICE_LOCAL; not needed if running React (nascent support of
+# which is experimental and under development in distinct branch) from Foursight directly,
+# but useful if/when running React React separately (npm start in foursight-core/react) to
+# facilitate easy/quick development/changes directly to React code.
 CHALICE_LOCAL = (os.environ.get("CHALICE_LOCAL") == "1")
 if CHALICE_LOCAL:
     print("XYZZY:foursight_core:CHALICE_LOCAL!!!")
@@ -2285,6 +2294,17 @@ def react_compare_gacs(environ, environ_compare):
     domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
     is_admin = AppUtilsCore.singleton().check_authorization(request_dict, environ)
     return AppUtilsCore.singleton().react_compare_gacs(request=request, environ=environ, environ_compare=environ_compare, is_admin=is_admin, domain=domain, context=context)
+
+@app.lambda_function()
+def check_runner(event, context):
+    """
+    Pure lambda function to pull run and check information from SQS and run
+    the checks. Self propogates. event is a dict of information passed into
+    the lambda at invocation time.
+    """
+    if not event:
+        return
+    AppUtilsCore.singleton().run_check_runner(event)
 
 
 class AppUtils(AppUtilsCore):  # for compatibility with older imports
