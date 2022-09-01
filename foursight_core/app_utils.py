@@ -1957,15 +1957,6 @@ class AppUtilsCore(ReactApi):
         return AppUtilsCore._app_utils
 
 
-@app.route(ROUTE_PREFIX + 'reactapi/{environ}/xyzzy', methods=["GET"], cors=CORS)
-def react_route_xyzzy(environ):
-    print(f"XYZZY:UNIFY-EXPERIMENT:/reactapi/xyzzy/{environ}/xyzzy")
-    request = app.current_request
-    request_dict = request.to_dict()
-    response = Response('react_get_header_info')
-    domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
-    return AppUtilsCore.singleton().react_get_header_info(request=request, environ=environ, domain=domain, context=context)
-
 @app.route(ROUTE_PREFIX + 'callback', cors=CORS)
 def auth0_callback():
     """
@@ -2181,16 +2172,6 @@ def get_view_users_route(environ):
     return AppUtilsCore.singleton().view_users(request=app.current_request, environ=environ, is_admin=AppUtilsCore.singleton().check_authorization(req_dict, environ), domain=domain, context=context)
 
 
-# dmichaels/2022-07-31:
-# For testing/debugging/troubleshooting.
-#@app.route(ROUTE_PREFIX + 'reactapi/reloadlambda', methods=['GET'], cors=CORS)
-#def get_view_reload_lambda_route():
-#    print("XYZZY:/REACTAPI/RELOADLAMBDA!!!!")
-#    req_dict = app.current_request.to_dict()
-#    domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
-#    return AppUtilsCore.singleton().view_reload_lambda(request=app.current_request, environ=DEFAULT_ENV, is_admin=True, lambda_name='default', domain=domain, context=context)
-
-
 ######### EXPERIMENTAL REACT API FUNCTIONS #########
 # Experimental React UI.
 def react_serve_file(environ, **kwargs):
@@ -2289,11 +2270,21 @@ def react_clear_cach(environ):
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/gac/{environ_compare}', cors=CORS)
 def react_compare_gacs(environ, environ_compare):
+    print("XYZZY:/reactapi/ENVIRON/gac/ENVIRON_COMPARE")
     request = app.current_request
     request_dict = request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
     is_admin = AppUtilsCore.singleton().check_authorization(request_dict, environ)
     return AppUtilsCore.singleton().react_compare_gacs(request=request, environ=environ, environ_compare=environ_compare, is_admin=is_admin, domain=domain, context=context)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/reloadlambda', methods=['GET'], cors=CORS)
+def get_view_reload_lambda_route():
+    print("XYZZY:/reactapi/reloadlambda!")
+    req_dict = app.current_request.to_dict()
+    domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
+    return AppUtilsCore.singleton().view_reload_lambda(request=app.current_request, environ=DEFAULT_ENV, is_admin=True, lambda_name='default', domain=domain, context=context)
+
 
 @app.lambda_function()
 def check_runner(event, context):
