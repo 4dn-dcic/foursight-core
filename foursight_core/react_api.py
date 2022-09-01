@@ -1,4 +1,4 @@
-from chalice import Response
+from chalice import Response, __version__ as chalice_version
 import os
 import io
 from os.path import dirname
@@ -41,8 +41,6 @@ from .fs_connection import FSConnection
 from .check_utils import CheckHandler
 from .sqs_utils import SQS
 from .stage import Stage
-
-
 
 
 class ReactApi:
@@ -259,7 +257,8 @@ class ReactApi:
                 "foursight": self.get_app_version(),
                 "foursight_core": pkg_resources.get_distribution('foursight-core').version,
                 "dcicutils": pkg_resources.get_distribution('dcicutils').version,
-                "python": platform.python_version()
+                "python": platform.python_version(),
+                "chalice": chalice_version
             },
             "login": login,
             "server": {
@@ -416,7 +415,8 @@ class ReactApi:
                 "foursight": self.get_app_version(),
                 "foursight_core": pkg_resources.get_distribution('foursight-core').version,
                 "dcicutils": pkg_resources.get_distribution('dcicutils').version,
-                "python": platform.python_version()
+                "python": platform.python_version(),
+                "chalice": chalice_version
             },
             "env": {
                 "name": environ,
