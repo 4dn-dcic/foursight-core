@@ -356,7 +356,8 @@ class AppUtilsCore(ReactApi):
                     return False  # we have no env to check auth
                 for env_info in self.init_environments(env).values():
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
-                                                     ff_env=env_info['ff_env'], add_on='frame=object')
+                                                     ff_env=env_info['ff_env'],
+                                                     add_on='frame=object&datastore=database')
                     logger.warn("foursight_core.check_authorization: env_info ...")
                     logger.warn(env_info)
                     logger.warn("foursight_core.check_authorization: user_res ...")
@@ -498,14 +499,16 @@ class AppUtilsCore(ReactApi):
 #           if name == 'redir':
 #               print(f"XYZZY:REDIRECT COOKIE [{name}] IS: [{val}]")
 #               redir_url = val
-        simple_cookies = SimpleCookie()
-        simple_cookies.load(cookies)
-        simple_cookies = {k: v.value for k, v in simple_cookies.items()}
-        print('xyzzy:simple-cookies')
-        print(simple_cookies)
-        redir_url = simple_cookies.get("redir")
-        print('xyzzy:redir-cookie')
-        print(redir_url)
+        try:
+            simple_cookies = SimpleCookie()
+            simple_cookies.load(cookies)
+            simple_cookies = {k: v.value for k, v in simple_cookies.items()}
+            redir_url_cookie = simple_cookies.get("redir")
+            if redir_url_cookie:
+                redir_url = redir_url_cookie
+        except Exception as e:
+            PRINT("Exception loading cookies: {cookies}")
+            PRINT(e)
 
         resp_headers = {'Location': redir_url}
         params = req_dict.get('query_params')
@@ -674,14 +677,15 @@ class AppUtilsCore(ReactApi):
             return cls.TRIM_ERR_OUTPUT
         return output
 
-    def sorted_dict(self, dictionary: dict) -> dict:
+    def sort_dictionary_by_lowercase_keys(self, dictionary: dict) -> dict:
         """
         Returns the given dictionary sorted by key values (yes, dictionaries are ordered as of Python 3.7).
         If the given value is not a dictionary it will be coerced to one.
         :param dictionary: Dictionary to sort.
         :return: Given dictionary sorted by key value.
         """
-        dictionary = dict(dictionary)
+        if not dictionary or not isinstance(dictionary, dict):
+            return {}
         return {key: dictionary[key] for key in sorted(dictionary.keys(), key=lambda key: key.lower())}
 
     def get_aws_account_number(self) -> dict:
@@ -767,7 +771,7 @@ class AppUtilsCore(ReactApi):
         try:
             portal_url = self.get_portal_url(env_name)
             logger.warn(f"foursight_core: Pinging portal: {portal_url}")
-            response = requests.get(portal_url, timeout=4)
+            response = requests.get(portal_url + "/health?format=json", timeout=4)
             logger.warn(f"foursight_core: Done pinging portal: {portal_url}")
             return (response.status_code == 200)
         except Exception as e:
@@ -1059,10 +1063,10 @@ class AppUtilsCore(ReactApi):
             "Foursight Bucket Prefix:": get_foursight_bucket_prefix()
         }
         gac_name = get_identity_name()
-        gac_values = self.sorted_dict(obfuscate_dict(get_identity_secrets()))
-        environment_and_bucket_info = self.sorted_dict(obfuscate_dict(
+        gac_values = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(get_identity_secrets()))
+        environment_and_bucket_info = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(
                                         self.environment.get_environment_and_bucket_info(environ, stage_name)))
-        declared_data = self.sorted_dict(EnvUtils.declared_data())
+        declared_data = self.sort_dictionary_by_lowercase_keys(EnvUtils.declared_data())
         dcicutils_version = pkg_resources.get_distribution('dcicutils').version
         foursight_core_version = pkg_resources.get_distribution('foursight-core').version
         versions = {
@@ -1082,7 +1086,7 @@ class AppUtilsCore(ReactApi):
         }
         aws_credentials = self.get_obfuscated_credentials_info(environ)
         aws_account_number = aws_credentials.get("AWS Account Number:")
-        os_environ = self.sorted_dict(obfuscate_dict(dict(os.environ)))
+        os_environ = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
         request_dict = request.to_dict()
 
         html_resp.body = template.render(
@@ -1135,7 +1139,8 @@ class AppUtilsCore(ReactApi):
         for this_email in email.split(","):
             try:
                 this_user = ff_utils.get_metadata('users/' + this_email.lower(),
-                                                  ff_env=full_env_name(environ), add_on='frame=object')
+                                                  ff_env=full_env_name(environ),
+>                                                 add_on='frame=object&datastore=database')
                 users.append({"email": this_email, "record": this_user})
             except Exception as e:
                 # TODO
@@ -1177,7 +1182,8 @@ class AppUtilsCore(ReactApi):
         stage_name = self.stage.get_stage()
         users = []
         # TODO: Support paging.
-        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000')
+        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ),
+>                                                      add_on='frame=object&limit=10000&datastore=database')
         for user_record in user_records["@graph"]:
             last_modified = user_record.get("last_modified")
             if last_modified:

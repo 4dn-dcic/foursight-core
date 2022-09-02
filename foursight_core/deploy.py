@@ -162,7 +162,7 @@ class Deploy(object):
                             and global_env_bucket_from_environ
                             and global_bucket_env_from_environ != global_env_bucket_from_environ):
                         PRINT('ERROR. GLOBAL_BUCKET_ENV and GLOBAL_ENV_BUCKET are both set, but inconsistently.')
-                        sys.exit()
+                        sys.exit(1)
                     global_env_bucket = global_bucket_env_from_environ or global_env_bucket_from_environ
                 if global_env_bucket:
                     curr_stage_environ['GLOBAL_BUCKET_ENV'] = global_env_bucket  # legacy compatibility
@@ -170,7 +170,7 @@ class Deploy(object):
                 else:
                     PRINT('ERROR. GLOBAL_ENV_BUCKET must be set or global_env_bucket= must be passed'
                           ' when building the trial config.')
-                    sys.exit()
+                    sys.exit(1)
             if security_group_ids:
                 curr_stage['security_group_ids'] = security_group_ids
             if subnet_ids:

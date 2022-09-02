@@ -42,6 +42,7 @@ class Environment(object):
 
         self.prefix = prefix
         self.s3_connection = S3Connection(self.get_env_bucket_name())
+        self.cached_list_environment_names = None
 
     def get_env_bucket_name(self) -> Optional[str]:
 
@@ -64,16 +65,15 @@ class Environment(object):
             result.add(infer_foursight_from_env(envname=env))
         return sorted(result)  # a list and sorted
 
-    cache_list_environment_names = None
     def list_environment_names(self) -> List[EnvName]:
         """
         Lists all environments in the foursight-envs s3.
 
         Returns: a list of names
         """
-        if self.cache_list_environment_names:
+        if self.cached_list_environment_names:
             print("XYZZY:foursight_core:list_environment_names: CACHE HIT")
-            return self.cache_list_environment_names
+            return self.cached_list_environment_names
 
         print("XYZZY:foursight_core:list_environment_names-1: calling get_all_environments - NO CACHE HIT")
         environment_names = [infer_foursight_from_env(envname=env)
@@ -88,7 +88,7 @@ class Environment(object):
         if modern_full_names != legacy_full_names:
             logger.warning(f"{full_class_name(self)}.list_environment_names has consistency problems.")
 
-        self.cache_list_environment_names = environment_names
+        self.cached_list_environment_names = environment_names
         return environment_names
 
     def list_valid_schedule_environment_names(self) -> List[EnvName]:
