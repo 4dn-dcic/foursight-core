@@ -31,7 +31,7 @@ from dcicutils.env_utils import (
     short_env_name,
 )
 from dcicutils.lang_utils import disjoined_list
-from dcicutils.misc_utils import get_error_message
+from dcicutils.misc_utils import get_error_message, PRINT
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from typing import Optional
@@ -144,7 +144,7 @@ class AppUtilsCore:
         Returns an FSConnection object or raises an error.
         """
         environments = self.init_environments(environ) if _environments is None else _environments
-        print("environments = %s" % str(environments))
+        PRINT("environments = %s" % str(environments))
         # if still not there, return an error
         if environ not in environments:
             error_res = {
@@ -278,117 +278,12 @@ class AppUtilsCore:
                     return False  # we have no env to check auth
                 for env_info in self.init_environments(env).values():
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
-                                                     ff_env=env_info['ff_env'], add_on='frame=object')
+                                                     ff_env=env_info['ff_env'],
+                                                     add_on='frame=object&datastore=database')
                     logger.warn("foursight_core.check_authorization: env_info ...")
                     logger.warn(env_info)
                     logger.warn("foursight_core.check_authorization: user_res ...")
                     logger.warn(user_res)
-                    #
-                    # The following tries to referent 'groups' in the JSON returned by the get_metadata call above,
-                    # but there is no such element. The JSON we get looks like this:
-                    # {
-                    #     "email": "david_michaels@hms.harvard.edu",
-                    #     "status": "current",
-                    #     "timezone": "US/Eastern",
-                    #     "last_name": "Michaels",
-                    #     "first_name": "David",
-                    #     "date_created": "2022-05-09T19:29:04.053460+00:00",
-                    #     "subscriptions": [],
-                    #     "schema_version": "1",
-                    #     "was_unauthorized": true,
-                    #     "@id": "/users/04bf103b-5a61-4ff9-96ac-e8d104f8b7ee/",
-                    #     "@type": [
-                    #         "User",
-                    #         "Item"
-                    #     ],
-                    #     "uuid": "04bf103b-5a61-4ff9-96ac-e8d104f8b7ee",
-                    #     "principals_allowed": {
-                    #         "view": [
-                    #             "group.admin",
-                    #             "group.read-only-admin",
-                    #             "remoteuser.EMBED",
-                    #             "remoteuser.INDEXER",
-                    #             "userid.04bf103b-5a61-4ff9-96ac-e8d104f8b7ee"
-                    #         ],
-                    #         "edit": [
-                    #             "group.admin",
-                    #             "userid.04bf103b-5a61-4ff9-96ac-e8d104f8b7ee"
-                    #         ]
-                    #     },
-                    #     "display_title": "David Michaels",
-                    #     "external_references": [],
-                    #     "title": "David Michaels",
-                    #     "contact_email": "david_michaels@hms.harvard.edu"
-                    # }
-                    #
-                    # Looks like we want to check principals_allowed/{view,edit} for 'group.admin' ...
-                    # For now only check the 'groups' element if present otherwise ignore that part of the check below.
-                    #
-                    # And BTW here is another sample record from the same source:
-                    # {
-                    #       "lab": "/labs/4dn-dcic-lab/",
-                    #       "tags": [
-                    #            "skip_oh_synchronization"
-                    #        ],
-                    #        "email": "kent_pitman@hms.harvard.edu",
-                    #        "groups": [
-                    #            "admin"
-                    #        ],
-                    #        "status": "current",
-                    #        "timezone": "US/Eastern",
-                    #        "job_title": "Software Developer",
-                    #        "last_name": "Pitman",
-                    #        "first_name": "Kent",
-                    #        "submits_for": [
-                    #            "/labs/4dn-dcic-lab/"
-                    #        ],
-                    #        "date_created": "2020-01-06T21:24:22.260908+00:00",
-                    #        "submitted_by": "/users/1a12362f-4eb6-4a9c-8173-776667226988/",
-                    #        "last_modified": {
-                    #            "modified_by": "/users/986b362f-4eb6-4a9c-8173-3ab267307e3a/",
-                    #            "date_modified": "2021-03-04T21:20:45.428320+00:00"
-                    #        },
-                    #        "subscriptions": [
-                    #            {
-                    #                "url": "?submitted_by.uuid=1a12362f-4eb6-4a9c-8173-776667226&sort=-date_created",
-                    #                "title": "My submissions"
-                    #            },
-                    #            {
-                    #                "url": "?lab.uuid=828cd4fe-ebb0-4b36-a94a-d2e3a36cc989&sort=-date_created",
-                    #                "title": "Submissions for my lab"
-                    #            }
-                    #        ],
-                    #        "schema_version": "1",
-                    #        "viewing_groups": [
-                    #            "4DN"
-                    #        ],
-                    #        "@id": "/users/1a12362f-4eb6-4a9c-8173-776667226962/",
-                    #        "@type": [
-                    #            "User",
-                    #            "Item"
-                    #        ],
-                    #        "uuid": "1a12362f-4eb6-4a9c-8173-776667226962",
-                    #        "principals_allowed": {
-                    #            "view": [
-                    #                "group.admin",
-                    #                "group.read-only-admin",
-                    #                "remoteuser.EMBED",
-                    #                "remoteuser.INDEXER",
-                    #                "userid.1a12362f-4eb6-4a9c-8173-776667226962"
-                    #            ],
-                    #            "edit": [
-                    #                "group.admin",
-                    #                "userid.1a12362f-4eb6-4a9c-8173-776667226962"
-                    #             ]
-                    #        },
-                    #        "display_title": "Kent Pitman",
-                    #        "external_references": [],
-                    #        "title": "Kent Pitman",
-                    #        "contact_email": "kent_pitman@hms.harvard.edu"
-                    # }
-                    #
-                    # if not ('admin' in user_res.get('groups') and payload.get('email_verified')):
-                    #
                     groups = user_res.get('groups')
                     if not groups:
                         logger.warn("foursight_core.check_authorization: No 'groups' element for user record! Returning False.")
@@ -425,8 +320,8 @@ class AppUtilsCore:
             if redir_url_cookie:
                 redir_url = redir_url_cookie
         except Exception as e:
-            print("Exception loading cookies: {cookies}")
-            print(e)
+            PRINT("Exception loading cookies: {cookies}")
+            PRINT(e)
 
         resp_headers = {'Location': redir_url}
         params = req_dict.get('query_params')
@@ -588,14 +483,15 @@ class AppUtilsCore:
             return cls.TRIM_ERR_OUTPUT
         return output
 
-    def sorted_dict(self, dictionary: dict) -> dict:
+    def sort_dictionary_by_lowercase_keys(self, dictionary: dict) -> dict:
         """
         Returns the given dictionary sorted by key values (yes, dictionaries are ordered as of Python 3.7).
         If the given value is not a dictionary it will be coerced to one.
         :param dictionary: Dictionary to sort.
         :return: Given dictionary sorted by key value.
         """
-        dictionary = dict(dictionary)
+        if not dictionary or not isinstance(dictionary, dict):
+            return {}
         return {key: dictionary[key] for key in sorted(dictionary.keys(), key=lambda key: key.lower())}
 
     def get_aws_account_number(self) -> dict:
@@ -681,7 +577,7 @@ class AppUtilsCore:
         try:
             portal_url = self.get_portal_url(env_name)
             logger.warn(f"foursight_core: Pinging portal: {portal_url}")
-            response = requests.get(portal_url, timeout=4)
+            response = requests.get(portal_url + "/health?format=json", timeout=4)
             logger.warn(f"foursight_core: Done pinging portal: {portal_url}")
             return (response.status_code == 200)
         except Exception as e:
@@ -965,10 +861,10 @@ class AppUtilsCore:
             "Foursight Bucket Prefix:": get_foursight_bucket_prefix()
         }
         gac_name = get_identity_name()
-        gac_values = self.sorted_dict(obfuscate_dict(get_identity_secrets()))
-        environment_and_bucket_info = self.sorted_dict(obfuscate_dict(
+        gac_values = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(get_identity_secrets()))
+        environment_and_bucket_info = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(
                                         self.environment.get_environment_and_bucket_info(environ, stage_name)))
-        declared_data = self.sorted_dict(EnvUtils.declared_data())
+        declared_data = self.sort_dictionary_by_lowercase_keys(EnvUtils.declared_data())
         dcicutils_version = pkg_resources.get_distribution('dcicutils').version
         foursight_core_version = pkg_resources.get_distribution('foursight-core').version
         versions = {
@@ -988,7 +884,7 @@ class AppUtilsCore:
         }
         aws_credentials = self.get_obfuscated_credentials_info(environ)
         aws_account_number = aws_credentials.get("AWS Account Number:")
-        os_environ = self.sorted_dict(obfuscate_dict(dict(os.environ)))
+        os_environ = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
         request_dict = request.to_dict()
 
         html_resp.body = template.render(
@@ -1041,7 +937,8 @@ class AppUtilsCore:
         for this_email in email.split(","):
             try:
                 this_user = ff_utils.get_metadata('users/' + this_email.lower(),
-                                                  ff_env=full_env_name(environ), add_on='frame=object')
+                                                  ff_env=full_env_name(environ),
+                                                  add_on='frame=object&datastore=database')
                 users.append({"email": this_email, "record": this_user})
             except Exception as e:
                 users.append({"email": this_email, "record": {"error": str(e)}})
@@ -1081,7 +978,8 @@ class AppUtilsCore:
         stage_name = self.stage.get_stage()
         users = []
         # TODO: Support paging.
-        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000')
+        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ),
+                                                       add_on='frame=object&limit=10000&datastore=database')
         for user_record in user_records["@graph"]:
             last_modified = user_record.get("last_modified")
             if last_modified:
@@ -1613,14 +1511,14 @@ class AppUtilsCore:
             logger.warn(f"queue_scheduled_checks: have schedule_name")
             logger.warn(f"queue_scheduled_checks: environment.is_valid_environment_name(sched_environ, or_all=True)={self.environment.is_valid_environment_name(sched_environ, or_all=True)}")
             if not self.environment.is_valid_environment_name(sched_environ, or_all=True):
-                print(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
+                PRINT(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
                 return
             sched_environs = self.environment.get_selected_environment_names(sched_environ)
             logger.warn(f"queue_scheduled_checks: sched_environs={sched_environs}")
             check_schedule = self.check_handler.get_check_schedule(schedule_name, conditions)
             logger.warn(f"queue_scheduled_checks: sched_environs={check_schedule}")
             if not check_schedule:
-                print(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
+                PRINT(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
                 return
             for environ in sched_environs:
                 # add the run info from 'all' as well as this specific environ
@@ -1783,7 +1681,7 @@ class AppUtilsCore:
             deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
             finished_dependencies = set(deps_w_uuid).issubset(already_run)
             if not finished_dependencies:
-                print(f'-RUN-> Not ready for: {run_name}')
+                PRINT(f'-RUN-> Not ready for: {run_name}')
         else:
             finished_dependencies = True
         connection = self.init_connection(run_env)
@@ -1798,7 +1696,7 @@ class AppUtilsCore:
                 found_rec = connection.get_object(rec_key)
                 if found_rec is not None:
                     # the action record has been written. Abort and propogate
-                    print(f'-RUN-> Found existing action record: {rec_key}. Skipping')
+                    PRINT(f'-RUN-> Found existing action record: {rec_key}. Skipping')
                     self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
                     return None
                 else:
@@ -1809,9 +1707,9 @@ class AppUtilsCore:
                     # This was changed per Will's suggestion in code review. -kmp 7-Jun-2022
                     # connection.put_object(rec_key, rec_body)
                     connection.connections['s3'].put_object(rec_key, rec_body)
-                    print(f'-RUN-> Wrote action record: {rec_key}')
+                    PRINT(f'-RUN-> Wrote action record: {rec_key}')
             run_result = self.check_handler.run_check_or_action(connection, run_name, run_kwargs)
-            print('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))
+            PRINT('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))
             # invoke action if running a check and kwargs['queue_action'] matches stage
             stage = self.stage.get_stage()
             if run_result['type'] == 'check' and run_result['kwargs']['queue_action'] == stage:
@@ -1823,16 +1721,16 @@ class AppUtilsCore:
                         self.queue_action(run_env, run_result['action'],
                                           params=action_params, uuid=run_uuid)
                     except Exception as exc:
-                        print('-RUN-> Could not queue action %s on stage %s with kwargs: %s. Error: %s'
+                        PRINT('-RUN-> Could not queue action %s on stage %s with kwargs: %s. Error: %s'
                               % (run_result['action'], stage, action_params, str(exc)))
                     else:
-                        print('-RUN-> Queued action %s on stage %s with kwargs: %s'
+                        PRINT('-RUN-> Queued action %s on stage %s with kwargs: %s'
                               % (run_result['action'], stage, action_params))
-            print(f'-RUN-> Finished: {run_name}')
+            PRINT(f'-RUN-> Finished: {run_name}')
             self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return run_result
         else:
-            print(f'-RUN-> Recovered: {run_name}')
+            PRINT(f'-RUN-> Recovered: {run_name}')
             self.sqs.recover_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
 
