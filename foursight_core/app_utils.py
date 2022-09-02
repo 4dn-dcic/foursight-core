@@ -610,6 +610,7 @@ class AppUtilsCore(ReactApi):
         Simple function to loop through the query params and convert them to
         bools/ints/floats other literals as applicable
         """
+        params = params or {}
         to_delete = []
         for key, value in params.items():
             if not value:
@@ -901,14 +902,20 @@ class AppUtilsCore(ReactApi):
         Returns:
             chalice.Response: redirect to check view that called this action
         """
+        print("XYZZY: view_run_action")
+        print(environ)
+        print(action)
+        print(params)
         # convert string query params to literals
         params = self.query_params_to_literals(params)
         queued_uuid = self.queue_action(environ, action, params)
         # redirect to calling check view page with a 302 so it isn't cached
         if 'check_name' in params and 'called_by' in params:
+            print("XYZZY: view_run_action A")
             check_detail = '/'.join([params['check_name'], params['called_by']])
             resp_headers = {'Location': '/'.join([context + 'view', environ, check_detail])}
         else:
+            print("XYZZY: view_run_action B")
             # no check so cannot redirect
             act_path = '/'.join([context + 'checks', action, queued_uuid])
             return Response(
@@ -919,6 +926,7 @@ class AppUtilsCore(ReactApi):
                 },
                 status_code=200
             )
+        print("XYZZY: view_run_action C")
         return Response(status_code=302, body=json.dumps(resp_headers),
                         headers=resp_headers)
 
@@ -2029,15 +2037,26 @@ def view_run_route(environ, check, method):
     """
     Protected route
     """
+    print("XYZZY: view_run_route")
     req_dict = app.current_request.to_dict()
+    print(req_dict)
     domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
     query_params = req_dict.get('query_params', {})
     if AppUtilsCore.singleton().check_authorization(req_dict, environ):
+        print(f"XYZZY: view_run_route A({method})")
+        print(check)
         if method == 'action':
+            print("XYZZY: view_run_route B")
             return AppUtilsCore.singleton().view_run_action(environ, check, query_params, context)
         else:
+            print("XYZZY: view_run_route C")
+            print(environ)
+            print(check)
+            print(query_params)
+            print(context)
             return AppUtilsCore.singleton().view_run_check(environ, check, query_params, context)
     else:
+        print("XYZZY: view_run_route D")
         return AppUtilsCore.singleton().forbidden_response(context)
 
 
