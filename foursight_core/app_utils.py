@@ -1844,8 +1844,11 @@ class AppUtilsCore(ReactApi):
         Returns:
             dict: run result if something was run, else None
         """
+        print("XYZZY: foursight_core/run_check_runner")
         sqs_url = runner_input.get('sqs_url')
+        print(sqs_url)
         if not sqs_url:
+            print("XYZZY: foursight_core/run_check_runner: no sql url")
             return
         client = boto3.client('sqs')
         response = client.receive_message(
@@ -1855,30 +1858,41 @@ class AppUtilsCore(ReactApi):
             VisibilityTimeout=300,
             WaitTimeSeconds=10
         )
+        print("XYZZY: foursight_core/run_check_runner: after receive_message")
         message = response.get('Messages', [{}])[0]
         body = message.get('Body')
         receipt = message.get('ReceiptHandle')
         if not body or not receipt:
+            print("XYZZY: foursight_core/run_check_runner: no body or receipt")
             # if no messages recieved in 10 seconds of long polling, terminate
             return None
+        print("XYZZY: foursight_core/run_check_runner: load check list")
         check_list = json.loads(body)
+        print(check_list)
         if not isinstance(check_list, list) or len(check_list) != 5:
             # if not a valid check str, remove the item from the SQS
+            print("XYZZY: foursight_core/run_check_runner: not valid check list")
             self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
         [run_env, run_uuid, run_name, run_kwargs, run_deps] = check_list
         # find information from s3 about completed checks in this run
         # actual id stored in s3 has key: <run_uuid>/<run_name>
+        print("XYZZY: foursight_core/run_check_runner: continuing")
         if run_deps and isinstance(run_deps, list):
+            print("XYZZY: foursight_core/run_check_runner: no run deps")
             already_run = self.collect_run_info(run_uuid)
             deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
             finished_dependencies = set(deps_w_uuid).issubset(already_run)
             if not finished_dependencies:
                 print(f'-RUN-> Not ready for: {run_name}')
         else:
+            print("XYZZY: foursight_core/run_check_runner: finish deps")
             finished_dependencies = True
+        print("XYZZY: foursight_core/run_check_runner: before init connection")
         connection = self.init_connection(run_env)
+        print("XYZZY: foursight_core/run_check_runner: after init connection")
         if finished_dependencies:
+            print("XYZZY: foursight_core/run_check_runner: finished deps")
             # add the run uuid as the uuid to kwargs so that checks will coordinate
             if 'uuid' not in run_kwargs:
                 run_kwargs['uuid'] = run_uuid
@@ -1970,7 +1984,7 @@ def auth0_callback():
 
 if CHALICE_LOCAL:
     @app.route("/", methods=['GET'], cors=CORS)
-    def index():
+    def index_chalice_local():
         """
         Redirect with 302 to view page of DEFAULT_ENV
         Non-protected route
@@ -2099,7 +2113,7 @@ def put_check_route(environ, check):
     Protected route
     """
     request = app.current_request
-    if app_utils_obAppUtilsCore.singleton().check_authorization(request.to_dict(), environ):
+    if AppUtilsCore.singleton().check_authorization(request.to_dict(), environ):
         put_data = request.json_body
         return AppUtilsCore.singleton().run_put_check(environ, check, put_data)
     else:
@@ -2183,7 +2197,7 @@ def react_serve_file(environ, **kwargs):
 
 
 @app.route(ROUTE_PREFIX + 'react', cors=CORS)
-def get_react_0():
+def get_react_noenv():
     return react_serve_file(DEFAULT_ENV, **{})
 
 
@@ -2299,8 +2313,13 @@ def check_runner(event, context):
     the checks. Self propogates. event is a dict of information passed into
     the lambda at invocation time.
     """
+    print("XYZZY: checker_runner lambda called.")
     if not event:
+        print("XYZZY: checker_runner lambda no event.")
         return
+    print("XYZZY: checker_runner lambda no event.")
+    print(event)
+    print(context)
     AppUtilsCore.singleton().run_check_runner(event)
 
 
