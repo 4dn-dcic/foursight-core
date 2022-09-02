@@ -583,8 +583,18 @@ class AppUtilsCore(ReactApi):
         Simple function to loop through the query params and convert them to
         bools/ints/floats other literals as applicable
         """
+        print('XYZZY-PRE-MOVE: query_params_to_literals A')
+        print(cls)
+        print(type(cls))
+        print(cls.__name__)
+        print(params)
+        if not params:
+            print('XYZZY-PRE-MOVE: query_params_to_literals C')
+            params = {}
         to_delete = []
+        print('XYZZY-PRE-MOVE: query_params_to_literals D')
         for key, value in params.items():
+            print('XYZZY-PRE-MOVE: query_params_to_literals E')
             if not value:
                 # handles empty strings
                 to_delete.append(key)
@@ -596,6 +606,7 @@ class AppUtilsCore(ReactApi):
             params[key] = as_literal
         for key in to_delete:
             del params[key]
+        print('XYZZY-PRE-MOVE: query_params_to_literals F')
         return params
 
     @classmethod
@@ -851,7 +862,13 @@ class AppUtilsCore(ReactApi):
             chalice.Response: redirect to future check landing page
         """
         # convert string query params to literals
+        print('XYZZY-PRE-MOVE: view_run_check A')
+        print(environ)
+        print(check)
+        print(params)
         params = self.query_params_to_literals(params)
+        print('XYZZY-PRE-MOVE: view_run_check B')
+        print(params)
         queued_uuid = self.queue_check(environ, check, params)
         # redirect to view page with a 302 so it isn't cached
         resp_headers = {'Location': '/'.join([context + 'view', environ, check, queued_uuid])}
@@ -874,8 +891,14 @@ class AppUtilsCore(ReactApi):
         Returns:
             chalice.Response: redirect to check view that called this action
         """
+        print('XYZZY-PRE-MOVE: view_run_action A')
+        print(environ)
+        print(action)
+        print(params)
         # convert string query params to literals
         params = self.query_params_to_literals(params)
+        print('XYZZY-PRE-MOVE: view_run_action B')
+        print(params)
         queued_uuid = self.queue_action(environ, action, params)
         # redirect to calling check view page with a 302 so it isn't cached
         if 'check_name' in params and 'called_by' in params:
