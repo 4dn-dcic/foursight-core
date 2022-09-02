@@ -198,7 +198,7 @@ class Deploy(object):
     # Added identity arg for the Foursight CloudFormation template; get other values from GAC/etc at runtime.
     def build_config_and_package(cls, args, identity=None, stack_name=None, trial_creds=None, global_env_bucket=None,
                                  security_ids=None, subnet_ids=None, check_runner=None,
-                                 lambda_timeout=DEFAULT_LAMBDA_TIMEOUT, rds_name=None,
+                                 lambda_timeout=DEFAULT_LAMBDA_TIMEOUT,
                                  # These next args are preferred over passing 'args'.
                                  merge_template=None, output_file=None, stage=None, trial=None,
                                  ):
@@ -223,8 +223,7 @@ class Deploy(object):
                 cls.build_config(stage, identity=identity, stack_name=stack_name, trial_creds=trial_creds,
                                  trial_global_env_bucket=True,
                                  global_env_bucket=global_env_bucket, lambda_timeout=lambda_timeout,
-                                 security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner,
-                                 rds_name=rds_name)
+                                 security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner)
             else:
                 raise Exception('Build config requires trial_creds, sg id, and subnet ids to run in trial account')
         else:
