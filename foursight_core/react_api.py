@@ -231,7 +231,7 @@ class ReactApi:
             env_unknown = False
         if not env_unknown:
             try:
-                environment_and_bucket_info = self.sorted_dict(obfuscate_dict(self.environment.get_environment_and_bucket_info(environ, stage_name))),
+                environment_and_bucket_info = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(self.environment.get_environment_and_bucket_info(environ, stage_name))),
                 portal_url = self.get_portal_url(environ)
             except:
                 environment_and_bucket_info = None
@@ -294,7 +294,7 @@ class ReactApi:
                 "foursight": get_foursight_bucket(envname=environ, stage=stage_name),
                 "foursight_prefix": get_foursight_bucket_prefix(),
                 "info": environment_and_bucket_info,
-                "ecosystem": self.sorted_dict(EnvUtils.declared_data()),
+                "ecosystem": self.sort_dictionary_by_lowercase_keys(EnvUtils.declared_data()),
             },
             "checks": {
                 "running": 0,
@@ -302,9 +302,9 @@ class ReactApi:
             },
             "gac": {
                 "name": get_identity_name(),
-                "values": self.sorted_dict(obfuscate_dict(get_identity_secrets())),
+                "values": self.sort_dictionary_by_lowercase_keys(obfuscate_dict(get_identity_secrets())),
              },
-            "environ": self.sorted_dict(obfuscate_dict(dict(os.environ)))
+            "environ": self.sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
         }
         if env_unknown:
             response.body["env_unknown"] = True
@@ -395,7 +395,7 @@ class ReactApi:
             env_unknown = False
         if not env_unknown:
             try:
-                environment_and_bucket_info = self.sorted_dict(obfuscate_dict(self.environment.get_environment_and_bucket_info(environ, stage_name))),
+                environment_and_bucket_info = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(self.environment.get_environment_and_bucket_info(environ, stage_name))),
             except:
                 environment_and_bucket_info = None
         else:
@@ -443,7 +443,7 @@ class ReactApi:
                 "foursight": get_foursight_bucket(envname=environ, stage=stage_name),
                 "foursight_prefix": get_foursight_bucket_prefix(),
                 "info": environment_and_bucket_info,
-                "ecosystem": self.sorted_dict(EnvUtils.declared_data()),
+                "ecosystem": self.sort_dictionary_by_lowercase_keys(EnvUtils.declared_data()),
             }
         }
         if env_unknown:
@@ -519,8 +519,8 @@ class ReactApi:
         diff = DiffManager(label=None)
         diffs = diff.diffs(gac_values_a, gac_values_b)
         return {
-            "gac": self.sorted_dict(obfuscate_dict(gac_values_a)),
-            "gac_compare": self.sorted_dict(obfuscate_dict(gac_values_b)),
+            "gac": self.sort_dictionary_by_lowercase_keys(obfuscate_dict(gac_values_a)),
+            "gac_compare": self.sort_dictionary_by_lowercase_keys(obfuscate_dict(gac_values_b)),
             "gac_diffs": diffs
         }
 

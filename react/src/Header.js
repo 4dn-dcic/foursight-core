@@ -48,7 +48,6 @@ const Header = (props) => {
                 <td width="1%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href="">
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
-                        <img src="/public/4dn_logo.png" width="130" />
                     </a>
                 </td>
                 <td width="98%" align="center" style={{fontSize:"16pt",color:"white", nowrap:"1"}}>
@@ -72,6 +71,8 @@ const Header = (props) => {
             <tr title={"App Deployed:" + info.app?.deployed + " | App Launched: " + info.app?.launched + " | Page Loaded: " + info.page?.loaded}>
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={URL.Url("/home", true)}>
+                        {/* TODO */}
+                        <img src="/4dnlogo.png" style={{marginLeft:"14px",marginTop:"4px",marginBottom:"4px",height:"32px"}} />
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                     </a>
                 </td>
