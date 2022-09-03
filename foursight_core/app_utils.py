@@ -1183,7 +1183,7 @@ class AppUtilsCore(ReactApi):
         users = []
         # TODO: Support paging.
         user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ),
->                                                      add_on='frame=object&limit=10000&datastore=database')
+                                                       add_on='frame=object&limit=10000&datastore=database')
         for user_record in user_records["@graph"]:
             last_modified = user_record.get("last_modified")
             if last_modified:
