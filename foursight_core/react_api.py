@@ -1,4 +1,5 @@
 from chalice import Response, __version__ as chalice_version
+import cron_descriptor
 import os
 import io
 from os.path import dirname
@@ -449,14 +450,10 @@ class ReactApi:
         if env_unknown:
             response.body["env"]["unknown"] = True
             response.body["env_unknown"] = True
-        print(f'xyzzy: react_get_info: 2: {datetime.datetime.utcnow()}')
         response.headers = {
             "Content-Type": "application/json"
         }     
-        print("xyzzy:headers:")
-        print(response.headers)
         response.status_code = 200
-        print(f'xyzzy: react_get_info: 3: {datetime.datetime.utcnow()}')
         response = self.process_response(response)
         self.react_header_info_cache[environ] = response
         return response
@@ -466,7 +463,7 @@ class ReactApi:
             boto_secrets_manager = boto3.client('secretsmanager')
             return [secrets['Name'] for secrets in boto_secrets_manager.list_secrets()['SecretList']]
         except Exception as e:
-            print("XYZZY:EXCEPTION GETTING SECRETS")
+            print("Exception getting secrets")
             print(e)
             return []
 
@@ -485,12 +482,8 @@ class ReactApi:
             return " OR ".join(matching_gac_names)
 
     def get_unique_annotated_environments(self):
-        print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
         envs = self.get_unique_annotated_environment_names()
-        print('11111xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
-        print(envs)
         for env in envs:
-            print('313333xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
             env["gac_name"] = self.get_gac_name(env["full"])
         return envs
 
@@ -514,8 +507,6 @@ class ReactApi:
             gac_values_a = get_identity_secrets()
         with override_environ(IDENTITY=gac_name_b):
             gac_values_b = get_identity_secrets()
-        if gac_name_a == gac_name_b:
-            gac_values_b = self.munge_gac_for_testing(gac_values_b)
         diff = DiffManager(label=None)
         diffs = diff.diffs(gac_values_a, gac_values_b)
         return {
@@ -524,10 +515,148 @@ class ReactApi:
             "gac_diffs": diffs
         }
 
-    def munge_gac_for_testing(self, gac_values):
-        if gac_values.get("ENCODED_AUTH0_CLIENT"):
-            gac_values["ENCODED_AUTH0_CLIENT"] = str(uuid.uuid4()).replace('-','')
-        if gac_values.get("ENCODED_AUTH0_SECRET"):
-            gac_values.pop("ENCODED_AUTH0_SECRET")
-        gac_values["SOME_VALUE_XYZZY"] = str(uuid.uuid4()).replace('-','')
-        return gac_values
+
+    # XYZZY:checks
+
+    def get_checks(self, env: str = None):
+        return self.check_handler.CHECK_SETUP
+
+    def get_stack_name(self):
+        return os.environ.get("STACK_NAME")
+
+    def get_stack_template(self, stack_name: str = None) -> dict:
+        if not stack_name:
+            stack_name = self.get_stack_name()
+            if not stack_name:
+                return {}
+        boto_cloudformation = boto3.client('cloudformation')
+        return boto_cloudformation.get_template(StackName=stack_name)
+ 
+
+    def get_lambdas_from_template(self, stack_template: dict) -> dict:
+        lambda_definitions = []
+        stack_template = stack_template["TemplateBody"]["Resources"]
+        for resource_key in stack_template:
+            resource_type = stack_template[resource_key]["Type"]
+            if resource_type == "AWS::Lambda::Function":
+                lambda_name = resource_key
+                lambda_properties = stack_template[lambda_name]["Properties"]
+                lambda_code_s3_bucket = lambda_properties["Code"]["S3Bucket"]
+                lambda_code_s3_bucket_key = lambda_properties["Code"]["S3Key"]
+                lambda_handler = lambda_properties["Handler"]
+                lambda_definitions.append({
+                    "lambda_name": lambda_name,
+                    "lambda_code_s3_bucket": lambda_code_s3_bucket,
+                    "lambda_code_s3_bucket_key": lambda_code_s3_bucket_key,
+                    "lambda_handler": lambda_handler
+                })
+        return lambda_definitions
+
+    def annotate_lambdas_with_schedules_from_template(self, lambdas: dict, stack_template: dict) -> list:
+        stack_template = stack_template["TemplateBody"]["Resources"]
+        for resource_key in stack_template:
+            resource_type = stack_template[resource_key]["Type"]
+            if resource_type == "AWS::Events::Rule":
+                event_name = resource_key
+                event_properties = stack_template[event_name]["Properties"]
+                event_schedule = event_properties["ScheduleExpression"]
+                if event_schedule:
+                    event_targets = event_properties["Targets"]
+                    for event_target in event_targets:
+                        event_target = dict(event_target)
+                        event_target_arn = dict(event_target["Arn"])
+                        event_target_function_arn = event_target_arn["Fn::GetAtt"]
+                        if len(event_target_function_arn) == 2 and "Arn" in event_target_function_arn:
+                            if event_target_function_arn[0] == "Arn":
+                                event_target_function_name = event_target_function_arn[1]
+                            else:
+                                event_target_function_name = event_target_function_arn[0]
+                            if event_target_function_name:
+                                for l in lambdas:
+                                    if l["lambda_name"] == event_target_function_name:
+                                        event_schedule = str(event_schedule).replace("cron(", "").replace(")", "")
+                                        l["lambda_schedule"] = str(event_schedule)
+                                        print('xyzzy-schedule')
+                                        print(event_schedule)
+                                        print(type(event_schedule))
+                                        print(str(event_schedule))
+                                        print(dir(event_schedule))
+                                        print(event_schedule.format())
+                                        l["lambda_schedule_description"] = cron_descriptor.get_description(str(event_schedule))
+
+        return lambdas
+
+    def annotate_lambdas_with_function_metadata(self, lambdas: dict) -> list:
+        boto_lambda = boto3.client("lambda")
+        lambda_functions = boto_lambda.list_functions()["Functions"]
+        for lambda_function in lambda_functions:
+            lambda_function_handler = lambda_function["Handler"]
+            for l in lambdas:
+                if l["lambda_handler"] == lambda_function_handler:
+                    l["lambda_function_name"] = lambda_function["FunctionName"]
+                    l["lambda_function_arn"] = lambda_function["FunctionArn"]
+                    l["lambda_code_size"] = lambda_function["CodeSize"]
+                    l["lambda_modified"] = lambda_function["LastModified"]
+                    l["lambda_description"] = lambda_function["Description"]
+                    l["lambda_role"] = lambda_function["Role"]
+                    #
+                    # Look for the real modified time which may be in the tag if we ever did a manual
+                    # reload of the lambda which will do its job by making an innocuous change to the
+                    # lambda (its description) but which also has the effect of changing its modified
+                    # time, so that process also squirrels away the real lambda modified time in a
+                    # tag called last_modified. See the reload_lambda function for details of this.
+                    try:
+                       lambda_function_tags = boto_lambda.list_tags(Resource=lambda_function["FunctionArn"])["Tags"]
+                       lambda_modified = lambda_function_tags.get("last_modified")
+                       if lambda_modified:
+                            l["lambda_modified"] = lambda_modified
+                    except:
+                        pass
+        return lambdas
+
+    def annotate_lambdas_with_check_setup(self, lambdas: dict, checks: dict) -> dict:
+        if not checks or not isinstance(checks, dict):
+            return lambdas
+        for check_setup_item_name in checks:
+            check_setup_item = checks[check_setup_item_name]
+            check_setup_item_schedule = check_setup_item.get("schedule")
+            if check_setup_item_schedule:
+                for check_setup_item_schedule_name in check_setup_item_schedule.keys():
+                    for l in lambdas:
+                        if l["lambda_handler"] == check_setup_item_schedule_name or l["lambda_handler"] == "app." + check_setup_item_schedule_name:
+                            if not l.get("lambda_checks"):
+                                l["lambda_checks"] = [check_setup_item_schedule_name]
+                            elif check_setup_item_schedule_name not in l["lambda_checks"]:
+                                l["lambda_checks"].append(check_setup_item_schedule_name)
+        return lambdas
+
+    def get_annotated_lambdas(self, stack_name: dict = None, checks: dict = None) -> dict:
+        if not stack_name:
+            stack_name = self.get_stack_name()
+            if not stack_name:
+                return {}
+        stack_template = self.get_stack_template(stack_name)
+        lambdas = self.get_lambdas_from_template(stack_template)
+        lambdas = self.annotate_lambdas_with_schedules_from_template(lambdas, stack_template)
+        lambdas = self.annotate_lambdas_with_function_metadata(lambdas)
+        lambdas = self.annotate_lambdas_with_check_setup(lambdas, checks)
+        return lambdas
+
+    def react_route_checks(self, request, env: str) -> dict:
+        response = Response('react_route_checks')
+        response.headers = { "Content-Type": "application/json" }     
+        response.status_code = 200
+
+        envs = self.init_environments(envs=[env])
+        connection = self.init_connection(env, _environments=envs)
+        response.body = self.get_checks()
+        response = self.process_response(response)
+        return response
+
+    def react_route_lambdas(self, request, env: str) -> dict:
+        response = Response('react_route_lambdas')
+        response.headers = { "Content-Type": "application/json" }     
+        response.status_code = 200
+        response.body = self.get_annotated_lambdas(checks=self.get_checks())
+        response = self.process_response(response)
+        return response

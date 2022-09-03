@@ -2331,6 +2331,18 @@ def get_view_reload_lambda_route():
     return AppUtilsCore.singleton().view_reload_lambda(request=app.current_request, environ=DEFAULT_ENV, is_admin=True, lambda_name='default', domain=domain, context=context)
 
 
+@app.route(ROUTE_PREFIX + 'reactapi/{env}/checks', methods=['GET'], cors=CORS)
+def reactapi_route_checks(env: str):
+    print(f"XYZZY:/reactapi/{env}/checks")
+    return AppUtilsCore.singleton().react_route_checks(request=app.current_request, env=env)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/{env}/lambdas', methods=['GET'], cors=CORS)
+def reactapi_route_lambdas(env: str):
+    print(f"XYZZY:/reactapi/{env}/lambdas")
+    return AppUtilsCore.singleton().react_route_lambdas(request=app.current_request, env=env)
+
+
 @app.lambda_function()
 def check_runner(event, context):
     """

@@ -181,7 +181,7 @@ const Info = () => {
         <InfoBox title="Environment Variables">
             { info.environ ? (<span>
                 { Object.keys(info.environ).map((key) => {
-                    return <InfoRow key={key} name={key} value={info.gac.values[key]} monospace={true} copy={true} />
+                    return <InfoRow key={key} name={key} value={info.environ[key]} monospace={true} copy={true} />
                 })}
             </span>):(<span/>)}
         </InfoBox>
