@@ -1140,7 +1140,7 @@ class AppUtilsCore(ReactApi):
             try:
                 this_user = ff_utils.get_metadata('users/' + this_email.lower(),
                                                   ff_env=full_env_name(environ),
->                                                 add_on='frame=object&datastore=database')
+                                                  add_on='frame=object&datastore=database')
                 users.append({"email": this_email, "record": this_user})
             except Exception as e:
                 # TODO

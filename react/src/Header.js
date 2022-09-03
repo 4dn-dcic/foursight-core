@@ -48,6 +48,7 @@ const Header = (props) => {
                 <td width="1%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href="">
                         <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
+                        <img src="/public/4dn_logo.png" width="130" />
                     </a>
                 </td>
                 <td width="98%" align="center" style={{fontSize:"16pt",color:"white", nowrap:"1"}}>
