@@ -299,12 +299,10 @@
         <div class="container">
             <div class="boxstyle check-warn" style="margin:20pt;padding:10pt;">
                 Not logged in. Click <u style="cursor:pointer" onclick="create_redir_cookie(); lock.show();"><b>here</b></u> to <span style="cursor:pointer" onclick="create_redir_cookie(); lock.show();">login</span>.
-                {% if not user_record %}
-                    {% if user_record_error == "noadmin" or user_record_error == "nogroups" %}
-                        <br /><span style="color:darkred"><b>Warning</b>: The user <b>{{user_record_error_email}}</b> does not have permission for the <b>{{env}}</b> environment.</span>
-                    {% else %}
-                        <br /><span style="color:darkred"><b>Warning</b>: A user record for <b>{{user_record_error_email}}</b> was not found for the <b>{{env}}</b> environment.</span>
-                    {% endif %}
+                {% if user_record["error"] == "noadmin" or user_record["error"] == "nogroups" %}
+                    <br /><span style="color:darkred"><b>Warning</b>: The user <b>{{user_record["email"]}}</b> does not have permission for the <b>{{env}}</b> environment.</span>
+                {% elif user_record["error"] == "exception"  %}
+                    <br /><span style="color:darkred"><b>Warning</b>: A user record for <b>{{user_record["email"]}}</b> was not found for the <b>{{env}}</b> environment.</span>
                 {% endif %}
                 {% if aws_account_number %}
                     <br />

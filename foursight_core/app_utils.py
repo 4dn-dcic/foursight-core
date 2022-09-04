@@ -104,9 +104,10 @@ class AppUtilsCore:
         )
         self.portal_url = None
         self.auth0_client_id = None
-        self.user_record = None
-        self.user_record_error = None
-        self.user_record_error_email = None
+        self.user_records = {}
+        # self.user_record = None
+        # self.user_record_error = None
+        # self.user_record_error_email = None
         self.lambda_last_modified = None
 
     @staticmethod
@@ -214,6 +215,25 @@ class AppUtilsCore:
                 "expiration_time": expiration_time,
                 "jwt": jwt_decoded}
 
+    # THis is quite a hack, this whole user_records thing. Will straighten out eventually (perhaps with React version someday).
+    def get_user_record(self, environ: str, request_dict: dict) -> dict:
+        user_info = self.get_logged_in_user_info(environ, request_dict)
+        if not user_info:
+            return None
+        user_record = self.user_records.get(user_info['email_address'])
+        return user_record
+
+    def set_user_record(self, email: str, record: dict, error: str, exception: str):
+        if not email:
+            return
+        user_record = self.user_records.get(email)
+        if not user_record:
+            self.user_records[email] = {"email": email, "record": record, "error": error, "exception": exception}
+        else:
+            user_record["record"] = record
+            user_record["error"] = error
+            user_record["exception"] = exception
+
     def get_portal_url(self, env_name: str) -> str:
         if not self.portal_url:
             try:
@@ -289,27 +309,31 @@ class AppUtilsCore:
                     groups = user_res.get('groups')
                     if not groups:
                         logger.warn("foursight_core.check_authorization: No 'groups' element for user record! Returning False.")
-                        self.user_record = None
-                        self.user_record_error = "nogroups"
-                        self.user_record_error_email = jwt_decoded.get('email')
+                        self.set_user_record(email=jwt_decoded.get('email'), record=None, error="nogroups", exception=None)
+                        # self.user_record = None
+                        # self.user_record_error = "nogroups"
+                        # self.user_record_error_email = jwt_decoded.get('email')
                         return False
                     if not ((not groups or 'admin' in groups) and jwt_decoded.get('email_verified')):
                         logger.error("foursight_core.check_authorization: Returning False")
                         # if unauthorized for one, unauthorized for all
-                        self.user_record = None
-                        self.user_record_error = "noadmin"
-                        self.user_record_error_email = jwt_decoded.get('email')
+                        self.set_user_record(email=jwt_decoded.get('email'), record=None, error="noadmin", exception=None)
+                        # self.user_record = None
+                        # self.user_record_error = "noadmin"
+                        # self.user_record_error_email = jwt_decoded.get('email')
                         return False
-                    self.user_record = user_res
-                    self.user_record_error = None
-                    self.user_record_error_email = None
+                    self.set_user_record(email=jwt_decoded.get('email'), record=user_res, error=None, exception=None)
+                    # self.user_record = user_res
+                    # self.user_record_error = None
+                    # self.user_record_error_email = None
                 logger.warn("foursight_core.check_authorization: Returning True")
                 return True
             except Exception as e:
                 logger.error("foursight_core.check_authorization: Exception on check_authorization")
-                self.user_record = None
-                self.user_record_error = "exception"
-                self.user_record_error_email = jwt_decoded.get('email')
+                self.set_user_record(email=jwt_decoded.get('email'), record=None, error="exception", exception=str(e))
+                # self.user_record = None
+                # self.user_record_error = "exception"
+                # self.user_record_error_email = jwt_decoded.get('email')
                 logger.error(e)
         logger.error("foursight_core.check_authorization: Returning False ")
         return False
@@ -824,9 +848,10 @@ class AppUtilsCore:
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
-            user_record=self.user_record,
-            user_record_error=self.user_record_error,
-            user_record_error_email=self.user_record_error_email,
+            user_record=self.get_user_record(environ, request_dict),
+            # user_record=self.user_record,
+            # user_record_error=self.user_record_error,
+            # user_record_error_email=self.user_record_error_email,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
@@ -917,9 +942,10 @@ class AppUtilsCore:
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
-            user_record=self.user_record,
-            user_record_error=self.user_record_error,
-            user_record_error_email=self.user_record_error_email,
+            user_record=self.get_user_record(environ, request_dict),
+            # user_record=self.user_record,
+            # user_record_error=self.user_record_error,
+            # user_record_error_email=self.user_record_error_email,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_credentials=aws_credentials,
             aws_account_number=aws_account_number,
@@ -975,9 +1001,10 @@ class AppUtilsCore:
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
-            user_record=self.user_record,
-            user_record_error=self.user_record_error,
-            user_record_error_email=self.user_record_error_email,
+            user_record=self.get_user_record(environ, request_dict),
+            # user_record=self.user_record,
+            # user_record_error=self.user_record_error,
+            # user_record_error_email=self.user_record_error_email,
             users=users,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
@@ -999,8 +1026,7 @@ class AppUtilsCore:
         stage_name = self.stage.get_stage()
         users = []
         # TODO: Support paging.
-        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ),
-                                                       add_on='frame=object&limit=10000&datastore=database')
+        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000&datastore=database')
         for user_record in user_records["@graph"]:
             last_modified = user_record.get("last_modified")
             if last_modified:
@@ -1038,9 +1064,10 @@ class AppUtilsCore:
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
-            user_record=self.user_record,
-            user_record_error=self.user_record_error,
-            user_record_error_email=self.user_record_error_email,
+            user_record=self.get_user_record(environ, request_dict),
+            # user_record=self.user_record,
+            # user_record_error=self.user_record_error,
+            # user_record_error_email=self.user_record_error_email,
             users=users,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
@@ -1112,9 +1139,10 @@ class AppUtilsCore:
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
-            user_record=self.user_record,
-            user_record_error=self.user_record_error,
-            user_record_error_email=self.user_record_error_email,
+            user_record=self.get_user_record(environ, request_dict),
+            # user_record=self.user_record,
+            # user_record_error=self.user_record_error,
+            # user_record_error_email=self.user_record_error_email,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             running_checks=running_checks,
@@ -1272,9 +1300,10 @@ class AppUtilsCore:
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
-            user_record=self.user_record,
-            user_record_error=self.user_record_error,
-            user_record_error_email=self.user_record_error_email,
+            user_record=self.get_user_record(environ, request_dict),
+            # user_record=self.user_record,
+            # user_record_error=self.user_record_error,
+            # user_record_error_email=self.user_record_error_email,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
