@@ -78,7 +78,7 @@ const Checks = (props) => {
 
     const ChecksGroupBox = ({}) => {
         return <div style={{minWidth:"150pt"}}>
-            <div style={{fontWeight:"bold",paddingBottom:"3pt",cursor:"pointer"}} onClick={() => onGroupSelectAll()}>&nbsp;Groups</div>
+            <div style={{fontWeight:"bold",paddingBottom:"3pt",cursor:"pointer"}} onClick={() => onGroupSelectAll()}>&nbsp;Check Groups</div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
                 { groupedChecks.map((datum, index) => {
                     return <div key={datum.group}>
@@ -112,7 +112,7 @@ const Checks = (props) => {
 
     const SelectedGroupsBox = ({}) => {
         return <div>
-            <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;Selected Checks</div>
+            <div style={{fontWeight:"bold",paddingBottom:"3pt",cursor:"pointer"}} onClick={() => {selectedGroups?.map(selectedGroup => toggleShowAllResults(selectedGroup.checks))}}>&nbsp;Checks</div>
             { selectedGroups?.map(selectedGroup =>
                 <SelectedGroupBox key={selectedGroup.group} group={selectedGroup} />
             )}
