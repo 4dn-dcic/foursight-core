@@ -166,7 +166,7 @@ const Checks = (props) => {
     const SelectedCheckResultsBox = ({check, index}) => {
         return <div>
             Latest Results: {check.results?.timestamp}
-            <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginTop:"3px",maxWidth:"600pt"}}>
+            <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginTop:"3px",marginRight:"5pt",maxWidth:"600pt"}}>
                 {!check.results ? "Loading ..." : (Object.keys(check.results).length > 0 ? YAML.stringify(check.results) : "No results.") }
             </pre>
         </div>
