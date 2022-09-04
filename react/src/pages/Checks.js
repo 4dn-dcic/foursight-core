@@ -139,7 +139,7 @@ const Checks = (props) => {
                                 { isSelectedCheckResultsBoxShowing(check) && (
                                     <div style={{borderStyle:"solid",borderWidth:"1",padding:"10pt"}}>
                                         Put results here ...
-                                        <SelectedCheckResultsBox/>
+                                        <SelectedCheckResultsBox check={check}/>
                                         <br/>
                                     </div>
                                 )}
@@ -154,8 +154,7 @@ const Checks = (props) => {
 
     const SelectedCheckResultsBox = ({check, index}) => {
         return <div>
-            TODO: SelectedCheckResultsBox
-            {JSON.stringify(check?.results)}
+            {JSON.stringify(check.results)}
         </div>
     }
 
@@ -171,11 +170,8 @@ const Checks = (props) => {
 
     function showCheckResultsBox(check, index) {
         const checkResultsUrl = API.Url(`/checks`, environ);
-            console.log("XXX");
-            console.log(selectedGroups)
-        fetchData(checkResultsUrl, checkResults => { console.log("gotit"); check.results = checkResults; console.log("YYY");console.log(selectedGroups);selectedGroups[0].checks[0].title="FOO";let x = [...selectedGroups]; console.log(x);console.log(selectedGroups); setSelectedGroups([...JSON.parse(JSON.stringify(x))]); }, setLoading, setError)
+        fetchData(checkResultsUrl, checkResults => { check.results = checkResults;  setSelectedGroups([...selectedGroups]); }, setLoading, setError)
         check.showingResults = true;
-        //setSelectedGroups((existingSelectedGroups) => [...existingSelectedGroups]);
     }
     function hideCheckResultsBox(check, index) {
         check.showingResults = false;
