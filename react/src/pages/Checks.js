@@ -122,7 +122,7 @@ const Checks = (props) => {
     const SelectedGroupBox = ({group}) => {
         return <div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt"}}>
-                <b>{group?.group}</b>
+                <b style={{cursor:"pointer"}} onClick={() => showAllResults(group.checks)}>{group?.group}</b>
                 <br /> <br />
                 { group.checks.map((check, index) => {
                     return <div key={index}>
@@ -179,6 +179,23 @@ const Checks = (props) => {
         else {
             showCheckResultsBox(check, index);
         }
+    }
+
+    function isShowingAllResults(checks) {
+        for (let i = 0 ; i < checks.length ; i++) {
+            if (!checks[i].showingResults) {
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    function showAllResults(checks) {
+        checks.map((check, index) => !check.showingResults && showCheckResultsBox(check, index));
+    }
+
+    function hideAllResults(checks) {
+        checks.map((check, index) => check.results = null);
     }
 
     function showCheckResultsBox(check, index) {
