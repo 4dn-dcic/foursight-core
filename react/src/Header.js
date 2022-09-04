@@ -15,6 +15,10 @@ const Header = (props) => {
     const [ info ] = useContext(GlobalContext);
     const path = window.location.pathname;
 
+    let isFoursightFourfront = info.page?.title == "Foursight-Fourfront";
+    let titleBackgroundColor = isFoursightFourfront ? "#14533C" : "#143C53";
+    let subTitleBackgroundColor = isFoursightFourfront ? "#AEF1D6" : "#AED6F1";
+
     function renderNavigationLinks(info) {
         function style(isActive) {
             if (isActive) {
@@ -42,12 +46,16 @@ const Header = (props) => {
     }
 
     return <>
-        <div style={{width:"100%",background:"#143c53"}}>{ info.loading ? (
+        <div style={{width:"100%",background:titleBackgroundColor}}>{ info.loading ? (
             <table style={{width:"100%",height:"42px"}}><tbody>
             <tr>
                 <td width="1%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href="">
-                        <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
+                        { isFoursightFourfront ? (<span>
+                            &nbsp;&nbsp;&nbsp;<img style={{marginLeft:"10px",marginTop:"4px",marginBottom:"10px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="34" />
+                        </span>):(<span>
+                            <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
+                        </span>)}
                     </a>
                 </td>
                 <td width="98%" align="center" style={{fontSize:"16pt",color:"white", nowrap:"1"}}>
@@ -72,8 +80,11 @@ const Header = (props) => {
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={URL.Url("/home", true)}>
                         {/* TODO */}
-                        <img src="/4dnlogo.png" style={{marginLeft:"14px",marginTop:"4px",marginBottom:"4px",height:"32px"}} />
-                        <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
+                        { isFoursightFourfront ? (<span>
+                            <img style={{marginLeft:"12px",marginTop:"4px",marginBottom:"4px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="34" />
+                        </span>):(<span>
+                            <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
+                        </span>)}
                     </a>
                 </td>
                 <td width="34%" align="center" style={{whiteSpace:"nowrap"}}>
@@ -99,7 +110,7 @@ const Header = (props) => {
             </tr>
             </tbody></table>
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
-                <tr style={{background:"#AED6F1"}}>
+                <tr style={{background:subTitleBackgroundColor}}>
                     <td width="49%" style={{paddingLeft:"10pt",paddingTop:"3pt",paddingBottom:"3pt",whiteSpace:"nowrap"}}>
                         {renderNavigationLinks(info)}
                     </td>
@@ -124,7 +135,7 @@ const Header = (props) => {
                             </div>
                          </span>
                         ):(
-                            <b style={{color:"#143c53"}} title="Environment: {URL.Env()}">{URL.Env().toUpperCase()}</b>
+                            <b style={{color:titleBackgroundColor}} title="Environment: {URL.Env()}">{URL.Env().toUpperCase()}</b>
                         )}
                         &nbsp;|&nbsp;
                         { (info.app?.stage == 'prod') ? (<span>
