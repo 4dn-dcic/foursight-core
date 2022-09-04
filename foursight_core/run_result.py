@@ -120,6 +120,8 @@ class RunResult(object):
             desired_time = (
                     datetime.datetime.utcnow() - datetime.timedelta(hours=diff_hours, minutes=diff_mins)
             ).replace(tzinfo=tz.tzutc())
+            print("xyzzy:desirtime:")
+            print(desired_time)
         best_match = get_closest(check_tuples, desired_time)
         # ensure that the does not have status 'ERROR'
         match_res = None

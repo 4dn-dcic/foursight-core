@@ -160,7 +160,7 @@ class ReactApi:
             open_mode = "r"
 
         if not ReactApi.Cache.static_files.get(file):
-            response = creeate_standard_response("react_serve_static_file", content_type)
+            response = self.create_standard_response("react_serve_static_file", content_type)
             print(f"Serving React file: {file} (content-type: {content_type}).")
             with io.open(file, open_mode) as f:
                 try:
@@ -528,6 +528,8 @@ class ReactApi:
         if not ReactApi.Cache.checks:
             print("xyzzy-checks-cache-nohit")
             checks = self.check_handler.CHECK_SETUP
+            for check_key in checks.keys():
+                checks[check_key]["name"] = check_key
             ReactApi.Cache.checks = checks
         else:
             print("xyzzy-checks-cache-hit")
@@ -537,7 +539,7 @@ class ReactApi:
     def get_annotated_checks(self, env: str = None):
         if not ReactApi.Cache.annotated_checks:
             checks = self.get_checks()
-            lambdas = self.get_annotated_lambdas(checks)
+            lambdas = self.get_annotated_lambdas()
             self.annotate_checks_with_schedules(checks, lambdas)
             ReactApi.Cache.annotated_checks = checks
         return ReactApi.Cache.annotated_checks
@@ -663,15 +665,14 @@ class ReactApi:
                                 la["lambda_checks"].append(check_setup_item_schedule_name)
         return lambdas
 
-    def get_annotated_lambdas(self, checks) -> dict:
+    def get_annotated_lambdas(self) -> dict:
         if not ReactApi.Cache.lambdas:
             stack_name = self.get_stack_name()
             stack_template = self.get_stack_template(stack_name)
             lambdas = self.get_lambdas_from_template(stack_template)
             lambdas = self.annotate_lambdas_with_schedules_from_template(lambdas, stack_template)
             lambdas = self.annotate_lambdas_with_function_metadata(lambdas)
-            if checks:
-                lambdas = self.annotate_lambdas_with_check_setup(lambdas, checks)
+            lambdas = self.annotate_lambdas_with_check_setup(lambdas, self.get_checks())
             ReactApi.Cache.lambdas = lambdas
         return ReactApi.Cache.lambdas
 
@@ -702,17 +703,23 @@ class ReactApi:
 
     def react_route_lambdas(self, request, env: str) -> dict:
         response = self.create_standard_response("react_route_lambdas")
-        response.body = self.get_annotated_lambdas(self.get_checks())
+        response.body = self.get_annotated_lambdas()
         response = self.process_response(response)
         return response
 
     def react_route_check_results(self, request, env: str, check: str) -> dict:
         print(f"XYZZY-CHECKS({env},{check}")
         response = self.create_standard_response("react_route_check_results")
-        connection = self.init_connection(env)
-        check_results = self.CheckResult(connection, check)
-        check_results = check_results.get_primary_result()
-        response.body = check_results
-        print("XYZZY-CHECKS-RESULT")
-        print(response.body)
+        try:
+            connection = self.init_connection(env)
+            check_results = self.CheckResult(connection, check)
+            check_results = check_results.get_closest_result()
+            uuid = check_results["uuid"]
+            check_datetime = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
+            check_datetime = self.convert_utc_datetime_to_useastern_datetime(check_datetime)
+            check_results["timestamp"] = check_datetime
+            response.body = check_results
+        except Exception as e:
+            print("xyzzy: Exception getting checks for {check}")
+            response.body = {}
         return self.process_response(response)

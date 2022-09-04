@@ -8,6 +8,7 @@ import { RingSpinner } from "../Spinners";
 import { LoginAndValidEnvRequired } from "../LoginUtils";
 import * as API from "../API";
 import * as URL from "../URL";
+let YAML = require('json-to-pretty-yaml');
 
 const Checks = (props) => {
 
@@ -49,13 +50,26 @@ const Checks = (props) => {
 
     function onGroupSelect(group) {
         if (isSelectedGroup(group)) {
-            const index = findSelectedGroupIndex(group)
+            const index = findSelectedGroupIndex(group);
             selectedGroups.splice(index, 1);
             setSelectedGroups((selectedGroups) => [...selectedGroups]);
         }
         else {
-            setSelectedGroups((existingSelectedGroups) => [...existingSelectedGroups, group]);
+            setSelectedGroups((existingSelectedGroups) => [group, ...existingSelectedGroups]);
         }
+    }
+
+    function onGroupSelectAll(group) {
+        if (isAllGroupsSelected()) {
+            setSelectedGroups([groupedChecks[0]]);
+        }
+        else {
+            setSelectedGroups([...groupedChecks]);
+        }
+    }
+
+    function isAllGroupsSelected() {
+        return groupedChecks.length == selectedGroups.length;
     }
 
     function selectGroup(group) {
@@ -64,7 +78,7 @@ const Checks = (props) => {
 
     const ChecksGroupBox = ({}) => {
         return <div style={{minWidth:"150pt"}}>
-            <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;Groups</div>
+            <div style={{fontWeight:"bold",paddingBottom:"3pt",cursor:"pointer"}} onClick={() => onGroupSelectAll()}>&nbsp;Groups</div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
                 { groupedChecks.map((datum, index) => {
                     return <div key={datum.group}>
@@ -107,43 +121,39 @@ const Checks = (props) => {
 
     const SelectedGroupBox = ({group}) => {
         return <div>
-            <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"400pt"}}>
+            <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt"}}>
                 <b>{group?.group}</b>
                 <br /> <br />
                 { group.checks.map((check, index) => {
                     return <div key={index}>
-                        <SelectedCheckBox check={check} index={index}/>
+                        <SelectedChecksBox check={check} index={index}/>
                     </div>
                 })}
             </div>
         </div>
     }
 
-    const SelectedCheckBox = ({check, index}) => {
+    const SelectedChecksBox = ({check, index}) => {
         return <div>
             <table>
                 <tbody>
                     <tr>
-                        <td style={{verticalAlign:"top"}}>
-                            <b>&#x2192;&nbsp;</b>
+                        <td style={{verticalAlign:"top","cursor":"pointer"}} onClick={(arg) => {toggleCheckResultsBox(check, index)}}>
+                            <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
                         <td>
-                            <u onClick={(arg) => {toggleCheckResultsBox(check, index)}}>{check.title}</u>
+                            <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={(arg) => {toggleCheckResultsBox(check, index)}}>{check.title}</u>
                             <br/>
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div key={index} title={check.schedule[key].cron}>
-                    [[[{JSON.stringify(check)}]]]
-                                    <i>Schedule: {check.schedule[key].cron_description}</i>
+                                    <i>Scheduled Run: {check.schedule[key].cron_description}</i>
                                 </div>
                             })}
                             <>
-                                { isSelectedCheckResultsBoxShowing(check) && (
-                                    <div style={{borderStyle:"solid",borderWidth:"1",padding:"10pt"}}>
-                                        Put results here ...
-                                        <SelectedCheckResultsBox check={check}/>
-                                        <br/>
-                                    </div>
-                                )}
+                                { isShowingSelectedCheckResultsBox(check) && (<>
+                                    <SelectedCheckResultsBox check={check}/>
+                                    <br/>
+                                </>)}
                                 <br />
                             </>
                         </td>
@@ -155,10 +165,12 @@ const Checks = (props) => {
 
     const SelectedCheckResultsBox = ({check, index}) => {
         return <div>
-            {JSON.stringify(check.results)}
+            Latest Results: {check.results?.timestamp}
+            <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginTop:"3px",maxWidth:"600pt"}}>
+                {!check.results ? "Loading ..." : (Object.keys(check.results).length > 0 ? YAML.stringify(check.results) : "No results.") }
+            </pre>
         </div>
     }
-
 
     function toggleCheckResultsBox(check, index) {
         if (check.showingResults) {
@@ -170,17 +182,16 @@ const Checks = (props) => {
     }
 
     function showCheckResultsBox(check, index) {
-        const checkResultsUrl = API.Url(`/checks`, environ);
-        fetchData(checkResultsUrl, checkResults => { check.results = checkResults;  setSelectedGroups([...selectedGroups]); }, setLoading, setError)
         check.showingResults = true;
+        setSelectedGroups([...selectedGroups]);
+        const checkResultsUrl = API.Url(`/checks/${check.name}`, environ);
+        fetchData(checkResultsUrl, checkResults => { check.results = checkResults; setSelectedGroups([...selectedGroups]); }, setLoading, setError)
     }
     function hideCheckResultsBox(check, index) {
         check.showingResults = false;
         setSelectedGroups((existingSelectedGroups) => [...existingSelectedGroups]);
     }
-    function isSelectedCheckResultsBoxShowing(check) {
-        console.log("isShowingCheckResultsBox");
-        console.log(JSON.stringify(check))
+    function isShowingSelectedCheckResultsBox(check) {
         return check.showingResults;
     }
 
