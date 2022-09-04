@@ -138,11 +138,12 @@ const Checks = (props) => {
             <table>
                 <tbody>
                     <tr>
-                        <td style={{verticalAlign:"top","cursor":"pointer"}} onClick={(arg) => {toggleCheckResultsBox(check, index)}}>
+                        <td style={{verticalAlign:"top","cursor":"pointer"}} onClick={(arg) => {toggleCheckResultsBox(check)}}>
                             <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
                         <td>
-                            <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={(arg) => {toggleCheckResultsBox(check, index)}}>{check.title}</u>
+                            <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={(arg) => {toggleCheckResultsBox(check)}}>{check.title}</u>
+                            { isShowingSelectedCheckResultsBox(check) && check.results && (<span>&nbsp;<span style={{cursor:"pointer"}} onClick={() => {refreshResults(check)}}>&#8635;</span></span>) }
                             <br/>
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div key={index} title={check.schedule[key].cron}>
@@ -152,7 +153,6 @@ const Checks = (props) => {
                             <>
                                 { isShowingSelectedCheckResultsBox(check) && (<>
                                     <SelectedCheckResultsBox check={check}/>
-                                    <br/>
                                 </>)}
                                 <br />
                             </>
@@ -172,12 +172,20 @@ const Checks = (props) => {
         </div>
     }
 
-    function toggleCheckResultsBox(check, index) {
+    function refreshResults(check) {
+        check.results = null;
         if (check.showingResults) {
-            hideCheckResultsBox(check, index);
+            hideCheckResultsBox(check);
+            showCheckResultsBox(check);
+        }
+    }
+
+    function toggleCheckResultsBox(check) {
+        if (check.showingResults) {
+            hideCheckResultsBox(check);
         }
         else {
-            showCheckResultsBox(check, index);
+            showCheckResultsBox(check);
         }
     }
 
@@ -214,15 +222,19 @@ const Checks = (props) => {
     function showCheckResultsBox(check) {
         check.showingResults = true;
         setSelectedGroups([...selectedGroups]);
-        const checkResultsUrl = API.Url(`/checks/${check.name}`, environ);
-        fetchData(checkResultsUrl, checkResults => { check.results = checkResults; setSelectedGroups([...selectedGroups]); }, setLoading, setError)
+        if (!check.results) {
+            const checkResultsUrl = API.Url(`/checks/${check.name}`, environ);
+            fetchData(checkResultsUrl, checkResults => { check.results = checkResults; setSelectedGroups([...selectedGroups]); }, setLoading, setError)
+        }
     }
+
     function hideCheckResultsBox(check) {
         check.showingResults = false;
+        // check.results = null;
         setSelectedGroups((existingSelectedGroups) => [...existingSelectedGroups]);
     }
     function isShowingSelectedCheckResultsBox(check) {
-        return check.showingResults;
+        return check?.showingResults;
     }
 
     return <LoginAndValidEnvRequired>
