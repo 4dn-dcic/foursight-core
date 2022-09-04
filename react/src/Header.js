@@ -16,8 +16,10 @@ const Header = (props) => {
     const path = window.location.pathname;
 
     let isFoursightFourfront = info.page?.title == "Foursight-Fourfront";
+    isFoursightFourfront = true;
     let titleBackgroundColor = isFoursightFourfront ? "#14533C" : "#143C53";
     let subTitleBackgroundColor = isFoursightFourfront ? "#AEF1D6" : "#AED6F1";
+    subTitleBackgroundColor = "#DFF0D8"
 
     function renderNavigationLinks(info) {
         function style(isActive) {
@@ -52,7 +54,7 @@ const Header = (props) => {
                 <td width="1%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href="">
                         { isFoursightFourfront ? (<span>
-                            &nbsp;&nbsp;&nbsp;<img style={{marginLeft:"10px",marginTop:"4px",marginBottom:"10px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="34" />
+                            &nbsp;&nbsp;&nbsp;<img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="32" />
                         </span>):(<span>
                             <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                         </span>)}
@@ -81,7 +83,7 @@ const Header = (props) => {
                     <a href={URL.Url("/home", true)}>
                         {/* TODO */}
                         { isFoursightFourfront ? (<span>
-                            <img style={{marginLeft:"12px",marginTop:"4px",marginBottom:"4px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="34" />
+                            <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="32" />
                         </span>):(<span>
                             <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                         </span>)}
