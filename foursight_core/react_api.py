@@ -545,7 +545,7 @@ class ReactApi:
     def get_grouped_checks(self) -> None:
         if not ReactApi.Cache.grouped_checks:
             grouped_checks = []
-            checks = self.get_checks()
+            checks = self.get_annotated_checks()
             for check_setup_item_name in checks:
                 check_setup_item = checks[check_setup_item_name]
                 check_setup_item_group = check_setup_item["group"]
@@ -705,3 +705,14 @@ class ReactApi:
         response.body = self.get_annotated_lambdas(self.get_checks())
         response = self.process_response(response)
         return response
+
+    def react_route_check_results(self, request, env: str, check: str) -> dict:
+        print(f"XYZZY-CHECKS({env},{check}")
+        response = self.create_standard_response("react_route_check_results")
+        connection = self.init_connection(env)
+        check_results = self.CheckResult(connection, check)
+        check_results = check_results.get_primary_result()
+        response.body = check_results
+        print("XYZZY-CHECKS-RESULT")
+        print(response.body)
+        return self.process_response(response)

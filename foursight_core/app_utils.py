@@ -2348,6 +2348,12 @@ def reactapi_route_lambdas(env: str):
     return AppUtilsCore.singleton().react_route_lambdas(request=app.current_request, env=env)
 
 
+@app.route(ROUTE_PREFIX + 'reactapi/{env}/checks/{check}', methods=['GET'], cors=CORS)
+def reactapi_route_check_results(env: str, check: str):
+    print(f"XYZZY:/reactapi/{env}/checks/{check}")
+    return AppUtilsCore.singleton().react_route_check_results(request=app.current_request, env=env, check=check)
+
+
 @app.lambda_function()
 def check_runner(event, context):
     """

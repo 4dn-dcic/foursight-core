@@ -132,6 +132,7 @@ const Checks = (props) => {
                             <br/>
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div key={index} title={check.schedule[key].cron}>
+                    [[[{JSON.stringify(check)}]]]
                                     <i>Schedule: {check.schedule[key].cron_description}</i>
                                 </div>
                             })}
