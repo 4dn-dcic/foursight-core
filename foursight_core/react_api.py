@@ -518,29 +518,49 @@ class ReactApi:
 
     # XYZZY:checks
 
+    class Cache:
+        checks = None
+        annotated_checks = None
+        grouped_checks = None
+        lambdas = None
+
     def get_checks(self, env: str = None):
-        checks = self.check_handler.CHECK_SETUP
-        lambdas = self.get_annotated_lambdas(self.get_stack_name(), checks)
-        self.annotate_checks_with_schedules(checks, lambdas)
-        return checks
+        # TODO: handle env
+        if not ReactApi.Cache.checks:
+            print("xyzzy-checks-cache-nohit")
+            checks = self.check_handler.CHECK_SETUP
+            ReactApi.Cache.checks = checks
+        else:
+            print("xyzzy-checks-cache-hit")
+        print("xyzzy-checks done")
+        return ReactApi.Cache.checks
+
+    def get_annotated_checks(self, env: str = None):
+        if not ReactApi.Cache.annotated_checks:
+            checks = self.get_checks()
+            lambdas = self.get_annotated_lambdas()
+            self.annotate_checks_with_schedules(checks, lambdas)
+            ReactApi.Cache.annotated_checks = checks
+        return ReactApi.Cache.annotated_checks
 
     def get_grouped_checks(self) -> None:
-        grouped_checks = []
-        checks = self.get_checks()
-        for check_setup_item_name in checks:
-            check_setup_item = checks[check_setup_item_name]
-            check_setup_item_group = check_setup_item["group"]
-            # TODO: Pythonic way to do this.
-            found = False
-            for grouped_check in grouped_checks:
-                if grouped_check["group"] == check_setup_item_group:
-                    grouped_check["checks"].append(check_setup_item)
-                    found = True
-                    break
-            if not found:
-                grouped_checks.append({ "group": check_setup_item_group, "checks": [check_setup_item]})
-
-        return grouped_checks
+        if not ReactApi.Cache.grouped_checks:
+            grouped_checks = []
+            checks = self.get_checks()
+            for check_setup_item_name in checks:
+                check_setup_item = checks[check_setup_item_name]
+                check_setup_item_group = check_setup_item["group"]
+                # TODO: Pythonic way to do this.
+                found = False
+                for grouped_check in grouped_checks:
+                    if grouped_check["group"] == check_setup_item_group:
+                        grouped_check["checks"].append(check_setup_item)
+                        found = True
+                        break
+                if not found:
+                    grouped_checks.append({ "group": check_setup_item_group, "checks": [check_setup_item]})
+            ReactApi.Cache.grouped_checks = grouped_checks
+        return ReactApi.Cache.grouped_checks
 
     def get_stack_name(self):
         return os.environ.get("STACK_NAME")
@@ -553,7 +573,6 @@ class ReactApi:
         boto_cloudformation = boto3.client('cloudformation')
         return boto_cloudformation.get_template(StackName=stack_name)
  
-
     def get_lambdas_from_template(self, stack_template: dict) -> dict:
         lambda_definitions = []
         stack_template = stack_template["TemplateBody"]["Resources"]
@@ -651,17 +670,17 @@ class ReactApi:
                                 l["lambda_checks"].append(check_setup_item_schedule_name)
         return lambdas
 
-    def get_annotated_lambdas(self, stack_name: dict = None, checks: dict = None) -> dict:
-        if not stack_name:
+    def get_annotated_lambdas(self, checks) -> dict:
+        if not ReactApi.Cache.lambdas:
             stack_name = self.get_stack_name()
-            if not stack_name:
-                return {}
-        stack_template = self.get_stack_template(stack_name)
-        lambdas = self.get_lambdas_from_template(stack_template)
-        lambdas = self.annotate_lambdas_with_schedules_from_template(lambdas, stack_template)
-        lambdas = self.annotate_lambdas_with_function_metadata(lambdas)
-        lambdas = self.annotate_lambdas_with_check_setup(lambdas, checks)
-        return lambdas
+            stack_template = self.get_stack_template(stack_name)
+            lambdas = self.get_lambdas_from_template(stack_template)
+            lambdas = self.annotate_lambdas_with_schedules_from_template(lambdas, stack_template)
+            lambdas = self.annotate_lambdas_with_function_metadata(lambdas)
+            if checks:
+                lambdas = self.annotate_lambdas_with_check_setup(lambdas, checks)
+            ReactApi.Cache.lambdas = lambdas
+        return ReactApi.Cache.lambdas
 
     def annotate_checks_with_schedules(self, checks: dict, lambdas: dict) -> None:
         for check_setup_item_name in checks:
@@ -683,8 +702,6 @@ class ReactApi:
 
     def react_route_checks(self, request, env: str) -> dict:
         response = self.create_standard_response("react_route_checks")
-        envs = self.init_environments(envs=[env])
-        connection = self.init_connection(env, _environments=envs)
         response.body = self.get_checks()
         response = self.process_response(response)
         return response
@@ -697,6 +714,6 @@ class ReactApi:
 
     def react_route_lambdas(self, request, env: str) -> dict:
         response = self.create_standard_response("react_route_lambdas")
-        response.body = self.get_annotated_lambdas(checks=self.get_checks())
+        response.body = self.get_annotated_lambdas(self.get_checks())
         response = self.process_response(response)
         return response
