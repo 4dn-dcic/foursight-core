@@ -158,7 +158,7 @@
     .dropdown-content {
       display: none;
       position: absolute;
-      background-color: #9DC5E0;
+      background-color: {% if main_title == 'Foursight-Fourfront' %}#9DE0C5{% else %}#9DC5E0{% endif %};
       min-width: 160px;
       box-shadow: 10px 10px 10px #476f86;
       z-index: 1;
@@ -187,7 +187,7 @@
 </head>
 <body>
 <div>
-    <div width="100%" height="70" style="background:#143c53;">
+    <div width="100%" height="70" style="background:{% if main_title == 'Foursight-Fourfront' %}#14533c{% else %}#143c53{% endif %};">
         <table width="100%">
                 <tr title="{% if lambda_deployed_time %}App Deployed: {{lambda_deployed_time}}&#013;{% endif %}App Launched: {{init_load_time}}&#013;Page Loaded: {{load_time}}">
                 <td width="33%" style="padding-left:2pt;padding-top:3px;padding-bottom:3px;white-space:nowrap;">
@@ -212,18 +212,18 @@
                             {% endif %}
                         </span>
                 </td>
-                <td width="33%" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;" align="right">
+                <td width="33%" style="padding-right:10pt;white-space:nowrap;color:{% if main_title == 'Foursight-Fourfront' %}#D6F8EA{% else %}#D6EAF8{% endif %};" align="right">
                     <small>{{load_time}}</small>
                     &nbsp;<b>|</b>&nbsp;
                     <a style="text-decoration:none;color:#D6EAF8;" href="{{context + 'reload_lambda/' + env + '/current'}}" title="Click to relaunch this app." onclick="if (window.confirm('Do you want to relaunch this app?')){return true;}else{event.stopPropagation(); event.preventDefault()}">&#x2318;</a>
                     {% if not is_running_locally and is_admin %}
-                        &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:#D6EAF8;" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
+                        &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:{% if main_title == 'Foursight-Fourfront' %}#D6F8EA{% else %}#D6EAF8{% endif %};" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
                     {% endif %}
                 </td>
             </tr>
         </table>
         <table width="100%">
-            <tr style="background:#AED6F1">
+            <tr style="background:{% if main_title == 'Foursight-Fourfront' %}#AEF1D6{% else %}#AED6F1{% endif %}">
                 <td width="49%" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
                         {% if request.context.path.startswith(context + 'info') %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;|&nbsp;
@@ -250,7 +250,7 @@
                 <td width="49%" style="padding-right:10pt;padding-top:2pt;padding-bottom:1pt;white-space:nowrap;" align="right" nowrap="1">
                     {% if environments|length > 0 %}
                         <span class="dropdown">
-                            <b class="dropdown-button" onclick="this.nextSibling.display = 'block';" onmouseover="this.style.display = 'block';" style="color:#143c53" title="Environment: {{env}} ({{env_short}})">{{env.upper()}}</b>
+                            <b class="dropdown-button" onclick="this.nextSibling.display = 'block';" onmouseover="this.style.display = 'block';" style="color:#143c53" title="Environment: {{env}} ({{env_short}})">{{env}}</b>
                             <span class="dropdown-content">
                                 {% for environment in environments %}
                                     {% if environment["name"].upper() == env.upper() or environment["full"].upper() == env.upper() or environment["short"].upper() == env.upper() or environment["foursight"].upper() == env.upper() %}
@@ -262,7 +262,7 @@
                             </span>
                          </span>
                     {% else %}
-                        <b style="color:#143c53" title="Environment: {{env}}">{{env.upper()}}</b>
+                        <b style="color:#143c53" title="Environment: {{env}}">{{env}}</b>
                     {% endif %}
                     &nbsp;|&nbsp;
                     {% if stage == 'prod' %}
