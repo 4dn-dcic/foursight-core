@@ -523,39 +523,46 @@ class ReactApi:
                     for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
                         if check_env_key == env:
                             checks_for_env[check_key] = checks[check_key]
+            else:
+                # If no schedule section (which has the env section) then include it.
+                checks_for_env[check_key] = checks[check_key]
         return checks_for_env
 
+    def get_checks_raw(self):
+        return self.check_handler.CHECK_SETUP
+
     def get_checks(self, env: str = None):
-        # TODO: handle env ...
         if not ReactApi.Cache.checks:
-            checks = self.check_handler.CHECK_SETUP
+            checks = self.get_checks_raw()
             for check_key in checks.keys():
                 checks[check_key]["name"] = check_key
+            lambdas = self.get_annotated_lambdas()
+            self.annotate_checks_with_schedules_from_lambdas(checks, lambdas)
             ReactApi.Cache.checks = checks
         return self.filter_checks_by_env(ReactApi.Cache.checks, env)
 
-    def get_annotated_checks(self, env: str = None):
+    def get_checks_grouped(self, env: str = None) -> None:
+        checks_groups = []
         checks = self.get_checks(env)
-        lambdas = self.get_annotated_lambdas()
-        self.annotate_checks_with_schedules(checks, lambdas)
-        return checks
-
-    def get_grouped_checks(self, env: str = None) -> None:
-        grouped_checks = []
-        checks = self.get_annotated_checks(env)
         for check_setup_item_name in checks:
             check_setup_item = checks[check_setup_item_name]
             check_setup_item_group = check_setup_item["group"]
-            # TODO: Pythonic way to do this.
+            # TODO: Probably a nore pythonic way to do this.
             found = False
-            for grouped_check in grouped_checks:
+            for grouped_check in checks_groups:
                 if grouped_check["group"] == check_setup_item_group:
                     grouped_check["checks"].append(check_setup_item)
                     found = True
                     break
             if not found:
-                grouped_checks.append({ "group": check_setup_item_group, "checks": [check_setup_item]})
-        return grouped_checks
+                checks_groups.append({ "group": check_setup_item_group, "checks": [check_setup_item]})
+        return checks_groups
+
+    def get_checks_grouped_by_schedule(self, env: str = None) -> None:
+        checks_grouped_by_schedule = []
+        checks = self.get_checks(env)
+        # TODO
+        return checks_grouped_by_schedule
 
     def get_stack_name(self):
         return os.environ.get("STACK_NAME")
@@ -666,11 +673,11 @@ class ReactApi:
             lambdas = self.get_lambdas_from_template(stack_template)
             lambdas = self.annotate_lambdas_with_schedules_from_template(lambdas, stack_template)
             lambdas = self.annotate_lambdas_with_function_metadata(lambdas)
-            lambdas = self.annotate_lambdas_with_check_setup(lambdas, self.get_checks())
+            lambdas = self.annotate_lambdas_with_check_setup(lambdas, self.get_checks_raw())
             ReactApi.Cache.lambdas = lambdas
         return ReactApi.Cache.lambdas
 
-    def annotate_checks_with_schedules(self, checks: dict, lambdas: dict) -> None:
+    def annotate_checks_with_schedules_from_lambdas(self, checks: dict, lambdas: dict) -> None:
         for check_setup_item_name in checks:
             check_setup_item = checks[check_setup_item_name]
             check_setup_item_schedule = check_setup_item.get("schedule")
@@ -683,13 +690,13 @@ class ReactApi:
 
     def react_route_checks(self, request, env: str) -> dict:
         response = self.create_standard_response("react_route_checks")
-        response.body = self.get_annotated_checks(env)
+        response.body = self.get_checks(env)
         response = self.process_response(response)
         return response
 
     def react_route_checks_grouped(self, request, env: str) -> dict:
         response = self.create_standard_response("react_route_checks_grouped")
-        response.body = self.get_grouped_checks(env)
+        response.body = self.get_checks_grouped(env)
         response = self.process_response(response)
         return response
 
