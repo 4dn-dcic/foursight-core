@@ -122,7 +122,7 @@ const Checks = (props) => {
     const SelectedGroupBox = ({group}) => {
         return <div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt"}}>
-                <b style={{cursor:"pointer"}} onClick={() => showAllResults(group.checks)}>{group?.group}</b>
+                <b style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group.checks)}>{group?.group}</b>
                 <br /> <br />
                 { group.checks.map((check, index) => {
                     return <div key={index}>
@@ -181,30 +181,43 @@ const Checks = (props) => {
         }
     }
 
-    function isShowingAllResults(checks) {
+    function toggleShowAllResults(checks) {
+        if (isShowingAnyResults(checks)) {
+                console.log('hidall')
+            hideAllResults(checks);
+        }
+        else {
+            showAllResults(checks);
+        }
+    }
+
+    function isShowingAnyResults(checks) {
+            console.log('xxx')
         for (let i = 0 ; i < checks.length ; i++) {
-            if (!checks[i].showingResults) {
-                    return true;
+            if (checks[i].showingResults) {
+            console.log('true')
+                return true;
             }
         }
+            console.log('false')
         return false;
     }
 
     function showAllResults(checks) {
-        checks.map((check, index) => !check.showingResults && showCheckResultsBox(check, index));
+        checks.map((check) => !check.showingResults && showCheckResultsBox(check));
     }
 
     function hideAllResults(checks) {
-        checks.map((check, index) => check.results = null);
+        checks.map((check) => check.showingResults && hideCheckResultsBox(check));
     }
 
-    function showCheckResultsBox(check, index) {
+    function showCheckResultsBox(check) {
         check.showingResults = true;
         setSelectedGroups([...selectedGroups]);
         const checkResultsUrl = API.Url(`/checks/${check.name}`, environ);
         fetchData(checkResultsUrl, checkResults => { check.results = checkResults; setSelectedGroups([...selectedGroups]); }, setLoading, setError)
     }
-    function hideCheckResultsBox(check, index) {
+    function hideCheckResultsBox(check) {
         check.showingResults = false;
         setSelectedGroups((existingSelectedGroups) => [...existingSelectedGroups]);
     }
