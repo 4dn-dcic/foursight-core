@@ -675,16 +675,14 @@ class ReactApi:
                             check_setup_item_schedule[check_setup_item_schedule_name]["cron"] = la["lambda_schedule"]
                             check_setup_item_schedule[check_setup_item_schedule_name]["cron_description"] = la["lambda_schedule_description"]
 
-    def get_standard_response(self, label: str):
+    def create_standard_response(self, label: str):
         response = Response(label)
         response.headers = { "Content-Type": "application/json" }     
         response.status_code = 200
         return response
 
     def react_route_checks(self, request, env: str) -> dict:
-        response = Response('react_route_checks')
-        response.headers = { "Content-Type": "application/json" }     
-        response.status_code = 200
+        response = self.create_standard_response("react_route_checks")
         envs = self.init_environments(envs=[env])
         connection = self.init_connection(env, _environments=envs)
         response.body = self.get_checks()
@@ -692,19 +690,13 @@ class ReactApi:
         return response
 
     def react_route_checks_grouped(self, request, env: str) -> dict:
-        response = Response('react_route_checks_grouped')
-        response.headers = { "Content-Type": "application/json" }     
-        response.status_code = 200
-        envs = self.init_environments(envs=[env])
+        response = self.create_standard_response("react_route_checks_grouped")
         response.body = self.get_grouped_checks()
         response = self.process_response(response)
         return response
 
     def react_route_lambdas(self, request, env: str) -> dict:
-        response = Response('react_route_lambdas')
-        response.headers = { "Content-Type": "application/json" }     
-        response.status_code = 200
+        response = self.create_standard_response("react_route_lambdas")
         response.body = self.get_annotated_lambdas(checks=self.get_checks())
         response = self.process_response(response)
         return response
-
