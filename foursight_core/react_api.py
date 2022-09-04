@@ -713,7 +713,8 @@ class ReactApi:
         try:
             connection = self.init_connection(env)
             check_results = self.CheckResult(connection, check)
-            check_results = check_results.get_closest_result()
+            #check_results = check_results.get_closest_result()
+            check_results = check_results.get_primary_result()
             uuid = check_results["uuid"]
             check_datetime = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
             check_datetime = self.convert_utc_datetime_to_useastern_datetime(check_datetime)
