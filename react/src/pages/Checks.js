@@ -18,6 +18,7 @@ const Checks = (props) => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
     let [ selectedGroups, setSelectedGroups ] = useState([])
+        const [ checkResults, setCheckResults ] = useState([]);
 
     useEffect(() => {
         const groupedChecksUrl = API.Url(`/checks/grouped`, environ);
@@ -152,15 +153,9 @@ const Checks = (props) => {
     }
 
     const SelectedCheckResultsBox = ({check, index}) => {
-        const [ checkResults, setCheckResults ] = useState([]);
-        const checkResultsUrl = API.Url(`/checks`, environ);
-        let [ loading, setLoading ] = useState(true);
-        let [ error, setError ] = useState(false);
-        fetchData(checkResultsUrl, setCheckResults, setLoading, setError)
-            console.log("FETFFdfsasdfas")
         return <div>
             TODO: SelectedCheckResultsBox
-            {JSON.stringify(checkResults)}
+            {JSON.stringify(check?.results)}
         </div>
     }
 
@@ -175,8 +170,12 @@ const Checks = (props) => {
     }
 
     function showCheckResultsBox(check, index) {
+        const checkResultsUrl = API.Url(`/checks`, environ);
+            console.log("XXX");
+            console.log(selectedGroups)
+        fetchData(checkResultsUrl, checkResults => { console.log("gotit"); check.results = checkResults; console.log("YYY");console.log(selectedGroups);selectedGroups[0].checks[0].title="FOO";let x = [...selectedGroups]; console.log(x);console.log(selectedGroups); setSelectedGroups([...JSON.parse(JSON.stringify(x))]); }, setLoading, setError)
         check.showingResults = true;
-        setSelectedGroups((existingSelectedGroups) => [...existingSelectedGroups]);
+        //setSelectedGroups((existingSelectedGroups) => [...existingSelectedGroups]);
     }
     function hideCheckResultsBox(check, index) {
         check.showingResults = false;
