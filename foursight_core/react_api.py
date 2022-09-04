@@ -49,8 +49,6 @@ class ReactApi:
     class Cache:
         static_files = {}
         checks = None
-        annotated_checks = None
-        grouped_checks = None
         lambdas = None
 
     def create_standard_response(self, label: str, content_type: str = "application/json"):
@@ -317,10 +315,8 @@ class ReactApi:
         }
         if env_unknown:
             response.body["env_unknown"] = True
-        print(f'xyzzy: react_get_info: 2: {datetime.datetime.utcnow()}')
         response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
-        print(f'xyzzy: react_get_info: 3: {datetime.datetime.utcnow()}')
 #       self.react_info_cache[environ] = response.body
         return self.process_response(response)
 
@@ -389,13 +385,8 @@ class ReactApi:
     react_header_info_cache = {}
     def react_get_header_info(self, request, environ, domain="", context="/"):
         react_header_info_cache = self.react_header_info_cache.get(environ)
-        print('xyzzy-cache-hit-yesno')
-        print(react_header_info_cache)
         if react_header_info_cache:
-            print('xyzzy-cache-hit')
             return react_header_info_cache
-        else:
-            print('xyzzy-cache-hit-no')
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         if not self.is_known_environment_name(environ):
@@ -503,7 +494,6 @@ class ReactApi:
         response.headers = {
             "Content-Type": "application/json"
         }     
-        print(response.headers)
         response.status_code = 200
         response = self.process_response(response)
         return response
@@ -523,45 +513,49 @@ class ReactApi:
             "gac_diffs": diffs
         }
 
+    def filter_checks_by_env(self, checks: dict, env) -> dict:
+        if not env:
+            return checks
+        checks_for_env = {}
+        for check_key in checks:
+            if checks[check_key]["schedule"]:
+                for check_schedule_key in checks[check_key]["schedule"].keys():
+                    for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
+                        if check_env_key == env:
+                            checks_for_env[check_key] = checks[check_key]
+        return checks_for_env
+
     def get_checks(self, env: str = None):
-        # TODO: handle env
+        # TODO: handle env ...
         if not ReactApi.Cache.checks:
-            print("xyzzy-checks-cache-nohit")
             checks = self.check_handler.CHECK_SETUP
             for check_key in checks.keys():
                 checks[check_key]["name"] = check_key
             ReactApi.Cache.checks = checks
-        else:
-            print("xyzzy-checks-cache-hit")
-        print("xyzzy-checks done")
-        return ReactApi.Cache.checks
+        return self.filter_checks_by_env(ReactApi.Cache.checks, env)
 
     def get_annotated_checks(self, env: str = None):
-        if not ReactApi.Cache.annotated_checks:
-            checks = self.get_checks()
-            lambdas = self.get_annotated_lambdas()
-            self.annotate_checks_with_schedules(checks, lambdas)
-            ReactApi.Cache.annotated_checks = checks
-        return ReactApi.Cache.annotated_checks
+        checks = self.get_checks(env)
+        lambdas = self.get_annotated_lambdas()
+        self.annotate_checks_with_schedules(checks, lambdas)
+        return checks
 
-    def get_grouped_checks(self) -> None:
-        if not ReactApi.Cache.grouped_checks:
-            grouped_checks = []
-            checks = self.get_annotated_checks()
-            for check_setup_item_name in checks:
-                check_setup_item = checks[check_setup_item_name]
-                check_setup_item_group = check_setup_item["group"]
-                # TODO: Pythonic way to do this.
-                found = False
-                for grouped_check in grouped_checks:
-                    if grouped_check["group"] == check_setup_item_group:
-                        grouped_check["checks"].append(check_setup_item)
-                        found = True
-                        break
-                if not found:
-                    grouped_checks.append({ "group": check_setup_item_group, "checks": [check_setup_item]})
-            ReactApi.Cache.grouped_checks = grouped_checks
-        return ReactApi.Cache.grouped_checks
+    def get_grouped_checks(self, env: str = None) -> None:
+        grouped_checks = []
+        checks = self.get_annotated_checks(env)
+        for check_setup_item_name in checks:
+            check_setup_item = checks[check_setup_item_name]
+            check_setup_item_group = check_setup_item["group"]
+            # TODO: Pythonic way to do this.
+            found = False
+            for grouped_check in grouped_checks:
+                if grouped_check["group"] == check_setup_item_group:
+                    grouped_check["checks"].append(check_setup_item)
+                    found = True
+                    break
+            if not found:
+                grouped_checks.append({ "group": check_setup_item_group, "checks": [check_setup_item]})
+        return grouped_checks
 
     def get_stack_name(self):
         return os.environ.get("STACK_NAME")
@@ -677,7 +671,6 @@ class ReactApi:
         return ReactApi.Cache.lambdas
 
     def annotate_checks_with_schedules(self, checks: dict, lambdas: dict) -> None:
-        print('annotate_checks_with_schedules')
         for check_setup_item_name in checks:
             check_setup_item = checks[check_setup_item_name]
             check_setup_item_schedule = check_setup_item.get("schedule")
@@ -687,17 +680,16 @@ class ReactApi:
                         if la["lambda_handler"] == check_setup_item_schedule_name or la["lambda_handler"] == "app." + check_setup_item_schedule_name:
                             check_setup_item_schedule[check_setup_item_schedule_name]["cron"] = la["lambda_schedule"]
                             check_setup_item_schedule[check_setup_item_schedule_name]["cron_description"] = la["lambda_schedule_description"]
-        print(checks)
 
     def react_route_checks(self, request, env: str) -> dict:
         response = self.create_standard_response("react_route_checks")
-        response.body = self.get_annotated_checks()
+        response.body = self.get_annotated_checks(env)
         response = self.process_response(response)
         return response
 
     def react_route_checks_grouped(self, request, env: str) -> dict:
         response = self.create_standard_response("react_route_checks_grouped")
-        response.body = self.get_grouped_checks()
+        response.body = self.get_grouped_checks(env)
         response = self.process_response(response)
         return response
 
@@ -708,7 +700,6 @@ class ReactApi:
         return response
 
     def react_route_check_results(self, request, env: str, check: str) -> dict:
-        print(f"XYZZY-CHECKS({env},{check}")
         response = self.create_standard_response("react_route_check_results")
         try:
             connection = self.init_connection(env)
@@ -721,6 +712,5 @@ class ReactApi:
             check_results["timestamp"] = check_datetime
             response.body = check_results
         except Exception as e:
-            print("xyzzy: Exception getting checks for {check}")
             response.body = {}
         return self.process_response(response)
