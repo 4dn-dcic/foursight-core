@@ -29,7 +29,7 @@ export const fetchData = (url, setData, setLoading, setError) => {
         // TODO: figure out why if this is not here exactly as 'authorization' running locally we get CORS preflight error.
         authorization: GetAuthTokenCookie() || "none"
     }
-    fetch(url, { headers: headers, mode: "cors" }).then(response => {
+    return fetch(url, { headers: headers, mode: "cors" }).then(response => {
         console.log("FETCH STATUS CODE IS " + response.status + ": " + url);
         if (response.status == 200) {
             response.json().then(responseJson => {

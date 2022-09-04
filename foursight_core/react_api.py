@@ -46,6 +46,23 @@ from .stage import Stage
 
 class ReactApi:
 
+    class Cache:
+        static_files = {}
+        checks = None
+        annotated_checks = None
+        grouped_checks = None
+        lambdas = None
+
+    def create_standard_response(self, label: str, content_type: str = "application/json"):
+        response = Response(label)
+        response.headers = { "Content-Type": content_type }     
+        response.status_code = 200
+        return response
+
+    def is_fourfront(self):
+        return "Fourfront" in self.html_main_title.lower()
+
+
     # TODO
     # Better authorization needed,
     # For now client (React) just send its JWT token we gave it on login,
@@ -78,8 +95,7 @@ class ReactApi:
             print(e)
             return False
 
-    react_file_cache = {}
-    def react_serve_file(self, environ, is_admin=False, domain="", context="/", **kwargs):
+    def react_serve_static_file(self, environ, is_admin=False, domain="", context="/", **kwargs):
 
         # TODO: Maybe cache output. But if so provide backdoor way of invalidating cache.
 
@@ -98,7 +114,6 @@ class ReactApi:
         else:
             file = os.path.join(BASE_DIR, REACT_BASE_DIR)
         args = kwargs.values()
-        print(f"XYZZY:react_serve_file:args: {args}")
         if not args:
             # TODO: png not downloading right!
             # Running chalice local it works though.
@@ -144,27 +159,19 @@ class ReactApi:
             content_type = "text/html"
             open_mode = "r"
 
-        react_file_cache = self.react_file_cache.get(file)
-        if react_file_cache:
-            print(f"XYZZY:react_serve_file: returning cached file: [{file}]")
-            return react_file_cache
-        else:
-            print(f"XYZZY:react_serve_file: file not cached: [{file}]")
-
-        response = Response("Experimental React UI")
-        response.headers = {"Content-Type": content_type}
-        print(f"Serving React file: {file} (content-type: {content_type}).")
-        with io.open(file, open_mode) as f:
-            try:
-                response.body = f.read()
-                print(f"Served React file: {file} (content-type: {content_type}).")
-            except Exception as e:
-                print(f"ERROR: Exception on serving React file: {file} (content-type: {content_type}).")
-                print(e)
-        response.status_code = 200
-        response = self.process_response(response)
-        self.react_file_cache[file] = response
-        return response
+        if not ReactApi.Cache.static_files.get(file):
+            response = creeate_standard_response("react_serve_static_file", content_type)
+            print(f"Serving React file: {file} (content-type: {content_type}).")
+            with io.open(file, open_mode) as f:
+                try:
+                    response.body = f.read()
+                    print(f"Served React file: {file} (content-type: {content_type}).")
+                except Exception as e:
+                    print(f"ERROR: Exception on serving React file: {file} (content-type: {content_type}).")
+                    print(e)
+            response = self.process_response(response)
+            ReactApi.Cache.static_files[file] = response
+        return ReactApi.Cache.static_files.get(file)
 
     # TODO: Refactor.
     def react_get_credentials_info(self, env_name: str) -> dict:
@@ -250,7 +257,8 @@ class ReactApi:
                 "local": self.is_running_locally(request_dict),
                 "credentials": self.react_get_credentials_info(environ),
                 "launched": self.init_load_time,
-                "deployed": self.get_lambda_last_modified()
+                "deployed": self.get_lambda_last_modified(),
+                "fourfront": self.is_fourfront()
             },
             "page": {
                 "title": self.html_main_title,
@@ -515,15 +523,6 @@ class ReactApi:
             "gac_diffs": diffs
         }
 
-
-    # XYZZY:checks
-
-    class Cache:
-        checks = None
-        annotated_checks = None
-        grouped_checks = None
-        lambdas = None
-
     def get_checks(self, env: str = None):
         # TODO: handle env
         if not ReactApi.Cache.checks:
@@ -538,7 +537,7 @@ class ReactApi:
     def get_annotated_checks(self, env: str = None):
         if not ReactApi.Cache.annotated_checks:
             checks = self.get_checks()
-            lambdas = self.get_annotated_lambdas()
+            lambdas = self.get_annotated_lambdas(checks)
             self.annotate_checks_with_schedules(checks, lambdas)
             ReactApi.Cache.annotated_checks = checks
         return ReactApi.Cache.annotated_checks
@@ -612,17 +611,11 @@ class ReactApi:
                             else:
                                 event_target_function_name = event_target_function_arn[0]
                             if event_target_function_name:
-                                for l in lambdas:
-                                    if l["lambda_name"] == event_target_function_name:
+                                for la in lambdas:
+                                    if la["lambda_name"] == event_target_function_name:
                                         event_schedule = str(event_schedule).replace("cron(", "").replace(")", "")
-                                        l["lambda_schedule"] = str(event_schedule)
-                                        print('xyzzy-schedule')
-                                        print(event_schedule)
-                                        print(type(event_schedule))
-                                        print(str(event_schedule))
-                                        print(dir(event_schedule))
-                                        print(event_schedule.format())
-                                        l["lambda_schedule_description"] = cron_descriptor.get_description(str(event_schedule))
+                                        la["lambda_schedule"] = str(event_schedule)
+                                        la["lambda_schedule_description"] = cron_descriptor.get_description(str(event_schedule))
 
         return lambdas
 
@@ -631,14 +624,14 @@ class ReactApi:
         lambda_functions = boto_lambda.list_functions()["Functions"]
         for lambda_function in lambda_functions:
             lambda_function_handler = lambda_function["Handler"]
-            for l in lambdas:
-                if l["lambda_handler"] == lambda_function_handler:
-                    l["lambda_function_name"] = lambda_function["FunctionName"]
-                    l["lambda_function_arn"] = lambda_function["FunctionArn"]
-                    l["lambda_code_size"] = lambda_function["CodeSize"]
-                    l["lambda_modified"] = lambda_function["LastModified"]
-                    l["lambda_description"] = lambda_function["Description"]
-                    l["lambda_role"] = lambda_function["Role"]
+            for la in lambdas:
+                if la["lambda_handler"] == lambda_function_handler:
+                    la["lambda_function_name"] = lambda_function["FunctionName"]
+                    la["lambda_function_arn"] = lambda_function["FunctionArn"]
+                    la["lambda_code_size"] = lambda_function["CodeSize"]
+                    la["lambda_modified"] = lambda_function["LastModified"]
+                    la["lambda_description"] = lambda_function["Description"]
+                    la["lambda_role"] = lambda_function["Role"]
                     #
                     # Look for the real modified time which may be in the tag if we ever did a manual
                     # reload of the lambda which will do its job by making an innocuous change to the
@@ -649,7 +642,7 @@ class ReactApi:
                        lambda_function_tags = boto_lambda.list_tags(Resource=lambda_function["FunctionArn"])["Tags"]
                        lambda_modified = lambda_function_tags.get("last_modified")
                        if lambda_modified:
-                            l["lambda_modified"] = lambda_modified
+                            la["lambda_modified"] = lambda_modified
                     except:
                         pass
         return lambdas
@@ -662,12 +655,12 @@ class ReactApi:
             check_setup_item_schedule = check_setup_item.get("schedule")
             if check_setup_item_schedule:
                 for check_setup_item_schedule_name in check_setup_item_schedule.keys():
-                    for l in lambdas:
-                        if l["lambda_handler"] == check_setup_item_schedule_name or l["lambda_handler"] == "app." + check_setup_item_schedule_name:
-                            if not l.get("lambda_checks"):
-                                l["lambda_checks"] = [check_setup_item_schedule_name]
-                            elif check_setup_item_schedule_name not in l["lambda_checks"]:
-                                l["lambda_checks"].append(check_setup_item_schedule_name)
+                    for la in lambdas:
+                        if la["lambda_handler"] == check_setup_item_schedule_name or la["lambda_handler"] == "app." + check_setup_item_schedule_name:
+                            if not la.get("lambda_checks"):
+                                la["lambda_checks"] = [check_setup_item_schedule_name]
+                            elif check_setup_item_schedule_name not in la["lambda_checks"]:
+                                la["lambda_checks"].append(check_setup_item_schedule_name)
         return lambdas
 
     def get_annotated_lambdas(self, checks) -> dict:
@@ -683,6 +676,7 @@ class ReactApi:
         return ReactApi.Cache.lambdas
 
     def annotate_checks_with_schedules(self, checks: dict, lambdas: dict) -> None:
+        print('annotate_checks_with_schedules')
         for check_setup_item_name in checks:
             check_setup_item = checks[check_setup_item_name]
             check_setup_item_schedule = check_setup_item.get("schedule")
@@ -690,19 +684,13 @@ class ReactApi:
                 for check_setup_item_schedule_name in check_setup_item_schedule.keys():
                     for la in lambdas:
                         if la["lambda_handler"] == check_setup_item_schedule_name or la["lambda_handler"] == "app." + check_setup_item_schedule_name:
-                            pass
                             check_setup_item_schedule[check_setup_item_schedule_name]["cron"] = la["lambda_schedule"]
                             check_setup_item_schedule[check_setup_item_schedule_name]["cron_description"] = la["lambda_schedule_description"]
-
-    def create_standard_response(self, label: str):
-        response = Response(label)
-        response.headers = { "Content-Type": "application/json" }     
-        response.status_code = 200
-        return response
+        print(checks)
 
     def react_route_checks(self, request, env: str) -> dict:
         response = self.create_standard_response("react_route_checks")
-        response.body = self.get_checks()
+        response.body = self.get_annotated_checks()
         response = self.process_response(response)
         return response
 

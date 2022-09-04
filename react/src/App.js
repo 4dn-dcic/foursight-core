@@ -8,7 +8,6 @@ import { IsLoggedIn, LoginRequired } from './LoginUtils';
 import * as URL from './URL';
 
 import Home from './Home';
-import Checks from './Checks';
 import Envs from './Envs';
 import Info from './Info';
 import User from './User';
@@ -19,6 +18,7 @@ import Login from './Login';
 import CompareGacs from './CompareGacs';
 import Test from './Test';
 import NotFound from './NotFound';
+import Checks from './pages/Checks';
 import { LoginAndValidEnvRequired } from './LoginUtils';
 
 const App = () => {
@@ -51,7 +51,7 @@ const App = () => {
                     <Route path="/api/react/:environ/login" element={<Login />} />
                     <Route path="/api/react/:environ" element={<LoginAndValidEnvRequired><Home /></LoginAndValidEnvRequired>} />
                     <Route path="/api/react/:environ/demo" element={<Demo />}/>
-                    <Route path="/api/react/:environ/checks" element={<LoginAndValidEnvRequired><Checks /></LoginAndValidEnvRequired>}/>
+                    <Route path="/api/react/:environ/checks" element={<Checks />}/>
                     <Route path="/api/react/:environ/home" element={<LoginAndValidEnvRequired><Home /></LoginAndValidEnvRequired>}/>
                     <Route path="/api/react/:environ/info" element={<LoginAndValidEnvRequired><Info /></LoginAndValidEnvRequired>}/>
                     <Route path="/api/react/:environ/users" element={<LoginAndValidEnvRequired><Users/></LoginAndValidEnvRequired>} />

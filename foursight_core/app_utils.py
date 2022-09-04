@@ -2214,41 +2214,41 @@ def get_view_users_route(environ):
 
 ######### EXPERIMENTAL REACT API FUNCTIONS #########
 # Experimental React UI.
-def react_serve_file(environ, **kwargs):
+def react_serve_static_file(environ, **kwargs):
     req_dict = app.current_request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
     is_admin = AppUtilsCore.singleton().check_authorization(req_dict, environ)
-    return AppUtilsCore.singleton().react_serve_file(environ, **kwargs)
+    return AppUtilsCore.singleton().react_serve_static_file(environ, **kwargs)
 
 
 @app.route(ROUTE_PREFIX + 'react', cors=CORS)
 def get_react_noenv():
-    return react_serve_file(DEFAULT_ENV, **{})
+    return react_serve_static_file(DEFAULT_ENV, **{})
 
 
 @app.route(ROUTE_PREFIX + 'react/{environ}', cors=CORS)
 def get_react_0(environ):
-    return react_serve_file(environ, **{})
+    return react_serve_static_file(environ, **{})
 
 
 @app.route(ROUTE_PREFIX + 'react/{environ}/{path1}', cors=CORS)
 def get_react_1(environ, path1):
-    return react_serve_file(environ, **{"path1": path1})
+    return react_serve_static_file(environ, **{"path1": path1})
 
 
 @app.route(ROUTE_PREFIX + 'react/{environ}/{path1}/{path2}', cors=CORS)
 def get_react_2(environ, path1, path2):
-    return react_serve_file(environ, **{"path1": path1, "path2": path2})
+    return react_serve_static_file(environ, **{"path1": path1, "path2": path2})
 
 
 @app.route(ROUTE_PREFIX + 'react/{environ}/{path1}/{path2}/{path3}', cors=CORS)
 def get_react_3(environ, path1, path2, path3):
-    return react_serve_file(environ, **{"path1": path1, "path2": path2, "path3": path3})
+    return react_serve_static_file(environ, **{"path1": path1, "path2": path2, "path3": path3})
 
 
 @app.route(ROUTE_PREFIX + 'react/{environ}/{path1}/{path2}/{path3}/{path4}', cors=CORS)
 def get_react_4(environ, path1, path2, path3, path4):
-    return react_serve_file(environ, **{"path1": path1, "path2": path2, "path3": path3, "path4": path4})
+    return react_serve_static_file(environ, **{"path1": path1, "path2": path2, "path3": path3, "path4": path4})
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/users', cors=CORS)
