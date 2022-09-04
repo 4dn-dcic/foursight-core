@@ -121,7 +121,7 @@ const Header = (props) => {
                         { (info.envs?.unique_annotated.length > 0) ? (
                         <span className="dropdown">
                             <b className="dropdown-button" style={{color:!URL.Env() || info.env_unknown ? "red" : "#143c53"}} title={"Environment: " + URL.Env() + (!URL.Env() || info.env_unknown ? " -> UNKNOWN" : "")}>{URL.Env().toUpperCase() || "UNKNOWN ENV"}</b>
-                            <div className="dropdown-content" id="dropdown-content-id">
+                            <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { info.envs?.unique_annotated.map(env => 
                                     env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.foursight.toUpperCase() == URL.Env().toUpperCase() ? (
                                         <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
