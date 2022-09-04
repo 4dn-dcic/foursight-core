@@ -16,10 +16,8 @@ const Header = (props) => {
     const path = window.location.pathname;
 
     let isFoursightFourfront = info.page?.title == "Foursight-Fourfront";
-    isFoursightFourfront = true;
     let titleBackgroundColor = isFoursightFourfront ? "#14533C" : "#143C53";
     let subTitleBackgroundColor = isFoursightFourfront ? "#AEF1D6" : "#AED6F1";
-    subTitleBackgroundColor = "#DFF0D8"
 
     function renderNavigationLinks(info) {
         function style(isActive) {

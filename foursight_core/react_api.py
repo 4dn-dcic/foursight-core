@@ -519,7 +519,28 @@ class ReactApi:
     # XYZZY:checks
 
     def get_checks(self, env: str = None):
-        return self.check_handler.CHECK_SETUP
+        checks = self.check_handler.CHECK_SETUP
+        lambdas = self.get_annotated_lambdas(self.get_stack_name(), checks)
+        self.annotate_checks_with_schedules(checks, lambdas)
+        return checks
+
+    def get_grouped_checks(self) -> None:
+        grouped_checks = []
+        checks = self.get_checks()
+        for check_setup_item_name in checks:
+            check_setup_item = checks[check_setup_item_name]
+            check_setup_item_group = check_setup_item["group"]
+            # TODO: Pythonic way to do this.
+            found = False
+            for grouped_check in grouped_checks:
+                if grouped_check["group"] == check_setup_item_group:
+                    grouped_check["checks"].append(check_setup_item)
+                    found = True
+                    break
+            if not found:
+                grouped_checks.append({ "group": check_setup_item_group, "checks": [check_setup_item]})
+
+        return grouped_checks
 
     def get_stack_name(self):
         return os.environ.get("STACK_NAME")
@@ -642,14 +663,40 @@ class ReactApi:
         lambdas = self.annotate_lambdas_with_check_setup(lambdas, checks)
         return lambdas
 
+    def annotate_checks_with_schedules(self, checks: dict, lambdas: dict) -> None:
+        for check_setup_item_name in checks:
+            check_setup_item = checks[check_setup_item_name]
+            check_setup_item_schedule = check_setup_item.get("schedule")
+            if check_setup_item_schedule:
+                for check_setup_item_schedule_name in check_setup_item_schedule.keys():
+                    for la in lambdas:
+                        if la["lambda_handler"] == check_setup_item_schedule_name or la["lambda_handler"] == "app." + check_setup_item_schedule_name:
+                            pass
+                            check_setup_item_schedule[check_setup_item_schedule_name]["cron"] = la["lambda_schedule"]
+                            check_setup_item_schedule[check_setup_item_schedule_name]["cron_description"] = la["lambda_schedule_description"]
+
+    def get_standard_response(self, label: str):
+        response = Response(label)
+        response.headers = { "Content-Type": "application/json" }     
+        response.status_code = 200
+        return response
+
     def react_route_checks(self, request, env: str) -> dict:
         response = Response('react_route_checks')
         response.headers = { "Content-Type": "application/json" }     
         response.status_code = 200
-
         envs = self.init_environments(envs=[env])
         connection = self.init_connection(env, _environments=envs)
         response.body = self.get_checks()
+        response = self.process_response(response)
+        return response
+
+    def react_route_checks_grouped(self, request, env: str) -> dict:
+        response = Response('react_route_checks_grouped')
+        response.headers = { "Content-Type": "application/json" }     
+        response.status_code = 200
+        envs = self.init_environments(envs=[env])
+        response.body = self.get_grouped_checks()
         response = self.process_response(response)
         return response
 
@@ -660,3 +707,4 @@ class ReactApi:
         response.body = self.get_annotated_lambdas(checks=self.get_checks())
         response = self.process_response(response)
         return response
+

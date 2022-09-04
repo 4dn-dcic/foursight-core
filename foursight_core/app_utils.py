@@ -2336,6 +2336,11 @@ def reactapi_route_checks(env: str):
     print(f"XYZZY:/reactapi/{env}/checks")
     return AppUtilsCore.singleton().react_route_checks(request=app.current_request, env=env)
 
+@app.route(ROUTE_PREFIX + 'reactapi/{env}/checks/grouped', methods=['GET'], cors=CORS)
+def reactapi_route_checks_grouped(env: str):
+    print(f"XYZZY:/reactapi/{env}/checks/grouped")
+    return AppUtilsCore.singleton().react_route_checks_grouped(request=app.current_request, env=env)
+
 
 @app.route(ROUTE_PREFIX + 'reactapi/{env}/lambdas', methods=['GET'], cors=CORS)
 def reactapi_route_lambdas(env: str):
