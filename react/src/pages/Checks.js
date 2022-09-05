@@ -247,8 +247,14 @@ const Checks = (props) => {
 
     const ResultsHistoryBox = ({check}) => {
         return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-            History Box: {check.name}
-            {check.showingHistory && JSON.stringify(check.history)}
+            History Box: {check.name} <br />
+            { check.showingHistory && (<>
+                { check.history ? (<>
+                    {JSON.stringify(check.history)}
+                </>):(<>
+                    Loading history ...
+                </>)}
+            </>)}
         </div>
     }
 
@@ -281,16 +287,17 @@ const Checks = (props) => {
     }
 
     function noteChangeHistories() {
+        setSelectedHistories(existing => [...existing]);
     }
+
     function showResultsHistory(check) {
         if (!check.showingHistory) {
             check.showingHistory = true;
             selectedHistories.unshift(check);
-            setSelectedHistories([...selectedHistories]);
+            noteChangeHistories();
             if (!check.history) {
                 const resultsHistoryUrl = API.Url(`/checks/${check.name}/history`, environ);
-                fetchData(resultsHistoryUrl, resultsHistory => { check.history = resultsHistory; setSelectedHistories((x) => [...x]);});
-                //fetchData(resultsHistoryUrl, resultsHistory => { check.history = resultsHistory; setSelectedHistories([...selectedHistories]);});
+                fetchData(resultsHistoryUrl, history => { check.history = history; noteChangeHistories(); });
             }
         }
     }
@@ -300,7 +307,7 @@ const Checks = (props) => {
             check.showingHistory = false;
             const index = findResultsHistoryIndex(check);
             selectedHistories.splice(index, 1);
-            setSelectedHistories([...selectedHistories]);
+            noteChangeHistories();
         }
     }
 
