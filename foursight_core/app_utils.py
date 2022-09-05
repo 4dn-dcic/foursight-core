@@ -2353,6 +2353,14 @@ def reactapi_route_check_results(env: str, check: str):
     print(f"XYZZY:/reactapi/{env}/checks/{check}")
     return AppUtilsCore.singleton().react_route_check_results(request=app.current_request, env=env, check=check)
 
+@app.route(ROUTE_PREFIX + 'reactapi/{env}/checks/{check}/history', methods=['GET'], cors=CORS)
+def reactapi_route_check_history(env: str, check: str):
+    print(f"XYZZY:/reactapi/{env}/checks/{check}/history")
+    params = app.current_request.to_dict().get('query_params')
+    offset = int(params.get('offset', '0')) if params else 0
+    limit = int(params.get('limit', '25')) if params else 25
+    return AppUtilsCore.singleton().react_route_check_history(request=app.current_request, env=env, check=check, offset=offset, limit=limit)
+
 
 @app.lambda_function()
 def check_runner(event, context):

@@ -700,6 +700,35 @@ class ReactApi:
         response = self.process_response(response)
         return response
 
+    def react_route_check_history(self, request, env: str, check: str, offset: int = 0, limit: int = 25) -> dict:
+        response = self.create_standard_response("react_route_checks")
+        response.body = self.get_checks(env)
+        connection = self.init_connection(env)
+        history = self.get_foursight_history(connection, check, offset, limit)
+        history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
+        queue_attr = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
+        running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
+        queued_checks = queue_attr.get('ApproximateNumberOfMessages')
+        print(f"xyzzy:running:{running_checks}")
+        print(f"xyzzy:queued:{queued_checks}")
+        print(history)
+        for item in history:
+            for subitem in item:
+                if isinstance(subitem, dict):
+                    uuid = subitem.get("uuid")
+                    if uuid:
+                        timestamp = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
+                        timestamp = self.convert_utc_datetime_to_useastern_datetime(timestamp)
+                        subitem["timestamp"] = timestamp
+        history = {
+            "check": check,
+            "env": env,
+            "history": history
+        }
+        response.body = history
+        response = self.process_response(response)
+        return response
+
     def react_route_lambdas(self, request, env: str) -> dict:
         response = self.create_standard_response("react_route_lambdas")
         response.body = self.get_annotated_lambdas()

@@ -147,7 +147,7 @@ const Checks = (props) => {
                             <br/>
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div key={index} title={check.schedule[key].cron}>
-                                    <i>Scheduled Run: {check.schedule[key].cron_description}</i>
+                                    <small><i>Scheduled Run: {check.schedule[key].cron_description}</i></small>
                                 </div>
                             })}
                             <>
@@ -165,7 +165,11 @@ const Checks = (props) => {
 
     const SelectedCheckResultsBox = ({check, index}) => {
         return <div>
-            Latest Results: {check.results?.timestamp}
+            { check.results && <small>
+                Latest Results: {check.results?.timestamp} <br />
+                Results Summary: {check.results?.summary}&nbsp;&nbsp;
+                { check.results?.status?.toUpperCase() == "PASS" ? (<b style={{fontSize:"12pt",color:"green"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>)}
+            </small> }
             <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginTop:"3px",marginRight:"5pt",maxWidth:"600pt"}}>
                 {!check.results ? "Loading ..." : (Object.keys(check.results).length > 0 ? YAML.stringify(check.results) : "No results.") }
             </pre>
