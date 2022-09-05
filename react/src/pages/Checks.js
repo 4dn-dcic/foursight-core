@@ -206,7 +206,7 @@ const Checks = (props) => {
 
     const SelectedChecksBox = ({check, index}) => {
         return <div>
-            <table>
+            <table style={{width:"100%"}}>
                 <tbody>
                     <tr style={{height:"3pt"}}><td></td></tr>
                     <tr>
@@ -245,7 +245,7 @@ const Checks = (props) => {
         return <div>
             { check.results && <small>
                 { Object.keys(check.results).length > 0 ? (<>
-                    <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"darkgreen",}}></div>
+                    <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div>
                     <span>Latest Results: {check.results?.timestamp}</span> <br />
                     <span style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red"}}>Results Summary: {check.results?.summary}</span>&nbsp;&nbsp;
                     { check.results?.status?.toUpperCase() == "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>)}
@@ -259,7 +259,7 @@ const Checks = (props) => {
                 </pre>
             ):(
                 <span>
-                    <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"darkgreen",}}></div>
+                    <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div>
                     {!check.results ? <small><i>Loading ...</i></small> : <></>}
                 </span>
             )}

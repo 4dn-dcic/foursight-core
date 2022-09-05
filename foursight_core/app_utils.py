@@ -2285,23 +2285,6 @@ def reactapi_route_check_history(environ: str, check: str):
     return AppUtilsCore.singleton().react_route_check_history(request=app.current_request, env=environ, check=check, offset=offset, limit=limit)
 
 
-@app.lambda_function()
-def check_runner(event, context):
-    """
-    Pure lambda function to pull run and check information from SQS and run
-    the checks. Self propogates. event is a dict of information passed into
-    the lambda at invocation time.
-    """
-    print("XYZZY: checker_runner lambda called.")
-    if not event:
-        print("XYZZY: checker_runner lambda no event.")
-        return
-    print("XYZZY: checker_runner lambda no event.")
-    print(event)
-    print(context)
-    AppUtilsCore.singleton().run_check_runner(event)
-
-
 class AppUtils(AppUtilsCore):  # for compatibility with older imports
     """
     Class AppUtils is the most high-level class that's used directy by Chalice object app.
