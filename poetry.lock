@@ -177,6 +177,14 @@ python-versions = ">=3.7"
 toml = ["tomli"]
 
 [[package]]
+name = "cron-descriptor"
+version = "1.2.31"
+description = "A Python library that converts cron expressions into human readable strings."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "dcicutils"
 version = "4.5.0"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
@@ -936,7 +944,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.9"
-content-hash = "190687cfb406ce47d20be66c6d5efde3f111e08de8f6204777c36e7e7f81394b"
+content-hash = "a642a2a861c3433d64bdf8eab44d6b3b2ae674cf079d044b0a2bfa7c5177a16c"
 
 [metadata.files]
 ansicon = [
@@ -1045,6 +1053,9 @@ coverage = [
     {file = "coverage-6.4.4-cp39-cp39-win_amd64.whl", hash = "sha256:1238b08f3576201ebf41f7c20bf59baa0d05da941b123c6656e42cdb668e9827"},
     {file = "coverage-6.4.4-pp36.pp37.pp38-none-any.whl", hash = "sha256:f67cf9f406cf0d2f08a3515ce2db5b82625a7257f88aad87904674def6ddaec1"},
     {file = "coverage-6.4.4.tar.gz", hash = "sha256:e16c45b726acb780e1e6f88b286d3c10b3914ab03438f32117c4aa52d7f30d58"},
+]
+cron-descriptor = [
+    {file = "cron_descriptor-1.2.31.tar.gz", hash = "sha256:8e83f08dbd76657a0b6ce1168b293bc27fa68be573ef8cb086ef0d9896340876"},
 ]
 dcicutils = [
     {file = "dcicutils-4.5.0-py3-none-any.whl", hash = "sha256:db298890c528435883dea9ca901e2203831492dc40a8716f2dfa2f043774ed90"},
