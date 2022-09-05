@@ -8,6 +8,7 @@ import { RingSpinner } from "../Spinners";
 import { LoginAndValidEnvRequired } from "../LoginUtils";
 import * as API from "../API";
 import * as URL from "../URL";
+import { isObject } from '../Utils';
 let YAML = require('json-to-pretty-yaml');
 
 const Checks = (props) => {
@@ -246,11 +247,87 @@ const Checks = (props) => {
     }
 
     const ResultsHistoryBox = ({check}) => {
+
+        function extractUUID(history) {
+            return history[2].uuid;
+        }
+        function extractStatus(history) {
+            return history[0];
+        }
+        function extractTimestamp(history) {
+            return history[2].timestamp;
+        }
+        function extractDuration(history) {
+            return history[2].runtime_seconds;
+        }
+        function extractDescription(history) {
+            return history[1];
+        }
+        function extractState(history) {
+            return history[2].queue_action;
+        }
+
         return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-            History Box: {check.name} <br />
+            <div title={check.name}>
+                <b>{check.title}</b>&nbsp;&nbsp;
+                <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideResultsHistory(check)})}><b>&#x2717;</b></span>
+            </div>
+            <div style={{marginBottom:"6pt"}}/>
             { check.showingHistory && (<>
                 { check.history ? (<>
-                    {JSON.stringify(check.history)}
+                    <table style={{width:"100%"}}>
+                    <thead>
+                        <tr>
+                            <td>
+                                &#x2630;
+                            &nbsp;&nbsp;</td>
+                            <td>
+                                Timestamp
+                            &nbsp;&nbsp;</td>
+                            <td>
+                                Status
+                            &nbsp;&nbsp;</td>
+                            <td style={{textAlign:"right"}}>
+                                Duration
+                            &nbsp;</td>
+                        </tr>
+                            <tr><td style={{height:"1px",background:"gray"}} colSpan="4"></td></tr>
+                    </thead>
+                    <tbody>
+                    {check.history.history.map((history, index) => {
+                        return <>
+                            { index != 0 && (
+                                <tr><td style={{height:"1px",background:"gray"}} colSpan="4"></td></tr>
+                            )}
+                            <tr>
+                            <td>
+                                {extractStatus(history) == "PASS" ? (<>
+                                    <span style={{color:"darkgreen"}}>&#x2713;</span>
+                                </>):(<>
+                                    <span style={{color:"darkred"}}>&#x2717;</span>
+                                </>)}
+                            &nbsp;&nbsp;</td>
+                            <td>
+                                {extractTimestamp(history)}
+                            &nbsp;&nbsp;</td>
+                            <td>
+                                {extractStatus(history) == "PASS" ? (<>
+                                    <span style={{color:"darkgreen"}}>OK</span>
+                                </>):(<>
+                                    <span style={{color:"darkred"}}>ERROR</span>
+                                </>)}
+                            &nbsp;&nbsp;</td>
+                            <td style={{textAlign:"right"}}>
+                                {extractDuration(history)}
+                            &nbsp;&nbsp;</td>
+                            <td style={{textAlign:"right"}}>
+                                {extractState(history)}
+                            &nbsp;&nbsp;</td>
+                            </tr>
+                        </>
+                    })}
+                    </tbody>
+                    </table>
                 </>):(<>
                     Loading history ...
                 </>)}
@@ -264,7 +341,7 @@ const Checks = (props) => {
             return <span>foo</span>
         }
         return <div>
-            <b style={{marginBottom:"100pt"}}>Results Histories</b>
+            <b style={{marginBottom:"100pt"}}>Recent Results Histories</b>
             { histories.map((selectedHistory, index) => {
                 return <div key={index} style={{marginTop:"3pt"}}>
                     <ResultsHistoryBox check={selectedHistory} />
