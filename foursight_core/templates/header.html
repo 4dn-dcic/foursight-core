@@ -158,7 +158,7 @@
     .dropdown-content {
       display: none;
       position: absolute;
-      background-color: #9DC5E0;
+      background-color: {% if main_title == 'Foursight-Fourfront' %}#9DE0C5{% else %}#9DC5E0{% endif %};
       min-width: 160px;
       box-shadow: 10px 10px 10px #476f86;
       z-index: 1;
@@ -187,15 +187,21 @@
 </head>
 <body>
 <div>
-    <div width="100%" height="70" style="background:#143c53;">
+    <div width="100%" height="70" style="background:{% if main_title == 'Foursight-Fourfront' %}#14533c{% else %}#143c53{% endif %};">
         <table width="100%">
                 <tr title="{% if lambda_deployed_time %}App Deployed: {{lambda_deployed_time}}&#013;{% endif %}App Launched: {{init_load_time}}&#013;Page Loaded: {{load_time}}">
-                <td width="400" style="padding-left:2pt;white-space:nowrap;">
-                    <a href={{context + 'view/' + env}}>
-                        <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
-                    </a>
+                <td width="33%" style="padding-left:2pt;padding-top:3px;padding-bottom:3px;white-space:nowrap;">
+                    {% if main_title == "Foursight-Fourfront" %}
+                        <a href={{context + 'view/' + env}}>
+                            &nbsp;&nbsp;&nbsp;<img src="https://data.4dnucleome.org//static/img/favicon-fs.ico" height="34" />
+                        </a>
+                    {% else %}
+                        <a href={{context + 'view/' + env}}>
+                            <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
+                        </a>
+                    {% endif %}
                 </td>
-                <td align="center" style="white-space:nowrap;">
+                <td width="34%" align="center" style="white-space:nowrap;">
                         <span style="font-family:arial;font-size:18pt;color:white;">
                             <span style="color:default;">{{main_title}}</span>
                             {% if stage == 'dev' %}
@@ -206,19 +212,19 @@
                             {% endif %}
                         </span>
                 </td>
-                <td width="400" style="padding-right:10pt;white-space:nowrap;color:#D6EAF8;" align="right">
+                <td width="33%" style="padding-right:10pt;white-space:nowrap;color:{% if main_title == 'Foursight-Fourfront' %}#D6F8EA{% else %}#D6EAF8{% endif %};" align="right">
                     <small>{{load_time}}</small>
                     &nbsp;<b>|</b>&nbsp;
                     <a style="text-decoration:none;color:#D6EAF8;" href="{{context + 'reload_lambda/' + env + '/current'}}" title="Click to relaunch this app." onclick="if (window.confirm('Do you want to relaunch this app?')){return true;}else{event.stopPropagation(); event.preventDefault()}">&#x2318;</a>
                     {% if not is_running_locally and is_admin %}
-                        &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:#D6EAF8;" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
+                        &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:{% if main_title == 'Foursight-Fourfront' %}#D6F8EA{% else %}#D6EAF8{% endif %};" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
                     {% endif %}
                 </td>
             </tr>
         </table>
         <table width="100%">
-            <tr style="background:#AED6F1">
-                <td width="400" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
+            <tr style="background:{% if main_title == 'Foursight-Fourfront' %}#AEF1D6{% else %}#AED6F1{% endif %}">
+                <td width="49%" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
                         {% if request.context.path.startswith(context + 'info') %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;|&nbsp;
                             <a href="{{context + 'users/' + env}}" style="text-decoration:none;">USERS</a> &nbsp;|&nbsp;
@@ -238,13 +244,13 @@
                         {% endif %}
                         &nbsp;|&nbsp; <a target="_blank" title="Open AWS Console for this account ({{aws_account_number}}) in another tab." style="text-decoration:none;" href="https://{{aws_account_number}}.signin.aws.amazon.com/console/">AWS  <span class="fa fa-external-link" style="position:relative;bottom:-1px;font-size:14px;"></span></a>
                 </td>
-                <td align="center" style="white-space:nowrap;">
+                <td width="2%" align="center" style="white-space:nowrap;">
                     <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{version}}/"><b title="Version of: foursight-cgap" style="text-decoration:none;color:#263A48;">{{version}}</b></a>
                 </td>
-                <td width="400" style="padding-right:10pt;padding-top:2pt;padding-bottom:1pt;white-space:nowrap;" align="right" nowrap="1">
+                <td width="49%" style="padding-right:10pt;padding-top:2pt;padding-bottom:1pt;white-space:nowrap;" align="right" nowrap="1">
                     {% if environments|length > 0 %}
                         <span class="dropdown">
-                            <b class="dropdown-button" onclick="this.nextSibling.display = 'block';" onmouseover="this.style.display = 'block';" style="color:#143c53" title="Environment: {{env}} ({{env_short}})">{{env.upper()}}</b>
+                            <b class="dropdown-button" onclick="this.nextSibling.display = 'block';" onmouseover="this.style.display = 'block';" style="color:#143c53" title="Environment: {{env}} ({{env_short}})">{{env}}</b>
                             <span class="dropdown-content">
                                 {% for environment in environments %}
                                     {% if environment["name"].upper() == env.upper() or environment["full"].upper() == env.upper() or environment["short"].upper() == env.upper() or environment["foursight"].upper() == env.upper() %}
@@ -256,7 +262,7 @@
                             </span>
                          </span>
                     {% else %}
-                        <b style="color:#143c53" title="Environment: {{env}}">{{env.upper()}}</b>
+                        <b style="color:#143c53" title="Environment: {{env}}">{{env}}</b>
                     {% endif %}
                     &nbsp;|&nbsp;
                     {% if stage == 'prod' %}
@@ -293,6 +299,11 @@
         <div class="container">
             <div class="boxstyle check-warn" style="margin:20pt;padding:10pt;">
                 Not logged in. Click <u style="cursor:pointer" onclick="create_redir_cookie(); lock.show();"><b>here</b></u> to <span style="cursor:pointer" onclick="create_redir_cookie(); lock.show();">login</span>.
+                {% if user_record["error"] == "noadmin" or user_record["error"] == "nogroups" %}
+                    <br /><span style="color:darkred"><b>Warning</b>: The user <b>{{user_record["email"]}}</b> does not have permission for the <b>{{env}}</b> environment.</span>
+                {% elif user_record["error"] == "exception"  %}
+                    <br /><span style="color:darkred"><b>Warning</b>: A user record for <b>{{user_record["email"]}}</b> was not found for the <b>{{env}}</b> environment.</span>
+                {% endif %}
                 {% if aws_account_number %}
                     <br />
                     <small> AWS Account: {{aws_account_number}} </small>
@@ -316,7 +327,7 @@
       function create_redir_cookie() {
         var expr = new Date();
         expr.setFullYear(expr.getFullYear() + 1);
-        document.cookie = "redir=" + window.location.href + "; path=/; expires=" + expr.toUTCString() + "; domain=" + window.location.host + ";";
+        document.cookie = "redir=" + window.location.href + "; path=/; expires=" + expr.toUTCString();
       }
 </script>
 <script type="text/javascript">
@@ -402,9 +413,15 @@
 <tr><td align="center" style="padding-top:2px;padding-bottom:6px">
 <!--<img src="https://hms.harvard.edu/themes/harvardmedical/logo.svg" height="20" />-->
 <!--<img src="https://pbs.twimg.com/profile_images/997469790481530881/Da1WaBIn_400x400.jpg" height="20" />-->
-<a href="https://cgap.hms.harvard.edu/" target="_blank">
-<img src="https://www.iscb.org/images/stories/ismb2020/bazaar/logo.HarvardMedical-BiomedicalInformatics.png" height="46"/>
-</a>
+{% if main_title == "Foursight-Fourfront" %}
+    <a href="https://data.4dnucleome.org" target="_blank">
+        <img src="https://www.iscb.org/images/stories/ismb2020/bazaar/logo.HarvardMedical-BiomedicalInformatics.png" height="46"/>
+    </a>
+{% else %}
+    <a href="https://cgap.hms.harvard.edu/" target="_blank">
+        <img src="https://www.iscb.org/images/stories/ismb2020/bazaar/logo.HarvardMedical-BiomedicalInformatics.png" height="46"/>
+    </a>
+{% endif %}
 </td></tr>
 <tr style="background-color:darkred;height:1px;"><td></td></tr>
 </table>

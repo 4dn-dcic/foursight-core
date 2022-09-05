@@ -21,12 +21,15 @@ const Checks = (props) => {
     let [ error, setError ] = useState(false);
     let [ selectedGroups, setSelectedGroups ] = useState([])
     let [ checkResults, setCheckResults ] = useState([]);
-    let [ showResultsDetailsFlag, setShowResultsDetailsFlag ] = useState([]);
+    let [ showResultsDetailsFlag, setShowResultsDetailsFlag ] = useState(false);
     let [ selectedHistories, setSelectedHistories ] = useState([])
 
     useEffect(() => {
         const groupedChecksUrl = API.Url(`/checks/grouped`, environ);
-        fetchData(groupedChecksUrl, groupedChecks => { setGroupedChecks(groupedChecks); setSelectedGroups([groupedChecks[0]])}, setLoading, setError)
+        fetchData(groupedChecksUrl, groupedChecks => {
+            setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
+            showGroup(groupedChecks[0]);
+        }, setLoading, setError)
         const lambdasUrl = API.Url(`/lambdas`, environ);
         fetchData(lambdasUrl, setLambdas);
     }, []);
@@ -51,32 +54,40 @@ const Checks = (props) => {
         return -1;
     }
 
-    function onGroupSelect(group) {
+    function noteChangedSelectedGroups() {
+        setSelectedGroups(existing => [...existing]);
+    }
+
+    function noteChangedResults() {
+        setSelectedGroups(existing => [...existing]);
+    }
+
+    function noteChangedHistories() {
+        setSelectedHistories(existing => [...existing]);
+    }
+
+    function showGroup(group, showResults = true) {
         if (isSelectedGroup(group)) {
             const index = findSelectedGroupIndex(group);
             selectedGroups.splice(index, 1);
-            setSelectedGroups((selectedGroups) => [...selectedGroups]);
+            noteChangedResults();
         }
         else {
-            setSelectedGroups((existingSelectedGroups) => [group, ...existingSelectedGroups]);
+            selectedGroups.unshift(group)
+            noteChangedResults()
+            if (showResults) {
+                group.checks.map(check => showCheckResultsBox(check));
+            }
         }
     }
 
     function onGroupSelectAll(group) {
-        if (isAllGroupsSelected()) {
+        if (groupedChecks.length == selectedGroups.length) {
             setSelectedGroups([groupedChecks[0]]);
         }
         else {
             setSelectedGroups([...groupedChecks]);
         }
-    }
-
-    function isAllGroupsSelected() {
-        return groupedChecks.length == selectedGroups.length;
-    }
-
-    function selectGroup(group) {
-        setSelectedGroups((existingSelectedGroups) => [...existingSelectedGroups, group]);
     }
 
     const ChecksGroupBox = ({}) => {
@@ -85,7 +96,7 @@ const Checks = (props) => {
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
                 { groupedChecks.map((datum, index) => {
                     return <div key={datum.group}>
-                        <span style={{fontWeight:isSelectedGroup(datum) ? "bold" : "normal",cursor:"pointer"}} onClick={() => onGroupSelect(datum)}>
+                        <span style={{fontWeight:isSelectedGroup(datum) ? "bold" : "normal",cursor:"pointer"}} onClick={() => showGroup(datum)}>
                             {datum.group}
                         </span>
                         { index < groupedChecks.length - 1 &&
@@ -179,7 +190,7 @@ const Checks = (props) => {
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt"}}>
                 <div>
                     <b style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group.checks)}>{group?.group}</b> {isShowingAnyResults(group.checks) ? (<span>&#x2193;</span>) : (<span>&#x2191;</span>)}
-                    <span style={{float:"right",cursor:"pointer"}} onClick={(() => {onGroupSelect(group)})}><b>&#x2717;</b></span>
+                    <span style={{float:"right",cursor:"pointer"}} onClick={(() => {showGroup(group)})}><b>&#x2717;</b></span>
                 </div>
                 <div style={{marginTop:"6pt"}} />
                 { group.checks.map((check, index) => {
@@ -298,14 +309,17 @@ const Checks = (props) => {
                                 Duration
                             &nbsp;</td>
                         </tr>
-                            <tr><td style={{height:"1px",background:"gray"}} colSpan="4"></td></tr>
+                        <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
+                        <tr><td style={{paddingTop:"4px"}}></td></tr>
                     </thead>
                     <tbody>
                     {check.history.history.map((history, index) => {
                         return <>
-                            { index != 0 && (
-                                <tr><td style={{height:"1px",background:"gray"}} colSpan="4"></td></tr>
-                            )}
+                            { index != 0 && (<>
+                                <tr><td style={{paddingTop:"2px"}}></td></tr>
+                                <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
+                                <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                            </>)}
                             <tr>
                             <td>
                                 {extractStatus(history) == "PASS" ? (<>
@@ -374,18 +388,14 @@ const Checks = (props) => {
         }
     }
 
-    function noteChangeHistories() {
-        setSelectedHistories(existing => [...existing]);
-    }
-
     function showResultsHistory(check) {
         if (!check.showingHistory) {
             check.showingHistory = true;
             selectedHistories.unshift(check);
-            noteChangeHistories();
+            noteChangedHistories();
             if (!check.history) {
                 const resultsHistoryUrl = API.Url(`/checks/${check.name}/history`, environ);
-                fetchData(resultsHistoryUrl, history => { check.history = history; noteChangeHistories(); });
+                fetchData(resultsHistoryUrl, history => { check.history = history; noteChangedHistories(); });
             }
         }
     }
@@ -395,7 +405,7 @@ const Checks = (props) => {
             check.showingHistory = false;
             const index = findResultsHistoryIndex(check);
             selectedHistories.splice(index, 1);
-            noteChangeHistories();
+            noteChangedHistories();
         }
     }
 
@@ -454,16 +464,16 @@ const Checks = (props) => {
 
     function showCheckResultsBox(check) {
         check.showingResults = true;
-        setSelectedGroups([...selectedGroups]);
+        noteChangedSelectedGroups();
         if (!check.results) {
             const checkResultsUrl = API.Url(`/checks/${check.name}`, environ);
-            fetchData(checkResultsUrl, checkResults => { check.results = checkResults; setSelectedGroups([...selectedGroups]); }, setLoading, setError)
+            fetchData(checkResultsUrl, checkResults => { check.results = checkResults; noteChangedResults(); }, setLoading, setError)
         }
     }
 
     function hideCheckResultsBox(check) {
         check.showingResults = false;
-        setSelectedGroups((existingSelectedGroups) => [...existingSelectedGroups]);
+        noteChangedSelectedGroups();
     }
     function isShowingSelectedCheckResultsBox(check) {
         return check?.showingResults;

@@ -37,7 +37,7 @@ from dcicutils.env_utils import (
     short_env_name,
 )
 from dcicutils.lang_utils import disjoined_list
-from dcicutils.misc_utils import get_error_message
+from dcicutils.misc_utils import get_error_message, PRINT
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from typing import Optional
@@ -172,7 +172,7 @@ class AppUtilsCore(ReactApi):
         )
         self.portal_url = None
         self.auth0_client_id = None
-        self.user_record = None
+        self.user_records = {}
         self.lambda_last_modified = None
 
     @staticmethod
@@ -282,6 +282,25 @@ class AppUtilsCore(ReactApi):
                 "expiration_time": expiration_time,
                 "jwt": jwt_decoded}
 
+    # THis is quite a hack, this whole user_records thing. Will straighten out eventually (perhaps with React version someday).
+    def get_user_record(self, environ: str, request_dict: dict) -> dict:
+        user_info = self.get_logged_in_user_info(environ, request_dict)
+        if not user_info:
+            return None
+        user_record = self.user_records.get(user_info['email_address'])
+        return user_record
+
+    def set_user_record(self, email: str, record: dict, error: str, exception: str):
+        if not email:
+            return
+        user_record = self.user_records.get(email)
+        if not user_record:
+            self.user_records[email] = {"email": email, "record": record, "error": error, "exception": exception}
+        else:
+            user_record["record"] = record
+            user_record["error"] = error
+            user_record["exception"] = exception
+
     def get_portal_url(self, env_name: str) -> str:
         if not self.portal_url:
             try:
@@ -362,124 +381,21 @@ class AppUtilsCore(ReactApi):
                     logger.warn(env_info)
                     logger.warn("foursight_core.check_authorization: user_res ...")
                     logger.warn(user_res)
-                    #
-                    # The following tries to referent 'groups' in the JSON returned by the get_metadata call above,
-                    # but there is no such element. The JSON we get looks like this:
-                    # {
-                    #     "email": "david_michaels@hms.harvard.edu",
-                    #     "status": "current",
-                    #     "timezone": "US/Eastern",
-                    #     "last_name": "Michaels",
-                    #     "first_name": "David",
-                    #     "date_created": "2022-05-09T19:29:04.053460+00:00",
-                    #     "subscriptions": [],
-                    #     "schema_version": "1",
-                    #     "was_unauthorized": true,
-                    #     "@id": "/users/04bf103b-5a61-4ff9-96ac-e8d104f8b7ee/",
-                    #     "@type": [
-                    #         "User",
-                    #         "Item"
-                    #     ],
-                    #     "uuid": "04bf103b-5a61-4ff9-96ac-e8d104f8b7ee",
-                    #     "principals_allowed": {
-                    #         "view": [
-                    #             "group.admin",
-                    #             "group.read-only-admin",
-                    #             "remoteuser.EMBED",
-                    #             "remoteuser.INDEXER",
-                    #             "userid.04bf103b-5a61-4ff9-96ac-e8d104f8b7ee"
-                    #         ],
-                    #         "edit": [
-                    #             "group.admin",
-                    #             "userid.04bf103b-5a61-4ff9-96ac-e8d104f8b7ee"
-                    #         ]
-                    #     },
-                    #     "display_title": "David Michaels",
-                    #     "external_references": [],
-                    #     "title": "David Michaels",
-                    #     "contact_email": "david_michaels@hms.harvard.edu"
-                    # }
-                    #
-                    # Looks like we want to check principals_allowed/{view,edit} for 'group.admin' ...
-                    # For now only check the 'groups' element if present otherwise ignore that part of the check below.
-                    #
-                    # And BTW here is another sample record from the same source:
-                    # {
-                    #       "lab": "/labs/4dn-dcic-lab/",
-                    #       "tags": [
-                    #            "skip_oh_synchronization"
-                    #        ],
-                    #        "email": "kent_pitman@hms.harvard.edu",
-                    #        "groups": [
-                    #            "admin"
-                    #        ],
-                    #        "status": "current",
-                    #        "timezone": "US/Eastern",
-                    #        "job_title": "Software Developer",
-                    #        "last_name": "Pitman",
-                    #        "first_name": "Kent",
-                    #        "submits_for": [
-                    #            "/labs/4dn-dcic-lab/"
-                    #        ],
-                    #        "date_created": "2020-01-06T21:24:22.260908+00:00",
-                    #        "submitted_by": "/users/1a12362f-4eb6-4a9c-8173-776667226988/",
-                    #        "last_modified": {
-                    #            "modified_by": "/users/986b362f-4eb6-4a9c-8173-3ab267307e3a/",
-                    #            "date_modified": "2021-03-04T21:20:45.428320+00:00"
-                    #        },
-                    #        "subscriptions": [
-                    #            {
-                    #                "url": "?submitted_by.uuid=1a12362f-4eb6-4a9c-8173-776667226&sort=-date_created",
-                    #                "title": "My submissions"
-                    #            },
-                    #            {
-                    #                "url": "?lab.uuid=828cd4fe-ebb0-4b36-a94a-d2e3a36cc989&sort=-date_created",
-                    #                "title": "Submissions for my lab"
-                    #            }
-                    #        ],
-                    #        "schema_version": "1",
-                    #        "viewing_groups": [
-                    #            "4DN"
-                    #        ],
-                    #        "@id": "/users/1a12362f-4eb6-4a9c-8173-776667226962/",
-                    #        "@type": [
-                    #            "User",
-                    #            "Item"
-                    #        ],
-                    #        "uuid": "1a12362f-4eb6-4a9c-8173-776667226962",
-                    #        "principals_allowed": {
-                    #            "view": [
-                    #                "group.admin",
-                    #                "group.read-only-admin",
-                    #                "remoteuser.EMBED",
-                    #                "remoteuser.INDEXER",
-                    #                "userid.1a12362f-4eb6-4a9c-8173-776667226962"
-                    #            ],
-                    #            "edit": [
-                    #                "group.admin",
-                    #                "userid.1a12362f-4eb6-4a9c-8173-776667226962"
-                    #             ]
-                    #        },
-                    #        "display_title": "Kent Pitman",
-                    #        "external_references": [],
-                    #        "title": "Kent Pitman",
-                    #        "contact_email": "kent_pitman@hms.harvard.edu"
-                    # }
-                    #
-                    # if not ('admin' in user_res.get('groups') and payload.get('email_verified')):
-                    #
                     groups = user_res.get('groups')
                     if not groups:
                         logger.warn("foursight_core.check_authorization: No 'groups' element for user record! Returning False.")
+                        self.set_user_record(email=jwt_decoded.get('email'), record=None, error="nogroups", exception=None)
                         return False
                     if not ((not groups or 'admin' in groups) and jwt_decoded.get('email_verified')):
                         logger.error("foursight_core.check_authorization: Returning False")
+                        self.set_user_record(email=jwt_decoded.get('email'), record=None, error="noadmin", exception=None)
                         # if unauthorized for one, unauthorized for all
                         return False
-                    self.user_record = user_res
+                    self.set_user_record(email=jwt_decoded.get('email'), record=user_res, error=None, exception=None)
                 logger.warn("foursight_core.check_authorization: Returning True")
                 return True
             except Exception as e:
+                self.set_user_record(email=jwt_decoded.get('email'), record=None, error="exception", exception=str(e))
                 logger.error("foursight_core.check_authorization: Exception on check_authorization")
                 logger.error(e)
         logger.error("foursight_core.check_authorization: Returning False ")
@@ -1013,6 +929,7 @@ class AppUtilsCore(ReactApi):
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            user_record=self.get_user_record(environ, request_dict),
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
@@ -1103,7 +1020,7 @@ class AppUtilsCore(ReactApi):
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
-            user_record=self.user_record,
+            user_record=self.get_user_record(environ, request_dict),
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_credentials=aws_credentials,
             aws_account_number=aws_account_number,
@@ -1161,6 +1078,7 @@ class AppUtilsCore(ReactApi):
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            user_record=self.get_user_record(environ, request_dict),
             users=users,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
@@ -1221,6 +1139,7 @@ class AppUtilsCore(ReactApi):
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            user_record=self.get_user_record(environ, request_dict),
             users=users,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
@@ -1292,6 +1211,7 @@ class AppUtilsCore(ReactApi):
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            user_record=self.get_user_record(environ, request_dict),
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             running_checks=running_checks,
@@ -1450,6 +1370,7 @@ class AppUtilsCore(ReactApi):
             is_admin=is_admin,
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            user_record=self.get_user_record(environ, request_dict),
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
