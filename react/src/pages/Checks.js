@@ -29,9 +29,11 @@ const Checks = (props) => {
         fetchData(groupedChecksUrl, groupedChecks => {
             setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
             showGroup(groupedChecks[0]);
-        }, setLoading, setError)
+        }, setLoading, setError);
         const lambdasUrl = API.Url(`/lambdas`, environ);
-        fetchData(lambdasUrl, setLambdas);
+        fetchData(lambdasUrl, lambdas => {
+            setLambdas(lambdas.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0)));
+        });
     }, []);
 
     function isSelectedGroup(group) {
@@ -112,7 +114,7 @@ const Checks = (props) => {
         return <div>
             <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;Lambdas</div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                { lambdas.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0)).map((datum, index) => {
+                { lambdas.map((datum, index) => {
                     return <div key={datum.lambda_name}>
                         {datum.lambda_name}
                         { index < lambdas.length - 1 &&
@@ -166,7 +168,7 @@ const Checks = (props) => {
                             &nbsp;&#x2191;
                         </>)}
                     </span>
-                    <small style={{float:"right"}}>
+                    <span style={{float:"right",fontSize:"x-small",marginTop:"6px"}}>
                         Results Details:&nbsp;
                         { showResultsDetailsFlag ? (<>
                             <span onClick={() => showAllGroupsResultsDetailsFlag()} style={{cursor:"pointer",fontWeight:"bold"}}>Show</span> |&nbsp;
@@ -176,7 +178,7 @@ const Checks = (props) => {
                             <span onClick={() => hideAllGroupsResultsDetailsFlag()} style={{cursor:"pointer",fontWeight:"bold"}}>Hide</span>
                         </>)}
                         &nbsp;
-                    </small>
+                    </span>
                 </div>
                 { selectedGroups?.map(selectedGroup =>
                     <SelectedGroupBox key={selectedGroup.group} group={selectedGroup} />
@@ -214,12 +216,12 @@ const Checks = (props) => {
                         <td style={{veriticalAlign:"top"}}>
                             <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>
                             { isShowingSelectedCheckResultsBox(check) && check.results &&
-                                (<span>&nbsp;&nbsp;<span style={{cursor:"pointer"}} onClick={() => {refreshResults(check)}}>&#8635;</span></span>)
+                                (<span>&nbsp;&nbsp;<span style={{cursor:"pointer",fontSize:"large"}} onClick={() => {refreshResults(check)}}>&#8635;</span></span>)
                             }
                                 <small>&nbsp;&nbsp;</small>
                                 <span onClick={() => onClickShowResultsHistory(check)} style={{paddingTop:"10px",cursor:"pointer"}}>
-                                    <img src="https://cdn-icons-png.flaticon.com/512/32/32223.png" height="15"/>
-                                    {check.showingHistory ? <span style={{paddingTop:"10px"}}>&nbsp;&#x2192;</span> : <></>}
+                                    <img src="https://cdn-icons-png.flaticon.com/512/32/32223.png" style={{paddingBottom:"4px",height:"22"}}/>
+                                    {check.showingHistory ? <span style={{paddingTop:"10px"}}>&#x2192;</span> : <></>}
                                 </span>
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div key={index} title={check.schedule[key].cron}>
@@ -314,7 +316,7 @@ const Checks = (props) => {
                     </thead>
                     <tbody>
                     {check.history.history.map((history, index) => {
-                        return <>
+                        return <React.Fragment key={extractUUID(history)}>
                             { index != 0 && (<>
                                 <tr><td style={{paddingTop:"2px"}}></td></tr>
                                 <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
@@ -345,13 +347,13 @@ const Checks = (props) => {
                                 {extractState(history)}
                             &nbsp;&nbsp;</td>
                             </tr>
-                        </>
+                        </React.Fragment>
                     })}
                     </tbody>
                     </table>
                 </>):(<>
                     { check.history ? (<>
-                        No history.
+                        <span style={{color:"black"}}>No history.</span>
                     </>):(<>
                         <i>Loading history ...</i>
                     </>)}
