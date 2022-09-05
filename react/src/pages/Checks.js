@@ -25,7 +25,7 @@ const Checks = (props) => {
     let [ selectedHistories, setSelectedHistories ] = useState([])
 
     useEffect(() => {
-        const groupedChecksUrl = API.Url(`/checks/grouped`, environ);
+        const groupedChecksUrl = API.Url(`/checks`, environ);
         fetchData(groupedChecksUrl, groupedChecks => {
             setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
             showGroup(groupedChecks[0]);

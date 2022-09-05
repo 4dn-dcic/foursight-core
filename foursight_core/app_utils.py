@@ -2252,15 +2252,22 @@ def get_view_reload_lambda_route():
     return AppUtilsCore.singleton().view_reload_lambda(request=app.current_request, environ=DEFAULT_ENV, is_admin=True, lambda_name='default', domain=domain, context=context)
 
 
-@app.route(ROUTE_PREFIX + 'reactapi/{env}/checks', methods=['GET'], cors=CORS)
+@app.route(ROUTE_PREFIX + 'reactapi/{env}/rawchecks', methods=['GET'], cors=CORS)
 def reactapi_route_checks(env: str):
     print(f"XYZZY:/reactapi/{env}/checks")
     return AppUtilsCore.singleton().react_route_checks(request=app.current_request, env=env)
 
-@app.route(ROUTE_PREFIX + 'reactapi/{env}/checks/grouped', methods=['GET'], cors=CORS)
+
+@app.route(ROUTE_PREFIX + 'reactapi/{env}/checks', methods=['GET'], cors=CORS)
 def reactapi_route_checks_grouped(env: str):
     print(f"XYZZY:/reactapi/{env}/checks/grouped")
     return AppUtilsCore.singleton().react_route_checks_grouped(request=app.current_request, env=env)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/{env}/checks/{check}', methods=['GET'], cors=CORS)
+def reactapi_route_check_results(env: str, check: str):
+    print(f"XYZZY:/reactapi/{env}/checks/{check}")
+    return AppUtilsCore.singleton().react_route_check_results(request=app.current_request, env=env, check=check)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{env}/lambdas', methods=['GET'], cors=CORS)
@@ -2268,11 +2275,6 @@ def reactapi_route_lambdas(env: str):
     print(f"XYZZY:/reactapi/{env}/lambdas")
     return AppUtilsCore.singleton().react_route_lambdas(request=app.current_request, env=env)
 
-
-@app.route(ROUTE_PREFIX + 'reactapi/{env}/checks/{check}', methods=['GET'], cors=CORS)
-def reactapi_route_check_results(env: str, check: str):
-    print(f"XYZZY:/reactapi/{env}/checks/{check}")
-    return AppUtilsCore.singleton().react_route_check_results(request=app.current_request, env=env, check=check)
 
 @app.route(ROUTE_PREFIX + 'reactapi/{env}/checks/{check}/history', methods=['GET'], cors=CORS)
 def reactapi_route_check_history(env: str, check: str):
