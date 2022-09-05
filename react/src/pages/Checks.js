@@ -177,8 +177,11 @@ const Checks = (props) => {
     const SelectedGroupBox = ({group}) => {
         return <div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt"}}>
-                <b style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group.checks)}>{group?.group}</b> {isShowingAnyResults(group.checks) ? (<span>&#x2193;</span>) : (<span>&#x2191;</span>)}
-                <br /> <br />
+                <div>
+                    <b style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group.checks)}>{group?.group}</b> {isShowingAnyResults(group.checks) ? (<span>&#x2193;</span>) : (<span>&#x2191;</span>)}
+                    <span style={{float:"right",cursor:"pointer"}} onClick={(() => {onGroupSelect(group)})}><b>&#x2717;</b></span>
+                </div>
+                <div style={{marginTop:"6pt"}} />
                 { group.checks.map((check, index) => {
                     return <div key={index}>
                         <SelectedChecksBox check={check} index={index}/>
@@ -192,17 +195,21 @@ const Checks = (props) => {
         return <div>
             <table>
                 <tbody>
+                    <tr style={{height:"3pt"}}><td></td></tr>
                     <tr>
                         <td style={{verticalAlign:"top","cursor":"pointer"}} onClick={() => {toggleCheckResultsBox(check)}}>
                             <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
-                        <td>
+                        <td style={{veriticalAlign:"top"}}>
                             <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>
                             { isShowingSelectedCheckResultsBox(check) && check.results &&
                                 (<span>&nbsp;&nbsp;<span style={{cursor:"pointer"}} onClick={() => {refreshResults(check)}}>&#8635;</span></span>)
                             }
-                            <small>&nbsp;&nbsp;</small><span onClick={() => onClickShowResultsHistory(check)} style={{cursor:"pointer"}}><img src="https://cdn-icons-png.flaticon.com/512/32/32223.png" height="15"/></span>
-                            <br/>
+                                <small>&nbsp;&nbsp;</small>
+                                <span onClick={() => onClickShowResultsHistory(check)} style={{paddingTop:"10px",cursor:"pointer"}}>
+                                    <img src="https://cdn-icons-png.flaticon.com/512/32/32223.png" height="15"/>
+                                    {check.showingHistory ? <span style={{paddingTop:"10px"}}>&nbsp;&#x2192;</span> : <></>}
+                                </span>
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div key={index} title={check.schedule[key].cron}>
                                     <small><i>Scheduled Run: {check.schedule[key].cron_description}</i></small>
@@ -212,10 +219,10 @@ const Checks = (props) => {
                                 { isShowingSelectedCheckResultsBox(check) && (<>
                                     <SelectedCheckResultsBox check={check}/>
                                 </>)}
-                                <br />
                             </>
                         </td>
                     </tr>
+                    <tr style={{height:"3pt"}}><td></td></tr>
                 </tbody>
             </table>
         </div>
@@ -274,7 +281,7 @@ const Checks = (props) => {
             </div>
             <div style={{marginBottom:"6pt"}}/>
             { check.showingHistory && (<>
-                { check.history ? (<>
+                { check.history?.history?.length > 0 ? (<>
                     <table style={{width:"100%"}}>
                     <thead>
                         <tr>
@@ -329,7 +336,11 @@ const Checks = (props) => {
                     </tbody>
                     </table>
                 </>):(<>
-                    Loading history ...
+                    { check.history ? (<>
+                        No history.
+                    </>):(<>
+                        <i>Loading history ...</i>
+                    </>)}
                 </>)}
             </>)}
         </div>
@@ -338,7 +349,7 @@ const Checks = (props) => {
     const ResultsHistoryPanel = ({}) => {
         let histories = selectedHistories?.filter((check) => check.showingHistory);
         if (histories.length <= 0) {
-            return <span>foo</span>
+            return <span />
         }
         return <div>
             <b style={{marginBottom:"100pt"}}>Recent Results Histories</b>
