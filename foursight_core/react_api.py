@@ -229,8 +229,6 @@ class ReactApi:
         login = self.get_logged_in_user_info(environ, request_dict)
         login["admin"] = is_admin
         login["auth0"] = self.get_auth0_client_id(environ)
-        if self.user_record:
-            login["user"] = self.user_record
         if not self.is_known_environment_name(environ):
             env_unknown = True
         else:
