@@ -14,12 +14,13 @@ const Checks = (props) => {
 
     let { environ } = useParams();
     const [ header ] = useContext(GlobalContext);
-    const [ groupedChecks, setGroupedChecks ] = useState([]);
-    const [ lambdas, setLambdas ] = useState([]);
+    let [ groupedChecks, setGroupedChecks ] = useState([]);
+    let [ lambdas, setLambdas ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
     let [ selectedGroups, setSelectedGroups ] = useState([])
-        const [ checkResults, setCheckResults ] = useState([]);
+    let [ checkResults, setCheckResults ] = useState([]);
+    let [ showResultsDetailsFlag, setShowResultsDetailsFlag ] = useState([]);
 
     useEffect(() => {
         const groupedChecksUrl = API.Url(`/checks/grouped`, environ);
@@ -110,12 +111,64 @@ const Checks = (props) => {
         </div>
     }
 
+    function onClickSelectedGroupsTitle(checks) {
+        const showingAnyGroupsResults = isShowingAnyGroupsResults();
+        console.log(showingAnyGroupsResults)
+        for (let i = 0 ; i < selectedGroups.length ; i++) {
+            if (showingAnyGroupsResults) {
+                hideAllResults(selectedGroups[i].checks);
+            }
+            else {
+                showAllResults(selectedGroups[i].checks);
+            }
+        }
+    }
+
+    function isShowingAnyGroupsResults() {
+        for (let i = 0 ; i < selectedGroups.length ; i++) {
+            if (isShowingAnyResults(selectedGroups[i].checks)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function showAllGroupsResultsDetailsFlag() {
+        setShowResultsDetailsFlag(true);
+    }
+    function hideAllGroupsResultsDetailsFlag() {
+        setShowResultsDetailsFlag(false);
+    }
+
     const SelectedGroupsBox = ({}) => {
         return <div>
-            <div style={{fontWeight:"bold",paddingBottom:"3pt",cursor:"pointer"}} onClick={() => {selectedGroups?.map(selectedGroup => toggleShowAllResults(selectedGroup.checks))}}>&nbsp;Checks</div>
-            { selectedGroups?.map(selectedGroup =>
-                <SelectedGroupBox key={selectedGroup.group} group={selectedGroup} />
-            )}
+            { selectedGroups.length > 0 ? (<>
+                <div style={{paddingBottom:"3pt"}}>
+                    <span style={{cursor:"pointer"}} onClick={() => onClickSelectedGroupsTitle()}>
+                        &nbsp;
+                        <b>Checks</b>
+                        { isShowingAnyGroupsResults() ? (<>
+                            &nbsp;&#x2193;
+                        </>):(<>
+                            &nbsp;&#x2191;
+                        </>)}
+                    </span>
+                    <small style={{float:"right"}}>
+                        Results Details:&nbsp;
+                        { showResultsDetailsFlag ? (<>
+                            <span onClick={() => showAllGroupsResultsDetailsFlag()} style={{cursor:"pointer",fontWeight:"bold"}}>Show</span> |&nbsp;
+                            <span onClick={() => hideAllGroupsResultsDetailsFlag()} style={{cursor:"pointer"}}>Hide</span>
+                        </>):(<>
+                            <span onClick={() => showAllGroupsResultsDetailsFlag()} style={{cursor:"pointer"}}>Show</span> |&nbsp;
+                            <span onClick={() => hideAllGroupsResultsDetailsFlag()} style={{cursor:"pointer",fontWeight:"bold"}}>Hide</span>
+                        </>)}
+                        &nbsp;
+                    </small>
+                </div>
+                { selectedGroups?.map(selectedGroup =>
+                    <SelectedGroupBox key={selectedGroup.group} group={selectedGroup} />
+                )}
+            </>):(<></>)}
         </div>
     }
 
@@ -143,7 +196,9 @@ const Checks = (props) => {
                         </td>
                         <td>
                             <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={(arg) => {toggleCheckResultsBox(check)}}>{check.title}</u>
-                            { isShowingSelectedCheckResultsBox(check) && check.results && (<span>&nbsp;<span style={{cursor:"pointer"}} onClick={() => {refreshResults(check)}}>&#8635;</span></span>) }
+                            { isShowingSelectedCheckResultsBox(check) && check.results &&
+                                (<span>&nbsp;&nbsp;<span style={{cursor:"pointer"}} onClick={() => {refreshResults(check)}}>&#8635;</span></span>)
+                            }
                             <br/>
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div key={index} title={check.schedule[key].cron}>
@@ -166,13 +221,25 @@ const Checks = (props) => {
     const SelectedCheckResultsBox = ({check, index}) => {
         return <div>
             { check.results && <small>
-                Latest Results: {check.results?.timestamp} <br />
-                Results Summary: {check.results?.summary}&nbsp;&nbsp;
-                { check.results?.status?.toUpperCase() == "PASS" ? (<b style={{fontSize:"12pt",color:"green"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>)}
+                { Object.keys(check.results).length > 0 ? (<>
+                    <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"darkgreen",}}></div>
+                    <span>Latest Results: {check.results?.timestamp}</span> <br />
+                    <span style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red"}}>Results Summary: {check.results?.summary}</span>&nbsp;&nbsp;
+                    { check.results?.status?.toUpperCase() == "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>)}
+                </>):(<>
+                    { !showResultsDetailsFlag && <span>No results.</span> }
+                </>)}
             </small> }
-            <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginTop:"3px",marginRight:"5pt",maxWidth:"600pt"}}>
-                {!check.results ? "Loading ..." : (Object.keys(check.results).length > 0 ? YAML.stringify(check.results) : "No results.") }
-            </pre>
+            { showResultsDetailsFlag ? (
+                <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginTop:"3px",marginRight:"5pt",maxWidth:"600pt"}}>
+                    {!check.results ? <i>Loading ...</i> : (Object.keys(check.results).length > 0 ? YAML.stringify(check.results) : "No results.") }
+                </pre>
+            ):(
+                <span>
+                    <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"darkgreen",}}></div>
+                    {!check.results ? <small><i>Loading ...</i></small> : <></>}
+                </span>
+            )}
         </div>
     }
 
@@ -195,7 +262,6 @@ const Checks = (props) => {
 
     function toggleShowAllResults(checks) {
         if (isShowingAnyResults(checks)) {
-                console.log('hidall')
             hideAllResults(checks);
         }
         else {
@@ -204,14 +270,11 @@ const Checks = (props) => {
     }
 
     function isShowingAnyResults(checks) {
-            console.log('xxx')
         for (let i = 0 ; i < checks.length ; i++) {
             if (checks[i].showingResults) {
-            console.log('true')
                 return true;
             }
         }
-            console.log('false')
         return false;
     }
 
