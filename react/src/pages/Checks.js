@@ -21,6 +21,7 @@ const Checks = (props) => {
     let [ selectedGroups, setSelectedGroups ] = useState([])
     let [ checkResults, setCheckResults ] = useState([]);
     let [ showResultsDetailsFlag, setShowResultsDetailsFlag ] = useState([]);
+    let [ selectedHistories, setSelectedHistories ] = useState([])
 
     useEffect(() => {
         const groupedChecksUrl = API.Url(`/checks/grouped`, environ);
@@ -140,7 +141,7 @@ const Checks = (props) => {
         setShowResultsDetailsFlag(false);
     }
 
-    const SelectedGroupsBox = ({}) => {
+    const SelectedGroupsPanel = ({}) => {
         return <div>
             { selectedGroups.length > 0 ? (<>
                 <div style={{paddingBottom:"3pt"}}>
@@ -191,14 +192,15 @@ const Checks = (props) => {
             <table>
                 <tbody>
                     <tr>
-                        <td style={{verticalAlign:"top","cursor":"pointer"}} onClick={(arg) => {toggleCheckResultsBox(check)}}>
+                        <td style={{verticalAlign:"top","cursor":"pointer"}} onClick={() => {toggleCheckResultsBox(check)}}>
                             <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
                         <td>
-                            <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={(arg) => {toggleCheckResultsBox(check)}}>{check.title}</u>
+                            <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>
                             { isShowingSelectedCheckResultsBox(check) && check.results &&
                                 (<span>&nbsp;&nbsp;<span style={{cursor:"pointer"}} onClick={() => {refreshResults(check)}}>&#8635;</span></span>)
                             }
+                            <small>&nbsp;&nbsp;</small><span onClick={() => onClickShowResultsHistory(check)} style={{cursor:"pointer"}}><img src="https://cdn-icons-png.flaticon.com/512/32/32223.png" height="15"/></span>
                             <br/>
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div key={index} title={check.schedule[key].cron}>
@@ -241,6 +243,75 @@ const Checks = (props) => {
                 </span>
             )}
         </div>
+    }
+
+    const ResultsHistoryBox = ({check}) => {
+        return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+            History Box: {check.name}
+            {check.showingHistory && JSON.stringify(check.history)}
+        </div>
+    }
+
+    const ResultsHistoryPanel = ({}) => {
+        let histories = selectedHistories?.filter((check) => check.showingHistory);
+        if (histories.length <= 0) {
+            return <span>foo</span>
+        }
+        return <div>
+            <b style={{marginBottom:"100pt"}}>Results Histories</b>
+            { histories.map((selectedHistory, index) => {
+                return <div key={index} style={{marginTop:"3pt"}}>
+                    <ResultsHistoryBox check={selectedHistory} />
+                </div>
+            })}
+        </div>
+    }
+
+    function onClickShowResultsHistory(check) {
+        toggleResultsHistory(check);
+    }
+
+    function toggleResultsHistory(check) {
+        if (check.showingHistory) {
+            hideResultsHistory(check);
+        }
+        else {
+            showResultsHistory(check);
+        }
+    }
+
+    function noteChangeHistories() {
+    }
+    function showResultsHistory(check) {
+        if (!check.showingHistory) {
+            check.showingHistory = true;
+            selectedHistories.unshift(check);
+            setSelectedHistories([...selectedHistories]);
+            if (!check.history) {
+                const resultsHistoryUrl = API.Url(`/checks/${check.name}/history`, environ);
+                fetchData(resultsHistoryUrl, resultsHistory => { check.history = resultsHistory; setSelectedHistories((x) => [...x]);});
+                //fetchData(resultsHistoryUrl, resultsHistory => { check.history = resultsHistory; setSelectedHistories([...selectedHistories]);});
+            }
+        }
+    }
+
+    function hideResultsHistory(check) {
+        if (check.showingHistory) {
+            check.showingHistory = false;
+            const index = findResultsHistoryIndex(check);
+            selectedHistories.splice(index, 1);
+            setSelectedHistories([...selectedHistories]);
+        }
+    }
+
+    function findResultsHistoryIndex(check) {
+        for (let i = 0 ; i < selectedHistories.length ; i++) {
+            const selectedHistory = selectedHistories[i]
+            if (selectedHistory.name == check.name) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     function refreshResults(check) {
@@ -297,7 +368,6 @@ const Checks = (props) => {
 
     function hideCheckResultsBox(check) {
         check.showingResults = false;
-        // check.results = null;
         setSelectedGroups((existingSelectedGroups) => [...existingSelectedGroups]);
     }
     function isShowingSelectedCheckResultsBox(check) {
@@ -313,7 +383,10 @@ const Checks = (props) => {
                         <LambdasBox />
                     </td>
                     <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>
-                        <SelectedGroupsBox />
+                        <SelectedGroupsPanel />
+                    </td>
+                    <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>
+                        <ResultsHistoryPanel />
                     </td>
                 </tr>
             </tbody></table>
