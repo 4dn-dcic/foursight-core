@@ -91,7 +91,7 @@ class Deploy(object):
     # get by looking for the AWS lambda function using the regex "{stack_name}-CheckRunner-.*").
     def build_config(cls, stage, identity=None, stack_name=None,
                      trial_creds=None, trial_global_env_bucket=False, global_env_bucket=None,
-                     security_group_ids=None, subnet_ids=None, check_runner=None, rds_name=None,
+                     security_group_ids=None, subnet_ids=None, check_runner=None,
                      lambda_timeout=DEFAULT_LAMBDA_TIMEOUT):
         """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
         # dmichaels/2022-07-22/C4-826:
