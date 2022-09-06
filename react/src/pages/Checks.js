@@ -21,8 +21,6 @@ const Checks = (props) => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
     let [ selectedGroups, setSelectedGroups ] = useState([])
-    let [ checkResults, setCheckResults ] = useState([]);
-    let [ showResultsDetailsFlag, setShowResultsDetailsFlag ] = useState(false);
     let [ selectedHistories, setSelectedHistories ] = useState([])
 
     useEffect(() => {
@@ -131,7 +129,6 @@ const Checks = (props) => {
 
     function onClickSelectedGroupsTitle(checks) {
         const showingAnyGroupsResults = isShowingAnyGroupsResults();
-        console.log(showingAnyGroupsResults)
         for (let i = 0 ; i < selectedGroups.length ; i++) {
             if (showingAnyGroupsResults) {
                 hideAllResults(selectedGroups[i].checks);
@@ -151,11 +148,36 @@ const Checks = (props) => {
         return false;
     }
 
-    function showAllGroupsResultsDetailsFlag() {
-        setShowResultsDetailsFlag(true);
+    function isShowingAnyResultDetails() {
+        for (let i = 0 ; i < selectedGroups?.length ; i++) {
+            for (let j = 0 ; j < selectedGroups[i]?.checks?.length ; j++) {
+                if (selectedGroups[i].checks[j].showingResultDetails) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
-    function hideAllGroupsResultsDetailsFlag() {
-        setShowResultsDetailsFlag(false);
+
+    function isShowingAllResultDetails() {
+        for (let i = 0 ; i < selectedGroups?.length ; i++) {
+            for (let j = 0 ; j < selectedGroups[i]?.checks?.length ; j++) {
+                if (!selectedGroups[i].checks[j].showingResultDetails) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    function showAllResultDetails() {
+        selectedGroups?.map(group => group.checks.map(check => check.showingResultDetails = true));
+        noteChangedResults();
+    }
+
+    function hideAllResultDetails() {
+        selectedGroups?.map(group => group.checks.map(check => check.showingResultDetails = false));
+        noteChangedResults();
     }
 
     const SelectedGroupsPanel = ({}) => {
@@ -172,13 +194,17 @@ const Checks = (props) => {
                         </>)}
                     </span>
                     <span style={{float:"right",fontSize:"x-small",marginTop:"6px",color:"darkgreen"}}>
-                        Results Details:&nbsp;
-                        { showResultsDetailsFlag ? (<>
-                            <span onClick={() => showAllGroupsResultsDetailsFlag()} style={{cursor:"pointer",fontWeight:"bold"}}>Show</span> |&nbsp;
-                            <span onClick={() => hideAllGroupsResultsDetailsFlag()} style={{cursor:"pointer"}}>Hide</span>
+                        All Results Details:&nbsp;
+                        { isShowingAllResultDetails() ? (<>
+                            <span style={{fontWeight:"bold"}}>Show</span>
                         </>):(<>
-                            <span onClick={() => showAllGroupsResultsDetailsFlag()} style={{cursor:"pointer"}}>Show</span> |&nbsp;
-                            <span onClick={() => hideAllGroupsResultsDetailsFlag()} style={{cursor:"pointer",fontWeight:"bold"}}>Hide</span>
+                            <span onClick={() => showAllResultDetails()} style={{cursor:"pointer"}}>Show</span>
+                        </>)}
+                        &nbsp;|&nbsp;
+                        { isShowingAnyResultDetails() ? (<>
+                            <span onClick={() => hideAllResultDetails()} style={{cursor:"pointer"}}>Hide</span>
+                        </>):(<>
+                            <span style={{fontWeight:"bold"}}>Hide</span>
                         </>)}
                         &nbsp;
                     </span>
@@ -250,7 +276,7 @@ const Checks = (props) => {
                 { Object.keys(check.results).length > 0 ? (<>
                     <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div>
                     <span>Latest Results: {check.results?.timestamp}</span>
-                        { check.showingResultDetails || showResultsDetailsFlag ? (
+                        { check.showingResultDetails ? (
                             <b style={{cursor:"pointer"}} onClick={() => { check.showingResultDetails = false; noteChangedResults(); }}>&nbsp;&#x2193;</b>
                         ):(
                             <b style={{cursor:"pointer"}} onClick={() => { check.showingResultDetails = true; noteChangedResults(); }}>&nbsp;&#x2191;</b>
@@ -259,10 +285,10 @@ const Checks = (props) => {
                     <span style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red"}}>Results Summary: {check.results?.summary}</span>&nbsp;&nbsp;
                     { check.results?.status?.toUpperCase() == "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>)}
                 </>):(<>
-                    { !showResultsDetailsFlag && <span>No results.</span> }
+                    { !check.showingResultDetails && <span>No results.</span> }
                 </>)}
             </small> }
-            { showResultsDetailsFlag || check.showingResultDetails ? (
+            { check.showingResultDetails ? (
                 <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginTop:"3px",marginRight:"5pt",maxWidth:"600pt"}}>
                     {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? YAML.stringify(check.results) : "No results.") }
                 </pre>
