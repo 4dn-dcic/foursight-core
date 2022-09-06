@@ -6,12 +6,18 @@ foursight-core
 Change Log
 ----------
 
-1.0.3
+2.0.0
 =====
 
 * Spruced up Foursight UI a bit.
   * New header/footer.
-  * Added new /info and /users pages.
+    * Different looks for Foursight-CGAP (blue header) and Foursight-Fourfront (green header).
+    * More relevant info in header (login email, environment, stage).
+  * New /info and /users page.
+  * New /users and /users/{email} page.
+  * New dropdown to change environments.
+  * New logout link.
+  * New specific error if login fails due to no user record for environment.
 
 
 1.0.2
