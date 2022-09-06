@@ -35,7 +35,6 @@ from dcicutils.misc_utils import get_error_message, PRINT
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from typing import Optional
-from .identity import apply_identity_globally
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
 from .check_utils import CheckHandler
@@ -1605,6 +1604,12 @@ class AppUtilsCore:
 
     @classmethod
     def get_env_schedule(cls, check_schedule, environ):
+        """
+        Gets schedules from the check_schedule table for the given environ, which may be a short, full, or public name.
+
+        In the new environment configuration, there are multiple aliases that refer to the same environment.
+        This function ensures that when writing a check schedule you can refer to any of the aliases.
+        """
         return (check_schedule.get(public_env_name(environ))
                 or check_schedule.get(full_env_name(environ))
                 or check_schedule.get(short_env_name(environ))
