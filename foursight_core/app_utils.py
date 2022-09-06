@@ -315,7 +315,7 @@ class AppUtilsCore:
                         # self.user_record_error = "nogroups"
                         # self.user_record_error_email = jwt_decoded.get('email')
                         return False
-                    if not ((not groups or 'admin' in groups) and jwt_decoded.get('email_verified')):
+                    if not (('admin' in user_res['groups'] or 'foursight' in user_res['groups']) and jwt_decoded.get('email_verified')):
                         logger.error("foursight_core.check_authorization: Returning False")
                         # if unauthorized for one, unauthorized for all
                         self.set_user_record(email=jwt_decoded.get('email'), record=None, error="noadmin", exception=None)
