@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
 import { fetchData } from '../FetchUtils';
-import { RingSpinner } from "../Spinners";
+import { BarSpinner } from "../Spinners";
 import { LoginAndValidEnvRequired } from "../LoginUtils";
 import * as API from "../API";
 import * as URL from "../URL";
@@ -115,7 +115,7 @@ const Checks = (props) => {
             <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;Lambdas</div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
                 { lambdas.map((datum, index) => {
-                    return <div key={datum.lambda_name}>
+                    return <div key={datum.lambda_name} title={datum.lambda_function_name}>
                         {datum.lambda_name}
                         { index < lambdas.length - 1 &&
                             <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
@@ -161,14 +161,14 @@ const Checks = (props) => {
                 <div style={{paddingBottom:"3pt"}}>
                     <span style={{cursor:"pointer"}} onClick={() => onClickSelectedGroupsTitle()}>
                         &nbsp;
-                        <b>Checks</b>
+                        <b>Check Details</b>
                         { isShowingAnyGroupsResults() ? (<>
                             &nbsp;&#x2193;
                         </>):(<>
                             &nbsp;&#x2191;
                         </>)}
                     </span>
-                    <span style={{float:"right",fontSize:"x-small",marginTop:"6px"}}>
+                    <span style={{float:"right",fontSize:"x-small",marginTop:"6px",color:"darkgreen"}}>
                         Results Details:&nbsp;
                         { showResultsDetailsFlag ? (<>
                             <span onClick={() => showAllGroupsResultsDetailsFlag()} style={{cursor:"pointer",fontWeight:"bold"}}>Show</span> |&nbsp;
@@ -210,7 +210,7 @@ const Checks = (props) => {
                 <tbody>
                     <tr style={{height:"3pt"}}><td></td></tr>
                     <tr>
-                        <td style={{verticalAlign:"top","cursor":"pointer"}} onClick={() => {toggleCheckResultsBox(check)}}>
+                        <td style={{verticalAlign:"top",width:"1%","cursor":"pointer"}} onClick={() => {toggleCheckResultsBox(check)}}>
                             <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
                         <td style={{veriticalAlign:"top"}}>
@@ -255,15 +255,22 @@ const Checks = (props) => {
             </small> }
             { showResultsDetailsFlag ? (
                 <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginTop:"3px",marginRight:"5pt",maxWidth:"600pt"}}>
-                    {!check.results ? <i>Loading ...</i> : (Object.keys(check.results).length > 0 ? YAML.stringify(check.results) : "No results.") }
+                    {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? YAML.stringify(check.results) : "No results.") }
                 </pre>
             ):(
                 <span>
                     <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div>
-                    {!check.results ? <small><i>Loading ...</i></small> : <></>}
+                    { !check.results && <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> }
                 </span>
             )}
         </div>
+    }
+
+    const Spinner = ({condition, color = "darkblue", size = 100, label = "Loading"}) => {
+        return <table><tbody><tr>
+            {label && <td nowrap="1"><small><i>{label}</i></small>&nbsp;&nbsp;</td>}
+            <td style={{paddingTop:"5px"}} nowrap="1"> <BarSpinner condition={true} size={size} color={color} /></td>
+        </tr></tbody></table>
     }
 
     const ResultsHistoryBox = ({check}) => {
@@ -310,6 +317,9 @@ const Checks = (props) => {
                             <td style={{textAlign:"right"}}>
                                 Duration
                             &nbsp;</td>
+                            <td>
+                                State
+                            &nbsp;</td>
                         </tr>
                         <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
                         <tr><td style={{paddingTop:"4px"}}></td></tr>
@@ -335,9 +345,9 @@ const Checks = (props) => {
                             &nbsp;&nbsp;</td>
                             <td>
                                 {extractStatus(history) == "PASS" ? (<>
-                                    <span style={{color:"darkgreen"}}>OK</span>
+                                    <b style={{color:"darkgreen"}}>OK</b>
                                 </>):(<>
-                                    <span style={{color:"darkred"}}>ERROR</span>
+                                    <b style={{color:"darkred"}}>ERROR</b>
                                 </>)}
                             &nbsp;&nbsp;</td>
                             <td style={{textAlign:"right"}}>
@@ -355,7 +365,7 @@ const Checks = (props) => {
                     { check.history ? (<>
                         <span style={{color:"black"}}>No history.</span>
                     </>):(<>
-                        <i>Loading history ...</i>
+                        <Spinner condition={!check.results} color={"darkgreen"} label="Loading history" />
                     </>)}
                 </>)}
             </>)}
