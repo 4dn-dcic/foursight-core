@@ -42,6 +42,7 @@ class Environment(object):
 
         self.prefix = prefix
         self.s3_connection = S3Connection(self.get_env_bucket_name())
+        self.cached_list_environment_names = None
 
     def get_env_bucket_name(self) -> Optional[str]:
 
@@ -69,6 +70,8 @@ class Environment(object):
 
         Returns: a list of names
         """
+        if self.cached_list_environment_names:
+            return self.cached_list_environment_names
 
         environment_names = [infer_foursight_from_env(envname=env)
                              for env in sorted(EnvManager.get_all_environments(env_bucket=self.get_env_bucket_name()))]
@@ -82,6 +85,7 @@ class Environment(object):
         if modern_full_names != legacy_full_names:
             logger.warning(f"{full_class_name(self)}.list_environment_names has consistency problems.")
 
+        self.cached_list_environment_names = environment_names
         return environment_names
 
     def list_valid_schedule_environment_names(self) -> List[EnvName]:

@@ -1,0 +1,53 @@
+{% extends "header.html" %}
+
+{% macro json_as_yaml_box(value) %}
+    {% macro json_as_yaml_box_nested(value) %}
+        {% if value.__class__.__name__ == 'dict' %}
+            {% for dict_key, dict_value in value.items() recursive %}
+                <b>{{dict_key}}</b>:
+                {% if dict_value.__class__.__name__ == 'dict' %}
+                    <ul style="padding-left:12pt">
+                        {{json_as_yaml_box_nested(dict_value)}}
+                    </ul>
+                {% else %}
+                    {{json_as_yaml_box_nested(dict_value)}}
+                {% endif %}
+            {% endfor %}
+        {% elif value.__class__.__name__ == 'list' %}
+            {% if value|length == 0 %}
+                [] <br />
+            {% else %}
+                <ul style="padding-left:12pt">
+                    {% for item in value %}
+                        <table><tr><td style="vertical-align:top;">-&nbsp;</td><td>
+                            {{json_as_yaml_box_nested(item)}}
+                        </td></tr></table>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% elif value.__class__.__name__ == 'bool' %}
+            {% if value %} true {% else %} false {% endif %} <br />
+        {% elif value.__class__.__name__ == 'NoneType' %}
+            null <br />
+        {% else %}
+            <span id="{{value}}" style="cursor:copy" onclick="copy_to_clipboard(this.id)">{{value}}</span> <br />
+        {% endif %}
+    {% endmacro %}
+    <div class="info boxstyle" style="font-family:monospace;">
+        {{json_as_yaml_box_nested(value)}}
+    </div>
+{% endmacro %}
+
+{% block content %}
+    <br />
+    {% for user in users %}
+        <ul class="top-level-list">
+            <div style="padding-bottom:8px;">
+                <b>User Record: {{user['email']}}</b>
+                <span name="user" id="user" style="font-size:0;opacity:0;">{{user}}</span>
+                <img onclick="copy_to_clipboard('user')" style="cursor:copy;font-family:monospace;position:relative;bottom:2pt;" src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="18" />
+            </div>
+            {{json_as_yaml_box(user['record'])}}
+        </ul>
+    {% endfor %}
+{% endblock %}

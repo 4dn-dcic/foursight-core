@@ -6,6 +6,33 @@ foursight-core
 Change Log
 ----------
 
+2.0.0
+=====
+
+* Spruced up Foursight UI a bit.
+  * New header/footer.
+    * Different looks for Foursight-CGAP (blue header) and Foursight-Fourfront (green header).
+    * More relevant info in header (login email, environment, stage).
+  * New /info and /users page.
+  * New /users and /users/{email} page.
+  * New dropdown to change environments.
+  * New logout link.
+  * New specific error if login fails due to no user record for environment.
+
+
+1.0.2
+=====
+
+* Repair changelong for 1.0.1
+
+(There was also a need for this version to be higher than some beta versions that are in play.)
+
+
+1.0.1
+=====
+
+* Fix the way check lookup works
+
 
 1.0.2
 =====
@@ -26,17 +53,17 @@ Change Log
 
 * IDENTITY-ized Foursight; i.e. get secrets and other configuration data from the global application configuration (GAC)
   rather than having them encoded in the environment via the CloudFormation template (for the lambdas). C4-826.
-* Added STACK_NAME (in addition to IDENTITY introduced in 0.7.4.2b0) to the environment variables
-  required (via the Foursight CloudFormation template) to get a foothold for other Foursight info,
-  e.g. to get the CHECK_RUNNER AWS lambda function name. See AppUtilsCore.apply_identity_globally
-  in app_utils.py and Deploy.build_config in deploy.py. C4-826.
-* Moved apply_identity_globally to its own identity.py module and
-  call it statically from app_utils.py/AppUtilsCore class. C4-826.
+  * Added STACK_NAME (in addition to IDENTITY introduced in 0.7.4.2b0) to the environment variables
+    required (via the Foursight CloudFormation template) to get a foothold for other Foursight info,
+    e.g. to get the CHECK_RUNNER AWS lambda function name. See AppUtilsCore.apply_identity_globally
+    in app_utils.py and Deploy.build_config in deploy.py. C4-826.
+  * Assume RDS_NAME is now in GAC (via 4dn-cloud-infra 3.4.0).
+  * Moved apply_identity_globally to its own identity.py module and
+    call it statically from app_utils.py/AppUtilsCore class. C4-826.
 * Merged in Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).
-* Merged from master.
 * Merged in more of Kent's changes from PR-27 (to environment.py and check_utils.py WRT environment names).
 * Added better error message for NoSuchKey for S3 bucket key access (s3_connection.py/get_object).
-* Updated dcicutils to 4.0.2.
+* Updated dcicutils to ^4.0.2.
 
 
 0.7.5
