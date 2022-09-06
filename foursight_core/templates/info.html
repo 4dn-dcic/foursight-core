@@ -275,6 +275,7 @@
                     </div>
                     <div class="col-sm-8" style="word-wrap:break-word;" align="left">
                         {{lambda_deployed_time}}
+                        &nbsp;<a style="text-decoration:none;font-size:x-large;color:red;" href="{{context + 'reload_lambda/' + env + '/current'}}" title="Click to relaunch this app." onclick="if (window.confirm('Do you want to relaunch this app?')){return true;}else{event.stopPropagation(); event.preventDefault()}">&#8635;</a>
                     </div>
                 </div>
                 <div class='row'>

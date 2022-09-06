@@ -158,7 +158,7 @@
     .dropdown-content {
       display: none;
       position: absolute;
-      background-color: {% if main_title == 'Foursight-Fourfront' %}#9DE0C5{% else %}#9DC5E0{% endif %};
+      background-color: {% if package == 'foursight' %}#9DE0C5{% else %}#9DC5E0{% endif %};
       min-width: 160px;
       box-shadow: 10px 10px 10px #476f86;
       z-index: 1;
@@ -187,43 +187,35 @@
 </head>
 <body>
 <div>
-    <div width="100%" height="70" style="background:{% if main_title == 'Foursight-Fourfront' %}#14533c{% else %}#143c53{% endif %};">
-        <table width="100%">
+    <div width="100%" style="background:{% if package == 'foursight' %}#14533c{% else %}#143c53{% endif %};">
+        <table height="49" width="100%">
                 <tr title="{% if lambda_deployed_time %}App Deployed: {{lambda_deployed_time}}&#013;{% endif %}App Launched: {{init_load_time}}&#013;Page Loaded: {{load_time}}">
                 <td width="33%" style="padding-left:2pt;padding-top:3px;padding-bottom:3px;white-space:nowrap;">
-                    {% if main_title == "Foursight-Fourfront" %}
-                        <a href={{context + 'view/' + env}}>
-                            &nbsp;&nbsp;&nbsp;<img src="https://data.4dnucleome.org//static/img/favicon-fs.ico" height="34" />
-                        </a>
-                    {% else %}
-                        <a href={{context + 'view/' + env}}>
+                    <a target="_blank" href="{{portal_url}}">
+                        {% if package == 'foursight' %}
+                            <img style="padding-left:20px" src="https://data.4dnucleome.org//static/img/favicon-fs.ico" height="38" />
+                        {% else %}
                             <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
-                        </a>
-                    {% endif %}
+                        {% endif %}
+                    </a>
                 </td>
                 <td width="34%" align="center" style="white-space:nowrap;">
                         <span style="font-family:arial;font-size:18pt;color:white;">
                             <span style="color:default;">{{main_title}}</span>
-                            {% if stage == 'dev' %}
-                                <span title="Stage is DEV." style="position:relative;left:4px;top:2px;font-size:23pt;color:lightgreen;">&#x269B;</span>
-                            {% endif %}
-                            {% if is_running_locally %}
-                                <span title="Running locally." style="position:relative;left:4px;top:2px;font-size:23pt;color:lightgreen;">&#x2299;</span>
-                            {% endif %}
                         </span>
                 </td>
-                <td width="33%" style="padding-right:10pt;white-space:nowrap;color:{% if main_title == 'Foursight-Fourfront' %}#D6F8EA{% else %}#D6EAF8{% endif %};" align="right">
-                    <small>{{load_time}}</small>
-                    &nbsp;<b>|</b>&nbsp;
-                    <a style="text-decoration:none;color:#D6EAF8;" href="{{context + 'reload_lambda/' + env + '/current'}}" title="Click to relaunch this app." onclick="if (window.confirm('Do you want to relaunch this app?')){return true;}else{event.stopPropagation(); event.preventDefault()}">&#x2318;</a>
+                <td width="33%" style="padding-right:10pt;white-space:nowrap;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" align="right">
+                    <span>{{load_time}}</span>
                     {% if not is_running_locally and is_admin %}
-                        &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:{% if main_title == 'Foursight-Fourfront' %}#D6F8EA{% else %}#D6EAF8{% endif %};" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
+                        &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
+                    {% elif not is_running_locally and not is_admin %}
+                        &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;font-weight:bold;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" title="Not logged in. Click to login." onclick="create_redir_cookie(); lock.show();">LOGIN</span>
                     {% endif %}
                 </td>
             </tr>
         </table>
         <table width="100%">
-            <tr style="background:{% if main_title == 'Foursight-Fourfront' %}#AEF1D6{% else %}#AED6F1{% endif %}">
+            <tr style="background:{% if package == 'foursight' %}#AEF1D6{% else %}#AED6F1{% endif %}">
                 <td width="49%" style="padding-left:10pt;padding-top:3pt;padding-bottom:3pt;white-space:nowrap;">
                         {% if request.context.path.startswith(context + 'info') %}
                             <a href="{{context + 'view/' + env}}" style="text-decoration:none;">HOME</a> &nbsp;|&nbsp;
@@ -253,10 +245,10 @@
                             <b class="dropdown-button" onclick="this.nextSibling.display = 'block';" onmouseover="this.style.display = 'block';" style="color:#143c53" title="Environment: {{env}} ({{env_short}})">{{env}}</b>
                             <span class="dropdown-content">
                                 {% for environment in environments %}
-                                    {% if environment["name"].upper() == env.upper() or environment["full"].upper() == env.upper() or environment["short"].upper() == env.upper() or environment["foursight"].upper() == env.upper() %}
-                                        <span>{{environment["full"]}}&nbsp;&nbsp;&#x2713;</span>
+                                    {% if environment["name"].upper() == env.upper() or environment["public"].upper() == env.upper() or environment["full"].upper() == env.upper() or environment["short"].upper() == env.upper() or environment["foursight"].upper() == env.upper() %}
+                                        <span>{{environment["public"]}}&nbsp;&nbsp;&#x2713;</span>
                                     {% else %}
-                                        <a href="{{request.context.path.replace('/' + env, '/' + environment['full'])}}" onclick="this.style.color = 'yellow'; this.style.backgroundColor = '#143c53'; this.style.fontWeight = 'bold';">{{environment["full"]}}</a>
+                                        <a href="{{request.context.path.replace('/' + env, '/' + environment['public'])}}" onclick="this.style.color = 'yellow'; this.style.backgroundColor = '#143c53'; this.style.fontWeight = 'bold';">{{environment["public"]}}</a>
                                     {% endif %}
                                 {% endfor %}     
                             </span>
@@ -266,20 +258,22 @@
                     {% endif %}
                     &nbsp;|&nbsp;
                     {% if stage == 'prod' %}
-                        <b title="Deployment stage: PROD!" style="color:red;">PROD</b> &nbsp;|&nbsp;
+                        <b title="Deployment stage: PROD!" style="color:red;">{{stage}}</b> &nbsp;|&nbsp;
                     {% elif stage == 'dev' %}
-                        <b title="Deployment stage: DEV" style="color:darkgreen;">DEV</b> &nbsp;|&nbsp;
+                        <b title="Deployment stage: DEV" style="color:darkgreen;">{{stage}}</b> &nbsp;|&nbsp;
                     {% else %}
                         <b title="Deployment stage: {{stage}}">{{stage}}</b> &nbsp;|&nbsp;
                     {% endif %}
                     {% if is_admin %}
                         {% if logged_in_as["email_address"] %}
-                        <a href="{{context + 'users/' + env + '/' + logged_in_as['email_address']}}" style="text-decoration:none;"><b title="Logged in as {{logged_in_as['first_name']}} {{logged_in_as['last_name']}}&#013;{{logged_in_as['email_address']}}" style="color:darkblue;" title="Logged in as.">{{logged_in_as["email_address"]}}</b>
+                            <a href="{{context + 'users/' + env + '/' + logged_in_as['email_address']}}" style="text-decoration:none;"><b title="Logged in as {{logged_in_as['first_name']}} {{logged_in_as['last_name']}}&#013;{{logged_in_as['email_address']}}" style="color:darkblue;" title="Logged in as.">{{logged_in_as["email_address"]}}</b>
+                        {% elif is_running_locally %}
+                            <b style="color:darkblue;">local</b>
                         {% else %}
-                            <b style="color:darkblue;">ADMIN</b>
+                            <b style="color:darkblue;">admin</b>
                         {% endif %}
                     {% else %}
-                        <span style="cursor:pointer;font-weight:bold;color:darkred;" title="Not logged in. Click to login." onclick="create_redir_cookie(); lock.show();">LOGIN</span>
+                        <span style="cursor:pointer;font-weight:bold;color:darkred;" title="Not logged in. Click to login." onclick="create_redir_cookie(); lock.show();">NOT LOGGED IN</span>
                     {% endif %}
                 </td>
             </tr>
@@ -413,15 +407,9 @@
 <tr><td align="center" style="padding-top:2px;padding-bottom:6px">
 <!--<img src="https://hms.harvard.edu/themes/harvardmedical/logo.svg" height="20" />-->
 <!--<img src="https://pbs.twimg.com/profile_images/997469790481530881/Da1WaBIn_400x400.jpg" height="20" />-->
-{% if main_title == "Foursight-Fourfront" %}
-    <a href="https://data.4dnucleome.org" target="_blank">
-        <img src="https://www.iscb.org/images/stories/ismb2020/bazaar/logo.HarvardMedical-BiomedicalInformatics.png" height="46"/>
-    </a>
-{% else %}
-    <a href="https://cgap.hms.harvard.edu/" target="_blank">
-        <img src="https://www.iscb.org/images/stories/ismb2020/bazaar/logo.HarvardMedical-BiomedicalInformatics.png" height="46"/>
-    </a>
-{% endif %}
+<a href="{{portal_url}}" target="_blank">
+    <img src="https://www.iscb.org/images/stories/ismb2020/bazaar/logo.HarvardMedical-BiomedicalInformatics.png" height="46"/>
+</a>
 </td></tr>
 <tr style="background-color:darkred;height:1px;"><td></td></tr>
 </table>

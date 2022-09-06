@@ -102,13 +102,13 @@ class AppUtilsCore:
             loader=jinja2.FileSystemLoader(self.get_template_path()),
             autoescape=jinja2.select_autoescape(['html', 'xml'])
         )
-        self.portal_url = None
         self.auth0_client_id = None
         self.user_records = {}
         # self.user_record = None
         # self.user_record_error = None
         # self.user_record_error_email = None
         self.lambda_last_modified = None
+        self.cached_portal_url = {}
 
     @staticmethod
     def note_non_fatal_error_for_ui_info(error_object, calling_function):
@@ -235,16 +235,17 @@ class AppUtilsCore:
             user_record["exception"] = exception
 
     def get_portal_url(self, env_name: str) -> str:
-        if not self.portal_url:
+        cached_portal_url = self.cached_portal_url.get(env_name)
+        if not cached_portal_url:
             try:
                 environment_and_bucket_info = \
                     self.environment.get_environment_and_bucket_info(env_name, self.stage.get_stage())
-                self.portal_url = environment_and_bucket_info.get("fourfront")
-                return self.portal_url
+                portal_url = environment_and_bucket_info.get("fourfront")
+                self.cached_portal_url[env_name] = portal_url
             except Exception as e:
                 logger.error(f"Error determining portal URL: {e}")
                 raise e
-        return self.portal_url
+        return self.cached_portal_url[env_name]
 
     def get_auth0_client_id(self, env_name: str) -> str:
         auth0_client_id = os.environ.get("CLIENT_ID")
@@ -776,6 +777,7 @@ class AppUtilsCore:
             {"name": env,
              "short": short_env_name(env),
              "full": full_env_name(env),
+             "public": public_env_name(env) if public_env_name(env) else short_env_name(env),
              "foursight": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
         return sorted(unique_annotated_environment_names, key=lambda key: key["full"])
 
@@ -860,6 +862,7 @@ class AppUtilsCore:
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title
         )
         html_resp.status_code = 200
@@ -949,6 +952,7 @@ class AppUtilsCore:
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_credentials=aws_credentials,
             aws_account_number=aws_account_number,
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title,
             favicon=self.get_favicon(),
             load_time=self.get_load_time(),
@@ -1008,6 +1012,7 @@ class AppUtilsCore:
             users=users,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title,
             favicon=self.get_favicon(),
             load_time=self.get_load_time(),
@@ -1071,6 +1076,7 @@ class AppUtilsCore:
             users=users,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title,
             favicon=self.get_favicon(),
             load_time=self.get_load_time(),
@@ -1148,6 +1154,7 @@ class AppUtilsCore:
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title
         )
         html_resp.status_code = 200
@@ -1312,6 +1319,7 @@ class AppUtilsCore:
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=favicon,
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title
         )
         html_resp.status_code = 200
