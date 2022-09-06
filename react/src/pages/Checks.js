@@ -9,6 +9,7 @@ import { LoginAndValidEnvRequired } from "../LoginUtils";
 import * as API from "../API";
 import * as URL from "../URL";
 import { isObject } from '../Utils';
+import { UUID } from '../Utils';
 let YAML = require('json-to-pretty-yaml');
 
 const Checks = (props) => {
@@ -28,7 +29,9 @@ const Checks = (props) => {
         const groupedChecksUrl = API.Url(`/checks`, environ);
         fetchData(groupedChecksUrl, groupedChecks => {
             setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
-            showGroup(groupedChecks[0]);
+            if (groupedChecks.length > 0) {
+                showGroup(groupedChecks[0]);
+            }
         }, setLoading, setError);
         const lambdasUrl = API.Url(`/lambdas`, environ);
         fetchData(lambdasUrl, lambdas => {
@@ -141,7 +144,7 @@ const Checks = (props) => {
 
     function isShowingAnyGroupsResults() {
         for (let i = 0 ; i < selectedGroups.length ; i++) {
-            if (isShowingAnyResults(selectedGroups[i].checks)) {
+            if (isShowingAnyResults(selectedGroups[i]?.checks)) {
                 return true;
             }
         }
@@ -180,8 +183,8 @@ const Checks = (props) => {
                         &nbsp;
                     </span>
                 </div>
-                { selectedGroups?.map(selectedGroup =>
-                    <SelectedGroupBox key={selectedGroup.group} group={selectedGroup} />
+                { selectedGroups?.map((selectedGroup, index) =>
+                    <SelectedGroupBox key={index} group={selectedGroup} />
                 )}
             </>):(<></>)}
         </div>
@@ -191,11 +194,11 @@ const Checks = (props) => {
         return <div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt"}}>
                 <div>
-                    <b style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group.checks)}>{group?.group}</b> {isShowingAnyResults(group.checks) ? (<span>&#x2193;</span>) : (<span>&#x2191;</span>)}
+                    <b style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks)}>{group?.group}</b> {isShowingAnyResults(group?.checks) ? (<span>&#x2193;</span>) : (<span>&#x2191;</span>)}
                     <span style={{float:"right",cursor:"pointer"}} onClick={(() => {showGroup(group)})}><b>&#x2717;</b></span>
                 </div>
                 <div style={{marginTop:"6pt"}} />
-                { group.checks.map((check, index) => {
+                { group?.checks?.map((check, index) => {
                     return <div key={index}>
                         <SelectedChecksBox check={check} index={index}/>
                     </div>
@@ -246,14 +249,20 @@ const Checks = (props) => {
             { check.results && <small>
                 { Object.keys(check.results).length > 0 ? (<>
                     <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div>
-                    <span>Latest Results: {check.results?.timestamp}</span> <br />
+                    <span>Latest Results: {check.results?.timestamp}</span>
+                        { check.showingResultDetails || showResultsDetailsFlag ? (
+                            <b style={{cursor:"pointer"}} onClick={() => { check.showingResultDetails = false; noteChangedResults(); }}>&nbsp;&#x2193;</b>
+                        ):(
+                            <b style={{cursor:"pointer"}} onClick={() => { check.showingResultDetails = true; noteChangedResults(); }}>&nbsp;&#x2191;</b>
+                        )}
+                    <br />
                     <span style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red"}}>Results Summary: {check.results?.summary}</span>&nbsp;&nbsp;
                     { check.results?.status?.toUpperCase() == "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>)}
                 </>):(<>
                     { !showResultsDetailsFlag && <span>No results.</span> }
                 </>)}
             </small> }
-            { showResultsDetailsFlag ? (
+            { showResultsDetailsFlag || check.showingResultDetails ? (
                 <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginTop:"3px",marginRight:"5pt",maxWidth:"600pt"}}>
                     {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? YAML.stringify(check.results) : "No results.") }
                 </pre>
@@ -296,7 +305,8 @@ const Checks = (props) => {
 
         return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
             <div title={check.name}>
-                <b>{check.title}</b>&nbsp;&nbsp;
+                <b>{check.title}</b>&nbsp;
+                { check.history && <span>&nbsp;&nbsp;<span style={{cursor:"pointer",fontSize:"large"}} onClick={() => {refreshHistory(check)}}>&#8635;&nbsp;&nbsp;</span></span> }
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideResultsHistory(check)})}><b>&#x2717;</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
@@ -439,6 +449,14 @@ const Checks = (props) => {
         }
     }
 
+    function refreshHistory(check) {
+        check.history = null;
+        if (check.showingHistory) {
+            hideResultsHistory(check);
+            showResultsHistory(check);
+        }
+    }
+
     function toggleCheckResultsBox(check) {
         if (check.showingResults) {
             hideCheckResultsBox(check);
@@ -458,7 +476,7 @@ const Checks = (props) => {
     }
 
     function isShowingAnyResults(checks) {
-        for (let i = 0 ; i < checks.length ; i++) {
+        for (let i = 0 ; i < checks?.length ; i++) {
             if (checks[i].showingResults) {
                 return true;
             }

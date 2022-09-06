@@ -447,6 +447,38 @@ class ReactApi:
         if env_unknown:
             response.body["env"]["unknown"] = True
             response.body["env_unknown"] = True
+
+        hack_for_local_testing = False
+        if hack_for_local_testing:
+            response.body["envs"] = {
+            "all": [
+            "supertest",
+            "cgap-supertest"
+            ],
+            "unique": [
+            "supertest",
+            "cgap-supertest"
+            ],
+            "unique_annotated": [
+            {
+            "name": "supertest",
+            "short": "supertest",
+            "full": "supertest",
+            "public": "supertest",
+            "foursight": "supertest",
+            "gac_name": "C4DatastoreCgapSupertestApplicationConfiguration"
+            },
+            {
+            "name": "cgap-supertest",
+            "short": "cgap-supertest",
+            "full": "cgap-supertest",
+            "public": "cgap-supertest",
+            "foursight": "cgap-supertest",
+            "gac_name": "C4DatastoreCgapSupertestApplicationConfiguration"
+            }
+            ]
+            }
+
         response.headers = {
             "Content-Type": "application/json"
         }     
@@ -511,6 +543,17 @@ class ReactApi:
             "gac_diffs": diffs
         }
 
+    def is_same_env(self, env_a: str, env_b: str) -> bool:
+        if not env_a or not env_b:
+            return False
+        env_a = env_a.lower()
+        env_b = env_b.lower()
+        return (env_a == env_a
+            or  full_env_name(env_a) == env_b
+            or  short_env_name(env_a) == env_b
+            or  public_env_name(env_a) == env_b
+            or  infer_foursight_from_env_name(env_a) == env_b)
+
     def filter_checks_by_env(self, checks: dict, env) -> dict:
         if not env:
             return checks
@@ -519,7 +562,8 @@ class ReactApi:
             if checks[check_key]["schedule"]:
                 for check_schedule_key in checks[check_key]["schedule"].keys():
                     for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
-                        if check_env_key == env:
+                        # if check_env_key == env:
+                        if self.is_same_env(check_env_key, env):
                             checks_for_env[check_key] = checks[check_key]
             else:
                 # If no schedule section (which has the env section) then include it.

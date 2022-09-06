@@ -1,7 +1,7 @@
 import './App.css';
 import React from 'react';
 import { useContext } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
 import * as URL from "./URL.js";
 import * as API from "./API.js";
@@ -11,8 +11,9 @@ import { fetchData } from "./FetchUtils.js";
 
 const Header = (props) => {
 
+    let { environ } = useParams();
     let navigate = useNavigate();
-    const [ info ] = useContext(GlobalContext);
+    const [ info, setInfo ] = useContext(GlobalContext);
     const path = window.location.pathname;
 
     let isFoursightFourfront = info.page?.title == "Foursight-Fourfront";
@@ -127,7 +128,11 @@ const Header = (props) => {
                                         <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
                                         /* <a key={env.full} onClick={()=>{navigate(URL.Url(null, env.full))}}>{env.full}</a> */
-                                        <a key={env.full} href={URL.Url("/envs", env.full)}>{env.full}</a>
+                                        /* <a key={env.full} href={URL.Url("/envs", env.full)}>{env.full}</a> */
+                                        /* TODO */
+                                        /* <Link key={env.full} onClick={() => {setInfo(x => [...x]);}} to={URL.Url(null, env.full)}>{env.full}</Link> */
+                                        /* <Link key={env.full} to={URL.Url(null, env.full)}>{env.full}</Link> */
+                                        <a key={env.full} href={URL.Url(null, env.full)}>{env.full}</a>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
