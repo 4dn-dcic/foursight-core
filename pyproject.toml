@@ -22,7 +22,7 @@ geocoder = "1.38.1"
 elasticsearch = "^6.8.1"
 elasticsearch-dsl = "^6.4.0"
 gitpython = "^3.1.2"
-pytz = "^2020.1"
+pytz = ">=2020.1"
 
 [tool.poetry.dev-dependencies]
 chalice = "^1.21.4"

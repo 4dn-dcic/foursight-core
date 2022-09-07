@@ -289,7 +289,12 @@ class CheckHandler(object):
         """
         grouped_results = {}
         check_res = self.get_check_results(connection)
+        print('xxxx-0:')
+        print(connection)
+        print(connection.fs_env)
+        print(connection.ff_env)
         for res in check_res:
+            print('xxxx-0-AAA:')
             setup_info = self.CHECK_SETUP.get(res['name'])
             # this should not happen, but fail gracefully
             if not setup_info:
@@ -297,8 +302,15 @@ class CheckHandler(object):
                 continue
             # make sure this environment displays this check
             used_envs = [env for sched in setup_info['schedule'].values() for env in sched]
+            print('xxxx-0-BBB:')
+            print(used_envs)
             used_envs.extend(setup_info.get('display', []))
-            if connection.fs_env in used_envs or 'all' in used_envs:
+            print('xxxx-1:')
+            print(used_envs)
+            if connection.ff_env in used_envs or 'all' in used_envs:
+            #if connection.fs_env in used_envs or 'all' in used_envs:
+                print('xxxx-2:')
+                print(connection.fs_env)
                 group = setup_info['group']
                 if group not in grouped_results:
                     grouped_results[group] = {}
