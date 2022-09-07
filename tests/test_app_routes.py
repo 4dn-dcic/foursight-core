@@ -8,7 +8,7 @@ class TestAppRoutes:
     def test_view_foursight(self, app_utils_obj_conn):
         test_check_name = 'test_random_nums'
         app_utils_obj, connection = app_utils_obj_conn
-        res = app_utils_obj.view_foursight(DEV_ENV)  # not is_admin
+        res = app_utils_obj.view_foursight(None, DEV_ENV)  # not is_admin
         assert (res.headers == {u'Content-Type': u'text/html'})
         assert (res.status_code == 200)
         assert (set(res.to_dict().keys()) == {'body', 'headers', 'statusCode', 'multiValueHeaders'})
@@ -50,7 +50,7 @@ class TestAppRoutes:
         test_check = 'test_random_nums'
         app_utils_obj, connection = app_utils_obj_conn
 
-        res = app_utils_obj.view_foursight_history(DEV_ENV, test_check)  # not admin
+        res = app_utils_obj.view_foursight_history(None, DEV_ENV, test_check)  # not admin
         assert (res.headers == {u'Content-Type': u'text/html'})
         assert (res.status_code == 200)
         assert ('<!DOCTYPE html>' in res.body)
@@ -58,10 +58,10 @@ class TestAppRoutes:
         assert ('Not logged in as admin' in res.body)
         assert (f'History for test_random_nums ({DEV_ENV})' in res.body)
         # run with bad environ
-        res = app_utils_obj.view_foursight_history('not_an_environment', test_check)
+        res = app_utils_obj.view_foursight_history(None, 'not_an_environment', test_check)
         assert ('<td>' not in res.body)
         # run with bad check
-        res = app_utils_obj.view_foursight_history(DEV_ENV, 'not_a_check')
+        res = app_utils_obj.view_foursight_history(None, DEV_ENV, 'not_a_check')
         assert ('<td>' not in res.body)
         # run with is_admin
         res = app_utils_obj.view_foursight_history(DEV_ENV, test_check, is_admin=True)  # admin

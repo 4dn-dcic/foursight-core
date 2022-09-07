@@ -1,0 +1,374 @@
+{% extends "header.html" %}
+
+<!-- Macro for toggle button to display _output fields of checks -->
+{% macro name_value_box(dictionary) %}
+    <div class="info boxstyle">
+        <h5 style='margin:10px 5px 10px 5px;'}}>
+            {% for key, value in dictionary.items() %}
+            <div class='row'>
+                <div class="col-sm-4">
+                    <div style="padding:0;" align="left">
+                        <b>{{key}}</b>
+                    </div>
+                </div>
+                <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                    {% if value.__class__.__name__ == 'list' %}
+                        {% for v in value %}
+                            {% if v.__class__.__name__ == 'dict' %}
+                                <b><code id="{{value}}" onclick="copy_to_clipboard(this.id)" style="cursor:copy;font-family:monospace;margin-left:-3pt;background:#D6EAF8;color:#263A48;">{{v}}</code></b>
+                            {% else %}
+                                <span id="{{value}}" onclick="copy_to_clipboard(this.id)" style="cursor:copy;font-family:monospace;">{{v}}</span> <br />
+                            {% endif %}
+                        {% endfor %}
+                    {% elif value.__class__.__name__ == 'dict' %}
+                        <b><code id="{{value}}" onclick="copy_to_clipboard(this.id)" style="cursor:copy;font-family:monospace;margin-left:-3pt;background:#D6EAF8;color:#263A48;">{{value}}</code></b>
+                    {% else %}
+                        {% if key == "Python:" %}
+                            <b style="cursor:copy;display:inline-block;width:77pt;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</b> &nbsp;&nbsp;
+                            <a target="_blank" href="https://docs.python.org/release/{{value}}/"><img src="https://logos-download.com/wp-content/uploads/2016/10/Python_logo_wordmark.png" height="19" /></a> &nbsp;
+                        {% elif key == "DCIC-Utils:" %}
+                            <b style="cursor:copy;display:inline-block;width:77pt;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</b> &nbsp;&nbsp;
+                            <a target="_blank" href="https://pypi.org/project/dcicutils/{{value}}/"><img src="https://cdn-images-1.medium.com/max/1064/1*8Zh-mzLnVMDsbvXdKsU4lw.png" height="21" /></a> &nbsp;
+                            <a target="_blank" href="https://github.com/4dn-dcic/utils/releases/tag/v{{value}}"><img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" /></a>
+                        {% elif key == "Foursight-Core:" %}
+                            <b style="cursor:copy;display:inline-block;width:77pt;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</b> &nbsp;&nbsp;
+                            <a target="_blank" href="https://pypi.org/project/foursight-core/{{value}}/"><img src="https://cdn-images-1.medium.com/max/1064/1*8Zh-mzLnVMDsbvXdKsU4lw.png" height="21" /></a> &nbsp;
+                            <a target="_blank" href="https://github.com/4dn-dcic/foursight-core/releases/tag/v{{value}}"><img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" /></a>
+                        {% elif key == main_title + ":" %}
+                            <b style="cursor:copy;display:inline-block;width:77pt;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</b> &nbsp;&nbsp;
+                            <a target="_blank" href="https://pypi.org/project/{{package}}/{{value}}/"><img src="https://cdn-images-1.medium.com/max/1064/1*8Zh-mzLnVMDsbvXdKsU4lw.png" height="21" /></a> &nbsp;
+                            <a target="_blank" href="https://github.com/dbmi-bgm/{{package}}/releases/tag/v{{value}}"><img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" /></a>
+                        {% elif key == "Portal Server:" %}
+                            <span style="cursor:copy;font-family:monospace;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>
+                            &nbsp;<a target="_blank" href="{{value}}"><span class="fa fa-external-link" style="position:relative;bottom:-1px;font-size:14px;"></span></a>
+                            {% if ping_portal %}
+                                &nbsp;<b style="font-size:13pt;color:green;">&#x2713;</b>
+                            {% else %}
+                                &nbsp;<b style="font-size:13pt;color:red;">&#x2717;</b>
+                            {% endif %}
+                        {% elif key == "ElasticSearch Server:" %}
+                            <span style="cursor:copy;font-family:monospace;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>{% if ping_elasticsearch %}&nbsp;<b style="font-size:13pt;color:green;">&#x2713;</b>{% else %}&nbsp;<b style="font-size:13pt;color:red;">&#x2717;</b>
+                            {% endif %}
+                        {% elif key == "SQS Server:" %}
+                            <span style="cursor:copy;font-family:monospace;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>{% if ping_sqs %}&nbsp;<b style="font-size:13pt;color:green;">&#x2713;</b>{% else %}
+                                &nbsp;<b style="font-size:13pt;color:red;">&#x2717;</b>
+                            {% endif %}
+                        {% else %}
+                            <span style="cursor:copy;font-family:monospace;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </h5>
+    </div>
+{% endmacro %}
+
+{% macro list_box(list) %}
+    <div class="check-pass boxstyle">
+        <h5 style='margin:10px 5px 10px 5px;'}}>
+            {% for value in list %}
+            <div class='row'>
+                <div class="col-sm-4">
+                    <div style="padding:0;" align="left">
+                        <b>{{value}}</b>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </h5>
+    </div>
+{% endmacro %}
+
+{% macro json_as_yaml_box(value) %}
+    {% macro json_as_yaml_box_nested(value) %}
+        {% if value.__class__.__name__ == 'dict' %}
+            {% for dict_key, dict_value in value.items() recursive %}
+                <b>{{dict_key}}</b>:
+                {% if dict_value.__class__.__name__ == 'dict' %}
+                    <ul style="padding-left:12pt">
+                        {{json_as_yaml_box_nested(dict_value)}}
+                    </ul>
+                {% else %}
+                    {{json_as_yaml_box_nested(dict_value)}}
+                {% endif %}
+            {% endfor %}
+        {% elif value.__class__.__name__ == 'list' %}
+            {% if value|length == 0 %}
+                [] <br />
+            {% else %}
+                <ul style="padding-left:12pt">
+                    {% for item in value %}
+                        <table><tr><td style="vertical-align:top;">-&nbsp;</td><td>
+                            {{json_as_yaml_box_nested(item)}}
+                        </td></tr></table>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% elif value.__class__.__name__ == 'bool' %}
+            {% if value %} true {% else %} false {% endif %} <br />
+        {% elif value.__class__.__name__ == 'NoneType' %}
+            null <br />
+        {% else %}
+            <span id="{{value}}" style="cursor:copy" onclick="copy_to_clipboard(this.id)">{{value}}</span> <br />
+        {% endif %}
+    {% endmacro %}
+    <div class="info boxstyle" style="font-family:monospace;">
+        {{json_as_yaml_box_nested(value)}}
+    </div>
+{% endmacro %}
+
+{% block content %}
+    <ul class="top-level-list">
+        <b>Versions</b>
+       {{name_value_box(versions)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>Credentials Info</b>
+       {{name_value_box(aws_credentials)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>Resources</b>
+       {{name_value_box(resources)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>Environment Names</b>
+        {{name_value_box(environment_names)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>Bucket Names</b>
+        {{name_value_box(bucket_names)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>Environment &amp; Bucket Names</b>
+        <span name="environment_and_bucket_info" id="environment_and_bucket_info" style="font-size:0;opacity:0;">{{environment_and_bucket_info}}</span>
+        <img onclick="copy_to_clipboard('environment_and_bucket_info')" style="cursor:copy;font-family:monospace;position:relative;bottom:2pt;" src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="18" />
+        {{json_as_yaml_box(environment_and_bucket_info)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>Declared Data</b> (main.ecosystem)
+        <span name="declared_data" id="declared_data" style="font-size:0;opacity:0;">{{declared_data}}</span>
+        <img onclick="copy_to_clipboard('declared_data')" style="cursor:copy;font-family:monospace;position:relative;bottom:2pt;" src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="18" />
+       {{json_as_yaml_box(declared_data)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>Global Application Configuration: {{identity_name}}</b>
+        {{name_value_box(identity_secrets)}}
+    </ul>
+    <ul class="top-level-list">
+        <b>Environment Variables</b>
+        {{name_value_box(os_environ)}}
+    </ul>
+    {% if not is_running_locally %}
+    <ul class="top-level-list" title="{{logged_in_as['jwt']}}">
+        <b>Login Auth0 Info</b>
+        <span name="jwt" id="jwt" style="font-size:0;opacity:0;">{{logged_in_as['jwt']}}</span>
+        <img onclick="copy_to_clipboard('jwt')" style="cursor:copy;font-family:monospace;position:relative;bottom:2pt;" src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="18" />
+        <div class="info boxstyle">
+            <h5 style='margin:10px 5px 10px 5px;'}}>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Email:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["email_address"]}}
+                        {% if logged_in_as["email_verified"] %}
+                            &nbsp;<b style="font-size:13pt;color:green;">&#x2713;</b>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if logged_in_as["first_name"] %}
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>First Name:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["first_name"]}}
+                    </div>
+                </div>
+                {% endif %}
+                {% if logged_in_as["last_name"] %}
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Last Name:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["last_name"]}}
+                    </div>
+                </div>
+                {% endif %}
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Issuer:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["issuer"]}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Subject:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["subject"]}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Audience:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["audience"]}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Issued At:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["issued_time"]}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Expires At:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{logged_in_as["expiration_time"]}}
+                    </div>
+                </div>
+            </h5>
+        </div>
+    </ul>
+    <ul class="top-level-list">
+        <b>Login User Record</b>
+        <span name="user_record" id="user_record" style="font-size:0;opacity:0;">{{user_record}}</span>
+        <img onclick="copy_to_clipboard('user_record')" style="cursor:copy;font-family:monospace;position:relative;bottom:2pt;" src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="18" />
+       {{json_as_yaml_box(user_record)}}
+    </ul>
+    {% endif %}
+    <ul class="top-level-list">
+        <b>Miscellany</b>
+        <div class="info boxstyle">
+            <h5 style='margin:10px 5px 10px 5px;'}}>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>App Deployed At:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{lambda_deployed_time}}
+                        &nbsp;<a style="text-decoration:none;font-size:x-large;color:red;" href="{{context + 'reload_lambda/' + env + '/current'}}" title="Click to relaunch this app." onclick="if (window.confirm('Do you want to relaunch this app?')){return true;}else{event.stopPropagation(); event.preventDefault()}">&#8635;</a>
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>App Launched At:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{init_load_time}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Page Loaded At:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{load_time}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Package:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{package}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Stage:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{stage}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Environment:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{env}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Domain:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{domain}}
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Context:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{context}}
+                    </div>
+                </div>
+                <div class='row' title="This is: request.context.path">
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Path:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{request.context.path}}
+                    </div>
+                </div>
+                <div class='row' title="This is: request.path">
+                    <div class="col-sm-4">
+                        <div style="padding:0;" align="left">
+                            <b>Endpoint:</b>
+                        </div>
+                    </div>
+                    <div class="col-sm-8" style="word-wrap:break-word;" align="left">
+                        {{request.path}}
+                    </div>
+                </div>
+            </h5>
+        </div>
+    </ul>
+{% endblock %}

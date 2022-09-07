@@ -8,15 +8,33 @@ import boto3
 import datetime
 import ast
 import copy
+from http.cookies import SimpleCookie
+import pkg_resources
+import platform
+import pytz
 import requests
+import socket
 import sys
+import time
+import types
 import logging
 from itertools import chain
 from dateutil import tz
 from dcicutils import ff_utils
-from dcicutils.lang_utils import disjoined_list
+from dcicutils.env_utils import (
+    EnvUtils,
+    full_env_name,
+    get_foursight_bucket,
+    get_foursight_bucket_prefix,
+    infer_foursight_from_env,
+    short_env_name,
+    public_env_name
+)
 from typing import Optional
-from .identity import apply_identity_globally, get_identity_name, GLOBAL_APPLICATION_CONFIGURATION
+from dcicutils.lang_utils import disjoined_list
+from dcicutils.misc_utils import get_error_message, PRINT
+from dcicutils.obfuscation_utils import obfuscate_dict
+from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
 from .check_utils import CheckHandler
@@ -35,11 +53,15 @@ class AppUtilsCore:
     so that a class named AppUtils is easier to define in libraries that import foursight-core.
     """
 
-    # dmichaels/2022-07-20/C4-826: Apply identity globally.
-    # wrr/2022-08-12: backwards compatibility, do not try if it's not set
-    identity_name = get_identity_name(identity_kind=GLOBAL_APPLICATION_CONFIGURATION)
-    if identity_name:
-        apply_identity_globally()
+    # Define in subclass.
+    APP_PACKAGE_NAME = None
+
+    def get_app_version(self):
+        return pkg_resources.get_distribution(self.APP_PACKAGE_NAME).version
+
+    # NOTE (2022-08-24): No longer call from the top-level here (not polite);
+    # rather call from (AppUtils) sub-classes in foursight-cgap and foursight.
+    # apply_identity_globally()
 
     # These must be overwritten in inherited classes
     # replace with 'foursight', 'foursight-cgap' etc
@@ -67,6 +89,7 @@ class AppUtilsCore:
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
     def __init__(self):
+        self.init_load_time = self.get_load_time()
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
         self.sqs = SQS(self.prefix)
@@ -77,6 +100,21 @@ class AppUtilsCore:
             loader=jinja2.FileSystemLoader(self.get_template_path()),
             autoescape=jinja2.select_autoescape(['html', 'xml'])
         )
+        self.auth0_client_id = None
+        self.user_records = {}
+        # self.user_record = None
+        # self.user_record_error = None
+        # self.user_record_error_email = None
+        self.lambda_last_modified = None
+        self.cached_portal_url = {}
+
+    @staticmethod
+    def note_non_fatal_error_for_ui_info(error_object, calling_function):
+        if isinstance(calling_function, types.FunctionType):
+            calling_function = calling_function.__name__
+        logger.warning(f"Non-fatal error in function ({calling_function})."
+                    f" Missing information via this function used only for Foursight UI display."
+                    f" Underlying error: {get_error_message(error_object)}")
 
     @classmethod
     def set_timeout(cls, timeout):
@@ -107,7 +145,7 @@ class AppUtilsCore:
         Returns an FSConnection object or raises an error.
         """
         environments = self.init_environments(environ) if _environments is None else _environments
-        print("environments = %s" % str(environments))
+        PRINT("environments = %s" % str(environments))
         # if still not there, return an error
         if environ not in environments:
             error_res = {
@@ -133,6 +171,108 @@ class AppUtilsCore:
             response.status_code = 400
         return connection, response
 
+    def is_running_locally(self, request_dict) -> bool:
+        return request_dict.get('context', {}).get('identity', {}).get('sourceIp', '') == "127.0.0.1"
+
+    def get_logged_in_user_info(self, environ: str, request_dict: dict) -> str:
+        email_address = ""
+        email_verified = ""
+        first_name = ""
+        last_name = ""
+        issuer = ""
+        subject = ""
+        audience = ""
+        issued_time = ""
+        expiration_time = ""
+        jwt_decoded = ""
+        try:
+            jwt_decoded = self.get_decoded_jwt_token(environ, request_dict)
+            if jwt_decoded:
+                email_address = jwt_decoded.get("email")
+                email_verified = jwt_decoded.get("email_verified")
+                issuer = jwt_decoded.get("iss")
+                if issuer:
+                    name = jwt_decoded.get(issuer + "name")
+                    if name:
+                        first_name = name.get("name_first")
+                        last_name = name.get("name_last")
+                subject = jwt_decoded.get("sub")
+                audience = jwt_decoded.get("aud")
+                issued_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("iat"))
+                expiration_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("exp"))
+        except Exception as e:
+            self.note_non_fatal_error_for_ui_info(e, 'get_logged_in_user_info')
+        return {"email_address": email_address,
+                "email_verified": email_verified,
+                "first_name": first_name,
+                "last_name": last_name,
+                "issuer": issuer,
+                "subject": subject,
+                "audience": audience,
+                "issued_time": issued_time,
+                "expiration_time": expiration_time,
+                "jwt": jwt_decoded}
+
+    # THis is quite a hack, this whole user_records thing. Will straighten out eventually (perhaps with React version someday).
+    def get_user_record(self, environ: str, request_dict: dict) -> dict:
+        user_info = self.get_logged_in_user_info(environ, request_dict)
+        if not user_info:
+            return None
+        user_record = self.user_records.get(user_info['email_address'])
+        return user_record
+
+    def set_user_record(self, email: str, record: dict, error: str, exception: str):
+        if not email:
+            return
+        user_record = self.user_records.get(email)
+        if not user_record:
+            self.user_records[email] = {"email": email, "record": record, "error": error, "exception": exception}
+        else:
+            user_record["record"] = record
+            user_record["error"] = error
+            user_record["exception"] = exception
+
+    def get_portal_url(self, env_name: str) -> str:
+        cached_portal_url = self.cached_portal_url.get(env_name)
+        if not cached_portal_url:
+            try:
+                environment_and_bucket_info = \
+                    self.environment.get_environment_and_bucket_info(env_name, self.stage.get_stage())
+                portal_url = environment_and_bucket_info.get("fourfront")
+                self.cached_portal_url[env_name] = portal_url
+            except Exception as e:
+                logger.error(f"Error determining portal URL: {e}")
+                raise e
+        return self.cached_portal_url[env_name]
+
+    def get_auth0_client_id(self, env_name: str) -> str:
+        auth0_client_id = os.environ.get("CLIENT_ID")
+        if not auth0_client_id:
+            # TODO: Confirm that we do not actually need to do this.
+            # Just in case. We should already have this value from the GAC.
+            # But Will said get it from the portal (was hardcoded in the template),
+            # so I had written code to do that; just call as fallback for now.
+            auth0_client_id = self.get_auth0_client_id_from_portal(env_name)
+        return auth0_client_id
+
+    def get_auth0_client_id_from_portal(self, env_name: str) -> str:
+        logger.warning(f"Fetching Auth0 client ID from portal.")
+        portal_url = self.get_portal_url(env_name)
+        auth0_config_url = portal_url + "/auth0_config?format=json"
+        if not self.auth0_client_id:
+            try:
+                response = requests.get(auth0_config_url).json()
+                self.auth0_client_id = response.get("auth0Client")
+            except Exception as e:
+                # TODO: Fallback behavior to old hardcoded value (previously in templates/header.html).
+                self.auth0_client_id = "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB"
+                logger.error(f"Error fetching Auth0 client ID from portal ({auth0_config_url}); using default value: {e}")
+        logger.warning(f"Done fetching Auth0 client ID from portal ({auth0_config_url}): {self.auth0_client_id}")
+        return self.auth0_client_id
+
+    def get_auth0_secret(self, env_name: str) -> str:
+        return os.environ.get("CLIENT_SECRET")
+
     def check_authorization(self, request_dict, env=None):
         """
         Manual authorization, since the builtin chalice @app.authorizer() was not
@@ -150,53 +290,84 @@ class AppUtilsCore:
         # if we're on localhost, automatically grant authorization
         # this looks bad but isn't because request authentication will
         # still fail if local keys are not configured
-        src_ip = request_dict.get('context', {}).get('identity', {}).get('sourceIp', '')
-        if src_ip == '127.0.0.1':
+        if self.is_running_locally(request_dict):
             return True
-        token = self.get_jwt(request_dict)
-        auth0_client = os.environ.get('CLIENT_ID', None)
-        auth0_secret = os.environ.get('CLIENT_SECRET', None)
-        if auth0_client and auth0_secret and token:
+        jwt_decoded = self.get_decoded_jwt_token(env, request_dict)
+        if jwt_decoded:
             try:
                 if env is None:
                     return False  # we have no env to check auth
-                # leeway accounts for clock drift between us and auth0
-                payload = jwt.decode(token, auth0_secret, audience=auth0_client, leeway=30)
                 for env_info in self.init_environments(env).values():
-                    user_res = ff_utils.get_metadata('users/' + payload.get('email').lower(),
+                    user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
                                                      ff_env=env_info['ff_env'],
                                                      add_on='frame=object&datastore=database')
-                    logger.error(env_info)
-                    logger.error(user_res)
-                    if not ('admin' in user_res['groups'] and payload.get('email_verified')):
-                        # if unauthorized for one, unauthorized for all
+                    logger.warning("foursight_core.check_authorization: env_info ...")
+                    logger.warning(env_info)
+                    logger.warning("foursight_core.check_authorization: user_res ...")
+                    logger.warning(user_res)
+                    groups = user_res.get('groups')
+                    if not groups:
+                        logger.warning("foursight_core.check_authorization: No 'groups' element for user record! Returning False.")
+                        self.set_user_record(email=jwt_decoded.get('email'), record=None, error="nogroups", exception=None)
+                        # self.user_record = None
+                        # self.user_record_error = "nogroups"
+                        # self.user_record_error_email = jwt_decoded.get('email')
                         return False
+                    if not (('admin' in user_res['groups'] or 'foursight' in user_res['groups']) and jwt_decoded.get('email_verified')):
+                        logger.error("foursight_core.check_authorization: Returning False")
+                        # if unauthorized for one, unauthorized for all
+                        self.set_user_record(email=jwt_decoded.get('email'), record=None, error="noadmin", exception=None)
+                        # self.user_record = None
+                        # self.user_record_error = "noadmin"
+                        # self.user_record_error_email = jwt_decoded.get('email')
+                        return False
+                    self.set_user_record(email=jwt_decoded.get('email'), record=user_res, error=None, exception=None)
+                    # self.user_record = user_res
+                    # self.user_record_error = None
+                    # self.user_record_error_email = None
+                logger.warning("foursight_core.check_authorization: Returning True")
                 return True
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error("foursight_core.check_authorization: Exception on check_authorization")
+                self.set_user_record(email=jwt_decoded.get('email'), record=None, error="exception", exception=str(e))
+                # self.user_record = None
+                # self.user_record_error = "exception"
+                # self.user_record_error_email = jwt_decoded.get('email')
+                logger.error(e)
+        logger.error("foursight_core.check_authorization: Returning False ")
         return False
 
-    @classmethod
-    def auth0_callback(cls, request, env):
+    def auth0_callback(self, request, env):
         req_dict = request.to_dict()
-        domain, context = cls.get_domain_and_context(req_dict)
+        domain, context = self.get_domain_and_context(req_dict)
         # extract redir cookie
         cookies = req_dict.get('headers', {}).get('cookie')
         redir_url = context + 'view/' + env
-        for cookie in cookies.split(';'):
-            name, val = cookie.strip().split('=')
-            if name == 'redir':
-                redir_url = val
+
+#       for cookie in cookies.split(';'):
+#           name, val = cookie.strip().split('=')
+#           if name == 'redir':
+#               redir_url = val
+        try:
+            simple_cookies = SimpleCookie()
+            simple_cookies.load(cookies)
+            simple_cookies = {k: v.value for k, v in simple_cookies.items()}
+            redir_url_cookie = simple_cookies.get("redir")
+            if redir_url_cookie:
+                redir_url = redir_url_cookie
+        except Exception as e:
+            PRINT("Exception loading cookies: {cookies}")
+            PRINT(e)
+
         resp_headers = {'Location': redir_url}
         params = req_dict.get('query_params')
         if not params:
-            return cls.forbidden_response()
+            return self.forbidden_response()
         auth0_code = params.get('code', None)
-        auth0_client = os.environ.get('CLIENT_ID', None)
-        auth0_secret = os.environ.get('CLIENT_SECRET', None)
+        auth0_client = self.get_auth0_client_id(env)
+        auth0_secret = self.get_auth0_secret(env)
         if not (domain and auth0_code and auth0_client and auth0_secret):
-            return Response(status_code=301, body=json.dumps(resp_headers),
-                            headers=resp_headers)
+            return Response(status_code=301, body=json.dumps(resp_headers), headers=resp_headers)
         payload = {
             'grant_type': 'authorization_code',
             'client_id': auth0_client,
@@ -206,7 +377,7 @@ class AppUtilsCore:
         }
         json_payload = json.dumps(payload)
         headers = {'content-type': "application/json"}
-        res = requests.post(cls.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
+        res = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
         id_token = res.json().get('id_token', None)
         if id_token:
             cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
@@ -217,8 +388,7 @@ class AppUtilsCore:
             resp_headers['Set-Cookie'] = cookie_str
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
-    @classmethod
-    def get_jwt(cls, request_dict):
+    def get_jwt_token(self, request_dict) -> str:
         """
         Simple function to extract a jwt from a request that has already been
         dict-transformed
@@ -233,6 +403,19 @@ class AppUtilsCore:
         token = cookie_dict.get('jwtToken', None)
         return token
 
+    def get_decoded_jwt_token(self, env_name: str, request_dict) -> dict:
+        try:
+            jwt_token = self.get_jwt_token(request_dict)
+            if not jwt_token:
+                return None
+            auth0_client_id = self.get_auth0_client_id(env_name)
+            auth0_secret = self.get_auth0_secret(env_name)
+            # leeway accounts for clock drift between us and auth0
+            return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30)
+        except:
+            logger.warning(f"foursight_core: Exception decoding JWT token: {jwt_token}")
+            return None
+
     @classmethod
     def get_favicon(cls):
         """
@@ -240,8 +423,7 @@ class AppUtilsCore:
         """
         return cls.FAVICON  # want full HTTPS, so hard-coded in
 
-    @classmethod
-    def get_domain_and_context(cls, request_dict):
+    def get_domain_and_context(self, request_dict):
         """
         Given a request that has already been dict-transformed, get the host
         and the url context for endpoints. Context will basically either be
@@ -337,6 +519,192 @@ class AppUtilsCore:
             return cls.TRIM_ERR_OUTPUT
         return output
 
+    def sort_dictionary_by_lowercase_keys(self, dictionary: dict) -> dict:
+        """
+        Returns the given dictionary sorted by key values (yes, dictionaries are ordered as of Python 3.7).
+        If the given value is not a dictionary it will be coerced to one.
+        :param dictionary: Dictionary to sort.
+        :return: Given dictionary sorted by key value.
+        """
+        if not dictionary or not isinstance(dictionary, dict):
+            return {}
+        return {key: dictionary[key] for key in sorted(dictionary.keys(), key=lambda key: key.lower())}
+
+    def get_aws_account_number(self) -> dict:
+        try:
+            caller_identity = boto3.client("sts").get_caller_identity()
+            return caller_identity["Account"]
+        except Exception as e:
+            self.note_non_fatal_error_for_ui_info(e, 'get_aws_account_number')
+            return None
+
+    def get_obfuscated_credentials_info(self, env_name: str) -> dict:
+        try:
+            session = boto3.session.Session()
+            credentials = session.get_credentials()
+            access_key_id = credentials.access_key
+            region_name = session.region_name
+            caller_identity = boto3.client("sts").get_caller_identity()
+            user_arn = caller_identity["Arn"]
+            account_number = caller_identity["Account"]
+            auth0_client_id = self.get_auth0_client_id(env_name)
+            credentials_info = {
+                "AWS Account Number:": account_number,
+                "AWS User ARN:": user_arn,
+                "AWS Access Key ID:": access_key_id,
+                "AWS Region Name:": region_name,
+                "Auth0 Client ID:": auth0_client_id
+            }
+            return credentials_info
+        except Exception as e:
+            self.note_non_fatal_error_for_ui_info(e, 'get_obfuscated_credentials_info')
+            return {}
+
+    def convert_utc_datetime_to_useastern_datetime(self, t) -> str:
+        """
+        Converts the given UTC datetime object or string into a US/Eastern datetime string
+        and returns its value in a form that looks like 2022-08-22 13:25:34 EDT.
+        If the argument is a string it is ASSUMED to have a value which looks
+        like 2022-08-22T14:24:49.000+0000; this is the datetime string format
+        we get from AWS via boto3 (e.g. for a lambda last-modified value).
+
+        :param t: UTC datetime object or string value.
+        :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
+        """
+        try:
+            if isinstance(t, str):
+                t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
+            t = t.replace(tzinfo=pytz.UTC).astimezone(pytz.timezone("US/Eastern"))
+            return t.strftime("%Y-%m-%d %H:%M:%S %Z")
+        except Exception as e:
+            self.note_non_fatal_error_for_ui_info(e, 'convert_utc_datetime_to_useastern_datetime')
+            return ""
+
+    def convert_time_t_to_useastern_datetime(self, time_t: int) -> str:
+        """
+        Converts the given "epoch" time (seconds since 1970-01-01T00:00:00Z)
+        integer value to a US/Eastern datetime string and returns its value
+        in a form that looks like 2022-08-22 13:25:34 EDT.
+
+        :param time_t: Epoch time value (i.e. seconds since 1970-01-01T00:00:00Z)
+        :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
+        """
+        try:
+            if not isinstance(time_t, int):
+                return ""
+            t = datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
+            return self.convert_utc_datetime_to_useastern_datetime(t)
+        except Exception as e:
+            self.note_non_fatal_error_for_ui_info(e, 'convert_time_t_to_useastern_datetime')
+            return ""
+
+    def ping_elasticsearch(self, env_name: str) -> bool:
+        logger.warning(f"foursight_core: Pinging ElasticSearch: {self.host}")
+        try:
+            response = self.init_connection(env_name).connections["es"].test_connection()
+            logger.warning(f"foursight_core: Done pinging ElasticSearch: {self.host}")
+            return response
+        except Exception as e:
+            logger.warning(f"Exception pinging ElasticSearch ({self.host}): {e}")
+            return False
+
+    def ping_portal(self, env_name: str) -> bool:
+        portal_url = ""
+        try:
+            portal_url = self.get_portal_url(env_name)
+            logger.warning(f"foursight_core: Pinging portal: {portal_url}")
+            response = requests.get(portal_url + "/health?format=json", timeout=4)
+            logger.warning(f"foursight_core: Done pinging portal: {portal_url}")
+            return (response.status_code == 200)
+        except Exception as e:
+            logger.warning(f"foursight_core: Exception pinging portal ({portal_url}): {e}")
+            return False
+
+    def ping_sqs(self) -> bool:
+        sqs_url = ""
+        try:
+            sqs_url = self.sqs.get_sqs_queue().url
+            logger.warning(f"foursight_core: Pinging SQS: {sqs_url}")
+            sqs_attributes = self.sqs.get_sqs_attributes(sqs_url)
+            logger.warning(f"foursight_core: Done pinging SQS: {sqs_url}")
+            return (sqs_attributes is not None)
+        except Exception as e:
+            logger.warning(f"Exception pinging SQS ({sqs_url}): {e}")
+            return False
+
+    def reload_lambda(self, lambda_name: str = None) -> bool:
+        """
+        Experimental.
+        Reloads the lambda code for the given lambda name. We do this by making an innocuous change
+        to it, namely, by adding/removing a trailing dot to its description. This causes the lambda
+        to be reloaded, however this also changes its last modified date, which we would also like to
+        to accurately get (get_lambda_last_modified), so we store its original value in a lambda tag,
+        the updating of which does not update the modified time; so the code (get_lambda_last_modified)
+        to get the last modified time of the lambda needs to look first at this tag and take that
+        if it exists before looking at the real last modified time.
+        """
+        if not lambda_name or lambda_name.lower() == "current":
+            lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+            if not lambda_name:
+                return False
+        try:
+            boto_lambda = boto3.client("lambda")
+            lambda_info = boto_lambda.get_function(FunctionName=lambda_name)
+            if lambda_info:
+                lambda_arn = lambda_info["Configuration"]["FunctionArn"]
+                lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
+                lambda_last_modified_tag = lambda_tags.get("last_modified")
+                if not lambda_last_modified_tag:
+                    lambda_last_modified = lambda_info["Configuration"]["LastModified"]
+                    boto_lambda.tag_resource(Resource=lambda_arn, Tags={"last_modified": lambda_last_modified})
+                lambda_description = lambda_info["Configuration"]["Description"]
+                if not lambda_description:
+                    lambda_description = "Reload"
+                else:
+                    if lambda_description.endswith("."):
+                        lambda_description = lambda_description[:-1]
+                    else:
+                        lambda_description = lambda_description + "."
+                logger.warning(f"Reloading lambda: {lambda_name}")
+                boto_lambda.update_function_configuration(FunctionName=lambda_name, Description=lambda_description)
+                logger.warning(f"Reloaded lambda: {lambda_name}")
+        except Exception as e:
+            logger.warning(f"Error reloading lambda ({lambda_name}): {e}")
+        return False
+
+    def get_lambda_last_modified(self, lambda_name: str = None) -> str:
+        """
+        Returns the last modified time for the given lambda name.
+        See comments in reload_lambda on this.
+        """
+        lambda_current = False
+        if not lambda_name or lambda_name.lower() == "current":
+            lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+            if not lambda_name:
+                return None
+            lambda_current = True
+        if lambda_current:
+            if self.lambda_last_modified:
+                return self.lambda_last_modified
+        try:
+            boto_lambda = boto3.client("lambda")
+            lambda_info = boto_lambda.get_function(FunctionName=lambda_name)
+            if lambda_info:
+                lambda_arn = lambda_info["Configuration"]["FunctionArn"]
+                lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
+                lambda_last_modified_tag = lambda_tags.get("last_modified")
+                if lambda_last_modified_tag:
+                    lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified_tag)
+                else:
+                    lambda_last_modified = lambda_info["Configuration"]["LastModified"]
+                    lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified)
+                if lambda_current:
+                    self.lambda_last_modified = lambda_last_modified
+                return lambda_last_modified
+        except Exception as e:
+            logger.warning(f"Error getting lambda ({lambda_name}) last modified time: {e}")
+        return None
+
     # ===== ROUTE RUNNING FUNCTIONS =====
 
     def view_run_check(self, environ, check, params, context="/"):
@@ -401,7 +769,17 @@ class AppUtilsCore:
         return Response(status_code=302, body=json.dumps(resp_headers),
                         headers=resp_headers)
 
-    def view_foursight(self, environ, is_admin=False, domain="", context="/"):
+    def get_unique_annotated_environment_names(self):
+        unique_environment_names = self.environment.list_unique_environment_names()
+        unique_annotated_environment_names = [
+            {"name": env,
+             "short": short_env_name(env),
+             "full": full_env_name(env),
+             "public": public_env_name(env) if public_env_name(env) else short_env_name(env),
+             "foursight": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
+        return sorted(unique_annotated_environment_names, key=lambda key: key["full"])
+
+    def view_foursight(self, request, environ, is_admin=False, domain="", context="/"):
         """
         View a template of all checks from the given environment(s).
         Environ may be 'all' or a specific FS environments separated by commas.
@@ -454,23 +832,261 @@ class AppUtilsCore:
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         first_env_favicon = self.get_favicon()
+        request_dict = request.to_dict()
         html_resp.body = template.render(
+            request=request,
+            version=self.get_app_version(),
+            package=self.APP_PACKAGE_NAME,
             env=environ,
+            env_short=short_env_name(environ),
+            env_full=full_env_name(environ),
             view_envs=total_envs,
             stage=self.stage.get_stage(),
             load_time=self.get_load_time(),
+            init_load_time=self.init_load_time,
+            lambda_deployed_time=self.get_lambda_last_modified(),
             is_admin=is_admin,
+            is_running_locally=self.is_running_locally(request_dict),
+            logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            user_record=self.get_user_record(environ, request_dict),
+            # user_record=self.user_record,
+            # user_record_error=self.user_record_error,
+            # user_record_error_email=self.user_record_error_email,
+            auth0_client_id=self.get_auth0_client_id(environ),
+            aws_account_number=self.get_aws_account_number(),
             domain=domain,
             context=context,
+            environments=self.get_unique_annotated_environment_names(),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
 
-    def view_foursight_check(self, environ, check, uuid, is_admin=False, domain="", context="/"):
+    def view_reload_lambda(self, request, environ, is_admin=False, domain="", context="/", lambda_name: str = None):
+        self.reload_lambda(lambda_name)
+        time.sleep(3)
+        resp_headers = {'Location': f"{context}info/{environ}"}
+        return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
+
+    # dmichaels/2020-08-01:
+    # Added /info/{environ} for debugging/troubleshooting purposes.
+    def view_info(self, request, environ, is_admin=False, domain="", context="/"):
+        """
+        Displays a /{environ}/info page containing sundry info about the running Foursight instance.
+        Any sensitive data is obfuscated. This is a protected route.
+        :param domain: Current FS domain, needed for Auth0 redirect.
+        :param context: Current context, usually "/api/" or "/".
+        :return: Response with html content.
+        """
+
+        html_resp = Response('Foursight viewing suite')
+        html_resp.headers = {'Content-Type': 'text/html'}
+        template = self.jin_env.get_template('info.html')
+        # env_name = os.environ.get("ENV_NAME")
+        stage_name = self.stage.get_stage()
+        environment_names = {
+            "Environment Name:": environ,
+            "Environment Name (Full):": full_env_name(environ),
+            "Environment Name (Short):": short_env_name(environ),
+            "Environment Name (Public):": public_env_name(envname=environ),
+            "Environment Name (Foursight):": infer_foursight_from_env(envname=environ),
+            "Environment Name List:": sorted(self.environment.list_environment_names()),
+            "Environment Name List (Unique):": sorted(self.environment.list_unique_environment_names())
+        }
+        bucket_names = {
+            "Environment Bucket Name:": self.environment.get_env_bucket_name(),
+            "Foursight Bucket Name:": get_foursight_bucket(envname=environ, stage=stage_name),
+            "Foursight Bucket Prefix:": get_foursight_bucket_prefix()
+        }
+        gac_name = get_identity_name()
+        gac_values = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(get_identity_secrets()))
+        environment_and_bucket_info = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(
+                                        self.environment.get_environment_and_bucket_info(environ, stage_name)))
+        declared_data = self.sort_dictionary_by_lowercase_keys(EnvUtils.declared_data())
+        dcicutils_version = pkg_resources.get_distribution('dcicutils').version
+        foursight_core_version = pkg_resources.get_distribution('foursight-core').version
+        versions = {
+            # TODO/dmichaels/2022-08-04: Get the "Foursight-CGAP" value some other way,
+            # as the package might not be "Foursight-CGAP" (might be for example just "Foursight").
+            f"{self.html_main_title}:": self.get_app_version(),
+            "Foursight-Core:": foursight_core_version,
+            "DCIC-Utils:": dcicutils_version,
+            "Python:": platform.python_version()
+        }
+        resources = {
+            "Foursight Server:": socket.gethostname(),
+            "Portal Server:": self.get_portal_url(environ),
+            "ElasticSearch Server:": self.host,
+            "RDS Server:": os.environ["RDS_HOSTNAME"],
+            "SQS Server:": self.sqs.get_sqs_queue().url,
+        }
+        aws_credentials = self.get_obfuscated_credentials_info(environ)
+        aws_account_number = aws_credentials.get("AWS Account Number:")
+        os_environ = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
+        request_dict = request.to_dict()
+
+        html_resp.body = template.render(
+            request=request,
+            version=self.get_app_version(),
+            package=self.APP_PACKAGE_NAME,
+            env=environ,
+            env_short=short_env_name(environ),
+            env_full=full_env_name(environ),
+            domain=domain,
+            context=context,
+            environments=self.get_unique_annotated_environment_names(),
+            stage=stage_name,
+            is_admin=is_admin,
+            is_running_locally=self.is_running_locally(request_dict),
+            logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            user_record=self.get_user_record(environ, request_dict),
+            # user_record=self.user_record,
+            # user_record_error=self.user_record_error,
+            # user_record_error_email=self.user_record_error_email,
+            auth0_client_id=self.get_auth0_client_id(environ),
+            aws_credentials=aws_credentials,
+            aws_account_number=aws_account_number,
+            portal_url=self.get_portal_url(environ),
+            main_title=self.html_main_title,
+            favicon=self.get_favicon(),
+            load_time=self.get_load_time(),
+            init_load_time=self.init_load_time,
+            lambda_deployed_time=self.get_lambda_last_modified(),
+            running_checks='0',
+            queued_checks='0',
+            environment_names=environment_names,
+            bucket_names=bucket_names,
+            environment_and_bucket_info=environment_and_bucket_info,
+            declared_data=declared_data,
+            identity_name=gac_name,
+            identity_secrets=gac_values,
+            resources=resources,
+            ping_portal=self.ping_portal(environ),
+            ping_elasticsearch=self.ping_elasticsearch(environ),
+            ping_sqs=self.ping_sqs(),
+            versions=versions,
+            os_environ=os_environ
+        )
+        html_resp.status_code = 200
+        return self.process_response(html_resp)
+
+    def view_user(self, request, environ, is_admin=False, domain="", context="/", email=None):
+        html_resp = Response('Foursight viewing suite')
+        html_resp.headers = {'Content-Type': 'text/html'}
+        request_dict = request.to_dict()
+        stage_name = self.stage.get_stage()
+        users = []
+        for this_email in email.split(","):
+            try:
+                this_user = ff_utils.get_metadata('users/' + this_email.lower(),
+                                                  ff_env=full_env_name(environ),
+                                                  add_on='frame=object&datastore=database')
+                users.append({"email": this_email, "record": this_user})
+            except Exception as e:
+                users.append({"email": this_email, "record": {"error": str(e)}})
+        template = self.jin_env.get_template('user.html')
+        html_resp.body = template.render(
+            request=request,
+            version=self.get_app_version(),
+            package=self.APP_PACKAGE_NAME,
+            env=environ,
+            env_short=short_env_name(environ),
+            env_full=full_env_name(environ),
+            domain=domain,
+            context=context,
+            environments=self.get_unique_annotated_environment_names(),
+            stage=stage_name,
+            is_admin=is_admin,
+            is_running_locally=self.is_running_locally(request_dict),
+            logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            user_record=self.get_user_record(environ, request_dict),
+            # user_record=self.user_record,
+            # user_record_error=self.user_record_error,
+            # user_record_error_email=self.user_record_error_email,
+            users=users,
+            auth0_client_id=self.get_auth0_client_id(environ),
+            aws_account_number=self.get_aws_account_number(),
+            portal_url=self.get_portal_url(environ),
+            main_title=self.html_main_title,
+            favicon=self.get_favicon(),
+            load_time=self.get_load_time(),
+            init_load_time=self.init_load_time,
+            lambda_deployed_time=self.get_lambda_last_modified(),
+            running_checks='0',
+            queued_checks='0'
+        )
+        html_resp.status_code = 200
+        return self.process_response(html_resp)
+
+    def view_users(self, request, environ, is_admin=False, domain="", context="/"):
+        html_resp = Response('Foursight viewing suite')
+        html_resp.headers = {'Content-Type': 'text/html'}
+        request_dict = request.to_dict()
+        stage_name = self.stage.get_stage()
+        users = []
+        # TODO: Support paging.
+        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000&datastore=database')
+        for user_record in user_records["@graph"]:
+            last_modified = user_record.get("last_modified")
+            if last_modified:
+                last_modified = last_modified.get("date_modified")
+            # TODO
+            # roles = []
+            # project_roles = user_record.get("project_roles")
+            # if project_roles:
+            #     role = role.get("date_modified")
+            #     roles.append({
+            #         "groups": groups,
+            #         "project_roles": project_roles,
+            #         "principals_view": principals_view,
+            #         "principals_edit": principals_edit
+            #     })
+            users.append({
+                "email_address": user_record.get("email"),
+                "first_name": user_record.get("first_name"),
+                "last_name": user_record.get("last_name"),
+                "uuid": user_record.get("uuid"),
+                "modified": self.convert_utc_datetime_to_useastern_datetime(last_modified)})
+        users = sorted(users, key=lambda key: key["email_address"])
+        template = self.jin_env.get_template('users.html')
+        html_resp.body = template.render(
+            request=request,
+            version=self.get_app_version(),
+            package=self.APP_PACKAGE_NAME,
+            env=environ,
+            env_short=short_env_name(environ),
+            env_full=full_env_name(environ),
+            domain=domain,
+            context=context,
+            environments=self.get_unique_annotated_environment_names(),
+            stage=stage_name,
+            is_admin=is_admin,
+            is_running_locally=self.is_running_locally(request_dict),
+            logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            user_record=self.get_user_record(environ, request_dict),
+            # user_record=self.user_record,
+            # user_record_error=self.user_record_error,
+            # user_record_error_email=self.user_record_error_email,
+            users=users,
+            auth0_client_id=self.get_auth0_client_id(environ),
+            aws_account_number=self.get_aws_account_number(),
+            portal_url=self.get_portal_url(environ),
+            main_title=self.html_main_title,
+            favicon=self.get_favicon(),
+            load_time=self.get_load_time(),
+            init_load_time=self.init_load_time,
+            lambda_deployed_time=self.get_lambda_last_modified(),
+            running_checks='0',
+            queued_checks='0'
+        )
+        html_resp.status_code = 200
+        return self.process_response(html_resp)
+
+    def view_foursight_check(self, request, environ, check, uuid, is_admin=False, domain="", context="/"):
         """
         View a formatted html response for a single check (environ, check, uuid)
         """
@@ -508,17 +1124,35 @@ class AppUtilsCore:
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         first_env_favicon = self.get_favicon()
+        request_dict = request.to_dict()
         html_resp.body = template.render(
+            request=request,
+            version=self.get_app_version(),
+            package=self.APP_PACKAGE_NAME,
             env=environ,
+            env_short=short_env_name(environ),
+            env_full=full_env_name(environ),
             view_envs=total_envs,
             stage=self.stage.get_stage(),
             load_time=self.get_load_time(),
-            is_admin=is_admin,
+            init_load_time=self.init_load_time,
+            lambda_deployed_time=self.get_lambda_last_modified(),
             domain=domain,
             context=context,
+            environments=self.get_unique_annotated_environment_names(),
+            is_admin=is_admin,
+            is_running_locally=self.is_running_locally(request_dict),
+            logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            user_record=self.get_user_record(environ, request_dict),
+            # user_record=self.user_record,
+            # user_record_error=self.user_record_error,
+            # user_record_error_email=self.user_record_error_email,
+            auth0_client_id=self.get_auth0_client_id(environ),
+            aws_account_number=self.get_aws_account_number(),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title
         )
         html_resp.status_code = 200
@@ -533,7 +1167,7 @@ class AppUtilsCore:
         ts_utc = ts_utc.replace(tzinfo=tz.tzutc())
         # change timezone to EST (specific location needed for daylight savings)
         ts_local = ts_utc.astimezone(tz.gettz('America/New_York'))
-        return ''.join([str(ts_local.date()), ' at ', str(ts_local.time()), ' (', str(ts_local.tzname()), ')'])
+        return ''.join([str(ts_local.date()), ' ', str(ts_local.time()), ' ', str(ts_local.tzname())])
 
     def process_view_result(self, connection, res, is_admin):
         """
@@ -619,7 +1253,7 @@ class AppUtilsCore:
                 del res['action']
         return res
 
-    def view_foursight_history(self, environ, check, start=0, limit=25, is_admin=False,
+    def view_foursight_history(self, request, environ, check, start=0, limit=25, is_admin=False,
                                domain="", context="/"):
         """
         View a tabular format of the history of a given check or action (str name
@@ -649,10 +1283,18 @@ class AppUtilsCore:
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         favicon = self.get_favicon()
+        request_dict = request.to_dict()
         html_resp.body = template.render(
+            request=request,
+            version=self.get_app_version(),
+            package=self.APP_PACKAGE_NAME,
             env=environ,
+            env_short=short_env_name(environ),
+            env_full=full_env_name(environ),
             check=check,
             load_time=self.get_load_time(),
+            init_load_time=self.init_load_time,
+            lambda_deployed_time=self.get_lambda_last_modified(),
             history=history,
             history_kwargs=history_kwargs,
             res_start=start,
@@ -661,11 +1303,21 @@ class AppUtilsCore:
             page_title=page_title,
             stage=self.stage.get_stage(),
             is_admin=is_admin,
+            is_running_locally=self.is_running_locally(request_dict),
+            logged_in_as=self.get_logged_in_user_info(environ, request_dict),
+            user_record=self.get_user_record(environ, request_dict),
+            # user_record=self.user_record,
+            # user_record_error=self.user_record_error,
+            # user_record_error_email=self.user_record_error_email,
+            auth0_client_id=self.get_auth0_client_id(environ),
+            aws_account_number=self.get_aws_account_number(),
             domain=domain,
             context=context,
+            environments=self.get_unique_annotated_environment_names(),
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=favicon,
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title
         )
         html_resp.status_code = 200
@@ -917,16 +1569,21 @@ class AppUtilsCore:
         Returns:
             dict: runner input of queued messages, used for testing
         """
+        logger.warning(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
         queue = self.sqs.get_sqs_queue()
-        print(f'-RUN-> target queue: {queue}')
+        logger.warning(f"queue_scheduled_checks: queue={queue}")
         if schedule_name is not None:
+            logger.warning(f"queue_scheduled_checks: have schedule_name")
+            logger.warning(f"queue_scheduled_checks: environment.is_valid_environment_name(sched_environ, or_all=True)={self.environment.is_valid_environment_name(sched_environ, or_all=True)}")
             if not self.environment.is_valid_environment_name(sched_environ, or_all=True):
-                print(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
+                PRINT(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
                 return
             sched_environs = self.environment.get_selected_environment_names(sched_environ)
+            logger.warning(f"queue_scheduled_checks: sched_environs={sched_environs}")
             check_schedule = self.check_handler.get_check_schedule(schedule_name, conditions)
+            logger.warning(f"queue_scheduled_checks: sched_environs={check_schedule}")
             if not check_schedule:
-                print(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
+                PRINT(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
                 return
             if not sched_environs:
                 print(f'-RUN-> No scheduled environs detected! {sched_environs}, {check_schedule}')
@@ -935,12 +1592,31 @@ class AppUtilsCore:
                 print(f'-RUN-> Sending messages for {environ}')
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
-                check_vals.extend(check_schedule.get(environ, []))
+                check_vals.extend(self.get_env_schedule(check_schedule, environ))
+                logger.warning(f"queue_scheduled_checks: calling send_sqs_messages({environ}) ... check_values:")
+                logger.warning(check_vals)
                 self.sqs.send_sqs_messages(queue, environ, check_vals)
+                logger.warning(f"queue_scheduled_checks: after calling send_sqs_messages({environ})")
         runner_input = {'sqs_url': queue.url}
         for n in range(4):  # number of parallel runners to kick off
+            logger.warning(f"queue_scheduled_checks: calling invoke_check_runner({runner_input})")
             self.sqs.invoke_check_runner(runner_input)
+            logger.warning(f"queue_scheduled_checks: after calling invoke_check_runner({runner_input})")
+        logger.warning(f"queue_scheduled_checks: returning({runner_input})")
         return runner_input  # for testing purposes
+
+    @classmethod
+    def get_env_schedule(cls, check_schedule, environ):
+        """
+        Gets schedules from the check_schedule table for the given environ, which may be a short, full, or public name.
+
+        In the new environment configuration, there are multiple aliases that refer to the same environment.
+        This function ensures that when writing a check schedule you can refer to any of the aliases.
+        """
+        return (check_schedule.get(public_env_name(environ))
+                or check_schedule.get(full_env_name(environ))
+                or check_schedule.get(short_env_name(environ))
+                or [])
 
     def queue_check(self, environ, check,
                     params: Optional[dict] = None, deps: Optional[list] = None, uuid: Optional[str] = None):
@@ -1080,7 +1756,7 @@ class AppUtilsCore:
             deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
             finished_dependencies = set(deps_w_uuid).issubset(already_run)
             if not finished_dependencies:
-                print(f'-RUN-> Not ready for: {run_name}')
+                PRINT(f'-RUN-> Not ready for: {run_name}')
         else:
             finished_dependencies = True
         connection = self.init_connection(run_env)
@@ -1095,7 +1771,7 @@ class AppUtilsCore:
                 found_rec = connection.get_object(rec_key)
                 if found_rec is not None:
                     # the action record has been written. Abort and propogate
-                    print(f'-RUN-> Found existing action record: {rec_key}. Skipping')
+                    PRINT(f'-RUN-> Found existing action record: {rec_key}. Skipping')
                     self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
                     return None
                 else:
@@ -1106,9 +1782,9 @@ class AppUtilsCore:
                     # This was changed per Will's suggestion in code review. -kmp 7-Jun-2022
                     # connection.put_object(rec_key, rec_body)
                     connection.connections['s3'].put_object(rec_key, rec_body)
-                    print(f'-RUN-> Wrote action record: {rec_key}')
+                    PRINT(f'-RUN-> Wrote action record: {rec_key}')
             run_result = self.check_handler.run_check_or_action(connection, run_name, run_kwargs)
-            print('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))
+            PRINT('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))
             # invoke action if running a check and kwargs['queue_action'] matches stage
             stage = self.stage.get_stage()
             if run_result['type'] == 'check' and run_result['kwargs']['queue_action'] == stage:
@@ -1120,16 +1796,16 @@ class AppUtilsCore:
                         self.queue_action(run_env, run_result['action'],
                                           params=action_params, uuid=run_uuid)
                     except Exception as exc:
-                        print('-RUN-> Could not queue action %s on stage %s with kwargs: %s. Error: %s'
+                        PRINT('-RUN-> Could not queue action %s on stage %s with kwargs: %s. Error: %s'
                               % (run_result['action'], stage, action_params, str(exc)))
                     else:
-                        print('-RUN-> Queued action %s on stage %s with kwargs: %s'
+                        PRINT('-RUN-> Queued action %s on stage %s with kwargs: %s'
                               % (run_result['action'], stage, action_params))
-            print(f'-RUN-> Finished: {run_name}')
+            PRINT(f'-RUN-> Finished: {run_name}')
             self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return run_result
         else:
-            print(f'-RUN-> Recovered: {run_name}')
+            PRINT(f'-RUN-> Recovered: {run_name}')
             self.sqs.recover_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
 

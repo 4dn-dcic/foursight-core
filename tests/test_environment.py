@@ -48,7 +48,7 @@ def test_list_unique_environment_names():
         environment = Environment()
         with mock.patch.object(environment, 'list_environment_names') as mock_list_environment_names:
             def mocked_list_environment_names():
-                return ['data', 'staging', 'fourfront-mastertest', 'mastertest']
+                return ['data', 'mastertest', 'staging']
             mock_list_environment_names.side_effect = mocked_list_environment_names
 
             unique = environment.list_unique_environment_names()
