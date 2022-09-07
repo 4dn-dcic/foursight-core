@@ -276,14 +276,14 @@ const Checks = (props) => {
 
     const SelectedCheckResultsBox = ({check, index}) => {
         return <div>
-            { check.results && <small>
+            { check.results && <small style={{color:"red",cursor:"pointer"}} onClick={() => { check.showingResultDetails = !check.showingResultDetails ; noteChangedResults(); }}>
                 { Object.keys(check.results).length > 0 ? (<>
                     <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div>
                     <span>Latest Results: {check.results?.timestamp}</span>
                         { check.showingResultDetails ? (
-                            <b style={{cursor:"pointer"}} onClick={() => { check.showingResultDetails = false; noteChangedResults(); }}>&nbsp;&#x2193;</b>
+                            <b>&nbsp;&#x2193;</b>
                         ):(
-                            <b style={{cursor:"pointer"}} onClick={() => { check.showingResultDetails = true; noteChangedResults(); }}>&nbsp;&#x2191;</b>
+                            <b>&nbsp;&#x2191;</b>
                         )}
                     <br />
                     <span style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red"}}>Results Summary: {check.results?.summary}</span>&nbsp;&nbsp;
@@ -294,8 +294,11 @@ const Checks = (props) => {
             </small> }
             { check.showingResultDetails ? (
                 <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",maxWidth:"600pt"}}>
-                    <img onClick={() => CopyToClipboard(check.name)} style={{float:"right",cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="22" />
+                    <div style={{float:"right"}}>
+                    <img onClick={() => CopyToClipboard(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="19" />
                     <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{JSON.stringify(check.results)}</span>
+                    <span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>&nbsp;X</span>
+                    </div>
             
                     {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? YAML.stringify(check.results) : "No results.") }
                 </pre>
@@ -309,7 +312,7 @@ const Checks = (props) => {
 
     const Spinner = ({condition, color = "darkblue", size = 100, label = "Loading"}) => {
         return <table><tbody><tr>
-            {label && <td nowrap="1"><small><i>{label}</i></small>&nbsp;&nbsp;</td>}
+            {label && <td nowrap="1"><small style={{color:color}}><b><i>{label}</i></b></small>&nbsp;&nbsp;</td>}
             <td style={{paddingTop:"5px"}} nowrap="1"> <BarSpinner condition={true} size={size} color={color} /></td>
         </tr></tbody></table>
     }
