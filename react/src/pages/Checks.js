@@ -29,7 +29,7 @@ const Checks = (props) => {
         fetchData(groupedChecksUrl, groupedChecks => {
             setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
             if (groupedChecks.length > 0) {
-                toggleShowGroup(groupedChecks[0]);
+                toggleShowGroup(groupedChecks[2]);
             }
         }, setLoading, setError);
         const lambdasUrl = API.Url(`/lambdas`, environ);
@@ -63,6 +63,10 @@ const Checks = (props) => {
     }
 
     function noteChangedResults() {
+        setSelectedGroups(existing => [...existing]);
+    }
+
+    function noteChangedCheckBox() {
         setSelectedGroups(existing => [...existing]);
     }
 
@@ -183,12 +187,39 @@ const Checks = (props) => {
     }
 
     function runCheck(check) {
+        hideCheckRunningBox(check);
+        noteChangedCheckBox();
         const runCheckUrl = API.Url(`/checks/${check.name}/run`, environ);
         let fetching = true;
-        fetchData(runCheckUrl, response => { fetching = false; });
-        showResultsHistory(check)
-        setTimeout(() => { if (!fetching) { refreshHistory(check); } }, 10000);
+        fetchData(runCheckUrl, response => { fetching = false; check.queueingCheckRun = false; check.queuedCheckRun = response.uuid });
+        check.queueingCheckRun = true;
+        check.queuedCheckRun = false;
+        showCheckRunningBox(check);
+        showResultsHistory(check);
+        setTimeout(() => { if (!fetching) { refreshHistory(check); noteChangedCheckBox(); } }, 10000);
     }
+
+    function showCheckRunningBox(check) {
+        check.showingCheckRunningBox = true;
+        noteChangedCheckBox();
+    }
+
+    function hideCheckRunningBox(check) {
+        check.showingCheckRunningBox = false;
+        noteChangedCheckBox();
+    }
+
+    const CheckRunningBox = ({check}) => {
+            console.log('xxx')
+            console.log(check)
+        return !check.showingCheckRunningBox ? <span /> : <div>
+            <div className="boxstyle check-pass" style={{marginTop:"6pt",padding:"6pt",cursor:"default",background:"yellow",xfilter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                <span style={{float:"right"}} onClick={() => hideCheckRunningBox(check)}>X</span>
+                {  check.queuedCheckRun && <b>Queued check run: <u>{check.queuedCheckRun}</u></b> }
+                { !check.queuedCheckRun && <Spinner condition={check.queueingCheckRun} label={"Queueing check run"} color={"darkgreen"} /> }
+            </div>
+        </div>
+    } 
 
     const SelectedGroupsPanel = ({}) => {
         return <div>
@@ -300,6 +331,7 @@ const Checks = (props) => {
                     <br />
                     <span style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red"}}>Results Summary: {check.results?.summary}</span>&nbsp;&nbsp;
                     { check.results?.status?.toUpperCase() == "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>)}
+                    <CheckRunningBox check={check} />
                 </>):(<>
                     { !check.showingResultDetails && <span>No results.</span> }
                 </>)}
@@ -326,7 +358,7 @@ const Checks = (props) => {
     const Spinner = ({condition, color = "darkblue", size = 100, label = "Loading"}) => {
         return <table><tbody><tr>
             {label && <td nowrap="1"><small style={{color:color}}><b><i>{label}</i></b></small>&nbsp;&nbsp;</td>}
-            <td style={{paddingTop:"5px"}} nowrap="1"> <BarSpinner condition={true} size={size} color={color} /></td>
+            <td style={{paddingTop:"5px"}} nowrap="1"> <BarSpinner loading={condition} size={size} color={color} /></td>
         </tr></tbody></table>
     }
 
