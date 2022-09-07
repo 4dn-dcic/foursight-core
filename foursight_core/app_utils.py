@@ -801,8 +801,16 @@ class AppUtilsCore(ReactApi):
             chalice.Response: redirect to future check landing page
         """
         # convert string query params to literals
+        print("XYZZY: view_run_check: 111")
+        print(environ)
+        print(check)
+        print(params)
         params = self.query_params_to_literals(params)
+        print("XYZZY: view_run_check: 222")
+        print(params)
         queued_uuid = self.queue_check(environ, check, params)
+        print("XYZZY: view_run_check: 333")
+        print(queued_uuid)
         # redirect to view page with a 302 so it isn't cached
         resp_headers = {'Location': '/'.join([context + 'view', environ, check, queued_uuid])}
         return Response(status_code=302, body=json.dumps(resp_headers),
@@ -830,6 +838,8 @@ class AppUtilsCore(ReactApi):
         print(params)
         # convert string query params to literals
         params = self.query_params_to_literals(params)
+        print("XYZZY: view_run_action-2")
+        print(params)
         queued_uuid = self.queue_action(environ, action, params)
         # redirect to calling check view page with a 302 so it isn't cached
         if 'check_name' in params and 'called_by' in params:
@@ -2283,12 +2293,6 @@ def reactapi_route_check_results(environ: str, check: str):
     return AppUtilsCore.singleton().react_route_check_results(request=app.current_request, env=environ, check=check)
 
 
-@app.route(ROUTE_PREFIX + 'reactapi/{environ}/lambdas', methods=['GET'], cors=CORS)
-def reactapi_route_lambdas(environ: str):
-    print(f"XYZZY:/reactapi/{environ}/lambdas")
-    return AppUtilsCore.singleton().react_route_lambdas(request=app.current_request, env=environ)
-
-
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}/history', methods=['GET'], cors=CORS)
 def reactapi_route_check_history(environ: str, check: str):
     print(f"XYZZY:/reactapi/{environ}/checks/{check}/history")
@@ -2296,6 +2300,18 @@ def reactapi_route_check_history(environ: str, check: str):
     offset = int(params.get('offset', '0')) if params else 0
     limit = int(params.get('limit', '25')) if params else 25
     return AppUtilsCore.singleton().react_route_check_history(request=app.current_request, env=environ, check=check, offset=offset, limit=limit)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}/run', methods=['GET'], cors=CORS)
+def reactapi_route_check_run(environ: str, check: str):
+    print(f"XYZZY:/reactapi/{environ}/checks/{check}/run")
+    return AppUtilsCore.singleton().reactapi_check_run(request=app.current_request, env=environ, check=check)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/{environ}/lambdas', methods=['GET'], cors=CORS)
+def reactapi_route_lambdas(environ: str):
+    print(f"XYZZY:/reactapi/{environ}/lambdas")
+    return AppUtilsCore.singleton().react_route_lambdas(request=app.current_request, env=environ)
 
 
 class AppUtils(AppUtilsCore):  # for compatibility with older imports

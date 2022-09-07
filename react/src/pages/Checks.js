@@ -182,6 +182,14 @@ const Checks = (props) => {
         noteChangedResults();
     }
 
+    function runCheck(check) {
+        const runCheckUrl = API.Url(`/checks/${check.name}/run`, environ);
+        let fetching = true;
+        fetchData(runCheckUrl, response => { fetching = false; });
+        showResultsHistory(check)
+        setTimeout(() => { if (!fetching) { refreshHistory(check); } }, 10000);
+    }
+
     const SelectedGroupsPanel = ({}) => {
         return <div>
             { selectedGroups.length > 0 ? (<>
@@ -238,7 +246,7 @@ const Checks = (props) => {
 
     const SelectedChecksBox = ({check, index}) => {
         return <div>
-            <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt",filter:"brightness(0.95)"}}>
+            <div className="boxstyle check-box" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt",xfilter:"brightness(0.95)"}}>
             <table style={{width:"100%"}}>
                 <tbody>
                     <tr style={{height:"3pt"}}><td></td></tr>
@@ -247,7 +255,7 @@ const Checks = (props) => {
                             <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
                         <td style={{veriticalAlign:"top"}} title={check.name}>
-                            <div className="check-run-button" style={{float:"right",marginLeft:"40pt"}} onClick={() => {console.log("CLICK");}}>
+                            <div className="check-run-button" style={{float:"right",marginLeft:"40pt"}} onClick={() => runCheck(check)}>
                                 <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Run</b>
                             </div>
                             <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>

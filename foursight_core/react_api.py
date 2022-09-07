@@ -792,3 +792,11 @@ class ReactApi:
         except Exception as e:
             response.body = {}
         return self.process_response(response)
+
+    def reactapi_check_run(self, request, env: str, check: str):
+        # TODO: What is this primary thing for? It is an option on the old/existing UI.
+        response = self.create_standard_response("reactapi_check_run")
+        params = {"primary": True}
+        queued_uuid = self.queue_check(env, check, params)
+        response.body = {"check": check, "env": env, "uuid": queued_uuid}
+        return self.process_response(response)

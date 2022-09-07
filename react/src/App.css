@@ -169,6 +169,15 @@
     .dropdown:hover .dropdown-content {display: block;}
     .dropdown:hover .dropdown-button {color: black;}
 
+.check-box {
+    filter: brightness(0.95);
+    background-color: #dff0d8;
+    color: #3c763d;
+}
+.check-box:hover {
+    filter: brightness(1.05);
+}
+
 .check-run-button {
    border: 1px solid lightgreen;
    border-radius: 8px;
@@ -176,16 +185,18 @@
    padding-top: 2pt;
    padding-bottom: 3pt;
    padding-right: 12pt;
-   background: darkgreen;
-   color: yellow;
-   cursor:pointer;
+   background: #4F7942;
+   color: #EEEEEE;
+   cursor: pointer;
+   user-select: none;
 }
 .check-run-button:hover {
-    color: darkgreen;
-    background: yellow;
+    color: yellow;
+    background: darkgreen;
 }
 .check-run-button:active {
     color: red;
+    background: yellow;
 }
 
 .App {
