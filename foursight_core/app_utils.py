@@ -174,6 +174,7 @@ class AppUtilsCore(ReactApi):
         self.auth0_client_id = None
         self.user_records = {}
         self.lambda_last_modified = None
+        self.cached_portal_url = {}
 
     @staticmethod
     def note_non_fatal_error_for_ui_info(error_object, calling_function):
@@ -302,16 +303,17 @@ class AppUtilsCore(ReactApi):
             user_record["exception"] = exception
 
     def get_portal_url(self, env_name: str) -> str:
-        if not self.portal_url:
+        cached_portal_url = self.cached_portal_url.get(env_name)
+        if not cached_portal_url:
             try:
                 environment_and_bucket_info = \
                     self.environment.get_environment_and_bucket_info(env_name, self.stage.get_stage())
-                self.portal_url = environment_and_bucket_info.get("fourfront")
-                return self.portal_url
+                portal_url = environment_and_bucket_info.get("fourfront")
+                self.cached_portal_url[env_name] = portal_url
             except Exception as e:
                 logger.error(f"Error determining portal URL: {e}")
                 raise e
-        return self.portal_url
+        return self.cached_portal_url[env_name]
 
     def get_auth0_client_id(self, env_name: str) -> str:
         auth0_client_id = os.environ.get("CLIENT_ID")
@@ -386,7 +388,7 @@ class AppUtilsCore(ReactApi):
                         logger.warn("foursight_core.check_authorization: No 'groups' element for user record! Returning False.")
                         self.set_user_record(email=jwt_decoded.get('email'), record=None, error="nogroups", exception=None)
                         return False
-                    if not ((not groups or 'admin' in groups) and jwt_decoded.get('email_verified')):
+                    if not (('admin' in user_res['groups'] or 'foursight' in user_res['groups']) and jwt_decoded.get('email_verified')):
                         logger.error("foursight_core.check_authorization: Returning False")
                         self.set_user_record(email=jwt_decoded.get('email'), record=None, error="noadmin", exception=None)
                         # if unauthorized for one, unauthorized for all
@@ -856,7 +858,7 @@ class AppUtilsCore(ReactApi):
             {"name": env,
              "short": short_env_name(env),
              "full": full_env_name(env),
-             "public": public_env_name(env),
+             "public": public_env_name(env) if public_env_name(env) else short_env_name(env),
              "foursight": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
         return sorted(unique_annotated_environment_names, key=lambda key: key["full"])
 
@@ -938,6 +940,7 @@ class AppUtilsCore(ReactApi):
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title
         )
         html_resp.status_code = 200
@@ -1024,6 +1027,7 @@ class AppUtilsCore(ReactApi):
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_credentials=aws_credentials,
             aws_account_number=aws_account_number,
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title,
             favicon=self.get_favicon(),
             load_time=self.get_load_time(),
@@ -1082,6 +1086,7 @@ class AppUtilsCore(ReactApi):
             users=users,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title,
             favicon=self.get_favicon(),
             load_time=self.get_load_time(),
@@ -1100,8 +1105,7 @@ class AppUtilsCore(ReactApi):
         stage_name = self.stage.get_stage()
         users = []
         # TODO: Support paging.
-        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ),
-                                                       add_on='frame=object&limit=10000&datastore=database')
+        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000&datastore=database')
         for user_record in user_records["@graph"]:
             last_modified = user_record.get("last_modified")
             if last_modified:
@@ -1143,6 +1147,7 @@ class AppUtilsCore(ReactApi):
             users=users,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title,
             favicon=self.get_favicon(),
             load_time=self.get_load_time(),
@@ -1217,6 +1222,7 @@ class AppUtilsCore(ReactApi):
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=first_env_favicon,
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title
         )
         html_resp.status_code = 200
@@ -1379,6 +1385,7 @@ class AppUtilsCore(ReactApi):
             running_checks=running_checks,
             queued_checks=queued_checks,
             favicon=favicon,
+            portal_url=self.get_portal_url(environ),
             main_title=self.html_main_title
         )
         html_resp.status_code = 200
@@ -1666,6 +1673,12 @@ class AppUtilsCore(ReactApi):
 
     @classmethod
     def get_env_schedule(cls, check_schedule, environ):
+        """
+        Gets schedules from the check_schedule table for the given environ, which may be a short, full, or public name.
+
+        In the new environment configuration, there are multiple aliases that refer to the same environment.
+        This function ensures that when writing a check schedule you can refer to any of the aliases.
+        """
         return (check_schedule.get(public_env_name(environ))
                 or check_schedule.get(full_env_name(environ))
                 or check_schedule.get(short_env_name(environ))
