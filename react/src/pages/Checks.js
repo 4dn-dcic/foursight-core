@@ -293,14 +293,15 @@ const Checks = (props) => {
                 </>)}
             </small> }
             { check.showingResultDetails ? (
-                <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",maxWidth:"600pt"}}>
-                    <div style={{float:"right"}}>
-                    <img onClick={() => CopyToClipboard(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="19" />
+                <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"600pt",maxWidth:"600pt"}}>
+                    <div style={{float:"right",marginTop:"-10px"}}>
                     <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{JSON.stringify(check.results)}</span>
-                    <span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>&nbsp;X</span>
+                    <img onClick={() => CopyToClipboard(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="19" />
+                    &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(); } }>{check.showingResultDetailsFull ? <span title="Show full results output.">&#x2191;</span> : <span title="Show abberviated results output.">&#x2193;</span>}</span>
+                    &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>X</span>
                     </div>
             
-                    {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? YAML.stringify(check.results) : "No results.") }
+                    {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? YAML.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results) : "No results.") }
                 </pre>
             ):(
                 <span>
