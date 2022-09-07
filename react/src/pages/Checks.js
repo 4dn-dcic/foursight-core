@@ -277,7 +277,7 @@ const Checks = (props) => {
 
     const SelectedCheckResultsBox = ({check, index}) => {
         return <div>
-            { check.results && <small style={{color:"red",cursor:"pointer"}} onClick={() => { check.showingResultDetails = !check.showingResultDetails ; noteChangedResults(); }}>
+            { check.results && <small style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red",cursor:"pointer"}} onClick={() => { check.showingResultDetails = !check.showingResultDetails ; noteChangedResults(); }}>
                 { Object.keys(check.results).length > 0 ? (<>
                     <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div>
                     <span>Latest Results: {check.results?.timestamp}</span>
