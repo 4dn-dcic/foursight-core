@@ -36,7 +36,7 @@ react:
 	cp -pR react/build/* foursight_core/react
 
 react-run-local:
-	cd react ; npm start &
+	cd react ; npm start
 
 info:
 	@: $(info Here are some 'make' options:)
