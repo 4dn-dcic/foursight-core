@@ -29,7 +29,7 @@ const Checks = (props) => {
         fetchData(groupedChecksUrl, groupedChecks => {
             setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
             if (groupedChecks.length > 0) {
-                showGroup(groupedChecks[0]);
+                toggleShowGroup(groupedChecks[0]);
             }
         }, setLoading, setError);
         const lambdasUrl = API.Url(`/lambdas`, environ);
@@ -70,8 +70,9 @@ const Checks = (props) => {
         setSelectedHistories(existing => [...existing]);
     }
 
-    function showGroup(group, showResults = true) {
+    function toggleShowGroup(group, showResults = true) {
         if (isSelectedGroup(group)) {
+            group.checks.map(check => hideResultsHistory(check));
             const index = findSelectedGroupIndex(group);
             selectedGroups.splice(index, 1);
             noteChangedResults();
@@ -100,7 +101,7 @@ const Checks = (props) => {
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
                 { groupedChecks.map((datum, index) => {
                     return <div key={datum.group}>
-                        <span style={{fontWeight:isSelectedGroup(datum) ? "bold" : "normal",cursor:"pointer"}} onClick={() => showGroup(datum)}>
+                        <span style={{fontWeight:isSelectedGroup(datum) ? "bold" : "normal",cursor:"pointer"}} onClick={() => toggleShowGroup(datum)}>
                             {datum.group}
                         </span>
                         { index < groupedChecks.length - 1 &&
@@ -222,7 +223,7 @@ const Checks = (props) => {
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt"}}>
                 <div>
                     <b style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks)}>{group?.group}</b> {isShowingAnyResults(group?.checks) ? (<span>&#x2193;</span>) : (<span>&#x2191;</span>)}
-                    <span style={{float:"right",cursor:"pointer"}} onClick={(() => {showGroup(group)})}><b>&#x2717;</b></span>
+                    <span style={{float:"right",cursor:"pointer"}} onClick={(() => {toggleShowGroup(group)})}><b>&#x2717;</b></span>
                 </div>
                 <div style={{marginTop:"6pt"}} />
                 { group?.checks?.map((check, index) => {
@@ -295,13 +296,13 @@ const Checks = (props) => {
             { check.showingResultDetails ? (
                 <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"600pt",maxWidth:"600pt"}}>
                     <div style={{float:"right",marginTop:"-10px"}}>
-                    <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{JSON.stringify(check.results)}</span>
+                    <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{JSON.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
                     <img onClick={() => CopyToClipboard(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="19" />
                     &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(); } }>{check.showingResultDetailsFull ? <span title="Show full results output.">&#x2191;</span> : <span title="Show abberviated results output.">&#x2193;</span>}</span>
                     &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>X</span>
                     </div>
             
-                    {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? YAML.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results) : "No results.") }
+                    {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? (YAML.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)) : "No results.") }
                 </pre>
             ):(
                 <span>
@@ -541,6 +542,7 @@ const Checks = (props) => {
         check.showingResults = false;
         noteChangedSelectedGroups();
     }
+
     function isShowingSelectedCheckResultsBox(check) {
         return check?.showingResults;
     }
