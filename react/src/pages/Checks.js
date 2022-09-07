@@ -210,8 +210,6 @@ const Checks = (props) => {
     }
 
     const CheckRunningBox = ({check}) => {
-            console.log('xxx')
-            console.log(check)
         return !check.showingCheckRunningBox ? <span /> : <div>
             <div className="boxstyle check-pass" style={{marginTop:"6pt",padding:"6pt",cursor:"default",background:"yellow",xfilter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                 <span style={{float:"right"}} onClick={() => hideCheckRunningBox(check)}>X</span>
