@@ -169,6 +169,25 @@
     .dropdown:hover .dropdown-content {display: block;}
     .dropdown:hover .dropdown-button {color: black;}
 
+.check-run-button {
+   border: 1px solid lightgreen;
+   border-radius: 8px;
+   padding-left: 8pt;
+   padding-top: 2pt;
+   padding-bottom: 3pt;
+   padding-right: 12pt;
+   background: darkgreen;
+   color: yellow;
+   cursor:pointer;
+}
+.check-run-button:hover {
+    color: darkgreen;
+    background: yellow;
+}
+.check-run-button:active {
+    color: red;
+}
+
 .App {
   text-align: center;
 }

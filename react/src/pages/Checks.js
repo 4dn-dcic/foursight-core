@@ -246,7 +246,10 @@ const Checks = (props) => {
                         <td style={{verticalAlign:"top",width:"1%","cursor":"pointer"}} onClick={() => {toggleCheckResultsBox(check)}}>
                             <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
-                        <td style={{veriticalAlign:"top"}}>
+                        <td style={{veriticalAlign:"top"}} title={check.name}>
+                            <div className="check-run-button" style={{float:"right",marginLeft:"40pt"}} onClick={() => {console.log("CLICK");}}>
+                                <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Run</b>
+                            </div>
                             <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>
                             { isShowingSelectedCheckResultsBox(check) && check.results &&
                                 (<span>&nbsp;&nbsp;<span style={{cursor:"pointer",fontSize:"large"}} onClick={() => {refreshResults(check)}}>&#8635;</span></span>)
@@ -294,7 +297,7 @@ const Checks = (props) => {
                 </>)}
             </small> }
             { check.showingResultDetails ? (
-                <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"600pt",maxWidth:"600pt"}}>
+                <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"500pt",maxWidth:"500pt"}}>
                     <div style={{float:"right",marginTop:"-10px"}}>
                     <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{JSON.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
                     <img onClick={() => CopyToClipboard(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="19" />
