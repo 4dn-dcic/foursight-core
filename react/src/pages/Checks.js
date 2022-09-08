@@ -9,6 +9,7 @@ import { LoginAndValidEnvRequired } from "../LoginUtils";
 import { CopyToClipboard } from "../Utils";
 import * as API from "../API";
 import * as URL from "../URL";
+import Moment from 'moment';
 import { isObject } from '../Utils';
 import { UUID } from '../Utils';
 let YAML = require('json-to-pretty-yaml');
@@ -222,7 +223,7 @@ const Checks = (props) => {
         return !check.showingCheckRunningBox ? <span /> : <div>
             <div className="boxstyle check-pass" style={{marginTop:"6pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                 { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}>X</span> }
-                {  check.queuedCheckRun && <b>Queued check run {new Date().getHours()}: <u>{check.queuedCheckRun}</u></b> }
+                {  check.queuedCheckRun && <b>Queued check run {Moment(new Date()).format("YYYY-MM-DD hh:mm:ss")} &#x2192; <u>{check.queuedCheckRun}</u></b> }
                 { !check.queuedCheckRun && <Spinner condition={check.queueingCheckRun} label={" Queueing check run"} color={"darkgreen"} /> }
             </div>
         </div>
@@ -471,7 +472,7 @@ const Checks = (props) => {
                     { check.history ? (<>
                         <span style={{color:"black"}}>No history.</span>
                     </>):(<>
-                        <Spinner condition={!check.results} color={"darkgreen"} label="Loading history" />
+                        <Spinner condition={!check.history} color={"darkgreen"} label="Loading history" />
                     </>)}
                 </>)}
             </>)}
