@@ -121,7 +121,7 @@ const Header = (props) => {
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (info.envs?.unique_annotated.length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:!URL.Env() || info.env_unknown ? "red" : "#143c53"}} title={"Environment: " + URL.Env() + (!URL.Env() || info.env_unknown ? " -> UNKNOWN" : "")}>{URL.Env().toUpperCase() || "UNKNOWN ENV"}</b>
+                            <b className="dropdown-button" style={{color:!URL.Env() || info.env_unknown ? "red" : "#143c53"}} title={"Environment: " + URL.Env() + (!URL.Env() || info.env_unknown ? " -> UNKNOWN" : "")}>{URL.Env() || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { info.envs?.unique_annotated.map(env => 
                                     env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.foursight.toUpperCase() == URL.Env().toUpperCase() ? (
@@ -144,10 +144,10 @@ const Header = (props) => {
                         )}
                         &nbsp;|&nbsp;
                         { (info.app?.stage == 'prod') ? (<span>
-                            <b title="Deployment stage: PROD!" style={{color:"darkred"}}>PROD</b> &nbsp;|&nbsp;
+                            <b title="Deployment stage: PROD!" style={{color:"darkred"}}>{info.app?.stage}</b> &nbsp;|&nbsp;
                         </span>):(<span></span>)}
                         { (info.app?.stage == 'dev') ? (<span>
-                            <b title="Deployment stage: DEV" style={{color:"darkgreen"}}>DEV</b> &nbsp;|&nbsp;
+                            <b title="Deployment stage: DEV" style={{color:"darkgreen"}}>{info.app?.stage}</b> &nbsp;|&nbsp;
                         </span>):(<span></span>)}
                         { (info.app?.stage != 'prod' && info.app?.stage != 'dev') ? (<span>
                             <b title="Deployment stage: {info.app?.stage}">{info.app?.stage}}</b> &nbsp;|&nbsp;
