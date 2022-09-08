@@ -3,18 +3,32 @@ import datetime
 from foursight_core import run_result
 
 
+class MockContext:
+    def __init__(self):
+        self.path = ''
+
+
+class MockRequest:
+    def __init__(self):
+        self.req = {}
+        self.context = MockContext()
+
+    def to_dict(self):
+        return self.req
+
+
 class TestAppRoutes:
 
     def test_view_foursight(self, app_utils_obj_conn):
         test_check_name = 'test_random_nums'
         app_utils_obj, connection = app_utils_obj_conn
-        res = app_utils_obj.view_foursight(None, DEV_ENV)  # not is_admin
+        res = app_utils_obj.view_foursight(MockRequest(), DEV_ENV)  # not is_admin
         assert (res.headers == {u'Content-Type': u'text/html'})
         assert (res.status_code == 200)
         assert (set(res.to_dict().keys()) == {'body', 'headers', 'statusCode', 'multiValueHeaders'})
         assert ('<!DOCTYPE html>' in res.body)
         assert ('Foursight' in res.body)
-        assert ('Not logged in as admin' in res.body)
+        assert ('Not logged in.' in res.body)
         # run a check, which redirects to future check result
         res2 = app_utils_obj.view_run_check(DEV_ENV, test_check_name, {})
         assert (res2.status_code == 302)
@@ -30,9 +44,9 @@ class TestAppRoutes:
         res4 = app_utils_obj.view_run_action(DEV_ENV, 'add_random_test_nums', {})
         assert (res4.status_code == 200)
         assert ('Action is queued.' in res4.body['details'])
-        res = app_utils_obj.view_foursight(DEV_ENV, True)  # is_admin
+        res = app_utils_obj.view_foursight(MockRequest(), DEV_ENV, True)  # is_admin
         assert (res.status_code == 200)
-        assert ('Currently logged in as admin' in res.body)
+        assert ('Not logged in.' not in res.body)
 
     @pytest.mark.skip  # assumes an existing check
     def test_view_foursight_check(self, app_utils_obj_conn):
@@ -50,27 +64,30 @@ class TestAppRoutes:
         test_check = 'test_random_nums'
         app_utils_obj, connection = app_utils_obj_conn
 
-        res = app_utils_obj.view_foursight_history(None, DEV_ENV, test_check)  # not admin
+        res = app_utils_obj.view_foursight_history(MockRequest(), DEV_ENV, test_check)  # not admin
         assert (res.headers == {u'Content-Type': u'text/html'})
         assert (res.status_code == 200)
         assert ('<!DOCTYPE html>' in res.body)
         assert ('Foursight' in res.body)
-        assert ('Not logged in as admin' in res.body)
-        assert (f'History for test_random_nums ({DEV_ENV})' in res.body)
+        assert ('Not logged in.' in res.body)
         # run with bad environ
-        res = app_utils_obj.view_foursight_history(None, 'not_an_environment', test_check)
-        assert ('<td>' not in res.body)
+        res = app_utils_obj.view_foursight_history(MockRequest(), 'not_an_environment', test_check)
+        assert ('not_an_environment' in res.body)  # should be handled differently?
         # run with bad check
-        res = app_utils_obj.view_foursight_history(None, DEV_ENV, 'not_a_check')
-        assert ('<td>' not in res.body)
+        res = app_utils_obj.view_foursight_history(MockRequest(), DEV_ENV, 'not_a_check')
+        assert ('not_a_check' not in res.body)  # should be handled differently?
         # run with is_admin
-        res = app_utils_obj.view_foursight_history(DEV_ENV, test_check, is_admin=True)  # admin
+        res = app_utils_obj.view_foursight_history(MockRequest(), DEV_ENV, test_check, is_admin=True)  # admin
         assert (res.status_code == 200)
-        assert ('Currently logged in as admin' in res.body)
+        assert ('Not logged in.' not in res.body)
+        assert (f'History for test_random_nums ({DEV_ENV})' in res.body)
         # run with some limits/starts
-        res = app_utils_obj.view_foursight_history(DEV_ENV, test_check, start=4, limit=2)
+        res = app_utils_obj.view_foursight_history(MockRequest(), DEV_ENV, test_check, start=4, limit=2)
         assert (res.status_code == 200)
-        assert ('Previous 2' in res.body)
+        assert ('Previous 2' not in res.body)  # no info since not admin
+        res = app_utils_obj.view_foursight_history(MockRequest(), DEV_ENV, test_check, start=4, limit=2, is_admin=True)
+        assert (res.status_code == 200)
+        assert ('Previous 2' in res.body)  # present now since admin
 
     def test_run_get_environment(self, app_utils_obj_conn):
         app_utils_obj, connection = app_utils_obj_conn

@@ -3,8 +3,8 @@ import time
 from dateutil import tz
 from abc import abstractmethod
 import json
-from .s3_connection import S3Connection
-from .exceptions import (
+from s3_connection import S3Connection
+from exceptions import (
   BadCheckOrAction,
   MissingFoursightPrefixException
 )

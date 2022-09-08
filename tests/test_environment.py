@@ -9,7 +9,7 @@ from dcicutils.lang_utils import disjoined_list
 from unittest import mock
 
 
-LEGACY_GLOBAL_ENV_BUCKET = 'foursight-prod-envs'
+FF_GLOBAL_ENV_BUCKET = 'foursight-prod-envs'
 LEGACY_PREFIX = "foursight-"
 LEGACY_ENVS = ['fourfront-mastertest', 'fourfront-hotseat', 'fourfront-production-blue', 'fourfront-production-green']
 PUBLIC_ENV_NAMES = ['mastertest', 'hotseat', 'data', 'staging']
@@ -17,9 +17,15 @@ PUBLIC_ENV_NAMES = ['mastertest', 'hotseat', 'data', 'staging']
 CONFIG_KEYS = ['ff_env', 'es', 'fourfront']
 
 
+# These tests are affected by the 'function' scoped fixture overriding
+# the EnvUtils API calls... not clear why, but separating into two runs
+# is the only way to clear this for now - Will Sept 8 2022
+pytestmark = [pytest.mark.integrated]
+
+
 def test_get_env_bucket_name():
 
-    with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
+    with EnvBase.global_env_bucket_named(FF_GLOBAL_ENV_BUCKET):
 
         environment = Environment()
 
@@ -28,7 +34,7 @@ def test_get_env_bucket_name():
 
 def test_list_environment_names():
 
-    with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
+    with EnvBase.global_env_bucket_named(FF_GLOBAL_ENV_BUCKET):
         environment = Environment()
         envs = environment.list_environment_names()
         check_environment_names(envs, with_all=False)
@@ -36,7 +42,7 @@ def test_list_environment_names():
 
 def test_list_valid_schedule_environment_names():
 
-    with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
+    with EnvBase.global_env_bucket_named(FF_GLOBAL_ENV_BUCKET):
         environment = Environment()
         envs = environment.list_valid_schedule_environment_names()
         check_environment_names(envs, with_all=True)
@@ -44,7 +50,7 @@ def test_list_valid_schedule_environment_names():
 
 def test_list_unique_environment_names():
 
-    with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
+    with EnvBase.global_env_bucket_named(FF_GLOBAL_ENV_BUCKET):
         environment = Environment()
         with mock.patch.object(environment, 'list_environment_names') as mock_list_environment_names:
             def mocked_list_environment_names():
@@ -72,7 +78,7 @@ def check_environment_names(envs, *, with_all):
 
 def test_is_valid_environment_name():
 
-    with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
+    with EnvBase.global_env_bucket_named(FF_GLOBAL_ENV_BUCKET):
         environment = Environment()
         envs = environment.list_environment_names()
         for env in envs:
@@ -84,11 +90,10 @@ def test_is_valid_environment_name():
 
 def test_get_environment_info_from_s3():
 
-    with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
+    with EnvBase.global_env_bucket_named(FF_GLOBAL_ENV_BUCKET):
 
         for test_env in LEGACY_ENVS + PUBLIC_ENV_NAMES:
             full_test_env = full_env_name(test_env)
-
             config = Environment.get_environment_info_from_s3(test_env)
 
             for key in CONFIG_KEYS:
@@ -134,7 +139,7 @@ def test_get_environment_info_from_s3():
 
 def test_get_environment_and_bucket_info():
 
-    with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
+    with EnvBase.global_env_bucket_named(FF_GLOBAL_ENV_BUCKET):
         environment = Environment()
         envs = environment.list_environment_names()
         for stage in CHALICE_STAGES:
@@ -154,7 +159,7 @@ def test_get_environment_and_bucket_info():
 
 def test_get_selected_environment_names():
 
-    with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
+    with EnvBase.global_env_bucket_named(FF_GLOBAL_ENV_BUCKET):
         environment = Environment()
         envs = environment.list_environment_names()
         assert environment.get_selected_environment_names('all') == sorted({infer_foursight_from_env(envname=env)
@@ -178,7 +183,7 @@ def test_get_environment_and_bucket_info_in_batch():
             for key in CONFIG_KEYS:
                 assert key in v
 
-    with EnvBase.global_env_bucket_named(LEGACY_GLOBAL_ENV_BUCKET):
+    with EnvBase.global_env_bucket_named(FF_GLOBAL_ENV_BUCKET):
         environment = Environment()
         all_env_names = environment.list_environment_names()
         some_env_names = [all_env_names[0], all_env_names[1]]

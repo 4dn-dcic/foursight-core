@@ -4,7 +4,7 @@ import app
 import boto3
 from dcicutils.env_utils import EnvUtils
 from dcicutils.env_manager import EnvManager
-from dcicutils.misc_utils import override_environ, ignored
+from dcicutils.misc_utils import override_environ, ignored, PRINT
 from foursight_core.app_utils import AppUtils
 from foursight_core.sqs_utils import SQS
 from foursight_core.environment import Environment
@@ -121,3 +121,4 @@ def app_utils_obj_conn(global_env_bucket):  # noQA pytest fixture
                     conn = apputils.init_connection(DEV_ENV)
                     with EnvUtils.temporary_state():
                         yield apputils, conn
+    return

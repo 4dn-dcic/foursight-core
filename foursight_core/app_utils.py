@@ -57,7 +57,10 @@ class AppUtilsCore:
     APP_PACKAGE_NAME = None
 
     def get_app_version(self):
-        return pkg_resources.get_distribution(self.APP_PACKAGE_NAME).version
+        try:
+            return pkg_resources.get_distribution(self.APP_PACKAGE_NAME).version
+        except Exception:  # does not work in unit tests
+            return 'Error detecting version'
 
     # NOTE (2022-08-24): No longer call from the top-level here (not polite);
     # rather call from (AppUtils) sub-classes in foursight-cgap and foursight.
