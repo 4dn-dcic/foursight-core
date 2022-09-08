@@ -211,8 +211,8 @@ const Checks = (props) => {
 
     const CheckRunningBox = ({check}) => {
         return !check.showingCheckRunningBox ? <span /> : <div>
-            <div className="boxstyle check-pass" style={{marginTop:"6pt",padding:"6pt",cursor:"default",background:"yellow",xfilter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
-                <span style={{float:"right"}} onClick={() => hideCheckRunningBox(check)}>X</span>
+            <div className="boxstyle check-pass" style={{marginTop:"6pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}>X</span> }
                 {  check.queuedCheckRun && <b>Queued check run: <u>{check.queuedCheckRun}</u></b> }
                 { !check.queuedCheckRun && <Spinner condition={check.queueingCheckRun} label={"Queueing check run"} color={"darkgreen"} /> }
             </div>
@@ -273,6 +273,17 @@ const Checks = (props) => {
         </div>
     }
 
+    const RunCheckButton = ({check, style}) => {
+        if (check.queueingCheckRun)
+            return <div className={"check-run-wait-button"} style={style}>
+                <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Wait</b>
+            </div>
+        else
+            return <div className={"check-run-button"} style={style} onClick={(e) => runCheck(check) }>
+                <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Run</b>
+            </div>
+    }
+
     const SelectedChecksBox = ({check, index}) => {
         return <div>
             <div className="boxstyle check-box" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt",xfilter:"brightness(0.95)"}}>
@@ -284,9 +295,7 @@ const Checks = (props) => {
                             <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
                         <td style={{veriticalAlign:"top"}} title={check.name}>
-                            <div className="check-run-button" style={{float:"right",marginLeft:"40pt"}} onClick={() => runCheck(check)}>
-                                <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Run</b>
-                            </div>
+                            <RunCheckButton check={check} style={{marginLeft:"160pt",float:"right"}} />
                             <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>
                             { isShowingSelectedCheckResultsBox(check) && check.results &&
                                 (<span>&nbsp;&nbsp;<span style={{cursor:"pointer",fontSize:"large"}} onClick={() => {refreshResults(check)}}>&#8635;</span></span>)
