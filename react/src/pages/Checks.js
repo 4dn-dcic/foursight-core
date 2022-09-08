@@ -221,9 +221,9 @@ const Checks = (props) => {
 
     const CheckRunningBox = ({check}) => {
         return !check.showingCheckRunningBox ? <span /> : <div>
-            <div className="boxstyle check-pass" style={{marginTop:"6pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+            <div className="boxstyle check-pass" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                 { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}>X</span> }
-                {  check.queuedCheckRun && <b>Queued check run {Moment(new Date()).format("YYYY-MM-DD hh:mm:ss")} &#x2192; <u>{check.queuedCheckRun}</u></b> }
+                {  check.queuedCheckRun && <small><b>Queued check run {Moment(new Date()).format("YYYY-MM-DD hh:mm:ss")} &#x2192; <u>{check.queuedCheckRun}</u></b></small> }
                 { !check.queuedCheckRun && <Spinner condition={check.queueingCheckRun} label={" Queueing check run"} color={"darkgreen"} /> }
             </div>
         </div>
@@ -310,11 +310,11 @@ const Checks = (props) => {
                             { isShowingSelectedCheckResultsBox(check) && check.results &&
                                 (<span>&nbsp;&nbsp;<span style={{cursor:"pointer",fontSize:"large"}} onClick={() => {refreshResults(check)}}>&#8635;</span></span>)
                             }
-                                <small>&nbsp;&nbsp;</small>
-                                <span onClick={() => onClickShowResultsHistory(check)} style={{paddingTop:"10px",cursor:"pointer"}}>
-                                    <img src="https://cdn-icons-png.flaticon.com/512/32/32223.png" style={{paddingBottom:"4px",height:"22"}}/>
-                                    {check.showingHistory ? <span style={{paddingTop:"10px"}}>&#x2192;</span> : <></>}
-                                </span>
+                            <small>&nbsp;&nbsp;</small>
+                            <span onClick={() => onClickShowResultsHistory(check)} style={{paddingTop:"10px",cursor:"pointer"}}>
+                                <img src="https://cdn-icons-png.flaticon.com/512/32/32223.png" style={{paddingBottom:"4px",height:"22"}}/>
+                                {check.showingHistory ? <span style={{paddingTop:"10px"}}>&#x2192;</span> : <></>}
+                            </span>
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div key={index} title={check.schedule[key].cron}>
                                     <small><i>Scheduled Run: {check.schedule[key].cron_description}</i></small>
@@ -334,11 +334,27 @@ const Checks = (props) => {
         </div>
     }
 
+    const ResultDetailsBox = ({check, style}) => {
+        return <pre className={check.results?.status?.toUpperCase() == "PASS" ? "check-pass" : "check-warn"} style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"500pt",maxWidth:"500pt"}}>
+            <div style={{float:"right",marginTop:"-10px"}}>
+            <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{JSON.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
+            <img onClick={() => CopyToClipboard(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="19" />
+            &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(); } }>{check.showingResultDetailsFull ? <span title="Show full results output.">&#x2191;</span> : <span title="Show abberviated results output.">&#x2193;</span>}</span>
+            &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>X</span>
+            </div>
+    
+            {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? (YAML.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)) : "No results.") }
+        </pre>
+    }
+
     const SelectedCheckResultsBox = ({check, index}) => {
         return <div>
+            {/* Check manually queued box */}
+            <CheckRunningBox check={check} />
+            {/* Schedule(s) and latest run lines */}
             { check.results && <small style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red",cursor:"pointer"}} onClick={() => { check.showingResultDetails = !check.showingResultDetails ; noteChangedResults(); }}>
                 { Object.keys(check.results).length > 0 ? (<>
-                    <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div>
+                    { !check.showingCheckRunningBox && <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div> }
                     <span>Latest Results: {check.results?.timestamp}</span>
                         { check.showingResultDetails ? (
                             <b>&nbsp;&#x2193;</b>
@@ -352,23 +368,14 @@ const Checks = (props) => {
                     { !check.showingResultDetails && <span>No results.</span> }
                 </>)}
             </small> }
+            {/* Results details or loading results box */}
             { check.showingResultDetails ? (
-                <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"500pt",maxWidth:"500pt"}}>
-                    <div style={{float:"right",marginTop:"-10px"}}>
-                    <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{JSON.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
-                    <img onClick={() => CopyToClipboard(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="19" />
-                    &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(); } }>{check.showingResultDetailsFull ? <span title="Show full results output.">&#x2191;</span> : <span title="Show abberviated results output.">&#x2193;</span>}</span>
-                    &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>X</span>
-                    </div>
-            
-                    {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? (YAML.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)) : "No results.") }
-                </pre>
+                <ResultDetailsBox check={check} style={{}} />
             ):(
                 <span>
                     { !check.results && <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> }
                 </span>
             )}
-            <CheckRunningBox check={check} />
         </div>
     }
 
