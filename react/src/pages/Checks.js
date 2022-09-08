@@ -29,7 +29,7 @@ const Checks = (props) => {
         fetchData(groupedChecksUrl, groupedChecks => {
             setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
             if (groupedChecks.length > 0) {
-                toggleShowGroup(groupedChecks[2]);
+                showGroup(groupedChecks[2]);
             }
         }, setLoading, setError);
         const lambdasUrl = API.Url(`/lambdas`, environ);
@@ -76,18 +76,27 @@ const Checks = (props) => {
 
     function toggleShowGroup(group, showResults = true) {
         if (isSelectedGroup(group)) {
-            group.checks.map(check => hideResultsHistory(check));
-            const index = findSelectedGroupIndex(group);
-            selectedGroups.splice(index, 1);
-            noteChangedResults();
+            hideGroup(group);
         }
         else {
-            selectedGroups.unshift(group)
-            noteChangedResults()
-            if (showResults) {
-                group.checks.map(check => showCheckResultsBox(check));
-            }
+            showGroup(group, showResults);
         }
+    }
+    function showGroup(group, showResults = true) {
+        if (isSelectedGroup(group)) {
+            return;
+        }
+        selectedGroups.unshift(group);
+        noteChangedResults();
+        if (showResults) {
+            group.checks.map(check => showCheckResultsBox(check));
+        }
+    }
+    function hideGroup(group) {
+        group.checks.map(check => hideResultsHistory(check));
+        const index = findSelectedGroupIndex(group);
+        selectedGroups.splice(index, 1);
+        noteChangedResults();
     }
 
     function onGroupSelectAll(group) {
@@ -193,7 +202,7 @@ const Checks = (props) => {
         let fetching = true;
         fetchData(runCheckUrl, response => { fetching = false; check.queueingCheckRun = false; check.queuedCheckRun = response.uuid });
         check.queueingCheckRun = true;
-        check.queuedCheckRun = false;
+        check.queuedCheckRun = null;
         showCheckRunningBox(check);
         showResultsHistory(check);
         setTimeout(() => { if (!fetching) { refreshHistory(check); noteChangedCheckBox(); } }, 10000);
@@ -213,8 +222,8 @@ const Checks = (props) => {
         return !check.showingCheckRunningBox ? <span /> : <div>
             <div className="boxstyle check-pass" style={{marginTop:"6pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                 { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}>X</span> }
-                {  check.queuedCheckRun && <b>Queued check run: <u>{check.queuedCheckRun}</u></b> }
-                { !check.queuedCheckRun && <Spinner condition={check.queueingCheckRun} label={"Queueing check run"} color={"darkgreen"} /> }
+                {  check.queuedCheckRun && <b>Queued check run {new Date().getHours()}: <u>{check.queuedCheckRun}</u></b> }
+                { !check.queuedCheckRun && <Spinner condition={check.queueingCheckRun} label={" Queueing check run"} color={"darkgreen"} /> }
             </div>
         </div>
     } 
@@ -295,7 +304,7 @@ const Checks = (props) => {
                             <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
                         <td style={{veriticalAlign:"top"}} title={check.name}>
-                            <RunCheckButton check={check} style={{marginLeft:"160pt",float:"right"}} />
+                            <RunCheckButton check={check} style={{marginLeft:"200pt",float:"right"}} />
                             <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>
                             { isShowingSelectedCheckResultsBox(check) && check.results &&
                                 (<span>&nbsp;&nbsp;<span style={{cursor:"pointer",fontSize:"large"}} onClick={() => {refreshResults(check)}}>&#8635;</span></span>)
