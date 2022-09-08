@@ -348,7 +348,6 @@ const Checks = (props) => {
                     <br />
                     <span style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red"}}>Results Summary: {check.results?.summary}</span>&nbsp;&nbsp;
                     { check.results?.status?.toUpperCase() == "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>)}
-                    <CheckRunningBox check={check} />
                 </>):(<>
                     { !check.showingResultDetails && <span>No results.</span> }
                 </>)}
@@ -369,6 +368,7 @@ const Checks = (props) => {
                     { !check.results && <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> }
                 </span>
             )}
+            <CheckRunningBox check={check} />
         </div>
     }
 
