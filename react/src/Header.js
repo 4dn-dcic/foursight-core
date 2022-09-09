@@ -13,14 +13,14 @@ const Header = (props) => {
 
     let { environ } = useParams();
     let navigate = useNavigate();
-    const [ info, setInfo ] = useContext(GlobalContext);
+    const [ header ] = useContext(GlobalContext);
     const path = window.location.pathname;
 
-    let isFoursightFourfront = info.page?.title == "Foursight-Fourfront";
+    let isFoursightFourfront = header.app?.package != "foursight-cgap";
     let titleBackgroundColor = isFoursightFourfront ? "#14533C" : "#143C53";
     let subTitleBackgroundColor = isFoursightFourfront ? "#AEF1D6" : "#AED6F1";
 
-    function renderNavigationLinks(info) {
+    function renderNavigationLinks(header) {
         function style(isActive) {
             if (isActive) {
                 return { textDecoration: "none", color: "black", fontWeight: "bold" }
@@ -35,9 +35,9 @@ const Header = (props) => {
             <NavLink to={URL.Url("/users", true)} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
             <NavLink to={URL.Url("/envs", true)} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
             <NavLink to={URL.Url("/info", true)} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
-            <a target="_blank" title="Open AWS Console for this account ({info.app?.credentials.aws_account_number}) in another tab."
+            <a target="_blank" title="Open AWS Console for this account ({header.app?.credentials.aws_account_number}) in another tab."
                 style={{textDecoration:"none",color:"darkgreen"}}
-                href={"https://" + info.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span></a>
+                href={"https://" + header.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span></a>
         </span>
     }
 
@@ -47,7 +47,7 @@ const Header = (props) => {
     }
 
     return <>
-        <div style={{width:"100%",background:titleBackgroundColor}}>{ info.loading ? (
+        <div style={{width:"100%",background:titleBackgroundColor}}>{ header.loading ? (
             <table style={{width:"100%",height:"42px"}}><tbody>
             <tr>
                 <td width="1%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
@@ -60,7 +60,7 @@ const Header = (props) => {
                     </a>
                 </td>
                 <td width="98%" align="center" style={{fontSize:"16pt",color:"white", nowrap:"1"}}>
-                    { info.error ? (<span>
+                    { header.error ? (<span>
                         <b style={{color:"red"}}>
                             Foursight Load Error
                         </b>
@@ -71,13 +71,13 @@ const Header = (props) => {
                     </span>)}
                 </td>
                 <td width="1%" align="right">
-                    <span style={{position:"relative",bottom:"5pt"}}>&nbsp;<BarSpinner loading={info.loading && !info.error} color={'lightyellow'} size={150} /></span>
+                    <span style={{position:"relative",bottom:"5pt"}}>&nbsp;<BarSpinner loading={header.loading && !header.error} color={'lightyellow'} size={150} /></span>
                 </td>
             </tr>
             </tbody></table>
         ):(<React.Fragment>
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
-            <tr title={"App Deployed:" + info.app?.deployed + " | App Launched: " + info.app?.launched + " | Page Loaded: " + info.page?.loaded}>
+            <tr title={"App Deployed:" + header.app?.deployed + " | App Launched: " + header.app?.launched + " | Page Loaded: " + header.page?.loaded}>
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={URL.Url("/home", true)}>
                         {/* TODO */}
@@ -90,11 +90,11 @@ const Header = (props) => {
                 </td>
                 <td width="34%" align="center" style={{whiteSpace:"nowrap"}}>
                     <span style={{fontSize:"20pt",color:"white"}}>
-                        <span style={{color:"default"}}>{info.page?.title}</span>&nbsp;
-                        { info.app?.stage == 'dev' ? (<span>
+                        <span style={{color:"default"}}>{header.page?.title}</span>&nbsp;
+                        { header.app?.stage == 'dev' ? (<span>
                             &nbsp;<span title="Stage is DEV." style={{position:"relative",top:"1pt",color:"lightgreen",fontSize:"24pt"}}>&#x269B;</span>
                         </span>):(<span></span>)}
-                        { info.app?.local ? (<span>
+                        { header.app?.local ? (<span>
                             &nbsp;<span title="Running locally." style={{position:"relative",bottom:"1pt",color:"lightgreen",fontSize:"15pt"}}>&#8861;</span>
                         </span>):(<span></span>)}
                     </span>
@@ -113,24 +113,24 @@ const Header = (props) => {
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
                 <tr style={{background:subTitleBackgroundColor}}>
                     <td width="49%" style={{paddingLeft:"10pt",paddingTop:"3pt",paddingBottom:"3pt",whiteSpace:"nowrap"}}>
-                        {renderNavigationLinks(info)}
+                        {renderNavigationLinks(header)}
                     </td>
                     <td width="2%" align="center" style={{whiteSpace:"nowrap",margin:"0 auto"}}>
-                        <a target="_blank" href={"https://pypi.org/project/foursight-cgap/" + info.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{info.app?.version}</b></a>
+                        <a target="_blank" href={"https://pypi.org/project/foursight-cgap/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{header.app?.version}</b></a>
                     </td>
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
-                        { (info.envs?.unique_annotated.length > 0) ? (
+                        { (header.envs?.unique_annotated.length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:!URL.Env() || info.env_unknown ? "red" : "#143c53"}} title={"Environment: " + URL.Env() + (!URL.Env() || info.env_unknown ? " -> UNKNOWN" : "")}>{URL.Env() || "unknown-env"}</b>
+                            <b className="dropdown-button" style={{color:!URL.Env() || header.env_unknown ? "red" : "#143c53"}} title={"Environment: " + URL.Env() + (!URL.Env() || header.env_unknown ? " -> UNKNOWN" : "")}>{URL.Env() || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
-                                { info.envs?.unique_annotated.map(env => 
+                                { header.envs?.unique_annotated.map(env => 
                                     env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.foursight.toUpperCase() == URL.Env().toUpperCase() ? (
                                         <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
                                         /* <a key={env.full} onClick={()=>{navigate(URL.Url(null, env.full))}}>{env.full}</a> */
                                         /* <a key={env.full} href={URL.Url("/envs", env.full)}>{env.full}</a> */
                                         /* TODO */
-                                        /* <Link key={env.full} onClick={() => {setInfo(x => [...x]);}} to={URL.Url(null, env.full)}>{env.full}</Link> */
+                                        /* <Link key={env.full} onClick={() => {setHeader(x => [...x]);}} to={URL.Url(null, env.full)}>{env.full}</Link> */
                                         /* <Link key={env.full} to={URL.Url(null, env.full)}>{env.full}</Link> */
                                         <a key={env.full} href={URL.Url(null, env.full)}>{env.full}</a>
                                     )
@@ -143,14 +143,14 @@ const Header = (props) => {
                             <b style={{color:titleBackgroundColor}} title="Environment: {URL.Env()}">{URL.Env().toUpperCase()}</b>
                         )}
                         &nbsp;|&nbsp;
-                        { (info.app?.stage == 'prod') ? (<span>
-                            <b title="Deployment stage: PROD!" style={{color:"darkred"}}>{info.app?.stage}</b> &nbsp;|&nbsp;
+                        { (header.app?.stage == 'prod') ? (<span>
+                            <b title="Deployment stage: PROD!" style={{color:"darkred"}}>{header.app?.stage}</b> &nbsp;|&nbsp;
                         </span>):(<span></span>)}
-                        { (info.app?.stage == 'dev') ? (<span>
-                            <b title="Deployment stage: DEV" style={{color:"darkgreen"}}>{info.app?.stage}</b> &nbsp;|&nbsp;
+                        { (header.app?.stage == 'dev') ? (<span>
+                            <b title="Deployment stage: DEV" style={{color:"darkgreen"}}>{header.app?.stage}</b> &nbsp;|&nbsp;
                         </span>):(<span></span>)}
-                        { (info.app?.stage != 'prod' && info.app?.stage != 'dev') ? (<span>
-                            <b title="Deployment stage: {info.app?.stage}">{info.app?.stage}}</b> &nbsp;|&nbsp;
+                        { (header.app?.stage != 'prod' && header.app?.stage != 'dev') ? (<span>
+                            <b title="Deployment stage: {header.app?.stage}">{header.app?.stage}}</b> &nbsp;|&nbsp;
                         </span>):(<span></span>)}
                         { (IsLoggedIn()) ? (<span>
                             {/* TODO: on first login the email does not appear but rather LOGIN - on refresh OK */}
@@ -158,7 +158,7 @@ const Header = (props) => {
                             { GetLoginInfo()?.email ? (<span>
                                 <Link to={URL.Url("/login", true)} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{GetLoginInfo()?.email}</b></Link>
                             </span>):(<span>
-                                { info.login?.admin ? (<span>
+                                { header.login?.admin ? (<span>
                                     <b style={{color:"darkblue"}}>ADMIN</b>
                                 </span>):(<span>
                                     <b style={{color:"darkblue"}}>SOMEUSER</b>
