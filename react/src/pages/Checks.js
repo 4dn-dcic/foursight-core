@@ -289,11 +289,11 @@ const Checks = (props) => {
     const RunButton = ({check, style}) => {
         if (check.queueingCheckRun || check.fetchingResult)
             return <div className={"check-run-wait-button"} style={style}>
-                <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Wait</b>
+                <span className={"xtooltip"} data-text={"Wait until " + (check.queueingCheckRun ? "check queueing" : "result fetch") + " completes."}><span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Wait</b></span>
             </div>
         else
             return <div className={"check-run-button"} style={style} onClick={(e) => runCheck(check) }>
-                <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Run</b>
+                <span className={"xtooltip"} data-text={"Click to run this check."}><span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Run</b></span>
             </div>
     }
 
