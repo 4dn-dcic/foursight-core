@@ -1,10 +1,17 @@
 import { useContext } from 'react';
 import { useParams } from 'react-router-dom';
-import GlobalContext from "./GlobalContext.js";
-import { LoginAndValidEnvRequired } from "./LoginUtils.js";
+import GlobalContext from "./GlobalContext";
+import { LoginAndValidEnvRequired } from "./LoginUtils";
+import { DeleteCookie } from './CookieUtils';
 import * as URL from "./URL";
 
 const Home = (props) => {
+
+    // Temporary so React and non-React version can live better side-by-side.
+    // This is set in Login.js when the Auth0 login box is shown.
+    // This is used in foursight_core/app_utils.py/auth0_callback.
+    //
+    DeleteCookie("redir_react");
 
     const [ header ] = useContext(GlobalContext);
     let { environ } = useParams();

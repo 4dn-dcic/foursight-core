@@ -406,6 +406,11 @@ class AppUtilsCore(ReactApi):
     def auth0_callback(self, request, env):
         req_dict = request.to_dict()
         domain, context = self.get_domain_and_context(req_dict)
+        print('xyzzy:auth0_callback')
+        print(domain)
+        print(context)
+        print(request)
+        print(req_dict)
         # extract redir cookie
         cookies = req_dict.get('headers', {}).get('cookie')
         redir_url = context + 'view/' + env
@@ -420,9 +425,16 @@ class AppUtilsCore(ReactApi):
             simple_cookies = SimpleCookie()
             simple_cookies.load(cookies)
             simple_cookies = {k: v.value for k, v in simple_cookies.items()}
-            redir_url_cookie = simple_cookies.get("redir")
-            if redir_url_cookie:
-                redir_url = redir_url_cookie
+            redir_react_url_cookie = simple_cookies.get("redir_react")
+            if redir_react_url_cookie:
+                #
+                # Special case for React version (TODO: rework later).
+                #
+                redir_url = redir_react_url_cookie
+            else:
+                redir_url_cookie = simple_cookies.get("redir")
+                if redir_url_cookie:
+                    redir_url = redir_url_cookie
         except Exception as e:
             PRINT("Exception loading cookies: {cookies}")
             PRINT(e)

@@ -69,11 +69,7 @@ const Login = (props) => {
         expires.setFullYear(expires.getFullYear() + 1);
         expires = expires.toUTCString();
         const redirectUrl = window.location.origin + URL.Url("/home", true);
-        console.log("REDIR:")
-        console.log(redirectUrl)
-        SetCookie("redir", redirectUrl, expires);
-        let x = GetCookie("redir", redirectUrl);
-        console.log(x)
+        SetCookie("redir_react", redirectUrl, expires);
     }
 
     if (info.loading && !info.error) return <>Loading ...</>
