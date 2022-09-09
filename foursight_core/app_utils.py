@@ -53,6 +53,9 @@ from .react_api import ReactApi
 # XYZZY
 app = Chalice(app_name='foursight-core')
 DEFAULT_ENV = os.environ.get("ENV_NAME", "env-name-unintialized")
+print('xyzzy-0: env:')
+print(DEFAULT_ENV)
+print(os.environ)
 
 # When running 'chalice local' we do not get the same "/api" prefix as we see when deployed to AWS (Lambda).
 # So we set it explicitly here if your CHALICE_LOCAL environment variable is set.
@@ -83,6 +86,9 @@ class AppUtilsCore(ReactApi):
     This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
     so that a class named AppUtils is easier to define in libraries that import foursight-core.
     """
+    print('xyzzy-ctor: env:')
+    print(os.environ.get("ENV_NAME"))
+    print(os.environ)
 
     # Define in subclass.
     APP_PACKAGE_NAME = None
@@ -1940,16 +1946,21 @@ def auth0_callback():
     return AppUtilsCore.singleton().auth0_callback(request, DEFAULT_ENV)
 
 
-if CHALICE_LOCAL:
+if ROUTE_PREFIX != ROUTE_EMPTY_PREFIX:
     @app.route("/", methods=['GET'], cors=CORS)
     def index_chalice_local():
         """
         Redirect with 302 to view page of DEFAULT_ENV
         Non-protected route
         """
+        default_env = os.environ.get("ENV_NAME")
         domain, context = AppUtilsCore.singleton().get_domain_and_context(app.current_request.to_dict())
-        redirect_path = ROUTE_PREFIX + 'view/' + DEFAULT_ENV
-        print(f'foursight-cgap: Redirecting to: {redirect_path}')
+        redirect_path = ROUTE_PREFIX + 'view/' + default_env
+        print(f'foursight-cgap-1: Redirecting to: {redirect_path}')
+        print(f'xyzzy-1: default_env = [{default_env}]')
+        print(f'xyzzy-1: os.environ[ENV_NAME] = [{os.environ.get("ENV_NAME")}]')
+        print(f'xyzzy-1: os.environ')
+        print(os.environ)
         resp_headers = {'Location': redirect_path}
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
@@ -1960,12 +1971,17 @@ def index():
     Redirect with 302 to view page of DEFAULT_ENV
     Non-protected route
     """
+    default_env = os.environ.get("ENV_NAME")
     domain, context = AppUtilsCore.singleton().get_domain_and_context(app.current_request.to_dict())
     if CHALICE_LOCAL:
-        redirect_path = ROUTE_PREFIX + 'view/' + DEFAULT_ENV
+        redirect_path = ROUTE_PREFIX + 'view/' + default_env
     else:
-        redirect_path = context + 'view/' + DEFAULT_ENV
-    print(f'foursight-cgap: Redirecting to: {redirect_path}')
+        redirect_path = context + 'view/' + default_env
+    print(f'foursight-cgap-2: Redirecting to: {redirect_path}')
+    print(f'xyzzy-2: os.environ[ENV_NAME] = [{os.environ.get("ENV_NAME")}]')
+    print(f'xyzzy-2: default_env = [{default_env}]')
+    print(f'xyzzy-2: os.environ')
+    print(os.environ)
     resp_headers = {'Location': redirect_path}
     return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
@@ -2008,6 +2024,13 @@ def view_run_route(environ, check, method):
     else:
         print("XYZZY: view_run_route D")
         return AppUtilsCore.singleton().forbidden_response(context)
+
+@app.route(ROUTE_PREFIX + "view", methods=['GET'], cors=CORS)
+def route_view():
+    default_env = os.environ.get("ENV_NAME")
+    redirect_path = ROUTE_PREFIX + 'view/' + default_env
+    headers = {"Location": redirect_path}
+    return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
 
 @app.route(ROUTE_PREFIX + 'view/{environ}', methods=['GET'], cors=CORS)

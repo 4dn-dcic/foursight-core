@@ -90,6 +90,7 @@
                       </a>
                     {% endif %}
                     {% if check.get('kwargs') %}
+                        FOO[{{check.get('kwargs')}}]GOO
                         <form action={{context + 'view_run/' + environment + '/' + check['name'] + '/check'}} method="GET" target="_blank">
                             {% for kwarg in check['kwargs'] %}
                                 {% if kwarg not in ['uuid', '_run_info', 'runtime_seconds', 'queue_action'] %}
