@@ -660,7 +660,13 @@ class ReactApi:
                                     if la["lambda_name"] == event_target_function_name:
                                         event_schedule = str(event_schedule).replace("cron(", "").replace(")", "")
                                         la["lambda_schedule"] = str(event_schedule)
-                                        la["lambda_schedule_description"] = cron_descriptor.get_description(str(event_schedule))
+                                        cron_description = cron_descriptor.get_description(str(event_schedule))
+                                        print('xyzzy-sched')
+                                        print(cron_description)
+                                        print(cron_description.startswith("At "))
+                                        if cron_description.startswith("At "):
+                                            cron_description = cron_description[3:]
+                                        la["lambda_schedule_description"] = cron_description
 
         return lambdas
 

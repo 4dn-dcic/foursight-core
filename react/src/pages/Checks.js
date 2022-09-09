@@ -335,7 +335,7 @@ const Checks = (props) => {
                             <ToggleHistoryButton check={check} style={{marginLeft:"4pt"}} />
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div style={{whiteSpace:"nowrap",width:"100%"}} key={index} title={check.schedule[key].cron}>
-                                    <small><i>Schedule: <span className={"tool-tip"} data-text={check.schedule[key]?.cron}>{check.schedule[key].cron_description}</span></i></small>
+                                    <small><i>Schedule: <span className={"tool-tip"} data-text={check.schedule[key]?.cron}>{check.schedule[key].cron_description}</span>.</i></small>
                                 </div>
                             })}
                             <>
@@ -434,7 +434,7 @@ const Checks = (props) => {
         return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
             <div title={check.name}>
                 <b>{check.title}</b>&nbsp;
-                { check.history && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",fontWeight:"bold",fontSize:"large"}} onClick={() => {refreshHistory(check)}}>&#8635;&nbsp;&nbsp;</span></span> }
+                { check.history && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",color:"darkred",fontWeight:"bold"}} onClick={() => {refreshHistory(check)}}>&#8635;&nbsp;&nbsp;</span></span> }
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideResultsHistory(check)})}><b>&#x2717;</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
