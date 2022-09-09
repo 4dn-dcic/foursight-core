@@ -202,13 +202,13 @@ const Checks = (props) => {
         hideCheckRunningBox(check);
         noteChangedCheckBox();
         const runCheckUrl = API.Url(`/checks/${check.name}/run`, environ);
-        let fetching = true;
-        fetchData(runCheckUrl, response => { fetching = false; check.queueingCheckRun = false; check.queuedCheckRun = response.uuid });
+        check.fetchingResult = true;
+        fetchData(runCheckUrl, response => { check.fetchingResult = false; check.queueingCheckRun = false; check.queuedCheckRun = response.uuid });
         check.queueingCheckRun = true;
         check.queuedCheckRun = null;
         showCheckRunningBox(check);
         showResultsHistory(check);
-        setTimeout(() => { if (!fetching) { refreshHistory(check); noteChangedCheckBox(); } }, 10000);
+        setTimeout(() => { if (!check.fetchingResult) { refreshHistory(check); noteChangedCheckBox(); } }, 10000);
     }
 
     function showCheckRunningBox(check) {
@@ -221,6 +221,7 @@ const Checks = (props) => {
         noteChangedCheckBox();
     }
 
+    // The (yellow) check running box.
     const CheckRunningBox = ({check}) => {
         return !check.showingCheckRunningBox ? <span /> : <div>
             <div className="boxstyle check-pass" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
@@ -285,8 +286,8 @@ const Checks = (props) => {
         </div>
     }
 
-    const RunCheckButton = ({check, style}) => {
-        if (check.queueingCheckRun)
+    const RunButton = ({check, style}) => {
+        if (check.queueingCheckRun || !check.results)
             return <div className={"check-run-wait-button"} style={style}>
                 <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Wait</b>
             </div>
@@ -324,7 +325,7 @@ const Checks = (props) => {
                             <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
                         <td style={{veriticalAlign:"top"}} title={check.name}>
-                            <RunCheckButton check={check} style={{marginLeft:"200pt",float:"right"}} />
+                            <RunButton check={check} style={{marginLeft:"200pt",float:"right"}} />
                             <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>
                             <RefreshResultsButton check={check} style={{marginLeft:"10pt"}} />
                             <ToggleHistoryButton  check={check} style={{marginLeft:"4pt"}} />
@@ -360,11 +361,8 @@ const Checks = (props) => {
         </pre>
     }
 
-    const SelectedCheckResultsBox = ({check, index}) => {
+    const ResultBox = ({check}) => {
         return <div>
-            {/* Check manually queued box */}
-            <CheckRunningBox check={check} />
-            {/* Schedule(s) and latest run lines */}
             { check.results && <small style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red",cursor:"pointer"}} onClick={() => { check.showingResultDetails = !check.showingResultDetails ; noteChangedResults(); }}>
                 { Object.keys(check.results).length > 0 ? (<>
                     { !check.showingCheckRunningBox && <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div> }
@@ -376,7 +374,7 @@ const Checks = (props) => {
                         )}
                     <br />
                     <span style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red"}}>Results Summary: {check.results?.summary}</span>&nbsp;&nbsp;
-                    { check.results?.status?.toUpperCase() == "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>)}
+                    { check.results?.status?.toUpperCase() == "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>) }
                 </>):(<>
                     { !check.showingResultDetails && <span>No results.</span> }
                 </>)}
@@ -389,6 +387,15 @@ const Checks = (props) => {
                     { !check.results && <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> }
                 </span>
             )}
+        </div>
+    }
+
+    const SelectedCheckResultsBox = ({check}) => {
+        return <div>
+            {/* Check manually queued box */}
+            <CheckRunningBox check={check} />
+            {/* Schedule(s) and latest run lines */}
+            <ResultBox check={check} />
         </div>
     }
 
