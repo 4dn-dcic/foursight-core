@@ -1,4 +1,5 @@
 import React from 'react';
+import '../App.css';
 import { useContext, useState, useEffect, useReducer } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link, useNavigate } from 'react-router-dom';
@@ -37,6 +38,7 @@ const Checks = (props) => {
         fetchData(lambdasUrl, lambdas => {
             setLambdas(lambdas.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0)));
         });
+            
     }, []);
 
     function isSelectedGroup(group) {
@@ -269,8 +271,8 @@ const Checks = (props) => {
         return <div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt"}}>
                 <div>
-                    <b style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks)}>{group?.group}</b> {isShowingAnyResults(group?.checks) ? (<span>&#x2193;</span>) : (<span>&#x2191;</span>)}
-                    <span style={{float:"right",cursor:"pointer"}} onClick={(() => {toggleShowGroup(group)})}><b>&#x2717;</b></span>
+                    <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks)}><b>{group?.group}</b> {isShowingAnyResults(group?.checks) ? (<span>&#x2193;</span>) : (<span>&#x2191;</span>)}</span>
+                    <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideGroup(group)})}><b>&#x2717;</b></span>
                 </div>
                 <div style={{marginTop:"6pt"}} />
                 { group?.checks?.map((check, index) => {
@@ -294,10 +296,27 @@ const Checks = (props) => {
             </div>
     }
 
+    const RefreshResultsButton = ({check, style}) => {
+        return <span>
+            <span style={{...style, cursor:check.results ? "pointer" : "not-allowed",color:"darkred",fontSize:"12pt"}} onClick={() => check.results && refreshResults(check)}>
+                <b data-text={check.results ? "Click here to refetch the latest results." : "Refetching latest results."} className={"xtooltip"}>&#8635;</b>
+            </span>
+        </span>
+    }
+
+    const ToggleHistoryButton = ({check, style}) => {
+        return <span style={{...style, xpaddingTop:"10px",cursor:"pointer"}} onClick={() => onClickShowResultsHistory(check)}>
+            <span data-text="Click here to view the recent history of checks runs." className={"xtooltip"}>
+                <img id="xyzzy" onClick={(e) => {}} src="https://cdn-icons-png.flaticon.com/512/32/32223.png" style={{marginBottom:"4px",height:"17"}} />
+            </span>
+            { check.showingHistory ? <span style={{xpaddingTop:"10px"}}>&#x2192;</span> : <></> }
+        </span>
+    }
+
     const SelectedChecksBox = ({check, index}) => {
         return <div>
-            <div className="boxstyle check-box" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt",xfilter:"brightness(0.95)"}}>
-            <table style={{width:"100%"}}>
+            <div className="boxstyle check-box" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt"}}>
+            <table style={{width:"100%"}} xborder="1">
                 <tbody>
                     <tr style={{height:"3pt"}}><td></td></tr>
                     <tr>
@@ -307,14 +326,8 @@ const Checks = (props) => {
                         <td style={{veriticalAlign:"top"}} title={check.name}>
                             <RunCheckButton check={check} style={{marginLeft:"200pt",float:"right"}} />
                             <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>
-                            { isShowingSelectedCheckResultsBox(check) && check.results &&
-                                (<span>&nbsp;&nbsp;<span style={{cursor:"pointer",fontSize:"large"}} onClick={() => {refreshResults(check)}}>&#8635;</span></span>)
-                            }
-                            <small>&nbsp;&nbsp;</small>
-                            <span onClick={() => onClickShowResultsHistory(check)} style={{paddingTop:"10px",cursor:"pointer"}}>
-                                <img src="https://cdn-icons-png.flaticon.com/512/32/32223.png" style={{paddingBottom:"4px",height:"22"}}/>
-                                {check.showingHistory ? <span style={{paddingTop:"10px"}}>&#x2192;</span> : <></>}
-                            </span>
+                            <RefreshResultsButton check={check} style={{marginLeft:"10pt"}} />
+                            <ToggleHistoryButton  check={check} style={{marginLeft:"4pt"}} />
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div key={index} title={check.schedule[key].cron}>
                                     <small><i>Scheduled Run: {check.schedule[key].cron_description}</i></small>
@@ -357,9 +370,9 @@ const Checks = (props) => {
                     { !check.showingCheckRunningBox && <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div> }
                     <span>Latest Results: {check.results?.timestamp}</span>
                         { check.showingResultDetails ? (
-                            <b>&nbsp;&#x2193;</b>
+                            <b className={"xtooltip"} data-text={"Click to hide result details."}>&nbsp;&#x2193;</b>
                         ):(
-                            <b>&nbsp;&#x2191;</b>
+                            <b className={"xtooltip"} data-text={"Click to show result details."}>&nbsp;&#x2191;</b>
                         )}
                     <br />
                     <span style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red"}}>Results Summary: {check.results?.summary}</span>&nbsp;&nbsp;
@@ -549,8 +562,14 @@ const Checks = (props) => {
         check.results = null;
         if (check.showingResults) {
             hideCheckResultsBox(check);
+        }
+        showCheckResultsBox(check);
+/*
+        if (check.showingResults) {
+            hideCheckResultsBox(check);
             showCheckResultsBox(check);
         }
+*/
     }
 
     function refreshHistory(check) {
