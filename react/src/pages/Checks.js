@@ -289,25 +289,25 @@ const Checks = (props) => {
     const RunButton = ({check, style}) => {
         if (check.queueingCheckRun || check.fetchingResult)
             return <div className={"check-run-wait-button"} style={style}>
-                <span className={"xtooltip"} data-text={"Wait until " + (check.queueingCheckRun ? "check queueing" : "result fetch") + " completes."}><span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Wait</b></span>
+                <span className={"tool-tip"} data-text={"Wait until " + (check.queueingCheckRun ? "check queueing" : "result fetch") + " completes."}><span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Wait</b></span>
             </div>
         else
             return <div className={"check-run-button"} style={style} onClick={(e) => runCheck(check) }>
-                <span className={"xtooltip"} data-text={"Click to run this check."}><span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Run</b></span>
+                <span className={"tool-tip"} data-text={"Click to run this check."}><span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Run</b></span>
             </div>
     }
 
     const RefreshResultButton = ({check, style}) => {
         return <span>
             <span style={{...style, cursor:!check.fetchingResult ? "pointer" : "not-allowed",color:"darkred",fontSize:"12pt"}} onClick={() => !check.fetchingResult && refreshResults(check)}>
-                <b data-text={check.results ? "Click here to refetch the latest results." : "Refetching latest results."} className={"xtooltip"}>&#8635;</b>
+                <b data-text={check.results ? "Click here to refetch the latest results." : "Refetching latest results."} className={"tool-tip"}>&#8635;</b>
             </span>
         </span>
     }
 
     const ToggleHistoryButton = ({check, style}) => {
         return <span style={{...style, xpaddingTop:"10px",cursor:"pointer"}} onClick={() => onClickShowResultsHistory(check)}>
-            <span data-text="Click here to view the recent history of checks runs." className={"xtooltip"}>
+            <span data-text="Click here to view the recent history of checks runs." className={"tool-tip"}>
                 <img id="xyzzy" onClick={(e) => {}} src="https://cdn-icons-png.flaticon.com/512/32/32223.png" style={{marginBottom:"4px",height:"17"}} />
             </span>
             { check.showingHistory ? <span style={{xpaddingTop:"10px"}}>&#x2192;</span> : <></> }
@@ -368,9 +368,9 @@ const Checks = (props) => {
                     { !check.showingCheckRunningBox && <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div> }
                     <span>Latest Results: {check.results?.timestamp}</span>
                         { check.showingResultDetails ? (
-                            <b className={"xtooltip"} data-text={"Click to hide result details."}>&nbsp;&#x2193;</b>
+                            <b className={"tool-tip"} data-text={"Click to hide result details."}>&nbsp;&#x2193;</b>
                         ):(
-                            <b className={"xtooltip"} data-text={"Click to show result details."}>&nbsp;&#x2191;</b>
+                            <b className={"tool-tip"} data-text={"Click to show result details."}>&nbsp;&#x2191;</b>
                         )}
                     <br />
                     <span style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red"}}>Results Summary: {check.results?.summary}</span>&nbsp;&nbsp;

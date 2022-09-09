@@ -36,57 +36,53 @@
     <title>React App</title>
 <style>
 /* https://blog.logrocket.com/creating-beautiful-tooltips-with-only-css */
-.xtooltip {
-  position:relative; /* making the .xtooltip span a container for the xtooltip text */
+.tool-tip {
+  position:relative; /* making the .tool-tip span a container for the tool-tip text */
 }
-.xtooltip:before {
+.tool-tip:before {
   content: attr(data-text);
-  position:absolute;
-  top:50%;
-  transform:translateY(-50%);
-  left:100%;
-  margin-left:15px;
-  width:200px;
-  padding-left:15px;
-  padding-right:10px;
-  padding-top:5px;
-  padding-bottom:5px;
-  border-radius:10px;
-  background:black;
-  color:white;
-  text-align:left;
-  display:none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 100%;
+  margin-left: 15px;
+  width: 200px;
+  padding-left: 15px;
+  padding-right: 10px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  border-radius: 10px;
+  background: black;
+  color: white;
+  text-align: left;
+  display: none;
   font-family: tahoma;
   font-size: 10pt;
+  font-weight: normal;
+  font-style: italic;
 }
-.xtooltip:hover:before {
-  display:block;
+.tool-tip:hover:before {
+  display: block;
 }
-.xtooltip.left:before {
-  left:initial;
-  margin:initial;
-  right:100%;
-  margin-right:15px;
+.tool-tip.left:before {
+  left: initial;
+  margin: initial;
+  right: 100%;
+  margin-right: 15px;
 }
-.xtooltip:after {
+.tool-tip:after {
   content: "";
-  position:absolute;
-  left:100%;
-  margin-left:-5px;
-  top:50%;
-  transform:translateY(-50%);
-  border:10px solid #000;
+  position: absolute;
+  left: 100%;
+  margin-left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 10px solid #000;
   border-color: transparent black transparent transparent;
-  display:none;
+  display: none;
 }
-.xtooltip:hover:before, .xtooltip:hover:after {
-  display:block;
-}
-.xtooltip:focus {
-        color:red;
-}
-.xtooltip:focus {
-        color:blue;
+.tool-tip:hover:before, .tool-tip:hover:after {
+  display: block;
 }
 </style>
   </head>
