@@ -32,10 +32,12 @@ export const SetCookie = (name, value, expires = undefined) => {
 }
 
 export const DeleteCookie = (name) => {
-    console.log("DELETE COOKIE: [" + name + "]");
-    _cookies.remove(name, { path: "/" });
-    // Issues with leading dot on domain name in cookie ...
-    document.cookie = "jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + document.location.hostname + ";";
+    if (Utils.isNonEmptyString(name)) {
+        console.log("DELETE COOKIE: [" + name + "]");
+        _cookies.remove(name, { path: "/" });
+        // Issue with leading dot on domain name in cookie ...
+        document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + document.location.hostname + ";";
+    }
 }
 
 export const GetJwtTokenCookie = (name) => {

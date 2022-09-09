@@ -425,20 +425,32 @@ class AppUtilsCore(ReactApi):
             simple_cookies = SimpleCookie()
             simple_cookies.load(cookies)
             simple_cookies = {k: v.value for k, v in simple_cookies.items()}
-            redir_react_url_cookie = simple_cookies.get("redir_react")
-            if redir_react_url_cookie:
-                #
-                # Special case for React version (TODO: rework later).
-                #
-                redir_url = redir_react_url_cookie
-            else:
-                redir_url_cookie = simple_cookies.get("redir")
-                if redir_url_cookie:
-                    redir_url = redir_url_cookie
+            redir_url_cookie = simple_cookies.get("redir")
+            print('xyzzy:auth0_callback-1')
+            if redir_url_cookie:
+                print('xyzzy:auth0_callback-2')
+                redir_url = redir_url_cookie
+#           print('xyzzy:auth0_callback-3')
+#           redir_react_url_cookie = simple_cookies.get("redir_react")
+#           print('xyzzy:auth0_callback-4')
+#           print(redir_react_url_cookie)
+#           if redir_react_url_cookie:
+#               #
+#               # Special case for React version (TODO: rework later).
+#               #
+#               print('xyzzy:auth0_callback-5')
+#               #redir_url = redir_react_url_cookie
+#           else:
+#               redir_url_cookie = simple_cookies.get("redir")
+#               if redir_url_cookie:
+#                   redir_url = redir_url_cookie
+            print('xyzzy:auth0_callback-6')
         except Exception as e:
             PRINT("Exception loading cookies: {cookies}")
             PRINT(e)
 
+        print('xyzzy:auth0_callback-7')
+        print(redir_url)
         resp_headers = {'Location': redir_url}
         params = req_dict.get('query_params')
         if not params:
@@ -447,6 +459,7 @@ class AppUtilsCore(ReactApi):
         auth0_client = self.get_auth0_client_id(env)
         auth0_secret = self.get_auth0_secret(env)
         if not (domain and auth0_code and auth0_client and auth0_secret):
+            print('xyzzy:auth0_callback-8')
             return Response(status_code=301, body=json.dumps(resp_headers), headers=resp_headers)
         payload = {
             'grant_type': 'authorization_code',
@@ -455,11 +468,14 @@ class AppUtilsCore(ReactApi):
             'code': auth0_code,
             'redirect_uri': ''.join(['https://', domain, context, 'callback/'])
         }
+        print('xyzzy:auth0_callback-9')
         json_payload = json.dumps(payload)
         headers = {'content-type': "application/json"}
         res = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
         id_token = res.json().get('id_token', None)
+        print('xyzzy:auth0_callback-10')
         if id_token:
+            print('xyzzy:auth0_callback-11')
             cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
             authtoken_cookie = ''.join(['authToken=', self.encrypt(id_token), '; Domain=', domain, '; Path=/;'])
             expires_in = res.json().get('expires_in', None)
@@ -469,7 +485,9 @@ class AppUtilsCore(ReactApi):
                 authtoken_cookie += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
             resp_headers['set-cookie'] = authtoken_cookie
             resp_headers['Set-Cookie'] = cookie_str
+            print('xyzzy:auth0_callback-12')
             print(resp_headers)
+        print('xyzzy:auth0_callback-13')
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
     def get_jwt_token(self, request_dict) -> str:

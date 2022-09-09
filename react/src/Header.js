@@ -165,7 +165,7 @@ const Header = (props) => {
                                 </span>)}
                             </span>)}
                         </span>):(<span>
-                            <NavLink to={URL.Url("/login", true)} style={{cursor:"pointer",fontWeight:"bold",color:"darkred"}} title="Not logged in. Click to login.">LOGIN</NavLink>
+                            <NavLink to={URL.Url("/login?auth", true)} style={{cursor:"pointer",fontWeight:"bold",color:"darkred"}} title="Not logged in. Click to login.">LOGIN</NavLink>
                         </span>)}
                     </td>
                 </tr>

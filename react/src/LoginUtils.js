@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import GlobalContext from './GlobalContext';
-import { DeleteAuthTokenCookie, DeleteJwtTokenCookie, GetAuthTokenCookie, GetCookie, GetDecodedJwtTokenCookie } from './CookieUtils';
+import { DeleteAuthTokenCookie, DeleteCookie, DeleteJwtTokenCookie, GetAuthTokenCookie, GetCookie, GetDecodedJwtTokenCookie } from './CookieUtils';
 import * as URL from './URL';
 import * as API from './API';
 import * as Utils from './Utils';
@@ -21,8 +21,8 @@ export const IsLoggedIn = () => {
     // it as a general is-logged-in flag. Probably some security issues here I'm not taking
     // into account but good for now, at least for development. Marking this as TODO.
     //
-
     if (IsRunningLocally()) {
+        return GetCookie("test_mode_login_localhost") == "1";
         return true;
     }
     const decodedJwtToken = GetDecodedJwtTokenCookie();
@@ -58,6 +58,10 @@ export const GetLoginInfo = () => {
 }
 
 export const Logout = (navigate) => {
+    if (IsRunningLocally()) {
+        DeleteCookie("test_mode_login_localhost");
+        return;
+    }
     DeleteJwtTokenCookie();
     DeleteAuthTokenCookie();
     if (navigate) {
@@ -88,7 +92,7 @@ export const VerifyLogin = () => {
 }
 
 export const Auth0CallbackUrl = () => {
-    const auth0CallbackCookie = GetCookie("auth0CallbackUrl");
+    const auth0CallbackCookie = GetCookie("test_mode_auth0_callback_url");
     if (Utils.isNonEmptyString(auth0CallbackCookie)) {
         return auth0CallbackCookie;
     }

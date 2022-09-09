@@ -1,17 +1,22 @@
 import './App.css';
 import React from 'react';
-import { useContext } from 'react';
+import { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useContext, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import GlobalContext from './GlobalContext.js';
 import Auth0Lock from 'auth0-lock';
 import * as URL from './URL';
-import { GetCookie, SetCookie } from './CookieUtils';
+import { DeleteCookie, GetCookie, SetCookie } from './CookieUtils';
 import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, IsRunningLocally, Logout, ValidEnvRequired } from './LoginUtils.js';
 
 const Login = (props) => {
 
     let navigate = useNavigate();
     const [ info ] = useContext(GlobalContext);
+    const [ showingAuthBox, setShowingAuthBox ] = useState(false);
+    const [args] = useSearchParams();
+    const showAuthBoxAtOutset = args.get("auth")?.length >= 0;
 
     function login() {
         showAuthBox();
@@ -39,6 +44,13 @@ const Login = (props) => {
         document.getElementById("login_auth_container").firstChild.firstChild.style.paddingBottom = "1";
         document.getElementById("login_auth_container").firstChild.firstChild.style.fontWeight = "bold";
         document.getElementById("login_auth_container").firstChild.firstChild.style.fontWeight = "bold";
+        setShowingAuthBox(true);
+    }
+
+    function hideAuthBox() {
+        document.getElementById("login_auth_container").style.display = "none";
+        document.getElementById("login_auth_cancel").style.display = "none";
+        setShowingAuthBox(false);
     }
 
     function createAuth0Lock() {
@@ -80,11 +92,11 @@ const Login = (props) => {
             <div className="container">
                 <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
                     Logged in as:&nbsp;
-                    { IsRunningLocally() ? (<span>
+                    { false && IsRunningLocally() ? (<span>
                         &nbsp;<b>localhost</b>
                     </span>):(<span>
                         <Link to={URL.Url("/users/" + loginInfo?.email, true)}><b style={{color:"darkblue"}}>{loginInfo?.email}</b></Link>
-                        <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=>{Logout(navigate);}}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small>
+                        <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=>{Logout(navigate); if (IsRunningLocally()) { window.location.reload(); } }}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small>
                     </span>)}
                 </div>
             </div>
@@ -105,9 +117,24 @@ const Login = (props) => {
                 <center id="login_auth_cancel" style={{display:"none",marginTop:"10px"}}>
                     <NavLink to={URL.Url("/info", true)} style={{fontSize:"small",cursor:"pointer",color:"blue"}}>Cancel</NavLink>
                 </center>
+            { (IsRunningLocally() && showingAuthBox) && (
+                <div className="container" style={{maxWidth:"290pt",marginTop:"-20pt"}}>
+                    <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt"}}>
+                        <small>
+                        As you appear to be <b>running</b> Foursight <b>locally</b>, the above Auth0 will not work. <br />
+                        Click <b style={{cursor:"pointer"}} onClick={(x) => { hideAuthBox(); SetCookie("test_mode_login_localhost", "1"); window.location.reload(); }}><u>here</u></b> for faux local login.
+                        </small>
+                    </div>
+                </div>
+            )}
+            { showAuthBoxAtOutset && setTimeout(() => { if (showAuthBoxAtOutset && !showingAuthBox) { showAuthBox(); }}, 1) }
         </div>
         </React.Fragment>)}
     </ValidEnvRequired>
 };
+
+export const LoginAuth = () => {
+    console.log("LOGIN-AUTH");
+}
 
 export default Login;
