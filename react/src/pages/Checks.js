@@ -307,7 +307,7 @@ const Checks = (props) => {
 
     const ToggleHistoryButton = ({check, style}) => {
         return <span style={{...style, xpaddingTop:"10px",cursor:"pointer"}} onClick={() => onClickShowResultsHistory(check)}>
-            <span data-text="Click here to view the recent history of checks runs." className={"tool-tip"}>
+            <span data-text={"Click here to " + (check.showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
                 <img id="xyzzy" onClick={(e) => {}} src="https://cdn-icons-png.flaticon.com/512/32/32223.png" style={{marginBottom:"4px",height:"17"}} />
             </span>
             { check.showingHistory ? <span style={{xpaddingTop:"10px"}}>&#x2192;</span> : <></> }

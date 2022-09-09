@@ -34,57 +34,6 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>React App</title>
-<style>
-/* https://blog.logrocket.com/creating-beautiful-tooltips-with-only-css */
-.tool-tip {
-  position:relative; /* making the .tool-tip span a container for the tool-tip text */
-}
-.tool-tip:before {
-  content: attr(data-text);
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  left: 100%;
-  margin-left: 15px;
-  width: 200px;
-  padding-left: 15px;
-  padding-right: 10px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  border-radius: 10px;
-  background: black;
-  color: white;
-  text-align: left;
-  display: none;
-  font-family: tahoma;
-  font-size: 10pt;
-  font-weight: normal;
-  font-style: italic;
-}
-.tool-tip:hover:before {
-  display: block;
-}
-.tool-tip.left:before {
-  left: initial;
-  margin: initial;
-  right: 100%;
-  margin-right: 15px;
-}
-.tool-tip:after {
-  content: "";
-  position: absolute;
-  left: 100%;
-  margin-left: -5px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: 10px solid #000;
-  border-color: transparent black transparent transparent;
-  display: none;
-}
-.tool-tip:hover:before, .tool-tip:hover:after {
-  display: block;
-}
-</style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
