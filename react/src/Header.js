@@ -171,7 +171,7 @@ const Header = (props) => {
                 </tr>
                 <tr>
                     <td style={{background:"lightyellow",color:"darkred",padding:"2pt"}} colSpan="3">
-                        <i style={{fontSize:"x-small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>. Click <a href={"/api/view/" + (environ || header.env?.default)} style={{color:"inherit"}}><b>here</b></a> to go to the real version.</i>
+                        <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>. Click <a href={"/api/view/" + (environ || header.env?.default)} style={{color:"inherit"}}><b>here</b></a> to go to the real version.</i>
                     </td>
                 </tr>
                 <tr>

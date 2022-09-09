@@ -31,7 +31,11 @@ const Checks = (props) => {
         fetchData(groupedChecksUrl, groupedChecks => {
             setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
             if (groupedChecks.length > 0) {
-                showGroup(groupedChecks[2]);
+                //
+                // Choose some group as default to show.
+                let group = groupedChecks.find(item => item.group.toLowerCase().includes("elasticsearch"));
+                group = group ? group : groupedChecks[0];
+                showGroup(group);
             }
         }, setLoading, setError);
         const lambdasUrl = API.Url(`/lambdas`, environ);
@@ -270,7 +274,7 @@ const Checks = (props) => {
 
     const SelectedGroupBox = ({group}) => {
         return <div>
-            <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt"}}>
+            <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"300pt"}}>
                 <div>
                     <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks)}><b>{group?.group}</b> {isShowingAnyResults(group?.checks) ? (<span>&#x2193;</span>) : (<span>&#x2191;</span>)}</span>
                     <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideGroup(group)})}><b>&#x2717;</b></span>
@@ -300,7 +304,7 @@ const Checks = (props) => {
     const RefreshResultButton = ({check, style}) => {
         return <span>
             <span style={{...style, cursor:!check.fetchingResult ? "pointer" : "not-allowed",color:"darkred",fontSize:"12pt"}} onClick={() => !check.fetchingResult && refreshResults(check)}>
-                <b data-text={check.results ? "Click here to refetch the latest results." : "Refetching latest results."} className={"tool-tip"}>&#8635;</b>
+                <b data-text={check.results ? "Click here to fetch the latest results." : "Fetching the latest results."} className={"tool-tip"}>&#8635;</b>
             </span>
         </span>
     }
@@ -316,8 +320,8 @@ const Checks = (props) => {
 
     const SelectedChecksBox = ({check, index}) => {
         return <div>
-            <div className="boxstyle check-box" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"430pt"}}>
-            <table style={{width:"100%"}} xborder="1">
+            <div className="boxstyle check-box" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"450pt"}}>
+            <table style={{width:"100%"}}>
                 <tbody>
                     <tr style={{height:"3pt"}}><td></td></tr>
                     <tr>
@@ -325,13 +329,13 @@ const Checks = (props) => {
                             <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
                         <td style={{veriticalAlign:"top"}} title={check.name}>
-                            <RunButton check={check} style={{marginLeft:"200pt",float:"right"}} />
+                            <RunButton check={check} style={{marginLeft:"30pt",marginTop:"-3pt",float:"right"}} />
                             <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>
                             <RefreshResultButton check={check} style={{marginLeft:"10pt"}} />
-                            <ToggleHistoryButton  check={check} style={{marginLeft:"4pt"}} />
+                            <ToggleHistoryButton check={check} style={{marginLeft:"4pt"}} />
                             { Object.keys(check?.schedule).map((key, index) => {
-                                return <div key={index} title={check.schedule[key].cron}>
-                                    <small><i>Scheduled Run: {check.schedule[key].cron_description}</i></small>
+                                return <div style={{whiteSpace:"nowrap",width:"100%"}} key={index} title={check.schedule[key].cron}>
+                                    <small><i>Schedule: <span className={"tool-tip"} data-text={check.schedule[key]?.cron}>{check.schedule[key].cron_description}</span></i></small>
                                 </div>
                             })}
                             <>
@@ -349,11 +353,11 @@ const Checks = (props) => {
     }
 
     const ResultDetailsBox = ({check, style}) => {
-        return <pre className={check.results?.status?.toUpperCase() == "PASS" ? "check-pass" : "check-warn"} style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"500pt",maxWidth:"500pt"}}>
+        return <pre className={check.results?.status?.toUpperCase() == "PASS" ? "check-pass" : "check-warn"} style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"415pt"}}>
             <div style={{float:"right",marginTop:"-10px"}}>
             <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{JSON.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
             <img onClick={() => CopyToClipboard(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="19" />
-            &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(); } }>{check.showingResultDetailsFull ? <span title="Show full results output.">&#x2191;</span> : <span title="Show abberviated results output.">&#x2193;</span>}</span>
+            &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(); } }>{check.showingResultDetailsFull ? <span title="Show full results output.">&#x2191;</span> : <span>&#x2193;</span>}</span>
             &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>X</span>
             </div>
     
@@ -373,7 +377,7 @@ const Checks = (props) => {
                             <b className={"tool-tip"} data-text={"Click to show result details."}>&nbsp;&#x2191;</b>
                         )}
                     <br />
-                    <span style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red"}}>Results Summary: {check.results?.summary}</span>&nbsp;&nbsp;
+                    <span style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red"}}><span className={"tool-tip"} data-text={"Click to " + (check.showingResultDetails ? "hide" : "show") + " result details."}>Results Summary</span>: {check.results?.summary}</span>&nbsp;&nbsp;
                     { check.results?.status?.toUpperCase() == "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>) }
                 </>):(<>
                     { !check.showingResultDetails && <span>No results.</span> }
@@ -430,7 +434,7 @@ const Checks = (props) => {
         return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
             <div title={check.name}>
                 <b>{check.title}</b>&nbsp;
-                { check.history && <span>&nbsp;&nbsp;<span style={{cursor:"pointer",fontSize:"large"}} onClick={() => {refreshHistory(check)}}>&#8635;&nbsp;&nbsp;</span></span> }
+                { check.history && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",fontWeight:"bold",fontSize:"large"}} onClick={() => {refreshHistory(check)}}>&#8635;&nbsp;&nbsp;</span></span> }
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideResultsHistory(check)})}><b>&#x2717;</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
@@ -439,19 +443,19 @@ const Checks = (props) => {
                     <table style={{width:"100%"}}>
                     <thead>
                         <tr>
-                            <td>
+                            <td style={{whiteSpace:"nowrap"}}>
                                 &#x2630;
                             &nbsp;&nbsp;</td>
-                            <td>
+                            <td style={{whiteSpace:"nowrap"}}>
                                 Timestamp
                             &nbsp;&nbsp;</td>
-                            <td>
+                            <td style={{whiteSpace:"nowrap"}}>
                                 Status
                             &nbsp;&nbsp;</td>
-                            <td style={{textAlign:"right"}}>
+                            <td style={{textAlign:"right",whiteSpace:"nowrap"}}>
                                 Duration
                             &nbsp;</td>
-                            <td>
+                            <td style={{whiteSpace:"nowrap"}}>
                                 State
                             &nbsp;</td>
                         </tr>
@@ -474,10 +478,10 @@ const Checks = (props) => {
                                     <span style={{color:"darkred"}}>&#x2717;</span>
                                 </>)}
                             &nbsp;&nbsp;</td>
-                            <td>
+                            <td style={{whiteSpace:"nowrap"}}>
                                 {extractTimestamp(history)}
                             &nbsp;&nbsp;</td>
-                            <td>
+                            <td style={{whiteSpace:"nowrap"}}>
                                 {extractStatus(history) == "PASS" ? (<>
                                     <b style={{color:"darkgreen"}}>OK</b>
                                 </>):(<>
@@ -487,7 +491,7 @@ const Checks = (props) => {
                             <td style={{textAlign:"right"}}>
                                 {extractDuration(history)}
                             &nbsp;&nbsp;</td>
-                            <td style={{textAlign:"right"}}>
+                            <td style={{textAlign:"right",whiteSpace:"nowrap"}}>
                                 {extractState(history)}
                             &nbsp;&nbsp;</td>
                             </tr>
