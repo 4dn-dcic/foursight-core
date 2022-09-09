@@ -70,11 +70,13 @@ if CHALICE_LOCAL:
     print("XYZZY:foursight_core:CHALICE_LOCAL!!!")
     ROUTE_PREFIX = "/api/"
     ROUTE_EMPTY_PREFIX = "/api"
+    ROUTE_PREFIX_EXPLICIT = "/api/"
     CORS = True
 else:
     print("XYZZY:foursight_core:NOT_CHALICE_LOCAL!!!")
     ROUTE_PREFIX = "/"
     ROUTE_EMPTY_PREFIX = "/"
+    ROUTE_PREFIX_EXPLICIT = "/api/"
     CORS = False
 
 logging.basicConfig()
@@ -358,28 +360,20 @@ class AppUtilsCore(ReactApi):
         Take in a dictionary format of the request (app.current_request) so we
         can test this.
         """
-        print('xyzzy:check_auth:1')
         # first check the Authorization header
         dev_auth = request_dict.get('headers', {}).get('authorization')
-        print('xyzzy:check_auth:2')
-        print(dev_auth)
         # grant admin if dev_auth equals secret value
         if dev_auth and dev_auth == os.environ.get('DEV_SECRET'):
-            print('xyzzy:check_auth:3')
             return True
-        print('xyzzy:check_auth:4')
         # if we're on localhost, automatically grant authorization
         # this looks bad but isn't because request authentication will
         # still fail if local keys are not configured
         if self.is_running_locally(request_dict):
-            print('xyzzy:check_auth:5:local-fooey')
             return True
-        print('xyzzy:check_auth:6')
         jwt_decoded = self.get_decoded_jwt_token(env, request_dict)
         if jwt_decoded:
             try:
                 if env is None:
-                    print('xyzzy:check_auth:7:env is None')
                     return False  # we have no env to check auth
                 for env_info in self.init_environments(env).values():
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
@@ -415,7 +409,6 @@ class AppUtilsCore(ReactApi):
         # extract redir cookie
         cookies = req_dict.get('headers', {}).get('cookie')
         redir_url = context + 'view/' + env
-        print(f'XYZZY:COOKIES:')
         print(cookies)
 
 #       for cookie in cookies.split(';'):
@@ -459,13 +452,11 @@ class AppUtilsCore(ReactApi):
             authtoken_cookie = ''.join(['authToken=', self.encrypt(id_token), '; Domain=', domain, '; Path=/;'])
             expires_in = res.json().get('expires_in', None)
             if expires_in:
-                print(f"xyzzy:id_token:[{id_token}]")
                 expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
                 cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
                 authtoken_cookie += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
             resp_headers['set-cookie'] = authtoken_cookie
             resp_headers['Set-Cookie'] = cookie_str
-            print("xyzzy:set-headers:")
             print(resp_headers)
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
@@ -1953,7 +1944,7 @@ if ROUTE_PREFIX != ROUTE_EMPTY_PREFIX:
         Redirect with 302 to view page of DEFAULT_ENV
         Non-protected route
         """
-        default_env = os.environ.get("ENV_NAME")
+        default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
         domain, context = AppUtilsCore.singleton().get_domain_and_context(app.current_request.to_dict())
         redirect_path = ROUTE_PREFIX + 'view/' + default_env
         print(f'foursight-cgap-1: Redirecting to: {redirect_path}')
@@ -1971,19 +1962,29 @@ def index():
     Redirect with 302 to view page of DEFAULT_ENV
     Non-protected route
     """
-    default_env = os.environ.get("ENV_NAME")
+    default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
     domain, context = AppUtilsCore.singleton().get_domain_and_context(app.current_request.to_dict())
-    if CHALICE_LOCAL:
-        redirect_path = ROUTE_PREFIX + 'view/' + default_env
-    else:
-        redirect_path = context + 'view/' + default_env
+    redirect_path = ROUTE_PREFIX_EXPLICIT + 'view/' + default_env
     print(f'foursight-cgap-2: Redirecting to: {redirect_path}')
     print(f'xyzzy-2: os.environ[ENV_NAME] = [{os.environ.get("ENV_NAME")}]')
     print(f'xyzzy-2: default_env = [{default_env}]')
     print(f'xyzzy-2: os.environ')
     print(os.environ)
-    resp_headers = {'Location': redirect_path}
-    return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
+    print(context)
+    headers = {'Location': redirect_path}
+    return Response(status_code=302, body=json.dumps(headers), headers=headers)
+
+
+@app.route(ROUTE_PREFIX + "view", methods=['GET'], cors=CORS)
+def route_view():
+    print("xyzzy-8:just view route")
+    print(ROUTE_PREFIX)
+    print(ROUTE_PREFIX_EXPLICIT)
+    default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
+    redirect_path = ROUTE_PREFIX_EXPLICIT + 'view/' + default_env
+    print(redirect_path)
+    headers = {"Location": redirect_path}
+    return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
 
 @app.route(ROUTE_PREFIX + 'introspect', methods=['GET'], cors=CORS)
@@ -2025,19 +2026,12 @@ def view_run_route(environ, check, method):
         print("XYZZY: view_run_route D")
         return AppUtilsCore.singleton().forbidden_response(context)
 
-@app.route(ROUTE_PREFIX + "view", methods=['GET'], cors=CORS)
-def route_view():
-    default_env = os.environ.get("ENV_NAME")
-    redirect_path = ROUTE_PREFIX + 'view/' + default_env
-    headers = {"Location": redirect_path}
-    return Response(status_code=302, body=json.dumps(headers), headers=headers)
-
-
 @app.route(ROUTE_PREFIX + 'view/{environ}', methods=['GET'], cors=CORS)
 def view_route(environ):
     """
     Non-protected route
     """
+    print(f"xyzzy-9:view/{environ}")
     req_dict = app.current_request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
     return AppUtilsCore.singleton().view_foursight(app.current_request, environ, AppUtilsCore.singleton().check_authorization(req_dict, environ), domain, context)
@@ -2190,7 +2184,8 @@ def react_serve_static_file(environ, **kwargs):
 
 @app.route(ROUTE_PREFIX + 'react', cors=CORS)
 def get_react_noenv():
-    return react_serve_static_file(DEFAULT_ENV, **{})
+    default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
+    return react_serve_static_file(default_env, **{})
 
 
 @app.route(ROUTE_PREFIX + 'react/{environ}', cors=CORS)
@@ -2250,8 +2245,9 @@ def react_get_info_noenv():
     request = app.current_request
     request_dict = request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
-    is_admin = AppUtilsCore.singleton().check_authorization(request_dict, DEFAULT_ENV)
-    return AppUtilsCore.singleton().react_get_info(request=request, environ=DEFAULT_ENV, is_admin=is_admin, domain=domain, context=context)
+    default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
+    is_admin = AppUtilsCore.singleton().check_authorization(request_dict, default_env)
+    return AppUtilsCore.singleton().react_get_info(request=request, environ=default_env, is_admin=is_admin, domain=domain, context=context)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/header', methods=["GET"], cors=CORS)
@@ -2268,7 +2264,8 @@ def react_get_header_noenv():
     request = app.current_request
     request_dict = request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
-    return AppUtilsCore.singleton().react_get_header_info(request=request, environ=DEFAULT_ENV, domain=domain, context=context)
+    default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
+    return AppUtilsCore.singleton().react_get_header_info(request=request, environ=default_env, domain=domain, context=context)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/__clearcache__', cors=CORS)
@@ -2295,7 +2292,8 @@ def get_view_reload_lambda_route():
     print("XYZZY:/reactapi/reloadlambda!")
     req_dict = app.current_request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
-    return AppUtilsCore.singleton().view_reload_lambda(request=app.current_request, environ=DEFAULT_ENV, is_admin=True, lambda_name='default', domain=domain, context=context)
+    default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
+    return AppUtilsCore.singleton().view_reload_lambda(request=app.current_request, environ=default_env, is_admin=True, lambda_name='default', domain=domain, context=context)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/rawchecks', methods=['GET'], cors=CORS)
