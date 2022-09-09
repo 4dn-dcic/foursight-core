@@ -92,7 +92,7 @@ const Checks = (props) => {
         selectedGroups.unshift(group);
         noteChangedResults();
         if (showResults) {
-            group.checks.map(check => showCheckResultsBox(check));
+            group.checks.map(check => showResultBox(check));
         }
     }
     function hideGroup(group) {
@@ -202,9 +202,9 @@ const Checks = (props) => {
         hideCheckRunningBox(check);
         noteChangedCheckBox();
         const runCheckUrl = API.Url(`/checks/${check.name}/run`, environ);
-        check.fetchingResult = true;
-        fetchData(runCheckUrl, response => { check.fetchingResult = false; check.queueingCheckRun = false; check.queuedCheckRun = response.uuid });
         check.queueingCheckRun = true;
+        check.fetchingResult = true;
+        fetchData(runCheckUrl, response => { check.queueingCheckRun = false; check.fetchingResult = false; check.queuedCheckRun = response.uuid });
         check.queuedCheckRun = null;
         showCheckRunningBox(check);
         showResultsHistory(check);
@@ -297,9 +297,9 @@ const Checks = (props) => {
             </div>
     }
 
-    const RefreshResultsButton = ({check, style}) => {
+    const RefreshResultButton = ({check, style}) => {
         return <span>
-            <span style={{...style, cursor:check.results ? "pointer" : "not-allowed",color:"darkred",fontSize:"12pt"}} onClick={() => check.results && refreshResults(check)}>
+            <span style={{...style, cursor:!check.fetchingResult ? "pointer" : "not-allowed",color:"darkred",fontSize:"12pt"}} onClick={() => !check.fetchingResult && refreshResults(check)}>
                 <b data-text={check.results ? "Click here to refetch the latest results." : "Refetching latest results."} className={"xtooltip"}>&#8635;</b>
             </span>
         </span>
@@ -327,7 +327,7 @@ const Checks = (props) => {
                         <td style={{veriticalAlign:"top"}} title={check.name}>
                             <RunButton check={check} style={{marginLeft:"200pt",float:"right"}} />
                             <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>
-                            <RefreshResultsButton check={check} style={{marginLeft:"10pt"}} />
+                            <RefreshResultButton check={check} style={{marginLeft:"10pt"}} />
                             <ToggleHistoryButton  check={check} style={{marginLeft:"4pt"}} />
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div key={index} title={check.schedule[key].cron}>
@@ -568,15 +568,9 @@ const Checks = (props) => {
     function refreshResults(check) {
         check.results = null;
         if (check.showingResults) {
-            hideCheckResultsBox(check);
+            hideResultBox(check);
         }
-        showCheckResultsBox(check);
-/*
-        if (check.showingResults) {
-            hideCheckResultsBox(check);
-            showCheckResultsBox(check);
-        }
-*/
+        showResultBox(check);
     }
 
     function refreshHistory(check) {
@@ -589,10 +583,10 @@ const Checks = (props) => {
 
     function toggleCheckResultsBox(check) {
         if (check.showingResults) {
-            hideCheckResultsBox(check);
+            hideResultBox(check);
         }
         else {
-            showCheckResultsBox(check);
+            showResultBox(check);
         }
     }
 
@@ -615,14 +609,14 @@ const Checks = (props) => {
     }
 
     function showAllResults(checks) {
-        checks.map((check) => !check.showingResults && showCheckResultsBox(check));
+        checks.map((check) => !check.showingResults && showResultBox(check));
     }
 
     function hideAllResults(checks) {
-        checks.map((check) => check.showingResults && hideCheckResultsBox(check));
+        checks.map((check) => check.showingResults && hideResultBox(check));
     }
 
-    function showCheckResultsBox(check) {
+    function showResultBox(check) {
         check.showingResults = true;
         noteChangedSelectedGroups();
         if (!check.results) {
@@ -633,7 +627,7 @@ const Checks = (props) => {
         }
     }
 
-    function hideCheckResultsBox(check) {
+    function hideResultBox(check) {
         check.showingResults = false;
         noteChangedSelectedGroups();
     }
