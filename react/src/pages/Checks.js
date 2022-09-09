@@ -287,7 +287,7 @@ const Checks = (props) => {
     }
 
     const RunButton = ({check, style}) => {
-        if (check.queueingCheckRun || !check.results)
+        if (check.queueingCheckRun || check.fetchingResult)
             return <div className={"check-run-wait-button"} style={style}>
                 <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Wait</b>
             </div>
@@ -626,8 +626,10 @@ const Checks = (props) => {
         check.showingResults = true;
         noteChangedSelectedGroups();
         if (!check.results) {
+            // Fetch the latest results for this check.
             const checkResultsUrl = API.Url(`/checks/${check.name}`, environ);
-            fetchData(checkResultsUrl, checkResults => { check.results = checkResults; noteChangedResults(); }, setLoading, setError)
+            check.fetchingResult = true;
+            fetchData(checkResultsUrl, checkResults => { check.results = checkResults; check.fetchingResult = false; noteChangedResults(); }, setLoading, setError)
         }
     }
 
