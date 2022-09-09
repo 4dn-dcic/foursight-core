@@ -15,6 +15,7 @@ import Users from './Users';
 import Demo from './Demo';
 import Header from './Header';
 import Login from './Login';
+import LoginDone from './LoginDone';
 import CompareGacs from './CompareGacs';
 import Test from './Test';
 import NotFound from './NotFound';
@@ -49,6 +50,7 @@ const App = () => {
                     <Route path="/api/react/:environ/envs" element={<Envs />} />
                     <Route path="/api/react/login" element={<Login />} />
                     <Route path="/api/react/:environ/login" element={<Login />} />
+                    <Route path="/api/react/:environ/logindone" element={<LoginDone />} />
                     <Route path="/api/react/:environ" element={<LoginAndValidEnvRequired><Home /></LoginAndValidEnvRequired>} />
                     <Route path="/api/react/:environ/demo" element={<Demo />}/>
                     <Route path="/api/react/:environ/checks" element={<Checks />}/>

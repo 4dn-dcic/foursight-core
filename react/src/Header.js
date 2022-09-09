@@ -101,11 +101,11 @@ const Header = (props) => {
                 </td>
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
                     <small>{new Date().toLocaleDateString('en-us', { weekday:"long", year:"numeric", month:"long", day:"numeric"})}</small>
-                    &nbsp;<b>|</b>&nbsp;
-                    <span style={{textDecoration:"none",color:"#D6EAF8",cursor:"pointer"}} title="Click to relaunch this app." onClick={() => { if (window.confirm('Do you want to relaunch this app?')){initiateAppReload();return true;}else{window.event.stopPropagation();window.event.preventDefault()}}}>&#x2318;</span>
                     { (IsLoggedIn()) ? (<span>
-                        &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {Logout(navigate);}}>LOGOUT</span>
+                            {/* &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {Logout(navigate);}}>LOGOUT</span> */}
+                        &nbsp;<b>|</b>&nbsp; <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink>
                     </span>):(<span>
+                        &nbsp;<b>|</b>&nbsp; <NavLink to={URL.Url("/login?auth", true)} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
                     </span>)}
                 </td>
             </tr>
@@ -165,7 +165,7 @@ const Header = (props) => {
                                 </span>)}
                             </span>)}
                         </span>):(<span>
-                            <NavLink to={URL.Url("/login?auth", true)} style={{cursor:"pointer",fontWeight:"bold",color:"darkred"}} title="Not logged in. Click to login.">LOGIN</NavLink>
+                            <b>NOT LOGGED IN</b>
                         </span>)}
                     </td>
                 </tr>
