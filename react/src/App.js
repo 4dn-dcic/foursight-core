@@ -14,6 +14,7 @@ import User from './User';
 import Users from './Users';
 import Demo from './Demo';
 import Header from './Header';
+import Footer from './Footer';
 import Login from './Login';
 import LoginDone from './LoginDone';
 import CompareGacs from './CompareGacs';
@@ -63,6 +64,7 @@ const App = () => {
                     <Route path="*" element={<NotFound />}/>
                 </Routes>
             </div>
+            <Footer />
         </GlobalContext.Provider>
     </Router>
 };
