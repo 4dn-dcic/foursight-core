@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import GlobalContext from './GlobalContext';
+import GlobalContext from '../GlobalContext';
 import { DeleteAuthTokenCookie, DeleteCookie, DeleteFauxLoginCookie, DeleteJwtTokenCookie, DeleteRedirectCookie, GetAuthTokenCookie, GetCookie, GetDecodedJwtTokenCookie, GetFauxLoginCookie, SetCookie } from './CookieUtils';
 import * as URL from './URL';
 import * as API from './API';

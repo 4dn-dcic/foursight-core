@@ -2,20 +2,19 @@ import React from 'react';
 import { useContext, useState, useEffect, useReducer } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link, useNavigate } from 'react-router-dom';
-import GlobalContext from "./GlobalContext.js";
-import { fetchData } from './FetchUtils';
-import { RingSpinner } from "./Spinners";
-import { LoginAndValidEnvRequired } from "./LoginUtils";
-import * as API from "./API";
-import * as URL from "./URL";
-import { UUID } from './Utils';
+import GlobalContext from "../GlobalContext";
+import { fetchData } from '../utils/FetchUtils';
+import { RingSpinner } from "../Spinners";
+import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
+import * as API from "../utils/API";
+import * as URL from "../utils/URL";
+import { UUID } from '../utils/Utils';
 let YAML = require('json-to-pretty-yaml');
 
-const CompareGacs = (props) => {
+const GacComparePage = (props) => {
 
     let environ = URL.Env();
     let { environCompare } = useParams();
-    console.log("CompareGAC(" + environ + "," + environCompare +")")
     const url = API.Url(`/gac/${environCompare}`, environ);
     const [ data, setData ] = useState([]);
     const [ showingRaw, setShowingRaw ] = useState(false);
@@ -149,20 +148,16 @@ const CompareGacs = (props) => {
 
     let OnChangeEnv = (arg) => {
         environ = arg.target.value;
-        console.log('CompareGacs:onChangeEnv(' + arg.target.value + ')')
         let url = API.Url("/gac/" + environCompare, environ);
         const path = "/api/react/" + environ + "/gac/" + environCompare;
-        console.log("CompareGacs:onChangeEnv(" + arg.target.value + "): Navigate(" + path + ")")
         navigate(path);
         fetchData(url, setData, setLoading, setError)
     }
 
     let OnChangeEnvCompare = (arg) => {
         environCompare = arg.target.value;
-        console.log('CompareGacs:onChangeEnvCompare(' + arg.target.value + ')')
         let url = API.Url("/gac/" + environCompare, environ);
         const path = "/api/react/" + environ + "/gac/" + environCompare;
-        console.log("CompareGacs:onChangeEnv(" + arg.target.value + "): Navigate(" + path + ")")
         navigate(path);
         fetchData(url, setData, setLoading, setError)
     }
@@ -263,4 +258,4 @@ const CompareGacs = (props) => {
     </LoginAndValidEnvRequired>
 };
 
-export default CompareGacs;
+export default GacComparePage;

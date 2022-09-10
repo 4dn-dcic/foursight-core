@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchData } from './FetchUtils';
-import { RingSpinner } from "./Spinners";
-import { LoginAndValidEnvRequired } from "./LoginUtils";
-import * as API from "./API";
+import { fetchData } from '../utils/FetchUtils';
+import { RingSpinner } from "../Spinners";
+import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
+import * as API from "../utils/API";
 let YAML = require('json-to-pretty-yaml');
 
-const User = (props) => {
+const UserPage = (props) => {
 
     const { email } = useParams()
     const url = API.Url(`/users/${email}`, true);
@@ -37,4 +37,4 @@ const User = (props) => {
     </LoginAndValidEnvRequired>
 };
 
-export default User;
+export default UserPage;

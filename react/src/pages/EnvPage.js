@@ -1,12 +1,12 @@
 import React from 'react';
 import { useContext } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import GlobalContext from "./GlobalContext.js";
-import { IsLoggedIn, NotePageLastVisited } from "./LoginUtils.js";
-import * as URL from './URL';
-import { UUID } from './Utils';
+import GlobalContext from "../GlobalContext.js";
+import { IsLoggedIn, NotePageLastVisited } from "../utils/LoginUtils";
+import * as URL from '../utils/URL';
+import { UUID } from '../utils/Utils';
 
-const Envs = (props) => {
+const EnvPage = (props) => {
 
     NotePageLastVisited();
 
@@ -154,4 +154,4 @@ const Envs = (props) => {
     </div>
 };
 
-export default Envs;
+export default EnvPage;

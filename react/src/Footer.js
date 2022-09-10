@@ -1,4 +1,4 @@
-import './App.css';
+import './css/App.css';
 import { useContext } from 'react';
 import GlobalContext from "./GlobalContext";
 

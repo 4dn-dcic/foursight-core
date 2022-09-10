@@ -1,22 +1,21 @@
 import React from 'react';
-import '../App.css';
+import '../css/App.css';
 import { useContext, useState, useEffect, useReducer } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
-import { fetchData } from '../FetchUtils';
-import { SetCookie } from '../CookieUtils';
+import { fetchData } from '../utils/FetchUtils';
+import { SetCookie } from '../utils/CookieUtils';
 import { BarSpinner } from "../Spinners";
-import { LoginAndValidEnvRequired } from "../LoginUtils";
-import { CopyToClipboard } from "../Utils";
-import * as API from "../API";
-import * as URL from "../URL";
+import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
+import { CopyToClipboard } from "../utils/Utils";
+import * as API from "../utils/API";
+import * as URL from "../utils/URL";
 import Moment from 'moment';
-import { isObject } from '../Utils';
-import { UUID } from '../Utils';
+import { isObject, UUID } from '../utils/Utils';
 let YAML = require('json-to-pretty-yaml');
 
-const Checks = (props) => {
+const ChecksPage = (props) => {
 
     let { environ } = useParams();
     const [ header ] = useContext(GlobalContext);
@@ -669,4 +668,4 @@ const Checks = (props) => {
     </LoginAndValidEnvRequired>
 };
 
-export default Checks;
+export default ChecksPage;

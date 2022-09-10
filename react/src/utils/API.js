@@ -1,5 +1,5 @@
-import * as Utils from './Utils.js';
-import * as URL from './URL.js';
+import * as Utils from './Utils';
+import * as URL from './URL';
 
 export const API_BASE_URL_PATH = "/api/reactapi";
 

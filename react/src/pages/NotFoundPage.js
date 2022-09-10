@@ -1,10 +1,10 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import GlobalContext from "./GlobalContext.js";
-import { LoginRequired } from "./LoginUtils.js";
-import * as URL from './URL.js';
+import GlobalContext from "../GlobalContext";
+import { LoginRequired } from "../utils/LoginUtils";
+import * as URL from '../utils/URL';
 
-const NotFound = (props) => {
+const NotFoundPage = (props) => {
 
     const [ info ] = useContext(GlobalContext);
 
@@ -21,4 +21,4 @@ const NotFound = (props) => {
     </LoginRequired>
 };
 
-export default NotFound;
+export default NotFoundPage;

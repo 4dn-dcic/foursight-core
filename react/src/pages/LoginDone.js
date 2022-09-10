@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
-import { IsLoggedIn } from './LoginUtils.js';
-import { GetCookie } from './CookieUtils';
-import * as URL from "./URL";
+import { IsLoggedIn } from '../utils/LoginUtils';
+import { GetCookie } from '../utils/CookieUtils';
+import * as URL from "../utils/URL";
 
 const LoginDone = (props) => {
     return <>

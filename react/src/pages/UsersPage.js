@@ -1,13 +1,13 @@
 import { useContext, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import GlobalContext from "./GlobalContext.js";
-import { fetchData } from './FetchUtils.js';
-import { RingSpinner } from "./Spinners.js";
-import { LoginAndValidEnvRequired } from "./LoginUtils.js";
-import * as URL from './URL.js';
-import * as API from "./API.js";
+import GlobalContext from "../GlobalContext";
+import { fetchData } from '../utils/FetchUtils';
+import { RingSpinner } from "../Spinners";
+import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
+import * as URL from '../utils/URL';
+import * as API from "../utils/API";
 
-const Users = () => {
+const UsersPage = () => {
 
     const url = API.Url("/users", true);
     let [ users, setUsers ] = useState([]);
@@ -63,4 +63,4 @@ const Users = () => {
     </LoginAndValidEnvRequired>
 };
 
-export default Users;
+export default UsersPage;

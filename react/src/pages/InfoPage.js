@@ -1,15 +1,15 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import GlobalContext from "./GlobalContext";
-import { GetLoginInfo, LoginAndValidEnvRequired } from "./LoginUtils";
-import { CopyToClipboard } from "./Utils";
-import { fetchData } from './FetchUtils';
-import * as API from "./API";
-import * as URL from "./URL";
+import GlobalContext from "../GlobalContext";
+import { GetLoginInfo, LoginAndValidEnvRequired } from "../utils/LoginUtils";
+import { CopyToClipboard } from "../utils/Utils";
+import { fetchData } from '../utils/FetchUtils';
+import * as API from "../utils/API";
+import * as URL from "../utils/URL";
 import uuid from 'react-uuid';
 let YAML = require('json-to-pretty-yaml');
 
-const Info = () => {
+const InfoPage = () => {
 
     const [ header ] = useContext(GlobalContext);
 
@@ -193,4 +193,4 @@ const Info = () => {
     </LoginAndValidEnvRequired>
 };
 
-export default Info;
+export default InfoPage;

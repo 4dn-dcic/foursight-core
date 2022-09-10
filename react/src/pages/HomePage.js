@@ -1,11 +1,11 @@
 import { useContext } from 'react';
 import { useParams } from 'react-router-dom';
-import GlobalContext from "./GlobalContext";
-import { LoginAndValidEnvRequired } from "./LoginUtils";
-import { IsRunningLocally } from './LoginUtils.js';
-import * as URL from "./URL";
+import GlobalContext from "../GlobalContext";
+import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
+import { IsRunningLocally } from '../utils/LoginUtils';
+import * as URL from "../utils/URL";
 
-const Home = (props) => {
+const HomePag = (props) => {
 
     const [ header ] = useContext(GlobalContext);
     let { environ } = useParams();
@@ -25,4 +25,4 @@ const Home = (props) => {
     </LoginAndValidEnvRequired>
 };
 
-export default Home;
+export default HomePag;

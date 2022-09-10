@@ -1,15 +1,15 @@
-import './App.css';
+import './css/App.css';
 import React from 'react';
 import { useContext } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "./GlobalContext";
-import { IsRunningLocally } from './LoginUtils';
-import { DeleteRedirectCookie } from './CookieUtils';
-import * as URL from "./URL";
-import * as API from "./API";
+import { IsRunningLocally } from './utils/LoginUtils';
+import { DeleteRedirectCookie } from './utils/CookieUtils';
+import * as URL from "./utils/URL";
+import * as API from "./utils/API";
 import { BarSpinner } from "./Spinners";
-import { GetLoginInfo, IsLoggedIn, Logout } from "./LoginUtils";
-import { fetchData } from "./FetchUtils";
+import { GetLoginInfo, IsLoggedIn, Logout } from "./utils/LoginUtils";
+import { fetchData } from "./utils/FetchUtils";
 
 const Header = (props) => {
 

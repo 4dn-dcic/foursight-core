@@ -1,16 +1,16 @@
-import './App.css';
+import '../css/App.css';
 import React from 'react';
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import GlobalContext from './GlobalContext.js';
+import GlobalContext from '../GlobalContext';
 import Auth0Lock from 'auth0-lock';
-import * as URL from './URL';
-import { GetCookie, SetCookie, SetFauxLoginCookie, SetRedirectCookie } from './CookieUtils';
-import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, IsRunningLocally, Logout, ValidEnvRequired } from './LoginUtils.js';
+import * as URL from '../utils/URL';
+import { GetCookie, SetCookie, SetFauxLoginCookie, SetRedirectCookie } from '../utils/CookieUtils';
+import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, IsRunningLocally, Logout, ValidEnvRequired } from '../utils/LoginUtils';
 
-const Login = (props) => {
+const LoginPage = (props) => {
 
     let navigate = useNavigate();
     const [ info ] = useContext(GlobalContext);
@@ -140,4 +140,4 @@ const Login = (props) => {
     </ValidEnvRequired>
 };
 
-export default Login;
+export default LoginPage;

@@ -1,7 +1,7 @@
-import logo from './logo.svg';
+import logo from '../logo.svg';
 import React from 'react';
 
-const Demo = () => {
+const DemoPage = () => {
 
   return (
     <div className="App">
@@ -23,4 +23,4 @@ const Demo = () => {
   );
 }
 
-export default Demo;
+export default DemoPage;

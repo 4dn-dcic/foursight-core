@@ -1,28 +1,28 @@
-import './App.css';
+import './css/App.css';
 import { useState, useEffect, Redirect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, NavLink } from 'react-router-dom';
 import GlobalContext from './GlobalContext';
-import { fetchData } from './FetchUtils';
-import * as API from './API';
-import { IsLoggedIn, LoginRequired } from './LoginUtils';
-import * as URL from './URL';
+import { fetchData } from './utils/FetchUtils';
+import * as API from './utils/API';
+import { IsLoggedIn, LoginRequired } from './utils/LoginUtils';
+import * as URL from './utils/URL';
 
-import Home from './Home';
-import Envs from './Envs';
-import Info from './Info';
-import User from './User';
-import Users from './Users';
-import Demo from './Demo';
+import HomePage from './pages/HomePage';
+import EnvPage from './pages/EnvPage';
+import InfoPage from './pages/InfoPage';
+import UserPage from './pages/UserPage';
+import UsersPage from './pages/UsersPage';
+import DemoPage from './pages/DemoPage';
 import Header from './Header';
 import Footer from './Footer';
-import Login from './Login';
-import LoginDone from './LoginDone';
-import EnvDone from './EnvDone';
-import CompareGacs from './CompareGacs';
-import Test from './Test';
-import NotFound from './NotFound';
-import Checks from './pages/Checks';
-import { LoginAndValidEnvRequired } from './LoginUtils';
+import LoginPage from './pages/LoginPage';
+import LoginDone from './pages/LoginDone';
+import EnvDone from './pages/EnvDone';
+import GacComparePage from './pages/GacComparePage';
+import TestPage from './pages/TestPage';
+import NotFoundPage from './pages/NotFoundPage';
+import ChecksPage from './pages/ChecksPage';
+import { LoginAndValidEnvRequired } from './utils/LoginUtils';
 
 const App = () => {
 
@@ -47,23 +47,23 @@ const App = () => {
             <Header />
             <div style={{margin:"20px"}}>
                 <Routes>
-                    <Route path="/api/react" element={<Envs />} />
-                    <Route path="/api/react/envs" element={<Envs />} />
-                    <Route path="/api/react/:environ/envs" element={<Envs />} />
+                    <Route path="/api/react" element={<EnvPage />} />
+                    <Route path="/api/react/envs" element={<EnvPage />} />
+                    <Route path="/api/react/:environ/envs" element={<EnvPage />} />
                     <Route path="/api/react/:environ/envdone" element={<EnvDone />} />
-                    <Route path="/api/react/login" element={<Login />} />
-                    <Route path="/api/react/:environ/login" element={<Login />} />
+                    <Route path="/api/react/login" element={<LoginPage />} />
+                    <Route path="/api/react/:environ/login" element={<LoginPage />} />
                     <Route path="/api/react/:environ/logindone" element={<LoginDone />} />
-                    <Route path="/api/react/:environ" element={<LoginAndValidEnvRequired><Home /></LoginAndValidEnvRequired>} />
-                    <Route path="/api/react/:environ/demo" element={<Demo />}/>
-                    <Route path="/api/react/:environ/checks" element={<Checks />}/>
-                    <Route path="/api/react/:environ/home" element={<LoginAndValidEnvRequired><Home /></LoginAndValidEnvRequired>}/>
-                    <Route path="/api/react/:environ/info" element={<LoginAndValidEnvRequired><Info /></LoginAndValidEnvRequired>}/>
-                    <Route path="/api/react/:environ/users" element={<LoginAndValidEnvRequired><Users/></LoginAndValidEnvRequired>} />
-                    <Route path="/api/react/:environ/users/:email" element={<LoginAndValidEnvRequired><User /></LoginAndValidEnvRequired>}/>
-                    <Route path="/api/react/:environ/gac/:environCompare" element={<LoginAndValidEnvRequired><CompareGacs /></LoginAndValidEnvRequired>}/>
-                    <Route path="/api/react/:environ/test" element={<Test />}/>
-                    <Route path="*" element={<NotFound />}/>
+                    <Route path="/api/react/:environ" element={<LoginAndValidEnvRequired><HomePage /></LoginAndValidEnvRequired>} />
+                    <Route path="/api/react/:environ/demo" element={<DemoPage />}/>
+                    <Route path="/api/react/:environ/checks" element={<ChecksPage />}/>
+                    <Route path="/api/react/:environ/home" element={<LoginAndValidEnvRequired><HomePage /></LoginAndValidEnvRequired>}/>
+                    <Route path="/api/react/:environ/info" element={<LoginAndValidEnvRequired><InfoPage /></LoginAndValidEnvRequired>}/>
+                    <Route path="/api/react/:environ/users" element={<LoginAndValidEnvRequired><UsersPage /></LoginAndValidEnvRequired>} />
+                    <Route path="/api/react/:environ/users/:email" element={<LoginAndValidEnvRequired><UserPage /></LoginAndValidEnvRequired>}/>
+                    <Route path="/api/react/:environ/gac/:environCompare" element={<LoginAndValidEnvRequired><GacComparePage /></LoginAndValidEnvRequired>}/>
+                    <Route path="/api/react/:environ/test" element={<TestPage />}/>
+                    <Route path="*" element={<NotFoundPage />}/>
                 </Routes>
             </div>
             <Footer />
