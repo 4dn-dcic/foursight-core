@@ -4,12 +4,15 @@ import GlobalContext from "./GlobalContext";
 import { GetLoginInfo, LoginAndValidEnvRequired } from "./LoginUtils";
 import { CopyToClipboard } from "./Utils";
 import { fetchData } from './FetchUtils';
+import { NotePageLastVisited } from './LoginUtils';
 import * as API from "./API";
 import * as URL from "./URL";
 import uuid from 'react-uuid';
 let YAML = require('json-to-pretty-yaml');
 
 const Info = () => {
+
+    NotePageLastVisited();
 
     const [ header ] = useContext(GlobalContext);
 

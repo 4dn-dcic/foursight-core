@@ -6,12 +6,15 @@ import GlobalContext from "./GlobalContext.js";
 import { fetchData } from './FetchUtils';
 import { RingSpinner } from "./Spinners";
 import { LoginAndValidEnvRequired } from "./LoginUtils";
+import { NotePageLastVisited } from './LoginUtils';
 import * as API from "./API";
 import * as URL from "./URL";
 import { UUID } from './Utils';
 let YAML = require('json-to-pretty-yaml');
 
 const CompareGacs = (props) => {
+
+    NotePageLastVisited();
 
     let environ = URL.Env();
     let { environCompare } = useParams();

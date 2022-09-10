@@ -26,7 +26,7 @@ const Login = (props) => {
         document.getElementById("login_container").style.display = "none";
         document.getElementById("login_auth_container").style.display = "block";
         document.getElementById("login_auth_cancel").style.display = "block";
-        createRedirectCookie();
+        createRedirectCookie(GetCookie("last_url"));
         createAuth0Lock().show();
         //
         // Hacking styles for (now) embeded (rather than popup) Auth0 login box.
@@ -76,11 +76,11 @@ const Login = (props) => {
         return new Auth0Lock(loginClientId, "hms-dbmi.auth0.com", loginPayload);
     }
 
-    function createRedirectCookie() {
+    function createRedirectCookie(url = null) {
         let expires = new Date();
         expires.setFullYear(expires.getFullYear() + 1);
         expires = expires.toUTCString();
-        const redirectUrl = window.location.origin + URL.Url("/home", true);
+        const redirectUrl = url ? url : window.location.origin + URL.Url("/home", true);
         //SetCookie("redir_react", redirectUrl, expires);
         SetRedirectCookie(redirectUrl, expires);
     }

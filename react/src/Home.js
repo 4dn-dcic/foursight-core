@@ -3,9 +3,11 @@ import { useParams } from 'react-router-dom';
 import GlobalContext from "./GlobalContext";
 import { LoginAndValidEnvRequired } from "./LoginUtils";
 import { IsRunningLocally } from './LoginUtils.js';
+import { NotePageLastVisited } from './LoginUtils';
 import * as URL from "./URL";
 
 const Home = (props) => {
+    NotePageLastVisited();
 
     const [ header ] = useContext(GlobalContext);
     let { environ } = useParams();

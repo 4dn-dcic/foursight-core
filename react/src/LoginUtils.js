@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import GlobalContext from './GlobalContext';
-import { DeleteAuthTokenCookie, DeleteCookie, DeleteFauxLoginCookie, DeleteJwtTokenCookie, DeleteRedirectCookie, GetAuthTokenCookie, GetCookie, GetDecodedJwtTokenCookie, GetFauxLoginCookie} from './CookieUtils';
+import { DeleteAuthTokenCookie, DeleteCookie, DeleteFauxLoginCookie, DeleteJwtTokenCookie, DeleteRedirectCookie, GetAuthTokenCookie, GetCookie, GetDecodedJwtTokenCookie, GetFauxLoginCookie, SetCookie } from './CookieUtils';
 import * as URL from './URL';
 import * as API from './API';
 import * as Utils from './Utils';
@@ -140,12 +140,14 @@ export const ValidEnvRequired = ({ children }) => {
 }
 
 export const LoginRequired = ({ children }) => {
+    NotePageLastVisited();
     const [ info ] = useContext(GlobalContext);
     //return !info.error && !info.env_unknown && IsLoggedIn() ? children : <Navigate to={URL.Url("/login", true)} replace />;
     return !IsLoggedIn() ? <Navigate to={URL.Url("/login", true)} replace /> : children;
 }
 
 export const LoginAndValidEnvRequired = ({ children }) => {
+    NotePageLastVisited();
     const [ info ] = useContext(GlobalContext);
     if (URL.Env() === "" || info.env_unknown) {
         return <Navigate to={URL.Url("/envs", true)} replace />
@@ -156,4 +158,8 @@ export const LoginAndValidEnvRequired = ({ children }) => {
     else {
         return children;
     }
+}
+
+export const NotePageLastVisited = () => {
+    SetCookie("last_url", IsRunningLocally() ? window.location.pathname : window.location.href);
 }

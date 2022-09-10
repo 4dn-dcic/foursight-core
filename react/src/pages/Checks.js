@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
 import { fetchData } from '../FetchUtils';
+import { SetCookie } from '../CookieUtils';
 import { BarSpinner } from "../Spinners";
 import { LoginAndValidEnvRequired } from "../LoginUtils";
 import { CopyToClipboard } from "../Utils";
@@ -13,9 +14,12 @@ import * as URL from "../URL";
 import Moment from 'moment';
 import { isObject } from '../Utils';
 import { UUID } from '../Utils';
+import { NotePageLastVisited } from '../LoginUtils';
 let YAML = require('json-to-pretty-yaml');
 
 const Checks = (props) => {
+
+    NotePageLastVisited();
 
     let { environ } = useParams();
     const [ header ] = useContext(GlobalContext);

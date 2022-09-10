@@ -1,7 +1,11 @@
 import logo from './logo.svg';
 import React from 'react';
+import { NotePageLastVisited } from './LoginUtils';
 
 const Demo = () => {
+
+    NotePageLastVisited();
+
   return (
     <div className="App">
       <header className="App-header">

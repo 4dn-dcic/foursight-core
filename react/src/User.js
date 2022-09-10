@@ -3,10 +3,13 @@ import { useParams } from 'react-router-dom';
 import { fetchData } from './FetchUtils';
 import { RingSpinner } from "./Spinners";
 import { LoginAndValidEnvRequired } from "./LoginUtils";
+import { NotePageLastVisited } from './LoginUtils';
 import * as API from "./API";
 let YAML = require('json-to-pretty-yaml');
 
 const User = (props) => {
+
+    NotePageLastVisited();
 
     const { email } = useParams()
     const url = API.Url(`/users/${email}`, true);
