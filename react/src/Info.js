@@ -4,15 +4,12 @@ import GlobalContext from "./GlobalContext";
 import { GetLoginInfo, LoginAndValidEnvRequired } from "./LoginUtils";
 import { CopyToClipboard } from "./Utils";
 import { fetchData } from './FetchUtils';
-import { NotePageLastVisited } from './LoginUtils';
 import * as API from "./API";
 import * as URL from "./URL";
 import uuid from 'react-uuid';
 let YAML = require('json-to-pretty-yaml');
 
 const Info = () => {
-
-    NotePageLastVisited();
 
     const [ header ] = useContext(GlobalContext);
 
@@ -21,6 +18,11 @@ const Info = () => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
     useEffect(() => { fetchData(url, setInfo, setLoading, setError)}, []);
+    //
+    // TODO: Set this within /header API call.
+    //
+    let isFoursightFourfront = header.app?.package != "foursight-cgap";
+    isFoursightFourfront =true
 
     const InfoBox = ({title, children}) => {
         return <>
@@ -112,7 +114,7 @@ const Info = () => {
         <InfoBox title="Versions">
             <InfoRow name={"dcicutils"} value={header.versions?.dcicutils} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"foursight-core"} value={header.versions?.foursight_core} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
-            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={"dbmi-bgm"} size="2" />
+            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={isFoursightFourfront ? "4dn-dcic" : "dbmi-bgm"} size="2" />
             <InfoRow name={"python"} value={header.versions?.python} monospace={true} copy={true} python={true} size="2" />
             <InfoRow name={"chalice"} value={header.versions?.chalice} monospace={true} copy={true} chalice={true} size="2" />
         </InfoBox>

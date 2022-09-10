@@ -14,12 +14,9 @@ import * as URL from "../URL";
 import Moment from 'moment';
 import { isObject } from '../Utils';
 import { UUID } from '../Utils';
-import { NotePageLastVisited } from '../LoginUtils';
 let YAML = require('json-to-pretty-yaml');
 
 const Checks = (props) => {
-
-    NotePageLastVisited();
 
     let { environ } = useParams();
     const [ header ] = useContext(GlobalContext);

@@ -4,13 +4,10 @@ import GlobalContext from "./GlobalContext.js";
 import { fetchData } from './FetchUtils.js';
 import { RingSpinner } from "./Spinners.js";
 import { LoginAndValidEnvRequired } from "./LoginUtils.js";
-import { NotePageLastVisited } from './LoginUtils';
 import * as URL from './URL.js';
 import * as API from "./API.js";
 
 const Users = () => {
-
-    NotePageLastVisited();
 
     const url = API.Url("/users", true);
     let [ users, setUsers ] = useState([]);
