@@ -5,6 +5,8 @@ import * as Utils from './Utils';
 const _cookies = new Cookies()
 const _jwtTokenCookieName = "jwtToken";
 const _authTokenCookieName = "authToken";
+const _redirectCookieName = "redir_react";
+const _fauxLoginCookieName = "test_mode_login_localhost";
 
 export const GetCookie = (name) => {
     const value = _cookies.get(name);
@@ -63,7 +65,7 @@ export const GetDecodedJwtTokenCookie = (name) => {
 }
 
 export const DeleteJwtTokenCookie = (name) => {
-    DeleteCookie(_jwtTokenCookieName)
+    DeleteCookie(_jwtTokenCookieName);
 }
 
 export const GetAuthTokenCookie = (name) => {
@@ -71,5 +73,29 @@ export const GetAuthTokenCookie = (name) => {
 }
 
 export const DeleteAuthTokenCookie = (name) => {
-    return DeleteCookie(_authTokenCookieName);
+    DeleteCookie(_authTokenCookieName);
+}
+
+export const SetRedirectCookie = (url, expires = null) => {
+    SetCookie(_redirectCookieName, url, expires);
+}
+
+export const GetRedirectCookie = () => {
+    return GetCookie(_redirectCookieName);
+}
+
+export const DeleteRedirectCookie = () => {
+    DeleteCookie(_redirectCookieName);
+}
+
+export const SetFauxLoginCookie = () => {
+    SetCookie(_fauxLoginCookieName, "1");
+}
+
+export const GetFauxLoginCookie = () => {
+    return GetCookie(_fauxLoginCookieName);
+}
+
+export const DeleteFauxLoginCookie = () => {
+    DeleteCookie(_fauxLoginCookieName);
 }

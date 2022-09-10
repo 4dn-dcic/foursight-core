@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import GlobalContext from './GlobalContext';
-import { DeleteAuthTokenCookie, DeleteCookie, DeleteJwtTokenCookie, GetAuthTokenCookie, GetCookie, GetDecodedJwtTokenCookie } from './CookieUtils';
+import { DeleteAuthTokenCookie, DeleteCookie, DeleteFauxLoginCookie, DeleteJwtTokenCookie, DeleteRedirectCookie, GetAuthTokenCookie, GetCookie, GetDecodedJwtTokenCookie, GetFauxLoginCookie} from './CookieUtils';
 import * as URL from './URL';
 import * as API from './API';
 import * as Utils from './Utils';
@@ -22,7 +22,7 @@ export const IsLoggedIn = () => {
     // into account but good for now, at least for development. Marking this as TODO.
     //
     if (IsRunningLocally()) {
-        return GetCookie("test_mode_login_localhost") == "1";
+        return GetFauxLoginCookie() == "1";
         return true;
     }
     const decodedJwtToken = GetDecodedJwtTokenCookie();
@@ -58,12 +58,10 @@ export const GetLoginInfo = () => {
 }
 
 export const Logout = (navigate) => {
-    if (IsRunningLocally()) {
-        DeleteCookie("test_mode_login_localhost");
-        return;
-    }
     DeleteJwtTokenCookie();
     DeleteAuthTokenCookie();
+    DeleteRedirectCookie();
+    DeleteFauxLoginCookie();
     if (navigate) {
         //
         // Cannot create useNavigate locally here:

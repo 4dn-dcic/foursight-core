@@ -334,7 +334,7 @@ const Checks = (props) => {
                             <RefreshResultButton check={check} style={{marginLeft:"10pt"}} />
                             <ToggleHistoryButton check={check} style={{marginLeft:"4pt"}} />
                             { Object.keys(check?.schedule).map((key, index) => {
-                                return <div>
+                                return <div key={key}>
                                     { false && check?.schedule ? (
                                         <div style={{whiteSpace:"nowrap",width:"100%"}} key={index} title={check.schedule[key].cron}>
                                             <small><i>Schedule: <span className={"tool-tip"} data-text={check.schedule[key]?.cron}>{check.schedule[key].cron_description}</span>.</i></small>
@@ -461,7 +461,7 @@ const Checks = (props) => {
                                 Status
                             &nbsp;&nbsp;</td>
                             <td style={{textAlign:"right",whiteSpace:"nowrap"}}>
-                                Duration
+                                <span className={"tool-tip"} data-text={"Duration of the check in seconds."}> Duration </span>
                             &nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
                                 State

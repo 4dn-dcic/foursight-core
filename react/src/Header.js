@@ -3,6 +3,7 @@ import React from 'react';
 import { useContext } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
+import { IsRunningLocally } from './LoginUtils.js';
 import * as URL from "./URL.js";
 import * as API from "./API.js";
 import { BarSpinner } from "./Spinners.js";
@@ -171,7 +172,8 @@ const Header = (props) => {
                 </tr>
                 <tr>
                     <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="3">
-                        <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>. Click <a href={"/api/view/" + (environ || header.env?.default)} style={{color:"inherit"}}><b>here</b></a> to go to the real version.</i>
+                        <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>.
+                        Click <a href={IsRunningLocally() && window.location.host == "localhost:3000" ? "http://localhost:8000/api/view" : ("/api/view/" + (environ || header.env?.default))} style={{color:"inherit"}}><b>here</b></a> to go to the real version.</i>
                     </td>
                 </tr>
                 <tr>

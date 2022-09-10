@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import GlobalContext from "./GlobalContext";
 import { LoginAndValidEnvRequired } from "./LoginUtils";
+import { IsRunningLocally } from './LoginUtils.js';
 import * as URL from "./URL";
 
 const Home = (props) => {
@@ -15,7 +16,7 @@ const Home = (props) => {
                 <b>Home Page</b>
                 <p />
                 This is an experimental React version of Foursight. <br />
-                Click <b><a style={{color:"inherit"}} href={"/api/view/" + environ}>here</a></b> to go to the real version of Foursight. <br />
+                Click <b><a style={{color:"inherit"}} href={IsRunningLocally() && window.location.host == "localhost:3000" ? "http://localhost:8000/api/view" : ("/api/view/" + environ)}>here</a></b> to go to the real version of Foursight. <br />
                 <small>
                     For more info: david_michaels@hms.harvard.edu
                 </small>

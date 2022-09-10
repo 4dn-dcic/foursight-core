@@ -7,7 +7,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import GlobalContext from './GlobalContext.js';
 import Auth0Lock from 'auth0-lock';
 import * as URL from './URL';
-import { DeleteCookie, GetCookie, SetCookie } from './CookieUtils';
+import { GetCookie, SetCookie, SetFauxLoginCookie, SetRedirectCookie } from './CookieUtils';
 import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, IsRunningLocally, Logout, ValidEnvRequired } from './LoginUtils.js';
 
 const Login = (props) => {
@@ -81,7 +81,8 @@ const Login = (props) => {
         expires.setFullYear(expires.getFullYear() + 1);
         expires = expires.toUTCString();
         const redirectUrl = window.location.origin + URL.Url("/home", true);
-        SetCookie("redir_react", redirectUrl, expires);
+        //SetCookie("redir_react", redirectUrl, expires);
+        SetRedirectCookie(redirectUrl, expires);
     }
 
     if (info.loading && !info.error) return <>Loading ...</>
@@ -125,15 +126,15 @@ const Login = (props) => {
             { (IsRunningLocally() && showingAuthBox) && (
                 <div className="container" style={{maxWidth:"290pt",marginTop:"-20pt"}}>
                     <div className="boxstyle check-fail" style={{margin:"20pt",padding:"10pt",borderWidth:"2",borderColor:"red"}}>
-                        <small>
-                        As you appear to be <b>running</b> Foursight <b>locally</b>, the above Auth0 <u><b>will not work</b></u>. <br />
-                    {/* Click <b style={{cursor:"pointer"}} onClick={(x) => { hideAuthBox(); SetCookie("test_mode_login_localhost", "1"); window.location.reload(); }}><u>here</u></b> for faux local login. */}
-                        Click <NavLink onClick={() => SetCookie("test_mode_login_localhost", "1")} to={URL.Url("/logindone", true)} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</NavLink> to faux <NavLink onClick={() => SetCookie("test_mode_login_localhost", "1")} to={URL.Url("/logindone", true)} style={{fontSize:"small",cursor:"pointer",color:"darkred"}}>login</NavLink> locally.
-                        </small>
+                        <img src={"https://i.stack.imgur.com/DPBue.png"} style={{height:"35",verticalAlign:"bottom"}} /> <b style={{fontSize:"x-large"}}>Warning ...</b> <br />
+                        <hr style={{borderTop: "2px solid red",marginTop:"8px",marginBottom:"8px"}}/>
+                        As you appear to be <b>running</b> Foursight <b>locally</b>, the above login <u><b>will not work</b></u> properly. <br />
+                        <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
+                        Click <NavLink onClick={() => SetFauxLoginCookie()} to={URL.Url("/logindone", true)} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</NavLink> to faux <NavLink onClick={() => SetFauxLoginCookie()} to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"darkred"}}><b>login</b></NavLink> locally.
                     </div>
                 </div>
             )}
-            { showAuthBoxAtOutset && setTimeout(() => { if (showAuthBoxAtOutset && !showingAuthBox) { showAuthBox(); }}, 1) }
+            { showAuthBoxAtOutset && (setTimeout(() => { if (showAuthBoxAtOutset && !showingAuthBox) { showAuthBox(); }}, 10), "") }
         </div>
         </React.Fragment>)}
     </ValidEnvRequired>
