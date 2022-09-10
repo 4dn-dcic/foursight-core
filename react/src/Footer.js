@@ -6,6 +6,7 @@ const Footer = (props) => {
 
     const [ header ] = useContext(GlobalContext);
     return <>
+                TODO
     </>
 };
 

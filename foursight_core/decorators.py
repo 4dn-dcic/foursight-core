@@ -62,27 +62,49 @@ class Decorators(object):
         def check_deco(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
+                print('xyzzy:check_function-1')
+                print(args)
+                print(kwargs)
                 start_time = time.time()
                 kwargs = self.handle_kwargs(kwargs, default_kwargs)
+                print('xyzzy:check_function-2')
+                print(kwargs)
                 parent_pid = os.getpid()
                 child_pid = os.fork()
+                print('xyzzy:check_function-3')
+                print(parent_pid)
+                print(child_pid)
                 if child_pid != 0:  # we are the parent who will execute the check
+                    print('xyzzy:check_function-4')
                     try:
                         check = func(*args, **kwargs)
+                        print('xyzzy:check_function-5')
                         check.validate()
+                        print('xyzzy:check_function-6')
                     except Exception:
+                        print('xyzzy:check_function-7: exception')
                         # connection should be the first (and only) positional arg
                         check = self.CheckResult(args[0], func.__name__)
+                        print('xyzzy:check_function-8')
                         check.status = 'ERROR'
                         check.description = 'Check failed to run. See full output.'
                         check.full_output = traceback.format_exc().split('\n')
                     kwargs['runtime_seconds'] = round(time.time() - start_time, 2)
+                    print('xyzzy:check_function-9')
+                    print(kwargs)
                     check.kwargs = kwargs
+                    print('xyzzy:check_function-10')
+                    print(check)
                     os.kill(child_pid, signal.SIGKILL)  # we finished, so kill child
-                    return check.store_result()
+                    xyzzy = check.store_result()
+                    print('xyzzy:check_function-11')
+                    print(xyzzy)
+                    #return check.store_result()
                 else:  # we are the child who handles the timeout
+                    print('xyzzy:check_function-12')
                     partials = {'name': func.__name__, 'kwargs': kwargs, 'is_check': True,
                                 'start_time': start_time, 'connection': args[0]}
+                    print(partials)
                     self.do_timeout(parent_pid, partials)
 
             wrapper.check_decorator = self.CHECK_DECO

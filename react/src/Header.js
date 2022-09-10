@@ -2,15 +2,20 @@ import './App.css';
 import React from 'react';
 import { useContext } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
-import GlobalContext from "./GlobalContext.js";
-import { IsRunningLocally } from './LoginUtils.js';
-import * as URL from "./URL.js";
-import * as API from "./API.js";
-import { BarSpinner } from "./Spinners.js";
-import { GetLoginInfo, IsLoggedIn, Logout } from "./LoginUtils.js";
-import { fetchData } from "./FetchUtils.js";
+import GlobalContext from "./GlobalContext";
+import { IsRunningLocally } from './LoginUtils';
+import { DeleteRedirectCookie } from './CookieUtils';
+import * as URL from "./URL";
+import * as API from "./API";
+import { BarSpinner } from "./Spinners";
+import { GetLoginInfo, IsLoggedIn, Logout } from "./LoginUtils";
+import { fetchData } from "./FetchUtils";
 
 const Header = (props) => {
+
+    // Temporary hack so "real" (non-React) Foursight doesn't use this.
+    //
+    DeleteRedirectCookie();
 
     let { environ } = useParams();
     let navigate = useNavigate();
@@ -117,7 +122,7 @@ const Header = (props) => {
                         {renderNavigationLinks(header)}
                     </td>
                     <td width="2%" align="center" style={{whiteSpace:"nowrap",margin:"0 auto"}}>
-                        <a target="_blank" href={"https://pypi.org/project/foursight-cgap/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{header.app?.version}</b></a>
+                        <a target="_blank" href={"https://pypi.org/project/" + (isFoursightFourfront ? "foursight" : "foursight-cgap") + "/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{header.app?.version}</b></a>
                     </td>
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (header.envs?.unique_annotated.length > 0) ? (
