@@ -57,7 +57,7 @@ const Header = (props) => {
             <table style={{width:"100%",height:"42px"}}><tbody>
             <tr>
                 <td width="1%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
-                    <a href="">
+                    <a href={isFoursightFourfront ? ("https://" + header.env?.public_name + ".4dnucleome.org/") : "https://cgap.hms.harvard.edu/"} target="_blank">
                         { isFoursightFourfront ? (<span>
                             &nbsp;&nbsp;&nbsp;<img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="32" />
                         </span>):(<span>
@@ -85,8 +85,7 @@ const Header = (props) => {
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr title={"App Deployed:" + header.app?.deployed + " | App Launched: " + header.app?.launched + " | Page Loaded: " + header.page?.loaded}>
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
-                    <a href={URL.Url("/home", true)}>
-                        {/* TODO */}
+                    <a href={isFoursightFourfront ? ("https://" + header.env?.public_name + ".4dnucleome.org/") : "https://cgap.hms.harvard.edu/"} target="_blank">
                         { isFoursightFourfront ? (<span>
                             <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="32" />
                         </span>):(<span>
