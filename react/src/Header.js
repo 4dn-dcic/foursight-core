@@ -137,7 +137,8 @@ const Header = (props) => {
                                         /* TODO */
                                         /* <Link key={env.full} onClick={() => {setHeader(x => [...x]);}} to={URL.Url(null, env.full)}>{env.full}</Link> */
                                         /* <Link key={env.full} to={URL.Url(null, env.full)}>{env.full}</Link> */
-                                        <a key={env.public} href={URL.Url(null, env.public)}>{env.public}</a>
+                                        /* <a key={env.public} href={URL.Url(null, env.public)}>{env.public}</a> */
+                                        <Link key={env.public} to={URL.Url("/envdone", env.public)}>{env.public}</Link>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>

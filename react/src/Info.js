@@ -176,7 +176,7 @@ const Info = () => {
             <InfoRow name={"Path"} value={info.page?.path} monospace={true} size="2" />
             <InfoRow name={"Endpoint"} value={info.page?.endpoint} monospace={true} size="2" />
         </InfoBox>
-        <InfoBox title="GAC">
+        <InfoBox title={`GAC: ${info.gac?.name}`}>
             { info.gac?.values ? (<span>
                 { Object.keys(info.gac?.values).map((key) => {
                     return <InfoRow key={key} name={key} value={info.gac.values[key]} monospace={true} copy={true} />

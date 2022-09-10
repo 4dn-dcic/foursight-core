@@ -62,7 +62,7 @@ export const Env = (path = undefined) => {
 // Returns the path portion of the path minus the environment and the App URL prefix (i.e. /api/react).
 // Assume the path has the form: /api/react/{environment}/{path}
 //
-const getLogicalPathFromUrlPath = (path = undefined) => {
+export const getLogicalPathFromUrlPath = (path = undefined) => {
     if (!Utils.isNonEmptyString(path)) {
         path = getCurrentUrlPath();
     }

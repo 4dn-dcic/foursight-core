@@ -17,6 +17,7 @@ import Header from './Header';
 import Footer from './Footer';
 import Login from './Login';
 import LoginDone from './LoginDone';
+import EnvDone from './EnvDone';
 import CompareGacs from './CompareGacs';
 import Test from './Test';
 import NotFound from './NotFound';
@@ -49,6 +50,7 @@ const App = () => {
                     <Route path="/api/react" element={<Envs />} />
                     <Route path="/api/react/envs" element={<Envs />} />
                     <Route path="/api/react/:environ/envs" element={<Envs />} />
+                    <Route path="/api/react/:environ/envdone" element={<EnvDone />} />
                     <Route path="/api/react/login" element={<Login />} />
                     <Route path="/api/react/:environ/login" element={<Login />} />
                     <Route path="/api/react/:environ/logindone" element={<LoginDone />} />

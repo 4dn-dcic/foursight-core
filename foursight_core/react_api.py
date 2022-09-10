@@ -448,7 +448,7 @@ class ReactApi:
             response.body["env"]["unknown"] = True
             response.body["env_unknown"] = True
 
-        hack_for_local_testing = False
+        hack_for_local_testing = True
         if hack_for_local_testing:
             response.body["envs"] = {
             "all": [
@@ -466,7 +466,7 @@ class ReactApi:
             "full": "supertest",
             "public": "supertest",
             "foursight": "supertest",
-            "gac_name": "C4DatastoreCgapSupertestApplicationConfiguration"
+            "gac_name": "FOOBAR-C4DatastoreCgapSupertestApplicationConfiguration"
             },
             {
             "name": "cgap-supertest",

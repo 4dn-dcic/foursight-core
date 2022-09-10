@@ -2,11 +2,13 @@ import React from 'react';
 import { useContext } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "./GlobalContext.js";
-import { IsLoggedIn } from "./LoginUtils.js";
+import { IsLoggedIn, NotePageLastVisited } from "./LoginUtils.js";
 import * as URL from './URL';
 import { UUID } from './Utils';
 
 const Envs = (props) => {
+
+    NotePageLastVisited();
 
     // TODO: why not just get current env from useParams?
     // Relics of getting this kind of info from server.
@@ -119,11 +121,13 @@ const Envs = (props) => {
                     <table style={{color:"inherit"}}><thead></thead><tbody>
                         {info?.envs?.unique_annotated.map((env, envIndex) =>
                             <tr key={UUID()} title={isDefaultEnv(env, info) ? "This is the default environment" : ""}>
-                                <td style={{verticalAlign:"top"}}><span>&#x2192;&nbsp;&nbsp;</span></td>
+                                <td style={{fontWeight:isSameEnv(URL.Env(), env) ? "bold" : "normal",color:isSameEnv(URL.Env(), env) ? "black" : "inherit",verticalAlign:"top"}}><span>&#x2192;&nbsp;&nbsp;</span></td>
                                 <td>
                                 {/* TODO: make this a Link rather than an anchor - had some trouble previously */}
+                                <span className={"tool-tip"} data-text={isSameEnv(URL.Env(), env) ? "This is the current environment." : "This is the default environment."}>
                                     <a  style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} href={URL.Url("/envs", env.full)}><b>{env.full}</b></a>
-                                    { isDefaultEnv(env, info) ? <b style={{color:!isKnownEnv() ? "darkred" : "darkblue"}}>&nbsp;&#x272e;</b> : <span/> }
+                                    { isDefaultEnv(env, info) && <b style={{color:!isKnownEnv() ? "darkred" : "darkblue"}}>&nbsp;&#x272e;</b> }
+                                </span>
                                         <br />
                                         Full Name: <span style={envNameTextStyles(env.full)}>{env.full}</span> <br />
                                         Short Name: <span style={envNameTextStyles(env.short)}>{env.short}</span> <br />
