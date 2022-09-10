@@ -1,8 +1,10 @@
 import React from 'react';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "../GlobalContext.js";
 import { IsLoggedIn, NotePageLastVisited } from "../utils/LoginUtils";
+import { fetchData } from '../utils/FetchUtils';
+import * as API from "../utils/API";
 import * as URL from '../utils/URL';
 import { UUID } from '../utils/Utils';
 
@@ -15,9 +17,16 @@ const EnvPage = (props) => {
     const { environ } = useParams() // TODO: use this
     let navigate = useNavigate();
     // TODO: Change this name 'info' to 'header'!
-    const [ info ] = useContext(GlobalContext);
+    const [ info, setInfo ] = useContext(GlobalContext);
+    let [ loading, setLoading ] = useState(true);
+    let [ error, setError ] = useState(false);
 
     const currentEnv = URL.Env();
+
+    function refreshHeaderData(env) {
+        const url = API.Url("/header", env.public);
+        fetchData(url, setInfo, setLoading, setError);
+    }
 
     function isKnownEnv(env = currentEnv, header = info) {
         if (!env) return false;
@@ -125,7 +134,8 @@ const EnvPage = (props) => {
                                 <td>
                                 {/* TODO: make this a Link rather than an anchor - had some trouble previously */}
                                 <span className={"tool-tip"} data-text={isSameEnv(URL.Env(), env) ? "This is the current environment." : "This is the default environment."}>
-                                    <a  style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} href={URL.Url("/envs", env.full)}><b>{env.full}</b></a>
+                                    {/* <a style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} href={URL.Url("/envs", env.full)}><b>{env.full}</b></a> */}
+                                    <Link style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} onClick={() => refreshHeaderData(env)} to={URL.Url("/envs", env.full)}><b>{env.full}</b></Link>
                                     { isDefaultEnv(env, info) && <b style={{color:!isKnownEnv() ? "darkred" : "darkblue"}}>&nbsp;&#x272e;</b> }
                                 </span>
                                         <br />

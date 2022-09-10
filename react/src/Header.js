@@ -1,6 +1,6 @@
 import './css/App.css';
 import React from 'react';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "./GlobalContext";
 import { IsRunningLocally } from './utils/LoginUtils';
@@ -19,12 +19,20 @@ const Header = (props) => {
 
     let { environ } = useParams();
     let navigate = useNavigate();
-    const [ header ] = useContext(GlobalContext);
-    const path = window.location.pathname;
+    const [ header, setHeader ] = useContext(GlobalContext);
+    let [ loading, setLoading ] = useState(true);
+    let [ error, setError ] = useState(false);
 
     let isFoursightFourfront = header.app?.package != "foursight-cgap";
     let titleBackgroundColor = isFoursightFourfront ? "#14533C" : "#143C53";
     let subTitleBackgroundColor = isFoursightFourfront ? "#AEF1D6" : "#AED6F1";
+
+    function refreshHeaderData(env) {
+        const url = API.Url("/header", env.public);
+            console.log("FFF")
+            console.log(url)
+        fetchData(url, setHeader, setLoading, setError);
+    }
 
     function renderNavigationLinks(header) {
         function style(isActive) {
@@ -95,13 +103,23 @@ const Header = (props) => {
                 </td>
                 <td width="34%" align="center" style={{whiteSpace:"nowrap"}}>
                     <span style={{fontSize:"20pt",color:"white"}}>
-                        <span style={{color:"default"}}>{header.page?.title}</span>&nbsp;
+
                         { header.app?.stage == 'dev' ? (<span>
-                            &nbsp;<span title="Stage is DEV." style={{position:"relative",top:"1pt",color:"lightgreen",fontSize:"24pt"}}>&#x269B;</span>
+                            <span title="Stage is DEV." style={{position:"relative",top:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>&nbsp;&nbsp;
                         </span>):(<span></span>)}
                         { header.app?.local ? (<span>
-                            &nbsp;<span title="Running locally." style={{position:"relative",bottom:"1pt",color:"lightgreen",fontSize:"15pt"}}>&#8861;</span>
+                            <span title="Running locally." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"15pt"}}>&#8861;</span>&nbsp;&nbsp;
                         </span>):(<span></span>)}
+
+                        <span style={{color:"default"}}>{header.page?.title}</span>&nbsp;
+
+                        { header.app?.stage == 'dev' ? (<span>
+                            &nbsp;<span title="Stage is DEV." style={{position:"relative",top:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>
+                        </span>):(<span></span>)}
+                        { header.app?.local ? (<span>
+                            &nbsp;<span title="Running locally." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"15pt"}}>&#8861;</span>
+                        </span>):(<span></span>)}
+
                     </span>
                 </td>
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
@@ -138,11 +156,12 @@ const Header = (props) => {
                                         /* <Link key={env.full} onClick={() => {setHeader(x => [...x]);}} to={URL.Url(null, env.full)}>{env.full}</Link> */
                                         /* <Link key={env.full} to={URL.Url(null, env.full)}>{env.full}</Link> */
                                         /* <a key={env.public} href={URL.Url(null, env.public)}>{env.public}</a> */
-                                        <Link key={env.public} to={URL.Url("/envdone", env.public)}>{env.public}</Link>
+                                        <Link key={env.public} onClick={() => refreshHeaderData(env)} to={URL.Url(null, env.public)}>{env.public}</Link>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
-                                <a id="__envinfo__" onClick={()=>{navigate(URL.Url("/envs", true));document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments Info</a>
+                                {/* <a id="__envinfo__" onClick={()=>{navigate(URL.Url("/envs", true));document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</a> */}
+                                <Link id="__envinfo__" to={URL.Url("/envs", true)}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</Link>
                             </div>
                          </span>
                         ):(
