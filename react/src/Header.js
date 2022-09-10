@@ -150,7 +150,8 @@ const Header = (props) => {
                                     env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.foursight.toUpperCase() == URL.Env().toUpperCase() ? (
                                         <span key={env.public}>{env.public}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
-                                        <Link key={env.public} onClick={() => refreshHeaderData(env)} to={URL.Url(null, env.public)}>{env.public}</Link>
+                                            /* <Link key={env.public} onClick={() => refreshHeaderData(env)} to={URL.Url(null, env.public)}>{env.public}</Link> */
+                                        <Link key={env.public} onClick={() => refreshHeaderData(env)} to={URL.Url("/envdone", env.public)}>{env.public}</Link>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
