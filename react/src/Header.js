@@ -47,7 +47,7 @@ const Header = (props) => {
             <NavLink to={URL.Url("/home", true)} style={({isActive}) => style(isActive)}>HOME</NavLink>&nbsp;|&nbsp;
             <NavLink to={URL.Url("/checks", true)} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
             <NavLink to={URL.Url("/users", true)} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
-            <NavLink to={URL.Url("/envs", true)} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
+            <NavLink to={URL.Url("/env", true)} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
             <NavLink to={URL.Url("/info", true)} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
             <a target="_blank" title="Open AWS Console for this account ({header.app?.credentials.aws_account_number}) in another tab."
                 style={{textDecoration:"none",color:"darkgreen"}}
@@ -150,18 +150,11 @@ const Header = (props) => {
                                     env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.foursight.toUpperCase() == URL.Env().toUpperCase() ? (
                                         <span key={env.public}>{env.public}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
-                                        /* <a key={env.full} onClick={()=>{navigate(URL.Url(null, env.full))}}>{env.full}</a> */
-                                        /* <a key={env.full} href={URL.Url("/envs", env.full)}>{env.full}</a> */
-                                        /* TODO */
-                                        /* <Link key={env.full} onClick={() => {setHeader(x => [...x]);}} to={URL.Url(null, env.full)}>{env.full}</Link> */
-                                        /* <Link key={env.full} to={URL.Url(null, env.full)}>{env.full}</Link> */
-                                        /* <a key={env.public} href={URL.Url(null, env.public)}>{env.public}</a> */
                                         <Link key={env.public} onClick={() => refreshHeaderData(env)} to={URL.Url(null, env.public)}>{env.public}</Link>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
-                                {/* <a id="__envinfo__" onClick={()=>{navigate(URL.Url("/envs", true));document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</a> */}
-                                <Link id="__envinfo__" to={URL.Url("/envs", true)}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</Link>
+                                <Link id="__envinfo__" to={URL.Url("/env", true)}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</Link>
                             </div>
                          </span>
                         ):(
@@ -178,8 +171,6 @@ const Header = (props) => {
                             <b title="Deployment stage: {header.app?.stage}">{header.app?.stage}}</b> &nbsp;|&nbsp;
                         </span>):(<span></span>)}
                         { (IsLoggedIn()) ? (<span>
-                            {/* TODO: on first login the email does not appear but rather LOGIN - on refresh OK */}
-                            {/* TODO: also on LOGOUT the emai remains even on refresh - think that's the server-side caching which is bad idea - need to cache just a new /header endpoint */}
                             { GetLoginInfo()?.email ? (<span>
                                 <Link to={URL.Url("/login", true)} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{GetLoginInfo()?.email}</b></Link>
                             </span>):(<span>

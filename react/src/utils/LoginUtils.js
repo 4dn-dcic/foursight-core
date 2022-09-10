@@ -134,9 +134,7 @@ function IsUnknownEnv(env, info) {
 export const ValidEnvRequired = ({ children }) => {
     // TODO: Change to look at current env in the URL this by looping through header.env.unique_annototated.
     const [ header ] = useContext(GlobalContext);
-    return !isKnownEnv(URL.Env(), header) ? <Navigate to={URL.Url("/envs", true)} replace /> : children;
-    // return URL.Env() === "" || header.env_unknown ? <Navigate to={URL.Url("/envs", header.env?.default)} replace /> : children;
-    //return URL.Env() == "" || header.env_unknown ? <Navigate to={URL.Url("/envs", true)} replace /> : <Navigate to={URL.Url("/info", true)} replace />
+    return !isKnownEnv(URL.Env(), header) ? <Navigate to={URL.Url("/env", true)} replace /> : children;
 }
 
 export const LoginRequired = ({ children }) => {
@@ -150,7 +148,7 @@ export const LoginAndValidEnvRequired = ({ children }) => {
     NotePageLastVisited();
     const [ info ] = useContext(GlobalContext);
     if (URL.Env() === "" || info.env_unknown) {
-        return <Navigate to={URL.Url("/envs", true)} replace />
+        return <Navigate to={URL.Url("/env", true)} replace />
     }
     else if (!IsLoggedIn()) {
         return <Navigate to={URL.Url("/login", true)} replace />

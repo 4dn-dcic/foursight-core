@@ -114,8 +114,8 @@ const EnvPage = (props) => {
                     <small>
                         {/* TODO: Use Link instead of anchor - some issue where not updating the nav links with correct URL or something */}
                         {/* though refresh (anchor rather than Link) isnt' so so bad when switching environments */}
-                        Click <a style={{fontWeight:"bold",color:"darkred"}} href={URL.Url("/envs", getDefaultEnv())}>here</a> to use this default environment:
-                        &nbsp;<a style={{fontWeight:"bold",color:"darkred"}} href={URL.Url("/envs", getDefaultEnv())}>{getDefaultEnv()}</a>
+                        Click <a style={{fontWeight:"bold",color:"darkred"}} href={URL.Url("/env", getDefaultEnv())}>here</a> to use this default environment:
+                        &nbsp;<a style={{fontWeight:"bold",color:"darkred"}} href={URL.Url("/env", getDefaultEnv())}>{getDefaultEnv()}</a>
                     </small>
                 </div>
                 </React.Fragment>):(<React.Fragment>
@@ -134,8 +134,7 @@ const EnvPage = (props) => {
                                 <td>
                                 {/* TODO: make this a Link rather than an anchor - had some trouble previously */}
                                 <span className={"tool-tip"} data-text={isSameEnv(URL.Env(), env) ? "This is the current environment." : "This is the default environment."}>
-                                    {/* <a style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} href={URL.Url("/envs", env.full)}><b>{env.full}</b></a> */}
-                                    <Link style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} onClick={() => refreshHeaderData(env)} to={URL.Url("/envs", env.full)}><b>{env.full}</b></Link>
+                                    <Link style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} onClick={() => refreshHeaderData(env)} to={URL.Url("/env", env.full)}><b>{env.full}</b></Link>
                                     { isDefaultEnv(env, info) && <b style={{color:!isKnownEnv() ? "darkred" : "darkblue"}}>&nbsp;&#x272e;</b> }
                                 </span>
                                         <br />
