@@ -124,9 +124,9 @@ const Login = (props) => {
                 </center>
             { (IsRunningLocally() && showingAuthBox) && (
                 <div className="container" style={{maxWidth:"290pt",marginTop:"-20pt"}}>
-                    <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt"}}>
+                    <div className="boxstyle check-fail" style={{margin:"20pt",padding:"10pt",borderWidth:"2",borderColor:"red"}}>
                         <small>
-                        As you appear to be <b>running</b> Foursight <b>locally</b>, the above Auth0 will not work. <br />
+                        As you appear to be <b>running</b> Foursight <b>locally</b>, the above Auth0 <u><b>will not work</b></u>. <br />
                     {/* Click <b style={{cursor:"pointer"}} onClick={(x) => { hideAuthBox(); SetCookie("test_mode_login_localhost", "1"); window.location.reload(); }}><u>here</u></b> for faux local login. */}
                         Click <NavLink onClick={() => SetCookie("test_mode_login_localhost", "1")} to={URL.Url("/logindone", true)} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</NavLink> to faux <NavLink onClick={() => SetCookie("test_mode_login_localhost", "1")} to={URL.Url("/logindone", true)} style={{fontSize:"small",cursor:"pointer",color:"darkred"}}>login</NavLink> locally.
                         </small>
@@ -138,9 +138,5 @@ const Login = (props) => {
         </React.Fragment>)}
     </ValidEnvRequired>
 };
-
-export const LoginAuth = () => {
-    console.log("LOGIN-AUTH");
-}
 
 export default Login;

@@ -266,14 +266,14 @@ const Checks = (props) => {
                     </span>
                 </div>
                 { selectedGroups?.map((selectedGroup, index) =>
-                    <SelectedGroupBox key={index} group={selectedGroup} />
+                    <SelectedGroupBox key={index} group={selectedGroup} style={{paddingTop:"3pt"}}/>
                 )}
             </>):(<></>)}
         </div>
     }
 
-    const SelectedGroupBox = ({group}) => {
-        return <div>
+    const SelectedGroupBox = ({group, style = {}}) => {
+        return <div style={style}>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"300pt"}}>
                 <div>
                     <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks)}><b>{group?.group}</b> {isShowingAnyResults(group?.checks) ? (<span>&#x2193;</span>) : (<span>&#x2191;</span>)}</span>
@@ -334,8 +334,16 @@ const Checks = (props) => {
                             <RefreshResultButton check={check} style={{marginLeft:"10pt"}} />
                             <ToggleHistoryButton check={check} style={{marginLeft:"4pt"}} />
                             { Object.keys(check?.schedule).map((key, index) => {
-                                return <div style={{whiteSpace:"nowrap",width:"100%"}} key={index} title={check.schedule[key].cron}>
-                                    <small><i>Schedule: <span className={"tool-tip"} data-text={check.schedule[key]?.cron}>{check.schedule[key].cron_description}</span>.</i></small>
+                                return <div>
+                                    { false && check?.schedule ? (
+                                        <div style={{whiteSpace:"nowrap",width:"100%"}} key={index} title={check.schedule[key].cron}>
+                                            <small><i>Schedule: <span className={"tool-tip"} data-text={check.schedule[key]?.cron}>{check.schedule[key].cron_description}</span>.</i></small>
+                                        </div>
+                                    ):(
+                                        <small><i>
+                                            Not scheduled.
+                                        </i></small>
+                                    )}
                                 </div>
                             })}
                             <>

@@ -100,12 +100,12 @@ const Header = (props) => {
                     </span>
                 </td>
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
-                    <small>{new Date().toLocaleDateString('en-us', { weekday:"long", year:"numeric", month:"long", day:"numeric"})}</small>
+                    <small>{new Date().toLocaleDateString('en-us', { weekday:"long", year:"numeric", month:"long", day:"numeric", hour12: false, hour: "2-digit", minute: "2-digit", second: "numeric", timeZoneName: "short"}).replace(" at ", " | ")}</small>
                     { (IsLoggedIn()) ? (<span>
                             {/* &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {Logout(navigate);}}>LOGOUT</span> */}
-                        &nbsp;<b>|</b>&nbsp; <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink>
+                        &nbsp;|&nbsp; <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink>
                     </span>):(<span>
-                        &nbsp;<b>|</b>&nbsp; <NavLink to={URL.Url("/login?auth", true)} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
+                        &nbsp;|&nbsp; <NavLink to={URL.Url("/login?auth", true)} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
                     </span>)}
                 </td>
             </tr>
@@ -170,7 +170,7 @@ const Header = (props) => {
                     </td>
                 </tr>
                 <tr>
-                    <td style={{background:"lightyellow",color:"darkred",padding:"2pt"}} colSpan="3">
+                    <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="3">
                         <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>. Click <a href={"/api/view/" + (environ || header.env?.default)} style={{color:"inherit"}}><b>here</b></a> to go to the real version.</i>
                     </td>
                 </tr>

@@ -427,27 +427,26 @@ class AppUtilsCore(ReactApi):
             simple_cookies = {k: v.value for k, v in simple_cookies.items()}
             redir_url_cookie = simple_cookies.get("redir")
             print('xyzzy:auth0_callback-1')
-            if redir_url_cookie:
-                print('xyzzy:auth0_callback-2')
-                redir_url = redir_url_cookie
-#           print('xyzzy:auth0_callback-3')
-#           redir_react_url_cookie = simple_cookies.get("redir_react")
-#           print('xyzzy:auth0_callback-4')
-#           print(redir_react_url_cookie)
-#           if redir_react_url_cookie:
-#               #
-#               # Special case for React version (TODO: rework later).
-#               #
-#               print('xyzzy:auth0_callback-5')
-#               #redir_url = redir_react_url_cookie
-#           else:
-#               redir_url_cookie = simple_cookies.get("redir")
-#               if redir_url_cookie:
-#                   redir_url = redir_url_cookie
+#           if redir_url_cookie:
+#               print('xyzzy:auth0_callback-2')
+#               redir_url = redir_url_cookie
+            print('xyzzy:auth0_callback-3')
+            redir_react_url_cookie = simple_cookies.get("redir_react")
+            if redir_react_url_cookie:
+                #
+                # Special case for React version (TODO: rework later).
+                #
+                print('xyzzy:auth0_callback-5')
+                redir_url = redir_react_url_cookie
+            else:
+                redir_url_cookie = simple_cookies.get("redir")
+                if redir_url_cookie:
+                    redir_url = redir_url_cookie
             print('xyzzy:auth0_callback-6')
         except Exception as e:
             PRINT("Exception loading cookies: {cookies}")
             PRINT(e)
+            redir_url = context + 'view/' + env
 
         print('xyzzy:auth0_callback-7')
         print(redir_url)
