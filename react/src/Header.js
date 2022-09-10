@@ -130,7 +130,7 @@ const Header = (props) => {
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { header.envs?.unique_annotated.map(env => 
                                     env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.foursight.toUpperCase() == URL.Env().toUpperCase() ? (
-                                        <span key={env.full}>{env.full}&nbsp;&nbsp;&#x2713;</span>
+                                        <span key={env.full}>{env.public}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
                                         /* <a key={env.full} onClick={()=>{navigate(URL.Url(null, env.full))}}>{env.full}</a> */
                                         /* <a key={env.full} href={URL.Url("/envs", env.full)}>{env.full}</a> */
