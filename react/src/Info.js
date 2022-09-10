@@ -68,7 +68,7 @@ const Info = () => {
                 </a>&nbsp;</span> : <span/>
         const githubElement = github ?
             <span>
-            <a target="_blank" href={"https://github.com/" + github + "/" + (name == "dcicutils" ? "utils" : name) + "/releases/tag/v" + value}>
+            <a target="_blank" href={"https://github.com/" + github + "/" + (name == "dcicutils" ? "utils" : name) + "/releases/tag/" + (name != "chalice" ? "v" : "")  + value}>
                 <img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" />
             </a>&nbsp;</span> : <span/>
         const pythonElement = python ?
@@ -115,8 +115,8 @@ const Info = () => {
             <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={isFoursightFourfront ? "4dn-dcic" : "dbmi-bgm"} size="2" />
             <InfoRow name={"foursight-core"} value={header.versions?.foursight_core} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"dcicutils"} value={header.versions?.dcicutils} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
+            <InfoRow name={"chalice"} value={header.versions?.chalice} monospace={true} copy={true} chalice={true} size="2" pypi={true} github={"aws"} />
             <InfoRow name={"python"} value={header.versions?.python} monospace={true} copy={true} python={true} size="2" />
-            <InfoRow name={"chalice"} value={header.versions?.chalice} monospace={true} copy={true} chalice={true} size="2" />
         </InfoBox>
         <InfoBox title="Credentials Info">
             <InfoRow name={"AWS Account Number"} value={header.app?.credentials?.aws_account_number} monospace={true} copy={true} size="2" />
