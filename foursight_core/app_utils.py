@@ -2032,7 +2032,9 @@ def auth0_callback():
     Special callback route, only to be used as a callback from auth0
     Will return a redirect to view on error/any missing callback info.
     """
-    print('xyzzy:route_auth0_callback')
+    print('xyzzy:route_auth0_callback-111')
+    xyzzy = app.current_request.to_dict().get('headers', {})
+    print(xyzzy)
     request = app.current_request
     default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
     return AppUtilsCore.singleton().auth0_callback(request, default_env)
@@ -2425,6 +2427,7 @@ def reactapi_route_lambdas(environ: str):
     return AppUtilsCore.singleton().react_route_lambdas(request=app.current_request, env=environ)
 
 
+# TODO: NEVERMIND. Take this out. It is hardcoded at Auth0 for /api/callback.
 @app.route(ROUTE_PREFIX + 'reactapi/callback', cors=CORS)
 def reactapi_route_auth0_callback():
     """

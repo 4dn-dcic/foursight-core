@@ -54,7 +54,7 @@ const LoginPage = (props) => {
     }
 
     function createAuth0Lock() {
-        const loginCallback = Auth0CallbackUrl("/api/reactapi/callback/");
+        const loginCallback = Auth0CallbackUrl();
         const loginClientId = info?.app?.credentials?.auth0_client_id;
         const loginPayload = {
             container: "login_auth_container",
@@ -62,7 +62,8 @@ const LoginPage = (props) => {
                 redirectUrl: loginCallback,
                 responseType: "code",
                 sso: false,
-                params: { scope: "openid email", prompt: "select_account" }
+                params: { scope: "openid email", prompt: "select_account" },
+                device: 'react'
             },
             socialButtonStyle: "big",
             languageDictionary: { title: "Foursight Login" },
