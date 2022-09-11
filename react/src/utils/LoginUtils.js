@@ -95,7 +95,7 @@ export const Auth0CallbackUrl = () => {
         return auth0CallbackCookie;
     }
     else {
-        return API.UrlAbs("/api/callback/");
+        return API.UrlAbs("/api/reactapi/callback/");
     }
 }
 
