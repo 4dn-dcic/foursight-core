@@ -53,24 +53,37 @@ const Header = (props) => {
         </span>
     }
 
+        // TODO: refactor - in LoginUtils and EnvPage too
+    function isKnownEnv(env, header) {
+        if (!env) return false;
+        env = env.toLowerCase();
+        for (let i = 0 ; i < header?.envs?.unique_annotated?.length ; i++) {
+            const env_annotated = header.envs?.unique_annotated[i];
+            if ((env_annotated.name.toLowerCase() == env) ||
+                (env_annotated.full.toLowerCase() == env) ||
+                (env_annotated.short.toLowerCase() == env) ||
+                (env_annotated.public.toLowerCase() == env) ||
+                (env_annotated.foursight.toLowerCase() == env)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    function getDefaultEnv() {
+        return header?.env?.default;
+    }
+
     function initiateAppReload() {
         const url = API.Url("/reloadlambda", false);
         fetchData(url);
     }
 
     return <>
-        <div style={{width:"100%",background:titleBackgroundColor}}>{ header.loading ? (
-            <table style={{width:"100%",height:"42px"}}><tbody>
+        { header.loading ? (
+            <div style={{width:"100%"}}>
+            <table style={{width:"100%",height:"42px",background:"#444444"}}><tbody>
             <tr>
                 <td width="1%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
-                    <a href={isFoursightFourfront ? ("https://" + header.env?.public_name + ".4dnucleome.org/") : "https://cgap.hms.harvard.edu/"} target="_blank">
-                        { isFoursightFourfront ? (<span>
-                            {/* ODD: without that leading <span/> below we get big header flashing on refresh showing foursight-cgap */}
-                            <span/><img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="32" width="44" />
-                        </span>):(<span>
-                            <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
-                        </span>)}
-                    </a>
                 </td>
                 <td width="98%" align="center" style={{fontSize:"16pt",color:"white", nowrap:"1"}}>
                     { header.error ? (<span>
@@ -84,11 +97,17 @@ const Header = (props) => {
                     </span>)}
                 </td>
                 <td width="1%" align="right">
-                    <span style={{position:"relative",bottom:"5pt"}}>&nbsp;<BarSpinner loading={header.loading && !header.error} color={'lightyellow'} size={150} /></span>
+                    <span style={{position:"relative",bottom:"5pt"}}>&nbsp;<BarSpinner loading={header.loading && !header.error} color={'yellow'} size={150} style={{marginRight:"20px"}}/></span>
                 </td>
             </tr>
             </tbody></table>
+            <table style={{width:"100%",height:"22px",background:"lightgray"}}><tbody>
+            <tr><td style={{height:"27px",paddingLeft:"2pt",whiteSpace:"nowrap",background:"lightgray"}} /></tr>
+            <tr><td style={{height:"20px",paddingLeft:"2pt",whiteSpace:"nowrap",background:"lightyellow"}} /></tr>
+            </tbody></table>
+            </div>
         ):(<React.Fragment>
+            <div style={{width:"100%",background:titleBackgroundColor}}>
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr title={"App Deployed:" + header.app?.deployed + " | App Launched: " + header.app?.launched + " | Page Loaded: " + header.page?.loaded}>
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
@@ -151,7 +170,8 @@ const Header = (props) => {
                                         <span key={env.public}>{env.public}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
                                             /* <Link key={env.public} onClick={() => refreshHeaderData(env)} to={URL.Url(null, env.public)}>{env.public}</Link> */
-                                        <Link key={env.public} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: URL.Url(null, env.public)}}>{env.public}</Link>
+                                            /* TODO: rework this whole URL.Url stuff with no env etc */
+                                        <Link key={env.public} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: !isKnownEnv(URL.Env()) ? URL.Url("/env", getDefaultEnv()) : URL.Url(null, env.public)}}>{env.public}</Link>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
@@ -196,7 +216,7 @@ const Header = (props) => {
                     <td style={{height:"1px",background:"darkblue"}}></td>
                 </tr>
             </tbody></table>
-        </React.Fragment>)}</div>
+            </div></React.Fragment>)}
     </>
 };
 

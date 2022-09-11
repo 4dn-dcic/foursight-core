@@ -368,14 +368,15 @@ class AppUtilsCore(ReactApi):
         # if we're on localhost, automatically grant authorization
         # this looks bad but isn't because request authentication will
         # still fail if local keys are not configured
-        if self.is_running_locally(request_dict):
-            return True
+        #if self.is_running_locally(request_dict):
+        #    return True
         jwt_decoded = self.get_decoded_jwt_token(env, request_dict)
         if jwt_decoded:
             try:
                 if env is None:
                     return False  # we have no env to check auth
                 for env_info in self.init_environments(env).values():
+                    logger.warn("foursight_core.check_authorization: feteching users for env: {env_info['ff_env']}")
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
                                                      ff_env=env_info['ff_env'],
                                                      add_on='frame=object&datastore=database')
@@ -2205,9 +2206,6 @@ def get_view_users_route(environ):
 ######### EXPERIMENTAL REACT API FUNCTIONS #########
 # Experimental React UI.
 def react_serve_static_file(environ, **kwargs):
-    req_dict = app.current_request.to_dict()
-    domain, context = AppUtilsCore.singleton().get_domain_and_context(req_dict)
-    is_admin = AppUtilsCore.singleton().check_authorization(req_dict, environ)
     return AppUtilsCore.singleton().react_serve_static_file(environ, **kwargs)
 
 
@@ -2244,20 +2242,12 @@ def get_react_4(environ, path1, path2, path3, path4):
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/users', cors=CORS)
 def react_get_users_route(environ):
-    request = app.current_request
-    request_dict = request.to_dict()
-    domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
-    is_admin = AppUtilsCore.singleton().check_authorization(request_dict, environ)
-    return AppUtilsCore.singleton().react_get_users(request=request, environ=environ, is_admin=is_admin, domain=domain, context=context)
+    return AppUtilsCore.singleton().react_get_users(request=app.current_request, environ=environ)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/users/{email}', cors=CORS)
 def react_get_user_route(environ, email):
-    request = app.current_request
-    request_dict = request.to_dict()
-    domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
-    is_admin = AppUtilsCore.singleton().check_authorization(request_dict, environ)
-    return AppUtilsCore.singleton().react_get_user(request=request, environ=environ, is_admin=is_admin, domain=domain, context=context, email=email)
+    return AppUtilsCore.singleton().react_get_user(request=app.current_request, environ=environ, email=email)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/info', cors=CORS)

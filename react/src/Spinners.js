@@ -13,10 +13,11 @@ export const RingSpinner = ({loading, color, size}) => {
     return <RingLoader color={color} loading={loading} cssOverride={override} size={size} />
 }
 
-export const BarSpinner = ({loading, color, size}) => {
+export const BarSpinner = ({loading, color, size, style}) => {
     const override: CSSProperties = {
         display: "block",
-        margin: "0 auto"
+        margin: "0 auto",
+        ...style
     };
     return <BarLoader color={color} loading={loading} cssOverride={override} width={size} />
 }

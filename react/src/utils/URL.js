@@ -3,7 +3,7 @@ import { GetCookie } from './CookieUtils';
 
 const BASE_URL_PATH = "/api/react/";
 
-function getCurrentUrlPath() {
+export const getCurrentUrlPath = () => {
     return window.location.pathname;
 }
 

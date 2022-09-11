@@ -104,20 +104,20 @@ const EnvPage = (props) => {
             <div className="container">
                 <b>&nbsp;Environment</b>
                 { !isKnownEnv() ? (<React.Fragment>
-                <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
-                    { !URL.Env() ? (<span>
-                        No environment specified in URL!
-                    </span>):(<span>
-                        Unknown environment: <b style={{color:"darkred"}}>{currentEnv}</b>
-                    </span>)}
-                    <br />
-                    <small>
-                        {/* TODO: Use Link instead of anchor - some issue where not updating the nav links with correct URL or something */}
-                        {/* though refresh (anchor rather than Link) isnt' so so bad when switching environments */}
-                        Click <a style={{fontWeight:"bold",color:"darkred"}} href={URL.Url("/env", getDefaultEnv())}>here</a> to use this default environment:
-                        &nbsp;<a style={{fontWeight:"bold",color:"darkred"}} href={URL.Url("/env", getDefaultEnv())}>{getDefaultEnv()}</a>
-                    </small>
-                </div>
+                    <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
+                        { !URL.Env() ? (<span>
+                            No environment specified in URL!
+                        </span>):(<span>
+                            Unknown environment: <b style={{color:"darkred"}}>{currentEnv}</b>
+                        </span>)}
+                        <br />
+                        <small>
+                            {/* TODO: Use Link instead of anchor - some issue where not updating the nav links with correct URL or something */}
+                            {/* though refresh (anchor rather than Link) isnt' so so bad when switching environments */}
+                            Click <Link style={{fontWeight:"bold",color:"darkred"}} to={URL.Url("/env", getDefaultEnv())}>here</Link> to use this default environment:
+                            &nbsp;<Link style={{fontWeight:"bold",color:"darkred"}} to={URL.Url("/env", getDefaultEnv())}>{getDefaultEnv()}</Link>
+                        </small>
+                    </div>
                 </React.Fragment>):(<React.Fragment>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
                     Current environment: <b style={{color:boxTextColor}}>{URL.Env()}</b>

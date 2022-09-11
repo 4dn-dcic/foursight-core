@@ -318,12 +318,9 @@ class ReactApi:
 #       self.react_info_cache[environ] = response.body
         return self.process_response(response)
 
-    def react_get_users(self, request, environ, is_admin=False, domain="", context="/"):
-        print('XYZZY:CHECK-AUTHORIZED')
+    def react_get_users(self, request, environ):
         if not self.authorize(request.to_dict(), environ):
-            print('XYZZY:NOT-AUTHORIZED')
             return self.forbidden_response()
-        print('XYZZY:AUTHORIZED')
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         users = []
@@ -356,12 +353,9 @@ class ReactApi:
         response.status_code = 200
         return self.process_response(response)
 
-    def react_get_user(self, request, environ, is_admin=False, domain="", context="/", email=None):
-        print('XYZZY:CHECK-AUTHORIZED')
+    def react_get_user(self, request, environ, email=None):
         if not self.authorize(request.to_dict(), environ):
-            print('XYZZY:NOT-AUTHORIZED')
             return self.forbidden_response()
-        print('XYZZY:AUTHORIZED')
         users = []
         for email_address in email.split(","):
             try:

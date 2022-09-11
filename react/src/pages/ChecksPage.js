@@ -335,7 +335,7 @@ const ChecksPage = (props) => {
                             <ToggleHistoryButton check={check} style={{marginLeft:"4pt"}} />
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div key={key}>
-                                    { false && check?.schedule ? (
+                                    { check?.schedule ? (
                                         <div style={{whiteSpace:"nowrap",width:"100%"}} key={index} title={check.schedule[key].cron}>
                                             <small><i>Schedule: <span className={"tool-tip"} data-text={check.schedule[key]?.cron}>{check.schedule[key].cron_description}</span>.</i></small>
                                         </div>
