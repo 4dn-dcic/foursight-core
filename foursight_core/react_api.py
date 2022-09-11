@@ -1,4 +1,5 @@
 from chalice import Response, __version__ as chalice_version
+import base64
 import cron_descriptor
 import os
 import io
@@ -85,6 +86,7 @@ class ReactApi:
             print(jwt_token)
             print('xyzzy:ReactApi.authorize:decrypted_authorization_token.authEnvs')
             print(authorization_token_json.get("authEnvs"))
+            print(base64.b64encode(authorization_token_json.get("authEnvs")).decode('utf-8'))
             auth0_client_id = self.get_auth0_client_id(environ)
             auth0_secret = self.get_auth0_secret(environ)
             jwt_decoded = jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30)

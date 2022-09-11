@@ -437,14 +437,21 @@ class AppUtilsCore(ReactApi):
         try:
             simple_cookies = SimpleCookie()
             simple_cookies.load(cookies)
+            print('xyzzy:auth0_callback-0')
+            print(simple_cookies)
+            print(simple_cookies.items())
             simple_cookies = {k: v.value for k, v in simple_cookies.items()}
+            print('xyzzy:auth0_callback-0a')
+            print(simple_cookies)
             redir_url_cookie = simple_cookies.get("redir")
             print('xyzzy:auth0_callback-1')
+            print(redir_url_cookie)
 #           if redir_url_cookie:
 #               print('xyzzy:auth0_callback-2')
 #               redir_url = redir_url_cookie
             print('xyzzy:auth0_callback-3')
             redir_react_url_cookie = simple_cookies.get("redir_react")
+            print(redir_react_url_cookie)
             if redir_react_url_cookie:
                 #
                 # Special case for React version (TODO: rework later).
@@ -452,11 +459,16 @@ class AppUtilsCore(ReactApi):
                 print('xyzzy:auth0_callback-5')
                 redir_url = redir_react_url_cookie
             else:
+                print('xyzzy:auth0_callback-5a')
                 redir_url_cookie = simple_cookies.get("redir")
+                print(redir_url_cookie)
                 if redir_url_cookie:
+                    print('xyzzy:auth0_callback-5b')
                     redir_url = redir_url_cookie
             print('xyzzy:auth0_callback-6')
         except Exception as e:
+            print("xyzzy:Exception loading cookies: {cookies}")
+            print(e)
             PRINT("Exception loading cookies: {cookies}")
             PRINT(e)
             redir_url = context + 'view/' + env
@@ -500,7 +512,7 @@ class AppUtilsCore(ReactApi):
         authenvs = ['cgap-supertest'] # TODO
         authtoken_json = {
             "jwtToken": id_token,
-            "authEnvs": authenvs,
+            "authEnvs": base64.b64encode(bytes(json.dumps(authenvs), "utf-8")).decode('utf-8'),
         }
         print("xyzzy:auth0_callback:authtoken_json:")
         print(authtoken_json)
@@ -518,7 +530,8 @@ class AppUtilsCore(ReactApi):
             authtoken_cookie = ''.join(['authToken=', authtoken, '; Domain=', domain, '; Path=/;'])
             print("xyzzy:auth0_callback:authtoken_cookie:")
             print(authtoken_cookie)
-            authenvs_cookie = ''.join(['authEnvs=', json.dumps(authenvs), '; Domain=', domain, '; Path=/;'])
+            #authenvs_cookie = ''.join(['authEnvs=', json.dumps(authenvs), '; Domain=', domain, '; Path=/;'])
+            authenvs_cookie = ''.join(['authEnvs=', base64.b64encode(bytes(json.dumps(authenvs), "utf-8")).decode('utf-8'), '; Domain=', domain, '; Path=/;'])
             print("xyzzy:auth0_callback:authenvs_cookie:")
             print(authenvs_cookie)
             expires_in = res.json().get('expires_in', None)
