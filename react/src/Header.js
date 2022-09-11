@@ -54,7 +54,7 @@ const Header = (props) => {
     }
 
         // TODO: refactor - in LoginUtils and EnvPage too
-    function isKnownEnv(env, header) {
+    function isKnownEnv(env, header = header) {
         if (!env) return false;
         env = env.toLowerCase();
         for (let i = 0 ; i < header?.envs?.unique_annotated?.length ; i++) {
