@@ -62,8 +62,7 @@ const LoginPage = (props) => {
                 redirectUrl: loginCallback,
                 responseType: "code",
                 sso: false,
-                params: { scope: "openid email", prompt: "select_account" },
-                device: 'react'
+                params: { scope: "openid email react", prompt: "select_account" }
             },
             socialButtonStyle: "big",
             languageDictionary: { title: "Foursight Login" },

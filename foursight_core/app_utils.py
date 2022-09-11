@@ -500,7 +500,11 @@ class AppUtilsCore(ReactApi):
         json_payload = json.dumps(payload)
         headers = {'content-type': "application/json"}
         res = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
-        id_token = res.json().get('id_token', None)
+        auth0_response = res.json()
+        print('xyzzy:auth0_callback-9a:auth0_response')
+        print(auth0_response)
+        id_token = auth0_response.get('id_token', None)
+        #id_token = res.json().get('id_token', None)
 
         #
         # TODO
