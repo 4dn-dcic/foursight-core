@@ -299,7 +299,29 @@ class CheckHandler(object):
             # make sure this environment displays this check
             used_envs = [env for sched in setup_info['schedule'].values() for env in sched]
             used_envs.extend(setup_info.get('display', []))
-            if connection.fs_env in used_envs or 'all' in used_envs:
+            # TODO: Is this a fix for 'cgap-supertest' not working but 'supertest' does?
+            #if connection.fs_env in used_envs or 'all' in used_envs:
+            if connection.ff_env in used_envs or 'all' in used_envs:
+                group = setup_info['group']
+                if group not in grouped_results:
+                    grouped_results[group] = {}
+                    grouped_results[group]['_name'] = group
+                    grouped_results[group]['_statuses'] = {'ERROR': 0, 'FAIL': 0, 'WARN': 0, 'PASS': 0}
+                grouped_results[group][setup_info['title']] = res
+                if res['status'] in grouped_results[group]['_statuses']:
+                    grouped_results[group]['_statuses'][res['status']] += 1
+        # format into a list and sort alphabetically
+        grouped_list = [group for group in grouped_results.values()]
+        return sorted(grouped_list, key=lambda v: v['_name'])
+
+    def run_check_or_action(self, connection, check_str, check_kwargs):
+        """
+        Does validation of provided check_str, it's module, and kwargs.
+        Determines by decorator whether the method is a check or action, then runs
+        it. All errors are taken care of within the running of the check/action.
+
+        Takes a FS_connection object, a check string formatted as: <str check module/name>
+        and a dictionary of check arguments.
                 group = setup_info['group']
                 if group not in grouped_results:
                     grouped_results[group] = {}

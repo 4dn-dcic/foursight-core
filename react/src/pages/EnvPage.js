@@ -2,7 +2,7 @@ import React from 'react';
 import { useContext, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "../GlobalContext.js";
-import { IsLoggedIn, NotePageLastVisited } from "../utils/LoginUtils";
+import { IsLoggedIn, NotePageLastVisited, IsAllowedEnv } from "../utils/LoginUtils";
 import { fetchData } from '../utils/FetchUtils';
 import * as API from "../utils/API";
 import * as URL from '../utils/URL';
@@ -24,7 +24,7 @@ const EnvPage = (props) => {
     const currentEnv = URL.Env();
 
     function refreshHeaderData(env) {
-        const url = API.Url("/header", env.public);
+        const url = API.Url("/header", env);
         fetchData(url, setInfo, setLoading, setError);
     }
 
@@ -114,8 +114,8 @@ const EnvPage = (props) => {
                         <small>
                             {/* TODO: Use Link instead of anchor - some issue where not updating the nav links with correct URL or something */}
                             {/* though refresh (anchor rather than Link) isnt' so so bad when switching environments */}
-                            Click <Link style={{fontWeight:"bold",color:"darkred"}} to={URL.Url("/env", getDefaultEnv())}>here</Link> to use this default environment:
-                            &nbsp;<Link style={{fontWeight:"bold",color:"darkred"}} to={URL.Url("/env", getDefaultEnv())}>{getDefaultEnv()}</Link>
+                            Click <Link style={{fontWeight:"bold",color:"darkred"}} to={URL.Url("/env", getDefaultEnv())} onClick={() => refreshHeaderData(getDefaultEnv())}>here</Link> to use this default environment:
+                            &nbsp;<Link style={{fontWeight:"bold",color:"darkred"}} to={URL.Url("/env", getDefaultEnv())} onClick={() => refreshHeaderData(getDefaultEnv())}>{getDefaultEnv()}</Link>
                         </small>
                     </div>
                 </React.Fragment>):(<React.Fragment>
@@ -134,8 +134,10 @@ const EnvPage = (props) => {
                                 <td>
                                 {/* TODO: make this a Link rather than an anchor - had some trouble previously */}
                                 <span className={"tool-tip"} data-text={isSameEnv(URL.Env(), env) ? "This is the current environment." : "This is the default environment."}>
-                                    <Link style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} onClick={() => refreshHeaderData(env)} to={URL.Url("/env", env.full)}><b>{env.full}</b></Link>
+                                    <Link style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} onClick={() => refreshHeaderData(env.public)} to={URL.Url("/env", env.full)}><b>{env.full}</b></Link>
                                     { isDefaultEnv(env, info) && <b style={{color:!isKnownEnv() ? "darkred" : "darkblue"}}>&nbsp;&#x272e;</b> }
+                                    <br />
+                                    {/* !IsAllowedEnv(env.full) && <i style={{color:"red",fontWeight:"bold"}}>You do not have permission for this environment.</i> */}
                                 </span>
                                         <br />
                                         Full Name: <span style={envNameTextStyles(env.full)}>{env.full}</span> <br />

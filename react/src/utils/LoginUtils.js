@@ -161,3 +161,24 @@ export const LoginAndValidEnvRequired = ({ children }) => {
 export const NotePageLastVisited = () => {
     SetCookie("last_url", IsRunningLocally() ? window.location.pathname : window.location.href);
 }
+
+export const GetAllowedEnvs = () => {
+    try {
+        const authEnvsCookie = GetCookie("authEnvs");
+        const authEnvsCookieDecoded = atob(authEnvsCookie);
+        const authEnvsCookieJson = JSON.parse(authEnvsCookieDecoded);
+        return authEnvsCookieJson;
+    } catch {
+        return null;
+    }
+}
+
+export const IsAllowedEnv = (env) => {
+    const allowedEnvs = GetAllowedEnvs();
+    for (const allowedEnv of allowedEnvs) {
+        if (allowedEnv == env) {
+            return true;
+        }
+    }
+    return false;
+}
