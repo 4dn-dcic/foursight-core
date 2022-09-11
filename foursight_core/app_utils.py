@@ -427,6 +427,7 @@ class AppUtilsCore(ReactApi):
         # extract redir cookie
         cookies = req_dict.get('headers', {}).get('cookie')
         redir_url = context + 'view/' + env
+        react_redir_url = None
         print(cookies)
 
 #       for cookie in cookies.split(';'):
@@ -457,17 +458,10 @@ class AppUtilsCore(ReactApi):
                 print('xyzzy:auth0_callback-5b')
                 redir_url = redir_url_cookie
 
-            if react:
-                print('xyzzy:auth0_callback-5c: REACT')
-                redir_react_url_cookie = simple_cookies.get("reactredir")
-                print(redir_react_url_cookie)
-                print(type(redir_react_url_cookie))
-                if redir_react_url_cookie:
-                    #
-                    # Special case for React version (TODO: rework later).
-                    #
-                    print('xyzzy:auth0_callback-5')
-                    redir_url = redir_react_url_cookie
+            react_redir_url = simple_cookies.get("reactredir")
+            print('xyzzy:auth0_callback-5')
+            print(react_redir_url)
+
             print('xyzzy:auth0_callback-6')
             print(redir_url)
         except Exception as e:
@@ -504,6 +498,11 @@ class AppUtilsCore(ReactApi):
         print('xyzzy:auth0_callback-9a:auth0_response')
         print(auth0_response)
         id_token = auth0_response.get('id_token', None)
+        react = "react" in auth0_response.get("scope", "")
+        if react and react_redir_url:
+            print("xyzzy:auth0_callback-9b: THIS IS REACT!")
+            print(react_redir_url)
+            resp_headers = {'Location': react_redir_url}
         #id_token = res.json().get('id_token', None)
 
         #
