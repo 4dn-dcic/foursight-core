@@ -60,7 +60,7 @@ export const GetLoginInfo = () => {
 export const Logout = (navigate) => {
     DeleteJwtTokenCookie();
     DeleteAuthTokenCookie();
-    DeleteRedirectCookie();
+    // DeleteRedirectCookie();
     DeleteFauxLoginCookie();
     if (navigate) {
         //

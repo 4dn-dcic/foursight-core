@@ -19,6 +19,7 @@ from pyDes import *
 import pytz
 import requests
 import socket
+import string
 import sys
 import time
 import types
@@ -118,6 +119,7 @@ class AppUtilsCore(ReactApi):
                 encryption_password = encryption_password[0:24]
             self.encryption_password = encryption_password
         return self.encryption_password
+
     def encrypt(self, plaintext_value: str) -> str:
         try:
             return base64.b64encode(triple_des(self.get_encryption_password()).encrypt(plaintext_value, padmode=2)).decode('utf-8')
@@ -125,9 +127,18 @@ class AppUtilsCore(ReactApi):
             print('xyzzy:encrypt error')
             print(e)
             return None
+
     def decrypt(self, encrypted_value: str) -> str:
         try:
-            return triple_des(self.get_encryption_password()).decrypt(base64.b64decode(encrypted_value)).decode("utf-8")
+            # TODO: FIGURE THIS OUT!
+            # VERY TEMPORARY HACK!
+            # FOR SOME REASON FOR SOME STRINGS (IT SEEMS) WE GET TRAILING NON-PRINTABLE CHARACTERS!
+            hack_decrypted_value = ""
+            decrypted_value = triple_des(self.get_encryption_password()).decrypt(base64.b64decode(encrypted_value)).decode("utf-8")
+            for c in decrypted_value:
+                if c in string.printable:
+                    hack_decrypted_value += c
+            return hack_decrypted_value
         except Exception as e:
             print('xyzzy:decrypt error')
             print(e)
@@ -330,6 +341,7 @@ class AppUtilsCore(ReactApi):
             # Just in case. We should already have this value from the GAC.
             # But Will said get it from the portal (was hardcoded in the template),
             # so I had written code to do that; just call as fallback for now.
+            # TODO: Also if we do get it then do we assume it varies per env; if so need to handle caching different.
             auth0_client_id = self.get_auth0_client_id_from_portal(env_name)
         return auth0_client_id
 
@@ -473,18 +485,51 @@ class AppUtilsCore(ReactApi):
         headers = {'content-type': "application/json"}
         res = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
         id_token = res.json().get('id_token', None)
+
+        #
+        # TODO
+        #
+        print("xyzzy:auth0_callback:id_token")
+        print(id_token)
+        jwt_token_decoded = self.decode_jwt_token(id_token, env)
+        print("xyzzy:auth0_callback:jwt_token_decoded:")
+        print(jwt_token_decoded)
+        auth_email = jwt_token_decoded.get("email")
+        print("xyzzy:auth0_callback:auth_email:")
+        print(auth_email)
+        authenvs = ['cgap-supertest'] # TODO
+        authtoken_json = {
+            "jwtToken": id_token,
+            "authEnvs": authenvs,
+        }
+        print("xyzzy:auth0_callback:authtoken_json:")
+        print(authtoken_json)
+        authtoken = self.encrypt(json.dumps(authtoken_json))
+        print("xyzzy:auth0_callback:authtoken:")
+        print(authtoken)
+        #
+        # TODO
+        #
+
         print('xyzzy:auth0_callback-10')
         if id_token:
             print('xyzzy:auth0_callback-11')
             cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
-            authtoken_cookie = ''.join(['authToken=', self.encrypt(id_token), '; Domain=', domain, '; Path=/;'])
+            authtoken_cookie = ''.join(['authToken=', authtoken, '; Domain=', domain, '; Path=/;'])
+            print("xyzzy:auth0_callback:authtoken_cookie:")
+            print(authtoken_cookie)
+            authenvs_cookie = ''.join(['authEnvs=', json.dumps(authenvs), '; Domain=', domain, '; Path=/;'])
+            print("xyzzy:auth0_callback:authenvs_cookie:")
+            print(authenvs_cookie)
             expires_in = res.json().get('expires_in', None)
             if expires_in:
                 expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
                 cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
                 authtoken_cookie += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
+                authenvs_cookie += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
             resp_headers['set-cookie'] = authtoken_cookie
-            resp_headers['Set-Cookie'] = cookie_str
+            resp_headers['SET-COOKIE'] = authenvs_cookie
+            resp_headers['Set-Cookie'] = cookie_str # sic: different casing of this to allow multiple cookies
             print('xyzzy:auth0_callback-12')
             print(resp_headers)
         print('xyzzy:auth0_callback-13')
@@ -508,6 +553,13 @@ class AppUtilsCore(ReactApi):
     def get_decoded_jwt_token(self, env_name: str, request_dict) -> dict:
         try:
             jwt_token = self.get_jwt_token(request_dict)
+            return self.decode_jwt_token(jwt_token, env_name)
+        except:
+            logger.warn(f"foursight_core: Exception getting decoded JWT token.")
+            return None
+
+    def decode_jwt_token(self, jwt_token: str, env_name: str) -> dict:
+        try:
             if not jwt_token:
                 return None
             auth0_client_id = self.get_auth0_client_id(env_name)
@@ -1964,7 +2016,8 @@ def auth0_callback():
     Will return a redirect to view on error/any missing callback info.
     """
     request = app.current_request
-    return AppUtilsCore.singleton().auth0_callback(request, DEFAULT_ENV)
+    default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
+    return AppUtilsCore.singleton().auth0_callback(request, default_env)
 
 
 if ROUTE_PREFIX != ROUTE_EMPTY_PREFIX:

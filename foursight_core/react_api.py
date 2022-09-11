@@ -8,6 +8,7 @@ import boto3
 import datetime
 import ast
 import copy
+import json
 import pkg_resources
 import platform
 import pytz
@@ -70,26 +71,35 @@ class ReactApi:
             return True
         try:
             authorization_token = request_dict.get('headers', {}).get('authorization')
-            print('xyzzy:authorization_token')
+            print('xyzzy:ReactApi.authorize:authorization_token')
             print(authorization_token)
-            jwt_token = self.decrypt(authorization_token)
-            print('xyzzy:jwt_token')
+            decrypted_authorization_token = self.decrypt(authorization_token)
+            print('xyzzy:ReactApi.authorize:decrypted_authorization_token')
+            print(decrypted_authorization_token)
+            print(type(decrypted_authorization_token))
+            authorization_token_json = json.loads(decrypted_authorization_token) # here
+            print('xyzzy:ReactApi.authorize:authorization_token_json')
+            print(authorization_token_json)
+            jwt_token = authorization_token_json.get("jwtToken")
+            print('xyzzy:ReactApi.authorize:decrypted_authorization_token.jwtToken')
             print(jwt_token)
+            print('xyzzy:ReactApi.authorize:decrypted_authorization_token.authEnvs')
+            print(authorization_token_json.get("authEnvs"))
             auth0_client_id = self.get_auth0_client_id(environ)
             auth0_secret = self.get_auth0_secret(environ)
             jwt_decoded = jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30)
-            print('jwt_decoded')
+            print('xyzzy:ReactApi.authorize:decrypted_authorization_token.jwt_decoded')
             print(jwt_decoded)
             aud = jwt_decoded.get("aud")
             if aud != auth0_client_id:
-                print('xyzzy:auth:return False')
+                print('xyzzy:ReactApi.authorize:return False')
                 print(aud)
                 print(auth0_client_id)
                 return False
-            print('xyzzy:auth:return True')
+            print('xyzzy:ReactApi.authorize:return True')
             return True
         except Exception as e:
-            print('xyzzy:auth:error')
+            print('xyzzy:ReactApi.authorize:error')
             print(e)
             return False
 
