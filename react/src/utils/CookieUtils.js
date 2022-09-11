@@ -5,7 +5,7 @@ import * as Utils from './Utils';
 const _cookies = new Cookies()
 const _jwtTokenCookieName = "jwtToken";
 const _authTokenCookieName = "authToken";
-const _redirectCookieName = "redir_react";
+const _redirectCookieName = "reactredir";
 const _fauxLoginCookieName = "test_mode_login_localhost";
 
 export const GetCookie = (name) => {

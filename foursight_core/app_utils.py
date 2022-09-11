@@ -96,6 +96,14 @@ class AppUtilsCore(ReactApi):
     # Define in subclass.
     APP_PACKAGE_NAME = None
 
+    # We use encryption for the React 'authToken' cookie, which is a JSON object containing
+    # the JWT token in the 'jwtToken' field and a 'authEnvs' field which is the Base-64
+    # encoded JSON list of names of allowed environments for the authenticated user.
+    #
+    # We are using pyDes for this, which is pure Python to avoid portability issues,
+    # and is SUPER slow, but OK for now for our purposes of just decrypting the authToken
+    # on each protected API call. I.e. it takes nearly 100ms to decrypt 500 characters!
+
     encryption_password = None
     def get_encryption_password(self):
         if not self.encryption_password:
@@ -130,15 +138,7 @@ class AppUtilsCore(ReactApi):
 
     def decrypt(self, encrypted_value: str) -> str:
         try:
-            # TODO: FIGURE THIS OUT!
-            # VERY TEMPORARY HACK!
-            # FOR SOME REASON FOR SOME STRINGS (IT SEEMS) WE GET TRAILING NON-PRINTABLE CHARACTERS!
-            hack_decrypted_value = ""
-            decrypted_value = triple_des(self.get_encryption_password()).decrypt(base64.b64decode(encrypted_value)).decode("utf-8")
-            for c in decrypted_value:
-                if c in string.printable:
-                    hack_decrypted_value += c
-            return hack_decrypted_value
+            return triple_des(self.get_encryption_password()).decrypt(base64.b64decode(encrypted_value), padmode=2).decode("utf-8")
         except Exception as e:
             print('xyzzy:decrypt error')
             print(e)
@@ -458,8 +458,10 @@ class AppUtilsCore(ReactApi):
                 redir_url = redir_url_cookie
 
             if react:
-                redir_react_url_cookie = simple_cookies.get("redir_react")
+                print('xyzzy:auth0_callback-5c: REACT')
+                redir_react_url_cookie = simple_cookies.get("reactredir")
                 print(redir_react_url_cookie)
+                print(type(redir_react_url_cookie))
                 if redir_react_url_cookie:
                     #
                     # Special case for React version (TODO: rework later).
@@ -467,6 +469,7 @@ class AppUtilsCore(ReactApi):
                     print('xyzzy:auth0_callback-5')
                     redir_url = redir_react_url_cookie
             print('xyzzy:auth0_callback-6')
+            print(redir_url)
         except Exception as e:
             print("xyzzy:Exception loading cookies: {cookies}")
             print(e)
@@ -2029,6 +2032,7 @@ def auth0_callback():
     Special callback route, only to be used as a callback from auth0
     Will return a redirect to view on error/any missing callback info.
     """
+    print('xyzzy:route_auth0_callback')
     request = app.current_request
     default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
     return AppUtilsCore.singleton().auth0_callback(request, default_env)
@@ -2422,11 +2426,12 @@ def reactapi_route_lambdas(environ: str):
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/callback', cors=CORS)
-def react_auth0_callback():
+def reactapi_route_auth0_callback():
     """
     Special callback route, only to be used as a callback from auth0
     Will return a redirect to view on error/any missing callback info.
     """
+    print('xyzzy:react_route_auth0_callback')
     request = app.current_request
     default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
     return AppUtilsCore.singleton().auth0_callback(request, default_env, react=True)
