@@ -5,15 +5,7 @@ import * as URL from "../utils/URL";
 const RedirectPage = () => {
 
     const { state } = useLocation();
-
-    let url = state.url;
-    if (url === "last") {
-        url = GetCookie("last_url");
-    }
-    if (!url) {
-        url = URL.Url("/home", URL.Env());
-    }
-
+    const url = state.url;
     return <Navigate to={url} replace />
 };
 

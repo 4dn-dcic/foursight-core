@@ -16,8 +16,6 @@ import DemoPage from './pages/DemoPage';
 import Header from './Header';
 import Footer from './Footer';
 import LoginPage from './pages/LoginPage';
-import LoginDone from './pages/LoginDone';
-import EnvDone from './pages/EnvDone';
 import GacComparePage from './pages/GacComparePage';
 import TestPage from './pages/TestPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -51,10 +49,8 @@ const App = () => {
                     <Route path="/api/react" element={<EnvPage />} />
                     <Route path="/api/react/env" element={<EnvPage />} />
                     <Route path="/api/react/:environ/env" element={<EnvPage />} />
-                    <Route path="/api/react/:environ/envdone" element={<EnvDone />} />
                     <Route path="/api/react/login" element={<LoginPage />} />
                     <Route path="/api/react/:environ/login" element={<LoginPage />} />
-                    <Route path="/api/react/:environ/logindone" element={<LoginDone />} />
                     <Route path="/api/react/:environ" element={<LoginAndValidEnvRequired><HomePage /></LoginAndValidEnvRequired>} />
                     <Route path="/api/react/:environ/demo" element={<DemoPage />}/>
                     <Route path="/api/react/:environ/checks" element={<ChecksPage />}/>
