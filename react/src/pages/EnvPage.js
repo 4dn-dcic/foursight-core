@@ -136,7 +136,6 @@ const EnvPage = (props) => {
                                 <span className={"tool-tip"} data-text={isSameEnv(URL.Env(), env) ? "This is the current environment." : "This is the default environment."}>
                                     <Link style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} onClick={() => refreshHeaderData(env.public)} to={URL.Url("/env", env.full)}><b>{env.full}</b></Link>
                                     { isDefaultEnv(env, info) && <b style={{color:!isKnownEnv() ? "darkred" : "darkblue"}}>&nbsp;&#x272e;</b> }
-                                    <br />
                                     {/* !IsAllowedEnv(env.full) && <i style={{color:"red",fontWeight:"bold"}}>You do not have permission for this environment.</i> */}
                                 </span>
                                         <br />
