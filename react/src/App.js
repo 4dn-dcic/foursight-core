@@ -22,6 +22,7 @@ import GacComparePage from './pages/GacComparePage';
 import TestPage from './pages/TestPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ChecksPage from './pages/ChecksPage';
+import RedirectPage from './pages/RedirectPage';
 import { LoginAndValidEnvRequired } from './utils/LoginUtils';
 
 const App = () => {
@@ -63,6 +64,7 @@ const App = () => {
                     <Route path="/api/react/:environ/users/:email" element={<LoginAndValidEnvRequired><UserPage /></LoginAndValidEnvRequired>}/>
                     <Route path="/api/react/:environ/gac/:environCompare" element={<LoginAndValidEnvRequired><GacComparePage /></LoginAndValidEnvRequired>}/>
                     <Route path="/api/react/:environ/test" element={<TestPage />}/>
+                    <Route path="/redirect" element={<RedirectPage />}/>
                     <Route path="*" element={<NotFoundPage />}/>
                 </Routes>
             </div>

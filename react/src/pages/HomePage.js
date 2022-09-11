@@ -5,7 +5,7 @@ import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
 import { IsRunningLocally } from '../utils/LoginUtils';
 import * as URL from "../utils/URL";
 
-const HomePag = (props) => {
+const HomePage = (props) => {
 
     const [ header ] = useContext(GlobalContext);
     let { environ } = useParams();
@@ -25,4 +25,4 @@ const HomePag = (props) => {
     </LoginAndValidEnvRequired>
 };
 
-export default HomePag;
+export default HomePage;

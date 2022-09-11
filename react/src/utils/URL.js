@@ -1,4 +1,5 @@
 import * as Utils from './Utils.js';
+import { GetCookie } from './CookieUtils';
 
 const BASE_URL_PATH = "/api/react/";
 
@@ -106,4 +107,12 @@ export const Url = (path = undefined, env = undefined, info = undefined) => {
         env = ""
     }
     return normalizePath(BASE_URL_PATH + env + path);
+}
+
+export const LastPath = () => {
+    let url = GetCookie("last_url");
+    if (!url) {
+        url = URL.Url("/home", URL.Env());
+    }
+    return url;
 }

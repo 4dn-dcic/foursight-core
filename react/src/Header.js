@@ -29,8 +29,6 @@ const Header = (props) => {
 
     function refreshHeaderData(env) {
         const url = API.Url("/header", env.public);
-            console.log("FFF")
-            console.log(url)
         fetchData(url, setHeader, setLoading, setError);
     }
 
@@ -127,7 +125,8 @@ const Header = (props) => {
                     <small>{new Date().toLocaleDateString('en-us', { weekday:"long", year:"numeric", month:"long", day:"numeric", hour12: false, hour: "2-digit", minute: "2-digit", second: "numeric", timeZoneName: "short"}).replace(" at ", " | ")}</small>
                     { (IsLoggedIn()) ? (<span>
                             {/* &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {Logout(navigate);}}>LOGOUT</span> */}
-                        &nbsp;|&nbsp; <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink>
+                            {/* &nbsp;|&nbsp; <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink> */}
+                                &nbsp;|&nbsp; <NavLink to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}}    style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink>
                     </span>):(<span>
                         &nbsp;|&nbsp; <NavLink to={URL.Url("/login?auth", true)} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
                     </span>)}
@@ -152,7 +151,7 @@ const Header = (props) => {
                                         <span key={env.public}>{env.public}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
                                             /* <Link key={env.public} onClick={() => refreshHeaderData(env)} to={URL.Url(null, env.public)}>{env.public}</Link> */
-                                        <Link key={env.public} onClick={() => refreshHeaderData(env)} to={URL.Url("/envdone", env.public)}>{env.public}</Link>
+                                        <Link key={env.public} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: URL.Url(null, env.public)}}>{env.public}</Link>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>

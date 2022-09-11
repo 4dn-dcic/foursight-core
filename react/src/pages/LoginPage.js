@@ -26,7 +26,7 @@ const LoginPage = (props) => {
         document.getElementById("login_container").style.display = "none";
         document.getElementById("login_auth_container").style.display = "block";
         document.getElementById("login_auth_cancel").style.display = "block";
-        createRedirectCookie(GetCookie("last_url"));
+        createRedirectCookie(URL.LastPath());
         createAuth0Lock().show();
         //
         // Hacking styles for (now) embeded (rather than popup) Auth0 login box.
@@ -81,7 +81,6 @@ const LoginPage = (props) => {
         expires.setFullYear(expires.getFullYear() + 1);
         expires = expires.toUTCString();
         const redirectUrl = url ? url : window.location.origin + URL.Url("/home", true);
-        //SetCookie("redir_react", redirectUrl, expires);
         SetRedirectCookie(redirectUrl, expires);
     }
 
@@ -100,7 +99,8 @@ const LoginPage = (props) => {
                             {/* <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout(navigate)}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small> */}
                         <br />
                         <small>
-                            Click <NavLink to={URL.Url("/logindone", true)} style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout()}>here</NavLink> to <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</NavLink>.
+                            {/* Click <NavLink to={URL.Url("/logindone", true)} style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout()}>here</NavLink> to <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</NavLink>. */}
+                            Click <Link to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}} style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout()}>here</Link> to <Link to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}} style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</Link>.
                         </small>
                     </span>)}
                 </div>
@@ -130,7 +130,8 @@ const LoginPage = (props) => {
                         <hr style={{borderTop: "2px solid red",marginTop:"8px",marginBottom:"8px"}}/>
                         As you appear to be <b>running</b> Foursight <b>locally</b>, the above login <u><b>will not work</b></u> properly. <br />
                         <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
-                        Click <NavLink onClick={() => SetFauxLoginCookie()} to={URL.Url("/logindone", true)} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</NavLink> to faux <NavLink onClick={() => SetFauxLoginCookie()} to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"darkred"}}><b>login</b></NavLink> locally.
+                    {/* Click <NavLink onClick={() => SetFauxLoginCookie()} to={URL.Url("/logindone", true)} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</NavLink> to faux <NavLink onClick={() => SetFauxLoginCookie()} to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"darkred"}}><b>login</b></NavLink> locally. */}
+                        Click <Link to={{pathname: "/redirect"}} state={{url: URL.LastPath()}} onClick={() => SetFauxLoginCookie()} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</Link> to faux <Link to={{pathname: "/redirect"}} state={{url: URL.LastPath()}} onClick={() => SetFauxLoginCookie()} style={{cursor:"pointer",color:"darkred"}}><b>login</b></Link> locally.
                     </div>
                 </div>
             )}
