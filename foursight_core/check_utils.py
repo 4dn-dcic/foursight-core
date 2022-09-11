@@ -299,9 +299,9 @@ class CheckHandler(object):
             # make sure this environment displays this check
             used_envs = [env for sched in setup_info['schedule'].values() for env in sched]
             used_envs.extend(setup_info.get('display', []))
-            # TODO: Is this a fix for 'cgap-supertest' not working but 'supertest' does?
-            #if connection.fs_env in used_envs or 'all' in used_envs:
-            if connection.ff_env in used_envs or 'all' in used_envs:
+            # TODO: Is this a fix for 'cgap-supertest' not working but 'supertest' does? At least this was this case.
+            # if connection.ff_env in used_envs or 'all' in used_envs:
+            if connection.fs_env in used_envs or 'all' in used_envs:
                 group = setup_info['group']
                 if group not in grouped_results:
                     grouped_results[group] = {}
