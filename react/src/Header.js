@@ -15,7 +15,7 @@ const Header = (props) => {
 
     // Temporary hack so "real" (non-React) Foursight doesn't use this.
     //
-    DeleteRedirectCookie();
+    // DeleteRedirectCookie();
 
     let { environ } = useParams();
     let navigate = useNavigate();
