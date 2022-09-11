@@ -54,7 +54,7 @@ const LoginPage = (props) => {
     }
 
     function createAuth0Lock() {
-        const loginCallback = Auth0CallbackUrl("/api/callback/");
+        const loginCallback = Auth0CallbackUrl("/api/reactapi/callback/");
         const loginClientId = info?.app?.credentials?.auth0_client_id;
         const loginPayload = {
             container: "login_auth_container",

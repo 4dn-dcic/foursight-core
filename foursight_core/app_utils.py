@@ -416,7 +416,7 @@ class AppUtilsCore(ReactApi):
         logger.error("foursight_core.check_authorization: Returning False ")
         return False
 
-    def auth0_callback(self, request, env):
+    def auth0_callback(self, request, env, react = False):
         req_dict = request.to_dict()
         domain, context = self.get_domain_and_context(req_dict)
         print('xyzzy:auth0_callback')
@@ -450,21 +450,22 @@ class AppUtilsCore(ReactApi):
 #               print('xyzzy:auth0_callback-2')
 #               redir_url = redir_url_cookie
             print('xyzzy:auth0_callback-3')
-            redir_react_url_cookie = simple_cookies.get("redir_react")
-            print(redir_react_url_cookie)
-            if redir_react_url_cookie:
-                #
-                # Special case for React version (TODO: rework later).
-                #
-                print('xyzzy:auth0_callback-5')
-                redir_url = redir_react_url_cookie
-            else:
-                print('xyzzy:auth0_callback-5a')
-                redir_url_cookie = simple_cookies.get("redir")
-                print(redir_url_cookie)
-                if redir_url_cookie:
-                    print('xyzzy:auth0_callback-5b')
-                    redir_url = redir_url_cookie
+
+            redir_url_cookie = simple_cookies.get("redir")
+            print(redir_url_cookie)
+            if redir_url_cookie:
+                print('xyzzy:auth0_callback-5b')
+                redir_url = redir_url_cookie
+
+            if react:
+                redir_react_url_cookie = simple_cookies.get("redir_react")
+                print(redir_react_url_cookie)
+                if redir_react_url_cookie:
+                    #
+                    # Special case for React version (TODO: rework later).
+                    #
+                    print('xyzzy:auth0_callback-5')
+                    redir_url = redir_react_url_cookie
             print('xyzzy:auth0_callback-6')
         except Exception as e:
             print("xyzzy:Exception loading cookies: {cookies}")
@@ -2418,6 +2419,17 @@ def reactapi_route_check_run(environ: str, check: str):
 def reactapi_route_lambdas(environ: str):
     print(f"XYZZY:/reactapi/{environ}/lambdas")
     return AppUtilsCore.singleton().react_route_lambdas(request=app.current_request, env=environ)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/callback', cors=CORS)
+def react_auth0_callback():
+    """
+    Special callback route, only to be used as a callback from auth0
+    Will return a redirect to view on error/any missing callback info.
+    """
+    request = app.current_request
+    default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
+    return AppUtilsCore.singleton().auth0_callback(request, default_env, react=True)
 
 
 class AppUtils(AppUtilsCore):  # for compatibility with older imports
