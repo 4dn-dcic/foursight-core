@@ -2328,7 +2328,7 @@ def get_view_reload_lambda_route():
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/rawchecks', methods=['GET'], cors=CORS)
 def reactapi_route_checks(environ: str):
     print(f"XYZZY:/reactapi/{environ}/checks")
-    return AppUtilsCore.singleton().react_route_checks(request=app.current_request, env=environ)
+    return AppUtilsCore.singleton().react_route_raw_checks(request=app.current_request)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks', methods=['GET'], cors=CORS)

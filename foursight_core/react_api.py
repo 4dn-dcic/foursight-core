@@ -574,7 +574,7 @@ class ReactApi:
                         print(check_env_key)
                         print(env)
                         # if check_env_key == env:
-                        if self.is_same_env(check_env_key, env):
+                        if check_env_key == "all" or self.is_same_env(check_env_key, env):
                             print('filter_checks_by_env-7')
                             checks_for_env[check_key] = checks[check_key]
             else:
@@ -748,9 +748,9 @@ class ReactApi:
                             check_setup_item_schedule[check_setup_item_schedule_name]["cron"] = la["lambda_schedule"]
                             check_setup_item_schedule[check_setup_item_schedule_name]["cron_description"] = la["lambda_schedule_description"]
 
-    def react_route_checks(self, request, env: str) -> dict:
+    def react_route_raw_checks(self, request) -> dict:
         response = self.create_standard_response("react_route_checks")
-        response.body = self.get_checks(env)
+        response.body = self.get_checks_raw()
         response = self.process_response(response)
         return response
 
@@ -761,7 +761,7 @@ class ReactApi:
         return response
 
     def react_route_check_history(self, request, env: str, check: str, offset: int = 0, limit: int = 25) -> dict:
-        response = self.create_standard_response("react_route_checks")
+        response = self.create_standard_response("react_route_check_history")
         response.body = self.get_checks(env)
         connection = self.init_connection(env)
         history = self.get_foursight_history(connection, check, offset, limit)
