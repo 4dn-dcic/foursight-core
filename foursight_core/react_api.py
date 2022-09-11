@@ -448,7 +448,7 @@ class ReactApi:
             response.body["env"]["unknown"] = True
             response.body["env_unknown"] = True
 
-        hack_for_local_testing = True
+        hack_for_local_testing = False
         if hack_for_local_testing:
             response.body["envs"] = {
             "all": [
@@ -548,22 +548,34 @@ class ReactApi:
             return False
         env_a = env_a.lower()
         env_b = env_b.lower()
-        return (env_a == env_a
+        return (env_a == env_b
             or  full_env_name(env_a) == env_b
             or  short_env_name(env_a) == env_b
             or  public_env_name(env_a) == env_b
-            or  infer_foursight_from_env_name(env_a) == env_b)
+            or  infer_foursight_from_env(envname=env_a) == env_b)
 
     def filter_checks_by_env(self, checks: dict, env) -> dict:
+        print('filter_checks_by_env-1')
         if not env:
+            print('filter_checks_by_env-2')
             return checks
         checks_for_env = {}
         for check_key in checks:
+            print('filter_checks_by_env-3')
+            print(check_key)
             if checks[check_key]["schedule"]:
+                print('filter_checks_by_env-4')
+                print(checks[check_key]["schedule"])
                 for check_schedule_key in checks[check_key]["schedule"].keys():
+                    print('filter_checks_by_env-5')
+                    print(check_schedule_key)
                     for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
+                        print('filter_checks_by_env-6')
+                        print(check_env_key)
+                        print(env)
                         # if check_env_key == env:
                         if self.is_same_env(check_env_key, env):
+                            print('filter_checks_by_env-7')
                             checks_for_env[check_key] = checks[check_key]
             else:
                 # If no schedule section (which has the env section) then include it.
