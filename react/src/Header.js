@@ -163,7 +163,7 @@ const Header = (props) => {
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (header.envs?.unique_annotated.length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:!URL.Env() || header.env_unknown ? "red" : "#143c53"}} title={"Environment: " + URL.Env() + (!URL.Env() || header.env_unknown ? " -> UNKNOWN" : "")}>{URL.Env() || "unknown-env"}</b>
+                            <b className="dropdown-button" style={{color:!URL.Env() || header.env_unknown ? "red" : "#143c53"}} title={"Environment: " + URL.Env() + (!URL.Env() || header.env_unknown ? " -> UNKNOWN" : "")}>{header.env?.public_name || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { header.envs?.unique_annotated.map(env => 
                                     env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.foursight.toUpperCase() == URL.Env().toUpperCase() ? (
@@ -209,7 +209,7 @@ const Header = (props) => {
                 <tr>
                     <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="3">
                         <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>.
-                        Click <a href={IsRunningLocally() && window.location.host == "localhost:3000" ? "http://localhost:8000/api/view" : ("/api/view/" + (environ || header.env?.default))} style={{color:"inherit"}}><b>here</b></a> to go to the real version.</i>
+                        Click <a href={IsRunningLocally() && window.location.host == "localhost:3000" ? ("http://localhost:8000" + ("/api/view/" + header?.env?.public_name)) : ("/api/view/" + (header?.env?.public_name))} style={{color:"inherit"}}><b>here</b></a> to go to the real version.</i>
                     </td>
                 </tr>
                 <tr>

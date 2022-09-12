@@ -21,7 +21,7 @@ const EnvPage = (props) => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
 
-    const currentEnv = URL.Env();
+    const currentEnv = info.env?.public_name;
 
     function refreshHeaderData(env) {
         const url = API.Url("/header", env);
