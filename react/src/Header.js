@@ -7,6 +7,7 @@ import { IsRunningLocally } from './utils/LoginUtils';
 import { DeleteRedirectCookie } from './utils/CookieUtils';
 import * as URL from "./utils/URL";
 import * as API from "./utils/API";
+import { FormatDateTime } from "./utils/Utils";
 import { BarSpinner } from "./Spinners";
 import { GetLoginInfo, IsLoggedIn, Logout } from "./utils/LoginUtils";
 import { fetchData } from "./utils/FetchUtils";
@@ -141,7 +142,7 @@ const Header = (props) => {
                     </span>
                 </td>
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
-                    <small>{new Date().toLocaleDateString('en-us', { weekday:"long", year:"numeric", month:"long", day:"numeric", hour12: false, hour: "2-digit", minute: "2-digit", second: "numeric", timeZoneName: "short"}).replace(" at ", " | ")}</small>
+                    <small>{FormatDateTime(new Date(), false)}</small>
                     { (IsLoggedIn()) ? (<span>
                             {/* &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {Logout(navigate);}}>LOGOUT</span> */}
                             {/* &nbsp;|&nbsp; <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink> */}

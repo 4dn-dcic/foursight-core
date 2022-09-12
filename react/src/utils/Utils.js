@@ -40,3 +40,38 @@ export const CopyToClipboard = (id) => {
 export const UUID = () => {
     return uuid();
 }
+
+export const FormatDateTime = (value = new Date(), long = false) => {
+    if (typeof(value) == 'number') {
+        if (value.toString().length < 12) {
+            const seconds = value;
+            value = new Date(seconds * 1000);
+        }
+        else {
+            const milliseconds = value;
+            value = new Date(milliseconds);
+        }
+    }
+    if (long) {
+        return value.toLocaleDateString('en-us', { weekday:"long",
+                                                   year:"numeric",
+                                                   month:"long",
+                                                   day:"numeric",
+                                                   hour12: false,
+                                                   hour: "2-digit",
+                                                   minute: "2-digit",
+                                                   second: "numeric",
+                                                   timeZoneName: "short"}).replace(" at ", " | ");
+    }
+    else {
+            // TODO: Timezone hack. Find better way.
+            let timezone = new Date().toLocaleDateString(undefined, {timeZoneName: "short"});
+            timezone = timezone.substring(timezone.length - 3);
+            return value.getFullYear() + "-" +
+                   ("0" + (value.getMonth() + 1)).slice(-2) + "-" +
+                   ("0" + value.getDate()).slice(-2) + " " +
+                   ("0" + value.getHours()).slice(-2) + ":" +
+                   ("0" + value.getMinutes()).slice(-2) + ":" +
+                   ("0" + value.getSeconds()).slice(-2) + " " + timezone;
+    }
+}

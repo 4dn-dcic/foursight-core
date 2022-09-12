@@ -153,7 +153,7 @@ export const LoginAndValidEnvRequired = ({ children }) => {
     else if (!IsLoggedIn()) {
         return <Navigate to={URL.Url("/login", true)} replace />
     }
-    else if (!IsAllowedEnv(header.env)) {
+    else if (header.env && !IsAllowedEnv(header.env)) {
         return <Navigate to={URL.Url("/env", true)} replace />
     }
     else {
@@ -176,34 +176,77 @@ export const GetAllowedEnvs = () => {
     }
 }
 
-export const IsAllowedEnv = (env_annotated) => {
+export const IsAllowedEnv = (envAnnotated) => {
     const allowedEnvs = GetAllowedEnvs();
     if (!allowedEnvs) {
         return true;
     }
     for (const allowedEnv of allowedEnvs) {
-        if (IsSameEnv(allowedEnv, env_annotated)) {
+        if (IsSameEnv(allowedEnv, envAnnotated)) {
             return true;
         }
     }
     return false;
 }
 
-export const IsSameEnv = (env, env_annotated) => {
-    env = env.toLowerCase()
-    // TODO: Unify names annotated env names in header.env and header.envs.unique_annotated.
-    if (env_annotated.public_name) {
-        return (env_annotated.name?.toLowerCase() == env) ||
-               (env_annotated.full_name?.toLowerCase() == env) ||
-               (env_annotated.short_name?.toLowerCase() == env) ||
-               (env_annotated.public_name?.toLowerCase() == env) ||
-               (env_annotated.foursight_name?.toLowerCase() == env);
+// Return true if the two given environments are the same.
+// Handles either of them being strings or annotated environment names as returned
+// by the /header endpoint, and, for now, both varieties for the annotated structure.
+// TODO: Unify names annotated env names in header.env and header.envs.unique_annotated.
+//
+export const IsSameEnv = (envA, envB) => {
+    function regular_env_name(envAnnotated) {
+        return envAnnotated?.name;
+    }
+    function full_env_name(envAnnotated) {
+        return envAnnotated?.full_name ? envAnnotated.full_name : envAnnotated?.full;
+    }
+    function short_env_name(envAnnotated) {
+        return envAnnotated?.short_name ? envAnnotated.short_name : envAnnotated?.short;
+    }
+    function public_env_name(envAnnotated) {
+        return envAnnotated?.public_name ? envAnnotated.public_name : envAnnotated?.public;
+    }
+    function foursight_env_name(envAnnotated) {
+        return envAnnotated?.foursight_name ? envAnnotated.foursight_name : envAnnotated?.foursight;
+    }
+    if (Utils.isObject(envA)) {
+        if (Utils.isObject(envB)) {
+            return (regular_env_name  (envA)?.toLowerCase() == regular_env_name  (envB)?.toLowerCase()) &&
+                   (full_env_name     (envA)?.toLowerCase() == full_env_name     (envB)?.toLowerCase()) &&
+                   (short_env_name    (envA)?.toLowerCase() == short_env_name    (envB)?.toLowerCase()) &&
+                   (public_env_name   (envA)?.toLowerCase() == public_env_name   (envB)?.toLowerCase()) &&
+                   (foursight_env_name(envA)?.toLowerCase() == foursight_env_name(envB)?.toLowerCase());
+        }
+        else if (Utils.isNonEmptyString(envB)) {
+            envB = envB.toLowerCase();
+            return (regular_env_name  (envA)?.toLowerCase() == envB) ||
+                   (full_env_name     (envA)?.toLowerCase() == envB) ||
+                   (short_env_name    (envA)?.toLowerCase() == envB) ||
+                   (public_env_name   (envA)?.toLowerCase() == envB) ||
+                   (foursight_env_name(envA)?.toLowerCase() == envB);
+        }
+        else {
+            return false;
+        }
+    }
+    else if (Utils.isNonEmptyString(envA)) {
+        if (Utils.isObject(envB)) {
+            envA = envA.toLowerCase();
+            return (regular_env_name  (envB)?.toLowerCase() == envA) ||
+                   (full_env_name     (envB)?.toLowerCase() == envA) ||
+                   (short_env_name    (envB)?.toLowerCase() == envA) ||
+                   (public_env_name   (envB)?.toLowerCase() == envA) ||
+                   (foursight_env_name(envB)?.toLowerCase() == envA);
+        }
+        else if (Utils.isNonEmptyString(envB)) {
+            return envA.toLowerCase() == envB.toLowerCase();
+        }
+        else {
+            return false;
+        }
     }
     else {
-        return (env_annotated.name?.toLowerCase() == env) ||
-               (env_annotated.full?.toLowerCase() == env) ||
-               (env_annotated.short?.toLowerCase() == env) ||
-               (env_annotated.public?.toLowerCase() == env) ||
-               (env_annotated.foursight?.toLowerCase() == env);
+        return false;
     }
 }
