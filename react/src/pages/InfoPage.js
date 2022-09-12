@@ -162,8 +162,8 @@ const InfoPage = () => {
             <InfoRow name={"Issuer"} value={GetLoginInfo()?.iss} monospace={true} copy={true} size="2" />
             <InfoRow name={"Subject"} value={GetLoginInfo()?.sub} monospace={true} copy={true} size="2" />
             <InfoRow name={"Audience"} value={GetLoginInfo()?.aud} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Issued At"} value={GetLoginInfo()?.iat} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Expires At"} value={FormatDateTime(GetLoginInfo()?.exp, false)} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Issued At"} value={FormatDateTime(GetLoginInfo()?.iat)} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Expires At"} value={FormatDateTime(GetLoginInfo()?.exp)} monospace={true} copy={true} size="2" />
         </InfoBox>
         <InfoBox title="Miscellany">
             <InfoRow name={"App Deployed At"} value={header.app?.deployed} monospace={true} copy={true} optional={true} size="2" />
