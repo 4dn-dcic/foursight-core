@@ -146,12 +146,15 @@ export const LoginRequired = ({ children }) => {
 
 export const LoginAndValidEnvRequired = ({ children }) => {
     NotePageLastVisited();
-    const [ info ] = useContext(GlobalContext);
-    if (URL.Env() === "" || info.env_unknown) {
+    const [ header ] = useContext(GlobalContext);
+    if (URL.Env() === "" || header.env_unknown) {
         return <Navigate to={URL.Url("/env", true)} replace />
     }
     else if (!IsLoggedIn()) {
         return <Navigate to={URL.Url("/login", true)} replace />
+    }
+    else if (!IsAllowedEnv(header.env)) {
+        return <Navigate to={URL.Url("/env", true)} replace />
     }
     else {
         return children;
@@ -173,12 +176,34 @@ export const GetAllowedEnvs = () => {
     }
 }
 
-export const IsAllowedEnv = (env) => {
+export const IsAllowedEnv = (env_annotated) => {
     const allowedEnvs = GetAllowedEnvs();
+    if (!allowedEnvs) {
+        return true;
+    }
     for (const allowedEnv of allowedEnvs) {
-        if (allowedEnv == env) {
+        if (IsSameEnv(allowedEnv, env_annotated)) {
             return true;
         }
     }
     return false;
+}
+
+export const IsSameEnv = (env, env_annotated) => {
+    env = env.toLowerCase()
+    // TODO: Unify names annotated env names in header.env and header.envs.unique_annotated.
+    if (env_annotated.public_name) {
+        return (env_annotated.name?.toLowerCase() == env) ||
+               (env_annotated.full_name?.toLowerCase() == env) ||
+               (env_annotated.short_name?.toLowerCase() == env) ||
+               (env_annotated.public_name?.toLowerCase() == env) ||
+               (env_annotated.foursight_name?.toLowerCase() == env);
+    }
+    else {
+        return (env_annotated.name?.toLowerCase() == env) ||
+               (env_annotated.full?.toLowerCase() == env) ||
+               (env_annotated.short?.toLowerCase() == env) ||
+               (env_annotated.public?.toLowerCase() == env) ||
+               (env_annotated.foursight?.toLowerCase() == env);
+    }
 }

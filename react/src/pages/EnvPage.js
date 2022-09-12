@@ -2,7 +2,7 @@ import React from 'react';
 import { useContext, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "../GlobalContext.js";
-import { IsLoggedIn, NotePageLastVisited, IsAllowedEnv } from "../utils/LoginUtils";
+import { IsLoggedIn, NotePageLastVisited, IsAllowedEnv, IsSameEnv } from "../utils/LoginUtils";
 import { fetchData } from '../utils/FetchUtils';
 import * as API from "../utils/API";
 import * as URL from '../utils/URL';
@@ -59,15 +59,6 @@ const EnvPage = (props) => {
         else {
             return false;
         }
-    }
-
-    function isSameEnv(env, env_annotated) {
-        env = env.toLowerCase()
-        return (env_annotated.name.toLowerCase() == env) ||
-               (env_annotated.full.toLowerCase() == env) ||
-               (env_annotated.short.toLowerCase() == env) ||
-               (env_annotated.public.toLowerCase() == env) ||
-               (env_annotated.foursight.toLowerCase() == env);
     }
 
     function onChange(arg, environ) {
@@ -130,13 +121,13 @@ const EnvPage = (props) => {
                     <table style={{color:"inherit"}}><thead></thead><tbody>
                         {info?.envs?.unique_annotated.map((env, envIndex) =>
                             <tr key={UUID()} title={isDefaultEnv(env, info) ? "This is the default environment" : ""}>
-                                <td style={{fontWeight:isSameEnv(URL.Env(), env) ? "bold" : "normal",color:isSameEnv(URL.Env(), env) ? "black" : "inherit",verticalAlign:"top"}}><span>&#x2192;&nbsp;&nbsp;</span></td>
+                                <td style={{fontWeight:IsSameEnv(URL.Env(), env) ? "bold" : "normal",color:IsSameEnv(URL.Env(), env) ? "black" : "inherit",verticalAlign:"top"}}><span>&#x2192;&nbsp;&nbsp;</span></td>
                                 <td>
                                 {/* TODO: make this a Link rather than an anchor - had some trouble previously */}
-                                <span className={"tool-tip"} data-text={isSameEnv(URL.Env(), env) ? "This is the current environment." : "This is the default environment."}>
-                                    <Link style={{color:isSameEnv(URL.Env(), env) ? "black" : "inherit"}} onClick={() => refreshHeaderData(env.public)} to={URL.Url("/env", env.full)}><b>{env.full}</b></Link>
+                                <span className={"tool-tip"} data-text={IsSameEnv(URL.Env(), env) ? "This is the current environment." : "This is the default environment."}>
+                                    <Link style={{color:IsSameEnv(URL.Env(), env) ? "black" : "inherit"}} onClick={() => refreshHeaderData(env.public)} to={URL.Url("/env", env.full)}><b>{env.full}</b></Link>
                                     { isDefaultEnv(env, info) && <b style={{color:!isKnownEnv() ? "darkred" : "darkblue"}}>&nbsp;&#x272e;</b> }
-                                    {/* !IsAllowedEnv(env.full) && <i style={{color:"red",fontWeight:"bold"}}>You do not have permission for this environment.</i> */}
+                                    { !IsAllowedEnv(env) && <i style={{color:"red",fontWeight:"normal"}}>&nbsp;&#x2192; You do not have permission for this environment.</i> }
                                 </span>
                                         <br />
                                         Full Name: <span style={envNameTextStyles(env.full)}>{env.full}</span> <br />
