@@ -44,6 +44,7 @@ from .fs_connection import FSConnection
 from .check_utils import CheckHandler
 from .sqs_utils import SQS
 from .stage import Stage
+from .encryption import Encryption
 
 
 class ReactApi:
@@ -62,6 +63,19 @@ class ReactApi:
     def is_fourfront(self):
         return "Fourfront" in self.html_main_title.lower()
 
+    def encode(self, s: str) -> str:
+        return base64.b64encode(bytes(s, "utf-8")).decode("utf-8")
+
+    def decode(self, s: str) -> str:
+        return base64.b64decode(s).decode("utf-8")
+
+    def is_allowed_env(self, env: str, allowed_envs: list) -> bool:
+        if not env or not allowed_envs:
+            return False
+        for allowed_env in allowed_envs:
+            if self.is_same_env(env, allowed_env):
+                return True
+        return False
 
     # TODO
     # Better authorization needed,
@@ -74,24 +88,39 @@ class ReactApi:
             authorization_token = request_dict.get('headers', {}).get('authorization')
             print('xyzzy:ReactApi.authorize:authorization_token')
             print(authorization_token)
-            decrypted_authorization_token = self.decrypt(authorization_token)
-            print('xyzzy:ReactApi.authorize:decrypted_authorization_token')
-            print(decrypted_authorization_token)
-            print(type(decrypted_authorization_token))
-            authorization_token_json = json.loads(decrypted_authorization_token) # here
+            authorization_token_decrypted = self.encryption.decrypt(authorization_token)
+            print('xyzzy:ReactApi.authorize:authorization_token_decrypted')
+            print(authorization_token_decrypted)
+            print(type(authorization_token_decrypted))
+            authorization_token_json = json.loads(authorization_token_decrypted) # here
             print('xyzzy:ReactApi.authorize:authorization_token_json')
             print(authorization_token_json)
             jwt_token = authorization_token_json.get("jwtToken")
-            print('xyzzy:ReactApi.authorize:decrypted_authorization_token.jwtToken')
+            print('xyzzy:ReactApi.authorize:authorization_token_decrypted.jwtToken')
             print(jwt_token)
-            print('xyzzy:ReactApi.authorize:decrypted_authorization_token.authEnvs')
-            print(authorization_token_json.get("authEnvs"))
+
+            allowed_envs = authorization_token_json.get("authEnvs")
+            print('xyzzy:ReactApi.authorize:authorization_token_decrypted.authEnvs')
+            print(allowed_envs)
+            allowed_envs_decoded = self.encryption.decode(allowed_envs)
+            print('xyzzy:ReactApi.authorize:authorization_token_decrypted.authEnvs-decoded')
+            print(allowed_envs_decoded)
+            allowed_envs_json = json.loads(allowed_envs_decoded)
+            print('xyzzy:ReactApi.authorize:authorization_token_decrypted.authEnvs-decoded-2')
+            print(allowed_envs_json)
+            print(environ)
+            if not self.is_allowed_env(environ, allowed_envs_json):
+                print('xyzzy:ReactApi.authorize:not-allowed')
+                return False
+
             auth0_client_id = self.get_auth0_client_id(environ)
             auth0_secret = self.get_auth0_secret(environ)
             jwt_decoded = jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30)
-            print('xyzzy:ReactApi.authorize:decrypted_authorization_token.jwt_decoded')
+            print('xyzzy:ReactApi.authorize:authorization_token_decrypted.jwt_decoded')
             print(jwt_decoded)
+
             aud = jwt_decoded.get("aud")
+            # TODO: compare decrypted authToken.jwtToken to decoded jwtToken.
             if aud != auth0_client_id:
                 print('xyzzy:ReactApi.authorize:return False')
                 print(aud)
@@ -330,6 +359,12 @@ class ReactApi:
         return self.process_response(response)
 
     def react_get_users(self, request, environ):
+        print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+        env_a = "fourfront-mastertest"
+        print(full_env_name(env_a))
+        print(short_env_name(env_a))
+        print(public_env_name(env_a))
+        print(infer_foursight_from_env(envname=env_a))
         if not self.authorize(request.to_dict(), environ):
             return self.forbidden_response()
         request_dict = request.to_dict()
@@ -549,6 +584,13 @@ class ReactApi:
         }
 
     def is_same_env(self, env_a: str, env_b: str) -> bool:
+        print('xyzzy:is_same_env')
+        print(env_a)
+        print(env_b)
+        print(full_env_name(env_a))
+        print(short_env_name(env_a))
+        print(public_env_name(env_a))
+        print(infer_foursight_from_env(envname=env_a))
         if not env_a or not env_b:
             return False
         env_a = env_a.lower()

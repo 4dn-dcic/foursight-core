@@ -48,6 +48,7 @@ from .fs_connection import FSConnection
 from .check_utils import CheckHandler
 from .sqs_utils import SQS
 from .stage import Stage
+from .encryption import Encryption
 from .environment import Environment
 from .react_api import ReactApi
 
@@ -95,54 +96,6 @@ class AppUtilsCore(ReactApi):
 
     # Define in subclass.
     APP_PACKAGE_NAME = None
-
-    # We use encryption for the React 'authToken' cookie, which is a JSON object containing
-    # the JWT token in the 'jwtToken' field and a 'authEnvs' field which is the Base-64
-    # encoded JSON list of names of allowed environments for the authenticated user.
-    #
-    # We are using pyDes for this, which is pure Python to avoid portability issues,
-    # and is SUPER slow, but OK for now for our purposes of just decrypting the authToken
-    # on each protected API call. I.e. it takes nearly 100ms to decrypt 500 characters!
-
-    encryption_password = None
-    def get_encryption_password(self):
-        if not self.encryption_password:
-            encryption_password = os.environ.get("ENCODED_AUTH0_SECRET")
-            if not encryption_password:
-                encryption_password = os.environ.get("S3_AWS_SECRET_ACCESS_KEY")
-                if not encryption_password:
-                    #
-                    # If we cannot find a password to use from the GAC we will
-                    # use a random one (a UUID) which just means that when
-                    # this server restarts (or this app reloads) it will
-                    # not be able to decrypt any authTokens existing out
-                    # there, meaning users will have to login again.
-                    #
-                    encryption_password = str(uuid.uuid4()).replace('-','')
-            if not encryption_password:
-                encryption_password = str(uuid.uuid4()).replace('-','')[0:24]
-            elif len(encryption_password) < 24:
-                encryption_password = encryption_password.ljust(24, 'x')
-            elif len(encryption_password) > 24:
-                encryption_password = encryption_password[0:24]
-            self.encryption_password = encryption_password
-        return self.encryption_password
-
-    def encrypt(self, plaintext_value: str) -> str:
-        try:
-            return base64.b64encode(triple_des(self.get_encryption_password()).encrypt(plaintext_value, padmode=2)).decode('utf-8')
-        except Exception as e:
-            print('xyzzy:encrypt error')
-            print(e)
-            return None
-
-    def decrypt(self, encrypted_value: str) -> str:
-        try:
-            return triple_des(self.get_encryption_password()).decrypt(base64.b64decode(encrypted_value), padmode=2).decode("utf-8")
-        except Exception as e:
-            print('xyzzy:decrypt error')
-            print(e)
-            return None
 
     def get_app_version(self):
         return pkg_resources.get_distribution(self.APP_PACKAGE_NAME).version
@@ -193,6 +146,7 @@ class AppUtilsCore(ReactApi):
         self.auth0_client_id = None
         self.user_records = {}
         self.lambda_last_modified = None
+        self.encryption = Encryption()
         self.cached_portal_url = {}
 
     @staticmethod
@@ -545,7 +499,7 @@ class AppUtilsCore(ReactApi):
         }
         print("xyzzy:auth0_callback:authtoken_json:")
         print(authtoken_json)
-        authtoken = self.encrypt(json.dumps(authtoken_json))
+        authtoken = self.encryption.encrypt(json.dumps(authtoken_json))
         print("xyzzy:auth0_callback:authtoken:")
         print(authtoken)
         #
