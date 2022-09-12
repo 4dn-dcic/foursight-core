@@ -363,6 +363,25 @@ class AppUtilsCore(ReactApi):
     def get_auth0_secret(self, env_name: str) -> str:
         return os.environ.get("CLIENT_SECRET")
 
+    def get_allowed_envs(self, email: str) -> list:
+        allowed_envs = []
+        envs = self.get_unique_annotated_environment_names()
+        for env in envs:
+            try:
+                print("xyzzy:getting-allowed-envs...")
+                user = ff_utils.get_metadata('users/' + email, ff_env=env["full"], add_on="frame=object&datastore=database")
+                print("xyzzy:done-getting-allowed-envs...")
+                if user:
+                    print("xyzzy:got-allowed-envs")
+                    allowed_envs.append(env["full"])
+            except Exception as e:
+                print("xyzzy:error-getting-allowed-envs")
+                print(e)
+                print(email)
+        print("xyzzy:allowed-envs is:")
+        print(allowed_envs)
+        return allowed_envs
+
     def check_authorization(self, request_dict, env=None):
         """
         Manual authorization, since the builtin chalice @app.authorizer() was not
@@ -416,6 +435,7 @@ class AppUtilsCore(ReactApi):
         logger.error("foursight_core.check_authorization: Returning False ")
         return False
 
+    # TODO: This needs massive cleanup after messing with WRT React.
     def auth0_callback(self, request, env, react = False):
         req_dict = request.to_dict()
         domain, context = self.get_domain_and_context(req_dict)
@@ -514,9 +534,11 @@ class AppUtilsCore(ReactApi):
         print("xyzzy:auth0_callback:jwt_token_decoded:")
         print(jwt_token_decoded)
         auth_email = jwt_token_decoded.get("email")
+        authenvs = self.get_allowed_envs(auth_email)
+        print("xyzzy:auth0_callback:allowed_envs:")
+        print(authenvs)
         print("xyzzy:auth0_callback:auth_email:")
         print(auth_email)
-        authenvs = ['cgap-supertest'] # TODO
         authtoken_json = {
             "jwtToken": id_token,
             "authEnvs": base64.b64encode(bytes(json.dumps(authenvs), "utf-8")).decode('utf-8'),
@@ -2317,17 +2339,17 @@ def get_react_4(environ, path1, path2, path3, path4):
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/users', cors=CORS)
-def react_get_users_route(environ):
+def react_route_get_users_route(environ):
     return AppUtilsCore.singleton().react_get_users(request=app.current_request, environ=environ)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/users/{email}', cors=CORS)
-def react_get_user_route(environ, email):
+def react_route_get_user_route(environ, email):
     return AppUtilsCore.singleton().react_get_user(request=app.current_request, environ=environ, email=email)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/info', cors=CORS)
-def react_get_info(environ):
+def react_route_get_info(environ):
     request = app.current_request
     request_dict = request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
@@ -2336,7 +2358,7 @@ def react_get_info(environ):
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/info', cors=CORS)
-def react_get_info_noenv():
+def react_route_get_info_noenv():
     request = app.current_request
     request_dict = request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
@@ -2346,7 +2368,7 @@ def react_get_info_noenv():
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/header', methods=["GET"], cors=CORS)
-def react_get_header(environ):
+def react_route_get_header(environ):
     print('XYZZY:/REACTAPI/ENV/HEADER')
     request = app.current_request
     request_dict = request.to_dict()
@@ -2355,7 +2377,7 @@ def react_get_header(environ):
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/header', methods=["GET"], cors=CORS)
-def react_get_header_noenv():
+def react_route_get_header_noenv():
     request = app.current_request
     request_dict = request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
@@ -2364,7 +2386,7 @@ def react_get_header_noenv():
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/__clearcache__', cors=CORS)
-def react_clear_cach(environ):
+def react_route_clear_cache(environ):
     request = app.current_request
     request_dict = request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
