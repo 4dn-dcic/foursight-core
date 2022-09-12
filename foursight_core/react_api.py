@@ -85,13 +85,16 @@ class ReactApi:
         if self.is_running_locally(request_dict):
             return True
         try:
-            authorization_token = request_dict.get('headers', {}).get('authorization')
+            #authorization_token = request_dict.get('headers', {}).get('authorization')
+            authorization_token = request_dict.get('headers', {}).get('authtoken')
             print('xyzzy:ReactApi.authorize:authorization_token')
             print(authorization_token)
+            print(request_dict)
             authorization_token_decrypted = self.encryption.decrypt(authorization_token)
             print('xyzzy:ReactApi.authorize:authorization_token_decrypted')
             print(authorization_token_decrypted)
             print(type(authorization_token_decrypted))
+            print(len(authorization_token_decrypted))
             authorization_token_json = json.loads(authorization_token_decrypted) # here
             print('xyzzy:ReactApi.authorize:authorization_token_json')
             print(authorization_token_json)
@@ -236,6 +239,8 @@ class ReactApi:
     react_info_cache = {}
 
     def is_known_environment_name(self, env_name: str) -> bool:
+        if not env_name:
+            return False
         env_name = env_name.upper()
         unique_annotated_environment_names = self.get_unique_annotated_environments()
         for environment_name in unique_annotated_environment_names:
@@ -251,24 +256,12 @@ class ReactApi:
                 return True
         return False
 
-    # TODO: Not protecte for now. TODO: make this protected and make a non-protecte one that just returns env name info for React header.
+    # TODO: Not protected for now. TODO: make this protected and make a non-protecte one that just returns env name info for React header.
     # Experimental React UI (API) stuff.
-    def react_get_info(self, request, environ, is_admin=False, domain="", context="/"):
-        # TODO: Do some kind of caching for speed, but probably on individual data items which may take
-        # time rather than this whole thing, or if we do do this whole thing needs to at least be on a per
-        # environment basis, and need to take into account invalidating (at least) login stuff on logout etc.
-        #
-        # Not ready for this yet - caching user stuff which is not appropriate for the server.
-        # Need an endipont to cach just stuff we need for the UI header.
-#       react_env_info_cache = self.react_info_cache.get(environ)
-#       if react_env_info_cache:
-#           react_env_info_cache["page"]["loaded"] = self.get_load_time()
-#           return react_env_info_cache
+    def react_get_info(self, request, environ, domain="", context="/"):
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
-        login = self.get_logged_in_user_info(environ, request_dict)
-        login["admin"] = is_admin
-        login["auth0"] = self.get_auth0_client_id(environ)
+        default_env = self.get_default_env()
         if not self.is_known_environment_name(environ):
             env_unknown = True
         else:
@@ -291,7 +284,7 @@ class ReactApi:
                 "env": environ,
                 "version": self.get_app_version(),
                 "local": self.is_running_locally(request_dict),
-                "credentials": self.react_get_credentials_info(environ),
+                "credentials": self.react_get_credentials_info(environ if environ else default_env),
                 "launched": self.init_load_time,
                 "deployed": self.get_lambda_last_modified(),
                 "fourfront": self.is_fourfront()
@@ -312,22 +305,12 @@ class ReactApi:
                 "python": platform.python_version(),
                 "chalice": chalice_version
             },
-            "login": login,
             "server": {
                 "foursight": socket.gethostname(),
                 "portal": portal_url,
                 "es": self.host,
                 "rds": os.environ["RDS_HOSTNAME"],
                 "sqs": self.sqs.get_sqs_queue().url
-            },
-            "env": {
-                "name": environ,
-                "full_name": full_env_name(environ),
-                "short_name": short_env_name(environ),
-                "public_name": public_env_name(environ),
-                "foursight_name": infer_foursight_from_env(envname=environ),
-                "default": os.environ.get("ENV_NAME"),
-                "gac_name": self.get_gac_name(environ)
             },
             "envs": {
                 "all": sorted(self.environment.list_environment_names()),
@@ -336,7 +319,7 @@ class ReactApi:
             },
             "buckets": {
                 "env": self.environment.get_env_bucket_name(),
-                "foursight": get_foursight_bucket(envname=environ, stage=stage_name),
+                "foursight": get_foursight_bucket(envname=environ if environ else default_env, stage=stage_name),
                 "foursight_prefix": get_foursight_bucket_prefix(),
                 "info": environment_and_bucket_info,
                 "ecosystem": self.sort_dictionary_by_lowercase_keys(EnvUtils.declared_data()),
@@ -352,10 +335,24 @@ class ReactApi:
             "environ": self.sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
         }
         if env_unknown:
+            response.body["env"] = {
+                "name": environ,
+                "unknown": True,
+                "default": default_env
+            }
             response.body["env_unknown"] = True
+        else:
+            response.body["env"] = {
+                "name": environ,
+                "full_name": full_env_name(environ),
+                "short_name": short_env_name(environ),
+                "public_name": public_env_name(environ),
+                "foursight_name": infer_foursight_from_env(envname=environ),
+                "default": default_env,
+                "gac_name": self.get_gac_name(environ)
+            }
         response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
-#       self.react_info_cache[environ] = response.body
         return self.process_response(response)
 
     def react_get_users(self, request, environ):
@@ -421,24 +418,18 @@ class ReactApi:
 
     # NEW ...
     react_header_info_cache = {}
-    def react_get_header_info(self, request, environ, domain="", context="/"):
+    def react_get_header(self, request, environ, domain="", context="/"):
         react_header_info_cache = self.react_header_info_cache.get(environ)
         if react_header_info_cache:
             return react_header_info_cache
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
+        default_env = self.get_default_env()
         if not self.is_known_environment_name(environ):
             env_unknown = True
         else:
             env_unknown = False
-        if not env_unknown:
-            try:
-                environment_and_bucket_info = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(self.environment.get_environment_and_bucket_info(environ, stage_name))),
-            except:
-                environment_and_bucket_info = None
-        else:
-            environment_and_bucket_info = None
-        response = Response('react_get_header_info')
+        response = Response('react_get_header')
         response.body = {
             "app": {
                 "package": self.APP_PACKAGE_NAME,
@@ -447,7 +438,7 @@ class ReactApi:
                 "version": self.get_app_version(),
                 "domain": domain,
                 "local": self.is_running_locally(request_dict),
-                "credentials": self.react_get_credentials_info(environ),
+                "credentials": self.react_get_credentials_info(environ if environ else default_env),
                 "launched": self.init_load_time,
                 "deployed": self.get_lambda_last_modified()
             },
@@ -463,31 +454,29 @@ class ReactApi:
                 "python": platform.python_version(),
                 "chalice": chalice_version
             },
-            "env": {
+            "envs": {
+                "all": sorted(self.environment.list_environment_names()),
+                "unique": sorted(self.environment.list_unique_environment_names()),
+                "unique_annotated": self.get_unique_annotated_environments(), # xyzzy
+                "default": default_env
+            }
+        }
+        if env_unknown:
+            response.body["env"] = {
+                "name": environ,
+                "unknown": True,
+                "default": default_env
+            }
+            response.body["env_unknown"] = True
+        else:
+            response.body["env"] = {
                 "name": environ,
                 "full_name": full_env_name(environ),
                 "short_name": short_env_name(environ),
                 "public_name": public_env_name(environ),
                 "foursight_name": infer_foursight_from_env(envname=environ),
-                "default": os.environ.get("ENV_NAME"),
-            },
-            "envs": {
-                "all": sorted(self.environment.list_environment_names()),
-                "unique": sorted(self.environment.list_unique_environment_names()),
-                "unique_annotated": self.get_unique_annotated_environments() # xyzzy
-            },
-            "buckets": {
-                "env": self.environment.get_env_bucket_name(),
-                "foursight": get_foursight_bucket(envname=environ, stage=stage_name),
-                "foursight_prefix": get_foursight_bucket_prefix(),
-                "info": environment_and_bucket_info,
-                "ecosystem": self.sort_dictionary_by_lowercase_keys(EnvUtils.declared_data()),
+                "default": default_env,
             }
-        }
-        if env_unknown:
-            response.body["env"]["unknown"] = True
-            response.body["env_unknown"] = True
-
         hack_for_local_testing = False
         if hack_for_local_testing:
             response.body["envs"] = {

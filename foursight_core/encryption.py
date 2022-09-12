@@ -5,8 +5,8 @@ from pyDes import triple_des
 
 class Encryption:
 
-    def __init__(self):
-        self.encryption_password = None
+    def __init__(self, encryption_password = None):
+        self.encryption_password = encryption_password
 
     # We use encryption for the React 'authToken' cookie, which is a JSON object containing
     # the JWT token in the 'jwtToken' field and a 'authEnvs' field which is the Base-64
@@ -21,6 +21,7 @@ class Encryption:
     def get_encryption_password(self):
         if not self.encryption_password:
             encryption_password = os.environ.get("ENCODED_AUTH0_SECRET")
+            encryption_password = "SYEDex90e1lwNZzq9D9PkGpo0xMTkxWgtjD6dIz_ty8YbzRWWK7lWMWeAAXmDSUh"
             if not encryption_password:
                 encryption_password = os.environ.get("S3_AWS_SECRET_ACCESS_KEY")
                 if not encryption_password:
@@ -49,6 +50,8 @@ class Encryption:
             encoded_encrypted_value = self.encode(encrypted_value_bytes)
             return encoded_encrypted_value
         except Exception as e:
+            print('xyzzy:foursight_core.Encryption.encrypt:error')
+            print(e)
             return ""
 
     def decrypt(self, encrypted_value: str) -> str:
@@ -56,10 +59,13 @@ class Encryption:
             password = self.get_encryption_password()
             encryption = triple_des(password)
             decoded_encrypted_value_bytes = self.decode_to_bytes(encrypted_value)
+            print('xyzzy')
             decrypted_value_bytes = encryption.decrypt(decoded_encrypted_value_bytes, padmode=2)
             decrypted_value = self.bytes_to_string(decrypted_value_bytes)
             return decrypted_value
         except Exception as e:
+            print('xyzzy:foursight_core.Encryption.decryp:error')
+            print(e)
             return ""
 
     def encode(self, s: str) -> str:

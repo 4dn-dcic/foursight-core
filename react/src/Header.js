@@ -196,11 +196,7 @@ const Header = (props) => {
                             { GetLoginInfo()?.email ? (<span>
                                 <Link to={URL.Url("/login", true)} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{GetLoginInfo()?.email}</b></Link>
                             </span>):(<span>
-                                { header.login?.admin ? (<span>
-                                    <b style={{color:"darkblue"}}>ADMIN</b>
-                                </span>):(<span>
-                                    <b style={{color:"darkblue"}}>SOMEUSER</b>
-                                </span>)}
+                                <b title="Cannot get login email from JWT token." style={{color:"darkred"}}>UNKNOWN USER</b>
                             </span>)}
                         </span>):(<span>
                             <b>NOT LOGGED IN</b>

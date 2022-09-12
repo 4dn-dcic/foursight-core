@@ -336,6 +336,9 @@ class AppUtilsCore(ReactApi):
         print(allowed_envs)
         return allowed_envs
 
+    def get_default_env(self) -> str:
+        return os.environ.get("ENV_NAME", DEFAULT_ENV)
+
     def check_authorization(self, request_dict, env=None):
         """
         Manual authorization, since the builtin chalice @app.authorizer() was not
@@ -2307,8 +2310,7 @@ def react_route_get_info(environ):
     request = app.current_request
     request_dict = request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
-    is_admin = AppUtilsCore.singleton().check_authorization(request_dict, environ)
-    return AppUtilsCore.singleton().react_get_info(request=request, environ=environ, is_admin=is_admin, domain=domain, context=context)
+    return AppUtilsCore.singleton().react_get_info(request=request, environ=environ, domain=domain, context=context)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/info', cors=CORS)
@@ -2316,9 +2318,7 @@ def react_route_get_info_noenv():
     request = app.current_request
     request_dict = request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
-    default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
-    is_admin = AppUtilsCore.singleton().check_authorization(request_dict, default_env)
-    return AppUtilsCore.singleton().react_get_info(request=request, environ=default_env, is_admin=is_admin, domain=domain, context=context)
+    return AppUtilsCore.singleton().react_get_info(request=request, environ=None, domain=domain, context=context)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/header', methods=["GET"], cors=CORS)
@@ -2327,7 +2327,7 @@ def react_route_get_header(environ):
     request = app.current_request
     request_dict = request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
-    return AppUtilsCore.singleton().react_get_header_info(request=request, environ=environ, domain=domain, context=context)
+    return AppUtilsCore.singleton().react_get_header(request=request, environ=environ, domain=domain, context=context)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/header', methods=["GET"], cors=CORS)
@@ -2335,8 +2335,7 @@ def react_route_get_header_noenv():
     request = app.current_request
     request_dict = request.to_dict()
     domain, context = AppUtilsCore.singleton().get_domain_and_context(request_dict)
-    default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
-    return AppUtilsCore.singleton().react_get_header_info(request=request, environ=default_env, domain=domain, context=context)
+    return AppUtilsCore.singleton().react_get_header(request=request, environ=None, domain=domain, context=context)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/__clearcache__', cors=CORS)

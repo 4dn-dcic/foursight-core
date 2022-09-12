@@ -1,4 +1,5 @@
 import { GetCookie, GetAuthTokenCookie } from './CookieUtils';
+import { isRunningLocally } from './Utils';
 
 function _sleep (time) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -10,7 +11,7 @@ let _artificialSleepForTesting = GetCookie("test_mode_fetch_sleep");
 // with a  new 'authToken' cookie which was created along with the 'jwtToken' cookie;
 // We don't need to know this here but this authTokn is the jwtToken encrypted by the
 // API (server-side) using a password it got from its GAC (namely S3_AWS_ACCESS_KEY_ID).
-// We pass this authToken cookie value as an 'authorization' header to the API.
+// We pass this authToken cookie value as an 'authToken' header to the API.
 // The API decrypts this using its password (from the GAC) and checks that the
 // decrypted value looks like a valid JWT token and that it's not expired, etc.
 // I think this is reasonably secure.
@@ -25,9 +26,12 @@ export const fetchData = (url, setData, setLoading, setError) => {
     else {
         console.log("FETCHING: " + url);
     }
-    const headers = {
-        // TODO: figure out why if this is not here exactly as 'authorization' running locally we get CORS preflight error.
-        authorization: GetAuthTokenCookie() || "none"
+    const headers = isRunningLocally() ? {} : {
+        //
+        // Note that fetch sends headers in lower case.
+        // https://stackoverflow.com/questions/34656412/fetch-sends-lower-case-header-keys
+        //
+        "authtoken": GetAuthTokenCookie() || "none",
     }
     return fetch(url, { headers: headers, mode: "cors" }).then(response => {
         console.log("FETCH STATUS CODE IS " + response.status + ": " + url);

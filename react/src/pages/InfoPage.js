@@ -141,24 +141,24 @@ const InfoPage = () => {
             <InfoRow name={"Environment Name (Foursight)"} value={header?.env?.foursight_name} monospace={true} copy={true} size="3" />
         </InfoBox>
         <InfoBox title="Bucket Names">
-            <InfoRow name={"Environment Bucket Name"} value={header?.buckets?.env} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Foursight Bucket Name"} value={header?.buckets?.foursight} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Foursight Bucket Prefix"} value={header?.buckets?.foursight_prefix} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Bucket Name"} value={info?.buckets?.env} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Foursight Bucket Name"} value={info?.buckets?.foursight} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Foursight Bucket Prefix"} value={info?.buckets?.foursight_prefix} monospace={true} copy={true} size="3" />
         </InfoBox>
         <InfoBox title="Environment & Bucket Names">
             <pre className="info" style={{border:"0",margin:"0",padding:"8",paddingBottom:"8",marginTop:"0"}}>
-                { header.buckets?.info && header.buckets.info.map(bucket_info => {
-                    return <span key={uuid()}>{YAML.stringify(bucket_info)}{header.buckets.info.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
+                { info.buckets?.info && info.buckets.info.map(bucket_info => {
+                    return <span key={uuid()}>{YAML.stringify(bucket_info)}{info.buckets.info.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
                 })}
             </pre>
         </InfoBox>
         <InfoBox title="Ecosystem">
             <pre className="info" style={{border:"0",margin:"0",paddingTop:"8",paddingBottom:"8",marginTop:"0"}}>
-                {YAML.stringify(header.buckets?.ecosystem)}
+                {YAML.stringify(info.buckets?.ecosystem)}
             </pre>
         </InfoBox>
         <InfoBox title="Login Auth0 Info">
-            <InfoRow name={"Email"} value={GetLoginInfo()?.email} monospace={true} copy={true} check={info.login?.jwt?.email_verified} link={URL.Url("/users/" + info.login?.jwt?.email, true)} size="2" />
+            <InfoRow name={"Email"} value={GetLoginInfo()?.email} monospace={true} copy={true} check={GetLoginInfo()?.email_verified} link={URL.Url("/users/" + GetLoginInfo()?.email, true)} size="2" />
             <InfoRow name={"Issuer"} value={GetLoginInfo()?.iss} monospace={true} copy={true} size="2" />
             <InfoRow name={"Subject"} value={GetLoginInfo()?.sub} monospace={true} copy={true} size="2" />
             <InfoRow name={"Audience"} value={GetLoginInfo()?.aud} monospace={true} copy={true} size="2" />
