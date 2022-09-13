@@ -165,13 +165,13 @@ const InfoPage = () => {
             <InfoRow name={"Issuer"} value={GetLoginInfo()?.iss} monospace={true} copy={true} size="2" />
             <InfoRow name={"Subject"} value={GetLoginInfo()?.sub} monospace={true} copy={true} size="2" />
             <InfoRow name={"Audience"} value={GetLoginInfo()?.aud} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Issued At"} value={FormatDateTime(GetLoginInfo()?.iat)} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Expires At"} value={FormatDateTime(GetLoginInfo()?.exp)} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Issued At"} value={FormatDateTime(GetLoginInfo()?.iat) + Duration(GetLoginInfo()?.iat, new Date(), true, "|", "ago", "just now")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Expires At"} value={FormatDateTime(GetLoginInfo()?.exp) + Duration(new Date(), GetLoginInfo()?.exp, true, "|", "from now", "now")} monospace={true} copy={true} size="2" />
         </InfoBox>
         <InfoBox title="Miscellany">
-            <InfoRow name={"App Deployed At"} value={header.app?.deployed} monospace={true} copy={true} optional={true} size="2" />
-            <InfoRow name={"App Launched At"} value={header.app?.launched} monospace={true} size="2" />
-            <InfoRow name={"Page Loaded At"} value={info.page?.loaded} monospace={true} size="2" />
+            <InfoRow name={"App Deployed At"} value={header.app?.deployed + Duration(header.app?.deployed, new Date(), true, "|", "ago", "just now")} monospace={true} copy={true} optional={true} size="2" />
+            <InfoRow name={"App Launched At"} value={header.app?.launched + Duration(header.app?.launched, new Date(), true, "|", "ago", "just now")} monospace={true} size="2" />
+            <InfoRow name={"Page Loaded At"} value={info.page?.loaded + Duration(header.app?.loaded, new Date(), true, "|", "ago", "just now")} monospace={true} size="2" />
             <InfoRow name={"Package"} value={header.app?.package} monospace={true} size="2" />
             <InfoRow name={"Stage"} value={header.app?.stage} monospace={true} size="2" />
             <InfoRow name={"Environment"} value={header.app?.env} monospace={true} size="2" />
