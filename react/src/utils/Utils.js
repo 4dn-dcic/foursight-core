@@ -41,6 +41,56 @@ export const UUID = () => {
     return uuid();
 }
 
+export const Duration = (startDate, endDate = new Date(), long = false) => {
+    startDate = ToDateTime(startDate);
+    endDate = ToDateTime(endDate);
+        console.log('.................')
+        console.log(startDate)
+        startDate = new Date(startDate);
+        console.log(startDate)
+        console.log(endDate)
+        console.log('aaaaaaaaaaaaaaaaaa')
+        console.log(typeof(endDate))
+        console.log(endDate instanceof Date)
+        console.log(typeof("dasfadf"))
+        console.log(ToDateTime("2022-09-11"))
+        console.log(typeof(ToDateTime("2022-09-11")))
+    const milliseconds = (endDate - startDate);
+    const days = Math.floor(milliseconds / 86400000);
+    const hours = Math.floor((milliseconds % 86400000) / 3600000);
+    const minutes = Math.round(((milliseconds % 86400000) % 3600000) / 60000);
+    if (long) {
+        const duration = (days > 0 ? days + " days " : "") + hours + " hours " + minutes + " minutes";
+        return duration;
+    }
+    else {
+        const duration = (days > 0 ? days + " days " : "") + hours + " hours " + minutes + " minutes";
+        return duration;
+    }
+}
+
+export const ToDateTime = (value) => {
+    if (value instanceof Date) {
+        return value;
+    }
+    else if (typeof(value) == 'number') {
+        if (value.toString().length < 12) {
+            const seconds = value;
+            value = new Date(seconds * 1000);
+        }
+        else {
+            const milliseconds = value;
+            value = new Date(milliseconds);
+        }
+    }
+    else if (isNonEmptyString(value)) {
+        return new Date(Date.parse(value));
+    }
+    else {
+        return Date();
+    }
+}
+
 export const FormatDateTime = (value = new Date(), long = false) => {
     if (typeof(value) == 'number') {
         if (value.toString().length < 12) {

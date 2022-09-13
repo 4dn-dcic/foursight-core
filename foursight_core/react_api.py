@@ -9,6 +9,7 @@ import boto3
 import datetime
 import ast
 import copy
+from http.cookies import SimpleCookie
 import json
 import pkg_resources
 import platform
@@ -77,6 +78,18 @@ class ReactApi:
                 return True
         return False
 
+    def read_cookies(self, request: dict) -> dict:
+        if not request:
+            return {}
+        cookies = request.get("headers", {}).get("cookie")
+        simple_cookies = SimpleCookie()
+        simple_cookies.load(cookies)
+        return {key: value.value for key, value in simple_cookies.items()}
+
+    def read_cookie(self, cookie_name: str, request: dict) -> str:
+        simple_cookies = self.read_cookies(request)
+        return simple_cookies.get(cookie_name)
+
     # TODO
     # Better authorization needed,
     # For now client (React) just send its JWT token we gave it on login,
@@ -86,7 +99,8 @@ class ReactApi:
             return True
         try:
             #authorization_token = request_dict.get('headers', {}).get('authorization')
-            authorization_token = request_dict.get('headers', {}).get('authtoken')
+            #authorization_token = request_dict.get('headers', {}).get('authtoken')
+            authorization_token = self.read_cookie("authToken", request_dict)
             print('xyzzy:ReactApi.authorize:authorization_token')
             print(authorization_token)
             print(request_dict)
@@ -423,6 +437,9 @@ class ReactApi:
         if react_header_info_cache:
             return react_header_info_cache
         request_dict = request.to_dict()
+        print('xyzzy:react_get_header: calling authorize')
+        if not self.authorize(request.to_dict(), environ):
+            print('xyzzy:react_get_header: not authorized: continue')
         stage_name = self.stage.get_stage()
         default_env = self.get_default_env()
         if not self.is_known_environment_name(environ):

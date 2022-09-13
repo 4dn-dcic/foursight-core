@@ -513,7 +513,7 @@ class AppUtilsCore(ReactApi):
         if id_token:
             print('xyzzy:auth0_callback-11')
             cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
-            authtoken_cookie = ''.join(['authToken=', authtoken, '; Domain=', domain, '; Path=/;'])
+            authtoken_cookie = ''.join(['authToken=', authtoken, '; Domain=', domain, '; Path=/; HttpOnly;'])
             print("xyzzy:auth0_callback:authtoken_cookie:")
             print(authtoken_cookie)
             #authenvs_cookie = ''.join(['authEnvs=', json.dumps(authenvs), '; Domain=', domain, '; Path=/;'])

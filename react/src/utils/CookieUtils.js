@@ -76,6 +76,30 @@ export const DeleteAuthTokenCookie = (name) => {
     DeleteCookie(_authTokenCookieName);
 }
 
+export const AuthTokenCookieExists = () => {
+    console.log("xyzzy:checking authTOken cookie exists");
+    let authTokenCookie = GetCookie(_authTokenCookieName);
+    console.log(authTokenCookie);
+    if (authTokenCookie) {
+        console.log("xyzzy:checking authTOken cookie exists: yes");
+        return true;
+    }
+    console.log("xyzzy:checking authTOken cookie exists: no");
+    try {
+        console.log("xyzzy:checking authTOken cookie exists: setting dummy");
+        SetCookie(_authTokenCookieName, "dummy");
+        console.log("xyzzy:checking authTOken cookie exists: done setting dummy");
+        authTokenCookie = GetCookie(_authTokenCookieName);
+        console.log("xyzzy:checking authTOken cookie exists: done setting dummy and read");
+        console.log(authTokenCookie)
+        return authTokenCookie != "dummy";
+    }
+    catch {
+        console.log("xyzzy:checking authTOken cookie exists: done setting exception");
+        return true;
+    }
+}
+
 export const SetRedirectCookie = (url, expires = null) => {
     SetCookie(_redirectCookieName, url, expires);
 }

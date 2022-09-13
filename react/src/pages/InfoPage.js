@@ -6,7 +6,7 @@ import { CopyToClipboard } from "../utils/Utils";
 import { fetchData } from '../utils/FetchUtils';
 import * as API from "../utils/API";
 import * as URL from "../utils/URL";
-import { FormatDateTime } from "../utils/Utils";
+import { FormatDateTime, Duration } from "../utils/Utils";
 import uuid from 'react-uuid';
 let YAML = require('json-to-pretty-yaml');
 
@@ -24,6 +24,9 @@ const InfoPage = () => {
     //
     let isFoursightFourfront = header.app?.package != "foursight-cgap";
     isFoursightFourfront =true
+
+        console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+        console.log(Duration(header.app?.launched));
 
     const InfoBox = ({title, children}) => {
         return <>

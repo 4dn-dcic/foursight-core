@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import GlobalContext from '../GlobalContext';
-import { DeleteAuthTokenCookie, DeleteCookie, DeleteFauxLoginCookie, DeleteJwtTokenCookie, DeleteRedirectCookie, GetAuthTokenCookie, GetCookie, GetDecodedJwtTokenCookie, GetFauxLoginCookie, SetCookie } from './CookieUtils';
+import { AuthTokenCookieExists, DeleteAuthTokenCookie, DeleteCookie, DeleteFauxLoginCookie, DeleteJwtTokenCookie, DeleteRedirectCookie, GetAuthTokenCookie, GetCookie, GetDecodedJwtTokenCookie, GetFauxLoginCookie, SetCookie } from './CookieUtils';
 import * as URL from './URL';
 import * as API from './API';
 import * as Utils from './Utils';
@@ -43,10 +43,13 @@ export const IsLoggedIn = () => {
             return false;
         }
     }
-    const authToken = GetAuthTokenCookie();
-    if (!Utils.isNonEmptyString(authToken)) {
+    if (!AuthTokenCookieExists()) {
         return false;
     }
+    // const authToken = GetAuthTokenCookie();
+    // if (!Utils.isNonEmptyString(authToken)) {
+        // return false;
+    // }
     return true;
 }
 
