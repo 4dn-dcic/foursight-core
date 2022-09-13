@@ -114,6 +114,7 @@ const EnvPage = (props) => {
                 </>):(<>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
                     Current environment: <b style={{color:boxTextColor}}>{URL.Env()}</b>
+                    { (!IsAllowedEnv(URL.Env())) && <span style={{color:"red"}}>&nbsp;&#x2192; You do not have permission for this environment.</span> }
                 </div>
                 </>)}
             </div>
