@@ -21,18 +21,16 @@ const EnvPage = (props) => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
 
-    const currentEnv = info.env?.public_name;
-
     function refreshHeaderData(env) {
         const url = API.Url("/header", env);
         fetchData(url, setInfo, setLoading, setError);
     }
 
-    function isKnownEnv(env = currentEnv, header = info) {
+    function IsKnownEnv(env = URL.Env()) {
         if (!env) return false;
         env = env.toLowerCase();
-        for (let i = 0 ; i < header.envs?.unique_annotated?.length ; i++) {
-            const env_annotated = header.envs?.unique_annotated[i];
+        for (let i = 0 ; i < info.envs?.unique_annotated?.length ; i++) {
+            const env_annotated = info.envs?.unique_annotated[i];
             if ((env_annotated.name.toLowerCase() == env) ||
                 (env_annotated.full.toLowerCase() == env) ||
                 (env_annotated.short.toLowerCase() == env) ||
@@ -44,11 +42,11 @@ const EnvPage = (props) => {
         return false;
     }
 
-    function getDefaultEnv() {
-        return info?.env?.default;
+    function IsCurrentEnv(env) {
+        return IsSameEnv(URL.Env(), env);
     }
 
-    function isDefaultEnv(env, info) {
+    function IsDefaultEnv(env) {
         const defaultEnv = getDefaultEnv().toLowerCase();
         if ((env?.full?.toLowerCase() == defaultEnv) ||
             (env?.short?.toLowerCase() == defaultEnv) ||
@@ -61,6 +59,10 @@ const EnvPage = (props) => {
         }
     }
 
+    function getDefaultEnv() {
+        return info?.env?.default;
+    }
+
     function onChange(arg, environ) {
         const environCompare = arg.target.value;
         navigate(URL.Url("/gac/" + environCompare, environ))
@@ -68,12 +70,12 @@ const EnvPage = (props) => {
 
     // TODO: clean up this styles stuff.
 
-    const boxClass = isKnownEnv() ? "boxstyle info" : "boxstyle check-warn";
-    const boxTextColor = isKnownEnv() ? "darkblue" : "#6F4E37";
+    const boxClass = IsKnownEnv() ? "boxstyle info" : "boxstyle check-warn";
+    const boxTextColor = IsKnownEnv() ? "darkblue" : "#6F4E37";
 
     function envNameTextStyles(env) {
         return {
-            fontWeight: env == currentEnv ? "bold" : "inherit"
+            fontWeight: env == URL.Env() ? "bold" : "inherit"
         };
     }
 
@@ -82,25 +84,25 @@ const EnvPage = (props) => {
     if (info.error) return <>Cannot load Foursight</>;
     if (info.loading) return <>Loading ...</>;
     return <div>
-            { !IsLoggedIn() ? (
+            { false && !IsLoggedIn() ? (
                 <div className="container">
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>
                         <b>Not Logged In</b> <br />
                         <small>
-                            Click <Link to={URL.Url("/login", !isKnownEnv() ? getDefaultEnv() : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>here</b></Link> to go to the <Link to={URL.Url("/login", !isKnownEnv() ? getDefaultEnv() : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
+                            Click <Link to={URL.Url("/login", !IsKnownEnv() ? getDefaultEnv() : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>here</b></Link> to go to the <Link to={URL.Url("/login", !IsKnownEnv() ? getDefaultEnv() : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
                         </small>
                         </div>
                 </div>
             ):(<span/>)}
             <div className="container">
                 <b>&nbsp;Environment</b>
-                { !isKnownEnv() ? (<React.Fragment>
+                { !IsKnownEnv() ? (<>
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
-                        { !URL.Env() ? (<span>
-                            No environment specified in URL!
-                        </span>):(<span>
-                            Unknown environment: <b style={{color:"darkred"}}>{currentEnv}</b>
-                        </span>)}
+                        { (URL.Env()) ? (<>
+                            Unknown environment: <b style={{color:"darkred"}}>{URL.Env()}</b>
+                        </>):(<>
+                            No environment specified (in URL)!
+                        </>)}
                         <br />
                         <small>
                             {/* TODO: Use Link instead of anchor - some issue where not updating the nav links with correct URL or something */}
@@ -109,40 +111,53 @@ const EnvPage = (props) => {
                             &nbsp;<Link style={{fontWeight:"bold",color:"darkred"}} to={URL.Url("/env", getDefaultEnv())} onClick={() => refreshHeaderData(getDefaultEnv())}>{getDefaultEnv()}</Link>
                         </small>
                     </div>
-                </React.Fragment>):(<React.Fragment>
+                </>):(<>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
                     Current environment: <b style={{color:boxTextColor}}>{URL.Env()}</b>
                 </div>
-                </React.Fragment>)}
+                </>)}
             </div>
             <div className="container">
                 <b>&nbsp;Available Environments</b>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
                     <table style={{color:"inherit"}}><thead></thead><tbody>
                         {info?.envs?.unique_annotated.map((env, envIndex) =>
-                            <tr key={UUID()} title={isDefaultEnv(env, info) ? "This is the default environment" : ""}>
-                                <td style={{fontWeight:IsSameEnv(URL.Env(), env) ? "bold" : "normal",color:IsSameEnv(URL.Env(), env) ? "black" : "inherit",verticalAlign:"top"}}><span>&#x2192;&nbsp;&nbsp;</span></td>
+                            <tr key={UUID()}>
+                                <td style={{fontWeight:IsCurrentEnv(env) ? "bold" : "normal",color:!IsKnownEnv(env.public_name) ? "red" : (IsCurrentEnv(env) ? "black" : "inherit"),verticalAlign:"top"}}><span>&#x2192;&nbsp;&nbsp;</span></td>
                                 <td>
-                                {/* TODO: make this a Link rather than an anchor - had some trouble previously */}
-                                <span className={"tool-tip"} data-text={IsSameEnv(URL.Env(), env) ? "This is the current environment." : "This is the default environment."}>
-                                    <Link style={{color:IsSameEnv(URL.Env(), env) ? "black" : "inherit"}} onClick={() => refreshHeaderData(env.public)} to={URL.Url("/env", env.full)}><b>{env.full}</b></Link>
-                                    { isDefaultEnv(env, info) && <b style={{color:!isKnownEnv() ? "darkred" : "darkblue"}}>&nbsp;&#x272e;</b> }
-                                    { !IsAllowedEnv(env) && <i style={{color:"red",fontWeight:"normal"}}>&nbsp;&#x2192; You do not have permission for this environment.</i> }
-                                </span>
-                                        <br />
-                                        Full Name: <span style={envNameTextStyles(env.full)}>{env.full}</span> <br />
-                                        Short Name: <span style={envNameTextStyles(env.short)}>{env.short}</span> <br />
-                                        Public Name: <span style={envNameTextStyles(env.public)}>{env.public}</span> <br />
-                                        GAC Name: {env.gac_name} <br />
-                                        { isKnownEnv() ? (<React.Fragment>
-                                            <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected, env.full)}>
-                                                <option>GAC Compare &#x2193;</option>
-                                                { info.envs?.unique_annotated.map((env) =>
-                                                    <option key={UUID()}>{env.full}</option>
-                                                )}
-                                            </select>
-                                        </React.Fragment>):(<React.Fragment>
-                                        </React.Fragment>)}
+                                    { !IsAllowedEnv(env) ? (<>
+                                        <span className={"tool-tip"} data-text={"This is an unknown environment!"} style={{color:"red"}}>
+                                            <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public)} to={URL.Url("/env", env.public)}><b>{env.public}</b></Link>
+                                            { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
+                                            &nbsp;&#x2192; You do not have permission for this environment.
+                                        </span>
+                                    </>):(<>
+                                        { IsCurrentEnv(env) ? (<>
+                                            <span className={"tool-tip"} data-text={"This is the current environment."} style={{color:"black"}}>
+                                                <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public)} to={URL.Url("/env", env.public)}><b>{env.public}</b></Link>
+                                                { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
+                                            </span>
+                                        </>):(<>
+                                            <span>
+                                                <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public)} to={URL.Url("/env", env.public)}><b>{env.public}</b></Link>
+                                                { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
+                                            </span>
+                                        </>)}
+                                    </>)}
+                                    <br />
+                                    Full Name: <span style={envNameTextStyles(env.full)}>{env.full}</span> <br />
+                                    Short Name: <span style={envNameTextStyles(env.short)}>{env.short}</span> <br />
+                                    Public Name: <span style={envNameTextStyles(env.public)}>{env.public}</span> <br />
+                                    GAC Name: {env.gac_name} <br />
+                                    { IsKnownEnv() ? (<>
+                                        <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected, env.full)}>
+                                            <option>GAC Compare &#x2193;</option>
+                                            { info.envs?.unique_annotated.map((env) =>
+                                                <option key={UUID()}>{env.full}</option>
+                                            )}
+                                        </select>
+                                    </>):(<>
+                                    </>)}
                                     { (envIndex < info.envs.unique_annotated.length - 1) ? (<span>
                                         <br /><br />
                                     </span>):(<span/>)}
