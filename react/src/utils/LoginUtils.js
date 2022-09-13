@@ -10,8 +10,9 @@ import * as Utils from './Utils';
 // depending on how expensive really it is to read cookie and decode JWT.
 
 export const IsRunningLocally = () => {
-    return window.location.hostname == "localhost";
+    return window.location.hostname == "localhost" || window.location.hostname == "127.0.0.1";
 }
+
 export const IsLoggedIn = () => {
     //
     // N.B. We do not validate the JWT cookie because (1) could not get anything to work,
@@ -21,8 +22,7 @@ export const IsLoggedIn = () => {
     // it as a general is-logged-in flag. Probably some security issues here I'm not taking
     // into account but good for now, at least for development. Marking this as TODO.
     //
-    if (IsRunningLocally()) {
-        return GetFauxLoginCookie() == "1";
+    if (IsRunningLocally() && IsFauxLoggedIn()) {
         return true;
     }
     const decodedJwtToken = GetDecodedJwtTokenCookie();
@@ -53,10 +53,14 @@ export const IsLoggedIn = () => {
     return true;
 }
 
+export const IsFauxLoggedIn = () => {
+    return IsRunningLocally() && (GetFauxLoginCookie() == "1");
+}
+
 export const GetLoginInfo = () => {
-    if (IsRunningLocally()) {
-        return { "email": "localhost" }
-    }
+    // if (IsRunningLocally()) {
+    //     return { "email": "localhost" }
+    // }
     return GetDecodedJwtTokenCookie();
 }
 
@@ -93,9 +97,8 @@ export const VerifyLogin = () => {
 }
 
 export const Auth0CallbackUrl = () => {
-    const auth0CallbackCookie = GetCookie("test_mode_auth0_callback_url");
-    if (Utils.isNonEmptyString(auth0CallbackCookie)) {
-        return auth0CallbackCookie;
+    if (IsRunningLocally()) {
+        return API.UrlAbs("/callback/");
     }
     else {
         return API.UrlAbs("/api/callback/");
@@ -165,7 +168,12 @@ export const LoginAndValidEnvRequired = ({ children }) => {
 }
 
 export const NotePageLastVisited = () => {
-    SetCookie("last_url", IsRunningLocally() ? window.location.pathname : window.location.href);
+    // SetCookie("last_url", IsRunningLocally() ? window.location.pathname : window.location.href);
+    const lastUrl = window.location.href;
+    console.log("Setting last URL: [" + lastUrl + "]");
+        console.log('foo')
+        console.log(window.location.href)
+    SetCookie("last_url", lastUrl);
 }
 
 export const GetAllowedEnvs = () => {

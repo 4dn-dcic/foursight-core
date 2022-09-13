@@ -9,7 +9,7 @@ import * as URL from "./utils/URL";
 import * as API from "./utils/API";
 import { FormatDateTime } from "./utils/Utils";
 import { BarSpinner } from "./Spinners";
-import { GetLoginInfo, IsLoggedIn, Logout } from "./utils/LoginUtils";
+import { GetLoginInfo, IsFauxLoggedIn, IsLoggedIn, Logout } from "./utils/LoginUtils";
 import { fetchData } from "./utils/FetchUtils";
 
 const Header = (props) => {
@@ -196,8 +196,8 @@ const Header = (props) => {
                         { (IsLoggedIn()) ? (<span>
                             { GetLoginInfo()?.email ? (<span>
                                 <Link to={URL.Url("/login", true)} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{GetLoginInfo()?.email}</b></Link>
-                            </span>):(<span>
-                                <b title="Cannot get login email from JWT token." style={{color:"darkred"}}>UNKNOWN USER</b>
+                            </span>):(<span className={"tool-tip"} data-text="Running locally and faux logged in (i.e. not via Auth0).">
+                                <b style={{color:"darkred"}}>FAUX USER</b>
                             </span>)}
                         </span>):(<span>
                             <b>NOT LOGGED IN</b>
@@ -206,8 +206,8 @@ const Header = (props) => {
                 </tr>
                 <tr>
                     <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="3">
-                        <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>.
-                        Click <a href={IsRunningLocally() && window.location.host == "localhost:3000" ? ("http://localhost:8000" + ("/api/view/" + header?.env?.public_name)) : ("/api/view/" + (header?.env?.public_name))} style={{color:"inherit"}}><b>here</b></a> to go to the real version.</i>
+                        <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>. For more info click <b><a href="https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React" style={{color:"darkred"}} target="_blank"><u>here</u></a></b>.
+                        To go to the real Foursight click <a href={IsRunningLocally() && window.location.host == "localhost:3000" ? ("http://localhost:8000" + ("/api/view/" + header?.env?.public_name)) : ("/api/view/" + (header?.env?.public_name))} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
                     </td>
                 </tr>
                 <tr>

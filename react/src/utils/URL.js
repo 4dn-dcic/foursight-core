@@ -112,7 +112,7 @@ export const Url = (path = undefined, env = undefined, info = undefined) => {
 export const LastPath = () => {
     let url = GetCookie("last_url");
     if (!url) {
-        url = Url("/home", Env());
+        url = window.location.origin + Url("/home", Env());
     }
     return url;
 }

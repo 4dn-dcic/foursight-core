@@ -56,6 +56,7 @@ const LoginPage = (props) => {
     function createAuth0Lock() {
         const loginCallback = Auth0CallbackUrl();
         const loginClientId = info?.app?.credentials?.auth0_client_id;
+        console.log("Auth0 callback URL: [" + loginCallback + "]");
         const loginPayload = {
             container: "login_auth_container",
             auth: {
@@ -76,11 +77,11 @@ const LoginPage = (props) => {
         return new Auth0Lock(loginClientId, "hms-dbmi.auth0.com", loginPayload);
     }
 
-    function createRedirectCookie(url = null) {
+    function createRedirectCookie(url) {
         let expires = new Date();
         expires.setFullYear(expires.getFullYear() + 1);
         expires = expires.toUTCString();
-        const redirectUrl = url ? url : window.location.origin + URL.Url("/home", true);
+        const redirectUrl = url;
         SetRedirectCookie(redirectUrl, expires);
     }
 
@@ -126,9 +127,11 @@ const LoginPage = (props) => {
             { (IsRunningLocally() && showingAuthBox) && (
                 <div className="container" style={{maxWidth:"290pt",marginTop:"-20pt"}}>
                     <div className="boxstyle check-fail" style={{margin:"20pt",padding:"10pt",borderWidth:"2",borderColor:"red"}}>
-                        <img src={"https://i.stack.imgur.com/DPBue.png"} style={{height:"35",verticalAlign:"bottom"}} /> <b style={{fontSize:"x-large"}}>Warning ...</b> <br />
+                        <img src={"https://i.stack.imgur.com/DPBue.png"} style={{height:"35",verticalAlign:"bottom"}} /> <b style={{fontSize:"x-large"}}>&nbsp;Attention ...</b> <br />
                         <hr style={{borderTop: "2px solid red",marginTop:"8px",marginBottom:"8px"}}/>
-                        As you appear to be <b>running</b> Foursight <b>locally</b>, the above login <u><b>will not work</b></u> properly. <br />
+                        As you appear to be <b>running</b> Foursight <b>locally</b>, the above <a href="https://auth0.com/" target="_blank">Auth0</a> login <u><b>may not work</b></u> properly. <br />
+                        <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
+                        It <i>should</i> but just in case you can also bypass this and faux login below. 
                         <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
                     {/* Click <NavLink onClick={() => SetFauxLoginCookie()} to={URL.Url("/logindone", true)} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</NavLink> to faux <NavLink onClick={() => SetFauxLoginCookie()} to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"darkred"}}><b>login</b></NavLink> locally. */}
                         Click <Link to={{pathname: "/redirect"}} state={{url: URL.LastPath()}} onClick={() => SetFauxLoginCookie()} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</Link> to faux <Link to={{pathname: "/redirect"}} state={{url: URL.LastPath()}} onClick={() => SetFauxLoginCookie()} style={{cursor:"pointer",color:"darkred"}}><b>login</b></Link> locally.

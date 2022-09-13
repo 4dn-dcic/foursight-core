@@ -465,7 +465,7 @@ class AppUtilsCore(ReactApi):
             'client_id': auth0_client,
             'client_secret': auth0_secret,
             'code': auth0_code,
-            'redirect_uri': ''.join(['https://', domain, context, 'callback/'])
+            'redirect_uri': ''.join(['https://' if not CHALICE_LOCAL else 'http://', domain, context, 'callback/'])
         }
         print('xyzzy:auth0_callback-9')
         json_payload = json.dumps(payload)
@@ -512,12 +512,25 @@ class AppUtilsCore(ReactApi):
         print('xyzzy:auth0_callback-10')
         if id_token:
             print('xyzzy:auth0_callback-11')
-            cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
-            authtoken_cookie = ''.join(['authToken=', authtoken, '; Domain=', domain, '; Path=/; HttpOnly;'])
+            #
+            # N.B. When running on localhost cookies cannot be set unless we leave off the domain entirely.
+            # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
+            #
+            if not self.is_running_locally(req_dict):
+                cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
+            else:
+                cookie_str = ''.join(['jwtToken=', id_token, '; Path=/;'])
+            if not self.is_running_locally(req_dict):
+                authtoken_cookie = ''.join(['authToken=', authtoken, '; Domain=', domain, '; Path=/; HttpOnly;'])
+            else:
+                authtoken_cookie = ''.join(['authToken=', authtoken, '; Path=/; HttpOnly;'])
             print("xyzzy:auth0_callback:authtoken_cookie:")
             print(authtoken_cookie)
             #authenvs_cookie = ''.join(['authEnvs=', json.dumps(authenvs), '; Domain=', domain, '; Path=/;'])
-            authenvs_cookie = ''.join(['authEnvs=', base64.b64encode(bytes(json.dumps(authenvs), "utf-8")).decode('utf-8'), '; Domain=', domain, '; Path=/;'])
+            if not self.is_running_locally(req_dict):
+                authenvs_cookie = ''.join(['authEnvs=', base64.b64encode(bytes(json.dumps(authenvs), "utf-8")).decode('utf-8'), '; Domain=', domain, '; Path=/;'])
+            else:
+                authenvs_cookie = ''.join(['authEnvs=', base64.b64encode(bytes(json.dumps(authenvs), "utf-8")).decode('utf-8'), '; Path=/;'])
             print("xyzzy:auth0_callback:authenvs_cookie:")
             print(authenvs_cookie)
             expires_in = res.json().get('expires_in', None)
@@ -528,7 +541,7 @@ class AppUtilsCore(ReactApi):
                 authenvs_cookie += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
             resp_headers['set-cookie'] = authtoken_cookie
             resp_headers['SET-COOKIE'] = authenvs_cookie
-            resp_headers['Set-Cookie'] = cookie_str # sic: different casing of this to allow multiple cookies
+            resp_headers['Set-Cookie'] = cookie_str # sic: different casing of this to allow multiple cookies (chalice/lambda restriction)
             print('xyzzy:auth0_callback-12')
             print(resp_headers)
         print('xyzzy:auth0_callback-13')
@@ -2008,7 +2021,7 @@ class AppUtilsCore(ReactApi):
         return AppUtilsCore._app_utils
 
 
-@app.route(ROUTE_PREFIX + 'callback', cors=CORS)
+@app.route((ROUTE_PREFIX if not CHALICE_LOCAL else "/") + 'callback', cors=CORS)
 def auth0_callback():
     """
     Special callback route, only to be used as a callback from auth0

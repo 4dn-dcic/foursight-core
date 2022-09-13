@@ -101,7 +101,7 @@ const EnvPage = (props) => {
                         { (URL.Env()) ? (<>
                             Unknown environment: <b style={{color:"darkred"}}>{URL.Env()}</b>
                         </>):(<>
-                            No environment specified (in URL)!
+                            No environment specified in URL!
                         </>)}
                         <br />
                         <small>
