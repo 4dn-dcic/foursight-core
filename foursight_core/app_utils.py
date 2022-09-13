@@ -948,7 +948,7 @@ class AppUtilsCore(ReactApi):
              "full": full_env_name(env),
              "public": public_env_name(env) if public_env_name(env) else short_env_name(env),
              "foursight": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
-        return sorted(unique_annotated_environment_names, key=lambda key: key["full"])
+        return sorted(unique_annotated_environment_names, key=lambda key: key["public"])
 
     def view_foursight(self, request, environ, is_admin=False, domain="", context="/"):
         """
