@@ -126,7 +126,7 @@ const EnvPage = (props) => {
                                 <td style={{fontWeight:IsCurrentEnv(env) ? "bold" : "normal",color:!IsKnownEnv(env.public_name) ? "red" : (IsCurrentEnv(env) ? "black" : "inherit"),verticalAlign:"top"}}><span>&#x2192;&nbsp;&nbsp;</span></td>
                                 <td>
                                     { !IsAllowedEnv(env) ? (<>
-                                        <span className={"tool-tip"} data-text={"This is an unknown environment!"} style={{color:"red"}}>
+                                        <span className={"tool-tip"} data-text={"This is a restricted environment!"} style={{color:"red"}}>
                                             <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public)} to={URL.Url("/env", env.public)}><b>{env.public}</b></Link>
                                             { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             &nbsp;&#x2192; You do not have permission for this environment.
