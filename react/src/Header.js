@@ -85,6 +85,7 @@ const Header = (props) => {
             <table style={{width:"100%",height:"42px",background:"#444444"}}><tbody>
             <tr>
                 <td width="1%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
+                    <div style={{width:"200px"}} />
                 </td>
                 <td width="98%" align="center" style={{fontSize:"16pt",color:"white", nowrap:"1"}}>
                     { header.error ? (<span>
