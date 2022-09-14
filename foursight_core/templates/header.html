@@ -206,9 +206,9 @@
                 </td>
                 <td width="33%" style="padding-right:10pt;white-space:nowrap;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" align="right">
                     <span>{{load_time}}</span>
-                    {% if not is_running_locally and is_admin %}
+                    {% if is_admin %}
                         &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
-                    {% elif not is_running_locally and not is_admin %}
+                    {% elif not is_admin %}
                         &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;font-weight:bold;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" title="Not logged in. Click to login." onclick="create_redir_cookie(); lock.show();">LOGIN</span>
                     {% endif %}
                 </td>
@@ -332,9 +332,14 @@
         // which returns: { "title": "Auth0 Config", "auth0Client": "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB" }
         // where that base URL is for the portal.
         // var lock = new Auth0Lock('DPxEwsZRnKDpk0VfVAxrStRKukN14ILB', 'hms-dbmi.auth0.com', {
+        var redirectUrl = 'https://' + domain + context + 'callback/';
+        {% if is_running_locally %}
+            redirectUrl = redirectUrl.replace("/api", "")
+            redirectUrl = redirectUrl.replace("https://", "http://")
+        {% endif %}
         var lock = new Auth0Lock('{{auth0_client_id}}', 'hms-dbmi.auth0.com', {
             auth: {
-                redirectUrl: 'https://' + domain + context + 'callback/',
+                redirectUrl: redirectUrl,
                 responseType: 'code',
                 sso: false,
                 params: {scope: 'openid email', prompt: 'select_account'}

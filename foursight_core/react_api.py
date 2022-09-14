@@ -96,7 +96,8 @@ class ReactApi:
     # and we decode it here and sanity check it. Better than nothing.
     def authorize(self, request_dict, environ) -> bool:
         if self.is_running_locally(request_dict):
-            return True
+            if self.read_cookie("test_mode_login_localhost", request_dict) == "1":
+                return True
         try:
             #authorization_token = request_dict.get('headers', {}).get('authorization')
             #authorization_token = request_dict.get('headers', {}).get('authtoken')

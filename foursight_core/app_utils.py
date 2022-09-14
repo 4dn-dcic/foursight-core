@@ -460,12 +460,16 @@ class AppUtilsCore(ReactApi):
         if not (domain and auth0_code and auth0_client and auth0_secret):
             print('xyzzy:auth0_callback-8')
             return Response(status_code=301, body=json.dumps(resp_headers), headers=resp_headers)
+        redirect_uri = ''.join(['https://' if not CHALICE_LOCAL else 'http://', domain, context, 'callback/'])
+        if self.is_running_locally(req_dict):
+            redirect_uri = redirect_uri.replace("/api", "/")
+            redirect_uri = redirect_uri.replace("https://", "http://")
         payload = {
             'grant_type': 'authorization_code',
             'client_id': auth0_client,
             'client_secret': auth0_secret,
             'code': auth0_code,
-            'redirect_uri': ''.join(['https://' if not CHALICE_LOCAL else 'http://', domain, context, 'callback/'])
+            'redirect_uri': redirect_uri
         }
         print('xyzzy:auth0_callback-9')
         json_payload = json.dumps(payload)
