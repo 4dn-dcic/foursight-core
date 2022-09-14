@@ -13,13 +13,15 @@ const HomePage = (props) => {
     return <LoginAndValidEnvRequired>
         <div className="container">
             <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt",color:"#6F4E37"}}>
-                <b>Home Page</b>
+                <b>Note</b>
                 <p />
-                This is an experimental React version of Foursight. <br />
-                Click <b><a style={{color:"inherit"}} href={IsRunningLocally() && window.location.host == "localhost:3000" ? "http://localhost:8000/api/view" : ("/api/view/" + environ)}>here</a></b> to go to the real version of Foursight. <br />
-                <small>
-                    For more info: david_michaels@hms.harvard.edu
-                </small>
+                <span>
+                    This is an <b>experimental</b> version of Foursight using <b><a href="https://reactjs.org/tutorial/tutorial.html" style={{color:"darkred"}} target="_blank">React</a></b>. <br />
+                    For more info click <b><a href="https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React" style={{color:"darkred"}} target="_blank"><u>here</u></a></b> or
+                    contact: <b><a href="mailto:david_michaels@hms.harvard.edu" style={{color:"darkred",textDecoration:"none"}}>david_michaels@hms.harvard.edu</a></b>
+                    <br />
+                    To go to the <b>real</b> Foursight click <a href={IsRunningLocally() && window.location.host == "localhost:3000" ? ("http://localhost:8000" + ("/api/view/" + header?.env?.public_name)) : ("/api/view/" + (header?.env?.public_name))} style={{color:"inherit"}}><b><u>here</u></b></a>. <br />
+                </span>
             </div>
         </div>
     </LoginAndValidEnvRequired>

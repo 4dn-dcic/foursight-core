@@ -20,10 +20,9 @@ class Encryption:
 
     def get_encryption_password(self):
         if not self.encryption_password:
-            encryption_password = os.environ.get("ENCODED_AUTH0_SECRET")
-            encryption_password = "SYEDex90e1lwNZzq9D9PkGpo0xMTkxWgtjD6dIz_ty8YbzRWWK7lWMWeAAXmDSUh"
+            encryption_password = os.environ.get("S3_AWS_SECRET_ACCESS_KEY")
             if not encryption_password:
-                encryption_password = os.environ.get("S3_AWS_SECRET_ACCESS_KEY")
+                encryption_password = os.environ.get("ENCODED_AUTH0_SECRET")
                 if not encryption_password:
                     #
                     # If we cannot find a password to use from the GAC we will
