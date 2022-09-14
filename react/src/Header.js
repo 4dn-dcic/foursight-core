@@ -143,7 +143,7 @@ const Header = (props) => {
                     </span>
                 </td>
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
-                    <small>{FormatDateTime(new Date(), false)}</small>
+                    <small>{FormatDateTime(new Date(), true)}</small>
                     { (IsLoggedIn()) ? (<span>
                             {/* &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {Logout(navigate);}}>LOGOUT</span> */}
                             {/* &nbsp;|&nbsp; <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink> */}

@@ -120,7 +120,7 @@ export const FormatDateTime = (value = new Date(), long = false) => {
                                                    year:"numeric",
                                                    month:"long",
                                                    day:"numeric",
-                                                   hour12: false,
+                                                   hour12: true,
                                                    hour: "2-digit",
                                                    minute: "2-digit",
                                                    second: "numeric",
