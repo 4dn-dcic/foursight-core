@@ -4,7 +4,7 @@ import * as Utils from './Utils';
 
 const _cookies = new Cookies()
 const _jwtTokenCookieName = "jwtToken";
-const _authTokenCookieName = "authToken";
+const _authTokenCookieName = "authtoken";
 const _redirectCookieName = "reactredir";
 const _fauxLoginCookieName = "test_mode_login_localhost";
 
@@ -77,25 +77,35 @@ export const DeleteAuthTokenCookie = (name) => {
 }
 
 export const AuthTokenCookieExists = () => {
-    console.log("xyzzy:checking authTOken cookie exists");
-    let authTokenCookie = GetCookie(_authTokenCookieName);
-    console.log(authTokenCookie);
-    if (authTokenCookie) {
-        console.log("xyzzy:checking authTOken cookie exists: yes");
+    const authTokenCookie = GetCookie(_authTokenCookieName);
+    if (Utils.isNonEmptyString(authTokenCookie)) {
+        //
+        // The authtoken cookie exists AND we can actually read it
+        // which means it is NOT an HttpOnly cookie, but whatever,
+        // that is a server (React API) decision.
+        //
         return true;
     }
-    console.log("xyzzy:checking authTOken cookie exists: no");
+    //
+    // Here, either the authtoken cookie does not exist or it exists but we cannot
+    // read it because it is an HttpOnly cookie. To see which of these situations
+    // we have, try actually writing a dummy value to this cookie, and if it fails
+    // (i.e. we don't read back the same dummy value), then it means this cookie
+    // DOES exist as an HttpOnly cookie (so return true); if it succeeds (i.e. we
+    // do read back the same dummy value), then it means this cookie did NOT exist
+    // at all (so return false, after deleting the dummy cookie we wrote to cleanup).
+    //
     try {
-        console.log("xyzzy:checking authTOken cookie exists: setting dummy");
         SetCookie(_authTokenCookieName, "dummy");
-        console.log("xyzzy:checking authTOken cookie exists: done setting dummy");
-        authTokenCookie = GetCookie(_authTokenCookieName);
-        console.log("xyzzy:checking authTOken cookie exists: done setting dummy and read");
-        console.log(authTokenCookie)
-        return authTokenCookie != "dummy";
+        const dummyAuthTokenCookie = GetCookie(_authTokenCookieName);
+        if (dummyAuthTokenCookie == "dummy") {
+            DeleteCookie(_authTokenCookieName);
+            return false;
+        }
+        return true;
+
     }
     catch {
-        console.log("xyzzy:checking authTOken cookie exists: done setting exception");
         return true;
     }
 }

@@ -9,8 +9,10 @@ import * as URL from "./utils/URL";
 import * as API from "./utils/API";
 import { FormatDateTime } from "./utils/Utils";
 import { BarSpinner } from "./Spinners";
-import { GetLoginInfo, IsFauxLoggedIn, IsLoggedIn, Logout } from "./utils/LoginUtils";
 import { fetchData } from "./utils/FetchUtils";
+import { GetLoginInfo, IsFauxLoggedIn, IsLoggedIn, Logout } from "./utils/LoginUtils";
+import AUTH from './utils/AUTH';
+import CLIENT from './utils/CLIENT';
 
 const Header = (props) => {
 
@@ -43,11 +45,11 @@ const Header = (props) => {
             }
         }
         return <span>
-            <NavLink to={URL.Url("/home", true)} style={({isActive}) => style(isActive)}>HOME</NavLink>&nbsp;|&nbsp;
-            <NavLink to={URL.Url("/checks", true)} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
-            <NavLink to={URL.Url("/users", true)} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
-            <NavLink to={URL.Url("/env", true)} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
-            <NavLink to={URL.Url("/info", true)} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
+            <NavLink to={CLIENT.Path("/home")} style={({isActive}) => style(isActive)}>HOME</NavLink>&nbsp;|&nbsp;
+            <NavLink to={CLIENT.Path("/checks")} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
+            <NavLink to={CLIENT.Path("/users")} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
+            <NavLink to={CLIENT.Path("/env")} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
+            <NavLink to={CLIENT.Path("/info")} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
             <a target="_blank" title="Open AWS Console for this account ({header.app?.credentials.aws_account_number}) in another tab."
                 style={{textDecoration:"none",color:"darkgreen"}}
                 href={"https://" + header.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span></a>
@@ -144,12 +146,16 @@ const Header = (props) => {
                 </td>
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
                     <small>{FormatDateTime(new Date(), true)}</small>
-                    { (IsLoggedIn()) ? (<span>
+                    { (AUTH.IsLoggedIn(header)) ? (<span>
                             {/* &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {Logout(navigate);}}>LOGOUT</span> */}
                             {/* &nbsp;|&nbsp; <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink> */}
-                                &nbsp;|&nbsp; <NavLink to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}}    style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink>
+
+                            {/* &nbsp;|&nbsp; <NavLink to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}}    style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink> */}
+                            {/* &nbsp;|&nbsp; <a href={"http://localhost:8000/api/reactapi/" + URL.Env() + "/logout"} style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</a> */}
+                            {/* &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => { Logout(); window.location.replace("http://localhost:8000/api/reactapi/" + URL.Env() + "/logout"); }}>LOGOUT</span> */}
+                            &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => AUTH.Logout()}>LOGOUT</span>
                     </span>):(<span>
-                        &nbsp;|&nbsp; <NavLink to={URL.Url("/login?auth", true)} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
+                        &nbsp;|&nbsp; <NavLink to={CLIENT.Path("/login?auth")} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
                     </span>)}
                 </td>
             </tr>
@@ -165,43 +171,51 @@ const Header = (props) => {
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (header.envs?.unique_annotated.length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:!URL.Env() || header.env_unknown ? "red" : "#143c53"}} title={"Environment: " + URL.Env() + (!URL.Env() || header.env_unknown ? " -> UNKNOWN" : "")}>{header.env?.public_name || "unknown-env"}</b>
+                            <b className="dropdown-button" style={{color:!CLIENT.Env() || header.env_unknown ? "red" : "#143c53"}} title={"Environment: " + CLIENT.Env() + (!CLIENT.Env() || header.env_unknown ? " -> UNKNOWN" : "")}>{header.env?.public_name || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { header.envs?.unique_annotated.map(env => 
-                                    env.name.toUpperCase() == URL.Env().toUpperCase() || env.full.toUpperCase() == URL.Env().toUpperCase() || env.short.toUpperCase() == URL.Env().toUpperCase() || env.foursight.toUpperCase() == URL.Env().toUpperCase() ? (
+                                    env.name.toUpperCase() == CLIENT.Env().toUpperCase() || env.full.toUpperCase() == CLIENT.Env().toUpperCase() || env.short.toUpperCase() == CLIENT.Env().toUpperCase() || env.foursight.toUpperCase() == CLIENT.Env().toUpperCase() ? (
                                         <span key={env.public}>{env.public}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
                                             /* <Link key={env.public} onClick={() => refreshHeaderData(env)} to={URL.Url(null, env.public)}>{env.public}</Link> */
                                             /* TODO: rework this whole URL.Url stuff with no env etc */
-                                        <Link key={env.public} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: !isKnownEnv(URL.Env()) ? URL.Url("/env", getDefaultEnv()) : URL.Url(null, env.public)}}>{env.public}</Link>
+                                        <Link key={env.public} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: !isKnownEnv(CLIENT.Env()) ? CLIENT.Path("/env", getDefaultEnv()) : CLIENT.Path(null, env.public)}}>{env.public}</Link>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
-                                <Link id="__envinfo__" to={URL.Url("/env", true)}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</Link>
+                                <Link id="__envinfo__" to={CLIENT.Path("/env")}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</Link>
                             </div>
                          </span>
                         ):(
-                            <b style={{color:titleBackgroundColor}} title="Environment: {URL.Env()}">{URL.Env().toUpperCase()}</b>
+                            <b style={{color:titleBackgroundColor}} title="Environment: {CLIENT.Env()}">{CLIENT.Env().toUpperCase()}</b>
                         )}
                         &nbsp;|&nbsp;
-                        { (header.app?.stage == 'prod') ? (<span>
+                        { (header.app?.stage == 'prod') ? (<>
                             <b title="Deployment stage: PROD!" style={{color:"darkred"}}>{header.app?.stage}</b> &nbsp;|&nbsp;
-                        </span>):(<span></span>)}
-                        { (header.app?.stage == 'dev') ? (<span>
+                        </>):(<></>)}
+                        { (header.app?.stage == 'dev') ? (<>
                             <b title="Deployment stage: DEV" style={{color:"darkgreen"}}>{header.app?.stage}</b> &nbsp;|&nbsp;
-                        </span>):(<span></span>)}
-                        { (header.app?.stage != 'prod' && header.app?.stage != 'dev') ? (<span>
+                        </>):(<></>)}
+                        { (header.app?.stage != 'prod' && header.app?.stage != 'dev') ? (<>
                             <b title="Deployment stage: {header.app?.stage}">{header.app?.stage}}</b> &nbsp;|&nbsp;
-                        </span>):(<span></span>)}
-                        { (IsLoggedIn()) ? (<span>
-                            { GetLoginInfo()?.email ? (<span>
-                                <Link to={URL.Url("/login", true)} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{GetLoginInfo()?.email}</b></Link>
-                            </span>):(<span className={"tool-tip"} data-text="Running locally and faux logged in (i.e. not via Auth0).">
-                                <b style={{color:"darkred"}}>FAUX USER</b>
-                            </span>)}
-                        </span>):(<span>
+                        </>):(<></>)}
+                        { (IsLoggedIn()) ? (<>
+                            { AUTH.LoggedInUser(header) ? (<>
+                                <Link to={CLIENT.Path("/login")} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{AUTH.LoggedInUser(header)}</b></Link>
+                            </>):(<>
+                                { (IsFauxLoggedIn()) ? (<>
+                                    <span className={"tool-tip"} data-text="Running locally and faux logged in (i.e. not via Auth0).">
+                                        <b style={{color:"darkred"}}>FAUX USER</b>
+                                    </span>
+                                </>):(<>
+                                    <span className={"tool-tip"} data-text="Running locally and unknown user logged in.">
+                                        <b style={{color:"darkred"}}>UNKNOWN USER</b>
+                                    </span>
+                                </>)}
+                            </>)}
+                        </>):(<>
                             <b>NOT LOGGED IN</b>
-                        </span>)}
+                        </>)}
                     </td>
                 </tr>
                 <tr>

@@ -1,5 +1,4 @@
 import { GetCookie, GetAuthTokenCookie } from './CookieUtils';
-import { isRunningLocally } from './Utils';
 
 function _sleep (time) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -8,10 +7,10 @@ function _sleep (time) {
 let _artificialSleepForTesting = GetCookie("test_mode_fetch_sleep");
 
 // The Foursight API we call (foursight-core/foursight_core/react_api.py) is protected
-// with a  new 'authToken' cookie which was created along with the 'jwtToken' cookie;
+// with a  new 'authtoken' cookie which was created along with the 'jwtToken' cookie;
 // We don't need to know this here but this authTokn is the jwtToken encrypted by the
 // API (server-side) using a password it got from its GAC (namely S3_AWS_ACCESS_KEY_ID).
-// We pass this authToken cookie value as an 'authToken' header to the API.
+// We pass this authtoken cookie value as an 'authtoken' header to the API.
 // The API decrypts this using its password (from the GAC) and checks that the
 // decrypted value looks like a valid JWT token and that it's not expired, etc.
 // I think this is reasonably secure.
@@ -26,14 +25,8 @@ export const fetchData = (url, setData, setLoading, setError) => {
     else {
         console.log("FETCHING: " + url);
     }
-    const headers = isRunningLocally() ? {} : {
-        //
-        // Note that fetch sends headers in lower case.
-        // https://stackoverflow.com/questions/34656412/fetch-sends-lower-case-header-keys
-        //
-        "authtoken": GetAuthTokenCookie() || "none",
-    }
-    return fetch(url, { headers: headers, mode: "cors" }).then(response => {
+    const headers = {}
+    return fetch(url, { headers: headers, credentials:"include"}).then(response => {
         console.log("FETCH STATUS CODE IS " + response.status + ": " + url);
         if (response.status == 200) {
             response.json().then(responseJson => {

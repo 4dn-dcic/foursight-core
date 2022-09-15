@@ -9,6 +9,8 @@ import Auth0Lock from 'auth0-lock';
 import * as URL from '../utils/URL';
 import { GetCookie, SetCookie, SetFauxLoginCookie, SetRedirectCookie } from '../utils/CookieUtils';
 import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, IsRunningLocally, Logout, ValidEnvRequired } from '../utils/LoginUtils';
+import CLIENT from '../utils/CLIENT';
+import AUTH from '../utils/AUTH';
 
 const LoginPage = (props) => {
 
@@ -96,12 +98,15 @@ const LoginPage = (props) => {
                     { false && IsRunningLocally() ? (<span>
                         &nbsp;<b>localhost</b>
                     </span>):(<span>
-                        <Link to={URL.Url("/users/" + loginInfo?.email, true)}><b style={{color:"darkblue"}}>{loginInfo?.email}</b></Link>
+                        <Link to={CLIENT.Path("/users/" + loginInfo?.email)}><b style={{color:"darkblue"}}>{loginInfo?.email}</b></Link>
                             {/* <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout(navigate)}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small> */}
                         <br />
                         <small>
                             {/* Click <NavLink to={URL.Url("/logindone", true)} style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout()}>here</NavLink> to <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</NavLink>. */}
-                            Click <Link to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}} style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout()}>here</Link> to <Link to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}} style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</Link>.
+                            {/* Click <Link to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}} style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout()}>here</Link> to <Link to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}} style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</Link>. */}
+
+                            {/* Click <a href={API.Url("/logout", true)} style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout()}>here</a> to <Link to={{pathname: "/redirect"}} state={{url: CLIENT.Path("/login")}} style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</Link>. */}
+                            Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> AUTH.Logout()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> AUTH.Logout()}>logout</span>.
                         </small>
                     </span>)}
                 </div>
@@ -122,7 +127,7 @@ const LoginPage = (props) => {
         <div>
             <div id="login_auth_container" style={{verticalAlign:"top",align:"top",backgroundColor:"#143c53", height: "fit-content", borderRadius: "8px", borderStyle: "solid", borderWidth: "1px", display: "none", width:"fit-content", padding:"0px", margin: "auto"}}></div>
                 <center id="login_auth_cancel" style={{display:"none",marginTop:"10px"}}>
-                    <NavLink to={URL.Url("/info", true)} style={{fontSize:"small",cursor:"pointer",color:"blue"}}>Cancel</NavLink>
+                    <NavLink to={CLIENT.Path("/info")} style={{fontSize:"small",cursor:"pointer",color:"blue"}}>Cancel</NavLink>
                 </center>
             { (IsRunningLocally() && showingAuthBox) && (
                 <div className="container" style={{maxWidth:"290pt",marginTop:"-20pt"}}>

@@ -1,5 +1,6 @@
 import os
 import base64
+import json
 import uuid
 from pyDes import triple_des
 
@@ -43,6 +44,8 @@ class Encryption:
 
     def encrypt(self, plaintext_value: str) -> str:
         try:
+            if isinstance(plaintext_value, dict) or isinstance(plaintext_value, list):
+                plaintext_value = json.dumps(plaintext_value)
             password = self.get_encryption_password()
             encryption = triple_des(password)
             encrypted_value_bytes = encryption.encrypt(plaintext_value, padmode=2)
@@ -58,7 +61,6 @@ class Encryption:
             password = self.get_encryption_password()
             encryption = triple_des(password)
             decoded_encrypted_value_bytes = self.decode_to_bytes(encrypted_value)
-            print('xyzzy')
             decrypted_value_bytes = encryption.decrypt(decoded_encrypted_value_bytes, padmode=2)
             decrypted_value = self.bytes_to_string(decrypted_value_bytes)
             return decrypted_value
@@ -67,11 +69,17 @@ class Encryption:
             print(e)
             return ""
 
-    def encode(self, s: str) -> str:
-        return self.encode_to_bytes(s).decode("utf-8")
+    def encode(self, value) -> str:
+        if not value:
+            return ""
+        if isinstance(value, dict) or isinstance(value, list):
+            value = json.dumps(value)
+        return self.encode_to_bytes(value).decode("utf-8")
 
-    def decode(self, s: str) -> str:
-        return self.decode_to_bytes(s).decode("utf-8")
+    def decode(self, value: str) -> str:
+        if not value:
+            return ""
+        return self.decode_to_bytes(value).decode("utf-8")
 
     def encode_to_bytes(self, string_or_bytes) -> bytes:
         if isinstance(string_or_bytes, str):

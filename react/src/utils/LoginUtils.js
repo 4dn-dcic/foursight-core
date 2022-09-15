@@ -5,6 +5,7 @@ import { AuthTokenCookieExists, DeleteAuthTokenCookie, DeleteCookie, DeleteFauxL
 import * as URL from './URL';
 import * as API from './API';
 import * as Utils from './Utils';
+import CLIENT from './CLIENT';
 
 // Do some caching maybe of logged in state ... maybe not ...
 // depending on how expensive really it is to read cookie and decode JWT.
@@ -25,13 +26,14 @@ export const IsLoggedIn = () => {
     if (IsRunningLocally() && IsFauxLoggedIn()) {
         return true;
     }
+    //
+    // N.B. The react-jwt isExpired function does not seem to work right.
+    //
+/*
     const decodedJwtToken = GetDecodedJwtTokenCookie();
     if (!Utils.isObject(decodedJwtToken)) {
         return false;
     }
-    //
-    // N.B. The react-jwt isExpired function does not seem to work right.
-    //
     const jwtTokenExpirationTimeT = decodedJwtToken.exp;
     if (jwtTokenExpirationTimeT) {
         const leewaySeconds = 30;
@@ -43,11 +45,12 @@ export const IsLoggedIn = () => {
             return false;
         }
     }
+*/
     if (!AuthTokenCookieExists()) {
         return false;
     }
-    // const authToken = GetAuthTokenCookie();
-    // if (!Utils.isNonEmptyString(authToken)) {
+    // const authtoken = GetAuthTokenCookie();
+    // if (!Utils.isNonEmptyString(authtoken)) {
         // return false;
     // }
     return true;
@@ -75,7 +78,7 @@ export const Logout = (navigate) => {
         // Hooks can only be called inside of the body of a function component.
         // So caller passes it in.
         //
-        navigate(URL.Url("/login", true));
+        navigate(CLIENT.Path("/login"));
     }
 }
 
@@ -90,7 +93,7 @@ export const VerifyLogin = () => {
     //
     let navigate = useNavigate()
     if (!IsLoggedIn()) {
-        navigate(URL.Url("/login", true));
+        navigate(CLIENT.Path("/login"));
         return false;
     }
     return true;
@@ -140,40 +143,31 @@ function IsUnknownEnv(env, info) {
 export const ValidEnvRequired = ({ children }) => {
     // TODO: Change to look at current env in the URL this by looping through header.env.unique_annototated.
     const [ header ] = useContext(GlobalContext);
-    return !isKnownEnv(URL.Env(), header) ? <Navigate to={URL.Url("/env", true)} replace /> : children;
+    return !isKnownEnv(CLIENT.Env(), header) ? <Navigate to={CLIENT.Path("/env")} replace /> : children;
 }
 
 export const LoginRequired = ({ children }) => {
-    NotePageLastVisited();
+    CLIENT.NoteLastUrl();
     const [ info ] = useContext(GlobalContext);
     //return !info.error && !info.env_unknown && IsLoggedIn() ? children : <Navigate to={URL.Url("/login", true)} replace />;
-    return !IsLoggedIn() ? <Navigate to={URL.Url("/login", true)} replace /> : children;
+    return !IsLoggedIn() ? <Navigate to={CLIENT.Path("/login")} replace /> : children;
 }
 
 export const LoginAndValidEnvRequired = ({ children }) => {
-    NotePageLastVisited();
+    CLIENT.NoteLastUrl();
     const [ header ] = useContext(GlobalContext);
-    if (URL.Env() === "" || header.env_unknown) {
-        return <Navigate to={URL.Url("/env", true)} replace />
+    if (CLIENT.Env() === "" || header.env_unknown) {
+        return <Navigate to={CLIENT.Path("/env")} replace />
     }
     else if (!IsLoggedIn()) {
-        return <Navigate to={URL.Url("/login", true)} replace />
+        return <Navigate to={CLIENT.Path("/login")} replace />
     }
     else if (header.env && !IsAllowedEnv(header.env)) {
-        return <Navigate to={URL.Url("/env", true)} replace />
+        return <Navigate to={CLIENT.Path("/env")} replace />
     }
     else {
         return children;
     }
-}
-
-export const NotePageLastVisited = () => {
-    // SetCookie("last_url", IsRunningLocally() ? window.location.pathname : window.location.href);
-    const lastUrl = window.location.href;
-    console.log("Setting last URL: [" + lastUrl + "]");
-        console.log('foo')
-        console.log(window.location.href)
-    SetCookie("last_url", lastUrl);
 }
 
 export const GetAllowedEnvs = () => {

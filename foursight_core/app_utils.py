@@ -1,6 +1,6 @@
 from chalice import Response
 # xyzzy
-from chalice import Chalice
+from chalice import Chalice, CORSConfig
 import base64
 import jinja2
 import json
@@ -59,21 +59,32 @@ print('xyzzy-0: env:')
 print(DEFAULT_ENV)
 print(os.environ)
 
-# When running 'chalice local' we do not get the same "/api" prefix as we see when deployed to AWS (Lambda).
-# So we set it explicitly here if your CHALICE_LOCAL environment variable is set.
-# Seems to be a known issue: https://github.com/aws/chalice/issues/838
+# When running 'chalice local' we do not (and seemingly can not) get the same "/api" prefix
+# as we see when deployed to AWS (Lambda). So we set it explicitly here if your CHALICE_LOCAL
+# environment variable is set. Seems to be a known issue: https://github.com/aws/chalice/issues/838
 #
-# Also set CORS to True if CHALICE_LOCAL; not needed if running React (nascent support of
-# which is experimental and under development in distinct branch) from Foursight directly,
-# but useful if/when running React React separately (npm start in foursight-core/react) to
-# facilitate easy/quick development/changes directly to React code.
+# Also set CORS to True if CHALICE_LOCAL; not needed if running React (nascent support of which
+# is experimental and under development in distinct branch) from Foursight directly, on the same
+# port (e.g. 8000), but useful if/when running React on a separate port (e.g. 3000) via npm start
+# in foursight-core/react to facilitate easy/quick development/changes directly to React code.
+
 CHALICE_LOCAL = (os.environ.get("CHALICE_LOCAL") == "1")
 if CHALICE_LOCAL:
     print("XYZZY:foursight_core:CHALICE_LOCAL!!!")
     ROUTE_PREFIX = "/api/"
     ROUTE_EMPTY_PREFIX = "/api"
     ROUTE_PREFIX_EXPLICIT = "/api/"
-    CORS = True
+    #
+    # Very specific requirements for running Foursight React UI/API
+    # in CORS mode (i.e. UI on localhost:3000 and API on localhost:8000).
+    # The allow_origin must be exact (i.e. no "*" allowed),
+    # and allow_credentials must be True. And on the caller (React UI)
+    # side we must include 'credentials: "include"' in the fetch.
+    #
+    CORS = CORSConfig(
+        allow_origin='http://localhost:3000', # need this to be explicit not '*'
+        allow_credentials=True, # need this
+    )
 else:
     print("XYZZY:foursight_core:NOT_CHALICE_LOCAL!!!")
     ROUTE_PREFIX = "/"
@@ -322,22 +333,106 @@ class AppUtilsCore(ReactApi):
         envs = self.get_unique_annotated_environment_names()
         for env in envs:
             try:
-                print("xyzzy:getting-allowed-envs...")
                 user = ff_utils.get_metadata('users/' + email, ff_env=env["full"], add_on="frame=object&datastore=database")
-                print("xyzzy:done-getting-allowed-envs...")
                 if user:
-                    print("xyzzy:got-allowed-envs")
                     allowed_envs.append(env["full"])
             except Exception as e:
-                print("xyzzy:error-getting-allowed-envs")
+                logger.error(f"Exception getting allowed envs for: {email}")
+                logger.error(e)
+                print(f"XYZZY: Exception getting allowed envs for: {email}")
                 print(e)
-                print(email)
-        print("xyzzy:allowed-envs is:")
-        print(allowed_envs)
         return allowed_envs
 
     def get_default_env(self) -> str:
         return os.environ.get("ENV_NAME", DEFAULT_ENV)
+
+    def read_cookies(self, request) -> dict:
+        if not request:
+            return {}
+        if not isinstance(request, dict):
+            request = request.to_dict()
+        cookies = request.get("headers", {}).get("cookie")
+        if not cookies:
+            return {}
+        simple_cookies = SimpleCookie()
+        simple_cookies.load(cookies)
+        return {key: value.value for key, value in simple_cookies.items()}
+
+    def read_cookie(self, cookie_name: str, request) -> str:
+        if not cookie_name or not request:
+            return ""
+        if not isinstance(request, dict):
+            request = request.to_dict()
+        simple_cookies = self.read_cookies(request)
+        return simple_cookies.get(cookie_name)
+
+    def create_set_cookie_string(self, request, name: str,
+                                                value: str,
+                                                domain: str,
+                                                path: str = "/",
+                                                expires = None,
+                                                http_only: bool = False) -> str:
+        """
+        Returns a string suitable for an HTTP response to set a cookie for this given cookie info.
+        If the given expires arg is "now" then then the expiration time for the cookie will be
+        set to the epoch (i.e. 1970-01-01) indicating this it has expired; used effectively for delete.
+        """ 
+        if not name or not request:
+            return ""
+        if not isinstance(request, dict):
+            request = request.to_dict()
+        cookie = name + "=" + (value if value else "") + ";"
+        if domain and not self.is_running_locally(request):
+            # N.B. When running on localhost cookies cannot be set unless we leave off the domain entirely.
+            # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
+            cookie += f" Domain={domain};"
+        if not path:
+            path = "/";
+        cookie += f" Path={path};"
+        if expires:
+            if isinstance(expires, datetime.datetime):
+                expires = expires.strftime("%a, %d %b %Y %H:%M:%S GMT")
+            elif isinstance(expires, int):
+                expires = (datetime.datetime.utcnow() + datetime.timedelta(seconds=expires)).strftime("%a, %d %b %Y %H:%M:%S GMT")
+            elif isinstance(expires, str):
+                if expires.lower() == "now":
+                    expires = "Expires=Thu, 01 Jan 1970 00:00:00 UTC"
+            else:
+                expires = None
+            if expires:
+                cookie += f" Expires={expires};"
+        if http_only: # xyzzy
+            cookie += " HttpOnly;"
+            #
+            # This does NOT seem to break running React UI/API in CORS
+            # mode (i.e. UI on localhost:3000 and API on localhost:8000).
+            #
+            cookie += " SameSite=Strict;"
+        return cookie
+
+    def create_delete_cookie_string(self, request, name: str, domain: str, path: str = "/") -> str:
+        return self.create_set_cookie_string(request, name=name, value=None, domain=domain, path=path, expires="now") 
+
+    def create_authtoken(self, jwt_token: str, env: str) -> str:
+        """
+        Used only for Foursight React.
+        Returns the value for the authtoken cookie consisting of
+        the given JWT token and the list of environments for which the
+        associated authenticated user, from the JWT token, is authorized.
+        This is a JSON object, encrypted, and then Base-64 encoded.
+        """
+        jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
+        email = jwt_token_decoded.get("email")
+        allowed_envs = self.get_allowed_envs(email)
+        print('xyzzy:allowed_envs')
+        print(allowed_envs)
+        allowed_envs_encoded = self.encryption.encode(allowed_envs)
+        authtoken_json = {
+            "jwt": jwt_token,
+            "env": allowed_envs_encoded
+        }
+        authtoken = self.encryption.encrypt(authtoken_json)
+        return authtoken
 
     def check_authorization(self, request_dict, env=None):
         """
@@ -394,177 +489,109 @@ class AppUtilsCore(ReactApi):
 
     # TODO: This needs massive cleanup after messing with WRT React.
     def auth0_callback(self, request, env, react = False):
-        req_dict = request.to_dict()
-        domain, context = self.get_domain_and_context(req_dict)
-        print('xyzzy:auth0_callback')
-        print(domain)
-        print(context)
-        print(request)
-        print(req_dict)
-        # extract redir cookie
-        cookies = req_dict.get('headers', {}).get('cookie')
-        redir_url = context + 'view/' + env
-        react_redir_url = None
-        print(cookies)
 
-#       for cookie in cookies.split(';'):
-#           name, val = cookie.strip().split('=')
-#           if name == 'redir':
-#               print(f"XYZZY:REDIRECT COOKIE [{name}] IS: [{val}]")
-#               redir_url = val
-        try:
-            simple_cookies = SimpleCookie()
-            simple_cookies.load(cookies)
-            print('xyzzy:auth0_callback-0')
-            print(simple_cookies)
-            print(simple_cookies.items())
-            simple_cookies = {k: v.value for k, v in simple_cookies.items()}
-            print('xyzzy:auth0_callback-0a')
-            print(simple_cookies)
-            redir_url_cookie = simple_cookies.get("redir")
-            print('xyzzy:auth0_callback-1')
-            print(redir_url_cookie)
-#           if redir_url_cookie:
-#               print('xyzzy:auth0_callback-2')
-#               redir_url = redir_url_cookie
-            print('xyzzy:auth0_callback-3')
+        request_dict = request.to_dict()
+        domain, context = self.get_domain_and_context(request_dict)
 
-            redir_url_cookie = simple_cookies.get("redir")
-            print(redir_url_cookie)
-            if redir_url_cookie:
-                print('xyzzy:auth0_callback-5b')
-                redir_url = redir_url_cookie
-
-            react_redir_url = simple_cookies.get("reactredir")
-            print('xyzzy:auth0_callback-5')
-            print(react_redir_url)
-
-            print('xyzzy:auth0_callback-6')
-            print(redir_url)
-        except Exception as e:
-            print("xyzzy:Exception loading cookies: {cookies}")
-            print(e)
-            PRINT("Exception loading cookies: {cookies}")
-            PRINT(e)
-            redir_url = context + 'view/' + env
-
-        print('xyzzy:auth0_callback-7')
-        print(redir_url)
-        resp_headers = {'Location': redir_url}
-        params = req_dict.get('query_params')
-        if not params:
+        auth0_params = request_dict.get("query_params")
+        if not auth0_params:
             return self.forbidden_response()
-        auth0_code = params.get('code', None)
+
+        auth0_code = auth0_params.get("code")
         auth0_client = self.get_auth0_client_id(env)
         auth0_secret = self.get_auth0_secret(env)
+
+        redir_url_cookie = self.read_cookie("redir", request_dict)
+        redir_url = redir_url_cookie if redir_url_cookie else f"{context if context else '/'}view/{env}"
+
+        response_headers = {"Location": redir_url}
+
         if not (domain and auth0_code and auth0_client and auth0_secret):
-            print('xyzzy:auth0_callback-8')
-            return Response(status_code=301, body=json.dumps(resp_headers), headers=resp_headers)
-        redirect_uri = ''.join(['https://' if not CHALICE_LOCAL else 'http://', domain, context, 'callback/'])
-        if self.is_running_locally(req_dict):
-            redirect_uri = redirect_uri.replace("/api", "/")
-            redirect_uri = redirect_uri.replace("https://", "http://")
-        payload = {
-            'grant_type': 'authorization_code',
-            'client_id': auth0_client,
-            'client_secret': auth0_secret,
-            'code': auth0_code,
-            'redirect_uri': redirect_uri
-        }
-        print('xyzzy:auth0_callback-9')
-        json_payload = json.dumps(payload)
-        headers = {'content-type': "application/json"}
-        res = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
-        auth0_response = res.json()
-        print('xyzzy:auth0_callback-9a:auth0_response')
-        print(auth0_response)
-        id_token = auth0_response.get('id_token', None)
-        react = "react" in auth0_response.get("scope", "")
-        if react and react_redir_url:
-            print("xyzzy:auth0_callback-9b: THIS IS REACT!")
-            print(react_redir_url)
-            resp_headers = {'Location': react_redir_url}
-        #id_token = res.json().get('id_token', None)
+            #
+            # TODO: What case is this really handling?
+            # If any of these things (domain and Auth0 credentials) are not set
+            # then something is seriously wrong, but redirecting back to main Foursight page.
+            # TODO: Not detecting if this is Foursight React here as we just don't know until
+            # we make the Auth0 call below where a scope token comes back with a React indicator.
+            #
+            return Response(status_code=301, body=json.dumps(response_headers), headers=response_headers)
 
-        #
-        # TODO
-        #
-        print("xyzzy:auth0_callback:id_token")
-        print(id_token)
-        jwt_token_decoded = self.decode_jwt_token(id_token, env)
-        print("xyzzy:auth0_callback:jwt_token_decoded:")
-        print(jwt_token_decoded)
-        auth_email = jwt_token_decoded.get("email")
-        authenvs = self.get_allowed_envs(auth_email)
-        print("xyzzy:auth0_callback:allowed_envs:")
-        print(authenvs)
-        print("xyzzy:auth0_callback:auth_email:")
-        print(auth_email)
-        authtoken_json = {
-            "jwtToken": id_token,
-            "authEnvs": base64.b64encode(bytes(json.dumps(authenvs), "utf-8")).decode('utf-8'),
-        }
-        print("xyzzy:auth0_callback:authtoken_json:")
-        print(authtoken_json)
-        authtoken = self.encryption.encrypt(json.dumps(authtoken_json))
-        print("xyzzy:auth0_callback:authtoken:")
-        print(authtoken)
-        #
-        # TODO
-        #
+        if self.is_running_locally(request_dict):
+            #
+            # For the localhost situation the URL registered at Auth0
+            # as a valid callback does not have the "/api" prefix (context).
+            # http://localhost:8000/callback/
+            #
+            auth0_redirect_url = f"http://{domain}/callback/"
+        else:
+            #
+            # For normal (non-localhost) operation the URL registered at Auth0
+            # as a valid callback has the "/api" prefix (context):
+            # https://foursight-domain/api/callback/
+            #
+            auth0_redirect_url = f"http://{domain}{context if context else '/'}callback/"
 
-        print('xyzzy:auth0_callback-10')
-        if id_token:
-            print('xyzzy:auth0_callback-11')
+        auth0_payload = {
+            "grant_type": "authorization_code",
+            "client_id": auth0_client,
+            "client_secret": auth0_secret,
+            "code": auth0_code,
+            "redirect_uri": auth0_redirect_url
+        }
+        auth0_payload_string = json.dumps(auth0_payload)
+        auth0_headers = {"content-type": "application/json"}
+        auth0_response = requests.post(self.OAUTH_TOKEN_URL, data=auth0_payload_string, headers=auth0_headers)
+        auth0_response_json = auth0_response.json()
+        jwt_token = auth0_response_json.get("id_token")
+        jwt_expires = auth0_response_json.get("expires_in")
+
+        # This "react" scope is set on the React UI side at Auth0 invocation time.
+
+        is_react = "react" in auth0_response_json.get("scope", "")
+
+        if jwt_token:
             #
             # N.B. When running on localhost cookies cannot be set unless we leave off the domain entirely.
             # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
             #
-            if not self.is_running_locally(req_dict):
-                cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
+            if is_react:
+                react_redir_url = self.read_cookie("reactredir", request_dict)
+                if react_redir_url:
+                    response_headers = {"Location": react_redir_url}
+                authtoken = self.create_authtoken(jwt_token, env)
+                authtoken_cookie = self.create_set_cookie_string(request, name="authtoken",
+                                                                          value=authtoken,
+                                                                          domain=domain,
+                                                                          expires=jwt_expires,
+                                                                          http_only=True)
+                print('xyzzy:auth0_callback:authtoken_cookie:')
+                print(authtoken_cookie)
+                response_headers["set-cookie"] = authtoken_cookie
             else:
-                cookie_str = ''.join(['jwtToken=', id_token, '; Path=/;'])
-            if not self.is_running_locally(req_dict):
-                authtoken_cookie = ''.join(['authToken=', authtoken, '; Domain=', domain, '; Path=/; HttpOnly;'])
-            else:
-                authtoken_cookie = ''.join(['authToken=', authtoken, '; Path=/; HttpOnly;'])
-            print("xyzzy:auth0_callback:authtoken_cookie:")
-            print(authtoken_cookie)
-            #authenvs_cookie = ''.join(['authEnvs=', json.dumps(authenvs), '; Domain=', domain, '; Path=/;'])
-            if not self.is_running_locally(req_dict):
-                authenvs_cookie = ''.join(['authEnvs=', base64.b64encode(bytes(json.dumps(authenvs), "utf-8")).decode('utf-8'), '; Domain=', domain, '; Path=/;'])
-            else:
-                authenvs_cookie = ''.join(['authEnvs=', base64.b64encode(bytes(json.dumps(authenvs), "utf-8")).decode('utf-8'), '; Path=/;'])
-            print("xyzzy:auth0_callback:authenvs_cookie:")
-            print(authenvs_cookie)
-            expires_in = res.json().get('expires_in', None)
-            if expires_in:
-                expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
-                cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
-                authtoken_cookie += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
-                authenvs_cookie += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
-            resp_headers['set-cookie'] = authtoken_cookie
-            resp_headers['SET-COOKIE'] = authenvs_cookie
-            resp_headers['Set-Cookie'] = cookie_str # sic: different casing of this to allow multiple cookies (chalice/lambda restriction)
-            print('xyzzy:auth0_callback-12')
-            print(resp_headers)
-        print('xyzzy:auth0_callback-13')
-        return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
+                cookie_str = self.create_set_cookie_string(request, name="jwtToken",
+                                                                    value=jwt_token,
+                                                                    domain=domain,
+                                                                    expires=jwt_expires)
+                response_headers["set-cookie"] = cookie_str
+
+        print("XYZZY:auth0_callback:headers:")
+        print(response_headers)
+        return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
     def get_jwt_token(self, request_dict) -> str:
         """
         Simple function to extract a jwt from a request that has already been
         dict-transformed
         """
-        cookies = request_dict.get('headers', {}).get('cookie')
-        cookie_dict = {}
-        if cookies:
-            for cookie in cookies.split(';'):
-                cookie_split = cookie.strip().split('=')
-                if len(cookie_split) == 2:
-                    cookie_dict[cookie_split[0]] = cookie_split[1]
-        token = cookie_dict.get('jwtToken', None)
-        return token
+#       cookies = request_dict.get("headers", {}).get("cookie")
+#       cookie_dict = {}
+#       if cookies:
+#           for cookie in cookies.split(";"):
+#               cookie_split = cookie.strip().split("=")
+#               if len(cookie_split) == 2:
+#                   cookie_dict[cookie_split[0]] = cookie_split[1]
+#       token = cookie_dict.get("jwtToken", None)
+        return self.read_cookie("jwtToken", request_dict)
 
     def get_decoded_jwt_token(self, env_name: str, request_dict) -> dict:
         try:
@@ -2422,17 +2449,13 @@ def reactapi_route_lambdas(environ: str):
     return AppUtilsCore.singleton().react_route_lambdas(request=app.current_request, env=environ)
 
 
-# TODO: NEVERMIND. Take this out. It is hardcoded at Auth0 for /api/callback.
-@app.route(ROUTE_PREFIX + 'reactapi/callback', cors=CORS)
-def reactapi_route_auth0_callback():
-    """
-    Special callback route, only to be used as a callback from auth0
-    Will return a redirect to view on error/any missing callback info.
-    """
-    print('xyzzy:react_route_auth0_callback')
-    request = app.current_request
-    default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
-    return AppUtilsCore.singleton().auth0_callback(request, default_env, react=True)
+@app.route(ROUTE_PREFIX + 'reactapi/{environ}/logout', methods=['GET'], cors=CORS)
+def reactapi_route_get_logout(environ):
+    #
+    # The environ on strictly required for logout (as we logout from all envs) but useful for redirect back.
+    #
+    print(f"XYZZY:/reactapi/logout")
+    return AppUtilsCore.singleton().react_route_logout(request=app.current_request, environ=environ)
 
 
 class AppUtils(AppUtilsCore):  # for compatibility with older imports

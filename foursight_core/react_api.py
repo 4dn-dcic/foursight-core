@@ -52,6 +52,7 @@ class ReactApi:
 
     class Cache:
         static_files = {}
+        header = {}
         checks = None
         lambdas = None
 
@@ -78,78 +79,171 @@ class ReactApi:
                 return True
         return False
 
-    def read_cookies(self, request: dict) -> dict:
+    def is_local_cross_origin_request(self, request: dict) -> bool:
+        """
+        Returns True iff this request is a LOCAL (localhost) request AND its origin (the React UI)
+        and we the host (the React API) are running on different ports. This is the situation for
+        local development when running the React UI on (typically) port 3000 (for easy/quick
+        development, with the live-reload feature, i.e. via npm run).
+
+        We want to know this because in this case, for some reason I do not yet fully understand,
+        cookies are not passed through from the client (React UI) to the server (React API),
+        even though we have CORS enabled in this case. I tried various things with the Chalice
+        CORSConfig and response headers (e.g. Access-Control-Allow-Credentials) and client-side
+        things (e.g. setting withCredentials true on the fetch) to no avail.
+
+        With the more realistic scenario, where both the client (React UI) and the server (React API)
+        are running on the same port (e.g. 8000) this (cookies being sent) works fine.
+
+        N.B. If this returns True then it will entirely short-circuit the authorization check
+        for the protected React API endpoint (see the authorization function below).
+        So be careful with this.
+        """
         if not request:
-            return {}
-        cookies = request.get("headers", {}).get("cookie")
-        simple_cookies = SimpleCookie()
-        simple_cookies.load(cookies)
-        return {key: value.value for key, value in simple_cookies.items()}
-
-    def read_cookie(self, cookie_name: str, request: dict) -> str:
-        simple_cookies = self.read_cookies(request)
-        return simple_cookies.get(cookie_name)
-
-    # TODO
-    # Better authorization needed,
-    # For now client (React) just send its JWT token we gave it on login,
-    # and we decode it here and sanity check it. Better than nothing.
-    def authorize(self, request_dict, environ) -> bool:
-        if self.is_running_locally(request_dict):
-            if self.read_cookie("test_mode_login_localhost", request_dict) == "1":
-                return True
-        try:
-            #authorization_token = request_dict.get('headers', {}).get('authorization')
-            #authorization_token = request_dict.get('headers', {}).get('authtoken')
-            authorization_token = self.read_cookie("authToken", request_dict)
-            print('xyzzy:ReactApi.authorize:authorization_token')
-            print(authorization_token)
-            print(request_dict)
-            authorization_token_decrypted = self.encryption.decrypt(authorization_token)
-            print('xyzzy:ReactApi.authorize:authorization_token_decrypted')
-            print(authorization_token_decrypted)
-            print(type(authorization_token_decrypted))
-            print(len(authorization_token_decrypted))
-            authorization_token_json = json.loads(authorization_token_decrypted) # here
-            print('xyzzy:ReactApi.authorize:authorization_token_json')
-            print(authorization_token_json)
-            jwt_token = authorization_token_json.get("jwtToken")
-            print('xyzzy:ReactApi.authorize:authorization_token_decrypted.jwtToken')
-            print(jwt_token)
-
-            allowed_envs = authorization_token_json.get("authEnvs")
-            print('xyzzy:ReactApi.authorize:authorization_token_decrypted.authEnvs')
-            print(allowed_envs)
-            allowed_envs_decoded = self.encryption.decode(allowed_envs)
-            print('xyzzy:ReactApi.authorize:authorization_token_decrypted.authEnvs-decoded')
-            print(allowed_envs_decoded)
-            allowed_envs_json = json.loads(allowed_envs_decoded)
-            print('xyzzy:ReactApi.authorize:authorization_token_decrypted.authEnvs-decoded-2')
-            print(allowed_envs_json)
-            print(environ)
-            if not self.is_allowed_env(environ, allowed_envs_json):
-                print('xyzzy:ReactApi.authorize:not-allowed')
-                return False
-
-            auth0_client_id = self.get_auth0_client_id(environ)
-            auth0_secret = self.get_auth0_secret(environ)
-            jwt_decoded = jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30)
-            print('xyzzy:ReactApi.authorize:authorization_token_decrypted.jwt_decoded')
-            print(jwt_decoded)
-
-            aud = jwt_decoded.get("aud")
-            # TODO: compare decrypted authToken.jwtToken to decoded jwtToken.
-            if aud != auth0_client_id:
-                print('xyzzy:ReactApi.authorize:return False')
-                print(aud)
-                print(auth0_client_id)
-                return False
-            print('xyzzy:ReactApi.authorize:return True')
-            return True
-        except Exception as e:
-            print('xyzzy:ReactApi.authorize:error')
-            print(e)
             return False
+        if not isinstance(request, dict):
+            request = request.to_dict()
+        if not self.is_running_locally(request):
+            return False
+        headers = request.get("headers")
+        if not headers:
+            return False
+        origin = headers.get("origin")
+        if not origin:
+            return False
+        if not (origin.startswith("http://localhost:") or origin.startswith("http://127.0.0.1:")):
+            return False
+        host = headers.get("host")
+        if not host:
+            return False
+            return False
+        if not (host.startswith("localhost:") or origin.startswith("127.0.0.1:")):
+            return False
+        if origin == f"http://{host}":
+            return False
+        return True
+
+    def is_local_faux_logged_in(self, request: dict) -> bool:
+        """
+        Returns True if and only if: this request is a LOCAL (localhost) requests AND it
+        contains a cookie (set by the React UI) indicating that the user is faux logged in.
+        This is supported just in case there are issues with local Auth0 authentication/login.
+
+        N.B. If this returns True then it will entirely short-circuit the authorization check
+        for the protected React API endpoint (see the authorization function below).
+        So be careful with this.
+        """
+        if not self.is_running_locally(request):
+            return False
+        if self.read_cookie("test_mode_login_localhost", request) != "1":
+            return False
+        return True
+
+    def reconstitute_authtoken(self, authtoken: str, env: str) -> dict:
+        """
+        Fully reconstitute the given encrypted/encoded authtoken (cookie).
+        It contains the JWT token and a list of environments the authenticated
+        is allowed to access. Returns this info fully decrypted in a dictionary.
+        """
+        print('xyzzy:reconstitute_authtoken-1')
+        if not authtoken:
+            print('xyzzy:reconstitute_authtoken-2')
+            return None
+
+        print('xyzzy:reconstitute_authtoken-3')
+        authtoken_decrypted = self.encryption.decrypt(authtoken)
+        print(authtoken_decrypted)
+        if not authtoken_decrypted:
+            print('xyzzy:reconstitute_authtoken-4')
+            return None
+
+        print('xyzzy:reconstitute_authtoken-5')
+        authtoken_json = json.loads(authtoken_decrypted)
+        print(authtoken_json)
+        print('xyzzy:reconstitute_authtoken-6')
+        jwt_token = authtoken_json.get("jwt")
+        print('xyzzy:reconstitute_authtoken-7')
+        print(jwt_token)
+        jwt_decoded = self.decode_jwt_token(jwt_token, env)
+        print('xyzzy:reconstitute_authtoken-8')
+        print(jwt_decoded)
+
+        print('xyzzy:reconstitute_authtoken-9')
+        allowed_envs_encoded = authtoken_json.get("env")
+        print(allowed_envs_encoded)
+        print('xyzzy:reconstitute_authtoken-11')
+        allowed_envs = self.encryption.decode(allowed_envs_encoded)
+        print('xyzzy:reconstitute_authtoken-12')
+        print(allowed_envs)
+        print('xyzzy:reconstitute_authtoken-14')
+        allowed_envs_json = json.loads(allowed_envs) if allowed_envs else []
+        print(allowed_envs_json)
+
+        return {
+            "jwt": jwt_decoded,
+            "jwt_token": jwt_token,
+            "allowed_envs": allowed_envs_json
+        }
+
+    def authorize(self, request, env) -> dict:
+        """
+        If the request indicates that is is authenticated then returns a
+        dictionary with relevant authentication/authorization info, otherwise
+        returns an dictonary indicating authentication/authorization failure.
+        """
+        print('XYZZY:authorize-1')
+        if not request:
+            print('XYZZY:authorize-2')
+            return {}
+        print('XYZZY:authorize-3')
+        if not isinstance(request, dict):
+            print('XYZZY:authorize-4')
+            request = request.to_dict();
+        print('XYZZY:authorize-5')
+        if self.is_running_locally(request):
+            print('XYZZY:authorize-6')
+            #
+            # If running locally (localhost) AND if this is either a cross-origin
+            # request (e.g. where the React UI is running on port 3000 and the React API
+            # on port 8000), OR if the request indicates that the user is faux logged
+            # in then we bypass authentication altogether and simply return True here.
+            # See is_local_cross_origin_request and is_local_faux_logged_in for more comments.
+            #
+            if self.is_local_cross_origin_request(request):
+                print('XYZZY:authorize-7')
+                pass
+                # return { "authenticated": True, "user": "unknown" }
+            if self.is_local_faux_logged_in(request):
+                return { "authenticated": True, "user": "faux" }
+        print('XYZZY:authorize-8')
+        try:
+            authtoken_encrypted = self.read_cookie("authtoken", request)
+            authtoken_info = self.reconstitute_authtoken(authtoken_encrypted, env)
+            if not authtoken_info:
+                return { "authenticated": False }
+
+            jwt_decoded = authtoken_info["jwt"]
+            allowed_envs = authtoken_info["allowed_envs"]
+
+            # Sanity check the decrypted authtoken be comparing our known Auth0 client ID
+            # with the ("sub" field of the) JWT from the Auth0 authentication process.
+
+            if jwt_decoded.get("aud") != self.get_auth0_client_id(env):
+                return { "authenticated": False, "error": "Auth0 client ID mismatch." }
+
+            # Return the raw JWT token as well as most of its info unpacked in a nicer form for UI usage.
+            # We leave the issued-at and expires-at info as time_t based values (for now at least).
+
+            authtoken_info["authenticated"] = True
+            authtoken_info["authenticated_at"] = jwt_decoded.get("iat")
+            authtoken_info["authenticated_until"] = jwt_decoded.get("exp")
+            authtoken_info["user"] = jwt_decoded.get("email")
+            return authtoken_info
+
+        except Exception as e:
+            print('XYZZY:ReactApi.authorize:error')
+            print(e)
+            return { "authenticated": False, "error": True, "exception": str(e) }
 
     def react_serve_static_file(self, environ, is_admin=False, domain="", context="/", **kwargs):
 
@@ -250,8 +344,6 @@ class ReactApi:
         except Exception as e:
             self.note_non_fatal_error_for_ui_info(e, 'get_obfuscated_credentials_info')
             return {}
-
-    react_info_cache = {}
 
     def is_known_environment_name(self, env_name: str) -> bool:
         if not env_name:
@@ -371,19 +463,21 @@ class ReactApi:
         return self.process_response(response)
 
     def react_get_users(self, request, environ):
-        print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
         env_a = "fourfront-mastertest"
-        print(full_env_name(env_a))
-        print(short_env_name(env_a))
-        print(public_env_name(env_a))
-        print(infer_foursight_from_env(envname=env_a))
-        if not self.authorize(request.to_dict(), environ):
+        authorize_response = self.authorize(request.to_dict(), environ)
+        print("XYZZY:authorize_response-users")
+        print(authorize_response)
+        print(environ)
+        print(full_env_name(environ))
+        if not authorize_response:
             return self.forbidden_response()
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         users = []
         # TODO: Support paging.
+        print("XYZZY:authorize_response-users-get-users")
         user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000')
+        print("XYZZY:authorize_response-users-get-users-after")
         for user_record in user_records["@graph"]:
             last_modified = user_record.get("last_modified")
             if last_modified:
@@ -412,7 +506,11 @@ class ReactApi:
         return self.process_response(response)
 
     def react_get_user(self, request, environ, email=None):
-        if not self.authorize(request.to_dict(), environ):
+        authorize_response = self.authorize(request.to_dict(), environ)
+        print("XYZZ:authorize_response-user")
+        print(authorize_response)
+        print(environ)
+        if not authorize_response:
             return self.forbidden_response()
         users = []
         for email_address in email.split(","):
@@ -429,26 +527,36 @@ class ReactApi:
         return self.process_response(response)
 
     def react_clear_cache(self, request, environ, is_admin=False, domain="", context="/"):
-        self.react_info_cache = {}
+        pass
+
+    def react_get_header(self, request, environ, domain="", context="/"):
+        print('XYZZY:HEADER COOKIES')
+        print(self.read_cookies(request))
+
+        auth = self.authorize(request, environ)
+        data = ReactApi.Cache.header.get(environ)
+        if not data:
+            data = self.react_get_header_nocache(request, environ, domain, context)
+            ReactApi.Cache.header[environ] = data
+        data = copy.deepcopy(data)
+        data["auth"] = auth
+        response = self.create_standard_response("react_get_header")
+        response.body = data
+        print('XYZZY:HEADER RETURNS')
+        print(response.body)
+        return self.process_response(response)
 
     # NEW ...
     react_header_info_cache = {}
-    def react_get_header(self, request, environ, domain="", context="/"):
-        react_header_info_cache = self.react_header_info_cache.get(environ)
-        if react_header_info_cache:
-            return react_header_info_cache
+    def react_get_header_nocache(self, request, environ, domain="", context="/"):
         request_dict = request.to_dict()
-        print('xyzzy:react_get_header: calling authorize')
-        if not self.authorize(request.to_dict(), environ):
-            print('xyzzy:react_get_header: not authorized: continue')
         stage_name = self.stage.get_stage()
         default_env = self.get_default_env()
         if not self.is_known_environment_name(environ):
             env_unknown = True
         else:
             env_unknown = False
-        response = Response('react_get_header')
-        response.body = {
+        response = {
             "app": {
                 "package": self.APP_PACKAGE_NAME,
                 "stage": stage_name,
@@ -480,14 +588,14 @@ class ReactApi:
             }
         }
         if env_unknown:
-            response.body["env"] = {
+            response["env"] = {
                 "name": environ,
                 "unknown": True,
                 "default": default_env
             }
-            response.body["env_unknown"] = True
+            response["env_unknown"] = True
         else:
-            response.body["env"] = {
+            response["env"] = {
                 "name": environ,
                 "full_name": full_env_name(environ),
                 "short_name": short_env_name(environ),
@@ -497,41 +605,29 @@ class ReactApi:
             }
         hack_for_local_testing = False
         if hack_for_local_testing:
-            response.body["envs"] = {
+            response["envs"] = {
             "all": [
             "supertest",
             "cgap-supertest"
-            ],
-            "unique": [
+            ], "unique": [
             "supertest",
             "cgap-supertest"
             ],
-            "unique_annotated": [
-            {
+            "unique_annotated": [ {
             "name": "supertest",
             "short": "supertest",
             "full": "supertest",
             "public": "supertest",
             "foursight": "supertest",
             "gac_name": "FOOBAR-C4DatastoreCgapSupertestApplicationConfiguration"
-            },
-            {
+            }, {
             "name": "cgap-supertest",
             "short": "cgap-supertest",
             "full": "cgap-supertest",
             "public": "cgap-supertest",
             "foursight": "cgap-supertest",
             "gac_name": "C4DatastoreCgapSupertestApplicationConfiguration"
-            }
-            ]
-            }
-
-        response.headers = {
-            "Content-Type": "application/json"
-        }     
-        response.status_code = 200
-        response = self.process_response(response)
-        self.react_header_info_cache[environ] = response
+            } ] }
         return response
 
     def get_secrets_names(self) -> list:
@@ -591,13 +687,6 @@ class ReactApi:
         }
 
     def is_same_env(self, env_a: str, env_b: str) -> bool:
-        print('xyzzy:is_same_env')
-        print(env_a)
-        print(env_b)
-        print(full_env_name(env_a))
-        print(short_env_name(env_a))
-        print(public_env_name(env_a))
-        print(infer_foursight_from_env(envname=env_a))
         if not env_a or not env_b:
             return False
         env_a = env_a.lower()
@@ -609,27 +698,15 @@ class ReactApi:
             or  infer_foursight_from_env(envname=env_a) == env_b)
 
     def filter_checks_by_env(self, checks: dict, env) -> dict:
-        print('filter_checks_by_env-1')
         if not env:
-            print('filter_checks_by_env-2')
             return checks
         checks_for_env = {}
         for check_key in checks:
-            print('filter_checks_by_env-3')
-            print(check_key)
             if checks[check_key]["schedule"]:
-                print('filter_checks_by_env-4')
-                print(checks[check_key]["schedule"])
                 for check_schedule_key in checks[check_key]["schedule"].keys():
-                    print('filter_checks_by_env-5')
-                    print(check_schedule_key)
                     for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
-                        print('filter_checks_by_env-6')
-                        print(check_env_key)
-                        print(env)
                         # if check_env_key == env:
                         if check_env_key == "all" or self.is_same_env(check_env_key, env):
-                            print('filter_checks_by_env-7')
                             checks_for_env[check_key] = checks[check_key]
             else:
                 # If no schedule section (which has the env section) then include it.
@@ -727,9 +804,6 @@ class ReactApi:
                                         event_schedule = str(event_schedule).replace("cron(", "").replace(")", "")
                                         la["lambda_schedule"] = str(event_schedule)
                                         cron_description = cron_descriptor.get_description(str(event_schedule))
-                                        print('xyzzy-sched')
-                                        print(cron_description)
-                                        print(cron_description.startswith("At "))
                                         if cron_description.startswith("At "):
                                             cron_description = cron_description[3:]
                                         la["lambda_schedule_description"] = cron_description
@@ -823,9 +897,6 @@ class ReactApi:
         queue_attr = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
-        print(f"xyzzy:running:{running_checks}")
-        print(f"xyzzy:queued:{queued_checks}")
-        print(history)
         for item in history:
             for subitem in item:
                 if isinstance(subitem, dict):
@@ -872,3 +943,17 @@ class ReactApi:
         queued_uuid = self.queue_check(env, check, params)
         response.body = {"check": check, "env": env, "uuid": queued_uuid}
         return self.process_response(response)
+
+    def react_route_logout(self, request, environ) -> dict:
+        request_dict = request.to_dict()
+        domain, context = self.get_domain_and_context(request_dict)
+        redirect_url = self.read_cookie("reactredir", request_dict)
+        if not redirect_url:
+            http = "https" if not self.is_running_locally(request_dict) else "http"
+            redirect_url = f"{http}://{domain}{context if context else ''}react/{environ}/login"
+        authtoken_cookie_deletion = self.create_delete_cookie_string(request_dict, "authtoken", domain)
+        headers = {
+            "location": redirect_url,
+            "set-cookie": authtoken_cookie_deletion
+        }
+        return Response(status_code=302, body=json.dumps(headers), headers=headers)

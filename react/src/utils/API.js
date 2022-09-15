@@ -1,12 +1,15 @@
 import * as Utils from './Utils';
 import * as URL from './URL';
+import * as LoginUtils from './LoginUtils';
+import AUTH from './AUTH';
+import CLIENT from './CLIENT';
 
 export const API_BASE_URL_PATH = "/api/reactapi";
 
 export const getApiBaseUrl = () => {
     let baseDomainUrl;
-    if (Utils.isRunningLocally()) {
-        baseDomainUrl = "http://localhost:8000";
+    if (CLIENT.IsLocal()) {
+        baseDomainUrl = "http://" + window.location.hostname + ":8000";
     } else {
         baseDomainUrl = window.origin;
     }

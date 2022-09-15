@@ -2,15 +2,17 @@ import React from 'react';
 import { useContext, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "../GlobalContext.js";
-import { IsLoggedIn, NotePageLastVisited, IsAllowedEnv, IsSameEnv } from "../utils/LoginUtils";
+import { IsLoggedIn, IsAllowedEnv, IsSameEnv } from "../utils/LoginUtils";
 import { fetchData } from '../utils/FetchUtils';
 import * as API from "../utils/API";
 import * as URL from '../utils/URL';
 import { UUID } from '../utils/Utils';
+import SERVER from '../utils/SERVER';
+import CLIENT from '../utils/CLIENT';
 
 const EnvPage = (props) => {
 
-    NotePageLastVisited();
+    CLIENT.NoteLastUrl();
 
     // TODO: why not just get current env from useParams?
     // Relics of getting this kind of info from server.
@@ -26,7 +28,7 @@ const EnvPage = (props) => {
         fetchData(url, setInfo, setLoading, setError);
     }
 
-    function IsKnownEnv(env = URL.Env()) {
+    function IsKnownEnv(env = CLIENT.Env()) {
         if (!env) return false;
         env = env.toLowerCase();
         for (let i = 0 ; i < info.envs?.unique_annotated?.length ; i++) {
@@ -43,7 +45,7 @@ const EnvPage = (props) => {
     }
 
     function IsCurrentEnv(env) {
-        return IsSameEnv(URL.Env(), env);
+        return IsSameEnv(CLIENT.Env(), env);
     }
 
     function IsDefaultEnv(env) {
@@ -65,7 +67,7 @@ const EnvPage = (props) => {
 
     function onChange(arg, environ) {
         const environCompare = arg.target.value;
-        navigate(URL.Url("/gac/" + environCompare, environ))
+        navigate(CLIENT.Path("/gac/" + environCompare, environ))
     }
 
     // TODO: clean up this styles stuff.
@@ -75,7 +77,7 @@ const EnvPage = (props) => {
 
     function envNameTextStyles(env) {
         return {
-            fontWeight: env == URL.Env() ? "bold" : "inherit"
+            fontWeight: env == CLIENT.Env() ? "bold" : "inherit"
         };
     }
 
@@ -84,12 +86,29 @@ const EnvPage = (props) => {
     if (info.error) return <>Cannot load Foursight</>;
     if (info.loading) return <>Loading ...</>;
     return <div>
+            ServerOrigin: {SERVER.Origin()} <br />
+            ServerBasePath: {SERVER.BasePath()}  <br />
+            ServerBaseUrl: {SERVER.BaseUrl()} <br />
+            ServerUrlExample: {SERVER.Url("/example-one")} <br />
+            ClientOrigin: {CLIENT.Origin()} <br />
+            ClientBasePath: {CLIENT.BasePath()} <br />
+            ClientBaseUrl: {CLIENT.BaseUrl()} <br />
+            ClientPathExample: {CLIENT.Path("/example-one")} <br />
+            ClientPathWithEnvExample: {CLIENT.Path("/example-one", "some-env")} <br />
+            CurrentEnv: [{CLIENT.Env()}] <br />
+            CURENT CurrentEnv: [{CLIENT.Env()}] <br />
+            FOO: [{CLIENT.Path("", true)}] <br />
+            GOO: [{URL.Url("", true)}] <br />
+            current logical path: [{CLIENT.CurrentLogicalPath()}] <br />
+            foobar: [{CLIENT.Path(null, "foobar")}] <br />
+            env: [{CLIENT.Env()}]
+
             { false && !IsLoggedIn() ? (
                 <div className="container">
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>
                         <b>Not Logged In</b> <br />
                         <small>
-                            Click <Link to={URL.Url("/login", !IsKnownEnv() ? getDefaultEnv() : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>here</b></Link> to go to the <Link to={URL.Url("/login", !IsKnownEnv() ? getDefaultEnv() : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
+                            Click <Link to={CLIENT.Path("/login", !IsKnownEnv() ? info : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>here</b></Link> to go to the <Link to={CLIENT.Path("/login", !IsKnownEnv() ? info : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
                         </small>
                         </div>
                 </div>
@@ -98,8 +117,8 @@ const EnvPage = (props) => {
                 <b>&nbsp;Environment</b>
                 { !IsKnownEnv() ? (<>
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
-                        { (URL.Env()) ? (<>
-                            Unknown environment: <b style={{color:"darkred"}}>{URL.Env()}</b>
+                        { (CLIENT.Env()) ? (<>
+                            Unknown environment: <b style={{color:"darkred"}}>{CLIENT.Env()}</b>
                         </>):(<>
                             No environment specified in URL!
                         </>)}
@@ -107,14 +126,14 @@ const EnvPage = (props) => {
                         <small>
                             {/* TODO: Use Link instead of anchor - some issue where not updating the nav links with correct URL or something */}
                             {/* though refresh (anchor rather than Link) isnt' so so bad when switching environments */}
-                            Click <Link style={{fontWeight:"bold",color:"darkred"}} to={URL.Url("/env", getDefaultEnv())} onClick={() => refreshHeaderData(getDefaultEnv())}>here</Link> to use this default environment:
-                            &nbsp;<Link style={{fontWeight:"bold",color:"darkred"}} to={URL.Url("/env", getDefaultEnv())} onClick={() => refreshHeaderData(getDefaultEnv())}>{getDefaultEnv()}</Link>
+                            Click <Link style={{fontWeight:"bold",color:"darkred"}} to={CLIENT.Path("/env", getDefaultEnv())} onClick={() => refreshHeaderData(getDefaultEnv())}>here</Link> to use this default environment:
+                            &nbsp;<Link style={{fontWeight:"bold",color:"darkred"}} to={CLIENT.Path("/env", getDefaultEnv())} onClick={() => refreshHeaderData(getDefaultEnv())}>{getDefaultEnv()}</Link>
                         </small>
                     </div>
                 </>):(<>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
-                    Current environment: <b style={{color:boxTextColor}}>{URL.Env()}</b>
-                    { (!IsAllowedEnv(URL.Env())) && <span style={{color:"red"}}>&nbsp;&#x2192; You do not have permission for this environment.</span> }
+                    Current environment: <b style={{color:boxTextColor}}>{CLIENT.Env()}</b>
+                    { (!IsAllowedEnv(CLIENT.Env())) && <span style={{color:"red"}}>&nbsp;&#x2192; You do not have permission for this environment.</span> }
                 </div>
                 </>)}
             </div>
@@ -128,19 +147,19 @@ const EnvPage = (props) => {
                                 <td>
                                     { !IsAllowedEnv(env) ? (<>
                                         <span className={"tool-tip"} data-text={"This is a restricted environment!"} style={{color:"red"}}>
-                                            <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public)} to={URL.Url("/env", env.public)}><b>{env.public}</b></Link>
+                                            <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public)} to={CLIENT.Path("/env", env.public)}><b>{env.public}</b></Link>
                                             { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             &nbsp;&#x2192; You do not have permission for this environment.
                                         </span>
                                     </>):(<>
                                         { IsCurrentEnv(env) ? (<>
                                             <span className={"tool-tip"} data-text={"This is the current environment."} style={{color:"black"}}>
-                                                <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public)} to={URL.Url("/env", env.public)}><b>{env.public}</b></Link>
+                                                <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public)} to={CLIENT.Path("/env", env.public)}><b>{env.public}</b></Link>
                                                 { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             </span>
                                         </>):(<>
                                             <span>
-                                                <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public)} to={URL.Url("/env", env.public)}><b>{env.public}</b></Link>
+                                                <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public)} to={CLIENT.Path("/env", env.public)}><b>{env.public}</b></Link>
                                                 { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             </span>
                                         </>)}

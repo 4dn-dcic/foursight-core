@@ -5,11 +5,11 @@ import { fetchData } from '../utils/FetchUtils';
 import { RingSpinner } from "../Spinners";
 import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
 import * as URL from '../utils/URL';
-import * as API from "../utils/API";
+import SERVER from "../utils/SERVER";
 
 const UsersPage = () => {
 
-    const url = API.Url("/users", true);
+    const url = SERVER.Url("/users", true);
     let [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);

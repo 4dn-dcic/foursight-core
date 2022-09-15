@@ -7,6 +7,8 @@ import { fetchData } from '../utils/FetchUtils';
 import * as API from "../utils/API";
 import * as URL from "../utils/URL";
 import { FormatDateTime, Duration } from "../utils/Utils";
+import CLIENT from '../utils/CLIENT';
+import SERVER from '../utils/SERVER';
 import uuid from 'react-uuid';
 let YAML = require('json-to-pretty-yaml');
 
@@ -24,9 +26,6 @@ const InfoPage = () => {
     //
     let isFoursightFourfront = header.app?.package != "foursight-cgap";
     isFoursightFourfront =true
-
-        console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
-        console.log(Duration(header.app?.launched));
 
     const InfoBox = ({title, children}) => {
         return <>
@@ -179,6 +178,16 @@ const InfoPage = () => {
             <InfoRow name={"Context"} value={header.page?.context} monospace={true} size="2" />
             <InfoRow name={"Path"} value={info.page?.path} monospace={true} size="2" />
             <InfoRow name={"Endpoint"} value={info.page?.endpoint} monospace={true} size="2" />
+            <InfoRow name={"ServerOrigin"} value={SERVER.Origin()} monospace={true} size="2" />
+            <InfoRow name={"ServerBasePath"} value={SERVER.BasePath()} monospace={true} size="2" />
+            <InfoRow name={"ServerBaseUrl"} value={SERVER.BaseUrl()} monospace={true} size="2" />
+            <InfoRow name={"ServerUrlExample"} value={SERVER.Url("/example-one")} monospace={true} size="2" />
+            <InfoRow name={"ClientOrigin"} value={CLIENT.Origin()} monospace={true} size="2" />
+            <InfoRow name={"ClientBasePath"} value={CLIENT.BasePath()} monospace={true} size="2" />
+            <InfoRow name={"ClientBaseUrl"} value={CLIENT.BaseUrl()} monospace={true} size="2" />
+            <InfoRow name={"ClientPathExample"} value={CLIENT.Path("/example-one")} monospace={true} size="2" />
+            <InfoRow name={"ClientPathWithEnvExample"} value={CLIENT.Path("/example-one", "some-env")} monospace={true} size="2" />
+            <InfoRow name={"CurrentEnv"} value={CLIENT.Env()} monospace={true} size="2" />
         </InfoBox>
         <InfoBox title={`GAC: ${info.gac?.name}`}>
             { info.gac?.values ? (<span>

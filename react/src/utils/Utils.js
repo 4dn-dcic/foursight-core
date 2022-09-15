@@ -20,10 +20,6 @@ export const isBoolean = (value) => {
     return value != undefined && value != null && typeof value == "boolean";
 }
 
-export const isRunningLocally = () => {
-    return window.origin?.startsWith("http://localhost:");
-}
-
 export const CopyToClipboard = (id) => {
     const r = document.createRange();
     if (r) {

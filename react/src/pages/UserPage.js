@@ -3,13 +3,13 @@ import { useParams } from 'react-router-dom';
 import { fetchData } from '../utils/FetchUtils';
 import { RingSpinner } from "../Spinners";
 import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
-import * as API from "../utils/API";
+import SERVER from "../utils/SERVER";
 let YAML = require('json-to-pretty-yaml');
 
 const UserPage = (props) => {
 
     const { email } = useParams()
-    const url = API.Url(`/users/${email}`, true);
+    const url = SERVER.Url(`/users/${email}`, true);
     const [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
