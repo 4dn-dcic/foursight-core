@@ -27,7 +27,7 @@ const Header = (props) => {
     let titleToolTip = "Foursight";
 
     function refreshHeaderData(env) {
-        const url = SERVER.Url("/header", env.public);
+        const url = SERVER.Url("/header", env.public_name);
         fetchData(url, setHeader, setLoading, setError);
     }
 
@@ -154,12 +154,12 @@ const Header = (props) => {
                             <b className="dropdown-button" style={{color:!CLIENT.Env() || header.env_unknown ? "red" : "#143c53"}} title={"Environment: " + CLIENT.Env() + (!CLIENT.Env() || header.env_unknown ? " -> UNKNOWN" : "")}>{header.env?.public_name || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { header.envs?.unique_annotated.map(env => 
-                                    env.name.toUpperCase() == CLIENT.Env().toUpperCase() || env.full.toUpperCase() == CLIENT.Env().toUpperCase() || env.short.toUpperCase() == CLIENT.Env().toUpperCase() || env.foursight.toUpperCase() == CLIENT.Env().toUpperCase() ? (
-                                        <span key={env.public}>{env.public}&nbsp;&nbsp;&#x2713;</span>
+                                    env.name.toUpperCase() == CLIENT.Env().toUpperCase() || env.full_name.toUpperCase() == CLIENT.Env().toUpperCase() || env.short_name.toUpperCase() == CLIENT.Env().toUpperCase() || env.foursight_name.toUpperCase() == CLIENT.Env().toUpperCase() ? (
+                                        <span key={env.public_name}>{env.public_name}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
-                                            /* <Link key={env.public} onClick={() => refreshHeaderData(env)} to={URL.Url(null, env.public)}>{env.public}</Link> */
+                                            /* <Link key={env.public_name} onClick={() => refreshHeaderData(env)} to={URL.Url(null, env.public_name)}>{env.public_name}</Link> */
                                             /* TODO: rework this whole URL.Url stuff with no env etc */
-                                        <Link key={env.public} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: !CLIENT.IsKnownEnv(CLIENT.Env()) ? CLIENT.Path("/env", getDefaultEnv()) : CLIENT.Path(null, env.public)}}>{env.public}</Link>
+                                        <Link key={env.public_name} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: !CLIENT.IsKnownEnv(CLIENT.Env()) ? CLIENT.Path("/env", getDefaultEnv()) : CLIENT.Path(null, env.public_name)}}>{env.public_name}</Link>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>

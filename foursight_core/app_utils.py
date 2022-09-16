@@ -334,9 +334,9 @@ class AppUtilsCore(ReactApi):
         envs = self.get_unique_annotated_environment_names()
         for env in envs:
             try:
-                user = ff_utils.get_metadata('users/' + email, ff_env=env["full"], add_on="frame=object&datastore=database")
+                user = ff_utils.get_metadata('users/' + email, ff_env=env["full_name"], add_on="frame=object&datastore=database")
                 if user:
-                    allowed_envs.append(env["full"])
+                    allowed_envs.append(env["full_name"])
             except Exception as e:
                 logger.error(f"Exception getting allowed envs for: {email}")
                 logger.error(e)
@@ -992,11 +992,11 @@ class AppUtilsCore(ReactApi):
         unique_environment_names = self.environment.list_unique_environment_names()
         unique_annotated_environment_names = [
             {"name": env,
-             "short": short_env_name(env),
-             "full": full_env_name(env),
-             "public": public_env_name(env) if public_env_name(env) else short_env_name(env),
-             "foursight": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
-        return sorted(unique_annotated_environment_names, key=lambda key: key["public"])
+             "short_name": short_env_name(env),
+             "full_name": full_env_name(env),
+             "public_name": public_env_name(env) if public_env_name(env) else short_env_name(env),
+             "foursight_name": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
+        return sorted(unique_annotated_environment_names, key=lambda key: key["public_name"])
 
     def view_foursight(self, request, environ, is_admin=False, domain="", context="/"):
         """

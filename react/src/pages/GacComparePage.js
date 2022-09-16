@@ -195,9 +195,9 @@ const GacComparePage = (props) => {
                             {/* TODO: Warning: Use the `defaultValue` or `value` props on <select> instead of setting `selected` on <option>. */}
                             <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnv(arg)}>
                                 { unique_annotated_envs?.map((env) =>
-                                    env.full == environ ?
-                                        <option selected key={env.full}>{env.full}</option> :
-                                        <option key={env.full}>{env.full}</option>
+                                    env.full_name == environ ?
+                                        <option selected key={env.full_name}>{env.full_name}</option> :
+                                        <option key={env.full_name}>{env.full_name}</option>
                                 )}
                             </select>
                             <br />
@@ -206,9 +206,9 @@ const GacComparePage = (props) => {
                         <td>
                             <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnvCompare(arg)}>
                                 { unique_annotated_envs?.map((env) =>
-                                    env.full == environCompare ?
-                                        <option selected key={env.full}>{env.full}</option> :
-                                        <option          key={env.full}>{env.full}</option>
+                                    env.full_name == environCompare ?
+                                        <option selected key={env.full_name}>{env.full_name}</option> :
+                                        <option          key={env.full_name}>{env.full_name}</option>
                                 )}
                             </select>
                             <br />

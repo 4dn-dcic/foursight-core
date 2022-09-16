@@ -355,13 +355,13 @@ class ReactApi:
         for environment_name in unique_annotated_environment_names:
             if environment_name["name"].upper() == env_name:
                 return True
-            if environment_name["short"].upper() == env_name:
+            if environment_name["short_name"].upper() == env_name:
                 return True
-            if environment_name["full"].upper() == env_name:
+            if environment_name["full_name"].upper() == env_name:
                 return True
-            if environment_name["public"].upper() == env_name:
+            if environment_name["public_name"].upper() == env_name:
                 return True
-            if environment_name["foursight"].upper() == env_name:
+            if environment_name["foursight_name"].upper() == env_name:
                 return True
         return False
 
@@ -617,17 +617,17 @@ class ReactApi:
             ],
             "unique_annotated": [ {
             "name": "supertest",
-            "short": "supertest",
-            "full": "supertest",
-            "public": "supertest",
-            "foursight": "supertest",
+            "short_name": "supertest",
+            "full_name": "supertest",
+            "public_name": "supertest",
+            "foursight_name": "supertest",
             "gac_name": "FOOBAR-C4DatastoreCgapSupertestApplicationConfiguration"
             }, {
             "name": "cgap-supertest",
-            "short": "cgap-supertest",
-            "full": "cgap-supertest",
-            "public": "cgap-supertest",
-            "foursight": "cgap-supertest",
+            "short_name": "cgap-supertest",
+            "full_name": "cgap-supertest",
+            "public_name": "cgap-supertest",
+            "foursight_name": "cgap-supertest",
             "gac_name": "C4DatastoreCgapSupertestApplicationConfiguration"
             } ] }
         return response
@@ -658,7 +658,7 @@ class ReactApi:
     def get_unique_annotated_environments(self):
         envs = self.get_unique_annotated_environment_names()
         for env in envs:
-            env["gac_name"] = self.get_gac_name(env["full"])
+            env["gac_name"] = self.get_gac_name(env["full_name"])
         return envs
 
     def react_compare_gacs(self, request, environ, environ_compare, is_admin=False, domain="", context="/"):

@@ -27,10 +27,10 @@ export const Auth0CallbackUrl = () => {
         for (let i = 0 ; i < header.envs?.unique_annotated?.length ; i++) {
             const env_annotated = header.envs?.unique_annotated[i];
             if ((env_annotated.name.toLowerCase() == env) ||
-                (env_annotated.full.toLowerCase() == env) ||
-                (env_annotated.short.toLowerCase() == env) ||
-                (env_annotated.public.toLowerCase() == env) ||
-                (env_annotated.foursight.toLowerCase() == env)) {
+                (env_annotated.full_name.toLowerCase() == env) ||
+                (env_annotated.short_name.toLowerCase() == env) ||
+                (env_annotated.public_name.toLowerCase() == env) ||
+                (env_annotated.foursight_name.toLowerCase() == env)) {
                 return true;
             }
         }
@@ -39,6 +39,7 @@ export const Auth0CallbackUrl = () => {
 
 export const ValidEnvRequired = ({ children }) => {
     // TODO: Change to look at current env in the URL this by looping through header.env.unique_annototated.
+    CLIENT.NoteLastUrl();
     const [ header ] = useContext(GlobalContext);
     return !isKnownEnv(CLIENT.Env(), header) ? <Navigate to={CLIENT.Path("/env")} replace /> : children;
 }
@@ -94,16 +95,16 @@ export const IsSameEnv = (envA, envB) => {
         return envAnnotated?.name;
     }
     function full_env_name(envAnnotated) {
-        return envAnnotated?.full_name ? envAnnotated.full_name : envAnnotated?.full;
+        return envAnnotated?.full_name ? envAnnotated.full_name : envAnnotated?.full_name;
     }
     function short_env_name(envAnnotated) {
-        return envAnnotated?.short_name ? envAnnotated.short_name : envAnnotated?.short;
+        return envAnnotated?.short_name ? envAnnotated.short_name : envAnnotated?.short_name;
     }
     function public_env_name(envAnnotated) {
-        return envAnnotated?.public_name ? envAnnotated.public_name : envAnnotated?.public;
+        return envAnnotated?.public_name ? envAnnotated.public_name : envAnnotated?.public_name;
     }
     function foursight_env_name(envAnnotated) {
-        return envAnnotated?.foursight_name ? envAnnotated.foursight_name : envAnnotated?.foursight;
+        return envAnnotated?.foursight_name ? envAnnotated.foursight_name : envAnnotated?.foursight_name;
     }
     if (UTIL.IsObject(envA)) {
         if (UTIL.IsObject(envB)) {

@@ -147,10 +147,10 @@ function IsKnownEnv(env, header) {
     for (let i = 0 ; i < header.envs?.unique_annotated?.length ; i++) {
         const env_annotated = header.envs?.unique_annotated[i];
         if ((env_annotated.name.toLowerCase() == env) ||
-            (env_annotated.full.toLowerCase() == env) ||
-            (env_annotated.short.toLowerCase() == env) ||
-            (env_annotated.public.toLowerCase() == env) ||
-            (env_annotated.foursight.toLowerCase() == env)) {
+            (env_annotated.full_name.toLowerCase() == env) ||
+            (env_annotated.short_name.toLowerCase() == env) ||
+            (env_annotated.public_name.toLowerCase() == env) ||
+            (env_annotated.foursight_name.toLowerCase() == env)) {
             return true;
         }
     }

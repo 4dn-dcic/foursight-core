@@ -245,10 +245,10 @@
                             <b class="dropdown-button" onclick="this.nextSibling.display = 'block';" onmouseover="this.style.display = 'block';" style="color:#143c53" title="Environment: {{env}} ({{env_short}})">{{env}}</b>
                             <span class="dropdown-content">
                                 {% for environment in environments %}
-                                    {% if environment["name"].upper() == env.upper() or environment["public"].upper() == env.upper() or environment["full"].upper() == env.upper() or environment["short"].upper() == env.upper() or environment["foursight"].upper() == env.upper() %}
-                                        <span>{{environment["public"]}}&nbsp;&nbsp;&#x2713;</span>
+                                    {% if environment["name"].upper() == env.upper() or environment["public_name"].upper() == env.upper() or environment["full_name"].upper() == env.upper() or environment["short_name"].upper() == env.upper() or environment["foursight_name"].upper() == env.upper() %}
+                                        <span>{{environment["public_name"]}}&nbsp;&nbsp;&#x2713;</span>
                                     {% else %}
-                                        <a href="{{request.context.path.replace('/' + env, '/' + environment['public'])}}" onclick="this.style.color = 'yellow'; this.style.backgroundColor = '#143c53'; this.style.fontWeight = 'bold';">{{environment["public"]}}</a>
+                                        <a href="{{request.context.path.replace('/' + env, '/' + environment['public_name'])}}" onclick="this.style.color = 'yellow'; this.style.backgroundColor = '#143c53'; this.style.fontWeight = 'bold';">{{environment["public_name"]}}</a>
                                     {% endif %}
                                 {% endfor %}     
                             </span>

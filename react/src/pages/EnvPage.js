@@ -33,10 +33,10 @@ const EnvPage = (props) => {
         for (let i = 0 ; i < info.envs?.unique_annotated?.length ; i++) {
             const env_annotated = info.envs?.unique_annotated[i];
             if ((env_annotated.name.toLowerCase() == env) ||
-                (env_annotated.full.toLowerCase() == env) ||
-                (env_annotated.short.toLowerCase() == env) ||
-                (env_annotated.public.toLowerCase() == env) ||
-                (env_annotated.foursight.toLowerCase() == env)) {
+                (env_annotated.full_name.toLowerCase() == env) ||
+                (env_annotated.short_name.toLowerCase() == env) ||
+                (env_annotated.public_name.toLowerCase() == env) ||
+                (env_annotated.foursight_name.toLowerCase() == env)) {
                 return true;
             }
         }
@@ -49,10 +49,10 @@ const EnvPage = (props) => {
 
     function IsDefaultEnv(env) {
         const defaultEnv = getDefaultEnv().toLowerCase();
-        if ((env?.full?.toLowerCase() == defaultEnv) ||
-            (env?.short?.toLowerCase() == defaultEnv) ||
-            (env?.public?.toLowerCase() == defaultEnv) ||
-            (env?.foursight?.toLowerCase() == defaultEnv)) {
+        if ((env?.full_name?.toLowerCase() == defaultEnv) ||
+            (env?.short_name?.toLowerCase() == defaultEnv) ||
+            (env?.public_name?.toLowerCase() == defaultEnv) ||
+            (env?.foursight_name?.toLowerCase() == defaultEnv)) {
             return true;
         }
         else {
@@ -133,33 +133,33 @@ const EnvPage = (props) => {
                                 <td>
                                     { !IsAllowedEnv(env) ? (<>
                                         <span className={"tool-tip"} data-text={"This is a restricted environment!"} style={{color:"red"}}>
-                                            <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public)} to={CLIENT.Path("/env", env.public)}><b>{env.public}</b></Link>
+                                            <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public_name)} to={CLIENT.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
                                             { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             &nbsp;&#x2192; You do not have permission for this environment.
                                         </span>
                                     </>):(<>
                                         { IsCurrentEnv(env) ? (<>
                                             <span className={"tool-tip"} data-text={"This is the current environment."} style={{color:"black"}}>
-                                                <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public)} to={CLIENT.Path("/env", env.public)}><b>{env.public}</b></Link>
+                                                <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public_name)} to={CLIENT.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
                                                 { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             </span>
                                         </>):(<>
                                             <span>
-                                                <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public)} to={CLIENT.Path("/env", env.public)}><b>{env.public}</b></Link>
+                                                <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public_name)} to={CLIENT.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
                                                 { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             </span>
                                         </>)}
                                     </>)}
                                     <br />
-                                    Full Name: <span style={envNameTextStyles(env.full)}>{env.full}</span> <br />
-                                    Short Name: <span style={envNameTextStyles(env.short)}>{env.short}</span> <br />
-                                    Public Name: <span style={envNameTextStyles(env.public)}>{env.public}</span> <br />
+                                    Full Name: <span style={envNameTextStyles(env.full_name)}>{env.full_name}</span> <br />
+                                    Short Name: <span style={envNameTextStyles(env.short_name)}>{env.short_name}</span> <br />
+                                    Public Name: <span style={envNameTextStyles(env.public_name)}>{env.public_name}</span> <br />
                                     GAC Name: {env.gac_name} <br />
                                     { IsKnownEnv() ? (<>
-                                        <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected, env.full)}>
+                                        <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected, env.full_name)}>
                                             <option>GAC Compare &#x2193;</option>
                                             { info.envs?.unique_annotated.map((env) =>
-                                                <option key={UUID()}>{env.full}</option>
+                                                <option key={UUID()}>{env.full_name}</option>
                                             )}
                                         </select>
                                     </>):(<>
