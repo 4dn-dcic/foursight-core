@@ -1,7 +1,7 @@
 import COOKIE from './COOKIE';
 import LOC from './LOC';
 import STR from './STR';
-import UTIL from './UTIL';
+import TYPE from './TYPE';
 
 function IsLocal() {
     return LOC.IsLocalClient();
@@ -48,7 +48,7 @@ function GetPath(path, env = true, envFallback = null) {
         path = "/" + path;
     }
     path = NormalizePath(path);
-    if (UTIL.IsBoolean(env)) {
+    if (TYPE.IsBoolean(env)) {
         if (env) {
             //
             // Use the current environment (from the current URL) for the given path.
@@ -60,7 +60,7 @@ function GetPath(path, env = true, envFallback = null) {
                 if (STR.HasValue(envFallback)) {
                     env = envFallback;
                 }
-                else if (UTIL.IsObject(envFallback)) {
+                else if (TYPE.IsObject(envFallback)) {
                     const header = envFallback;
                     env = header.envs?.default;
                 }
@@ -68,14 +68,14 @@ function GetPath(path, env = true, envFallback = null) {
         }
 
     }
-    else if (UTIL.IsObject(env)) {
+    else if (TYPE.IsObject(env)) {
         const header = env;
         env = header.envs?.default;
         if (!STR.HasValue(env)) {
             if (STR.HasValue(envFallback)) {
                 env = envFallback;
             }
-            else if (UTIL.IsObject(envFallback)) {
+            else if (TYPE.IsObject(envFallback)) {
                 //
                 // This would be weird but just for completeness.
                 //
@@ -131,7 +131,7 @@ function GetCurrentEnv(header = null) {
             env = (slash >= 0) ? pathSansBasePath.substring(0, slash) : pathSansBasePath;
         }
     }
-    if (UTIL.IsObject(header)) {
+    if (TYPE.IsObject(header)) {
         if (!IsKnownEnv(env)) {
             env = header.envs?.default;
         }
@@ -140,7 +140,7 @@ function GetCurrentEnv(header = null) {
 }
 
 function IsKnownEnv(env, header) {
-    if (!STR.HasValue(env) || !UTIL.IsObject(header)) {
+    if (!STR.HasValue(env) || !TYPE.IsObject(header)) {
         return false;
     }
     env = env.toLowerCase();

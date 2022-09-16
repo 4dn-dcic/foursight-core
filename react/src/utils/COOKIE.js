@@ -1,6 +1,5 @@
 import Cookies from 'universal-cookie';
 import STR from './STR';
-import UTIL from './UTIL';
 
 const _cookies             = new Cookies()
 const _authTokenCookieName = "authtoken";

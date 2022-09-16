@@ -1,7 +1,7 @@
 import CLIENT from './CLIENT';
 import LOC from './LOC';
 import STR from './STR';
-import UTIL from './UTIL';
+import TYPE from './TYPE';
 
 function IsLocal() {
     return LOC.IsLocalServer();
@@ -30,7 +30,7 @@ function GetUrl(path, env = true) {
     else if (!path.startsWith("/")) {
         path = "/" + path;
     }
-    if (UTIL.IsBoolean(env)) {
+    if (TYPE.IsBoolean(env)) {
         if (env) {
             env = CLIENT.Env();
         }

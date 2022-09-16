@@ -8,7 +8,6 @@ import COOKIE from './COOKIE';
 import ENV from './ENV';
 import SERVER from './SERVER';
 import STR from './STR';
-import UTIL from './UTIL';
 
 export const Auth0CallbackUrl = () => {
     if (CLIENT.IsLocal()) {

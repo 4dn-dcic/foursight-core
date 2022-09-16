@@ -1,5 +1,5 @@
 import STR from './STR';
-import UTIL from './UTIL';
+import TYPE from './TYPE';
 
 const BASE_URL_PATH = "/api/react/";
 
@@ -86,17 +86,17 @@ export const Url = (path = undefined, env = undefined, info = undefined) => {
     if (path.startsWith(BASE_URL_PATH)) {
         path = path.replace(BASE_URL_PATH, "/");
     }
-    if (UTIL.IsBoolean(env)) {
+    if (TYPE.IsBoolean(env)) {
         if (env) {
             env = Env();
-            if (!STR.HasValue(env) && UTIL.IsObject(info)) {
+            if (!STR.HasValue(env) && TYPE.IsObject(info)) {
                 if (info?.environ) {
                     env = info?.environ["ENV_NAME"];
                 }
             }
         }
         else {
-            if (UTIL.IsObject(info)) {
+            if (TYPE.IsObject(info)) {
                 if (info?.environ) {
                     env = info?.environ["ENV_NAME"];
                 }

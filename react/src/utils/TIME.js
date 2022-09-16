@@ -1,7 +1,6 @@
 // Miscellaneous date/time related utilities (local timezone formatting).
 
 import STR from './STR';
-import UTIL from './UTIL';
 
 // Returns a formatted date/time string based on the given date/time value (local timezone).
 //

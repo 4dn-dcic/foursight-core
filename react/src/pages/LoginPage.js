@@ -7,7 +7,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import GlobalContext from '../GlobalContext';
 import Auth0Lock from 'auth0-lock';
 import * as URL from '../utils/URL';
-import { Auth0CallbackUrl, Logout, ValidEnvRequired } from '../utils/LoginUtils';
+import { ValidEnvRequired } from '../utils/LoginUtils';
 import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
 import COOKIE from '../utils/COOKIE';
@@ -56,8 +56,8 @@ const LoginPage = (props) => {
     }
 
     function createAuth0Lock() {
-        const loginCallback = Auth0CallbackUrl();
-        const loginClientId = header?.app?.credentials?.auth0_client_id;
+        const loginCallback = AUTH.AuthenticationCallbackUrl();
+        const loginClientId = AUTH.AuthenticationClientID(header); // header?.app?.credentials?.auth0_client_id;
         const loginPayload = {
             container: "login_auth_container",
             auth: {

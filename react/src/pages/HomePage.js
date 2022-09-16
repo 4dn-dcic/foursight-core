@@ -5,7 +5,6 @@ import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
 import * as URL from "../utils/URL";
 import COOKIE from "../utils/COOKIE";
 import CLIENT from "../utils/CLIENT";
-import UTIL from '../utils/UTIL';
 import UUID from '../utils/UUID';
 import SERVER from '../utils/SERVER';
 import TIME from '../utils/TIME';

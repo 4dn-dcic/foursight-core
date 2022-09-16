@@ -3,13 +3,12 @@
 // Note that many of these are need the global header data as an argument.
 // -------------------------------------------------------------------------------------------------
 
-import COOKIE from './COOKIE';
 import CLIENT from './CLIENT';
+import COOKIE from './COOKIE';
 import ENV from './ENV';
 import SERVER from './SERVER';
 import STR from './STR';
 import TYPE from './TYPE';
-import UTIL from './UTIL';
 
 // -------------------------------------------------------------------------------------------------
 // Authentication related functions.
@@ -59,6 +58,21 @@ function Logout() {
     window.location.replace(SERVER.Url("/logout", CLIENT.Env()));
 }
 
+// This is the server (React API) URL for Auth0 to callback to.
+//
+function AuthenticationCallbackUrl() {
+    if (CLIENT.IsLocal()) {
+        return SERVER.UrlAbs("/callback/");
+    }
+    else {
+        return SERVER.UrlAbs("/api/callback/");
+    }
+}
+
+function AuthenticationClientID(header) {
+    return header?.app?.credentials?.auth0_client_id;
+}
+
 // -------------------------------------------------------------------------------------------------
 // Authorization (allowed environments) functions.
 // -------------------------------------------------------------------------------------------------
@@ -100,15 +114,17 @@ function IsKnownEnv(env, header) {
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    AllowedEnvs: GetAllowedEnvs,
-    IsAllowedEnv: IsAllowedEnv,
-    IsFauxLoggedIn: IsFauxLoggedIn,
-    IsKnownEnv: IsKnownEnv,
-    IsLoggedIn: IsLoggedIn,
-    KnownEnvs: GetKnownEnvs,
-    LoggedInUser: LoggedInUser,
-    LoggedInUserVerified: LoggedInUserVerified,
-    LoggedInUserJwt: LoggedInUserJwt,
-    LoggedInUserAuthRecord: LoggedInUserAuthRecord,
-    Logout: Logout
+    AllowedEnvs:               GetAllowedEnvs,
+    AuthenticationCallbackUrl: AuthenticationCallbackUrl,
+    AuthenticationClientID:    AuthenticationClientID,
+    IsAllowedEnv:              IsAllowedEnv,
+    IsFauxLoggedIn:            IsFauxLoggedIn,
+    IsKnownEnv:                IsKnownEnv,
+    IsLoggedIn:                IsLoggedIn,
+    KnownEnvs:                 GetKnownEnvs,
+    LoggedInUser:              LoggedInUser,
+    LoggedInUserVerified:      LoggedInUserVerified,
+    LoggedInUserJwt:           LoggedInUserJwt,
+    LoggedInUserAuthRecord:    LoggedInUserAuthRecord,
+    Logout:                    Logout
 }

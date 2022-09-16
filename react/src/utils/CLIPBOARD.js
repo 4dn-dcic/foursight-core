@@ -1,5 +1,4 @@
 import STR from './STR';
-import UTIL from './UTIL';
 
 function CopyToClipboard(id) {
     if (STR.HasValue(id)) {
