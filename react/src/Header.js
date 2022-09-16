@@ -24,6 +24,25 @@ const Header = (props) => {
 
     let titleToolTip = "Foursight";
 
+    function getLegacyFoursightLink() {
+        //
+        // For Foursight-CGAP (as opposed to Foursight-Fourfront) going to just,
+        // for example, /api/view/supertest, does not work, rather we want to
+        // to, for example, /api/view/cgap-supertest. I.e. for Foursight-CGAP
+        // use the full name and the public name for Foursight-Fourfront.
+        //
+        const env = (isFoursightFourfront ? header?.env?.public_name : header?.env?.full_name) || header?.env?.default;
+        if (CLIENT.IsLocal() && window.location.host == "localhost:3000") {
+            //
+            // TODO
+            //
+            return "http://localhost:8000" + "/api/view/" + env;
+        }
+        else {
+            return "/api/view/" + env;
+        }
+    }
+
     function refreshHeaderData(env) {
         const url = SERVER.Url("/header", env.public_name);
         fetchData(url, setHeader, setLoading, setError);
@@ -97,6 +116,7 @@ const Header = (props) => {
                         { isFoursightFourfront ? (<span>
                             <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="32" width="44" />
                         </span>):(<span>
+                            <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src="" height="32" width="44" />
                             <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                         </span>)}
                     </a>
@@ -199,7 +219,8 @@ const Header = (props) => {
                 <tr>
                     <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="3">
                         <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>. For more info click <b><a href="https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React" style={{color:"darkred"}} target="_blank"><u>here</u></a></b>.
-                        To go to the real Foursight click <a href={CLIENT.IsLocal() && window.location.host == "localhost:3000" ? ("http://localhost:8000" + ("/api/view/" + header?.env?.public_name)) : ("/api/view/" + (header?.env?.public_name))} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
+                        {/* To go to the real Foursight click <a href={CLIENT.IsLocal() && window.location.host == "localhost:3000" ? ("http://localhost:8000" + ("/api/view/" + header?.env?.public_name)) : ("/api/view/" + (header?.env?.public_name))} style={{color:"inherit"}}><b><u>here</u></b></a>.</i> */}
+                        To go to the real Foursight click <a href={getLegacyFoursightLink()} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
                     </td>
                 </tr>
                 <tr>

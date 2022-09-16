@@ -407,8 +407,9 @@ class AppUtilsCore(ReactApi):
             #
             # This does NOT seem to break running React UI/API in CORS
             # mode (i.e. UI on localhost:3000 and API on localhost:8000).
+            # But it does break production mode. Leave it out.
             #
-            cookie += " SameSite=Strict;"
+            # cookie += " SameSite=Strict;"
         return cookie
 
     def create_delete_cookie_string(self, request, name: str, domain: str, path: str = "/") -> str:
@@ -530,7 +531,7 @@ class AppUtilsCore(ReactApi):
             # as a valid callback has the "/api" prefix (context):
             # https://foursight-domain/api/callback/
             #
-            auth0_redirect_url = f"http://{domain}{context if context else '/'}callback/"
+            auth0_redirect_url = f"https://{domain}{context if context else '/'}callback/"
 
         auth0_payload = {
             "grant_type": "authorization_code",
@@ -543,6 +544,8 @@ class AppUtilsCore(ReactApi):
         auth0_headers = {"content-type": "application/json"}
         auth0_response = requests.post(self.OAUTH_TOKEN_URL, data=auth0_payload_string, headers=auth0_headers)
         auth0_response_json = auth0_response.json()
+        print('xyzzy:auth0_callback:auth0_response::')
+        print(auth0_response_json)
         jwt_token = auth0_response_json.get("id_token")
         jwt_expires = auth0_response_json.get("expires_in")
 

@@ -61,10 +61,16 @@ function Logout() {
 // This is the server (React API) URL for Auth0 to callback to.
 //
 function AuthenticationCallbackUrl() {
+        console.log('AuthenticationCallbackUrl')
+        console.log(window.location)
     if (CLIENT.IsLocal()) {
+        console.log('AuthenticationCallbackUrl-1')
+        console.log(SERVER.UrlAbs("/callback/"));
         return SERVER.UrlAbs("/callback/");
     }
     else {
+        console.log('AuthenticationCallbackUrl-2')
+        console.log(SERVER.UrlAbs("/api/callback/"));
         return SERVER.UrlAbs("/api/callback/");
     }
 }
