@@ -2,7 +2,6 @@ import React from 'react';
 import { useContext, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "../GlobalContext.js";
-import { IsAllowedEnv, IsSameEnv } from "../utils/LoginUtils";
 import { fetchData } from '../utils/FetchUtils';
 import AUTH from '../utils/AUTH';
 import ENV from '../utils/ENV';
@@ -124,7 +123,7 @@ const EnvPage = (props) => {
                 </>):(<>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
                     Current environment: <b style={{color:boxTextColor}}>{CLIENT.Env()}</b>
-                    { (!AUTH.IsAllowedEnv(CLIENT.Env(), info)) && <span style={{color:"red"}}>&nbsp;&#x2192; You do not have permission for this environment.</span> }
+                    { (AUTH.IsLoggedIn(info) && !AUTH.IsAllowedEnv(CLIENT.Env(), info)) && <span style={{color:"red"}}>&nbsp;&#x2192; You do not have permission for this environment.</span> }
                 </div>
                 </>)}
             </div>
@@ -136,7 +135,7 @@ const EnvPage = (props) => {
                             <tr key={UUID()}>
                                 <td style={{fontWeight:IsCurrentEnv(env) ? "bold" : "normal",color:!IsKnownEnv(env.public_name) ? "red" : (IsCurrentEnv(env) ? "black" : "inherit"),verticalAlign:"top"}}><span>&#x2192;&nbsp;&nbsp;</span></td>
                                 <td>
-                                    { !AUTH.IsAllowedEnv(env, info) ? (<>
+                                    { AUTH.IsLoggedIn(info) && !AUTH.IsAllowedEnv(env, info) ? (<>
                                         <span className={"tool-tip"} data-text={"This is a restricted environment!"} style={{color:"red"}}>
                                             <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public_name)} to={CLIENT.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
                                             { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }

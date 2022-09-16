@@ -230,7 +230,7 @@
   padding-bottom: 8px;
   border-radius: 10px;
   background: black;
-  color: attr(data-color);
+  color: white;
   text-align: left;
   display: none;
   font-family: tahoma;

@@ -10,13 +10,13 @@ let _artificialSleepForTesting = COOKIE.Get("test_mode_fetch_sleep");
 // with a  new 'authtoken' cookie which was created along with the 'jwtToken' cookie;
 // We don't need to know this here but this authTokn is the jwtToken encrypted by the
 // API (server-side) using a password it got from its GAC (namely S3_AWS_ACCESS_KEY_ID).
-// We pass this authtoken cookie value as an 'authtoken' header to the API.
-// The API decrypts this using its password (from the GAC) and checks that the
-// decrypted value looks like a valid JWT token and that it's not expired, etc.
-// I think this is reasonably secure.
+// This authtoken cookie get automatically passed React API. The React API decrypts
+// this using its password (from the GAC) and checks that the decrypted value looks
+// like a valid JWT token and that it's not expired, etc.
+// See: https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React#Authentication-%26-Authorization
 //
-// TODO
-// Handle case of forbidden response from server and what ... logout ?
+// TODO: Handle case of forbidden response from server and what ... logout ?
+// TODO: Handle timeouts!
 //
 export const fetchData = (url, setData, setLoading, setError) => {
     if (_artificialSleepForTesting > 0) {

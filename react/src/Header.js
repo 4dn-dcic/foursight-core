@@ -5,7 +5,6 @@ import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "./GlobalContext";
 import { BarSpinner } from "./Spinners";
 import { fetchData } from "./utils/FetchUtils";
-import { GetLoginInfo, Logout } from "./utils/LoginUtils";
 import AUTH from './utils/AUTH';
 import CLIENT from './utils/CLIENT';
 import SERVER from './utils/SERVER';
