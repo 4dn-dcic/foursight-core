@@ -27,23 +27,6 @@ export const IsLoggedIn = () => {
     return true;
 }
 
-export const VerifyLogin = () => {
-    //
-    // TODO
-    // Not the way to do this I think. More investigation.
-    // Get warning/errors like:
-    // You should call navigate() in a React.useEffect(), not when your component is first rendered.
-    // Warning: Cannot update a component (`BrowserRouter`) while rendering a different component (`Info`).
-    // To locate the bad setState() call inside `Info`, follow the stack trace as described in https://reactjs.org/link/setstate-in-render
-    //
-    let navigate = useNavigate()
-    if (!IsLoggedIn()) {
-        navigate(CLIENT.Path("/login"));
-        return false;
-    }
-    return true;
-}
-
 export const Auth0CallbackUrl = () => {
     if (CLIENT.IsLocal()) {
         //return API.UrlAbs("/callback/");
@@ -78,20 +61,13 @@ export const ValidEnvRequired = ({ children }) => {
     return !isKnownEnv(CLIENT.Env(), header) ? <Navigate to={CLIENT.Path("/env")} replace /> : children;
 }
 
-export const LoginRequired = ({ children }) => {
-    CLIENT.NoteLastUrl();
-    const [ info ] = useContext(GlobalContext);
-    //return !info.error && !info.env_unknown && IsLoggedIn() ? children : <Navigate to={URL.Url("/login", true)} replace />;
-    return !IsLoggedIn() ? <Navigate to={CLIENT.Path("/login")} replace /> : children;
-}
-
 export const LoginAndValidEnvRequired = ({ children }) => {
     CLIENT.NoteLastUrl();
     const [ header ] = useContext(GlobalContext);
     if (CLIENT.Env() === "" || header.env_unknown) {
         return <Navigate to={CLIENT.Path("/env")} replace />
     }
-    else if (!IsLoggedIn()) {
+    else if (!AUTH.IsLoggedIn(header)) {
         return <Navigate to={CLIENT.Path("/login")} replace />
     }
     else if (header.env && !IsAllowedEnv(header.env)) {

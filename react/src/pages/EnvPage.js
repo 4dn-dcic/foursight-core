@@ -2,8 +2,9 @@ import React from 'react';
 import { useContext, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "../GlobalContext.js";
-import { IsLoggedIn, IsAllowedEnv, IsSameEnv } from "../utils/LoginUtils";
+import { IsAllowedEnv, IsSameEnv } from "../utils/LoginUtils";
 import { fetchData } from '../utils/FetchUtils';
+import AUTH from '../utils/AUTH';
 import SERVER from '../utils/SERVER';
 import CLIENT from '../utils/CLIENT';
 import UUID from '../utils/UUID';
@@ -88,7 +89,7 @@ const EnvPage = (props) => {
     if (info.error) return <>Cannot load Foursight</>;
     if (info.loading) return <>Loading ...</>;
     return <div>
-            { !IsLoggedIn() && IsKnownEnv() ? (
+            { !AUTH.IsLoggedIn(info) && IsKnownEnv() ? (
                 <div className="container">
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>
                         <b>Not Logged In</b> <br />

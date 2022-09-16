@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
-import { LoginRequired, LoginAndValidEnvRequired } from "../utils/LoginUtils";
+import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
 import * as URL from '../utils/URL';
 import SERVER from '../utils/SERVER';
 import CLIENT from '../utils/CLIENT';

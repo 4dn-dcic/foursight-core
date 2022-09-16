@@ -8,9 +8,9 @@ import GlobalContext from '../GlobalContext';
 import Auth0Lock from 'auth0-lock';
 import * as URL from '../utils/URL';
 import { Auth0CallbackUrl, IsLoggedIn, Logout, ValidEnvRequired } from '../utils/LoginUtils';
+import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
 import COOKIE from '../utils/COOKIE';
-import AUTH from '../utils/AUTH';
 
 const LoginPage = (props) => {
 
@@ -82,6 +82,8 @@ const LoginPage = (props) => {
     if (header.error) return <>Cannot load Foursight.</>
     const loginInfo = IsLoggedIn() ? AUTH.LoggedInUserJwt(header) : undefined;;
     return <ValidEnvRequired>
+                old logged in: {IsLoggedIn() ? "yes" : "no"} <br />
+                new logged in: {AUTH.IsLoggedIn(header) ? "yes" : "no"} <br />
         { IsLoggedIn() ? (<React.Fragment>
             <div className="container">
                 <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
