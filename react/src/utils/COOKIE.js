@@ -1,4 +1,5 @@
 import Cookies from 'universal-cookie';
+import STR from './STR';
 import UTIL from './UTIL';
 
 const _cookies             = new Cookies()
@@ -15,14 +16,14 @@ function GetCookie(name) {
 }
 
 function DeleteCookie(name) {
-    if (UTIL.IsNonEmptyString(name)) {
+    if (STR.HasValue(name)) {
         _cookies.remove(name, { path: _cookiePath });
     }
 }
 
 function SetCookie(name, value, expires = null) {
-    if (UTIL.IsNonEmptyString(name)) {
-        if (UTIL.IsNonEmptyString(value)) {
+    if (STR.HasValue(name)) {
+        if (STR.HasValue(value)) {
             // _cookies.set(name, value, { path: _cookiePath, expires: expires });
             _cookies.set(name, value, { path: _cookiePath});
         } else {
@@ -33,7 +34,7 @@ function SetCookie(name, value, expires = null) {
 
 function HasAuthTokenCookie() {
     const authTokenCookie = GetCookie(_authTokenCookieName);
-    if (UTIL.IsNonEmptyString(authTokenCookie)) {
+    if (STR.HasValue(authTokenCookie)) {
         //
         // The authtoken cookie exists AND we can actually read it
         // which means it is NOT an HttpOnly cookie, but whatever,

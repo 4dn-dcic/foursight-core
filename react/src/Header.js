@@ -24,6 +24,8 @@ const Header = (props) => {
     let titleBackgroundColor = isFoursightFourfront ? "#14533C" : "#143C53";
     let subTitleBackgroundColor = isFoursightFourfront ? "#AEF1D6" : "#AED6F1";
 
+    let titleToolTip = "Foursight";
+
     function refreshHeaderData(env) {
         const url = SERVER.Url("/header", env.public);
         fetchData(url, setHeader, setLoading, setError);
@@ -58,8 +60,6 @@ const Header = (props) => {
         const url = SERVER.Url("/reloadlambda", false);
         fetchData(url);
     }
-        console.log('HEADER....')
-        console.log(header)
 
     return <>
         { header.loading ? (
@@ -208,7 +208,17 @@ const Header = (props) => {
                     <td style={{height:"1px",background:"darkblue"}}></td>
                 </tr>
             </tbody></table>
-            </div></React.Fragment>)}
+            </div>
+            { CLIENT.IsLocal() && (<>
+                <div style={{float:"right",fontSize:"small",fontWeight:"bold",marginRight:"7pt",marginTop:"6pt",paddingTop:"2pt",paddingBottom:"2pt",paddingLeft:"5pt",paddingRight:"5pt",color:"#684B19",background:"#FCF8E3",border:"2px double #8A6D3B",borderRadius:"8px"}}>
+                    { SERVER.IsLocalCrossOrigin() ? (<>
+                        Running Locally (Cross-Origin)
+                    </>):(<>
+                        Running Locally
+                    </>)}
+                </div>
+            </>)}
+            </React.Fragment>)}
     </>
 };
 

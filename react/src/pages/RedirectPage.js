@@ -8,7 +8,6 @@ const RedirectPage = () => {
     if (url.startsWith(window.location.origin)) {
         url = url.substring(window.location.origin.length);
     }
-    console.log("RedirectPage -> [" + url + "]")
     return <Navigate to={url} replace />
 };
 

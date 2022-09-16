@@ -1,25 +1,22 @@
 import CLIENT from './CLIENT';
+import LOC from './LOC';
+import STR from './STR';
 import UTIL from './UTIL';
 
-const _SERVER_LOCALHOST_PORT = 8000
-//
-// If the client (React UI) is running locally
-// then assume the server (React API) is as well.
-//
-const _SERVER_ORIGIN = CLIENT.IsLocal() ? "http://localhost:" + _SERVER_LOCALHOST_PORT : window.location.origin;
-const _SERVER_BASE_PATH = "/api/reactapi";
+function IsLocal() {
+    return LOC.IsLocalServer();
+}
 
-function IsRunningLocally(header) {
-    const origin = GetOrigin();
-    return origin == "localhost" || origin == "127.0.0.1";
+function IsLocalCrossOrigin() {
+    return LOC.IsLocalCrossOrigin();
 }
 
 function GetOrigin() {
-    return _SERVER_ORIGIN;
+    return LOC.ServerOrigin();
 }
 
 function GetBasePath() {
-    return _SERVER_BASE_PATH;
+    return LOC.ServerBasePath();
 }
 
 function GetBaseUrl() {
@@ -27,7 +24,7 @@ function GetBaseUrl() {
 }
 
 function GetUrl(path, env = true) {
-    if (!UTIL.IsNonEmptyString(path)) {
+    if (!STR.HasValue(path)) {
         path = "/"
     }
     else if (!path.startsWith("/")) {
@@ -38,14 +35,14 @@ function GetUrl(path, env = true) {
             env = CLIENT.Env();
         }
     }
-    if (UTIL.IsNonEmptyString(env)) {
+    if (STR.HasValue(env)) {
         path = "/" + env + path;
     }
     return GetBaseUrl() + path;
 }
 
 function GetUrlAbs(path) {
-    if (!UTIL.IsNonEmptyString(path)) {
+    if (!STR.HasValue(path)) {
         path = "/";
     }
     if (!path.startsWith("/")) {
@@ -56,10 +53,11 @@ function GetUrlAbs(path) {
 }
 
 export default {
-    BasePath: GetBasePath,
-    BaseUrl: GetBaseUrl,
-    IsLocal: IsRunningLocally,
-    Origin: GetOrigin,
-    Url: GetUrl,
-    UrlAbs: GetUrlAbs
+    BasePath:           GetBasePath,
+    BaseUrl:            GetBaseUrl,
+    IsLocal:            IsLocal,
+    IsLocalCrossOrigin: IsLocalCrossOrigin,
+    Origin:             GetOrigin,
+    Url:                GetUrl,
+    UrlAbs:             GetUrlAbs
 }

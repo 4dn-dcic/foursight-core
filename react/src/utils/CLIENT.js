@@ -1,19 +1,22 @@
 import COOKIE from './COOKIE';
+import LOC from './LOC';
+import STR from './STR';
 import UTIL from './UTIL';
 
-const _CLIENT_ORIGIN = window.location.origin;
-const _CLIENT_BASE_PATH = "/api/react";
+function IsLocal() {
+    return LOC.IsLocalClient();
+}
 
-function IsRunningLocally() {
-    return window.location.hostname == "localhost" || window.location.hostname == "127.0.0.1";
+function IsLocalCrossOrigin() {
+    return LOC.IsLocalCrossOrigin();
 }
 
 function GetOrigin() {
-    return _CLIENT_ORIGIN;
+    return LOC.ClientOrigin();
 }
 
 function GetBasePath() {
-    return _CLIENT_BASE_PATH;
+    return LOC.ClientBasePath();
 }
 
 function GetBaseUrl() {
@@ -21,7 +24,7 @@ function GetBaseUrl() {
 }
 
 function GetUrl(path) {
-    if (!UTIL.IsNonEmptyString(path)) {
+    if (!STR.HasValue(path)) {
         path = "/"
     }
     if (!path.startsWith("/")) {
@@ -38,7 +41,7 @@ function GetUrl(path) {
 // data object from which we will use the default environment.
 //
 function GetPath(path, env = true, envFallback = null) {
-    if (!UTIL.IsNonEmptyString(path)) {
+    if (!STR.HasValue(path)) {
         path = GetCurrentLogicalPath();
     }
     if (!path.startsWith("/")) {
@@ -53,8 +56,8 @@ function GetPath(path, env = true, envFallback = null) {
             // from the global header data, if passed in.
             //
             env = GetCurrentEnv();
-            if (!UTIL.IsNonEmptyString(env)) {
-                if (UTIL.IsNonEmptyString(envFallback)) {
+            if (!STR.HasValue(env)) {
+                if (STR.HasValue(envFallback)) {
                     env = envFallback;
                 }
                 else if (UTIL.IsObject(envFallback)) {
@@ -68,8 +71,8 @@ function GetPath(path, env = true, envFallback = null) {
     else if (UTIL.IsObject(env)) {
         const header = env;
         env = header.envs?.default;
-        if (!UTIL.IsNonEmptyString(env)) {
-            if (!UTIL.IsNonEmptyString(envFallback)) {
+        if (!STR.HasValue(env)) {
+            if (STR.HasValue(envFallback)) {
                 env = envFallback;
             }
             else if (UTIL.IsObject(envFallback)) {
@@ -81,7 +84,7 @@ function GetPath(path, env = true, envFallback = null) {
             }
         }
     }
-    if (UTIL.IsNonEmptyString(env)) {
+    if (STR.HasValue(env)) {
         path = "/" + env + path;
     }
     path = GetBasePath() + path;
@@ -117,10 +120,6 @@ function GetCurrentLogicalPath() {
 // current environment is NOT known (according to the list of available environments
 // in the given global header data), then return the default environment from this object.
 //
-// If there is none (for some reason) AND if the given header is an object
-// then assume it is the global header data and return the default environment from that.
-// If there is one but it is not a known environment
-//
 function GetCurrentEnv(header = null) {
     const currentPath = NormalizePath(GetCurrentPath());
     const basePathWithTrailingSlash = GetBasePath() + "/";
@@ -141,7 +140,7 @@ function GetCurrentEnv(header = null) {
 }
 
 function IsKnownEnv(env, header) {
-    if (!UTIL.IsNonEmptyString(env) || !UTIL.IsObject(header)) {
+    if (!STR.HasValue(env) || !UTIL.IsObject(header)) {
         return false;
     }
     env = env.toLowerCase();
@@ -167,7 +166,7 @@ function LastUrl() {
 }
 
 function NormalizePath(path) {
-    if (!UTIL.IsNonEmptyString(path)) {
+    if (!STR.HasValue(path)) {
         return "";
     }
     path = path.replace(/\/+/g, "/");
@@ -187,7 +186,8 @@ export default {
     CurrentLogicalPath: GetCurrentLogicalPath,
     Env:                GetCurrentEnv,
     IsKnownEnv:         IsKnownEnv,
-    IsLocal:            IsRunningLocally,
+    IsLocal:            IsLocal,
+    IsLocalCrossOrigin: IsLocalCrossOrigin,
     LastUrl:            LastUrl,
     NoteLastUrl:        NoteLastUrl,
     Origin:             GetOrigin,

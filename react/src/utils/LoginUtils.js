@@ -5,6 +5,7 @@ import * as URL from './URL';
 import CLIENT from './CLIENT';
 import COOKIE from './COOKIE';
 import SERVER from './SERVER';
+import STR from './STR';
 import UTIL from './UTIL';
 
 export const IsLoggedIn = () => {
@@ -169,7 +170,7 @@ export const IsSameEnv = (envA, envB) => {
                    (public_env_name   (envA)?.toLowerCase() == public_env_name   (envB)?.toLowerCase()) &&
                    (foursight_env_name(envA)?.toLowerCase() == foursight_env_name(envB)?.toLowerCase());
         }
-        else if (UTIL.IsNonEmptyString(envB)) {
+        else if (STR.HasValue(envB)) {
             envB = envB.toLowerCase();
             return (regular_env_name  (envA)?.toLowerCase() == envB) ||
                    (full_env_name     (envA)?.toLowerCase() == envB) ||
@@ -181,7 +182,7 @@ export const IsSameEnv = (envA, envB) => {
             return false;
         }
     }
-    else if (UTIL.IsNonEmptyString(envA)) {
+    else if (STR.HasValue(envA)) {
         if (UTIL.IsObject(envB)) {
             envA = envA.toLowerCase();
             return (regular_env_name  (envB)?.toLowerCase() == envA) ||
@@ -190,7 +191,7 @@ export const IsSameEnv = (envA, envB) => {
                    (public_env_name   (envB)?.toLowerCase() == envA) ||
                    (foursight_env_name(envB)?.toLowerCase() == envA);
         }
-        else if (UTIL.IsNonEmptyString(envB)) {
+        else if (STR.HasValue(envB)) {
             return envA.toLowerCase() == envB.toLowerCase();
         }
         else {

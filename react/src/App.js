@@ -28,11 +28,7 @@ const App = () => {
 
     // TODO: Change this name 'info' to 'header'!
     let [ info, setInfo ] = useState({loading: true});
-        console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-        console.log(SERVER.Url("/header"))
-        console.log(CLIENT.Env())
     const url = SERVER.Url("/header");
-        console.log(url)
     useEffect(() => {
         fetchData(
             url,

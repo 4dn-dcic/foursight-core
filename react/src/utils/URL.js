@@ -1,3 +1,4 @@
+import STR from './STR';
 import UTIL from './UTIL';
 
 const BASE_URL_PATH = "/api/react/";
@@ -7,7 +8,7 @@ export const getCurrentUrlPath = () => {
 }
 
 function normalizePath(value) {
-    if (!UTIL.IsNonEmptyString(value)) {
+    if (!STR.HasValue(value)) {
         return "";
     }
     const valueLowerCase = value.toLowerCase();
@@ -37,7 +38,7 @@ function normalizePath(value) {
 // Assume the path has the form: /api/react/{environment}/{path}
 //
 export const Env = (path = undefined) => {
-    if (!UTIL.IsNonEmptyString(path)) {
+    if (!STR.HasValue(path)) {
         path = getCurrentUrlPath();
     }
     path = normalizePath(path);
@@ -47,7 +48,7 @@ export const Env = (path = undefined) => {
     else if (path.startsWith("/")) {
         path = path.substring(1);
     }
-    if (!UTIL.IsNonEmptyString(path)) {
+    if (!STR.HasValue(path)) {
         return "";
     }
     const slash = path.indexOf("/");
@@ -63,7 +64,7 @@ export const Env = (path = undefined) => {
 // Assume the path has the form: /api/react/{environment}/{path}
 //
 export const getLogicalPathFromUrlPath = (path = undefined) => {
-    if (!UTIL.IsNonEmptyString(path)) {
+    if (!STR.HasValue(path)) {
         path = getCurrentUrlPath();
     }
     path = normalizePath(path);
@@ -78,7 +79,7 @@ export const getLogicalPathFromUrlPath = (path = undefined) => {
 }
 
 export const Url = (path = undefined, env = undefined, info = undefined) => {
-    if (!UTIL.IsNonEmptyString(path)) {
+    if (!STR.HasValue(path)) {
         path = getLogicalPathFromUrlPath()
     }
     path = normalizePath(path);
@@ -88,7 +89,7 @@ export const Url = (path = undefined, env = undefined, info = undefined) => {
     if (UTIL.IsBoolean(env)) {
         if (env) {
             env = Env();
-            if (!UTIL.IsNonEmptyString(env) && UTIL.IsObject(info)) {
+            if (!STR.HasValue(env) && UTIL.IsObject(info)) {
                 if (info?.environ) {
                     env = info?.environ["ENV_NAME"];
                 }
@@ -102,7 +103,7 @@ export const Url = (path = undefined, env = undefined, info = undefined) => {
             }
         }
     }
-    if (!UTIL.IsNonEmptyString(env)) {
+    if (!STR.HasValue(env)) {
         env = ""
     }
     return normalizePath(BASE_URL_PATH + env + path);

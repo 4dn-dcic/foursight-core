@@ -1,7 +1,8 @@
+import STR from './STR';
 import UTIL from './UTIL';
 
 function CopyToClipboard(id) {
-    if (UTIL.IsNonEmptyString(id)) {
+    if (STR.HasValue(id)) {
         const range = document.createRange();
         if (range) {
             const element = document.getElementById(id);

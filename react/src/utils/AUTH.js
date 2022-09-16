@@ -12,8 +12,6 @@ function IsLoggedIn(header) {
     // since the way we detect the existence of the authtoken cookie is a bit
     // hacky since it is an HttpOnly cookie (see COOKIE.HasAuthToken).
     //
-console.log('isloggedin...')
-console.log(header?.auth?.authenticated);
     return header?.auth?.authenticated;
 }
 

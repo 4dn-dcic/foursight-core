@@ -1,5 +1,6 @@
 // Miscellaneous date/time related utilities (local timezone formatting).
 
+import STR from './STR';
 import UTIL from './UTIL';
 
 // Returns a formatted date/time string based on the given date/time value (local timezone).
@@ -31,17 +32,17 @@ function FormatDateTime(value, verbose = false) {
 function FormatDuration(startDate, endDate = new Date(), verbose = false, fallback = "", prefix = "", suffix = "") {
     if (!((startDate = ToDateTime(startDate)) instanceof Date)) return "";
     if (!((endDate   = ToDateTime(endDate))   instanceof Date)) return "";
-    const msPerDay = 86400000;
-    const msPerHour = 3600000;
+    const msPerDay    = 86400000;
+    const msPerHour   = 3600000;
     const msPerMinute = 60000;
     const msPerSecond = 1000;
-    const ms = (endDate - startDate);
-    const days = Math.floor(ms / msPerDay);
-    const hours = Math.floor((ms % msPerDay) / msPerHour);
-    const minutes = Math.round(((ms % msPerDay) % msPerHour) / msPerMinute);
-    const seconds = Math.round(((ms % msPerDay) % msPerMinute) / msPerSecond);
+    const ms          = (endDate - startDate);
+    const days        = Math.floor  (ms / msPerDay);
+    const hours       = Math.floor ((ms % msPerDay) / msPerHour);
+    const minutes     = Math.round(((ms % msPerDay) % msPerHour)   / msPerMinute);
+    const seconds     = Math.round(((ms % msPerDay) % msPerMinute) / msPerSecond);
     if (days == 0 && hours == 0 && minutes == 0 && seconds == 0) {
-        if (UTIL.IsNonEmptyString(fallback)) {
+        if (STR.HasValue(fallback)) {
             return (prefix ? (" " + prefix + " ") : "") + fallback;
         }
         else {
@@ -84,7 +85,7 @@ function ToDateTime(value) {
             return new Date(ms);
         }
     }
-    else if (UTIL.IsNonEmptyString(value)) {
+    else if (STR.HasValue(value)) {
         try {
             if ((value = new Date(Date.parse(value))) == "Invalid Date") {
                 return null;
@@ -97,5 +98,6 @@ function ToDateTime(value) {
 
 export default {
     FormatDuration: FormatDuration,
-    FormatDateTime: FormatDateTime
+    FormatDateTime: FormatDateTime,
+    ToDateTime: ToDateTime
 }

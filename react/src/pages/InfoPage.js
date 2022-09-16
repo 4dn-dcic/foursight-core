@@ -19,6 +19,7 @@ const InfoPage = () => {
     const [ info, setInfo ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
+    let [ showingJwt, setShowJwt ] = useState(false);
     useEffect(() => { fetchData(url, setInfo, setLoading, setError)}, []);
     //
     // TODO: Set this within /header API call.
@@ -165,28 +166,27 @@ const InfoPage = () => {
             <InfoRow name={"Audience"} value={AUTH.LoggedInUserJwt(header)?.aud} monospace={true} copy={true} size="2" />
             <InfoRow name={"Issued At"} value={TIME.FormatDateTime(AUTH.LoggedInUserJwt(header)?.iat) + TIME.FormatDuration(AUTH.LoggedInUserJwt(header)?.iat, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} size="2" />
             <InfoRow name={"Expires At"} value={TIME.FormatDateTime(AUTH.LoggedInUserJwt(header)?.exp) + TIME.FormatDuration(new Date(), AUTH.LoggedInUserJwt(header)?.exp, true, "now", "|", "from now")} monospace={true} copy={true} size="2" />
+            <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
+                { showingJwt ? (<>
+                    <small onClick={() => setShowJwt(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide JWT</u></b></small>
+                    <pre style={{filter:"brightness(0.9)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.stringify(AUTH.LoggedInUserJwt(header))}</pre>
+                </>):(<>
+                    <small onClick={() => setShowJwt(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show JWT</u></b></small>
+                </>)}
         </InfoBox>
         <InfoBox title="Miscellany">
-            <InfoRow name={"App Deployed At"} value={header.app?.deployed + TIME.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
+            <InfoRow name={"App Deployed At"} value={SERVER.IsLocal() ? "running locally" + (SERVER.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + TIME.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
             <InfoRow name={"App Launched At"} value={header.app?.launched + TIME.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Page Loaded At"} value={info.page?.loaded + TIME.FormatDuration(info.page?.loaded, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Package"} value={header.app?.package} monospace={true} size="2" />
             <InfoRow name={"Stage"} value={header.app?.stage} monospace={true} size="2" />
-            <InfoRow name={"Environment"} value={header.app?.env} monospace={true} size="2" />
+            <InfoRow name={"Environment"} value={CLIENT.Env()} monospace={true} size="2" />
             <InfoRow name={"Domain"} value={header.app?.domain} monospace={true} size="2" />
             <InfoRow name={"Context"} value={header.page?.context} monospace={true} size="2" />
             <InfoRow name={"Path"} value={info.page?.path} monospace={true} size="2" />
             <InfoRow name={"Endpoint"} value={info.page?.endpoint} monospace={true} size="2" />
-            <InfoRow name={"ServerOrigin"} value={SERVER.Origin()} monospace={true} size="2" />
-            <InfoRow name={"ServerBasePath"} value={SERVER.BasePath()} monospace={true} size="2" />
-            <InfoRow name={"ServerBaseUrl"} value={SERVER.BaseUrl()} monospace={true} size="2" />
-            <InfoRow name={"ServerUrlExample"} value={SERVER.Url("/example-one")} monospace={true} size="2" />
-            <InfoRow name={"ClientOrigin"} value={CLIENT.Origin()} monospace={true} size="2" />
-            <InfoRow name={"ClientBasePath"} value={CLIENT.BasePath()} monospace={true} size="2" />
-            <InfoRow name={"ClientBaseUrl"} value={CLIENT.BaseUrl()} monospace={true} size="2" />
-            <InfoRow name={"ClientPathExample"} value={CLIENT.Path("/example-one")} monospace={true} size="2" />
-            <InfoRow name={"ClientPathWithEnvExample"} value={CLIENT.Path("/example-one", "some-env")} monospace={true} size="2" />
-            <InfoRow name={"CurrentEnv"} value={CLIENT.Env()} monospace={true} size="2" />
+            <InfoRow name={"Client (React UI)"} value={CLIENT.BaseUrl()} monospace={true} size="2" />
+            <InfoRow name={"Server (React API)"} value={SERVER.BaseUrl()} monospace={true} size="2" />
         </InfoBox>
         <InfoBox title={`GAC: ${info.gac?.name}`}>
             { info.gac?.values ? (<span>
