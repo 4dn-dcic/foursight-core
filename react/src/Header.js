@@ -116,7 +116,6 @@ const Header = (props) => {
                         { isFoursightFourfront ? (<span>
                             <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="32" width="44" />
                         </span>):(<span>
-                            <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src="" height="32" width="44" />
                             <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
                         </span>)}
                     </a>
@@ -131,7 +130,7 @@ const Header = (props) => {
                             <span title="Running locally." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"15pt"}}>&#8861;</span>&nbsp;&nbsp;
                         </span>):(<span></span>)}
 
-                        <span style={{color:"default"}}>{header.page?.title}</span>&nbsp;
+                        <span style={{color:"default",fontFamily:"arial"}}>{header.page?.title}</span>&nbsp;
 
                         { header.app?.stage == 'dev' ? (<span>
                             &nbsp;<span title="Stage is DEV." style={{position:"relative",top:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>
