@@ -3,9 +3,10 @@ import { useState, useEffect, Redirect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, NavLink } from 'react-router-dom';
 import GlobalContext from './GlobalContext';
 import { fetchData } from './utils/FetchUtils';
-import * as API from './utils/API';
 import { IsLoggedIn, LoginRequired } from './utils/LoginUtils';
 import * as URL from './utils/URL';
+import CLIENT from './utils/CLIENT';
+import SERVER from './utils/SERVER';
 
 import HomePage from './pages/HomePage';
 import EnvPage from './pages/EnvPage';
@@ -27,7 +28,11 @@ const App = () => {
 
     // TODO: Change this name 'info' to 'header'!
     let [ info, setInfo ] = useState({loading: true});
-    const url = API.Url("/header", true);
+        console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        console.log(SERVER.Url("/header"))
+        console.log(CLIENT.Env())
+    const url = SERVER.Url("/header");
+        console.log(url)
     useEffect(() => {
         fetchData(
             url,

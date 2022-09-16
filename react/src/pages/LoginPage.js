@@ -7,9 +7,9 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import GlobalContext from '../GlobalContext';
 import Auth0Lock from 'auth0-lock';
 import * as URL from '../utils/URL';
-import { GetCookie, SetCookie, SetFauxLoginCookie, SetRedirectCookie } from '../utils/CookieUtils';
-import { Auth0CallbackUrl, GetLoginInfo, IsLoggedIn, IsRunningLocally, Logout, ValidEnvRequired } from '../utils/LoginUtils';
+import { Auth0CallbackUrl, IsLoggedIn, Logout, ValidEnvRequired } from '../utils/LoginUtils';
 import CLIENT from '../utils/CLIENT';
+import COOKIE from '../utils/COOKIE';
 import AUTH from '../utils/AUTH';
 
 const LoginPage = (props) => {
@@ -28,7 +28,7 @@ const LoginPage = (props) => {
         document.getElementById("login_container").style.display = "none";
         document.getElementById("login_auth_container").style.display = "block";
         document.getElementById("login_auth_cancel").style.display = "block";
-        createRedirectCookie(URL.LastPath());
+        COOKIE.SetRedirect(CLIENT.LastUrl());
         createAuth0Lock().show();
         //
         // Hacking styles for (now) embeded (rather than popup) Auth0 login box.
@@ -79,23 +79,15 @@ const LoginPage = (props) => {
         return new Auth0Lock(loginClientId, "hms-dbmi.auth0.com", loginPayload);
     }
 
-    function createRedirectCookie(url) {
-        let expires = new Date();
-        expires.setFullYear(expires.getFullYear() + 1);
-        expires = expires.toUTCString();
-        const redirectUrl = url;
-        SetRedirectCookie(redirectUrl, expires);
-    }
-
     if (info.loading && !info.error) return <>Loading ...</>
     if (info.error) return <>Cannot load Foursight.</>
-    const loginInfo = IsLoggedIn() ? GetLoginInfo() : undefined;;
+    const loginInfo = IsLoggedIn() ? AUTH.LoggedInUserJwt(info) : undefined;;
     return <ValidEnvRequired>
         { IsLoggedIn() ? (<React.Fragment>
             <div className="container">
                 <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
                     Logged in as:&nbsp;
-                    { false && IsRunningLocally() ? (<span>
+                    { false && CLIENT.IsLocal() ? (<span>
                         &nbsp;<b>localhost</b>
                     </span>):(<span>
                         <Link to={CLIENT.Path("/users/" + loginInfo?.email)}><b style={{color:"darkblue"}}>{loginInfo?.email}</b></Link>
@@ -129,7 +121,7 @@ const LoginPage = (props) => {
                 <center id="login_auth_cancel" style={{display:"none",marginTop:"10px"}}>
                     <NavLink to={CLIENT.Path("/info")} style={{fontSize:"small",cursor:"pointer",color:"blue"}}>Cancel</NavLink>
                 </center>
-            { (IsRunningLocally() && showingAuthBox) && (
+            { (CLIENT.IsLocal() && showingAuthBox) && (
                 <div className="container" style={{maxWidth:"290pt",marginTop:"-20pt"}}>
                     <div className="boxstyle check-fail" style={{margin:"20pt",padding:"10pt",borderWidth:"2",borderColor:"red"}}>
                         <img src={"https://i.stack.imgur.com/DPBue.png"} style={{height:"35",verticalAlign:"bottom"}} /> <b style={{fontSize:"x-large"}}>&nbsp;Attention ...</b> <br />
@@ -139,7 +131,7 @@ const LoginPage = (props) => {
                         It <i>should</i> but just in case you can also bypass this and faux login below. 
                         <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
                     {/* Click <NavLink onClick={() => SetFauxLoginCookie()} to={URL.Url("/logindone", true)} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</NavLink> to faux <NavLink onClick={() => SetFauxLoginCookie()} to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"darkred"}}><b>login</b></NavLink> locally. */}
-                        Click <Link to={{pathname: "/redirect"}} state={{url: URL.LastPath()}} onClick={() => SetFauxLoginCookie()} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</Link> to faux <Link to={{pathname: "/redirect"}} state={{url: URL.LastPath()}} onClick={() => SetFauxLoginCookie()} style={{cursor:"pointer",color:"darkred"}}><b>login</b></Link> locally.
+                        Click <Link to={{pathname: "/redirect"}} state={{url: CLIENT.LastUrl()}} onClick={() => COOKIE.SetFauxLoginCookie()} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</Link> to faux <Link to={{pathname: "/redirect"}} state={{url: CLIENT.LastUrl()}} onClick={() => COOKIE.SetFauxLoginCookie()} style={{cursor:"pointer",color:"darkred"}}><b>login</b></Link> locally.
                     </div>
                 </div>
             )}

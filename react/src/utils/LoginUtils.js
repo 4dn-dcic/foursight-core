@@ -1,18 +1,12 @@
 import { useContext } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import GlobalContext from '../GlobalContext';
-import { AuthTokenCookieExists, DeleteAuthTokenCookie, DeleteCookie, DeleteFauxLoginCookie, DeleteJwtTokenCookie, DeleteRedirectCookie, GetAuthTokenCookie, GetCookie, GetDecodedJwtTokenCookie, GetFauxLoginCookie, SetCookie } from './CookieUtils';
 import * as URL from './URL';
 import * as API from './API';
 import * as Utils from './Utils';
 import CLIENT from './CLIENT';
-
-// Do some caching maybe of logged in state ... maybe not ...
-// depending on how expensive really it is to read cookie and decode JWT.
-
-export const IsRunningLocally = () => {
-    return window.location.hostname == "localhost" || window.location.hostname == "127.0.0.1";
-}
+import COOKIE from './COOKIE';
+import UTIL from './UTIL';
 
 export const IsLoggedIn = () => {
     //
@@ -23,55 +17,25 @@ export const IsLoggedIn = () => {
     // it as a general is-logged-in flag. Probably some security issues here I'm not taking
     // into account but good for now, at least for development. Marking this as TODO.
     //
-    if (IsRunningLocally() && IsFauxLoggedIn()) {
+        console.log('is-logged-in ......')
+    if (CLIENT.IsLocal() && IsFauxLoggedIn()) {
+        console.log('yes1')
         return true;
     }
-    //
-    // N.B. The react-jwt isExpired function does not seem to work right.
-    //
-/*
-    const decodedJwtToken = GetDecodedJwtTokenCookie();
-    if (!Utils.isObject(decodedJwtToken)) {
+    if (!COOKIE.HasAuthToken()) {
+        console.log('no1')
         return false;
     }
-    const jwtTokenExpirationTimeT = decodedJwtToken.exp;
-    if (jwtTokenExpirationTimeT) {
-        const leewaySeconds = 30;
-        const jwtTokenExpirationDateTime = new Date((jwtTokenExpirationTimeT + leewaySeconds) * 1000);
-        const jwtTokenTimeTillExpirationMs = jwtTokenExpirationDateTime - new Date();
-        if (jwtTokenTimeTillExpirationMs <= 0) {
-            console.log("JWT token expired -> " + jwtTokenExpirationDateTime + " [" + jwtTokenExpirationTimeT + "]" + " [" + jwtTokenTimeTillExpirationMs + "]");
-            console.log(new Date());
-            return false;
-        }
-    }
-*/
-    if (!AuthTokenCookieExists()) {
-        return false;
-    }
-    // const authtoken = GetAuthTokenCookie();
-    // if (!Utils.isNonEmptyString(authtoken)) {
-        // return false;
-    // }
+        console.log('yes2')
     return true;
 }
 
 export const IsFauxLoggedIn = () => {
-    return IsRunningLocally() && (GetFauxLoginCookie() == "1");
-}
-
-export const GetLoginInfo = () => {
-    // if (IsRunningLocally()) {
-    //     return { "email": "localhost" }
-    // }
-    return GetDecodedJwtTokenCookie();
+    return CLIENT.IsLocal() && (COOKIE.HasFauxLogin() == "1");
 }
 
 export const Logout = (navigate) => {
-    DeleteJwtTokenCookie();
-    DeleteAuthTokenCookie();
-    // DeleteRedirectCookie();
-    DeleteFauxLoginCookie();
+    COOKIE.DeleteFauxLogin();
     if (navigate) {
         //
         // Cannot create useNavigate locally here:
@@ -100,7 +64,7 @@ export const VerifyLogin = () => {
 }
 
 export const Auth0CallbackUrl = () => {
-    if (IsRunningLocally()) {
+    if (CLIENT.IsLocal()) {
         return API.UrlAbs("/callback/");
     }
     else {
@@ -108,21 +72,6 @@ export const Auth0CallbackUrl = () => {
     }
 }
 
-function IsUnknownEnv(env, info) {
-    if (env && info?.envs?.unique_annotated) {
-        env = env.toUpperCase();
-        for (let i = info.envs ; i < info.envs.unique_annotated.length ; i++) {
-            let knownEnv = info.envs.unique_annotated[i];
-            if (knownEnv.toUpperCase() === env) {
-                return false;
-            }
-        }
-        return true;
-    }
-    else {
-        return false;
-    }
-}
     // TODO: Refactor WRT Env.js
     function isKnownEnv(env, header) {
         if (!env) return false;
@@ -143,12 +92,19 @@ function IsUnknownEnv(env, info) {
 export const ValidEnvRequired = ({ children }) => {
     // TODO: Change to look at current env in the URL this by looping through header.env.unique_annototated.
     const [ header ] = useContext(GlobalContext);
+        console.log('valid-env...')
+        console.log(CLIENT.Env())
+        console.log(CLIENT.Path("/env"))
+        console.log(header)
     return !isKnownEnv(CLIENT.Env(), header) ? <Navigate to={CLIENT.Path("/env")} replace /> : children;
 }
 
 export const LoginRequired = ({ children }) => {
     CLIENT.NoteLastUrl();
     const [ info ] = useContext(GlobalContext);
+        console.log('login-req...')
+        console.log(IsLoggedIn())
+        console.log(CLIENT.Path("/login"))
     //return !info.error && !info.env_unknown && IsLoggedIn() ? children : <Navigate to={URL.Url("/login", true)} replace />;
     return !IsLoggedIn() ? <Navigate to={CLIENT.Path("/login")} replace /> : children;
 }
@@ -156,6 +112,11 @@ export const LoginRequired = ({ children }) => {
 export const LoginAndValidEnvRequired = ({ children }) => {
     CLIENT.NoteLastUrl();
     const [ header ] = useContext(GlobalContext);
+        console.log('login-and-valid-env-req...')
+        console.log(IsLoggedIn())
+        console.log(CLIENT.Env())
+        console.log(header.env_unknown)
+        console.log(CLIENT.Path("/login"))
     if (CLIENT.Env() === "" || header.env_unknown) {
         return <Navigate to={CLIENT.Path("/env")} replace />
     }
@@ -172,7 +133,7 @@ export const LoginAndValidEnvRequired = ({ children }) => {
 
 export const GetAllowedEnvs = () => {
     try {
-        const authEnvsCookie = GetCookie("authEnvs");
+        const authEnvsCookie = COOKIE.Get("authEnvs");
         const authEnvsCookieDecoded = atob(authEnvsCookie);
         const authEnvsCookieJson = JSON.parse(authEnvsCookieDecoded);
         return authEnvsCookieJson;
@@ -223,7 +184,7 @@ export const IsSameEnv = (envA, envB) => {
                    (public_env_name   (envA)?.toLowerCase() == public_env_name   (envB)?.toLowerCase()) &&
                    (foursight_env_name(envA)?.toLowerCase() == foursight_env_name(envB)?.toLowerCase());
         }
-        else if (Utils.isNonEmptyString(envB)) {
+        else if (UTIL.IsNonEmptyString(envB)) {
             envB = envB.toLowerCase();
             return (regular_env_name  (envA)?.toLowerCase() == envB) ||
                    (full_env_name     (envA)?.toLowerCase() == envB) ||
@@ -235,8 +196,8 @@ export const IsSameEnv = (envA, envB) => {
             return false;
         }
     }
-    else if (Utils.isNonEmptyString(envA)) {
-        if (Utils.isObject(envB)) {
+    else if (UTIL.IsNonEmptyString(envA)) {
+        if (UTIL.IsObject(envB)) {
             envA = envA.toLowerCase();
             return (regular_env_name  (envB)?.toLowerCase() == envA) ||
                    (full_env_name     (envB)?.toLowerCase() == envA) ||
@@ -244,7 +205,7 @@ export const IsSameEnv = (envA, envB) => {
                    (public_env_name   (envB)?.toLowerCase() == envA) ||
                    (foursight_env_name(envB)?.toLowerCase() == envA);
         }
-        else if (Utils.isNonEmptyString(envB)) {
+        else if (UTIL.IsNonEmptyString(envB)) {
             return envA.toLowerCase() == envB.toLowerCase();
         }
         else {

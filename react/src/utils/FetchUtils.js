@@ -1,10 +1,10 @@
-import { GetCookie, GetAuthTokenCookie } from './CookieUtils';
+import COOKIE from '../utils/COOKIE';
 
 function _sleep (time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
 
-let _artificialSleepForTesting = GetCookie("test_mode_fetch_sleep");
+let _artificialSleepForTesting = COOKIE.Get("test_mode_fetch_sleep");
 
 // The Foursight API we call (foursight-core/foursight_core/react_api.py) is protected
 // with a  new 'authtoken' cookie which was created along with the 'jwtToken' cookie;

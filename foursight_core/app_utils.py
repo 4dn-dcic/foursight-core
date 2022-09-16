@@ -23,6 +23,7 @@ import string
 import sys
 import time
 import types
+import urllib.parse
 import uuid
 import logging
 from itertools import chain
@@ -557,6 +558,9 @@ class AppUtilsCore(ReactApi):
             if is_react:
                 react_redir_url = self.read_cookie("reactredir", request_dict)
                 if react_redir_url:
+                    # Not certain if by design but the React library (universal-cookie) used to
+                    # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
+                    react_redir_url = urllib.parse.unquote(react_redir_url)
                     response_headers = {"Location": react_redir_url}
                 authtoken = self.create_authtoken(jwt_token, env)
                 authtoken_cookie = self.create_set_cookie_string(request, name="authtoken",

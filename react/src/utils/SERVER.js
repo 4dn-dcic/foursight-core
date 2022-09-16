@@ -26,7 +26,7 @@ function GetBaseUrl() {
     return GetOrigin() + GetBasePath();
 }
 
-function GetUrl(path, env = null) {
+function GetUrl(path, env = true) {
     if (!UTIL.IsNonEmptyString(path)) {
         path = "/"
     }

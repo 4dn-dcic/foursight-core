@@ -1,5 +1,5 @@
 import Cookies from 'universal-cookie';
-import * as Utils from './Utils';
+import UTIL from './UTIL';
 
 const _cookies             = new Cookies()
 const _authTokenCookieName = "authtoken";
@@ -15,15 +15,16 @@ function GetCookie(name) {
 }
 
 function DeleteCookie(name) {
-    if (Utils.isNonEmptyString(name)) {
+    if (UTIL.IsNonEmptyString(name)) {
         _cookies.remove(name, { path: _cookiePath });
     }
 }
 
 function SetCookie(name, value, expires = null) {
-    if (Utils.isNonEmptyString(name)) {
-        if (Utils.isNonEmptyString(value)) {
-            _cookies.set(name, value, { path: _cookiePath, expires: expires });
+    if (UTIL.IsNonEmptyString(name)) {
+        if (UTIL.IsNonEmptyString(value)) {
+            // _cookies.set(name, value, { path: _cookiePath, expires: expires });
+            _cookies.set(name, value, { path: _cookiePath});
         } else {
             DeleteCookie(name);
         }
@@ -32,7 +33,7 @@ function SetCookie(name, value, expires = null) {
 
 function HasAuthTokenCookie() {
     const authTokenCookie = GetCookie(_authTokenCookieName);
-    if (Utils.isNonEmptyString(authTokenCookie)) {
+    if (UTIL.IsNonEmptyString(authTokenCookie)) {
         //
         // The authtoken cookie exists AND we can actually read it
         // which means it is NOT an HttpOnly cookie, but whatever,
@@ -68,6 +69,10 @@ function HasFauxLoginCookie() {
     return GetCookie(_fauxLoginCookieName) == "1";
 }
 
+function SetFauxLoginCookie() {
+    return SetCookie(_fauxLoginCookieName, "1");
+}
+
 function DeleteFauxLoginCookie() {
     return DeleteCookie(_fauxLoginCookieName);
 }
@@ -80,13 +85,18 @@ function SetLastUrlCookie(url) {
     SetCookie(_lastUrlCookieName, url);
 }
 
+function SetRedirectCookie(url, expires = null) {
+    SetCookie(_redirectCookieName, url, expires);
+}
+
 export default {
-    Get: GetCookie,
-    GetLastUrlCookie: GetLastUrlCookie,
-    Set: SetCookie,
-    SetLastUrlCookie: SetLastUrlCookie,
-    Delete: DeleteCookie,
+    Get:             GetCookie,
+    GetLastUrl:      GetLastUrlCookie,
+    Set:             SetCookie,
+    SetLastUrl:      SetLastUrlCookie,
+    SetRedirect:     SetRedirectCookie,
+    Delete:          DeleteCookie,
     DeleteFauxLogin: DeleteFauxLoginCookie,
-    HasAuthToken: HasAuthTokenCookie,
-    HasFauxLogin: HasFauxLoginCookie,
+    HasAuthToken:    HasAuthTokenCookie,
+    HasFauxLogin:    HasFauxLoginCookie,
 }

@@ -1,5 +1,7 @@
+import UTIL from './UTIL';
+
 function CopyToClipboard(id) {
-    if (IsNonEmptyString(id)) {
+    if (UTIL.IsNonEmptyString(id)) {
         const range = document.createRange();
         if (range) {
             const element = document.getElementById(id);

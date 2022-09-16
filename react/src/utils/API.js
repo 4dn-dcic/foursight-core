@@ -3,6 +3,8 @@ import * as URL from './URL';
 import * as LoginUtils from './LoginUtils';
 import AUTH from './AUTH';
 import CLIENT from './CLIENT';
+import STR from './STR';
+import UTIL from './UTIL';
 
 export const API_BASE_URL_PATH = "/api/reactapi";
 
@@ -20,17 +22,17 @@ export const getApiBaseUrlWithPath = () => {
     return getApiBaseUrl() + API_BASE_URL_PATH;
 }
 
-export const Url = (path, env = undefined) => {
-    if (!Utils.isNonEmptyString(path)) {
+export const Url = (path, env = null) => {
+    if (!UTIL.IsNonEmptyString(path)) {
         path = "/";
     }
     else if (!path.startsWith("/")) {
         path = "/" + path;
     }
     if (Utils.isBoolean(env) && env) {
-        env = URL.Env();
+        env = CLIENT.Env();
     }
-    if (Utils.isNonEmptyString(env)) {
+    if (UTIL.IsNonEmptyString(env)) {
         return getApiBaseUrlWithPath() + "/" + env + path;
     }
     else {
@@ -39,7 +41,7 @@ export const Url = (path, env = undefined) => {
 }
 
 export const UrlAbs = (path) => {
-    if (!Utils.isNonEmptyString(path)) {
+    if (!UTIL.IsNonEmptyString(path)) {
         path = "/";
     }
     return getApiBaseUrl() + path;

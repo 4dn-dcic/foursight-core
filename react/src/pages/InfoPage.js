@@ -1,15 +1,15 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
-import { GetLoginInfo, LoginAndValidEnvRequired } from "../utils/LoginUtils";
-import { CopyToClipboard } from "../utils/Utils";
 import { fetchData } from '../utils/FetchUtils';
 import * as API from "../utils/API";
-import * as URL from "../utils/URL";
-import { FormatDateTime, Duration } from "../utils/Utils";
+import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
+import CLIPBOARD from '../utils/CLIPBOARD';
 import SERVER from '../utils/SERVER';
+import TIME from '../utils/TIME';
 import uuid from 'react-uuid';
+import { LoginAndValidEnvRequired } from '../utils/LoginUtils';
 let YAML = require('json-to-pretty-yaml');
 
 const InfoPage = () => {
@@ -57,12 +57,12 @@ const InfoPage = () => {
             align: "left",
         };
         let valueOnClick = copy ? {
-            onClick: () => CopyToClipboard(name)
+            onClick: () => CLIPBOARD.Copy(name)
             
         } : {};
         let checkElement = check ?
             <span>
-                &nbsp;&nbsp;<b style={{fontSize:"13pt",color:"green"}}>&#x2713;</b>
+                &nbsp;<b style={{fontSize:"13pt",color:"green"}}>&#x2713;</b>
             </span> : <span/>
         const pypiElement = pypi ?
             <span>
@@ -160,17 +160,17 @@ const InfoPage = () => {
             </pre>
         </InfoBox>
         <InfoBox title="Login Auth0 Info">
-            <InfoRow name={"Email"} value={GetLoginInfo()?.email} monospace={true} copy={true} check={GetLoginInfo()?.email_verified} link={URL.Url("/users/" + GetLoginInfo()?.email, true)} size="2" />
-            <InfoRow name={"Issuer"} value={GetLoginInfo()?.iss} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Subject"} value={GetLoginInfo()?.sub} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Audience"} value={GetLoginInfo()?.aud} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Issued At"} value={FormatDateTime(GetLoginInfo()?.iat) + Duration(GetLoginInfo()?.iat, new Date(), true, "|", "ago", "just now")} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Expires At"} value={FormatDateTime(GetLoginInfo()?.exp) + Duration(new Date(), GetLoginInfo()?.exp, true, "|", "from now", "now")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Email"} value={AUTH.LoggedInUser(header)} monospace={true} copy={true} check={AUTH.LoggedInUserVerified(header)} link={CLIENT.Path("/users/" + AUTH.LoggedInUser(header), true)} size="2" />
+            <InfoRow name={"Issuer"} value={AUTH.LoggedInUserJwt(header)?.iss} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Subject"} value={AUTH.LoggedInUserJwt(header)?.sub} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Audience"} value={AUTH.LoggedInUserJwt(header)?.aud} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Issued At"} value={TIME.FormatDateTime(AUTH.LoggedInUserJwt(header)?.iat) + TIME.FormatDuration(AUTH.LoggedInUserJwt(header)?.iat, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Expires At"} value={TIME.FormatDateTime(AUTH.LoggedInUserJwt(header)?.exp) + TIME.FormatDuration(new Date(), AUTH.LoggedInUserJwt(header)?.exp, true, "now", "|", "from now")} monospace={true} copy={true} size="2" />
         </InfoBox>
         <InfoBox title="Miscellany">
-            <InfoRow name={"App Deployed At"} value={header.app?.deployed + Duration(header.app?.deployed, new Date(), true, "|", "ago", "just now")} monospace={true} copy={true} optional={true} size="2" />
-            <InfoRow name={"App Launched At"} value={header.app?.launched + Duration(header.app?.launched, new Date(), true, "|", "ago", "just now")} monospace={true} size="2" />
-            <InfoRow name={"Page Loaded At"} value={info.page?.loaded + Duration(header.app?.loaded, new Date(), true, "|", "ago", "just now")} monospace={true} size="2" />
+            <InfoRow name={"App Deployed At"} value={header.app?.deployed + TIME.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
+            <InfoRow name={"App Launched At"} value={header.app?.launched + TIME.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
+            <InfoRow name={"Page Loaded At"} value={info.page?.loaded + TIME.FormatDuration(info.page?.loaded, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Package"} value={header.app?.package} monospace={true} size="2" />
             <InfoRow name={"Stage"} value={header.app?.stage} monospace={true} size="2" />
             <InfoRow name={"Environment"} value={header.app?.env} monospace={true} size="2" />

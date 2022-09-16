@@ -1,5 +1,5 @@
 import * as Utils from './Utils.js';
-import { GetCookie } from './CookieUtils';
+import UTIL from './UTIL';
 
 const BASE_URL_PATH = "/api/react/";
 
@@ -8,7 +8,7 @@ export const getCurrentUrlPath = () => {
 }
 
 function normalizePath(value) {
-    if (!Utils.isNonEmptyString(value)) {
+    if (!UTIL.IsNonEmptyString(value)) {
         return "";
     }
     const valueLowerCase = value.toLowerCase();
@@ -38,7 +38,7 @@ function normalizePath(value) {
 // Assume the path has the form: /api/react/{environment}/{path}
 //
 export const Env = (path = undefined) => {
-    if (!Utils.isNonEmptyString(path)) {
+    if (!UTIL.IsNonEmptyString(path)) {
         path = getCurrentUrlPath();
     }
     path = normalizePath(path);
@@ -48,7 +48,7 @@ export const Env = (path = undefined) => {
     else if (path.startsWith("/")) {
         path = path.substring(1);
     }
-    if (!Utils.isNonEmptyString(path)) {
+    if (!UTIL.IsNonEmptyString(path)) {
         return "";
     }
     const slash = path.indexOf("/");
@@ -64,7 +64,7 @@ export const Env = (path = undefined) => {
 // Assume the path has the form: /api/react/{environment}/{path}
 //
 export const getLogicalPathFromUrlPath = (path = undefined) => {
-    if (!Utils.isNonEmptyString(path)) {
+    if (!UTIL.IsNonEmptyString(path)) {
         path = getCurrentUrlPath();
     }
     path = normalizePath(path);
@@ -79,7 +79,7 @@ export const getLogicalPathFromUrlPath = (path = undefined) => {
 }
 
 export const Url = (path = undefined, env = undefined, info = undefined) => {
-    if (!Utils.isNonEmptyString(path)) {
+    if (!UTIL.IsNonEmptyString(path)) {
         path = getLogicalPathFromUrlPath()
     }
     path = normalizePath(path);
@@ -89,7 +89,7 @@ export const Url = (path = undefined, env = undefined, info = undefined) => {
     if (Utils.isBoolean(env)) {
         if (env) {
             env = Env();
-            if (!Utils.isNonEmptyString(env) && Utils.isObject(info)) {
+            if (!UTIL.IsNonEmptyString(env) && Utils.isObject(info)) {
                 if (info?.environ) {
                     env = info?.environ["ENV_NAME"];
                 }
@@ -103,16 +103,8 @@ export const Url = (path = undefined, env = undefined, info = undefined) => {
             }
         }
     }
-    if (!Utils.isNonEmptyString(env)) {
+    if (!UTIL.IsNonEmptyString(env)) {
         env = ""
     }
     return normalizePath(BASE_URL_PATH + env + path);
-}
-
-export const LastPath = () => {
-    let url = GetCookie("last_url");
-    if (!url) {
-        url = window.location.origin + Url("/home", Env());
-    }
-    return url;
 }

@@ -9,6 +9,7 @@ import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
 import * as API from "../utils/API";
 import * as URL from "../utils/URL";
 import { UUID } from '../utils/Utils';
+import SERVER from '../utils/SERVER';
 let YAML = require('json-to-pretty-yaml');
 
 const GacComparePage = (props) => {

@@ -12,7 +12,7 @@ function FormatDateTime(value, verbose = false) {
                                                    month:"long",
                                                    day:"numeric",
                                                    hour12: true,
-                                                   hour: "2-digit",
+                                                   hour: "numeric",
                                                    minute: "2-digit",
                                                    second: "numeric",
                                                    timeZoneName: "short"}).replace(" at ", " | ");

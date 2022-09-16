@@ -3,22 +3,16 @@ import React from 'react';
 import { useContext, useState } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "./GlobalContext";
-import { IsRunningLocally } from './utils/LoginUtils';
-import { DeleteRedirectCookie } from './utils/CookieUtils';
 import * as URL from "./utils/URL";
-import * as API from "./utils/API";
-import { FormatDateTime } from "./utils/Utils";
 import { BarSpinner } from "./Spinners";
 import { fetchData } from "./utils/FetchUtils";
 import { GetLoginInfo, IsFauxLoggedIn, IsLoggedIn, Logout } from "./utils/LoginUtils";
 import AUTH from './utils/AUTH';
 import CLIENT from './utils/CLIENT';
+import SERVER from './utils/SERVER';
+import TIME from './utils/TIME';
 
 const Header = (props) => {
-
-    // Temporary hack so "real" (non-React) Foursight doesn't use this.
-    //
-    // DeleteRedirectCookie();
 
     let { environ } = useParams();
     let navigate = useNavigate();
@@ -31,7 +25,7 @@ const Header = (props) => {
     let subTitleBackgroundColor = isFoursightFourfront ? "#AEF1D6" : "#AED6F1";
 
     function refreshHeaderData(env) {
-        const url = API.Url("/header", env.public);
+        const url = SERVER.Url("/header", env.public);
         fetchData(url, setHeader, setLoading, setError);
     }
 
@@ -56,30 +50,16 @@ const Header = (props) => {
         </span>
     }
 
-        // TODO: refactor - in LoginUtils and EnvPage too
-    function isKnownEnv(env) {
-        if (!env) return false;
-        env = env.toLowerCase();
-        for (let i = 0 ; i < header?.envs?.unique_annotated?.length ; i++) {
-            const env_annotated = header.envs?.unique_annotated[i];
-            if ((env_annotated.name.toLowerCase() == env) ||
-                (env_annotated.full.toLowerCase() == env) ||
-                (env_annotated.short.toLowerCase() == env) ||
-                (env_annotated.public.toLowerCase() == env) ||
-                (env_annotated.foursight.toLowerCase() == env)) {
-                return true;
-            }
-        }
-        return false;
-    }
     function getDefaultEnv() {
         return header?.env?.default;
     }
 
     function initiateAppReload() {
-        const url = API.Url("/reloadlambda", false);
+        const url = SERVER.Url("/reloadlambda", false);
         fetchData(url);
     }
+        console.log('HEADER....')
+        console.log(header)
 
     return <>
         { header.loading ? (
@@ -145,7 +125,7 @@ const Header = (props) => {
                     </span>
                 </td>
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
-                    <small>{FormatDateTime(new Date(), true)}</small>
+                    <small>{TIME.FormatDateTime(new Date(), true)}</small>
                     { (AUTH.IsLoggedIn(header)) ? (<span>
                             {/* &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {Logout(navigate);}}>LOGOUT</span> */}
                             {/* &nbsp;|&nbsp; <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink> */}
@@ -179,7 +159,7 @@ const Header = (props) => {
                                     ):(
                                             /* <Link key={env.public} onClick={() => refreshHeaderData(env)} to={URL.Url(null, env.public)}>{env.public}</Link> */
                                             /* TODO: rework this whole URL.Url stuff with no env etc */
-                                        <Link key={env.public} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: !isKnownEnv(CLIENT.Env()) ? CLIENT.Path("/env", getDefaultEnv()) : CLIENT.Path(null, env.public)}}>{env.public}</Link>
+                                        <Link key={env.public} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: !CLIENT.IsKnownEnv(CLIENT.Env()) ? CLIENT.Path("/env", getDefaultEnv()) : CLIENT.Path(null, env.public)}}>{env.public}</Link>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
@@ -221,7 +201,7 @@ const Header = (props) => {
                 <tr>
                     <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="3">
                         <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>. For more info click <b><a href="https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React" style={{color:"darkred"}} target="_blank"><u>here</u></a></b>.
-                        To go to the real Foursight click <a href={IsRunningLocally() && window.location.host == "localhost:3000" ? ("http://localhost:8000" + ("/api/view/" + header?.env?.public_name)) : ("/api/view/" + (header?.env?.public_name))} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
+                        To go to the real Foursight click <a href={CLIENT.IsLocal() && window.location.host == "localhost:3000" ? ("http://localhost:8000" + ("/api/view/" + header?.env?.public_name)) : ("/api/view/" + (header?.env?.public_name))} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
                     </td>
                 </tr>
                 <tr>

@@ -3,11 +3,11 @@ import ReactDOM from 'react-dom/client';
 import './css/index.css';
 import App from './App';
 import { CookiesProvider } from 'react-cookie';
-import { GetCookie } from './utils/CookieUtils';
+import COOKIE from './utils/COOKIE';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
-if (GetCookie("test_mode_dummy_page") == "1") {
+if (COOKIE.Get("test_mode_dummy_page") == "1") {
     root.render(
         <div>
             Foursight: Hello, world!

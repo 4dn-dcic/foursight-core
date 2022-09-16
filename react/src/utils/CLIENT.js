@@ -159,11 +159,11 @@ function IsKnownEnv(env, header) {
 }
 
 function NoteLastUrl() {
-    COOKIE.SetLastUrlCookie(window.location.href);
+    COOKIE.SetLastUrl(window.location.href);
 }
 
 function LastUrl() {
-    return COOKIE.GetLastUrlCookie();
+    return COOKIE.GetLastUrl();
 }
 
 function NormalizePath(path) {
@@ -181,16 +181,16 @@ function NormalizePath(path) {
 }
 
 export default {
-    BasePath: GetBasePath,
-    BaseUrl: GetBaseUrl,
-    CurrentPath: GetCurrentPath,
+    BasePath:           GetBasePath,
+    BaseUrl:            GetBaseUrl,
+    CurrentPath:        GetCurrentPath,
     CurrentLogicalPath: GetCurrentLogicalPath,
-    Env: GetCurrentEnv,
-    IsKnownEnv: IsKnownEnv,
-    IsLocal: IsRunningLocally,
-    LastUrl: LastUrl,
-    NoteLastUrl: NoteLastUrl,
-    Origin: GetOrigin,
-    Path: GetPath,
-    Url: GetUrl
+    Env:                GetCurrentEnv,
+    IsKnownEnv:         IsKnownEnv,
+    IsLocal:            IsRunningLocally,
+    LastUrl:            LastUrl,
+    NoteLastUrl:        NoteLastUrl,
+    Origin:             GetOrigin,
+    Path:               GetPath,
+    Url:                GetUrl
 }

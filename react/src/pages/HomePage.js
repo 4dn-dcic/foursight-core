@@ -12,19 +12,8 @@ import TIME from '../utils/TIME';
 const HomePage = (props) => {
 
     const [ header ] = useContext(GlobalContext);
-    let { environ } = useParams();
-
-    let [ xyzzy, setXyzzy ] = useState();
 
     return <LoginAndValidEnvRequired>
-        [{UTIL.IsNonEmptyString("/example") ? "nonempty" : "empty"}]
-                Time: {TIME.FormatDateTime(header.app?.launched, true)}<br/>
-                Duration: {TIME.FormatDuration(header.app?.launched, new Date(), true, "fallback", "|", "ago")}<br/>
-                <div onClick={() => { COOKIE.Set("abc", "http://slashdot.org"); setXyzzy(COOKIE.Get("abc")); }}> set </div>
-                <div onClick={() => { COOKIE.Set("abc", UUID()); setXyzzy(COOKIE.Get("abc")); }}> change </div>
-                <div onClick={() => { console.log(COOKIE.Get("abc")); }}> print </div>
-                <div onClick={() => { COOKIE.Delete("abc"); setXyzzy(COOKIE.Get("abc")); }}> delete </div>
-                <div>{COOKIE.Get("abc")}</div>.
         <div className="container">
             <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt",color:"#6F4E37"}}>
                 <b>Note</b>

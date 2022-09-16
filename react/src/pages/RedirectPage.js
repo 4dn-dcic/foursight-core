@@ -1,5 +1,4 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { GetCookie } from '../utils/CookieUtils';
 import * as URL from "../utils/URL";
 
 const RedirectPage = () => {

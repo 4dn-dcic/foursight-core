@@ -67,6 +67,10 @@ const EnvPage = (props) => {
 
     function onChange(arg, environ) {
         const environCompare = arg.target.value;
+            console.log('onchaaaaan')
+            console.log(arg)
+            console.log(environ)
+        console.log(CLIENT.Path("/gac/" + environCompare, environ))
         navigate(CLIENT.Path("/gac/" + environCompare, environ))
     }
 
@@ -86,23 +90,6 @@ const EnvPage = (props) => {
     if (info.error) return <>Cannot load Foursight</>;
     if (info.loading) return <>Loading ...</>;
     return <div>
-            ServerOrigin: {SERVER.Origin()} <br />
-            ServerBasePath: {SERVER.BasePath()}  <br />
-            ServerBaseUrl: {SERVER.BaseUrl()} <br />
-            ServerUrlExample: {SERVER.Url("/example-one")} <br />
-            ClientOrigin: {CLIENT.Origin()} <br />
-            ClientBasePath: {CLIENT.BasePath()} <br />
-            ClientBaseUrl: {CLIENT.BaseUrl()} <br />
-            ClientPathExample: {CLIENT.Path("/example-one")} <br />
-            ClientPathWithEnvExample: {CLIENT.Path("/example-one", "some-env")} <br />
-            CurrentEnv: [{CLIENT.Env()}] <br />
-            CURENT CurrentEnv: [{CLIENT.Env()}] <br />
-            FOO: [{CLIENT.Path("", true)}] <br />
-            GOO: [{URL.Url("", true)}] <br />
-            current logical path: [{CLIENT.CurrentLogicalPath()}] <br />
-            foobar: [{CLIENT.Path(null, "foobar")}] <br />
-            env: [{CLIENT.Env()}]
-
             { false && !IsLoggedIn() ? (
                 <div className="container">
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>

@@ -20,6 +20,7 @@ import socket
 import sys
 import time
 import types
+import urllib.parse
 import uuid
 import logging
 from itertools import chain
@@ -238,6 +239,7 @@ class ReactApi:
             authtoken_info["authenticated_at"] = jwt_decoded.get("iat")
             authtoken_info["authenticated_until"] = jwt_decoded.get("exp")
             authtoken_info["user"] = jwt_decoded.get("email")
+            authtoken_info["user_verified"] = jwt_decoded.get("email_verified")
             return authtoken_info
 
         except Exception as e:
@@ -951,6 +953,10 @@ class ReactApi:
         if not redirect_url:
             http = "https" if not self.is_running_locally(request_dict) else "http"
             redirect_url = f"{http}://{domain}{context if context else ''}react/{environ}/login"
+        else:
+            # Not certain if by design but the React library (universal-cookie) used to
+            # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
+            redirect_url = urllib.parse.unquote(redirect_url)
         authtoken_cookie_deletion = self.create_delete_cookie_string(request_dict, "authtoken", domain)
         headers = {
             "location": redirect_url,
