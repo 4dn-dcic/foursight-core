@@ -91,13 +91,14 @@ function SetRedirectCookie(url, expires = null) {
 }
 
 export default {
-    Get:             GetCookie,
-    GetLastUrl:      GetLastUrlCookie,
-    Set:             SetCookie,
-    SetLastUrl:      SetLastUrlCookie,
-    SetRedirect:     SetRedirectCookie,
     Delete:          DeleteCookie,
     DeleteFauxLogin: DeleteFauxLoginCookie,
+    Get:             GetCookie,
+    GetLastUrl:      GetLastUrlCookie,
     HasAuthToken:    HasAuthTokenCookie,
     HasFauxLogin:    HasFauxLoginCookie,
+    Set:             SetCookie,
+    SetFauxLogin:    SetFauxLoginCookie,
+    SetLastUrl:      SetLastUrlCookie,
+    SetRedirect:     SetRedirectCookie,
 }

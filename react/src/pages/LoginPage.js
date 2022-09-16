@@ -15,7 +15,7 @@ import AUTH from '../utils/AUTH';
 const LoginPage = (props) => {
 
     let navigate = useNavigate();
-    const [ info ] = useContext(GlobalContext);
+    const [ header, setHeader ] = useContext(GlobalContext);
     const [ showingAuthBox, setShowingAuthBox ] = useState(false);
     const [args] = useSearchParams();
     const showAuthBoxAtOutset = args.get("auth")?.length >= 0;
@@ -57,7 +57,7 @@ const LoginPage = (props) => {
 
     function createAuth0Lock() {
         const loginCallback = Auth0CallbackUrl();
-        const loginClientId = info?.app?.credentials?.auth0_client_id;
+        const loginClientId = header?.app?.credentials?.auth0_client_id;
         const loginPayload = {
             container: "login_auth_container",
             auth: {
@@ -78,9 +78,9 @@ const LoginPage = (props) => {
         return new Auth0Lock(loginClientId, "hms-dbmi.auth0.com", loginPayload);
     }
 
-    if (info.loading && !info.error) return <>Loading ...</>
-    if (info.error) return <>Cannot load Foursight.</>
-    const loginInfo = IsLoggedIn() ? AUTH.LoggedInUserJwt(info) : undefined;;
+    if (header.loading && !header.error) return <>Loading ...</>
+    if (header.error) return <>Cannot load Foursight.</>
+    const loginInfo = IsLoggedIn() ? AUTH.LoggedInUserJwt(header) : undefined;;
     return <ValidEnvRequired>
         { IsLoggedIn() ? (<React.Fragment>
             <div className="container">
@@ -107,8 +107,8 @@ const LoginPage = (props) => {
             <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt"}}>
                 Not logged in.
                 Click <u style={{cursor:"pointer"}} onClick={() => login()}><b>here</b></u> to <span style={{cursor:"pointer"}} onClick={() => login()}>login</span>.
-                {(info?.app?.credentials?.aws_account_number) ? (<React.Fragment>
-                    <br /> <small> AWS Account: {info?.app?.credentials?.aws_account_number} </small>
+                {(header?.app?.credentials?.aws_account_number) ? (<React.Fragment>
+                    <br /> <small> AWS Account: {header?.app?.credentials?.aws_account_number} </small>
                     <br/>
                 </React.Fragment>):(<React.Fragment>
                 </React.Fragment>)}
@@ -125,12 +125,11 @@ const LoginPage = (props) => {
                     <div className="boxstyle check-fail" style={{margin:"20pt",padding:"10pt",borderWidth:"2",borderColor:"red"}}>
                         <img src={"https://i.stack.imgur.com/DPBue.png"} style={{height:"35",verticalAlign:"bottom"}} /> <b style={{fontSize:"x-large"}}>&nbsp;Attention ...</b> <br />
                         <hr style={{borderTop: "2px solid red",marginTop:"8px",marginBottom:"8px"}}/>
-                        As you appear to be <b>running</b> Foursight <b>locally</b>, the above <a href="https://auth0.com/" target="_blank">Auth0</a> login <u><b>may not work</b></u> properly. <br />
+                        As you appear to be <b>running</b> Foursight <b>locally</b> {CLIENT.IsLocalCrossOrigin() && <span>(cross-origin)</span>}, the above <a href="https://auth0.com/" style={{color:"red"}} target="_blank">Auth0</a> login <u><b>may not work</b></u>. <br />
                         <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
-                        It <i>should</i> but just in case you can also bypass this and faux login below. 
+                        It <u><b>should work</b></u> but just in case you can bypass this and <b>faux</b> login below. 
                         <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
-                    {/* Click <NavLink onClick={() => SetFauxLoginCookie()} to={URL.Url("/logindone", true)} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</NavLink> to faux <NavLink onClick={() => SetFauxLoginCookie()} to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"darkred"}}><b>login</b></NavLink> locally. */}
-                        Click <Link to={{pathname: "/redirect"}} state={{url: CLIENT.LastUrl()}} onClick={() => COOKIE.SetFauxLoginCookie()} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</Link> to faux <Link to={{pathname: "/redirect"}} state={{url: CLIENT.LastUrl()}} onClick={() => COOKIE.SetFauxLoginCookie()} style={{cursor:"pointer",color:"darkred"}}><b>login</b></Link> locally.
+                        Click <Link to={CLIENT.LastPath()} onClick={() => COOKIE.SetFauxLogin()} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</Link> to faux <Link to={{pathname: "/redirect"}} state={{url: CLIENT.LastUrl()}} onClick={() => COOKIE.SetFauxLogin()} style={{cursor:"pointer",color:"darkred"}}><b>login</b></Link> locally.
                     </div>
                 </div>
             )}

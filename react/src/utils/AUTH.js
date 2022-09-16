@@ -12,6 +12,9 @@ function IsLoggedIn(header) {
     // since the way we detect the existence of the authtoken cookie is a bit
     // hacky since it is an HttpOnly cookie (see COOKIE.HasAuthToken).
     //
+    if (CLIENT.IsLocal() && IsFauxLoggedIn()) {
+        return true;
+    }
     return header?.auth?.authenticated;
 }
 
@@ -20,6 +23,9 @@ function IsFauxLoggedIn(header) {
 }
 
 function LoggedInUser(header) {
+    if (CLIENT.IsLocal() && IsFauxLoggedIn()) {
+        return "faux-login";
+    }
     return header?.auth?.authenticated ? header.auth?.user : "unknown";
 }
 

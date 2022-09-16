@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import GlobalContext from '../GlobalContext';
 import * as URL from './URL';
+import AUTH from './AUTH';
 import CLIENT from './CLIENT';
 import COOKIE from './COOKIE';
 import SERVER from './SERVER';
@@ -17,29 +18,13 @@ export const IsLoggedIn = () => {
     // it as a general is-logged-in flag. Probably some security issues here I'm not taking
     // into account but good for now, at least for development. Marking this as TODO.
     //
-    if (CLIENT.IsLocal() && IsFauxLoggedIn()) {
+    if (CLIENT.IsLocal() && AUTH.IsFauxLoggedIn()) {
         return true;
     }
     if (!COOKIE.HasAuthToken()) {
         return false;
     }
     return true;
-}
-
-export const IsFauxLoggedIn = () => {
-    return CLIENT.IsLocal() && (COOKIE.HasFauxLogin() == "1");
-}
-
-export const Logout = (navigate) => {
-    COOKIE.DeleteFauxLogin();
-    if (navigate) {
-        //
-        // Cannot create useNavigate locally here:
-        // Hooks can only be called inside of the body of a function component.
-        // So caller passes it in.
-        //
-        navigate(CLIENT.Path("/login"));
-    }
 }
 
 export const VerifyLogin = () => {

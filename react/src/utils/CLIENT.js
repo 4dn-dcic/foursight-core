@@ -165,6 +165,19 @@ function LastUrl() {
     return COOKIE.GetLastUrl();
 }
 
+function LastPath() {
+        console.log('xxxxxxxxxxxx')
+    const lastUrl = LastUrl();
+        console.log(lastUrl)
+    const baseUrl = GetBaseUrl();
+        console.log(baseUrl)
+    if (lastUrl.startsWith(baseUrl)) {
+        console.log(lastUrl.substring(baseUrl.length));
+        return GetPath(lastUrl.substring(baseUrl.length), false);
+    }
+    return lastUrl;
+}
+
 function NormalizePath(path) {
     if (!STR.HasValue(path)) {
         return "";
@@ -188,6 +201,7 @@ export default {
     IsKnownEnv:         IsKnownEnv,
     IsLocal:            IsLocal,
     IsLocalCrossOrigin: IsLocalCrossOrigin,
+    LastPath:           LastPath,
     LastUrl:            LastUrl,
     NoteLastUrl:        NoteLastUrl,
     Origin:             GetOrigin,
