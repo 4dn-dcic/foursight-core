@@ -130,7 +130,7 @@ const Header = (props) => {
                             <span title="Running locally." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"15pt"}}>&#8861;</span>&nbsp;&nbsp;
                         </span>):(<span></span>)}
 
-                        <span style={{color:"default",fontFamily:"arial"}}>{header.page?.title}</span>&nbsp;
+                        <span className="title-font" style={{color:"default"}}>{header.page?.title.toUpperCase()}</span>&nbsp;
 
                         { header.app?.stage == 'dev' ? (<span>
                             &nbsp;<span title="Stage is DEV." style={{position:"relative",top:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>

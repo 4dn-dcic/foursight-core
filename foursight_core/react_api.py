@@ -306,6 +306,9 @@ class ReactApi:
         elif file.endswith(".ico"):
             content_type = "image/x-icon"
             open_mode = "rb"
+        elif file.endswith(".woff"):
+            content_type = "font/woff2"
+            open_mode = "rb"
         else:
             file = os.path.join(BASE_DIR, REACT_BASE_DIR, REACT_DEFAULT_FILE)
             content_type = "text/html"

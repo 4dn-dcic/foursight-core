@@ -300,3 +300,10 @@
     transform: rotate(360deg);
   }
 }
+@font-face {
+   font-family: myFirstFont;
+   src: url(font_sansation_bold.woff);
+}
+.title-font {
+   font-family: myFirstFont;
+}
