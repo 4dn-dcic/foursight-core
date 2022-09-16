@@ -6,7 +6,7 @@ import GlobalContext from "./GlobalContext";
 import * as URL from "./utils/URL";
 import { BarSpinner } from "./Spinners";
 import { fetchData } from "./utils/FetchUtils";
-import { GetLoginInfo, IsFauxLoggedIn, IsLoggedIn, Logout } from "./utils/LoginUtils";
+import { GetLoginInfo, IsLoggedIn, Logout } from "./utils/LoginUtils";
 import AUTH from './utils/AUTH';
 import CLIENT from './utils/CLIENT';
 import SERVER from './utils/SERVER';
@@ -179,11 +179,11 @@ const Header = (props) => {
                         { (header.app?.stage != 'prod' && header.app?.stage != 'dev') ? (<>
                             <b title="Deployment stage: {header.app?.stage}">{header.app?.stage}}</b> &nbsp;|&nbsp;
                         </>):(<></>)}
-                        { (IsLoggedIn()) ? (<>
+                        { (AUTH.IsLoggedIn(header)) ? (<>
                             { AUTH.LoggedInUser(header) ? (<>
                                 <Link to={CLIENT.Path("/login")} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{AUTH.LoggedInUser(header)}</b></Link>
                             </>):(<>
-                                { (IsFauxLoggedIn()) ? (<>
+                                { (AUTH.IsFauxLoggedIn(header)) ? (<>
                                     <span className={"tool-tip"} data-text="Running locally and faux logged in (i.e. not via Auth0).">
                                         <b style={{color:"darkred"}}>FAUX USER</b>
                                     </span>

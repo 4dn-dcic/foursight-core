@@ -2,7 +2,6 @@ import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
 import { fetchData } from '../utils/FetchUtils';
-import * as API from "../utils/API";
 import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
 import CLIPBOARD from '../utils/CLIPBOARD';

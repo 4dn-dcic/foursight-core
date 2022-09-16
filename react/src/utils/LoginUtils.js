@@ -2,7 +2,6 @@ import { useContext } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import GlobalContext from '../GlobalContext';
 import * as URL from './URL';
-import * as API from './API';
 import * as Utils from './Utils';
 import CLIENT from './CLIENT';
 import COOKIE from './COOKIE';
@@ -18,16 +17,12 @@ export const IsLoggedIn = () => {
     // it as a general is-logged-in flag. Probably some security issues here I'm not taking
     // into account but good for now, at least for development. Marking this as TODO.
     //
-        console.log('is-logged-in ......')
     if (CLIENT.IsLocal() && IsFauxLoggedIn()) {
-        console.log('yes1')
         return true;
     }
     if (!COOKIE.HasAuthToken()) {
-        console.log('no1')
         return false;
     }
-        console.log('yes2')
     return true;
 }
 
@@ -95,19 +90,12 @@ export const Auth0CallbackUrl = () => {
 export const ValidEnvRequired = ({ children }) => {
     // TODO: Change to look at current env in the URL this by looping through header.env.unique_annototated.
     const [ header ] = useContext(GlobalContext);
-        console.log('valid-env...')
-        console.log(CLIENT.Env())
-        console.log(CLIENT.Path("/env"))
-        console.log(header)
     return !isKnownEnv(CLIENT.Env(), header) ? <Navigate to={CLIENT.Path("/env")} replace /> : children;
 }
 
 export const LoginRequired = ({ children }) => {
     CLIENT.NoteLastUrl();
     const [ info ] = useContext(GlobalContext);
-        console.log('login-req...')
-        console.log(IsLoggedIn())
-        console.log(CLIENT.Path("/login"))
     //return !info.error && !info.env_unknown && IsLoggedIn() ? children : <Navigate to={URL.Url("/login", true)} replace />;
     return !IsLoggedIn() ? <Navigate to={CLIENT.Path("/login")} replace /> : children;
 }
@@ -115,11 +103,6 @@ export const LoginRequired = ({ children }) => {
 export const LoginAndValidEnvRequired = ({ children }) => {
     CLIENT.NoteLastUrl();
     const [ header ] = useContext(GlobalContext);
-        console.log('login-and-valid-env-req...')
-        console.log(IsLoggedIn())
-        console.log(CLIENT.Env())
-        console.log(header.env_unknown)
-        console.log(CLIENT.Path("/login"))
     if (CLIENT.Env() === "" || header.env_unknown) {
         return <Navigate to={CLIENT.Path("/env")} replace />
     }
