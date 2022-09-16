@@ -9,7 +9,6 @@ import { BarSpinner } from "../Spinners";
 import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
 import CLIPBOARD from '../utils/CLIPBOARD';
 import Moment from 'moment';
-import { isObject, UUID } from '../utils/Utils';
 import SERVER from '../utils/SERVER';
 let YAML = require('json-to-pretty-yaml');
 
