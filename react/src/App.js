@@ -45,19 +45,62 @@ const App = () => {
             <Header />
             <div style={{margin:"20px"}}>
                 <Routes>
-                    <Route path="/api/react" element={<EnvPage />} />
-                    <Route path="/api/react/:environ/env" element={<EnvPage />} />
-                    <Route path="/api/react/:environ/login" element={<LoginPage />} />
-                    <Route path="/api/react/:environ/demo" element={<DemoPage />}/>
-                    <Route path="/api/react/:environ/checks" element={<ChecksPage />}/>
-                    <Route path="/api/react/:environ/home" element={<HomePage />}/>
-                    <Route path="/api/react/:environ/info" element={<InfoPage />}/>
-                    <Route path="/api/react/:environ/users" element={<UsersPage />} />
-                    <Route path="/api/react/:environ/users/:email" element={<UserPage />}/>
-                    <Route path="/api/react/:environ/gac/:environCompare" element={<Page.AuthorizationRequired><GacComparePage /></Page.AuthorizationRequired>}/>
-                    <Route path="/api/react/:environ/test" element={<TestPage />}/>
-                    <Route path="/redirect" element={<RedirectPage />}/>
-                    <Route path="*" element={<NotFoundPage />}/>
+                    <Route path="/api/react" element={
+                        <EnvPage />
+                    } />
+                    <Route path="/api/react/:environ/env" element={
+                        <EnvPage />
+                    } />
+                    <Route path="/api/react/:environ/login" element={
+                        <Page.KnownEnvRequired>
+                            <LoginPage />
+                        </Page.KnownEnvRequired>
+                    } />
+                    <Route path="/api/react/:environ/demo" element={
+                            <DemoPage />
+                    }/>
+                    <Route path="/api/react/:environ/checks" element={
+                        <Page.AuthorizationRequired>
+                            <ChecksPage />
+                        </Page.AuthorizationRequired>
+                    }/>
+                    <Route path="/api/react/:environ/home" element={
+                        <Page.AuthorizationRequired>
+                            <HomePage />
+                        </Page.AuthorizationRequired>
+                    }/>
+                    <Route path="/api/react/:environ/info" element={
+                        <Page.AuthorizationRequired>
+                            <InfoPage />
+                        </Page.AuthorizationRequired>
+                    }/>
+                    <Route path="/api/react/:environ/users" element={
+                        <Page.AuthorizationRequired>
+                            <UsersPage />
+                        </Page.AuthorizationRequired>
+                    } />
+                    <Route path="/api/react/:environ/users/:email" element={
+                        <Page.AuthorizationRequired>
+                            <UserPage />
+                        </Page.AuthorizationRequired>
+                    }/>
+                    <Route path="/api/react/:environ/gac/:environCompare" element={
+                        <Page.AuthorizationRequired>
+                            <GacComparePage />
+                        </Page.AuthorizationRequired>
+                    }>
+                    </Route>
+                    <Route path="/api/react/:environ/test" element={
+                        <TestPage />
+                    }/>
+                    <Route path="/redirect" element={
+                        <RedirectPage />
+                    }/>
+                    <Route path="*" element={
+                        <Page.AuthorizationRequired>
+                            <NotFoundPage />
+                        </Page.AuthorizationRequired>
+                    }/>
                 </Routes>
             </div>
             <Footer />

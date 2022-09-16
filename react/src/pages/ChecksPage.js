@@ -9,7 +9,6 @@ import { BarSpinner } from "../Spinners";
 import CLIPBOARD from '../utils/CLIPBOARD';
 import Moment from 'moment';
 import SERVER from '../utils/SERVER';
-import Page from '../Page';
 let YAML = require('json-to-pretty-yaml');
 
 const ChecksPage = (props) => {
@@ -646,7 +645,7 @@ const ChecksPage = (props) => {
         return check?.showingResults;
     }
 
-    return <Page.AuthorizationRequired>
+    return <>
         <div>
             <table><tbody>
                 <tr>
@@ -663,7 +662,7 @@ const ChecksPage = (props) => {
                 </tr>
             </tbody></table>
         </div>
-    </Page.AuthorizationRequired>
+    </>
 };
 
 export default ChecksPage;

@@ -1,7 +1,6 @@
 import { useContext, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
-import Page from "../Page";
 import COOKIE from "../utils/COOKIE";
 import CLIENT from "../utils/CLIENT";
 import UUID from '../utils/UUID';
@@ -18,7 +17,7 @@ const HomePage = (props) => {
               ? (SERVER.Origin() + "/api/view/" + CLIENT.Env(header))
               : ("/api/view/" + CLIENT.Env(header));
 
-    return <Page.AuthorizationRequired>
+    return <>
         <div className="container">
             <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt",color:"#6F4E37"}}>
                 <span style={{fontSize:"xx-large"}}>&#x26A0;</span>&nbsp;
@@ -36,7 +35,7 @@ const HomePage = (props) => {
                 </span>
             </div>
         </div>
-    </Page.AuthorizationRequired>
+    </>
 };
 
 export default HomePage;

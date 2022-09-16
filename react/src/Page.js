@@ -11,6 +11,13 @@ import CLIENT from './utils/CLIENT';
 export const KnownEnvRequired = ({ children }) => {
     CLIENT.NoteLastUrl();
     const [ header ] = useContext(GlobalContext);
+    //
+    // TODO: More fully understand this next line added 2022-09-16.
+    // If not here then going to the /login page redirects to the /env page because /header API is still in progress.
+    // But thing that's a little confusing is we don't seem to need this kind of thing
+    // in AuthorizationRequired below.
+    //
+    if (header.loading) return children;
     return !AUTH.IsKnownEnv(CLIENT.Env(), header) ? <Navigate to={CLIENT.Path("/env")} replace /> : children;
 }
 
@@ -23,6 +30,10 @@ export const KnownEnvRequired = ({ children }) => {
 export const AuthorizationRequired = ({ children }) => {
     CLIENT.NoteLastUrl();
     const [ header ] = useContext(GlobalContext);
+    //
+    // TODO: Should we add this here too like above?
+    //       if (header.loading) return children;
+    //
     if (CLIENT.Env() === "" || header.env_unknown) {
         return <Navigate to={CLIENT.Path("/env")} replace />
     }

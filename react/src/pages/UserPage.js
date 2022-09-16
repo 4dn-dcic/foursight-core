@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchData } from '../utils/FetchUtils';
 import { RingSpinner } from "../Spinners";
-import Page from "../Page";
 import SERVER from "../utils/SERVER";
 let YAML = require('json-to-pretty-yaml');
 
@@ -17,13 +16,13 @@ const UserPage = (props) => {
 
     if (error) return <>Cannot load user ({email}) from Foursight: {error}</>;
     if (loading) {
-        return <Page.AuthorizationRequired>
+        return <>
             <div style={{marginTop:"30px"}}>
                 <RingSpinner loading={loading} color={'blue'} size={90} />
             </div>
-        </Page.AuthorizationRequired>
+        </>
     }
-    return <Page.AuthorizationRequired>
+    return <>
         <div className="container">
             {users.length > 0 && users.map(user => (
                 <div key={user.record.uuid}>
@@ -34,7 +33,7 @@ const UserPage = (props) => {
                 </div>
             ))}
         </div>
-    </Page.AuthorizationRequired>
+    </>
 };
 
 export default UserPage;

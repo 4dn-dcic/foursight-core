@@ -5,7 +5,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
 import { fetchData } from '../utils/FetchUtils';
 import { RingSpinner } from "../Spinners";
-import Page from "../Page";
 import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
 import SERVER from '../utils/SERVER';
@@ -171,7 +170,7 @@ const GacComparePage = (props) => {
     let unique_keys = getUniqueKeys(data?.gac, data?.gac_compare);
     let unique_annotated_envs = info.envs?.unique_annotated;
 
-    return <Page.AuthorizationRequired>
+    return <>
             <b>&nbsp;GAC Comparison</b>:&nbsp;&nbsp;
             <small>
                 { !showingRaw ? (<React.Fragment>
@@ -259,7 +258,7 @@ const GacComparePage = (props) => {
             <pre id="raw" className="info" style={{display:"none"}}>
                 {YAML.stringify(data)}
             </pre>
-    </Page.AuthorizationRequired>
+    </>
 };
 
 export default GacComparePage;
