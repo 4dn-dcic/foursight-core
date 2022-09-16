@@ -5,10 +5,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
 import { fetchData } from '../utils/FetchUtils';
 import { RingSpinner } from "../Spinners";
-import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
-import UUID from '../utils/UUID';
-import SERVER from '../utils/SERVER';
+import Page from "../Page";
+import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
+import SERVER from '../utils/SERVER';
+import UUID from '../utils/UUID';
 let YAML = require('json-to-pretty-yaml');
 
 const GacComparePage = (props) => {
@@ -23,7 +24,9 @@ const GacComparePage = (props) => {
     let [ error, setError ] = useState(false);
     const [ info ] = useContext(GlobalContext);
     const [, forceUpdate] = useReducer(x => x + 1, 0);
-    useEffect(() => { fetchData(url, setData, setLoading, setError)}, []);
+    useEffect(() => {
+            fetchData(url, setData, setLoading, setError)
+    }, []);
     let navigate = useNavigate();
 
     function getUniqueKeys(gac, gac_compare) {
@@ -168,7 +171,7 @@ const GacComparePage = (props) => {
     let unique_keys = getUniqueKeys(data?.gac, data?.gac_compare);
     let unique_annotated_envs = info.envs?.unique_annotated;
 
-    return <LoginAndValidEnvRequired>
+    return <Page.AuthorizationRequired>
             <b>&nbsp;GAC Comparison</b>:&nbsp;&nbsp;
             <small>
                 { !showingRaw ? (<React.Fragment>
@@ -256,7 +259,7 @@ const GacComparePage = (props) => {
             <pre id="raw" className="info" style={{display:"none"}}>
                 {YAML.stringify(data)}
             </pre>
-    </LoginAndValidEnvRequired>
+    </Page.AuthorizationRequired>
 };
 
 export default GacComparePage;

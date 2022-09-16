@@ -6,7 +6,7 @@ import { useContext, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import GlobalContext from '../GlobalContext';
 import Auth0Lock from 'auth0-lock';
-import { ValidEnvRequired } from '../utils/LoginUtils';
+import Page from '../Page';
 import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
 import COOKIE from '../utils/COOKIE';
@@ -79,7 +79,7 @@ const LoginPage = (props) => {
 
     if (header.loading && !header.error) return <>Loading ...</>
     if (header.error) return <>Cannot load Foursight.</>
-    return <ValidEnvRequired>
+    return <Page.KnownEnvRequired >
         { AUTH.IsLoggedIn(header) ? (<React.Fragment>
             <div className="container">
                 <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
@@ -134,7 +134,7 @@ const LoginPage = (props) => {
             { showAuthBoxAtOutset && (setTimeout(() => { if (showAuthBoxAtOutset && !showingAuthBox) { showAuthBox(); }}, 10), "") }
         </div>
         </React.Fragment>)}
-    </ValidEnvRequired>
+    </Page.KnownEnvRequired>
 };
 
 export default LoginPage;

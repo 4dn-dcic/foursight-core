@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
 import { fetchData } from '../utils/FetchUtils';
 import { RingSpinner } from "../Spinners";
-import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
+import Page from "../Page";
 import SERVER from "../utils/SERVER";
 import CLIENT from "../utils/CLIENT";
 
@@ -17,13 +17,13 @@ const UsersPage = () => {
 
     if (error) return <>Cannot load users from Foursight: {error}</>;
     if (loading) {
-        return <LoginAndValidEnvRequired>
+        return <Page.AuthorizationRequired>
             <div style={{marginTop:"30px"}}>
                 <RingSpinner loading={loading} color={'blue'} size={90} />
             </div>
-        </LoginAndValidEnvRequired>
+        </Page.AuthorizationRequired>
     }
-    return <LoginAndValidEnvRequired>
+    return <Page.AuthorizationRequired>
         <div className="container">
             <div className="info boxstyle">
                 <table style={{width:"100%"}}>
@@ -60,7 +60,7 @@ const UsersPage = () => {
                 </table>
             </div>
         </div>
-    </LoginAndValidEnvRequired>
+    </Page.AuthorizationRequired>
 };
 
 export default UsersPage;

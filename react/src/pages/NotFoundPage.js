@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
-import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
+import Page from "../Page";
 import SERVER from '../utils/SERVER';
 import CLIENT from '../utils/CLIENT';
 
@@ -9,7 +9,7 @@ const NotFoundPage = (props) => {
 
     const [ info ] = useContext(GlobalContext);
 
-    return <LoginAndValidEnvRequired>
+    return <Page.AuthorizationRequired>
         <div className="container" id="login_container">
             <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt"}}>
                 <b>Page not found</b>.
@@ -19,7 +19,7 @@ const NotFoundPage = (props) => {
                 </small>
             </div>
         </div>
-    </LoginAndValidEnvRequired>
+    </Page.AuthorizationRequired>
 };
 
 export default NotFoundPage;

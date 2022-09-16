@@ -8,7 +8,7 @@ import CLIPBOARD from '../utils/CLIPBOARD';
 import SERVER from '../utils/SERVER';
 import TIME from '../utils/TIME';
 import uuid from 'react-uuid';
-import { LoginAndValidEnvRequired } from '../utils/LoginUtils';
+import Page from '../Page';
 let YAML = require('json-to-pretty-yaml');
 
 const InfoPage = () => {
@@ -113,7 +113,7 @@ const InfoPage = () => {
 
     if (header.error) return <>Cannot load Foursight.</>;
     if (header.loading) return <>Loading ...</>;
-    return <LoginAndValidEnvRequired>
+    return <Page.AuthorizationRequired>
         <InfoBox title="Versions">
             <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={isFoursightFourfront ? "4dn-dcic" : "dbmi-bgm"} size="2" />
             <InfoRow name={"foursight-core"} value={header.versions?.foursight_core} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
@@ -202,7 +202,7 @@ const InfoPage = () => {
                 })}
             </span>):(<span/>)}
         </InfoBox>
-    </LoginAndValidEnvRequired>
+    </Page.AuthorizationRequired>
 };
 
 export default InfoPage;

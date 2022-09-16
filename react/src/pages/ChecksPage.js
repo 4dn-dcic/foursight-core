@@ -6,10 +6,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
 import { fetchData } from '../utils/FetchUtils';
 import { BarSpinner } from "../Spinners";
-import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
 import CLIPBOARD from '../utils/CLIPBOARD';
 import Moment from 'moment';
 import SERVER from '../utils/SERVER';
+import Page from '../Page';
 let YAML = require('json-to-pretty-yaml');
 
 const ChecksPage = (props) => {
@@ -646,7 +646,7 @@ const ChecksPage = (props) => {
         return check?.showingResults;
     }
 
-    return <LoginAndValidEnvRequired>
+    return <Page.AuthorizationRequired>
         <div>
             <table><tbody>
                 <tr>
@@ -663,7 +663,7 @@ const ChecksPage = (props) => {
                 </tr>
             </tbody></table>
         </div>
-    </LoginAndValidEnvRequired>
+    </Page.AuthorizationRequired>
 };
 
 export default ChecksPage;

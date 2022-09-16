@@ -1,10 +1,11 @@
 import './css/App.css';
-import { useState, useEffect, Redirect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, NavLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import GlobalContext from './GlobalContext';
 import { fetchData } from './utils/FetchUtils';
 import SERVER from './utils/SERVER';
 
+import Page from './Page';
 import HomePage from './pages/HomePage';
 import EnvPage from './pages/EnvPage';
 import InfoPage from './pages/InfoPage';
@@ -19,28 +20,28 @@ import TestPage from './pages/TestPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ChecksPage from './pages/ChecksPage';
 import RedirectPage from './pages/RedirectPage';
-import { LoginAndValidEnvRequired } from './utils/LoginUtils';
 
 const App = () => {
 
-    // TODO: Change this name 'info' to 'header'!
-    let [ info, setInfo ] = useState({loading: true});
+    let [ header, setHeader ] = useState({loading: true});
     const url = SERVER.Url("/header");
     useEffect(() => {
         fetchData(
             url,
             data => {
-                info.loading = false;
-                setInfo(data);
+                header.loading = false;
+                setHeader(data);
             },
             loading => {},
             error => {
-                setInfo(info => ({...info, ...{error:true}}));
+                setHeader(header => ({...header, ...{error:true}}));
             })
     }, []);
 
+    // TODO: Move the page guards here or else the fetches with fire within the pages before they redirect if not authenticated.
+
     return <Router>
-        <GlobalContext.Provider value={[info, setInfo]}>
+        <GlobalContext.Provider value={[header, setHeader]}>
             <Header />
             <div style={{margin:"20px"}}>
                 <Routes>
@@ -50,10 +51,10 @@ const App = () => {
                     <Route path="/api/react/:environ/demo" element={<DemoPage />}/>
                     <Route path="/api/react/:environ/checks" element={<ChecksPage />}/>
                     <Route path="/api/react/:environ/home" element={<HomePage />}/>
-                    <Route path="/api/react/:environ/info" element={<LoginAndValidEnvRequired><InfoPage /></LoginAndValidEnvRequired>}/>
-                    <Route path="/api/react/:environ/users" element={<LoginAndValidEnvRequired><UsersPage /></LoginAndValidEnvRequired>} />
-                    <Route path="/api/react/:environ/users/:email" element={<LoginAndValidEnvRequired><UserPage /></LoginAndValidEnvRequired>}/>
-                    <Route path="/api/react/:environ/gac/:environCompare" element={<LoginAndValidEnvRequired><GacComparePage /></LoginAndValidEnvRequired>}/>
+                    <Route path="/api/react/:environ/info" element={<InfoPage />}/>
+                    <Route path="/api/react/:environ/users" element={<UsersPage />} />
+                    <Route path="/api/react/:environ/users/:email" element={<UserPage />}/>
+                    <Route path="/api/react/:environ/gac/:environCompare" element={<Page.AuthorizationRequired><GacComparePage /></Page.AuthorizationRequired>}/>
                     <Route path="/api/react/:environ/test" element={<TestPage />}/>
                     <Route path="/redirect" element={<RedirectPage />}/>
                     <Route path="*" element={<NotFoundPage />}/>
