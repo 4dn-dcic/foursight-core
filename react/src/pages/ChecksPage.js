@@ -8,10 +8,9 @@ import { fetchData } from '../utils/FetchUtils';
 import { BarSpinner } from "../Spinners";
 import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
 import CLIPBOARD from '../utils/CLIPBOARD';
-import * as API from "../utils/API";
-import * as URL from "../utils/URL";
 import Moment from 'moment';
 import { isObject, UUID } from '../utils/Utils';
+import SERVER from '../utils/SERVER';
 let YAML = require('json-to-pretty-yaml');
 
 const ChecksPage = (props) => {
@@ -26,18 +25,19 @@ const ChecksPage = (props) => {
     let [ selectedHistories, setSelectedHistories ] = useState([])
 
     useEffect(() => {
-        const groupedChecksUrl = API.Url(`/checks`, environ);
+        const groupedChecksUrl = SERVER.Url(`/checks`, environ);
         fetchData(groupedChecksUrl, groupedChecks => {
             setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
             if (groupedChecks.length > 0) {
                 //
                 // Choose some group as default to show.
+                //
                 let group = groupedChecks.find(item => item.group.toLowerCase().includes("elasticsearch"));
                 group = group ? group : groupedChecks[0];
                 showGroup(group);
             }
         }, setLoading, setError);
-        const lambdasUrl = API.Url(`/lambdas`, environ);
+        const lambdasUrl = SERVER.Url(`/lambdas`, environ);
         fetchData(lambdasUrl, lambdas => {
             setLambdas(lambdas.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0)));
         });
@@ -204,7 +204,7 @@ const ChecksPage = (props) => {
     function runCheck(check) {
         hideCheckRunningBox(check);
         noteChangedCheckBox();
-        const runCheckUrl = API.Url(`/checks/${check.name}/run`, environ);
+        const runCheckUrl = SERVER.Url(`/checks/${check.name}/run`, environ);
         check.queueingCheckRun = true;
         check.fetchingResult = true;
         fetchData(runCheckUrl, response => { check.queueingCheckRun = false; check.fetchingResult = false; check.queuedCheckRun = response.uuid });
@@ -551,7 +551,7 @@ const ChecksPage = (props) => {
             selectedHistories.unshift(check);
             noteChangedHistories();
             if (!check.history) {
-                const resultsHistoryUrl = API.Url(`/checks/${check.name}/history`, environ);
+                const resultsHistoryUrl = SERVER.Url(`/checks/${check.name}/history`, environ);
                 fetchData(resultsHistoryUrl, history => { check.history = history; noteChangedHistories(); });
             }
         }
@@ -632,7 +632,7 @@ const ChecksPage = (props) => {
         noteChangedSelectedGroups();
         if (!check.results) {
             // Fetch the latest results for this check.
-            const checkResultsUrl = API.Url(`/checks/${check.name}`, environ);
+            const checkResultsUrl = SERVER.Url(`/checks/${check.name}`, environ);
             check.fetchingResult = true;
             fetchData(checkResultsUrl, checkResults => { check.results = checkResults; check.fetchingResult = false; noteChangedResults(); }, setLoading, setError)
         }

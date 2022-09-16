@@ -4,8 +4,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "../GlobalContext.js";
 import { IsLoggedIn, IsAllowedEnv, IsSameEnv } from "../utils/LoginUtils";
 import { fetchData } from '../utils/FetchUtils';
-import * as API from "../utils/API";
-import * as URL from '../utils/URL';
 import { UUID } from '../utils/Utils';
 import SERVER from '../utils/SERVER';
 import CLIENT from '../utils/CLIENT';
@@ -24,7 +22,7 @@ const EnvPage = (props) => {
     let [ error, setError ] = useState(false);
 
     function refreshHeaderData(env) {
-        const url = API.Url("/header", env);
+        const url = SERVER.Url("/header", env);
         fetchData(url, setInfo, setLoading, setError);
     }
 

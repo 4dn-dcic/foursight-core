@@ -6,17 +6,16 @@ import GlobalContext from "../GlobalContext";
 import { fetchData } from '../utils/FetchUtils';
 import { RingSpinner } from "../Spinners";
 import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
-import * as API from "../utils/API";
-import * as URL from "../utils/URL";
 import { UUID } from '../utils/Utils';
 import SERVER from '../utils/SERVER';
+import CLIENT from '../utils/CLIENT';
 let YAML = require('json-to-pretty-yaml');
 
 const GacComparePage = (props) => {
 
-    let environ = URL.Env();
+    let environ = CLIENT.Env();
     let { environCompare } = useParams();
-    const url = API.Url(`/gac/${environCompare}`, environ);
+    const url = SERVER.Url(`/gac/${environCompare}`, environ);
     const [ data, setData ] = useState([]);
     const [ showingRaw, setShowingRaw ] = useState(false);
     const [ showingType, setShowingType ] = useState("all");
@@ -149,7 +148,7 @@ const GacComparePage = (props) => {
 
     let OnChangeEnv = (arg) => {
         environ = arg.target.value;
-        let url = API.Url("/gac/" + environCompare, environ);
+        let url = SERVER.Url("/gac/" + environCompare, environ);
         const path = "/api/react/" + environ + "/gac/" + environCompare;
         navigate(path);
         fetchData(url, setData, setLoading, setError)
@@ -157,7 +156,7 @@ const GacComparePage = (props) => {
 
     let OnChangeEnvCompare = (arg) => {
         environCompare = arg.target.value;
-        let url = API.Url("/gac/" + environCompare, environ);
+        let url = SERVER.Url("/gac/" + environCompare, environ);
         const path = "/api/react/" + environ + "/gac/" + environCompare;
         navigate(path);
         fetchData(url, setData, setLoading, setError)
@@ -193,6 +192,7 @@ const GacComparePage = (props) => {
                         <td></td>
                         <td width="30%" style={{verticalAlign:"bottom"}}>Key</td>
                         <td>
+                            {/* TODO: Warning: Use the `defaultValue` or `value` props on <select> instead of setting `selected` on <option>. */}
                             <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnv(arg)}>
                                 { unique_annotated_envs?.map((env) =>
                                     env.full == environ ?
