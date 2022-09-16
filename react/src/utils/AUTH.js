@@ -1,9 +1,19 @@
+// -------------------------------------------------------------------------------------------------
 // Authentication and authorization utilities.
-// All of these are passed the global header state as an argument.
+// Note that many of these are need the global header data as an argument.
+// -------------------------------------------------------------------------------------------------
 
 import COOKIE from './COOKIE';
 import CLIENT from './CLIENT';
+import ENV from './ENV';
 import SERVER from './SERVER';
+import STR from './STR';
+import TYPE from './TYPE';
+import UTIL from './UTIL';
+
+// -------------------------------------------------------------------------------------------------
+// Authentication related functions.
+// -------------------------------------------------------------------------------------------------
 
 function IsLoggedIn(header) {
     //
@@ -18,7 +28,7 @@ function IsLoggedIn(header) {
     return header?.auth?.authenticated;
 }
 
-function IsFauxLoggedIn(header) {
+function IsFauxLoggedIn() {
     return CLIENT.IsLocal() && COOKIE.HasFauxLogin();
 }
 
@@ -33,20 +43,72 @@ function LoggedInUserVerified(header) {
     return header?.auth?.authenticated ? header.auth?.user_verified : false;
 }
 
+function LoggedInUserAuthRecord(header) {
+    return header?.auth;
+}
+
 function LoggedInUserJwt(header) {
     return header?.auth?.jwt;
 }
 
-function Logout(header) {
+// Redirects to the server /logout page in order to delete the authtoken cookie.
+// The server should redirect back to the value of CLIENT.LastPath (from the lasturl cookie)
+//
+function Logout() {
     COOKIE.DeleteFauxLogin();
     window.location.replace(SERVER.Url("/logout", CLIENT.Env()));
 }
 
+// -------------------------------------------------------------------------------------------------
+// Authorization (allowed environments) functions.
+// -------------------------------------------------------------------------------------------------
+
+function GetAllowedEnvs(header) {
+    return header?.auth?.allowed_envs || [];
+}
+
+function GetKnownEnvs(header) {
+    return header?.envs?.unique_annotated || [];
+}
+
+function IsAllowedEnv(env, header) {
+    if ((STR.HasValue(env) || TYPE.IsObject(env)) && TYPE.IsObject(header)) {
+        const allowedEnvs = GetAllowedEnvs(header);
+        for (const allowedEnv of allowedEnvs) {
+            if (ENV.Equals(allowedEnv, env)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function IsKnownEnv(env, header) {
+    if ((STR.HasValue(env) || TYPE.IsObject(env)) && TYPE.IsObject(header)) {
+        const knownEnvs = GetKnownEnvs(header);
+        for (const knownEnv of knownEnvs) {
+            if (ENV.Equals(knownEnv, env)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// -------------------------------------------------------------------------------------------------
+// Exported functions.
+// -------------------------------------------------------------------------------------------------
+
 export default {
+    AllowedEnvs: GetAllowedEnvs,
+    IsAllowedEnv: IsAllowedEnv,
     IsFauxLoggedIn: IsFauxLoggedIn,
+    IsKnownEnv: IsKnownEnv,
     IsLoggedIn: IsLoggedIn,
+    KnownEnvs: GetKnownEnvs,
     LoggedInUser: LoggedInUser,
     LoggedInUserVerified: LoggedInUserVerified,
     LoggedInUserJwt: LoggedInUserJwt,
+    LoggedInUserAuthRecord: LoggedInUserAuthRecord,
     Logout: Logout
 }

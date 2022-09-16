@@ -183,7 +183,7 @@ const Header = (props) => {
                             { AUTH.LoggedInUser(header) ? (<>
                                 <Link to={CLIENT.Path("/login")} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{AUTH.LoggedInUser(header)}</b></Link>
                             </>):(<>
-                                { (AUTH.IsFauxLoggedIn(header)) ? (<>
+                                { (AUTH.IsFauxLoggedIn()) ? (<>
                                     <span className={"tool-tip"} data-text="Running locally and faux logged in (i.e. not via Auth0).">
                                         <b style={{color:"darkred"}}>FAUX USER</b>
                                     </span>

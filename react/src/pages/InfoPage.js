@@ -168,10 +168,10 @@ const InfoPage = () => {
             <InfoRow name={"Expires At"} value={TIME.FormatDateTime(AUTH.LoggedInUserJwt(header)?.exp) + TIME.FormatDuration(new Date(), AUTH.LoggedInUserJwt(header)?.exp, true, "now", "|", "from now")} monospace={true} copy={true} size="2" />
             <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
                 { showingJwt ? (<>
-                    <small onClick={() => setShowJwt(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide JWT</u></b></small>
-                    <pre style={{filter:"brightness(0.9)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.stringify(AUTH.LoggedInUserJwt(header))}</pre>
+                    <small onClick={() => setShowJwt(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide Auth Record</u></b></small>
+                    <pre style={{filter:"brightness(0.9)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.stringify(AUTH.LoggedInUserAuthRecord(header))}</pre>
                 </>):(<>
-                    <small onClick={() => setShowJwt(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show JWT</u></b></small>
+                    <small onClick={() => setShowJwt(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show Auth Record</u></b></small>
                 </>)}
         </InfoBox>
         <InfoBox title="Miscellany">

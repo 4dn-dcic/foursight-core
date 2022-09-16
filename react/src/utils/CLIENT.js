@@ -166,13 +166,9 @@ function LastUrl() {
 }
 
 function LastPath() {
-        console.log('xxxxxxxxxxxx')
     const lastUrl = LastUrl();
-        console.log(lastUrl)
     const baseUrl = GetBaseUrl();
-        console.log(baseUrl)
     if (lastUrl.startsWith(baseUrl)) {
-        console.log(lastUrl.substring(baseUrl.length));
         return GetPath(lastUrl.substring(baseUrl.length), false);
     }
     return lastUrl;
