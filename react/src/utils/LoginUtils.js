@@ -85,42 +85,27 @@ export const IsAllowedEnv = (envAnnotated) => {
     return false;
 }
 
-// Return true if the two given environments are the same.
-// Handles either of them being strings or annotated environment names as returned
-// by the /header endpoint, and, for now, both varieties for the annotated structure.
-// TODO: Unify names annotated env names in header.env and header.envs.unique_annotated.
+// Returns true iff the given two environments refer to same environment.
+// The arguments may be either strings and/or JSON objects from the global
+// header data element containing the annotated environment names, i.e. which
+// contains these elements: name, full_name, short_name, public_name, foursight_name.
 //
 export const IsSameEnv = (envA, envB) => {
-    function regular_env_name(envAnnotated) {
-        return envAnnotated?.name;
-    }
-    function full_env_name(envAnnotated) {
-        return envAnnotated?.full_name ? envAnnotated.full_name : envAnnotated?.full_name;
-    }
-    function short_env_name(envAnnotated) {
-        return envAnnotated?.short_name ? envAnnotated.short_name : envAnnotated?.short_name;
-    }
-    function public_env_name(envAnnotated) {
-        return envAnnotated?.public_name ? envAnnotated.public_name : envAnnotated?.public_name;
-    }
-    function foursight_env_name(envAnnotated) {
-        return envAnnotated?.foursight_name ? envAnnotated.foursight_name : envAnnotated?.foursight_name;
-    }
     if (UTIL.IsObject(envA)) {
         if (UTIL.IsObject(envB)) {
-            return (regular_env_name  (envA)?.toLowerCase() == regular_env_name  (envB)?.toLowerCase()) &&
-                   (full_env_name     (envA)?.toLowerCase() == full_env_name     (envB)?.toLowerCase()) &&
-                   (short_env_name    (envA)?.toLowerCase() == short_env_name    (envB)?.toLowerCase()) &&
-                   (public_env_name   (envA)?.toLowerCase() == public_env_name   (envB)?.toLowerCase()) &&
-                   (foursight_env_name(envA)?.toLowerCase() == foursight_env_name(envB)?.toLowerCase());
+            return (envA?.name?.toLowerCase()           == envB?.name?.toLowerCase()) &&
+                   (envA?.full_name?.toLowerCase()      == envB?.full_name?.toLowerCase()) &&
+                   (envA?.short_name?.toLowerCase()     == envB?.short_name?.toLowerCase()) &&
+                   (envA?.public_name?.toLowerCase()    == envB?.public_name?.toLowerCase()) &&
+                   (envA?.foursight_name?.toLowerCase() == envB?.foursight_name?.toLowerCase());
         }
         else if (STR.HasValue(envB)) {
             envB = envB.toLowerCase();
-            return (regular_env_name  (envA)?.toLowerCase() == envB) ||
-                   (full_env_name     (envA)?.toLowerCase() == envB) ||
-                   (short_env_name    (envA)?.toLowerCase() == envB) ||
-                   (public_env_name   (envA)?.toLowerCase() == envB) ||
-                   (foursight_env_name(envA)?.toLowerCase() == envB);
+            return (envA?.name?.toLowerCase()           == envB) ||
+                   (envA?.full_name?.toLowerCase()      == envB) ||
+                   (envA?.short_name?.toLowerCase()     == envB) ||
+                   (envA?.public_name?.toLowerCase()    == envB) ||
+                   (envA?.foursight_name?.toLowerCase() == envB);
         }
         else {
             return false;
@@ -129,11 +114,11 @@ export const IsSameEnv = (envA, envB) => {
     else if (STR.HasValue(envA)) {
         if (UTIL.IsObject(envB)) {
             envA = envA.toLowerCase();
-            return (regular_env_name  (envB)?.toLowerCase() == envA) ||
-                   (full_env_name     (envB)?.toLowerCase() == envA) ||
-                   (short_env_name    (envB)?.toLowerCase() == envA) ||
-                   (public_env_name   (envB)?.toLowerCase() == envA) ||
-                   (foursight_env_name(envB)?.toLowerCase() == envA);
+            return (envB?.name?.toLowerCase()           == envA) ||
+                   (envB?.full_name?.toLowerCase()      == envA) ||
+                   (envB?.short_name?.toLowerCase()     == envA) ||
+                   (envB?.public_name?.toLowerCase()    == envA) ||
+                   (envB?.foursight_name?.toLowerCase() == envA);
         }
         else if (STR.HasValue(envB)) {
             return envA.toLowerCase() == envB.toLowerCase();
