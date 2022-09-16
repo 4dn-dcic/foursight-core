@@ -307,7 +307,7 @@ class ReactApi:
             content_type = "image/x-icon"
             open_mode = "rb"
         elif file.endswith(".woff"):
-            content_type = "font/woff2"
+            content_type = "application/octet-stream"
             open_mode = "rb"
         else:
             file = os.path.join(BASE_DIR, REACT_BASE_DIR, REACT_DEFAULT_FILE)
