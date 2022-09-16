@@ -28,7 +28,7 @@ class TestCheckResult():
         _, connection = app_utils_obj_conn
         check = run_result.CheckResult(connection, self.check_name)
         if not use_es:
-            check.es = False # trigger s3 fallback
+            check.es = False  # trigger s3 fallback
         # default status
         assert (check.status == 'IGNORE')
         check.description = 'This check is just for testing purposes.'
