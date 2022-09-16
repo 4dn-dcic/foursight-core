@@ -88,7 +88,7 @@ const EnvPage = (props) => {
     if (info.error) return <>Cannot load Foursight</>;
     if (info.loading) return <>Loading ...</>;
     return <div>
-            { false && !IsLoggedIn() ? (
+            { !IsLoggedIn() && IsKnownEnv() ? (
                 <div className="container">
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>
                         <b>Not Logged In</b> <br />
