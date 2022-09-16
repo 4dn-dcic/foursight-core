@@ -48,7 +48,6 @@ const App = () => {
             <div style={{margin:"20px"}}>
                 <Routes>
                     <Route path="/api/react" element={<EnvPage />} />
-                    <Route path="/api/react/env" element={<EnvPage />} />
                     <Route path="/api/react/:environ/env" element={<EnvPage />} />
                     <Route path="/api/react/:environ/login" element={<LoginPage />} />
                     <Route path="/api/react/:environ/demo" element={<DemoPage />}/>
