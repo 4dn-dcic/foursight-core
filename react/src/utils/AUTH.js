@@ -24,7 +24,11 @@ function IsLoggedIn(header) {
     if (CLIENT.IsLocal() && IsFauxLoggedIn()) {
         return true;
     }
-    return header?.auth?.authenticated;
+    //
+    // Actually need this because we do not know that we are logged
+    // in on refresh unless/until the /header is fetched.
+    //
+    return header?.auth?.authenticated || COOKIE.HasAuthToken();
 }
 
 function IsFauxLoggedIn() {
