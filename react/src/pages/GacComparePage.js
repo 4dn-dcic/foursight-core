@@ -6,7 +6,7 @@ import GlobalContext from "../GlobalContext";
 import { fetchData } from '../utils/FetchUtils';
 import { RingSpinner } from "../Spinners";
 import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
-import { UUID } from '../utils/Utils';
+import UUID from '../utils/UUID';
 import SERVER from '../utils/SERVER';
 import CLIENT from '../utils/CLIENT';
 let YAML = require('json-to-pretty-yaml');

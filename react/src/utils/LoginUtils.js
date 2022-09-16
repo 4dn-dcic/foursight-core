@@ -6,6 +6,7 @@ import * as API from './API';
 import * as Utils from './Utils';
 import CLIENT from './CLIENT';
 import COOKIE from './COOKIE';
+import SERVER from './SERVER';
 import UTIL from './UTIL';
 
 export const IsLoggedIn = () => {
@@ -65,10 +66,12 @@ export const VerifyLogin = () => {
 
 export const Auth0CallbackUrl = () => {
     if (CLIENT.IsLocal()) {
-        return API.UrlAbs("/callback/");
+        //return API.UrlAbs("/callback/");
+        return SERVER.UrlAbs("/callback/");
     }
     else {
-        return API.UrlAbs("/api/callback/");
+        //return API.UrlAbs("/api/callback/");
+        return SERVER.UrlAbs("/api/callback/");
     }
 }
 

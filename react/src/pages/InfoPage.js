@@ -16,7 +16,7 @@ const InfoPage = () => {
 
     const [ header ] = useContext(GlobalContext);
 
-    const url = API.Url("/info", true);
+    const url = SERVER.Url("/info");
     const [ info, setInfo ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);

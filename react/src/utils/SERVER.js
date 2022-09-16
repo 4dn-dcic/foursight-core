@@ -44,10 +44,22 @@ function GetUrl(path, env = true) {
     return GetBaseUrl() + path;
 }
 
+function GetUrlAbs(path) {
+    if (!UTIL.IsNonEmptyString(path)) {
+        path = "/";
+    }
+    if (!path.startsWith("/")) {
+        path = "/" + path;
+    }
+    path = path.replace(/\/+/g, "/");
+    return GetOrigin() + path;
+}
+
 export default {
     BasePath: GetBasePath,
     BaseUrl: GetBaseUrl,
     IsLocal: IsRunningLocally,
     Origin: GetOrigin,
-    Url: GetUrl
+    Url: GetUrl,
+    UrlAbs: GetUrlAbs
 }
