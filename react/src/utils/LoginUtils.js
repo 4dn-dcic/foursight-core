@@ -2,7 +2,6 @@ import { useContext } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import GlobalContext from '../GlobalContext';
 import * as URL from './URL';
-import * as Utils from './Utils';
 import CLIENT from './CLIENT';
 import COOKIE from './COOKIE';
 import SERVER from './SERVER';
@@ -162,8 +161,8 @@ export const IsSameEnv = (envA, envB) => {
     function foursight_env_name(envAnnotated) {
         return envAnnotated?.foursight_name ? envAnnotated.foursight_name : envAnnotated?.foursight;
     }
-    if (Utils.isObject(envA)) {
-        if (Utils.isObject(envB)) {
+    if (UTIL.IsObject(envA)) {
+        if (UTIL.IsObject(envB)) {
             return (regular_env_name  (envA)?.toLowerCase() == regular_env_name  (envB)?.toLowerCase()) &&
                    (full_env_name     (envA)?.toLowerCase() == full_env_name     (envB)?.toLowerCase()) &&
                    (short_env_name    (envA)?.toLowerCase() == short_env_name    (envB)?.toLowerCase()) &&

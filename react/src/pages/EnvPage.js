@@ -4,9 +4,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "../GlobalContext.js";
 import { IsLoggedIn, IsAllowedEnv, IsSameEnv } from "../utils/LoginUtils";
 import { fetchData } from '../utils/FetchUtils';
-import { UUID } from '../utils/Utils';
 import SERVER from '../utils/SERVER';
 import CLIENT from '../utils/CLIENT';
+import UUID from '../utils/UUID';
 
 const EnvPage = (props) => {
 
