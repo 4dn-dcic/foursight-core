@@ -188,6 +188,10 @@ function NormalizePath(path) {
     return path;
 }
 
+// -------------------------------------------------------------------------------------------------
+// Exported functions.
+// -------------------------------------------------------------------------------------------------
+
 export default {
     BasePath:           GetBasePath,
     BaseUrl:            GetBaseUrl,

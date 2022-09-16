@@ -3,7 +3,6 @@ import React from 'react';
 import { useContext, useState } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import GlobalContext from "./GlobalContext";
-import * as URL from "./utils/URL";
 import { BarSpinner } from "./Spinners";
 import { fetchData } from "./utils/FetchUtils";
 import { GetLoginInfo, Logout } from "./utils/LoginUtils";

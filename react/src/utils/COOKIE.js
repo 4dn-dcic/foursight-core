@@ -89,6 +89,10 @@ function SetRedirectCookie(url, expires = null) {
     SetCookie(_redirectCookieName, url, expires);
 }
 
+// -------------------------------------------------------------------------------------------------
+// Exported functions.
+// -------------------------------------------------------------------------------------------------
+
 export default {
     Delete:          DeleteCookie,
     DeleteFauxLogin: DeleteFauxLoginCookie,

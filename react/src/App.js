@@ -3,8 +3,6 @@ import { useState, useEffect, Redirect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, NavLink } from 'react-router-dom';
 import GlobalContext from './GlobalContext';
 import { fetchData } from './utils/FetchUtils';
-import * as URL from './utils/URL';
-import CLIENT from './utils/CLIENT';
 import SERVER from './utils/SERVER';
 
 import HomePage from './pages/HomePage';
@@ -51,7 +49,7 @@ const App = () => {
                     <Route path="/api/react/:environ/login" element={<LoginPage />} />
                     <Route path="/api/react/:environ/demo" element={<DemoPage />}/>
                     <Route path="/api/react/:environ/checks" element={<ChecksPage />}/>
-                    <Route path="/api/react/:environ/home" element={<LoginAndValidEnvRequired><HomePage /></LoginAndValidEnvRequired>}/>
+                    <Route path="/api/react/:environ/home" element={<HomePage />}/>
                     <Route path="/api/react/:environ/info" element={<LoginAndValidEnvRequired><InfoPage /></LoginAndValidEnvRequired>}/>
                     <Route path="/api/react/:environ/users" element={<LoginAndValidEnvRequired><UsersPage /></LoginAndValidEnvRequired>} />
                     <Route path="/api/react/:environ/users/:email" element={<LoginAndValidEnvRequired><UserPage /></LoginAndValidEnvRequired>}/>

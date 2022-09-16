@@ -6,7 +6,6 @@ import { useContext, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import GlobalContext from '../GlobalContext';
 import Auth0Lock from 'auth0-lock';
-import * as URL from '../utils/URL';
 import { ValidEnvRequired } from '../utils/LoginUtils';
 import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
@@ -80,7 +79,6 @@ const LoginPage = (props) => {
 
     if (header.loading && !header.error) return <>Loading ...</>
     if (header.error) return <>Cannot load Foursight.</>
-    const loginInfo = AUTH.IsLoggedIn(header) ? AUTH.LoggedInUserJwt(header) : undefined;;
     return <ValidEnvRequired>
         { AUTH.IsLoggedIn(header) ? (<React.Fragment>
             <div className="container">
@@ -89,7 +87,7 @@ const LoginPage = (props) => {
                     { false && CLIENT.IsLocal() ? (<span>
                         &nbsp;<b>localhost</b>
                     </span>):(<span>
-                        <Link to={CLIENT.Path("/users/" + loginInfo?.email)}><b style={{color:"darkblue"}}>{loginInfo?.email}</b></Link>
+                        <Link to={CLIENT.Path("/users/" + AUTH.LoggedInUser(header))}><b style={{color:"darkblue"}}>{AUTH.LoggedInUser(header)}</b></Link>
                             {/* <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout(navigate)}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small> */}
                         <br />
                         <small>

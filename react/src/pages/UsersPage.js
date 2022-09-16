@@ -4,8 +4,8 @@ import GlobalContext from "../GlobalContext";
 import { fetchData } from '../utils/FetchUtils';
 import { RingSpinner } from "../Spinners";
 import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
-import * as URL from '../utils/URL';
 import SERVER from "../utils/SERVER";
+import CLIENT from "../utils/CLIENT";
 
 const UsersPage = () => {
 
@@ -44,7 +44,7 @@ const UsersPage = () => {
                     {users.map(user => (
                         <tr key={user.uuid} style={{borderBottom:"1px solid gray"}}>
                             <td style={{borderBottom:"1px solid gray",padding:"10px"}}>
-                                <Link to={URL.Url("/users/" + user.email_address, true)}><b>{user.email_address}</b></Link> <br />
+                                <Link to={CLIENT.Path("/users/" + user.email_address)}><b>{user.email_address}</b></Link> <br />
                                 {user["first_name"]} {user["last_name"]} <br />
                                 <small id="{user.uuid}" style={{cursor:"copy"}}>{user.uuid}</small>
                             </td>

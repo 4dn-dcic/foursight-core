@@ -52,6 +52,10 @@ function GetUrlAbs(path) {
     return GetOrigin() + path;
 }
 
+// -------------------------------------------------------------------------------------------------
+// Exported functions.
+// -------------------------------------------------------------------------------------------------
+
 export default {
     BasePath:           GetBasePath,
     BaseUrl:            GetBaseUrl,

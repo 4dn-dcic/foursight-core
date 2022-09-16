@@ -2,7 +2,6 @@ import { useContext, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
 import { LoginAndValidEnvRequired } from "../utils/LoginUtils";
-import * as URL from "../utils/URL";
 import COOKIE from "../utils/COOKIE";
 import CLIENT from "../utils/CLIENT";
 import UUID from '../utils/UUID';

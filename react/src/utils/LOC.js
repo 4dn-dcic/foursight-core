@@ -57,6 +57,10 @@ function IsLocalCrossOrigin() {
     return IsLocal() && ClientOrigin() != ServerOrigin();
 }
 
+// -------------------------------------------------------------------------------------------------
+// Exported functions.
+// -------------------------------------------------------------------------------------------------
+
 export default {
     ClientBasePath:     ClientBasePath,
     ClientOrigin:       ClientOrigin,

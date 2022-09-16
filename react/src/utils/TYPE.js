@@ -17,6 +17,10 @@ function IsDateTime(value) {
     return value instanceof Date;
 }
 
+// -------------------------------------------------------------------------------------------------
+// Exported functions.
+// -------------------------------------------------------------------------------------------------
+
 export default {
     IsBoolean: IsBoolean,
     IsDateTime: IsDateTime,

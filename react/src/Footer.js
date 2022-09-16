@@ -1,7 +1,6 @@
 import './css/App.css';
 import { useContext } from 'react';
 import GlobalContext from "./GlobalContext";
-import * as URL from "./utils/URL";
 
 const Footer = (props) => {
 

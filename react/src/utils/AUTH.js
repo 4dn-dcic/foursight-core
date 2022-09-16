@@ -78,6 +78,14 @@ function AuthenticationClientID(header) {
 // -------------------------------------------------------------------------------------------------
 
 function GetAllowedEnvs(header) {
+    if (IsFauxLoggedIn()) {
+        //
+        // If we are faux logged in then allow all environments since we we (the React API)
+        // are not able to determind the list of allowed environment without a real authenticated
+        // user; if we don't do this then the faux logged in user won't be able to do anything.
+        //
+        return GetKnownEnvs(header);
+    }
     return header?.auth?.allowed_envs || [];
 }
 
@@ -86,10 +94,19 @@ function GetKnownEnvs(header) {
 }
 
 function IsAllowedEnv(env, header) {
+        console.log('is-allowed-env')
+        console.log(env)
+        console.log(header)
+        console.log(GetAllowedEnvs(header))
     if ((STR.HasValue(env) || TYPE.IsObject(env)) && TYPE.IsObject(header)) {
+        console.log('is-allowed-env-A')
         const allowedEnvs = GetAllowedEnvs(header);
         for (const allowedEnv of allowedEnvs) {
+            console.log('is-allowed-env-B')
+            console.log(allowedEnv)
+            console.log(env)
             if (ENV.Equals(allowedEnv, env)) {
+            console.log('is-allowed-env-C')
                 return true;
             }
         }

@@ -95,6 +95,10 @@ function ToDateTime(value) {
     return null;
 }
 
+// -------------------------------------------------------------------------------------------------
+// Exported functions.
+// -------------------------------------------------------------------------------------------------
+
 export default {
     FormatDuration: FormatDuration,
     FormatDateTime: FormatDateTime,
