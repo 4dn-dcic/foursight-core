@@ -7,7 +7,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import GlobalContext from '../GlobalContext';
 import Auth0Lock from 'auth0-lock';
 import * as URL from '../utils/URL';
-import { Auth0CallbackUrl, IsLoggedIn, Logout, ValidEnvRequired } from '../utils/LoginUtils';
+import { Auth0CallbackUrl, Logout, ValidEnvRequired } from '../utils/LoginUtils';
 import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
 import COOKIE from '../utils/COOKIE';
@@ -80,11 +80,9 @@ const LoginPage = (props) => {
 
     if (header.loading && !header.error) return <>Loading ...</>
     if (header.error) return <>Cannot load Foursight.</>
-    const loginInfo = IsLoggedIn() ? AUTH.LoggedInUserJwt(header) : undefined;;
+    const loginInfo = AUTH.IsLoggedIn(header) ? AUTH.LoggedInUserJwt(header) : undefined;;
     return <ValidEnvRequired>
-                old logged in: {IsLoggedIn() ? "yes" : "no"} <br />
-                new logged in: {AUTH.IsLoggedIn(header) ? "yes" : "no"} <br />
-        { IsLoggedIn() ? (<React.Fragment>
+        { AUTH.IsLoggedIn(header) ? (<React.Fragment>
             <div className="container">
                 <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
                     Logged in as:&nbsp;

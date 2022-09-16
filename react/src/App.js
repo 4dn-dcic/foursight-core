@@ -3,7 +3,6 @@ import { useState, useEffect, Redirect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, NavLink } from 'react-router-dom';
 import GlobalContext from './GlobalContext';
 import { fetchData } from './utils/FetchUtils';
-import { IsLoggedIn } from './utils/LoginUtils';
 import * as URL from './utils/URL';
 import CLIENT from './utils/CLIENT';
 import SERVER from './utils/SERVER';

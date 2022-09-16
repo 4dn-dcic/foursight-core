@@ -9,24 +9,6 @@ import SERVER from './SERVER';
 import STR from './STR';
 import UTIL from './UTIL';
 
-export const IsLoggedIn = () => {
-    //
-    // N.B. We do not validate the JWT cookie because (1) could not get anything to work,
-    // not that straight-forward for some reason; and (2) don't *think* it's that important
-    // as we do check for expiration time, and when the user logs in we do it via Auth0 and
-    // the server-side (our Foursight/Chalice/Python code) sets the JWT token; we a just using
-    // it as a general is-logged-in flag. Probably some security issues here I'm not taking
-    // into account but good for now, at least for development. Marking this as TODO.
-    //
-    if (CLIENT.IsLocal() && AUTH.IsFauxLoggedIn()) {
-        return true;
-    }
-    if (!COOKIE.HasAuthToken()) {
-        return false;
-    }
-    return true;
-}
-
 export const Auth0CallbackUrl = () => {
     if (CLIENT.IsLocal()) {
         //return API.UrlAbs("/callback/");

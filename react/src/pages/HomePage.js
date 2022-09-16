@@ -23,11 +23,11 @@ const HomePage = (props) => {
     return <LoginAndValidEnvRequired>
         <div className="container">
             <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt",color:"#6F4E37"}}>
-<img src={"https://i.stack.imgur.com/DPBue.png"} style={{height:"35",verticalAlign:"bottom"}} />
-                {/* <span style={{fontSize:"xx-large"}}>&#x26A0;</span> */}
-                <b style={{fontSize:"x-large"}}> Note</b>
+                <span style={{fontSize:"xx-large"}}>&#x26A0;</span>&nbsp;
+                <b style={{fontSize:"x-large"}}> Note ...</b>
                 <p />
                 <span>
+                    <hr style={{borderTop:"1px solid darkred",marginTop:"8",marginBottom:"8"}}/>
                     This is an <b>experimental</b> version of Foursight using <b><a href="https://reactjs.org/tutorial/tutorial.html" style={{color:"#8A6D3B"}} target="_blank">React</a></b>. <br />
                     To go to the <b>real</b> Foursight click <a href={linkToNonReactFoursight} style={{color:"darkred"}}><b><u>here</u></b></a>. <br />
                     <hr style={{borderTop:"1px solid darkred",marginTop:"8",marginBottom:"8"}}/>

@@ -6,7 +6,7 @@ import GlobalContext from "./GlobalContext";
 import * as URL from "./utils/URL";
 import { BarSpinner } from "./Spinners";
 import { fetchData } from "./utils/FetchUtils";
-import { GetLoginInfo, IsLoggedIn, Logout } from "./utils/LoginUtils";
+import { GetLoginInfo, Logout } from "./utils/LoginUtils";
 import AUTH from './utils/AUTH';
 import CLIENT from './utils/CLIENT';
 import SERVER from './utils/SERVER';
