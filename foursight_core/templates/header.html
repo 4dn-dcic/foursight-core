@@ -277,20 +277,25 @@
                     {% endif %}
                 </td>
             </tr>
-            {% if running_checks != '0' or queued_checks != '0' %}
-                <table width="100%">
-                    <tr style="background:#F9E79F;">
-                        <td style="padding-right:8pt;padding-top:2pt;padding-bottom:2pt;white-space:nowrap;" align="right">
+            <table width="100%">
+                <tr style="background:#F9E79F;">
+                    <td style="padding-left:8pt;padding-top:2pt;padding-bottom:2pt;white-space:nowrap;color:darkred;" ><i>
+                        To try an <b>experimental</b> version of Foursight <b>React</b> click <a href="{{context + 'react/' + env + '/home'}}" style="color:darkred;"><b>here</b></>.
+                    </i></td>
+                    <td style="padding-right:8pt;padding-top:2pt;padding-bottom:2pt;white-space:nowrap;" align="right">
+                        {% if running_checks != '0' or queued_checks != '0' %}
                             running: <b>{{running_checks}}</b> &nbsp;|&nbsp;
                             queued: <b>{{queued_checks}}</b>
-                        </td>
-                    </tr>
-                </table>
-            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
         </table>
+        <!--
         <div style="float:right;font-size:small;margin-right:6pt;margin-top:4pt;padding-left:5pt;padding-right:5pt;padding-top:2pt;padding-bottom:2pt;border:1px solid darkred;border-radius:4pt;color:darkred;background:lightyellow;">
             <a style="color:darkred" href="{{context + 'react/' + env + '/home'}}"><b>Foursight React</b></a>
         </div>
+        -->
     </div>
     {% if not is_admin %}
         <div class="container">
