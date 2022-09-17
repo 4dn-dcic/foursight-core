@@ -29,18 +29,18 @@ const GacComparePage = (props) => {
     let navigate = useNavigate();
 
     function getUniqueKeys(gac, gac_compare) {
-        let uniqueKeys = []
+        let uniqueKeys = [];
         if (!gac || !gac_compare) {
             return uniqueKeys;
         }
         Object.keys(gac)?.map((key) => {
             if (!uniqueKeys.includes(key)) {
-                uniqueKeys.push(key)
+                uniqueKeys.push(key);
             }
         });
         Object.keys(gac_compare)?.map((key) => {
             if (!uniqueKeys.includes(key)) {
-                uniqueKeys.push(key)
+                uniqueKeys.push(key);
             }
         });
         return uniqueKeys.sort();

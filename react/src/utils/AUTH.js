@@ -103,7 +103,23 @@ function GetAllowedEnvs(header) {
         //
         return GetKnownEnvs(header);
     }
-    return header?.auth?.allowed_envs || [];
+    const allowedEnvs = header?.auth?.allowed_envs || [];
+    //
+    // The list of known environments are of the annotated variety.
+    // But the list of allowed environments is just a list of simple environment names.
+    // We want to return the list of allowed environments as a list of the annotated variety.
+    // We could maybe do this on the server-side, or at least at global header data fetch time.
+    //
+    const knownEnvs = GetKnownEnvs(header);
+    let allowedEnvsAnnotated = [];
+    for (const knownEnv of knownEnvs) {
+        for (const allowedEnv of allowedEnvs) {
+            if (ENV.Equals(allowedEnv, knownEnv)) {
+                allowedEnvsAnnotated.push(knownEnv);
+            }
+        }
+    }
+    return allowedEnvsAnnotated;
 }
 
 function GetKnownEnvs(header) {
@@ -115,6 +131,10 @@ function IsAllowedEnv(env, header) {
     console.log(env);
     console.log(header);
     if ((STR.HasValue(env) || TYPE.IsObject(env)) && TYPE.IsObject(header)) {
+        // TODO
+        // This is not right. The allowed_envs list is just a simple list of env names
+        // and we want to consider all name version possibilities via the unique_annotated list.
+        //
         const allowedEnvs = GetAllowedEnvs(header);
         console.log(allowedEnvs);
         for (const allowedEnv of allowedEnvs) {

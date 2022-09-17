@@ -10,7 +10,11 @@ import COOKIE from './utils/COOKIE';
 // data (from the React API /header endpoint), then redirect to the /env page.
 //
 function KnownEnvRequired({ children }) {
-    NoteLastUrl();
+    //
+    // Maybe just NoteLastUrl on AuthorizationRequired pages,
+    // i.e. all protected pages except the /login page.
+    // NoteLastUrl();
+    //
     const [ header ] = useContext(GlobalContext);
     //
     // TODO: More fully understand this next line added 2022-09-16.
