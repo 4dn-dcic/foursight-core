@@ -301,9 +301,9 @@
   }
 }
 @font-face {
-   font-family: myFirstFont;
-   src: url(font_sansation_bold.woff);
+   font-family: 'Sansation Bold';
+   src: url(https://allfont.ru/cache/fonts/sansation-bold_1ed7ffb329f73655e972f658a6514075.ttf);
 }
 .title-font {
-   font-family: myFirstFont;
+   font-family: 'Sansation Bold';
 }
