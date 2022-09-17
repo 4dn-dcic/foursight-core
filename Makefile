@@ -34,6 +34,8 @@ react:
 	rm -rf foursight_core/react
 	mkdir foursight_core/react
 	cp -pR react/build/* foursight_core/react
+	rm -f foursight_core/react/static/js/*.map
+	rm -f foursight_core/react/static/js/*.LICENSE.txt
 
 react-run-local:
 	cd react ; npm start
