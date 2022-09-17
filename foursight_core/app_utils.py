@@ -415,7 +415,7 @@ class AppUtilsCore(ReactApi):
     def create_delete_cookie_string(self, request, name: str, domain: str, path: str = "/") -> str:
         return self.create_set_cookie_string(request, name=name, value=None, domain=domain, path=path, expires="now") 
 
-    def create_authtoken(self, jwt_token: str, env: str) -> str:
+    def create_authtoken(self, jwt_token: str, allowed_envs: list, env: str) -> str:
         """
         Used only for Foursight React.
         Returns the value for the authtoken cookie consisting of
@@ -423,9 +423,9 @@ class AppUtilsCore(ReactApi):
         associated authenticated user, from the JWT token, is authorized.
         This is a JSON object, encrypted, and then Base-64 encoded.
         """
-        jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
-        email = jwt_token_decoded.get("email")
-        allowed_envs = self.get_allowed_envs(email)
+        # jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
+        # email = jwt_token_decoded.get("email")
+        # allowed_envs = self.get_allowed_envs(email)
         print('xyzzy:allowed_envs')
         print(allowed_envs)
         allowed_envs_encoded = self.encryption.encode(allowed_envs)
@@ -565,15 +565,28 @@ class AppUtilsCore(ReactApi):
                     # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
                     react_redir_url = urllib.parse.unquote(react_redir_url)
                     response_headers = {"Location": react_redir_url}
-                authtoken = self.create_authtoken(jwt_token, env)
+                jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
+                email = jwt_token_decoded.get("email")
+                allowed_envs = self.get_allowed_envs(email)
+                authtoken = self.create_authtoken(jwt_token, allowed_envs, env)
                 authtoken_cookie = self.create_set_cookie_string(request, name="authtoken",
                                                                           value=authtoken,
                                                                           domain=domain,
                                                                           expires=jwt_expires,
                                                                           http_only=True)
+                #
+                # Need to create an authenvs cookie too, not HttpOnly, readable by client (React UI).
+                #
+                authenvs = self.encryption.encode(allowed_envs)
+                authenvs_cookie = self.create_set_cookie_string(request, name="authenvs",
+                                                                          value=authenvs,
+                                                                          domain=domain,
+                                                                          expires=jwt_expires)
                 print('xyzzy:auth0_callback:authtoken_cookie:')
                 print(authtoken_cookie)
+                print(authenvs_cookie)
                 response_headers["set-cookie"] = authtoken_cookie
+                response_headers["Set-Cookie"] = authenvs_cookie
             else:
                 cookie_str = self.create_set_cookie_string(request, name="jwtToken",
                                                                     value=jwt_token,

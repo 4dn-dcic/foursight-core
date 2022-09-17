@@ -127,7 +127,7 @@ const LoginPage = (props) => {
                         <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
                         It <u><b>should work</b></u> but just in case you can bypass this and <b>faux</b> login below. 
                         <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
-                        Click <Link to={{pathname: "/redirect"}} state={{url: CLIENT.LastPath()}} onClick={() => COOKIE.SetFauxLogin()} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</Link> to faux <Link to={{pathname: "/redirect"}} state={{url: CLIENT.LastPath()}} onClick={() => COOKIE.SetFauxLogin()} style={{cursor:"pointer",color:"darkred"}}><b>login</b></Link> locally.
+                        Click <Link to={{pathname: "/redirect"}} state={{url: Page.LastPath()}} onClick={() => COOKIE.SetFauxLogin()} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</Link> to faux <Link to={{pathname: "/redirect"}} state={{url: Page.LastPath()}} onClick={() => COOKIE.SetFauxLogin()} style={{cursor:"pointer",color:"darkred"}}><b>login</b></Link> locally.
                     </div>
                 </div>
             )}
