@@ -1,4 +1,3 @@
-import COOKIE from './COOKIE';
 import LOC from './LOC';
 import STR from './STR';
 import TYPE from './TYPE';
@@ -13,6 +12,10 @@ function IsLocalCrossOrigin() {
 
 function GetOrigin() {
     return LOC.ClientOrigin();
+}
+
+function GetDomain() {
+    return LOC.ClientDomain();
 }
 
 function GetBasePath() {
@@ -157,23 +160,6 @@ function IsKnownEnv(env, header) {
     return false;
 }
 
-function NoteLastUrl() {
-    COOKIE.SetLastUrl(window.location.href);
-}
-
-function LastUrl() {
-    return COOKIE.GetLastUrl();
-}
-
-function LastPath() {
-    const lastUrl = LastUrl();
-    const baseUrl = GetBaseUrl();
-    if (lastUrl.startsWith(baseUrl)) {
-        return GetPath(lastUrl.substring(baseUrl.length), false);
-    }
-    return lastUrl;
-}
-
 function NormalizePath(path) {
     if (!STR.HasValue(path)) {
         return "";
@@ -197,13 +183,11 @@ export default {
     BaseUrl:            GetBaseUrl,
     CurrentPath:        GetCurrentPath,
     CurrentLogicalPath: GetCurrentLogicalPath,
+    Domain:             GetDomain,
     Env:                GetCurrentEnv,
     IsKnownEnv:         IsKnownEnv,
     IsLocal:            IsLocal,
     IsLocalCrossOrigin: IsLocalCrossOrigin,
-    LastPath:           LastPath,
-    LastUrl:            LastUrl,
-    NoteLastUrl:        NoteLastUrl,
     Origin:             GetOrigin,
     Path:               GetPath,
     Url:                GetUrl

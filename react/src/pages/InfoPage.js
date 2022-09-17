@@ -184,7 +184,7 @@ const InfoPage = () => {
             <InfoRow name={"Context"} value={header.page?.context} monospace={true} size="2" />
             <InfoRow name={"Path"} value={info.page?.path} monospace={true} size="2" />
             <InfoRow name={"Endpoint"} value={info.page?.endpoint} monospace={true} size="2" />
-            <InfoRow name={"Client (React UI)"} value={CLIENT.BaseUrl()} monospace={true} size="2" />
+            <InfoRow name={"Client (React UI)"} value={CLIENT.BaseUrl() + " (" + CLIENT.Domain() + ")"} monospace={true} size="2" />
             <InfoRow name={"Server (React API)"} value={SERVER.BaseUrl()} monospace={true} size="2" />
         </InfoBox>
         <InfoBox title={`GAC: ${info.gac?.name}`}>

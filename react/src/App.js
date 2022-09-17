@@ -57,7 +57,7 @@ const App = () => {
                         </Page.KnownEnvRequired>
                     } />
                     <Route path="/api/react/:environ/demo" element={
-                            <DemoPage />
+                        <DemoPage />
                     }/>
                     <Route path="/api/react/:environ/checks" element={
                         <Page.AuthorizationRequired>

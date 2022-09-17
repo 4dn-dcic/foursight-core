@@ -649,9 +649,11 @@ class AppUtilsCore(ReactApi):
         Does any final processing of a Foursight response before returning it. Right now, this includes:
         * Changing the response body if it is greater than 5.5 MB (Lambda body max is 6 MB)
         """
-        if cls.get_size(response.body) > cls.LAMBDA_MAX_BODY_SIZE:  # should be much faster than json.dumps
-            response.body = 'Body size exceeded 6 MB maximum.'
-            response.status_code = 413
+        print('xyzzy:process_request:size:')
+        print(cls.get_size(response.body))
+#       if cls.get_size(response.body) > cls.LAMBDA_MAX_BODY_SIZE:  # should be much faster than json.dumps
+#           response.body = 'Body size exceeded 6 MB maximum.'
+#           response.status_code = 413
         return response
 
     @classmethod

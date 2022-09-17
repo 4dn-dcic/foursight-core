@@ -8,6 +8,10 @@ function ClientOrigin() {
     return window.location.origin;
 }
 
+function ClientDomain() {
+    return window.location.hostname;
+}
+
 function ClientBasePath() {
     return _CLIENT_BASE_PATH;
 }
@@ -63,6 +67,7 @@ function IsLocalCrossOrigin() {
 
 export default {
     ClientBasePath:     ClientBasePath,
+    ClientDomain:       ClientDomain,
     ClientOrigin:       ClientOrigin,
     IsLocal:            IsLocal,
     IsLocalClient:      IsLocalClient,

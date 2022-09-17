@@ -9,6 +9,7 @@ import Auth0Lock from 'auth0-lock';
 import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
 import COOKIE from '../utils/COOKIE';
+import Page from '../Page';
 
 const LoginPage = (props) => {
 
@@ -26,7 +27,7 @@ const LoginPage = (props) => {
         document.getElementById("login_container").style.display = "none";
         document.getElementById("login_auth_container").style.display = "block";
         document.getElementById("login_auth_cancel").style.display = "block";
-        COOKIE.SetRedirect(CLIENT.LastUrl());
+        COOKIE.SetRedirect(Page.LastUrl());
         createAuth0Lock().show();
         //
         // Hacking styles for (now) embeded (rather than popup) Auth0 login box.

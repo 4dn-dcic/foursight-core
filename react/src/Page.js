@@ -3,13 +3,14 @@ import { Navigate } from 'react-router-dom';
 import GlobalContext from './GlobalContext';
 import AUTH from './utils/AUTH';
 import CLIENT from './utils/CLIENT';
+import COOKIE from './utils/COOKIE';
 
 // If the current environment (from the URL) is NOT a known environment according
 // to the envs.unique_annotated list in the auth record of the global header
 // data (from the React API /header endpoint), then redirect to the /env page.
 //
-export const KnownEnvRequired = ({ children }) => {
-    CLIENT.NoteLastUrl();
+function KnownEnvRequired({ children }) {
+    NoteLastUrl();
     const [ header ] = useContext(GlobalContext);
     //
     // TODO: More fully understand this next line added 2022-09-16.
@@ -18,7 +19,14 @@ export const KnownEnvRequired = ({ children }) => {
     // in AuthorizationRequired below.
     //
     if (header.loading) return children;
-    return !AUTH.IsKnownEnv(CLIENT.Env(), header) ? <Navigate to={CLIENT.Path("/env")} replace /> : children;
+    if (!AUTH.IsKnownEnv(CLIENT.Env(), header) ) {
+        console.log("XYZZY:REDIRECT TO /env (a)");
+        return <Navigate to={CLIENT.Path("/env")} replace />
+    }
+    else {
+        return children;
+    }
+    // return !AUTH.IsKnownEnv(CLIENT.Env(), header) ? <Navigate to={CLIENT.Path("/env")} replace /> : children;
 }
 
 // If the user is NOT authenticated (i.e. logged in) OR is NOT authorized for the current
@@ -27,25 +35,46 @@ export const KnownEnvRequired = ({ children }) => {
 // header data (from the React API /header endpoint), then redirect to either the /login
 // page, if not authenticated, or to the /env page, if authenticated by not authorized.
 //
-export const AuthorizationRequired = ({ children }) => {
-    CLIENT.NoteLastUrl();
+function AuthorizationRequired({ children }) {
+    NoteLastUrl();
     const [ header ] = useContext(GlobalContext);
     //
     // TODO: Should we add this here too like above?
     //       if (header.loading) return children;
     //
     if (CLIENT.Env() === "" || header.env_unknown) {
+        console.log("XYZZY:REDIRECT TO /env (b)");
         return <Navigate to={CLIENT.Path("/env")} replace />
     }
     else if (!AUTH.IsLoggedIn(header)) {
+        console.log("XYZZY:REDIRECT TO /login (c)");
+        console.log(header);
         return <Navigate to={CLIENT.Path("/login")} replace />
     }
     else if (header.env && !AUTH.IsAllowedEnv(header.env, header)) {
+        console.log("XYZZY:REDIRECT TO /env (d)");
         return <Navigate to={CLIENT.Path("/env")} replace />
     }
     else {
         return children;
     }
+}
+
+function NoteLastUrl() {
+    COOKIE.SetLastUrl(window.location.href);
+}
+
+function GetLastUrl() {
+    return COOKIE.GetLastUrl();
+}
+
+function GetLastPath() {
+    const lastUrl = GetLastUrl();
+    const baseUrl = CLIENT.BaseUrl();
+    if (lastUrl.startsWith(baseUrl)) {
+        return CLIENT.Path(lastUrl.substring(baseUrl.length), false);
+    }
+    return lastUrl;
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -54,5 +83,8 @@ export const AuthorizationRequired = ({ children }) => {
 
 export default {
     AuthorizationRequired: AuthorizationRequired,
-    KnownEnvRequired:      KnownEnvRequired
+    KnownEnvRequired:      KnownEnvRequired,
+    LastPath:              GetLastPath,
+    LastUrl:               GetLastUrl,
+    NoteLastUrl:           NoteLastUrl
 }

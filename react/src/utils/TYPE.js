@@ -17,13 +17,18 @@ function IsDateTime(value) {
     return value instanceof Date;
 }
 
+function IsNull(value) {
+    return value == null || value == undefined;
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    IsBoolean: IsBoolean,
+    IsBoolean:  IsBoolean,
     IsDateTime: IsDateTime,
-    IsObject: IsObject,
-    IsString: IsString
+    IsNull:     IsNull,
+    IsObject:   IsObject,
+    IsString:   IsString
 }

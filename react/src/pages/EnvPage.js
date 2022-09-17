@@ -5,13 +5,14 @@ import GlobalContext from "../GlobalContext.js";
 import { fetchData } from '../utils/FetchUtils';
 import AUTH from '../utils/AUTH';
 import ENV from '../utils/ENV';
+import Page from '../Page';
 import SERVER from '../utils/SERVER';
 import CLIENT from '../utils/CLIENT';
 import UUID from '../utils/UUID';
 
 const EnvPage = (props) => {
 
-    CLIENT.NoteLastUrl();
+    Page.NoteLastUrl();
 
     // TODO: why not just get current env from useParams?
     // Relics of getting this kind of info from server.
@@ -70,10 +71,6 @@ const EnvPage = (props) => {
 
     function onChange(arg, environ) {
         const environCompare = arg.target.value;
-            console.log('onchaaaaan')
-            console.log(arg)
-            console.log(environ)
-        console.log(CLIENT.Path("/gac/" + environCompare, environ))
         navigate(CLIENT.Path("/gac/" + environCompare, environ))
     }
 

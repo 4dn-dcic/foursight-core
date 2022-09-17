@@ -1,5 +1,7 @@
 import Cookies from 'universal-cookie';
+import CLIENT from './CLIENT';
 import STR from './STR';
+import TYPE from './TYPE';
 
 const _cookies             = new Cookies()
 const _authTokenCookieName = "authtoken";
@@ -9,31 +11,64 @@ const _lastUrlCookieName   = "lasturl";
 const _cookiePath           = "/";
 const _cookieDomain         = document.location.hostname;
 
+function GetCookieDomain() {
+    return CLIENT.IsLocal() ? _cookieDomain : "." + _cookieDomain;
+}
+
 function GetCookie(name) {
-    const value = _cookies.get(name);
-    return (value === "") ? null : value;
+    if (STR.HasValue(name)) {
+        const value = _cookies.get(name);
+        console.log(`GET COOKIE: [${name}] -> [${value}]`);
+        return (value === "") ? null : value;
+    }
+    return null;
 }
 
 function DeleteCookie(name) {
     if (STR.HasValue(name)) {
-        _cookies.remove(name, { path: _cookiePath });
+        console.log(`DELETE COOKIE: [${name}] = [${GetCookie(name)}] (${GetCookieDomain()})`);
+         //
+        // The universal-cookie library is not working for delete, at least with a cookie
+        // domain which includes all sub-domains, i.e. cookie domains beginning with a dot.
+        // And since the server sets cookies (e.g. the authtoken cookie) with a cookie domain
+        // beginning with a dot (i.e. which includes all sub-domains), which does seem like the
+        // right thing to do, we use this low-tech non-universal-cookie-library way of cookie deletion.
+        // _cookies.remove(name, { path: _cookiePath });
+        //
+        const domain = GetCookieDomain();
+        console.log("DELETE COOKIE USING OLD-SCHOOL METHOD:");
+        const cookieDeletionString = `${name}=; Path=/; Domain=${domain}; Expires=Thu, 01 Jan 1970 00:00:00 UTC`;
+        console.log(cookieDeletionString);
+        document.cookie = cookieDeletionString;
+        console.log(`VERIFY DELETE COOKIE: [${name}] -> [${GetCookie(name)}] (${domain})`);
     }
 }
 
 function SetCookie(name, value, expires = null) {
     if (STR.HasValue(name)) {
         if (STR.HasValue(value)) {
+            //
             // _cookies.set(name, value, { path: _cookiePath, expires: expires });
-            _cookies.set(name, value, { path: _cookiePath});
-        } else {
+            //
+            const domain = GetCookieDomain();
+            console.log(`SET COOKIE [${name}] -> [${value}] (${domain})`);
+            _cookies.set(name, value, { domain: _cookieDomain, path: _cookiePath});
+            console.log(`VERIFY SET COOKIE [${name}] -> [${GetCookie(name)}] (${domain})`);
+        } else if (TYPE.IsNull(value)) {
+            console.log(`SET COOKIE [${name}] -> NULL VALUE (DELETE IT)`);
             DeleteCookie(name);
+        }
+        else {
+            console.log(`SET COOKIE [${name}] -> NO VALUE (DO NOTHING)`);
         }
     }
 }
 
 function HasAuthTokenCookie() {
+    console.log("CHECK FOR AUTHTOKEN");
     const authTokenCookie = GetCookie(_authTokenCookieName);
     if (STR.HasValue(authTokenCookie)) {
+        console.log("HAVE AUTHTOKEN (UNEXPECTEDLY READABLE AS SHOULD BE HTTPONLY)");
         //
         // The authtoken cookie exists AND we can actually read it
         // which means it is NOT an HttpOnly cookie, but whatever,
@@ -51,16 +86,22 @@ function HasAuthTokenCookie() {
     // at all (so return false, after deleting the dummy cookie we wrote to cleanup).
     //
     try {
+        console.log("TEST SET AUTHTOKEN TO DETECT EXISTENCE");
         SetCookie(_authTokenCookieName, "dummy");
         const dummyAuthTokenCookie = GetCookie(_authTokenCookieName);
         if (dummyAuthTokenCookie == "dummy") {
+            console.log("SET AUTHTOKEN OK MEANING IT DOES NOT EXIST (NOW DELETE IT)");
             DeleteCookie(_authTokenCookieName);
+            console.log("RETURN FALSE FROM CHECK FOR AUTHTOKEN");
             return false;
         }
+        console.log("TEST SET AUTHTOKEN NOT OK MEANING IT DOES EXIST");
+        console.log("RETURN TRUE FROM CHECK FOR AUTHTOKEN");
         return true;
-
     }
     catch {
+        console.log("TEST SET AUTHTOKEN EXCEPTION MEANING IT DOES EXIST");
+        console.log("RETURN TRUE FROM CHECK FOR AUTHTOKEN");
         return true;
     }
 }
