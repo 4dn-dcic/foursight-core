@@ -28,10 +28,17 @@ function IsLoggedIn(header) {
     // Actually need this because we do not know that we are logged
     // in on refresh unless/until the /header is fetched.
     //
-    console.log('XYZZY:IsLoggedIn');
-    console.log(header);
-    console.log(COOKIE.HasAuthToken());
-    return header?.auth?.authenticated || COOKIE.HasAuthToken();
+    console.log("CHECK IS LOGGED IN");
+    if (header?.auth?.authenticated) {
+        console.log("IS LOGGED IN BY WAY OF HEADER DATA");
+    }
+    else if (COOKIE.HasAuthToken()) {
+        console.log("IS LOGGED IN BY WAY OF COOKIE");
+    }
+    else {
+        console.log("IS NOT LOGGED IN");
+    }
+    // return header?.auth?.authenticated || COOKIE.HasAuthToken();
 }
 
 function IsFauxLoggedIn() {
@@ -68,16 +75,10 @@ function Logout() {
 // This is the server (React API) URL for Auth0 to callback to.
 //
 function AuthenticationCallbackUrl() {
-        console.log('AuthenticationCallbackUrl')
-        console.log(window.location)
     if (CLIENT.IsLocal()) {
-        console.log('AuthenticationCallbackUrl-1')
-        console.log(SERVER.UrlAbs("/callback/"));
         return SERVER.UrlAbs("/callback/");
     }
     else {
-        console.log('AuthenticationCallbackUrl-2')
-        console.log(SERVER.UrlAbs("/api/callback/"));
         return SERVER.UrlAbs("/api/callback/");
     }
 }
@@ -107,23 +108,24 @@ function GetKnownEnvs(header) {
 }
 
 function IsAllowedEnv(env, header) {
-        console.log('is-allowed-env')
-        console.log(env)
-        console.log(header)
-        console.log(GetAllowedEnvs(header))
+    console.log("CHECK ALLOWED ENV");
+    console.log(env);
+    console.log(header);
     if ((STR.HasValue(env) || TYPE.IsObject(env)) && TYPE.IsObject(header)) {
-        console.log('is-allowed-env-A')
         const allowedEnvs = GetAllowedEnvs(header);
+        console.log(allowedEnvs);
         for (const allowedEnv of allowedEnvs) {
-            console.log('is-allowed-env-B')
-            console.log(allowedEnv)
-            console.log(env)
             if (ENV.Equals(allowedEnv, env)) {
-            console.log('is-allowed-env-C')
+                console.log("ALLOWED ENV");
+                console.log(allowedEnv);
+                console.log(env);
                 return true;
             }
         }
     }
+    console.log("NOT ALLOWED ENV");
+    console.log(env);
+    console.log(header);
     return false;
 }
 
