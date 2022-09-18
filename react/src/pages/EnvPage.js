@@ -1,27 +1,24 @@
 import { useContext, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Global from "../Global";
+import Page from '../Page';
 import AUTH from '../utils/AUTH';
 import ENV from '../utils/ENV';
-import Page from '../Page';
 import CLIENT from '../utils/CLIENT';
+import COOKIE from '../utils/COOKIE';
 import UUID from '../utils/UUID';
 
 const EnvPage = (props) => {
 
     Page.NoteLastUrl();
 
-    // TODO: why not just get current env from useParams?
-    // Relics of getting this kind of info from server.
-    const { environ } = useParams() // TODO: use this
     let navigate = useNavigate();
-    // TODO: Change this name 'info' to 'header'!
-    const [ info, setInfo ] = useContext(Global);
+    const [ header ] = useContext(Global);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
 
     function IsKnownCurrentEnv() {
-        return ENV.IsCurrentKnown(info);
+        return ENV.IsCurrentKnown(header);
     }
 
     function IsCurrentEnv(env) {
@@ -29,16 +26,16 @@ const EnvPage = (props) => {
     }
 
     function IsDefaultEnv(env) {
-        return ENV.IsDefault(env, info);
+        return ENV.IsDefault(env, header);
     }
 
     function GetDefaultEnv() {
-        return ENV.Default(info);
+        return ENV.Default(header);
     }
 
-    function onChange(arg, environ) {
+    function onChange(arg, env) {
         const environCompare = arg.target.value;
-        navigate(CLIENT.Path("/gac/" + environCompare, environ))
+        navigate(CLIENT.Path("/gac/" + environCompare, env))
     }
 
     // TODO: clean up this styles stuff.
@@ -54,15 +51,17 @@ const EnvPage = (props) => {
 
     // This page is unprotected.
 
-    if (info.error) return <>Cannot load Foursight</>;
-    if (info.loading) return <>Loading ...</>;
+    if (header.error) return <>Cannot load Foursight</>;
+    if (header.loading) return <>Loading ...</>;
     return <div>
-            { !AUTH.IsLoggedIn(info) && IsKnownCurrentEnv() ? (
+                [[[{typeof(COOKIE.GetAllowedEnvs())}]]]
+                <pre>{JSON.stringify(COOKIE.GetAllowedEnvs())}</pre>
+            { !AUTH.IsLoggedIn(header) && IsKnownCurrentEnv() ? (
                 <div className="container">
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>
                         <b>Not Logged In</b> <br />
                         <small>
-                            Click <Link to={CLIENT.Path("/login", !IsKnownCurrentEnv() ? info : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>here</b></Link> to go to the <Link to={CLIENT.Path("/login", !IsKnownCurrentEnv() ? info : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
+                            Click <Link to={CLIENT.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b>here</b></Link> to go to the <Link to={CLIENT.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
                         </small>
                         </div>
                 </div>
@@ -87,7 +86,7 @@ const EnvPage = (props) => {
                 </>):(<>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
                     Current environment: <b style={{color:boxTextColor}}>{ENV.Current()}</b>
-                    { (AUTH.IsLoggedIn(info) && !ENV.IsAllowed(ENV.Current(), info)) && <span style={{color:"red"}}>&nbsp;&#x2192; You do not have permission for this environment.</span> }
+                    { (AUTH.IsLoggedIn(header) && !ENV.IsAllowed(ENV.Current(), header)) && <span style={{color:"red"}}>&nbsp;&#x2192; You do not have permission for this environment.</span> }
                 </div>
                 </>)}
             </div>
@@ -95,7 +94,7 @@ const EnvPage = (props) => {
                 <b>&nbsp;Available Environments</b>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
                     <table style={{color:"inherit"}}><thead></thead><tbody>
-                        {ENV.KnownEnvs(info).map((env, envIndex) =>
+                        {ENV.KnownEnvs(header).map((env, envIndex) =>
                             <tr key={UUID()}>
                                 <td style={{fontWeight:IsCurrentEnv(env) ? "bold" : "normal",color:!IsKnownCurrentEnv(env.public_name) ? "red" : (IsCurrentEnv(env) ? "black" : "inherit"),verticalAlign:"top"}}>
                                     { IsCurrentEnv(env) ? (<>
@@ -105,7 +104,7 @@ const EnvPage = (props) => {
                                     </>)}
                                 </td>
                                 <td>
-                                    { AUTH.IsLoggedIn(info) && !ENV.IsAllowed(env, info) ? (<>
+                                    { AUTH.IsLoggedIn(header) && !ENV.IsAllowed(env, header) ? (<>
                                         <span className={"tool-tip"} data-text={"This is a restricted environment!"} style={{color:"red"}}>
                                             <Link style={{color:"inherit",textDecoration:IsCurrentEnv(env) ? "underline" : "normal"}} to={CLIENT.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
                                             { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
@@ -132,13 +131,13 @@ const EnvPage = (props) => {
                                     { IsKnownCurrentEnv() ? (<>
                                         <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected, env.full_name)}>
                                             <option>GAC Compare &#x2193;</option>
-                                            { ENV.KnownEnvs(info).map((env) =>
+                                            { ENV.KnownEnvs(header).map((env) =>
                                                 <option key={UUID()}>{env.full_name}</option>
                                             )}
                                         </select>
                                     </>):(<>
                                     </>)}
-                                    { (envIndex < ENV.KnownEnvs(info).length - 1) ? (<span>
+                                    { (envIndex < ENV.KnownEnvs(header).length - 1) ? (<span>
                                         <br /><br />
                                     </span>):(<span/>)}
                                 </td>

@@ -4,6 +4,7 @@
 
 import AUTH from './AUTH';
 import CONTEXT from './CONTEXT';
+import COOKIE from './COOKIE';
 import PATH from './PATH';
 import STR from './STR';
 import TYPE from './TYPE';
@@ -13,7 +14,7 @@ import TYPE from './TYPE';
 // -------------------------------------------------------------------------------------------------
 
 function GetKnownEnvs(header) {
-    return header?.envs?.unique_annotated || [];
+    return header?.envs?.unique_annotated || COOKIE.GetKnownEnvs();
 }
 
 function IsKnownEnv(env, header) {
@@ -41,7 +42,7 @@ function GetAllowedEnvs(header) {
         //
         return GetKnownEnvs(header);
     }
-    const allowedEnvs = header?.auth?.allowed_envs || [];
+    const allowedEnvs = header?.auth?.allowed_envs || COOKIE.GetAllowedEnvs();
     //
     // The list of known environments are of the annotated variety.
     // But the list of allowed environments is just a list of simple environment names.

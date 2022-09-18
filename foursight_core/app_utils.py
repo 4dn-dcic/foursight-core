@@ -329,20 +329,24 @@ class AppUtilsCore(ReactApi):
     def get_auth0_secret(self, env_name: str) -> str:
         return os.environ.get("CLIENT_SECRET")
 
-    def get_allowed_envs(self, email: str) -> list:
+    def get_envs(self, email: str) -> [list, list]:
+        """
+        Returns a tuple containing (in left-right order) the list of annotated unique environments,
+        and the list of allowed environment names.
+        """
         allowed_envs = []
-        envs = self.get_unique_annotated_environment_names()
-        for env in envs:
+        known_envs = self.get_unique_annotated_environment_names()
+        for known_env in known_envs:
             try:
-                user = ff_utils.get_metadata('users/' + email, ff_env=env["full_name"], add_on="frame=object&datastore=database")
+                user = ff_utils.get_metadata('users/' + email, ff_env=known_env["full_name"], add_on="frame=object&datastore=database")
                 if user:
-                    allowed_envs.append(env["full_name"])
+                    allowed_envs.append(known_env["full_name"])
             except Exception as e:
                 logger.error(f"Exception getting allowed envs for: {email}")
                 logger.error(e)
                 print(f"XYZZY: Exception getting allowed envs for: {email}")
                 print(e)
-        return allowed_envs
+        return (known_envs, allowed_envs)
 
     def get_default_env(self) -> str:
         return os.environ.get("ENV_NAME", DEFAULT_ENV)
@@ -423,11 +427,6 @@ class AppUtilsCore(ReactApi):
         associated authenticated user, from the JWT token, is authorized.
         This is a JSON object, encrypted, and then Base-64 encoded.
         """
-        # jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
-        # email = jwt_token_decoded.get("email")
-        # allowed_envs = self.get_allowed_envs(email)
-        print('xyzzy:allowed_envs')
-        print(allowed_envs)
         allowed_envs_encoded = self.encryption.encode(allowed_envs)
         authtoken_json = {
             "jwt": jwt_token,
@@ -567,7 +566,7 @@ class AppUtilsCore(ReactApi):
                     response_headers = {"Location": react_redir_url}
                 jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
                 email = jwt_token_decoded.get("email")
-                allowed_envs = self.get_allowed_envs(email)
+                (known_envs, allowed_envs) = self.get_envs(email)
                 authtoken = self.create_authtoken(jwt_token, allowed_envs, env)
                 authtoken_cookie = self.create_set_cookie_string(request, name="authtoken",
                                                                           value=authtoken,
@@ -579,14 +578,20 @@ class AppUtilsCore(ReactApi):
                 #
                 authenvs = self.encryption.encode(allowed_envs)
                 authenvs_cookie = self.create_set_cookie_string(request, name="authenvs",
-                                                                          value=authenvs,
-                                                                          domain=domain,
-                                                                          expires=jwt_expires)
+                                                                         value=authenvs,
+                                                                         domain=domain,
+                                                                         expires=jwt_expires)
+                envs = self.encryption.encode(known_envs)
+                envs_cookie = self.create_set_cookie_string(request, name="envs",
+                                                                     value=envs,
+                                                                     domain=domain,
+                                                                     expires=jwt_expires)
                 print('xyzzy:auth0_callback:authtoken_cookie:')
                 print(authtoken_cookie)
                 print(authenvs_cookie)
                 response_headers["set-cookie"] = authtoken_cookie
                 response_headers["Set-Cookie"] = authenvs_cookie
+                response_headers["SET-COOKIE"] = envs_cookie
             else:
                 cookie_str = self.create_set_cookie_string(request, name="jwtToken",
                                                                     value=jwt_token,

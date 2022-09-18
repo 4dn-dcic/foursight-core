@@ -3,13 +3,15 @@ import CLIENT from './CLIENT';
 import STR from './STR';
 import TYPE from './TYPE';
 
-const _cookies             = new Cookies()
-const _authTokenCookieName = "authtoken";
-const _fauxLoginCookieName = "test_mode_login_localhost";
-const _redirectCookieName  = "reactredir";
-const _lastUrlCookieName   = "lasturl";
-const _cookiePath           = "/";
-const _cookieDomain         = document.location.hostname;
+const _cookies               = new Cookies()
+const _authTokenCookieName   = "authtoken";
+const _allowedEnvsCookieName = "authenvs";
+const _knownEnvsCookieName   = "envs";
+const _fauxLoginCookieName   = "test_mode_login_localhost";
+const _redirectCookieName    = "reactredir";
+const _lastUrlCookieName     = "lasturl";
+const _cookiePath            = "/";
+const _cookieDomain          = document.location.hostname;
 
 function GetCookieDomain() {
     return CLIENT.IsLocal() ? _cookieDomain : "." + _cookieDomain;
@@ -106,6 +108,38 @@ function HasAuthTokenCookie() {
     }
 }
 
+function GetKnownEnvsCookie() {
+    try {
+        console.log("GET ENVS COOKIE");
+        const knownEnvsEncoded = GetCookie(_knownEnvsCookieName);
+        const knownEnvsDecoded = atob(knownEnvsEncoded);
+        const knownEnvs = JSON.parse(knownEnvsDecoded);
+        console.log("GET ENVS COOKIE");
+        console.log(knownEnvs);
+        return knownEnvs;
+    }
+    catch {
+        console.log("GET ENVS COOKIE EXCEPTION");
+        return [];
+    }
+}
+
+function GetAllowedEnvsCookie() {
+    try {
+        console.log("GET AUTHENVS COOKIE");
+        const allowedEnvsEncoded = GetCookie(_allowedEnvsCookieName);
+        const allowedEnvsDecoded = atob(allowedEnvsEncoded);
+        const allowedEnvs = JSON.parse(allowedEnvsDecoded);
+        console.log("GET AUTHENVS COOKIE");
+        console.log(allowedEnvs);
+        return allowedEnvs;
+    }
+    catch {
+        console.log("GET AUTHENVS COOKIE EXCEPTION");
+        return [];
+    }
+}
+
 function HasFauxLoginCookie() {
     return GetCookie(_fauxLoginCookieName) == "1";
 }
@@ -147,6 +181,8 @@ export default {
     DeleteFauxLogin: DeleteFauxLoginCookie,
     Get:             GetCookie,
     GetLastUrl:      GetLastUrlCookie,
+    GetAllowedEnvs:  GetAllowedEnvsCookie,
+    GetKnownEnvs:    GetKnownEnvsCookie,
     HasAuthToken:    HasAuthTokenCookie,
     HasFauxLogin:    HasFauxLoginCookie,
     Set:             SetCookie,
