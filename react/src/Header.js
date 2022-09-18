@@ -97,25 +97,29 @@ const Header = (props) => {
                     </a>
                 </td>
                 <td width="34%" align="center" style={{whiteSpace:"nowrap"}}>
-                    <span style={{fontSize:"20pt",color:"white"}}>
-
-                        { header.app?.stage == 'dev' ? (<span>
-                            <span title="Stage is DEV." style={{position:"relative",top:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>&nbsp;&nbsp;
-                        </span>):(<span></span>)}
-                        { header.app?.local ? (<span>
-                            <span title="Running locally." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"15pt"}}>&#8861;</span>&nbsp;&nbsp;
-                        </span>):(<span></span>)}
-
-                        <span className="title-font" style={{color:"default",fontWeight:"bold"}}>{header.page?.title.toUpperCase()}</span>&nbsp;
-
-                        { header.app?.stage == 'dev' ? (<span>
-                            &nbsp;<span title="Stage is DEV." style={{position:"relative",top:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>
-                        </span>):(<span></span>)}
-                        { header.app?.local ? (<span>
-                            &nbsp;<span title="Running locally." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"15pt"}}>&#8861;</span>
-                        </span>):(<span></span>)}
-
-                    </span>
+                    <div style={{fontSize:"20pt",color:"white",cursor:"default"}}>
+                        { header.app?.stage == 'dev' ? (<>
+                            { header.app?.local ? (<>
+                                <span title="Running locally." style={{position:"relative",bottom:"3pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;
+                                <span title="Stage is DEV. Running locally" style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"26pt"}}>&#x269B;</span>&nbsp;&nbsp;
+                                <span className="title-font" style={{position:"relative",bottom:"3pt",color:"white",fontWeight:"bold"}}>{header.page?.title.toUpperCase()}</span>&nbsp;&nbsp;
+                                <span title="Stage is DEV. Running locally" style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>&nbsp;
+                                <span title="Running locally." style={{position:"relative",bottom:"3pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;&nbsp;
+                            </>):(<>
+                                <span title="Stage is DEV." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>&nbsp;&nbsp;
+                                <span className="title-font" style={{position:"relative",bottom:"2pt",color:"white",fontWeight:"bold"}}>{header.page?.title.toUpperCase()}</span>&nbsp;&nbsp;
+                                <span title="Stage is DEV." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>&nbsp;
+                            </>)}
+                        </>):(<>
+                            { header.app?.local ? (<>
+                                <span title="Running locally." style={{position:"relative",bottom:"2pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;&nbsp;
+                                <span className="title-font" style={{position:"relative",bottom:"1pt",color:"white",fontWeight:"bold"}}>{header.page?.title.toUpperCase()}</span>&nbsp;&nbsp;
+                                <span title="Running locally." style={{position:"relative",bottom:"2pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;&nbsp;
+                            </>):(<>
+                                <span className="title-font" style={{position:"relative",bottom:"1pt",color:"white",fontWeight:"bold"}}>{header.page?.title.toUpperCase()}</span>&nbsp;&nbsp;
+                            </>)}
+                        </>)}
+                    </div>
                 </td>
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
                     <small>{TIME.FormatDateTime(new Date(), true)}</small>
