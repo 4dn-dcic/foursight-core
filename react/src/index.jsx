@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './css/index.css';
 import App from './App';
-import { CookiesProvider } from 'react-cookie';
 import COOKIE from './utils/COOKIE';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -17,9 +16,7 @@ if (COOKIE.Get("test_mode_dummy_page") == "1") {
 else {
     root.render(
         <React.StrictMode>
-            <CookiesProvider>
-                <App />
-            </CookiesProvider>
+            <App />
         </React.StrictMode>
     );
 }
