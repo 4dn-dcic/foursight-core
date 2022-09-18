@@ -305,5 +305,5 @@
    src: url(https://allfont.ru/cache/fonts/sansation-bold_1ed7ffb329f73655e972f658a6514075.ttf);
 }
 .title-font {
-   font-family: 'Sansation Bold';
+   font-family: 'Sansation Bold', 'Arial';
 }

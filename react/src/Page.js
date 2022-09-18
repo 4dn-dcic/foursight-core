@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
 import GlobalContext from './GlobalContext';
 import AUTH from './utils/AUTH';
+import ENV from './utils/ENV';
 import CLIENT from './utils/CLIENT';
 import COOKIE from './utils/COOKIE';
 
@@ -23,14 +24,14 @@ function KnownEnvRequired({ children }) {
     // in AuthorizationRequired below.
     //
     if (header.loading) return children;
-    if (!AUTH.IsKnownEnv(CLIENT.Env(), header) ) {
+    if (!ENV.IsKnown(CLIENT.Current.Env(), header) ) {
         console.log("XYZZY:REDIRECT TO /env (a)");
         return <Navigate to={CLIENT.Path("/env")} replace />
     }
     else {
         return children;
     }
-    // return !AUTH.IsKnownEnv(CLIENT.Env(), header) ? <Navigate to={CLIENT.Path("/env")} replace /> : children;
+    // return !AUTH.IsKnownEnv(CLIENT.Current.Env(), header) ? <Navigate to={CLIENT.Path("/env")} replace /> : children;
 }
 
 // If the user is NOT authenticated (i.e. logged in) OR is NOT authorized for the current
@@ -46,7 +47,7 @@ function AuthorizationRequired({ children }) {
     // TODO: Should we add this here too like above?
     //       if (header.loading) return children;
     //
-    if (CLIENT.Env() === "" || header.env_unknown) {
+    if (CLIENT.Current.Env() === "" || header.env_unknown) {
         console.log("XYZZY:REDIRECT TO /env (b)");
         return <Navigate to={CLIENT.Path("/env")} replace />
     }
@@ -55,7 +56,7 @@ function AuthorizationRequired({ children }) {
         console.log(header);
         return <Navigate to={CLIENT.Path("/login")} replace />
     }
-    else if (header.env && !AUTH.IsAllowedEnv(header.env, header)) {
+    else if (header.env && !ENV.IsAllowed(header.env, header)) {
         console.log("XYZZY:REDIRECT TO /env (d)");
         return <Navigate to={CLIENT.Path("/env")} replace />
     }

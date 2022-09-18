@@ -2,8 +2,94 @@
 // Environment related functions.
 // -------------------------------------------------------------------------------------------------
 
+import AUTH from './AUTH';
+import CONTEXT from './CONTEXT';
+import PATH from './PATH';
 import STR from './STR';
 import TYPE from './TYPE';
+
+// -------------------------------------------------------------------------------------------------
+// Known environments functions.
+// -------------------------------------------------------------------------------------------------
+
+function GetKnownEnvs(header) {
+    return header?.envs?.unique_annotated || [];
+}
+
+function IsKnownEnv(env, header) {
+    if ((STR.HasValue(env) || TYPE.IsObject(env)) && TYPE.IsObject(header)) {
+        const knownEnvs = GetKnownEnvs(header);
+        for (const knownEnv of knownEnvs) {
+            if (AreSameEnvs(knownEnv, env)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// -------------------------------------------------------------------------------------------------
+// Authorization (allowed environments) functions.
+// -------------------------------------------------------------------------------------------------
+
+function GetAllowedEnvs(header) {
+    if (AUTH.IsFauxLoggedIn()) {
+        //
+        // If we are faux logged in then allow all environments since we we (the React API)
+        // are not able to determind the list of allowed environment without a real authenticated
+        // user; if we don't do this then the faux logged in user won't be able to do anything.
+        //
+        return GetKnownEnvs(header);
+    }
+    const allowedEnvs = header?.auth?.allowed_envs || [];
+    //
+    // The list of known environments are of the annotated variety.
+    // But the list of allowed environments is just a list of simple environment names.
+    // We want to return the list of allowed environments as a list of the annotated variety.
+    // We could maybe do this on the server-side, or at least at global header data fetch time.
+    //
+    const knownEnvs = GetKnownEnvs(header);
+    let allowedEnvsAnnotated = [];
+    for (const knownEnv of knownEnvs) {
+        for (const allowedEnv of allowedEnvs) {
+            if (AreSameEnvs(allowedEnv, knownEnv)) {
+                allowedEnvsAnnotated.push(knownEnv);
+            }
+        }
+    }
+    return allowedEnvsAnnotated;
+}
+
+function IsAllowedEnv(env, header) {
+    console.log("CHECK ALLOWED ENV");
+    console.log(env);
+    console.log(header);
+    if ((STR.HasValue(env) || TYPE.IsObject(env)) && TYPE.IsObject(header)) {
+        // TODO
+        // This is not right. The allowed_envs list is just a simple list of env names
+        // and we want to consider all name version possibilities via the unique_annotated list.
+        //
+        const allowedEnvs = GetAllowedEnvs(header);
+        console.log("ALLOWED ENVS ARE:");
+        console.log(allowedEnvs);
+        for (const allowedEnv of allowedEnvs) {
+            if (AreSameEnvs(allowedEnv, env)) {
+                console.log("ALLOWED ENV");
+                console.log(allowedEnv);
+                console.log(env);
+                return true;
+            }
+        }
+    }
+    console.log("NOT ALLOWED ENV");
+    console.log(env);
+    console.log(header);
+    return false;
+}
+
+// -------------------------------------------------------------------------------------------------
+// Environment comparison functions
+// -------------------------------------------------------------------------------------------------
 
 // Returns true iff the given two environments refer to same environment.
 // The arguments may be either strings and/or JSON objects from the global
@@ -11,8 +97,13 @@ import TYPE from './TYPE';
 // contains these elements: name, full_name, short_name, public_name, foursight_name.
 //
 function AreSameEnvs(envA, envB) {
+        console.log("SAME?")
+        console.log(envA)
+        console.log(envB)
     if (TYPE.IsObject(envA)) {
+        console.log("SAME-A")
         if (TYPE.IsObject(envB)) {
+        console.log("SAME-B")
             return (envA?.name?.toLowerCase()           == envB?.name?.toLowerCase()) ||
                    (envA?.full_name?.toLowerCase()      == envB?.full_name?.toLowerCase()) ||
                    (envA?.short_name?.toLowerCase()     == envB?.short_name?.toLowerCase()) ||
@@ -20,6 +111,7 @@ function AreSameEnvs(envA, envB) {
                    (envA?.foursight_name?.toLowerCase() == envB?.foursight_name?.toLowerCase());
         }
         else if (STR.HasValue(envB)) {
+        console.log("SAME-C")
             envB = envB.toLowerCase();
             return (envA?.name?.toLowerCase()           == envB) ||
                    (envA?.full_name?.toLowerCase()      == envB) ||
@@ -28,11 +120,14 @@ function AreSameEnvs(envA, envB) {
                    (envA?.foursight_name?.toLowerCase() == envB);
         }
         else {
+        console.log("SAME-D")
             return false;
         }
     }
     else if (STR.HasValue(envA)) {
+        console.log("SAME-E")
         if (TYPE.IsObject(envB)) {
+        console.log("SAME-F")
             envA = envA.toLowerCase();
             return (envB?.name?.toLowerCase()           == envA) ||
                    (envB?.full_name?.toLowerCase()      == envA) ||
@@ -41,15 +136,67 @@ function AreSameEnvs(envA, envB) {
                    (envB?.foursight_name?.toLowerCase() == envA);
         }
         else if (STR.HasValue(envB)) {
+        console.log("SAME-G")
             return envA.toLowerCase() == envB.toLowerCase();
         }
         else {
+        console.log("SAME-H")
             return false;
         }
     }
     else {
+        console.log("SAME-I")
         return false;
     }
+}
+
+// -------------------------------------------------------------------------------------------------
+// Current environment functions.
+// -------------------------------------------------------------------------------------------------
+
+// Returns the current environment from the URL.
+// NOTE: If the given header is an object then we assume it is the global header data
+// and in this case: if there is NO current environment (for some reason), or if the
+// current environment is NOT known (according to the list of available environments
+// in the given global header data), then return the default environment from this object.
+//
+function GetCurrentEnv(header = null) {
+    const currentPath = PATH.Normalize(CONTEXT.Client.CurrentPath());
+    const basePathWithTrailingSlash = CONTEXT.Client.BasePath() + "/";
+    let env = "";
+    if (currentPath.startsWith(basePathWithTrailingSlash)) {
+        const pathSansBasePath = currentPath.substring(basePathWithTrailingSlash.length);
+        if (pathSansBasePath.length > 0) {
+            const slash = pathSansBasePath.indexOf("/");
+            env = (slash >= 0) ? pathSansBasePath.substring(0, slash) : pathSansBasePath;
+        }
+    }
+    if (TYPE.IsObject(header)) {
+        if (!IsKnownEnv(env, header)) {
+            env = header.envs?.default;
+        }
+    }
+    return env;
+}
+
+function IsCurrentEnv(env) {
+    return AreSameEnvs(GetCurrentEnv(), env);
+}
+
+function IsCurrentEnvKnown(header) {
+    return IsKnownEnv(GetCurrentEnv(), header);
+}
+
+// -------------------------------------------------------------------------------------------------
+// Default environment functions.
+// -------------------------------------------------------------------------------------------------
+
+function GetDefaultEnv(header) {
+    return header?.env?.default;
+}
+
+function IsDefaultEnv(env, header) {
+    return AreSameEnvs(GetDefaultEnv(header), env);
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -57,5 +204,14 @@ function AreSameEnvs(envA, envB) {
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    Equals: AreSameEnvs
+    Equals:         AreSameEnvs,
+    AllowedEnvs:    GetAllowedEnvs,
+    Current:        GetCurrentEnv,
+    IsCurrent:      IsCurrentEnv,
+    IsCurrentKnown: IsCurrentEnvKnown,
+    Default:        GetDefaultEnv,
+    IsAllowed:      IsAllowedEnv,
+    IsDefault:      IsDefaultEnv,
+    IsKnown:        IsKnownEnv,
+    KnownEnvs:      GetKnownEnvs,
 }

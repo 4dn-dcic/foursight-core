@@ -6,6 +6,7 @@ import GlobalContext from "./GlobalContext";
 import { BarSpinner } from "./Spinners";
 import { fetchData } from "./utils/FetchUtils";
 import AUTH from './utils/AUTH';
+import ENV from './utils/ENV';
 import CLIENT from './utils/CLIENT';
 import SERVER from './utils/SERVER';
 import TIME from './utils/TIME';
@@ -69,10 +70,6 @@ const Header = (props) => {
         </span>
     }
 
-    function getDefaultEnv() {
-        return header?.env?.default;
-    }
-
     function initiateAppReload() {
         const url = SERVER.Url("/reloadlambda", false);
         fetchData(url);
@@ -130,7 +127,7 @@ const Header = (props) => {
                             <span title="Running locally." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"15pt"}}>&#8861;</span>&nbsp;&nbsp;
                         </span>):(<span></span>)}
 
-                        <span className="title-font" style={{color:"default"}}>{header.page?.title.toUpperCase()}</span>&nbsp;
+                        <span className="title-font" style={{color:"default",fontWeight:"bold"}}>{header.page?.title.toUpperCase()}</span>&nbsp;
 
                         { header.app?.stage == 'dev' ? (<span>
                             &nbsp;<span title="Stage is DEV." style={{position:"relative",top:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>
@@ -166,17 +163,18 @@ const Header = (props) => {
                         <a target="_blank" href={"https://pypi.org/project/" + (isFoursightFourfront ? "foursight" : "foursight-cgap") + "/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{header.app?.version}</b></a>
                     </td>
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
-                        { (header.envs?.unique_annotated.length > 0) ? (
+                        { (ENV.KnownEnvs(header).length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:!CLIENT.Env() || header.env_unknown ? "red" : "#143c53"}} title={"Environment: " + CLIENT.Env() + (!CLIENT.Env() || header.env_unknown ? " -> UNKNOWN" : "")}>{header.env?.public_name || "unknown-env"}</b>
+                            <b className="dropdown-button" style={{color:!ENV.Current() || header.env_unknown ? "red" : "#143c53"}} title={"Environment: " + ENV.Current() + (!ENV.Current() || header.env_unknown ? " -> UNKNOWN" : "")}>{ENV.Current() || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
-                                { header.envs?.unique_annotated.map(env => 
-                                    env.name.toUpperCase() == CLIENT.Env().toUpperCase() || env.full_name.toUpperCase() == CLIENT.Env().toUpperCase() || env.short_name.toUpperCase() == CLIENT.Env().toUpperCase() || env.foursight_name.toUpperCase() == CLIENT.Env().toUpperCase() ? (
+                                { ENV.KnownEnvs(header).map(env => 
+                                    ENV.Equals(env, ENV.Current()) ?  (
                                         <span key={env.public_name}>{env.public_name}&nbsp;&nbsp;&#x2713;</span>
                                     ):(
                                             /* <Link key={env.public_name} onClick={() => refreshHeaderData(env)} to={URL.Url(null, env.public_name)}>{env.public_name}</Link> */
                                             /* TODO: rework this whole URL.Url stuff with no env etc */
-                                        <Link key={env.public_name} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: !CLIENT.IsKnownEnv(CLIENT.Env()) ? CLIENT.Path("/env", getDefaultEnv()) : CLIENT.Path(null, env.public_name)}}>{env.public_name}</Link>
+                                            /*<Link key={env.public_name} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: !ENV.IsKnownEnv(ENV.Current()) ? CLIENT.Path("/env", getDefaultEnv()) : CLIENT.Path(null, env.public_name)}}>{env.public_name}</Link>*/
+                                            <Link key={env.public_name} to={CLIENT.Path(null, env.public_name)}>{env.public_name}</Link>
                                     )
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
@@ -184,7 +182,7 @@ const Header = (props) => {
                             </div>
                          </span>
                         ):(
-                            <b style={{color:titleBackgroundColor}} title="Environment: {CLIENT.Env()}">{CLIENT.Env().toUpperCase()}</b>
+                            <b style={{color:titleBackgroundColor}} title="Environment: {ENV.Current()}">{ENV.Current()}</b>
                         )}
                         &nbsp;|&nbsp;
                         { (header.app?.stage == 'prod') ? (<>

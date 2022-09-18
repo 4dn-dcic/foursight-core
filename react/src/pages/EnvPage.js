@@ -23,50 +23,20 @@ const EnvPage = (props) => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
 
-    function refreshHeaderData(env) {
-        const url = SERVER.Url("/header", env);
-        fetchData(url, setInfo, setLoading, setError);
-    }
-
-    function IsKnownEnv() {
-        return AUTH.IsKnownEnv(CLIENT.Env(), info);
-    }
-
-    function obsolete_IsKnownEnv(env = CLIENT.Env()) {
-        if (!env) return false;
-        env = env.toLowerCase();
-        for (let i = 0 ; i < info.envs?.unique_annotated?.length ; i++) {
-            const env_annotated = info.envs?.unique_annotated[i];
-            if ((env_annotated.name.toLowerCase() == env) ||
-                (env_annotated.full_name.toLowerCase() == env) ||
-                (env_annotated.short_name.toLowerCase() == env) ||
-                (env_annotated.public_name.toLowerCase() == env) ||
-                (env_annotated.foursight_name.toLowerCase() == env)) {
-                return true;
-            }
-        }
-        return false;
+    function IsKnownCurrentEnv() {
+        return ENV.IsCurrentKnown(info);
     }
 
     function IsCurrentEnv(env) {
-        return ENV.Equals(CLIENT.Env(), env);
+        return ENV.Equals(ENV.Current(), env);
     }
 
     function IsDefaultEnv(env) {
-        const defaultEnv = getDefaultEnv().toLowerCase();
-        if ((env?.full_name?.toLowerCase() == defaultEnv) ||
-            (env?.short_name?.toLowerCase() == defaultEnv) ||
-            (env?.public_name?.toLowerCase() == defaultEnv) ||
-            (env?.foursight_name?.toLowerCase() == defaultEnv)) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        return ENV.IsDefault(env, info);
     }
 
-    function getDefaultEnv() {
-        return info?.env?.default;
+    function GetDefaultEnv() {
+        return ENV.Default(info);
     }
 
     function onChange(arg, environ) {
@@ -76,12 +46,12 @@ const EnvPage = (props) => {
 
     // TODO: clean up this styles stuff.
 
-    const boxClass = IsKnownEnv() ? "boxstyle info" : "boxstyle check-warn";
-    const boxTextColor = IsKnownEnv() ? "darkblue" : "#6F4E37";
+    const boxClass = IsKnownCurrentEnv() ? "boxstyle info" : "boxstyle check-warn";
+    const boxTextColor = IsKnownCurrentEnv() ? "darkblue" : "#6F4E37";
 
     function envNameTextStyles(env) {
         return {
-            fontWeight: env == CLIENT.Env() ? "bold" : "inherit"
+            fontWeight: env == ENV.Current() ? "bold" : "inherit"
         };
     }
 
@@ -90,22 +60,22 @@ const EnvPage = (props) => {
     if (info.error) return <>Cannot load Foursight</>;
     if (info.loading) return <>Loading ...</>;
     return <div>
-            { !AUTH.IsLoggedIn(info) && IsKnownEnv() ? (
+            { !AUTH.IsLoggedIn(info) && IsKnownCurrentEnv() ? (
                 <div className="container">
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>
                         <b>Not Logged In</b> <br />
                         <small>
-                            Click <Link to={CLIENT.Path("/login", !IsKnownEnv() ? info : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>here</b></Link> to go to the <Link to={CLIENT.Path("/login", !IsKnownEnv() ? info : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
+                            Click <Link to={CLIENT.Path("/login", !IsKnownCurrentEnv() ? info : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>here</b></Link> to go to the <Link to={CLIENT.Path("/login", !IsKnownCurrentEnv() ? info : true, info)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
                         </small>
                         </div>
                 </div>
             ):(<span/>)}
             <div className="container">
                 <b>&nbsp;Environment</b>
-                { !IsKnownEnv() ? (<>
+                { !IsKnownCurrentEnv() ? (<>
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
-                        { (CLIENT.Env()) ? (<>
-                            Unknown environment: <b style={{color:"darkred"}}>{CLIENT.Env()}</b>
+                        { (ENV.Current()) ? (<>
+                            Unknown environment: <b style={{color:"darkred"}}>{ENV.Current()}</b>
                         </>):(<>
                             No environment specified in URL!
                         </>)}
@@ -113,14 +83,14 @@ const EnvPage = (props) => {
                         <small>
                             {/* TODO: Use Link instead of anchor - some issue where not updating the nav links with correct URL or something */}
                             {/* though refresh (anchor rather than Link) isnt' so so bad when switching environments */}
-                            Click <Link style={{fontWeight:"bold",color:"darkred"}} to={CLIENT.Path("/env", getDefaultEnv())} onClick={() => refreshHeaderData(getDefaultEnv())}>here</Link> to use this default environment:
-                            &nbsp;<Link style={{fontWeight:"bold",color:"darkred"}} to={CLIENT.Path("/env", getDefaultEnv())} onClick={() => refreshHeaderData(getDefaultEnv())}>{getDefaultEnv()}</Link>
+                            Click <Link style={{fontWeight:"bold",color:"darkred"}} to={CLIENT.Path("/env", GetDefaultEnv())}>here</Link> to use this default environment:
+                            &nbsp;<Link style={{fontWeight:"bold",color:"darkred"}} to={CLIENT.Path("/env", GetDefaultEnv())}>{GetDefaultEnv()}</Link>
                         </small>
                     </div>
                 </>):(<>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
-                    Current environment: <b style={{color:boxTextColor}}>{CLIENT.Env()}</b>
-                    { (AUTH.IsLoggedIn(info) && !AUTH.IsAllowedEnv(CLIENT.Env(), info)) && <span style={{color:"red"}}>&nbsp;&#x2192; You do not have permission for this environment.</span> }
+                    Current environment: <b style={{color:boxTextColor}}>{ENV.Current()}</b>
+                    { (AUTH.IsLoggedIn(info) && !ENV.IsAllowed(ENV.Current(), info)) && <span style={{color:"red"}}>&nbsp;&#x2192; You do not have permission for this environment.</span> }
                 </div>
                 </>)}
             </div>
@@ -128,25 +98,31 @@ const EnvPage = (props) => {
                 <b>&nbsp;Available Environments</b>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
                     <table style={{color:"inherit"}}><thead></thead><tbody>
-                        {info?.envs?.unique_annotated.map((env, envIndex) =>
+                        {ENV.KnownEnvs(info).map((env, envIndex) =>
                             <tr key={UUID()}>
-                                <td style={{fontWeight:IsCurrentEnv(env) ? "bold" : "normal",color:!IsKnownEnv(env.public_name) ? "red" : (IsCurrentEnv(env) ? "black" : "inherit"),verticalAlign:"top"}}><span>&#x2192;&nbsp;&nbsp;</span></td>
+                                <td style={{fontWeight:IsCurrentEnv(env) ? "bold" : "normal",color:!IsKnownCurrentEnv(env.public_name) ? "red" : (IsCurrentEnv(env) ? "black" : "inherit"),verticalAlign:"top"}}>
+                                    { IsCurrentEnv(env) ? (<>
+                                        <span>&#x2192;&nbsp;&nbsp;</span>
+                                    </>):(<>
+                                        <span>&ndash;&nbsp;&nbsp;</span>
+                                    </>)}
+                                </td>
                                 <td>
-                                    { AUTH.IsLoggedIn(info) && !AUTH.IsAllowedEnv(env, info) ? (<>
+                                    { AUTH.IsLoggedIn(info) && !ENV.IsAllowed(env, info) ? (<>
                                         <span className={"tool-tip"} data-text={"This is a restricted environment!"} style={{color:"red"}}>
-                                            <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public_name)} to={CLIENT.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
+                                            <Link style={{color:"inherit",textDecoration:IsCurrentEnv(env) ? "underline" : "normal"}} to={CLIENT.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
                                             { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             &nbsp;&#x2192; You do not have permission for this environment.
                                         </span>
                                     </>):(<>
                                         { IsCurrentEnv(env) ? (<>
                                             <span className={"tool-tip"} data-text={"This is the current environment."} style={{color:"black"}}>
-                                                <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public_name)} to={CLIENT.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
+                                                <Link style={{color:"inherit"}} to={CLIENT.Path("/env", env.public_name)}><b><u>{env.public_name}</u></b></Link>
                                                 { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             </span>
                                         </>):(<>
                                             <span>
-                                                <Link style={{color:"inherit"}} onClick={() => refreshHeaderData(env.public_name)} to={CLIENT.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
+                                                <Link style={{color:"inherit"}} to={CLIENT.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
                                                 { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             </span>
                                         </>)}
@@ -156,16 +132,16 @@ const EnvPage = (props) => {
                                     Short Name: <span style={envNameTextStyles(env.short_name)}>{env.short_name}</span> <br />
                                     Public Name: <span style={envNameTextStyles(env.public_name)}>{env.public_name}</span> <br />
                                     GAC Name: {env.gac_name} <br />
-                                    { IsKnownEnv() ? (<>
+                                    { IsKnownCurrentEnv() ? (<>
                                         <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected, env.full_name)}>
                                             <option>GAC Compare &#x2193;</option>
-                                            { info.envs?.unique_annotated.map((env) =>
+                                            { ENV.KnownEnvs(info).map((env) =>
                                                 <option key={UUID()}>{env.full_name}</option>
                                             )}
                                         </select>
                                     </>):(<>
                                     </>)}
-                                    { (envIndex < info.envs.unique_annotated.length - 1) ? (<span>
+                                    { (envIndex < ENV.KnownEnvs(info).length - 1) ? (<span>
                                         <br /><br />
                                     </span>):(<span/>)}
                                 </td>

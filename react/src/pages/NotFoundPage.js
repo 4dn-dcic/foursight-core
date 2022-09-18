@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
-import SERVER from '../utils/SERVER';
+import ENV from '../utils/ENV';
 import CLIENT from '../utils/CLIENT';
 
 const NotFoundPage = (props) => {
@@ -14,7 +14,7 @@ const NotFoundPage = (props) => {
                 <b>Page not found</b>.
                 <br />
                 <small>
-                Click <Link to={CLIENT.Path("/home", CLIENT.Env(info))} style={{color:"#6F4E37"}}><b>here</b></Link> to go to return to the <Link to={CLIENT.Path("/home", CLIENT.Env(info))}><b style={{color:"6F4E37"}}>home</b></Link> page.
+                Click <Link to={CLIENT.Path("/home", ENV.Current(info))} style={{color:"#6F4E37"}}><b>here</b></Link> to go to return to the <Link to={CLIENT.Path("/home", ENV.Current(info))}><b style={{color:"6F4E37"}}>home</b></Link> page.
                 </small>
             </div>
         </div>

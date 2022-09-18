@@ -1,30 +1,12 @@
-import LOC from './LOC';
+import ENV from './ENV';
+import CONTEXT from './CONTEXT';
+import PATH from './PATH';
 import STR from './STR';
 import TYPE from './TYPE';
 
-function IsLocal() {
-    return LOC.IsLocalClient();
-}
-
-function IsLocalCrossOrigin() {
-    return LOC.IsLocalCrossOrigin();
-}
-
-function GetOrigin() {
-    return LOC.ClientOrigin();
-}
-
-function GetDomain() {
-    return LOC.ClientDomain();
-}
-
-function GetBasePath() {
-    return LOC.ClientBasePath();
-}
-
-function GetBaseUrl() {
-    return GetOrigin() + GetBasePath();
-}
+// -------------------------------------------------------------------------------------------------
+// Client URL functions.
+// -------------------------------------------------------------------------------------------------
 
 function GetUrl(path) {
     if (!STR.HasValue(path)) {
@@ -33,8 +15,12 @@ function GetUrl(path) {
     if (!path.startsWith("/")) {
         path = "/" + path;
     }
-    return GetBaseUrl() + path;
+    return CONTEXT.Client.BaseUrl() + path;
 }
+
+// -------------------------------------------------------------------------------------------------
+// Client path functions.
+// -------------------------------------------------------------------------------------------------
 
 // Returns a well-formed client (React UI) path for the given logical path.
 // Uses the current environment (from the URL) by default, or if the env
@@ -50,7 +36,7 @@ function GetPath(path, env = true, envFallback = null) {
     if (!path.startsWith("/")) {
         path = "/" + path;
     }
-    path = NormalizePath(path);
+    path = PATH.Normalize(path);
     if (TYPE.IsBoolean(env)) {
         if (env) {
             //
@@ -58,7 +44,7 @@ function GetPath(path, env = true, envFallback = null) {
             // If it doesn't exist (for some reason) use the default environemnet
             // from the global header data, if passed in.
             //
-            env = GetCurrentEnv();
+            env = ENV.Current();
             if (!STR.HasValue(env)) {
                 if (STR.HasValue(envFallback)) {
                     env = envFallback;
@@ -90,20 +76,24 @@ function GetPath(path, env = true, envFallback = null) {
     if (STR.HasValue(env)) {
         path = "/" + env + path;
     }
-    path = GetBasePath() + path;
+    path = CONTEXT.Client.BasePath() + path;
     if (path.endsWith("/")) {
         path = path.substring(0, path.length - 1);
     }
     return path;
 }
 
+// -------------------------------------------------------------------------------------------------
+// Current client path functions.
+// -------------------------------------------------------------------------------------------------
+
 function GetCurrentPath() {
     return window.location.pathname;
 }
 
 function GetCurrentLogicalPath() {
-    const currentPath = NormalizePath(GetCurrentPath());
-    const basePathWithTrailingSlash = GetBasePath() + "/";
+    const currentPath = PATH.Normalize(GetCurrentPath());
+    const basePathWithTrailingSlash = CONTEXT.Client.BasePath() + "/";
     if (currentPath.startsWith(basePathWithTrailingSlash)) {
         const pathSansBasePath = currentPath.substring(basePathWithTrailingSlash.length);
         if (pathSansBasePath.length > 0) {
@@ -116,79 +106,22 @@ function GetCurrentLogicalPath() {
     return "";
 }
 
-// Returns the current environment from the URL.
-//
-// If the given header is an object then we assume it is the global header data
-// and in this case: if there is NO current environment (for some reason), or if the
-// current environment is NOT known (according to the list of available environments
-// in the given global header data), then return the default environment from this object.
-//
-function GetCurrentEnv(header = null) {
-    const currentPath = NormalizePath(GetCurrentPath());
-    const basePathWithTrailingSlash = GetBasePath() + "/";
-    let env = "";
-    if (currentPath.startsWith(basePathWithTrailingSlash)) {
-        const pathSansBasePath = currentPath.substring(basePathWithTrailingSlash.length);
-        if (pathSansBasePath.length > 0) {
-            const slash = pathSansBasePath.indexOf("/");
-            env = (slash >= 0) ? pathSansBasePath.substring(0, slash) : pathSansBasePath;
-        }
-    }
-    if (TYPE.IsObject(header)) {
-        if (!IsKnownEnv(env)) {
-            env = header.envs?.default;
-        }
-    }
-    return env;
-}
-
-function IsKnownEnv(env, header) {
-    if (!STR.HasValue(env) || !TYPE.IsObject(header)) {
-        return false;
-    }
-    env = env.toLowerCase();
-    for (let i = 0 ; i < header.envs?.unique_annotated?.length ; i++) {
-        const env_annotated = header.envs?.unique_annotated[i];
-        if ((env_annotated.name.toLowerCase() == env) ||
-            (env_annotated.full_name.toLowerCase() == env) ||
-            (env_annotated.short_name.toLowerCase() == env) ||
-            (env_annotated.public_name.toLowerCase() == env) ||
-            (env_annotated.foursight_name.toLowerCase() == env)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function NormalizePath(path) {
-    if (!STR.HasValue(path)) {
-        return "";
-    }
-    path = path.replace(/\/+/g, "/");
-    if (path.endsWith("/")) {
-        path = path.substring(0, path.length - 1)
-    }
-    if (!path.startsWith("/")) {
-        path = "/" + path;
-    }
-    return path;
-}
-
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    BasePath:           GetBasePath,
-    BaseUrl:            GetBaseUrl,
-    CurrentPath:        GetCurrentPath,
-    CurrentLogicalPath: GetCurrentLogicalPath,
-    Domain:             GetDomain,
-    Env:                GetCurrentEnv,
-    IsKnownEnv:         IsKnownEnv,
-    IsLocal:            IsLocal,
-    IsLocalCrossOrigin: IsLocalCrossOrigin,
-    Origin:             GetOrigin,
+    BasePath:           CONTEXT.Client.BasePath,
+    BaseUrl:            CONTEXT.Client.BaseUrl,
+    Domain:             CONTEXT.Client.Domain,
+    IsLocal:            CONTEXT.Client.IsLocal,
+    IsLocalCrossOrigin: CONTEXT.IsLocalCrossOrigin,
+    Origin:             CONTEXT.Client.Origin,
     Path:               GetPath,
-    Url:                GetUrl
+    Url:                GetUrl,
+
+    Current: {
+        Env:        ENV.Current,
+        IsKnownEnv: ENV.IsCurrentKnown
+    }
 }

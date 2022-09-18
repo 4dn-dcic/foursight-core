@@ -1,52 +1,64 @@
 // -------------------------------------------------------------------------------------------------
-// Client (React UI) location info.
+// Client (React UI) context info.
 // -------------------------------------------------------------------------------------------------
 
 const _CLIENT_BASE_PATH = "/api/react";
 
-function ClientOrigin() {
+function GetClientOrigin() {
     return window.location.origin;
 }
 
-function ClientDomain() {
+function GetClientDomain() {
     return window.location.hostname;
 }
 
-function ClientBasePath() {
+function GetClientBasePath() {
     return _CLIENT_BASE_PATH;
 }
 
+function GetClientBaseUrl() {
+    return GetClientOrigin() + GetClientBasePath();
+}
+
+function GetClientCurrentPath() {
+    return window.location.pathname;
+}
+
+function IsLocalClient() {
+    const origin = GetClientOrigin();
+    return origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
+}
+
 // -------------------------------------------------------------------------------------------------
-// Server (React API) location info.
+// Server (React API) context info.
 // -------------------------------------------------------------------------------------------------
 
 const _SERVER_BASE_PATH  = "/api/reactapi";
 const _SERVER_LOCAL_PORT = 8000
 
-function ServerOrigin() {
+function GetServerOrigin() {
     //
     // N.B. If the client (React UI) is running locally then assume the server (React API) is as well.
     //
     return IsLocalClient() ? "http://localhost:" + _SERVER_LOCAL_PORT : window.location.origin;
 }
 
-function ServerBasePath() {
+function GetServerBasePath() {
     return _SERVER_BASE_PATH;
 }
 
-// -------------------------------------------------------------------------------------------------
-// Running local info.
-// -------------------------------------------------------------------------------------------------
-
-function IsLocalClient() {
-    const origin = ClientOrigin();
-    return origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
+function GetServerBaseUrl() {
+    return GetServerOrigin() + GetServerBasePath();
 }
 
 function IsLocalServer() {
-    const origin = ServerOrigin();
+    const origin = GetServerOrigin();
     return origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
 }
+
+// -------------------------------------------------------------------------------------------------
+// Local context info.
+// -------------------------------------------------------------------------------------------------
 
 function IsLocal() {
     return IsLocalClient() && IsLocalServer();
@@ -58,7 +70,7 @@ function IsLocal() {
 // the server via chalice local (typically on port 8000).
 //
 function IsLocalCrossOrigin() {
-    return IsLocal() && ClientOrigin() != ServerOrigin();
+    return IsLocal() && GetClientOrigin() != GetServerOrigin();
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -66,13 +78,23 @@ function IsLocalCrossOrigin() {
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    ClientBasePath:     ClientBasePath,
-    ClientDomain:       ClientDomain,
-    ClientOrigin:       ClientOrigin,
+
     IsLocal:            IsLocal,
-    IsLocalClient:      IsLocalClient,
     IsLocalCrossOrigin: IsLocalCrossOrigin,
-    IsLocalServer:      IsLocalServer,
-    ServerBasePath:     ServerBasePath,
-    ServerOrigin:       ServerOrigin
+
+    Client: {
+        BasePath:    GetClientBasePath,
+        BaseUrl:     GetClientBaseUrl,
+        CurrentPath: GetClientCurrentPath,
+        Domain:      GetClientDomain,
+        IsLocal:     IsLocalClient,
+        Origin:      GetClientOrigin
+    },
+
+    Server: {
+        IsLocal:  IsLocalServer,
+        BasePath: GetServerBasePath,
+        BaseUrl:  GetServerBaseUrl,
+        Origin:   GetServerOrigin
+    }
 }

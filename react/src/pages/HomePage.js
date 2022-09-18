@@ -1,12 +1,8 @@
 import { useContext, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import GlobalContext from "../GlobalContext";
-import COOKIE from "../utils/COOKIE";
-import CLIENT from "../utils/CLIENT";
-import UUID from '../utils/UUID';
+import ENV from "../utils/ENV";
 import SERVER from '../utils/SERVER';
-import TIME from '../utils/TIME';
-import TYPE from '../utils/TYPE';
 
 const HomePage = (props) => {
 
@@ -14,8 +10,8 @@ const HomePage = (props) => {
 
     const linkToNonReactFoursight =
               SERVER.IsLocalCrossOrigin()
-              ? (SERVER.Origin() + "/api/view/" + CLIENT.Env(header))
-              : ("/api/view/" + CLIENT.Env(header));
+              ? (SERVER.Origin() + "/api/view/" + ENV.Current(header))
+              : ("/api/view/" + ENV.Current(header));
 
     return <>
         <div className="container">

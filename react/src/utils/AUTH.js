@@ -5,7 +5,6 @@
 
 import CLIENT from './CLIENT';
 import COOKIE from './COOKIE';
-import ENV from './ENV';
 import SERVER from './SERVER';
 import STR from './STR';
 import TYPE from './TYPE';
@@ -72,7 +71,7 @@ function LoggedInUserJwt(header) {
 //
 function Logout() {
     COOKIE.DeleteFauxLogin();
-    window.location.replace(SERVER.Url("/logout", CLIENT.Env()));
+    window.location.replace(SERVER.Url("/logout", CLIENT.Current.Env()));
 }
 
 // This is the server (React API) URL for Auth0 to callback to.
@@ -91,92 +90,14 @@ function AuthenticationClientID(header) {
 }
 
 // -------------------------------------------------------------------------------------------------
-// Authorization (allowed environments) functions.
-// -------------------------------------------------------------------------------------------------
-
-function GetAllowedEnvs(header) {
-    if (IsFauxLoggedIn()) {
-        //
-        // If we are faux logged in then allow all environments since we we (the React API)
-        // are not able to determind the list of allowed environment without a real authenticated
-        // user; if we don't do this then the faux logged in user won't be able to do anything.
-        //
-        return GetKnownEnvs(header);
-    }
-    const allowedEnvs = header?.auth?.allowed_envs || [];
-    //
-    // The list of known environments are of the annotated variety.
-    // But the list of allowed environments is just a list of simple environment names.
-    // We want to return the list of allowed environments as a list of the annotated variety.
-    // We could maybe do this on the server-side, or at least at global header data fetch time.
-    //
-    const knownEnvs = GetKnownEnvs(header);
-    let allowedEnvsAnnotated = [];
-    for (const knownEnv of knownEnvs) {
-        for (const allowedEnv of allowedEnvs) {
-            if (ENV.Equals(allowedEnv, knownEnv)) {
-                allowedEnvsAnnotated.push(knownEnv);
-            }
-        }
-    }
-    return allowedEnvsAnnotated;
-}
-
-function GetKnownEnvs(header) {
-    return header?.envs?.unique_annotated || [];
-}
-
-function IsAllowedEnv(env, header) {
-    console.log("CHECK ALLOWED ENV");
-    console.log(env);
-    console.log(header);
-    if ((STR.HasValue(env) || TYPE.IsObject(env)) && TYPE.IsObject(header)) {
-        // TODO
-        // This is not right. The allowed_envs list is just a simple list of env names
-        // and we want to consider all name version possibilities via the unique_annotated list.
-        //
-        const allowedEnvs = GetAllowedEnvs(header);
-        console.log(allowedEnvs);
-        for (const allowedEnv of allowedEnvs) {
-            if (ENV.Equals(allowedEnv, env)) {
-                console.log("ALLOWED ENV");
-                console.log(allowedEnv);
-                console.log(env);
-                return true;
-            }
-        }
-    }
-    console.log("NOT ALLOWED ENV");
-    console.log(env);
-    console.log(header);
-    return false;
-}
-
-function IsKnownEnv(env, header) {
-    if ((STR.HasValue(env) || TYPE.IsObject(env)) && TYPE.IsObject(header)) {
-        const knownEnvs = GetKnownEnvs(header);
-        for (const knownEnv of knownEnvs) {
-            if (ENV.Equals(knownEnv, env)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-// -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    AllowedEnvs:               GetAllowedEnvs,
     AuthenticationCallbackUrl: AuthenticationCallbackUrl,
     AuthenticationClientID:    AuthenticationClientID,
-    IsAllowedEnv:              IsAllowedEnv,
     IsFauxLoggedIn:            IsFauxLoggedIn,
-    IsKnownEnv:                IsKnownEnv,
     IsLoggedIn:                IsLoggedIn,
-    KnownEnvs:                 GetKnownEnvs,
     LoggedInUser:              LoggedInUser,
     LoggedInUserVerified:      LoggedInUserVerified,
     LoggedInUserJwt:           LoggedInUserJwt,

@@ -1,27 +1,7 @@
 import CLIENT from './CLIENT';
-import LOC from './LOC';
+import CONTEXT from './CONTEXT';
 import STR from './STR';
 import TYPE from './TYPE';
-
-function IsLocal() {
-    return LOC.IsLocalServer();
-}
-
-function IsLocalCrossOrigin() {
-    return LOC.IsLocalCrossOrigin();
-}
-
-function GetOrigin() {
-    return LOC.ServerOrigin();
-}
-
-function GetBasePath() {
-    return LOC.ServerBasePath();
-}
-
-function GetBaseUrl() {
-    return GetOrigin() + GetBasePath();
-}
 
 function GetUrl(path, env = true) {
     if (!STR.HasValue(path)) {
@@ -32,13 +12,13 @@ function GetUrl(path, env = true) {
     }
     if (TYPE.IsBoolean(env)) {
         if (env) {
-            env = CLIENT.Env();
+            env = CLIENT.Current.Env();
         }
     }
     if (STR.HasValue(env)) {
         path = "/" + env + path;
     }
-    return GetBaseUrl() + path;
+    return CONTEXT.Server.BaseUrl() + path;
 }
 
 function GetUrlAbs(path) {
@@ -49,7 +29,7 @@ function GetUrlAbs(path) {
         path = "/" + path;
     }
     path = path.replace(/\/+/g, "/");
-    return GetOrigin() + path;
+    return CONTEXT.Server.Origin() + path;
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -57,11 +37,11 @@ function GetUrlAbs(path) {
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    BasePath:           GetBasePath,
-    BaseUrl:            GetBaseUrl,
-    IsLocal:            IsLocal,
-    IsLocalCrossOrigin: IsLocalCrossOrigin,
-    Origin:             GetOrigin,
+    BasePath:           CONTEXT.Server.BasePath,
+    BaseUrl:            CONTEXT.Server.BaseUrl,
+    IsLocal:            CONTEXT.Server.IsLocal,
+    IsLocalCrossOrigin: CONTEXT.IsLocalCrossOrigin,
+    Origin:             CONTEXT.Server.Origin,
     Url:                GetUrl,
     UrlAbs:             GetUrlAbs
 }
