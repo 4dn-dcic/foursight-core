@@ -574,24 +574,28 @@ class AppUtilsCore(ReactApi):
                                                                           expires=jwt_expires,
                                                                           http_only=True)
                 #
-                # Need to create an authenvs cookie too, not HttpOnly, readable by client (React UI).
+                # Need to create an authenvs cookie too, not HttpOnly, readable by client (React UI);
+                # this contains the list of known and allowed (for this authenticate user) environments.
                 #
-                authenvs = self.encryption.encode(allowed_envs)
+                authenvs = {
+                    "known_envs": known_envs,
+                    "allowed_envs": allowed_envs
+                }
+                authenvs = self.encryption.encode(authenvs)
                 authenvs_cookie = self.create_set_cookie_string(request, name="authenvs",
                                                                          value=authenvs,
                                                                          domain=domain,
                                                                          expires=jwt_expires)
-                envs = self.encryption.encode(known_envs)
-                envs_cookie = self.create_set_cookie_string(request, name="envs",
-                                                                     value=envs,
-                                                                     domain=domain,
-                                                                     expires=jwt_expires)
+              # envs = self.encryption.encode(known_envs)
+              # envs_cookie = self.create_set_cookie_string(request, name="envs",
+              #                                                      value=envs,
+              #                                                      domain=domain,
+              #                                                      expires=jwt_expires)
                 print('xyzzy:auth0_callback:authtoken_cookie:')
                 print(authtoken_cookie)
                 print(authenvs_cookie)
                 response_headers["set-cookie"] = authtoken_cookie
                 response_headers["Set-Cookie"] = authenvs_cookie
-                response_headers["SET-COOKIE"] = envs_cookie
             else:
                 cookie_str = self.create_set_cookie_string(request, name="jwtToken",
                                                                     value=jwt_token,

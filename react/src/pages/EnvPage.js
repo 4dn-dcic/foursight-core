@@ -54,8 +54,6 @@ const EnvPage = (props) => {
     if (header.error) return <>Cannot load Foursight</>;
     if (header.loading) return <>Loading ...</>;
     return <div>
-                [[[{typeof(COOKIE.GetAllowedEnvs())}]]]
-                <pre>{JSON.stringify(COOKIE.GetAllowedEnvs())}</pre>
             { !AUTH.IsLoggedIn(header) && IsKnownCurrentEnv() ? (
                 <div className="container">
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>

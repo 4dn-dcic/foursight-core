@@ -5,8 +5,7 @@ import TYPE from './TYPE';
 
 const _cookies               = new Cookies()
 const _authTokenCookieName   = "authtoken";
-const _allowedEnvsCookieName = "authenvs";
-const _knownEnvsCookieName   = "envs";
+const _authEnvsCookieName   = "authenvs";
 const _fauxLoginCookieName   = "test_mode_login_localhost";
 const _redirectCookieName    = "reactredir";
 const _lastUrlCookieName     = "lasturl";
@@ -108,34 +107,46 @@ function HasAuthTokenCookie() {
     }
 }
 
+function GetAuthEnvsCookie() {
+    try {
+        console.log("GET AUTHENVS COOKIE");
+        const authEnvsEncoded = GetCookie(_authEnvsCookieName);
+        const authEnvsDecoded = atob(authEnvsEncoded);
+        const authEnvs = JSON.parse(authEnvsDecoded);
+        console.log("GET AUTHENVS COOKIE");
+        console.log(authEnvs);
+        return authEnvs;
+    }
+    catch {
+        console.log("GET AUTHENVS COOKIE EXCEPTION");
+        return [];
+    }
+}
+
 function GetKnownEnvsCookie() {
     try {
-        console.log("GET ENVS COOKIE");
-        const knownEnvsEncoded = GetCookie(_knownEnvsCookieName);
-        const knownEnvsDecoded = atob(knownEnvsEncoded);
-        const knownEnvs = JSON.parse(knownEnvsDecoded);
-        console.log("GET ENVS COOKIE");
+        console.log("GET KNOWN ENVS COOKIE");
+        const knownEnvs = GetAuthEnvsCookie()?.known_envs || [];
+        console.log("GOT KNOWN ENVS COOKIE");
         console.log(knownEnvs);
         return knownEnvs;
     }
     catch {
-        console.log("GET ENVS COOKIE EXCEPTION");
+        console.log("GET KNOWN ENVS COOKIE EXCEPTION");
         return [];
     }
 }
 
 function GetAllowedEnvsCookie() {
     try {
-        console.log("GET AUTHENVS COOKIE");
-        const allowedEnvsEncoded = GetCookie(_allowedEnvsCookieName);
-        const allowedEnvsDecoded = atob(allowedEnvsEncoded);
-        const allowedEnvs = JSON.parse(allowedEnvsDecoded);
-        console.log("GET AUTHENVS COOKIE");
+        console.log("GET ALLOWED ENVS COOKIE");
+        const allowedEnvs = GetAuthEnvsCookie()?.allowed_envs || [];
+        console.log("GOT ALLOWED ENVS COOKIE");
         console.log(allowedEnvs);
         return allowedEnvs;
     }
     catch {
-        console.log("GET AUTHENVS COOKIE EXCEPTION");
+        console.log("GET ALLOWED ENVS COOKIE EXCEPTION");
         return [];
     }
 }
