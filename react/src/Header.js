@@ -8,6 +8,7 @@ import { fetchData } from "./utils/FetchUtils";
 import AUTH from './utils/AUTH';
 import ENV from './utils/ENV';
 import CLIENT from './utils/CLIENT';
+import CONTEXT from './utils/CONTEXT';
 import SERVER from './utils/SERVER';
 import TIME from './utils/TIME';
 
@@ -19,20 +20,21 @@ const Header = (props) => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
 
-    let isFoursightFourfront = header.app?.package != "foursight-cgap";
-    let titleBackgroundColor = isFoursightFourfront ? "#14533C" : "#143C53";
-    let subTitleBackgroundColor = isFoursightFourfront ? "#AEF1D6" : "#AED6F1";
+    // let isFoursightFourfront = header.app?.package != "foursight-cgap";
+    let titleBackgroundColor = CONTEXT.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
+    let subTitleBackgroundColor = CONTEXT.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
 
     let titleToolTip = "Foursight";
 
-    function getLegacyFoursightLink() {
+    function GetLegacyFoursightLink() {
         //
         // For Foursight-CGAP (as opposed to Foursight-Fourfront) going to just,
         // for example, /api/view/supertest, does not work, rather we want to
         // to, for example, /api/view/cgap-supertest. I.e. for Foursight-CGAP
         // use the full name and the public name for Foursight-Fourfront.
         //
-        const env = (isFoursightFourfront ? header?.env?.public_name : header?.env?.full_name) || header?.env?.default;
+        // const env = (isFoursightFourfront ? header?.env?.public_name : header?.env?.full_name) || ENV.Default(header);
+        const env = (CONTEXT.IsFoursightFourfront(header) ? ENV.PublicEnvName(ENV.Current()) : ENV.FullEnvName(ENV.Current())) || ENV.Default(header);
         if (CLIENT.IsLocal() && window.location.host == "localhost:3000") {
             //
             // TODO
@@ -109,8 +111,8 @@ const Header = (props) => {
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr title={"App Deployed:" + header.app?.deployed + " | App Launched: " + header.app?.launched + " | Page Loaded: " + header.page?.loaded}>
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
-                    <a href={isFoursightFourfront ? ("https://" + header.env?.public_name + ".4dnucleome.org/") : "https://cgap.hms.harvard.edu/"} target="_blank">
-                        { isFoursightFourfront ? (<span>
+                    <a href={CONTEXT.IsFoursightFourfront(header) ? ("https://" + header.env?.public_name + ".4dnucleome.org/") : "https://cgap.hms.harvard.edu/"} target="_blank">
+                        { CONTEXT.IsFoursightFourfront(header) ? (<span>
                             <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="32" width="44" />
                         </span>):(<span>
                             <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
@@ -160,7 +162,7 @@ const Header = (props) => {
                         {renderNavigationLinks(header)}
                     </td>
                     <td width="2%" align="center" style={{whiteSpace:"nowrap",margin:"0 auto"}}>
-                        <a target="_blank" href={"https://pypi.org/project/" + (isFoursightFourfront ? "foursight" : "foursight-cgap") + "/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{header.app?.version}</b></a>
+                        <a target="_blank" href={"https://pypi.org/project/" + (CONTEXT.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + "/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{header.app?.version}</b></a>
                     </td>
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (ENV.KnownEnvs(header).length > 0) ? (
@@ -173,7 +175,7 @@ const Header = (props) => {
                                     ):(
                                             /* <Link key={env.public_name} onClick={() => refreshHeaderData(env)} to={URL.Url(null, env.public_name)}>{env.public_name}</Link> */
                                             /* TODO: rework this whole URL.Url stuff with no env etc */
-                                            /*<Link key={env.public_name} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: !ENV.IsKnownEnv(ENV.Current()) ? CLIENT.Path("/env", getDefaultEnv()) : CLIENT.Path(null, env.public_name)}}>{env.public_name}</Link>*/
+                                            /*<Link key={env.public_name} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: !ENV.IsKnownEnv(ENV.Current()) ? CLIENT.Path("/env", ENV.Default(header)) : CLIENT.Path(null, env.public_name)}}>{env.public_name}</Link>*/
                                             <Link key={env.public_name} to={CLIENT.Path(null, env.public_name)}>{env.public_name}</Link>
                                     )
                                 )}
@@ -217,7 +219,7 @@ const Header = (props) => {
                     <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="3">
                         <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>. For more info click <b><a href="https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React" style={{color:"darkred"}} target="_blank"><u>here</u></a></b>.
                         {/* To go to the real Foursight click <a href={CLIENT.IsLocal() && window.location.host == "localhost:3000" ? ("http://localhost:8000" + ("/api/view/" + header?.env?.public_name)) : ("/api/view/" + (header?.env?.public_name))} style={{color:"inherit"}}><b><u>here</u></b></a>.</i> */}
-                        To go to the real Foursight click <a href={getLegacyFoursightLink()} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
+                        To go to the real Foursight click <a href={GetLegacyFoursightLink()} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
                     </td>
                 </tr>
                 <tr>

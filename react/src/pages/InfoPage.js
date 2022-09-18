@@ -5,9 +5,10 @@ import { fetchData } from '../utils/FetchUtils';
 import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
 import CLIPBOARD from '../utils/CLIPBOARD';
+import CONTEXT from '../utils/CONTEXT';
 import SERVER from '../utils/SERVER';
 import TIME from '../utils/TIME';
-import uuid from 'react-uuid';
+import UUID from '../utils/UUID';
 let YAML = require('json-to-pretty-yaml');
 
 const InfoPage = () => {
@@ -20,11 +21,6 @@ const InfoPage = () => {
     let [ error, setError ] = useState(false);
     let [ showingJwt, setShowJwt ] = useState(false);
     useEffect(() => { fetchData(url, setInfo, setLoading, setError)}, []);
-    //
-    // TODO: Set this within /header API call.
-    //
-    let isFoursightFourfront = header.app?.package != "foursight-cgap";
-    isFoursightFourfront =true
 
     const InfoBox = ({title, children}) => {
         return <>
@@ -114,7 +110,7 @@ const InfoPage = () => {
     if (header.loading) return <>Loading ...</>;
     return <>
         <InfoBox title="Versions">
-            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={isFoursightFourfront ? "4dn-dcic" : "dbmi-bgm"} size="2" />
+            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={CONTEXT.IsFoursightFourfront(info) ? "4dn-dcic" : "dbmi-bgm"} size="2" />
             <InfoRow name={"foursight-core"} value={header.versions?.foursight_core} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"dcicutils"} value={header.versions?.dcicutils} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"chalice"} value={header.versions?.chalice} monospace={true} copy={true} chalice={true} size="2" pypi={true} github={"aws"} />
@@ -149,7 +145,7 @@ const InfoPage = () => {
         <InfoBox title="Environment & Bucket Names">
             <pre className="info" style={{border:"0",margin:"0",padding:"8",paddingBottom:"8",marginTop:"0"}}>
                 { info.buckets?.info && info.buckets.info.map(bucket_info => {
-                    return <span key={uuid()}>{YAML.stringify(bucket_info)}{info.buckets.info.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
+                    return <span key={UUID()}>{YAML.stringify(bucket_info)}{info.buckets.info.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
                 })}
             </pre>
         </InfoBox>

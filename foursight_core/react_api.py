@@ -632,7 +632,7 @@ class ReactApi:
             "public_name": "cgap-supertest",
             "foursight_name": "cgap-supertest",
             "gac_name": "C4DatastoreCgapSupertestApplicationConfiguration"
-            } ] }
+            } ], "default": "cgap-supertest" }
         return response
 
     def get_secrets_names(self) -> list:

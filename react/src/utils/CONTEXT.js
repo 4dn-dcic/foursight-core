@@ -74,13 +74,22 @@ function IsLocalCrossOrigin() {
 }
 
 // -------------------------------------------------------------------------------------------------
+// Foursight-CGAP vs. Foursight-Fourfront context info.
+// -------------------------------------------------------------------------------------------------
+
+function IsFoursightFourfront(header) {
+    return header.app?.package != "foursight-cgap";
+}
+
+// -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 export default {
 
-    IsLocal:            IsLocal,
-    IsLocalCrossOrigin: IsLocalCrossOrigin,
+    IsLocal:              IsLocal,
+    IsLocalCrossOrigin:   IsLocalCrossOrigin,
+    IsFoursightFourfront: IsFoursightFourfront,
 
     Client: {
         BasePath:    GetClientBasePath,

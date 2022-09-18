@@ -157,8 +157,8 @@ function AreSameEnvs(envA, envB) {
 // Returns the current environment from the URL.
 // NOTE: If the given header is an object then we assume it is the global header data
 // and in this case: if there is NO current environment (for some reason), or if the
-// current environment is NOT known (according to the list of available environments
-// in the given global header data), then return the default environment from this object.
+// current environment is NOT known (according to the list of available/known environments in the
+// given global header data), then return the default environment from this global header data object.
 //
 function GetCurrentEnv(header = null) {
     const currentPath = PATH.Normalize(CONTEXT.Client.CurrentPath());
@@ -187,6 +187,36 @@ function IsCurrentEnvKnown(header) {
     return IsKnownEnv(GetCurrentEnv(), header);
 }
 
+function GetPublicEnvName(env) {
+    if (TYPE.IsObject(env)) {
+        return env.public_name;
+    }
+    else if (STR.HasValue(env)) {
+        const knownEnvs = GetKnownEnvs();
+        for (const knownEnv of knownEnvs) {
+            if (AreSameEnvs(knownEnv, env)) {
+                return knownEnv.public_name;
+            }
+        }
+    }
+    return "";
+}
+
+function GetFullEnvName(env) {
+    if (TYPE.IsObject(env)) {
+        return env.full_name;
+    }
+    else if (STR.HasValue(env)) {
+        const knownEnvs = GetKnownEnvs();
+        for (const knownEnv of knownEnvs) {
+            if (AreSameEnvs(knownEnv, env)) {
+                return knownEnv.full_name;
+            }
+        }
+    }
+    return "";
+}
+
 // -------------------------------------------------------------------------------------------------
 // Default environment functions.
 // -------------------------------------------------------------------------------------------------
@@ -207,11 +237,13 @@ export default {
     Equals:         AreSameEnvs,
     AllowedEnvs:    GetAllowedEnvs,
     Current:        GetCurrentEnv,
+    Default:        GetDefaultEnv,
+    FullEnvName:    GetFullEnvName,
+    IsAllowed:      IsAllowedEnv,
     IsCurrent:      IsCurrentEnv,
     IsCurrentKnown: IsCurrentEnvKnown,
-    Default:        GetDefaultEnv,
-    IsAllowed:      IsAllowedEnv,
     IsDefault:      IsDefaultEnv,
     IsKnown:        IsKnownEnv,
     KnownEnvs:      GetKnownEnvs,
+    PublicEnvName:  GetPublicEnvName
 }
