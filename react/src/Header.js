@@ -153,12 +153,13 @@ const Header = (props) => {
                                 { ENV.KnownEnvs(header).map(env => 
                                     ENV.Equals(env, ENV.Current()) ?  (
                                         <span key={env.public_name}>{env.public_name}&nbsp;&nbsp;&#x2713;</span>
-                                    ):(
-                                            /* <Link key={env.public_name} onClick={() => refreshHeaderData(env)} to={URL.Url(null, env.public_name)}>{env.public_name}</Link> */
-                                            /* TODO: rework this whole URL.Url stuff with no env etc */
-                                            /*<Link key={env.public_name} onClick={() => refreshHeaderData(env)} to={{pathname: "/redirect"}} state={{url: !ENV.IsKnownEnv(ENV.Current()) ? CLIENT.Path("/env", ENV.Default(header)) : CLIENT.Path(null, env.public_name)}}>{env.public_name}</Link>*/
+                                    ):(<>
+                                        { ENV.IsAllowed(env, header) ? (<>
                                             <Link key={env.public_name} to={CLIENT.Path(null, env.public_name)}>{env.public_name}</Link>
-                                    )
+                                        </>):(<>
+                                            <Link key={env.public_name} to={CLIENT.Path("/env", env.public_name)}>{env.public_name}</Link>
+                                        </>)}
+                                    </>)
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
                                 <Link id="__envinfo__" to={CLIENT.Path("/env")}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</Link>
