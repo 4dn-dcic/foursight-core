@@ -26,6 +26,7 @@ const Header = (props) => {
 
     let titleToolTip = "Foursight";
 
+        /*
     function GetLegacyFoursightLink() {
         //
         // For Foursight-CGAP (as opposed to Foursight-Fourfront) going to just,
@@ -34,7 +35,7 @@ const Header = (props) => {
         // use the full name and the public name for Foursight-Fourfront.
         //
         // const env = (isFoursightFourfront ? header?.env?.public_name : header?.env?.full_name) || ENV.Default(header);
-        const env = (CONTEXT.IsFoursightFourfront(header) ? ENV.PublicEnvName(ENV.Current()) : ENV.FullEnvName(ENV.Current())) || ENV.Default(header);
+        const env = (CONTEXT.IsFoursightFourfront(header) ? ENV.PublicName(ENV.Current(), header) : ENV.FullName(ENV.Current(), header)) || ENV.Default(header);
         if (CLIENT.IsLocal() && window.location.host == "localhost:3000") {
             //
             // TODO
@@ -45,11 +46,7 @@ const Header = (props) => {
             return "/api/view/" + env;
         }
     }
-
-    function refreshHeaderData(env) {
-        const url = SERVER.Url("/header", env.public_name);
-        fetchData(url, setHeader, setLoading, setError);
-    }
+    */
 
     function renderNavigationLinks(header) {
         function style(isActive) {
@@ -219,7 +216,7 @@ const Header = (props) => {
                     <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="3">
                         <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>. For more info click <b><a href="https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React" style={{color:"darkred"}} target="_blank"><u>here</u></a></b>.
                         {/* To go to the real Foursight click <a href={CLIENT.IsLocal() && window.location.host == "localhost:3000" ? ("http://localhost:8000" + ("/api/view/" + header?.env?.public_name)) : ("/api/view/" + (header?.env?.public_name))} style={{color:"inherit"}}><b><u>here</u></b></a>.</i> */}
-                        To go to the real Foursight click <a href={GetLegacyFoursightLink()} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
+                        To go to the real Foursight click <a href={ENV.LegacyFoursightLink(header)} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
                     </td>
                 </tr>
                 <tr>

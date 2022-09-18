@@ -56,7 +56,7 @@ function AuthorizationRequired({ children }) {
         console.log(header);
         return <Navigate to={CLIENT.Path("/login")} replace />
     }
-    else if (header.env && !ENV.IsAllowed(header.env, header)) {
+    else if (!ENV.IsAllowed(ENV.Current(), header)) {
         console.log("XYZZY:REDIRECT TO /env (d)");
         return <Navigate to={CLIENT.Path("/env")} replace />
     }

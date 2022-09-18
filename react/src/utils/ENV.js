@@ -97,13 +97,8 @@ function IsAllowedEnv(env, header) {
 // contains these elements: name, full_name, short_name, public_name, foursight_name.
 //
 function AreSameEnvs(envA, envB) {
-        console.log("SAME?")
-        console.log(envA)
-        console.log(envB)
     if (TYPE.IsObject(envA)) {
-        console.log("SAME-A")
         if (TYPE.IsObject(envB)) {
-        console.log("SAME-B")
             return (envA?.name?.toLowerCase()           == envB?.name?.toLowerCase()) ||
                    (envA?.full_name?.toLowerCase()      == envB?.full_name?.toLowerCase()) ||
                    (envA?.short_name?.toLowerCase()     == envB?.short_name?.toLowerCase()) ||
@@ -111,7 +106,6 @@ function AreSameEnvs(envA, envB) {
                    (envA?.foursight_name?.toLowerCase() == envB?.foursight_name?.toLowerCase());
         }
         else if (STR.HasValue(envB)) {
-        console.log("SAME-C")
             envB = envB.toLowerCase();
             return (envA?.name?.toLowerCase()           == envB) ||
                    (envA?.full_name?.toLowerCase()      == envB) ||
@@ -120,14 +114,11 @@ function AreSameEnvs(envA, envB) {
                    (envA?.foursight_name?.toLowerCase() == envB);
         }
         else {
-        console.log("SAME-D")
             return false;
         }
     }
     else if (STR.HasValue(envA)) {
-        console.log("SAME-E")
         if (TYPE.IsObject(envB)) {
-        console.log("SAME-F")
             envA = envA.toLowerCase();
             return (envB?.name?.toLowerCase()           == envA) ||
                    (envB?.full_name?.toLowerCase()      == envA) ||
@@ -136,16 +127,13 @@ function AreSameEnvs(envA, envB) {
                    (envB?.foursight_name?.toLowerCase() == envA);
         }
         else if (STR.HasValue(envB)) {
-        console.log("SAME-G")
             return envA.toLowerCase() == envB.toLowerCase();
         }
         else {
-        console.log("SAME-H")
             return false;
         }
     }
     else {
-        console.log("SAME-I")
         return false;
     }
 }
@@ -187,34 +175,39 @@ function IsCurrentEnvKnown(header) {
     return IsKnownEnv(GetCurrentEnv(), header);
 }
 
-function GetPublicEnvName(env) {
+// -------------------------------------------------------------------------------------------------
+// Environment name variants functions.
+// -------------------------------------------------------------------------------------------------
+
+function GetAnnotatedEnv(env, header) {
     if (TYPE.IsObject(env)) {
-        return env.public_name;
+        return env;
     }
     else if (STR.HasValue(env)) {
-        const knownEnvs = GetKnownEnvs();
+        const knownEnvs = GetKnownEnvs(header);
         for (const knownEnv of knownEnvs) {
             if (AreSameEnvs(knownEnv, env)) {
-                return knownEnv.public_name;
+                return knownEnv;
             }
         }
     }
-    return "";
+    return null;
 }
 
-function GetFullEnvName(env) {
-    if (TYPE.IsObject(env)) {
-        return env.full_name;
-    }
-    else if (STR.HasValue(env)) {
-        const knownEnvs = GetKnownEnvs();
-        for (const knownEnv of knownEnvs) {
-            if (AreSameEnvs(knownEnv, env)) {
-                return knownEnv.full_name;
-            }
-        }
-    }
-    return "";
+function GetPublicEnvName(env, header) {
+    return GetAnnotatedEnv(env, header)?.public_name;
+}
+
+function GetFullEnvName(env, header) {
+    return GetAnnotatedEnv(env, header)?.full_name;
+}
+
+function GetShortEnvName(env, header) {
+    return GetAnnotatedEnv(env, header)?.short_name;
+}
+
+function GetFoursightEnvName(env, header) {
+    return GetAnnotatedEnv(env, header)?.foursight_name;
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -222,7 +215,7 @@ function GetFullEnvName(env) {
 // -------------------------------------------------------------------------------------------------
 
 function GetDefaultEnv(header) {
-    return header?.env?.default;
+    return header?.envs?.default;
 }
 
 function IsDefaultEnv(env, header) {
@@ -230,20 +223,49 @@ function IsDefaultEnv(env, header) {
 }
 
 // -------------------------------------------------------------------------------------------------
+// Legacy Foursight functions.
+// -------------------------------------------------------------------------------------------------
+
+function GetLegacyFoursightLink(header) {
+    //
+    // For Foursight-CGAP (as opposed to Foursight-Fourfront) going to just,
+    // for example, /api/view/supertest, does not work, rather we want to
+    // to, for example, /api/view/cgap-supertest. I.e. for Foursight-CGAP
+    // use the full name and the public name for Foursight-Fourfront.
+    //
+    const env = (CONTEXT.IsFoursightFourfront(header) ?
+                 GetPublicEnvName(GetCurrentEnv(header), header) :
+                 GetFullEnvName(GetCurrentEnv(header), header))
+                || GetDefaultEnv(header);
+    if (CONTEXT.Client.IsLocal() && window.location.host == "localhost:3000") {
+        //
+        // TODO
+        //
+        return "http://localhost:8000" + "/api/view/" + env;
+    }
+    else {
+        return "/api/view/" + env;
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    Equals:         AreSameEnvs,
-    AllowedEnvs:    GetAllowedEnvs,
-    Current:        GetCurrentEnv,
-    Default:        GetDefaultEnv,
-    FullEnvName:    GetFullEnvName,
-    IsAllowed:      IsAllowedEnv,
-    IsCurrent:      IsCurrentEnv,
-    IsCurrentKnown: IsCurrentEnvKnown,
-    IsDefault:      IsDefaultEnv,
-    IsKnown:        IsKnownEnv,
-    KnownEnvs:      GetKnownEnvs,
-    PublicEnvName:  GetPublicEnvName
+    AllowedEnvs:         GetAllowedEnvs,
+    Current:             GetCurrentEnv,
+    Default:             GetDefaultEnv,
+    Equals:              AreSameEnvs,
+    FoursightName:       GetFoursightEnvName,
+    FullName:            GetFullEnvName,
+    IsAllowed:           IsAllowedEnv,
+    IsCurrent:           IsCurrentEnv,
+    IsCurrentKnown:      IsCurrentEnvKnown,
+    IsDefault:           IsDefaultEnv,
+    IsKnown:             IsKnownEnv,
+    KnownEnvs:           GetKnownEnvs,
+    LegacyFoursightLink: GetLegacyFoursightLink,
+    PublicName:          GetPublicEnvName,
+    ShortName:           GetShortEnvName
 }
