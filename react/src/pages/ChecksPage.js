@@ -1,15 +1,14 @@
 import React from 'react';
-import '../css/App.css';
 import { useContext, useState, useEffect, useReducer } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import Global from "../Global";
-import { fetchData } from '../utils/FetchUtils';
 import { BarSpinner } from "../Spinners";
 import CLIPBOARD from '../utils/CLIPBOARD';
-import Moment from 'moment';
+import FETCH from '../utils/FETCH';
 import SERVER from '../utils/SERVER';
-let YAML = require('json-to-pretty-yaml');
+import TIME from '../utils/TIME';
+import YAML from '../utils/YAML';
 
 const ChecksPage = (props) => {
 
@@ -24,7 +23,7 @@ const ChecksPage = (props) => {
 
     useEffect(() => {
         const groupedChecksUrl = SERVER.Url(`/checks`, environ);
-        fetchData(groupedChecksUrl, groupedChecks => {
+        FETCH.get(groupedChecksUrl, groupedChecks => {
             setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
             if (groupedChecks.length > 0) {
                 //
@@ -36,7 +35,7 @@ const ChecksPage = (props) => {
             }
         }, setLoading, setError);
         const lambdasUrl = SERVER.Url(`/lambdas`, environ);
-        fetchData(lambdasUrl, lambdas => {
+        FETCH.get(lambdasUrl, lambdas => {
             setLambdas(lambdas.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0)));
         });
             
@@ -205,7 +204,7 @@ const ChecksPage = (props) => {
         const runCheckUrl = SERVER.Url(`/checks/${check.name}/run`, environ);
         check.queueingCheckRun = true;
         check.fetchingResult = true;
-        fetchData(runCheckUrl, response => { check.queueingCheckRun = false; check.fetchingResult = false; check.queuedCheckRun = response.uuid });
+        FETCH.get(runCheckUrl, response => { check.queueingCheckRun = false; check.fetchingResult = false; check.queuedCheckRun = response.uuid });
         check.queuedCheckRun = null;
         showCheckRunningBox(check);
         showResultsHistory(check);
@@ -226,8 +225,9 @@ const ChecksPage = (props) => {
     const CheckRunningBox = ({check}) => {
         return !check.showingCheckRunningBox ? <span /> : <div>
             <div className="boxstyle check-pass" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
-                { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}>X</span> }
-                {  check.queuedCheckRun && <small><b>Queued check run {Moment(new Date()).format("YYYY-MM-DD hh:mm:ss")} &#x2192; <u>{check.queuedCheckRun}</u></b></small> }
+                { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}></span> }
+                {/*  check.queuedCheckRun && <small><b>Queued check run {Moment(new Date()).format("YYYY-MM-DD hh:mm:ss")} &#x2192; <u>{check.queuedCheckRun}</u></b></small> */}
+                {  check.queuedCheckRun && <small><b>Queued check run {TIME.FormatDateTime(TIME.Now())} &#x2192; <u>{check.queuedCheckRun}</u></b></small> }
                 { !check.queuedCheckRun && <Spinner condition={check.queueingCheckRun} label={" Queueing check run"} color={"darkgreen"} /> }
             </div>
         </div>
@@ -366,7 +366,7 @@ const ChecksPage = (props) => {
             &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>X</span>
             </div>
     
-            {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? (YAML.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)) : "No results.") }
+            {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? (YAML.Format(check.showingResultDetailsFull ? check.results.full_output : check.results)) : "No results.") }
         </pre>
     }
 
@@ -550,7 +550,7 @@ const ChecksPage = (props) => {
             noteChangedHistories();
             if (!check.history) {
                 const resultsHistoryUrl = SERVER.Url(`/checks/${check.name}/history`, environ);
-                fetchData(resultsHistoryUrl, history => { check.history = history; noteChangedHistories(); });
+                FETCH.get(resultsHistoryUrl, history => { check.history = history; noteChangedHistories(); });
             }
         }
     }
@@ -632,7 +632,7 @@ const ChecksPage = (props) => {
             // Fetch the latest results for this check.
             const checkResultsUrl = SERVER.Url(`/checks/${check.name}`, environ);
             check.fetchingResult = true;
-            fetchData(checkResultsUrl, checkResults => { check.results = checkResults; check.fetchingResult = false; noteChangedResults(); }, setLoading, setError)
+            FETCH.get(checkResultsUrl, checkResults => { check.results = checkResults; check.fetchingResult = false; noteChangedResults(); }, setLoading, setError)
         }
     }
 

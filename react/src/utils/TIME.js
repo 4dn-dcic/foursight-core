@@ -102,5 +102,6 @@ function ToDateTime(value) {
 export default {
     FormatDuration: FormatDuration,
     FormatDateTime: FormatDateTime,
-    ToDateTime: ToDateTime
+    ToDateTime: ToDateTime,
+    Now: () => new Date()
 }

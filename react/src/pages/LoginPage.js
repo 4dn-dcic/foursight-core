@@ -1,4 +1,3 @@
-import '../css/App.css';
 import React from 'react';
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';

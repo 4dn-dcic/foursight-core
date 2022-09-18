@@ -130,6 +130,14 @@ function SetRedirectCookie(url, expires = null) {
     SetCookie(_redirectCookieName, url, expires);
 }
 
+function HasTestModeFetchSleepCookie() {
+    return GetCookie("test_mode_fetch_sleep") > 0;
+}
+
+function GetTestModeFetchSleepCookie() {
+    return GetCookie("test_mode_fetch_sleep");
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
@@ -145,4 +153,9 @@ export default {
     SetFauxLogin:    SetFauxLoginCookie,
     SetLastUrl:      SetLastUrlCookie,
     SetRedirect:     SetRedirectCookie,
+
+    TestMode: {
+        HasFetchSleep: HasTestModeFetchSleepCookie,
+        FetchSleep: GetTestModeFetchSleepCookie
+    }
 }

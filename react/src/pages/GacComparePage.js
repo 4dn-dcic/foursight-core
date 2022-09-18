@@ -1,15 +1,13 @@
 import React from 'react';
-import { useContext, useState, useEffect, useReducer } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import Global from "../Global";
-import { fetchData } from '../utils/FetchUtils';
-import { RingSpinner } from "../Spinners";
-import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
+import FETCH from '../utils/FETCH';
 import SERVER from '../utils/SERVER';
 import UUID from '../utils/UUID';
-let YAML = require('json-to-pretty-yaml');
+import YAML from '../utils/YAML';
 
 const GacComparePage = (props) => {
 
@@ -21,9 +19,8 @@ const GacComparePage = (props) => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
     const [ info ] = useContext(Global);
-    const [, forceUpdate] = useReducer(x => x + 1, 0);
     useEffect(() => {
-            fetchData(url, setData, setLoading, setError)
+            FETCH.get(url, setData, setLoading, setError)
     }, []);
     let navigate = useNavigate();
 
@@ -152,7 +149,7 @@ const GacComparePage = (props) => {
         let url = SERVER.Url("/gac/" + environCompare, environ);
         const path = "/api/react/" + environ + "/gac/" + environCompare;
         navigate(path);
-        fetchData(url, setData, setLoading, setError)
+        FETCH.get(url, setData, setLoading, setError)
     }
 
     let OnChangeEnvCompare = (arg) => {
@@ -160,7 +157,7 @@ const GacComparePage = (props) => {
         let url = SERVER.Url("/gac/" + environCompare, CLIENT.Current.Env());
         const path = "/api/react/" + CLIENT.Current.Env() + "/gac/" + environCompare;
         navigate(path);
-        fetchData(url, setData, setLoading, setError)
+        FETCH.get(url, setData, setLoading, setError)
     }
 
     if (error) return <>Cannot load GAC comparison from Foursight: {error}</>;
@@ -255,7 +252,7 @@ const GacComparePage = (props) => {
                 </table>
             </div>
             <pre id="raw" className="info" style={{display:"none"}}>
-                {YAML.stringify(data)}
+                {YAML.Format(data)}
             </pre>
     </>
 };

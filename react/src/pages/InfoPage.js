@@ -1,15 +1,15 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Global from "../Global";
-import { fetchData } from '../utils/FetchUtils';
 import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
 import CLIPBOARD from '../utils/CLIPBOARD';
 import CONTEXT from '../utils/CONTEXT';
+import FETCH from '../utils/FETCH';
 import SERVER from '../utils/SERVER';
 import TIME from '../utils/TIME';
 import UUID from '../utils/UUID';
-let YAML = require('json-to-pretty-yaml');
+import YAML from '../utils/YAML';
 
 const InfoPage = () => {
 
@@ -20,7 +20,7 @@ const InfoPage = () => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
     let [ showingJwt, setShowJwt ] = useState(false);
-    useEffect(() => { fetchData(url, setInfo, setLoading, setError)}, []);
+    useEffect(() => { FETCH.get(url, setInfo, setLoading, setError)}, []);
 
     const InfoBox = ({title, children}) => {
         return <>
@@ -145,13 +145,13 @@ const InfoPage = () => {
         <InfoBox title="Environment & Bucket Names">
             <pre className="info" style={{border:"0",margin:"0",padding:"8",paddingBottom:"8",marginTop:"0"}}>
                 { info.buckets?.info && info.buckets.info.map(bucket_info => {
-                    return <span key={UUID()}>{YAML.stringify(bucket_info)}{info.buckets.info.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
+                    return <span key={UUID()}>{YAML.Format(bucket_info)}{info.buckets.info.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
                 })}
             </pre>
         </InfoBox>
         <InfoBox title="Ecosystem">
             <pre className="info" style={{border:"0",margin:"0",paddingTop:"8",paddingBottom:"8",marginTop:"0"}}>
-                {YAML.stringify(info.buckets?.ecosystem)}
+                {YAML.Format(info.buckets?.ecosystem)}
             </pre>
         </InfoBox>
         <InfoBox title="Login Auth0 Info">

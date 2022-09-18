@@ -1,12 +1,9 @@
-import React from 'react';
 import { useContext, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Global from "../Global";
-import { fetchData } from '../utils/FetchUtils';
 import AUTH from '../utils/AUTH';
 import ENV from '../utils/ENV';
 import Page from '../Page';
-import SERVER from '../utils/SERVER';
 import CLIENT from '../utils/CLIENT';
 import UUID from '../utils/UUID';
 

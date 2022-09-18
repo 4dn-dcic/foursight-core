@@ -4,11 +4,11 @@ import { useContext, useState } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import Global from "./Global";
 import { BarSpinner } from "./Spinners";
-import { fetchData } from "./utils/FetchUtils";
 import AUTH from './utils/AUTH';
-import ENV from './utils/ENV';
 import CLIENT from './utils/CLIENT';
 import CONTEXT from './utils/CONTEXT';
+import ENV from './utils/ENV';
+import FETCH from './utils/FETCH';
 import SERVER from './utils/SERVER';
 import TIME from './utils/TIME';
 
@@ -51,7 +51,7 @@ const Header = (props) => {
 
     function initiateAppReload() {
         const url = SERVER.Url("/reloadlambda", false);
-        fetchData(url);
+        FETCH.get(url);
     }
 
     return <>

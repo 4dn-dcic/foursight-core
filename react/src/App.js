@@ -1,8 +1,7 @@
-import './css/App.css';
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Global from './Global';
-import { fetchData } from './utils/FetchUtils';
+import FETCH from './utils/FETCH';
 import SERVER from './utils/SERVER';
 
 import Page from './Page';
@@ -26,7 +25,7 @@ const App = () => {
     let [ header, setHeader ] = useState({loading: true});
     const url = SERVER.Url("/header");
     useEffect(() => {
-        fetchData(
+        FETCH.get(
             url,
             data => {
                 header.loading = false;

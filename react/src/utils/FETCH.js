@@ -1,10 +1,8 @@
 import COOKIE from '../utils/COOKIE';
 
-function _sleep (time) {
+function SLEEP (time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
-
-let _artificialSleepForTesting = COOKIE.Get("test_mode_fetch_sleep");
 
 // The Foursight API we call (foursight-core/foursight_core/react_api.py) is protected
 // with a  new 'authtoken' cookie which was created along with the 'jwtToken' cookie;
@@ -18,9 +16,9 @@ let _artificialSleepForTesting = COOKIE.Get("test_mode_fetch_sleep");
 // TODO: Handle case of forbidden response from server and what ... logout ?
 // TODO: Handle timeouts!
 //
-export const fetchData = (url, setData, setLoading, setError) => {
-    if (_artificialSleepForTesting > 0) {
-        console.log("FETCHING WITH " + _artificialSleepForTesting + "ms SLEEP: " + url);
+function fetchData(url, setData, setLoading, setError) {
+    if (COOKIE.TestMode.HasFetchSleep()) {
+        console.log("FETCHING WITH " + COOKIE.TestMode.FetchSleep() + "ms SLEEP: " + url);
     }
     else {
         console.log("FETCHING: " + url);
@@ -30,13 +28,14 @@ export const fetchData = (url, setData, setLoading, setError) => {
         console.log("FETCH STATUS CODE IS " + response.status + ": " + url);
         if (response.status == 200) {
             response.json().then(responseJson => {
-                if (_artificialSleepForTesting > 0) {
-                    _sleep(_artificialSleepForTesting).then(() => {
-                        console.log("FETCHING DONE WITH " + _artificialSleepForTesting + "ms SLEEP: " + url);
+                if (COOKIE.TestMode.HasFetchSleep()) {
+                    SLEEP(COOKIE.TestMode.FetchSleep()).then(() => {
+                        console.log("FETCHING DONE WITH " + COOKIE.TestMode.FetchSleep() + "ms SLEEP: " + url);
                         setData(responseJson)
                         if (setLoading) {
                             setLoading(false);
                         }
+                        return true;
                     });
                 }
                 else {
@@ -67,4 +66,12 @@ export const fetchData = (url, setData, setLoading, setError) => {
             setError(error);
         }
     });
+}
+
+// -------------------------------------------------------------------------------------------------
+// Exported functions.
+// -------------------------------------------------------------------------------------------------
+
+export default {
+    get: fetchData
 }
