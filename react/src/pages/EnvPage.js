@@ -1,7 +1,7 @@
 import React from 'react';
 import { useContext, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import GlobalContext from "../GlobalContext.js";
+import Global from "../Global";
 import { fetchData } from '../utils/FetchUtils';
 import AUTH from '../utils/AUTH';
 import ENV from '../utils/ENV';
@@ -19,7 +19,7 @@ const EnvPage = (props) => {
     const { environ } = useParams() // TODO: use this
     let navigate = useNavigate();
     // TODO: Change this name 'info' to 'header'!
-    const [ info, setInfo ] = useContext(GlobalContext);
+    const [ info, setInfo ] = useContext(Global);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
 

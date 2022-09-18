@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
-import GlobalContext from './GlobalContext';
+import Global from './Global';
 import AUTH from './utils/AUTH';
 import ENV from './utils/ENV';
 import CLIENT from './utils/CLIENT';
@@ -16,7 +16,7 @@ function KnownEnvRequired({ children }) {
     // i.e. all protected pages except the /login page.
     // NoteLastUrl();
     //
-    const [ header ] = useContext(GlobalContext);
+    const [ header ] = useContext(Global);
     //
     // TODO: More fully understand this next line added 2022-09-16.
     // If not here then going to the /login page redirects to the /env page because /header API is still in progress.
@@ -42,7 +42,7 @@ function KnownEnvRequired({ children }) {
 //
 function AuthorizationRequired({ children }) {
     NoteLastUrl();
-    const [ header ] = useContext(GlobalContext);
+    const [ header ] = useContext(Global);
     //
     // TODO: Should we add this here too like above?
     //       if (header.loading) return children;

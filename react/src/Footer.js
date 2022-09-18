@@ -1,10 +1,10 @@
 import './css/App.css';
 import { useContext } from 'react';
-import GlobalContext from "./GlobalContext";
+import Global from "./Global";
 
 const Footer = (props) => {
 
-    const [ header ] = useContext(GlobalContext);
+    const [ header ] = useContext(Global);
     const isFoursightFourfront = header.app?.package != "foursight-cgap";
 
     if (header.loading) return <span/>

@@ -3,7 +3,7 @@ import '../css/App.css';
 import { useContext, useState, useEffect, useReducer } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link, useNavigate } from 'react-router-dom';
-import GlobalContext from "../GlobalContext";
+import Global from "../Global";
 import { fetchData } from '../utils/FetchUtils';
 import { BarSpinner } from "../Spinners";
 import CLIPBOARD from '../utils/CLIPBOARD';
@@ -14,7 +14,7 @@ let YAML = require('json-to-pretty-yaml');
 const ChecksPage = (props) => {
 
     let { environ } = useParams();
-    const [ header ] = useContext(GlobalContext);
+    const [ header ] = useContext(Global);
     let [ groupedChecks, setGroupedChecks ] = useState([]);
     let [ lambdas, setLambdas ] = useState([]);
     let [ loading, setLoading ] = useState(true);

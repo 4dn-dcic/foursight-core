@@ -1,7 +1,7 @@
 import './css/App.css';
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import GlobalContext from './GlobalContext';
+import Global from './Global';
 import { fetchData } from './utils/FetchUtils';
 import SERVER from './utils/SERVER';
 
@@ -41,7 +41,7 @@ const App = () => {
     // TODO: Move the page guards here or else the fetches with fire within the pages before they redirect if not authenticated.
 
     return <Router>
-        <GlobalContext.Provider value={[header, setHeader]}>
+        <Global.Provider value={[header, setHeader]}>
             <Header />
             <div style={{margin:"20px"}}>
                 <Routes>
@@ -104,7 +104,7 @@ const App = () => {
                 </Routes>
             </div>
             <Footer />
-        </GlobalContext.Provider>
+        </Global.Provider>
     </Router>
 };
 

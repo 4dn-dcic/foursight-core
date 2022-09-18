@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import GlobalContext from "../GlobalContext";
+import Global from "../Global";
 import { fetchData } from '../utils/FetchUtils';
 import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
@@ -13,7 +13,7 @@ let YAML = require('json-to-pretty-yaml');
 
 const InfoPage = () => {
 
-    const [ header ] = useContext(GlobalContext);
+    const [ header ] = useContext(Global);
 
     const url = SERVER.Url("/info");
     const [ info, setInfo ] = useState([]);

@@ -2,7 +2,7 @@ import React from 'react';
 import { useContext, useState, useEffect, useReducer } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link, useNavigate } from 'react-router-dom';
-import GlobalContext from "../GlobalContext";
+import Global from "../Global";
 import { fetchData } from '../utils/FetchUtils';
 import { RingSpinner } from "../Spinners";
 import AUTH from '../utils/AUTH';
@@ -20,7 +20,7 @@ const GacComparePage = (props) => {
     const [ showingType, setShowingType ] = useState("all");
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
-    const [ info ] = useContext(GlobalContext);
+    const [ info ] = useContext(Global);
     const [, forceUpdate] = useReducer(x => x + 1, 0);
     useEffect(() => {
             fetchData(url, setData, setLoading, setError)

@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import GlobalContext from '../GlobalContext';
+import Global from '../Global';
 import Auth0Lock from 'auth0-lock';
 import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
@@ -14,7 +14,7 @@ import Page from '../Page';
 const LoginPage = (props) => {
 
     let navigate = useNavigate();
-    const [ header, setHeader ] = useContext(GlobalContext);
+    const [ header, setHeader ] = useContext(Global);
     const [ showingAuthBox, setShowingAuthBox ] = useState(false);
     const [args] = useSearchParams();
     const showAuthBoxAtOutset = args.get("auth")?.length >= 0;

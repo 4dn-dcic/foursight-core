@@ -1,6 +1,6 @@
 import { useContext, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import GlobalContext from "../GlobalContext";
+import Global from "../Global";
 import { fetchData } from '../utils/FetchUtils';
 import { RingSpinner } from "../Spinners";
 import SERVER from "../utils/SERVER";

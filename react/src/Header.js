@@ -2,7 +2,7 @@ import './css/App.css';
 import React from 'react';
 import { useContext, useState } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
-import GlobalContext from "./GlobalContext";
+import Global from "./Global";
 import { BarSpinner } from "./Spinners";
 import { fetchData } from "./utils/FetchUtils";
 import AUTH from './utils/AUTH';
@@ -16,7 +16,7 @@ const Header = (props) => {
 
     let { environ } = useParams();
     let navigate = useNavigate();
-    const [ header, setHeader ] = useContext(GlobalContext);
+    const [ header, setHeader ] = useContext(Global);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
 
@@ -25,28 +25,6 @@ const Header = (props) => {
     let subTitleBackgroundColor = CONTEXT.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
 
     let titleToolTip = "Foursight";
-
-        /*
-    function GetLegacyFoursightLink() {
-        //
-        // For Foursight-CGAP (as opposed to Foursight-Fourfront) going to just,
-        // for example, /api/view/supertest, does not work, rather we want to
-        // to, for example, /api/view/cgap-supertest. I.e. for Foursight-CGAP
-        // use the full name and the public name for Foursight-Fourfront.
-        //
-        // const env = (isFoursightFourfront ? header?.env?.public_name : header?.env?.full_name) || ENV.Default(header);
-        const env = (CONTEXT.IsFoursightFourfront(header) ? ENV.PublicName(ENV.Current(), header) : ENV.FullName(ENV.Current(), header)) || ENV.Default(header);
-        if (CLIENT.IsLocal() && window.location.host == "localhost:3000") {
-            //
-            // TODO
-            //
-            return "http://localhost:8000" + "/api/view/" + env;
-        }
-        else {
-            return "/api/view/" + env;
-        }
-    }
-    */
 
     function renderNavigationLinks(header) {
         function style(isActive) {
@@ -65,7 +43,9 @@ const Header = (props) => {
             <NavLink to={CLIENT.Path("/info")} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
             <a target="_blank" title="Open AWS Console for this account ({header.app?.credentials.aws_account_number}) in another tab."
                 style={{textDecoration:"none",color:"darkgreen"}}
-                href={"https://" + header.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span></a>
+                href={"https://" + header.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>
+                AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
+            </a>
         </span>
     }
 
