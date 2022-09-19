@@ -207,7 +207,7 @@ const Header = (props) => {
                     </td>
                     <td style={{background:"lightyellow",color:"darkred",textAlign:"right",paddingRight:"10pt",fontStyle:"italic"}}>
                         { CLIENT.IsLocal() && <>
-                            Running Locally
+                            Running locally
                             { SERVER.IsLocalCrossOrigin() ? (<>
                             </>):(<>
                                 Running locally cross-origin
