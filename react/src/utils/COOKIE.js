@@ -3,14 +3,18 @@ import CLIENT from './CLIENT';
 import STR from './STR';
 import TYPE from './TYPE';
 
-const _cookies               = new Cookies()
-const _authTokenCookieName   = "authtoken";
+const _cookies              = new Cookies()
+const _authTokenCookieName  = "authtoken";
 const _authEnvsCookieName   = "authenvs";
-const _fauxLoginCookieName   = "test_mode_login_localhost";
-const _redirectCookieName    = "reactredir";
-const _lastUrlCookieName     = "lasturl";
-const _cookiePath            = "/";
-const _cookieDomain          = document.location.hostname;
+const _fauxLoginCookieName  = "test_mode_login_localhost";
+const _redirectCookieName   = "reactredir";
+const _lastUrlCookieName    = "lasturl";
+const _cookiePath           = "/";
+const _cookieDomain         = document.location.hostname;
+
+// -------------------------------------------------------------------------------------------------
+// General cookie functions.
+// -------------------------------------------------------------------------------------------------
 
 function GetCookieDomain() {
     return CLIENT.IsLocal() ? _cookieDomain : "." + _cookieDomain;
@@ -65,6 +69,10 @@ function SetCookie(name, value, expires = null) {
     }
 }
 
+// -------------------------------------------------------------------------------------------------
+// Authentication related cookie functions.
+// -------------------------------------------------------------------------------------------------
+
 function HasAuthTokenCookie() {
     console.log("CHECK FOR AUTHTOKEN");
     const authTokenCookie = GetCookie(_authTokenCookieName);
@@ -107,6 +115,10 @@ function HasAuthTokenCookie() {
     }
 }
 
+// -------------------------------------------------------------------------------------------------
+// Authorized environments (known, default, allowed) cookie (authenvs) related functions.
+// -------------------------------------------------------------------------------------------------
+
 function GetAuthEnvsCookie() {
     try {
         console.log("GET AUTHENVS COOKIE");
@@ -137,6 +149,21 @@ function GetKnownEnvsCookie() {
     }
 }
 
+function GetDefaultEnvCookie() {
+    try {
+        console.log("GET DEFAULT ENV COOKIE");
+        const defaultEnv = GetAuthEnvsCookie()?.default_env || "";
+        console.log("GOT DEFAULT ENV COOKIE");
+        console.log(defaultEnv);
+        return defaultEnv;
+    }
+    catch {
+        console.log("GET KNOWN ENVS COOKIE EXCEPTION");
+        return [];
+    }
+}
+
+
 function GetAllowedEnvsCookie() {
     try {
         console.log("GET ALLOWED ENVS COOKIE");
@@ -151,6 +178,10 @@ function GetAllowedEnvsCookie() {
     }
 }
 
+// -------------------------------------------------------------------------------------------------
+// Faux login related cookies.
+// -------------------------------------------------------------------------------------------------
+
 function HasFauxLoginCookie() {
     return GetCookie(_fauxLoginCookieName) == "1";
 }
@@ -163,6 +194,10 @@ function DeleteFauxLoginCookie() {
     return DeleteCookie(_fauxLoginCookieName);
 }
 
+// -------------------------------------------------------------------------------------------------
+// Last URL related cookies.
+// -------------------------------------------------------------------------------------------------
+
 function GetLastUrlCookie() {
     return GetCookie(_lastUrlCookieName);
 }
@@ -171,9 +206,17 @@ function SetLastUrlCookie(url) {
     SetCookie(_lastUrlCookieName, url);
 }
 
+// -------------------------------------------------------------------------------------------------
+// Redirect URL related cookies.
+// -------------------------------------------------------------------------------------------------
+
 function SetRedirectCookie(url, expires = null) {
     SetCookie(_redirectCookieName, url, expires);
 }
+
+// -------------------------------------------------------------------------------------------------
+// Test mode related cookies.
+// -------------------------------------------------------------------------------------------------
 
 function HasTestModeFetchSleepCookie() {
     return GetCookie("test_mode_fetch_sleep") > 0;
@@ -188,12 +231,13 @@ function GetTestModeFetchSleepCookie() {
 // -------------------------------------------------------------------------------------------------
 
 export default {
+    AllowedEnvs:     GetAllowedEnvsCookie,
     Delete:          DeleteCookie,
     DeleteFauxLogin: DeleteFauxLoginCookie,
     Get:             GetCookie,
+    DefaultEnv:      GetDefaultEnvCookie,
+    KnownEnvs:       GetKnownEnvsCookie,
     GetLastUrl:      GetLastUrlCookie,
-    GetAllowedEnvs:  GetAllowedEnvsCookie,
-    GetKnownEnvs:    GetKnownEnvsCookie,
     HasAuthToken:    HasAuthTokenCookie,
     HasFauxLogin:    HasFauxLoginCookie,
     Set:             SetCookie,

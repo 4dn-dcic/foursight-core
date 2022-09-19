@@ -578,19 +578,15 @@ class AppUtilsCore(ReactApi):
                 # this contains the list of known and allowed (for this authenticate user) environments.
                 #
                 authenvs = {
-                    "known_envs": known_envs,
-                    "allowed_envs": allowed_envs
+                    "allowed_envs": allowed_envs,
+                    "default_env": self.get_default_env(),
+                    "known_envs": known_envs
                 }
                 authenvs = self.encryption.encode(authenvs)
                 authenvs_cookie = self.create_set_cookie_string(request, name="authenvs",
                                                                          value=authenvs,
                                                                          domain=domain,
                                                                          expires=jwt_expires)
-              # envs = self.encryption.encode(known_envs)
-              # envs_cookie = self.create_set_cookie_string(request, name="envs",
-              #                                                      value=envs,
-              #                                                      domain=domain,
-              #                                                      expires=jwt_expires)
                 print('xyzzy:auth0_callback:authtoken_cookie:')
                 print(authtoken_cookie)
                 print(authenvs_cookie)

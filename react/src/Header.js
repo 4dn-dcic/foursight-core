@@ -148,7 +148,7 @@ const Header = (props) => {
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (ENV.KnownEnvs(header).length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:!ENV.Current() || header.env_unknown ? "red" : "#143c53"}} title={"Environment: " + ENV.Current() + (!ENV.Current() || header.env_unknown ? " -> UNKNOWN" : "")}>{ENV.Current() || "unknown-env"}</b>
+                            <b className="dropdown-button" style={{color:!ENV.Current() || !ENV.IsCurrentKnown(header) ? "red" : "#143c53"}} title={"Environment: " + ENV.Current() + (!ENV.IsCurrentKnown(header) ? " -> UNKNOWN" : "")}>{ENV.Current() || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { ENV.KnownEnvs(header).map(env => 
                                     ENV.Equals(env, ENV.Current()) ?  (
@@ -207,8 +207,8 @@ const Header = (props) => {
                     </td>
                     <td style={{background:"lightyellow",color:"darkred",textAlign:"right",paddingRight:"10pt",fontStyle:"italic"}}>
                         { CLIENT.IsLocal() && <>
-                            Running locally
                             { SERVER.IsLocalCrossOrigin() ? (<>
+                                Running locally
                             </>):(<>
                                 Running locally cross-origin
                             </>)}

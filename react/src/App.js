@@ -50,6 +50,9 @@ const App = () => {
                     <Route path="/api/react/:environ/env" element={
                         <EnvPage />
                     } />
+                    <Route path="/api/react/env" element={
+                        <EnvPage />
+                    } />
                     <Route path="/api/react/:environ/login" element={
                         <Page.KnownEnvRequired>
                             <LoginPage />

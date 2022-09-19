@@ -10,11 +10,11 @@ import STR from './STR';
 import TYPE from './TYPE';
 
 // -------------------------------------------------------------------------------------------------
-// Known environments functions.
+// Known environments related functions.
 // -------------------------------------------------------------------------------------------------
 
 function GetKnownEnvs(header) {
-    return header?.envs?.unique_annotated || COOKIE.GetKnownEnvs();
+    return header?.envs?.unique_annotated || COOKIE.KnownEnvs();
 }
 
 function IsKnownEnv(env, header) {
@@ -30,7 +30,19 @@ function IsKnownEnv(env, header) {
 }
 
 // -------------------------------------------------------------------------------------------------
-// Authorization (allowed environments) functions.
+// Default environment related functions.
+// -------------------------------------------------------------------------------------------------
+
+function GetDefaultEnv(header) {
+    return header?.envs?.default || COOKIE.DefaultEnv();
+}
+
+function IsDefaultEnv(env, header) {
+    return AreSameEnvs(GetDefaultEnv(header), env);
+}
+
+// -------------------------------------------------------------------------------------------------
+// Allowed environments (authorization) related functions.
 // -------------------------------------------------------------------------------------------------
 
 function GetAllowedEnvs(header) {
@@ -42,7 +54,7 @@ function GetAllowedEnvs(header) {
         //
         return GetKnownEnvs(header);
     }
-    const allowedEnvs = header?.auth?.allowed_envs || COOKIE.GetAllowedEnvs();
+    const allowedEnvs = header?.auth?.allowed_envs || COOKIE.AllowedEnvs();
     //
     // The list of known environments are of the annotated variety.
     // But the list of allowed environments is just a list of simple environment names.
@@ -89,7 +101,7 @@ function IsAllowedEnv(env, header) {
 }
 
 // -------------------------------------------------------------------------------------------------
-// Environment comparison functions
+// Environment comparison related functions.
 // -------------------------------------------------------------------------------------------------
 
 // Returns true iff the given two environments refer to same environment.
@@ -140,7 +152,7 @@ function AreSameEnvs(envA, envB) {
 }
 
 // -------------------------------------------------------------------------------------------------
-// Current environment functions.
+// Current environment related functions.
 // -------------------------------------------------------------------------------------------------
 
 // Returns the current environment from the URL.
@@ -177,7 +189,7 @@ function IsCurrentEnvKnown(header) {
 }
 
 // -------------------------------------------------------------------------------------------------
-// Environment name variants functions.
+// Environment name variants related functions.
 // -------------------------------------------------------------------------------------------------
 
 function GetAnnotatedEnv(env, header) {
@@ -212,19 +224,7 @@ function GetFoursightEnvName(env, header) {
 }
 
 // -------------------------------------------------------------------------------------------------
-// Default environment functions.
-// -------------------------------------------------------------------------------------------------
-
-function GetDefaultEnv(header) {
-    return header?.envs?.default;
-}
-
-function IsDefaultEnv(env, header) {
-    return AreSameEnvs(GetDefaultEnv(header), env);
-}
-
-// -------------------------------------------------------------------------------------------------
-// Legacy Foursight functions.
+// Legacy Foursight related functions.
 // -------------------------------------------------------------------------------------------------
 
 function GetLegacyFoursightLink(header) {
@@ -239,10 +239,8 @@ function GetLegacyFoursightLink(header) {
                  GetFullEnvName(GetCurrentEnv(header), header))
                 || GetDefaultEnv(header);
     if (CONTEXT.Client.IsLocal() && window.location.host == "localhost:3000") {
-        //
-        // TODO
-        //
-        return "http://localhost:8000" + "/api/view/" + env;
+        // return "http://localhost:8000" + "/api/view/" + env;
+        return CONTEXT.Server.Origin() + "/api/view/" + env;
     }
     else {
         return "/api/view/" + env;

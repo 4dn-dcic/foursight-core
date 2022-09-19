@@ -51,7 +51,8 @@ function GetPath(path, env = true, envFallback = null) {
                 }
                 else if (TYPE.IsObject(envFallback)) {
                     const header = envFallback;
-                    env = header.envs?.default;
+                    // env = header.envs?.default;
+                    env = ENV.Default(header);
                 }
             }
         }
@@ -59,7 +60,8 @@ function GetPath(path, env = true, envFallback = null) {
     }
     else if (TYPE.IsObject(env)) {
         const header = env;
-        env = header.envs?.default;
+        // env = header.envs?.default;
+        env = ENV.Default(header);
         if (!STR.HasValue(env)) {
             if (STR.HasValue(envFallback)) {
                 env = envFallback;
@@ -69,7 +71,8 @@ function GetPath(path, env = true, envFallback = null) {
                 // This would be weird but just for completeness.
                 //
                 const header = envFallback;
-                env = header.envs?.default;
+                // env = header.envs?.default;
+                env = ENV.Default(header);
             }
         }
     }

@@ -6,6 +6,10 @@ import ENV from './utils/ENV';
 import CLIENT from './utils/CLIENT';
 import COOKIE from './utils/COOKIE';
 
+// -------------------------------------------------------------------------------------------------
+// Page guards.
+// -------------------------------------------------------------------------------------------------
+
 // If the current environment (from the URL) is NOT a known environment according
 // to the envs.unique_annotated list in the auth record of the global header
 // data (from the React API /header endpoint), then redirect to the /env page.
@@ -31,7 +35,6 @@ function KnownEnvRequired({ children }) {
     else {
         return children;
     }
-    // return !AUTH.IsKnownEnv(CLIENT.Current.Env(), header) ? <Navigate to={CLIENT.Path("/env")} replace /> : children;
 }
 
 // If the user is NOT authenticated (i.e. logged in) OR is NOT authorized for the current
@@ -43,11 +46,7 @@ function KnownEnvRequired({ children }) {
 function AuthorizationRequired({ children }) {
     NoteLastUrl();
     const [ header ] = useContext(Global);
-    //
-    // TODO: Should we add this here too like above?
-    //       if (header.loading) return children;
-    //
-    if (CLIENT.Current.Env() === "" || header.env_unknown) {
+    if (!ENV.IsCurrentKnown(header)) {
         console.log("XYZZY:REDIRECT TO /env (b)");
         return <Navigate to={CLIENT.Path("/env")} replace />
     }
@@ -64,6 +63,10 @@ function AuthorizationRequired({ children }) {
         return children;
     }
 }
+
+// -------------------------------------------------------------------------------------------------
+// Last path/URL related fnctions.
+// -------------------------------------------------------------------------------------------------
 
 function NoteLastUrl() {
     COOKIE.SetLastUrl(window.location.href);
