@@ -30,7 +30,7 @@ const EnvPage = (props) => {
     }
 
     function GetDefaultEnv() {
-        return ENV.Default(header);
+        return ENV.PreferredName(ENV.Default(header), header);
     }
 
     function onChange(arg, env) {

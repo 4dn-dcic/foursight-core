@@ -231,6 +231,10 @@ function GetFoursightEnvName(env, header) {
     return GetAnnotatedEnv(env, header)?.foursight_name;
 }
 
+function GetPreferredEnvName(env, header) {
+    return IsFoursightFourfront(header) ? GetPublicEnvName(env) : GetFullEnvName(env);
+}
+
 // -------------------------------------------------------------------------------------------------
 // Foursight-Fourfront vs. Foursight-CGAP and legacy Foursight related functions.
 // -------------------------------------------------------------------------------------------------
@@ -286,6 +290,7 @@ export default {
     IsKnown:              IsKnownEnv,
     KnownEnvs:            GetKnownEnvs,
     LegacyFoursightLink:  GetLegacyFoursightLink,
+    PreferredName:        GetPreferredEnvName,
     PublicName:           GetPublicEnvName,
     RegularName:          GetRegularEnvName,
     ShortName:            GetShortEnvName
