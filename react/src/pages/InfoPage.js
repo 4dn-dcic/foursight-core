@@ -164,7 +164,7 @@ const InfoPage = () => {
             <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
                 { showingJwt ? (<>
                     <small onClick={() => setShowJwt(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide Auth Record</u></b></small>
-                    <pre style={{filter:"brightness(0.9)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.stringify(AUTH.LoggedInUserAuthRecord(header))}</pre>
+                    <pre style={{filter:"brightness(0.9)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(AUTH.LoggedInUserAuthRecord(header))}</pre>
                 </>):(<>
                     <small onClick={() => setShowJwt(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show Auth Record</u></b></small>
                 </>)}
