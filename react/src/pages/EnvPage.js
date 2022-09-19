@@ -82,7 +82,7 @@ const EnvPage = (props) => {
                     </div>
                 </>):(<>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
-                    Current environment: <b style={{color:boxTextColor}}>{ENV.Current()}</b>
+                    Current environment: <b style={{color:boxTextColor}}>{ENV.PreferredName(ENV.Current(), header)}</b>
                     { (AUTH.IsLoggedIn(header) && !ENV.IsAllowed(ENV.Current(), header)) && <span style={{color:"red"}}>&nbsp;&#x2192; You do not have permission for this environment.</span> }
                 </div>
                 </>)}
