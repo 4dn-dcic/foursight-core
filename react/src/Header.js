@@ -88,7 +88,7 @@ const Header = (props) => {
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr title={"App Deployed:" + header.app?.deployed + " | App Launched: " + header.app?.launched + " | Page Loaded: " + header.page?.loaded}>
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
-                    <a href={CONTEXT.IsFoursightFourfront(header) ? ("https://" + header.env?.public_name + ".4dnucleome.org/") : "https://cgap.hms.harvard.edu/"} target="_blank">
+                    <a href={CONTEXT.IsFoursightFourfront(header) ? ("https://" +  ENV.PublicName(ENV.Current(), header) + ".4dnucleome.org/") : "https://cgap.hms.harvard.edu/"} target="_blank">
                         { CONTEXT.IsFoursightFourfront(header) ? (<span>
                             <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="32" width="44" />
                         </span>):(<span>
@@ -152,7 +152,7 @@ const Header = (props) => {
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { ENV.KnownEnvs(header).map(env => 
                                     ENV.Equals(env, ENV.Current()) ?  (
-                                        <span key={env.public_name}>{env.public_name}&nbsp;&nbsp;&#x2713;</span>
+                                        <span key={env.public_name}>{env.public_name}&nbsp;&nbsp;&#x2713;{ ENV.IsKnown(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</span>
                                     ):(<>
                                         { ENV.IsAllowed(env, header) ? (<>
                                             {/* This works "okay" 2022-09-18 but does not refresh/refetch (say) /users page data on select new env */}
@@ -160,7 +160,7 @@ const Header = (props) => {
                                             {/* So doing this funky double redirect to get it to ... TODO: figure out right/React of of doing this */}
                                             <Link key={env.public_name} to={{pathname: "/redirect"}} state={{url: !ENV.IsCurrentKnown(header) ? CLIENT.Path("/env", ENV.Default()) : CLIENT.Path(null, env.public_name)}}>{env.public_name}</Link>
                                         </>):(<>
-                                            <Link key={env.public_name} to={CLIENT.Path("/env", env.public_name)}>{env.public_name}</Link>
+                                            <Link key={env.public_name} to={CLIENT.Path("/env", env.public_name)}>{env.public_name}{ !ENV.IsKnown(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</Link>
                                         </>)}
                                     </>)
                                 )}

@@ -5,6 +5,7 @@ import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
 import CLIPBOARD from '../utils/CLIPBOARD';
 import CONTEXT from '../utils/CONTEXT';
+import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
 import SERVER from '../utils/SERVER';
 import TIME from '../utils/TIME';
@@ -131,11 +132,11 @@ const InfoPage = () => {
             <InfoRow name={"SQS Server"} value={info?.server?.sqs} monospace={true} copy={true} size="2" />
         </InfoBox>
         <InfoBox title="Environment Names">
-            <InfoRow name={"Environment Name"} value={header?.env?.name} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Full)"} value={header?.env?.full_name} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Short)"} value={header?.env?.short_name} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Public)"} value={header?.env?.public_name} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Foursight)"} value={header?.env?.foursight_name} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name"} value={ENV.RegularName(ENV.Current(), info)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Full)"} value={ENV.FullName(ENV.Current(), info)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Short)"} value={ENV.ShortName(ENV.Current(), info)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Public)"} value={ENV.PublicName(ENV.Current(), info)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Foursight)"} value={ENV.FoursightName(ENV.Current(), info)} monospace={true} copy={true} size="3" />
         </InfoBox>
         <InfoBox title="Bucket Names">
             <InfoRow name={"Environment Bucket Name"} value={info?.buckets?.env} monospace={true} copy={true} size="3" />

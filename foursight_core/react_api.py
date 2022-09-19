@@ -608,7 +608,7 @@ class ReactApi:
                 "foursight_name": infer_foursight_from_env(envname=environ),
                 "default": default_env,
             }
-        hack_for_local_testing = False
+        hack_for_local_testing = True
         if hack_for_local_testing:
             response["envs"] = {
             "all": [

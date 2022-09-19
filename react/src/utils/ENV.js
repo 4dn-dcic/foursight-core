@@ -207,6 +207,10 @@ function GetAnnotatedEnv(env, header) {
     return null;
 }
 
+function GetRegularEnvName(env, header) {
+    return GetAnnotatedEnv(env, header)?.name;
+}
+
 function GetPublicEnvName(env, header) {
     return GetAnnotatedEnv(env, header)?.public_name;
 }
@@ -266,5 +270,6 @@ export default {
     KnownEnvs:           GetKnownEnvs,
     LegacyFoursightLink: GetLegacyFoursightLink,
     PublicName:          GetPublicEnvName,
+    RegularName:         GetRegularEnvName,
     ShortName:           GetShortEnvName
 }
