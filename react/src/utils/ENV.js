@@ -188,6 +188,10 @@ function IsCurrentEnvKnown(header) {
     return IsKnownEnv(GetCurrentEnv(), header);
 }
 
+function IsCurrentEnvAllowed(header) {
+    return IsAllowedEnv(GetCurrentEnv(), header);
+}
+
 // -------------------------------------------------------------------------------------------------
 // Environment name variants related functions.
 // -------------------------------------------------------------------------------------------------
@@ -228,8 +232,20 @@ function GetFoursightEnvName(env, header) {
 }
 
 // -------------------------------------------------------------------------------------------------
-// Legacy Foursight related functions.
+// Foursight-Fourfront vs. Foursight-CGAP and legacy Foursight related functions.
 // -------------------------------------------------------------------------------------------------
+
+function IsFoursightFourfront(header) {
+    if (COOKIE.TestMode.HasFoursightFourfront()) {
+        return true;
+    }
+    else if (COOKIE.TestMode.HasFoursightCgap()) {
+        return false;
+    }
+    else {
+        return header.app?.package != "foursight-cgap";
+    }
+}
 
 function GetLegacyFoursightLink(header) {
     //
@@ -238,12 +254,11 @@ function GetLegacyFoursightLink(header) {
     // to, for example, /api/view/cgap-supertest. I.e. for Foursight-CGAP
     // use the full name and the public name for Foursight-Fourfront.
     //
-    const env = (CONTEXT.IsFoursightFourfront(header) ?
+    const env = (IsFoursightFourfront(header) ?
                  GetPublicEnvName(GetCurrentEnv(header), header) :
                  GetFullEnvName(GetCurrentEnv(header), header))
                 || GetDefaultEnv(header);
     if (CONTEXT.Client.IsLocal() && window.location.host == "localhost:3000") {
-        // return "http://localhost:8000" + "/api/view/" + env;
         return CONTEXT.Server.Origin() + "/api/view/" + env;
     }
     else {
@@ -256,20 +271,22 @@ function GetLegacyFoursightLink(header) {
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    AllowedEnvs:         GetAllowedEnvs,
-    Current:             GetCurrentEnv,
-    Default:             GetDefaultEnv,
-    Equals:              AreSameEnvs,
-    FoursightName:       GetFoursightEnvName,
-    FullName:            GetFullEnvName,
-    IsAllowed:           IsAllowedEnv,
-    IsCurrent:           IsCurrentEnv,
-    IsCurrentKnown:      IsCurrentEnvKnown,
-    IsDefault:           IsDefaultEnv,
-    IsKnown:             IsKnownEnv,
-    KnownEnvs:           GetKnownEnvs,
-    LegacyFoursightLink: GetLegacyFoursightLink,
-    PublicName:          GetPublicEnvName,
-    RegularName:         GetRegularEnvName,
-    ShortName:           GetShortEnvName
+    AllowedEnvs:          GetAllowedEnvs,
+    Current:              GetCurrentEnv,
+    Default:              GetDefaultEnv,
+    Equals:               AreSameEnvs,
+    FoursightName:        GetFoursightEnvName,
+    FullName:             GetFullEnvName,
+    IsAllowed:            IsAllowedEnv,
+    IsCurrent:            IsCurrentEnv,
+    IsCurrentAllowed:     IsCurrentEnvAllowed,
+    IsCurrentKnown:       IsCurrentEnvKnown,
+    IsDefault:            IsDefaultEnv,
+    IsFoursightFourfront: IsFoursightFourfront,
+    IsKnown:              IsKnownEnv,
+    KnownEnvs:            GetKnownEnvs,
+    LegacyFoursightLink:  GetLegacyFoursightLink,
+    PublicName:           GetPublicEnvName,
+    RegularName:          GetRegularEnvName,
+    ShortName:            GetShortEnvName
 }

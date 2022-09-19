@@ -226,6 +226,14 @@ function GetTestModeFetchSleepCookie() {
     return GetCookie("test_mode_fetch_sleep");
 }
 
+function HasTestModeFoursightFourfrontCookie() {
+    return GetCookie("test_mode_foursight_fourfront") === "1";
+}
+
+function HasTestModeFoursightCgapCookie() {
+    return GetCookie("test_mode_foursight_cgap") === "1";
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
@@ -246,7 +254,9 @@ export default {
     SetRedirect:     SetRedirectCookie,
 
     TestMode: {
-        HasFetchSleep: HasTestModeFetchSleepCookie,
-        FetchSleep: GetTestModeFetchSleepCookie
+        HasFetchSleep:         HasTestModeFetchSleepCookie,
+        FetchSleep:            GetTestModeFetchSleepCookie,
+        HasFoursightFourfront: HasTestModeFoursightFourfrontCookie,
+        HasFoursightCgap:      HasTestModeFoursightCgapCookie
     }
 }

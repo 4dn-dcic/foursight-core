@@ -20,9 +20,8 @@ const Header = (props) => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
 
-    // let isFoursightFourfront = header.app?.package != "foursight-cgap";
-    let titleBackgroundColor = CONTEXT.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
-    let subTitleBackgroundColor = CONTEXT.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
+    let titleBackgroundColor = ENV.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
+    let subTitleBackgroundColor = ENV.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
 
     let titleToolTip = "Foursight";
 
@@ -88,8 +87,8 @@ const Header = (props) => {
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr title={"App Deployed:" + header.app?.deployed + " | App Launched: " + header.app?.launched + " | Page Loaded: " + header.page?.loaded}>
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
-                    <a href={CONTEXT.IsFoursightFourfront(header) ? ("https://" +  ENV.PublicName(ENV.Current(), header) + ".4dnucleome.org/") : "https://cgap.hms.harvard.edu/"} target="_blank">
-                        { CONTEXT.IsFoursightFourfront(header) ? (<span>
+                    <a href={ENV.IsFoursightFourfront(header) ? ("https://" +  ENV.PublicName(ENV.Current(), header) + ".4dnucleome.org/") : "https://cgap.hms.harvard.edu/"} target="_blank">
+                        { ENV.IsFoursightFourfront(header) ? (<span>
                             <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="32" width="44" />
                         </span>):(<span>
                             <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
@@ -143,16 +142,16 @@ const Header = (props) => {
                         {renderNavigationLinks(header)}
                     </td>
                     <td width="2%" align="center" style={{whiteSpace:"nowrap",margin:"0 auto"}}>
-                        <a target="_blank" href={"https://pypi.org/project/" + (CONTEXT.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + "/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{header.app?.version}</b></a>
+                        <a target="_blank" href={"https://pypi.org/project/" + (ENV.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + "/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{header.app?.version}</b></a>
                     </td>
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (ENV.KnownEnvs(header).length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:!ENV.Current() || !ENV.IsCurrentKnown(header) ? "red" : "#143c53"}} title={"Environment: " + ENV.Current() + (!ENV.IsCurrentKnown(header) ? " -> UNKNOWN" : "")}>{ENV.Current() || "unknown-env"}</b>
+                            <b className="dropdown-button" style={{color:!ENV.IsCurrentKnown(header) || !ENV.IsCurrentAllowed(header)  ? "red" : "#143c53"}} title={"Environment: " + ENV.Current() + (!ENV.IsCurrentKnown(header) ? " -> UNKNOWN" : "")}>{ENV.Current() || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { ENV.KnownEnvs(header).map(env => 
                                     ENV.Equals(env, ENV.Current()) ?  (
-                                        <span key={env.public_name}>{env.public_name}&nbsp;&nbsp;&#x2713;{ ENV.IsKnown(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</span>
+                                        <span key={env.public_name}>{env.public_name}&nbsp;&nbsp;&#x2713;{ !ENV.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</span>
                                     ):(<>
                                         { ENV.IsAllowed(env, header) ? (<>
                                             {/* This works "okay" 2022-09-18 but does not refresh/refetch (say) /users page data on select new env */}
@@ -160,7 +159,7 @@ const Header = (props) => {
                                             {/* So doing this funky double redirect to get it to ... TODO: figure out right/React of of doing this */}
                                             <Link key={env.public_name} to={{pathname: "/redirect"}} state={{url: !ENV.IsCurrentKnown(header) ? CLIENT.Path("/env", ENV.Default()) : CLIENT.Path(null, env.public_name)}}>{env.public_name}</Link>
                                         </>):(<>
-                                            <Link key={env.public_name} to={CLIENT.Path("/env", env.public_name)}>{env.public_name}{ !ENV.IsKnown(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</Link>
+                                            <Link key={env.public_name} to={CLIENT.Path("/env", env.public_name)}>{env.public_name}{ !ENV.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</Link>
                                         </>)}
                                     </>)
                                 )}
