@@ -148,19 +148,19 @@ const Header = (props) => {
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (ENV.KnownEnvs(header).length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:!ENV.IsCurrentKnown(header) || !ENV.IsCurrentAllowed(header)  ? "red" : "#143c53"}} title={"Environment: " + ENV.Current() + (!ENV.IsCurrentKnown(header) ? " -> UNKNOWN" : "")}>{ENV.Current() || "unknown-env"}</b>
+                            <b className="dropdown-button" style={{color:!ENV.IsCurrentKnown(header) || !ENV.IsCurrentAllowed(header)  ? "red" : "#143c53"}} title={"Environment: " + ENV.Current() + (!ENV.IsCurrentKnown(header) ? " -> UNKNOWN" : "")}>{ENV.PreferredName(ENV.Current(), header) || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { ENV.KnownEnvs(header).map(env => 
                                     ENV.Equals(env, ENV.Current()) ?  (
-                                        <span key={env.public_name}>{env.public_name}&nbsp;&nbsp;&#x2713;{ !ENV.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</span>
+                                        <span key={env.full_name}>{ENV.PreferredName(env, header)}&nbsp;&nbsp;&#x2713;{ !ENV.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</span>
                                     ):(<>
                                         { ENV.IsAllowed(env, header) ? (<>
                                             {/* This works "okay" 2022-09-18 but does not refresh/refetch (say) /users page data on select new env */}
                                             {/* <Link key={env.public_name} to={CLIENT.Path(null, env.public_name)}>{env.public_name}</Link> */}
                                             {/* So doing this funky double redirect to get it to ... TODO: figure out right/React of of doing this */}
-                                            <Link key={env.public_name} to={{pathname: "/redirect"}} state={{url: !ENV.IsCurrentKnown(header) ? CLIENT.Path("/env", ENV.Default()) : CLIENT.Path(null, env.public_name)}}>{env.public_name}</Link>
+                                            <Link key={env.full_name} to={{pathname: "/redirect"}} state={{url: !ENV.IsCurrentKnown(header) ? CLIENT.Path("/env", ENV.PreferredName(ENV.Default(header), header)) : CLIENT.Path(null, ENV.PreferredName(env, header))}}>{ENV.PreferredName(env, header)}</Link>
                                         </>):(<>
-                                            <Link key={env.public_name} to={CLIENT.Path("/env", env.public_name)}>{env.public_name}{ !ENV.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</Link>
+                                            <Link key={env.public_name} to={CLIENT.Path("/env", ENV.PreferredName(env, header))}>{ENV.PreferredName(env, header)}{!ENV.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</Link>
                                         </>)}
                                     </>)
                                 )}
