@@ -231,7 +231,7 @@ function HasTestModeFoursightFourfrontCookie() {
 }
 
 function HasTestModeFoursightCgapCookie() {
-    return GetCookie("test_mode_foursight_cgap") === "1";
+    return GetCookie("test_mode_foursight_fourfront") === "0";
 }
 
 // -------------------------------------------------------------------------------------------------

@@ -18,7 +18,7 @@ const GacComparePage = (props) => {
     const [ showingType, setShowingType ] = useState("all");
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
-    const [ info ] = useContext(Global);
+    const [ header ] = useContext(Global);
     useEffect(() => {
             FETCH.get(url, setData, setLoading, setError)
     }, []);
@@ -164,7 +164,7 @@ const GacComparePage = (props) => {
     if (loading) return <>Loading content ...</>;
 
     let unique_keys = getUniqueKeys(data?.gac, data?.gac_compare);
-    let unique_annotated_envs = info.envs?.unique_annotated;
+    let unique_annotated_envs = header.envs?.unique_annotated;
 
     return <>
             <b>&nbsp;GAC Comparison</b>:&nbsp;&nbsp;
