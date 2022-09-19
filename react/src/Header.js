@@ -155,7 +155,10 @@ const Header = (props) => {
                                         <span key={env.public_name}>{env.public_name}&nbsp;&nbsp;&#x2713;</span>
                                     ):(<>
                                         { ENV.IsAllowed(env, header) ? (<>
-                                            <Link key={env.public_name} to={CLIENT.Path(null, env.public_name)}>{env.public_name}</Link>
+                                            {/* This works "okay" 2022-09-18 but does not refresh/refetch (say) /users page data on select new env */}
+                                            {/* <Link key={env.public_name} to={CLIENT.Path(null, env.public_name)}>{env.public_name}</Link> */}
+                                            {/* So doing this funky double redirect to get it to ... TODO: figure out right/React of of doing this */}
+                                            <Link key={env.public_name} to={{pathname: "/redirect"}} state={{url: !ENV.IsCurrentKnown(header) ? CLIENT.Path("/env", ENV.Default()) : CLIENT.Path(null, env.public_name)}}>{env.public_name}</Link>
                                         </>):(<>
                                             <Link key={env.public_name} to={CLIENT.Path("/env", env.public_name)}>{env.public_name}</Link>
                                         </>)}
