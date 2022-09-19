@@ -201,10 +201,18 @@ const Header = (props) => {
                     </td>
                 </tr>
                 <tr>
-                    <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="3">
+                    <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="2">
                         <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>. For more info click <b><a href="https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React" style={{color:"darkred"}} target="_blank"><u>here</u></a></b>.
-                        {/* To go to the real Foursight click <a href={CLIENT.IsLocal() && window.location.host == "localhost:3000" ? ("http://localhost:8000" + ("/api/view/" + header?.env?.public_name)) : ("/api/view/" + (header?.env?.public_name))} style={{color:"inherit"}}><b><u>here</u></b></a>.</i> */}
                         To go to the real Foursight click <a href={ENV.LegacyFoursightLink(header)} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
+                    </td>
+                    <td style={{background:"lightyellow",color:"darkred",textAlign:"right",paddingRight:"10pt",fontStyle:"italic"}}>
+                        { CLIENT.IsLocal() && <>
+                            Running Locally
+                            { SERVER.IsLocalCrossOrigin() ? (<>
+                            </>):(<>
+                                Running locally cross-origin
+                            </>)}
+                        </>}
                     </td>
                 </tr>
                 <tr>
@@ -212,15 +220,23 @@ const Header = (props) => {
                 </tr>
             </tbody></table>
             </div>
-            { CLIENT.IsLocal() && (<>
-                <div style={{float:"right",fontSize:"small",fontWeight:"bold",marginRight:"7pt",marginTop:"6pt",paddingTop:"2pt",paddingBottom:"2pt",paddingLeft:"5pt",paddingRight:"5pt",color:"#684B19",background:"#FCF8E3",border:"2px double #8A6D3B",borderRadius:"8px"}}>
-                    { SERVER.IsLocalCrossOrigin() ? (<>
-                        Running Locally (Cross-Origin)
-                    </>):(<>
-                        Running Locally
-                    </>)}
+            <div style={{float:"right",marginRight:"7pt",marginTop:"6pt"}}>
+                { false && CLIENT.IsLocal() && (<>
+                    <div style={{fontSize:"small",fontWeight:"bold",paddingTop:"2pt",paddingBottom:"2pt",paddingLeft:"5pt",paddingRight:"5pt",color:"#684B19",background:"#FCF8E3",border:"2px double #8A6D3B",borderRadius:"8px"}}>
+                        <div>
+                            { SERVER.IsLocalCrossOrigin() ? (<>
+                                Running Locally (Cross-Origin)
+                            </>):(<>
+                                Running Locally
+                            </>)}
+                        </div>
                 </div>
-            </>)}
+                </>)}
+                <div>
+                    {/* Could put some other branding here ... */}
+                    {/* <img src="https://avatars.githubusercontent.com/u/23222469?s=200&v=4" height="60" /> */}
+                </div>
+            </div>
             </React.Fragment>)}
     </>
 };
