@@ -75,8 +75,7 @@ const EnvPage = (props) => {
                         </>)}
                         <br />
                         <small>
-                            {/* TODO: Use Link instead of anchor - some issue where not updating the nav links with correct URL or something */}
-                            {/* though refresh (anchor rather than Link) isnt' so so bad when switching environments */}
+                            {/* TODO: use short/public name with Foursight-Front but full name with Foursight-CGAP */}
                             Click <Link style={{fontWeight:"bold",color:"darkred"}} to={CLIENT.Path("/env", GetDefaultEnv())}>here</Link> to use this default environment:
                             &nbsp;<Link style={{fontWeight:"bold",color:"darkred"}} to={CLIENT.Path("/env", GetDefaultEnv())}>{GetDefaultEnv()}</Link>
                         </small>
