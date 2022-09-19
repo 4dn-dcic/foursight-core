@@ -1,4 +1,6 @@
-// Miscellaneous date/time related utilities (local timezone formatting).
+// -------------------------------------------------------------------------------------------------
+// Miscellaneous date/time related functions (local timezone formatting).
+// -------------------------------------------------------------------------------------------------
 
 import STR from './STR';
 
@@ -102,6 +104,6 @@ function ToDateTime(value) {
 export default {
     FormatDuration: FormatDuration,
     FormatDateTime: FormatDateTime,
-    ToDateTime: ToDateTime,
-    Now: () => new Date()
+    ToDateTime:     ToDateTime,
+    Now:            () => new Date()
 }

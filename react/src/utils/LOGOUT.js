@@ -1,5 +1,9 @@
-import ENV from './ENV';
+// -------------------------------------------------------------------------------------------------
+// Logout function.
+// -------------------------------------------------------------------------------------------------
+
 import COOKIE from './COOKIE';
+import ENV from './ENV';
 import SERVER from './SERVER';
 
 // Redirects to the server /logout page in order to delete the authtoken cookie.

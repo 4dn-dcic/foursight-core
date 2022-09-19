@@ -171,12 +171,12 @@ const InfoPage = () => {
                 </>)}
         </InfoBox>
         <InfoBox title="Miscellany">
-            <InfoRow name={"App Deployed At"} value={SERVER.IsLocal() ? "running locally" + (SERVER.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + TIME.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
+            <InfoRow name={"App Deployed At"} value={SERVER.IsLocal() ? "running locally" + (CONTEXT.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + TIME.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
             <InfoRow name={"App Launched At"} value={header.app?.launched + TIME.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Page Loaded At"} value={info.page?.loaded + TIME.FormatDuration(info.page?.loaded, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Package"} value={header.app?.package} monospace={true} size="2" />
             <InfoRow name={"Stage"} value={header.app?.stage} monospace={true} size="2" />
-            <InfoRow name={"Environment"} value={CLIENT.Current.Env()} monospace={true} size="2" />
+            <InfoRow name={"Environment"} value={ENV.Current()} monospace={true} size="2" />
             <InfoRow name={"Domain"} value={header.app?.domain} monospace={true} size="2" />
             <InfoRow name={"Context"} value={header.app?.context} monospace={true} size="2" />
             <InfoRow name={"Path"} value={info.page?.path} monospace={true} size="2" />

@@ -28,7 +28,7 @@ function KnownEnvRequired({ children }) {
     // in AuthorizationRequired below.
     //
     if (header.loading) return children;
-    if (!ENV.IsKnown(CLIENT.Current.Env(), header) ) {
+    if (!ENV.IsKnown(ENV.Current(), header) ) {
         console.log("XYZZY:REDIRECT TO /env (a)");
         return <Navigate to={CLIENT.Path("/env")} replace />
     }

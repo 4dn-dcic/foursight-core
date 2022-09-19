@@ -124,7 +124,7 @@ const LoginPage = (props) => {
                     <div className="boxstyle check-fail" style={{margin:"20pt",padding:"10pt",borderWidth:"2",borderColor:"red"}}>
                         <img src={"https://i.stack.imgur.com/DPBue.png"} style={{height:"35",verticalAlign:"bottom"}} /> <b style={{fontSize:"x-large"}}>&nbsp;Attention ...</b> <br />
                         <hr style={{borderTop: "2px solid red",marginTop:"8px",marginBottom:"8px"}}/>
-                        As you appear to be <b>running</b> Foursight <b>locally</b> {CLIENT.IsLocalCrossOrigin() && <span>(cross-origin)</span>}, the above <a href="https://auth0.com/" style={{color:"red"}} target="_blank">Auth0</a> login <u><b>may not work</b></u>. <br />
+                        As you appear to be <b>running</b> Foursight <b>locally</b> {CONTEXT.IsLocalCrossOrigin() && <span>(cross-origin)</span>}, the above <a href="https://auth0.com/" style={{color:"red"}} target="_blank">Auth0</a> login <u><b>may not work</b></u>. <br />
                         <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
                         It <u><b>should work</b></u> but just in case you can bypass this and <b>faux</b> login below. 
                         <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>

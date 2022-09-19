@@ -1,5 +1,9 @@
-import ENV from './ENV';
+// -------------------------------------------------------------------------------------------------
+// Client (React UI) related functions.
+// -------------------------------------------------------------------------------------------------
+
 import CONTEXT from './CONTEXT';
+import ENV from './ENV';
 import PATH from './PATH';
 import STR from './STR';
 import TYPE from './TYPE';
@@ -84,12 +88,8 @@ function GetPath(path, env = true, envFallback = null) {
 // Current client path functions.
 // -------------------------------------------------------------------------------------------------
 
-function GetCurrentPath() {
-    return window.location.pathname;
-}
-
 function GetCurrentLogicalPath() {
-    const currentPath = PATH.Normalize(GetCurrentPath());
+    const currentPath = PATH.Normalize(window.location.pathname);
     const basePathWithTrailingSlash = CONTEXT.Client.BasePath() + "/";
     if (currentPath.startsWith(basePathWithTrailingSlash)) {
         const pathSansBasePath = currentPath.substring(basePathWithTrailingSlash.length);
@@ -108,17 +108,11 @@ function GetCurrentLogicalPath() {
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    BasePath:           CONTEXT.Client.BasePath,
-    BaseUrl:            CONTEXT.Client.BaseUrl,
-    Domain:             CONTEXT.Client.Domain,
-    HomeUrl:            GetHomeUrl,
-    IsLocal:            CONTEXT.Client.IsLocal,
-    IsLocalCrossOrigin: CONTEXT.IsLocalCrossOrigin,
-    Origin:             CONTEXT.Client.Origin,
-    Path:               GetPath,
-
-    Current: {
-        Env:        ENV.Current,
-        IsKnownEnv: ENV.IsCurrentKnown
-    }
+    BasePath: CONTEXT.Client.BasePath,
+    BaseUrl:  CONTEXT.Client.BaseUrl,
+    Domain:   CONTEXT.Client.Domain,
+    HomeUrl:  GetHomeUrl,
+    IsLocal:  CONTEXT.Client.IsLocal,
+    Origin:   CONTEXT.Client.Origin,
+    Path:     GetPath
 }

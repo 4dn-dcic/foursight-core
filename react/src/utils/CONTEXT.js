@@ -1,5 +1,7 @@
-// This modules contains key locations of things:
-// I.e. Client (React UI), server (React API), authentication (Auth0).
+// -------------------------------------------------------------------------------------------------
+// Context (location) related functions.
+// I.e. Locations of client (React UI), server (React API), authentication (Auth0).
+// -------------------------------------------------------------------------------------------------
 
 // -------------------------------------------------------------------------------------------------
 // Client (React UI) context info.
@@ -32,12 +34,24 @@ function IsLocalClient() {
     return origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
 }
 
+// -------------------------------------------------------------------------------------------------
+// Client (React UI) branding (icons, images) info.
+// -------------------------------------------------------------------------------------------------
+
 function GetClientFaviconFoursightCgap() {
     return "https://cgap-dbmi.hms.harvard.edu/favicon.ico";
 }
 
 function GetClientFaviconFoursightFourfront() {
-    return "https://data.4dnucleome.org//static/img/favicon-fs.ico";
+    return "https://data.4dnucleome.org/static/img/favicon-fs.ico";
+}
+
+function GetClientLogoFoursightCgap() {
+    return "https://data.4dnucleome.org/static/img/favicon-fs.ico";
+}
+
+function GetClientLogoFoursightFourfront() {
+    return "https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png";
 }
 
 // -------------------------------------------------------------------------------------------------

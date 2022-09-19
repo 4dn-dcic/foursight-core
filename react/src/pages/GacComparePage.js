@@ -13,7 +13,7 @@ import YAML from '../utils/YAML';
 const GacComparePage = (props) => {
 
     let { environCompare } = useParams();
-    const url = SERVER.Url(`/gac/${environCompare}`, CLIENT.Current.Env());
+    const url = SERVER.Url(`/gac/${environCompare}`, ENV.Current());
     const [ data, setData ] = useState([]);
     const [ showingRaw, setShowingRaw ] = useState(false);
     const [ showingType, setShowingType ] = useState("all");
@@ -155,8 +155,8 @@ const GacComparePage = (props) => {
 
     let OnChangeEnvCompare = (arg) => {
         const environCompare = arg.target.value;
-        let url = SERVER.Url("/gac/" + environCompare, CLIENT.Current.Env());
-        const path = "/api/react/" + CLIENT.Current.Env() + "/gac/" + environCompare;
+        let url = SERVER.Url("/gac/" + environCompare, ENV.Current());
+        const path = "/api/react/" + ENV.Current() + "/gac/" + environCompare;
         navigate(path);
         FETCH.get(url, setData, setLoading, setError)
     }
@@ -194,7 +194,7 @@ const GacComparePage = (props) => {
                             {/* TODO: Warning: Use the `defaultValue` or `value` props on <select> instead of setting `selected` on <option>. */}
                             <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnv(arg)}>
                                 { knownEnvs.map((env) =>
-                                    env.full_name == CLIENT.Current.Env() ?
+                                    env.full_name == ENV.Current() ?
                                         <option selected key={env.full_name}>{env.full_name}</option> :
                                         <option key={env.full_name}>{env.full_name}</option>
                                 )}

@@ -1,4 +1,6 @@
-// Miscellaneous type related utilities.
+// -------------------------------------------------------------------------------------------------
+// Miscellaneous type related functions.
+// -------------------------------------------------------------------------------------------------
 
 function IsString(value) {
     return value != undefined && value != null && value.constructor == String;

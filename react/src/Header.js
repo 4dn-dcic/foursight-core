@@ -207,7 +207,7 @@ const Header = (props) => {
                     </td>
                     <td style={{background:"lightyellow",color:"darkred",textAlign:"right",paddingRight:"10pt",fontSize:"small",fontStyle:"italic"}}>
                         { CLIENT.IsLocal() && <>
-                            { SERVER.IsLocalCrossOrigin() ? (<>
+                            { CONTEXT.IsLocalCrossOrigin() ? (<>
                                 Running locally cross-origin
                             </>):(<>
                                 Running locally
@@ -224,7 +224,7 @@ const Header = (props) => {
                 { false && CLIENT.IsLocal() && (<>
                     <div style={{fontSize:"small",fontWeight:"bold",paddingTop:"2pt",paddingBottom:"2pt",paddingLeft:"5pt",paddingRight:"5pt",color:"#684B19",background:"#FCF8E3",border:"2px double #8A6D3B",borderRadius:"8px"}}>
                         <div>
-                            { SERVER.IsLocalCrossOrigin() ? (<>
+                            { CONTEXT.IsLocalCrossOrigin() ? (<>
                                 Running Locally (Cross-Origin)
                             </>):(<>
                                 Running Locally
