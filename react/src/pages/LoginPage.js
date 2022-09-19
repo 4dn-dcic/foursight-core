@@ -7,7 +7,9 @@ import Global from '../Global';
 import Auth0Lock from 'auth0-lock';
 import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
+import CONTEXT from '../utils/CONTEXT';
 import COOKIE from '../utils/COOKIE';
+import LOGOUT from '../utils/LOGOUT';
 import Page from '../Page';
 
 const LoginPage = (props) => {
@@ -54,8 +56,8 @@ const LoginPage = (props) => {
     }
 
     function createAuth0Lock() {
-        const loginCallback = AUTH.AuthenticationCallbackUrl();
-        const loginClientId = AUTH.AuthenticationClientID(header); // header?.app?.credentials?.auth0_client_id;
+        const loginCallback = CONTEXT.Authentication.CallbackUrl();
+        const loginClientId = CONTEXT.Authentication.CallbackId(header);
         const loginPayload = {
             container: "login_auth_container",
             auth: {
@@ -94,7 +96,7 @@ const LoginPage = (props) => {
                             {/* Click <Link to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}} style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout()}>here</Link> to <Link to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}} style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</Link>. */}
 
                             {/* Click <a href={API.Url("/logout", true)} style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout()}>here</a> to <Link to={{pathname: "/redirect"}} state={{url: CLIENT.Path("/login")}} style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</Link>. */}
-                            Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> AUTH.Logout()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> AUTH.Logout()}>logout</span>.
+                            Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> LOGOUT()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> LOGOUT()}>logout</span>.
                         </small>
                     </span>)}
                 </div>

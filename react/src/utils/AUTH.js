@@ -3,9 +3,8 @@
 // Note that many of these are need the global header data as an argument.
 // -------------------------------------------------------------------------------------------------
 
-import CLIENT from './CLIENT';
+import CONTEXT from './CONTEXT';
 import COOKIE from './COOKIE';
-import SERVER from './SERVER';
 import STR from './STR';
 import TYPE from './TYPE';
 
@@ -20,7 +19,7 @@ function IsLoggedIn(header) {
     // since the way we detect the existence of the authtoken cookie is a bit
     // hacky since it is an HttpOnly cookie (see COOKIE.HasAuthToken).
     //
-    if (CLIENT.IsLocal() && IsFauxLoggedIn()) {
+    if (CONTEXT.Client.IsLocal() && IsFauxLoggedIn()) {
         return true;
     }
     //
@@ -44,11 +43,11 @@ function IsLoggedIn(header) {
 }
 
 function IsFauxLoggedIn() {
-    return CLIENT.IsLocal() && COOKIE.HasFauxLogin();
+    return CONTEXT.Client.IsLocal() && COOKIE.HasFauxLogin();
 }
 
 function LoggedInUser(header) {
-    if (CLIENT.IsLocal() && IsFauxLoggedIn()) {
+    if (CONTEXT.Client.IsLocal() && IsFauxLoggedIn()) {
         return "faux-login";
     }
     return header?.auth?.authenticated ? header.auth?.user : "unknown";
@@ -66,41 +65,15 @@ function LoggedInUserJwt(header) {
     return header?.auth?.jwt;
 }
 
-// Redirects to the server /logout page in order to delete the authtoken cookie.
-// The server should redirect back to the value of CLIENT.LastPath (from the lasturl cookie)
-//
-function Logout() {
-    COOKIE.DeleteFauxLogin();
-    window.location.replace(SERVER.Url("/logout", CLIENT.Current.Env()));
-}
-
-// This is the server (React API) URL for Auth0 to callback to.
-//
-function AuthenticationCallbackUrl() {
-    if (CLIENT.IsLocal()) {
-        return SERVER.UrlAbs("/callback/");
-    }
-    else {
-        return SERVER.UrlAbs("/api/callback/");
-    }
-}
-
-function AuthenticationClientID(header) {
-    return header?.app?.credentials?.auth0_client_id;
-}
-
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    AuthenticationCallbackUrl: AuthenticationCallbackUrl,
-    AuthenticationClientID:    AuthenticationClientID,
     IsFauxLoggedIn:            IsFauxLoggedIn,
     IsLoggedIn:                IsLoggedIn,
     LoggedInUser:              LoggedInUser,
     LoggedInUserVerified:      LoggedInUserVerified,
     LoggedInUserJwt:           LoggedInUserJwt,
-    LoggedInUserAuthRecord:    LoggedInUserAuthRecord,
-    Logout:                    Logout
+    LoggedInUserAuthRecord:    LoggedInUserAuthRecord
 }

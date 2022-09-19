@@ -1,3 +1,6 @@
+// This modules contains key locations of things:
+// I.e. Client (React UI), server (React API), authentication (Auth0).
+
 // -------------------------------------------------------------------------------------------------
 // Client (React UI) context info.
 // -------------------------------------------------------------------------------------------------
@@ -27,6 +30,14 @@ function GetClientCurrentPath() {
 function IsLocalClient() {
     const origin = GetClientOrigin();
     return origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
+}
+
+function GetClientFaviconFoursightCgap() {
+    return "https://cgap-dbmi.hms.harvard.edu/favicon.ico";
+}
+
+function GetClientFaviconFoursightFourfront() {
+    return "https://data.4dnucleome.org//static/img/favicon-fs.ico";
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -74,6 +85,23 @@ function IsLocalCrossOrigin() {
 }
 
 // -------------------------------------------------------------------------------------------------
+// Authentication (Auth0) callback info.
+// -------------------------------------------------------------------------------------------------
+
+function AuthenticationCallbackUrl() {
+    if (IsLocalClient()) {
+        return GetServerOrigin() + "/callback/";
+    }
+    else {
+        return GetServerOrigin() + "/api/callback/";
+    }
+}
+
+function AuthenticationCallbackId(header) {
+    return header?.app?.credentials?.auth0_client_id;
+}
+
+// -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
@@ -83,18 +111,23 @@ export default {
     IsLocalCrossOrigin:   IsLocalCrossOrigin,
 
     Client: {
-        BasePath:    GetClientBasePath,
-        BaseUrl:     GetClientBaseUrl,
-        CurrentPath: GetClientCurrentPath,
-        Domain:      GetClientDomain,
-        IsLocal:     IsLocalClient,
-        Origin:      GetClientOrigin
+        BasePath:         GetClientBasePath,
+        BaseUrl:          GetClientBaseUrl,
+        CurrentPath:      GetClientCurrentPath,
+        Domain:           GetClientDomain,
+        IsLocal:          IsLocalClient,
+        Origin:           GetClientOrigin,
+        FaviconCgap:      GetClientFaviconFoursightCgap,
+        FaviconFourfront: GetClientFaviconFoursightFourfront
     },
-
     Server: {
-        IsLocal:  IsLocalServer,
-        BasePath: GetServerBasePath,
-        BaseUrl:  GetServerBaseUrl,
-        Origin:   GetServerOrigin
+        IsLocal:           IsLocalServer,
+        BasePath:          GetServerBasePath,
+        BaseUrl:           GetServerBaseUrl,
+        Origin:            GetServerOrigin
+    },
+    Authentication: {
+        CallbackUrl:        AuthenticationCallbackUrl,
+        CallbackId:         AuthenticationCallbackId
     }
 }

@@ -21,17 +21,6 @@ function GetUrl(path, env = true) {
     return CONTEXT.Server.BaseUrl() + path;
 }
 
-function GetUrlAbs(path) {
-    if (!STR.HasValue(path)) {
-        path = "/";
-    }
-    if (!path.startsWith("/")) {
-        path = "/" + path;
-    }
-    path = path.replace(/\/+/g, "/");
-    return CONTEXT.Server.Origin() + path;
-}
-
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
@@ -42,6 +31,5 @@ export default {
     IsLocal:            CONTEXT.Server.IsLocal,
     IsLocalCrossOrigin: CONTEXT.IsLocalCrossOrigin,
     Origin:             CONTEXT.Server.Origin,
-    Url:                GetUrl,
-    UrlAbs:             GetUrlAbs
+    Url:                GetUrl
 }

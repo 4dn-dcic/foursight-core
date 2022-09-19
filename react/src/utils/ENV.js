@@ -14,7 +14,7 @@ import TYPE from './TYPE';
 // -------------------------------------------------------------------------------------------------
 
 function GetKnownEnvs(header) {
-    return header?.envs?.unique_annotated || COOKIE.KnownEnvs();
+    return header?.known_envs || COOKIE.KnownEnvs();
 }
 
 function IsKnownEnv(env, header) {
@@ -49,7 +49,7 @@ function GetAllowedEnvs(header) {
     if (AUTH.IsFauxLoggedIn()) {
         //
         // If we are faux logged in then allow all environments since we we (the React API)
-        // are not able to determind the list of allowed environment without a real authenticated
+        // are not able to determine the list of allowed environment without a real authenticated
         // user; if we don't do this then the faux logged in user won't be able to do anything.
         //
         return GetKnownEnvs(header);
@@ -80,7 +80,7 @@ function IsAllowedEnv(env, header) {
     if ((STR.HasValue(env) || TYPE.IsObject(env)) && TYPE.IsObject(header)) {
         // TODO
         // This is not right. The allowed_envs list is just a simple list of env names
-        // and we want to consider all name version possibilities via the unique_annotated list.
+        // and we want to consider all name version possibilities via the known_envs list.
         //
         const allowedEnvs = GetAllowedEnvs(header);
         console.log("ALLOWED ENVS ARE:");
@@ -243,7 +243,7 @@ function IsFoursightFourfront(header) {
         return false;
     }
     else {
-        return header.app?.package != "foursight-cgap";
+        return header?.app?.package != "foursight-cgap";
     }
 }
 
@@ -258,7 +258,7 @@ function GetLegacyFoursightLink(header) {
                  GetPublicEnvName(GetCurrentEnv(header), header) :
                  GetFullEnvName(GetCurrentEnv(header), header))
                 || GetDefaultEnv(header);
-    if (CONTEXT.Client.IsLocal() && window.location.host == "localhost:3000") {
+    if (CONTEXT.IsLocalCrossOrigin()) {
         return CONTEXT.Server.Origin() + "/api/view/" + env;
     }
     else {

@@ -111,7 +111,7 @@ const InfoPage = () => {
     if (header.loading) return <>Loading ...</>;
     return <>
         <InfoBox title="Versions">
-            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={ENV.IsFoursightFourfront(info) ? "4dn-dcic" : "dbmi-bgm"} size="2" />
+            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={ENV.IsFoursightFourfront(header) ? "4dn-dcic" : "dbmi-bgm"} size="2" />
             <InfoRow name={"foursight-core"} value={header.versions?.foursight_core} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"dcicutils"} value={header.versions?.dcicutils} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"chalice"} value={header.versions?.chalice} monospace={true} copy={true} chalice={true} size="2" pypi={true} github={"aws"} />
@@ -178,7 +178,7 @@ const InfoPage = () => {
             <InfoRow name={"Stage"} value={header.app?.stage} monospace={true} size="2" />
             <InfoRow name={"Environment"} value={CLIENT.Current.Env()} monospace={true} size="2" />
             <InfoRow name={"Domain"} value={header.app?.domain} monospace={true} size="2" />
-            <InfoRow name={"Context"} value={header.page?.context} monospace={true} size="2" />
+            <InfoRow name={"Context"} value={header.app?.context} monospace={true} size="2" />
             <InfoRow name={"Path"} value={info.page?.path} monospace={true} size="2" />
             <InfoRow name={"Endpoint"} value={info.page?.endpoint} monospace={true} size="2" />
             <InfoRow name={"Client (React UI)"} value={CLIENT.BaseUrl()} monospace={true} size="2" />

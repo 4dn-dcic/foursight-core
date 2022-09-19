@@ -9,6 +9,7 @@ import CLIENT from './utils/CLIENT';
 import CONTEXT from './utils/CONTEXT';
 import ENV from './utils/ENV';
 import FETCH from './utils/FETCH';
+import LOGOUT from './utils/LOGOUT';
 import SERVER from './utils/SERVER';
 import TIME from './utils/TIME';
 
@@ -101,21 +102,21 @@ const Header = (props) => {
                             { header.app?.local ? (<>
                                 <span title="Running locally." style={{position:"relative",bottom:"3pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;
                                 <span title="Stage is DEV. Running locally" style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"26pt"}}>&#x269B;</span>&nbsp;&nbsp;
-                                <span className="title-font" style={{position:"relative",bottom:"3pt",color:"white",fontWeight:"bold"}}>{header.page?.title.toUpperCase()}</span>&nbsp;&nbsp;
+                                <span className="title-font" style={{position:"relative",bottom:"3pt",color:"white",fontWeight:"bold"}}>{header.app?.title.toUpperCase()}</span>&nbsp;&nbsp;
                                 <span title="Stage is DEV. Running locally" style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>&nbsp;
                                 <span title="Running locally." style={{position:"relative",bottom:"3pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;&nbsp;
                             </>):(<>
                                 <span title="Stage is DEV." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>&nbsp;&nbsp;
-                                <span className="title-font" style={{position:"relative",bottom:"2pt",color:"white",fontWeight:"bold"}}>{header.page?.title.toUpperCase()}</span>&nbsp;&nbsp;
+                                <span className="title-font" style={{position:"relative",bottom:"2pt",color:"white",fontWeight:"bold"}}>{header.app?.title.toUpperCase()}</span>&nbsp;&nbsp;
                                 <span title="Stage is DEV." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>&nbsp;
                             </>)}
                         </>):(<>
                             { header.app?.local ? (<>
                                 <span title="Running locally." style={{position:"relative",bottom:"2pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;&nbsp;
-                                <span className="title-font" style={{position:"relative",bottom:"1pt",color:"white",fontWeight:"bold"}}>{header.page?.title.toUpperCase()}</span>&nbsp;&nbsp;
+                                <span className="title-font" style={{position:"relative",bottom:"1pt",color:"white",fontWeight:"bold"}}>{header.app?.title.toUpperCase()}</span>&nbsp;&nbsp;
                                 <span title="Running locally." style={{position:"relative",bottom:"2pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;&nbsp;
                             </>):(<>
-                                <span className="title-font" style={{position:"relative",bottom:"1pt",color:"white",fontWeight:"bold"}}>{header.page?.title.toUpperCase()}</span>&nbsp;&nbsp;
+                                <span className="title-font" style={{position:"relative",bottom:"1pt",color:"white",fontWeight:"bold"}}>{header.app?.title.toUpperCase()}</span>&nbsp;&nbsp;
                             </>)}
                         </>)}
                     </div>
@@ -129,7 +130,7 @@ const Header = (props) => {
                             {/* &nbsp;|&nbsp; <NavLink to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}}    style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink> */}
                             {/* &nbsp;|&nbsp; <a href={"http://localhost:8000/api/reactapi/" + URL.Env() + "/logout"} style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</a> */}
                             {/* &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => { Logout(); window.location.replace("http://localhost:8000/api/reactapi/" + URL.Env() + "/logout"); }}>LOGOUT</span> */}
-                            &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => AUTH.Logout()}>LOGOUT</span>
+                            &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => LOGOUT()}>LOGOUT</span>
                     </span>):(<span>
                         &nbsp;|&nbsp; <NavLink to={CLIENT.Path("/login?auth")} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
                     </span>)}

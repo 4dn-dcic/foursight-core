@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import Global from "../Global";
 import CLIENT from '../utils/CLIENT';
+import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
 import SERVER from '../utils/SERVER';
 import UUID from '../utils/UUID';
@@ -164,7 +165,7 @@ const GacComparePage = (props) => {
     if (loading) return <>Loading content ...</>;
 
     let unique_keys = getUniqueKeys(data?.gac, data?.gac_compare);
-    let unique_annotated_envs = header.envs?.unique_annotated;
+    let knownEnvs = ENV.KnownEnvs();
 
     return <>
             <b>&nbsp;GAC Comparison</b>:&nbsp;&nbsp;
@@ -192,7 +193,7 @@ const GacComparePage = (props) => {
                         <td>
                             {/* TODO: Warning: Use the `defaultValue` or `value` props on <select> instead of setting `selected` on <option>. */}
                             <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnv(arg)}>
-                                { unique_annotated_envs?.map((env) =>
+                                { knownEnvs.map((env) =>
                                     env.full_name == CLIENT.Current.Env() ?
                                         <option selected key={env.full_name}>{env.full_name}</option> :
                                         <option key={env.full_name}>{env.full_name}</option>
@@ -203,7 +204,7 @@ const GacComparePage = (props) => {
                         </td>
                         <td>
                             <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnvCompare(arg)}>
-                                { unique_annotated_envs?.map((env) =>
+                                { knownEnvs.map((env) =>
                                     env.full_name == environCompare ?
                                         <option selected key={env.full_name}>{env.full_name}</option> :
                                         <option          key={env.full_name}>{env.full_name}</option>

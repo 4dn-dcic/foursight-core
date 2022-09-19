@@ -1,5 +1,5 @@
 import Cookies from 'universal-cookie';
-import CLIENT from './CLIENT';
+import CONTEXT from './CONTEXT';
 import STR from './STR';
 import TYPE from './TYPE';
 
@@ -17,7 +17,7 @@ const _cookieDomain         = document.location.hostname;
 // -------------------------------------------------------------------------------------------------
 
 function GetCookieDomain() {
-    return CLIENT.IsLocal() ? _cookieDomain : "." + _cookieDomain;
+    return CONTEXT.Client.IsLocal() ? _cookieDomain : "." + _cookieDomain;
 }
 
 function GetCookie(name) {
@@ -211,6 +211,9 @@ function SetLastUrlCookie(url) {
 // -------------------------------------------------------------------------------------------------
 
 function SetRedirectCookie(url, expires = null) {
+        console.log("SetRedirectCookie:");
+        console.log(url);
+        console.log(expires);
     SetCookie(_redirectCookieName, url, expires);
 }
 

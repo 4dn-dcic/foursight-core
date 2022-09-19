@@ -4,12 +4,6 @@ class TestPage extends Component {
 
     constructor(props) {
         super(props);
-        console.log('TestPage:');
-        console.log(props)
-    }
-
-    componentWillMount() {
-        console.log('componentWillMount');
     }
 
     render() {

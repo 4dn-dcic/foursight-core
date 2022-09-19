@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Global from './Global';
+import CONTEXT from './utils/CONTEXT';
+import ENV from './utils/ENV';
 import FETCH from './utils/FETCH';
 import SERVER from './utils/SERVER';
 
@@ -20,6 +22,18 @@ import NotFoundPage from './pages/NotFoundPage';
 import ChecksPage from './pages/ChecksPage';
 import RedirectPage from './pages/RedirectPage';
 
+function setFavicon(header) {
+    const faviconElement = document.getElementById("favicon");
+    if (faviconElement) {
+        if (ENV.IsFoursightFourfront(header)) {
+            faviconElement.href = CONTEXT.Client.FaviconFourfront();
+        }
+        else {
+            faviconElement.href = CONTEXT.Client.FaviconCgap();
+        }
+    }
+}
+
 const App = () => {
 
     let [ header, setHeader ] = useState({loading: true});
@@ -28,8 +42,9 @@ const App = () => {
         FETCH.get(
             url,
             data => {
-                header.loading = false;
+                data.loading = false;
                 setHeader(data);
+                setFavicon(data);
             },
             loading => {},
             error => {

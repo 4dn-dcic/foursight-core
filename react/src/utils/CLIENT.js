@@ -8,14 +8,8 @@ import TYPE from './TYPE';
 // Client URL functions.
 // -------------------------------------------------------------------------------------------------
 
-function GetUrl(path) {
-    if (!STR.HasValue(path)) {
-        path = "/"
-    }
-    if (!path.startsWith("/")) {
-        path = "/" + path;
-    }
-    return CONTEXT.Client.BaseUrl() + path;
+function GetHomeUrl() {
+    return CONTEXT.Client.Origin() + GetPath("/home", ENV.Current());
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -117,11 +111,11 @@ export default {
     BasePath:           CONTEXT.Client.BasePath,
     BaseUrl:            CONTEXT.Client.BaseUrl,
     Domain:             CONTEXT.Client.Domain,
+    HomeUrl:            GetHomeUrl,
     IsLocal:            CONTEXT.Client.IsLocal,
     IsLocalCrossOrigin: CONTEXT.IsLocalCrossOrigin,
     Origin:             CONTEXT.Client.Origin,
     Path:               GetPath,
-    Url:                GetUrl,
 
     Current: {
         Env:        ENV.Current,

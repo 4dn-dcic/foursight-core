@@ -80,7 +80,7 @@ class ReactApi:
                 return True
         return False
 
-    def is_local_cross_origin_request(self, request: dict) -> bool:
+    def obsolete_is_local_cross_origin_request(self, request: dict) -> bool:
         """
         Returns True iff this request is a LOCAL (localhost) request AND its origin (the React UI)
         and we the host (the React API) are running on different ports. This is the situation for
@@ -146,39 +146,20 @@ class ReactApi:
         It contains the JWT token and a list of environments the authenticated
         is allowed to access. Returns this info fully decrypted in a dictionary.
         """
-        print('xyzzy:reconstitute_authtoken-1')
         if not authtoken:
-            print('xyzzy:reconstitute_authtoken-2')
             return None
 
-        print('xyzzy:reconstitute_authtoken-3')
         authtoken_decrypted = self.encryption.decrypt(authtoken)
-        print(authtoken_decrypted)
         if not authtoken_decrypted:
-            print('xyzzy:reconstitute_authtoken-4')
             return None
 
-        print('xyzzy:reconstitute_authtoken-5')
         authtoken_json = json.loads(authtoken_decrypted)
-        print(authtoken_json)
-        print('xyzzy:reconstitute_authtoken-6')
         jwt_token = authtoken_json.get("jwt")
-        print('xyzzy:reconstitute_authtoken-7')
-        print(jwt_token)
         jwt_decoded = self.decode_jwt_token(jwt_token, env)
-        print('xyzzy:reconstitute_authtoken-8')
-        print(jwt_decoded)
 
-        print('xyzzy:reconstitute_authtoken-9')
         allowed_envs_encoded = authtoken_json.get("env")
-        print(allowed_envs_encoded)
-        print('xyzzy:reconstitute_authtoken-11')
         allowed_envs = self.encryption.decode(allowed_envs_encoded)
-        print('xyzzy:reconstitute_authtoken-12')
-        print(allowed_envs)
-        print('xyzzy:reconstitute_authtoken-14')
         allowed_envs_json = json.loads(allowed_envs) if allowed_envs else []
-        print(allowed_envs_json)
 
         return {
             "jwt": jwt_decoded,
@@ -192,31 +173,17 @@ class ReactApi:
         dictionary with relevant authentication/authorization info, otherwise
         returns an dictonary indicating authentication/authorization failure.
         """
-        print('XYZZY:authorize-1')
         if not request:
-            print('XYZZY:authorize-2')
             return {}
-        print('XYZZY:authorize-3')
         if not isinstance(request, dict):
-            print('XYZZY:authorize-4')
             request = request.to_dict();
-        print('XYZZY:authorize-5')
         if self.is_running_locally(request):
-            print('XYZZY:authorize-6')
             #
-            # If running locally (localhost) AND if this is either a cross-origin
-            # request (e.g. where the React UI is running on port 3000 and the React API
-            # on port 8000), OR if the request indicates that the user is faux logged
-            # in then we bypass authentication altogether and simply return True here.
-            # See is_local_cross_origin_request and is_local_faux_logged_in for more comments.
+            # If running locally (localhost) AND if this is request indicates that the user is
+            # faux logged in then we bypass authentication altogether and return authenticated response.
             #
-            if self.is_local_cross_origin_request(request):
-                print('XYZZY:authorize-7')
-                pass
-                # return { "authenticated": True, "user": "unknown" }
             if self.is_local_faux_logged_in(request):
                 return { "authenticated": True, "user": "faux" }
-        print('XYZZY:authorize-8')
         try:
             authtoken_encrypted = self.read_cookie("authtoken", request)
             authtoken_info = self.reconstitute_authtoken(authtoken_encrypted, env)
@@ -424,11 +391,11 @@ class ReactApi:
                 "rds": os.environ["RDS_HOSTNAME"],
                 "sqs": self.sqs.get_sqs_queue().url
             },
-            "envs": {
-                "all": sorted(self.environment.list_environment_names()),
-                "unique": sorted(self.environment.list_unique_environment_names()),
-                "unique_annotated": self.get_unique_annotated_environments() # xyzzy
-            },
+#           "envs": {
+#               "all": sorted(self.environment.list_environment_names()),
+#               "unique": sorted(self.environment.list_unique_environment_names()),
+#               "unique_annotated": self.get_unique_annotated_environments() # xyzzy
+#           },
             "buckets": {
                 "env": self.environment.get_env_bucket_name(),
                 "foursight": get_foursight_bucket(envname=environ if environ else default_env, stage=stage_name),
@@ -446,23 +413,22 @@ class ReactApi:
              },
             "environ": self.sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
         }
-        if env_unknown:
-            response.body["env"] = {
-                "name": environ,
-                "unknown": True,
-                "default": default_env
-            }
-            response.body["env_unknown"] = True
-        else:
-            response.body["env"] = {
-                "name": environ,
-                "full_name": full_env_name(environ),
-                "short_name": short_env_name(environ),
-                "public_name": public_env_name(environ),
-                "foursight_name": infer_foursight_from_env(envname=environ),
-                "default": default_env,
-                "gac_name": self.get_gac_name(environ)
-            }
+#       if env_unknown:
+#           response.body["env"] = {
+#               "name": environ,
+#               "unknown": True,
+#               "default": default_env
+#           }
+#       else:
+#           response.body["env"] = {
+#               "name": environ,
+#               "full_name": full_env_name(environ),
+#               "short_name": short_env_name(environ),
+#               "public_name": public_env_name(environ),
+#               "foursight_name": infer_foursight_from_env(envname=environ),
+#               "default": default_env,
+#               "gac_name": self.get_gac_name(environ)
+#           }
         response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
         return self.process_response(response)
@@ -551,23 +517,19 @@ class ReactApi:
         print(response.body)
         return self.process_response(response)
 
-    # NEW ...
     react_header_info_cache = {}
     def react_get_header_nocache(self, request, environ, domain="", context="/"):
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         default_env = self.get_default_env()
-        if not self.is_known_environment_name(environ):
-            env_unknown = True
-        else:
-            env_unknown = False
         response = {
             "app": {
+                "title": self.html_main_title,
                 "package": self.APP_PACKAGE_NAME,
                 "stage": stage_name,
-                "env": environ,
                 "version": self.get_app_version(),
                 "domain": domain,
+                "context": context,
                 "local": self.is_running_locally(request_dict),
                 "credentials": self.react_get_credentials_info(environ if environ else default_env),
                 "launched": self.init_load_time,
@@ -576,7 +538,6 @@ class ReactApi:
             "page": {
                 "title": self.html_main_title,
                 "favicon": self.get_favicon(),
-                "context": context
             },
             "versions": {
                 "foursight": self.get_app_version(),
@@ -590,24 +551,9 @@ class ReactApi:
                 "unique": sorted(self.environment.list_unique_environment_names()),
                 "unique_annotated": self.get_unique_annotated_environments(), # xyzzy
                 "default": default_env
-            }
+            },
+            "known_envs": self.get_unique_annotated_environments()
         }
-        if env_unknown:
-            response["env"] = {
-                "name": environ,
-                "unknown": True,
-                "default": default_env
-            }
-            response["env_unknown"] = True
-        else:
-            response["env"] = {
-                "name": environ,
-                "full_name": full_env_name(environ),
-                "short_name": short_env_name(environ),
-                "public_name": public_env_name(environ),
-                "foursight_name": infer_foursight_from_env(envname=environ),
-                "default": default_env,
-            }
         hack_for_local_testing = False
         if hack_for_local_testing:
             response["envs"] = {

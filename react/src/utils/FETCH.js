@@ -1,6 +1,6 @@
 import COOKIE from '../utils/COOKIE';
 
-function SLEEP (time) {
+function SLEEP(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
 
