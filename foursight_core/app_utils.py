@@ -2476,6 +2476,33 @@ def reactapi_route_lambdas(environ: str):
     return AppUtilsCore.singleton().react_route_lambdas(request=app.current_request, env=environ)
 
 
+@app.route(ROUTE_PREFIX + 'reactapi/{environ}/aws/s3/buckets', methods=['GET'], cors=CORS)
+def reactapi_route_aws_s3_buckets(environ: str):
+    """
+    Return the list of all AWS S3 bucket names for the current AWS environment.
+    """
+    print(f"XYZZY:/reactapi/{environ}/aws/s3/buckets")
+    return AppUtilsCore.singleton().reactapi_route_aws_s3_buckets(request=app.current_request, env=environ)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/{environ}/aws/s3/buckets/{bucket}', methods=['GET'], cors=CORS)
+def reactapi_route_aws_s3_bucket_keys(environ: str, bucket: str):
+    """
+    Return the list of AWS S3 bucket key names in the given bucket for the current AWS environment.
+    """
+    print(f"XYZZY:/reactapi/{environ}/aws/s3/buckets/{bucket}")
+    return AppUtilsCore.singleton().reactapi_route_aws_s3_bucket_keys(request=app.current_request, env=environ, bucket=bucket)
+
+
+@app.route(ROUTE_PREFIX + 'reactapi/{environ}/aws/s3/buckets/{bucket}/{key}', methods=['GET'], cors=CORS)
+def reactapi_route_aws_s3_bucket_key_content(environ: str, bucket: str, key: str):
+    """
+    Return the content of the given AWS S3 bucket key in the given bucket for the current AWS environment.
+    """
+    print(f"XYZZY:/reactapi/{environ}/aws/s3/buckets/{bucket}/{key}")
+    return AppUtilsCore.singleton().reactapi_route_aws_s3_bucket_key_content(request=app.current_request, env=environ, bucket=bucket, key=key)
+
+
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/logout', methods=['GET'], cors=CORS)
 def reactapi_route_get_logout(environ):
     #

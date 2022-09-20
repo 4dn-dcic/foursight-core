@@ -907,3 +907,60 @@ class ReactApi:
             "set-cookie": authtoken_cookie_deletion
         }
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
+
+    def get_bucket_names(self) -> list:
+        results = []
+        try:
+            s3 = boto3.resource("s3")
+            results = sorted([bucket.name for bucket in s3.buckets.all()])
+        except Exception as e:
+            print("XYZZY:get_bucket_names:EXCEPTION")
+            print(e)
+            pass
+        return results
+
+    def get_bucket_keys(self, bucket_name: str) -> list:
+        results = []
+        try:
+            s3 = boto3.client("s3")
+            bucket_keys = s3.list_objects(Bucket=bucket_name)
+            if bucket_keys:
+                bucket_keys = bucket_keys.get("Contents")
+                if bucket_keys:
+                    for bucket_key in sorted(bucket_keys, key=lambda item: item["Key"]):
+                        results.append({
+                            "name": bucket_key["Key"],
+                            "size": bucket_key["Size"],
+                            "modified": self.convert_utc_datetime_to_useastern_datetime(bucket_key["LastModified"])
+                        })
+
+        except Exception as e:
+            print("XYZZY:get_bucket_keys:EXCEPTION")
+            print(e)
+        return results
+
+    def get_bucket_key_contents(self, bucket_name: str, bucket_key_name) -> list:
+        try:
+            s3 = boto3.resource("s3")
+            s3_object = s3.Object(bucket_name, bucket_key_name)
+            print("XYZZY:reactapi_route_aws_s3_bucket_key_content")
+            print(s3_object)
+            return s3_object.get()["Body"].read().decode("utf-8")
+        except Exception as e:
+            print("XYZZY:reactapi_route_aws_s3_bucket_key_content:EXCEPTION")
+            print(e)
+
+    def reactapi_route_aws_s3_buckets(self, request, env: str):
+        response = self.create_standard_response("reactapi_route_aws_s3_buckets")
+        response.body = self.get_bucket_names()
+        return self.process_response(response)
+
+    def reactapi_route_aws_s3_bucket_keys(self, request, env: str, bucket: str):
+        response = self.create_standard_response("reactapi_route_aws_s3_buckets")
+        response.body = self.get_bucket_keys(bucket)
+        return self.process_response(response)
+
+    def reactapi_route_aws_s3_bucket_key_content(self, request, env: str, bucket: str, key: str):
+        response = self.create_standard_response("reactapi_route_aws_s3_bucket_key_content")
+        response.body = self.get_bucket_key_contents(bucket, key)
+        return self.process_response(response)
