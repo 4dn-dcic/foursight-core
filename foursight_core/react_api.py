@@ -535,10 +535,6 @@ class ReactApi:
                 "launched": self.init_load_time,
                 "deployed": self.get_lambda_last_modified()
             },
-            "page": {
-                "title": self.html_main_title,
-                "favicon": self.get_favicon(),
-            },
             "versions": {
                 "foursight": self.get_app_version(),
                 "foursight_core": pkg_resources.get_distribution('foursight-core').version,
@@ -546,31 +542,29 @@ class ReactApi:
                 "python": platform.python_version(),
                 "chalice": chalice_version
             },
-            "envs": {
-                "all": sorted(self.environment.list_environment_names()),
-                "unique": sorted(self.environment.list_unique_environment_names()),
-                "unique_annotated": self.get_unique_annotated_environments(), # xyzzy
-                "default": default_env
-            },
-            "known_envs": self.get_unique_annotated_environments()
+            "known_envs": self.get_unique_annotated_environments(),
+            "default_env": default_env
         }
-        hack_for_local_testing = False
+
+#           "page": {
+#               "title": self.html_main_title,
+#               "favicon": self.get_favicon(),
+#           },
+#           "envs": {
+#               "all": sorted(self.environment.list_environment_names()),
+#               "unique": sorted(self.environment.list_unique_environment_names()),
+#               "unique_annotated": self.get_unique_annotated_environments(), # xyzzy
+#               "default": default_env
+#           },
+
+        hack_for_local_testing = True
         if hack_for_local_testing:
-            response["envs"] = {
-            "all": [
-            "supertest",
-            "cgap-supertest"
-            ], "unique": [
-            "supertest",
-            "cgap-supertest"
-            ],
-            "unique_annotated": [ {
+            response["known_envs"] = [{
             "name": "supertest",
             "short_name": "supertest",
             "full_name": "supertest",
             "public_name": "supertest",
             "foursight_name": "supertest",
-            "gac_name": "FOOBAR-C4DatastoreCgapSupertestApplicationConfiguration"
             }, {
             "name": "cgap-supertest",
             "short_name": "cgap-supertest",
@@ -578,7 +572,8 @@ class ReactApi:
             "public_name": "cgap-supertest",
             "foursight_name": "cgap-supertest",
             "gac_name": "C4DatastoreCgapSupertestApplicationConfiguration"
-            } ], "default": "cgap-supertest" }
+            } ]
+            response["default_env"] = "cgap-supertest"
         return response
 
     def get_secrets_names(self) -> list:

@@ -34,7 +34,7 @@ function IsKnownEnv(env, header) {
 // -------------------------------------------------------------------------------------------------
 
 function GetDefaultEnv(header) {
-    return header?.envs?.default || COOKIE.DefaultEnv();
+    return header?.default_env || COOKIE.DefaultEnv();
 }
 
 function IsDefaultEnv(env, header) {
@@ -174,7 +174,7 @@ function GetCurrentEnv(header = null) {
     }
     if (TYPE.IsObject(header)) {
         if (!IsKnownEnv(env, header)) {
-            env = header.envs?.default;
+            env = header?.default_env;
         }
     }
     return env;

@@ -40,8 +40,8 @@ const EnvPage = (props) => {
 
     // TODO: clean up this styles stuff.
 
-    const boxClass = IsKnownCurrentEnv() ? "boxstyle info" : "boxstyle check-warn";
-    const boxTextColor = IsKnownCurrentEnv() ? "darkblue" : "#6F4E37";
+    const boxClass = IsKnownCurrentEnv() && ENV.IsCurrentAllowed(header) ? ("boxstyle info") : "boxstyle check-warn";
+    const boxTextColor = IsKnownCurrentEnv() && ENV.IsCurrentAllowed(header) ? "darkblue" : "#6F4E37";
 
     function envNameTextStyles(env) {
         return {
