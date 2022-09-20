@@ -17,8 +17,8 @@ function SLEEP(time) {
 // like a valid JWT token and that it's not expired, etc.
 // See: https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React#Authentication-%26-Authorization
 //
-// TODO: Handle case of forbidden response from server and what ... logout ?
 // TODO: Handle timeouts!
+// TODO: Handle 403 forbidden specifically indicating that the (JWT within the) authtoken has expired.
 //
 function fetchData(url, setData, setLoading, setError) {
     if (COOKIE.TestMode.HasFetchSleep()) {

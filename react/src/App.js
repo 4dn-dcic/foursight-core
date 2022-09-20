@@ -6,21 +6,22 @@ import ENV from './utils/ENV';
 import FETCH from './utils/FETCH';
 import SERVER from './utils/SERVER';
 
-import Page from './Page';
-import HomePage from './pages/HomePage';
+import AwsS3Page from './pages/AwsS3Page';
+import ChecksPage from './pages/ChecksPage';
 import EnvPage from './pages/EnvPage';
-import InfoPage from './pages/InfoPage';
-import UserPage from './pages/UserPage';
-import UsersPage from './pages/UsersPage';
 import DemoPage from './pages/DemoPage';
-import Header from './Header';
 import Footer from './Footer';
+import Header from './Header';
+import HomePage from './pages/HomePage';
+import InfoPage from './pages/InfoPage';
 import LoginPage from './pages/LoginPage';
 import GacComparePage from './pages/GacComparePage';
-import TestPage from './pages/TestPage';
 import NotFoundPage from './pages/NotFoundPage';
-import ChecksPage from './pages/ChecksPage';
+import Page from './Page';
 import RedirectPage from './pages/RedirectPage';
+import TestPage from './pages/TestPage';
+import UserPage from './pages/UserPage';
+import UsersPage from './pages/UsersPage';
 
 function setFavicon(header) {
     const faviconElement = document.getElementById("favicon");
@@ -107,6 +108,11 @@ const App = () => {
                         </Page.AuthorizationRequired>
                     }>
                     </Route>
+                    <Route path="/api/react/:environ/aws/s3" element={
+                        <Page.AuthorizationRequired>
+                            <AwsS3Page />
+                        </Page.AuthorizationRequired>
+                    }/>
                     <Route path="/api/react/:environ/test" element={
                         <TestPage />
                     }/>

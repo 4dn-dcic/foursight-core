@@ -37,10 +37,11 @@ const Header = (props) => {
         }
         return <span>
             <NavLink to={CLIENT.Path("/home")} style={({isActive}) => style(isActive)}>HOME</NavLink>&nbsp;|&nbsp;
-            <NavLink to={CLIENT.Path("/checks")} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
-            <NavLink to={CLIENT.Path("/users")} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
             <NavLink to={CLIENT.Path("/env")} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
             <NavLink to={CLIENT.Path("/info")} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
+            <NavLink to={CLIENT.Path("/checks")} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
+            <NavLink to={CLIENT.Path("/users")} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
+            <NavLink to={CLIENT.Path("/aws/s3")} style={({isActive}) => style(isActive)}>S3</NavLink>&nbsp;|&nbsp;
             <a target="_blank" title="Open AWS Console for this account ({header.app?.credentials.aws_account_number}) in another tab."
                 style={{textDecoration:"none",color:"darkgreen"}}
                 href={"https://" + header.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>

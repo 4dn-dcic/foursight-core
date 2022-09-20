@@ -107,8 +107,8 @@ const InfoPage = () => {
         </>
     }
 
-    if (header.error) return <>Cannot load Foursight.</>;
-    if (header.loading) return <>Loading ...</>;
+    if (error) return <>Cannot load data from Foursight API: {error}</>;
+    if (loading) return <>Loading ...</>;
     return <>
         <InfoBox title="Versions">
             <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={ENV.IsFoursightFourfront(header) ? "4dn-dcic" : "dbmi-bgm"} size="2" />

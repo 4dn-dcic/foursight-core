@@ -174,7 +174,7 @@ class ReactApi:
         returns an dictonary indicating authentication/authorization failure.
         """
         if not request:
-            return {}
+            return { "authenticated": False, "status": "no-request" }
         if not isinstance(request, dict):
             request = request.to_dict();
         if self.is_running_locally(request):
@@ -186,33 +186,56 @@ class ReactApi:
                 return { "authenticated": True, "user": "faux" }
         try:
             authtoken_encrypted = self.read_cookie("authtoken", request)
+            if not authtoken_encrypted:
+                return { "authenticated": False, "status": "no-authtoken" }
+
             authtoken_info = self.reconstitute_authtoken(authtoken_encrypted, env)
             if not authtoken_info:
-                return { "authenticated": False }
+                return { "authenticated": False, "status": "bad-authtoken" }
 
-            jwt_decoded = authtoken_info["jwt"]
-            allowed_envs = authtoken_info["allowed_envs"]
+            jwt = authtoken_info["jwt"]
+            if not jwt:
+                return { "authenticated": False, "status": "no-jwt" }
+
+            jwt_expires_time_t = jwt.get("exp")
+            current_time_t = int(time.time())
+            if jwt_expires_time_t <= current_time_t:
+                return { "authenticated": False, "status": "jwt-expired" }
+
+            allowed_envs = authtoken_info.get("allowed_envs")
+            if not allowed_envs:
+                return { "authenticated": False, "status": "no-allowed-envs" }
+            if not self.is_allowed_env(env, allowed_envs):
+                return { "authenticated": False, "status": "not-allowed-env" }
 
             # Sanity check the decrypted authtoken be comparing our known Auth0 client ID
             # with the ("sub" field of the) JWT from the Auth0 authentication process.
 
-            if jwt_decoded.get("aud") != self.get_auth0_client_id(env):
-                return { "authenticated": False, "error": "Auth0 client ID mismatch." }
+            if jwt.get("aud") != self.get_auth0_client_id(env):
+                return { "authenticated": False, "status": "authtoken-mismatch" }
 
             # Return the raw JWT token as well as most of its info unpacked in a nicer form for UI usage.
             # We leave the issued-at and expires-at info as time_t based values (for now at least).
 
             authtoken_info["authenticated"] = True
-            authtoken_info["authenticated_at"] = jwt_decoded.get("iat")
-            authtoken_info["authenticated_until"] = jwt_decoded.get("exp")
-            authtoken_info["user"] = jwt_decoded.get("email")
-            authtoken_info["user_verified"] = jwt_decoded.get("email_verified")
+            authtoken_info["authenticated_at"] = jwt.get("iat")
+            authtoken_info["authenticated_until"] = jwt_expires_time_t
+            authtoken_info["user"] = jwt.get("email")
+            authtoken_info["user_verified"] = jwt.get("email_verified")
             return authtoken_info
 
         except Exception as e:
             print('XYZZY:ReactApi.authorize:error')
             print(e)
-            return { "authenticated": False, "error": True, "exception": str(e) }
+            return { "authenticated": False, "status": "exception", "exception": str(e) }
+
+    def react_forbidden_response(self, body):
+        response = self.create_standard_response("react_forbidden_response")
+        if not body or not isinstance(body, dict):
+            body = { "forbidden": true }
+        response.body = body
+        response.status_code = 403
+        return self.process_response(response)
 
     def react_serve_static_file(self, environ, is_admin=False, domain="", context="/", **kwargs):
 
@@ -338,6 +361,9 @@ class ReactApi:
     # TODO: Not protected for now. TODO: make this protected and make a non-protecte one that just returns env name info for React header.
     # Experimental React UI (API) stuff.
     def react_get_info(self, request, environ, domain="", context="/"):
+        authorize_response = self.authorize(request.to_dict(), environ)
+        if not authorize_response or not authorize_response["authenticated"]:
+            return self.react_forbidden_response(authorize_response)
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         default_env = self.get_default_env()
@@ -436,19 +462,13 @@ class ReactApi:
     def react_get_users(self, request, environ):
         env_a = "fourfront-mastertest"
         authorize_response = self.authorize(request.to_dict(), environ)
-        print("XYZZY:authorize_response-users")
-        print(authorize_response)
-        print(environ)
-        print(full_env_name(environ))
-        if not authorize_response:
-            return self.forbidden_response()
+        if not authorize_response or not authorize_response["authenticated"]:
+            return self.react_forbidden_response(authorize_response)
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         users = []
         # TODO: Support paging.
-        print("XYZZY:authorize_response-users-get-users")
         user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000')
-        print("XYZZY:authorize_response-users-get-users-after")
         for user_record in user_records["@graph"]:
             last_modified = user_record.get("last_modified")
             if last_modified:
@@ -478,11 +498,8 @@ class ReactApi:
 
     def react_get_user(self, request, environ, email=None):
         authorize_response = self.authorize(request.to_dict(), environ)
-        print("XYZZ:authorize_response-user")
-        print(authorize_response)
-        print(environ)
-        if not authorize_response:
-            return self.forbidden_response()
+        if not authorize_response or not authorize_response["authenticated"]:
+            return self.react_forbidden_response(authorize_response)
         users = []
         for email_address in email.split(","):
             try:
@@ -501,9 +518,6 @@ class ReactApi:
         pass
 
     def react_get_header(self, request, environ, domain="", context="/"):
-        print('XYZZY:HEADER COOKIES')
-        print(self.read_cookies(request))
-
         auth = self.authorize(request, environ)
         data = ReactApi.Cache.header.get(environ)
         if not data:
@@ -513,8 +527,6 @@ class ReactApi:
         data["auth"] = auth
         response = self.create_standard_response("react_get_header")
         response.body = data
-        print('XYZZY:HEADER RETURNS')
-        print(response.body)
         return self.process_response(response)
 
     react_header_info_cache = {}
@@ -908,13 +920,13 @@ class ReactApi:
         }
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
-    def get_bucket_names(self) -> list:
+    def get_buckets(self) -> list:
         results = []
         try:
             s3 = boto3.resource("s3")
             results = sorted([bucket.name for bucket in s3.buckets.all()])
         except Exception as e:
-            print("XYZZY:get_bucket_names:EXCEPTION")
+            print("XYZZY:get_buckets:EXCEPTION")
             print(e)
             pass
         return results
@@ -929,7 +941,7 @@ class ReactApi:
                 if bucket_keys:
                     for bucket_key in sorted(bucket_keys, key=lambda item: item["Key"]):
                         results.append({
-                            "name": bucket_key["Key"],
+                            "key": bucket_key["Key"],
                             "size": bucket_key["Size"],
                             "modified": self.convert_utc_datetime_to_useastern_datetime(bucket_key["LastModified"])
                         })
@@ -952,7 +964,7 @@ class ReactApi:
 
     def reactapi_route_aws_s3_buckets(self, request, env: str):
         response = self.create_standard_response("reactapi_route_aws_s3_buckets")
-        response.body = self.get_bucket_names()
+        response.body = self.get_buckets()
         return self.process_response(response)
 
     def reactapi_route_aws_s3_bucket_keys(self, request, env: str, bucket: str):
@@ -961,6 +973,11 @@ class ReactApi:
         return self.process_response(response)
 
     def reactapi_route_aws_s3_bucket_key_content(self, request, env: str, bucket: str, key: str):
+        print('xyzzy:reactapi_route_aws_s3_bucket_key_content')
+        print(bucket)
+        print(key)
+        key = urllib.parse.unquote(key)
+        print(key)
         response = self.create_standard_response("reactapi_route_aws_s3_bucket_key_content")
         response.body = self.get_bucket_key_contents(bucket, key)
         return self.process_response(response)
