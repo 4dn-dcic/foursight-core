@@ -357,33 +357,33 @@ class ReactApi:
             portal_url = None
         response = Response('react_get_info')
         response.body = {
-            "app": {
-                "package": self.APP_PACKAGE_NAME,
-                "stage": stage_name,
-                "env": environ,
-                "version": self.get_app_version(),
-                "local": self.is_running_locally(request_dict),
-                "credentials": self.react_get_credentials_info(environ if environ else default_env),
-                "launched": self.init_load_time,
-                "deployed": self.get_lambda_last_modified(),
-                "fourfront": self.is_fourfront()
-            },
+#           "app": {
+#               "package": self.APP_PACKAGE_NAME,
+#               "stage": stage_name,
+#               "env": environ,
+#               "version": self.get_app_version(),
+#               "local": self.is_running_locally(request_dict),
+#               "credentials": self.react_get_credentials_info(environ if environ else default_env),
+#               "launched": self.init_load_time,
+#               "deployed": self.get_lambda_last_modified(),
+#               "fourfront": self.is_fourfront()
+#           },
             "page": {
-                "title": self.html_main_title,
-                "favicon": self.get_favicon(),
-                "domain": domain,
-                "context": context,
+#               "title": self.html_main_title,
+#               "favicon": self.get_favicon(),
+#               "domain": domain,
+#               "context": context,
                 "path": request_dict.get("context").get("path"),
                 "endpoint": request.path,
                 "loaded": self.get_load_time()
             },
-            "versions": {
-                "foursight": self.get_app_version(),
-                "foursight_core": pkg_resources.get_distribution('foursight-core').version,
-                "dcicutils": pkg_resources.get_distribution('dcicutils').version,
-                "python": platform.python_version(),
-                "chalice": chalice_version
-            },
+#           "versions": {
+#               "foursight": self.get_app_version(),
+#               "foursight_core": pkg_resources.get_distribution('foursight-core').version,
+#               "dcicutils": pkg_resources.get_distribution('dcicutils').version,
+#               "python": platform.python_version(),
+#               "chalice": chalice_version
+#           },
             "server": {
                 "foursight": socket.gethostname(),
                 "portal": portal_url,
@@ -557,7 +557,7 @@ class ReactApi:
 #               "default": default_env
 #           },
 
-        hack_for_local_testing = True
+        hack_for_local_testing = False
         if hack_for_local_testing:
             response["known_envs"] = [{
             "name": "supertest",
