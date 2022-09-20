@@ -2467,13 +2467,13 @@ def reactapi_route_check_history(environ: str, check: str):
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}/run', methods=['GET'], cors=CORS)
 def reactapi_route_check_run(environ: str, check: str):
     print(f"XYZZY:/reactapi/{environ}/checks/{check}/run")
-    return AppUtilsCore.singleton().reactapi_check_run(request=app.current_request, env=environ, check=check)
+    return AppUtilsCore.singleton().reactapi_route_check_run(request=app.current_request, env=environ, check=check)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/lambdas', methods=['GET'], cors=CORS)
 def reactapi_route_lambdas(environ: str):
     print(f"XYZZY:/reactapi/{environ}/lambdas")
-    return AppUtilsCore.singleton().react_route_lambdas(request=app.current_request, env=environ)
+    return AppUtilsCore.singleton().reactapi_route_lambdas(request=app.current_request, env=environ)
 
 
 @app.route(ROUTE_PREFIX + 'reactapi/{environ}/aws/s3/buckets', methods=['GET'], cors=CORS)
@@ -2509,7 +2509,7 @@ def reactapi_route_get_logout(environ):
     # The environ on strictly required for logout (as we logout from all envs) but useful for redirect back.
     #
     print(f"XYZZY:/reactapi/logout")
-    return AppUtilsCore.singleton().react_route_logout(request=app.current_request, environ=environ)
+    return AppUtilsCore.singleton().reactapi_route_get_logout(request=app.current_request, environ=environ)
 
 
 class AppUtils(AppUtilsCore):  # for compatibility with older imports

@@ -872,8 +872,8 @@ class ReactApi:
         response = self.process_response(response)
         return response
 
-    def react_route_lambdas(self, request, env: str) -> dict:
-        response = self.create_standard_response("react_route_lambdas")
+    def reactapi_route_lambdas(self, request, env: str) -> dict:
+        response = self.create_standard_response("reactapi_route_lambdas")
         response.body = self.get_annotated_lambdas()
         response = self.process_response(response)
         return response
@@ -894,15 +894,15 @@ class ReactApi:
             response.body = {}
         return self.process_response(response)
 
-    def reactapi_check_run(self, request, env: str, check: str):
+    def reactapi_route_check_run(self, request, env: str, check: str):
         # TODO: What is this primary thing for? It is an option on the old/existing UI.
-        response = self.create_standard_response("reactapi_check_run")
+        response = self.create_standard_response("reactapi_route_check_run")
         params = {"primary": True}
         queued_uuid = self.queue_check(env, check, params)
         response.body = {"check": check, "env": env, "uuid": queued_uuid}
         return self.process_response(response)
 
-    def react_route_logout(self, request, environ) -> dict:
+    def reactapi_route_get_logout(self, request, environ) -> dict:
         request_dict = request.to_dict()
         domain, context = self.get_domain_and_context(request_dict)
         redirect_url = self.read_cookie("reactredir", request_dict)
@@ -963,16 +963,31 @@ class ReactApi:
             print(e)
 
     def reactapi_route_aws_s3_buckets(self, request, env: str):
+
+        authorize_response = self.authorize(request.to_dict(), env)
+        if not authorize_response or not authorize_response["authenticated"]:
+            return self.react_forbidden_response(authorize_response)
+
         response = self.create_standard_response("reactapi_route_aws_s3_buckets")
         response.body = self.get_buckets()
         return self.process_response(response)
 
     def reactapi_route_aws_s3_bucket_keys(self, request, env: str, bucket: str):
+
+        authorize_response = self.authorize(request.to_dict(), env)
+        if not authorize_response or not authorize_response["authenticated"]:
+            return self.react_forbidden_response(authorize_response)
+
         response = self.create_standard_response("reactapi_route_aws_s3_buckets")
         response.body = self.get_bucket_keys(bucket)
         return self.process_response(response)
 
     def reactapi_route_aws_s3_bucket_key_content(self, request, env: str, bucket: str, key: str):
+
+        authorize_response = self.authorize(request.to_dict(), env)
+        if not authorize_response or not authorize_response["authenticated"]:
+            return self.react_forbidden_response(authorize_response)
+
         print('xyzzy:reactapi_route_aws_s3_bucket_key_content')
         print(bucket)
         print(key)

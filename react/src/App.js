@@ -6,7 +6,7 @@ import ENV from './utils/ENV';
 import FETCH from './utils/FETCH';
 import SERVER from './utils/SERVER';
 
-import AwsS3Page from './pages/AwsS3Page';
+import AwsS3Page from './pages/aws/AwsS3Page';
 import ChecksPage from './pages/ChecksPage';
 import EnvPage from './pages/EnvPage';
 import DemoPage from './pages/DemoPage';

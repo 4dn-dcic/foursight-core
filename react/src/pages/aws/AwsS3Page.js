@@ -2,13 +2,15 @@ import React from 'react';
 import { useContext, useState, useEffect, useReducer } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link, useNavigate } from 'react-router-dom';
-import Global from "../Global";
-import { BarSpinner } from "../Spinners";
-import CLIPBOARD from '../utils/CLIPBOARD';
-import FETCH from '../utils/FETCH';
-import SERVER from '../utils/SERVER';
-import TIME from '../utils/TIME';
-import YAML from '../utils/YAML';
+import Global from "../../Global";
+import { BarSpinner } from "../../Spinners";
+import CLIPBOARD from '../../utils/CLIPBOARD';
+import FETCH from '../../utils/FETCH';
+import SERVER from '../../utils/SERVER';
+import TIME from '../../utils/TIME';
+import YAML from '../../utils/YAML';
+import UUID from '../../utils/UUID';
+import TableHead from '../../TableHead';
 
 const AwsS3Page = (props) => {
 
@@ -140,10 +142,6 @@ const AwsS3Page = (props) => {
 
     function toggleBucketKeyContentBox(bucket, key) {
         const index = findBucketKeyContentListIndex(bucket, key);
-            console.log('toggle:index...');
-            console.log(bucket);
-            console.log(key);
-            console.log(index);
         if (index >= 0) {
             hideBucketKeyContentBox(bucket, key);
         }
@@ -167,7 +165,7 @@ const AwsS3Page = (props) => {
             <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;S3 Buckets</div>
             <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
                 { bucketList.map((bucket, i) => {
-                    return <div key={bucket}>
+                    return <div key={i}>
                         <span style={{cursor:"pointer",fontWeight:isShowingBucketKeysBox(bucket) ? "bold" : "normal"}} onClick={() => toggleBucketKeysBox(bucket)}>{bucket}</span>
                         { i < bucketList.length - 1 &&
                             <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkblue"}} />
@@ -188,6 +186,13 @@ const AwsS3Page = (props) => {
     }
 
     const BucketKeysBox = ({bucketKeys}) => {
+
+        const columns = [
+            { label: "Key", key: "key" },
+            { label: "Size", key: "size", align: "right" },
+            { label: "Modified", key: "modified" }
+        ];
+
         return <>
             <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt",minWidth:"240pt"}}>
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideBucketKeysBox(bucketKeys.bucket)})}><b>&nbsp;&nbsp;&#x2717;</b></span>
@@ -196,26 +201,14 @@ const AwsS3Page = (props) => {
                 { <Spinner condition={bucketKeys.loading} label={"Fetching bucket keys"} color={"darkblue"} /> }
                 { bucketKeys.keys.length > 0 ? (<>
                     <div style={{height:"1px",background:"darkblue",marginBottom:"1pt"}}></div>
-                    <table>
-                        <thead>
-                        <tr>
-                        <td>
-                            <b>Key</b>
-                        &nbsp;&nbsp;</td>
-                        <td align="right">
-                            <b>Size</b>
-                        &nbsp;&nbsp;</td>
-                        <td>
-                            <b>Modified</b>
-                        &nbsp;&nbsp;</td>
-                        </tr>
+                    <table width="100%">
+                        <TableHead columns={columns} list={bucketKeys.keys} update={() => setBucketKeysList(existing => [...existing])} style={{color:"darkblue",fontWeight:"bold"}}/>
                         <tr><td style={{paddingTop:"1pt"}}></td></tr>
                         <tr><td style={{height:"1px",background:"darkblue"}} colSpan="3"></td></tr>
                         <tr><td style={{paddingTop:"4pt"}}></td></tr>
-                        </thead>
                         <tbody>
-                        { bucketKeys.keys.map((bucketKey, i) => { return <>
-                            <tr key={bucketKey.key}>
+                        { bucketKeys.keys.map((bucketKey, i) => { return <React.Fragment key={i}>
+                            <tr key={i}>
                             <td>
                                 { mayLookAtKeyContent(bucketKeys.bucket, bucketKey.key, bucketKey.size) ? (<>
                                     <span style={{cursor:"pointer",
@@ -243,11 +236,11 @@ const AwsS3Page = (props) => {
                                 <tr><td style={{height:"1px",background:"lightblue"}} colSpan="3"></td></tr>
                                 <tr><td style={{paddingTop:"2pt"}}></td></tr>
                             </>}
-                        </>})}
+                        </React.Fragment>})}
                 </tbody>
                 </table>
                 </>):(<>
-                        <i>No keys found for this bucket.</i>
+                    { !bucketKeys.loading && <i>No keys found for this bucket.</i> }
                 </>)}
             </div>
         </>
