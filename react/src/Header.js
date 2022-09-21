@@ -1,30 +1,22 @@
 import './css/App.css';
 import React from 'react';
-import { useContext, useState } from 'react';
-import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
+import { useContext } from 'react';
+import { Link, NavLink } from 'react-router-dom';
 import Global from "./Global";
 import { BarSpinner } from "./Spinners";
 import AUTH from './utils/AUTH';
 import CLIENT from './utils/CLIENT';
 import CONTEXT from './utils/CONTEXT';
 import ENV from './utils/ENV';
-import FETCH from './utils/FETCH';
 import LOGOUT from './utils/LOGOUT';
-import SERVER from './utils/SERVER';
 import TIME from './utils/TIME';
 
 const Header = (props) => {
 
-    let { environ } = useParams();
-    let navigate = useNavigate();
-    const [ header, setHeader ] = useContext(Global);
-    let [ loading, setLoading ] = useState(true);
-    let [ error, setError ] = useState(false);
+    const [ header ] = useContext(Global);
 
     let titleBackgroundColor = ENV.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
     let subTitleBackgroundColor = ENV.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
-
-    let titleToolTip = "Foursight";
 
     function renderNavigationLinks(header) {
         function style(isActive) {
@@ -48,11 +40,6 @@ const Header = (props) => {
                 AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
             </a>
         </span>
-    }
-
-    function initiateAppReload() {
-        const url = SERVER.Url("/reloadlambda", false);
-        FETCH.get(url);
     }
 
     return <>
@@ -99,7 +86,7 @@ const Header = (props) => {
                 </td>
                 <td width="34%" align="center" style={{whiteSpace:"nowrap"}}>
                     <div style={{fontSize:"20pt",color:"white",cursor:"default"}}>
-                        { header.app?.stage == 'dev' ? (<>
+                        { header.app?.stage === 'dev' ? (<>
                             { header.app?.local ? (<>
                                 <span title="Running locally." style={{position:"relative",bottom:"3pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;
                                 <span title="Stage is DEV. Running locally" style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"26pt"}}>&#x269B;</span>&nbsp;&nbsp;
@@ -125,12 +112,6 @@ const Header = (props) => {
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
                     <small>{TIME.FormatDateTime(new Date(), true)}</small>
                     { (AUTH.IsLoggedIn(header)) ? (<span>
-                            {/* &nbsp;<b>|</b>&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => {Logout(navigate);}}>LOGOUT</span> */}
-                            {/* &nbsp;|&nbsp; <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink> */}
-
-                            {/* &nbsp;|&nbsp; <NavLink to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}}    style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</NavLink> */}
-                            {/* &nbsp;|&nbsp; <a href={"http://localhost:8000/api/reactapi/" + URL.Env() + "/logout"} style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</a> */}
-                            {/* &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => { Logout(); window.location.replace("http://localhost:8000/api/reactapi/" + URL.Env() + "/logout"); }}>LOGOUT</span> */}
                             &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => LOGOUT()}>LOGOUT</span>
                     </span>):(<span>
                         &nbsp;|&nbsp; <NavLink to={CLIENT.Path("/login?auth")} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
@@ -173,18 +154,18 @@ const Header = (props) => {
                             <b style={{color:titleBackgroundColor}} title="Environment: {ENV.Current()}">{ENV.Current()}</b>
                         )}
                         &nbsp;|&nbsp;
-                        { (header.app?.stage == 'prod') ? (<>
+                        { (header.app?.stage === 'prod') ? (<>
                             <b title="Deployment stage: PROD!" style={{color:"darkred"}}>{header.app?.stage}</b> &nbsp;|&nbsp;
                         </>):(<></>)}
-                        { (header.app?.stage == 'dev') ? (<>
+                        { (header.app?.stage === 'dev') ? (<>
                             <b title="Deployment stage: DEV" style={{color:"darkgreen"}}>{header.app?.stage}</b> &nbsp;|&nbsp;
                         </>):(<></>)}
-                        { (header.app?.stage != 'prod' && header.app?.stage != 'dev') ? (<>
+                        { (header.app?.stage !== 'prod' && header.app?.stage !== 'dev') ? (<>
                             <b title="Deployment stage: {header.app?.stage}">{header.app?.stage}}</b> &nbsp;|&nbsp;
                         </>):(<></>)}
                         { (AUTH.IsLoggedIn(header)) ? (<>
                             { AUTH.LoggedInUser(header) ? (<>
-                                <Link to={CLIENT.Path("/login")} style={{textDecoration:"none"}}><b title="" style={{color:"darkblue"}} title="Logged in as.">{AUTH.LoggedInUser(header)}</b></Link>
+                                <Link to={CLIENT.Path("/login")} style={{textDecoration:"none"}}><b style={{color:"darkblue"}} title="Logged in as.">{AUTH.LoggedInUser(header)}</b></Link>
                             </>):(<>
                                 { (AUTH.IsFauxLoggedIn()) ? (<>
                                     <span className={"tool-tip"} data-text="Running locally and faux logged in (i.e. not via Auth0).">

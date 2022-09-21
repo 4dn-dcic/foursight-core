@@ -1,8 +1,6 @@
 import React from 'react';
-import { useContext, useState, useEffect, useReducer } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Link, useNavigate } from 'react-router-dom';
-import Global from "../Global";
 import { BarSpinner } from "../Spinners";
 import CLIPBOARD from '../utils/CLIPBOARD';
 import FETCH from '../utils/FETCH';
@@ -13,7 +11,6 @@ import YAML from '../utils/YAML';
 const ChecksPage = (props) => {
 
     let { environ } = useParams();
-    const [ header ] = useContext(Global);
     let [ groupedChecks, setGroupedChecks ] = useState([]);
     let [ lambdas, setLambdas ] = useState([]);
     let [ loading, setLoading ] = useState(true);
@@ -44,7 +41,7 @@ const ChecksPage = (props) => {
     function isSelectedGroup(group) {
         for (let i = 0 ; i < selectedGroups?.length ; i++) {
             const selectedGroup = selectedGroups[i]
-            if (selectedGroup.group == group.group) {
+            if (selectedGroup.group === group.group) {
                 return true;
             }
         }
@@ -54,7 +51,7 @@ const ChecksPage = (props) => {
     function findSelectedGroupIndex(group) {
         for (let i = 0 ; i < selectedGroups.length ; i++) {
             const selectedGroup = selectedGroups[i]
-            if (selectedGroup.group == group.group) {
+            if (selectedGroup.group === group.group) {
                 return i;
             }
         }
@@ -103,7 +100,7 @@ const ChecksPage = (props) => {
     }
 
     function onGroupSelectAll(group) {
-        if (groupedChecks.length == selectedGroups.length) {
+        if (groupedChecks.length === selectedGroups.length) {
             setSelectedGroups([groupedChecks[0]]);
         }
         else {
@@ -111,7 +108,7 @@ const ChecksPage = (props) => {
         }
     }
 
-    const ChecksGroupBox = ({}) => {
+    const ChecksGroupBox = ({props}) => {
         return <div style={{minWidth:"150pt"}}>
             <div style={{fontWeight:"bold",paddingBottom:"3pt",cursor:"pointer"}} onClick={() => onGroupSelectAll()}>&nbsp;Check Groups</div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
@@ -129,7 +126,7 @@ const ChecksPage = (props) => {
         </div>
     }
 
-    const LambdasBox = ({}) => {
+    const LambdasBox = ({props}) => {
         return <div>
             <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;Lambdas</div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
@@ -233,7 +230,7 @@ const ChecksPage = (props) => {
         </div>
     } 
 
-    const SelectedGroupsPanel = ({}) => {
+    const SelectedGroupsPanel = ({props}) => {
         return <div>
             { selectedGroups.length > 0 ? (<>
                 <div style={{paddingBottom:"3pt"}}>
@@ -358,7 +355,7 @@ const ChecksPage = (props) => {
     }
 
     const ResultDetailsBox = ({check, style}) => {
-        return <pre className={check.results?.status?.toUpperCase() == "PASS" ? "check-pass" : "check-warn"} style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"415pt"}}>
+        return <pre className={check.results?.status?.toUpperCase() === "PASS" ? "check-pass" : "check-warn"} style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"415pt"}}>
             <div style={{float:"right",marginTop:"-10px"}}>
             <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{JSON.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
             <img onClick={() => CLIPBOARD.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="19" />
@@ -372,7 +369,7 @@ const ChecksPage = (props) => {
 
     const ResultBox = ({check}) => {
         return <div>
-            { check.results && <small style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red",cursor:"pointer"}} onClick={() => { check.showingResultDetails = !check.showingResultDetails ; noteChangedResults(); }}>
+            { check.results && <small style={{color:check.results?.status?.toUpperCase() === "PASS" ? "darkgreen" : "red",cursor:"pointer"}} onClick={() => { check.showingResultDetails = !check.showingResultDetails ; noteChangedResults(); }}>
                 { Object.keys(check.results).length > 0 ? (<>
                     { !check.showingCheckRunningBox && <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div> }
                     <span>Latest Results: {check.results?.timestamp}</span>
@@ -382,15 +379,15 @@ const ChecksPage = (props) => {
                             <b className={"tool-tip"} data-text={"Click to show result details."}>&nbsp;&#x2191;</b>
                         )}
                     <br />
-                    <span style={{color:check.results?.status?.toUpperCase() == "PASS" ? "darkgreen" : "red"}}><span className={"tool-tip"} data-text={"Click to " + (check.showingResultDetails ? "hide" : "show") + " result details."}>Results Summary</span>: {check.results?.summary}</span>&nbsp;&nbsp;
-                    { check.results?.status?.toUpperCase() == "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>) }
+                    <span style={{color:check.results?.status?.toUpperCase() === "PASS" ? "darkgreen" : "red"}}><span className={"tool-tip"} data-text={"Click to " + (check.showingResultDetails ? "hide" : "show") + " result details."}>Results Summary</span>: {check.results?.summary}</span>&nbsp;&nbsp;
+                    { check.results?.status?.toUpperCase() === "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>) }
                 </>):(<>
                     { !check.showingResultDetails && <span>No results.</span> }
                 </>)}
             </small> }
             {/* Results details or loading results box */}
             { check.showingResultDetails ? (
-                <ResultDetailsBox check={check} style={{}} />
+                <ResultDetailsBox check={check} />
             ):(
                 <span>
                     { !check.results && <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> }
@@ -428,9 +425,6 @@ const ChecksPage = (props) => {
         }
         function extractDuration(history) {
             return history[2].runtime_seconds;
-        }
-        function extractDescription(history) {
-            return history[1];
         }
         function extractState(history) {
             return history[2].queue_action;
@@ -470,14 +464,14 @@ const ChecksPage = (props) => {
                     <tbody>
                     {check.history.history.map((history, index) => {
                         return <React.Fragment key={extractUUID(history)}>
-                            { index != 0 && (<>
+                            { index !== 0 && (<>
                                 <tr><td style={{paddingTop:"2px"}}></td></tr>
                                 <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
                                 <tr><td style={{paddingBottom:"2px"}}></td></tr>
                             </>)}
                             <tr>
                             <td>
-                                {extractStatus(history) == "PASS" ? (<>
+                                {extractStatus(history) === "PASS" ? (<>
                                     <span style={{color:"darkgreen"}}>&#x2713;</span>
                                 </>):(<>
                                     <span style={{color:"darkred"}}>&#x2717;</span>
@@ -487,7 +481,7 @@ const ChecksPage = (props) => {
                                 {extractTimestamp(history)}
                             &nbsp;&nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
-                                {extractStatus(history) == "PASS" ? (<>
+                                {extractStatus(history) === "PASS" ? (<>
                                     <b style={{color:"darkgreen"}}>OK</b>
                                 </>):(<>
                                     <b style={{color:"darkred"}}>ERROR</b>
@@ -567,7 +561,7 @@ const ChecksPage = (props) => {
     function findResultsHistoryIndex(check) {
         for (let i = 0 ; i < selectedHistories.length ; i++) {
             const selectedHistory = selectedHistories[i]
-            if (selectedHistory.name == check.name) {
+            if (selectedHistory.name === check.name) {
                 return i;
             }
         }

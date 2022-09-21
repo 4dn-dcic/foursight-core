@@ -1,8 +1,7 @@
 import React from 'react';
-import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useContext, useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import Global from '../Global';
 import Auth0Lock from 'auth0-lock';
 import AUTH from '../utils/AUTH';
@@ -14,8 +13,7 @@ import Page from '../Page';
 
 const LoginPage = (props) => {
 
-    let navigate = useNavigate();
-    const [ header, setHeader ] = useContext(Global);
+    const [ header ] = useContext(Global);
     const [ showingAuthBox, setShowingAuthBox ] = useState(false);
     const [args] = useSearchParams();
     const showAuthBoxAtOutset = args.get("auth")?.length >= 0;
@@ -47,12 +45,6 @@ const LoginPage = (props) => {
         document.getElementById("login_auth_container").firstChild.firstChild.style.fontWeight = "bold";
         document.getElementById("login_auth_container").firstChild.firstChild.style.fontWeight = "bold";
         setShowingAuthBox(true);
-    }
-
-    function hideAuthBox() {
-        document.getElementById("login_auth_container").style.display = "none";
-        document.getElementById("login_auth_cancel").style.display = "none";
-        setShowingAuthBox(false);
     }
 
     function createAuth0Lock() {
@@ -89,13 +81,8 @@ const LoginPage = (props) => {
                         &nbsp;<b>localhost</b>
                     </span>):(<span>
                         <Link to={CLIENT.Path("/users/" + AUTH.LoggedInUser(header))}><b style={{color:"darkblue"}}>{AUTH.LoggedInUser(header)}</b></Link>
-                            {/* <br /> <small>Click <u style={{fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout(navigate)}>here</u> to <span onClick={()=>{Logout(navigate);}}>logout</span>.</small> */}
                         <br />
                         <small>
-                            {/* Click <NavLink to={URL.Url("/logindone", true)} style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout()}>here</NavLink> to <NavLink to={URL.Url("/logindone", true)} style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</NavLink>. */}
-                            {/* Click <Link to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}} style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout()}>here</Link> to <Link to={{pathname: "/redirect"}} state={{url: URL.Url("/login", true)}} style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</Link>. */}
-
-                            {/* Click <a href={API.Url("/logout", true)} style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> Logout()}>here</a> to <Link to={{pathname: "/redirect"}} state={{url: CLIENT.Path("/login")}} style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</Link>. */}
                             Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> LOGOUT()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> LOGOUT()}>logout</span>.
                         </small>
                     </span>)}

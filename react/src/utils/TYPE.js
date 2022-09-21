@@ -3,16 +3,15 @@
 // -------------------------------------------------------------------------------------------------
 
 function IsString(value) {
-    return value != undefined && value != null && value.constructor == String;
+    return value !== undefined && value !== null && value.constructor === String;
 }
 
 function IsBoolean(value) {
-    //return value != undefined && value != null && typeof value == "boolean";
-    return value != undefined && value != null && value.constructor == Boolean;
+    return value !== undefined && value !== null && value.constructor === Boolean;
 }
 
 function IsObject(value) {
-    return value != undefined && value != null && value.constructor == Object;
+    return value !== undefined && value !== null && value.constructor === Object;
 }
 
 function IsDateTime(value) {
@@ -20,7 +19,7 @@ function IsDateTime(value) {
 }
 
 function IsNull(value) {
-    return value == null || value == undefined;
+    return value === null || value === undefined;
 }
 
 // -------------------------------------------------------------------------------------------------

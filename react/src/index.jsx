@@ -6,7 +6,7 @@ import COOKIE from './utils/COOKIE';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
-if (COOKIE.Get("test_mode_dummy_page") == "1") {
+if (COOKIE.Get("test_mode_dummy_page") === "1") {
     root.render(
         <div>
             Foursight: Hello, world!

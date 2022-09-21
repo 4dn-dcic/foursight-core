@@ -1,9 +1,6 @@
 import React from 'react';
-import { useContext, useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Link, useNavigate } from 'react-router-dom';
-import Global from "../Global";
-import CLIENT from '../utils/CLIENT';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
 import SERVER from '../utils/SERVER';
@@ -19,7 +16,6 @@ const GacComparePage = (props) => {
     const [ showingType, setShowingType ] = useState("all");
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
-    const [ header ] = useContext(Global);
     useEffect(() => {
             FETCH.get(url, setData, setLoading, setError)
     }, []);
@@ -79,7 +75,7 @@ const GacComparePage = (props) => {
         setShowingType("all");
     }
     function showingAll() {
-        return showingType == "all"
+        return showingType === "all"
     }
     function showingAllLinkStyle() {
         return {
@@ -93,7 +89,7 @@ const GacComparePage = (props) => {
         setShowingType("matches");
     }
     function showingMatches() {
-        return showingType == "matches"
+        return showingType === "matches"
     }
     function showingMatchesLinkStyle() {
         return {
@@ -107,7 +103,7 @@ const GacComparePage = (props) => {
         setShowingType("nonmatches");
     }
     function showingNonMatches() {
-        return showingType == "nonmatches"
+        return showingType === "nonmatches"
     }
     function showingNonMatchesLinkStyle() {
         return {
@@ -121,7 +117,7 @@ const GacComparePage = (props) => {
         setShowingType("differences");
     }
     function showingDifferences() {
-        return showingType == "differences"
+        return showingType === "differences"
     }
     function showingDifferencesLinkStyle() {
         return {
@@ -135,7 +131,7 @@ const GacComparePage = (props) => {
         setShowingType("missing");
     }
     function showingMissing() {
-        return showingType == "missing"
+        return showingType === "missing"
     }
     function showingMissingLinkStyle() {
         return {
@@ -194,7 +190,7 @@ const GacComparePage = (props) => {
                             {/* TODO: Warning: Use the `defaultValue` or `value` props on <select> instead of setting `selected` on <option>. */}
                             <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnv(arg)}>
                                 { knownEnvs.map((env) =>
-                                    env.full_name == ENV.Current() ?
+                                    env.full_name === ENV.Current() ?
                                         <option selected key={env.full_name}>{env.full_name}</option> :
                                         <option key={env.full_name}>{env.full_name}</option>
                                 )}
@@ -205,7 +201,7 @@ const GacComparePage = (props) => {
                         <td>
                             <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnvCompare(arg)}>
                                 { knownEnvs.map((env) =>
-                                    env.full_name == environCompare ?
+                                    env.full_name === environCompare ?
                                         <option selected key={env.full_name}>{env.full_name}</option> :
                                         <option          key={env.full_name}>{env.full_name}</option>
                                 )}

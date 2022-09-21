@@ -95,7 +95,7 @@ function IsLocal() {
 // the server via chalice local (typically on port 8000).
 //
 function IsLocalCrossOrigin() {
-    return IsLocal() && GetClientOrigin() != GetServerOrigin();
+    return IsLocal() && GetClientOrigin() !== GetServerOrigin();
 }
 
 // -------------------------------------------------------------------------------------------------

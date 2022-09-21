@@ -31,7 +31,7 @@ function fetchData(url, setData, setLoading, setError) {
     const headers = {}
     return fetch(url, { headers: headers, credentials:"include"}).then(response => {
         console.log("FETCH STATUS CODE IS " + response.status + ": " + url);
-        if (response.status == 200) {
+        if (response.status === 200) {
             response.json().then(responseJson => {
                 if (COOKIE.TestMode.HasFetchSleep()) {
                     SLEEP(COOKIE.TestMode.FetchSleep()).then(() => {
@@ -61,7 +61,7 @@ function fetchData(url, setData, setLoading, setError) {
         else {
             console.log("FETCH STATUS CODE IS NOT 200 BUT " + response.status + ": " + url);
             console.log(response);
-            if (response.status == 403) {
+            if (response.status === 403) {
                 console.log("FETCH IS FORBIDDEN! " + url);
                 console.log(window.location);
                 // window.location.pathname = "/api/react/cgap-supertest/forbidden";

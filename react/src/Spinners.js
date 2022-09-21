@@ -3,7 +3,6 @@ import BarLoader from "react-spinners/BarLoader";
 import DotLoader from "react-spinners/DotLoader";
 import ScaleLoader from "react-spinners/ScaleLoader";
 import ClipLoader from "react-spinners/ClipLoader";
-import { LoaderHeightWidthProps } from "react-spinners/helpers/props";
 
 export const RingSpinner = ({loading, color, size}) => {
     const override: CSSProperties = {

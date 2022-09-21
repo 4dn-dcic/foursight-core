@@ -1,11 +1,10 @@
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Global from "../Global";
 import Page from '../Page';
 import AUTH from '../utils/AUTH';
 import ENV from '../utils/ENV';
 import CLIENT from '../utils/CLIENT';
-import COOKIE from '../utils/COOKIE';
 import UUID from '../utils/UUID';
 
 const EnvPage = (props) => {
@@ -14,8 +13,6 @@ const EnvPage = (props) => {
 
     let navigate = useNavigate();
     const [ header ] = useContext(Global);
-    let [ loading, setLoading ] = useState(true);
-    let [ error, setError ] = useState(false);
 
     function IsKnownCurrentEnv() {
         return ENV.IsCurrentKnown(header);
@@ -45,7 +42,7 @@ const EnvPage = (props) => {
 
     function envNameTextStyles(env) {
         return {
-            fontWeight: env == ENV.Current() ? "bold" : "inherit"
+            fontWeight: env === ENV.Current() ? "bold" : "inherit"
         };
     }
 

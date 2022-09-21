@@ -5,8 +5,6 @@
 
 import CONTEXT from './CONTEXT';
 import COOKIE from './COOKIE';
-import STR from './STR';
-import TYPE from './TYPE';
 
 // -------------------------------------------------------------------------------------------------
 // Authentication related functions.

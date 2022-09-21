@@ -53,8 +53,6 @@ const App = () => {
             })
     }, []);
 
-    // TODO: Move the page guards here or else the fetches with fire within the pages before they redirect if not authenticated.
-
     return <Router>
         <Global.Provider value={[header, setHeader]}>
             <Header />

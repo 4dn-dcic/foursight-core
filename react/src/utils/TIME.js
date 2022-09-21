@@ -42,7 +42,7 @@ function FormatDuration(startDate, endDate = new Date(), verbose = false, fallba
     const hours       = Math.floor ((ms % msPerDay) / msPerHour);
     const minutes     = Math.round(((ms % msPerDay) % msPerHour)   / msPerMinute);
     const seconds     = Math.round(((ms % msPerDay) % msPerMinute) / msPerSecond);
-    if (days == 0 && hours == 0 && minutes == 0 && seconds == 0) {
+    if (days === 0 && hours === 0 && minutes === 0 && seconds === 0) {
         if (STR.HasValue(fallback)) {
             return (prefix ? (" " + prefix + " ") : "") + fallback;
         }
@@ -52,15 +52,15 @@ function FormatDuration(startDate, endDate = new Date(), verbose = false, fallba
     }
     if (verbose) {
         return (prefix ? " " + prefix + " " : "")
-               + (days    > 0 ? days    + (days    == 1 ? " day "    : " days "   ) : "")
-               + (hours   > 0 ? hours   + (hours   == 1 ? " hour "   : " hours "  ) : "")
-               + (minutes > 0 ? minutes + (minutes == 1 ? " minute " : " minutes ") : "")
-               + (seconds > 0 ? seconds + (seconds == 1 ? " second " : " seconds ") : "")
+               + (days    > 0 ? days    + (days    === 1 ? " day "    : " days "   ) : "")
+               + (hours   > 0 ? hours   + (hours   === 1 ? " hour "   : " hours "  ) : "")
+               + (minutes > 0 ? minutes + (minutes === 1 ? " minute " : " minutes ") : "")
+               + (seconds > 0 ? seconds + (seconds === 1 ? " second " : " seconds ") : "")
                + (suffix ? " " + suffix : "");
     }
     return (prefix ? " " + prefix + " " : "")
-           + (days > 0 ? days + (days == 1 ? " day " : " days " ) : "")
-           + (hours  .toString().padStart(2, "0") + ":")
+           + (days > 0 ? days + (days === 1 ? " day " : " days " ) : "")
+           + (hours.toString().padStart(2, "0") + ":")
            + (minutes.toString().padStart(2, "0") + ":")
            + (seconds.toString().padStart(2, "0"))
            + (suffix ? " " + suffix : "");
@@ -72,7 +72,7 @@ function ToDateTime(value) {
     if (value instanceof Date) {
         return value;
     }
-    else if (typeof(value) == 'number') {
+    else if (typeof(value) === 'number') {
         //
         // If number assume it is an "epoch" number,
         // and detect if it is in seconds or milliseconds.
@@ -88,7 +88,7 @@ function ToDateTime(value) {
     }
     else if (STR.HasValue(value)) {
         try {
-            if ((value = new Date(Date.parse(value))) == "Invalid Date") {
+            if ((value = new Date(Date.parse(value))) === "Invalid Date") {
                 return null;
             }
             return value;

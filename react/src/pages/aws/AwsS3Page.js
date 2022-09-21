@@ -1,21 +1,16 @@
 import React from 'react';
-import { useContext, useState, useEffect, useReducer } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Link, useNavigate } from 'react-router-dom';
-import Global from "../../Global";
 import { BarSpinner } from "../../Spinners";
 import CLIPBOARD from '../../utils/CLIPBOARD';
 import FETCH from '../../utils/FETCH';
 import SERVER from '../../utils/SERVER';
-import TIME from '../../utils/TIME';
 import YAML from '../../utils/YAML';
-import UUID from '../../utils/UUID';
 import TableHead from '../../TableHead';
 
 const AwsS3Page = (props) => {
 
     let { environ } = useParams();
-    const [ header ] = useContext(Global);
     let [ bucketList, setBucketList ] = useState([]);
     let [ bucketKeysList, setBucketKeysList ] = useState([]);
     let [ bucketKeyContentList, setBucketKeyContentList ] = useState([]);
@@ -109,7 +104,7 @@ const AwsS3Page = (props) => {
     function findBucketKeysListIndex(bucket) {
         for (let i = 0 ; i < bucketKeysList.length ; i++) {
             const bucketKeys = bucketKeysList[i]
-            if (bucketKeys.bucket == bucket) {
+            if (bucketKeys.bucket === bucket) {
                 return i;
             }
         }
@@ -169,7 +164,7 @@ const AwsS3Page = (props) => {
     function findBucketKeyContentListIndex(bucket, key) {
         for (let i = 0 ; i < bucketKeyContentList.length ; i++) {
             const bucketKeyContent = bucketKeyContentList[i]
-            if ((bucketKeyContent.bucket == bucket) && (bucketKeyContent.key == key)) {
+            if ((bucketKeyContent.bucket === bucket) && (bucketKeyContent.key === key)) {
                 return i;
             }
         }

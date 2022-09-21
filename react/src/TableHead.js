@@ -42,7 +42,7 @@ const TableHead = ({columns, list, update, style}) => {
                             update();
                         }}>
                         <span style={{...style}}>{column.label}</span>
-                        { list.__sort.key == column.key ? (<>
+                        { list.__sort.key === column.key ? (<>
                             <span style={{fontWeight:"normal"}}>&nbsp;{list.__sort.order > 0 ? <>&#x2193;</> : <>&#x2191;</>}</span>
                         </>):(<>
                             &nbsp;<span style={{position:"relative",fontSize:"7pt",top:"-2pt"}}>&#x2022;</span>

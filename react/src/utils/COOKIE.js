@@ -102,7 +102,7 @@ function HasAuthTokenCookie() {
         console.log("TEST SET AUTHTOKEN TO DETECT EXISTENCE");
         SetCookie(_authTokenCookieName, "dummy");
         const dummyAuthTokenCookie = GetCookie(_authTokenCookieName);
-        if (dummyAuthTokenCookie == "dummy") {
+        if (dummyAuthTokenCookie === "dummy") {
             console.log("SET AUTHTOKEN OK MEANING IT DOES NOT EXIST (NOW DELETE IT)");
             DeleteCookie(_authTokenCookieName);
             console.log("RETURN FALSE FROM CHECK FOR AUTHTOKEN");
@@ -187,7 +187,7 @@ function GetAllowedEnvsCookie() {
 // -------------------------------------------------------------------------------------------------
 
 function HasFauxLoginCookie() {
-    return GetCookie(_fauxLoginCookieName) == "1";
+    return GetCookie(_fauxLoginCookieName) === "1";
 }
 
 function SetFauxLoginCookie() {

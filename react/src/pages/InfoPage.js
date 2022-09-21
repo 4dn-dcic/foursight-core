@@ -24,12 +24,17 @@ const InfoPage = () => {
     let [ showingAuthEnvs, setShowAuthEnvs ] = useState(false);
     useEffect(() => { FETCH.get(url, setInfo, setLoading, setError)}, []);
 
+    function initiateAppReload() {
+        const url = SERVER.Url("/reloadlambda", false);
+        FETCH.get(url);
+    }
+
     const InfoBox = ({title, children}) => {
         return <>
             <div className="container">
                 <b>{title}</b>
                 <ul className="top-level-list">
-                    <div className="info boxstyle" style={{paddingLeft:"8pt",paddingTop:"6pt",paddingBottom:"8pt",paddingBottom:"6pt"}}>
+                    <div className="info boxstyle" style={{paddingLeft:"8pt",paddingTop:"6pt",paddingBottom:"8pt"}}>
                         {children}
                     </div>
                 </ul>
@@ -68,7 +73,7 @@ const InfoPage = () => {
                 </a>&nbsp;</span> : <span/>
         const githubElement = github ?
             <span>
-            <a target="_blank" href={"https://github.com/" + github + "/" + (name == "dcicutils" ? "utils" : name) + "/releases/tag/" + (name != "chalice" ? "v" : "")  + value}>
+            <a target="_blank" href={"https://github.com/" + github + "/" + (name === "dcicutils" ? "utils" : name) + "/releases/tag/" + (name !== "chalice" ? "v" : "")  + value}>
                 <img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" />
             </a>&nbsp;</span> : <span/>
         const pythonElement = python ?
