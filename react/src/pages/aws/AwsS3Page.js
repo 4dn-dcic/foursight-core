@@ -277,7 +277,9 @@ const AwsS3Page = (props) => {
                 Key: <b>{bucketKeyContent.bucket}</b>
                 <p />
                 { <Spinner condition={bucketKeyContent.loading} label={"Fetching bucket key content"} color={"darkblue"} /> }
-                { bucketKeyContent.content && <pre style={{marginTop:"6pt",marginBottom:"0pt",background:"inherit",filter:"brightness(0.9)",maxWidth:"800pt"}}>
+                { bucketKeyContent.content && <pre style={{marginTop:"6pt",marginBottom:"0pt",background:"inherit",borderRadius:"8pt",filter:"brightness(1.1)",maxWidth:"800pt"}}>
+                    <span style={{fontSize:"0",opacity:"0"}} id={bucketKeyContent.bucket}>{JSON.stringify(bucketKeyContent.content)}</span>
+                    <img onClick={() => CLIPBOARD.Copy(bucketKeyContent.bucket)} style={{cursor:"copy",float:"right",fontFamily:"monospace"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="19" />
                     {YAML.Format(bucketKeyContent.content)}
                 </pre> }
             </div>
