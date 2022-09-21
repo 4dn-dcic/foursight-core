@@ -274,12 +274,12 @@ const AwsS3Page = (props) => {
             <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt",minWidth:"300pt"}}>
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideBucketKeyContentBox(bucketKeyContent.bucket, bucketKeyContent.key)})}><b>&nbsp;&nbsp;&#x2717;</b></span>
                 Bucket: <b>{bucketKeyContent.bucket}</b> <br />
-                Key: <b>{bucketKeyContent.bucket}</b>
+                Key: <b>{bucketKeyContent.key}</b>
                 <p />
                 { <Spinner condition={bucketKeyContent.loading} label={"Fetching bucket key content"} color={"darkblue"} /> }
                 { bucketKeyContent.content && <pre style={{marginTop:"6pt",marginBottom:"0pt",background:"inherit",borderRadius:"8pt",filter:"brightness(1.1)",maxWidth:"800pt"}}>
-                    <span style={{fontSize:"0",opacity:"0"}} id={bucketKeyContent.bucket}>{JSON.stringify(bucketKeyContent.content)}</span>
-                    <img onClick={() => CLIPBOARD.Copy(bucketKeyContent.bucket)} style={{cursor:"copy",float:"right",fontFamily:"monospace"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="19" />
+                    <span style={{fontSize:"0",opacity:"0"}} id={bucketKeyContent.key}>{JSON.stringify(bucketKeyContent.content)}</span>
+                    <img onClick={() => CLIPBOARD.Copy(bucketKeyContent.key)} style={{cursor:"copy",float:"right",fontFamily:"monospace"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="19" />
                     {YAML.Format(bucketKeyContent.content)}
                 </pre> }
             </div>

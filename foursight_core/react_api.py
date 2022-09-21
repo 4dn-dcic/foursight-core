@@ -80,50 +80,6 @@ class ReactApi:
                 return True
         return False
 
-    def obsolete_is_local_cross_origin_request(self, request: dict) -> bool:
-        """
-        Returns True iff this request is a LOCAL (localhost) request AND its origin (the React UI)
-        and we the host (the React API) are running on different ports. This is the situation for
-        local development when running the React UI on (typically) port 3000 (for easy/quick
-        development, with the live-reload feature, i.e. via npm run).
-
-        We want to know this because in this case, for some reason I do not yet fully understand,
-        cookies are not passed through from the client (React UI) to the server (React API),
-        even though we have CORS enabled in this case. I tried various things with the Chalice
-        CORSConfig and response headers (e.g. Access-Control-Allow-Credentials) and client-side
-        things (e.g. setting withCredentials true on the fetch) to no avail.
-
-        With the more realistic scenario, where both the client (React UI) and the server (React API)
-        are running on the same port (e.g. 8000) this (cookies being sent) works fine.
-
-        N.B. If this returns True then it will entirely short-circuit the authorization check
-        for the protected React API endpoint (see the authorization function below).
-        So be careful with this.
-        """
-        if not request:
-            return False
-        if not isinstance(request, dict):
-            request = request.to_dict()
-        if not self.is_running_locally(request):
-            return False
-        headers = request.get("headers")
-        if not headers:
-            return False
-        origin = headers.get("origin")
-        if not origin:
-            return False
-        if not (origin.startswith("http://localhost:") or origin.startswith("http://127.0.0.1:")):
-            return False
-        host = headers.get("host")
-        if not host:
-            return False
-            return False
-        if not (host.startswith("localhost:") or origin.startswith("127.0.0.1:")):
-            return False
-        if origin == f"http://{host}":
-            return False
-        return True
-
     def is_local_faux_logged_in(self, request: dict) -> bool:
         """
         Returns True if and only if: this request is a LOCAL (localhost) requests AND it
@@ -166,6 +122,49 @@ class ReactApi:
             "jwt_token": jwt_token,
             "allowed_envs": allowed_envs_json
         }
+
+    # TODO: This needs massive cleanup after messing with WRT React.
+    def auth0_react_finish_callback(self, request, env, domain, jwt_token, jwt_expires):
+
+        react_redir_url = self.read_cookie("reactredir", request)
+        if react_redir_url:
+            # Not certain if by design but the React library (universal-cookie) used to
+            # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
+            react_redir_url = urllib.parse.unquote(react_redir_url)
+            response_headers = {"Location": react_redir_url}
+
+        jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
+        email = jwt_token_decoded.get("email")
+        (known_envs, allowed_envs) = self.get_envs(email)
+        authtoken = self.create_authtoken(jwt_token, allowed_envs, env)
+        authtoken_cookie = self.create_set_cookie_string(request, name="authtoken",
+                                                                  value=authtoken,
+                                                                  domain=domain,
+                                                                  expires=jwt_expires,
+                                                                  http_only=True)
+        #
+        # Need to create an authenvs cookie too, not HttpOnly, readable by client (React UI);
+        # this contains the list of known and allowed (for this authenticate user) environments.
+        #
+        authenvs = {
+            "allowed_envs": allowed_envs,
+            "default_env": self.get_default_env(),
+            "known_envs": known_envs
+        }
+        authenvs = self.encryption.encode(authenvs)
+        authenvs_cookie = self.create_set_cookie_string(request, name="authenvs",
+                                                                 value=authenvs,
+                                                                 domain=domain,
+                                                                 expires=jwt_expires)
+        print('xyzzy:auth0_callback:authtoken_cookie:')
+        print(authtoken_cookie)
+        print(authenvs_cookie)
+        response_headers["set-cookie"] = authtoken_cookie
+        response_headers["Set-Cookie"] = authenvs_cookie
+
+        print("XYZZY:REACT:auth0_callback:headers:")
+        print(response_headers)
+        return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
     def authorize(self, request, env) -> dict:
         """

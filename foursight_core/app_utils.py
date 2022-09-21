@@ -53,7 +53,6 @@ from .encryption import Encryption
 from .environment import Environment
 from .react_api import ReactApi
 
-# XYZZY
 app = Chalice(app_name='foursight-core')
 DEFAULT_ENV = os.environ.get("ENV_NAME", "env-name-unintialized")
 
@@ -371,14 +370,8 @@ class AppUtilsCore(ReactApi):
                 expires = None
             if expires:
                 cookie += f" Expires={expires};"
-        if http_only: # xyzzy
+        if http_only:
             cookie += " HttpOnly;"
-            #
-            # This does NOT seem to break running React UI/API in CORS
-            # mode (i.e. UI on localhost:3000 and API on localhost:8000).
-            # But it does break production mode. Leave it out.
-            #
-            # cookie += " SameSite=Strict;"
         return cookie
 
     def create_delete_cookie_string(self, request, name: str, domain: str, path: str = "/") -> str:
@@ -454,7 +447,7 @@ class AppUtilsCore(ReactApi):
         return False
 
     # TODO: This needs massive cleanup after messing with WRT React.
-    def auth0_callback(self, request, env, react = False):
+    def auth0_callback(self, request, env):
 
         request_dict = request.to_dict()
         domain, context = self.get_domain_and_context(request_dict)
@@ -523,46 +516,13 @@ class AppUtilsCore(ReactApi):
             # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
             #
             if is_react:
-                react_redir_url = self.read_cookie("reactredir", request_dict)
-                if react_redir_url:
-                    # Not certain if by design but the React library (universal-cookie) used to
-                    # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
-                    react_redir_url = urllib.parse.unquote(react_redir_url)
-                    response_headers = {"Location": react_redir_url}
-                jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
-                email = jwt_token_decoded.get("email")
-                (known_envs, allowed_envs) = self.get_envs(email)
-                authtoken = self.create_authtoken(jwt_token, allowed_envs, env)
-                authtoken_cookie = self.create_set_cookie_string(request, name="authtoken",
-                                                                          value=authtoken,
-                                                                          domain=domain,
-                                                                          expires=jwt_expires,
-                                                                          http_only=True)
-                #
-                # Need to create an authenvs cookie too, not HttpOnly, readable by client (React UI);
-                # this contains the list of known and allowed (for this authenticate user) environments.
-                #
-                authenvs = {
-                    "allowed_envs": allowed_envs,
-                    "default_env": self.get_default_env(),
-                    "known_envs": known_envs
-                }
-                authenvs = self.encryption.encode(authenvs)
-                authenvs_cookie = self.create_set_cookie_string(request, name="authenvs",
-                                                                         value=authenvs,
-                                                                         domain=domain,
-                                                                         expires=jwt_expires)
-                print('xyzzy:auth0_callback:authtoken_cookie:')
-                print(authtoken_cookie)
-                print(authenvs_cookie)
-                response_headers["set-cookie"] = authtoken_cookie
-                response_headers["Set-Cookie"] = authenvs_cookie
-            else:
-                cookie_str = self.create_set_cookie_string(request, name="jwtToken",
-                                                                    value=jwt_token,
-                                                                    domain=domain,
-                                                                    expires=jwt_expires)
-                response_headers["set-cookie"] = cookie_str
+                return self.auth0_react_finish_callback(request, env, domain, jwt_token, jwt_expires);
+
+            cookie_str = self.create_set_cookie_string(request, name="jwtToken",
+                                                                value=jwt_token,
+                                                                domain=domain,
+                                                                expires=jwt_expires)
+            response_headers["set-cookie"] = cookie_str
 
         print("XYZZY:auth0_callback:headers:")
         print(response_headers)
@@ -573,14 +533,6 @@ class AppUtilsCore(ReactApi):
         Simple function to extract a jwt from a request that has already been
         dict-transformed
         """
-#       cookies = request_dict.get("headers", {}).get("cookie")
-#       cookie_dict = {}
-#       if cookies:
-#           for cookie in cookies.split(";"):
-#               cookie_split = cookie.strip().split("=")
-#               if len(cookie_split) == 2:
-#                   cookie_dict[cookie_split[0]] = cookie_split[1]
-#       token = cookie_dict.get("jwtToken", None)
         return self.read_cookie("jwtToken", request_dict)
 
     def get_decoded_jwt_token(self, env_name: str, request_dict) -> dict:
