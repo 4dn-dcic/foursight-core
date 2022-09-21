@@ -11,6 +11,7 @@ import ChecksPage from './pages/ChecksPage';
 import EnvPage from './pages/EnvPage';
 import DemoPage from './pages/DemoPage';
 import Footer from './Footer';
+import ForbiddenPage from './pages/ForbiddenPage';
 import Header from './Header';
 import HomePage from './pages/HomePage';
 import InfoPage from './pages/InfoPage';
@@ -115,6 +116,9 @@ const App = () => {
                     }/>
                     <Route path="/api/react/:environ/test" element={
                         <TestPage />
+                    }/>
+                    <Route path="/api/react/:environ/forbidden" element={
+                        <ForbiddenPage />
                     }/>
                     <Route path="/redirect" element={
                         <RedirectPage />

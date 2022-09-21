@@ -176,7 +176,7 @@ const AwsS3Page = (props) => {
     const BucketsBox = ({}) => {
         return <div>
             <div style={{float:"left",fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;S3 Buckets</div>&nbsp;&nbsp;
-            <input type="text" autoFocus style={{outline:"none",paddingLeft:"2pt",border:"1px solid gray",borderRadius:"3pt",position:"relative",bottom:"1pt",fontSize:"small",marginBottom:"3pt"}} defaultValue={bucketListFilter} onChange={onBucketListSearch} />
+            <input placeholder="Search ..." type="text" autoFocus style={{outline:"none",paddingLeft:"2pt",border:"1px solid gray",borderRadius:"3pt",position:"relative",bottom:"1pt",fontSize:"small",marginBottom:"3pt"}} defaultValue={bucketListFilter} onChange={onBucketListSearch} />
             <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
                 { getBucketList().map((bucket, i) => {
                     return <div key={i}>
@@ -293,6 +293,8 @@ const AwsS3Page = (props) => {
         </tr></tbody></table>
     }
 
+    if (error) return <>Cannot load data from Foursight API: {error}</>;
+    if (loading) return <>Loading ...</>;
     return <>
         <div>
             <table><tbody>

@@ -2,6 +2,7 @@
 // Fetch (HTTP GET et cetera) related functions.
 // -------------------------------------------------------------------------------------------------
 
+import CLIENT from '../utils/CLIENT';
 import COOKIE from '../utils/COOKIE';
 
 function SLEEP(time) {
@@ -59,6 +60,13 @@ function fetchData(url, setData, setLoading, setError) {
         }
         else {
             console.log("FETCH STATUS CODE IS NOT 200 BUT " + response.status + ": " + url);
+            console.log(response);
+            if (response.status == 403) {
+                console.log("FETCH IS FORBIDDEN! " + url);
+                console.log(window.location);
+                // window.location.pathname = "/api/react/cgap-supertest/forbidden";
+                window.location.pathname = CLIENT.Path("/forbidden");
+            }
             if (setError) {
                 setError(response.status);
             }
