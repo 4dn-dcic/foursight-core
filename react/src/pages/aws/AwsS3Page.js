@@ -16,16 +16,18 @@ const AwsS3Page = (props) => {
 
     let { environ } = useParams();
     const [ header ] = useContext(Global);
-    let [ bucketList, setBuckets ] = useState([]);
+    let [ bucketList, setBucketList ] = useState([]);
     let [ bucketKeysList, setBucketKeysList ] = useState([]);
     let [ bucketKeyContentList, setBucketKeyContentList ] = useState([]);
+    let [ bucketListFilter, setBucketListFilter ] = useState("");
+
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
 
     useEffect(() => {
         const bucketsUrl = SERVER.Url("/aws/s3/buckets", environ);
         FETCH.get(bucketsUrl, bucketList => {
-            setBuckets(bucketList);
+            setBucketList(bucketList);
         }, setLoading, setError);
     }, []);
 
@@ -40,6 +42,17 @@ const AwsS3Page = (props) => {
             return true;
         }
         return false;
+    }
+
+    // Bucket list functions.
+
+    function getBucketList() {
+        return bucketList.filter(bucket => bucket.toLowerCase().includes(bucketListFilter.toLowerCase()));
+    }
+
+    function onBucketListSearch(e) {
+        setBucketListFilter(e.currentTarget.value);
+        setBucketList(existing => [...existing]);
     }
 
     // Bucket keys list functions.
@@ -162,12 +175,13 @@ const AwsS3Page = (props) => {
 
     const BucketsBox = ({}) => {
         return <div>
-            <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;S3 Buckets</div>
+            <div style={{float:"left",fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;S3 Buckets</div>&nbsp;&nbsp;
+            <input type="text" autoFocus style={{outline:"none",paddingLeft:"2pt",border:"1px solid gray",borderRadius:"3pt",position:"relative",bottom:"1pt",fontSize:"small",marginBottom:"3pt"}} defaultValue={bucketListFilter} onChange={onBucketListSearch} />
             <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                { bucketList.map((bucket, i) => {
+                { getBucketList().map((bucket, i) => {
                     return <div key={i}>
                         <span style={{cursor:"pointer",fontWeight:isShowingBucketKeysBox(bucket) ? "bold" : "normal"}} onClick={() => toggleBucketKeysBox(bucket)}>{bucket}</span>
-                        { i < bucketList.length - 1 &&
+                        { i < getBucketList().length - 1 &&
                             <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkblue"}} />
                         }
                     </div>
