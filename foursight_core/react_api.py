@@ -41,6 +41,7 @@ from dcicutils.misc_utils import get_error_message, override_environ
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from typing import Optional
+from .decorators import Decorators
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
 from .check_utils import CheckHandler
@@ -666,25 +667,28 @@ class ReactApi:
     def is_same_env(self, env_a: str, env_b: str) -> bool:
         if not env_a or not env_b:
             return False
-        env_a = env_a.lower()
         env_b = env_b.lower()
-        return (env_a == env_b
-            or  full_env_name(env_a) == env_b
-            or  short_env_name(env_a) == env_b
-            or  public_env_name(env_a) == env_b
-            or  infer_foursight_from_env(envname=env_a) == env_b)
+        return (env_a.lower() == env_b.lower()
+            or  full_env_name(env_a).lower() == env_b
+            or  short_env_name(env_a).lower() == env_b
+            or  public_env_name(env_a).lower() == env_b
+            or  infer_foursight_from_env(envname=env_a).lower() == env_b)
 
     def filter_checks_by_env(self, checks: dict, env) -> dict:
         if not env:
             return checks
+        checks = copy.deepcopy(checks)
         checks_for_env = {}
         for check_key in checks:
             if checks[check_key]["schedule"]:
                 for check_schedule_key in checks[check_key]["schedule"].keys():
                     for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
-                        # if check_env_key == env:
                         if check_env_key == "all" or self.is_same_env(check_env_key, env):
                             checks_for_env[check_key] = checks[check_key]
+                            break
+                        else:
+                            del checks_for_env[check_key]
+
             else:
                 # If no schedule section (which has the env section) then include it.
                 checks_for_env[check_key] = checks[check_key]
@@ -700,6 +704,7 @@ class ReactApi:
                 checks[check_key]["name"] = check_key
             lambdas = self.get_annotated_lambdas()
             self.annotate_checks_with_schedules_from_lambdas(checks, lambdas)
+            self.annotate_checks_with_kwargs_from_decorators(checks)
             ReactApi.Cache.checks = checks
         return self.filter_checks_by_env(ReactApi.Cache.checks, env)
 
@@ -853,7 +858,19 @@ class ReactApi:
                             check_setup_item_schedule[check_setup_item_schedule_name]["cron"] = la["lambda_schedule"]
                             check_setup_item_schedule[check_setup_item_schedule_name]["cron_description"] = la["lambda_schedule_description"]
 
-    def react_route_raw_checks(self, request) -> dict:
+    def annotate_checks_with_kwargs_from_decorators(self, checks: dict) -> None:
+        checks_decorators = Decorators.get_registry()
+        for check_setup_item_name in checks:
+            check_setup_item = checks[check_setup_item_name]
+            for checks_decorator in checks_decorators:
+                checks_decorator_function_name = checks_decorator.get("function")
+                if check_setup_item_name == checks_decorator_function_name:
+                    checks_decorator_kwargs = checks_decorator.get("kwargs")
+                    if checks_decorator_kwargs:
+                        check_setup_item["registered_kwargs"] = checks_decorator_kwargs
+
+
+    def react_route_raw_checks(self, request, env: str) -> dict:
 
         authorize_response = self.authorize(request, env)
         if not authorize_response or not authorize_response["authenticated"]:
@@ -861,6 +878,17 @@ class ReactApi:
 
         response = self.create_standard_response("react_route_checks")
         response.body = self.get_checks_raw()
+        response = self.process_response(response)
+        return response
+
+    def react_route_checks_registry(self, request, env: str) -> dict:
+
+        authorize_response = self.authorize(request, env)
+        if not authorize_response or not authorize_response["authenticated"]:
+            return self.react_forbidden_response(authorize_response)
+
+        response = self.create_standard_response("react_route_checks_grouped")
+        response.body = Decorators.get_registry()
         response = self.process_response(response)
         return response
 

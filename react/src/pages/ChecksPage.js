@@ -3,9 +3,13 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { BarSpinner } from "../Spinners";
 import CLIPBOARD from '../utils/CLIPBOARD';
+import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
 import SERVER from '../utils/SERVER';
+import STR from '../utils/STR';
 import TIME from '../utils/TIME';
+import TYPE from '../utils/TYPE';
+import UUID from '../utils/UUID';
 import YAML from '../utils/YAML';
 
 const ChecksPage = (props) => {
@@ -37,6 +41,56 @@ const ChecksPage = (props) => {
         });
             
     }, []);
+
+
+    // This is a bit tedious to unwrap. This is what a check record looks like:
+    // {
+    //     "title": "ES Disk Space Check",
+    //     "name": "elastic_search_space",
+    //     "group": "Elasticsearch checks",
+    //     "module": "system_checks",
+    //     "schedule": {
+    //         "morning_checks_1": {
+    //             "all": {
+    //                 "kwargs": {
+    //                     "dependencies": [],
+    //                     "primary": true
+    //                  },
+    //                  "dependencies": []
+    //             },
+    //             "cron": "0 6 * * ? *",
+    //             "cron_description": "06:00 AM"
+    //         }
+    //     },
+    //     "registered_kwargs": {
+    //         "time_limit": 480
+    //     }
+    // }
+    //
+    // See foursight_core/react_api.py for how this gets put together, from the
+    // original from check_setup.json and annotated with schedule info from lambdas
+    // and extra (registered) kwargs from the check_function decorators.
+    //
+    function getKwargsFromCheck(check) {
+        let kwargs = {};
+        for (let schedule_key of Object.keys(check?.schedule)) {
+            for (let schedule_env_key of Object.keys(check.schedule[schedule_key])) {
+                if (schedule_env_key.toLowerCase() == "all" || ENV.Equals(schedule_env_key, environ)) {
+                    kwargs = check.schedule[schedule_key][schedule_env_key]["kwargs"]
+                    break;
+                }
+            }
+        }
+        let registered_kwargs = check?.registered_kwargs;
+        if (registered_kwargs) {
+            //
+            // Order here matters; have the kwargs override the registered kwargs.
+            // actually comes up for example for the wrangler_checks.core_project_status.
+            //
+            kwargs = {...registered_kwargs, ...kwargs}
+        }
+        return kwargs;
+    }
 
     function isSelectedGroup(group) {
         for (let i = 0 ; i < selectedGroups?.length ; i++) {
@@ -201,6 +255,8 @@ const ChecksPage = (props) => {
         const runCheckUrl = SERVER.Url(`/checks/${check.name}/run`, environ);
         check.queueingCheckRun = true;
         check.fetchingResult = true;
+            console.log("RUNNING CHECK:")
+            console.log(check)
         FETCH.get(runCheckUrl, response => { check.queueingCheckRun = false; check.fetchingResult = false; check.queuedCheckRun = response.uuid });
         check.queuedCheckRun = null;
         showCheckRunningBox(check);
@@ -223,12 +279,71 @@ const ChecksPage = (props) => {
         return !check.showingCheckRunningBox ? <span /> : <div>
             <div className="boxstyle check-pass" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                 { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}></span> }
-                {/*  check.queuedCheckRun && <small><b>Queued check run {Moment(new Date()).format("YYYY-MM-DD hh:mm:ss")} &#x2192; <u>{check.queuedCheckRun}</u></b></small> */}
                 {  check.queuedCheckRun && <small><b>Queued check run {TIME.FormatDateTime(TIME.Now())} &#x2192; <u>{check.queuedCheckRun}</u></b></small> }
                 { !check.queuedCheckRun && <Spinner condition={check.queueingCheckRun} label={" Queueing check run"} color={"darkgreen"} /> }
             </div>
         </div>
     } 
+
+    // What a pain ...
+    const CheckRunArgsBox = ({check}) => {
+        check.kwargs = TYPE.CopyObject(getKwargsFromCheck(check));
+        let [ kwargs, setKwargs ] = useState(check.kwargs);
+        return check.configuringCheckRun && <>
+            <div className="boxstyle" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"green",background:"lightyellow",fontSize:"small",fontWeight:"bold"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                { (TYPE.IsNonEmptyObject(kwargs)) ? (<>
+                    <span style={{float:"right"}}>&#x2190;&nbsp;Arguments&nbsp;</span>
+                    <table style={{fontSize:"small"}}><tbody>
+                    { Object.keys(kwargs).sort().map(key => {
+                        return <tr key={UUID()} style={{}}>
+                            <td>
+                                <b>{key}</b>:
+                            &nbsp;&nbsp;</td>
+                            <td style={{padding:"1pt"}}>
+                            { (TYPE.IsBoolean(kwargs[key])) && <>
+                                <select style={{background:"lightyellow",border:"1px solid lightgray",borderRadius:"4pt"}}
+                                    onChange={(e) => { kwargs[key] = e.target.value == "true" ? true : false; setKwargs(existing => ({...existing})); }}>
+                                    { kwargs[key] ? <>
+                                        <option selected>true</option>
+                                        <option>false</option>
+                                    </>:<>
+                                        <option>true</option>
+                                        <option selected>false</option>
+                                    </>}
+                                </select> 
+                            </>}
+                            { (TYPE.IsString(kwargs[key]) || TYPE.IsNumber(kwargs[key])) && <>
+                                {/* TODO: Focus is tricky ... */}
+                                { STR.HasValue(kwargs[key]) ? <>
+                                    <input id={key} type="text" defaultValue={kwargs[key]} style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"1px solid lightgray",borderRadius:"2pt"}}
+                                        autoFocus onChange={(e) => {kwargs[key] = e.target.value; setKwargs(existing => ({...existing})); setTimeout(()=> {document.getElementById(key).focus();}, 1); }} />
+                                </>:<>
+                                    <input id={key} type="text" placeholder="Empty" style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"1px solid lightgray",borderRadius:"2pt"}}
+                                        onChange={(e) => {kwargs[key] = e.target.value; setKwargs(existing => ({...existing})); setTimeout(()=> {document.getElementById(key).focus();}, 1); }} />
+                                </>}
+                            </>}
+                            { (TYPE.IsArray(kwargs[key])) && <>
+                                <select style={{background:"lightyellow",border:"1px solid lightgray"}}
+                                    onChange={(e) => { kwargs[key].__selected = e.target.value; setKwargs(existing => ({...existing})); }}>
+                                    { kwargs[key].map(item => {
+                                        return kwargs[key].__selected == item ? <>
+                                            <option selected>{item}</option>
+                                        </>:<>
+                                            <option>{item}</option>
+                                        </>
+                                    })}
+                                </select>
+                            </>}
+                            &nbsp;&nbsp;</td>
+                        </tr>
+                    })}
+                    </tbody></table>
+                </>):(<>
+                    No arguments.
+                </>)}
+            </div>
+        </>
+    }
 
     const SelectedGroupsPanel = ({props}) => {
         return <div>
@@ -267,6 +382,7 @@ const ChecksPage = (props) => {
     }
 
     const SelectedGroupBox = ({group, style = {}}) => {
+
         return <div style={style}>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"300pt"}}>
                 <div>
@@ -290,8 +406,12 @@ const ChecksPage = (props) => {
                 <span className={"tool-tip"} data-text={"Wait until " + (check.queueingCheckRun ? "check queueing" : "result fetch") + " completes."}><span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Wait</b></span>
             </div>
         else
-            return <div className={"check-run-button"} style={style} onClick={(e) => runCheck(check) }>
-                <span className={"tool-tip"} data-text={"Click to run this check."}><span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Run</b></span>
+            return <div>
+                <div className={"check-run-button"} style={style} >
+                    <span className={"tool-tip"} data-text={"Click to run this check."} onClick={(e) => runCheck(check) }><span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Run</b></span>
+                    &nbsp;|&nbsp;
+                    <span className={"tool-tip"} data-text={"Set arguments for this check run."} onClick={() => { check.configuringCheckRun = !check.configuringCheckRun; noteChangedCheckBox(check) } }><b>Args</b></span>
+                </div>
             </div>
     }
 
@@ -322,11 +442,12 @@ const ChecksPage = (props) => {
                         <td style={{verticalAlign:"top",width:"1%","cursor":"pointer"}} onClick={() => {toggleCheckResultsBox(check)}}>
                             <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
-                        <td style={{veriticalAlign:"top"}} title={check.name}>
+                        <td style={{veriticalAlign:"top",whiteSpace:"nowrap"}} title={check.name}>
                             <RunButton check={check} style={{marginLeft:"30pt",marginTop:"-3pt",float:"right"}} />
                             <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>
                             <RefreshResultButton check={check} style={{marginLeft:"10pt"}} />
                             <ToggleHistoryButton check={check} style={{marginLeft:"4pt"}} />
+                            {/* TODO: As far as I can tell there is only every one element here under the schedule element */}
                             { Object.keys(check?.schedule).map((key, index) => {
                                 return <div key={key}>
                                     { check?.schedule ? (
@@ -340,6 +461,7 @@ const ChecksPage = (props) => {
                                     )}
                                 </div>
                             })}
+                            <CheckRunArgsBox check={check} />
                             <>
                                 { isShowingSelectedCheckResultsBox(check) && (<>
                                     <SelectedCheckResultsBox check={check}/>

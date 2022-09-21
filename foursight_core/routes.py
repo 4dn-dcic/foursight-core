@@ -486,10 +486,15 @@ class Routes:
         return app_utils.singleton().view_reload_lambda(request=app.current_request, environ=default_env, is_admin=True, lambda_name='default', domain=domain, context=context)
 
 
-    @app.route(ROUTE_PREFIX + 'reactapi/{environ}/rawchecks', methods=['GET'], cors=CORS)
-    def reactapi_route_checks(environ: str):
-        print(f"XYZZY:/reactapi/{environ}/checks")
-        return app_utils.singleton().react_route_raw_checks(request=app.current_request)
+    @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checksraw', methods=['GET'], cors=CORS)
+    def reactapi_route_checks_raw(environ: str):
+        print(f"XYZZY:/reactapi/{environ}/checksraw")
+        return app_utils.singleton().react_route_raw_checks(request=app.current_request, env=environ)
+
+    @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checksregistry', methods=['GET'], cors=CORS)
+    def reactapi_route_checks_registry(environ: str):
+        print(f"XYZZY:/reactapi/{environ}/checksregistry")
+        return app_utils.singleton().react_route_checks_registry(request=app.current_request, env=environ)
 
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks', methods=['GET'], cors=CORS)

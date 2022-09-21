@@ -13,8 +13,19 @@ from .run_result import (
 from .exceptions import BadCheckOrAction
 from .sqs_utils import SQS
 
+# dmichaels/2022-09-20: Foursight React related addition.
+# Added this to get a handle on the check function kwargs defined via the check_function
+# decorator on the checks. Currently the Foursight UI seems to display these only by
+# virtue of them having been in a result set of an actual check run. But we would
+# like to get and present these without having to get the check history; and only
+# displaying if the check has ever been run.
+_decorator_registry = []
 
 class Decorators(object):
+
+    @staticmethod
+    def get_registry():
+        return _decorator_registry
 
     CHECK_DECO = 'check_function'
     ACTION_DECO = 'action_function'
@@ -58,8 +69,24 @@ class Decorators(object):
         return an ERROR CheckResult.
         """
         ignored(default_args)
+        print('xyzzy:check_function decorator 1')
+        print(default_args)
+        print(default_kwargs)
 
         def check_deco(func):
+            print('xyzzy:check_function decorator 2')
+            print(func)
+            print('+++++++++++++++++++++++++++++++++++++++++')
+            print(func.__name__)
+            print(default_args)
+            print(default_kwargs)
+            decorator_registry_record = {
+                "function": func.__name__,
+                "args": default_args,
+                "kwargs": default_kwargs,
+            }
+            _decorator_registry.append(decorator_registry_record)
+            print('-----------------------------------------')
             @wraps(func)
             def wrapper(*args, **kwargs):
                 print('xyzzy:check_function-1')
@@ -108,8 +135,10 @@ class Decorators(object):
                     self.do_timeout(parent_pid, partials)
 
             wrapper.check_decorator = self.CHECK_DECO
+            print('xyzzy:check_function decorator return 2')
             return wrapper
 
+        print('xyzzy:check_function decorator return 1')
         return check_deco
 
     def action_function(self, *default_args, **default_kwargs):
