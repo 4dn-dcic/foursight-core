@@ -156,7 +156,7 @@ const InfoPage = () => {
                 {YAML.Format(info.buckets?.ecosystem)}
             </pre>
         </InfoBox>
-        <InfoBox title="Login Auth0 Info">
+        <InfoBox title="Authentication/Authorization Info">
             <InfoRow name={"Email"} value={AUTH.LoggedInUser(header)} monospace={true} copy={true} check={AUTH.LoggedInUserVerified(header)} link={CLIENT.Path("/users/" + AUTH.LoggedInUser(header), true)} size="2" />
             <InfoRow name={"Issuer"} value={AUTH.LoggedInUserJwt(header)?.iss} monospace={true} copy={true} size="2" />
             <InfoRow name={"Subject"} value={AUTH.LoggedInUserJwt(header)?.sub} monospace={true} copy={true} size="2" />
@@ -165,16 +165,17 @@ const InfoPage = () => {
             <InfoRow name={"Expires At"} value={TIME.FormatDateTime(AUTH.LoggedInUserJwt(header)?.exp) + TIME.FormatDuration(new Date(), AUTH.LoggedInUserJwt(header)?.exp, true, "now", "|", "from now")} monospace={true} copy={true} size="2" />
             <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
                 { showingAuthToken ? (<>
-                    <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide AuthToken</u></b></small>
+                    <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide AuthToken</u></b></small> <i>(server-side encrypted cookie)</i>
                     <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(AUTH.LoggedInUserAuthToken(header))}</pre>
                 </>):(<>
-                    <small onClick={() => setShowAuthToken(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show AuthToken</u></b></small>
+                    <small onClick={() => setShowAuthToken(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show AuthToken</u></b></small> <i>(server-side encrypted cookie)</i>
+                    <br />
                 </>)}
                 { showingAuthEnvs ? (<>
-                    <small onClick={() => setShowAuthEnvs(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide AuthEnvs</u></b></small>
+                    <small onClick={() => setShowAuthEnvs(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide AuthEnvs</u></b></small> <i>(base-64 encoded cookie)</i>
                     <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(AUTH.LoggedInUserAuthEnvs(header))}</pre>
                 </>):(<>
-                    <small onClick={() => setShowAuthEnvs(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show AuthEnvs</u></b></small>
+                    <small onClick={() => setShowAuthEnvs(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show AuthEnvs</u></b></small> <i>(base-64 encoded cookie)</i>
                 </>)}
         </InfoBox>
         <InfoBox title="Miscellany">

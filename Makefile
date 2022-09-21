@@ -32,8 +32,6 @@ publish-for-ga:
 react:
 	scripts/react_build.sh
 
-foo:
-
 react-run-local:
 	cd react ; npm start
 
