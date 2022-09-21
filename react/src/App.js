@@ -9,7 +9,6 @@ import SERVER from './utils/SERVER';
 import AwsS3Page from './pages/aws/AwsS3Page';
 import ChecksPage from './pages/ChecksPage';
 import EnvPage from './pages/EnvPage';
-import DemoPage from './pages/DemoPage';
 import Footer from './Footer';
 import ForbiddenPage from './pages/ForbiddenPage';
 import Header from './Header';
@@ -75,9 +74,6 @@ const App = () => {
                             <LoginPage />
                         </Page.KnownEnvRequired>
                     } />
-                    <Route path="/api/react/:environ/demo" element={
-                        <DemoPage />
-                    }/>
                     <Route path="/api/react/:environ/checks" element={
                         <Page.AuthorizationRequired>
                             <ChecksPage />

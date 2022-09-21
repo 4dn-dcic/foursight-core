@@ -47,11 +47,11 @@ function GetClientFaviconFoursightFourfront() {
 }
 
 function GetClientLogoFoursightCgap() {
-    return "https://data.4dnucleome.org/static/img/favicon-fs.ico";
+    return "https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png";
 }
 
 function GetClientLogoFoursightFourfront() {
-    return "https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png";
+    return "https://data.4dnucleome.org/static/img/favicon-fs.ico";
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -132,7 +132,9 @@ export default {
         IsLocal:          IsLocalClient,
         Origin:           GetClientOrigin,
         FaviconCgap:      GetClientFaviconFoursightCgap,
-        FaviconFourfront: GetClientFaviconFoursightFourfront
+        FaviconFourfront: GetClientFaviconFoursightFourfront,
+        LogoCgap:         GetClientLogoFoursightCgap,
+        LogoFourfront:    GetClientLogoFoursightFourfront
     },
     Server: {
         IsLocal:           IsLocalServer,

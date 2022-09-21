@@ -91,9 +91,9 @@ const Header = (props) => {
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={ENV.IsFoursightFourfront(header) ? ("https://" +  ENV.PublicName(ENV.Current(), header) + ".4dnucleome.org/") : "https://cgap.hms.harvard.edu/"} target="_blank">
                         { ENV.IsFoursightFourfront(header) ? (<span>
-                            <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src="https://data.4dnucleome.org/static/img/favicon-fs.ico" height="32" width="44" />
+                            <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={CONTEXT.Client.LogoFourfront()} height="32" width="44" />
                         </span>):(<span>
-                            <img src="https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png" width="130" />
+                            <img src={CONTEXT.Client.LogoCgap()} width="130" />
                         </span>)}
                     </a>
                 </td>

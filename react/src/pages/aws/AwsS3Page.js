@@ -31,6 +31,9 @@ const AwsS3Page = (props) => {
         }, setLoading, setError);
     }, []);
 
+    // Only allow fetching/displaying S3 bucket key content for keys (file) with a '.json' suffix,
+    // or all files within a bucket with a name ending with '-envs'; AND which are not too large.
+    //
     function mayLookAtKeyContent(bucket, key, size) {
         if (size > 50000) {
             return false;

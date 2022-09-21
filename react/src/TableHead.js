@@ -1,5 +1,26 @@
 import UUID from './utils/UUID';
 
+// -------------------------------------------------------------------------------------------------
+// Nice little table header component with sorting for columns (and with up/down arrow indicators).
+// Pass in: a list (array) which is the contents of the table which will be sorted when the column
+// header is clicked; a columns array containing info about the columns to be sorted on and which
+// looks like the below example; and an update function which will be called after the sorting is
+// performed on the given list (which should update the React state to reflect the sorting).
+// Styles on the displayed header text may also be passed in.
+//
+//  [ { label: "Name", key: "key" },
+//    { label: "Size (MB)", key: "size", align: "right" },
+//    { label: "Last Modified", key: "modified" } ]
+//
+// In the (above example) columns array the label is the displayed header text,
+// and the key is the name of the field in the given list to sort on.
+//
+// The implementation is slightly trickier than one might expect (and not generally done right by
+// examples in the wild) because it needs to work for multiple components repeated within a loop,
+// where using useState (for sort state) for each is problematic as gets reset on each invocation.
+// So we stored the sort state in hidden fields within the given list itself.
+// -------------------------------------------------------------------------------------------------
+
 const TableHead = ({columns, list, update, style}) => {
     function sort(list, field, direction) {
         let comparator = direction > 0
@@ -34,5 +55,9 @@ const TableHead = ({columns, list, update, style}) => {
         })}
     </tr></thead>
 }
+
+// -------------------------------------------------------------------------------------------------
+// Exported component.
+// -------------------------------------------------------------------------------------------------
 
 export default TableHead;

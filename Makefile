@@ -30,13 +30,9 @@ publish-for-ga:
 .PHONY: react
 
 react:
-	cd react ; rm -rf build ; npm install ; PUBLIC_URL=/api/react npm run build
-	rm -rf foursight_core/react
-	mkdir foursight_core/react
-	cp -pR react/build/* foursight_core/react
-	rm -f foursight_core/react/static/js/*.map
-	rm -f foursight_core/react/static/css/*.map
-	rm -f foursight_core/react/static/js/*.LICENSE.txt
+	scripts/react_build.sh
+
+foo:
 
 react-run-local:
 	cd react ; npm start

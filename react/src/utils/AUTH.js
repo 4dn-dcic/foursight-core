@@ -57,8 +57,12 @@ function LoggedInUserVerified(header) {
     return header?.auth?.authenticated ? header.auth?.user_verified : false;
 }
 
-function LoggedInUserAuthRecord(header) {
+function LoggedInUserAuthToken(header) {
     return header?.auth;
+}
+
+function LoggedInUserAuthEnvs(header) {
+    return COOKIE.AuthEnvs();
 }
 
 function LoggedInUserJwt(header) {
@@ -75,5 +79,6 @@ export default {
     LoggedInUser:              LoggedInUser,
     LoggedInUserVerified:      LoggedInUserVerified,
     LoggedInUserJwt:           LoggedInUserJwt,
-    LoggedInUserAuthRecord:    LoggedInUserAuthRecord
+    LoggedInUserAuthToken:     LoggedInUserAuthToken,
+    LoggedInUserAuthEnvs:      LoggedInUserAuthEnvs
 }

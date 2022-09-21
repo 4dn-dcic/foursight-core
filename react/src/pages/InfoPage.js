@@ -20,7 +20,8 @@ const InfoPage = () => {
     const [ info, setInfo ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
-    let [ showingJwt, setShowJwt ] = useState(false);
+    let [ showingAuthToken, setShowAuthToken ] = useState(false);
+    let [ showingAuthEnvs, setShowAuthEnvs ] = useState(false);
     useEffect(() => { FETCH.get(url, setInfo, setLoading, setError)}, []);
 
     const InfoBox = ({title, children}) => {
@@ -163,11 +164,17 @@ const InfoPage = () => {
             <InfoRow name={"Issued At"} value={TIME.FormatDateTime(AUTH.LoggedInUserJwt(header)?.iat) + TIME.FormatDuration(AUTH.LoggedInUserJwt(header)?.iat, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} size="2" />
             <InfoRow name={"Expires At"} value={TIME.FormatDateTime(AUTH.LoggedInUserJwt(header)?.exp) + TIME.FormatDuration(new Date(), AUTH.LoggedInUserJwt(header)?.exp, true, "now", "|", "from now")} monospace={true} copy={true} size="2" />
             <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
-                { showingJwt ? (<>
-                    <small onClick={() => setShowJwt(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide Auth Record</u></b></small>
-                    <pre style={{filter:"brightness(0.9)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(AUTH.LoggedInUserAuthRecord(header))}</pre>
+                { showingAuthToken ? (<>
+                    <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide AuthToken</u></b></small>
+                    <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(AUTH.LoggedInUserAuthToken(header))}</pre>
                 </>):(<>
-                    <small onClick={() => setShowJwt(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show Auth Record</u></b></small>
+                    <small onClick={() => setShowAuthToken(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show AuthToken</u></b></small>
+                </>)}
+                { showingAuthEnvs ? (<>
+                    <small onClick={() => setShowAuthEnvs(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide AuthEnvs</u></b></small>
+                    <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(AUTH.LoggedInUserAuthEnvs(header))}</pre>
+                </>):(<>
+                    <small onClick={() => setShowAuthEnvs(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show AuthEnvs</u></b></small>
                 </>)}
         </InfoBox>
         <InfoBox title="Miscellany">

@@ -247,6 +247,7 @@ function HasTestModeFoursightCgapCookie() {
 
 export default {
     AllowedEnvs:     GetAllowedEnvsCookie,
+    AuthEnvs:        GetAuthEnvsCookie,
     Delete:          DeleteCookie,
     DeleteFauxLogin: DeleteFauxLoginCookie,
     Get:             GetCookie,
