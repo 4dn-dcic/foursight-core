@@ -1,3 +1,10 @@
+# Script to build the Foursight React code:
+# - Use npm to do basic React build in the 'react' sub-directory (of this main repo).
+# - Change the generated hashed files names and css files (e.g. main.07ce1b0d.js
+#   and main.07ce1b0d.css) to the unadorned file names (e.g. main.js, main.css).
+# - Copy the resultant files into the 'react' sub-directory of the 'foursight_core'
+#   sub-directory; these are to be checked into GitHub.
+#
 cd react
 rm -rf build
 npm install
