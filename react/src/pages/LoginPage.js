@@ -9,6 +9,7 @@ import CLIENT from '../utils/CLIENT';
 import CONTEXT from '../utils/CONTEXT';
 import COOKIE from '../utils/COOKIE';
 import LOGOUT from '../utils/LOGOUT';
+import TIME from '../utils/TIME';
 import Page from '../Page';
 
 const LoginPage = (props) => {
@@ -76,16 +77,36 @@ const LoginPage = (props) => {
         { AUTH.IsLoggedIn(header) ? (<React.Fragment>
             <div className="container">
                 <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
-                    Logged in as:&nbsp;
                     { AUTH.IsFauxLoggedIn() ? (<span>
-                        &nbsp;<b>faux-login</b>
+                        Logged in as:&nbsp;<b>faux-login</b>
+                        <br />
+                        <small>
+                            Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> LOGOUT()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> LOGOUT()}>logout</span>.
+                        </small>
                     </span>):(<span>
-                        <Link to={CLIENT.Path("/users/" + AUTH.LoggedInUser(header))}><b style={{color:"darkblue"}}>{AUTH.LoggedInUser(header)}</b></Link>
+                        <table style={{color:"inherit"}}><tbody><tr>
+                            <td align="top" style={{whiteSpace:"nowrap"}}>
+                                Logged in as:&nbsp;
+                                <Link to={CLIENT.Path("/users/" + AUTH.LoggedInUser(header))}><b style={{color:"darkblue"}}>{AUTH.LoggedInUser(header)}</b></Link> <br />
+                                <div style={{fontSize:"small",marginTop:"3pt"}}>
+                                    Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}}
+                                            onClick={()=> LOGOUT()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> LOGOUT()}>logout</span>.
+                                </div>
+                            </td>
+                            <td style={{width:"8pt"}}></td>
+                            <td style={{background:"darkblue",width:"2px"}}></td>
+                            <td style={{width:"8pt"}}></td>
+                            <td style={{textAlign:"top"}}><small style={{marginTop:"20pt"}}>
+                                <u className="tool-tip" data-text={"Logged in: " + TIME.FormatDateTime(AUTH.LoggedInUserJwt(header)?.iat)}>
+                                    Logged in
+                                </u>:&nbsp;{TIME.FormatDuration(AUTH.LoggedInUserJwt(header)?.iat, TIME.Now(), true, "just now", "", "ago")}&nbsp;
+                                <br />
+                                <u className="tool-tip" data-text={"Session expires: " + TIME.FormatDateTime(AUTH.LoggedInUserJwt(header)?.exp)}>
+                                    Session expires
+                                </u>:&nbsp;{TIME.FormatDuration(TIME.Now(), AUTH.LoggedInUserJwt(header)?.exp, true, "now", "", "from now")}&nbsp;
+                            </small></td>
+                        </tr></tbody></table>
                     </span>)}
-                    <br />
-                    <small>
-                        Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> LOGOUT()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> LOGOUT()}>logout</span>.
-                    </small>
                 </div>
             </div>
         </React.Fragment>):(<React.Fragment>

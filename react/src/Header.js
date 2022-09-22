@@ -191,8 +191,8 @@ const Header = (props) => {
                 </tr>
                 <tr>
                     <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="2">
-                        <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight using <b>React</b>. For more info click <b><a href="https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React" style={{color:"darkred"}} target="_blank"><u>here</u></a></b>.
-                        To go to the real Foursight click <a href={ENV.LegacyFoursightLink(header)} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
+                        <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight <b>React</b>. For more info click <b><a href="https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React" style={{color:"darkred"}} target="_blank"><u>here</u></a></b>.
+                        For the real Foursight click <a href={ENV.LegacyFoursightLink(header)} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
                     </td>
                     <td style={{background:"lightyellow",color:"darkred",textAlign:"right",paddingRight:"10pt",fontSize:"small",fontStyle:"italic"}}>
                         { CLIENT.IsLocal() && <>
