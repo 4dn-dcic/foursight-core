@@ -6,7 +6,6 @@ import CLIPBOARD from '../utils/CLIPBOARD';
 import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
 import SERVER from '../utils/SERVER';
-import STR from '../utils/STR';
 import TableHead from '../TableHead';
 import TIME from '../utils/TIME';
 import TYPE from '../utils/TYPE';

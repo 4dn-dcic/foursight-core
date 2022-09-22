@@ -3,11 +3,13 @@
 // I.e. Locations of client (React UI), server (React API), authentication (Auth0).
 // -------------------------------------------------------------------------------------------------
 
+const _CLIENT_BASE_PATH  = "/api/react";
+const _SERVER_BASE_PATH  = "/api/reactapi";
+const _SERVER_LOCAL_PORT = 8000
+
 // -------------------------------------------------------------------------------------------------
 // Client (React UI) context info.
 // -------------------------------------------------------------------------------------------------
-
-const _CLIENT_BASE_PATH = "/api/react";
 
 function GetClientOrigin() {
     return window.location.origin;
@@ -57,9 +59,6 @@ function GetClientLogoFoursightFourfront() {
 // -------------------------------------------------------------------------------------------------
 // Server (React API) context info.
 // -------------------------------------------------------------------------------------------------
-
-const _SERVER_BASE_PATH  = "/api/reactapi";
-const _SERVER_LOCAL_PORT = 8000
 
 function GetServerOrigin() {
     //
