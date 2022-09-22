@@ -43,7 +43,6 @@ const ChecksPage = (props) => {
             
     }, []);
 
-
     // This is a bit tedious to unwrap. This is what a check record looks like:
     // {
     //     "title": "ES Disk Space Check",
@@ -251,16 +250,13 @@ const ChecksPage = (props) => {
     }
 
     function runCheck(check) {
-            console.log("RUNNING CHECK:")
-
+        console.log("RUNNING CHECK:")
         const args = check.kwargs;
         const argsString = JSON.stringify(args);
         const argsEncoded = btoa(argsString);
-
-            console.log(args);
-            console.log(argsString);
-            console.log(argsEncoded);
-
+        console.log(args);
+        console.log(argsString);
+        console.log(argsEncoded);
         hideCheckRunningBox(check);
         noteChangedCheckBox();
         const runCheckUrl = SERVER.Url(`/checks/${check.name}/run?args=${argsEncoded}`, environ);
@@ -502,7 +498,25 @@ const ChecksPage = (props) => {
                                         <span className={"tool-tip"} data-text={"Configure run below."} style={{}}><span style={{fontSize:"small"}}>&#x25BC;</span>&nbsp;Configure</span>
                                     </div>
                                 </>:<>
-                                    <div className={"check-run-button"} style={{float:"right"}} onClick={() => { check.configuringCheckRun = !check.configuringCheckRun; noteChangedCheckBox(); }}>
+                                    <div
+                                        className={"check-run-button"} style={{float:"right"}}
+                                        onClick={() => {
+                                            if (check.configuringCheckRun) {
+                                                Object.keys(check.kwargs).map(key => {
+                                                    if (!TYPE.IsBoolean(check.kwargs[key]) && !TYPE.IsNonEmptyArray(check.kwargs[key])) {
+                                                        const inputId = `${check.name}.${key}`;
+                                                        const inputElement = document.getElementById(inputId);
+                                                        const inputValue = inputElement?.value;
+                                                        check.kwargs[key] = inputValue;
+                                                    }
+                                                });
+                                                check.configuringCheckRun = false;
+                                            }
+                                            else {
+                                                check.configuringCheckRun = true;
+                                            }
+                                            noteChangedCheckBox();
+                                        }}>
                                         <span className={"tool-tip"} data-text={"Configure run below."} style={{}}><span style={{fontSize:"small"}}>&#x25BC;</span>&nbsp;Configure</span>
                                     </div>
                                 </>}
@@ -633,29 +647,10 @@ const ChecksPage = (props) => {
             { check.showingHistory && (<>
                 { check.history?.history?.length > 0 ? (<>
                     <table style={{width:"100%"}}>
-                        <TableHead columns={columns} list={check.history.history} update={() => noteChangedHistories()} style={{color:"darkgreen",fontWeight:"bold"}}/>
-                        {/*
-                        <tr>
-                            <td style={{whiteSpace:"nowrap"}}>
-                                &#x2630;
-                            &nbsp;&nbsp;</td>
-                            <td style={{whiteSpace:"nowrap"}}>
-                                Timestamp
-                            &nbsp;&nbsp;</td>
-                            <td style={{whiteSpace:"nowrap"}}>
-                                Status
-                            &nbsp;&nbsp;</td>
-                            <td style={{textAlign:"right",whiteSpace:"nowrap"}}>
-                                <span className={"tool-tip"} data-text={"Duration of the check in seconds."}> Duration </span>
-                            &nbsp;</td>
-                            <td style={{whiteSpace:"nowrap"}}>
-                                State
-                            &nbsp;</td>
-                        </tr>
-                        */}
-                        <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
-                        <tr><td style={{paddingTop:"4px"}}></td></tr>
+                        <TableHead columns={columns} list={check.history.history} update={() => noteChangedHistories()} style={{color:"darkgreen",fontWeight:"bold"}} />
                     <tbody>
+                    <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
+                    <tr><td style={{paddingTop:"4px"}}></td></tr>
                     {check.history.history.map((history, index) =>
                         <React.Fragment key={extractUUID(history)}>
                             { index !== 0 && (<>

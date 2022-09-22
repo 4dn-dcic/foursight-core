@@ -34,7 +34,10 @@ const TableHead = ({columns, list, update, style}) => {
         list = list.sort((a,b) => comparator(a, b));
         return list;
     }
-    if (!list.__sort) list.__sort = { key: null, order: 1 };
+    function keysEqual(a, b) {
+        return (TYPE.IsFunction(a) && TYPE.IsFunction(b)) ? a.name == b.name : a == b;
+    }
+    if (!list.__sort) list.__sort = { key: null, order: 0 };
     return <thead><tr>
         { columns.map(column => {
             return <td key={UUID()} style={{textAlign:column.align || "normal"}}>
@@ -42,12 +45,12 @@ const TableHead = ({columns, list, update, style}) => {
                     <span style={{...style, cursor:"pointer"}}
                         onClick={() => {
                             list.__sort.key = column.key;
-                            list.__sort.order = -list.__sort.order;
+                            list.__sort.order = list.__sort.order ? -list.__sort.order : 1;
                             sort(list, list.__sort.key, list.__sort.order);
                             update();
                         }}>
                         <span style={{...style}}>{column.label}</span>
-                        { list.__sort.key === column.key ? (<>
+                        { keysEqual(list.__sort.key, column.key) ? (<>
                             <span style={{fontWeight:"normal"}}>&nbsp;{list.__sort.order > 0 ? <>&#x2193;</> : <>&#x2191;</>}</span>
                         </>):(<>
                             &nbsp;<span style={{position:"relative",fontSize:"7pt",top:"-2pt"}}>&#x2022;</span>
