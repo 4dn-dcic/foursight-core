@@ -966,11 +966,22 @@ class ReactApi:
             response.body = {}
         return self.process_response(response)
 
-    def reactapi_route_check_run(self, request, env: str, check: str):
+    def reactapi_route_check_run(self, request, env: str, check: str, args: str):
         # TODO: What is this primary thing for? It is an option on the old/existing UI.
         response = self.create_standard_response("reactapi_route_check_run")
-        params = {"primary": True}
-        queued_uuid = self.queue_check(env, check, params)
+        print('xyzzy:reactapi_route_check_run-1')
+        print(args)
+        print('xyzzy:reactapi_route_check_run-2')
+        args = self.encryption.decode(args)
+        print('xyzzy:reactapi_route_check_run-2')
+        print(args)
+        args = json.loads(args)
+        print('xyzzy:reactapi_route_check_run-3')
+        print(args)
+        print(type(args))
+         queued_uuid = self.queue_check(env, check, args)
+        #params = {"primary": True}
+        #queued_uuid = self.queue_check(env, check, params)
         response.body = {"check": check, "env": env, "uuid": queued_uuid}
         return self.process_response(response)
 

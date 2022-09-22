@@ -521,7 +521,12 @@ class Routes:
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}/run', methods=['GET'], cors=CORS)
     def reactapi_route_check_run(environ: str, check: str):
         print(f"XYZZY:/reactapi/{environ}/checks/{check}/run")
-        return app_utils.singleton().reactapi_route_check_run(request=app.current_request, env=environ, check=check)
+        args = app.current_request.to_dict().get('query_params', {})
+        print(f"XYZZY:reactapi_route_check_run:")
+        print(args)
+        args = args.get('args')
+        print(args)
+        return app_utils.singleton().reactapi_route_check_run(request=app.current_request, env=environ, check=check, args=args)
 
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/lambdas', methods=['GET'], cors=CORS)

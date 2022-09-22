@@ -250,16 +250,21 @@ const ChecksPage = (props) => {
     }
 
     function runCheck(check) {
+            console.log("RUNNING CHECK:")
+
+        const args = check.kwargs;
+        const argsString = JSON.stringify(args);
+        const argsEncoded = btoa(argsString);
+
+            console.log(args);
+            console.log(argsString);
+            console.log(argsEncoded);
+
         hideCheckRunningBox(check);
         noteChangedCheckBox();
-        const runCheckUrl = SERVER.Url(`/checks/${check.name}/run`, environ);
+        const runCheckUrl = SERVER.Url(`/checks/${check.name}/run?args=${argsEncoded}`, environ);
         check.queueingCheckRun = true;
         check.fetchingResult = true;
-            console.log("RUNNING CHECK:")
-            console.log(check)
-            console.log(check.kwargs)
-            console.log(btoa(JSON.stringify(check.kwargs)))
-            console.log(atob(btoa(JSON.stringify(check.kwargs))))
         FETCH.get(runCheckUrl, response => { check.queueingCheckRun = false; check.fetchingResult = false; check.queuedCheckRun = response.uuid });
         check.queuedCheckRun = null;
         showCheckRunningBox(check);
