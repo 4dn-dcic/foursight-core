@@ -312,7 +312,7 @@ const ChecksPage = (props) => {
                                 <b>{key}</b>:
                             &nbsp;&nbsp;</td>
                             <td style={{padding:"1pt"}}>
-                            { (TYPE.IsBoolean(check.kwargs[key])) && <>
+                            { (TYPE.IsBoolean(check.kwargs[key])) &&
                                 <select defaultValue={check.kwargs[key] ? "true" : "false"} style={{background:"lightyellow",border:"1px solid lightgray",borderRadius:"4pt"}}
                                     onChange={(e) => {
                                         check.kwargs[key] = e.target.value == "true" ? true : false;
@@ -326,7 +326,7 @@ const ChecksPage = (props) => {
                                         <option>false</option>
                                     </>}
                                 </select> 
-                            </>}
+                            }
                             { ((TYPE.IsString(check.kwargs[key]) || TYPE.IsNumber(check.kwargs[key]))) && <>
                                 {/* TODO: Focus is tricky ... */}
                                 { STR.HasValue(check.kwargs[key]) ? <>
@@ -357,7 +357,7 @@ const ChecksPage = (props) => {
                                         }} />
                                 </>}
                             </>}
-                            { (TYPE.IsArray(check.kwargs[key])) && <React.Fragment key={UUID()}>
+                            { (TYPE.IsArray(check.kwargs[key])) &&
                                 <select key={UUID()} defaultValue={check.kwargs[key]?.__selected} style={{background:"lightyellow",border:"1px solid lightgray"}}
                                     onChange={(e) => {
                                         check.kwargs[key].__selected = e.target.value;
@@ -367,7 +367,7 @@ const ChecksPage = (props) => {
                                         <option key={UUID()}>{item}</option>
                                     )}
                                 </select>
-                            </React.Fragment>}
+                            }
                             &nbsp;&nbsp;</td>
                         </tr>
                     )}
