@@ -427,11 +427,11 @@ const ChecksPage = (props) => {
     //
     const RunButton = ({check, style}) => {
         if (check.queueingCheckRun || check.fetchingResult) {
-            return <div className={"check-run-wait-button"} style={style}>
+            return check.queueingCheckRun && <div className={"check-run-wait-button"} style={style}>
                 <span
                  className={"tool-tip"}
                  data-text={"Wait until " + (check.queueingCheckRun ? "check queueing" : "result fetch") + " completes."}>
-                    <span>Queueing</span>
+                     <span>Queueing</span>
                  </span>
             </div>
         }
