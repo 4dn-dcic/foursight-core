@@ -285,10 +285,6 @@ const ChecksPage = (props) => {
         </div>
     } 
 
-        function setKwargs() {
-            noteChangedCheckBox();
-        }
-
     // What a pain ...
     const CheckRunArgsBox = ({check}) => {
         if (!TYPE.IsNonEmptyObject(check.kwargs)) {
@@ -307,7 +303,10 @@ const ChecksPage = (props) => {
                             <td style={{padding:"1pt"}}>
                             { (TYPE.IsBoolean(check.kwargs[key])) && <>
                                 <select style={{background:"lightyellow",border:"1px solid lightgray",borderRadius:"4pt"}}
-                                    onChange={(e) => { check.kwargs[key] = e.target.value == "true" ? true : false; setKwargs(); }}>
+                                    onChange={(e) => {
+                                        check.kwargs[key] = e.target.value == "true" ? true : false;
+                                        noteChangedCheckBox();
+                                    }}>
                                     { check.kwargs[key] ? <>
                                         <option selected>true</option>
                                         <option>false</option>
@@ -320,16 +319,27 @@ const ChecksPage = (props) => {
                             { ((TYPE.IsString(check.kwargs[key]) || TYPE.IsNumber(check.kwargs[key]))) && <>
                                 {/* TODO: Focus is tricky ... */}
                                 { STR.HasValue(check.kwargs[key]) ? <>
-                                    <input id={key} type="text" defaultValue={check.kwargs[key]} style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"1px solid lightgray",borderRadius:"2pt"}}
-                                        onChange={(e) => {check.kwargs[key] = e.target.value; setKwargs(); setTimeout(()=> {document.getElementById(key).focus();}, 1); }} />
+                                    <input id={`${check.name}.${key}`} type="text" defaultValue={check.kwargs[key]} style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"0px solid lightgray",borderRadius:"2pt"}}
+                                        onChange={(e) => {
+                                                check.kwargs[key] = e.target.value;
+                                                noteChangedCheckBox();
+                                                setTimeout(()=> {document.getElementById(`${check.name}.${key}`).focus();}, 1);
+                                        }} />
                                 </>:<>
-                                    <input id={key} type="text" placeholder="Empty" style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"1px solid lightgray",borderRadius:"2pt"}}
-                                        onChange={(e) => {check.kwargs[key] = e.target.value; setKwargs(); setTimeout(()=> {document.getElementById(key).focus();}, 1); }} />
+                                    <input id={`${check.name}.${key}`} type="text" placeholder="Empty" style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"1px solid lightgray",borderRadius:"2pt"}}
+                                        onChange={(e) => {
+                                            check.kwargs[key] = e.target.value;
+                                            noteChangedCheckBox();
+                                            setTimeout(()=> {document.getElementById(`${check.name}.${key}`).focus();}, 1);
+                                        }} />
                                 </>}
                             </>}
                             { (TYPE.IsArray(check.kwargs[key])) && <>
                                 <select style={{background:"lightyellow",border:"1px solid lightgray"}}
-                                    onChange={(e) => { check.kwargs[key].__selected = e.target.value; setKwargs(); }}>
+                                    onChange={(e) => {
+                                        check.kwargs[key].__selected = e.target.value;
+                                        noteChangedCheckBox();
+                                    }}>
                                     { check.kwargs[key].map(item => {
                                         return check.kwargs[key]?.__selected == item ? <>
                                             <option selected>{item}</option>
