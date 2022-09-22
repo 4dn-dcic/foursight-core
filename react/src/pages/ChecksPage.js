@@ -257,6 +257,9 @@ const ChecksPage = (props) => {
         check.fetchingResult = true;
             console.log("RUNNING CHECK:")
             console.log(check)
+            console.log(check.kwargs)
+            console.log(btoa(JSON.stringify(check.kwargs)))
+            console.log(atob(btoa(JSON.stringify(check.kwargs))))
         FETCH.get(runCheckUrl, response => { check.queueingCheckRun = false; check.fetchingResult = false; check.queuedCheckRun = response.uuid });
         check.queuedCheckRun = null;
         showCheckRunningBox(check);
@@ -285,8 +288,16 @@ const ChecksPage = (props) => {
         </div>
     } 
 
+        {/* Needed to retain focus in sane manner after onChange/setState. */}
+        {/* Use passed in notify callback on when focus lost to let parent know of value. */}
+        {/* However the onBlur with eat the very next mouse click ... still working on that ... */}
+        const FocusedInput = ({value, notify, style}) => {
+            let [input, setInput] = useState(value);
+            return <input type="text" style={{...style}} onChange={(e) => setInput(e.target.value)} onBlur={(e) => notify(input)} value={input} defaultValue={value} />
+        }
+
     // What a pain ...
-    const CheckRunArgsBox = ({check}) => {
+    const CheckRunArgsBox = ({check,update}) => {
         if (!TYPE.IsNonEmptyObject(check.kwargs)) {
             check.kwargs = getKwargsFromCheck(check);
         }
@@ -319,12 +330,24 @@ const ChecksPage = (props) => {
                             { ((TYPE.IsString(check.kwargs[key]) || TYPE.IsNumber(check.kwargs[key]))) && <>
                                 {/* TODO: Focus is tricky ... */}
                                 { STR.HasValue(check.kwargs[key]) ? <>
-                                    <input id={`${check.name}.${key}`} type="text" defaultValue={check.kwargs[key]} style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"0px solid lightgray",borderRadius:"2pt"}}
+                                    <FocusedInput value={check.kwargs[key]} style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"0px solid lightgray",borderRadius:"2pt"}}
+                                        notify={ value => {
+                                            check.kwargs[key] = value;
+                                            noteChangedCheckBox();
+                                        }} />
+{/*
+                                    <input id={`${check.name}.${key}`} type="text" defaultValue={check.kwargs[key]} value={check.kwargs[key]} style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"0px solid lightgray",borderRadius:"2pt"}}
+                                        onBlur={() => {
+                                                console.log("BLUR")
+                                                console.log(check.kwargs[key]);
+                                            noteChangedCheckBox(check.kwargs[key]);
+                                        }}
                                         onChange={(e) => {
                                                 check.kwargs[key] = e.target.value;
-                                                noteChangedCheckBox();
-                                                setTimeout(()=> {document.getElementById(`${check.name}.${key}`).focus();}, 1);
+                                                //noteChangedCheckBox();
+                                                //setTimeout(()=> {document.getElementById(`${check.name}.${key}`).focus();}, 0);
                                         }} />
+*/}
                                 </>:<>
                                     <input id={`${check.name}.${key}`} type="text" placeholder="Empty" style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"1px solid lightgray",borderRadius:"2pt"}}
                                         onChange={(e) => {
@@ -425,7 +448,11 @@ const ChecksPage = (props) => {
                 <div className={"check-run-button"} style={style} >
                     <span className={"tool-tip"} data-text={"Click to run this check."} onClick={(e) => runCheck(check) }><span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Run</b></span>
                     &nbsp;|&nbsp;
-                    <span className={"tool-tip"} data-text={"Set arguments for this check run."} onClick={() => { check.configuringCheckRun = !check.configuringCheckRun; noteChangedCheckBox(check) } }><b>Args</b></span>
+                    {/*
+                        Using onMouseDown rather than onClick fixes the issue with onBlur (for input box on check args)
+                        eating the next onClick but then this won't act like a real butten (armed etc).
+                    */}
+                    <span className={"tool-tip"} data-text={"Set arguments for this check run."} onMouseDown={() => { check.configuringCheckRun = !check.configuringCheckRun; noteChangedCheckBox(check) } }><b>Args</b></span>
                 </div>
             </div>
     }
@@ -476,7 +503,7 @@ const ChecksPage = (props) => {
                                     )}
                                 </div>
                             })}
-                            <CheckRunArgsBox check={check} />
+                            <CheckRunArgsBox check={check} update={() => noteChangedCheckBox()}/>
                             <>
                                 { isShowingSelectedCheckResultsBox(check) && (<>
                                     <SelectedCheckResultsBox check={check}/>
