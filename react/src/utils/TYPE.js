@@ -38,6 +38,10 @@ function IsDateTime(value) {
     return value instanceof Date;
 }
 
+function IsFunction(value) {
+    return typeof value == 'function';
+}
+
 function IsNull(value) {
     return value === null || value === undefined;
 }
@@ -51,6 +55,7 @@ export default {
     IsArray:          IsArray,
     IsBoolean:        IsBoolean,
     IsDateTime:       IsDateTime,
+    IsFunction:       IsFunction,
     IsNonEmptyArray:  IsNonEmptyArray,
     IsNonEmptyObject: IsNonEmptyObject,
     IsNull:           IsNull,

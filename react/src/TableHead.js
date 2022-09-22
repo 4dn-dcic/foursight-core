@@ -1,3 +1,4 @@
+import TYPE from './utils/TYPE';
 import UUID from './utils/UUID';
 
 // -------------------------------------------------------------------------------------------------
@@ -22,16 +23,20 @@ import UUID from './utils/UUID';
 // -------------------------------------------------------------------------------------------------
 
 const TableHead = ({columns, list, update, style}) => {
-    function sort(list, field, direction) {
-        let comparator = direction > 0
-                       ? (a,b) => a[field] > b[field] ? 1 : (a[field] < b[field] ? -1 : 0)
-                       : (a,b) => a[field] < b[field] ? 1 : (a[field] > b[field] ? -1 : 0);
+    function sort(list, key, direction) {
+        let comparator = TYPE.IsFunction(key)
+                         ? (direction > 0
+                            ? (a,b) => key(a) > key(b) ? 1 : (key(a) < key(b) ? -1 : 0)
+                            : (a,b) => key(a) < key(b) ? 1 : (key(a) > key(b) ? -1 : 0))
+                          : (direction > 0
+                             ? (a,b) => a[key] > b[key] ? 1 : (a[key] < b[key] ? -1 : 0)
+                             : (a,b) => a[key] < b[key] ? 1 : (a[key] > b[key] ? -1 : 0));
         list = list.sort((a,b) => comparator(a, b));
         return list;
     }
-    if (!list.__sort) list.__sort = { key: "key", order: 1 };
+    if (!list.__sort) list.__sort = { key: null, order: 1 };
     return <thead><tr>
-        { columns.map((column) => {
+        { columns.map(column => {
             return <td key={UUID()} style={{textAlign:column.align || "normal"}}>
                 { column.key ? (<>
                     <span style={{...style, cursor:"pointer"}}

@@ -7,6 +7,7 @@ import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
 import SERVER from '../utils/SERVER';
 import STR from '../utils/STR';
+import TableHead from '../TableHead';
 import TIME from '../utils/TIME';
 import TYPE from '../utils/TYPE';
 import UUID from '../utils/UUID';
@@ -614,6 +615,14 @@ const ChecksPage = (props) => {
             return history[2].queue_action;
         }
 
+        const columns = [
+            { label: "" },
+            { label: "Timestamp", key: extractTimestamp },
+            { label: "Status", key: extractStatus},
+            { label: "Duration", key: extractDuration, align: "right" },
+            { label: "State", key: extractState }
+        ];
+
         return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
             <div title={check.name}>
                 <b>{check.title}</b>&nbsp;
@@ -624,7 +633,8 @@ const ChecksPage = (props) => {
             { check.showingHistory && (<>
                 { check.history?.history?.length > 0 ? (<>
                     <table style={{width:"100%"}}>
-                    <thead>
+                        <TableHead columns={columns} list={check.history.history} update={() => noteChangedHistories()} style={{color:"darkgreen",fontWeight:"bold"}}/>
+                        {/*
                         <tr>
                             <td style={{whiteSpace:"nowrap"}}>
                                 &#x2630;
@@ -642,9 +652,9 @@ const ChecksPage = (props) => {
                                 State
                             &nbsp;</td>
                         </tr>
+                        */}
                         <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
                         <tr><td style={{paddingTop:"4px"}}></td></tr>
-                    </thead>
                     <tbody>
                     {check.history.history.map((history, index) =>
                         <React.Fragment key={extractUUID(history)}>
