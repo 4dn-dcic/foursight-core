@@ -668,16 +668,19 @@ class ReactApi:
         if not env_a or not env_b:
             return False
         env_b = env_b.lower()
-        return (env_a.lower() == env_b.lower()
-            or  full_env_name(env_a).lower() == env_b
-            or  short_env_name(env_a).lower() == env_b
-            or  public_env_name(env_a).lower() == env_b
-            or  infer_foursight_from_env(envname=env_a).lower() == env_b)
+        full_env_a = full_env_name(env_a) or ""
+        short_env_a = short_env_name(env_a) or ""
+        public_env_a = public_env_name(env_a) or ""
+        foursight_env_a = infer_foursight_from_env(envname=env_a) or ""
+        return (env_a.lower() == env_b
+            or  full_env_a.lower() == env_b
+            or  short_env_a.lower() == env_b
+            or  public_env_a.lower() == env_b
+            or  foursight_env_a.lower() == env_b)
 
     def filter_checks_by_env(self, checks: dict, env) -> dict:
         if not env:
             return checks
-        checks = copy.deepcopy(checks)
         checks_for_env = {}
         for check_key in checks:
             if checks[check_key]["schedule"]:
@@ -685,10 +688,6 @@ class ReactApi:
                     for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
                         if check_env_key == "all" or self.is_same_env(check_env_key, env):
                             checks_for_env[check_key] = checks[check_key]
-                            break
-                        else:
-                            del checks_for_env[check_key]
-
             else:
                 # If no schedule section (which has the env section) then include it.
                 checks_for_env[check_key] = checks[check_key]
