@@ -1,7 +1,7 @@
 import './css/App.css';
 import React from 'react';
 import { useContext } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import Global from "./Global";
 import { BarSpinner } from "./Spinners";
 import AUTH from './utils/AUTH';
@@ -14,6 +14,13 @@ import TIME from './utils/TIME';
 const Header = (props) => {
 
     const [ header ] = useContext(Global);
+    //
+    // Very odd but this below (dummy) usage of useNavigate is REQUIRED in order for
+    // the header navigation links (e.g. HOME, INFO) to work properly. If this is not
+    // here, for example, then the (target) values to not get updated properly when on the
+    // EnvPage and clicking from one environment to another. No idea why. Fun tracking down.
+    //
+    const dummy = useNavigate();
 
     let titleBackgroundColor = ENV.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
     let subTitleBackgroundColor = ENV.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
