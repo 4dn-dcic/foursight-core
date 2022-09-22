@@ -77,15 +77,15 @@ const LoginPage = (props) => {
             <div className="container">
                 <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
                     Logged in as:&nbsp;
-                    { false && CLIENT.IsLocal() ? (<span>
-                        &nbsp;<b>localhost</b>
+                    { AUTH.IsFauxLoggedIn() ? (<span>
+                        &nbsp;<b>faux-login</b>
                     </span>):(<span>
                         <Link to={CLIENT.Path("/users/" + AUTH.LoggedInUser(header))}><b style={{color:"darkblue"}}>{AUTH.LoggedInUser(header)}</b></Link>
-                        <br />
-                        <small>
-                            Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> LOGOUT()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> LOGOUT()}>logout</span>.
-                        </small>
                     </span>)}
+                    <br />
+                    <small>
+                        Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> LOGOUT()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> LOGOUT()}>logout</span>.
+                    </small>
                 </div>
             </div>
         </React.Fragment>):(<React.Fragment>

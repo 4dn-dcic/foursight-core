@@ -4,6 +4,7 @@
 
 import CLIENT from '../utils/CLIENT';
 import COOKIE from '../utils/COOKIE';
+import LOGOUT from '../utils/LOGOUT';
 
 function SLEEP(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -65,7 +66,8 @@ function fetchData(url, setData, setLoading, setError) {
                 console.log("FETCH IS FORBIDDEN! " + url);
                 console.log(window.location);
                 // window.location.pathname = "/api/react/cgap-supertest/forbidden";
-                window.location.pathname = CLIENT.Path("/forbidden");
+                // window.location.pathname = CLIENT.Path("/forbidden");
+                LOGOUT();
             }
             if (setError) {
                 setError(response.status);

@@ -2,6 +2,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { BarSpinner } from "../Spinners";
+import { RingSpinner } from "../Spinners";
 import CLIPBOARD from '../utils/CLIPBOARD';
 import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
@@ -89,6 +90,17 @@ const ChecksPage = (props) => {
             kwargs = {...registered_kwargs, ...kwargs}
         }
         return kwargs;
+    }
+
+    function saveInputKwargs(check) {
+        Object.keys(check.kwargs).map(key => {
+            if (!TYPE.IsBoolean(check.kwargs[key]) && !TYPE.IsNonEmptyArray(check.kwargs[key])) {
+                const inputId = `${check.name}.${key}`;
+                const inputElement = document.getElementById(inputId);
+                const inputValue = inputElement?.value;
+                check.kwargs[key] = inputValue;
+            }
+        });
     }
 
     function isSelectedGroup(group) {
@@ -346,6 +358,8 @@ const ChecksPage = (props) => {
                                     id={`${check.name}.${key}`}
                                     defaultValue={check.kwargs[key]}
                                     placeholder="Empty"
+                                    onBlur={() => {saveInputKwargs(check)}}
+                            
                                     style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"1px solid lightgray",borderRadius:"2pt"}}
                                     />
                             </>}
@@ -393,7 +407,7 @@ const ChecksPage = (props) => {
                     </span>
                 </div>
                 { selectedGroups?.map((selectedGroup, index) =>
-                    <SelectedGroupBox key={index} group={selectedGroup} style={{paddingTop:"3pt"}}/>
+                    <SelectedGroupBox key={index} group={selectedGroup} style={{paddingBottom:"6pt"}}/>
                 )}
             </>):(<></>)}
         </div>
@@ -410,7 +424,7 @@ const ChecksPage = (props) => {
                 <div style={{marginTop:"6pt"}} />
                 { group?.checks?.map((check, index) =>
                     <div key={index}>
-                        { index > 0 && <div style={{marginBottom:"8px"}} /> }
+                        { index > 0 && <div style={{marginBottom:"12px"}} /> }
                         <SelectedChecksBox check={check} index={index}/>
                     </div>
                 )}
@@ -438,14 +452,7 @@ const ChecksPage = (props) => {
             <div className={"check-run-button"} style={style}
                 onClick={(e) => {
                     if (check.configuringCheckRun) {
-                        Object.keys(check.kwargs).map(key => {
-                            if (!TYPE.IsBoolean(check.kwargs[key]) && !TYPE.IsNonEmptyArray(check.kwargs[key])) {
-                                const inputId = `${check.name}.${key}`;
-                                const inputElement = document.getElementById(inputId);
-                                const inputValue = inputElement?.value;
-                                check.kwargs[key] = inputValue;
-                            }
-                        });
+                        saveInputKwargs(check);
                         runCheck(check)
                     }
                     else {
@@ -500,14 +507,7 @@ const ChecksPage = (props) => {
                                         className={check.configuringCheckRun ? "check-config-button" : "check-run-button"} style={{float:"right"}}
                                         onClick={() => {
                                             if (check.configuringCheckRun) {
-                                                Object.keys(check.kwargs).map(key => {
-                                                    if (!TYPE.IsBoolean(check.kwargs[key]) && !TYPE.IsNonEmptyArray(check.kwargs[key])) {
-                                                        const inputId = `${check.name}.${key}`;
-                                                        const inputElement = document.getElementById(inputId);
-                                                        const inputValue = inputElement?.value;
-                                                        check.kwargs[key] = inputValue;
-                                                    }
-                                                });
+                                                saveInputKwargs(check);
                                                 check.configuringCheckRun = false;
                                             }
                                             else {
@@ -831,6 +831,14 @@ const ChecksPage = (props) => {
         return check?.showingResults;
     }
 
+    if (error) return <>Cannot load users from Foursight: {error}</>;
+    if (loading) {
+        return <>
+            <div style={{marginTop:"30px"}}>
+                <RingSpinner loading={loading} color={'blue'} size={90} />
+            </div>
+        </>
+    }
     return <>
         <div>
             <table><tbody>
