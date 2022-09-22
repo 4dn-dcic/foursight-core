@@ -530,7 +530,7 @@ const ChecksPage = (props) => {
                             {/* TODO: As far as I can tell there is only every one element here under the schedule element */}
                             { Object.keys(check?.schedule).map((key, index) =>
                                 <div key={key}>
-                                    { check?.schedule ? (
+                                    { check.schedule[key]?.cron ? (
                                         <div style={{whiteSpace:"nowrap",width:"100%"}} key={index} title={check.schedule[key].cron}>
                                             <small><i>Schedule: <span className={"tool-tip"} data-text={check.schedule[key]?.cron}>{check.schedule[key].cron_description}</span>.</i></small>
                                         </div>
