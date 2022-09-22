@@ -237,6 +237,7 @@
   font-size: 10pt;
   font-weight: normal;
   font-style: italic;
+  z-index: 99;
 }
 .tool-tip:hover:before {
   display: block;

@@ -19,7 +19,7 @@ function IsObject(value) {
 }
 
 function IsNonEmptyObject(value) {
-    return IsObject(value) && Object.keys(value).length > 0;
+    return value !== undefined && value !== null && value.constructor === Object && Object.keys(value).length > 0;
 }
 
 function CopyObject(value) {
@@ -28,6 +28,10 @@ function CopyObject(value) {
 
 function IsArray(value) {
     return Array.isArray(value);
+}
+
+function IsNonEmptyArray(value) {
+    return Array.isArray(value) && value.length > 0;
 }
 
 function IsDateTime(value) {
@@ -47,6 +51,7 @@ export default {
     IsArray:          IsArray,
     IsBoolean:        IsBoolean,
     IsDateTime:       IsDateTime,
+    IsNonEmptyArray:  IsNonEmptyArray,
     IsNonEmptyObject: IsNonEmptyObject,
     IsNull:           IsNull,
     IsNumber:         IsNumber,

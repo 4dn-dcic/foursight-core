@@ -298,7 +298,7 @@ const ChecksPage = (props) => {
         {/* However the onBlur with eat the very next mouse click ... still working on that ... */}
         const FocusedInput = ({value, notify, style}) => {
             let [input, setInput] = useState(value);
-            return <input type="text" style={{...style}} onChange={(e) => setInput(e.target.value)} onBlur={(e) => notify(input)} defaultValue={value} />
+            return <input type="text" placeholder="Empty" style={{...style}} onChange={(e) => setInput(e.target.value)} onBlur={(e) => notify(input)} defaultValue={value} />
         }
 
     // What a pain ...
@@ -332,10 +332,21 @@ const ChecksPage = (props) => {
                                     </>}
                                 </select> 
                             }
-                            { ((TYPE.IsString(check.kwargs[key]) || TYPE.IsNumber(check.kwargs[key]))) && <>
+                            { (TYPE.IsNonEmptyArray(check.kwargs[key])) &&
+                                <select key={UUID()} defaultValue={check.kwargs[key]?.__selected} style={{background:"lightyellow",border:"1px solid lightgray"}}
+                                    onChange={(e) => {
+                                        check.kwargs[key].__selected = e.target.value;
+                                        noteChangedCheckBox();
+                                    }}>
+                                    { check.kwargs[key].map(item =>
+                                        <option key={UUID()}>{item}</option>
+                                    )}
+                                </select>
+                            }
+                            { (!TYPE.IsBoolean(check.kwargs[key]) && !TYPE.IsNonEmptyArray(check.kwargs[key])) && <>
                                 {/* TODO: Focus is tricky ... */}
-                                { STR.HasValue(check.kwargs[key]) ? <>
-                                    <FocusedInput value={check.kwargs[key]} style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"0px solid lightgray",borderRadius:"2pt"}}
+                                { true || STR.HasValue(check.kwargs[key]) ? <>
+                                    <FocusedInput value={check.kwargs[key]} style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"1px solid lightgray",borderRadius:"2pt"}}
                                         notify={ value => {
                                             check.kwargs[key] = value;
                                             noteChangedCheckBox();
@@ -362,17 +373,6 @@ const ChecksPage = (props) => {
                                         }} />
                                 </>}
                             </>}
-                            { (TYPE.IsArray(check.kwargs[key])) &&
-                                <select key={UUID()} defaultValue={check.kwargs[key]?.__selected} style={{background:"lightyellow",border:"1px solid lightgray"}}
-                                    onChange={(e) => {
-                                        check.kwargs[key].__selected = e.target.value;
-                                        noteChangedCheckBox();
-                                    }}>
-                                    { check.kwargs[key].map(item =>
-                                        <option key={UUID()}>{item}</option>
-                                    )}
-                                </select>
-                            }
                             &nbsp;&nbsp;</td>
                         </tr>
                     )}
