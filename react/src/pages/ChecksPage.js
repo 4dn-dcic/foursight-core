@@ -166,8 +166,8 @@ const ChecksPage = (props) => {
         return <div style={{minWidth:"150pt"}}>
             <div style={{fontWeight:"bold",paddingBottom:"3pt",cursor:"pointer"}} onClick={() => onGroupSelectAll()}>&nbsp;Check Groups</div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                { groupedChecks.map((datum, index) => {
-                    return <div key={datum.group}>
+                { groupedChecks.map((datum, index) =>
+                    <div key={datum.group}>
                         <span style={{fontWeight:isSelectedGroup(datum) ? "bold" : "normal",cursor:"pointer"}} onClick={() => toggleShowGroup(datum)}>
                             {datum.group}
                         </span>
@@ -175,7 +175,7 @@ const ChecksPage = (props) => {
                             <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
                         }
                     </div>
-                })}
+                )}
             </div>
         </div>
     }
@@ -184,14 +184,14 @@ const ChecksPage = (props) => {
         return <div>
             <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;Lambdas</div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                { lambdas.map((datum, index) => {
-                    return <div key={datum.lambda_name} title={datum.lambda_function_name}>
+                { lambdas.map((datum, index) =>
+                    <div key={datum.lambda_name} title={datum.lambda_function_name}>
                         {datum.lambda_name}
                         { index < lambdas.length - 1 &&
                             <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
                         }
                     </div>
-                })}
+                )}
             </div>
         </div>
     }
@@ -293,7 +293,7 @@ const ChecksPage = (props) => {
         {/* However the onBlur with eat the very next mouse click ... still working on that ... */}
         const FocusedInput = ({value, notify, style}) => {
             let [input, setInput] = useState(value);
-            return <input type="text" style={{...style}} onChange={(e) => setInput(e.target.value)} onBlur={(e) => notify(input)} value={input} defaultValue={value} />
+            return <input type="text" style={{...style}} onChange={(e) => setInput(e.target.value)} onBlur={(e) => notify(input)} defaultValue={value} />
         }
 
     // What a pain ...
@@ -306,24 +306,24 @@ const ChecksPage = (props) => {
                 { (TYPE.IsNonEmptyObject(check.kwargs)) ? (<>
                     <span style={{float:"right"}}>&#x2190;&nbsp;Arguments&nbsp;</span>
                     <table style={{fontSize:"small"}}><tbody>
-                    { Object.keys(check.kwargs).sort().map(key => {
-                        return <tr key={UUID()} style={{}}>
+                    { Object.keys(check.kwargs).sort().map(key =>
+                        <tr key={UUID()} style={{}}>
                             <td>
                                 <b>{key}</b>:
                             &nbsp;&nbsp;</td>
                             <td style={{padding:"1pt"}}>
                             { (TYPE.IsBoolean(check.kwargs[key])) && <>
-                                <select style={{background:"lightyellow",border:"1px solid lightgray",borderRadius:"4pt"}}
+                                <select defaultValue={check.kwargs[key] ? "true" : "false"} style={{background:"lightyellow",border:"1px solid lightgray",borderRadius:"4pt"}}
                                     onChange={(e) => {
                                         check.kwargs[key] = e.target.value == "true" ? true : false;
                                         noteChangedCheckBox();
                                     }}>
                                     { check.kwargs[key] ? <>
-                                        <option selected>true</option>
+                                        <option>true</option>
                                         <option>false</option>
                                     </>:<>
                                         <option>true</option>
-                                        <option selected>false</option>
+                                        <option>false</option>
                                     </>}
                                 </select> 
                             </>}
@@ -357,24 +357,20 @@ const ChecksPage = (props) => {
                                         }} />
                                 </>}
                             </>}
-                            { (TYPE.IsArray(check.kwargs[key])) && <>
-                                <select style={{background:"lightyellow",border:"1px solid lightgray"}}
+                            { (TYPE.IsArray(check.kwargs[key])) && <React.Fragment key={UUID()}>
+                                <select key={UUID()} defaultValue={check.kwargs[key]?.__selected} style={{background:"lightyellow",border:"1px solid lightgray"}}
                                     onChange={(e) => {
                                         check.kwargs[key].__selected = e.target.value;
                                         noteChangedCheckBox();
                                     }}>
-                                    { check.kwargs[key].map(item => {
-                                        return check.kwargs[key]?.__selected == item ? <>
-                                            <option selected>{item}</option>
-                                        </>:<>
-                                            <option>{item}</option>
-                                        </>
-                                    })}
+                                    { check.kwargs[key].map(item =>
+                                        <option key={UUID()}>{item}</option>
+                                    )}
                                 </select>
-                            </>}
+                            </React.Fragment>}
                             &nbsp;&nbsp;</td>
                         </tr>
-                    })}
+                    )}
                     </tbody></table>
                 </>):(<>
                     No arguments.
@@ -428,12 +424,12 @@ const ChecksPage = (props) => {
                     <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideGroup(group)})}><b>&#x2717;</b></span>
                 </div>
                 <div style={{marginTop:"6pt"}} />
-                { group?.checks?.map((check, index) => {
-                    return <div key={index}>
+                { group?.checks?.map((check, index) =>
+                    <div key={index}>
                         { index > 0 && <div style={{marginBottom:"8px"}} /> }
                         <SelectedChecksBox check={check} index={index}/>
                     </div>
-                })}
+                )}
             </div>
         </div>
     }
@@ -452,7 +448,11 @@ const ChecksPage = (props) => {
                         Using onMouseDown rather than onClick fixes the issue with onBlur (for input box on check args)
                         eating the next onClick but then this won't act like a real butten (armed etc).
                     */}
-                    <span className={"tool-tip"} data-text={"Set arguments for this check run."} onMouseDown={() => { check.configuringCheckRun = !check.configuringCheckRun; noteChangedCheckBox(check) } }><b>Args</b></span>
+                    <span className={"tool-tip"} data-text={"Set arguments for this check run."}
+                        onMouseDown={() => {
+                            check.configuringCheckRun = !check.configuringCheckRun;
+                                noteChangedCheckBox(check);
+                        }}><b>Args</b></span>
                 </div>
             </div>
     }
@@ -490,8 +490,8 @@ const ChecksPage = (props) => {
                             <RefreshResultButton check={check} style={{marginLeft:"10pt"}} />
                             <ToggleHistoryButton check={check} style={{marginLeft:"4pt"}} />
                             {/* TODO: As far as I can tell there is only every one element here under the schedule element */}
-                            { Object.keys(check?.schedule).map((key, index) => {
-                                return <div key={key}>
+                            { Object.keys(check?.schedule).map((key, index) =>
+                                <div key={key}>
                                     { check?.schedule ? (
                                         <div style={{whiteSpace:"nowrap",width:"100%"}} key={index} title={check.schedule[key].cron}>
                                             <small><i>Schedule: <span className={"tool-tip"} data-text={check.schedule[key]?.cron}>{check.schedule[key].cron_description}</span>.</i></small>
@@ -502,7 +502,7 @@ const ChecksPage = (props) => {
                                         </i></small>
                                     )}
                                 </div>
-                            })}
+                            )}
                             <CheckRunArgsBox check={check} update={() => noteChangedCheckBox()}/>
                             <>
                                 { isShowingSelectedCheckResultsBox(check) && (<>
@@ -626,8 +626,8 @@ const ChecksPage = (props) => {
                         <tr><td style={{paddingTop:"4px"}}></td></tr>
                     </thead>
                     <tbody>
-                    {check.history.history.map((history, index) => {
-                        return <React.Fragment key={extractUUID(history)}>
+                    {check.history.history.map((history, index) =>
+                        <React.Fragment key={extractUUID(history)}>
                             { index !== 0 && (<>
                                 <tr><td style={{paddingTop:"2px"}}></td></tr>
                                 <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
@@ -659,7 +659,7 @@ const ChecksPage = (props) => {
                             &nbsp;&nbsp;</td>
                             </tr>
                         </React.Fragment>
-                    })}
+                    )}
                     </tbody>
                     </table>
                 </>):(<>
@@ -680,11 +680,11 @@ const ChecksPage = (props) => {
         }
         return <div>
             <b style={{marginBottom:"100pt"}}>Recent Results Histories</b>
-            { histories.map((selectedHistory, index) => {
-                return <div key={index} style={{marginTop:"3pt"}}>
+            { histories.map((selectedHistory, index) =>
+                <div key={index} style={{marginTop:"3pt"}}>
                     <ResultsHistoryBox check={selectedHistory} />
                 </div>
-            })}
+            )}
         </div>
     }
 
