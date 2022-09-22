@@ -72,6 +72,7 @@ const ChecksPage = (props) => {
     // and extra (registered) kwargs from the check_function decorators.
     //
     function getKwargsFromCheck(check) {
+            return []
         let kwargs = {};
         for (let schedule_key of Object.keys(check?.schedule)) {
             for (let schedule_env_key of Object.keys(check.schedule[schedule_key])) {
@@ -90,6 +91,10 @@ const ChecksPage = (props) => {
             kwargs = {...registered_kwargs, ...kwargs}
         }
         return kwargs;
+    }
+
+    function hasKwargs(check) {
+        return TYPE.IsNonEmptyObject(getKwargsFromCheck(check));
     }
 
     function isSelectedGroup(group) {
@@ -293,30 +298,24 @@ const ChecksPage = (props) => {
         </div>
     } 
 
-        {/* Needed to retain focus in sane manner after onChange/setState. */}
-        {/* Use passed in notify callback on when focus lost to let parent know of value. */}
-        {/* However the onBlur with eat the very next mouse click ... still working on that ... */}
-        const FocusedInput = ({value, notify, style}) => {
-            let [input, setInput] = useState(value);
-            return <input type="text" placeholder="Empty" style={{...style}} onChange={(e) => setInput(e.target.value)} onBlur={(e) => notify(input)} defaultValue={value} />
-        }
-
     // What a pain ...
     const CheckRunArgsBox = ({check,update}) => {
         if (!TYPE.IsNonEmptyObject(check.kwargs)) {
             check.kwargs = getKwargsFromCheck(check);
         }
         return check.configuringCheckRun && <>
-            <div className="boxstyle" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"green",background:"lightyellow",fontSize:"small",fontWeight:"bold"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+            <div className="boxstyle" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"green",background:"lightyellow"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                 { (TYPE.IsNonEmptyObject(check.kwargs)) ? (<>
-                    <span style={{float:"right"}}>&#x2190;&nbsp;Arguments&nbsp;</span>
-                    <table style={{fontSize:"small"}}><tbody>
+                    <div style={{marginTop:"-2pt",float:"right"}}>
+                        <RunButton check={check} style={{float:"right"}} />
+                    </div>
+                    <table style={{fontSize:"small",marginTop:"0pt"}}><tbody>
                     { Object.keys(check.kwargs).sort().map(key =>
                         <tr key={UUID()} style={{}}>
-                            <td>
+                            <td align="top">
                                 <b>{key}</b>:
                             &nbsp;&nbsp;</td>
-                            <td style={{padding:"1pt"}}>
+                            <td style={{padding:"1pt"}} align="top">
                             { (TYPE.IsBoolean(check.kwargs[key])) &&
                                 <select defaultValue={check.kwargs[key] ? "true" : "false"} style={{background:"lightyellow",border:"1px solid lightgray",borderRadius:"4pt"}}
                                     onChange={(e) => {
@@ -344,40 +343,29 @@ const ChecksPage = (props) => {
                                 </select>
                             }
                             { (!TYPE.IsBoolean(check.kwargs[key]) && !TYPE.IsNonEmptyArray(check.kwargs[key])) && <>
-                                {/* TODO: Focus is tricky ... */}
-                                { true || STR.HasValue(check.kwargs[key]) ? <>
-                                    <FocusedInput value={check.kwargs[key]} style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"1px solid lightgray",borderRadius:"2pt"}}
-                                        notify={ value => {
-                                            check.kwargs[key] = value;
-                                            noteChangedCheckBox();
-                                        }} />
-{/*
-                                    <input id={`${check.name}.${key}`} type="text" defaultValue={check.kwargs[key]} value={check.kwargs[key]} style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"0px solid lightgray",borderRadius:"2pt"}}
-                                        onBlur={() => {
-                                                console.log("BLUR")
-                                                console.log(check.kwargs[key]);
-                                            noteChangedCheckBox(check.kwargs[key]);
-                                        }}
-                                        onChange={(e) => {
-                                                check.kwargs[key] = e.target.value;
-                                                //noteChangedCheckBox();
-                                                //setTimeout(()=> {document.getElementById(`${check.name}.${key}`).focus();}, 0);
-                                        }} />
-*/}
-                                </>:<>
-                                    <input id={`${check.name}.${key}`} type="text" placeholder="Empty" style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"1px solid lightgray",borderRadius:"2pt"}}
-                                        onChange={(e) => {
-                                            check.kwargs[key] = e.target.value;
-                                            noteChangedCheckBox();
-                                            setTimeout(()=> {document.getElementById(`${check.name}.${key}`).focus();}, 1);
-                                        }} />
-                                </>}
+                                {/*
+                                    Input box focus issues were very tricky with onChange and setting state et cetera;
+                                    tried many things; finally came upon functionally simple solution (though code is
+                                    slightly arcane) of reading input values directly from the input elements when the
+                                    run button is clicked. See RunButton. Perhaps the non-input type (e.g. dropdown)
+                                    values should be done this way too, thereby avoiding setting state at all during
+                                    run args configuration process, but leave it for now.
+                                */}
+                                <input
+                                    id={`${check.name}.${key}`}
+                                    defaultValue={check.kwargs[key]}
+                                    placeholder="Empty"
+                                    style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"1px solid lightgray",borderRadius:"2pt"}}
+                                    />
                             </>}
                             &nbsp;&nbsp;</td>
                         </tr>
                     )}
                     </tbody></table>
                 </>):(<>
+                    <div style={{marginTop:"-3pt",float:"right"}}>
+                        <RunButton check={check} style={{float:"right"}} />
+                    </div>
                     No arguments.
                 </>)}
             </div>
@@ -439,27 +427,52 @@ const ChecksPage = (props) => {
         </div>
     }
 
+    // This RunButton is context sensitive. As it first appears clicking on it will
+    // just show the run args configuration box (and then that button will turn into
+    // a configure button which when clicked will hide the args configuration box);
+    // and when the args configuration box is showing this RunButton, which will be
+    // place inside the args configuration box, will actually run the check when clicked.
+    //
     const RunButton = ({check, style}) => {
-        if (check.queueingCheckRun || check.fetchingResult)
+        if (check.queueingCheckRun || check.fetchingResult) {
             return <div className={"check-run-wait-button"} style={style}>
-                <span className={"tool-tip"} data-text={"Wait until " + (check.queueingCheckRun ? "check queueing" : "result fetch") + " completes."}><span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Wait</b></span>
+                <span
+                 className={"tool-tip"}
+                 data-text={"Wait until " + (check.queueingCheckRun ? "check queueing" : "result fetch") + " completes."}>
+                    <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;
+                    <span>Wait</span>
+                 </span>
             </div>
-        else
-            return <div>
-                <div className={"check-run-button"} style={style} >
-                    <span className={"tool-tip"} data-text={"Click to run this check."} onClick={(e) => runCheck(check) }><span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<b>Run</b></span>
-                    &nbsp;|&nbsp;
-                    {/*
-                        Using onMouseDown rather than onClick fixes the issue with onBlur (for input box on check args)
-                        eating the next onClick but then this won't act like a real butten (armed etc).
-                    */}
-                    <span className={"tool-tip"} data-text={"Set arguments for this check run."}
-                        onMouseDown={() => {
-                            check.configuringCheckRun = !check.configuringCheckRun;
+        }
+        return <div>
+            <div className={"check-run-button"} style={style} >
+                <span className={"tool-tip"} data-text={"Click to run this check."}
+                    onClick={(e) => {
+                        if (check.configuringCheckRun) {
+                            Object.keys(check.kwargs).map(key => {
+                                if (!TYPE.IsBoolean(check.kwargs[key]) && !TYPE.IsNonEmptyArray(check.kwargs[key])) {
+                                    const inputId = `${check.name}.${key}`;
+                                    const inputElement = document.getElementById(inputId);
+                                    const inputValue = inputElement?.value;
+                                    check.kwargs[key] = inputValue;
+                                }
+                            });
+                            runCheck(check)
+                        }
+                        else {
+                            if (true || hasKwargs(check)) {
+                                check.configuringCheckRun = true;
                                 noteChangedCheckBox(check);
-                        }}><b>Args</b></span>
-                </div>
+                            }
+                            else {
+                                runCheck(check)
+                            }
+                        }
+                    }}>
+                    <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<span>Run</span>
+                </span>
             </div>
+        </div>
     }
 
     const RefreshResultButton = ({check, style}) => {
@@ -473,7 +486,7 @@ const ChecksPage = (props) => {
     const ToggleHistoryButton = ({check, style}) => {
         return <span style={{...style, xpaddingTop:"10px",cursor:"pointer"}} onClick={() => onClickShowResultsHistory(check)}>
             <span data-text={"Click here to " + (check.showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
-                <img id="xyzzy" onClick={(e) => {}} src="https://cdn-icons-png.flaticon.com/512/32/32223.png" style={{marginBottom:"4px",height:"17"}} />
+                <img onClick={(e) => {}} src="https://cdn-icons-png.flaticon.com/512/32/32223.png" style={{marginBottom:"4px",height:"17"}} />
             </span>
             { check.showingHistory ? <span style={{xpaddingTop:"10px"}}>&#x2192;</span> : <></> }
         </span>
@@ -490,7 +503,19 @@ const ChecksPage = (props) => {
                             <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
                         <td style={{veriticalAlign:"top",whiteSpace:"nowrap"}} title={check.name}>
-                            <RunButton check={check} style={{marginLeft:"30pt",marginTop:"-3pt",float:"right"}} />
+                            { (!check.configuringCheckRun) ? <>
+                                <RunButton check={check} style={{marginLeft:"30pt",marginTop:"-3pt",float:"right"}} />
+                            </>:<>
+                                { (check.queueingCheckRun || check.fetchingResult) ? <>
+                                    <div className={"check-run-wait-button"} style={{float:"right"}}>
+                                        <span className={"tool-tip"} data-text={"Configure run below."} style={{}}><span style={{fontSize:"small"}}>&#x25BC;</span>&nbsp;Configure</span>
+                                    </div>
+                                </>:<>
+                                    <div className={"check-run-button"} style={{float:"right"}} onClick={() => { check.configuringCheckRun = !check.configuringCheckRun; noteChangedCheckBox(); }}>
+                                        <span className={"tool-tip"} data-text={"Configure run below."} style={{}}><span style={{fontSize:"small"}}>&#x25BC;</span>&nbsp;Configure</span>
+                                    </div>
+                                </>}
+                            </>}
                             <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>
                             <RefreshResultButton check={check} style={{marginLeft:"10pt"}} />
                             <ToggleHistoryButton check={check} style={{marginLeft:"4pt"}} />

@@ -180,7 +180,7 @@
 
 .check-run-button {
    border: 1px solid lightgreen;
-   border-radius: 30px;
+   border-radius: 12px;
    padding-left: 8pt;
    padding-top: 2pt;
    padding-bottom: 3pt;
@@ -200,7 +200,7 @@
 }
 .check-run-wait-button {
    border: 1px solid lightgreen;
-   border-radius: 30px;
+   border-radius: 12px;
    padding-left: 8pt;
    padding-top: 2pt;
    padding-bottom: 3pt;
