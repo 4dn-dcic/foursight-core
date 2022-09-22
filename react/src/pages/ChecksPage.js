@@ -72,7 +72,6 @@ const ChecksPage = (props) => {
     // and extra (registered) kwargs from the check_function decorators.
     //
     function getKwargsFromCheck(check) {
-            return []
         let kwargs = {};
         for (let schedule_key of Object.keys(check?.schedule)) {
             for (let schedule_env_key of Object.keys(check.schedule[schedule_key])) {
@@ -91,10 +90,6 @@ const ChecksPage = (props) => {
             kwargs = {...registered_kwargs, ...kwargs}
         }
         return kwargs;
-    }
-
-    function hasKwargs(check) {
-        return TYPE.IsNonEmptyObject(getKwargsFromCheck(check));
     }
 
     function isSelectedGroup(group) {
@@ -460,13 +455,8 @@ const ChecksPage = (props) => {
                             runCheck(check)
                         }
                         else {
-                            if (true || hasKwargs(check)) {
-                                check.configuringCheckRun = true;
-                                noteChangedCheckBox(check);
-                            }
-                            else {
-                                runCheck(check)
-                            }
+                            check.configuringCheckRun = true;
+                            noteChangedCheckBox(check);
                         }
                     }}>
                     <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<span>Run</span>
