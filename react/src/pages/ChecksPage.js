@@ -431,31 +431,30 @@ const ChecksPage = (props) => {
                 <span
                  className={"tool-tip"}
                  data-text={"Wait until " + (check.queueingCheckRun ? "check queueing" : "result fetch") + " completes."}>
-                    <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;
-                    <span>Wait</span>
+                    <span>Queueing</span>
                  </span>
             </div>
         }
         return <div>
-            <div className={"check-run-button"} style={style} >
-                <span className={"tool-tip"} data-text={"Click to run this check."}
-                    onClick={(e) => {
-                        if (check.configuringCheckRun) {
-                            Object.keys(check.kwargs).map(key => {
-                                if (!TYPE.IsBoolean(check.kwargs[key]) && !TYPE.IsNonEmptyArray(check.kwargs[key])) {
-                                    const inputId = `${check.name}.${key}`;
-                                    const inputElement = document.getElementById(inputId);
-                                    const inputValue = inputElement?.value;
-                                    check.kwargs[key] = inputValue;
-                                }
-                            });
-                            runCheck(check)
-                        }
-                        else {
-                            check.configuringCheckRun = true;
-                            noteChangedCheckBox(check);
-                        }
-                    }}>
+            <div className={"check-run-button"} style={style}
+                onClick={(e) => {
+                    if (check.configuringCheckRun) {
+                        Object.keys(check.kwargs).map(key => {
+                            if (!TYPE.IsBoolean(check.kwargs[key]) && !TYPE.IsNonEmptyArray(check.kwargs[key])) {
+                                const inputId = `${check.name}.${key}`;
+                                const inputElement = document.getElementById(inputId);
+                                const inputValue = inputElement?.value;
+                                check.kwargs[key] = inputValue;
+                            }
+                        });
+                        runCheck(check)
+                    }
+                    else {
+                        check.configuringCheckRun = true;
+                        noteChangedCheckBox(check);
+                    }
+                }}>
+                <span className={"tool-tip"} data-text={"Click to run this check."}>
                     <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<span>Run</span>
                 </span>
             </div>
@@ -494,12 +493,12 @@ const ChecksPage = (props) => {
                                 <RunButton check={check} style={{marginLeft:"30pt",marginTop:"-3pt",float:"right"}} />
                             </>:<>
                                 { (check.queueingCheckRun || check.fetchingResult) ? <>
-                                    <div className={"check-run-wait-button"} style={{float:"right"}}>
+                                    <div className={"check-config-wait-button"} style={{float:"right"}}>
                                         <span className={"tool-tip"} data-text={"Configure run below."} style={{}}><span style={{fontSize:"small"}}>&#x25BC;</span>&nbsp;Configure</span>
                                     </div>
                                 </>:<>
                                     <div
-                                        className={"check-run-button"} style={{float:"right"}}
+                                        className={check.configuringCheckRun ? "check-config-button" : "check-run-button"} style={{float:"right"}}
                                         onClick={() => {
                                             if (check.configuringCheckRun) {
                                                 Object.keys(check.kwargs).map(key => {
@@ -517,7 +516,12 @@ const ChecksPage = (props) => {
                                             }
                                             noteChangedCheckBox();
                                         }}>
-                                        <span className={"tool-tip"} data-text={"Configure run below."} style={{}}><span style={{fontSize:"small"}}>&#x25BC;</span>&nbsp;Configure</span>
+                                        <span
+                                            className={"tool-tip"}
+                                            data-text={"Configure run below."}
+                                            style={{}}>
+                                            <span style={{fontSize:"small"}}>&#x25BC;</span>&nbsp;Configure
+                                        </span>
                                     </div>
                                 </>}
                             </>}

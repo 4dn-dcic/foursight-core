@@ -210,6 +210,30 @@
    cursor: not-allowed;
    user-select: none;
 }
+.check-config-button {
+   border: 1px solid darkgreen;
+   border-radius: 12px;
+   padding-left: 8pt;
+   padding-top: 2pt;
+   padding-bottom: 3pt;
+   padding-right: 12pt;
+   background: inherit;
+   color: inherit;
+   cursor: pointer;
+   user-select: none;
+}
+.check-config-wait-button {
+   border: 1px solid darkgreen;
+   border-radius: 12px;
+   padding-left: 8pt;
+   padding-top: 2pt;
+   padding-bottom: 3pt;
+   padding-right: 12pt;
+   background: inherit;
+   color: inherit;
+   cursor: not-allowed;
+   user-select: none;
+}
 
 /* https://blog.logrocket.com/creating-beautiful-tooltips-with-only-css */
 .tool-tip {
