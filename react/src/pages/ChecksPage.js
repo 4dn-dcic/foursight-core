@@ -450,7 +450,7 @@ const ChecksPage = (props) => {
             </div>
         }
         return <div>
-            <div className={"check-run-button"} style={style}
+            <div className={"check-run-button"} style={{...style, color:check.configuringCheckRun ? "yellow" : ""}}
                 onClick={(e) => {
                     if (check.configuringCheckRun) {
                         saveInputKwargs(check);
@@ -587,7 +587,7 @@ const ChecksPage = (props) => {
                     <span style={{color:check.results?.status?.toUpperCase() === "PASS" ? "darkgreen" : "red"}}><span className={"tool-tip"} data-text={"Click to " + (check.showingResultDetails ? "hide" : "show") + " result details."}>Results Summary</span>: {check.results?.summary}</span>&nbsp;&nbsp;
                     { check.results?.status?.toUpperCase() === "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>) }
                 </>):(<>
-                    { !check.showingResultDetails && <span>No results.</span> }
+                    { !check.showingResultDetails && <span>No recent results.</span> }
                 </>)}
             </small> }
             {/* Results details or loading results box */}
