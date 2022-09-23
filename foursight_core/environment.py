@@ -60,7 +60,6 @@ class Environment(object):
 
     def list_unique_environment_names(self) -> List[EnvName]:
         result = set()
-        print("XYZZY:foursight_core:list_unique_environment_names-1: calling list_environment_names")
         for env in self.list_environment_names():
             result.add(infer_foursight_from_env(envname=env))
         return sorted(result)  # a list and sorted
@@ -72,10 +71,8 @@ class Environment(object):
         Returns: a list of names
         """
         if self.cached_list_environment_names:
-            print("XYZZY:foursight_core:list_environment_names: CACHE HIT")
             return self.cached_list_environment_names
 
-        print("XYZZY:foursight_core:list_environment_names-1: calling get_all_environments - NO CACHE HIT")
         environment_names = [infer_foursight_from_env(envname=env)
                              for env in sorted(EnvManager.get_all_environments(env_bucket=self.get_env_bucket_name()))]
 
@@ -112,7 +109,6 @@ class Environment(object):
 
         if or_all and env == 'all':
             return True
-        print("XYZZY:foursight_core:is_valid_environment_name-1: calling list_environment_names")
         valid_envs = self.list_unique_environment_names() if strict else self.list_environment_names()
         return infer_foursight_from_env(envname=env) in valid_envs
 

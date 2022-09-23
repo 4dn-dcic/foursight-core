@@ -66,9 +66,6 @@ class AppUtilsCore(ReactApi):
     This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
     so that a class named AppUtils is easier to define in libraries that import foursight-core.
     """
-    print('xyzzy-ctor: env:')
-    print(os.environ.get("ENV_NAME"))
-    print(os.environ)
 
     # Define in subclass.
     APP_PACKAGE_NAME = None
@@ -161,7 +158,6 @@ class AppUtilsCore(ReactApi):
         and the given environment.
         Returns an FSConnection object or raises an error.
         """
-        print("XYZZY:INIT-CONNECTION-ACTION-1")
         environments = self.init_environments(environ) if _environments is None else _environments
         print("environments = %s" % str(environments))
         # if still not there, return an error
@@ -173,7 +169,6 @@ class AppUtilsCore(ReactApi):
                 'checks': {}
             }
             raise Exception(str(error_res))
-        print("XYZZY:FS-CONNECTION-1")
         connection = FSConnection(environ, environments[environ], host=self.host)
         return connection
 
@@ -315,8 +310,6 @@ class AppUtilsCore(ReactApi):
             except Exception as e:
                 logger.error(f"Exception getting allowed envs for: {email}")
                 logger.error(e)
-                print(f"XYZZY: Exception getting allowed envs for: {email}")
-                print(e)
         return (known_envs, allowed_envs, first_name, last_name)
 
     def get_default_env(self) -> str:
@@ -510,8 +503,6 @@ class AppUtilsCore(ReactApi):
         auth0_headers = {"content-type": "application/json"}
         auth0_response = requests.post(self.OAUTH_TOKEN_URL, data=auth0_payload_string, headers=auth0_headers)
         auth0_response_json = auth0_response.json()
-        print('xyzzy:auth0_callback:auth0_response::')
-        print(auth0_response_json)
         jwt_token = auth0_response_json.get("id_token")
         jwt_expires = auth0_response_json.get("expires_in")
 
@@ -533,8 +524,6 @@ class AppUtilsCore(ReactApi):
                                                                 expires=jwt_expires)
             response_headers["set-cookie"] = cookie_str
 
-        print("XYZZY:auth0_callback:headers:")
-        print(response_headers)
         return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
     def get_jwt_token(self, request_dict) -> str:
@@ -593,8 +582,6 @@ class AppUtilsCore(ReactApi):
         Does any final processing of a Foursight response before returning it. Right now, this includes:
         * Changing the response body if it is greater than 5.5 MB (Lambda body max is 6 MB)
         """
-        print('xyzzy:process_request:size:')
-        print(cls.get_size(response.body))
 #       if cls.get_size(response.body) > cls.LAMBDA_MAX_BODY_SIZE:  # should be much faster than json.dumps
 #           response.body = 'Body size exceeded 6 MB maximum.'
 #           response.status_code = 413
@@ -876,16 +863,8 @@ class AppUtilsCore(ReactApi):
             chalice.Response: redirect to future check landing page
         """
         # convert string query params to literals
-        print("XYZZY: view_run_check: 111")
-        print(environ)
-        print(check)
-        print(params)
         params = self.query_params_to_literals(params)
-        print("XYZZY: view_run_check: 222")
-        print(params)
         queued_uuid = self.queue_check(environ, check, params)
-        print("XYZZY: view_run_check: 333")
-        print(queued_uuid)
         # redirect to view page with a 302 so it isn't cached
         resp_headers = {'Location': '/'.join([context + 'view', environ, check, queued_uuid])}
         return Response(status_code=302, body=json.dumps(resp_headers),
@@ -907,22 +886,14 @@ class AppUtilsCore(ReactApi):
         Returns:
             chalice.Response: redirect to check view that called this action
         """
-        print("XYZZY: view_run_action")
-        print(environ)
-        print(action)
-        print(params)
         # convert string query params to literals
         params = self.query_params_to_literals(params)
-        print("XYZZY: view_run_action-2")
-        print(params)
         queued_uuid = self.queue_action(environ, action, params)
         # redirect to calling check view page with a 302 so it isn't cached
         if 'check_name' in params and 'called_by' in params:
-            print("XYZZY: view_run_action A")
             check_detail = '/'.join([params['check_name'], params['called_by']])
             resp_headers = {'Location': '/'.join([context + 'view', environ, check_detail])}
         else:
-            print("XYZZY: view_run_action B")
             # no check so cannot redirect
             act_path = '/'.join([context + 'checks', action, queued_uuid])
             return Response(
@@ -933,7 +904,6 @@ class AppUtilsCore(ReactApi):
                 },
                 status_code=200
             )
-        print("XYZZY: view_run_action C")
         return Response(status_code=302, body=json.dumps(resp_headers),
                         headers=resp_headers)
 
@@ -1374,7 +1344,6 @@ class AppUtilsCore(ReactApi):
             action = self.ActionResult(connection, res.get('action'))
             if action:
                 action_record_key = '/'.join([res['name'], 'action_records', res['uuid']])
-                print("XYZZY:S3-ACTION-1")
                 assc_action_key = connection.connections['s3'].get_object(action_record_key)
                 if assc_action_key:
                     assc_action_key = assc_action_key.decode()  # in bytes
@@ -1590,7 +1559,6 @@ class AppUtilsCore(ReactApi):
                 'es': es_address,
                 'ff_env': ff_env
             }
-            print("XYZZY:S3-ACTION-2")
             s3_connection = S3Connection(self.prefix + '-envs')
             s3_connection.put_object(proc_environ, json.dumps(env_entry))
             stage = self.stage.get_stage()
@@ -1665,7 +1633,6 @@ class AppUtilsCore(ReactApi):
         """
         if not bucket:
             bucket = cls.prefix + '-envs'
-        print("XYZZY:S3-ACTION-3")
         s3_connection = S3Connection(bucket)
         s3_resp = s3_connection.delete_keys([environ])
         keys_deleted = s3_resp['Deleted']
@@ -1877,11 +1844,8 @@ class AppUtilsCore(ReactApi):
         Returns:
             dict: run result if something was run, else None
         """
-        print("XYZZY: foursight_core/run_check_runner")
         sqs_url = runner_input.get('sqs_url')
-        print(sqs_url)
         if not sqs_url:
-            print("XYZZY: foursight_core/run_check_runner: no sql url")
             return
         client = boto3.client('sqs')
         response = client.receive_message(
@@ -1891,41 +1855,30 @@ class AppUtilsCore(ReactApi):
             VisibilityTimeout=300,
             WaitTimeSeconds=10
         )
-        print("XYZZY: foursight_core/run_check_runner: after receive_message")
         message = response.get('Messages', [{}])[0]
         body = message.get('Body')
         receipt = message.get('ReceiptHandle')
         if not body or not receipt:
-            print("XYZZY: foursight_core/run_check_runner: no body or receipt")
             # if no messages recieved in 10 seconds of long polling, terminate
             return None
-        print("XYZZY: foursight_core/run_check_runner: load check list")
         check_list = json.loads(body)
-        print(check_list)
         if not isinstance(check_list, list) or len(check_list) != 5:
             # if not a valid check str, remove the item from the SQS
-            print("XYZZY: foursight_core/run_check_runner: not valid check list")
             self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
         [run_env, run_uuid, run_name, run_kwargs, run_deps] = check_list
         # find information from s3 about completed checks in this run
         # actual id stored in s3 has key: <run_uuid>/<run_name>
-        print("XYZZY: foursight_core/run_check_runner: continuing")
         if run_deps and isinstance(run_deps, list):
-            print("XYZZY: foursight_core/run_check_runner: no run deps")
             already_run = self.collect_run_info(run_uuid)
             deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
             finished_dependencies = set(deps_w_uuid).issubset(already_run)
             if not finished_dependencies:
-                print(f'-RUN-> Not ready for: {run_name}')
+                pass
         else:
-            print("XYZZY: foursight_core/run_check_runner: finish deps")
             finished_dependencies = True
-        print("XYZZY: foursight_core/run_check_runner: before init connection")
         connection = self.init_connection(run_env)
-        print("XYZZY: foursight_core/run_check_runner: after init connection")
         if finished_dependencies:
-            print("XYZZY: foursight_core/run_check_runner: finished deps")
             # add the run uuid as the uuid to kwargs so that checks will coordinate
             if 'uuid' not in run_kwargs:
                 run_kwargs['uuid'] = run_uuid
@@ -1936,7 +1889,6 @@ class AppUtilsCore(ReactApi):
                 found_rec = connection.get_object(rec_key)
                 if found_rec is not None:
                     # the action record has been written. Abort and propogate
-                    print(f'-RUN-> Found existing action record: {rec_key}. Skipping')
                     self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
                     return None
                 else:
@@ -1979,7 +1931,6 @@ class AppUtilsCore(ReactApi):
         """
         Returns a set of run checks under this run uuid
         """
-        print("XYZZY:S3-ACTION-4")
         s3_connection = S3Connection(cls.prefix + '-runs')
         run_prefix = ''.join([run_uuid, '/'])
         complete = s3_connection.list_all_keys_w_prefix(run_prefix)
@@ -1989,18 +1940,10 @@ class AppUtilsCore(ReactApi):
     _app_utils = None
     @staticmethod
     def singleton(cls = None):
-        print("XYZZY:EXPERIMENTAL:singleton-1")
         if not AppUtilsCore._app_utils:
-            print("XYZZY:EXPERIMENTAL:singleton-2")
             if not cls:
-                print("XYZZY:EXPERIMENTAL:singleton-3!")
                 cls = AppUtilsCore
-            print("XYZZY:EXPERIMENTAL:singleton-4")
             AppUtilsCore._app_utils = cls()
-            print("XYZZY:EXPERIMENTAL:singleton-5")
-        print("XYZZY:EXPERIMENTAL:singleton-6")
-        print("XYZZY:EXPERIMENTAL:singleton-class:")
-        print(type(AppUtilsCore._app_utils))
         return AppUtilsCore._app_utils
 
 class AppUtils(AppUtilsCore):  # for compatibility with older imports

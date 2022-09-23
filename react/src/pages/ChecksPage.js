@@ -23,8 +23,11 @@ const ChecksPage = (props) => {
     let [ error, setError ] = useState(false);
     let [ selectedGroups, setSelectedGroups ] = useState([])
     let [ selectedHistories, setSelectedHistories ] = useState([])
+    let [ checksStatus, setChecksStatus ] = useState({});
+    let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
 
     useEffect(() => {
+
         const groupedChecksUrl = SERVER.Url(`/checks`, environ);
         FETCH.get(groupedChecksUrl, groupedChecks => {
             setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
@@ -37,12 +40,23 @@ const ChecksPage = (props) => {
                 showGroup(group);
             }
         }, setLoading, setError);
+
         const lambdasUrl = SERVER.Url(`/lambdas`, environ);
         FETCH.get(lambdasUrl, lambdas => {
             setLambdas(lambdas.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0)));
         });
-            
+
+        refreshChecksStatus();
+        setInterval(() => { refreshChecksStatus(); }, 10000);
     }, []);
+
+    function refreshChecksStatus() {
+        setChecksStatusLoading(true);
+        const url = SERVER.Url(`/checks-status`, environ);
+        FETCH.get(url, response => {
+            setChecksStatus(e => ({...response}));
+        }, setChecksStatusLoading);
+    }
 
     // This is a bit tedious to unwrap. This is what a check record looks like:
     // {
@@ -159,7 +173,7 @@ const ChecksPage = (props) => {
         }
     }
     function hideGroup(group) {
-        group.checks.map(check => hideResultsHistory(check));
+        group.checks.map(check => hideHistory(check));
         const index = findSelectedGroupIndex(group);
         selectedGroups.splice(index, 1);
         noteChangedResults();
@@ -277,7 +291,7 @@ const ChecksPage = (props) => {
         FETCH.get(runCheckUrl, response => { check.queueingCheckRun = false; check.fetchingResult = false; check.queuedCheckRun = response.uuid });
         check.queuedCheckRun = null;
         showCheckRunningBox(check);
-        showResultsHistory(check);
+        showHistory(check);
         setTimeout(() => { if (!check.fetchingResult) { refreshHistory(check); noteChangedCheckBox(); } }, 10000);
     }
 
@@ -479,7 +493,7 @@ const ChecksPage = (props) => {
     }
 
     const ToggleHistoryButton = ({check, style}) => {
-        return <span style={{...style, xpaddingTop:"10px",cursor:"pointer"}} onClick={() => onClickShowResultsHistory(check)}>
+        return <span style={{...style, xpaddingTop:"10px",cursor:"pointer"}} onClick={() => onClickShowHistory(check)}>
             <span data-text={"Click here to " + (check.showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
                 <img onClick={(e) => {}} src="https://cdn-icons-png.flaticon.com/512/32/32223.png" style={{marginBottom:"4px",height:"17"}} />
             </span>
@@ -647,7 +661,7 @@ const ChecksPage = (props) => {
             <div title={check.name}>
                 <b>{check.title}</b>&nbsp;
                 { check.history && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",color:"darkred",fontWeight:"bold"}} onClick={() => {refreshHistory(check)}}>&#8635;&nbsp;&nbsp;</span></span> }
-                <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideResultsHistory(check)})}><b>&#x2717;</b></span>
+                <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check)})}><b>&#x2717;</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
             { check.showingHistory && (<>
@@ -719,21 +733,21 @@ const ChecksPage = (props) => {
         </div>
     }
 
-    function onClickShowResultsHistory(check) {
+    function onClickShowHistory(check) {
         toggleResultsHistory(check);
     }
 
     function toggleResultsHistory(check) {
         if (check.showingHistory) {
-            hideResultsHistory(check);
+            hideHistory(check);
         }
         else {
-            showResultsHistory(check);
+            showHistory(check);
         }
     }
 
-    function showResultsHistory(check) {
-        if (!check.showingHistory) {
+    function showHistory(check) {
+        //if (!check.showingHistory) {
             check.showingHistory = true;
             selectedHistories.unshift(check);
             noteChangedHistories();
@@ -741,10 +755,10 @@ const ChecksPage = (props) => {
                 const resultsHistoryUrl = SERVER.Url(`/checks/${check.name}/history`, environ);
                 FETCH.get(resultsHistoryUrl, history => { check.history = history; noteChangedHistories(); });
             }
-        }
+        //}
     }
 
-    function hideResultsHistory(check) {
+    function hideHistory(check) {
         if (check.showingHistory) {
             check.showingHistory = false;
             const index = findResultsHistoryIndex(check);
@@ -774,8 +788,8 @@ const ChecksPage = (props) => {
     function refreshHistory(check) {
         check.history = null;
         if (check.showingHistory) {
-            hideResultsHistory(check);
-            showResultsHistory(check);
+            hideHistory(check);
+            showHistory(check);
         }
     }
 
@@ -834,6 +848,26 @@ const ChecksPage = (props) => {
         return check?.showingResults;
     }
 
+    const ChecksStatus = () => {
+        return <>
+            <table><tbody><tr><td style={{whiteSpace:"nowrap"}}>
+            &nbsp;<b style={{cursor:"pointer"}} onClick={() => refreshChecksStatus()}>Checks Status</b>
+            &nbsp;&nbsp;
+            </td><td>
+            { checksStatusLoading ? <>
+                { <BarSpinner loading={checksStatusLoading} size={60} color={"black"} /> }
+            </>:<>
+                <b style={{cursor:"pointer"}} onClick={() => refreshChecksStatus()}>&#8635;</b>
+            </>}
+            </td></tr></tbody></table>
+            <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+                <b>Running</b>: {!checksStatusLoading ? checksStatus.checks_running : "..."}
+                <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
+                <b>Queued</b>: {!checksStatusLoading ? checksStatus.checks_queued : "..."}
+           </div>
+        </>
+    }
+
     if (error) return <>Cannot load users from Foursight: {error}</>;
     if (loading) {
         return <>
@@ -848,6 +882,7 @@ const ChecksPage = (props) => {
                 <tr>
                     <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>
                         <ChecksGroupBox />
+                        <ChecksStatus />
                         <LambdasBox />
                     </td>
                     <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>

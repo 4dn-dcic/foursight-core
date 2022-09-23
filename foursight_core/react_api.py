@@ -159,14 +159,9 @@ class ReactApi:
                                                                  value=authenvs,
                                                                  domain=domain,
                                                                  expires=jwt_expires)
-        print('xyzzy:auth0_callback:authtoken_cookie:')
-        print(authtoken_cookie)
-        print(authenvs_cookie)
         response_headers["set-cookie"] = authtoken_cookie
         response_headers["Set-Cookie"] = authenvs_cookie
 
-        print("XYZZY:REACT:auth0_callback:headers:")
-        print(response_headers)
         return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
     def authorize(self, request, env) -> dict:
@@ -176,60 +171,49 @@ class ReactApi:
         returns an dictonary indicating authentication/authorization failure.
         """
         if not request:
-            print('xyzzy:not-authentictated-0')
             return { "authenticated": False, "status": "no-request" }
         if not isinstance(request, dict):
-            print('xyzzy:not-authentictated-1')
             request = request.to_dict();
         if self.is_running_locally(request):
             #
             # If running locally (localhost) AND if this is request indicates that the user is
             # faux logged in then we bypass authentication altogether and return authenticated response.
             #
-            print('xyzzy:not-authentictated-2')
             if self.is_local_faux_logged_in(request):
                 return { "authenticated": True, "user": "faux" }
         try:
 
             test_mode_not_authorized = self.read_cookie("test_mode_not_authorized", request)
             if test_mode_not_authorized == "1":
-                print('xyzzy:not-authentictated-3')
                 return { "authenticated": False, "status": "test-mode-not-authorized" }
 
             authtoken_encrypted = self.read_cookie("authtoken", request)
             if not authtoken_encrypted:
-                print('xyzzy:not-authentictated-4')
                 return { "authenticated": False, "status": "no-authtoken" }
 
             authtoken_info = self.reconstitute_authtoken(authtoken_encrypted, env)
             if not authtoken_info:
-                print('xyzzy:not-authentictated-5')
                 return { "authenticated": False, "status": "bad-authtoken" }
 
             jwt = authtoken_info["jwt"]
             if not jwt:
-                print('xyzzy:not-authentictated-6')
                 return { "authenticated": False, "status": "no-jwt" }
 
             jwt_expires_time_t = jwt.get("exp")
             current_time_t = int(time.time())
             if jwt_expires_time_t <= current_time_t:
-                print('xyzzy:not-authentictated-7')
                 return { "authenticated": False, "status": "jwt-expired" }
 
             allowed_envs = authtoken_info.get("allowed_envs")
             if not allowed_envs:
-                print('xyzzy:not-authentictated-8')
                 return { "authenticated": False, "status": "no-allowed-envs" }
             if not self.is_allowed_env(env, allowed_envs):
-                print('xyzzy:not-authentictated-9')
                 return { "authenticated": False, "status": "not-allowed-env" }
 
             # Sanity check the decrypted authtoken be comparing our known Auth0 client ID
             # with the ("sub" field of the) JWT from the Auth0 authentication process.
 
             if jwt.get("aud") != self.get_auth0_client_id(env):
-                print('xyzzy:not-authentictated-a')
                 return { "authenticated": False, "status": "authtoken-mismatch" }
 
             # Return the raw JWT token as well as most of its info unpacked in a nicer form for UI usage.
@@ -243,8 +227,6 @@ class ReactApi:
             return authtoken_info
 
         except Exception as e:
-            print('xyzzy:not-authentictated-b')
-            print('XYZZY:ReactApi.authorize:error')
             print(e)
             return { "authenticated": False, "status": "exception", "exception": str(e) }
 
@@ -871,7 +853,7 @@ class ReactApi:
                         check_setup_item["registered_kwargs"] = checks_decorator_kwargs
 
 
-    def react_route_raw_checks(self, request, env: str) -> dict:
+    def react_route_checks_raw(self, request, env: str) -> dict:
 
         authorize_response = self.authorize(request, env)
         if not authorize_response or not authorize_response["authenticated"]:
@@ -936,6 +918,22 @@ class ReactApi:
         response = self.process_response(response)
         return response
 
+    def react_route_checks_status(self, request, env: str) -> dict:
+
+        authorize_response = self.authorize(request, env)
+        if not authorize_response or not authorize_response["authenticated"]:
+            return self.react_forbidden_response(authorize_response)
+
+        response = self.create_standard_response("react_route_checks_status")
+        checks_queue = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
+        checks_running = checks_queue.get('ApproximateNumberOfMessagesNotVisible')
+        checks_queued = checks_queue.get('ApproximateNumberOfMessages')
+        response.body = {
+            "checks_running": checks_running,
+            "checks_queued": checks_queued
+        }
+        return self.process_response(response)
+
     def reactapi_route_lambdas(self, request, env: str) -> dict:
 
         authorize_response = self.authorize(request, env)
@@ -971,16 +969,8 @@ class ReactApi:
     def reactapi_route_check_run(self, request, env: str, check: str, args: str):
         # TODO: What is this primary thing for? It is an option on the old/existing UI.
         response = self.create_standard_response("reactapi_route_check_run")
-        print('xyzzy:reactapi_route_check_run-1')
-        print(args)
-        print('xyzzy:reactapi_route_check_run-2')
         args = self.encryption.decode(args)
-        print('xyzzy:reactapi_route_check_run-2')
-        print(args)
         args = json.loads(args)
-        print('xyzzy:reactapi_route_check_run-3')
-        print(args)
-        print(type(args))
         queued_uuid = self.queue_check(env, check, args)
         #params = {"primary": True}
         #queued_uuid = self.queue_check(env, check, params)
@@ -1040,8 +1030,6 @@ class ReactApi:
         try:
             s3 = boto3.resource("s3")
             s3_object = s3.Object(bucket_name, bucket_key_name)
-            print("XYZZY:reactapi_route_aws_s3_bucket_key_content")
-            print(s3_object)
             return s3_object.get()["Body"].read().decode("utf-8")
         except Exception as e:
             print("XYZZY:reactapi_route_aws_s3_bucket_key_content:EXCEPTION")
@@ -1073,11 +1061,7 @@ class ReactApi:
         if not authorize_response or not authorize_response["authenticated"]:
             return self.react_forbidden_response(authorize_response)
 
-        print('xyzzy:reactapi_route_aws_s3_bucket_key_content')
-        print(bucket)
-        print(key)
         key = urllib.parse.unquote(key)
-        print(key)
         response = self.create_standard_response("reactapi_route_aws_s3_bucket_key_content")
         response.body = self.get_bucket_key_contents(bucket, key)
         return self.process_response(response)
