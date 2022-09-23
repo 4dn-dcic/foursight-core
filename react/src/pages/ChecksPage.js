@@ -454,10 +454,12 @@ const ChecksPage = (props) => {
                 onClick={(e) => {
                     if (check.configuringCheckRun) {
                         saveInputKwargs(check);
-                        runCheck(check)
+                        showResultBox(check);
+                        runCheck(check);
                     }
                     else {
                         check.configuringCheckRun = true;
+                        showResultBox(check);
                         noteChangedCheckBox(check);
                     }
                 }}>
@@ -495,7 +497,7 @@ const ChecksPage = (props) => {
                         <td style={{verticalAlign:"top",width:"1%","cursor":"pointer"}} onClick={() => {toggleCheckResultsBox(check)}}>
                             <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
                         </td>
-                        <td style={{veriticalAlign:"top",whiteSpace:"nowrap"}} title={check.name}>
+                        <td style={{veriticalAlign:"top",maxWidth:"600pt",width:"100%"}} title={check.name}>
                             { (!check.configuringCheckRun) ? <>
                                 <RunButton check={check} style={{marginLeft:"30pt",marginTop:"-3pt",float:"right"}} />
                             </>:<>
@@ -558,7 +560,7 @@ const ChecksPage = (props) => {
     }
 
     const ResultDetailsBox = ({check, style}) => {
-        return <pre className={check.results?.status?.toUpperCase() === "PASS" ? "check-pass" : "check-warn"} style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"415pt"}}>
+        return <pre className={check.results?.status?.toUpperCase() === "PASS" ? "check-pass" : "check-warn"} style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
             <div style={{float:"right",marginTop:"-10px"}}>
             <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{JSON.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
             <img onClick={() => CLIPBOARD.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src="https://cdn.iconscout.com/icon/premium/png-256-thumb/document-1767412-1505234.png" height="19" />
