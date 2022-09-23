@@ -747,7 +747,7 @@ const ChecksPage = (props) => {
     }
 
     function showHistory(check) {
-        //if (!check.showingHistory) {
+        if (!check.showingHistory) {
             check.showingHistory = true;
             selectedHistories.unshift(check);
             noteChangedHistories();
@@ -755,7 +755,7 @@ const ChecksPage = (props) => {
                 const resultsHistoryUrl = SERVER.Url(`/checks/${check.name}/history`, environ);
                 FETCH.get(resultsHistoryUrl, history => { check.history = history; noteChangedHistories(); });
             }
-        //}
+        }
     }
 
     function hideHistory(check) {
