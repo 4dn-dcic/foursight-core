@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { BarSpinner } from "../Spinners";
 import { RingSpinner } from "../Spinners";
 import CLIPBOARD from '../utils/CLIPBOARD';
+import COOKIE from '../utils/COOKIE';
 import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
 import SERVER from '../utils/SERVER';
@@ -464,7 +465,7 @@ const ChecksPage = (props) => {
             </div>
         }
         return <div>
-            <div className={"check-run-button"} style={{...style, color:check.configuringCheckRun ? "yellow" : ""}}
+            <div className={"check-run-button"} style={{...style, background:!COOKIE.IsReadOnlyMode() ? "#888888" : "",color:check.configuringCheckRun ? "yellow" : ""}}
                 onClick={(e) => {
                     if (check.configuringCheckRun) {
                         saveInputKwargs(check);
@@ -477,11 +478,16 @@ const ChecksPage = (props) => {
                         noteChangedCheckBox(check);
                     }
                 }}>
+                    {/* TODO backwards readonly */}
                 <span className={"tool-tip"} data-text={"Click to run this check."}>
-                    { check.configuringCheckRun ? <>
-                        <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<span>Run</span>
+                    { COOKIE.IsReadOnlyMode() ? <>
+                        { check.configuringCheckRun ? <>
+                            <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<span>Run</span>
+                        </>:<>
+                            <span style={{fontSize:"small"}}></span>&nbsp;<span>Run ...</span>
+                        </>}
                     </>:<>
-                        <span style={{fontSize:"small"}}></span>&nbsp;<span>Run ...</span>
+                        <span style={{fontSize:"",color:"#DDDDDD",background:"#888888"}}><small>&nbsp;</small>Disabled</span>
                     </>}
                 </span>
             </div>
