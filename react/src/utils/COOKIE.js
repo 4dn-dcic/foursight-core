@@ -7,14 +7,15 @@ import CONTEXT from './CONTEXT';
 import STR from './STR';
 import TYPE from './TYPE';
 
-const _cookies              = new Cookies()
-const _authTokenCookieName  = "authtoken";
-const _authEnvsCookieName   = "authenvs";
-const _fauxLoginCookieName  = "test_mode_login_localhost";
-const _redirectCookieName   = "reactredir";
-const _lastUrlCookieName    = "lasturl";
-const _cookiePath           = "/";
-const _cookieDomain         = document.location.hostname;
+const _cookies                = new Cookies()
+const _authTokenCookieName    = "authtoken";
+const _authEnvsCookieName     = "authenvs";
+const _fauxLoginCookieName    = "test_mode_login_localhost";
+const _redirectCookieName     = "reactredir";
+const _lastUrlCookieName      = "lasturl";
+const _readOnlyModeCookieName = "readonly";
+const _cookiePath             = "/";
+const _cookieDomain           = document.location.hostname;
 
 // -------------------------------------------------------------------------------------------------
 // General cookie functions.
@@ -222,6 +223,18 @@ function SetRedirectCookie(url, expires = null) {
 }
 
 // -------------------------------------------------------------------------------------------------
+// Readonly mode related cookies.
+// -------------------------------------------------------------------------------------------------
+
+function IsReadOnlyMode() {
+    return GetCookie(_readOnlyModeCookieName) === "1";
+}
+
+function SetReadOnlyMode(value) {
+    SetCookie(_readOnlyModeCookieName, value ? "1" : "0");
+}
+
+// -------------------------------------------------------------------------------------------------
 // Test mode related cookies.
 // -------------------------------------------------------------------------------------------------
 
@@ -256,9 +269,11 @@ export default {
     GetLastUrl:      GetLastUrlCookie,
     HasAuthToken:    HasAuthTokenCookie,
     HasFauxLogin:    HasFauxLoginCookie,
+    IsReadOnlyMode:  IsReadOnlyMode,
     Set:             SetCookie,
     SetFauxLogin:    SetFauxLoginCookie,
     SetLastUrl:      SetLastUrlCookie,
+    SetReadOnlyMode: SetReadOnlyMode,
     SetRedirect:     SetRedirectCookie,
 
     TestMode: {

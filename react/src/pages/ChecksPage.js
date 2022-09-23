@@ -478,7 +478,11 @@ const ChecksPage = (props) => {
                     }
                 }}>
                 <span className={"tool-tip"} data-text={"Click to run this check."}>
-                    <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<span>Run</span>
+                    { check.configuringCheckRun ? <>
+                        <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<span>Run</span>
+                    </>:<>
+                        <span style={{fontSize:"small"}}></span>&nbsp;<span>Run ...</span>
+                    </>}
                 </span>
             </div>
         </div>

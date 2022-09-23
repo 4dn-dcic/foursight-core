@@ -1,12 +1,13 @@
 import './css/App.css';
 import React from 'react';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import Global from "./Global";
 import { BarSpinner } from "./Spinners";
 import AUTH from './utils/AUTH';
 import CLIENT from './utils/CLIENT';
 import CONTEXT from './utils/CONTEXT';
+import COOKIE from './utils/COOKIE';
 import ENV from './utils/ENV';
 import LOGOUT from './utils/LOGOUT';
 import TIME from './utils/TIME';
@@ -14,6 +15,7 @@ import TIME from './utils/TIME';
 const Header = (props) => {
 
     const [ header ] = useContext(Global);
+    const [ readOnlyMode, setReadOnlyMode ] = useState(COOKIE.IsReadOnlyMode());
     //
     // Very odd but this below (dummy) usage of useNavigate is REQUIRED in order for
     // the header navigation links (e.g. HOME, INFO) to work properly. If this is not
@@ -224,6 +226,16 @@ const Header = (props) => {
                 <div>
                     {/* Could put some other branding here ... */}
                     {/* <img src="https://avatars.githubusercontent.com/u/23222469?s=200&v=4" height="60" /> */}
+                    {  readOnlyMode ? <>
+                        <img src="https://media.istockphoto.com/illustrations/unlock-icon-special-soft-green-round-button-illustration-id985414200?k=20&m=985414200&s=170667a&w=0&h=krNp8Z0zvh_m-_ddgx7lhNQ-I6Ljeds71lMn6brQG1M="
+                            style={{height:"70",width:"68",marginTop:"10pt",marginRight:"13pt",cursor:"pointer"}}
+                            onClick={() => { COOKIE.SetReadOnlyMode(false); setReadOnlyMode(false); }}/>
+                    </>:<>
+                        <img src="https://www.emparion.com/wp-content/uploads/2020/12/LOCK-ICON-red-300x300.jpg"
+                            style={{height:"80",marginTop:"6pt",marginRight:"10pt",cursor:"pointer"}}
+                            onClick={() => { COOKIE.SetReadOnlyMode(true); setReadOnlyMode(true); }}/>
+                    </>}
+
                 </div>
             </div>
             </React.Fragment>)}
