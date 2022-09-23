@@ -8,6 +8,7 @@ import SERVER from './utils/SERVER';
 
 import AwsS3Page from './pages/aws/AwsS3Page';
 import ChecksPage from './pages/ChecksPage';
+import CheckHistoryPage from './pages/CheckHistoryPage';
 import EnvPage from './pages/EnvPage';
 import Footer from './Footer';
 import ForbiddenPage from './pages/ForbiddenPage';
@@ -75,6 +76,11 @@ const App = () => {
                     <Route path="/api/react/:environ/checks" element={
                         <Page.AuthorizationRequired>
                             <ChecksPage />
+                        </Page.AuthorizationRequired>
+                    }/>
+                    <Route path="/api/react/:environ/checks/:check/history" element={
+                        <Page.AuthorizationRequired>
+                            <CheckHistoryPage />
                         </Page.AuthorizationRequired>
                     }/>
                     <Route path="/api/react/:environ/home" element={

@@ -293,24 +293,31 @@ class AppUtilsCore(ReactApi):
     def get_auth0_secret(self, env_name: str) -> str:
         return os.environ.get("CLIENT_SECRET")
 
-    def get_envs(self, email: str) -> [list, list]:
+    def get_envs(self, email: str) -> [list, list, str, str]:
         """
         Returns a tuple containing (in left-right order) the list of annotated unique environments,
-        and the list of allowed environment names.
+        and the list of allowed environment names; and also since we're getting the user record
+        anyways, the first and last name of the user for informational/display purposes.
         """
         allowed_envs = []
         known_envs = self.get_unique_annotated_environment_names()
+        first_name = None
+        last_name = None
         for known_env in known_envs:
             try:
                 user = ff_utils.get_metadata('users/' + email, ff_env=known_env["full_name"], add_on="frame=object&datastore=database")
                 if user:
+                    if not first_name:
+                        first_name = user.get("first_name")
+                    if not last_name:
+                        last_name = user.get("last_name")
                     allowed_envs.append(known_env["full_name"])
             except Exception as e:
                 logger.error(f"Exception getting allowed envs for: {email}")
                 logger.error(e)
                 print(f"XYZZY: Exception getting allowed envs for: {email}")
                 print(e)
-        return (known_envs, allowed_envs)
+        return (known_envs, allowed_envs, first_name, last_name)
 
     def get_default_env(self) -> str:
         return os.environ.get("ENV_NAME", DEFAULT_ENV)
@@ -377,7 +384,7 @@ class AppUtilsCore(ReactApi):
     def create_delete_cookie_string(self, request, name: str, domain: str, path: str = "/") -> str:
         return self.create_set_cookie_string(request, name=name, value=None, domain=domain, path=path, expires="now") 
 
-    def create_authtoken(self, jwt_token: str, allowed_envs: list, env: str) -> str:
+    def create_authtoken(self, jwt_token: str, allowed_envs: list, first_name: str, last_name: str, env: str) -> str:
         """
         Used only for Foursight React.
         Returns the value for the authtoken cookie consisting of
@@ -388,7 +395,9 @@ class AppUtilsCore(ReactApi):
         allowed_envs_encoded = self.encryption.encode(allowed_envs)
         authtoken_json = {
             "jwt": jwt_token,
-            "env": allowed_envs_encoded
+            "env": allowed_envs_encoded,
+            "first_name": first_name,
+            "last_name": last_name
         }
         authtoken = self.encryption.encrypt(authtoken_json)
         return authtoken

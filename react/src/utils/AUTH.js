@@ -51,6 +51,15 @@ function LoggedInUser(header) {
     return header?.auth?.authenticated ? header.auth?.user : "unknown";
 }
 
+function LoggedInUserName(header) {
+    if (CONTEXT.Client.IsLocal() && IsFauxLoggedIn()) {
+        return "faux-login";
+    }
+    const first_name = header?.auth?.authenticated ? header.auth?.first_name : "";
+    const last_name = header?.auth?.authenticated ? header.auth?.last_name : "";
+    return first_name + " " + last_name;
+}
+
 function LoggedInUserVerified(header) {
     return header?.auth?.authenticated ? header.auth?.user_verified : false;
 }
@@ -75,6 +84,7 @@ export default {
     IsFauxLoggedIn:            IsFauxLoggedIn,
     IsLoggedIn:                IsLoggedIn,
     LoggedInUser:              LoggedInUser,
+    LoggedInUserName:          LoggedInUserName,
     LoggedInUserVerified:      LoggedInUserVerified,
     LoggedInUserJwt:           LoggedInUserJwt,
     LoggedInUserAuthToken:     LoggedInUserAuthToken,

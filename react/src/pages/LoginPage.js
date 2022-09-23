@@ -10,12 +10,15 @@ import CONTEXT from '../utils/CONTEXT';
 import COOKIE from '../utils/COOKIE';
 import LOGOUT from '../utils/LOGOUT';
 import TIME from '../utils/TIME';
+import YAML from '../utils/YAML';
 import Page from '../Page';
 
 const LoginPage = (props) => {
 
     const [ header ] = useContext(Global);
     const [ showingAuthBox, setShowingAuthBox ] = useState(false);
+    let [ showingAuthToken, setShowAuthToken ] = useState(false);
+    let [ showingAuthEnvs, setShowAuthEnvs ] = useState(false);
     const [args] = useSearchParams();
     const showAuthBoxAtOutset = args.get("auth")?.length >= 0;
 
@@ -76,7 +79,21 @@ const LoginPage = (props) => {
     return <>
         { AUTH.IsLoggedIn(header) ? (<React.Fragment>
             <div className="container">
-                <div className="boxstyle info" style={{margin:"20pt",padding:"10pt",color:"darkblue"}}>
+                {AUTH.LoggedInUserName(header) && <b style={{marginLeft:"4pt",color:"darkblue"}}>Hello, {AUTH.LoggedInUserName(header)} ...</b>}
+                <div style={{float:"right",marginRight:"8pt",color:"darkblue",fontSize:"small",cursor:"pointer"}}>
+                    { showingAuthToken ? <>
+                        <span onClick={() => setShowAuthToken(false)}><b>AuthToken</b> &#x2193;</span>
+                    </>:<>
+                        <span onClick={() => setShowAuthToken(true)}><b>AuthToken</b> &#x2191;</span>
+                    </>}
+                    &nbsp;|&nbsp;
+                    { showingAuthEnvs ? <>
+                        <span onClick={() => setShowAuthEnvs(false)}><b>AuthEnvs</b> &#x2193;</span>
+                    </>:<>
+                        <span onClick={() => setShowAuthEnvs(true)}><b>AuthEnvs</b> &#x2191;</span>
+                    </>}
+                </div>
+                <div className="boxstyle info" style={{marginLeft:"0pt",padding:"10pt",color:"darkblue"}}>
                     { AUTH.IsFauxLoggedIn() ? (<span>
                         Logged in as:&nbsp;<b>faux-login</b>
                         <br />
@@ -108,6 +125,18 @@ const LoginPage = (props) => {
                         </tr></tbody></table>
                     </span>)}
                 </div>
+                { showingAuthToken &&
+                    <div className="boxstyle info" style={{paddingLeft:"8pt",color:"darkblue",fontSize:"small"}}>
+                        <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>AuthToken</b> (server-side encrypted cookie)</span>
+                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(AUTH.LoggedInUserAuthToken(header))}</pre>
+                    </div>
+                }
+                { showingAuthEnvs &&
+                    <div className="boxstyle info" style={{paddingLeft:"8pt",color:"darkblue",fontSize:"small"}}>
+                        <span onClick={() => setShowAuthEnvs(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>AuthEnvs</b> (base-64 encoded cookie)</span>
+                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(AUTH.LoggedInUserAuthEnvs(header))}</pre>
+                    </div>
+                }
             </div>
         </React.Fragment>):(<React.Fragment>
         <div className="container" id="login_container">

@@ -121,7 +121,9 @@ class ReactApi:
         return {
             "jwt": jwt_decoded,
             "jwt_token": jwt_token,
-            "allowed_envs": allowed_envs_json
+            "allowed_envs": allowed_envs_json,
+            "first_name": authtoken_json.get("first_name"),
+            "last_name": authtoken_json.get("last_name")
         }
 
     # TODO: This needs massive cleanup after messing with WRT React.
@@ -136,8 +138,8 @@ class ReactApi:
 
         jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
         email = jwt_token_decoded.get("email")
-        (known_envs, allowed_envs) = self.get_envs(email)
-        authtoken = self.create_authtoken(jwt_token, allowed_envs, env)
+        (known_envs, allowed_envs, first_name, last_name) = self.get_envs(email)
+        authtoken = self.create_authtoken(jwt_token, allowed_envs, first_name, last_name, env)
         authtoken_cookie = self.create_set_cookie_string(request, name="authtoken",
                                                                   value=authtoken,
                                                                   domain=domain,
@@ -927,6 +929,7 @@ class ReactApi:
         history = {
             "check": check,
             "env": env,
+            "history_kwargs": history_kwargs,
             "history": history
         }
         response.body = history
