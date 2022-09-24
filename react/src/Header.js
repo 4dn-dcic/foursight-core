@@ -11,8 +11,10 @@ import COOKIE from './utils/COOKIE';
 import ENV from './utils/ENV';
 import LOGOUT from './utils/LOGOUT';
 import TIME from './utils/TIME';
-import LockImage from './media/lock.jpg';
-import UnlockImage from './media/unlock.jpg';
+// Issues with serving images ONLY from 4dn-dcic/dev NOT from cgap-supertest ...
+// So serve from my GitHub account for now ...
+// import LockImage from './media/lock.jpg';
+// import UnlockImage from './media/unlock.jpg';
 
 const Header = (props) => {
 
@@ -230,13 +232,13 @@ const Header = (props) => {
                     {/* <img src="https://avatars.githubusercontent.com/u/23222469?s=200&v=4" height="60" /> */}
                     {  CLIENT.IsReadOnlyMode(header) ? <>
                         <span className={"tool-tip"} data-text={"You are in readonly mode. Click to enter read/write mode."}>
-                            <img src={LockImage}
+                            <img src={"https://raw.githubusercontent.com/dmichaels/public/master/img/lock.f70cb2627ad278feb47e.jpg"}
                                 style={{height:"30",cursor:"pointer"}}
                                 onClick={() => CLIENT.SetReadOnlyMode(false, setHeader)}/>
                         </span>
                     </>:<>
                         <span className={"tool-tip"} data-text={"You are in read/write mode. Click to enter readonly mode."}>
-                            <img src={UnlockImage}
+                            <img src={"https://raw.githubusercontent.com/dmichaels/public/master/img/unlock.a39edec5f19bde275fe6.jpg"}
                                 style={{height:"30",cursor:"pointer"}}
                                 onClick={() => CLIENT.SetReadOnlyMode(true, setHeader)}/>
                         </span>
