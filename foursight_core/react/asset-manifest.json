@@ -2,8 +2,6 @@
   "files": {
     "main.css": "/api/react/static/css/main.css",
     "main.js": "/api/react/static/js/main.js",
-    "static/media/lock.jpg": "/api/react/static/media/lock.f70cb2627ad278feb47e.jpg",
-    "static/media/unlock.jpg": "/api/react/static/media/unlock.a39edec5f19bde275fe6.jpg",
     "index.html": "/api/react/index.html"
   },
   "entrypoints": [
