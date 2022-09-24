@@ -3,6 +3,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import CONTEXT from './CONTEXT';
+import COOKIE from './COOKIE';
 import ENV from './ENV';
 import PATH from './PATH';
 import STR from './STR';
@@ -104,15 +105,35 @@ function GetCurrentLogicalPath() {
 }
 
 // -------------------------------------------------------------------------------------------------
+// Readonly mode related function.
+// -------------------------------------------------------------------------------------------------
+
+function IsReadOnlyMode(header) {
+    return header?.readOnlyMode || COOKIE.IsReadOnlyMode();
+}
+
+function SetReadOnlyMode(value, setHeader) {
+    
+    if (TYPE.IsBoolean(value)) {
+        if (TYPE.IsFunction(setHeader)) {
+            setHeader(e => ({...e, readOnlyMode: value}));
+        }
+        COOKIE.SetReadOnlyMode(value);
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    BasePath: CONTEXT.Client.BasePath,
-    BaseUrl:  CONTEXT.Client.BaseUrl,
-    Domain:   CONTEXT.Client.Domain,
-    HomeUrl:  GetHomeUrl,
-    IsLocal:  CONTEXT.Client.IsLocal,
-    Origin:   CONTEXT.Client.Origin,
-    Path:     GetPath
+    BasePath:        CONTEXT.Client.BasePath,
+    BaseUrl:         CONTEXT.Client.BaseUrl,
+    Domain:          CONTEXT.Client.Domain,
+    HomeUrl:         GetHomeUrl,
+    IsLocal:         CONTEXT.Client.IsLocal,
+    IsReadOnlyMode:  IsReadOnlyMode,
+    Origin:          CONTEXT.Client.Origin,
+    Path:            GetPath,
+    SetReadOnlyMode: SetReadOnlyMode
 }

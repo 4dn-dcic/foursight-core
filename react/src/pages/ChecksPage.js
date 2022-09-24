@@ -1,12 +1,14 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { BarSpinner } from "../Spinners";
 import { RingSpinner } from "../Spinners";
 import CLIPBOARD from '../utils/CLIPBOARD';
+import CLIENT from '../utils/CLIENT';
 import COOKIE from '../utils/COOKIE';
 import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
+import Global from '../Global';
 import SERVER from '../utils/SERVER';
 import STR from '../utils/STR';
 import TableHead from '../TableHead';
@@ -17,6 +19,7 @@ import YAML from '../utils/YAML';
 
 const ChecksPage = (props) => {
 
+    const [ header, setHeader ] = useContext(Global);
     let { environ } = useParams();
     let [ groupedChecks, setGroupedChecks ] = useState([]);
     let [ lambdas, setLambdas ] = useState([]);
@@ -48,7 +51,8 @@ const ChecksPage = (props) => {
         });
 
         refreshChecksStatus();
-        setInterval(() => { refreshChecksStatus(); }, 10000);
+        // This running periodically screws up the check run configuration inputs.
+        // setInterval(() =>  refreshChecksStatus(), 10000);
     }, []);
 
     function refreshChecksStatus() {
@@ -465,12 +469,14 @@ const ChecksPage = (props) => {
             </div>
         }
         return <div>
-            <div className={"check-run-button"} style={{...style, background:!COOKIE.IsReadOnlyMode() ? "#888888" : "",color:check.configuringCheckRun ? "yellow" : ""}}
+            <div className={"check-run-button"} style={{...style, cursor:CLIENT.IsReadOnlyMode(header) && check.configuringCheckRun ? "not-allowed" : "",background:CLIENT.IsReadOnlyMode(header) && check.configuringCheckRun ? "#888888" : "",color:check.configuringCheckRun ? "yellow" : ""}}
                 onClick={(e) => {
                     if (check.configuringCheckRun) {
-                        saveInputKwargs(check);
-                        showResultBox(check);
-                        runCheck(check);
+                        if (!CLIENT.IsReadOnlyMode(header)) {
+                            saveInputKwargs(check);
+                            showResultBox(check);
+                            runCheck(check);
+                        }
                     }
                     else {
                         check.configuringCheckRun = true;
@@ -478,16 +484,19 @@ const ChecksPage = (props) => {
                         noteChangedCheckBox(check);
                     }
                 }}>
-                    {/* TODO backwards readonly */}
-                <span className={"tool-tip"} data-text={"Click to run this check."}>
-                    { COOKIE.IsReadOnlyMode() ? <>
+                <span className={"tool-tip"} data-text={CLIENT.IsReadOnlyMode(header) ? "Run disabled because in readonly mode." : "Click to run this check."}>
+                    { !CLIENT.IsReadOnlyMode(header) ? <>
                         { check.configuringCheckRun ? <>
                             <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<span>Run</span>
                         </>:<>
                             <span style={{fontSize:"small"}}></span>&nbsp;<span>Run ...</span>
                         </>}
                     </>:<>
-                        <span style={{fontSize:"",color:"#DDDDDD",background:"#888888"}}><small>&nbsp;</small>Disabled</span>
+                        { check.configuringCheckRun ? <>
+                            <span style={{fontSize:"",color:"#DDDDDD",background:"#888888"}}><small>&nbsp;</small>Disabled</span>
+                        </>:<>
+                            <span style={{fontSize:"small"}}></span>&nbsp;<span>Run ...</span>
+                        </>}
                     </>}
                 </span>
             </div>

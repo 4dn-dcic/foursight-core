@@ -11,11 +11,12 @@ import COOKIE from './utils/COOKIE';
 import ENV from './utils/ENV';
 import LOGOUT from './utils/LOGOUT';
 import TIME from './utils/TIME';
+import LockImage from './media/lock.jpg';
+import UnlockImage from './media/unlock.jpg';
 
 const Header = (props) => {
 
-    const [ header ] = useContext(Global);
-    const [ readOnlyMode, setReadOnlyMode ] = useState(COOKIE.IsReadOnlyMode());
+    const [ header, setHeader ] = useContext(Global);
     //
     // Very odd but this below (dummy) usage of useNavigate is REQUIRED in order for
     // the header navigation links (e.g. HOME, INFO) to work properly. If this is not
@@ -52,6 +53,7 @@ const Header = (props) => {
     }
 
     return <>
+
         { header.loading ? (
             <div style={{width:"100%"}}>
             <table style={{width:"100%",height:"42px",background:"#444444"}}><tbody>
@@ -226,14 +228,18 @@ const Header = (props) => {
                 <div>
                     {/* Could put some other branding here ... */}
                     {/* <img src="https://avatars.githubusercontent.com/u/23222469?s=200&v=4" height="60" /> */}
-                    {  readOnlyMode ? <>
-                        <img src="https://media.istockphoto.com/illustrations/unlock-icon-special-soft-green-round-button-illustration-id985414200?k=20&m=985414200&s=170667a&w=0&h=krNp8Z0zvh_m-_ddgx7lhNQ-I6Ljeds71lMn6brQG1M="
-                            style={{height:"70",width:"68",marginTop:"10pt",marginRight:"13pt",cursor:"pointer"}}
-                            onClick={() => { COOKIE.SetReadOnlyMode(false); setReadOnlyMode(false); }}/>
+                    {  CLIENT.IsReadOnlyMode(header) ? <>
+                        <span className={"tool-tip"} data-text={"You are in readonly mode. Click to enter read/write mode."}>
+                            <img src={LockImage}
+                                style={{height:"30",cursor:"pointer"}}
+                                onClick={() => CLIENT.SetReadOnlyMode(false, setHeader)}/>
+                        </span>
                     </>:<>
-                        <img src="https://www.emparion.com/wp-content/uploads/2020/12/LOCK-ICON-red-300x300.jpg"
-                            style={{height:"80",marginTop:"6pt",marginRight:"10pt",cursor:"pointer"}}
-                            onClick={() => { COOKIE.SetReadOnlyMode(true); setReadOnlyMode(true); }}/>
+                        <span className={"tool-tip"} data-text={"You are in read/write mode. Click to enter readonly mode."}>
+                            <img src={UnlockImage}
+                                style={{height:"30",cursor:"pointer"}}
+                                onClick={() => CLIENT.SetReadOnlyMode(true, setHeader)}/>
+                        </span>
                     </>}
 
                 </div>

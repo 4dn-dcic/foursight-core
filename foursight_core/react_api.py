@@ -249,6 +249,8 @@ class ReactApi:
         REACT_BASE_DIR = "react"
         REACT_DEFAULT_FILE = "index.html"
 
+        print('xyzz: SERVE STATIC')
+        print(kwargs)
         if environ == "static":
             # If the environ is 'static' then we take this to mean the 'static'
             # sub-directory; this is the directory where the static (js, css, etc)
@@ -290,6 +292,10 @@ class ReactApi:
             open_mode = "r"
         elif file.endswith(".png"):
             content_type = "image/png"
+            open_mode = "rb"
+        elif file.endswith(".jpeg") or file.endswith(".jpg"):
+            print('xyzz: SERVE JPEG')
+            content_type = "image/jpeg"
             open_mode = "rb"
         elif file.endswith(".svg"):
             content_type = "image/svg+xml"
