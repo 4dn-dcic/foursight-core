@@ -388,33 +388,11 @@ class ReactApi:
             portal_url = None
         response = Response('react_get_info')
         response.body = {
-#           "app": {
-#               "package": self.APP_PACKAGE_NAME,
-#               "stage": stage_name,
-#               "env": environ,
-#               "version": self.get_app_version(),
-#               "local": self.is_running_locally(request_dict),
-#               "credentials": self.react_get_credentials_info(environ if environ else default_env),
-#               "launched": self.init_load_time,
-#               "deployed": self.get_lambda_last_modified(),
-#               "fourfront": self.is_fourfront()
-#           },
             "page": {
-#               "title": self.html_main_title,
-#               "favicon": self.get_favicon(),
-#               "domain": domain,
-#               "context": context,
                 "path": request_dict.get("context").get("path"),
                 "endpoint": request.path,
                 "loaded": self.get_load_time()
             },
-#           "versions": {
-#               "foursight": self.get_app_version(),
-#               "foursight_core": pkg_resources.get_distribution('foursight-core').version,
-#               "dcicutils": pkg_resources.get_distribution('dcicutils').version,
-#               "python": platform.python_version(),
-#               "chalice": chalice_version
-#           },
             "server": {
                 "foursight": socket.gethostname(),
                 "portal": portal_url,
@@ -422,11 +400,6 @@ class ReactApi:
                 "rds": os.environ["RDS_HOSTNAME"],
                 "sqs": self.sqs.get_sqs_queue().url
             },
-#           "envs": {
-#               "all": sorted(self.environment.list_environment_names()),
-#               "unique": sorted(self.environment.list_unique_environment_names()),
-#               "unique_annotated": self.get_unique_annotated_environments() # xyzzy
-#           },
             "buckets": {
                 "env": self.environment.get_env_bucket_name(),
                 "foursight": get_foursight_bucket(envname=environ if environ else default_env, stage=stage_name),
@@ -564,17 +537,6 @@ class ReactApi:
             "known_envs": self.get_unique_annotated_environments(),
             "default_env": default_env
         }
-
-#           "page": {
-#               "title": self.html_main_title,
-#               "favicon": self.get_favicon(),
-#           },
-#           "envs": {
-#               "all": sorted(self.environment.list_environment_names()),
-#               "unique": sorted(self.environment.list_unique_environment_names()),
-#               "unique_annotated": self.get_unique_annotated_environments(), # xyzzy
-#               "default": default_env
-#           },
 
         hack_for_local_testing = False
         if hack_for_local_testing:
@@ -891,6 +853,10 @@ class ReactApi:
 
     def react_route_check_history(self, request, env: str, check: str, offset: int = 0, limit: int = 25) -> dict:
 
+        if offset < 0:
+            offset = 0
+        if limit < 0:
+            limit = 0
         authorize_response = self.authorize(request, env)
         if not authorize_response or not authorize_response["authenticated"]:
             return self.react_forbidden_response(authorize_response)
@@ -898,7 +864,7 @@ class ReactApi:
         response = self.create_standard_response("react_route_check_history")
         response.body = self.get_checks(env)
         connection = self.init_connection(env)
-        history = self.get_foursight_history(connection, check, offset, limit)
+        history, total = self.get_foursight_history(connection, check, offset, limit)
         history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
         queue_attr = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
@@ -915,7 +881,14 @@ class ReactApi:
             "check": check,
             "env": env,
             "history_kwargs": history_kwargs,
-            "history": history
+            "paging": {
+                "total": total,
+                "count": len(history),
+                "limit": min(limit, total),
+                "offset": min(offset, total),
+                "more": max(total - offset - limit, 0)
+            },
+            "list": history
         }
         response.body = history
         response = self.process_response(response)
@@ -1004,8 +977,7 @@ class ReactApi:
             s3 = boto3.resource("s3")
             results = sorted([bucket.name for bucket in s3.buckets.all()])
         except Exception as e:
-            print("XYZZY:get_buckets:EXCEPTION")
-            print(e)
+            print("Get buckets error: " + str(e))
             pass
         return results
 
@@ -1025,8 +997,7 @@ class ReactApi:
                         })
 
         except Exception as e:
-            print("XYZZY:get_bucket_keys:EXCEPTION")
-            print(e)
+            print("Get bucket keys error: " + str(e))
         return results
 
     def get_bucket_key_contents(self, bucket_name: str, bucket_key_name) -> list:
@@ -1035,8 +1006,7 @@ class ReactApi:
             s3_object = s3.Object(bucket_name, bucket_key_name)
             return s3_object.get()["Body"].read().decode("utf-8")
         except Exception as e:
-            print("XYZZY:reactapi_route_aws_s3_bucket_key_content:EXCEPTION")
-            print(e)
+            print("Get bucket key contents error: " + str(e))
 
     def reactapi_route_aws_s3_buckets(self, request, env: str):
 

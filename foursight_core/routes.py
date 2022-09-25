@@ -1,5 +1,4 @@
 from chalice import Response
-# xyzzy
 from chalice import Chalice, CORSConfig
 import base64
 import jinja2

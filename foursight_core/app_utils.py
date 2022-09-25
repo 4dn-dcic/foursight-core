@@ -1,6 +1,5 @@
 from chalice import Response
-# xyzzy
-from chalice import Chalice, CORSConfig
+from chalice import Chalice
 import base64
 import jinja2
 import json
@@ -1397,7 +1396,7 @@ class AppUtilsCore(ReactApi):
             connection = None
         if connection:
             # server = connection.ff_server
-            history = self.get_foursight_history(connection, check, start, limit)
+            history, total = self.get_foursight_history(connection, check, start, limit)
             history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
         else:
             history, history_kwargs = [], []
@@ -1445,7 +1444,7 @@ class AppUtilsCore(ReactApi):
         html_resp.status_code = 200
         return self.process_response(html_resp)
 
-    def get_foursight_history(self, connection, check, start, limit):
+    def get_foursight_history(self, connection, check, start, limit) -> [list, int]:
         """
         Get a brief form of the historical results for a check, including
         UUID, status, kwargs. Limit the number of results recieved to 500, unless
@@ -1458,8 +1457,9 @@ class AppUtilsCore(ReactApi):
         limit = 500 if limit > 500 else limit
         result_obj = self.check_handler.init_check_or_action_res(connection, check)
         if not result_obj:
-            return []
-        return result_obj.get_result_history(start, limit)
+            return [], 0
+        result, total = result_obj.get_result_history(start, limit)
+        return result, total
 
     def run_get_check(self, environ, check, uuid=None):
         """

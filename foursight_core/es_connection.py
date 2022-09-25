@@ -142,7 +142,7 @@ class ESConnection(AbstractConnection):
         resp = self.es.indices.stats(index=self.index, metric='store')
         return resp['_all']['total']['store']['size_in_bytes']
 
-    def search(self, search, key='_source'):
+    def search(self, search, key='_source') -> [list, int]:
         """
         Inner function that passes doc as a search parameter to ES. Based on the
         execute_search method in Fourfront
@@ -165,9 +165,10 @@ class ESConnection(AbstractConnection):
         if err_msg:
             raise ElasticsearchException(message=err_msg)
         # In next line, PyCharm's linter wrongly worries that 'res' might not be reliably set above. -kmp 6-Jun-2022
-        return [obj[key] for obj in res['hits']['hits']] if len(res['hits']['hits']) > 0 else []  # noQA
+        total = res['hits']['total']
+        return [obj[key] for obj in res['hits']['hits']] if len(res['hits']['hits']) > 0 else [], total  # noQA
 
-    def get_result_history(self, prefix, start, limit):
+    def get_result_history(self, prefix, start, limit) -> [list, int]:
         """
         ES handle to implement the get_result_history functionality of RunResult
         """
@@ -192,7 +193,8 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        return self.search(search)
+        result, total = self.search(search)
+        return result, total
 
     def get_main_page_checks(self, checks=None, primary=True):
         """
@@ -226,7 +228,7 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        raw_result = self.search(search)
+        raw_result, total = self.search(search)
         if checks is not None:
             # figure out which checks we didn't find, add a placeholder check so
             # that check is still rendered on the UI
@@ -255,7 +257,8 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        return self.search(search, key='_id')
+        result, total = self.search(search, key='_id')
+        return result
 
     def list_all_keys_w_prefix(self, prefix):
         """
@@ -279,7 +282,8 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        return self.search(search, key='_id')
+        result, total = self.search(search, key='_id')
+        return result
 
     def get_all_objects(self):
         """
@@ -299,7 +303,8 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        return self.search(search)
+        result, total = self.search(search)
+        return result
 
     def delete_keys(self, key_list):
         """

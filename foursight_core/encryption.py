@@ -52,8 +52,7 @@ class Encryption:
             encoded_encrypted_value = self.encode(encrypted_value_bytes)
             return encoded_encrypted_value
         except Exception as e:
-            print('xyzzy:foursight_core.Encryption.encrypt:error')
-            print(e)
+            print('Encryption error: ' + str(e))
             return ""
 
     def decrypt(self, encrypted_value: str) -> str:
@@ -65,8 +64,7 @@ class Encryption:
             decrypted_value = self.bytes_to_string(decrypted_value_bytes)
             return decrypted_value
         except Exception as e:
-            print('xyzzy:foursight_core.Encryption.decryp:error')
-            print(e)
+            print('Decryption error: ' + str(e))
             return ""
 
     def encode(self, value) -> str:

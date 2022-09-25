@@ -20,7 +20,7 @@ const CheckHistoryPage = (props) => {
     const { environ } = useParams();
     const { check } = useParams();
     const [ args ] = useSearchParams();
-    const limit = args.get("limit") || 50;
+    const limit = parseInt(args.get("limit")) || 50;
     const offset = args.get("offset") || 0;
         console.log('xxxxxx')
         console.log(limit)
@@ -28,16 +28,16 @@ const CheckHistoryPage = (props) => {
 
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
-    let [ history, setHistory ] = useState([])
+    let [ history, setHistory ] = useState({})
 
     useEffect(() => {
-        const url = SERVER.Url(`/checks/${check}/history?offset=${offset}&limit=${limit + 1}`, environ);
+        const url = SERVER.Url(`/checks/${check}/history?offset=${offset}&limit=${limit}`, environ);
         FETCH.get(url, response => {
             setHistory(response);
         }, setLoading, setError);
     }, []);
 
-    const HistoryBox = ({check, history}) => {
+    const HistoryBox = ({history}) => {
 
         function refreshHistory(check) {
         }
@@ -69,29 +69,21 @@ const CheckHistoryPage = (props) => {
             { label: "Duration", key: extractDuration, align: "right" },
             { label: "State", key: extractState }
         ];
-        columns = [
-            { label: "" },
-            { label: "" },
-            { label: "Timestamp" },
-            { label: "Status" },
-            { label: "Duration", },
-            { label: "State" }
-        ];
 
         return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-            <div title={check}>
-                <b>{check}</b>&nbsp;
-                { history && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",color:"darkred",fontWeight:"bold"}} onClick={() => {refreshHistory(check)}}>&#8635;&nbsp;&nbsp;</span></span> }
+            <div title={history.check}>
+                <b>{history.check}</b>&nbsp; {history.paging.total}
+                { history.list && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",color:"darkred",fontWeight:"bold"}} onClick={() => {refreshHistory(check)}}>&#8635;&nbsp;&nbsp;</span></span> }
                 <span style={{float:"right",cursor:"pointer"}} onClick={() => {}}><b>&#x2717;</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
-                { history?.length > 0 ? (<>
+                { history.list?.length > 0 ? (<>
                     <table style={{width:"100%"}}>
-                        <TableHead columns={columns} list={history} update={() => {setHistory(e => ({...e}))}} style={{color:"darkgreen",fontWeight:"bold"}} />
+                        <TableHead columns={columns} list={history.list} state={{key: extractTimestamp, order: -1}} update={() => setHistory(e => ({...e}))} style={{color:"darkgreen",fontWeight:"bold"}} />
                     <tbody>
                     <tr><td style={{height:"1px",background:"gray"}} colSpan="6"></td></tr>
                     <tr><td style={{paddingTop:"4px"}}></td></tr>
-                    {history.map((history, index) =>
+                    {history.list.map((history, index) =>
                         <React.Fragment key={extractUUID(history)}>
                             { index !== 0 && (<>
                                 <tr><td style={{paddingTop:"2px"}}></td></tr>
@@ -149,7 +141,7 @@ const CheckHistoryPage = (props) => {
             <table><tbody>
                 <tr>
                     <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>
-                        <HistoryBox check={history.check} history={history.history} />
+                        <HistoryBox history={history} />
                     </td>
                 </tr>
             </tbody></table>

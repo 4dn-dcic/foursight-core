@@ -22,7 +22,7 @@ import UUID from './utils/UUID';
 // So we stored the sort state in hidden fields within the given list itself.
 // -------------------------------------------------------------------------------------------------
 
-const TableHead = ({columns, list, update, style}) => {
+const TableHead = ({columns, list, update, state, style}) => {
     function sort(list, key, direction) {
         let comparator = TYPE.IsFunction(key)
                          ? (direction > 0
@@ -37,7 +37,7 @@ const TableHead = ({columns, list, update, style}) => {
     function keysEqual(a, b) {
         return (TYPE.IsFunction(a) && TYPE.IsFunction(b)) ? a.name == b.name : a == b;
     }
-    if (!list.__sort) list.__sort = { key: null, order: 0 };
+    if (!list.__sort) list.__sort = state || { key: null, order: 0 };
     return <thead><tr>
         { columns.map(column => {
             return <td key={UUID()} style={{textAlign:column.align || "normal"}}>

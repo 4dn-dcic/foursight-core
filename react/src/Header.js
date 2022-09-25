@@ -228,8 +228,6 @@ const Header = (props) => {
                 </div>
                 </>)}
                 <div>
-                    {/* Could put some other branding here ... */}
-                    {/* <img src="https://avatars.githubusercontent.com/u/23222469?s=200&v=4" height="60" /> */}
                     {  CLIENT.IsReadOnlyMode(header) ? <>
                         <span className={"tool-tip"} data-text={"You are in readonly mode. Click to enter read/write mode."}>
                             <img src={"https://raw.githubusercontent.com/dmichaels/public/master/img/lock.f70cb2627ad278feb47e.jpg"}
