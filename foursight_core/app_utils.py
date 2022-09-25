@@ -1444,7 +1444,7 @@ class AppUtilsCore(ReactApi):
         html_resp.status_code = 200
         return self.process_response(html_resp)
 
-    def get_foursight_history(self, connection, check, start, limit) -> [list, int]:
+    def get_foursight_history(self, connection, check, start, limit, sort) -> [list, int]:
         """
         Get a brief form of the historical results for a check, including
         UUID, status, kwargs. Limit the number of results recieved to 500, unless
@@ -1458,7 +1458,7 @@ class AppUtilsCore(ReactApi):
         result_obj = self.check_handler.init_check_or_action_res(connection, check)
         if not result_obj:
             return [], 0
-        result, total = result_obj.get_result_history(start, limit)
+        result, total = result_obj.get_result_history(start, limit, sort)
         return result, total
 
     def run_get_check(self, environ, check, uuid=None):

@@ -138,7 +138,7 @@ const Header = (props) => {
                         {renderNavigationLinks(header)}
                     </td>
                     <td width="2%" align="center" style={{whiteSpace:"nowrap",margin:"0 auto"}}>
-                        <a target="_blank" href={"https://pypi.org/project/" + (ENV.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + "/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48"}}>{header.app?.version}</b></a>
+                        <a target="_blank" href={"https://pypi.org/project/" + (ENV.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + "/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48",paddingRight:"8pt"}}>{header.app?.version}</b></a>
                     </td>
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (ENV.KnownEnvs(header).length > 0) ? (
@@ -196,9 +196,12 @@ const Header = (props) => {
                     </td>
                 </tr>
                 <tr>
-                    <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="2">
+                    <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="1">
                         <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight <b>React</b>. For more info click <b><a href="https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React" style={{color:"darkred"}} target="_blank"><u>here</u></a></b>.
                         For the real Foursight click <a href={ENV.LegacyFoursightLink(header)} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
+                    </td>
+                    <td style={{background:"lightyellow"}}>
+                        <BarSpinner loading={header.contentLoading} color="darkred" size="160"/>
                     </td>
                     <td style={{background:"lightyellow",color:"darkred",textAlign:"right",paddingRight:"10pt",fontSize:"small",fontStyle:"italic"}}>
                         { CLIENT.IsLocal() && <>

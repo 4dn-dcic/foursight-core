@@ -47,8 +47,11 @@ const TableHead = ({columns, list, update, state, style}) => {
                             list.__sort.key = column.key;
                             list.__sort.order = list.__sort.order ? -list.__sort.order : 1;
                             sort(list, list.__sort.key, list.__sort.order);
-                            update();
+                            const sortKey = TYPE.IsFunction(list.__sort.key) ? list.__sort.key(null) : list.__sort.key;
+                            const sortOrder = list.__sort.order > 0 ? "asc" : "desc";
+                            update(sortKey, sortOrder);
                         }}>
+                        [[[{list.__sort.order}]]]
                         <span style={{...style}}>{column.label}</span>
                         { keysEqual(list.__sort.key, column.key) ? (<>
                             <span style={{fontWeight:"normal"}}>&nbsp;{list.__sort.order > 0 ? <>&#x2193;</> : <>&#x2191;</>}</span>

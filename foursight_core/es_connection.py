@@ -168,15 +168,29 @@ class ESConnection(AbstractConnection):
         total = res['hits']['total']
         return [obj[key] for obj in res['hits']['hits']] if len(res['hits']['hits']) > 0 else [], total  # noQA
 
-    def get_result_history(self, prefix, start, limit) -> [list, int]:
+    def get_result_history(self, prefix, start, limit, sort = "-timestamp") -> [list, int]:
         """
         ES handle to implement the get_result_history functionality of RunResult
         """
+        sort_field = "uuid"
+        sort_order = "desc"
+        if sort:
+            if sort.endswith(".desc"):
+                sort_order = "desc"
+                sort_field = sort[:-5]
+            elif sort.endswith(".asc"):
+                sort_order = "asc"
+                sort_field = sort[:-4]
+            else:
+                sort_order = "asc"
+                sort_field = sort
+            if sort_field == "timestamp":
+                sort_field = "uuid"
         doc = {
             'from': start,
             'size': limit,
             'sort': {
-                'uuid': {'order': 'desc'}
+                sort_field: {'order': sort_order}
             },
             'query': {
                 'bool': {

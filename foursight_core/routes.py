@@ -445,10 +445,12 @@ class Routes:
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}/history', methods=['GET'], cors=CORS)
     def reactapi_route_check_history(environ: str, check: str):
-        params = app.current_request.to_dict().get('query_params')
-        offset = int(params.get('offset', '0')) if params else 0
-        limit = int(params.get('limit', '25')) if params else 25
-        return app_utils.singleton().react_route_check_history(request=app.current_request, env=environ, check=check, offset=offset, limit=limit)
+        params = app.current_request.to_dict().get("query_params")
+        offset = int(params.get("offset", "0")) if params else 0
+        limit = int(params.get("limit", "25")) if params else 25
+        sort = params.get("sort", "timestamp.desc") if params else "timestamp.desc"
+        sort = urllib.parse.unquote(sort)
+        return app_utils.singleton().react_route_check_history(request=app.current_request, env=environ, check=check, offset=offset, limit=limit, sort=sort)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}/run', methods=['GET'], cors=CORS)
     def reactapi_route_check_run(environ: str, check: str):

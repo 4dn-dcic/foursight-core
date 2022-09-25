@@ -224,7 +224,7 @@ class RunResult(object):
 
         return num_deleted_s3, num_deleted_es
 
-    def get_result_history(self, start, limit, after_date=None) -> [list, int]:
+    def get_result_history(self, start, limit, sort, after_date=None) -> [list, int]:
         """
         Used to get the uuid, status, and kwargs for a specific check.
         Results are ordered by uuid (timestamped) and sliced from start to limit.
@@ -234,7 +234,7 @@ class RunResult(object):
         Returns a list of lists (inner lists: [status, kwargs])
         """
         if self.es:
-            history, total = self.connections['es'].get_result_history(self.name, start, limit)
+            history, total = self.connections['es'].get_result_history(self.name, start, limit, sort)
 
             def wrapper(obj):
                 filename = obj.get('_id')

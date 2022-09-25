@@ -851,7 +851,7 @@ class ReactApi:
         response = self.process_response(response)
         return response
 
-    def react_route_check_history(self, request, env: str, check: str, offset: int = 0, limit: int = 25) -> dict:
+    def react_route_check_history(self, request, env: str, check: str, offset: int = 0, limit: int = 25, sort: str = None) -> dict:
 
         if offset < 0:
             offset = 0
@@ -864,7 +864,7 @@ class ReactApi:
         response = self.create_standard_response("react_route_check_history")
         response.body = self.get_checks(env)
         connection = self.init_connection(env)
-        history, total = self.get_foursight_history(connection, check, offset, limit)
+        history, total = self.get_foursight_history(connection, check, offset, limit, sort)
         history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
         queue_attr = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
