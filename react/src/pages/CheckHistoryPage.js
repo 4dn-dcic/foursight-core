@@ -169,7 +169,7 @@ const CheckHistoryPage = (props) => {
     return <>
         <table style={{minWidth:"680pt"}}><tbody>
             <tr>
-                <td style={{paddingRight:"10pt"}}>
+                <td style={{paddingRight:"10pt",paddingBottom:"4pt"}}>
                     <table style={{minWidth:"420pt", width:"100%"}}><tbody><tr>
                     <td style={{width:"90%"}}>
                         <PaginationControl
@@ -179,14 +179,14 @@ const CheckHistoryPage = (props) => {
                             spinner={true}
                             loading={history.loading} />
                     </td>
-                    <td style={{width:"10%",whiteSpace:"nowrap",align:"right"}}>
+                    <td style={{width:"10%",whiteSpace:"nowrap",verticalAlign:"bottom",align:"right"}}>
                         <div style={{fontSize:"small",fontWeight:"bold",color:"darkblue"}}>
                             Showing {offset + 1} thru {offset + limit} | Total: {history?.paging?.total}&nbsp;&nbsp;
                         </div>
                     </td>
                     </tr></tbody></table>
                 </td>
-                <td></td>
+                <td><b>Check History</b></td>
             </tr>
             <tr>
                 <td style={{paddingRight:"10pt"}}>
@@ -199,10 +199,16 @@ const CheckHistoryPage = (props) => {
                                 <td style={{paddingRight:"8pt"}}><b>Check</b>:</td>
                                 <td>{check}</td>
                             </tr>
+                            <tr><td style={{paddingTop:"2px"}}></td></tr>
+                            <tr><td style={{height:"1px",background:"gray"}} colSpan="6"></td></tr>
+                            <tr><td style={{paddingBottom:"2px"}}></td></tr>
                             <tr>
                                 <td style={{paddingRight:"8pt"}}><b>Group</b>:</td>
                                 <td>{history?.check?.group}</td>
                             </tr>
+                            <tr><td style={{paddingTop:"2px"}}></td></tr>
+                            <tr><td style={{height:"1px",background:"gray"}} colSpan="6"></td></tr>
+                            <tr><td style={{paddingBottom:"2px"}}></td></tr>
                             <tr>
                                 <td style={{paddingRight:"8pt"}}><b>Schedule:</b></td>
                                 <td>
@@ -218,52 +224,6 @@ const CheckHistoryPage = (props) => {
                 </td>
             </tr>
         </tbody></table>
-    </>
-    return <>
-        <div>
-            <div style={{marginBottom:"4pt"}}>
-                <table width="40%" border="1"><tbody><tr>
-                    <td>
-                        <PaginationControl pages={pages} onChange={onPaginationClick} page={page} spinner={true} loading={history.loading} />
-                    </td>
-                    <td>
-                        <div style={{display:"inline-block",float:"right",marginLeft:"2pt",marginBottom:"4pt",fontSize:"small",fontWeight:"bold",color:"darkblue"}}>
-                            Showing {offset + 1} thru {offset + limit} | Total: {history?.paging?.total}
-                        </div>
-                    </td>
-                </tr></tbody></table>
-            </div>
-            <table width="40%"><tbody><tr>
-                <td>
-                    <HistoryList history={history} />
-                </td>
-                <td style={{width:"10pt"}} />
-                <td style={{verticalAlign:"top"}}>
-                    <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                        <table><tbody>
-                            <tr>
-                                <td style={{paddingRight:"8pt"}}><b>Check</b>:</td>
-                                <td>{check}</td>
-                            </tr>
-                            <tr>
-                                <td style={{paddingRight:"8pt"}}><b>Group</b>:</td>
-                                <td>{history?.check?.group}</td>
-                            </tr>
-                            <tr>
-                                <td style={{paddingRight:"8pt"}}><b>Schedule:</b></td>
-                                <td>
-                                    {getCronDescriptionFromCheck(history.check)}
-                                    <br />
-                                    <span style={{fontFamily:"monospace"}}>
-                                        {getCronFromCheck(history.check)}
-                                    </span>
-                                </td>
-                            </tr>
-                        </tbody></table>
-                    </div>
-                </td>
-            </tr></tbody></table>
-        </div>
     </>
 };
 
