@@ -83,6 +83,9 @@ const CheckHistoryPage = (props) => {
         function extractState(history) {
             return !history ? "state" : history[2].queue_action;
         }
+        function extractSummary(history) {
+            return !history ? "summary" : history[1];
+        }
 
         let columns = [
             { label: "" },
@@ -126,23 +129,27 @@ const CheckHistoryPage = (props) => {
                                     <span style={{color:"darkred"}}>&#x2717;</span>
                                 </>)}
                             &nbsp;&nbsp;</td>
-                            <td style={{textAlign:"right"}}>
+                            <td style={{verticalAlign:"top",textAlign:"right"}}>
                                 <small>{offset + index + 1}.</small>
                             &nbsp;</td>
-                            <td style={{whiteSpace:"nowrap"}}>
+                            <td style={{verticalAlign:"top",whiteSpace:"nowrap"}}>
                                 {extractTimestamp(history)}
                             &nbsp;&nbsp;</td>
-                            <td style={{whiteSpace:"nowrap"}}>
+                            <td style={{verticalAlign:"top",whiteSpace:"break-spaces"}}>
                                 {extractStatus(history) === "PASS" ? (<>
                                     <b style={{color:"darkblue"}}>OK</b>
                                 </>):(<>
                                     <b style={{color:"darkred"}}>ERROR</b>
                                 </>)}
+                                <br/>
+                                <small>
+                                    {extractSummary(history)}
+                                </small>
                             &nbsp;&nbsp;</td>
-                            <td style={{textAlign:"right"}}>
+                            <td style={{verticalAlign:"top",textAlign:"right"}}>
                                 {extractDuration(history)}
                             &nbsp;&nbsp;</td>
-                            <td style={{whiteSpace:"nowrap"}}>
+                            <td style={{verticalAlign:"top",whiteSpace:"nowrap"}}>
                                 {extractState(history)}
                             </td>
                             </tr>
@@ -167,10 +174,10 @@ const CheckHistoryPage = (props) => {
 
     if (history.error) return <>Cannot load data from Foursight: {history.error}</>;
     return <>
-        <table style={{minWidth:"680pt"}}><tbody>
+        <table style={{maxWidth:"1000pt"}}><tbody>
             <tr>
                 <td style={{paddingRight:"10pt",paddingBottom:"4pt"}}>
-                    <table style={{minWidth:"420pt", width:"100%"}}><tbody><tr>
+                    <table style={{minWidth:"550pt",width:"100%"}}><tbody><tr>
                     <td style={{width:"90%"}}>
                         <PaginationControl
                             pages={pages}
@@ -220,6 +227,11 @@ const CheckHistoryPage = (props) => {
                                 </td>
                             </tr>
                         </tbody></table>
+                    </div>
+                    <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+                        <b style={{color:"darkred"}}>TODO</b>
+                        <p />
+                        - Show full result output on click of each item.
                     </div>
                 </td>
             </tr>
