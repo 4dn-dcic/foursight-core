@@ -23,16 +23,13 @@ const CheckHistoryPage = (props) => {
     const { environ, check } = useParams();
     const [ args, setArgs ] = useSearchParams();
 
-    const [ limit, setLimit ] = useState(parseInt(args.get("limit")) || 10);
+    const [ limit, setLimit ] = useState(parseInt(args.get("limit")) || 30);
     const [ offset, setOffset ] = useState(parseInt(args.get("offset")) || 0);
     const [ sort, setSort ] = useState(args.get("sort") || "timestamp.desc")
 
     const [ header, setHeader ] = useContext(Global);
     const [ page, setPage ] = useState(Math.floor(offset / limit));
-        console.log("TOP")
-        console.log(page)
     const [ pages, setPages ] = useState(Math.max(1, page + 1));
-        console.log(pages)
     const [ history, setHistory ] = useState({loading: true});
 
     useEffect(() => {
@@ -40,9 +37,6 @@ const CheckHistoryPage = (props) => {
     }, []);
 
     function update(limit, offset, sort) {
-        //if (history.loading) {
-            //return;
-        //}
         setHistory(e => ({...e, loading: true}));
         if (!STR.HasValue(sort)) {
             sort = "timestamp.desc";
@@ -65,20 +59,8 @@ const CheckHistoryPage = (props) => {
         update(limit, offset, sort);
       }
       function onSort(key, order) {
-    console.log("SORT..................................")
-    console.log(key)
-    console.log(order)
         const sort = `${key}.${order}`;
         update(limit, offset, sort);
-/*
-    return
-        const url = SERVER.Url(`/checks/${check}/history?offset=${offset}&limit=${limit}&sort=${key}.${order}`, environ);
-        FETCH.get(url, response => {
-            setHistory(response);
-            setPages(Math.ceil(response.paging.total / limit));
-            setOffset(offset);
-        }, () => { history.loading = false; }, () => { history.error = true; } );
-*/
     }
 
     const HistoryList = ({history}) => {
@@ -114,7 +96,7 @@ const CheckHistoryPage = (props) => {
         return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
 
             <div title={check}>
-                <b>{check}</b>&nbsp;
+                <b>Check: {check}</b>&nbsp;
                 <span style={{float:"right",cursor:"pointer"}} onClick={() => {}}><b>&#x2717;</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
@@ -145,8 +127,8 @@ const CheckHistoryPage = (props) => {
                                 </>)}
                             &nbsp;&nbsp;</td>
                             <td style={{textAlign:"right"}}>
-                                {offset + index + 1}.
-                            &nbsp;&nbsp;</td>
+                                <small>{offset + index + 1}.</small>
+                            &nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
                                 {extractTimestamp(history)}
                             &nbsp;&nbsp;</td>
@@ -177,7 +159,10 @@ const CheckHistoryPage = (props) => {
     if (history.error) return <>Cannot load data from Foursight: {history.error}</>;
     return <>
         <div style={{width:"30%"}}>
-            <PaginationControl pages={pages} onChange={onPaginationClick} page={page} spinner={true} loading={history.loading} />
+            <div style={{display:"inline-block",marginLeft:"2pt",marginBottom:"4pt",fontSize:"small",fontWeight:"bold",color:"darkblue"}}>Showing {offset + 1} thru {offset + limit} | Total: {history?.paging?.total}</div>
+            <div style={{marginBottom:"4pt"}}>
+                <PaginationControl pages={pages} onChange={onPaginationClick} page={page} spinner={true} loading={history.loading} />
+            </div>
             <HistoryList history={history} />
         </div>
     </>

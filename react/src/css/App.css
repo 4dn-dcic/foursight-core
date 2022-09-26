@@ -332,3 +332,8 @@
 .title-font {
    font-family: 'Sansation Bold', 'Arial';
 }
+
+/* This was the only way found to get rid of margin around react-paginate control. */
+.pagination-control * {
+    margin: 0;
+}
