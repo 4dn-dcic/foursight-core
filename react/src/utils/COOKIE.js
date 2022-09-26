@@ -10,6 +10,7 @@ import TYPE from './TYPE';
 const _cookies                = new Cookies()
 const _authTokenCookieName    = "authtoken";
 const _authEnvsCookieName     = "authenvs";
+const _authCookieName         = "auth";
 const _fauxLoginCookieName    = "test_mode_login_localhost";
 const _redirectCookieName     = "reactredir";
 const _lastUrlCookieName      = "lasturl";
@@ -44,7 +45,7 @@ function DeleteCookie(name) {
         // _cookies.remove(name, { path: _cookiePath });
         //
         const domain = GetCookieDomain();
-        const cookieDeletionString = `${name}=; Path=/; Domain=${domain}; Expires=Thu, 01 Jan 1970 00:00:00 UTC`;
+        const cookieDeletionString = `${name}=; Path=${_cookiePath}; Domain=${domain}; Expires=Thu, 01 Jan 1970 00:00:00 UTC`;
         document.cookie = cookieDeletionString;
     }
 }
@@ -56,7 +57,7 @@ function SetCookie(name, value, expires = null) {
             // _cookies.set(name, value, { path: _cookiePath, expires: expires });
             //
             const domain = GetCookieDomain();
-            _cookies.set(name, value, { domain: _cookieDomain, path: _cookiePath});
+            _cookies.set(name, value, { domain: domain, path: _cookiePath});
         } else if (TYPE.IsNull(value)) {
             DeleteCookie(name);
         }
@@ -70,6 +71,20 @@ function SetCookie(name, value, expires = null) {
 // -------------------------------------------------------------------------------------------------
 
 function HasAuthTokenCookie() {
+    //
+    // Nevermind the below business of detecting if the authtoken HttpOnly cookie exists,
+    // by trying to delete it. This does not work on Safari or Firefix (though it does
+    // on Chrome and Brave). Safter just to use th3 authenvs cookie cookie; didn't want
+    // to rely on this but the server always sets this on login along with authtoken
+    // so there's no real reason why we shouldn't rely on it.
+    //
+    const authCookie = GetCookie(_authCookieName);
+    if (STR.HasValue(authCookie)) {
+        return true;
+    }
+    //
+    // Pre-above. Trying to determine if the authtoken HttpOnly cookie exists.
+    //
     const authTokenCookie = GetCookie(_authTokenCookieName);
     if (STR.HasValue(authTokenCookie) && authTokenCookie != "dummy") {
         //
@@ -149,6 +164,10 @@ function GetAllowedEnvsCookie() {
     }
 }
 
+function DeleteAuthCookie() {
+    DeleteCookie(_authCookieName);
+}
+
 // -------------------------------------------------------------------------------------------------
 // Faux login related cookies.
 // -------------------------------------------------------------------------------------------------
@@ -225,6 +244,7 @@ export default {
     AllowedEnvs:     GetAllowedEnvsCookie,
     AuthEnvs:        GetAuthEnvsCookie,
     Delete:          DeleteCookie,
+    DeleteAuth:      DeleteAuthCookie,
     DeleteFauxLogin: DeleteFauxLoginCookie,
     Get:             GetCookie,
     DefaultEnv:      GetDefaultEnvCookie,

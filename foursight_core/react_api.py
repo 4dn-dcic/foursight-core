@@ -145,6 +145,17 @@ class ReactApi:
                                                                   domain=domain,
                                                                   expires=jwt_expires,
                                                                   http_only=True)
+
+        # Set another cookie indicating we are logged in since we cannot read an HttpOnly
+        # cookie client-side to determine its existence; set it to Base64 encode email;
+        # thought doesn't really matter; client will just check for existence.
+        # We could use the authenvs cookie for this purpose but might be nice
+        # to keep that around, i.e. not delete on logout.
+        #
+        auth_cookie = self.create_set_cookie_string(request, name="auth",
+                                                             value=self.encryption.encode(email),
+                                                             domain=domain,
+                                                             expires=jwt_expires)
         #
         # Need to create an authenvs cookie too, not HttpOnly, readable by client (React UI);
         # this contains the list of known and allowed (for this authenticate user) environments.
@@ -159,8 +170,11 @@ class ReactApi:
                                                                  value=authenvs,
                                                                  domain=domain,
                                                                  expires=jwt_expires)
+        # Sic WRT the different set-cookie spellings,
+        # to workaround issue where Chalice not allowing multiple cookies to be set.
         response_headers["set-cookie"] = authtoken_cookie
         response_headers["Set-Cookie"] = authenvs_cookie
+        response_headers["SET-COOKIE"] = auth_cookie
 
         return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
@@ -981,9 +995,11 @@ class ReactApi:
             # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
             redirect_url = urllib.parse.unquote(redirect_url)
         authtoken_cookie_deletion = self.create_delete_cookie_string(request_dict, "authtoken", domain)
+        auth_cookie_deletion = self.create_delete_cookie_string(request_dict, "auth", domain)
         headers = {
             "location": redirect_url,
-            "set-cookie": authtoken_cookie_deletion
+            "set-cookie": authtoken_cookie_deletion,
+            "Set-Cookie": auth_cookie_deletion
         }
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
 

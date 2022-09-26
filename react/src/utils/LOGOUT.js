@@ -11,6 +11,7 @@ import SERVER from './SERVER';
 //
 function LOGOUT() {
     COOKIE.DeleteFauxLogin();
+    COOKIE.DeleteAuth();
     window.location.replace(SERVER.Url("/logout", ENV.Current()));
 }
 
