@@ -560,7 +560,7 @@ const ChecksPage = (props) => {
                                     </div>
                                 </>}
                             </>}
-                            <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {toggleCheckResultsBox(check)}}>{check.title}</u>
+                            <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check);/*toggleCheckResultsBox(check)*/}}>{check.title}</u>
                             <RefreshResultButton check={check} style={{marginLeft:"10pt"}} />
                             <ToggleHistoryButton check={check} style={{marginLeft:"4pt"}} />
                             {/* TODO: As far as I can tell there is only every one element here under the schedule element */}

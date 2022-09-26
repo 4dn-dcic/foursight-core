@@ -122,7 +122,7 @@ const CheckHistoryPage = (props) => {
                                 <tr><td style={{paddingBottom:"2px"}}></td></tr>
                             </>)}
                             <tr>
-                            <td>
+                            <td style={{verticalAlign:"top"}}>
                                 {extractStatus(history) === "PASS" ? (<>
                                     <span style={{color:"darkblue"}}>&#x2713;</span>
                                 </>):(<>
@@ -141,10 +141,12 @@ const CheckHistoryPage = (props) => {
                                 </>):(<>
                                     <b style={{color:"darkred"}}>ERROR</b>
                                 </>)}
+                                {/*
                                 <br/>
                                 <small>
                                     {extractSummary(history)}
                                 </small>
+                                */}
                             &nbsp;&nbsp;</td>
                             <td style={{verticalAlign:"top",textAlign:"right"}}>
                                 {extractDuration(history)}
@@ -231,7 +233,8 @@ const CheckHistoryPage = (props) => {
                     <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
                         <b style={{color:"darkred"}}>TODO</b>
                         <p />
-                        - Show full result output on click of each item.
+                        - Show full result output on click of each item. <br />
+                        - Have dropdown to pick other checks (maybe by group). <br />
                     </div>
                 </td>
             </tr>
