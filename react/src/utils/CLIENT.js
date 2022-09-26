@@ -105,6 +105,19 @@ function GetCurrentLogicalPath() {
 }
 
 // -------------------------------------------------------------------------------------------------
+// Links functions.
+// -------------------------------------------------------------------------------------------------
+
+function GetPortalLink(header) {
+    if (ENV.IsFoursightFourfront(header)) {
+        return "https://" +  ENV.PublicName(ENV.Current(), header) + ".4dnucleome.org/";
+    }
+    else {
+        return "https://cgap.hms.harvard.edu/";
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
 // Readonly mode related function.
 // -------------------------------------------------------------------------------------------------
 
@@ -135,5 +148,6 @@ export default {
     IsReadOnlyMode:  IsReadOnlyMode,
     Origin:          CONTEXT.Client.Origin,
     Path:            GetPath,
+    PortalLink:     GetPortalLink,
     SetReadOnlyMode: SetReadOnlyMode
 }

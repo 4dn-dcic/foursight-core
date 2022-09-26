@@ -645,18 +645,27 @@ class ReactApi:
     def get_checks_raw(self):
         return self.check_handler.CHECK_SETUP
 
-    def get_checks(self, env: str = None):
+    def get_checks(self, env: str):
+        print("xyzzy:get_checks......................................")
         if not ReactApi.Cache.checks:
             checks = self.get_checks_raw()
             for check_key in checks.keys():
+                print("xyzzy:get_checks:")
+                print(check_key)
+                print(checks[check_key])
+                print(checks[check_key]["group"])
                 checks[check_key]["name"] = check_key
+                checks[check_key]["group"] = checks[check_key]["group"]
             lambdas = self.get_annotated_lambdas()
             self.annotate_checks_with_schedules_from_lambdas(checks, lambdas)
             self.annotate_checks_with_kwargs_from_decorators(checks)
             ReactApi.Cache.checks = checks
-        return self.filter_checks_by_env(ReactApi.Cache.checks, env)
+        xyzzy = self.filter_checks_by_env(ReactApi.Cache.checks, env)
+        print('xyzzy..................................................................................')
+        print(xyzzy)
+        return xyzzy
 
-    def get_checks_grouped(self, env: str = None) -> None:
+    def get_checks_grouped(self, env: str) -> None:
         checks_groups = []
         checks = self.get_checks(env)
         for check_setup_item_name in checks:
@@ -673,11 +682,18 @@ class ReactApi:
                 checks_groups.append({ "group": check_setup_item_group, "checks": [check_setup_item]})
         return checks_groups
 
-    def get_checks_grouped_by_schedule(self, env: str = None) -> None:
+    def get_checks_grouped_by_schedule(self, env: str) -> None:
         checks_grouped_by_schedule = []
         checks = self.get_checks(env)
         # TODO
         return checks_grouped_by_schedule
+
+    def get_check(self, env: str, check: str):
+        checks = self.get_checks(env)
+        for check_key in checks.keys():
+            if check_key == check:
+                return checks[check_key]
+        return check
 
     def get_stack_name(self):
         return os.environ.get("STACK_NAME")
@@ -862,7 +878,7 @@ class ReactApi:
             return self.react_forbidden_response(authorize_response)
 
         response = self.create_standard_response("react_route_check_history")
-        response.body = self.get_checks(env)
+        check_record = self.get_check(env, check)
         connection = self.init_connection(env)
         history, total = self.get_foursight_history(connection, check, offset, limit, sort)
         history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
@@ -878,7 +894,7 @@ class ReactApi:
                         timestamp = self.convert_utc_datetime_to_useastern_datetime(timestamp)
                         subitem["timestamp"] = timestamp
         history = {
-            "check": check,
+            "check": check_record,
             "env": env,
             "history_kwargs": history_kwargs,
             "paging": {

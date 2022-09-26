@@ -46,6 +46,11 @@ const Header = (props) => {
             <NavLink to={CLIENT.Path("/checks")} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
             <NavLink to={CLIENT.Path("/users")} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
             <NavLink to={CLIENT.Path("/aws/s3")} style={({isActive}) => style(isActive)}>S3</NavLink>&nbsp;|&nbsp;
+            <a target="_blank" title="Open portal in another tab."
+                style={{textDecoration:"none",color:"darkgreen"}}
+                href={CLIENT.PortalLink(header)}>
+                PORTAL <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
+            </a>&nbsp;|&nbsp;
             <a target="_blank" title="Open AWS Console for this account ({header.app?.credentials.aws_account_number}) in another tab."
                 style={{textDecoration:"none",color:"darkgreen"}}
                 href={"https://" + header.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>
@@ -89,7 +94,7 @@ const Header = (props) => {
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr title={"App Deployed:" + header.app?.deployed + " | App Launched: " + header.app?.launched + " | Page Loaded: " + header.page?.loaded}>
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
-                    <a href={ENV.IsFoursightFourfront(header) ? ("https://" +  ENV.PublicName(ENV.Current(), header) + ".4dnucleome.org/") : "https://cgap.hms.harvard.edu/"} target="_blank">
+                    <a href={CLIENT.PortalLink(header)} target="_blank">
                         { ENV.IsFoursightFourfront(header) ? (<span>
                             <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={CONTEXT.Client.LogoFourfront()} height="32" width="44" />
                         </span>):(<span>

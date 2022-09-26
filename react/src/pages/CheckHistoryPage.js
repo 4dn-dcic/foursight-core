@@ -23,7 +23,7 @@ const CheckHistoryPage = (props) => {
     const { environ, check } = useParams();
     const [ args, setArgs ] = useSearchParams();
 
-    const [ limit, setLimit ] = useState(parseInt(args.get("limit")) || 30);
+    const [ limit, setLimit ] = useState(parseInt(args.get("limit")) || 25);
     const [ offset, setOffset ] = useState(parseInt(args.get("offset")) || 0);
     const [ sort, setSort ] = useState(args.get("sort") || "timestamp.desc")
 
@@ -93,7 +93,7 @@ const CheckHistoryPage = (props) => {
             { label: "State" }
         ];
 
-        return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+        return <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
 
             <div title={check}>
                 <b>Check: {check}</b>&nbsp;
@@ -108,7 +108,7 @@ const CheckHistoryPage = (props) => {
                             state={{key: extractTimestamp, order: sort.endsWith(".desc") ? -1 : 1}}
                             update={(key, order) => {onSort(key, order);}}
                             lines={true}
-                            style={{color:"darkgreen",fontWeight:"bold"}}
+                            style={{color:"darkblue",fontWeight:"bold"}}
                             loading={history.loading} />
                     <tbody>
                     {history?.list.map((history, index) =>
@@ -121,7 +121,7 @@ const CheckHistoryPage = (props) => {
                             <tr>
                             <td>
                                 {extractStatus(history) === "PASS" ? (<>
-                                    <span style={{color:"darkgreen"}}>&#x2713;</span>
+                                    <span style={{color:"darkblue"}}>&#x2713;</span>
                                 </>):(<>
                                     <span style={{color:"darkred"}}>&#x2717;</span>
                                 </>)}
@@ -134,7 +134,7 @@ const CheckHistoryPage = (props) => {
                             &nbsp;&nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
                                 {extractStatus(history) === "PASS" ? (<>
-                                    <b style={{color:"darkgreen"}}>OK</b>
+                                    <b style={{color:"darkblue"}}>OK</b>
                                 </>):(<>
                                     <b style={{color:"darkred"}}>ERROR</b>
                                 </>)}
@@ -156,14 +156,113 @@ const CheckHistoryPage = (props) => {
         </div>
     }
 
+    function getCronFromCheck(check) {
+        return TYPE.IsNonEmptyObject(check?.schedule) ? check.schedule[Object.keys(check.schedule)[0]]?.cron : "";
+    }
+
+    function getCronDescriptionFromCheck(check) {
+        return TYPE.IsNonEmptyObject(check?.schedule) ? check.schedule[Object.keys(check.schedule)[0]]?.cron_description : "";
+    }
+
+
     if (history.error) return <>Cannot load data from Foursight: {history.error}</>;
     return <>
-        <div style={{width:"30%"}}>
-            <div style={{display:"inline-block",marginLeft:"2pt",marginBottom:"4pt",fontSize:"small",fontWeight:"bold",color:"darkblue"}}>Showing {offset + 1} thru {offset + limit} | Total: {history?.paging?.total}</div>
+        <table style={{minWidth:"680pt"}}><tbody>
+            <tr>
+                <td style={{paddingRight:"10pt"}}>
+                    <table style={{minWidth:"420pt", width:"100%"}}><tbody><tr>
+                    <td style={{width:"90%"}}>
+                        <PaginationControl
+                            pages={pages}
+                            onChange={onPaginationClick}
+                            page={page}
+                            spinner={true}
+                            loading={history.loading} />
+                    </td>
+                    <td style={{width:"10%",whiteSpace:"nowrap",align:"right"}}>
+                        <div style={{fontSize:"small",fontWeight:"bold",color:"darkblue"}}>
+                            Showing {offset + 1} thru {offset + limit} | Total: {history?.paging?.total}&nbsp;&nbsp;
+                        </div>
+                    </td>
+                    </tr></tbody></table>
+                </td>
+                <td></td>
+            </tr>
+            <tr>
+                <td style={{paddingRight:"10pt"}}>
+                    <HistoryList history={history} />
+                </td>
+                <td style={{verticalAlign:"top"}}>
+                    <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+                        <table><tbody>
+                            <tr>
+                                <td style={{paddingRight:"8pt"}}><b>Check</b>:</td>
+                                <td>{check}</td>
+                            </tr>
+                            <tr>
+                                <td style={{paddingRight:"8pt"}}><b>Group</b>:</td>
+                                <td>{history?.check?.group}</td>
+                            </tr>
+                            <tr>
+                                <td style={{paddingRight:"8pt"}}><b>Schedule:</b></td>
+                                <td>
+                                    {getCronDescriptionFromCheck(history.check)}
+                                    <br />
+                                    <span style={{fontFamily:"monospace"}}>
+                                        {getCronFromCheck(history.check)}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody></table>
+                    </div>
+                </td>
+            </tr>
+        </tbody></table>
+    </>
+    return <>
+        <div>
             <div style={{marginBottom:"4pt"}}>
-                <PaginationControl pages={pages} onChange={onPaginationClick} page={page} spinner={true} loading={history.loading} />
+                <table width="40%" border="1"><tbody><tr>
+                    <td>
+                        <PaginationControl pages={pages} onChange={onPaginationClick} page={page} spinner={true} loading={history.loading} />
+                    </td>
+                    <td>
+                        <div style={{display:"inline-block",float:"right",marginLeft:"2pt",marginBottom:"4pt",fontSize:"small",fontWeight:"bold",color:"darkblue"}}>
+                            Showing {offset + 1} thru {offset + limit} | Total: {history?.paging?.total}
+                        </div>
+                    </td>
+                </tr></tbody></table>
             </div>
-            <HistoryList history={history} />
+            <table width="40%"><tbody><tr>
+                <td>
+                    <HistoryList history={history} />
+                </td>
+                <td style={{width:"10pt"}} />
+                <td style={{verticalAlign:"top"}}>
+                    <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+                        <table><tbody>
+                            <tr>
+                                <td style={{paddingRight:"8pt"}}><b>Check</b>:</td>
+                                <td>{check}</td>
+                            </tr>
+                            <tr>
+                                <td style={{paddingRight:"8pt"}}><b>Group</b>:</td>
+                                <td>{history?.check?.group}</td>
+                            </tr>
+                            <tr>
+                                <td style={{paddingRight:"8pt"}}><b>Schedule:</b></td>
+                                <td>
+                                    {getCronDescriptionFromCheck(history.check)}
+                                    <br />
+                                    <span style={{fontFamily:"monospace"}}>
+                                        {getCronFromCheck(history.check)}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody></table>
+                    </div>
+                </td>
+            </tr></tbody></table>
         </div>
     </>
 };

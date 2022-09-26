@@ -1,6 +1,6 @@
 import React from 'react';
 import { useContext, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { BarSpinner } from "../Spinners";
 import { RingSpinner } from "../Spinners";
 import CLIPBOARD from '../utils/CLIPBOARD';
@@ -678,7 +678,9 @@ const ChecksPage = (props) => {
 
         return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
             <div title={check.name}>
-                <b>{check.title}</b>&nbsp;
+                <b className="tool-tip" data-text={`Group: ${check.group}. Check: ${check.name}. Click for full history.`}>
+                    <Link to={CLIENT.Path(`/checks/${check.name}/history`)} style={{color:"darkgreen"}} target="_blank">{check.title}</Link>
+                </b>&nbsp;
                 { check.history && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",color:"darkred",fontWeight:"bold"}} onClick={() => {refreshHistory(check)}}>&#8635;&nbsp;&nbsp;</span></span> }
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check)})}><b>&#x2717;</b></span>
             </div>
