@@ -653,19 +653,19 @@ const ChecksPage = (props) => {
     const ResultsHistoryBox = ({check}) => {
 
         function extractUUID(history) {
-            return history[2].uuid;
+            return !history ? "uuid" : history[2].uuid;
         }
         function extractStatus(history) {
-            return history[0];
+            return !history ? "status" : history[0];
         }
         function extractTimestamp(history) {
-            return history[2].timestamp;
+            return !history ? "timestamp" : history[2].timestamp;
         }
         function extractDuration(history) {
-            return history[2].runtime_seconds;
+            return !history ? "duration" : history[2].runtime_seconds;
         }
         function extractState(history) {
-            return history[2].queue_action;
+            return !history ? "state" : history[2].queue_action;
         }
 
         const columns = [
@@ -684,13 +684,11 @@ const ChecksPage = (props) => {
             </div>
             <div style={{marginBottom:"6pt"}}/>
             { check.showingHistory && (<>
-                { check.history?.history?.length > 0 ? (<>
+                { check.history?.list?.length > 0 ? (<>
                     <table style={{width:"100%"}}>
-                        <TableHead columns={columns} list={check.history.history} update={() => noteChangedHistories()} style={{color:"darkgreen",fontWeight:"bold"}} />
+                        <TableHead columns={columns} list={check.history.list} update={() => noteChangedHistories()} style={{color:"darkgreen",fontWeight:"bold"}} lines={true} />
                     <tbody>
-                    <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
-                    <tr><td style={{paddingTop:"4px"}}></td></tr>
-                    {check.history.history.map((history, index) =>
+                    {check.history.list.map((history, index) =>
                         <React.Fragment key={extractUUID(history)}>
                             { index !== 0 && (<>
                                 <tr><td style={{paddingTop:"2px"}}></td></tr>
@@ -727,7 +725,7 @@ const ChecksPage = (props) => {
                     </tbody>
                     </table>
                 </>):(<>
-                    { check.history ? (<>
+                    { check.history?.list ? (<>
                         <span style={{color:"black"}}>No history.</span>
                     </>):(<>
                         <Spinner condition={!check.history} color={"darkgreen"} label="Loading history" />
@@ -772,7 +770,7 @@ const ChecksPage = (props) => {
             noteChangedHistories();
             if (!check.history) {
                 const resultsHistoryUrl = SERVER.Url(`/checks/${check.name}/history`, environ);
-                FETCH.get(resultsHistoryUrl, history => { check.history = history; noteChangedHistories(); });
+                FETCH.get(resultsHistoryUrl, history => { check.history = history; console.log(check); noteChangedHistories(); });
             }
         }
     }

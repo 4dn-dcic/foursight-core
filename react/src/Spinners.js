@@ -3,6 +3,8 @@ import BarLoader from "react-spinners/BarLoader";
 import DotLoader from "react-spinners/DotLoader";
 import ScaleLoader from "react-spinners/ScaleLoader";
 import ClipLoader from "react-spinners/ClipLoader";
+import CircleLoader from "react-spinners/CircleLoader";
+import PuffLoader from "react-spinners/PuffLoader";
 
 export const RingSpinner = ({loading, color, size}) => {
     const override: CSSProperties = {
@@ -29,12 +31,32 @@ export const DotSpinner = ({loading, color, size}) => {
     return <DotLoader color={color} loading={loading} cssOverride={override} width={size} />
 }
 
-export const ScaleSpinner = ({loading, color, size}) => {
+export const PuffSpinner = ({loading, color, size}) => {
     const override: CSSProperties = {
         display: "block",
         margin: "0 auto"
     };
-    return <ScaleLoader color={color} loading={loading} cssOverride={override} width={size} />
+    return <PuffLoader color={color} loading={loading} cssOverride={override} size={size} />
+}
+
+export const CircleSpinner = ({loading, color, size}) => {
+    const override: CSSProperties = {
+        display: "block",
+        margin: "0 auto"
+    };
+    return <CircleLoader color={color} loading={loading} cssOverride={override} size={size} />
+}
+
+export const ScaleSpinner = ({loading, color, width, height, speed = 1.6}) => {
+    const override: CSSProperties = {
+        display: "block",
+        margin: "0 auto",
+        width: width,
+        height: height,
+        color: color,
+            
+    };
+    return <ScaleLoader color={color} loading={loading} cssOverride={override} width={width} height={height} speedMultiplier={speed} />
 }
 
 export const ClipSpinner = ({loading, color, size}) => {

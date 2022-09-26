@@ -28,7 +28,6 @@ function GetCookieDomain() {
 function GetCookie(name) {
     if (STR.HasValue(name)) {
         const value = _cookies.get(name);
-        console.log(`GET COOKIE: [${name}] -> [${value}]`);
         return (value === "") ? null : value;
     }
     return null;
@@ -36,7 +35,6 @@ function GetCookie(name) {
 
 function DeleteCookie(name) {
     if (STR.HasValue(name)) {
-        console.log(`DELETE COOKIE: [${name}] = [${GetCookie(name)}] (${GetCookieDomain()})`);
          //
         // The universal-cookie library is not working for delete, at least with a cookie
         // domain which includes all sub-domains, i.e. cookie domains beginning with a dot.
@@ -46,11 +44,8 @@ function DeleteCookie(name) {
         // _cookies.remove(name, { path: _cookiePath });
         //
         const domain = GetCookieDomain();
-        console.log("DELETE COOKIE USING OLD-SCHOOL METHOD:");
         const cookieDeletionString = `${name}=; Path=/; Domain=${domain}; Expires=Thu, 01 Jan 1970 00:00:00 UTC`;
-        console.log(cookieDeletionString);
         document.cookie = cookieDeletionString;
-        console.log(`VERIFY DELETE COOKIE: [${name}] -> [${GetCookie(name)}] (${domain})`);
     }
 }
 
@@ -61,15 +56,11 @@ function SetCookie(name, value, expires = null) {
             // _cookies.set(name, value, { path: _cookiePath, expires: expires });
             //
             const domain = GetCookieDomain();
-            console.log(`SET COOKIE [${name}] -> [${value}] (${domain})`);
             _cookies.set(name, value, { domain: _cookieDomain, path: _cookiePath});
-            console.log(`VERIFY SET COOKIE [${name}] -> [${GetCookie(name)}] (${domain})`);
         } else if (TYPE.IsNull(value)) {
-            console.log(`SET COOKIE [${name}] -> NULL VALUE (DELETE IT)`);
             DeleteCookie(name);
         }
         else {
-            console.log(`SET COOKIE [${name}] -> NO VALUE (DO NOTHING)`);
         }
     }
 }
@@ -79,10 +70,8 @@ function SetCookie(name, value, expires = null) {
 // -------------------------------------------------------------------------------------------------
 
 function HasAuthTokenCookie() {
-    console.log("CHECK FOR AUTHTOKEN");
     const authTokenCookie = GetCookie(_authTokenCookieName);
     if (STR.HasValue(authTokenCookie)) {
-        console.log("HAVE AUTHTOKEN (UNEXPECTEDLY READABLE AS SHOULD BE HTTPONLY)");
         //
         // The authtoken cookie exists AND we can actually read it
         // which means it is NOT an HttpOnly cookie, but whatever,
@@ -100,22 +89,15 @@ function HasAuthTokenCookie() {
     // at all (so return false, after deleting the dummy cookie we wrote to cleanup).
     //
     try {
-        console.log("TEST SET AUTHTOKEN TO DETECT EXISTENCE");
         SetCookie(_authTokenCookieName, "dummy");
         const dummyAuthTokenCookie = GetCookie(_authTokenCookieName);
         if (dummyAuthTokenCookie === "dummy") {
-            console.log("SET AUTHTOKEN OK MEANING IT DOES NOT EXIST (NOW DELETE IT)");
             DeleteCookie(_authTokenCookieName);
-            console.log("RETURN FALSE FROM CHECK FOR AUTHTOKEN");
             return false;
         }
-        console.log("TEST SET AUTHTOKEN NOT OK MEANING IT DOES EXIST");
-        console.log("RETURN TRUE FROM CHECK FOR AUTHTOKEN");
         return true;
     }
     catch {
-        console.log("TEST SET AUTHTOKEN EXCEPTION MEANING IT DOES EXIST");
-        console.log("RETURN TRUE FROM CHECK FOR AUTHTOKEN");
         return true;
     }
 }
@@ -126,44 +108,32 @@ function HasAuthTokenCookie() {
 
 function GetAuthEnvsCookie() {
     try {
-        console.log("GET AUTHENVS COOKIE");
         const authEnvsEncoded = GetCookie(_authEnvsCookieName);
         const authEnvsDecoded = atob(authEnvsEncoded);
         const authEnvs = JSON.parse(authEnvsDecoded);
-        console.log("GET AUTHENVS COOKIE");
-        console.log(authEnvs);
         return authEnvs;
     }
     catch {
-        console.log("GET AUTHENVS COOKIE EXCEPTION");
         return [];
     }
 }
 
 function GetKnownEnvsCookie() {
     try {
-        console.log("GET KNOWN ENVS COOKIE");
         const knownEnvs = GetAuthEnvsCookie()?.known_envs || [];
-        console.log("GOT KNOWN ENVS COOKIE");
-        console.log(knownEnvs);
         return knownEnvs;
     }
     catch {
-        console.log("GET KNOWN ENVS COOKIE EXCEPTION");
         return [];
     }
 }
 
 function GetDefaultEnvCookie() {
     try {
-        console.log("GET DEFAULT ENV COOKIE");
         const defaultEnv = GetAuthEnvsCookie()?.default_env || "";
-        console.log("GOT DEFAULT ENV COOKIE");
-        console.log(defaultEnv);
         return defaultEnv;
     }
     catch {
-        console.log("GET KNOWN ENVS COOKIE EXCEPTION");
         return [];
     }
 }
@@ -171,14 +141,10 @@ function GetDefaultEnvCookie() {
 
 function GetAllowedEnvsCookie() {
     try {
-        console.log("GET ALLOWED ENVS COOKIE");
         const allowedEnvs = GetAuthEnvsCookie()?.allowed_envs || [];
-        console.log("GOT ALLOWED ENVS COOKIE");
-        console.log(allowedEnvs);
         return allowedEnvs;
     }
     catch {
-        console.log("GET ALLOWED ENVS COOKIE EXCEPTION");
         return [];
     }
 }
@@ -216,9 +182,6 @@ function SetLastUrlCookie(url) {
 // -------------------------------------------------------------------------------------------------
 
 function SetRedirectCookie(url, expires = null) {
-        console.log("SetRedirectCookie:");
-        console.log(url);
-        console.log(expires);
     SetCookie(_redirectCookieName, url, expires);
 }
 

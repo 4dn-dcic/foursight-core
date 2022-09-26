@@ -201,7 +201,7 @@ const Header = (props) => {
                         For the real Foursight click <a href={ENV.LegacyFoursightLink(header)} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
                     </td>
                     <td style={{background:"lightyellow"}}>
-                        <BarSpinner loading={header.contentLoading} color="darkred" size="160"/>
+                        {/* <BarSpinner loading={header.contentLoading} color="darkred" size="160"/> */}
                     </td>
                     <td style={{background:"lightyellow",color:"darkred",textAlign:"right",paddingRight:"10pt",fontSize:"small",fontStyle:"italic"}}>
                         { CLIENT.IsLocal() && <>

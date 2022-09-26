@@ -1,5 +1,7 @@
+import React from 'react';
 import TYPE from './utils/TYPE';
 import UUID from './utils/UUID';
+import { PuffSpinner } from './Spinners';
 
 // -------------------------------------------------------------------------------------------------
 // Nice little table header component with sorting for columns (and with up/down arrow indicators).
@@ -22,7 +24,7 @@ import UUID from './utils/UUID';
 // So we stored the sort state in hidden fields within the given list itself.
 // -------------------------------------------------------------------------------------------------
 
-const TableHead = ({columns, list, update, state, style}) => {
+const TableHead = ({columns, list, update, state = null, lines = false, style = {}, spinner = false, loading = false}) => {
     function sort(list, key, direction) {
         let comparator = TYPE.IsFunction(key)
                          ? (direction > 0
@@ -38,12 +40,15 @@ const TableHead = ({columns, list, update, state, style}) => {
         return (TYPE.IsFunction(a) && TYPE.IsFunction(b)) ? a.name == b.name : a == b;
     }
     if (!list.__sort) list.__sort = state || { key: null, order: 0 };
-    return <thead><tr>
-        { columns.map(column => {
-            return <td key={UUID()} style={{textAlign:column.align || "normal"}}>
+    return <thead>
+        { lines && <><tr><td style={{height:"1px",background:style?.color ? style.color : "gray"}} colSpan="6"></td></tr>
+                     <tr><td style={{paddingBottom:"2pt"}}></td></tr></>}
+        <tr>{ columns.map(column => {
+            return <td key={UUID()} style={{textAlign:column.align || "normal",whiteSpace:"nowrap"}}>
                 { column.key ? (<>
-                    <span style={{...style, cursor:"pointer"}}
+                    <span style={{...style, cursor: loading ? "not-allowed" : "pointer"}}
                         onClick={() => {
+                            if (loading) return;
                             list.__sort.key = column.key;
                             list.__sort.order = list.__sort.order ? -list.__sort.order : 1;
                             sort(list, list.__sort.key, list.__sort.order);
@@ -51,20 +56,32 @@ const TableHead = ({columns, list, update, state, style}) => {
                             const sortOrder = list.__sort.order > 0 ? "asc" : "desc";
                             update(sortKey, sortOrder);
                         }}>
-                        [[[{list.__sort.order}]]]
-                        <span style={{...style}}>{column.label}</span>
+                        <table cellPadding="0" cellSpacing="0" style={{margin:"0",padding:"0",display:"inline-block"}}><tbody style={{margin:"0",padding:"0"}}><tr style={{margin:"0",padding:"0"}}>
                         { keysEqual(list.__sort.key, column.key) ? (<>
-                            <span style={{fontWeight:"normal"}}>&nbsp;{list.__sort.order > 0 ? <>&#x2193;</> : <>&#x2191;</>}</span>
+                            <td>
+                                <span style={{...style}}>{column.label}</span>
+                                { !loading && <span style={{fontWeight:"normal"}}>&nbsp;{list.__sort.order > 0 ? <>&#x2193;</> : <>&#x2191;</>}</span> }
+                            </td>
+                            <td style={{paddingLeft:"3pt",paddingTop:"2pt"}}>
+                                { loading && <><PuffSpinner condition={true} size={"16px"}/></> }
+                            </td>
                         </>):(<>
-                            &nbsp;<span style={{position:"relative",fontSize:"7pt",top:"-2pt"}}>&#x2022;</span>
+                            <td >
+                                <span style={{...style}}>{column.label}</span>
+                                <div style={{position:"relative",top:"-1pt",display:"inline-block",fontSize:"7pt",opacity:"0.5"}}>&nbsp;&#x2022;</div>
+                            </td>
                         </>)}
+                        </tr></tbody></table>
                     </span>
                 </>):(<>
-                    <span style={{...style}}>{column.label}</span>
+                    <span style={{...style,cursor:"not-allowed"}}>{column.label}</span>
                 </>)}
             &nbsp;&nbsp;</td>
-        })}
-    </tr></thead>
+        })}</tr>
+        { lines && <><tr><td style={{paddingBottom:"0pt"}}></td></tr>
+                      <tr><td style={{height:"1px",background:style?.color ? style.color : "red"}} colSpan="6"></td></tr>
+                      <tr><td style={{height:"4pt"}} colSpan="6"></td></tr></>}
+       </thead>
 }
 
 // -------------------------------------------------------------------------------------------------

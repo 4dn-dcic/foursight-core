@@ -20,66 +20,66 @@ import YAML from '../utils/YAML';
 
 const CheckHistoryPage = (props) => {
 
-    const [ header, setHeader ] = useContext(Global);
-    const { environ } = useParams();
-    const { check } = useParams();
+    const { environ, check } = useParams();
     const [ args, setArgs ] = useSearchParams();
+
     const [ limit, setLimit ] = useState(parseInt(args.get("limit")) || 10);
-    const [ offset, setOffset ] = useState(args.get("offset") || 0);
+    const [ offset, setOffset ] = useState(parseInt(args.get("offset")) || 0);
     const [ sort, setSort ] = useState(args.get("sort") || "timestamp.desc")
-	console.log("TOPSET.......................")
-	console.log(args)
-	console.log(args.get("offset"))
-	console.log(offset)
-  	const [ pages, setPages ] = useState(0);
-  	const [ page, setPage ] = useState((offset + 1) / limit);
-  	const [ history, setHistory ] = useState({});
-  	const [ loading, setLoading ] = useState(true);
-    const [ error, setError ] = useState(0);
+
+    const [ header, setHeader ] = useContext(Global);
+    const [ page, setPage ] = useState(Math.floor(offset / limit));
+        console.log("TOP")
+        console.log(page)
+    const [ pages, setPages ] = useState(Math.max(1, page + 1));
+        console.log(pages)
+    const [ history, setHistory ] = useState({loading: true});
 
     useEffect(() => {
-        const url = SERVER.Url(`/checks/${check}/history?offset=${offset}&limit=${limit}&sort=${sort}`, environ);
-		console.log("TOP-FETCH: " + url)
+        update(limit, offset, sort);
+    }, []);
+
+    function update(limit, offset, sort) {
+        //if (history.loading) {
+            //return;
+        //}
+        setHistory(e => ({...e, loading: true}));
+        if (!STR.HasValue(sort)) {
+            sort = "timestamp.desc";
+        }
+		setArgs({...args,  "limit": limit, "offset": offset, "sort": sort });
+        const url = SERVER.Url(`/checks/${check}/history?limit=${limit}&offset=${offset}&sort=${sort}`, environ);
+        FETCH.get(url, response => {
+            response.loading = false;
+            setHistory(response);
+            setLimit(limit);
+            setOffset(offset);
+            setSort(sort);
+            setPages(Math.ceil(response.paging.total / limit));
+            setPage(Math.floor(offset / limit));
+        }, () => { history.loading = false; }, () => { history.error = true; } );
+    }
+
+      function onPaginationClick(event) {
+        const offset = event.selected * limit % history.paging.total;
+        update(limit, offset, sort);
+      }
+      function onSort(key, order) {
+    console.log("SORT..................................")
+    console.log(key)
+    console.log(order)
+        const sort = `${key}.${order}`;
+        update(limit, offset, sort);
+/*
+    return
+        const url = SERVER.Url(`/checks/${check}/history?offset=${offset}&limit=${limit}&sort=${key}.${order}`, environ);
         FETCH.get(url, response => {
             setHistory(response);
             setPages(Math.ceil(response.paging.total / limit));
-			setOffset(offset);
-			setHeader(e => ({...e, contentLoading: false}));
-        }, setLoading, setError);
-    }, []);
-
-  	function onPaginationClick(event) {
-		if (loading) { return; }
-		const newOffset = event.selected * limit % history.paging.total;
-		setArgs({"offset": newOffset});
-		setOffset(newOffset);
-		console.log(`ON-PAGE: selected = ${event.selected} | limit = ${limit} | pages = ${pages} | old-offset = ${offset} | new-offset = ${newOffset} `)
-    	console.log(`User requested page number ${event.selected+1}, which is offset ${event.selected * limit % history.paging.total}`);
-        const url = SERVER.Url(`/checks/${check}/history?offset=${newOffset}&limit=${limit}&sort=${sort}`, environ);
-		console.log("INNER-FETCH: " + url)
-		setLoading(true)
-		setHeader(e => ({...e, contentLoading: true}));
-        FETCH.get(url, response => {
-            setHistory(response);
-        	setPages(Math.ceil(response.paging.total / limit));
-			setOffset(newOffset);
-			setHeader(e => ({...e, contentLoading: false}));
-        }, setLoading, setError);
-  	}
-  	function onSort(key, order) {
-	console.log("SORT..................................")
-	console.log(key)
-	console.log(order)
-	return
-        const url = SERVER.Url(`/checks/${check}/history?offset=${offset}&limit=${limit}&sort=${key}.${order}`, environ);
-		setHeader(e => ({...e, contentLoading: true}));
-        FETCH.get(url, response => {
-            setHistory(response);
-        	setPages(Math.ceil(response.paging.total / limit));
-			setOffset(offset);
-			setHeader(e => ({...e, contentLoading: false}));
-        }, setLoading, setError);
-	}
+            setOffset(offset);
+        }, () => { history.loading = false; }, () => { history.error = true; } );
+*/
+    }
 
     const HistoryList = ({history}) => {
 
@@ -106,25 +106,29 @@ const CheckHistoryPage = (props) => {
             { label: "" },
             { label: "" },
             { label: "Timestamp", key: extractTimestamp },
-            { label: "Status", key: extractStatus},
-            { label: "Duration", key: extractDuration, align: "right" },
-            { label: "State", key: extractState }
+            { label: "Status"},
+            { label: "Duration", align: "right" },
+            { label: "State" }
         ];
 
         return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
 
-            <div title={history.check}>
-                <b>{history?.check}</b>&nbsp;
-                { history.list && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",color:"darkred",fontWeight:"bold"}} onClick={() => {refreshHistory(history?.check)}}>&#8635;&nbsp;&nbsp;</span></span> }
+            <div title={check}>
+                <b>{check}</b>&nbsp;
                 <span style={{float:"right",cursor:"pointer"}} onClick={() => {}}><b>&#x2717;</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
                 { history?.list?.length > 0 ? (<>
                     <table style={{width:"100%"}}>
-                        <TableHead columns={columns} list={history.list} state={{key: extractTimestamp, order: -1}} update={(key, order) => {console.log('111111');console.log(order);onSort(key, order);}} style={{color:"darkgreen",fontWeight:"bold"}} />
+                        <TableHead
+                            columns={columns}
+                            list={history.list}
+                            state={{key: extractTimestamp, order: sort.endsWith(".desc") ? -1 : 1}}
+                            update={(key, order) => {onSort(key, order);}}
+                            lines={true}
+                            style={{color:"darkgreen",fontWeight:"bold"}}
+                            loading={history.loading} />
                     <tbody>
-                    <tr><td style={{height:"1px",background:"gray"}} colSpan="6"></td></tr>
-                    <tr><td style={{paddingTop:"4px"}}></td></tr>
                     {history?.list.map((history, index) =>
                         <React.Fragment key={extractUUID(history)}>
                             { index !== 0 && (<>
@@ -133,15 +137,15 @@ const CheckHistoryPage = (props) => {
                                 <tr><td style={{paddingBottom:"2px"}}></td></tr>
                             </>)}
                             <tr>
-                            <td style={{textAlign:"right"}}>
-                                {index}.
-                            &nbsp;&nbsp;</td>
                             <td>
                                 {extractStatus(history) === "PASS" ? (<>
                                     <span style={{color:"darkgreen"}}>&#x2713;</span>
                                 </>):(<>
                                     <span style={{color:"darkred"}}>&#x2717;</span>
                                 </>)}
+                            &nbsp;&nbsp;</td>
+                            <td style={{textAlign:"right"}}>
+                                {offset + index + 1}.
                             &nbsp;&nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
                                 {extractTimestamp(history)}
@@ -156,37 +160,25 @@ const CheckHistoryPage = (props) => {
                             <td style={{textAlign:"right"}}>
                                 {extractDuration(history)}
                             &nbsp;&nbsp;</td>
-                            <td style={{textAlign:"right",whiteSpace:"nowrap"}}>
+                            <td style={{whiteSpace:"nowrap"}}>
                                 {extractState(history)}
-                            &nbsp;&nbsp;</td>
+                            </td>
                             </tr>
                         </React.Fragment>
                     )}
                     </tbody>
                     </table>
                 </>):(<>
-                    <span style={{color:"black"}}>No history.</span>
+                    <span style={{color:"black"}}>{ history.loading ? <i>Loading ...</i> : <>No history</> }</span>
                 </>)}
         </div>
     }
 
-    if (error) return <>Cannot load data from Foursight: {error}</>;
-    if (loading) {
-        return <>
-            <div style={{marginTop:"30px"}}>
-            </div>
-        </>
-    }
+    if (history.error) return <>Cannot load data from Foursight: {history.error}</>;
     return <>
-        <div>
-            <table><tbody>
-                <tr>
-                    <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>
-					<PaginationControl pages={pages} onChange={onPaginationClick} page={page} />
-                        <HistoryList history={history} />
-                    </td>
-                </tr>
-            </tbody></table>
+        <div style={{width:"30%"}}>
+            <PaginationControl pages={pages} onChange={onPaginationClick} page={page} spinner={true} loading={history.loading} />
+            <HistoryList history={history} />
         </div>
     </>
 };

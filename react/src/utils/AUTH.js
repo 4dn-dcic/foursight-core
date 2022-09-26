@@ -24,17 +24,13 @@ function IsLoggedIn(header) {
     // Actually need this because we do not know that we are logged
     // in on refresh unless/until the /header is fetched.
     //
-    console.log("CHECK IS LOGGED IN");
     if (header?.auth?.authenticated) {
-        console.log("IS LOGGED IN BY WAY OF HEADER DATA");
         return true;
     }
     else if (COOKIE.HasAuthToken()) {
-        console.log("IS LOGGED IN BY WAY OF COOKIE");
         return true;
     }
     else {
-        console.log("IS NOT LOGGED IN");
         return false;
     }
     // return header?.auth?.authenticated || COOKIE.HasAuthToken();

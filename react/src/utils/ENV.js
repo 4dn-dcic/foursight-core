@@ -74,29 +74,18 @@ function GetAllowedEnvs(header) {
 }
 
 function IsAllowedEnv(env, header) {
-    console.log("CHECK ALLOWED ENV");
-    console.log(env);
-    console.log(header);
     if ((STR.HasValue(env) || TYPE.IsObject(env)) && TYPE.IsObject(header)) {
         // TODO
         // This is not right. The allowed_envs list is just a simple list of env names
         // and we want to consider all name version possibilities via the known_envs list.
         //
         const allowedEnvs = GetAllowedEnvs(header);
-        console.log("ALLOWED ENVS ARE:");
-        console.log(allowedEnvs);
         for (const allowedEnv of allowedEnvs) {
             if (AreSameEnvs(allowedEnv, env)) {
-                console.log("ALLOWED ENV");
-                console.log(allowedEnv);
-                console.log(env);
                 return true;
             }
         }
     }
-    console.log("NOT ALLOWED ENV");
-    console.log(env);
-    console.log(header);
     return false;
 }
 

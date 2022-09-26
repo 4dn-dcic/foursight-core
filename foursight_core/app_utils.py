@@ -299,7 +299,7 @@ class AppUtilsCore(ReactApi):
         last_name = None
         for known_env in known_envs:
             try:
-                user = ff_utils.get_metadata('users/' + email, ff_env=known_env["full_name"], add_on="frame=object&datastore=database")
+                user = ff_utils.get_metadata('users/' + email.lower(), ff_env=known_env["full_name"], add_on="frame=object&datastore=database")
                 if user:
                     if not first_name:
                         first_name = user.get("first_name")
