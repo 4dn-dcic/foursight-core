@@ -71,7 +71,7 @@ function SetCookie(name, value, expires = null) {
 
 function HasAuthTokenCookie() {
     const authTokenCookie = GetCookie(_authTokenCookieName);
-    if (STR.HasValue(authTokenCookie)) {
+    if (STR.HasValue(authTokenCookie) && authTokenCookie != "dummy") {
         //
         // The authtoken cookie exists AND we can actually read it
         // which means it is NOT an HttpOnly cookie, but whatever,
