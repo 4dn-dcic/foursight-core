@@ -37,26 +37,6 @@ function IsLocalClient() {
 }
 
 // -------------------------------------------------------------------------------------------------
-// Client (React UI) branding (icons, images) info.
-// -------------------------------------------------------------------------------------------------
-
-function GetClientFaviconFoursightCgap() {
-    return "https://cgap-dbmi.hms.harvard.edu/favicon.ico";
-}
-
-function GetClientFaviconFoursightFourfront() {
-    return "https://data.4dnucleome.org/static/img/favicon-fs.ico";
-}
-
-function GetClientLogoFoursightCgap() {
-    return "https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png";
-}
-
-function GetClientLogoFoursightFourfront() {
-    return "https://data.4dnucleome.org/static/img/favicon-fs.ico";
-}
-
-// -------------------------------------------------------------------------------------------------
 // Server (React API) context info.
 // -------------------------------------------------------------------------------------------------
 
@@ -129,11 +109,7 @@ export default {
         CurrentPath:      GetClientCurrentPath,
         Domain:           GetClientDomain,
         IsLocal:          IsLocalClient,
-        Origin:           GetClientOrigin,
-        FaviconCgap:      GetClientFaviconFoursightCgap,
-        FaviconFourfront: GetClientFaviconFoursightFourfront,
-        LogoCgap:         GetClientLogoFoursightCgap,
-        LogoFourfront:    GetClientLogoFoursightFourfront
+        Origin:           GetClientOrigin
     },
     Server: {
         IsLocal:           IsLocalServer,

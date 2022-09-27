@@ -291,7 +291,7 @@ const CheckHistoryPage = (props) => {
                             <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                             <tr><td style={{paddingBottom:"2px"}}></td></tr>
                             <tr>
-                                <td style={{paddingRight:"8pt"}}><b>Schedule:</b></td>
+                                <td style={{verticalAlign:"top",paddingRight:"8pt"}}><b>Schedule:</b></td>
                                 <td>
                                     {getCronDescriptionFromCheck(history.check)}
                                     <br />
@@ -305,7 +305,6 @@ const CheckHistoryPage = (props) => {
                     <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
                         <b style={{color:"darkred"}}>TODO</b>
                         <p />
-                        - Show full result output on click of each item. <br />
                         - Have dropdown to pick other checks (maybe by group). <br />
                     </div>
                 </td>

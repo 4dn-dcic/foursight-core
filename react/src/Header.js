@@ -9,6 +9,7 @@ import CLIENT from './utils/CLIENT';
 import CONTEXT from './utils/CONTEXT';
 import COOKIE from './utils/COOKIE';
 import ENV from './utils/ENV';
+import IMAGE from './utils/IMAGE';
 import LOGOUT from './utils/LOGOUT';
 import TIME from './utils/TIME';
 // Issues with serving images ONLY from 4dn-dcic/dev NOT from cgap-supertest ...
@@ -22,7 +23,7 @@ const Header = (props) => {
     //
     // Very odd but this below (dummy) usage of useNavigate is REQUIRED in order for
     // the header navigation links (e.g. HOME, INFO) to work properly. If this is not
-    // here, for example, then the (target) values to not get updated properly when on the
+    // here, for example, then the (target) values do not get updated properly when on the
     // EnvPage and clicking from one environment to another. No idea why. Fun tracking down.
     //
     const dummy = useNavigate();
@@ -96,9 +97,9 @@ const Header = (props) => {
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={CLIENT.PortalLink(header)} target="_blank">
                         { ENV.IsFoursightFourfront(header) ? (<span>
-                            <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={CONTEXT.Client.LogoFourfront()} height="32" width="44" />
+                            <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={IMAGE.FoursightFourfrontLogo()} height="32" width="44" />
                         </span>):(<span>
-                            <img src={CONTEXT.Client.LogoCgap()} width="130" />
+                            <img src={IMAGE.FoursightCgapLogo()} width="130" />
                         </span>)}
                     </a>
                 </td>
@@ -238,13 +239,13 @@ const Header = (props) => {
                 <div>
                     {  CLIENT.IsReadOnlyMode(header) ? <>
                         <span className={"tool-tip"} data-text={"You are in readonly mode. Click to enter read/write mode."}>
-                            <img src={"https://raw.githubusercontent.com/dmichaels/public/master/img/lock.f70cb2627ad278feb47e.jpg"}
+                            <img src={IMAGE.Lock()}
                                 style={{height:"30",cursor:"pointer"}}
                                 onClick={() => CLIENT.SetReadOnlyMode(false, setHeader)}/>
                         </span>
                     </>:<>
                         <span className={"tool-tip"} data-text={"You are in read/write mode. Click to enter readonly mode."}>
-                            <img src={"https://raw.githubusercontent.com/dmichaels/public/master/img/unlock.a39edec5f19bde275fe6.jpg"}
+                            <img src={IMAGE.Unlock()}
                                 style={{height:"30",cursor:"pointer"}}
                                 onClick={() => CLIENT.SetReadOnlyMode(true, setHeader)}/>
                         </span>

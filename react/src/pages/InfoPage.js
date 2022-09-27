@@ -7,6 +7,7 @@ import CLIPBOARD from '../utils/CLIPBOARD';
 import CONTEXT from '../utils/CONTEXT';
 import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
+import IMAGE from '../utils/IMAGE';
 import SERVER from '../utils/SERVER';
 import TIME from '../utils/TIME';
 import UUID from '../utils/UUID';
@@ -69,17 +70,17 @@ const InfoPage = () => {
         const pypiElement = pypi ?
             <span>
                 <a target="_blank" href={"https://pypi.org/project/" + name + "/" + value + "/"}>
-                    <img src="https://cdn-images-1.medium.com/max/1064/1*8Zh-mzLnVMDsbvXdKsU4lw.png" height="21" />
+                    <img src={IMAGE.PyPi()} height="21" />
                 </a>&nbsp;</span> : <span/>
         const githubElement = github ?
             <span>
             <a target="_blank" href={"https://github.com/" + github + "/" + (name === "dcicutils" ? "utils" : name) + "/releases/tag/" + (name !== "chalice" ? "v" : "")  + value}>
-                <img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" />
+                <img src={IMAGE.GitHub()} height="15" />
             </a>&nbsp;</span> : <span/>
         const pythonElement = python ?
             <span>
                 <a target="_blank" href={"https://docs.python.org/release/" + value + "/"}>
-                    <img src="https://logos-download.com/wp-content/uploads/2016/10/Python_logo_wordmark.png" height="19" />
+                    <img src={IMAGE.Python()} height="19" />
             </a>&nbsp;</span> : <span/>
         const chaliceElement = false /*chalice*/ ?
             <span>

@@ -4,6 +4,7 @@ import Global from './Global';
 import CONTEXT from './utils/CONTEXT';
 import ENV from './utils/ENV';
 import FETCH from './utils/FETCH';
+import IMAGE from './utils/IMAGE';
 import SERVER from './utils/SERVER';
 
 import AwsS3Page from './pages/aws/AwsS3Page';
@@ -28,10 +29,10 @@ function setFavicon(header) {
     const faviconElement = document.getElementById("favicon");
     if (faviconElement) {
         if (ENV.IsFoursightFourfront(header)) {
-            faviconElement.href = CONTEXT.Client.FaviconFourfront();
+            faviconElement.href = IMAGE.FoursightFourfrontFavicon();
         }
         else {
-            faviconElement.href = CONTEXT.Client.FaviconCgap();
+            faviconElement.href = IMAGE.FoursightCgapFavicon();
         }
     }
 }
