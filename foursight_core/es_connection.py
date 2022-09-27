@@ -168,7 +168,7 @@ class ESConnection(AbstractConnection):
         total = res['hits']['total']
         return [obj[key] for obj in res['hits']['hits']] if len(res['hits']['hits']) > 0 else [], total  # noQA
 
-    def get_result_history(self, prefix, start, limit, sort = "-timestamp") -> [list, int]:
+    def get_result_history(self, prefix, start, limit, sort = "timestamp.desc") -> [list, int]:
         """
         ES handle to implement the get_result_history functionality of RunResult
         """

@@ -10,6 +10,7 @@ import PaginationControl from '../PaginationControl';
 import CLIPBOARD from '../utils/CLIPBOARD';
 import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
+import IMAGE from '../utils/IMAGE';
 import SERVER from '../utils/SERVER';
 import STR from '../utils/STR';
 import TableHead from '../TableHead';
@@ -54,13 +55,45 @@ const CheckHistoryPage = (props) => {
         }, () => { history.loading = false; }, () => { history.error = true; } );
     }
 
-      function onPaginationClick(event) {
+    function onPaginationClick(event) {
         const offset = event.selected * limit % history.paging.total;
         update(limit, offset, sort);
-      }
-      function onSort(key, order) {
+    }
+
+    function onSort(key, order) {
         const sort = `${key}.${order}`;
         update(limit, offset, sort);
+    }
+
+    function showResult(check, history, uuid) {
+        history.__resultShowing = true;
+        history.__resultLoading = true;
+        history.__resultError = false;
+        setHistory(e => ({...e}));
+        const url = SERVER.Url(`/checks/${check}/${uuid}`, environ);
+        FETCH.get(url, response => {
+            if (history.__resultShowing) {
+                history.__result = response;
+                setHistory(e => ({...e}));
+            }
+        }, () => { history.__resultLoading = false; setHistory(e => ({...e})); }, () => { history.__resultError = true; } );
+    }
+
+    function hideResult(history) {
+        history.__resultShowing = false;
+        history.__result = null;
+        history.__resultLoading = false;
+        history.__resultError = false;
+        setHistory(e => ({...e}));
+    }
+
+    function toggleResult(check, history, uuid) {
+        if (history.__resultShowing) {
+            hideResult(history);
+        }
+        else {
+            showResult(check, history, uuid);
+        }
     }
 
     const HistoryList = ({history}) => {
@@ -91,6 +124,7 @@ const CheckHistoryPage = (props) => {
             { label: "" },
             { label: "" },
             { label: "Timestamp", key: extractTimestamp },
+            { label: "UUID", key: extractUUID },
             { label: "Status"},
             { label: "Duration", align: "right" },
             { label: "State" }
@@ -118,7 +152,7 @@ const CheckHistoryPage = (props) => {
                         <React.Fragment key={extractUUID(history)}>
                             { index !== 0 && (<>
                                 <tr><td style={{paddingTop:"2px"}}></td></tr>
-                                <tr><td style={{height:"1px",background:"gray"}} colSpan="6"></td></tr>
+                                <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                                 <tr><td style={{paddingBottom:"2px"}}></td></tr>
                             </>)}
                             <tr>
@@ -133,7 +167,12 @@ const CheckHistoryPage = (props) => {
                                 <small>{offset + index + 1}.</small>
                             &nbsp;</td>
                             <td style={{verticalAlign:"top",whiteSpace:"nowrap"}}>
-                                {extractTimestamp(history)}
+                                <span onClick={() => toggleResult(check, history, extractUUID(history))} style={{cursor:"pointer"}}>
+                                    {extractTimestamp(history)}
+                                </span>
+                            &nbsp;&nbsp;</td>
+                            <td style={{verticalAlign:"top",whiteSpace:"nowrap"}}>
+                                {extractUUID(history)}
                             &nbsp;&nbsp;</td>
                             <td style={{verticalAlign:"top",whiteSpace:"break-spaces"}}>
                                 {extractStatus(history) === "PASS" ? (<>
@@ -155,6 +194,26 @@ const CheckHistoryPage = (props) => {
                                 {extractState(history)}
                             </td>
                             </tr>
+                            { (history.__resultShowing) &&
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                    <td colSpan="9">
+                                        <pre style={{background:"#D6EAF8",filter:"brightness(1.1)",borderColor:"darkblue",borderWidth:"1",wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"600pt"}}>
+                                            { history.__resultLoading ? <>
+                                                <StandardSpinner condition={history.__resultLoading} color={"darkblue"} label="Loading result"/>
+                                            </>:<>
+                                                <div style={{float:"right",marginTop:"-0px"}}>
+                                                    <span style={{fontSize:"0",opacity:"0"}} id={check}>{JSON.stringify(history.__result[0])}</span>
+                                                    <img onClick={() => CLIPBOARD.Copy(check)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={IMAGE.Clipboard()} height="19" />
+                                                    <span onClick={() => hideResult(history)} style={{marginLeft:"6pt",marginRight:"2pt",fontSize:"large",fontWeight:"bold",cursor:"pointer"}}>X</span>
+                                                </div>
+                                                {YAML.Format(history.__result[0])}
+                                            </>}
+                                        </pre>
+                                    </td>
+                                </tr>
+                            }
                         </React.Fragment>
                     )}
                     </tbody>
@@ -179,7 +238,7 @@ const CheckHistoryPage = (props) => {
         <table style={{maxWidth:"1000pt"}}><tbody>
             <tr>
                 <td style={{paddingRight:"10pt",paddingBottom:"4pt"}}>
-                    <table style={{minWidth:"550pt",width:"100%"}}><tbody><tr>
+                    <table style={{minWidth:"620pt",width:"100%"}}><tbody><tr>
                     <td style={{width:"90%"}}>
                         <PaginationControl
                             pages={pages}
@@ -190,6 +249,19 @@ const CheckHistoryPage = (props) => {
                     </td>
                     <td style={{width:"10%",whiteSpace:"nowrap",verticalAlign:"bottom",align:"right"}}>
                         <div style={{fontSize:"small",fontWeight:"bold",color:"darkblue"}}>
+                            Page Size:&nbsp;
+                            <span style={{cursor:history.loading ? "not-allowed" : "",width:"fit-content"}}>
+                            <span style={{pointerEvents:history.loading ? "none" : "",width:"fit-content"}}>
+                            <select style={{border:"0",marginRight:"2pt"}} defaultValue={limit} onChange={e => {update(parseInt(e.target.value), offset, sort)}}>
+                                <option>10</option>
+                                <option>25</option>
+                                <option>50</option>
+                                <option>75</option>
+                                <option>100</option>
+                                <option>200</option>
+                            </select>
+                            </span></span>
+                            |
                             Showing {offset + 1} thru {offset + limit} | Total: {history?.paging?.total}&nbsp;&nbsp;
                         </div>
                     </td>
@@ -198,7 +270,7 @@ const CheckHistoryPage = (props) => {
                 <td><b>Check History</b></td>
             </tr>
             <tr>
-                <td style={{paddingRight:"10pt"}}>
+                <td style={{verticalAlign:"top",paddingRight:"10pt"}}>
                     <HistoryList history={history} />
                 </td>
                 <td style={{verticalAlign:"top"}}>
@@ -209,14 +281,14 @@ const CheckHistoryPage = (props) => {
                                 <td>{check}</td>
                             </tr>
                             <tr><td style={{paddingTop:"2px"}}></td></tr>
-                            <tr><td style={{height:"1px",background:"gray"}} colSpan="6"></td></tr>
+                            <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                             <tr><td style={{paddingBottom:"2px"}}></td></tr>
                             <tr>
                                 <td style={{paddingRight:"8pt"}}><b>Group</b>:</td>
                                 <td>{history?.check?.group}</td>
                             </tr>
                             <tr><td style={{paddingTop:"2px"}}></td></tr>
-                            <tr><td style={{height:"1px",background:"gray"}} colSpan="6"></td></tr>
+                            <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                             <tr><td style={{paddingBottom:"2px"}}></td></tr>
                             <tr>
                                 <td style={{paddingRight:"8pt"}}><b>Schedule:</b></td>

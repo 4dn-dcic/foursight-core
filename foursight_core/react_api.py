@@ -180,9 +180,12 @@ class ReactApi:
 
     def authorize(self, request, env) -> dict:
         """
-        If the request indicates that is is authenticated then returns a
-        dictionary with relevant authentication/authorization info, otherwise
+        If the request indicates that is is authenticated AND authorized for the given environment,
+        then returns a dictionary with relevant authentication/authorization info, otherwise
         returns an dictonary indicating authentication/authorization failure.
+        Does this by reading the (server-side encrypted) authtoken cookie which contains
+        the Auth0 JWT token and dictionary of allowed environments for the authenticate user;
+        this authtoken was set by create_authtoken.
         """
         if not request:
             return { "authenticated": False, "status": "no-request" }
@@ -952,7 +955,9 @@ class ReactApi:
         return response
 
     def react_route_check_results(self, request, env: str, check: str) -> dict:
-
+        """
+        Returns the latest result from the given check.
+        """
         authorize_response = self.authorize(request, env)
         if not authorize_response or not authorize_response["authenticated"]:
             return self.react_forbidden_response(authorize_response)
@@ -971,6 +976,44 @@ class ReactApi:
         except Exception as e:
             response.body = {}
         return self.process_response(response)
+
+    def react_route_check_result(self, request, env: str, check: str, uuid: str) -> dict:
+        """
+        Returns the specified result, by uuid, for the given check.
+        Analogous legacy function is app_utils.view_foursight_check.
+        """
+        authorize_response = self.authorize(request, env)
+        if not authorize_response or not authorize_response["authenticated"]:
+            return self.react_forbidden_response(authorize_response)
+
+        response = []
+        servers = []
+        try:
+            connection = self.init_connection(env)
+        except Exception:
+            connection = None
+        if connection:
+            servers.append(connection.ff_server)
+            check_result = self.CheckResult(connection, check)
+            if check_result:
+                data = check_result.get_result_by_uuid(uuid)
+                if data is None:
+                    # the check hasn't run. Return a placeholder view
+                    data = {
+                        'name': check,
+                        'uuid': uuid,
+                        'status': 'ERROR',  # in this case we just queued a check, so ERROR is ok
+                        'summary': 'Check has not yet run',
+                        'description': 'Check has not yet run'
+                    }
+                title = self.check_handler.get_check_title_from_setup(check)
+                processed_result = self.process_view_result(connection, data, is_admin=True)
+                response.append({
+                    'status': 'success',
+                    'env': env,
+                    'checks': {title: processed_result}
+                })
+        return response
 
     def reactapi_route_check_run(self, request, env: str, check: str, args: str):
         # TODO: What is this primary thing for? It is an option on the old/existing UI.

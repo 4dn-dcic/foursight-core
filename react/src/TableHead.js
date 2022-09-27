@@ -16,7 +16,9 @@ import { PuffSpinner } from './Spinners';
 //    { label: "Last Modified", key: "modified" } ]
 //
 // In the (above example) columns array the label is the displayed header text,
-// and the key is the name of the field in the given list to sort on.
+// and the key is the name of the field in the given list to sort on; this key
+// can alternatively be a function which (if so) will be called with the item
+// in the list to sort and which should return the corresponding value.
 //
 // The implementation is slightly trickier than one might expect (and not generally done right by
 // examples in the wild) because it needs to work for multiple components repeated within a loop,
@@ -41,7 +43,7 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
     }
     if (!list.__sort) list.__sort = state || { key: null, order: 0 };
     return <thead>
-        { lines && <><tr><td style={{height:"1px",background:style?.color ? style.color : "gray"}} colSpan="6"></td></tr>
+        { lines && <><tr><td style={{height:"1px",background:style?.color ? style.color : "gray"}} colSpan="9"></td></tr>
                      <tr><td style={{paddingBottom:"2pt"}}></td></tr></>}
         <tr>{ columns.map(column => {
             return <td key={UUID()} style={{textAlign:column.align || "normal",whiteSpace:"nowrap"}}>
@@ -74,12 +76,12 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
                         </tr></tbody></table>
                     </span>
                 </>):(<>
-                    <span style={{...style,cursor:"not-allowed"}}>{column.label}</span>
+                    <div style={{...style,display:"inline-block",position:"relative",top:"-1pt",cursor:"not-allowed"}}>{column.label}</div>
                 </>)}
             &nbsp;&nbsp;</td>
         })}</tr>
         { lines && <><tr><td style={{paddingBottom:"0pt"}}></td></tr>
-                      <tr><td style={{height:"1px",background:style?.color ? style.color : "red"}} colSpan="6"></td></tr>
+                      <tr><td style={{height:"1px",background:style?.color ? style.color : "red"}} colSpan="9"></td></tr>
                       <tr><td style={{height:"4pt"}} colSpan="6"></td></tr></>}
        </thead>
 }

@@ -443,6 +443,10 @@ class Routes:
     def reactapi_route_check_results(environ: str, check: str):
         return app_utils.singleton().react_route_check_results(request=app.current_request, env=environ, check=check)
 
+    @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}/{uuid}', methods=['GET'], cors=CORS)
+    def reactapi_route_check_results(environ: str, check: str, uuid: str):
+        return app_utils.singleton().react_route_check_result(request=app.current_request, env=environ, check=check, uuid=uuid)
+
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}/history', methods=['GET'], cors=CORS)
     def reactapi_route_check_history(environ: str, check: str):
         params = app.current_request.to_dict().get("query_params")
