@@ -1,13 +1,16 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
+import Global from "../Global";
 import SERVER from '../utils/SERVER';
 import UUID from '../utils/UUID';
 import YAML from '../utils/YAML';
 
 const GacComparePage = (props) => {
+
+    const [ header ] = useContext(Global);
 
     let { environCompare } = useParams();
     const url = SERVER.Url(`/gac/${environCompare}`, ENV.Current());
@@ -188,12 +191,11 @@ const GacComparePage = (props) => {
                         <td></td>
                         <td width="30%" style={{verticalAlign:"bottom"}}>Key</td>
                         <td>
-                            {/* TODO: Warning: Use the `defaultValue` or `value` props on <select> instead of setting `selected` on <option>. */}
-                            <select defaultValue={ENV.Current()} style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","WebkitAppearance":"none"}} onChange={(arg) => OnChangeEnv(arg)}>
+                            <select defaultValue={ENV.PreferredName(ENV.Current(), header)} style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","WebkitAppearance":"none"}} onChange={(arg) => OnChangeEnv(arg)}>
                                 { knownEnvs.map((env) =>
-                                    env.full_name === ENV.Current() ?
-                                        <option key={env.full_name}>{env.full_name}</option> :
-                                        <option key={env.full_name}>{env.full_name}</option>
+                                    ENV.PreferredName(env, header) === ENV.PreferredName(ENV.Current(), header) ?
+                                        <option key={ENV.PreferredName(env, header)}>{ENV.PreferredName(env, header)}</option> :
+                                        <option key={ENV.PreferredName(env, header)}>{ENV.PreferredName(env, header)}</option>
                                 )}
                             </select>&nbsp;<span style={{color:"blue"}}>&#x2193;</span>
                             <br />
@@ -202,9 +204,9 @@ const GacComparePage = (props) => {
                         <td>
                             <select defaultValue={environCompare} style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","WebkitAppearance":"none"}} onChange={(arg) => OnChangeEnvCompare(arg)}>
                                 { knownEnvs.map((env) =>
-                                    env.full_name === environCompare ?
-                                        <option key={env.full_name}>{env.full_name}</option> :
-                                        <option key={env.full_name}>{env.full_name}</option>
+                                    ENV.PreferredName(env, header) === environCompare ?
+                                        <option key={ENV.PreferredName(env, header)}>{ENV.PreferredName(env, header)}</option> :
+                                        <option key={ENV.PreferredName(env, header)}>{ENV.PreferredName(env, header)}</option>
                                 )}
                             </select>&nbsp;<span style={{color:"blue"}}>&#x2193;</span>
                             <br />
