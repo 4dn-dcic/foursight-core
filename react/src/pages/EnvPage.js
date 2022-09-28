@@ -123,10 +123,10 @@ const EnvPage = (props) => {
                                     Public Name: <span style={envNameTextStyles(env.public_name)}>{env.public_name}</span> <br />
                                     GAC Name: {env.gac_name} <br />
                                     { IsKnownCurrentEnv() ? (<>
-                                        <select style={{border:"0",background:"transparent","-webkit-appearance":"none"}} onChange={(selected) => onChange(selected, env.full_name)}>
+                                        <select style={{border:"0",background:"transparent","WebkitAppearance":"none"}} onChange={(selected) => onChange(selected, env.full_name)}>
                                             <option>GAC Compare &#x2193;</option>
                                             { ENV.KnownEnvs(header).map((env) =>
-                                                <option key={UUID()}>{env.full_name}</option>
+                                                <option key={UUID()}>{ENV.PreferredName(env, header)}</option>
                                             )}
                                         </select>
                                     </>):(<>

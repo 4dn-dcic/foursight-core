@@ -385,8 +385,12 @@ class AppUtilsCore(ReactApi):
         This is a JSON object, encrypted, and then Base-64 encoded.
         """
         allowed_envs_encoded = self.encryption.encode(allowed_envs)
+        # TODO: think about separate timestamp or similar for authorized envs (ask Kent);
         authtoken_json = {
             "jwt": jwt_token,
+            # TODO: think about putting all this in the JWT ...
+            # and use the existing JWT verification (encryption) mechanism to check if it is okay (has not been tampered with);
+            # then we don't need to wrap and encrypt this ourselves.
             "env": allowed_envs_encoded,
             "first_name": first_name,
             "last_name": last_name
@@ -496,6 +500,7 @@ class AppUtilsCore(ReactApi):
             "client_id": auth0_client,
             "client_secret": auth0_secret,
             "code": auth0_code,
+            # TODO: maybe here put in allowed envs ?
             "redirect_uri": auth0_redirect_url
         }
         auth0_payload_string = json.dumps(auth0_payload)
@@ -503,6 +508,11 @@ class AppUtilsCore(ReactApi):
         auth0_response = requests.post(self.OAUTH_TOKEN_URL, data=auth0_payload_string, headers=auth0_headers)
         auth0_response_json = auth0_response.json()
         jwt_token = auth0_response_json.get("id_token")
+
+        print('XYZZY:ID_TOKEN FROM AUTH0 ...')
+        print(jwt_token)
+        print(type(jwt_token))
+
         jwt_expires = auth0_response_json.get("expires_in")
 
         # This "react" scope is set on the React UI side at Auth0 invocation time.
@@ -547,9 +557,14 @@ class AppUtilsCore(ReactApi):
             auth0_client_id = self.get_auth0_client_id(env_name)
             auth0_secret = self.get_auth0_secret(env_name)
             # leeway accounts for clock drift between us and auth0
-            return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30)
-        except:
+            print('XYZZY: DECODE JWT FROM APP UTILS ...')
+            print(jwt_token)
+            print(type(jwt_token))
+            return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30, options={"verify_signature": True}, algorithms=["HS256"])
+        except Exception as e:
             logger.warn(f"foursight_core: Exception decoding JWT token: {jwt_token}")
+            print('xyzzy: exception decoding jwt token')
+            print(e)
             return None
 
     @classmethod

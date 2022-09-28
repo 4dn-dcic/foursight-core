@@ -4,6 +4,7 @@ import json
 import uuid
 from pyDes import triple_des
 
+# TODO: triple_des not secure really - try (from Will): https://github.com/wbond/oscrypto (AES 256)
 class Encryption:
 
     def __init__(self, encryption_password = None):

@@ -91,6 +91,7 @@ class ReactApi:
         for the protected React API endpoint (see the authorization function below).
         So be careful with this.
         """
+        # TODO: remove this faux stuff.
         if not self.is_running_locally(request):
             return False
         if self.read_cookie("test_mode_login_localhost", request) != "1":
@@ -136,9 +137,34 @@ class ReactApi:
             react_redir_url = urllib.parse.unquote(react_redir_url)
             response_headers = {"Location": react_redir_url}
 
+        print('JWT ORIGINAL ...........................................')
+        print(jwt_token)
+        print(type(jwt_token))
         jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
         email = jwt_token_decoded.get("email")
         (known_envs, allowed_envs, first_name, last_name) = self.get_envs(email)
+
+        # xyzzy
+        print('JWT DECODED ...........................................')
+        print(jwt_token_decoded)
+        print(type(jwt_token_decoded))
+        jwt_token_decoded["app_metadata"] = {
+            "allowed_envs": allowed_envs,
+            "default_env": self.get_default_env(),
+            "known_envs": known_envs
+        }
+        print('JWT ENHANCED:')
+        print(jwt_token_decoded)
+        auth0_client_id = self.get_auth0_client_id(env)
+        auth0_secret = self.get_auth0_secret(env)
+        jwt_token_reencoded = jwt.encode(jwt_token_decoded, auth0_secret, algorithm="HS256", headers=None)
+        print('JWT RE-ENCODED:')
+        print(jwt_token_reencoded)
+        xyzzy = self.decode_jwt_token(jwt_token_reencoded, env)
+        print('JWT RE-ENCODED DECODED:')
+        print(xyzzy)
+        # xyzzy
+
         authtoken = self.create_authtoken(jwt_token, allowed_envs, first_name, last_name, env)
         authtoken_cookie = self.create_set_cookie_string(request, name="authtoken",
                                                                   value=authtoken,
@@ -257,6 +283,11 @@ class ReactApi:
 
     def react_serve_static_file(self, environ, is_admin=False, domain="", context="/", **kwargs):
 
+        # -------------------------------------------------------------------------------
+        # TODO: More security WRT exactly what we allow to serve here.
+        # Idea: whitelist ... serving very few and known files.
+        # -------------------------------------------------------------------------------
+
         # TODO: Maybe cache output. But if so provide backdoor way of invalidating cache.
 
         print(f"Serve React file called with: environ={environ}, is_admin={is_admin}")
@@ -317,7 +348,7 @@ class ReactApi:
         elif file.endswith(".ico"):
             content_type = "image/x-icon"
             open_mode = "rb"
-        elif file.endswith(".woff"):
+        elif file.endswith(".woff"): # obsolete
             content_type = "application/octet-stream"
             open_mode = "rb"
         else:
@@ -381,7 +412,7 @@ class ReactApi:
 
     def react_get_info(self, request, environ, domain="", context="/"):
 
-        # TODO: Put this in a decorator.
+        # TODO: Put this in a decorator and at the route level.
         authorize_response = self.authorize(request.to_dict(), environ)
         if not authorize_response or not authorize_response["authenticated"]:
             return self.react_forbidden_response(authorize_response)
@@ -515,6 +546,8 @@ class ReactApi:
 
     def react_get_header(self, request, environ, domain="", context="/"):
         # Note that this route is not protected but/and we return the results from authorize.
+        # TODO: remove stuff we don't need like credentials and also auth also version of other stuff and gac_name ...
+        #       review all these data points and see which ones really need ...
         auth = self.authorize(request, environ)
         data = ReactApi.Cache.header.get(environ)
         if not data:
@@ -526,7 +559,6 @@ class ReactApi:
         response.body = data
         return self.process_response(response)
 
-    react_header_info_cache = {}
     def react_get_header_nocache(self, request, environ, domain="", context="/"):
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()

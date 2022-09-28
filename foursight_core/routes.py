@@ -352,6 +352,7 @@ class Routes:
     def get_react_0(environ):
         return Routes.react_serve_static_file(environ, **{})
 
+    # TODO: see if better way to get variadic paths
     @app.route(ROUTE_PREFIX + 'react/{environ}/{path1}', cors=CORS)
     def get_react_1(environ, path1):
         return Routes.react_serve_static_file(environ, **{"path1": path1})
@@ -377,6 +378,7 @@ class Routes:
         return app_utils.singleton().react_get_user(request=app.current_request, environ=environ, email=email)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/info', cors=CORS)
+    # TODO: Put auth decorator here ...
     def react_route_get_info(environ):
         request = app.current_request
         request_dict = request.to_dict()

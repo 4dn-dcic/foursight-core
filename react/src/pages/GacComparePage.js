@@ -164,6 +164,7 @@ const GacComparePage = (props) => {
     let knownEnvs = ENV.KnownEnvs();
 
     return <>
+        <div style={{width:"fit-content"}}>
             <b>&nbsp;GAC Comparison</b>:&nbsp;&nbsp;
             <small>
                 { !showingRaw ? (<React.Fragment>
@@ -188,24 +189,24 @@ const GacComparePage = (props) => {
                         <td width="30%" style={{verticalAlign:"bottom"}}>Key</td>
                         <td>
                             {/* TODO: Warning: Use the `defaultValue` or `value` props on <select> instead of setting `selected` on <option>. */}
-                            <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnv(arg)}>
+                            <select defaultValue={ENV.Current()} style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","WebkitAppearance":"none"}} onChange={(arg) => OnChangeEnv(arg)}>
                                 { knownEnvs.map((env) =>
                                     env.full_name === ENV.Current() ?
-                                        <option selected key={env.full_name}>{env.full_name}</option> :
+                                        <option key={env.full_name}>{env.full_name}</option> :
                                         <option key={env.full_name}>{env.full_name}</option>
                                 )}
-                            </select>
+                            </select>&nbsp;<span style={{color:"blue"}}>&#x2193;</span>
                             <br />
                             {getGacName(data?.gac)}
                         </td>
                         <td>
-                            <select style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","-webkit-appearance":"none"}} onChange={(arg) => OnChangeEnvCompare(arg)}>
+                            <select defaultValue={environCompare} style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","WebkitAppearance":"none"}} onChange={(arg) => OnChangeEnvCompare(arg)}>
                                 { knownEnvs.map((env) =>
                                     env.full_name === environCompare ?
-                                        <option selected key={env.full_name}>{env.full_name}</option> :
-                                        <option          key={env.full_name}>{env.full_name}</option>
+                                        <option key={env.full_name}>{env.full_name}</option> :
+                                        <option key={env.full_name}>{env.full_name}</option>
                                 )}
-                            </select>
+                            </select>&nbsp;<span style={{color:"blue"}}>&#x2193;</span>
                             <br />
                             {getGacName(data?.gac_compare)}
                         </td>
@@ -230,7 +231,7 @@ const GacComparePage = (props) => {
                             <td>
                                 <b>{key}</b>
                             </td>
-                            <td>
+                            <td style={{paddingRight:"8pt"}}>
                                 <span>{addedGacValue(key, data) ? <b>MISSING</b> : ((appearsToBeObfuscated(data.gac[key]) ? <b>OBFUSCATED</b> : data.gac[key]) || <b>&#x2205;</b>)}</span>
                             </td>
                             <td>
@@ -251,6 +252,7 @@ const GacComparePage = (props) => {
             <pre id="raw" className="info" style={{display:"none"}}>
                 {YAML.Format(data)}
             </pre>
+        </div>
     </>
 };
 
