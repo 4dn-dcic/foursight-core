@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { RingSpinner } from "../Spinners";
 import SERVER from "../utils/SERVER";
 import Fetch from "../utils/Fetch";
-import YAML from '../utils/YAML';
+import Yaml from '../utils/Yaml';
 
 const UserPage = (props) => {
 
@@ -28,7 +28,7 @@ const UserPage = (props) => {
                 <div key={user.record.uuid}>
                     <div style={{fontWeight:"bold",marginBottom:"6px"}}>{user.email_address}</div>
                         <pre className="info">
-                            {YAML.Format(user.record)}
+                            {Yaml.Format(user.record)}
                         </pre>
                 </div>
             ))}

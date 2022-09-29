@@ -6,7 +6,7 @@ import Fetch from '../utils/Fetch';
 import Global from "../Global";
 import SERVER from '../utils/SERVER';
 import UUID from '../utils/UUID';
-import YAML from '../utils/YAML';
+import Yaml from '../utils/Yaml';
 
 const GacComparePage = (props) => {
 
@@ -252,7 +252,7 @@ const GacComparePage = (props) => {
                 </table>
             </div>
             <pre id="raw" className="info" style={{display:"none"}}>
-                {YAML.Format(data)}
+                {Yaml.Format(data)}
             </pre>
         </div>
     </>

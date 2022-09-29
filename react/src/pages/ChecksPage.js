@@ -17,7 +17,7 @@ import TableHead from '../TableHead';
 import TIME from '../utils/TIME';
 import Type from '../utils/Type';
 import UUID from '../utils/UUID';
-import YAML from '../utils/YAML';
+import Yaml from '../utils/Yaml';
 
 const ChecksPage = (props) => {
 
@@ -609,7 +609,7 @@ const ChecksPage = (props) => {
             &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>X</span>
             </div>
     
-            {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? (YAML.Format(check.showingResultDetailsFull ? check.results.full_output : check.results)) : "No results.") }
+            {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? (Yaml.Format(check.showingResultDetailsFull ? check.results.full_output : check.results)) : "No results.") }
         </pre>
     }
 

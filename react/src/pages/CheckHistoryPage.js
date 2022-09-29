@@ -17,7 +17,7 @@ import TableHead from '../TableHead';
 import TIME from '../utils/TIME';
 import Type from '../utils/Type';
 import UUID from '../utils/UUID';
-import YAML from '../utils/YAML';
+import Yaml from '../utils/Yaml';
 
 const CheckHistoryPage = (props) => {
 
@@ -208,7 +208,7 @@ const CheckHistoryPage = (props) => {
                                                     <img onClick={() => Clipboard.Copy(check)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
                                                     <span onClick={() => hideResult(history)} style={{marginLeft:"6pt",marginRight:"2pt",fontSize:"large",fontWeight:"bold",cursor:"pointer"}}>X</span>
                                                 </div>
-                                                {YAML.Format(history.__result[0])}
+                                                {Yaml.Format(history.__result[0])}
                                             </>}
                                         </pre>
                                     </td>

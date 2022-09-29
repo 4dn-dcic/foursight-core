@@ -11,7 +11,7 @@ import Image from '../utils/Image';
 import SERVER from '../utils/SERVER';
 import TIME from '../utils/TIME';
 import UUID from '../utils/UUID';
-import YAML from '../utils/YAML';
+import Yaml from '../utils/Yaml';
 
 const InfoPage = () => {
 
@@ -152,13 +152,13 @@ const InfoPage = () => {
         <InfoBox title="Environment & Bucket Names">
             <pre className="info" style={{border:"0",margin:"0",padding:"8",paddingBottom:"8",marginTop:"0"}}>
                 { info.buckets?.info && info.buckets.info.map(bucket_info => {
-                    return <span key={UUID()}>{YAML.Format(bucket_info)}{info.buckets.info.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
+                    return <span key={UUID()}>{Yaml.Format(bucket_info)}{info.buckets.info.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
                 })}
             </pre>
         </InfoBox>
         <InfoBox title="Ecosystem">
             <pre className="info" style={{border:"0",margin:"0",paddingTop:"8",paddingBottom:"8",marginTop:"0"}}>
-                {YAML.Format(info.buckets?.ecosystem)}
+                {Yaml.Format(info.buckets?.ecosystem)}
             </pre>
         </InfoBox>
         <InfoBox title="Authentication/Authorization Info">
@@ -172,7 +172,7 @@ const InfoPage = () => {
             <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
                 { showingAuthToken ? (<>
                     <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide AuthToken</u></b></small> <i>(server-side encrypted cookie)</i>
-                    <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(Auth.Token())}</pre>
+                    <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{Yaml.Format(Auth.Token())}</pre>
                 </>):(<>
                     <small onClick={() => setShowAuthToken(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show AuthToken</u></b></small>
                     <br />
