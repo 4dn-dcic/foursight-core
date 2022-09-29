@@ -185,12 +185,13 @@ class ReactApi:
         jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
         email = jwt_token_decoded.get("email")
         known_envs, allowed_envs, first_name, last_name = self.get_envs(email)
-        jwt_token_decoded["app_metadata"] = {
+        jwt_token_decoded = {
+            "user": email,
+            "first_name": first_name,
+            "last_name": last_name
             "known_envs": known_envs,
             "allowed_envs": allowed_envs,
             "default_env": self.get_default_env(),
-            "first_name": first_name,
-            "last_name": last_name
         }
         auth0_secret = self.get_auth0_secret(env)
         if not auth0_secret:

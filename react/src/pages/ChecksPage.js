@@ -31,10 +31,11 @@ const ChecksPage = (props) => {
     let [ selectedHistories, setSelectedHistories ] = useState([])
     let [ checksStatus, setChecksStatus ] = useState({});
     let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
-
-    let readOnlyMode = ReadOnlyMode.State();
+    const [ readOnlyMode, setReadOnlyMode ] = useState();
 
     useEffect(() => {
+
+        ReadOnlyMode.RegisterCallback(setReadOnlyMode);
 
         const groupedChecksUrl = SERVER.Url(`/checks`, environ);
         FETCH.get(groupedChecksUrl, groupedChecks => {
@@ -57,6 +58,9 @@ const ChecksPage = (props) => {
         refreshChecksStatus();
         // This running periodically screws up the check run configuration inputs.
         // setInterval(() =>  refreshChecksStatus(), 10000);
+
+        return () => ReadOnlyMode.UnregisterCallback(setReadOnlyMode);
+
     }, []);
 
     function refreshChecksStatus() {
