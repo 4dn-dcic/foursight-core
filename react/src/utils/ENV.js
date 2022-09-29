@@ -7,7 +7,7 @@ import Context from './Context';
 import Cookie from './Cookie';
 import PATH from './PATH';
 import STR from './STR';
-import TYPE from './TYPE';
+import Type from './Type';
 
 // -------------------------------------------------------------------------------------------------
 // Known environments related functions.
@@ -18,7 +18,7 @@ function GetKnownEnvs(header) {
 }
 
 function IsKnownEnv(env, header) {
-    if ((STR.HasValue(env) || TYPE.IsObject(env)) && TYPE.IsObject(header)) {
+    if ((STR.HasValue(env) || Type.IsObject(env)) && Type.IsObject(header)) {
         const knownEnvs = GetKnownEnvs(header);
         for (const knownEnv of knownEnvs) {
             if (AreSameEnvs(knownEnv, env)) {
@@ -66,7 +66,7 @@ function GetAllowedEnvs(header) {
 }
 
 function IsAllowedEnv(env, header) {
-    if ((STR.HasValue(env) || TYPE.IsObject(env)) && TYPE.IsObject(header)) {
+    if ((STR.HasValue(env) || Type.IsObject(env)) && Type.IsObject(header)) {
         // TODO
         // This is not right. The allowed_envs list is just a simple list of env names
         // and we want to consider all name version possibilities via the known_envs list.
@@ -91,8 +91,8 @@ function IsAllowedEnv(env, header) {
 // contains these elements: name, full_name, short_name, public_name, foursight_name.
 //
 function AreSameEnvs(envA, envB) {
-    if (TYPE.IsObject(envA)) {
-        if (TYPE.IsObject(envB)) {
+    if (Type.IsObject(envA)) {
+        if (Type.IsObject(envB)) {
             return (envA?.name?.toLowerCase()           === envB?.name?.toLowerCase()) ||
                    (envA?.full_name?.toLowerCase()      === envB?.full_name?.toLowerCase()) ||
                    (envA?.short_name?.toLowerCase()     === envB?.short_name?.toLowerCase()) ||
@@ -112,7 +112,7 @@ function AreSameEnvs(envA, envB) {
         }
     }
     else if (STR.HasValue(envA)) {
-        if (TYPE.IsObject(envB)) {
+        if (Type.IsObject(envB)) {
             envA = envA.toLowerCase();
             return (envB?.name?.toLowerCase()           === envA) ||
                    (envB?.full_name?.toLowerCase()      === envA) ||
@@ -153,7 +153,7 @@ function GetCurrentEnv(header = null) {
             env = (slash >= 0) ? pathSansBasePath.substring(0, slash) : pathSansBasePath;
         }
     }
-    if (TYPE.IsObject(header)) {
+    if (Type.IsObject(header)) {
         if (!IsKnownEnv(env, header)) {
             env = header?.default_env;
         }
@@ -178,7 +178,7 @@ function IsCurrentEnvAllowed(header) {
 // -------------------------------------------------------------------------------------------------
 
 function GetAnnotatedEnv(env, header) {
-    if (TYPE.IsObject(env)) {
+    if (Type.IsObject(env)) {
         return env;
     }
     else if (STR.HasValue(env)) {

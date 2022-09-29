@@ -22,7 +22,6 @@ const LoginPage = (props) => {
     let [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [args] = useSearchParams();
     const showAuthBoxAtOutset = args.get("auth")?.length >= 0;
-        console.log('renderrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr' + TIME.FormatDateTime(new Date()));
 
     function login() {
         showAuthBox();
@@ -81,7 +80,7 @@ const LoginPage = (props) => {
     return <>
         { Auth.IsLoggedIn(header) ? (<React.Fragment>
             <div className="container">
-                xxx {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt",color:"darkblue"}}>Hello, {Auth.LoggedInUserName(header)} ...</b>}
+                {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt",color:"darkblue"}}>Hello, {Auth.LoggedInUserName(header)} ...</b>}
                 <div style={{float:"right",marginRight:"8pt",color:"darkblue",fontSize:"small",cursor:"pointer"}}>
                     { showingAuthToken ? <>
                         <span onClick={() => setShowAuthToken(false)}><b>AuthToken</b> &#x2193;</span>

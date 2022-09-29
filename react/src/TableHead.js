@@ -1,5 +1,5 @@
 import React from 'react';
-import TYPE from './utils/TYPE';
+import Type from './utils/Type';
 import UUID from './utils/UUID';
 import { PuffSpinner } from './Spinners';
 
@@ -28,7 +28,7 @@ import { PuffSpinner } from './Spinners';
 
 const TableHead = ({columns, list, update, state = null, lines = false, style = {}, spinner = false, loading = false}) => {
     function sort(list, key, direction) {
-        let comparator = TYPE.IsFunction(key)
+        let comparator = Type.IsFunction(key)
                          ? (direction > 0
                             ? (a,b) => key(a) > key(b) ? 1 : (key(a) < key(b) ? -1 : 0)
                             : (a,b) => key(a) < key(b) ? 1 : (key(a) > key(b) ? -1 : 0))
@@ -39,7 +39,7 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
         return list;
     }
     function keysEqual(a, b) {
-        return (TYPE.IsFunction(a) && TYPE.IsFunction(b)) ? a.name == b.name : a == b;
+        return (Type.IsFunction(a) && Type.IsFunction(b)) ? a.name == b.name : a == b;
     }
     if (!list.__sort) list.__sort = state || { key: null, order: 0 };
     return <thead>
@@ -54,7 +54,7 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
                             list.__sort.key = column.key;
                             list.__sort.order = list.__sort.order ? -list.__sort.order : 1;
                             sort(list, list.__sort.key, list.__sort.order);
-                            const sortKey = TYPE.IsFunction(list.__sort.key) ? list.__sort.key(null) : list.__sort.key;
+                            const sortKey = Type.IsFunction(list.__sort.key) ? list.__sort.key(null) : list.__sort.key;
                             const sortOrder = list.__sort.order > 0 ? "asc" : "desc";
                             update(sortKey, sortOrder);
                         }}>

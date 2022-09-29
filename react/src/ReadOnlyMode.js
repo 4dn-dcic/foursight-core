@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Client from "./utils/Client";
 import Cookie from "./utils/Cookie";
 import Image from "./utils/Image";
-import TYPE from "./utils/TYPE";
+import Type from "./utils/Type";
 
 let _callbacks = [];
 
@@ -46,7 +46,7 @@ const ReadOnlyModeLock = function() {
 // This seems totally lame.
 
 function RegisterCallback(callback) {
-    if (TYPE.IsFunction(callback)) {
+    if (Type.IsFunction(callback)) {
         const index = _callbacks.indexOf(callback) > -1;
         if (index > -1) {
             _callbacks.push(callback);
@@ -56,7 +56,7 @@ function RegisterCallback(callback) {
 }
 
 function UnregisterCallback(callback) {
-    if (TYPE.IsFunction(callback)) {
+    if (Type.IsFunction(callback)) {
         const index = _callbacks.indexOf(callback)
         if (index > -1) {
             _callbacks.splice(index, 1);

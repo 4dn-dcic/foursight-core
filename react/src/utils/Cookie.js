@@ -6,7 +6,7 @@ import Cookies from 'universal-cookie';
 import Context from './Context';
 import Jwt from './Jwt';
 import STR from './STR';
-import TYPE from './TYPE';
+import Type from './Type';
 
 const _cookies                = new Cookies()
 const _authTokenCookieName    = "authtoken";
@@ -57,7 +57,7 @@ function SetCookie(name, value, expires = null) {
             //
             const domain = GetCookieDomain();
             _cookies.set(name, value, { domain: domain, path: _cookiePath});
-        } else if (TYPE.IsNull(value)) {
+        } else if (Type.IsNull(value)) {
             DeleteCookie(name);
         }
         else {
@@ -132,7 +132,7 @@ function GetAuthTokenCookie() {
         const authTokenCookie = GetCookie(_authTokenCookieName);
         if (STR.HasValue(authTokenCookie)) {
             const authToken = Jwt.Decode(authTokenCookie);
-            if (TYPE.IsObject(authToken)) {
+            if (Type.IsObject(authToken)) {
                 return authToken || {};
             }
         }

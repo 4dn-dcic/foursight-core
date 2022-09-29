@@ -15,7 +15,7 @@ import SERVER from '../utils/SERVER';
 import STR from '../utils/STR';
 import TableHead from '../TableHead';
 import TIME from '../utils/TIME';
-import TYPE from '../utils/TYPE';
+import Type from '../utils/Type';
 import UUID from '../utils/UUID';
 import YAML from '../utils/YAML';
 
@@ -225,11 +225,11 @@ const CheckHistoryPage = (props) => {
     }
 
     function getCronFromCheck(check) {
-        return TYPE.IsNonEmptyObject(check?.schedule) ? check.schedule[Object.keys(check.schedule)[0]]?.cron : "";
+        return Type.IsNonEmptyObject(check?.schedule) ? check.schedule[Object.keys(check.schedule)[0]]?.cron : "";
     }
 
     function getCronDescriptionFromCheck(check) {
-        return TYPE.IsNonEmptyObject(check?.schedule) ? check.schedule[Object.keys(check.schedule)[0]]?.cron_description : "";
+        return Type.IsNonEmptyObject(check?.schedule) ? check.schedule[Object.keys(check.schedule)[0]]?.cron_description : "";
     }
 
 

@@ -7,7 +7,7 @@ import Cookie from './Cookie';
 import ENV from './ENV';
 import PATH from './PATH';
 import STR from './STR';
-import TYPE from './TYPE';
+import Type from './Type';
 
 // -------------------------------------------------------------------------------------------------
 // Client URL functions.
@@ -36,7 +36,7 @@ function GetPath(path, env = true, envFallback = null) {
         path = "/" + path;
     }
     path = PATH.Normalize(path);
-    if (TYPE.IsBoolean(env)) {
+    if (Type.IsBoolean(env)) {
         if (env) {
             //
             // Use the current environment (from the current URL) for the given path.
@@ -48,7 +48,7 @@ function GetPath(path, env = true, envFallback = null) {
                 if (STR.HasValue(envFallback)) {
                     env = envFallback;
                 }
-                else if (TYPE.IsObject(envFallback)) {
+                else if (Type.IsObject(envFallback)) {
                     const header = envFallback;
                     // env = header.envs?.default;
                     env = ENV.Default(header);
@@ -57,7 +57,7 @@ function GetPath(path, env = true, envFallback = null) {
         }
 
     }
-    else if (TYPE.IsObject(env)) {
+    else if (Type.IsObject(env)) {
         const header = env;
         // env = header.envs?.default;
         env = ENV.Default(header);
@@ -65,7 +65,7 @@ function GetPath(path, env = true, envFallback = null) {
             if (STR.HasValue(envFallback)) {
                 env = envFallback;
             }
-            else if (TYPE.IsObject(envFallback)) {
+            else if (Type.IsObject(envFallback)) {
                 //
                 // This would be weird but just for completeness.
                 //
@@ -127,8 +127,8 @@ function IsReadOnlyMode(header) {
 
 function SetReadOnlyMode(value, setHeader) {
     
-    if (TYPE.IsBoolean(value)) {
-        if (TYPE.IsFunction(setHeader)) {
+    if (Type.IsBoolean(value)) {
+        if (Type.IsFunction(setHeader)) {
             setHeader(e => ({...e, readOnlyMode: value}));
         }
         Cookie.SetReadOnlyMode(value);

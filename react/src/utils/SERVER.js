@@ -5,7 +5,7 @@
 import ENV from './ENV';
 import Context from './Context';
 import STR from './STR';
-import TYPE from './TYPE';
+import Type from './Type';
 
 function GetUrl(path, env = true) {
     if (!STR.HasValue(path)) {
@@ -14,7 +14,7 @@ function GetUrl(path, env = true) {
     else if (!path.startsWith("/")) {
         path = "/" + path;
     }
-    if (TYPE.IsBoolean(env)) {
+    if (Type.IsBoolean(env)) {
         if (env) {
             env = ENV.Current();
         }

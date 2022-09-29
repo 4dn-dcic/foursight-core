@@ -15,7 +15,7 @@ import SERVER from '../utils/SERVER';
 import STR from '../utils/STR';
 import TableHead from '../TableHead';
 import TIME from '../utils/TIME';
-import TYPE from '../utils/TYPE';
+import Type from '../utils/Type';
 import UUID from '../utils/UUID';
 import YAML from '../utils/YAML';
 
@@ -122,7 +122,7 @@ const ChecksPage = (props) => {
 
     function saveInputKwargs(check) {
         Object.keys(check.kwargs).map(key => {
-            if (!TYPE.IsBoolean(check.kwargs[key]) && !TYPE.IsNonEmptyArray(check.kwargs[key])) {
+            if (!Type.IsBoolean(check.kwargs[key]) && !Type.IsNonEmptyArray(check.kwargs[key])) {
                 const inputId = `${check.name}.${key}`;
                 const inputElement = document.getElementById(inputId);
                 const inputValue = inputElement?.value;
@@ -331,12 +331,12 @@ const ChecksPage = (props) => {
 
     // What a pain ...
     const CheckRunArgsBox = ({check,update}) => {
-        if (!TYPE.IsNonEmptyObject(check.kwargs)) {
+        if (!Type.IsNonEmptyObject(check.kwargs)) {
             check.kwargs = getKwargsFromCheck(check);
         }
         return check.configuringCheckRun && <>
             <div className="boxstyle" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"green",background:"lightyellow"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
-                { (TYPE.IsNonEmptyObject(check.kwargs)) ? (<>
+                { (Type.IsNonEmptyObject(check.kwargs)) ? (<>
                     <div style={{marginTop:"-2pt",float:"right"}}>
                         <RunButton check={check} style={{float:"right"}} />
                     </div>
@@ -347,7 +347,7 @@ const ChecksPage = (props) => {
                                 <b>{key}</b>:
                             &nbsp;&nbsp;</td>
                             <td style={{padding:"1pt"}} align="top">
-                            { (TYPE.IsBoolean(check.kwargs[key])) &&
+                            { (Type.IsBoolean(check.kwargs[key])) &&
                                 <select defaultValue={check.kwargs[key] ? "true" : "false"} style={{background:"lightyellow",border:"1px solid lightgray",borderRadius:"4pt"}}
                                     onChange={(e) => {
                                         check.kwargs[key] = e.target.value == "true" ? true : false;
@@ -362,7 +362,7 @@ const ChecksPage = (props) => {
                                     </>}
                                 </select> 
                             }
-                            { (TYPE.IsNonEmptyArray(check.kwargs[key])) &&
+                            { (Type.IsNonEmptyArray(check.kwargs[key])) &&
                                 <select key={UUID()} defaultValue={check.kwargs[key]?.__selected} style={{background:"lightyellow",border:"1px solid lightgray"}}
                                     onChange={(e) => {
                                         check.kwargs[key].__selected = e.target.value;
@@ -373,7 +373,7 @@ const ChecksPage = (props) => {
                                     )}
                                 </select>
                             }
-                            { (!TYPE.IsBoolean(check.kwargs[key]) && !TYPE.IsNonEmptyArray(check.kwargs[key])) && <>
+                            { (!Type.IsBoolean(check.kwargs[key]) && !Type.IsNonEmptyArray(check.kwargs[key])) && <>
                                 {/*
                                     Input box focus issues were very tricky with onChange and setting state et cetera;
                                     tried many things; finally came upon functionally simple solution (though code is
