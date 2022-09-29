@@ -90,9 +90,6 @@ const CheckHistoryPage = (props) => {
 
     const HistoryList = ({history}) => {
 
-        function refreshHistory(check) {
-        }
-
         function extractUUID(history) {
             return !history ? "uuid" : history[2].uuid;
         }
