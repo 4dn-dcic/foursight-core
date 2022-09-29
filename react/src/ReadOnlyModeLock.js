@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import CLIENT from "./utils/CLIENT";
+import Client from "./utils/Client";
 import COOKIE from "./utils/COOKIE";
 import IMAGE from "./utils/IMAGE";
 
 const ReadOnlyModeLock = ({}) => {
-    const [ readOnlyMode, setReadOnlyMode ] = useState(CLIENT.IsReadOnlyMode());
+    const [ readOnlyMode, setReadOnlyMode ] = useState(Client.IsReadOnlyMode());
     return <>
         { readOnlyMode ? <>
             <span className={"tool-tip"} data-text={"You are in readonly mode. Click to enter read/write mode."}>

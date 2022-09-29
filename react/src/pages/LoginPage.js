@@ -4,8 +4,8 @@ import { useContext, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import Global from '../Global';
 import Auth0Lock from 'auth0-lock';
-import AUTH from '../utils/AUTH';
-import CLIENT from '../utils/CLIENT';
+import Auth from '../utils/Auth';
+import Client from '../utils/Client';
 import CONTEXT from '../utils/CONTEXT';
 import COOKIE from '../utils/COOKIE';
 import CurrentTime from '../CurrentTime';
@@ -80,9 +80,9 @@ const LoginPage = (props) => {
     if (header.loading && !header.error) return <>Loading ...</>
     if (header.error) return <>Cannot load Foursight.</>
     return <>
-        { AUTH.IsLoggedIn(header) ? (<React.Fragment>
+        { Auth.IsLoggedIn(header) ? (<React.Fragment>
             <div className="container">
-                {AUTH.LoggedInUserName(header) && <b style={{marginLeft:"4pt",color:"darkblue"}}>Hello, {AUTH.LoggedInUserName(header)} ...</b>}
+                {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt",color:"darkblue"}}>Hello, {Auth.LoggedInUserName(header)} ...</b>}
                 <div style={{float:"right",marginRight:"8pt",color:"darkblue",fontSize:"small",cursor:"pointer"}}>
                     { showingAuthToken ? <>
                         <span onClick={() => setShowAuthToken(false)}><b>AuthToken</b> &#x2193;</span>
@@ -97,7 +97,7 @@ const LoginPage = (props) => {
                     </>}
                 </div>
                 <div className="boxstyle info" style={{marginLeft:"0pt",padding:"10pt",color:"darkblue"}}>
-                    { AUTH.IsFauxLoggedIn() ? (<span>
+                    { Auth.IsFauxLoggedIn() ? (<span>
                         Logged in as:&nbsp;<b>faux-login</b>
                         <br />
                         <small>
@@ -107,7 +107,7 @@ const LoginPage = (props) => {
                         <table style={{color:"inherit"}}><tbody><tr>
                             <td align="top" style={{whiteSpace:"nowrap"}}>
                                 Logged in as:&nbsp;
-                                <Link to={CLIENT.Path("/users/" + AUTH.LoggedInUser(header))}><b style={{color:"darkblue"}}>{AUTH.LoggedInUser(header)}</b></Link> <br />
+                                <Link to={Client.Path("/users/" + Auth.LoggedInUser(header))}><b style={{color:"darkblue"}}>{Auth.LoggedInUser(header)}</b></Link> <br />
                                 <div style={{fontSize:"small",marginTop:"3pt"}}>
                                     Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}}
                                             onClick={()=> LOGOUT()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> LOGOUT()}>logout</span>.
@@ -117,9 +117,9 @@ const LoginPage = (props) => {
                             <td style={{background:"darkblue",width:"2px"}}></td>
                             <td style={{width:"8pt"}}></td>
                             <td style={{textAlign:"top"}}><small style={{marginTop:"20pt"}}>
-                                Logged in: <CurrentTime.FormatDuration start={AUTH.LoggedInUserJwt(header)?.iat} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
+                                Logged in: <CurrentTime.FormatDuration start={Auth.LoggedInUserJwt(header)?.iat} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
                                 <br />
-                                Session expires: <CurrentTime.FormatDuration end={AUTH.LoggedInUserJwt(header)?.exp} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
+                                Session expires: <CurrentTime.FormatDuration end={Auth.LoggedInUserJwt(header)?.exp} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
                             </small></td>
                         </tr></tbody></table>
                     </span>)}
@@ -127,13 +127,13 @@ const LoginPage = (props) => {
                 { showingAuthToken &&
                     <div className="boxstyle info" style={{paddingLeft:"8pt",color:"darkblue",fontSize:"small"}}>
                         <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>AuthToken</b> (server-side encrypted cookie)</span>
-                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(AUTH.LoggedInUserAuthToken(header))}</pre>
+                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(Auth.LoggedInUserAuthToken(header))}</pre>
                     </div>
                 }
                 { showingAuthEnvs &&
                     <div className="boxstyle info" style={{paddingLeft:"8pt",color:"darkblue",fontSize:"small"}}>
                         <span onClick={() => setShowAuthEnvs(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>AuthEnvs</b> (base-64 encoded cookie)</span>
-                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(AUTH.LoggedInUserAuthEnvs(header))}</pre>
+                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(Auth.LoggedInUserAuthEnvs(header))}</pre>
                     </div>
                 }
             </div>
@@ -153,9 +153,9 @@ const LoginPage = (props) => {
         <div>
             <div id="login_auth_container" style={{verticalAlign:"top",align:"top",backgroundColor:"#143c53", height: "fit-content", borderRadius: "8px", borderStyle: "solid", borderWidth: "1px", display: "none", width:"fit-content", padding:"0px", margin: "auto"}}></div>
                 <center id="login_auth_cancel" style={{display:"none",marginTop:"10px"}}>
-                    <NavLink to={CLIENT.Path("/info")} style={{fontSize:"small",cursor:"pointer",color:"blue"}}>Cancel</NavLink>
+                    <NavLink to={Client.Path("/info")} style={{fontSize:"small",cursor:"pointer",color:"blue"}}>Cancel</NavLink>
                 </center>
-            { (CLIENT.IsLocal() && showingAuthBox) && (
+            { (Client.IsLocal() && showingAuthBox) && (
                 <div className="container" style={{maxWidth:"290pt",marginTop:"-20pt"}}>
                     <div className="boxstyle check-fail" style={{margin:"20pt",padding:"10pt",borderWidth:"2",borderColor:"red"}}>
                         <img src={"https://i.stack.imgur.com/DPBue.png"} style={{height:"35",verticalAlign:"bottom"}} /> <b style={{fontSize:"x-large"}}>&nbsp;Attention ...</b> <br />

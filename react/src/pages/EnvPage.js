@@ -2,9 +2,9 @@ import { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Global from "../Global";
 import Page from '../Page';
-import AUTH from '../utils/AUTH';
+import Auth from '../utils/Auth';
 import ENV from '../utils/ENV';
-import CLIENT from '../utils/CLIENT';
+import Client from '../utils/Client';
 import UUID from '../utils/UUID';
 
 const EnvPage = (props) => {
@@ -33,7 +33,7 @@ const EnvPage = (props) => {
 
     function onChange(arg, env) {
         const environCompare = arg.target.value;
-        navigate(CLIENT.Path("/gac/" + environCompare, env))
+        navigate(Client.Path("/gac/" + environCompare, env))
     }
 
     // TODO: clean up this styles stuff.
@@ -52,12 +52,12 @@ const EnvPage = (props) => {
     if (header.error) return <>Cannot load Foursight</>;
     if (header.loading) return <>Loading ...</>;
     return <div>
-            { !AUTH.IsLoggedIn(header) && IsKnownCurrentEnv() ? (
+            { !Auth.IsLoggedIn(header) && IsKnownCurrentEnv() ? (
                 <div className="container">
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>
                         <b>Not Logged In</b> <br />
                         <small>
-                            Click <Link to={CLIENT.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b>here</b></Link> to go to the <Link to={CLIENT.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
+                            Click <Link to={Client.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b>here</b></Link> to go to the <Link to={Client.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
                         </small>
                         </div>
                 </div>
@@ -74,14 +74,14 @@ const EnvPage = (props) => {
                         <br />
                         <small>
                             {/* TODO: use short/public name with Foursight-Front but full name with Foursight-CGAP */}
-                            Click <Link style={{fontWeight:"bold",color:"darkred"}} to={CLIENT.Path("/env", GetDefaultEnv())}>here</Link> to use this default environment:
-                            &nbsp;<Link style={{fontWeight:"bold",color:"darkred"}} to={CLIENT.Path("/env", GetDefaultEnv())}>{GetDefaultEnv()}</Link>
+                            Click <Link style={{fontWeight:"bold",color:"darkred"}} to={Client.Path("/env", GetDefaultEnv())}>here</Link> to use this default environment:
+                            &nbsp;<Link style={{fontWeight:"bold",color:"darkred"}} to={Client.Path("/env", GetDefaultEnv())}>{GetDefaultEnv()}</Link>
                         </small>
                     </div>
                 </>):(<>
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
                     Current environment: <b style={{color:boxTextColor}}>{ENV.PreferredName(ENV.Current(), header)}</b>
-                    { (AUTH.IsLoggedIn(header) && !ENV.IsAllowed(ENV.Current(), header)) && <span style={{color:"red"}}>&nbsp;&#x2192; You do not have permission for this environment.</span> }
+                    { (Auth.IsLoggedIn(header) && !ENV.IsAllowed(ENV.Current(), header)) && <span style={{color:"red"}}>&nbsp;&#x2192; You do not have permission for this environment.</span> }
                 </div>
                 </>)}
             </div>
@@ -99,21 +99,21 @@ const EnvPage = (props) => {
                                     </>)}
                                 </td>
                                 <td>
-                                    { AUTH.IsLoggedIn(header) && !ENV.IsAllowed(env, header) ? (<>
+                                    { Auth.IsLoggedIn(header) && !ENV.IsAllowed(env, header) ? (<>
                                         <span className={"tool-tip"} data-text={"This is a restricted environment!"} style={{color:"red"}}>
-                                            <Link style={{color:"inherit",textDecoration:IsCurrentEnv(env) ? "underline" : "normal"}} to={CLIENT.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
+                                            <Link style={{color:"inherit",textDecoration:IsCurrentEnv(env) ? "underline" : "normal"}} to={Client.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
                                             { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             &nbsp;&#x2192; You do not have permission for this environment.
                                         </span>
                                     </>):(<>
                                         { IsCurrentEnv(env) ? (<>
                                             <span className={"tool-tip"} data-text={"This is the current environment."} style={{color:"black"}}>
-                                                <Link style={{color:"inherit"}} to={CLIENT.Path("/env", env.public_name)}><b><u>{env.public_name}</u></b></Link>
+                                                <Link style={{color:"inherit"}} to={Client.Path("/env", env.public_name)}><b><u>{env.public_name}</u></b></Link>
                                                 { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             </span>
                                         </>):(<>
                                             <span>
-                                                <Link style={{color:"inherit"}} to={CLIENT.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
+                                                <Link style={{color:"inherit"}} to={Client.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
                                                 { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             </span>
                                         </>)}

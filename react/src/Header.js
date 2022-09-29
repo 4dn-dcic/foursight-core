@@ -4,8 +4,8 @@ import { useContext, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import Global from "./Global";
 import { BarSpinner } from "./Spinners";
-import AUTH from './utils/AUTH';
-import CLIENT from './utils/CLIENT';
+import Auth from './utils/Auth';
+import Client from './utils/Client';
 import CONTEXT from './utils/CONTEXT';
 import COOKIE from './utils/COOKIE';
 import CurrentTime from './CurrentTime';
@@ -44,15 +44,15 @@ const Header = (props) => {
             }
         }
         return <span>
-            <NavLink to={CLIENT.Path("/home")} style={({isActive}) => style(isActive)}>HOME</NavLink>&nbsp;|&nbsp;
-            <NavLink to={CLIENT.Path("/env")} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
-            <NavLink to={CLIENT.Path("/info")} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
-            <NavLink to={CLIENT.Path("/checks")} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
-            <NavLink to={CLIENT.Path("/users")} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
-            <NavLink to={CLIENT.Path("/aws/s3")} style={({isActive}) => style(isActive)}>S3</NavLink>&nbsp;|&nbsp;
+            <NavLink to={Client.Path("/home")} style={({isActive}) => style(isActive)}>HOME</NavLink>&nbsp;|&nbsp;
+            <NavLink to={Client.Path("/env")} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
+            <NavLink to={Client.Path("/info")} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
+            <NavLink to={Client.Path("/checks")} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
+            <NavLink to={Client.Path("/users")} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
+            <NavLink to={Client.Path("/aws/s3")} style={({isActive}) => style(isActive)}>S3</NavLink>&nbsp;|&nbsp;
             <a target="_blank" title="Open portal in another tab."
                 style={{textDecoration:"none",color:"darkgreen"}}
-                href={CLIENT.PortalLink(header)}>
+                href={Client.PortalLink(header)}>
                 PORTAL <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
             </a>&nbsp;|&nbsp;
             <a target="_blank" title="Open AWS Console for this account ({header.app?.credentials.aws_account_number}) in another tab."
@@ -97,7 +97,7 @@ const Header = (props) => {
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr title={"App Deployed:" + header.app?.deployed + " | App Launched: " + header.app?.launched + " | Page Loaded: " + header.page?.loaded}>
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
-                    <a href={CLIENT.PortalLink(header)} target="_blank">
+                    <a href={Client.PortalLink(header)} target="_blank">
                         { ENV.IsFoursightFourfront(header) ? (<span>
                             <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={IMAGE.FoursightFourfrontLogo()} height="32" width="44" />
                         </span>):(<span>
@@ -132,10 +132,10 @@ const Header = (props) => {
                 </td>
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
                     <small><CurrentTime.FormatDateTime verbose={true} /></small>
-                    { (AUTH.IsLoggedIn(header)) ? (<span>
+                    { (Auth.IsLoggedIn(header)) ? (<span>
                             &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => LOGOUT()}>LOGOUT</span>
                     </span>):(<span>
-                        &nbsp;|&nbsp; <NavLink to={CLIENT.Path("/login?auth")} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
+                        &nbsp;|&nbsp; <NavLink to={Client.Path("/login?auth")} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
                     </span>)}
                 </td>
             </tr>
@@ -151,7 +151,7 @@ const Header = (props) => {
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (ENV.KnownEnvs(header).length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:(!ENV.IsCurrentKnown(header) || (AUTH.IsLoggedIn(header) && !ENV.IsCurrentAllowed(header))) ? "red" : "#143c53"}} title={"Environment: " + ENV.Current() + (!ENV.IsCurrentKnown(header) ? " -> UNKNOWN" : "")}>{ENV.Current() || "unknown-env"}</b>
+                            <b className="dropdown-button" style={{color:(!ENV.IsCurrentKnown(header) || (Auth.IsLoggedIn(header) && !ENV.IsCurrentAllowed(header))) ? "red" : "#143c53"}} title={"Environment: " + ENV.Current() + (!ENV.IsCurrentKnown(header) ? " -> UNKNOWN" : "")}>{ENV.Current() || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { ENV.KnownEnvs(header).map(env => 
                                     ENV.Equals(env, ENV.Current()) ?
@@ -159,14 +159,14 @@ const Header = (props) => {
                                     :
                                         ENV.IsAllowed(env, header) ?
                                             // This works "okay" 2022-09-18 but does not refresh/refetch (say) /users page data on select new env
-                                            // <Link key={env.public_name} to={CLIENT.Path(null, env.public_name)}>{env.public_name}</Link>
+                                            // <Link key={env.public_name} to={Client.Path(null, env.public_name)}>{env.public_name}</Link>
                                             // So doing this funky double redirect to get it to ... TODO: figure out right/React of of doing this
-                                            <Link key={env.full_name} to={{pathname: "/redirect"}} state={{url: !ENV.IsCurrentKnown(header) ? CLIENT.Path("/env", ENV.PreferredName(ENV.Default(header), header)) : CLIENT.Path(null, ENV.PreferredName(env, header))}}>{ENV.PreferredName(env, header)}</Link>
+                                            <Link key={env.full_name} to={{pathname: "/redirect"}} state={{url: !ENV.IsCurrentKnown(header) ? Client.Path("/env", ENV.PreferredName(ENV.Default(header), header)) : Client.Path(null, ENV.PreferredName(env, header))}}>{ENV.PreferredName(env, header)}</Link>
                                         :
-                                            <Link key={env.public_name} to={CLIENT.Path("/env", ENV.PreferredName(env, header))}>{ENV.PreferredName(env, header)}{!ENV.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</Link>
+                                            <Link key={env.public_name} to={Client.Path("/env", ENV.PreferredName(env, header))}>{ENV.PreferredName(env, header)}{!ENV.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</Link>
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
-                                <Link id="__envinfo__" to={CLIENT.Path("/env")}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</Link>
+                                <Link id="__envinfo__" to={Client.Path("/env")}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</Link>
                             </div>
                          </span>
                         ):(
@@ -182,11 +182,11 @@ const Header = (props) => {
                         { (header.app?.stage !== 'prod' && header.app?.stage !== 'dev') ? (<>
                             <b title="Deployment stage: {header.app?.stage}">{header.app?.stage}}</b> &nbsp;|&nbsp;
                         </>):(<></>)}
-                        { (AUTH.IsLoggedIn(header)) ? (<>
-                            { AUTH.LoggedInUser(header) ? (<>
-                                <Link to={CLIENT.Path("/login")} style={{textDecoration:"none"}}><b style={{color:"darkblue"}} title="Logged in as.">{AUTH.LoggedInUser(header)}</b></Link>
+                        { (Auth.IsLoggedIn(header)) ? (<>
+                            { Auth.LoggedInUser(header) ? (<>
+                                <Link to={Client.Path("/login")} style={{textDecoration:"none"}}><b style={{color:"darkblue"}} title="Logged in as.">{Auth.LoggedInUser(header)}</b></Link>
                             </>):(<>
-                                { (AUTH.IsFauxLoggedIn()) ? (<>
+                                { (Auth.IsFauxLoggedIn()) ? (<>
                                     <span className={"tool-tip"} data-text="Running locally and faux logged in (i.e. not via Auth0).">
                                         <b style={{color:"darkred"}}>FAUX USER</b>
                                     </span>
@@ -210,7 +210,7 @@ const Header = (props) => {
                         {/* <BarSpinner loading={header.contentLoading} color="darkred" size="160"/> */}
                     </td>
                     <td style={{background:"lightyellow",color:"darkred",textAlign:"right",paddingRight:"10pt",fontSize:"small",fontStyle:"italic"}}>
-                        { CLIENT.IsLocal() && <>
+                        { Client.IsLocal() && <>
                             { CONTEXT.IsLocalCrossOrigin() ? (<>
                                 Running locally cross-origin
                             </>):(<>
@@ -225,7 +225,7 @@ const Header = (props) => {
             </tbody></table>
             </div>
             <div style={{float:"right",marginRight:"7pt",marginTop:"6pt"}}>
-                { false && CLIENT.IsLocal() && (<>
+                { false && Client.IsLocal() && (<>
                     <div style={{fontSize:"small",fontWeight:"bold",paddingTop:"2pt",paddingBottom:"2pt",paddingLeft:"5pt",paddingRight:"5pt",color:"#684B19",background:"#FCF8E3",border:"2px double #8A6D3B",borderRadius:"8px"}}>
                         <div>
                             { CONTEXT.IsLocalCrossOrigin() ? (<>

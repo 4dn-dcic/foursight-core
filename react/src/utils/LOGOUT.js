@@ -8,7 +8,7 @@ import Page from '../Page';
 import SERVER from './SERVER';
 
 // Redirects to the server /logout page in order to delete the authtoken cookie.
-// The server should redirect back to the value of CLIENT.LastPath (from the lasturl cookie)
+// The server should redirect back to the value of Client.LastPath (from the lasturl cookie)
 //
 function LOGOUT() {
     COOKIE.DeleteFauxLogin();

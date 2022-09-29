@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { RingSpinner } from "../Spinners";
 import FETCH from "../utils/FETCH";
 import SERVER from "../utils/SERVER";
-import CLIENT from "../utils/CLIENT";
+import Client from "../utils/Client";
 
 const UsersPage = () => {
 
@@ -42,7 +42,7 @@ const UsersPage = () => {
                     {users.map(user => (
                         <tr key={user.uuid} style={{borderBottom:"1px solid gray"}}>
                             <td style={{borderBottom:"1px solid gray",padding:"10px"}}>
-                                <Link to={CLIENT.Path("/users/" + user.email_address)}><b>{user.email_address}</b></Link> <br />
+                                <Link to={Client.Path("/users/" + user.email_address)}><b>{user.email_address}</b></Link> <br />
                                 {user["first_name"]} {user["last_name"]} <br />
                                 <small id="{user.uuid}" style={{cursor:"copy"}}>{user.uuid}</small>
                             </td>

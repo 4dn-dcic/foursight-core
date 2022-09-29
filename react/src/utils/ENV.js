@@ -2,7 +2,7 @@
 // Environment related functions.
 // -------------------------------------------------------------------------------------------------
 
-import AUTH from './AUTH';
+import Auth from './Auth';
 import CONTEXT from './CONTEXT';
 import COOKIE from './COOKIE';
 import PATH from './PATH';
@@ -46,7 +46,7 @@ function IsDefaultEnv(env, header) {
 // -------------------------------------------------------------------------------------------------
 
 function GetAllowedEnvs(header) {
-    if (AUTH.IsFauxLoggedIn()) {
+    if (Auth.IsFauxLoggedIn()) {
         //
         // If we are faux logged in then allow all environments since we we (the React API)
         // are not able to determine the list of allowed environment without a real authenticated

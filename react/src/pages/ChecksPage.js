@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { BarSpinner } from "../Spinners";
 import { RingSpinner } from "../Spinners";
 import CLIPBOARD from '../utils/CLIPBOARD';
-import CLIENT from '../utils/CLIENT';
+import Client from '../utils/Client';
 import COOKIE from '../utils/COOKIE';
 import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
@@ -470,10 +470,10 @@ const ChecksPage = (props) => {
             </div>
         }
         return <div>
-            <div className={"check-run-button"} style={{...style, cursor:CLIENT.IsReadOnlyMode(header) && check.configuringCheckRun ? "not-allowed" : "",background:CLIENT.IsReadOnlyMode(header) && check.configuringCheckRun ? "#888888" : "",color:check.configuringCheckRun ? "yellow" : ""}}
+            <div className={"check-run-button"} style={{...style, cursor:Client.IsReadOnlyMode(header) && check.configuringCheckRun ? "not-allowed" : "",background:Client.IsReadOnlyMode(header) && check.configuringCheckRun ? "#888888" : "",color:check.configuringCheckRun ? "yellow" : ""}}
                 onClick={(e) => {
                     if (check.configuringCheckRun) {
-                        if (!CLIENT.IsReadOnlyMode(header)) {
+                        if (!Client.IsReadOnlyMode(header)) {
                             saveInputKwargs(check);
                             showResultBox(check);
                             runCheck(check);
@@ -485,8 +485,8 @@ const ChecksPage = (props) => {
                         noteChangedCheckBox(check);
                     }
                 }}>
-                <span className={"tool-tip"} data-text={CLIENT.IsReadOnlyMode(header) ? "Run disabled because in readonly mode." : "Click to run this check."}>
-                    { !CLIENT.IsReadOnlyMode(header) ? <>
+                <span className={"tool-tip"} data-text={Client.IsReadOnlyMode(header) ? "Run disabled because in readonly mode." : "Click to run this check."}>
+                    { !Client.IsReadOnlyMode(header) ? <>
                         { check.configuringCheckRun ? <>
                             <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<span>Run</span>
                         </>:<>
@@ -680,7 +680,7 @@ const ChecksPage = (props) => {
         return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
             <div title={check.name}>
                 <b className="tool-tip" data-text={`Group: ${check.group}. Check: ${check.name}. Click for full history.`}>
-                    <Link to={CLIENT.Path(`/checks/${check.name}/history`)} style={{color:"darkgreen"}} target="_blank">{check.title}</Link>
+                    <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"darkgreen"}} target="_blank">{check.title}</Link>
                 </b>&nbsp;
                 { check.history && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",color:"darkred",fontWeight:"bold"}} onClick={() => {refreshHistory(check)}}>&#8635;&nbsp;&nbsp;</span></span> }
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check)})}><b>&#x2717;</b></span>

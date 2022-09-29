@@ -2,7 +2,7 @@
 // Fetch (HTTP GET et cetera) related functions.
 // -------------------------------------------------------------------------------------------------
 
-import CLIENT from '../utils/CLIENT';
+import Client from '../utils/Client';
 import COOKIE from '../utils/COOKIE';
 import LOGOUT from '../utils/LOGOUT';
 
@@ -66,7 +66,7 @@ function fetchData(url, setData, setLoading, setError) {
                 console.log("FETCH IS FORBIDDEN! " + url);
                 console.log(window.location);
                 // window.location.pathname = "/api/react/cgap-supertest/forbidden";
-                // window.location.pathname = CLIENT.Path("/forbidden");
+                // window.location.pathname = Client.Path("/forbidden");
                 LOGOUT();
             }
             if (setError) {

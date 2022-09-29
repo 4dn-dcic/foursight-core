@@ -1,9 +1,9 @@
 import { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
 import Global from './Global';
-import AUTH from './utils/AUTH';
+import Auth from './utils/Auth';
 import ENV from './utils/ENV';
-import CLIENT from './utils/CLIENT';
+import Client from './utils/Client';
 import COOKIE from './utils/COOKIE';
 
 // -------------------------------------------------------------------------------------------------
@@ -30,7 +30,7 @@ function KnownEnvRequired({ children }) {
     if (header.loading) return children;
     if (!ENV.IsKnown(ENV.Current(), header) ) {
         console.log("XYZZY:REDIRECT TO /env (a)");
-        return <Navigate to={CLIENT.Path("/env")} replace />
+        return <Navigate to={Client.Path("/env")} replace />
     }
     else {
         return children;
@@ -48,16 +48,16 @@ function AuthorizationRequired({ children }) {
     const [ header ] = useContext(Global);
     if (!ENV.IsCurrentKnown(header)) {
         console.log("XYZZY:REDIRECT TO /env (b)");
-        return <Navigate to={CLIENT.Path("/env")} replace />
+        return <Navigate to={Client.Path("/env")} replace />
     }
-    else if (!AUTH.IsLoggedIn(header)) {
+    else if (!Auth.IsLoggedIn(header)) {
         console.log("XYZZY:REDIRECT TO /login (c)");
         console.log(header);
-        return <Navigate to={CLIENT.Path("/login")} replace />
+        return <Navigate to={Client.Path("/login")} replace />
     }
     else if (!ENV.IsAllowed(ENV.Current(), header)) {
         console.log("XYZZY:REDIRECT TO /env (d)");
-        return <Navigate to={CLIENT.Path("/env")} replace />
+        return <Navigate to={Client.Path("/env")} replace />
     }
     else {
         return children;
@@ -73,14 +73,14 @@ function NoteLastUrl() {
 }
 
 function GetLastUrl() {
-    return COOKIE.LastUrl() || CLIENT.HomeUrl();
+    return COOKIE.LastUrl() || Client.HomeUrl();
 }
 
 function GetLastPath() {
     const lastUrl = GetLastUrl();
-    const baseUrl = CLIENT.BaseUrl();
+    const baseUrl = Client.BaseUrl();
     if (lastUrl.startsWith(baseUrl)) {
-        return CLIENT.Path(lastUrl.substring(baseUrl.length), false);
+        return Client.Path(lastUrl.substring(baseUrl.length), false);
     }
     return lastUrl;
 }
