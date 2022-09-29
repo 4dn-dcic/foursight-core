@@ -306,6 +306,7 @@ const CheckHistoryPage = (props) => {
                         <b style={{color:"darkred"}}>TODO</b>
                         <p />
                         - Have dropdown to pick other checks (maybe by group). <br />
+                        - Allow check to be run here.<br />
                     </div>
                 </td>
             </tr>
