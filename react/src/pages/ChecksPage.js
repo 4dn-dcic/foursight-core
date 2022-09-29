@@ -11,10 +11,10 @@ import Fetch from '../utils/Fetch';
 import Image from '../utils/Image';
 import Global from '../Global';
 import ReadOnlyMode from '../ReadOnlyMode';
-import SERVER from '../utils/SERVER';
-import STR from '../utils/STR';
+import Server from '../utils/Server';
+import Str from '../utils/Str';
 import TableHead from '../TableHead';
-import TIME from '../utils/TIME';
+import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';
@@ -37,7 +37,7 @@ const ChecksPage = (props) => {
 
         ReadOnlyMode.RegisterCallback(setReadOnlyMode);
 
-        const groupedChecksUrl = SERVER.Url(`/checks`, environ);
+        const groupedChecksUrl = Server.Url(`/checks`, environ);
         Fetch.get(groupedChecksUrl, groupedChecks => {
             setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
             if (groupedChecks.length > 0) {
@@ -50,7 +50,7 @@ const ChecksPage = (props) => {
             }
         }, setLoading, setError);
 
-        const lambdasUrl = SERVER.Url(`/lambdas`, environ);
+        const lambdasUrl = Server.Url(`/lambdas`, environ);
         Fetch.get(lambdasUrl, lambdas => {
             setLambdas(lambdas.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0)));
         });
@@ -65,7 +65,7 @@ const ChecksPage = (props) => {
 
     function refreshChecksStatus() {
         setChecksStatusLoading(true);
-        const url = SERVER.Url(`/checks-status`, environ);
+        const url = Server.Url(`/checks-status`, environ);
         Fetch.get(url, response => {
             setChecksStatus(e => ({...response}));
         }, setChecksStatusLoading);
@@ -298,7 +298,7 @@ const ChecksPage = (props) => {
         console.log(argsEncoded);
         hideCheckRunningBox(check);
         noteChangedCheckBox();
-        const runCheckUrl = SERVER.Url(`/checks/${check.name}/run?args=${argsEncoded}`, environ);
+        const runCheckUrl = Server.Url(`/checks/${check.name}/run?args=${argsEncoded}`, environ);
         check.queueingCheckRun = true;
         check.fetchingResult = true;
         Fetch.get(runCheckUrl, response => { check.queueingCheckRun = false; check.fetchingResult = false; check.queuedCheckRun = response.uuid });
@@ -323,7 +323,7 @@ const ChecksPage = (props) => {
         return !check.showingCheckRunningBox ? <span /> : <div>
             <div className="boxstyle check-pass" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                 { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}></span> }
-                {  check.queuedCheckRun && <small><b>Queued check run {TIME.FormatDateTime(TIME.Now())} &#x2192; <u>{check.queuedCheckRun}</u></b></small> }
+                {  check.queuedCheckRun && <small><b>Queued check run {Time.FormatDateTime(Time.Now())} &#x2192; <u>{check.queuedCheckRun}</u></b></small> }
                 { !check.queuedCheckRun && <Spinner condition={check.queueingCheckRun} label={" Queueing check run"} color={"darkgreen"} /> }
             </div>
         </div>
@@ -574,7 +574,7 @@ const ChecksPage = (props) => {
                             {/* TODO: As far as I can tell there is only every one element here under the schedule element */}
                             { Object.keys(check?.schedule).map((key, index) =>
                                 <div key={key}>
-                                    { STR.HasValue(check.schedule[key]?.cron_description) ? (
+                                    { Str.HasValue(check.schedule[key]?.cron_description) ? (
                                         <div style={{whiteSpace:"nowrap",width:"100%"}} key={index} title={check.schedule[key].cron}>
                                             <small><i>Schedule: <span className={"tool-tip"} data-text={check.schedule[key]?.cron}>{check.schedule[key].cron_description}</span>.</i></small>
                                         </div>
@@ -779,7 +779,7 @@ const ChecksPage = (props) => {
             selectedHistories.unshift(check);
             noteChangedHistories();
             if (!check.history) {
-                const resultsHistoryUrl = SERVER.Url(`/checks/${check.name}/history`, environ);
+                const resultsHistoryUrl = Server.Url(`/checks/${check.name}/history`, environ);
                 Fetch.get(resultsHistoryUrl, history => { check.history = history; console.log(check); noteChangedHistories(); });
             }
         }
@@ -860,7 +860,7 @@ const ChecksPage = (props) => {
         noteChangedSelectedGroups();
         if (!check.results) {
             // Fetch the latest results for this check.
-            const checkResultsUrl = SERVER.Url(`/checks/${check.name}`, environ);
+            const checkResultsUrl = Server.Url(`/checks/${check.name}`, environ);
             check.fetchingResult = true;
             Fetch.get(checkResultsUrl, checkResults => { check.results = checkResults; check.fetchingResult = false; noteChangedResults(); }, setLoading, setError)
         }

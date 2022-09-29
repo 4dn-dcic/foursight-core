@@ -5,7 +5,7 @@ import { BarSpinner } from "../../Spinners";
 import Clipboard from '../../utils/Clipboard';
 import Fetch from '../../utils/Fetch';
 import Image from '../../utils/Image';
-import SERVER from '../../utils/SERVER';
+import Server from '../../utils/Server';
 import Yaml from '../../utils/Yaml';
 import TableHead from '../../TableHead';
 
@@ -21,7 +21,7 @@ const AwsS3Page = (props) => {
     let [ error, setError ] = useState(false);
 
     useEffect(() => {
-        const bucketsUrl = SERVER.Url("/aws/s3/buckets", environ);
+        const bucketsUrl = Server.Url("/aws/s3/buckets", environ);
         Fetch.get(bucketsUrl, bucketList => {
             setBucketList(bucketList);
         }, setLoading, setError);
@@ -75,7 +75,7 @@ const AwsS3Page = (props) => {
         };
         bucketKeysList.unshift(bucketKeys);
         setBucketKeysList(existing => [...existing]);
-        const bucketKeysUrl = SERVER.Url(`/aws/s3/buckets/${bucket}`, environ);
+        const bucketKeysUrl = Server.Url(`/aws/s3/buckets/${bucket}`, environ);
         Fetch.get(bucketKeysUrl, data => {
             bucketKeys.keys = data;
             bucketKeys.loading = false;
@@ -127,7 +127,7 @@ const AwsS3Page = (props) => {
             return;
         }
         key = encodeURIComponent(key);
-        const url = SERVER.Url(`/aws/s3/buckets/${bucket}/${key}`, environ);
+        const url = Server.Url(`/aws/s3/buckets/${bucket}/${key}`, environ);
         let data = {
             bucket: bucket,
             key: key,

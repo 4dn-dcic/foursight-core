@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import ENV from '../utils/ENV';
 import Fetch from '../utils/Fetch';
 import Global from "../Global";
-import SERVER from '../utils/SERVER';
+import Server from '../utils/Server';
 import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';
 
@@ -13,7 +13,7 @@ const GacComparePage = (props) => {
     const [ header ] = useContext(Global);
 
     let { environCompare } = useParams();
-    const url = SERVER.Url(`/gac/${environCompare}`, ENV.Current());
+    const url = Server.Url(`/gac/${environCompare}`, ENV.Current());
     const [ data, setData ] = useState([]);
     const [ showingRaw, setShowingRaw ] = useState(false);
     const [ showingType, setShowingType ] = useState("all");
@@ -146,7 +146,7 @@ const GacComparePage = (props) => {
 
     let OnChangeEnv = (arg) => {
         const environ = arg.target.value;
-        let url = SERVER.Url("/gac/" + environCompare, environ);
+        let url = Server.Url("/gac/" + environCompare, environ);
         const path = "/api/react/" + environ + "/gac/" + environCompare;
         navigate(path);
         Fetch.get(url, setData, setLoading, setError)
@@ -154,7 +154,7 @@ const GacComparePage = (props) => {
 
     let OnChangeEnvCompare = (arg) => {
         const environCompare = arg.target.value;
-        let url = SERVER.Url("/gac/" + environCompare, ENV.Current());
+        let url = Server.Url("/gac/" + environCompare, ENV.Current());
         const path = "/api/react/" + ENV.Current() + "/gac/" + environCompare;
         navigate(path);
         Fetch.get(url, setData, setLoading, setError)

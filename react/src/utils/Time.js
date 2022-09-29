@@ -2,7 +2,7 @@
 // Miscellaneous date/time related functions (local timezone formatting).
 // -------------------------------------------------------------------------------------------------
 
-import STR from './STR';
+import Str from './Str';
 
 // Returns a formatted date/time string based on the given date/time value (local timezone).
 //
@@ -43,7 +43,7 @@ function FormatDuration(startDate, endDate = new Date(), verbose = false, fallba
     const minutes     = Math.round(((ms % msPerDay) % msPerHour)   / msPerMinute);
     const seconds     = Math.round(((ms % msPerDay) % msPerMinute) / msPerSecond);
     if (days === 0 && hours === 0 && minutes === 0 && seconds === 0) {
-        if (STR.HasValue(fallback)) {
+        if (Str.HasValue(fallback)) {
             return (prefix ? (" " + prefix + " ") : "") + fallback;
         }
         else {
@@ -86,7 +86,7 @@ function ToDateTime(value) {
             return new Date(ms);
         }
     }
-    else if (STR.HasValue(value)) {
+    else if (Str.HasValue(value)) {
         try {
             if ((value = new Date(Date.parse(value))) === "Invalid Date") {
                 return null;

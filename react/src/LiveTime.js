@@ -3,14 +3,14 @@
 // -------------------------------------------------------------------------------------------------
 
 import { useEffect, useState } from 'react';
-import TIME from "./utils/TIME";
+import Time from "./utils/Time";
 
 const _CURRENT_TIME_INTERVAL = 1100;
 
 const FormatDateTime = ({verbose = false}) => {
     const [ now, setNow ] = useState(new Date());
     useEffect(() => {setInterval(() => setNow(new Date()), _CURRENT_TIME_INTERVAL); }, []);
-    return <>{TIME.FormatDateTime(now, verbose)}</>
+    return <>{Time.FormatDateTime(now, verbose)}</>
 }
 
 const FormatDuration = ({start = null, end = null, verbose = false, fallback = "", suffix = "", tooltip = false}) => {
@@ -18,11 +18,11 @@ const FormatDuration = ({start = null, end = null, verbose = false, fallback = "
     useEffect(() => {setInterval(() => setNow(new Date()), _CURRENT_TIME_INTERVAL); }, []);
     return <>
         { tooltip ? <>
-            <span className="tool-tip" data-text={TIME.FormatDateTime(start || end)}>
-                {TIME.FormatDuration(start || now, end || now, verbose, fallback, null, suffix)}
+            <span className="tool-tip" data-text={Time.FormatDateTime(start || end)}>
+                {Time.FormatDuration(start || now, end || now, verbose, fallback, null, suffix)}
             </span>
         </>:<>
-            {TIME.FormatDuration(start || now, end || now, verbose, fallback, null, suffix)}
+            {Time.FormatDuration(start || now, end || now, verbose, fallback, null, suffix)}
         </>}
     </>
 }

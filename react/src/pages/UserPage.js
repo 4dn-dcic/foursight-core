@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { RingSpinner } from "../Spinners";
-import SERVER from "../utils/SERVER";
+import Server from "../utils/Server";
 import Fetch from "../utils/Fetch";
 import Yaml from '../utils/Yaml';
 
 const UserPage = (props) => {
 
     const { email } = useParams()
-    const url = SERVER.Url(`/users/${email}`, true);
+    const url = Server.Url(`/users/${email}`, true);
     const [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);

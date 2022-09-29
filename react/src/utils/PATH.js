@@ -2,10 +2,10 @@
 // Path related function.
 // -------------------------------------------------------------------------------------------------
 
-import STR from './STR';
+import Str from './Str';
 
 function GetNormalizedPath(path) {
-    if (!STR.HasValue(path)) {
+    if (!Str.HasValue(path)) {
         return "";
     }
     path = path.replace(/\/+/g, "/");

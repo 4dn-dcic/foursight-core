@@ -11,10 +11,10 @@ import Clipboard from '../utils/Clipboard';
 import ENV from '../utils/ENV';
 import Fetch from '../utils/Fetch';
 import Image from '../utils/Image';
-import SERVER from '../utils/SERVER';
-import STR from '../utils/STR';
+import Server from '../utils/Server';
+import Str from '../utils/Str';
 import TableHead from '../TableHead';
-import TIME from '../utils/TIME';
+import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';
@@ -39,11 +39,11 @@ const CheckHistoryPage = (props) => {
 
     function update(limit, offset, sort) {
         setHistory(e => ({...e, loading: true}));
-        if (!STR.HasValue(sort)) {
+        if (!Str.HasValue(sort)) {
             sort = "timestamp.desc";
         }
 		setArgs({...args,  "limit": limit, "offset": offset, "sort": sort });
-        const url = SERVER.Url(`/checks/${check}/history?limit=${limit}&offset=${offset}&sort=${sort}`, environ);
+        const url = Server.Url(`/checks/${check}/history?limit=${limit}&offset=${offset}&sort=${sort}`, environ);
         Fetch.get(url, response => {
             response.loading = false;
             setHistory(response);
@@ -70,7 +70,7 @@ const CheckHistoryPage = (props) => {
         history.__resultLoading = true;
         history.__resultError = false;
         setHistory(e => ({...e}));
-        const url = SERVER.Url(`/checks/${check}/${uuid}`, environ);
+        const url = Server.Url(`/checks/${check}/${uuid}`, environ);
         Fetch.get(url, response => {
             if (history.__resultShowing) {
                 history.__result = response;

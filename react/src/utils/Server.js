@@ -4,11 +4,11 @@
 
 import ENV from './ENV';
 import Context from './Context';
-import STR from './STR';
+import Str from './Str';
 import Type from './Type';
 
 function GetUrl(path, env = true) {
-    if (!STR.HasValue(path)) {
+    if (!Str.HasValue(path)) {
         path = "/"
     }
     else if (!path.startsWith("/")) {
@@ -19,7 +19,7 @@ function GetUrl(path, env = true) {
             env = ENV.Current();
         }
     }
-    if (STR.HasValue(env)) {
+    if (Str.HasValue(env)) {
         path = "/" + env + path;
     }
     return Context.Server.BaseUrl() + path;

@@ -6,7 +6,7 @@ import Client from './utils/Client';
 import ENV from './utils/ENV';
 import Fetch from './utils/Fetch';
 import Image from './utils/Image';
-import SERVER from './utils/SERVER';
+import Server from './utils/Server';
 
 import AwsS3Page from './pages/aws/AwsS3Page';
 import ChecksPage from './pages/ChecksPage';
@@ -42,7 +42,7 @@ const App = () => {
 
     let [ header, setHeader ] = useState({loading: true});
 
-    const url = SERVER.Url("/header");
+    const url = Server.Url("/header");
     useEffect(() => {
         Fetch.get(
             url,

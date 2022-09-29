@@ -5,7 +5,7 @@
 import Cookies from 'universal-cookie';
 import Context from './Context';
 import Jwt from './Jwt';
-import STR from './STR';
+import Str from './Str';
 import Type from './Type';
 
 const _cookies                = new Cookies()
@@ -26,7 +26,7 @@ function GetCookieDomain() {
 }
 
 function GetCookie(name) {
-    if (STR.HasValue(name)) {
+    if (Str.HasValue(name)) {
         const value = _cookies.get(name);
         return (value === "") ? null : value;
     }
@@ -34,7 +34,7 @@ function GetCookie(name) {
 }
 
 function DeleteCookie(name) {
-    if (STR.HasValue(name)) {
+    if (Str.HasValue(name)) {
          //
         // The universal-cookie library is not working for delete, at least with a cookie
         // domain which includes all sub-domains, i.e. cookie domains beginning with a dot.
@@ -50,8 +50,8 @@ function DeleteCookie(name) {
 }
 
 function SetCookie(name, value, expires = null) {
-    if (STR.HasValue(name)) {
-        if (STR.HasValue(value)) {
+    if (Str.HasValue(name)) {
+        if (Str.HasValue(value)) {
             //
             // _cookies.set(name, value, { path: _cookiePath, expires: expires });
             //
@@ -74,7 +74,7 @@ function HasAuthTokenCookie() {
     // With new scheme of having the authtoken cookie be our JWT-encoded (signed, actually)
     // authorization object, which is NOT an HttpOnly, cookie we don't need any of the below.
     //
-    return STR.HasValue(GetCookie(_authTokenCookieName));
+    return Str.HasValue(GetCookie(_authTokenCookieName));
 
     //
     // Nevermind the below business of detecting if the authtoken HttpOnly cookie exists,
@@ -84,7 +84,7 @@ function HasAuthTokenCookie() {
     // so there's no real reason why we shouldn't rely on it.
     //
     const authCookie = GetCookie(_authCookieName);
-    if (STR.HasValue(authCookie)) {
+    if (Str.HasValue(authCookie)) {
         return true;
     }
 
@@ -92,7 +92,7 @@ function HasAuthTokenCookie() {
     // Pre-above. Trying to determine if the authtoken HttpOnly cookie exists.
     //
     const authTokenCookie = GetCookie(_authTokenCookieName);
-    if (STR.HasValue(authTokenCookie) && authTokenCookie != "dummy") {
+    if (Str.HasValue(authTokenCookie) && authTokenCookie != "dummy") {
         //
         // The authtoken cookie exists AND we can actually read it
         // which means it is NOT an HttpOnly cookie, but whatever,
@@ -130,7 +130,7 @@ function HasAuthTokenCookie() {
 function GetAuthTokenCookie() {
     try {
         const authTokenCookie = GetCookie(_authTokenCookieName);
-        if (STR.HasValue(authTokenCookie)) {
+        if (Str.HasValue(authTokenCookie)) {
             const authToken = Jwt.Decode(authTokenCookie);
             if (Type.IsObject(authToken)) {
                 return authToken || {};

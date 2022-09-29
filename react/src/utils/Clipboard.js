@@ -2,10 +2,10 @@
 // Clipboard related functions.
 // -------------------------------------------------------------------------------------------------
 
-import STR from './STR';
+import Str from './Str';
 
 function CopyToClipboard(id) {
-    if (STR.HasValue(id)) {
+    if (Str.HasValue(id)) {
         const range = document.createRange();
         if (range) {
             const element = document.getElementById(id);

@@ -5,7 +5,7 @@
 import Cookie from './Cookie';
 import ENV from './ENV';
 import Page from '../Page';
-import SERVER from './SERVER';
+import Server from './Server';
 
 // Redirects to the server /logout page in order to delete the authtoken cookie.
 // The server should redirect back to the value of Client.LastPath (from the lasturl cookie)
@@ -13,7 +13,7 @@ import SERVER from './SERVER';
 function Logout() {
     Cookie.DeleteAuth();
     Cookie.SetRedirect(Page.LastUrl());
-    window.location.replace(SERVER.Url("/logout", ENV.Current()));
+    window.location.replace(Server.Url("/logout", ENV.Current()));
 }
 
 export default Logout;

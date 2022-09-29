@@ -6,7 +6,7 @@ import Auth from './Auth';
 import Context from './Context';
 import Cookie from './Cookie';
 import PATH from './PATH';
-import STR from './STR';
+import Str from './Str';
 import Type from './Type';
 
 // -------------------------------------------------------------------------------------------------
@@ -18,7 +18,7 @@ function GetKnownEnvs(header) {
 }
 
 function IsKnownEnv(env, header) {
-    if ((STR.HasValue(env) || Type.IsObject(env)) && Type.IsObject(header)) {
+    if ((Str.HasValue(env) || Type.IsObject(env)) && Type.IsObject(header)) {
         const knownEnvs = GetKnownEnvs(header);
         for (const knownEnv of knownEnvs) {
             if (AreSameEnvs(knownEnv, env)) {
@@ -66,7 +66,7 @@ function GetAllowedEnvs(header) {
 }
 
 function IsAllowedEnv(env, header) {
-    if ((STR.HasValue(env) || Type.IsObject(env)) && Type.IsObject(header)) {
+    if ((Str.HasValue(env) || Type.IsObject(env)) && Type.IsObject(header)) {
         // TODO
         // This is not right. The allowed_envs list is just a simple list of env names
         // and we want to consider all name version possibilities via the known_envs list.
@@ -99,7 +99,7 @@ function AreSameEnvs(envA, envB) {
                    (envA?.public_name?.toLowerCase()    === envB?.public_name?.toLowerCase()) ||
                    (envA?.foursight_name?.toLowerCase() === envB?.foursight_name?.toLowerCase());
         }
-        else if (STR.HasValue(envB)) {
+        else if (Str.HasValue(envB)) {
             envB = envB.toLowerCase();
             return (envA?.name?.toLowerCase()           === envB) ||
                    (envA?.full_name?.toLowerCase()      === envB) ||
@@ -111,7 +111,7 @@ function AreSameEnvs(envA, envB) {
             return false;
         }
     }
-    else if (STR.HasValue(envA)) {
+    else if (Str.HasValue(envA)) {
         if (Type.IsObject(envB)) {
             envA = envA.toLowerCase();
             return (envB?.name?.toLowerCase()           === envA) ||
@@ -120,7 +120,7 @@ function AreSameEnvs(envA, envB) {
                    (envB?.public_name?.toLowerCase()    === envA) ||
                    (envB?.foursight_name?.toLowerCase() === envA);
         }
-        else if (STR.HasValue(envB)) {
+        else if (Str.HasValue(envB)) {
             return envA.toLowerCase() === envB.toLowerCase();
         }
         else {
@@ -181,7 +181,7 @@ function GetAnnotatedEnv(env, header) {
     if (Type.IsObject(env)) {
         return env;
     }
-    else if (STR.HasValue(env)) {
+    else if (Str.HasValue(env)) {
         const knownEnvs = GetKnownEnvs(header);
         for (const knownEnv of knownEnvs) {
             if (AreSameEnvs(knownEnv, env)) {

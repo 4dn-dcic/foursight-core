@@ -8,8 +8,8 @@ import Context from '../utils/Context';
 import ENV from '../utils/ENV';
 import Fetch from '../utils/Fetch';
 import Image from '../utils/Image';
-import SERVER from '../utils/SERVER';
-import TIME from '../utils/TIME';
+import Server from '../utils/Server';
+import Time from '../utils/Time';
 import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';
 
@@ -17,7 +17,7 @@ const InfoPage = () => {
 
     const [ header ] = useContext(Global);
 
-    const url = SERVER.Url("/info");
+    const url = Server.Url("/info");
     const [ info, setInfo ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
@@ -25,7 +25,7 @@ const InfoPage = () => {
     useEffect(() => { Fetch.get(url, setInfo, setLoading, setError)}, []);
 
     function initiateAppReload() {
-        const url = SERVER.Url("/reloadlambda", false);
+        const url = Server.Url("/reloadlambda", false);
         Fetch.get(url);
     }
 
@@ -167,8 +167,8 @@ const InfoPage = () => {
             <InfoRow name={"Last Name"} value={Auth.Token()?.last_name} monospace={true} copy={true} size="2" />
             <InfoRow name={"Environments"} value={Auth.Token()?.allowed_envs.join(", ")} monospace={true} copy={true} size="2" />
             <InfoRow name={"Audience"} value={Auth.Token()?.aud} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Issued At"} value={TIME.FormatDateTime(Auth.Token()?.authorized_at) + TIME.FormatDuration(Auth.Token()?.authorized_at, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Expires At"} value={TIME.FormatDateTime(Auth.Token()?.authorized_until) + TIME.FormatDuration(new Date(), Auth.Token()?.authorized_until, true, "now", "|", "from now")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Issued At"} value={Time.FormatDateTime(Auth.Token()?.authorized_at) + Time.FormatDuration(Auth.Token()?.authorized_at, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Expires At"} value={Time.FormatDateTime(Auth.Token()?.authorized_until) + Time.FormatDuration(new Date(), Auth.Token()?.authorized_until, true, "now", "|", "from now")} monospace={true} copy={true} size="2" />
             <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
                 { showingAuthToken ? (<>
                     <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide AuthToken</u></b></small> <i>(server-side encrypted cookie)</i>
@@ -179,9 +179,9 @@ const InfoPage = () => {
                 </>)}
         </InfoBox>
         <InfoBox title="Miscellany">
-            <InfoRow name={"App Deployed At"} value={SERVER.IsLocal() ? "running locally" + (Context.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + TIME.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
-            <InfoRow name={"App Launched At"} value={header.app?.launched + TIME.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
-            <InfoRow name={"Page Loaded At"} value={info.page?.loaded + TIME.FormatDuration(info.page?.loaded, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
+            <InfoRow name={"App Deployed At"} value={Server.IsLocal() ? "running locally" + (Context.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + Time.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
+            <InfoRow name={"App Launched At"} value={header.app?.launched + Time.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
+            <InfoRow name={"Page Loaded At"} value={info.page?.loaded + Time.FormatDuration(info.page?.loaded, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Package"} value={header.app?.package} monospace={true} size="2" />
             <InfoRow name={"Stage"} value={header.app?.stage} monospace={true} size="2" />
             <InfoRow name={"Environment"} value={ENV.Current()} monospace={true} size="2" />
@@ -190,7 +190,7 @@ const InfoPage = () => {
             <InfoRow name={"Path"} value={info.page?.path} monospace={true} size="2" />
             <InfoRow name={"Endpoint"} value={info.page?.endpoint} monospace={true} size="2" />
             <InfoRow name={"Client (React UI)"} value={Client.BaseUrl()} monospace={true} size="2" />
-            <InfoRow name={"Server (React API)"} value={SERVER.BaseUrl()} monospace={true} size="2" />
+            <InfoRow name={"Server (React API)"} value={Server.BaseUrl()} monospace={true} size="2" />
         </InfoBox>
         <InfoBox title={`GAC: ${info.gac?.name}`}>
             { info.gac?.values ? (<span>

@@ -11,7 +11,7 @@ import Cookie from '../utils/Cookie';
 import LiveTime from '../LiveTime';
 import ENV from '../utils/ENV';
 import Logout from '../utils/Logout';
-import TIME from '../utils/TIME';
+import Time from '../utils/Time';
 import Yaml from '../utils/Yaml';
 import Page from '../Page';
 

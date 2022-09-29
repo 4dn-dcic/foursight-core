@@ -6,7 +6,7 @@ import Context from './Context';
 import Cookie from './Cookie';
 import ENV from './ENV';
 import PATH from './PATH';
-import STR from './STR';
+import Str from './Str';
 import Type from './Type';
 
 // -------------------------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ function GetHomeUrl() {
 // data object from which we will use the default environment.
 //
 function GetPath(path, env = true, envFallback = null) {
-    if (!STR.HasValue(path)) {
+    if (!Str.HasValue(path)) {
         path = GetCurrentLogicalPath();
     }
     if (!path.startsWith("/")) {
@@ -44,8 +44,8 @@ function GetPath(path, env = true, envFallback = null) {
             // from the global header data, if passed in.
             //
             env = ENV.Current();
-            if (!STR.HasValue(env)) {
-                if (STR.HasValue(envFallback)) {
+            if (!Str.HasValue(env)) {
+                if (Str.HasValue(envFallback)) {
                     env = envFallback;
                 }
                 else if (Type.IsObject(envFallback)) {
@@ -61,8 +61,8 @@ function GetPath(path, env = true, envFallback = null) {
         const header = env;
         // env = header.envs?.default;
         env = ENV.Default(header);
-        if (!STR.HasValue(env)) {
-            if (STR.HasValue(envFallback)) {
+        if (!Str.HasValue(env)) {
+            if (Str.HasValue(envFallback)) {
                 env = envFallback;
             }
             else if (Type.IsObject(envFallback)) {
@@ -75,7 +75,7 @@ function GetPath(path, env = true, envFallback = null) {
             }
         }
     }
-    if (STR.HasValue(env)) {
+    if (Str.HasValue(env)) {
         path = "/" + env + path;
     }
     path = Context.Client.BasePath() + path;

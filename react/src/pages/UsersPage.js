@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { RingSpinner } from "../Spinners";
 import Fetch from "../utils/Fetch";
-import SERVER from "../utils/SERVER";
+import Server from "../utils/Server";
 import Client from "../utils/Client";
 
 const UsersPage = () => {
 
-    const url = SERVER.Url("/users", true);
+    const url = Server.Url("/users", true);
     let [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
