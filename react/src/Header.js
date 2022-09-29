@@ -188,7 +188,7 @@ const Header = (props) => {
                                 </span>
                             </>)}
                         </>):(<>
-                            <b>NOT LOGGED IN</b>
+                            <Link to={Client.Path("/login")} style={{textDecoration:"none"}}><b style={{color:"darkblue"}}>NOT LOGGED IN</b></Link>
                         </>)}
                     </td>
                 </tr>
