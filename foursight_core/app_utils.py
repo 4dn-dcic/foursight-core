@@ -499,19 +499,19 @@ class AppUtilsCore(ReactApi):
     def get_decoded_jwt_token(self, env_name: str, request_dict) -> dict:
         try:
             jwt_token = self.get_jwt_token(request_dict)
-            return self.decode_jwt_token(jwt_token, env_name)
+            return self.decode_jwt(jwt_token, env_name)
         except:
             logger.warn(f"foursight_core: Exception getting decoded JWT token.")
             return None
 
-    def decode_jwt_token(self, jwt_token: str, env_name: str) -> dict:
+    def decode_jwt(self, jwt_token: str, env_name: str) -> dict:
         try:
             if not jwt_token:
                 return None
             auth0_client_id = self.get_auth0_client_id(env_name)
             auth0_secret = self.get_auth0_secret(env_name)
             # leeway accounts for clock drift between us and auth0
-            print('XYZZY: DECODE JWT FROM APP UTILS ...')
+            print('XYZZY: DECODING JWT FROM APP UTILS ...')
             print(jwt_token)
             print(type(jwt_token))
             return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30, options={"verify_signature": True}, algorithms=["HS256"])

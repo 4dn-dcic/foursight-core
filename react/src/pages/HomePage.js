@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import Global from "../Global";
 import Cookie from "../utils/Cookie";
 import ENV from "../utils/ENV";
-import JWT from "../utils/JWT";
+import Jwt from "../utils/Jwt";
 
 const HomePage = (props) => {
 

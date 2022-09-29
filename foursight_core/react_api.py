@@ -4,7 +4,7 @@ import cron_descriptor
 import os
 import io
 from os.path import dirname
-import jwt
+import jwt as jwtlib
 import boto3
 import datetime
 import ast
@@ -123,58 +123,17 @@ class ReactApi:
             return False
         return True
 
-    def create_authtoken(self, jwt_token: str, allowed_envs: list, first_name: str, last_name: str, env: str) -> str:
+    def decode_authtoken(self, authtoken: str, env: str) -> dict:
         """
-        Used only for Foursight React.
-        Returns the value for the authtoken cookie consisting of
-        the given JWT token and the list of environments for which the
-        associated authenticated user, from the JWT token, is authorized.
-        This is a JSON object, encrypted, and then Base-64 encoded.
+        Fully decode AND verify the given encrypted/encoded authtoken (cookie).
+        If not verified (by the decode_jwt function) then None will be returned.
+        This authtoken is a JWT-encoded (signed, actually) token containing the
+        list of environments the authenticated user is allowed to access.
+        Returns this info fully decrypted in a dictionary.
         """
-        allowed_envs_encoded = self.encryption.encode(allowed_envs)
-        # TODO: think about separate timestamp or similar for authorized envs (ask Kent);
-        authtoken_json = {
-            "jwt": jwt_token,
-            # TODO: think about putting all this in the JWT ...
-            # and use the existing JWT verification (encryption) mechanism to check if it is okay (has not been tampered with);
-            # then we don't need to wrap and encrypt this ourselves.
-            "env": allowed_envs_encoded,
-            "first_name": first_name,
-            "last_name": last_name
-        }
-        authtoken = self.encryption.encrypt(authtoken_json)
-        return authtoken
+        return self.decode_jwt(authtoken, env)
 
-    def reconstitute_authtoken(self, authtoken: str, env: str) -> dict:
-        """
-        Fully reconstitute the given encrypted/encoded authtoken (cookie).
-        It contains the JWT token and a list of environments the authenticated
-        is allowed to access. Returns this info fully decrypted in a dictionary.
-        """
-        if not authtoken:
-            return None
-
-        authtoken_decrypted = self.encryption.decrypt(authtoken)
-        if not authtoken_decrypted:
-            return None
-
-        authtoken_json = json.loads(authtoken_decrypted)
-        jwt_token = authtoken_json.get("jwt")
-        jwt_decoded = self.decode_jwt_token(jwt_token, env)
-
-        allowed_envs_encoded = authtoken_json.get("env")
-        allowed_envs = self.encryption.decode(allowed_envs_encoded)
-        allowed_envs_json = json.loads(allowed_envs) if allowed_envs else []
-
-        return {
-            "jwt": jwt_decoded,
-            "jwt_token": jwt_token,
-            "allowed_envs": allowed_envs_json,
-            "first_name": authtoken_json.get("first_name"),
-            "last_name": authtoken_json.get("last_name")
-        }
-
-    def augment_jwt_token(self, jwt_token: str, env: str):
+    def create_authtoken(self, jwt: str, env: str):
         """
         Augments the given JWT with the list of known environments; the default environments;
         and the list of allowed (authorized) environments for the user associated with the
@@ -182,26 +141,30 @@ class ReactApi:
         environments and first/last name are obtained via the users store (in ElasticSearch).
         The first/last name FYI is just or informational/display purposes in the client.
         """
-        jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
-        email = jwt_token_decoded.get("email")
+        jwt_decoded = self.decode_jwt(jwt, env)
+        email = jwt_decoded.get("email")
         known_envs, allowed_envs, first_name, last_name = self.get_envs(email)
-        jwt_token_decoded = {
+        authtoken_decoded = {
+            "aud": self.get_auth0_client_id(env), # The 'aud' must be Auth0 client ID for JWT decode to work.
             "user": email,
             "first_name": first_name,
-            "last_name": last_name
-            "known_envs": known_envs,
+            "last_name": last_name,
+            "authorized": True,
+            "authorized_at": jwt_decoded.get("iat"),
+            "authorized_until": jwt_decoded.get("exp"),
             "allowed_envs": allowed_envs,
+            "known_envs": known_envs,
             "default_env": self.get_default_env(),
         }
         auth0_secret = self.get_auth0_secret(env)
         if not auth0_secret:
             print("WARNING: No Auth0 secret for JWT signing!")
         # Re-encode (sign) the JWT using our Auth0 secret.
-        jwt_token = jwt.encode(jwt_token_decoded, auth0_secret, algorithm="HS256")
-        return jwt_token
+        authtoken = jwtlib.encode(authtoken_decoded, auth0_secret, algorithm="HS256")
+        return authtoken
 
     # TODO: This needs massive cleanup after messing with WRT React.
-    def auth0_react_finish_callback(self, request, env, domain, jwt_token, jwt_expires):
+    def auth0_react_finish_callback(self, request, env, domain, jwt, jwt_expires):
 
         react_redir_url = self.read_cookie("reactredir", request)
         if react_redir_url:
@@ -210,161 +173,46 @@ class ReactApi:
             react_redir_url = urllib.parse.unquote(react_redir_url)
             response_headers = {"Location": react_redir_url}
 
-        print('JWT ORIGINAL ...........................................')
-        print(jwt_token)
-        print(type(jwt_token))
-        jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
-        email = jwt_token_decoded.get("email")
-        (known_envs, allowed_envs, first_name, last_name) = self.get_envs(email)
-
-        # xyzzy
-        print('JWT DECODED ...........................................')
-        print(jwt_token_decoded)
-        print(type(jwt_token_decoded))
-        jwt_token_decoded["app_metadata"] = {
-            "allowed_envs": allowed_envs,
-            "default_env": self.get_default_env(),
-            "known_envs": known_envs
-        }
-        print('JWT ENHANCED:')
-        print(jwt_token_decoded)
-        auth0_client_id = self.get_auth0_client_id(env)
-        auth0_secret = self.get_auth0_secret(env)
-        jwt_token_reencoded = jwt.encode(jwt_token_decoded, auth0_secret, algorithm="HS256", headers=None)
-        print('JWT RE-ENCODED:')
-        print(jwt_token_reencoded)
-        xyzzy = self.decode_jwt_token(jwt_token_reencoded, env)
-        print('JWT RE-ENCODED DECODED:')
-        print(xyzzy)
-        # xyzzy
-
-        jwt_token_augmented = self.augment_jwt_token(jwt_token, env)
-        print("JWT AUGMENTED:")
-        print(jwt_token_augmented)
-        print(type(jwt_token_augmented))
-        print(self.decode_jwt_token(jwt_token_augmented, env))
-
-        authtoken = self.create_authtoken(jwt_token, allowed_envs, first_name, last_name, env)
+        authtoken = self.create_authtoken(jwt, env)
         authtoken_cookie = self.create_set_cookie_string(request, name="authtoken",
-                                                                  value=authtoken,
-                                                                  domain=domain,
-                                                                  expires=jwt_expires,
-                                                                  http_only=True)
-
-        jwt_cookie = self.create_set_cookie_string(request, name="jwt",
-                                                            value=jwt_token_augmented,
-                                                            domain=domain,
-                                                            expires=jwt_expires,
-                                                            http_only=False)
-
-        # Set another cookie indicating we are logged in since we cannot read an HttpOnly
-        # cookie client-side to determine its existence; set it to Base64 encode email;
-        # thought doesn't really matter; client will just check for existence.
-        # We could use the authenvs cookie for this purpose but might be nice
-        # to keep that around, i.e. not delete on logout.
-        #
-        auth_cookie = self.create_set_cookie_string(request, name="auth",
-                                                             value=self.encryption.encode(email),
-                                                             domain=domain,
-                                                             expires=jwt_expires)
-        #
-        # Need to create an authenvs cookie too, not HttpOnly, readable by client (React UI);
-        # this contains the list of known and allowed (for this authenticate user) environments.
-        #
-        authenvs = {
-            "allowed_envs": allowed_envs,
-            "default_env": self.get_default_env(),
-            "known_envs": known_envs
-        }
-        authenvs = self.encryption.encode(authenvs)
-        authenvs_cookie = self.create_set_cookie_string(request, name="authenvs",
-                                                                 value=authenvs,
-                                                                 domain=domain,
-                                                                 expires=jwt_expires)
-        # Sic WRT the different set-cookie spellings,
-        # to workaround issue where Chalice not allowing multiple cookies to be set.
+                                                         value=authtoken,
+                                                         domain=domain,
+                                                         expires=jwt_expires,
+                                                         http_only=False)
         response_headers["set-cookie"] = authtoken_cookie
-        response_headers["Set-Cookie"] = authenvs_cookie
-        response_headers["SET-COOKIE"] = auth_cookie
-        response_headers["SET-cookie"] = jwt_cookie
 
         return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
     def authorize(self, request, env) -> dict:
-        """
-        If the request indicates that is is authenticated AND authorized for the given environment,
-        then returns a dictionary with relevant authentication/authorization info, otherwise
-        returns an dictonary indicating authentication/authorization failure.
-        Does this by reading the (server-side encrypted) authtoken cookie which contains
-        the Auth0 JWT token and dictionary of allowed environments for the authenticate user;
-        this authtoken was set by create_authtoken.
-        """
         if not request:
-            return { "authenticated": False, "status": "no-request" }
+            return { "authorized": False, "status": "no-request" }
         if not isinstance(request, dict):
             request = request.to_dict();
         if self.is_running_locally(request):
             #
             # If running locally (localhost) AND if this is request indicates that the user is
-            # faux logged in then we bypass authentication altogether and return authenticated response.
+            # faux logged in then we bypass authentication altogether and return authorized response.
             #
             if self.is_local_faux_logged_in(request):
-                return { "authenticated": True, "user": "faux" }
+                return { "authorized": True, "user": "faux" }
         try:
-
             test_mode_not_authorized = self.read_cookie("test_mode_not_authorized", request)
             if test_mode_not_authorized == "1":
-                return { "authenticated": False, "status": "test-mode-not-authorized" }
+                return { "authorized": False, "status": "test-mode-not-authorized" }
 
-            authtoken_encrypted = self.read_cookie("authtoken", request)
-            if not authtoken_encrypted:
-                return { "authenticated": False, "status": "no-authtoken" }
+            authtoken = self.read_cookie("authtoken", request)
+            if not authtoken:
+                return { "authorized": False, "status": "no-authtoken" }
 
-            #xyzzy
-            jwt_cookie = self.read_cookie("jwt", request)
-            jwt_cookie_decoded = self.decode_jwt_token(jwt_cookie, env)
-            print('XYZZY: JWT COOKIE DECODED:')
-            print(jwt_cookie_decoded)
-            #xyzzy
+            authtoken_decoded = self.decode_authtoken(authtoken, env)
+            if not authtoken_decoded:
+                return { "authorized": False, "status": "invalid-authtoken" }
 
-            authtoken_info = self.reconstitute_authtoken(authtoken_encrypted, env)
-            if not authtoken_info:
-                return { "authenticated": False, "status": "bad-authtoken" }
-
-            jwt = authtoken_info["jwt"]
-            if not jwt:
-                return { "authenticated": False, "status": "no-jwt" }
-
-            jwt_expires_time_t = jwt.get("exp")
-            current_time_t = int(time.time())
-            if jwt_expires_time_t <= current_time_t:
-                return { "authenticated": False, "status": "jwt-expired" }
-
-            allowed_envs = authtoken_info.get("allowed_envs")
-            if not allowed_envs:
-                return { "authenticated": False, "status": "no-allowed-envs" }
-            if not self.is_allowed_env(env, allowed_envs):
-                return { "authenticated": False, "status": "not-allowed-env" }
-
-            # Sanity check the decrypted authtoken be comparing our known Auth0 client ID
-            # with the ("sub" field of the) JWT from the Auth0 authentication process.
-
-            if jwt.get("aud") != self.get_auth0_client_id(env):
-                return { "authenticated": False, "status": "authtoken-mismatch" }
-
-            # Return the raw JWT token as well as most of its info unpacked in a nicer form for UI usage.
-            # We leave the issued-at and expires-at info as time_t based values (for now at least).
-
-            authtoken_info["authenticated"] = True
-            authtoken_info["authenticated_at"] = jwt.get("iat")
-            authtoken_info["authenticated_until"] = jwt_expires_time_t
-            authtoken_info["user"] = jwt.get("email")
-            authtoken_info["user_verified"] = jwt.get("email_verified")
-            return authtoken_info
+            return authtoken_decoded
 
         except Exception as e:
             print(e)
-            return { "authenticated": False, "status": "exception", "exception": str(e) }
+            return { "authorized": False, "status": "exception", "exception": str(e) }
 
     def react_forbidden_response(self, body):
         response = self.create_standard_response("react_forbidden_response")
@@ -441,9 +289,6 @@ class ReactApi:
         elif file.endswith(".ico"):
             content_type = "image/x-icon"
             open_mode = "rb"
-        elif file.endswith(".woff"): # obsolete
-            content_type = "application/octet-stream"
-            open_mode = "rb"
         else:
             file = os.path.join(BASE_DIR, REACT_BASE_DIR, REACT_DEFAULT_FILE)
             content_type = "text/html"
@@ -507,7 +352,7 @@ class ReactApi:
 
         # TODO: Put this in a decorator and at the route level.
         authorize_response = self.authorize(request.to_dict(), environ)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
 
         request_dict = request.to_dict()
@@ -581,7 +426,7 @@ class ReactApi:
     def react_get_users(self, request, environ):
 
         authorize_response = self.authorize(request.to_dict(), environ)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
 
         request_dict = request.to_dict()
@@ -618,7 +463,7 @@ class ReactApi:
 
     def react_get_user(self, request, environ, email=None):
         authorize_response = self.authorize(request.to_dict(), environ)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
         users = []
         for email_address in email.split(","):
@@ -979,7 +824,7 @@ class ReactApi:
     def react_route_checks_raw(self, request, env: str) -> dict:
 
         authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
 
         response = self.create_standard_response("react_route_checks")
@@ -990,7 +835,7 @@ class ReactApi:
     def react_route_checks_registry(self, request, env: str) -> dict:
 
         authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
 
         response = self.create_standard_response("react_route_checks_grouped")
@@ -1001,7 +846,7 @@ class ReactApi:
     def react_route_checks_grouped(self, request, env: str) -> dict:
 
         authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
 
         response = self.create_standard_response("react_route_checks_grouped")
@@ -1016,7 +861,7 @@ class ReactApi:
         if limit < 0:
             limit = 0
         authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
 
         response = self.create_standard_response("react_route_check_history")
@@ -1055,7 +900,7 @@ class ReactApi:
     def react_route_checks_status(self, request, env: str) -> dict:
 
         authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
 
         response = self.create_standard_response("react_route_checks_status")
@@ -1071,7 +916,7 @@ class ReactApi:
     def reactapi_route_lambdas(self, request, env: str) -> dict:
 
         authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
 
         response = self.create_standard_response("reactapi_route_lambdas")
@@ -1084,7 +929,7 @@ class ReactApi:
         Returns the latest result from the given check.
         """
         authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
 
         response = self.create_standard_response("react_route_check_results")
@@ -1108,7 +953,7 @@ class ReactApi:
         Analogous legacy function is app_utils.view_foursight_check.
         """
         authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
 
         response = []
@@ -1211,7 +1056,7 @@ class ReactApi:
     def reactapi_route_aws_s3_buckets(self, request, env: str):
 
         authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
 
         response = self.create_standard_response("reactapi_route_aws_s3_buckets")
@@ -1221,7 +1066,7 @@ class ReactApi:
     def reactapi_route_aws_s3_bucket_keys(self, request, env: str, bucket: str):
 
         authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
 
         response = self.create_standard_response("reactapi_route_aws_s3_buckets")
@@ -1231,7 +1076,7 @@ class ReactApi:
     def reactapi_route_aws_s3_bucket_key_content(self, request, env: str, bucket: str, key: str):
 
         authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authenticated"]:
+        if not authorize_response or not authorize_response["authorized"]:
             return self.react_forbidden_response(authorize_response)
 
         key = urllib.parse.unquote(key)

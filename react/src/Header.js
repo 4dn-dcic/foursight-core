@@ -7,7 +7,7 @@ import { BarSpinner } from "./Spinners";
 import Auth from './utils/Auth';
 import Client from './utils/Client';
 import Context from './utils/Context';
-import CurrentTime from './CurrentTime';
+import LiveTime from './LiveTime';
 import ENV from './utils/ENV';
 import IMAGE from './utils/IMAGE';
 import LOGOUT from './utils/LOGOUT';
@@ -130,7 +130,7 @@ const Header = (props) => {
                     </div>
                 </td>
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
-                    <small><CurrentTime.FormatDateTime verbose={true} /></small>
+                    <small><LiveTime.FormatDateTime verbose={true} /></small>
                     { (Auth.IsLoggedIn(header)) ? (<span>
                             &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => LOGOUT()}>LOGOUT</span>
                     </span>):(<span>

@@ -8,7 +8,7 @@ import Auth from '../utils/Auth';
 import Client from '../utils/Client';
 import Context from '../utils/Context';
 import Cookie from '../utils/Cookie';
-import CurrentTime from '../CurrentTime';
+import LiveTime from '../LiveTime';
 import ENV from '../utils/ENV';
 import LOGOUT from '../utils/LOGOUT';
 import TIME from '../utils/TIME';
@@ -117,9 +117,9 @@ const LoginPage = (props) => {
                             <td style={{background:"darkblue",width:"2px"}}></td>
                             <td style={{width:"8pt"}}></td>
                             <td style={{textAlign:"top"}}><small style={{marginTop:"20pt"}}>
-                                Logged in: <CurrentTime.FormatDuration start={Auth.LoggedInUserJwt(header)?.iat} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
+                                Logged in: <LiveTime.FormatDuration start={Auth.Token().authorized_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
                                 <br />
-                                Session expires: <CurrentTime.FormatDuration end={Auth.LoggedInUserJwt(header)?.exp} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
+                                Session expires: <LiveTime.FormatDuration end={Auth.Token().authorized_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
                             </small></td>
                         </tr></tbody></table>
                     </span>)}

@@ -5,6 +5,7 @@ import Page from '../Page';
 import Auth from '../utils/Auth';
 import ENV from '../utils/ENV';
 import Client from '../utils/Client';
+import Cookie from '../utils/Cookie';
 import UUID from '../utils/UUID';
 
 const EnvPage = (props) => {
@@ -52,6 +53,7 @@ const EnvPage = (props) => {
     if (header.error) return <>Cannot load Foursight</>;
     if (header.loading) return <>Loading ...</>;
     return <div>
+                [{Cookie.HasAuthToken() ? 'yes':'no'}]
             { !Auth.IsLoggedIn(header) && IsKnownCurrentEnv() ? (
                 <div className="container">
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>

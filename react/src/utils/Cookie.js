@@ -4,6 +4,7 @@
 
 import Cookies from 'universal-cookie';
 import Context from './Context';
+import Jwt from './Jwt';
 import STR from './STR';
 import TYPE from './TYPE';
 
@@ -71,6 +72,12 @@ function SetCookie(name, value, expires = null) {
 // -------------------------------------------------------------------------------------------------
 
 function HasAuthTokenCookie() {
+
+    // With new scheme of having the authtoken cookie be our JWT-encoded (signed, actually)
+    // authorization object, which is NOT an HttpOnly, cookie we don't need any of the below.
+    //
+    return STR.HasValue(GetCookie(_authTokenCookieName));
+
     //
     // Nevermind the below business of detecting if the authtoken HttpOnly cookie exists,
     // by trying to delete it. This does not work on Safari or Firefix (though it does
@@ -82,6 +89,7 @@ function HasAuthTokenCookie() {
     if (STR.HasValue(authCookie)) {
         return true;
     }
+
     //
     // Pre-above. Trying to determine if the authtoken HttpOnly cookie exists.
     //
@@ -121,7 +129,20 @@ function HasAuthTokenCookie() {
 // Authorized environments (known, default, allowed) cookie (authenvs) related functions.
 // -------------------------------------------------------------------------------------------------
 
-function GetAuthEnvsCookie() {
+function GetAuthTokenCookie() {
+    try {
+        const authTokenCookie = GetCookie(_authTokenCookieName);
+        if (STR.HasValue(authTokenCookie)) {
+            const authToken = Jwt.Decode(authTokenCookie);
+            if (TYPE.IsObject(authToken)) {
+                return authToken || {};
+            }
+        }
+    }
+    catch {
+    }
+    return [];
+
     try {
         const authEnvsEncoded = GetCookie(_authEnvsCookieName);
         const authEnvsDecoded = atob(authEnvsEncoded);
@@ -135,7 +156,7 @@ function GetAuthEnvsCookie() {
 
 function GetKnownEnvsCookie() {
     try {
-        const knownEnvs = GetAuthEnvsCookie()?.known_envs || [];
+        const knownEnvs = GetAuthTokenCookie()?.known_envs || [];
         return knownEnvs;
     }
     catch {
@@ -145,7 +166,7 @@ function GetKnownEnvsCookie() {
 
 function GetDefaultEnvCookie() {
     try {
-        const defaultEnv = GetAuthEnvsCookie()?.default_env || "";
+        const defaultEnv = GetAuthTokenCookie()?.default_env || "";
         return defaultEnv;
     }
     catch {
@@ -156,7 +177,7 @@ function GetDefaultEnvCookie() {
 
 function GetAllowedEnvsCookie() {
     try {
-        const allowedEnvs = GetAuthEnvsCookie()?.allowed_envs || [];
+        const allowedEnvs = GetAuthTokenCookie()?.allowed_envs || [];
         return allowedEnvs;
     }
     catch {
@@ -243,7 +264,7 @@ function HasTestModeFoursightCgapCookie() {
 
 export default {
     AllowedEnvs:     GetAllowedEnvsCookie,
-    AuthEnvs:        GetAuthEnvsCookie,
+    AuthToken:       GetAuthTokenCookie,
     Delete:          DeleteCookie,
     DeleteAuth:      DeleteAuthCookie,
     DeleteFauxLogin: DeleteFauxLoginCookie,

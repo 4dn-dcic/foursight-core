@@ -24,16 +24,13 @@ function IsLoggedIn(header) {
     // Actually need this because we do not know that we are logged
     // in on refresh unless/until the /header is fetched.
     //
-    if (header?.auth?.authenticated) {
+    if (header?.auth?.authorized) {
         return true;
     }
-    else if (Cookie.HasAuthToken()) {
+    if (Cookie.HasAuthToken()) {
         return true;
     }
-    else {
-        return false;
-    }
-    // return header?.auth?.authenticated || Cookie.HasAuthToken();
+    return false;
 }
 
 function IsFauxLoggedIn() {
@@ -44,20 +41,20 @@ function LoggedInUser(header) {
     if (Context.Client.IsLocal() && IsFauxLoggedIn()) {
         return "faux-login";
     }
-    return header?.auth?.authenticated ? header.auth?.user : "unknown";
+    return header?.auth?.authorized ? header.auth?.user : "unknown";
 }
 
 function LoggedInUserName(header) {
     if (Context.Client.IsLocal() && IsFauxLoggedIn()) {
         return "faux-login";
     }
-    const first_name = header?.auth?.authenticated ? header.auth?.first_name : "";
-    const last_name = header?.auth?.authenticated ? header.auth?.last_name : "";
+    const first_name = header?.auth?.authorized ? header.auth?.first_name : "";
+    const last_name = header?.auth?.authorized ? header.auth?.last_name : "";
     return first_name + " " + last_name;
 }
 
 function LoggedInUserVerified(header) {
-    return header?.auth?.authenticated ? header.auth?.user_verified : false;
+    return header?.auth?.authorized ? header.auth?.user_verified : false;
 }
 
 function LoggedInUserAuthToken(header) {
@@ -79,6 +76,7 @@ function LoggedInUserJwt(header) {
 export default {
     IsFauxLoggedIn:            IsFauxLoggedIn,
     IsLoggedIn:                IsLoggedIn,
+    Token:                     Cookie.AuthToken,
     LoggedInUser:              LoggedInUser,
     LoggedInUserName:          LoggedInUserName,
     LoggedInUserVerified:      LoggedInUserVerified,
