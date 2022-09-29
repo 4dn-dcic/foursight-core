@@ -10,7 +10,7 @@ import Context from './utils/Context';
 import LiveTime from './LiveTime';
 import ENV from './utils/ENV';
 import Image from './utils/Image';
-import LOGOUT from './utils/LOGOUT';
+import Logout from './utils/Logout';
 import ReadOnlyMode from './ReadOnlyMode';
 import TIME from './utils/TIME';
 import UUID from './utils/UUID';
@@ -132,7 +132,7 @@ const Header = (props) => {
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
                     <small><LiveTime.FormatDateTime verbose={true} /></small>
                     { (Auth.IsLoggedIn(header)) ? (<span>
-                            &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => LOGOUT()}>LOGOUT</span>
+                            &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</span>
                     </span>):(<span>
                         &nbsp;|&nbsp; <NavLink to={Client.Path("/login?auth")} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
                     </span>)}

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Global from "../Global";
 import ENV from '../utils/ENV';
 import Client from '../utils/Client';
-import LOGOUT from '../utils/LOGOUT';
+import Logout from '../utils/Logout';
 
 const ForbiddenPage = (props) => {
 
@@ -14,7 +14,7 @@ const ForbiddenPage = (props) => {
             <div className="boxstyle check-error" style={{margin:"20pt",padding:"10pt"}}>
                 <b>Forbidden response from server.</b>.  <br />
                 You seem to be logged in but the server does not seem to think so. <br />
-                Try <span onClick={() => LOGOUT()} style={{cursor:"pointer"}}><u>logging out</u></span> and logging in again.
+                Try <span onClick={() => Logout()} style={{cursor:"pointer"}}><u>logging out</u></span> and logging in again.
                 <br />
                 <small>
                 Click <Link to={Client.Path("/login", ENV.Current(header))} style={{color:"darkred"}}><b>here</b></Link> to go to the <Link to={Client.Path("/login", ENV.Current(header))}><b style={{color:"darkred"}}>login</b></Link> page.

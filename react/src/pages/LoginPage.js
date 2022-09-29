@@ -10,7 +10,7 @@ import Context from '../utils/Context';
 import Cookie from '../utils/Cookie';
 import LiveTime from '../LiveTime';
 import ENV from '../utils/ENV';
-import LOGOUT from '../utils/LOGOUT';
+import Logout from '../utils/Logout';
 import TIME from '../utils/TIME';
 import YAML from '../utils/YAML';
 import Page from '../Page';
@@ -95,7 +95,7 @@ const LoginPage = (props) => {
                                 <Link to={Client.Path("/users/" + Auth.LoggedInUser(header))}><b style={{color:"darkblue"}}>{Auth.LoggedInUser(header)}</b></Link> <br />
                                 <div style={{fontSize:"small",marginTop:"3pt"}}>
                                     Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}}
-                                            onClick={()=> LOGOUT()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> LOGOUT()}>logout</span>.
+                                            onClick={()=> Logout()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</span>.
                                 </div>
                             </td>
                             <td style={{width:"8pt"}}></td>

@@ -4,7 +4,7 @@
 
 import Client from '../utils/Client';
 import Cookie from '../utils/Cookie';
-import LOGOUT from '../utils/LOGOUT';
+import Logout from '../utils/Logout';
 
 function SLEEP(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -67,7 +67,7 @@ function fetchData(url, setData, setLoading, setError) {
                 console.log(window.location);
                 // window.location.pathname = "/api/react/cgap-supertest/forbidden";
                 // window.location.pathname = Client.Path("/forbidden");
-                LOGOUT();
+                Logout();
             }
             if (setError) {
                 setError(response.status);
