@@ -3,8 +3,8 @@
 // -------------------------------------------------------------------------------------------------
 
 import Auth from './Auth';
-import CONTEXT from './CONTEXT';
-import COOKIE from './COOKIE';
+import Context from './Context';
+import Cookie from './Cookie';
 import PATH from './PATH';
 import STR from './STR';
 import TYPE from './TYPE';
@@ -14,7 +14,7 @@ import TYPE from './TYPE';
 // -------------------------------------------------------------------------------------------------
 
 function GetKnownEnvs(header) {
-    return header?.known_envs || COOKIE.KnownEnvs();
+    return header?.known_envs || Cookie.KnownEnvs();
 }
 
 function IsKnownEnv(env, header) {
@@ -34,7 +34,7 @@ function IsKnownEnv(env, header) {
 // -------------------------------------------------------------------------------------------------
 
 function GetDefaultEnv(header) {
-    return header?.default_env || COOKIE.DefaultEnv();
+    return header?.default_env || Cookie.DefaultEnv();
 }
 
 function IsDefaultEnv(env, header) {
@@ -54,7 +54,7 @@ function GetAllowedEnvs(header) {
         //
         return GetKnownEnvs(header);
     }
-    const allowedEnvs = header?.auth?.allowed_envs || COOKIE.AllowedEnvs();
+    const allowedEnvs = header?.auth?.allowed_envs || Cookie.AllowedEnvs();
     //
     // The list of known environments are of the annotated variety.
     // But the list of allowed environments is just a list of simple environment names.
@@ -151,8 +151,8 @@ function AreSameEnvs(envA, envB) {
 // given global header data), then return the default environment from this global header data object.
 //
 function GetCurrentEnv(header = null) {
-    const currentPath = PATH.Normalize(CONTEXT.Client.CurrentPath());
-    const basePathWithTrailingSlash = CONTEXT.Client.BasePath() + "/";
+    const currentPath = PATH.Normalize(Context.Client.CurrentPath());
+    const basePathWithTrailingSlash = Context.Client.BasePath() + "/";
     let env = "";
     if (currentPath.startsWith(basePathWithTrailingSlash)) {
         const pathSansBasePath = currentPath.substring(basePathWithTrailingSlash.length);
@@ -229,10 +229,10 @@ function GetPreferredEnvName(env, header) {
 // -------------------------------------------------------------------------------------------------
 
 function IsFoursightFourfront(header) {
-    if (COOKIE.TestMode.HasFoursightFourfront()) {
+    if (Cookie.TestMode.HasFoursightFourfront()) {
         return true;
     }
-    else if (COOKIE.TestMode.HasFoursightCgap()) {
+    else if (Cookie.TestMode.HasFoursightCgap()) {
         return false;
     }
     else {
@@ -251,8 +251,8 @@ function GetLegacyFoursightLink(header) {
                  GetPublicEnvName(GetCurrentEnv(header), header) :
                  GetFullEnvName(GetCurrentEnv(header), header))
                 || GetDefaultEnv(header);
-    if (CONTEXT.IsLocalCrossOrigin()) {
-        return CONTEXT.Server.Origin() + "/api/view/" + env;
+    if (Context.IsLocalCrossOrigin()) {
+        return Context.Server.Origin() + "/api/view/" + env;
     }
     else {
         return "/api/view/" + env;

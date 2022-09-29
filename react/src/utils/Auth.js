@@ -3,8 +3,8 @@
 // Note that many of these are need the global header data as an argument.
 // -------------------------------------------------------------------------------------------------
 
-import CONTEXT from './CONTEXT';
-import COOKIE from './COOKIE';
+import Context from './Context';
+import Cookie from './Cookie';
 
 // -------------------------------------------------------------------------------------------------
 // Authentication related functions.
@@ -15,9 +15,9 @@ function IsLoggedIn(header) {
     // We can either check the global header auth field or check for the cookie. 
     // Probably better more React-ish to check this global state, especially
     // since the way we detect the existence of the authtoken cookie is a bit
-    // hacky since it is an HttpOnly cookie (see COOKIE.HasAuthToken).
+    // hacky since it is an HttpOnly cookie (see Cookie.HasAuthToken).
     //
-    if (CONTEXT.Client.IsLocal() && IsFauxLoggedIn()) {
+    if (Context.Client.IsLocal() && IsFauxLoggedIn()) {
         return true;
     }
     //
@@ -27,28 +27,28 @@ function IsLoggedIn(header) {
     if (header?.auth?.authenticated) {
         return true;
     }
-    else if (COOKIE.HasAuthToken()) {
+    else if (Cookie.HasAuthToken()) {
         return true;
     }
     else {
         return false;
     }
-    // return header?.auth?.authenticated || COOKIE.HasAuthToken();
+    // return header?.auth?.authenticated || Cookie.HasAuthToken();
 }
 
 function IsFauxLoggedIn() {
-    return CONTEXT.Client.IsLocal() && COOKIE.HasFauxLogin();
+    return Context.Client.IsLocal() && Cookie.HasFauxLogin();
 }
 
 function LoggedInUser(header) {
-    if (CONTEXT.Client.IsLocal() && IsFauxLoggedIn()) {
+    if (Context.Client.IsLocal() && IsFauxLoggedIn()) {
         return "faux-login";
     }
     return header?.auth?.authenticated ? header.auth?.user : "unknown";
 }
 
 function LoggedInUserName(header) {
-    if (CONTEXT.Client.IsLocal() && IsFauxLoggedIn()) {
+    if (Context.Client.IsLocal() && IsFauxLoggedIn()) {
         return "faux-login";
     }
     const first_name = header?.auth?.authenticated ? header.auth?.first_name : "";
@@ -65,7 +65,7 @@ function LoggedInUserAuthToken(header) {
 }
 
 function LoggedInUserAuthEnvs(header) {
-    return COOKIE.AuthEnvs();
+    return Cookie.AuthEnvs();
 }
 
 function LoggedInUserJwt(header) {

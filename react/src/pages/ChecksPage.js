@@ -3,9 +3,9 @@ import { useContext, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { BarSpinner } from "../Spinners";
 import { RingSpinner } from "../Spinners";
-import CLIPBOARD from '../utils/CLIPBOARD';
+import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
-import COOKIE from '../utils/COOKIE';
+import Cookie from '../utils/Cookie';
 import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
 import IMAGE from '../utils/IMAGE';
@@ -597,7 +597,7 @@ const ChecksPage = (props) => {
         return <pre className={check.results?.status?.toUpperCase() === "PASS" ? "check-pass" : "check-warn"} style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
             <div style={{float:"right",marginTop:"-10px"}}>
             <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{JSON.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
-            <img onClick={() => CLIPBOARD.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={IMAGE.Clipboard()} height="19" />
+            <img onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={IMAGE.Clipboard()} height="19" />
             &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(); } }>{check.showingResultDetailsFull ? <span title="Show full results output.">&#x2191;</span> : <span>&#x2193;</span>}</span>
             &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>X</span>
             </div>

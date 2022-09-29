@@ -7,7 +7,7 @@ import { StandardSpinner } from "../Spinners";
 import Global from '../Global';
 import ReactPaginate from 'react-paginate';
 import PaginationControl from '../PaginationControl';
-import CLIPBOARD from '../utils/CLIPBOARD';
+import Clipboard from '../utils/Clipboard';
 import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
 import IMAGE from '../utils/IMAGE';
@@ -205,7 +205,7 @@ const CheckHistoryPage = (props) => {
                                             </>:<>
                                                 <div style={{float:"right",marginTop:"-0px"}}>
                                                     <span style={{fontSize:"0",opacity:"0"}} id={check}>{JSON.stringify(history.__result[0])}</span>
-                                                    <img onClick={() => CLIPBOARD.Copy(check)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={IMAGE.Clipboard()} height="19" />
+                                                    <img onClick={() => Clipboard.Copy(check)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={IMAGE.Clipboard()} height="19" />
                                                     <span onClick={() => hideResult(history)} style={{marginLeft:"6pt",marginRight:"2pt",fontSize:"large",fontWeight:"bold",cursor:"pointer"}}>X</span>
                                                 </div>
                                                 {YAML.Format(history.__result[0])}

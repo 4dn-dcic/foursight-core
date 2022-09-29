@@ -4,7 +4,7 @@ import Global from './Global';
 import Auth from './utils/Auth';
 import ENV from './utils/ENV';
 import Client from './utils/Client';
-import COOKIE from './utils/COOKIE';
+import Cookie from './utils/Cookie';
 
 // -------------------------------------------------------------------------------------------------
 // Page guards.
@@ -69,11 +69,11 @@ function AuthorizationRequired({ children }) {
 // -------------------------------------------------------------------------------------------------
 
 function NoteLastUrl() {
-    COOKIE.SetLastUrl(window.location.href);
+    Cookie.SetLastUrl(window.location.href);
 }
 
 function GetLastUrl() {
-    return COOKIE.LastUrl() || Client.HomeUrl();
+    return Cookie.LastUrl() || Client.HomeUrl();
 }
 
 function GetLastPath() {

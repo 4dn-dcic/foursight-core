@@ -3,7 +3,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import Cookies from 'universal-cookie';
-import CONTEXT from './CONTEXT';
+import Context from './Context';
 import STR from './STR';
 import TYPE from './TYPE';
 
@@ -23,7 +23,7 @@ const _cookieDomain           = document.location.hostname;
 // -------------------------------------------------------------------------------------------------
 
 function GetCookieDomain() {
-    return CONTEXT.Client.IsLocal() ? _cookieDomain : "." + _cookieDomain;
+    return Context.Client.IsLocal() ? _cookieDomain : "." + _cookieDomain;
 }
 
 function GetCookie(name) {

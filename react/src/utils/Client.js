@@ -2,8 +2,8 @@
 // Client (React UI) related functions.
 // -------------------------------------------------------------------------------------------------
 
-import CONTEXT from './CONTEXT';
-import COOKIE from './COOKIE';
+import Context from './Context';
+import Cookie from './Cookie';
 import ENV from './ENV';
 import PATH from './PATH';
 import STR from './STR';
@@ -14,7 +14,7 @@ import TYPE from './TYPE';
 // -------------------------------------------------------------------------------------------------
 
 function GetHomeUrl() {
-    return CONTEXT.Client.Origin() + GetPath("/home", ENV.Current());
+    return Context.Client.Origin() + GetPath("/home", ENV.Current());
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -78,7 +78,7 @@ function GetPath(path, env = true, envFallback = null) {
     if (STR.HasValue(env)) {
         path = "/" + env + path;
     }
-    path = CONTEXT.Client.BasePath() + path;
+    path = Context.Client.BasePath() + path;
     if (path.endsWith("/")) {
         path = path.substring(0, path.length - 1);
     }
@@ -91,7 +91,7 @@ function GetPath(path, env = true, envFallback = null) {
 
 function GetCurrentLogicalPath() {
     const currentPath = PATH.Normalize(window.location.pathname);
-    const basePathWithTrailingSlash = CONTEXT.Client.BasePath() + "/";
+    const basePathWithTrailingSlash = Context.Client.BasePath() + "/";
     if (currentPath.startsWith(basePathWithTrailingSlash)) {
         const pathSansBasePath = currentPath.substring(basePathWithTrailingSlash.length);
         if (pathSansBasePath.length > 0) {
@@ -122,7 +122,7 @@ function GetPortalLink(header) {
 // -------------------------------------------------------------------------------------------------
 
 function IsReadOnlyMode(header) {
-    return header?.readOnlyMode || COOKIE.IsReadOnlyMode();
+    return header?.readOnlyMode || Cookie.IsReadOnlyMode();
 }
 
 function SetReadOnlyMode(value, setHeader) {
@@ -131,7 +131,7 @@ function SetReadOnlyMode(value, setHeader) {
         if (TYPE.IsFunction(setHeader)) {
             setHeader(e => ({...e, readOnlyMode: value}));
         }
-        COOKIE.SetReadOnlyMode(value);
+        Cookie.SetReadOnlyMode(value);
     }
 }
 
@@ -140,13 +140,13 @@ function SetReadOnlyMode(value, setHeader) {
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    BasePath:        CONTEXT.Client.BasePath,
-    BaseUrl:         CONTEXT.Client.BaseUrl,
-    Domain:          CONTEXT.Client.Domain,
+    BasePath:        Context.Client.BasePath,
+    BaseUrl:         Context.Client.BaseUrl,
+    Domain:          Context.Client.Domain,
     HomeUrl:         GetHomeUrl,
-    IsLocal:         CONTEXT.Client.IsLocal,
+    IsLocal:         Context.Client.IsLocal,
     IsReadOnlyMode:  IsReadOnlyMode,
-    Origin:          CONTEXT.Client.Origin,
+    Origin:          Context.Client.Origin,
     Path:            GetPath,
     PortalLink:     GetPortalLink,
     SetReadOnlyMode: SetReadOnlyMode

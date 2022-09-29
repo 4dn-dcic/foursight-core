@@ -3,7 +3,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import Client from '../utils/Client';
-import COOKIE from '../utils/COOKIE';
+import Cookie from '../utils/Cookie';
 import LOGOUT from '../utils/LOGOUT';
 
 function SLEEP(time) {
@@ -23,8 +23,8 @@ function SLEEP(time) {
 // TODO: Handle 403 forbidden specifically indicating that the (JWT within the) authtoken has expired.
 //
 function fetchData(url, setData, setLoading, setError) {
-    if (COOKIE.TestMode.HasFetchSleep()) {
-        console.log("FETCHING WITH " + COOKIE.TestMode.FetchSleep() + "ms SLEEP: " + url);
+    if (Cookie.TestMode.HasFetchSleep()) {
+        console.log("FETCHING WITH " + Cookie.TestMode.FetchSleep() + "ms SLEEP: " + url);
     }
     else {
         console.log("FETCHING: " + url);
@@ -34,9 +34,9 @@ function fetchData(url, setData, setLoading, setError) {
         console.log("FETCH STATUS CODE IS " + response.status + ": " + url);
         if (response.status === 200) {
             response.json().then(responseJson => {
-                if (COOKIE.TestMode.HasFetchSleep()) {
-                    SLEEP(COOKIE.TestMode.FetchSleep()).then(() => {
-                        console.log("FETCHING DONE WITH " + COOKIE.TestMode.FetchSleep() + "ms SLEEP: " + url);
+                if (Cookie.TestMode.HasFetchSleep()) {
+                    SLEEP(Cookie.TestMode.FetchSleep()).then(() => {
+                        console.log("FETCHING DONE WITH " + Cookie.TestMode.FetchSleep() + "ms SLEEP: " + url);
                         setData(responseJson)
                         if (setLoading) {
                             setLoading(false);

@@ -6,8 +6,8 @@ import Global from '../Global';
 import Auth0Lock from 'auth0-lock';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
-import CONTEXT from '../utils/CONTEXT';
-import COOKIE from '../utils/COOKIE';
+import Context from '../utils/Context';
+import Cookie from '../utils/Cookie';
 import CurrentTime from '../CurrentTime';
 import ENV from '../utils/ENV';
 import LOGOUT from '../utils/LOGOUT';
@@ -33,7 +33,7 @@ const LoginPage = (props) => {
         document.getElementById("login_container").style.display = "none";
         document.getElementById("login_auth_container").style.display = "block";
         document.getElementById("login_auth_cancel").style.display = "block";
-        COOKIE.SetRedirect(Page.LastUrl());
+        Cookie.SetRedirect(Page.LastUrl());
         createAuth0Lock().show();
         //
         // Hacking styles for (now) embeded (rather than popup) Auth0 login box.
@@ -55,8 +55,8 @@ const LoginPage = (props) => {
     }
 
     function createAuth0Lock() {
-        const loginCallback = CONTEXT.Authentication.CallbackUrl();
-        const loginClientId = CONTEXT.Authentication.CallbackId(header);
+        const loginCallback = Context.Authentication.CallbackUrl();
+        const loginClientId = Context.Authentication.CallbackId(header);
         const loginPayload = {
             container: "login_auth_container",
             auth: {
@@ -160,11 +160,11 @@ const LoginPage = (props) => {
                     <div className="boxstyle check-fail" style={{margin:"20pt",padding:"10pt",borderWidth:"2",borderColor:"red"}}>
                         <img src={"https://i.stack.imgur.com/DPBue.png"} style={{height:"35",verticalAlign:"bottom"}} /> <b style={{fontSize:"x-large"}}>&nbsp;Attention ...</b> <br />
                         <hr style={{borderTop: "2px solid red",marginTop:"8px",marginBottom:"8px"}}/>
-                        As you appear to be <b>running</b> Foursight <b>locally</b> {CONTEXT.IsLocalCrossOrigin() && <span>(cross-origin)</span>}, the above <a href="https://auth0.com/" style={{color:"red"}} target="_blank">Auth0</a> login <u><b>may not work</b></u>. <br />
+                        As you appear to be <b>running</b> Foursight <b>locally</b> {Context.IsLocalCrossOrigin() && <span>(cross-origin)</span>}, the above <a href="https://auth0.com/" style={{color:"red"}} target="_blank">Auth0</a> login <u><b>may not work</b></u>. <br />
                         <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
                         It <u><b>should work</b></u> but just in case you can bypass this and <b>faux</b> login below. 
                         <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
-                        Click <Link to={{pathname: "/redirect"}} state={{url: Page.LastPath()}} onClick={() => COOKIE.SetFauxLogin()} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</Link> to faux <Link to={{pathname: "/redirect"}} state={{url: Page.LastPath()}} onClick={() => COOKIE.SetFauxLogin()} style={{cursor:"pointer",color:"darkred"}}><b>login</b></Link> locally.
+                        Click <Link to={{pathname: "/redirect"}} state={{url: Page.LastPath()}} onClick={() => Cookie.SetFauxLogin()} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</Link> to faux <Link to={{pathname: "/redirect"}} state={{url: Page.LastPath()}} onClick={() => Cookie.SetFauxLogin()} style={{cursor:"pointer",color:"darkred"}}><b>login</b></Link> locally.
                     </div>
                 </div>
             )}

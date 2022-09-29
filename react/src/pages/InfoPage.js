@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import Global from "../Global";
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
-import CLIPBOARD from '../utils/CLIPBOARD';
-import CONTEXT from '../utils/CONTEXT';
+import Clipboard from '../utils/Clipboard';
+import Context from '../utils/Context';
 import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
 import IMAGE from '../utils/IMAGE';
@@ -60,7 +60,7 @@ const InfoPage = () => {
             align: "left",
         };
         let valueOnClick = copy ? {
-            onClick: () => CLIPBOARD.Copy(name)
+            onClick: () => Clipboard.Copy(name)
             
         } : {};
         let checkElement = check ?
@@ -185,7 +185,7 @@ const InfoPage = () => {
                 </>)}
         </InfoBox>
         <InfoBox title="Miscellany">
-            <InfoRow name={"App Deployed At"} value={SERVER.IsLocal() ? "running locally" + (CONTEXT.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + TIME.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
+            <InfoRow name={"App Deployed At"} value={SERVER.IsLocal() ? "running locally" + (Context.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + TIME.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
             <InfoRow name={"App Launched At"} value={header.app?.launched + TIME.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Page Loaded At"} value={info.page?.loaded + TIME.FormatDuration(info.page?.loaded, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Package"} value={header.app?.package} monospace={true} size="2" />

@@ -2,7 +2,7 @@
 // Logout function.
 // -------------------------------------------------------------------------------------------------
 
-import COOKIE from './COOKIE';
+import Cookie from './Cookie';
 import ENV from './ENV';
 import Page from '../Page';
 import SERVER from './SERVER';
@@ -11,9 +11,9 @@ import SERVER from './SERVER';
 // The server should redirect back to the value of Client.LastPath (from the lasturl cookie)
 //
 function LOGOUT() {
-    COOKIE.DeleteFauxLogin();
-    COOKIE.DeleteAuth();
-    COOKIE.SetRedirect(Page.LastUrl());
+    Cookie.DeleteFauxLogin();
+    Cookie.DeleteAuth();
+    Cookie.SetRedirect(Page.LastUrl());
     window.location.replace(SERVER.Url("/logout", ENV.Current()));
 }
 

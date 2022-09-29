@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { BarSpinner } from "../../Spinners";
-import CLIPBOARD from '../../utils/CLIPBOARD';
+import Clipboard from '../../utils/Clipboard';
 import FETCH from '../../utils/FETCH';
 import IMAGE from '../../utils/IMAGE';
 import SERVER from '../../utils/SERVER';
@@ -278,7 +278,7 @@ const AwsS3Page = (props) => {
                 { <Spinner condition={bucketKeyContent.loading} label={"Fetching bucket key content"} color={"darkblue"} /> }
                 { bucketKeyContent.content && <pre style={{marginTop:"6pt",marginBottom:"0pt",background:"inherit",borderRadius:"8pt",filter:"brightness(1.1)",maxWidth:"800pt"}}>
                     <span style={{fontSize:"0",opacity:"0"}} id={bucketKeyContent.key}>{JSON.stringify(bucketKeyContent.content)}</span>
-                    <img onClick={() => CLIPBOARD.Copy(bucketKeyContent.key)} style={{cursor:"copy",float:"right",fontFamily:"monospace"}} src={IMAGE.Clipboard()} height="19" />
+                    <img onClick={() => Clipboard.Copy(bucketKeyContent.key)} style={{cursor:"copy",float:"right",fontFamily:"monospace"}} src={IMAGE.Clipboard()} height="19" />
                     {YAML.Format(bucketKeyContent.content)}
                 </pre> }
             </div>

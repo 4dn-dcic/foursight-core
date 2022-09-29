@@ -6,8 +6,7 @@ import Global from "./Global";
 import { BarSpinner } from "./Spinners";
 import Auth from './utils/Auth';
 import Client from './utils/Client';
-import CONTEXT from './utils/CONTEXT';
-import COOKIE from './utils/COOKIE';
+import Context from './utils/Context';
 import CurrentTime from './CurrentTime';
 import ENV from './utils/ENV';
 import IMAGE from './utils/IMAGE';
@@ -211,7 +210,7 @@ const Header = (props) => {
                     </td>
                     <td style={{background:"lightyellow",color:"darkred",textAlign:"right",paddingRight:"10pt",fontSize:"small",fontStyle:"italic"}}>
                         { Client.IsLocal() && <>
-                            { CONTEXT.IsLocalCrossOrigin() ? (<>
+                            { Context.IsLocalCrossOrigin() ? (<>
                                 Running locally cross-origin
                             </>):(<>
                                 Running locally
@@ -228,7 +227,7 @@ const Header = (props) => {
                 { false && Client.IsLocal() && (<>
                     <div style={{fontSize:"small",fontWeight:"bold",paddingTop:"2pt",paddingBottom:"2pt",paddingLeft:"5pt",paddingRight:"5pt",color:"#684B19",background:"#FCF8E3",border:"2px double #8A6D3B",borderRadius:"8px"}}>
                         <div>
-                            { CONTEXT.IsLocalCrossOrigin() ? (<>
+                            { Context.IsLocalCrossOrigin() ? (<>
                                 Running Locally (Cross-Origin)
                             </>):(<>
                                 Running Locally
