@@ -9,7 +9,7 @@ import ReactPaginate from 'react-paginate';
 import PaginationControl from '../PaginationControl';
 import Clipboard from '../utils/Clipboard';
 import ENV from '../utils/ENV';
-import FETCH from '../utils/FETCH';
+import Fetch from '../utils/Fetch';
 import IMAGE from '../utils/IMAGE';
 import SERVER from '../utils/SERVER';
 import STR from '../utils/STR';
@@ -44,7 +44,7 @@ const CheckHistoryPage = (props) => {
         }
 		setArgs({...args,  "limit": limit, "offset": offset, "sort": sort });
         const url = SERVER.Url(`/checks/${check}/history?limit=${limit}&offset=${offset}&sort=${sort}`, environ);
-        FETCH.get(url, response => {
+        Fetch.get(url, response => {
             response.loading = false;
             setHistory(response);
             setLimit(limit);
@@ -71,7 +71,7 @@ const CheckHistoryPage = (props) => {
         history.__resultError = false;
         setHistory(e => ({...e}));
         const url = SERVER.Url(`/checks/${check}/${uuid}`, environ);
-        FETCH.get(url, response => {
+        Fetch.get(url, response => {
             if (history.__resultShowing) {
                 history.__result = response;
                 setHistory(e => ({...e}));

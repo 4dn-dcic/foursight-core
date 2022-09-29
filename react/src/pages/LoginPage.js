@@ -81,7 +81,7 @@ const LoginPage = (props) => {
     return <>
         { Auth.IsLoggedIn(header) ? (<React.Fragment>
             <div className="container">
-                {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt",color:"darkblue"}}>Hello, {Auth.LoggedInUserName(header)} ...</b>}
+                xxx {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt",color:"darkblue"}}>Hello, {Auth.LoggedInUserName(header)} ...</b>}
                 <div style={{float:"right",marginRight:"8pt",color:"darkblue",fontSize:"small",cursor:"pointer"}}>
                     { showingAuthToken ? <>
                         <span onClick={() => setShowAuthToken(false)}><b>AuthToken</b> &#x2193;</span>

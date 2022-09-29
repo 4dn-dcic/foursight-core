@@ -126,10 +126,12 @@ class ReactApi:
         """
         jwt_decoded = self.decode_jwt(jwt, env)
         email = jwt_decoded.get("email")
+        email_verified = jwt_decoded.get("email_verified")
         known_envs, allowed_envs, first_name, last_name = self.get_envs(email)
         authtoken_decoded = {
             "aud": self.get_auth0_client_id(env), # The 'aud' must be Auth0 client ID for JWT decode to work.
             "user": email,
+            "user_verified": email_verified,
             "first_name": first_name,
             "last_name": last_name,
             "authorized": True,

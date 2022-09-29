@@ -34,33 +34,13 @@ function LoggedInUserName(header) {
     return first_name + " " + last_name;
 }
 
-function LoggedInUserVerified(header) {
-    return header?.auth?.authorized ? header.auth?.user_verified : false;
-}
-
-function LoggedInUserAuthToken(header) {
-    return header?.auth;
-}
-
-function LoggedInUserAuthEnvs(header) {
-    return Cookie.AuthEnvs();
-}
-
-function LoggedInUserJwt(header) {
-    return header?.auth?.jwt;
-}
-
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 export default {
     IsLoggedIn:                IsLoggedIn,
-    Token:                     Cookie.AuthToken,
     LoggedInUser:              LoggedInUser,
     LoggedInUserName:          LoggedInUserName,
-    LoggedInUserVerified:      LoggedInUserVerified,
-    LoggedInUserJwt:           LoggedInUserJwt,
-    LoggedInUserAuthToken:     LoggedInUserAuthToken,
-    LoggedInUserAuthEnvs:      LoggedInUserAuthEnvs
+    Token:                     Cookie.AuthToken
 }

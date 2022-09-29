@@ -7,7 +7,7 @@ import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import Cookie from '../utils/Cookie';
 import ENV from '../utils/ENV';
-import FETCH from '../utils/FETCH';
+import Fetch from '../utils/Fetch';
 import IMAGE from '../utils/IMAGE';
 import Global from '../Global';
 import ReadOnlyMode from '../ReadOnlyMode';
@@ -38,7 +38,7 @@ const ChecksPage = (props) => {
         ReadOnlyMode.RegisterCallback(setReadOnlyMode);
 
         const groupedChecksUrl = SERVER.Url(`/checks`, environ);
-        FETCH.get(groupedChecksUrl, groupedChecks => {
+        Fetch.get(groupedChecksUrl, groupedChecks => {
             setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
             if (groupedChecks.length > 0) {
                 //
@@ -51,7 +51,7 @@ const ChecksPage = (props) => {
         }, setLoading, setError);
 
         const lambdasUrl = SERVER.Url(`/lambdas`, environ);
-        FETCH.get(lambdasUrl, lambdas => {
+        Fetch.get(lambdasUrl, lambdas => {
             setLambdas(lambdas.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0)));
         });
 
@@ -66,7 +66,7 @@ const ChecksPage = (props) => {
     function refreshChecksStatus() {
         setChecksStatusLoading(true);
         const url = SERVER.Url(`/checks-status`, environ);
-        FETCH.get(url, response => {
+        Fetch.get(url, response => {
             setChecksStatus(e => ({...response}));
         }, setChecksStatusLoading);
     }
@@ -301,7 +301,7 @@ const ChecksPage = (props) => {
         const runCheckUrl = SERVER.Url(`/checks/${check.name}/run?args=${argsEncoded}`, environ);
         check.queueingCheckRun = true;
         check.fetchingResult = true;
-        FETCH.get(runCheckUrl, response => { check.queueingCheckRun = false; check.fetchingResult = false; check.queuedCheckRun = response.uuid });
+        Fetch.get(runCheckUrl, response => { check.queueingCheckRun = false; check.fetchingResult = false; check.queuedCheckRun = response.uuid });
         check.queuedCheckRun = null;
         showCheckRunningBox(check);
         showHistory(check);
@@ -780,7 +780,7 @@ const ChecksPage = (props) => {
             noteChangedHistories();
             if (!check.history) {
                 const resultsHistoryUrl = SERVER.Url(`/checks/${check.name}/history`, environ);
-                FETCH.get(resultsHistoryUrl, history => { check.history = history; console.log(check); noteChangedHistories(); });
+                Fetch.get(resultsHistoryUrl, history => { check.history = history; console.log(check); noteChangedHistories(); });
             }
         }
     }
@@ -862,7 +862,7 @@ const ChecksPage = (props) => {
             // Fetch the latest results for this check.
             const checkResultsUrl = SERVER.Url(`/checks/${check.name}`, environ);
             check.fetchingResult = true;
-            FETCH.get(checkResultsUrl, checkResults => { check.results = checkResults; check.fetchingResult = false; noteChangedResults(); }, setLoading, setError)
+            Fetch.get(checkResultsUrl, checkResults => { check.results = checkResults; check.fetchingResult = false; noteChangedResults(); }, setLoading, setError)
         }
     }
 

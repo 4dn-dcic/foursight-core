@@ -2,7 +2,7 @@ import React from 'react';
 import { useContext, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ENV from '../utils/ENV';
-import FETCH from '../utils/FETCH';
+import Fetch from '../utils/Fetch';
 import Global from "../Global";
 import SERVER from '../utils/SERVER';
 import UUID from '../utils/UUID';
@@ -20,7 +20,7 @@ const GacComparePage = (props) => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
     useEffect(() => {
-            FETCH.get(url, setData, setLoading, setError)
+            Fetch.get(url, setData, setLoading, setError)
     }, []);
     let navigate = useNavigate();
 
@@ -149,7 +149,7 @@ const GacComparePage = (props) => {
         let url = SERVER.Url("/gac/" + environCompare, environ);
         const path = "/api/react/" + environ + "/gac/" + environCompare;
         navigate(path);
-        FETCH.get(url, setData, setLoading, setError)
+        Fetch.get(url, setData, setLoading, setError)
     }
 
     let OnChangeEnvCompare = (arg) => {
@@ -157,7 +157,7 @@ const GacComparePage = (props) => {
         let url = SERVER.Url("/gac/" + environCompare, ENV.Current());
         const path = "/api/react/" + ENV.Current() + "/gac/" + environCompare;
         navigate(path);
-        FETCH.get(url, setData, setLoading, setError)
+        Fetch.get(url, setData, setLoading, setError)
     }
 
     if (error) return <>Cannot load GAC comparison from Foursight: {error}</>;

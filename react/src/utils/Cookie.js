@@ -10,7 +10,6 @@ import TYPE from './TYPE';
 
 const _cookies                = new Cookies()
 const _authTokenCookieName    = "authtoken";
-const _authEnvsCookieName     = "authenvs";
 const _authCookieName         = "auth";
 const _redirectCookieName     = "reactredir";
 const _lastUrlCookieName      = "lasturl";
@@ -138,19 +137,8 @@ function GetAuthTokenCookie() {
             }
         }
     }
-    catch {
-    }
+    catch { }
     return [];
-
-    try {
-        const authEnvsEncoded = GetCookie(_authEnvsCookieName);
-        const authEnvsDecoded = atob(authEnvsEncoded);
-        const authEnvs = JSON.parse(authEnvsDecoded);
-        return authEnvs;
-    }
-    catch {
-        return [];
-    }
 }
 
 function GetKnownEnvsCookie() {

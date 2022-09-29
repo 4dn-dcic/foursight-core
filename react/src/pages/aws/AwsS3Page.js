@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { BarSpinner } from "../../Spinners";
 import Clipboard from '../../utils/Clipboard';
-import FETCH from '../../utils/FETCH';
+import Fetch from '../../utils/Fetch';
 import IMAGE from '../../utils/IMAGE';
 import SERVER from '../../utils/SERVER';
 import YAML from '../../utils/YAML';
@@ -22,7 +22,7 @@ const AwsS3Page = (props) => {
 
     useEffect(() => {
         const bucketsUrl = SERVER.Url("/aws/s3/buckets", environ);
-        FETCH.get(bucketsUrl, bucketList => {
+        Fetch.get(bucketsUrl, bucketList => {
             setBucketList(bucketList);
         }, setLoading, setError);
     }, []);
@@ -76,7 +76,7 @@ const AwsS3Page = (props) => {
         bucketKeysList.unshift(bucketKeys);
         setBucketKeysList(existing => [...existing]);
         const bucketKeysUrl = SERVER.Url(`/aws/s3/buckets/${bucket}`, environ);
-        FETCH.get(bucketKeysUrl, data => {
+        Fetch.get(bucketKeysUrl, data => {
             bucketKeys.keys = data;
             bucketKeys.loading = false;
             setBucketKeysList(existing => [...existing]);
@@ -136,7 +136,7 @@ const AwsS3Page = (props) => {
         };
         bucketKeyContentList.unshift(data);
         setBucketKeyContentList(existing => [...existing]);
-        FETCH.get(url, response => {
+        Fetch.get(url, response => {
             data.content = response;
             data.loading = false;
             setBucketKeyContentList(existing => [...existing]);

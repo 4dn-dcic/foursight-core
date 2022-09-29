@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { RingSpinner } from "../Spinners";
-import FETCH from "../utils/FETCH";
+import Fetch from "../utils/Fetch";
 import SERVER from "../utils/SERVER";
 import Client from "../utils/Client";
 
@@ -11,7 +11,7 @@ const UsersPage = () => {
     let [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
-    useEffect(() => { FETCH.get(url, setUsers, setLoading, setError)}, []);
+    useEffect(() => { Fetch.get(url, setUsers, setLoading, setError)}, []);
 
     if (error) return <>Cannot load users from Foursight: {error}</>;
     if (loading) {

@@ -4,7 +4,7 @@ import Global from './Global';
 import Context from './utils/Context';
 import Client from './utils/Client';
 import ENV from './utils/ENV';
-import FETCH from './utils/FETCH';
+import Fetch from './utils/Fetch';
 import IMAGE from './utils/IMAGE';
 import SERVER from './utils/SERVER';
 
@@ -44,7 +44,7 @@ const App = () => {
 
     const url = SERVER.Url("/header");
     useEffect(() => {
-        FETCH.get(
+        Fetch.get(
             url,
             data => {
                 data.loading = false;
