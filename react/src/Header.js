@@ -13,7 +13,7 @@ import Image from './utils/Image';
 import Logout from './utils/Logout';
 import ReadOnlyMode from './ReadOnlyMode';
 import TIME from './utils/TIME';
-import UUID from './utils/UUID';
+import Uuid from './utils/Uuid';
 // Issues with serving images ONLY from 4dn-dcic/dev NOT from cgap-supertest ...
 // So serve from my GitHub account for now ...
 // import LockImage from './media/lock.jpg';

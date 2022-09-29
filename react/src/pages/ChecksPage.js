@@ -16,7 +16,7 @@ import STR from '../utils/STR';
 import TableHead from '../TableHead';
 import TIME from '../utils/TIME';
 import Type from '../utils/Type';
-import UUID from '../utils/UUID';
+import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';
 
 const ChecksPage = (props) => {
@@ -342,7 +342,7 @@ const ChecksPage = (props) => {
                     </div>
                     <table style={{fontSize:"small",marginTop:"0pt"}}><tbody>
                     { Object.keys(check.kwargs).sort().map(key =>
-                        <tr key={UUID()} style={{}}>
+                        <tr key={Uuid()} style={{}}>
                             <td align="top">
                                 <b>{key}</b>:
                             &nbsp;&nbsp;</td>
@@ -363,13 +363,13 @@ const ChecksPage = (props) => {
                                 </select> 
                             }
                             { (Type.IsNonEmptyArray(check.kwargs[key])) &&
-                                <select key={UUID()} defaultValue={check.kwargs[key]?.__selected} style={{background:"lightyellow",border:"1px solid lightgray"}}
+                                <select key={Uuid()} defaultValue={check.kwargs[key]?.__selected} style={{background:"lightyellow",border:"1px solid lightgray"}}
                                     onChange={(e) => {
                                         check.kwargs[key].__selected = e.target.value;
                                         noteChangedCheckBox();
                                     }}>
                                     { check.kwargs[key].map(item =>
-                                        <option key={UUID()}>{item}</option>
+                                        <option key={Uuid()}>{item}</option>
                                     )}
                                 </select>
                             }

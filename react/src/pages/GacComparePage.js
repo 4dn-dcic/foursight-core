@@ -5,7 +5,7 @@ import ENV from '../utils/ENV';
 import Fetch from '../utils/Fetch';
 import Global from "../Global";
 import SERVER from '../utils/SERVER';
-import UUID from '../utils/UUID';
+import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';
 
 const GacComparePage = (props) => {
@@ -219,14 +219,14 @@ const GacComparePage = (props) => {
                     </thead>
                     <tbody style={{fontSize:"10pt"}}>
                     { unique_keys?.map((key, keyIndex) => {
-                        return <React.Fragment key={UUID()}>
+                        return <React.Fragment key={Uuid()}>
                             { (showingAll() ||
                                (showingMatches() && sameGacValue(key, data)) ||
                                (showingNonMatches() && !sameGacValue(key, data)) ||
                                (showingDifferences() && !sameGacValue(key, data) && !(addedGacValue(key, data) || removedGacValue(key, data))) ||
                                (showingMissing() && (addedGacValue(key, data) || removedGacValue(key, data)))) ?
                             (<React.Fragment>
-                            <tr key={UUID()} style={{color:sameGacValue(key, data) ? "inherit" : (removedGacValue(key, data) || addedGacValue(key, data) ? "red" : "darkred")}}>
+                            <tr key={Uuid()} style={{color:sameGacValue(key, data) ? "inherit" : (removedGacValue(key, data) || addedGacValue(key, data) ? "red" : "darkred")}}>
                             <td>
                                 {sameGacValue(key, data) ? <span>&#x2713;</span> : <span>&#x2717;</span>}&nbsp;
                             </td>

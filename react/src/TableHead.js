@@ -1,6 +1,6 @@
 import React from 'react';
 import Type from './utils/Type';
-import UUID from './utils/UUID';
+import Uuid from './utils/Uuid';
 import { PuffSpinner } from './Spinners';
 
 // -------------------------------------------------------------------------------------------------
@@ -46,7 +46,7 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
         { lines && <><tr><td style={{height:"1px",background:style?.color ? style.color : "gray"}} colSpan="9"></td></tr>
                      <tr><td style={{paddingBottom:"2pt"}}></td></tr></>}
         <tr>{ columns.map(column => {
-            return <td key={UUID()} style={{textAlign:column.align || "normal",whiteSpace:"nowrap"}}>
+            return <td key={Uuid()} style={{textAlign:column.align || "normal",whiteSpace:"nowrap"}}>
                 { column.key ? (<>
                     <span style={{...style, cursor: loading ? "not-allowed" : "pointer"}}
                         onClick={() => {

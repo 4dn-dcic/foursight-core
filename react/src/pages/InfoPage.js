@@ -10,7 +10,7 @@ import Fetch from '../utils/Fetch';
 import Image from '../utils/Image';
 import SERVER from '../utils/SERVER';
 import TIME from '../utils/TIME';
-import UUID from '../utils/UUID';
+import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';
 
 const InfoPage = () => {
@@ -152,7 +152,7 @@ const InfoPage = () => {
         <InfoBox title="Environment & Bucket Names">
             <pre className="info" style={{border:"0",margin:"0",padding:"8",paddingBottom:"8",marginTop:"0"}}>
                 { info.buckets?.info && info.buckets.info.map(bucket_info => {
-                    return <span key={UUID()}>{Yaml.Format(bucket_info)}{info.buckets.info.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
+                    return <span key={Uuid()}>{Yaml.Format(bucket_info)}{info.buckets.info.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
                 })}
             </pre>
         </InfoBox>

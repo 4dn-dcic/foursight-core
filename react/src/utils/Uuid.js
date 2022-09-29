@@ -4,7 +4,7 @@
 
 import uuid from 'react-uuid';
 
-function UUID() {
+function Uuid() {
     return uuid();
 }
 
@@ -12,4 +12,4 @@ function UUID() {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default UUID;
+export default Uuid;

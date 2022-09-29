@@ -16,7 +16,7 @@ import STR from '../utils/STR';
 import TableHead from '../TableHead';
 import TIME from '../utils/TIME';
 import Type from '../utils/Type';
-import UUID from '../utils/UUID';
+import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';
 
 const CheckHistoryPage = (props) => {

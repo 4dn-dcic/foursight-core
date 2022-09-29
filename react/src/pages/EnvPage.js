@@ -6,7 +6,7 @@ import Auth from '../utils/Auth';
 import ENV from '../utils/ENV';
 import Client from '../utils/Client';
 import Cookie from '../utils/Cookie';
-import UUID from '../utils/UUID';
+import Uuid from '../utils/Uuid';
 
 const EnvPage = (props) => {
 
@@ -91,7 +91,7 @@ const EnvPage = (props) => {
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
                     <table style={{color:"inherit"}}><thead></thead><tbody>
                         {ENV.KnownEnvs(header).map((env, envIndex) =>
-                            <tr key={UUID()}>
+                            <tr key={Uuid()}>
                                 <td style={{fontWeight:IsCurrentEnv(env) ? "bold" : "normal",color:!IsKnownCurrentEnv(env.public_name) ? "red" : (IsCurrentEnv(env) ? "black" : "inherit"),verticalAlign:"top"}}>
                                     { IsCurrentEnv(env) ? (<>
                                         <span>&#x2192;&nbsp;&nbsp;</span>
@@ -128,7 +128,7 @@ const EnvPage = (props) => {
                                         <select style={{border:"0",background:"transparent","WebkitAppearance":"none"}} onChange={(selected) => onChange(selected, ENV.PreferredName(env, header))}>
                                             <option>GAC Compare &#x2193;</option>
                                             { ENV.KnownEnvs(header).map((env) =>
-                                                <option key={UUID()}>{ENV.PreferredName(env, header)}</option>
+                                                <option key={Uuid()}>{ENV.PreferredName(env, header)}</option>
                                             )}
                                         </select>
                                     </>):(<>
