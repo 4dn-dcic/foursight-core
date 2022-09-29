@@ -9,7 +9,7 @@ import Client from './utils/Client';
 import Context from './utils/Context';
 import LiveTime from './LiveTime';
 import ENV from './utils/ENV';
-import IMAGE from './utils/IMAGE';
+import Image from './utils/Image';
 import LOGOUT from './utils/LOGOUT';
 import ReadOnlyMode from './ReadOnlyMode';
 import TIME from './utils/TIME';
@@ -98,9 +98,9 @@ const Header = (props) => {
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={Client.PortalLink(header)} target="_blank">
                         { ENV.IsFoursightFourfront(header) ? (<span>
-                            <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={IMAGE.FoursightFourfrontLogo()} height="32" width="44" />
+                            <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={Image.FoursightFourfrontLogo()} height="32" width="44" />
                         </span>):(<span>
-                            <img src={IMAGE.FoursightCgapLogo()} width="130" />
+                            <img src={Image.FoursightCgapLogo()} width="130" />
                         </span>)}
                     </a>
                 </td>

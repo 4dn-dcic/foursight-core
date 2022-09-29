@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Client from "./utils/Client";
 import Cookie from "./utils/Cookie";
-import IMAGE from "./utils/IMAGE";
+import Image from "./utils/Image";
 import TYPE from "./utils/TYPE";
 
 let _callbacks = [];
@@ -11,7 +11,7 @@ const ReadOnlyModeLock = function() {
     return <>
         { readOnlyMode ? <>
             <span className={"tool-tip"} data-text={"You are in readonly mode. Click to enter read/write mode."}>
-                <img src={IMAGE.Lock()}
+                <img src={Image.Lock()}
                     style={{height:"30",cursor:"pointer"}}
                     onClick={() => {
                         setReadOnlyMode(false);
@@ -24,7 +24,7 @@ const ReadOnlyModeLock = function() {
             </span>
         </>:<>
             <span className={"tool-tip"} data-text={"You are in read/write mode. Click to enter readonly mode."}>
-                <img src={IMAGE.Unlock()}
+                <img src={Image.Unlock()}
                     style={{height:"30",cursor:"pointer"}}
                     onClick={() => {
                         setReadOnlyMode(true);

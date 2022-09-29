@@ -10,7 +10,7 @@ import PaginationControl from '../PaginationControl';
 import Clipboard from '../utils/Clipboard';
 import ENV from '../utils/ENV';
 import Fetch from '../utils/Fetch';
-import IMAGE from '../utils/IMAGE';
+import Image from '../utils/Image';
 import SERVER from '../utils/SERVER';
 import STR from '../utils/STR';
 import TableHead from '../TableHead';
@@ -205,7 +205,7 @@ const CheckHistoryPage = (props) => {
                                             </>:<>
                                                 <div style={{float:"right",marginTop:"-0px"}}>
                                                     <span style={{fontSize:"0",opacity:"0"}} id={check}>{JSON.stringify(history.__result[0])}</span>
-                                                    <img onClick={() => Clipboard.Copy(check)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={IMAGE.Clipboard()} height="19" />
+                                                    <img onClick={() => Clipboard.Copy(check)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
                                                     <span onClick={() => hideResult(history)} style={{marginLeft:"6pt",marginRight:"2pt",fontSize:"large",fontWeight:"bold",cursor:"pointer"}}>X</span>
                                                 </div>
                                                 {YAML.Format(history.__result[0])}

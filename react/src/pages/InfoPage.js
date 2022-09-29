@@ -7,7 +7,7 @@ import Clipboard from '../utils/Clipboard';
 import Context from '../utils/Context';
 import ENV from '../utils/ENV';
 import Fetch from '../utils/Fetch';
-import IMAGE from '../utils/IMAGE';
+import Image from '../utils/Image';
 import SERVER from '../utils/SERVER';
 import TIME from '../utils/TIME';
 import UUID from '../utils/UUID';
@@ -69,17 +69,17 @@ const InfoPage = () => {
         const pypiElement = pypi ?
             <span>
                 <a target="_blank" href={"https://pypi.org/project/" + name + "/" + value + "/"}>
-                    <img src={IMAGE.PyPi()} height="21" />
+                    <img src={Image.PyPi()} height="21" />
                 </a>&nbsp;</span> : <span/>
         const githubElement = github ?
             <span>
             <a target="_blank" href={"https://github.com/" + github + "/" + (name === "dcicutils" ? "utils" : name) + "/releases/tag/" + (name !== "chalice" ? "v" : "")  + value}>
-                <img src={IMAGE.GitHub()} height="15" />
+                <img src={Image.GitHub()} height="15" />
             </a>&nbsp;</span> : <span/>
         const pythonElement = python ?
             <span>
                 <a target="_blank" href={"https://docs.python.org/release/" + value + "/"}>
-                    <img src={IMAGE.Python()} height="19" />
+                    <img src={Image.Python()} height="19" />
             </a>&nbsp;</span> : <span/>
         const chaliceElement = false /*chalice*/ ?
             <span>
