@@ -73,7 +73,7 @@ function NoteLastUrl() {
 }
 
 function GetLastUrl() {
-    return COOKIE.GetLastUrl() || CLIENT.HomeUrl();
+    return COOKIE.LastUrl() || CLIENT.HomeUrl();
 }
 
 function GetLastPath() {

@@ -8,9 +8,11 @@ import AUTH from './utils/AUTH';
 import CLIENT from './utils/CLIENT';
 import CONTEXT from './utils/CONTEXT';
 import COOKIE from './utils/COOKIE';
+import CurrentTime from './CurrentTime';
 import ENV from './utils/ENV';
 import IMAGE from './utils/IMAGE';
 import LOGOUT from './utils/LOGOUT';
+import ReadOnlyModeLock from './ReadOnlyModeLock';
 import TIME from './utils/TIME';
 import UUID from './utils/UUID';
 // Issues with serving images ONLY from 4dn-dcic/dev NOT from cgap-supertest ...
@@ -62,7 +64,6 @@ const Header = (props) => {
     }
 
     return <>
-
         { header.loading ? (
             <div style={{width:"100%"}}>
             <table style={{width:"100%",height:"42px",background:"#444444"}}><tbody>
@@ -130,7 +131,7 @@ const Header = (props) => {
                     </div>
                 </td>
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
-                    <small>{TIME.FormatDateTime(new Date(), true)}</small>
+                    <small><CurrentTime.FormatDateTime verbose={true} /></small>
                     { (AUTH.IsLoggedIn(header)) ? (<span>
                             &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => LOGOUT()}>LOGOUT</span>
                     </span>):(<span>
@@ -236,20 +237,7 @@ const Header = (props) => {
                 </div>
                 </>)}
                 <div>
-                    {  CLIENT.IsReadOnlyMode(header) ? <>
-                        <span className={"tool-tip"} data-text={"You are in readonly mode. Click to enter read/write mode."}>
-                            <img src={IMAGE.Lock()}
-                                style={{height:"30",cursor:"pointer"}}
-                                onClick={() => CLIENT.SetReadOnlyMode(false, setHeader)}/>
-                        </span>
-                    </>:<>
-                        <span className={"tool-tip"} data-text={"You are in read/write mode. Click to enter readonly mode."}>
-                            <img src={IMAGE.Unlock()}
-                                style={{height:"30",cursor:"pointer"}}
-                                onClick={() => CLIENT.SetReadOnlyMode(true, setHeader)}/>
-                        </span>
-                    </>}
-
+                    <ReadOnlyModeLock />
                 </div>
             </div>
             </React.Fragment>)}

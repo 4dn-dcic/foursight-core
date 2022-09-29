@@ -1,12 +1,23 @@
 import { useContext } from 'react';
 import Global from "../Global";
+import COOKIE from "../utils/COOKIE";
 import ENV from "../utils/ENV";
+import JWT from "../utils/JWT";
 
 const HomePage = (props) => {
 
     const [ header ] = useContext(Global);
 
+    const jwt = COOKIE.Get("jwt")
+    console.log('DECODING JWT')
+    console.time()
+    const jwt_decoded = JWT.Decode(jwt)
+    console.timeEnd()
+    console.log('DONE DECODING JWT')
+
     return <>
+        [{COOKIE.Get("jwt")}]<br/>
+                <pre>{JSON.stringify(jwt_decoded, null, 2)}</pre>
         <div className="container">
             <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt",color:"#6F4E37"}}>
                 <span style={{fontSize:"xx-large"}}>&#x26A0;</span>&nbsp;

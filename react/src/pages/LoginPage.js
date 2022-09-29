@@ -8,6 +8,7 @@ import AUTH from '../utils/AUTH';
 import CLIENT from '../utils/CLIENT';
 import CONTEXT from '../utils/CONTEXT';
 import COOKIE from '../utils/COOKIE';
+import CurrentTime from '../CurrentTime';
 import ENV from '../utils/ENV';
 import LOGOUT from '../utils/LOGOUT';
 import TIME from '../utils/TIME';
@@ -22,6 +23,7 @@ const LoginPage = (props) => {
     let [ showingAuthEnvs, setShowAuthEnvs ] = useState(false);
     const [args] = useSearchParams();
     const showAuthBoxAtOutset = args.get("auth")?.length >= 0;
+        console.log('renderrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr' + TIME.FormatDateTime(new Date()));
 
     function login() {
         showAuthBox();
@@ -115,13 +117,9 @@ const LoginPage = (props) => {
                             <td style={{background:"darkblue",width:"2px"}}></td>
                             <td style={{width:"8pt"}}></td>
                             <td style={{textAlign:"top"}}><small style={{marginTop:"20pt"}}>
-                                <u className="tool-tip" data-text={"Logged in: " + TIME.FormatDateTime(AUTH.LoggedInUserJwt(header)?.iat)}>
-                                    Logged in
-                                </u>:&nbsp;{TIME.FormatDuration(AUTH.LoggedInUserJwt(header)?.iat, TIME.Now(), true, "just now", "", "ago")}&nbsp;
+                                Logged in: <CurrentTime.FormatDuration start={AUTH.LoggedInUserJwt(header)?.iat} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
                                 <br />
-                                <u className="tool-tip" data-text={"Session expires: " + TIME.FormatDateTime(AUTH.LoggedInUserJwt(header)?.exp)}>
-                                    Session expires
-                                </u>:&nbsp;{TIME.FormatDuration(TIME.Now(), AUTH.LoggedInUserJwt(header)?.exp, true, "now", "", "from now")}&nbsp;
+                                Session expires: <CurrentTime.FormatDuration end={AUTH.LoggedInUserJwt(header)?.exp} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
                             </small></td>
                         </tr></tbody></table>
                     </span>)}

@@ -193,6 +193,7 @@ function GetLastUrlCookie() {
 }
 
 function SetLastUrlCookie(url) {
+        console.log("SET-LAST-URL: " + url);
     SetCookie(_lastUrlCookieName, url);
 }
 
@@ -249,7 +250,7 @@ export default {
     Get:             GetCookie,
     DefaultEnv:      GetDefaultEnvCookie,
     KnownEnvs:       GetKnownEnvsCookie,
-    GetLastUrl:      GetLastUrlCookie,
+    LastUrl:         GetLastUrlCookie,
     HasAuthToken:    HasAuthTokenCookie,
     HasFauxLogin:    HasFauxLoginCookie,
     IsReadOnlyMode:  IsReadOnlyMode,

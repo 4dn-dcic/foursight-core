@@ -81,6 +81,31 @@ class ReactApi:
                 return True
         return False
 
+    def get_envs(self, email: str) -> [list, list, str, str]:
+        """
+        Returns a tuple containing (in left-right order) the list of known environments,
+        the list of allowed environment names (via the users store in ElasticSearch),
+        and (since we're getting the user record anyways) the first and last name of
+        the user (for informational/display purposes).
+        """
+        allowed_envs = []
+        known_envs = self.get_unique_annotated_environment_names()
+        first_name = None
+        last_name = None
+        for known_env in known_envs:
+            try:
+                user = ff_utils.get_metadata('users/' + email.lower(), ff_env=known_env["full_name"], add_on="frame=object&datastore=database")
+                if user:
+                    if not first_name:
+                        first_name = user.get("first_name")
+                    if not last_name:
+                        last_name = user.get("last_name")
+                    allowed_envs.append(known_env["full_name"])
+            except Exception as e:
+                logger.error(f"Exception getting allowed envs for: {email}")
+                logger.error(e)
+        return (known_envs, allowed_envs, first_name, last_name)
+
     def is_local_faux_logged_in(self, request: dict) -> bool:
         """
         Returns True if and only if: this request is a LOCAL (localhost) requests AND it
@@ -97,6 +122,28 @@ class ReactApi:
         if self.read_cookie("test_mode_login_localhost", request) != "1":
             return False
         return True
+
+    def create_authtoken(self, jwt_token: str, allowed_envs: list, first_name: str, last_name: str, env: str) -> str:
+        """
+        Used only for Foursight React.
+        Returns the value for the authtoken cookie consisting of
+        the given JWT token and the list of environments for which the
+        associated authenticated user, from the JWT token, is authorized.
+        This is a JSON object, encrypted, and then Base-64 encoded.
+        """
+        allowed_envs_encoded = self.encryption.encode(allowed_envs)
+        # TODO: think about separate timestamp or similar for authorized envs (ask Kent);
+        authtoken_json = {
+            "jwt": jwt_token,
+            # TODO: think about putting all this in the JWT ...
+            # and use the existing JWT verification (encryption) mechanism to check if it is okay (has not been tampered with);
+            # then we don't need to wrap and encrypt this ourselves.
+            "env": allowed_envs_encoded,
+            "first_name": first_name,
+            "last_name": last_name
+        }
+        authtoken = self.encryption.encrypt(authtoken_json)
+        return authtoken
 
     def reconstitute_authtoken(self, authtoken: str, env: str) -> dict:
         """
@@ -126,6 +173,31 @@ class ReactApi:
             "first_name": authtoken_json.get("first_name"),
             "last_name": authtoken_json.get("last_name")
         }
+
+    def augment_jwt_token(self, jwt_token: str, env: str):
+        """
+        Augments the given JWT with the list of known environments; the default environments;
+        and the list of allowed (authorized) environments for the user associated with the
+        given JWT; and the first/last name of the user associated with the JWT. The allowed
+        environments and first/last name are obtained via the users store (in ElasticSearch).
+        The first/last name FYI is just or informational/display purposes in the client.
+        """
+        jwt_token_decoded = self.decode_jwt_token(jwt_token, env)
+        email = jwt_token_decoded.get("email")
+        known_envs, allowed_envs, first_name, last_name = self.get_envs(email)
+        jwt_token_decoded["app_metadata"] = {
+            "known_envs": known_envs,
+            "allowed_envs": allowed_envs,
+            "default_env": self.get_default_env(),
+            "first_name": first_name,
+            "last_name": last_name
+        }
+        auth0_secret = self.get_auth0_secret(env)
+        if not auth0_secret:
+            print("WARNING: No Auth0 secret for JWT signing!")
+        # Re-encode (sign) the JWT using our Auth0 secret.
+        jwt_token = jwt.encode(jwt_token_decoded, auth0_secret, algorithm="HS256")
+        return jwt_token
 
     # TODO: This needs massive cleanup after messing with WRT React.
     def auth0_react_finish_callback(self, request, env, domain, jwt_token, jwt_expires):
@@ -165,12 +237,24 @@ class ReactApi:
         print(xyzzy)
         # xyzzy
 
+        jwt_token_augmented = self.augment_jwt_token(jwt_token, env)
+        print("JWT AUGMENTED:")
+        print(jwt_token_augmented)
+        print(type(jwt_token_augmented))
+        print(self.decode_jwt_token(jwt_token_augmented, env))
+
         authtoken = self.create_authtoken(jwt_token, allowed_envs, first_name, last_name, env)
         authtoken_cookie = self.create_set_cookie_string(request, name="authtoken",
                                                                   value=authtoken,
                                                                   domain=domain,
                                                                   expires=jwt_expires,
                                                                   http_only=True)
+
+        jwt_cookie = self.create_set_cookie_string(request, name="jwt",
+                                                            value=jwt_token_augmented,
+                                                            domain=domain,
+                                                            expires=jwt_expires,
+                                                            http_only=False)
 
         # Set another cookie indicating we are logged in since we cannot read an HttpOnly
         # cookie client-side to determine its existence; set it to Base64 encode email;
@@ -201,6 +285,7 @@ class ReactApi:
         response_headers["set-cookie"] = authtoken_cookie
         response_headers["Set-Cookie"] = authenvs_cookie
         response_headers["SET-COOKIE"] = auth_cookie
+        response_headers["SET-cookie"] = jwt_cookie
 
         return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
@@ -233,6 +318,13 @@ class ReactApi:
             authtoken_encrypted = self.read_cookie("authtoken", request)
             if not authtoken_encrypted:
                 return { "authenticated": False, "status": "no-authtoken" }
+
+            #xyzzy
+            jwt_cookie = self.read_cookie("jwt", request)
+            jwt_cookie_decoded = self.decode_jwt_token(jwt_cookie, env)
+            print('XYZZY: JWT COOKIE DECODED:')
+            print(jwt_cookie_decoded)
+            #xyzzy
 
             authtoken_info = self.reconstitute_authtoken(authtoken_encrypted, env)
             if not authtoken_info:

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Global from './Global';
+import Now from './Now';
 import CONTEXT from './utils/CONTEXT';
 import ENV from './utils/ENV';
 import FETCH from './utils/FETCH';
@@ -40,6 +41,8 @@ function setFavicon(header) {
 const App = () => {
 
     let [ header, setHeader ] = useState({loading: true});
+    const NowValue = Now.Value();
+
     const url = SERVER.Url("/header");
     useEffect(() => {
         FETCH.get(
@@ -57,6 +60,7 @@ const App = () => {
 
     return <Router>
         <Global.Provider value={[header, setHeader]}>
+        <Now.Context.Provider value={NowValue}>
             <Header />
             <div style={{margin:"20px"}}>
                 <Routes>
@@ -132,6 +136,7 @@ const App = () => {
                 </Routes>
             </div>
             <Footer />
+        </Now.Context.Provider>
         </Global.Provider>
     </Router>
 };

@@ -9,7 +9,8 @@ import UUID from '../utils/UUID';
 
 const EnvPage = (props) => {
 
-    Page.NoteLastUrl();
+        console.log("NOTE-LAST-URL-FROM-ENV-PAGE")
+    //Page.NoteLastUrl();
 
     let navigate = useNavigate();
     const [ header ] = useContext(Global);
