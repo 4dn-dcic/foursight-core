@@ -102,8 +102,8 @@ class ReactApi:
                         last_name = user.get("last_name")
                     allowed_envs.append(known_env["full_name"])
             except Exception as e:
-                logger.error(f"Exception getting allowed envs for: {email}")
-                logger.error(e)
+                print(f"Exception getting allowed envs for: {email}")
+                print(e)
         return (known_envs, allowed_envs, first_name, last_name)
 
     def decode_authtoken(self, authtoken: str, env: str) -> dict:
@@ -146,6 +146,10 @@ class ReactApi:
             print("WARNING: No Auth0 secret for JWT signing!")
         # Re-encode (sign) the JWT using our Auth0 secret.
         authtoken = jwtlib.encode(authtoken_decoded, auth0_secret, algorithm="HS256")
+        if isinstance(authtoken, bytes):
+            # Depending on version jwtlib.encode returns bytes or string :-(
+            authtoken = authtoken.decode("utf-8")
+
         return authtoken
 
     # TODO: This needs massive cleanup after messing with WRT React.
