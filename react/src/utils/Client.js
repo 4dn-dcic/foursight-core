@@ -4,7 +4,7 @@
 
 import Context from './Context';
 import Cookie from './Cookie';
-import ENV from './ENV';
+import Env from './Env';
 import Path from './Path';
 import Str from './Str';
 import Type from './Type';
@@ -14,7 +14,7 @@ import Type from './Type';
 // -------------------------------------------------------------------------------------------------
 
 function GetHomeUrl() {
-    return Context.Client.Origin() + GetPath("/home", ENV.Current());
+    return Context.Client.Origin() + GetPath("/home", Env.Current());
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ function GetPath(path, env = true, envFallback = null) {
             // If it doesn't exist (for some reason) use the default environemnet
             // from the global header data, if passed in.
             //
-            env = ENV.Current();
+            env = Env.Current();
             if (!Str.HasValue(env)) {
                 if (Str.HasValue(envFallback)) {
                     env = envFallback;
@@ -51,7 +51,7 @@ function GetPath(path, env = true, envFallback = null) {
                 else if (Type.IsObject(envFallback)) {
                     const header = envFallback;
                     // env = header.envs?.default;
-                    env = ENV.Default(header);
+                    env = Env.Default(header);
                 }
             }
         }
@@ -60,7 +60,7 @@ function GetPath(path, env = true, envFallback = null) {
     else if (Type.IsObject(env)) {
         const header = env;
         // env = header.envs?.default;
-        env = ENV.Default(header);
+        env = Env.Default(header);
         if (!Str.HasValue(env)) {
             if (Str.HasValue(envFallback)) {
                 env = envFallback;
@@ -71,7 +71,7 @@ function GetPath(path, env = true, envFallback = null) {
                 //
                 const header = envFallback;
                 // env = header.envs?.default;
-                env = ENV.Default(header);
+                env = Env.Default(header);
             }
         }
     }
@@ -109,8 +109,8 @@ function GetCurrentLogicalPath() {
 // -------------------------------------------------------------------------------------------------
 
 function GetPortalLink(header) {
-    if (ENV.IsFoursightFourfront(header)) {
-        return "https://" +  ENV.PublicName(ENV.Current(), header) + ".4dnucleome.org/";
+    if (Env.IsFoursightFourfront(header)) {
+        return "https://" +  Env.PublicName(Env.Current(), header) + ".4dnucleome.org/";
     }
     else {
         return "https://cgap.hms.harvard.edu/";

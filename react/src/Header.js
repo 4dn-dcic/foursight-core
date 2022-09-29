@@ -8,7 +8,7 @@ import Auth from './utils/Auth';
 import Client from './utils/Client';
 import Context from './utils/Context';
 import LiveTime from './LiveTime';
-import ENV from './utils/ENV';
+import Env from './utils/Env';
 import Image from './utils/Image';
 import Logout from './utils/Logout';
 import ReadOnlyMode from './ReadOnlyMode';
@@ -30,8 +30,8 @@ const Header = (props) => {
     //
     const dummy = useNavigate();
 
-    let titleBackgroundColor = ENV.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
-    let subTitleBackgroundColor = ENV.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
+    let titleBackgroundColor = Env.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
+    let subTitleBackgroundColor = Env.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
 
     function renderNavigationLinks(header) {
         function style(isActive) {
@@ -97,7 +97,7 @@ const Header = (props) => {
             <tr title={"App Deployed:" + header.app?.deployed + " | App Launched: " + header.app?.launched + " | Page Loaded: " + header.page?.loaded}>
                 <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={Client.PortalLink(header)} target="_blank">
-                        { ENV.IsFoursightFourfront(header) ? (<span>
+                        { Env.IsFoursightFourfront(header) ? (<span>
                             <img style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={Image.FoursightFourfrontLogo()} height="32" width="44" />
                         </span>):(<span>
                             <img src={Image.FoursightCgapLogo()} width="130" />
@@ -145,31 +145,31 @@ const Header = (props) => {
                         {renderNavigationLinks(header)}
                     </td>
                     <td width="2%" align="center" style={{whiteSpace:"nowrap",margin:"0 auto"}}>
-                        <a target="_blank" href={"https://pypi.org/project/" + (ENV.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + "/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48",paddingRight:"8pt"}}>{header.app?.version}</b></a>
+                        <a target="_blank" href={"https://pypi.org/project/" + (Env.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + "/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48",paddingRight:"8pt"}}>{header.app?.version}</b></a>
                     </td>
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
-                        { (ENV.KnownEnvs(header).length > 0) ? (
+                        { (Env.KnownEnvs(header).length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:(!ENV.IsCurrentKnown(header) || (Auth.IsLoggedIn(header) && !ENV.IsCurrentAllowed(header))) ? "red" : "#143c53"}} title={"Environment: " + ENV.Current() + (!ENV.IsCurrentKnown(header) ? " -> UNKNOWN" : "")}>{ENV.Current() || "unknown-env"}</b>
+                            <b className="dropdown-button" style={{color:(!Env.IsCurrentKnown(header) || (Auth.IsLoggedIn(header) && !Env.IsCurrentAllowed(header))) ? "red" : "#143c53"}} title={"Environment: " + Env.Current() + (!Env.IsCurrentKnown(header) ? " -> UNKNOWN" : "")}>{Env.Current() || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
-                                { ENV.KnownEnvs(header).map(env => 
-                                    ENV.Equals(env, ENV.Current()) ?
-                                        <span key={env.full_name}>{ENV.PreferredName(env, header)}&nbsp;&nbsp;&#x2713;{ !ENV.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</span>
+                                { Env.KnownEnvs(header).map(env => 
+                                    Env.Equals(env, Env.Current()) ?
+                                        <span key={env.full_name}>{Env.PreferredName(env, header)}&nbsp;&nbsp;&#x2713;{ !Env.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</span>
                                     :
-                                        ENV.IsAllowed(env, header) ?
+                                        Env.IsAllowed(env, header) ?
                                             // This works "okay" 2022-09-18 but does not refresh/refetch (say) /users page data on select new env
                                             // <Link key={env.public_name} to={Client.Path(null, env.public_name)}>{env.public_name}</Link>
                                             // So doing this funky double redirect to get it to ... TODO: figure out right/React of of doing this
-                                            <Link key={env.full_name} to={{pathname: "/redirect"}} state={{url: !ENV.IsCurrentKnown(header) ? Client.Path("/env", ENV.PreferredName(ENV.Default(header), header)) : Client.Path(null, ENV.PreferredName(env, header))}}>{ENV.PreferredName(env, header)}</Link>
+                                            <Link key={env.full_name} to={{pathname: "/redirect"}} state={{url: !Env.IsCurrentKnown(header) ? Client.Path("/env", Env.PreferredName(Env.Default(header), header)) : Client.Path(null, Env.PreferredName(env, header))}}>{Env.PreferredName(env, header)}</Link>
                                         :
-                                            <Link key={env.public_name} to={Client.Path("/env", ENV.PreferredName(env, header))}>{ENV.PreferredName(env, header)}{!ENV.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</Link>
+                                            <Link key={env.public_name} to={Client.Path("/env", Env.PreferredName(env, header))}>{Env.PreferredName(env, header)}{!Env.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</Link>
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
                                 <Link id="__envinfo__" to={Client.Path("/env")}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</Link>
                             </div>
                          </span>
                         ):(
-                            <b style={{color:titleBackgroundColor}} title="Environment: {ENV.Current()}">{ENV.Current()}</b>
+                            <b style={{color:titleBackgroundColor}} title="Environment: {Env.Current()}">{Env.Current()}</b>
                         )}
                         &nbsp;|&nbsp;
                         { (header.app?.stage === 'prod') ? (<>
@@ -197,7 +197,7 @@ const Header = (props) => {
                 <tr>
                     <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="1">
                         <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight <b>React</b>. For more info click <b><a href="https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React" style={{color:"darkred"}} target="_blank"><u>here</u></a></b>.
-                        For the real Foursight click <a href={ENV.LegacyFoursightLink(header)} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
+                        For the real Foursight click <a href={Env.LegacyFoursightLink(header)} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
                     </td>
                     <td style={{background:"lightyellow"}}>
                         {/* <BarSpinner loading={header.contentLoading} color="darkred" size="160"/> */}

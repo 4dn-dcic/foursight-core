@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Global from './Global';
 import Context from './utils/Context';
 import Client from './utils/Client';
-import ENV from './utils/ENV';
+import Env from './utils/Env';
 import Fetch from './utils/Fetch';
 import Image from './utils/Image';
 import Server from './utils/Server';
@@ -29,7 +29,7 @@ import UsersPage from './pages/UsersPage';
 function setFavicon(header) {
     const faviconElement = document.getElementById("favicon");
     if (faviconElement) {
-        if (ENV.IsFoursightFourfront(header)) {
+        if (Env.IsFoursightFourfront(header)) {
             faviconElement.href = Image.FoursightFourfrontFavicon();
         }
         else {

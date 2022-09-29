@@ -6,7 +6,7 @@ import { RingSpinner } from "../Spinners";
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import Cookie from '../utils/Cookie';
-import ENV from '../utils/ENV';
+import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
 import Image from '../utils/Image';
 import Global from '../Global';
@@ -103,7 +103,7 @@ const ChecksPage = (props) => {
         let kwargs = {};
         for (let schedule_key of Object.keys(check?.schedule)) {
             for (let schedule_env_key of Object.keys(check.schedule[schedule_key])) {
-                if (schedule_env_key.toLowerCase() == "all" || ENV.Equals(schedule_env_key, environ)) {
+                if (schedule_env_key.toLowerCase() == "all" || Env.Equals(schedule_env_key, environ)) {
                     kwargs = check.schedule[schedule_key][schedule_env_key]["kwargs"]
                     break;
                 }

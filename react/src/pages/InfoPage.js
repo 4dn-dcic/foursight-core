@@ -5,7 +5,7 @@ import Auth from '../utils/Auth';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
 import Context from '../utils/Context';
-import ENV from '../utils/ENV';
+import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
 import Image from '../utils/Image';
 import Server from '../utils/Server';
@@ -117,7 +117,7 @@ const InfoPage = () => {
     if (loading) return <>Loading ...</>;
     return <>
         <InfoBox title="Versions">
-            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={ENV.IsFoursightFourfront(header) ? "4dn-dcic" : "dbmi-bgm"} size="2" />
+            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={Env.IsFoursightFourfront(header) ? "4dn-dcic" : "dbmi-bgm"} size="2" />
             <InfoRow name={"foursight-core"} value={header.versions?.foursight_core} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"dcicutils"} value={header.versions?.dcicutils} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"chalice"} value={header.versions?.chalice} monospace={true} copy={true} chalice={true} size="2" pypi={true} github={"aws"} />
@@ -138,11 +138,11 @@ const InfoPage = () => {
             <InfoRow name={"SQS Server"} value={info?.server?.sqs} monospace={true} copy={true} size="2" />
         </InfoBox>
         <InfoBox title="Environment Names">
-            <InfoRow name={"Environment Name"} value={ENV.RegularName(ENV.Current(), info)} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Full)"} value={ENV.FullName(ENV.Current(), info)} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Short)"} value={ENV.ShortName(ENV.Current(), info)} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Public)"} value={ENV.PublicName(ENV.Current(), info)} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Foursight)"} value={ENV.FoursightName(ENV.Current(), info)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name"} value={Env.RegularName(Env.Current(), info)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Full)"} value={Env.FullName(Env.Current(), info)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Short)"} value={Env.ShortName(Env.Current(), info)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Public)"} value={Env.PublicName(Env.Current(), info)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Foursight)"} value={Env.FoursightName(Env.Current(), info)} monospace={true} copy={true} size="3" />
         </InfoBox>
         <InfoBox title="Bucket Names">
             <InfoRow name={"Environment Bucket Name"} value={info?.buckets?.env} monospace={true} copy={true} size="3" />
@@ -184,7 +184,7 @@ const InfoPage = () => {
             <InfoRow name={"Page Loaded At"} value={info.page?.loaded + Time.FormatDuration(info.page?.loaded, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Package"} value={header.app?.package} monospace={true} size="2" />
             <InfoRow name={"Stage"} value={header.app?.stage} monospace={true} size="2" />
-            <InfoRow name={"Environment"} value={ENV.Current()} monospace={true} size="2" />
+            <InfoRow name={"Environment"} value={Env.Current()} monospace={true} size="2" />
             <InfoRow name={"Domain"} value={header.app?.domain} monospace={true} size="2" />
             <InfoRow name={"Context"} value={header.app?.context} monospace={true} size="2" />
             <InfoRow name={"Path"} value={info.page?.path} monospace={true} size="2" />

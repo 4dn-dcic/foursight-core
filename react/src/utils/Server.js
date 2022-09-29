@@ -2,7 +2,7 @@
 // Server (React API) related functions.
 // -------------------------------------------------------------------------------------------------
 
-import ENV from './ENV';
+import Env from './Env';
 import Context from './Context';
 import Str from './Str';
 import Type from './Type';
@@ -16,7 +16,7 @@ function GetUrl(path, env = true) {
     }
     if (Type.IsBoolean(env)) {
         if (env) {
-            env = ENV.Current();
+            env = Env.Current();
         }
     }
     if (Str.HasValue(env)) {

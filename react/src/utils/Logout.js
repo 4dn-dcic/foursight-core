@@ -3,7 +3,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import Cookie from './Cookie';
-import ENV from './ENV';
+import Env from './Env';
 import Page from '../Page';
 import Server from './Server';
 
@@ -13,7 +13,7 @@ import Server from './Server';
 function Logout() {
     Cookie.DeleteAuth();
     Cookie.SetRedirect(Page.LastUrl());
-    window.location.replace(Server.Url("/logout", ENV.Current()));
+    window.location.replace(Server.Url("/logout", Env.Current()));
 }
 
 export default Logout;

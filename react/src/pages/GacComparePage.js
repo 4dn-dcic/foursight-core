@@ -1,7 +1,7 @@
 import React from 'react';
 import { useContext, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import ENV from '../utils/ENV';
+import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
 import Global from "../Global";
 import Server from '../utils/Server';
@@ -13,7 +13,7 @@ const GacComparePage = (props) => {
     const [ header ] = useContext(Global);
 
     let { environCompare } = useParams();
-    const url = Server.Url(`/gac/${environCompare}`, ENV.Current());
+    const url = Server.Url(`/gac/${environCompare}`, Env.Current());
     const [ data, setData ] = useState([]);
     const [ showingRaw, setShowingRaw ] = useState(false);
     const [ showingType, setShowingType ] = useState("all");
@@ -154,8 +154,8 @@ const GacComparePage = (props) => {
 
     let OnChangeEnvCompare = (arg) => {
         const environCompare = arg.target.value;
-        let url = Server.Url("/gac/" + environCompare, ENV.Current());
-        const path = "/api/react/" + ENV.Current() + "/gac/" + environCompare;
+        let url = Server.Url("/gac/" + environCompare, Env.Current());
+        const path = "/api/react/" + Env.Current() + "/gac/" + environCompare;
         navigate(path);
         Fetch.get(url, setData, setLoading, setError)
     }
@@ -164,7 +164,7 @@ const GacComparePage = (props) => {
     if (loading) return <>Loading content ...</>;
 
     let unique_keys = getUniqueKeys(data?.gac, data?.gac_compare);
-    let knownEnvs = ENV.KnownEnvs();
+    let knownEnvs = Env.KnownEnvs();
 
     return <>
         <div style={{width:"fit-content"}}>
@@ -191,11 +191,11 @@ const GacComparePage = (props) => {
                         <td></td>
                         <td width="30%" style={{verticalAlign:"bottom"}}>Key</td>
                         <td>
-                            <select defaultValue={ENV.PreferredName(ENV.Current(), header)} style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","WebkitAppearance":"none"}} onChange={(arg) => OnChangeEnv(arg)}>
+                            <select defaultValue={Env.PreferredName(Env.Current(), header)} style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","WebkitAppearance":"none"}} onChange={(arg) => OnChangeEnv(arg)}>
                                 { knownEnvs.map((env) =>
-                                    ENV.PreferredName(env, header) === ENV.PreferredName(ENV.Current(), header) ?
-                                        <option key={ENV.PreferredName(env, header)}>{ENV.PreferredName(env, header)}</option> :
-                                        <option key={ENV.PreferredName(env, header)}>{ENV.PreferredName(env, header)}</option>
+                                    Env.PreferredName(env, header) === Env.PreferredName(Env.Current(), header) ?
+                                        <option key={Env.PreferredName(env, header)}>{Env.PreferredName(env, header)}</option> :
+                                        <option key={Env.PreferredName(env, header)}>{Env.PreferredName(env, header)}</option>
                                 )}
                             </select>&nbsp;<span style={{color:"blue"}}>&#x2193;</span>
                             <br />
@@ -204,9 +204,9 @@ const GacComparePage = (props) => {
                         <td>
                             <select defaultValue={environCompare} style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","WebkitAppearance":"none"}} onChange={(arg) => OnChangeEnvCompare(arg)}>
                                 { knownEnvs.map((env) =>
-                                    ENV.PreferredName(env, header) === environCompare ?
-                                        <option key={ENV.PreferredName(env, header)}>{ENV.PreferredName(env, header)}</option> :
-                                        <option key={ENV.PreferredName(env, header)}>{ENV.PreferredName(env, header)}</option>
+                                    Env.PreferredName(env, header) === environCompare ?
+                                        <option key={Env.PreferredName(env, header)}>{Env.PreferredName(env, header)}</option> :
+                                        <option key={Env.PreferredName(env, header)}>{Env.PreferredName(env, header)}</option>
                                 )}
                             </select>&nbsp;<span style={{color:"blue"}}>&#x2193;</span>
                             <br />

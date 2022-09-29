@@ -8,7 +8,7 @@ import Global from '../Global';
 import ReactPaginate from 'react-paginate';
 import PaginationControl from '../PaginationControl';
 import Clipboard from '../utils/Clipboard';
-import ENV from '../utils/ENV';
+import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
 import Image from '../utils/Image';
 import Server from '../utils/Server';

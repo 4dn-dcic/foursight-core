@@ -9,7 +9,7 @@ import Client from '../utils/Client';
 import Context from '../utils/Context';
 import Cookie from '../utils/Cookie';
 import LiveTime from '../LiveTime';
-import ENV from '../utils/ENV';
+import Env from '../utils/Env';
 import Logout from '../utils/Logout';
 import Time from '../utils/Time';
 import Yaml from '../utils/Yaml';

@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import Global from "../Global";
-import ENV from '../utils/ENV';
+import Env from '../utils/Env';
 import Client from '../utils/Client';
 import Logout from '../utils/Logout';
 
@@ -17,7 +17,7 @@ const ForbiddenPage = (props) => {
                 Try <span onClick={() => Logout()} style={{cursor:"pointer"}}><u>logging out</u></span> and logging in again.
                 <br />
                 <small>
-                Click <Link to={Client.Path("/login", ENV.Current(header))} style={{color:"darkred"}}><b>here</b></Link> to go to the <Link to={Client.Path("/login", ENV.Current(header))}><b style={{color:"darkred"}}>login</b></Link> page.
+                Click <Link to={Client.Path("/login", Env.Current(header))} style={{color:"darkred"}}><b>here</b></Link> to go to the <Link to={Client.Path("/login", Env.Current(header))}><b style={{color:"darkred"}}>login</b></Link> page.
                 </small>
             </div>
         </div>
