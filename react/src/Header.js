@@ -11,7 +11,7 @@ import CurrentTime from './CurrentTime';
 import ENV from './utils/ENV';
 import IMAGE from './utils/IMAGE';
 import LOGOUT from './utils/LOGOUT';
-import ReadOnlyModeLock from './ReadOnlyModeLock';
+import ReadOnlyMode from './ReadOnlyMode';
 import TIME from './utils/TIME';
 import UUID from './utils/UUID';
 // Issues with serving images ONLY from 4dn-dcic/dev NOT from cgap-supertest ...
@@ -236,7 +236,7 @@ const Header = (props) => {
                 </div>
                 </>)}
                 <div>
-                    <ReadOnlyModeLock />
+                    <ReadOnlyMode.Lock />
                 </div>
             </div>
             </React.Fragment>)}

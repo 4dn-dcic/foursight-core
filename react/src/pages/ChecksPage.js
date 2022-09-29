@@ -10,6 +10,7 @@ import ENV from '../utils/ENV';
 import FETCH from '../utils/FETCH';
 import IMAGE from '../utils/IMAGE';
 import Global from '../Global';
+import ReadOnlyMode from '../ReadOnlyMode';
 import SERVER from '../utils/SERVER';
 import STR from '../utils/STR';
 import TableHead from '../TableHead';
@@ -30,6 +31,8 @@ const ChecksPage = (props) => {
     let [ selectedHistories, setSelectedHistories ] = useState([])
     let [ checksStatus, setChecksStatus ] = useState({});
     let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
+
+    let readOnlyMode = ReadOnlyMode.State();
 
     useEffect(() => {
 
@@ -470,10 +473,10 @@ const ChecksPage = (props) => {
             </div>
         }
         return <div>
-            <div className={"check-run-button"} style={{...style, cursor:Client.IsReadOnlyMode(header) && check.configuringCheckRun ? "not-allowed" : "",background:Client.IsReadOnlyMode(header) && check.configuringCheckRun ? "#888888" : "",color:check.configuringCheckRun ? "yellow" : ""}}
+            <div className={"check-run-button"} style={{...style, cursor:readOnlyMode && check.configuringCheckRun ? "not-allowed" : "",background:readOnlyMode && check.configuringCheckRun ? "#888888" : "",color:check.configuringCheckRun ? "yellow" : ""}}
                 onClick={(e) => {
                     if (check.configuringCheckRun) {
-                        if (!Client.IsReadOnlyMode(header)) {
+                        if (!readOnlyMode) {
                             saveInputKwargs(check);
                             showResultBox(check);
                             runCheck(check);
@@ -485,8 +488,8 @@ const ChecksPage = (props) => {
                         noteChangedCheckBox(check);
                     }
                 }}>
-                <span className={"tool-tip"} data-text={Client.IsReadOnlyMode(header) ? "Run disabled because in readonly mode." : "Click to run this check."}>
-                    { !Client.IsReadOnlyMode(header) ? <>
+                <span className={"tool-tip"} data-text={readOnlyMode ? "Run disabled because in readonly mode." : "Click to run this check."}>
+                    { !readOnlyMode ? <>
                         { check.configuringCheckRun ? <>
                             <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<span>Run</span>
                         </>:<>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Global from './Global';
 import Context from './utils/Context';
+import Client from './utils/Client';
 import ENV from './utils/ENV';
 import FETCH from './utils/FETCH';
 import IMAGE from './utils/IMAGE';
