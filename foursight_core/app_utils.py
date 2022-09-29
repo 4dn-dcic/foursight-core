@@ -462,11 +462,6 @@ class AppUtilsCore(ReactApi):
         auth0_response = requests.post(self.OAUTH_TOKEN_URL, data=auth0_payload_string, headers=auth0_headers)
         auth0_response_json = auth0_response.json()
         jwt_token = auth0_response_json.get("id_token")
-
-        print('XYZZY:ID_TOKEN FROM AUTH0 ...')
-        print(jwt_token)
-        print(type(jwt_token))
-
         jwt_expires = auth0_response_json.get("expires_in")
 
         # This "react" scope is set on the React UI side at Auth0 invocation time.
@@ -511,13 +506,9 @@ class AppUtilsCore(ReactApi):
             auth0_client_id = self.get_auth0_client_id(env_name)
             auth0_secret = self.get_auth0_secret(env_name)
             # leeway accounts for clock drift between us and auth0
-            print('XYZZY: DECODING JWT FROM APP UTILS ...')
-            print(jwt_token)
-            print(type(jwt_token))
             return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30, options={"verify_signature": True}, algorithms=["HS256"])
         except Exception as e:
             logger.warn(f"foursight_core: Exception decoding JWT token: {jwt_token}")
-            print('xyzzy: exception decoding jwt token')
             print(e)
             return None
 

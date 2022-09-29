@@ -619,24 +619,16 @@ class ReactApi:
         return self.check_handler.CHECK_SETUP
 
     def get_checks(self, env: str):
-        print("xyzzy:get_checks......................................")
         if not ReactApi.Cache.checks:
             checks = self.get_checks_raw()
             for check_key in checks.keys():
-                print("xyzzy:get_checks:")
-                print(check_key)
-                print(checks[check_key])
-                print(checks[check_key]["group"])
                 checks[check_key]["name"] = check_key
                 checks[check_key]["group"] = checks[check_key]["group"]
             lambdas = self.get_annotated_lambdas()
             self.annotate_checks_with_schedules_from_lambdas(checks, lambdas)
             self.annotate_checks_with_kwargs_from_decorators(checks)
             ReactApi.Cache.checks = checks
-        xyzzy = self.filter_checks_by_env(ReactApi.Cache.checks, env)
-        print('xyzzy..................................................................................')
-        print(xyzzy)
-        return xyzzy
+        return self.filter_checks_by_env(ReactApi.Cache.checks, env)
 
     def get_checks_grouped(self, env: str) -> None:
         checks_groups = []
