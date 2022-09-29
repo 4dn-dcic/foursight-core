@@ -172,7 +172,7 @@ const AwsS3Page = (props) => {
         return -1;
     }
 
-    const BucketsBox = ({}) => {
+    const BucketsBox = () => {
         return <div>
             <div style={{float:"left",fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;S3 Buckets</div>&nbsp;&nbsp;
             <input placeholder="Search ..." type="text" autoFocus style={{outline:"none",paddingLeft:"2pt",border:"1px solid gray",borderRadius:"3pt",position:"relative",bottom:"1pt",fontSize:"small",marginBottom:"3pt"}} defaultValue={bucketListFilter} onChange={onBucketListSearch} />
@@ -189,7 +189,7 @@ const AwsS3Page = (props) => {
         </div>
     }
 
-    const BucketKeysPanel = ({}) => {
+    const BucketKeysPanel = () => {
         return isShowingAnyBucketKeys() && <div>
             <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;S3 Bucket Keys</div>
             { bucketKeysList?.map((bucketKeys, i) => {
@@ -259,7 +259,7 @@ const AwsS3Page = (props) => {
         </>
     }
 
-    const BucketKeyContentPanel = ({}) => {
+    const BucketKeyContentPanel = () => {
         return isShowingAnyBucketKeyContent() && <div>
             <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;S3 Bucket Key Content</div>
             { bucketKeyContentList?.map((bucketKeyContent, i) => {
@@ -278,7 +278,7 @@ const AwsS3Page = (props) => {
                 { <Spinner condition={bucketKeyContent.loading} label={"Fetching bucket key content"} color={"darkblue"} /> }
                 { bucketKeyContent.content && <pre style={{marginTop:"6pt",marginBottom:"0pt",background:"inherit",borderRadius:"8pt",filter:"brightness(1.1)",maxWidth:"800pt"}}>
                     <span style={{fontSize:"0",opacity:"0"}} id={bucketKeyContent.key}>{JSON.stringify(bucketKeyContent.content)}</span>
-                    <img onClick={() => Clipboard.Copy(bucketKeyContent.key)} style={{cursor:"copy",float:"right",fontFamily:"monospace"}} src={Image.Clipboard()} height="19" />
+                    <img alt="copy" onClick={() => Clipboard.Copy(bucketKeyContent.key)} style={{cursor:"copy",float:"right",fontFamily:"monospace"}} src={Image.Clipboard()} height="19" />
                     {Yaml.Format(bucketKeyContent.content)}
                 </pre> }
             </div>

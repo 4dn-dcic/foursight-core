@@ -68,23 +68,23 @@ const InfoPage = () => {
             </span> : <span/>
         const pypiElement = pypi ?
             <span>
-                <a target="_blank" href={"https://pypi.org/project/" + name + "/" + value + "/"}>
-                    <img src={Image.PyPi()} height="21" />
+                <a target="_blank" rel="noreferrer" href={"https://pypi.org/project/" + name + "/" + value + "/"}>
+                    <img alt="pypi" src={Image.PyPi()} height="21" />
                 </a>&nbsp;</span> : <span/>
         const githubElement = github ?
             <span>
-            <a target="_blank" href={"https://github.com/" + github + "/" + (name === "dcicutils" ? "utils" : name) + "/releases/tag/" + (name !== "chalice" ? "v" : "")  + value}>
-                <img src={Image.GitHub()} height="15" />
+            <a target="_blank" rel="noreferrer" href={"https://github.com/" + github + "/" + (name === "dcicutils" ? "utils" : name) + "/releases/tag/" + (name !== "chalice" ? "v" : "")  + value}>
+                <img alt="github" src={Image.GitHub()} height="15" />
             </a>&nbsp;</span> : <span/>
         const pythonElement = python ?
             <span>
-                <a target="_blank" href={"https://docs.python.org/release/" + value + "/"}>
-                    <img src={Image.Python()} height="19" />
+                <a target="_blank" rel="noreferrer" href={"https://docs.python.org/release/" + value + "/"}>
+                    <img alt="python" src={Image.Python()} height="19" />
             </a>&nbsp;</span> : <span/>
         const chaliceElement = false /*chalice*/ ?
             <span>
-                <a target="_blank" href={"https://pypi.org/project/" + name + "/" + value + "/"}>
-                    <img src="https://www.gliffy.com/sites/default/files/image/2020-06/AWS-Lambda_Lambda-Function_dark-bg_0.png" height="14" />
+                <a target="_blank" rel="noreferrer" href={"https://pypi.org/project/" + name + "/" + value + "/"}>
+                    <img alt="chalice" src="https://www.gliffy.com/sites/default/files/image/2020-06/AWS-Lambda_Lambda-Function_dark-bg_0.png" height="14" />
                 </a>&nbsp;</span> : <span/>
         return <>
             <div style={{marginTop:"1px"}}>

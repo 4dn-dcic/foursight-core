@@ -98,7 +98,7 @@ function AuthenticationCallbackId(header) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
 
     IsLocal:              IsLocal,
     IsLocalCrossOrigin:   IsLocalCrossOrigin,
@@ -121,4 +121,5 @@ export default {
         CallbackUrl:        AuthenticationCallbackUrl,
         CallbackId:         AuthenticationCallbackId
     }
-}
+};
+export default Exports;

@@ -22,6 +22,7 @@ function GetNormalizedPath(path) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     Normalize: GetNormalizedPath
-}
+};
+export default Exports;

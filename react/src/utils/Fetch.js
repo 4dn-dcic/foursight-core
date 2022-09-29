@@ -2,7 +2,6 @@
 // Fetch (HTTP GET et cetera) related functions.
 // -------------------------------------------------------------------------------------------------
 
-import Client from '../utils/Client';
 import Cookie from '../utils/Cookie';
 import Logout from '../utils/Logout';
 
@@ -64,9 +63,6 @@ function fetchData(url, setData, setLoading, setError) {
             console.log(response);
             if (response.status === 403) {
                 console.log("FETCH IS FORBIDDEN! " + url);
-                console.log(window.location);
-                // window.location.pathname = "/api/react/cgap-supertest/forbidden";
-                // window.location.pathname = Client.Path("/forbidden");
                 Logout();
             }
             if (setError) {
@@ -86,6 +82,7 @@ function fetchData(url, setData, setLoading, setError) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     get: fetchData
-}
+};
+export default Exports;

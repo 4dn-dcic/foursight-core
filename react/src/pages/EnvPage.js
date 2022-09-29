@@ -5,13 +5,11 @@ import Page from '../Page';
 import Auth from '../utils/Auth';
 import Env from '../utils/Env';
 import Client from '../utils/Client';
-import Cookie from '../utils/Cookie';
 import Uuid from '../utils/Uuid';
 
 const EnvPage = (props) => {
 
-        console.log("NOTE-LAST-URL-FROM-Env-PAGE")
-    //Page.NoteLastUrl();
+    Page.NoteLastUrl();
 
     let navigate = useNavigate();
     const [ header ] = useContext(Global);

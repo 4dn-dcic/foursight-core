@@ -1,5 +1,4 @@
 import ReactPaginate from 'react-paginate';
-import { StandardSpinner } from "./Spinners";
 import { ScaleSpinner } from "./Spinners";
 
 export const PaginationControl = ({pages, onChange, page = 1, spinner = true, loading = false}) => {

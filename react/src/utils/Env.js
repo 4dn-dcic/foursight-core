@@ -2,7 +2,6 @@
 // Environment related functions.
 // -------------------------------------------------------------------------------------------------
 
-import Auth from './Auth';
 import Context from './Context';
 import Cookie from './Cookie';
 import Path from './Path';
@@ -255,7 +254,7 @@ function GetLegacyFoursightLink(header) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     AllowedEnvs:          GetAllowedEnvs,
     Current:              GetCurrentEnv,
     Default:              GetDefaultEnv,
@@ -275,4 +274,5 @@ export default {
     PublicName:           GetPublicEnvName,
     RegularName:          GetRegularEnvName,
     ShortName:            GetShortEnvName
-}
+};
+export default Exports;

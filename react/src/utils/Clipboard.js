@@ -25,6 +25,7 @@ function CopyToClipboard(id) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     Copy: CopyToClipboard
-}
+};
+export default Exports;

@@ -75,52 +75,6 @@ function HasAuthTokenCookie() {
     // authorization object, which is NOT an HttpOnly, cookie we don't need any of the below.
     //
     return Str.HasValue(GetCookie(_authTokenCookieName));
-
-    //
-    // Nevermind the below business of detecting if the authtoken HttpOnly cookie exists,
-    // by trying to delete it. This does not work on Safari or Firefix (though it does
-    // on Chrome and Brave). Safter just to use th3 authenvs cookie cookie; didn't want
-    // to rely on this but the server always sets this on login along with authtoken
-    // so there's no real reason why we shouldn't rely on it.
-    //
-    const authCookie = GetCookie(_authCookieName);
-    if (Str.HasValue(authCookie)) {
-        return true;
-    }
-
-    //
-    // Pre-above. Trying to determine if the authtoken HttpOnly cookie exists.
-    //
-    const authTokenCookie = GetCookie(_authTokenCookieName);
-    if (Str.HasValue(authTokenCookie) && authTokenCookie != "dummy") {
-        //
-        // The authtoken cookie exists AND we can actually read it
-        // which means it is NOT an HttpOnly cookie, but whatever,
-        // that is a server (React API) decision.
-        //
-        return true;
-    }
-    //
-    // Here, either the authtoken cookie does not exist or it exists but we cannot
-    // read it because it is an HttpOnly cookie. To see which of these situations
-    // we have, try actually writing a dummy value to this cookie, and if it fails
-    // (i.e. we don't read back the same dummy value), then it means this cookie
-    // DOES exist as an HttpOnly cookie (so return true); if it succeeds (i.e. we
-    // do read back the same dummy value), then it means this cookie did NOT exist
-    // at all (so return false, after deleting the dummy cookie we wrote to cleanup).
-    //
-    try {
-        SetCookie(_authTokenCookieName, "dummy");
-        const dummyAuthTokenCookie = GetCookie(_authTokenCookieName);
-        if (dummyAuthTokenCookie === "dummy") {
-            DeleteCookie(_authTokenCookieName);
-            return false;
-        }
-        return true;
-    }
-    catch {
-        return true;
-    }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -233,7 +187,7 @@ function HasTestModeFoursightCgapCookie() {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     AllowedEnvs:     GetAllowedEnvsCookie,
     AuthToken:       GetAuthTokenCookie,
     Delete:          DeleteCookie,
@@ -255,4 +209,5 @@ export default {
         HasFoursightFourfront: HasTestModeFoursightFourfrontCookie,
         HasFoursightCgap:      HasTestModeFoursightCgapCookie
     }
-}
+};
+export default Exports;

@@ -139,7 +139,7 @@ function SetReadOnlyMode(value, setHeader) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     BasePath:        Context.Client.BasePath,
     BaseUrl:         Context.Client.BaseUrl,
     Domain:          Context.Client.Domain,
@@ -150,4 +150,5 @@ export default {
     Path:            GetPath,
     PortalLink:     GetPortalLink,
     SetReadOnlyMode: SetReadOnlyMode
-}
+};
+export default Exports;

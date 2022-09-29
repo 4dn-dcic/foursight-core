@@ -89,10 +89,11 @@ function GetLastPath() {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     AuthorizationRequired: AuthorizationRequired,
     KnownEnvRequired:      KnownEnvRequired,
     LastPath:              GetLastPath,
     LastUrl:               GetLastUrl,
     NoteLastUrl:           NoteLastUrl
-}
+};
+export default Exports;

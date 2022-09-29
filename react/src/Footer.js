@@ -14,8 +14,8 @@ const Footer = (props) => {
         <table width="100%"><tbody>
             <tr style={{backgroundColor:"darkred",height:"1px"}}><td></td></tr>
             <tr><td align="center" style={{paddingTop:"2px",paddingBottom:"6px"}}>
-                <a href={Env.IsFoursightFourfront(header) ? ("https://" + Env.PublicName(Env.Current()) + ".4dnucleome.org/") : "https://cgap.hms.harvard.edu/"} target="_blank">
-                    <img src={Image.Harvard()} height="46"/>
+                <a href={Env.IsFoursightFourfront(header) ? ("https://" + Env.PublicName(Env.Current()) + ".4dnucleome.org/") : "https://cgap.hms.harvard.edu/"} target="_blank" rel="noreferrer">
+                    <img alt="harvard" src={Image.Harvard()} height="46"/>
                 </a>
             </td></tr>
             <tr style={{backgroundColor:"darkred",height:"1px"}}><td></td></tr>

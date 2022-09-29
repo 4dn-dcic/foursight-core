@@ -3,7 +3,6 @@
 // Note that many of these are need the global header data as an argument.
 // -------------------------------------------------------------------------------------------------
 
-import Context from './Context';
 import Cookie from './Cookie';
 
 // -------------------------------------------------------------------------------------------------
@@ -38,9 +37,10 @@ function LoggedInUserName(header) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     IsLoggedIn:                IsLoggedIn,
     LoggedInUser:              LoggedInUser,
     LoggedInUserName:          LoggedInUserName,
     Token:                     Cookie.AuthToken
-}
+};
+export default Exports;

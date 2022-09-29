@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Client from "./utils/Client";
 import Cookie from "./utils/Cookie";
 import Image from "./utils/Image";
@@ -11,7 +11,7 @@ const ReadOnlyModeLock = function() {
     return <>
         { readOnlyMode ? <>
             <span className={"tool-tip"} data-text={"You are in readonly mode. Click to enter read/write mode."}>
-                <img src={Image.Lock()}
+                <img alt="lock" src={Image.Lock()}
                     style={{height:"30",cursor:"pointer"}}
                     onClick={() => {
                         setReadOnlyMode(false);
@@ -24,7 +24,7 @@ const ReadOnlyModeLock = function() {
             </span>
         </>:<>
             <span className={"tool-tip"} data-text={"You are in read/write mode. Click to enter readonly mode."}>
-                <img src={Image.Unlock()}
+                <img alt="unlock" src={Image.Unlock()}
                     style={{height:"30",cursor:"pointer"}}
                     onClick={() => {
                         setReadOnlyMode(true);
@@ -64,8 +64,9 @@ function UnregisterCallback(callback) {
     }
 }
 
-export default {
+const Exports = {
     Lock:               ReadOnlyModeLock,
     RegisterCallback:   RegisterCallback,
     UnregisterCallback: UnregisterCallback
-}
+};
+export default Exports;

@@ -8,6 +8,7 @@ let yaml = require('json-to-pretty-yaml');
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     Format: (value) => { return yaml.stringify(value) }
-}
+};
+export default Exports;

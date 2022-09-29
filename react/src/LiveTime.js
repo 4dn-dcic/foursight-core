@@ -31,7 +31,8 @@ const FormatDuration = ({start = null, end = null, verbose = false, fallback = "
 // Exported components.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     FormatDateTime: FormatDateTime,
     FormatDuration: FormatDuration
-}
+};
+export default Exports;

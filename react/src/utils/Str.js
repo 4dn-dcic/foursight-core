@@ -10,6 +10,7 @@ function IsNonEmptyString(value) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     HasValue: IsNonEmptyString
-}
+};
+export default Exports;

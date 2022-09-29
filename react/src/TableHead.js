@@ -39,7 +39,7 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
         return list;
     }
     function keysEqual(a, b) {
-        return (Type.IsFunction(a) && Type.IsFunction(b)) ? a.name == b.name : a == b;
+        return (Type.IsFunction(a) && Type.IsFunction(b)) ? a.name === b.name : a === b;
     }
     if (!list.__sort) list.__sort = state || { key: null, order: 0 };
     return <thead>

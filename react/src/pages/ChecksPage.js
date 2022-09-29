@@ -1,15 +1,13 @@
 import React from 'react';
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { BarSpinner } from "../Spinners";
 import { RingSpinner } from "../Spinners";
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
-import Cookie from '../utils/Cookie';
 import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
 import Image from '../utils/Image';
-import Global from '../Global';
 import ReadOnlyMode from '../ReadOnlyMode';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
@@ -21,7 +19,6 @@ import Yaml from '../utils/Yaml';
 
 const ChecksPage = (props) => {
 
-    const [ header, setHeader ] = useContext(Global);
     let { environ } = useParams();
     let [ groupedChecks, setGroupedChecks ] = useState([]);
     let [ lambdas, setLambdas ] = useState([]);
@@ -103,7 +100,7 @@ const ChecksPage = (props) => {
         let kwargs = {};
         for (let schedule_key of Object.keys(check?.schedule)) {
             for (let schedule_env_key of Object.keys(check.schedule[schedule_key])) {
-                if (schedule_env_key.toLowerCase() == "all" || Env.Equals(schedule_env_key, environ)) {
+                if (schedule_env_key.toLowerCase() === "all" || Env.Equals(schedule_env_key, environ)) {
                     kwargs = check.schedule[schedule_key][schedule_env_key]["kwargs"]
                     break;
                 }
@@ -350,7 +347,7 @@ const ChecksPage = (props) => {
                             { (Type.IsBoolean(check.kwargs[key])) &&
                                 <select defaultValue={check.kwargs[key] ? "true" : "false"} style={{background:"lightyellow",border:"1px solid lightgray",borderRadius:"4pt"}}
                                     onChange={(e) => {
-                                        check.kwargs[key] = e.target.value == "true" ? true : false;
+                                        check.kwargs[key] = e.target.value === "true" ? true : false;
                                         noteChangedCheckBox();
                                     }}>
                                     { check.kwargs[key] ? <>
@@ -522,7 +519,7 @@ const ChecksPage = (props) => {
     const ToggleHistoryButton = ({check, style}) => {
         return <span style={{...style, xpaddingTop:"10px",cursor:"pointer"}} onClick={() => onClickShowHistory(check)}>
             <span data-text={"Click here to " + (check.showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
-                <img onClick={(e) => {}} src="https://cdn-icons-png.flaticon.com/512/32/32223.png" style={{marginBottom:"4px",height:"17"}} />
+                <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"4px",height:"17"}} />
             </span>
             { check.showingHistory ? <span style={{xpaddingTop:"10px"}}>&#x2192;</span> : <></> }
         </span>
@@ -604,7 +601,7 @@ const ChecksPage = (props) => {
         return <pre className={check.results?.status?.toUpperCase() === "PASS" ? "check-pass" : "check-warn"} style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
             <div style={{float:"right",marginTop:"-10px"}}>
             <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{JSON.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
-            <img onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
+            <img alt="copy" onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
             &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(); } }>{check.showingResultDetailsFull ? <span title="Show full results output.">&#x2191;</span> : <span>&#x2193;</span>}</span>
             &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>X</span>
             </div>
@@ -745,7 +742,7 @@ const ChecksPage = (props) => {
         </div>
     }
 
-    const ResultsHistoryPanel = ({}) => {
+    const ResultsHistoryPanel = () => {
         let histories = selectedHistories?.filter((check) => check.showingHistory);
         if (histories.length <= 0) {
             return <span />

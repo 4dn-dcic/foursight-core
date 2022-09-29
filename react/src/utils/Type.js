@@ -50,7 +50,7 @@ function IsNull(value) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     CopyObject:       CopyObject,
     IsArray:          IsArray,
     IsBoolean:        IsBoolean,
@@ -62,4 +62,5 @@ export default {
     IsNumber:         IsNumber,
     IsObject:         IsObject,
     IsString:         IsString
-}
+};
+export default Exports;

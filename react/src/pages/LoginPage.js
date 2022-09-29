@@ -9,9 +9,7 @@ import Client from '../utils/Client';
 import Context from '../utils/Context';
 import Cookie from '../utils/Cookie';
 import LiveTime from '../LiveTime';
-import Env from '../utils/Env';
 import Logout from '../utils/Logout';
-import Time from '../utils/Time';
 import Yaml from '../utils/Yaml';
 import Page from '../Page';
 
@@ -113,7 +111,7 @@ const LoginPage = (props) => {
                         <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>AuthToken</b> from Cookie</span>
                         <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{Yaml.Format(Auth.Token())}</pre>
                     </div>
-                    { (JSON.stringify(Auth.Token()) != JSON.stringify(header?.auth)) &&
+                    { (JSON.stringify(Auth.Token()) !== JSON.stringify(header?.auth)) &&
                         <div className="boxstyle info" style={{paddingLeft:"8pt",color:"darkblue",fontSize:"small"}}>
                             <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>AuthToken</b> from API</span>
                             <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{Yaml.Format(header?.auth)}</pre>

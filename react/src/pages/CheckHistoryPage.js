@@ -1,22 +1,15 @@
 import React from 'react';
-import { useContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { BarSpinner } from "../Spinners";
-import { RingSpinner } from "../Spinners";
 import { StandardSpinner } from "../Spinners";
-import Global from '../Global';
-import ReactPaginate from 'react-paginate';
 import PaginationControl from '../PaginationControl';
 import Clipboard from '../utils/Clipboard';
-import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
 import Image from '../utils/Image';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
 import TableHead from '../TableHead';
-import Time from '../utils/Time';
 import Type from '../utils/Type';
-import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';
 
 const CheckHistoryPage = (props) => {
@@ -28,7 +21,6 @@ const CheckHistoryPage = (props) => {
     const [ offset, setOffset ] = useState(parseInt(args.get("offset")) || 0);
     const [ sort, setSort ] = useState(args.get("sort") || "timestamp.desc")
 
-    const [ header, setHeader ] = useContext(Global);
     const [ page, setPage ] = useState(Math.floor(offset / limit));
     const [ pages, setPages ] = useState(Math.max(1, page + 1));
     const [ history, setHistory ] = useState({loading: true});
@@ -205,7 +197,7 @@ const CheckHistoryPage = (props) => {
                                             </>:<>
                                                 <div style={{float:"right",marginTop:"-0px"}}>
                                                     <span style={{fontSize:"0",opacity:"0"}} id={check}>{JSON.stringify(history.__result[0])}</span>
-                                                    <img onClick={() => Clipboard.Copy(check)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
+                                                    <img alt="copy" onClick={() => Clipboard.Copy(check)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
                                                     <span onClick={() => hideResult(history)} style={{marginLeft:"6pt",marginRight:"2pt",fontSize:"large",fontWeight:"bold",cursor:"pointer"}}>X</span>
                                                 </div>
                                                 {Yaml.Format(history.__result[0])}

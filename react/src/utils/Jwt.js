@@ -27,6 +27,7 @@ function DecodeJwt(jwt) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     Decode: DecodeJwt
-}
+};
+export default Exports;

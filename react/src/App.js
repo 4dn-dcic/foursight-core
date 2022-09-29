@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Global from './Global';
-import Context from './utils/Context';
-import Client from './utils/Client';
 import Env from './utils/Env';
 import Fetch from './utils/Fetch';
 import Image from './utils/Image';

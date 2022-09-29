@@ -29,10 +29,11 @@ function GetUrl(path, env = true) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     BasePath: Context.Server.BasePath,
     BaseUrl:  Context.Server.BaseUrl,
     IsLocal:  Context.Server.IsLocal,
     Origin:   Context.Server.Origin,
     Url:      GetUrl
-}
+};
+export default Exports;

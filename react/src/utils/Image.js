@@ -14,6 +14,10 @@ function GetUnlockImage() {
     return "https://raw.githubusercontent.com/dmichaels/public/master/img/unlock.a39edec5f19bde275fe6.jpg";
 }
 
+function GetHistoryImage() {
+    return "https://cdn-icons-png.flaticon.com/512/32/32223.png";
+}
+
 function GetPyPiImage() {
     return "https://cdn-images-1.medium.com/max/1064/1*8Zh-mzLnVMDsbvXdKsU4lw.png";
 }
@@ -50,11 +54,12 @@ function GetFoursightFourfrontLogoImage() {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-export default {
+const Exports = {
     Clipboard:                 GetClipboardImage,
     GitHub:                    GetGitHubImage,
     Lock:                      GetLockImage,
     Harvard:                   GetHarvardImage,
+    History:                   GetHistoryImage,
     FoursightCgapFavicon:      GetFoursightCgapFaviconImage,
     FoursightFourfrontFavicon: GetFoursightFourfrontFaviconImage,
     FoursightCgapLogo:         GetFoursightCgapLogoImage,
@@ -62,4 +67,5 @@ export default {
     PyPi:                      GetPyPiImage,
     Python:                    GetPythonImage,
     Unlock:                    GetUnlockImage
-}
+};
+export default Exports;
