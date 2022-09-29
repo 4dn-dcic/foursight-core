@@ -22,7 +22,6 @@ const InfoPage = () => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
     let [ showingAuthToken, setShowAuthToken ] = useState(false);
-    let [ showingAuthEnvs, setShowAuthEnvs ] = useState(false);
     useEffect(() => { FETCH.get(url, setInfo, setLoading, setError)}, []);
 
     function initiateAppReload() {
@@ -163,25 +162,20 @@ const InfoPage = () => {
             </pre>
         </InfoBox>
         <InfoBox title="Authentication/Authorization Info">
-            <InfoRow name={"Email"} value={Auth.LoggedInUser(header)} monospace={true} copy={true} check={Auth.LoggedInUserVerified(header)} link={Client.Path("/users/" + Auth.LoggedInUser(header), true)} size="2" />
-            <InfoRow name={"Issuer"} value={Auth.LoggedInUserJwt(header)?.iss} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Subject"} value={Auth.LoggedInUserJwt(header)?.sub} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Audience"} value={Auth.LoggedInUserJwt(header)?.aud} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Issued At"} value={TIME.FormatDateTime(Auth.LoggedInUserJwt(header)?.iat) + TIME.FormatDuration(Auth.LoggedInUserJwt(header)?.iat, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Expires At"} value={TIME.FormatDateTime(Auth.LoggedInUserJwt(header)?.exp) + TIME.FormatDuration(new Date(), Auth.LoggedInUserJwt(header)?.exp, true, "now", "|", "from now")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Email"} value={Auth.Token().user} monospace={true} copy={true} check={Auth.LoggedInUserVerified(header)} link={Client.Path("/users/" + Auth.LoggedInUser(header), true)} size="2" />
+            <InfoRow name={"First Name"} value={Auth.Token().first_name} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Last Name"} value={Auth.Token().last_name} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Environments"} value={Auth.Token().allowed_envs.join(", ")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Audience"} value={Auth.Token().aud} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Issued At"} value={TIME.FormatDateTime(Auth.Token().authorized_at) + TIME.FormatDuration(Auth.Token().authorized_at, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Expires At"} value={TIME.FormatDateTime(Auth.Token().authorized_until) + TIME.FormatDuration(new Date(), Auth.Token().authorized_until, true, "now", "|", "from now")} monospace={true} copy={true} size="2" />
             <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
                 { showingAuthToken ? (<>
                     <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide AuthToken</u></b></small> <i>(server-side encrypted cookie)</i>
                     <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(Auth.LoggedInUserAuthToken(header))}</pre>
                 </>):(<>
-                    <small onClick={() => setShowAuthToken(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show AuthToken</u></b></small> <i>(server-side encrypted cookie)</i>
+                    <small onClick={() => setShowAuthToken(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show AuthToken</u></b></small>
                     <br />
-                </>)}
-                { showingAuthEnvs ? (<>
-                    <small onClick={() => setShowAuthEnvs(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide AuthEnvs</u></b></small> <i>(base-64 encoded cookie)</i>
-                    <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(Auth.LoggedInUserAuthEnvs(header))}</pre>
-                </>):(<>
-                    <small onClick={() => setShowAuthEnvs(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show AuthEnvs</u></b></small> <i>(base-64 encoded cookie)</i>
                 </>)}
         </InfoBox>
         <InfoBox title="Miscellany">

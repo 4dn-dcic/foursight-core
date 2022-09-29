@@ -20,7 +20,6 @@ const LoginPage = (props) => {
     const [ header ] = useContext(Global);
     const [ showingAuthBox, setShowingAuthBox ] = useState(false);
     let [ showingAuthToken, setShowAuthToken ] = useState(false);
-    let [ showingAuthEnvs, setShowAuthEnvs ] = useState(false);
     const [args] = useSearchParams();
     const showAuthBoxAtOutset = args.get("auth")?.length >= 0;
         console.log('renderrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr' + TIME.FormatDateTime(new Date()));
@@ -89,21 +88,8 @@ const LoginPage = (props) => {
                     </>:<>
                         <span onClick={() => setShowAuthToken(true)}><b>AuthToken</b> &#x2191;</span>
                     </>}
-                    &nbsp;|&nbsp;
-                    { showingAuthEnvs ? <>
-                        <span onClick={() => setShowAuthEnvs(false)}><b>AuthEnvs</b> &#x2193;</span>
-                    </>:<>
-                        <span onClick={() => setShowAuthEnvs(true)}><b>AuthEnvs</b> &#x2191;</span>
-                    </>}
                 </div>
                 <div className="boxstyle info" style={{marginLeft:"0pt",padding:"10pt",color:"darkblue"}}>
-                    { Auth.IsFauxLoggedIn() ? (<span>
-                        Logged in as:&nbsp;<b>faux-login</b>
-                        <br />
-                        <small>
-                            Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}} onClick={()=> LOGOUT()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> LOGOUT()}>logout</span>.
-                        </small>
-                    </span>):(<span>
                         <table style={{color:"inherit"}}><tbody><tr>
                             <td align="top" style={{whiteSpace:"nowrap"}}>
                                 Logged in as:&nbsp;
@@ -122,20 +108,19 @@ const LoginPage = (props) => {
                                 Session expires: <LiveTime.FormatDuration end={Auth.Token().authorized_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
                             </small></td>
                         </tr></tbody></table>
-                    </span>)}
                 </div>
-                { showingAuthToken &&
+                { showingAuthToken && <>
                     <div className="boxstyle info" style={{paddingLeft:"8pt",color:"darkblue",fontSize:"small"}}>
-                        <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>AuthToken</b> (server-side encrypted cookie)</span>
-                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(Auth.LoggedInUserAuthToken(header))}</pre>
+                        <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>AuthToken</b> from Cookie</span>
+                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(Auth.Token())}</pre>
                     </div>
-                }
-                { showingAuthEnvs &&
-                    <div className="boxstyle info" style={{paddingLeft:"8pt",color:"darkblue",fontSize:"small"}}>
-                        <span onClick={() => setShowAuthEnvs(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>AuthEnvs</b> (base-64 encoded cookie)</span>
-                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(Auth.LoggedInUserAuthEnvs(header))}</pre>
-                    </div>
-                }
+                    { (JSON.stringify(Auth.Token()) != JSON.stringify(header?.auth)) &&
+                        <div className="boxstyle info" style={{paddingLeft:"8pt",color:"darkblue",fontSize:"small"}}>
+                            <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>AuthToken</b> from API</span>
+                            <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{YAML.Format(header?.auth)}</pre>
+                        </div>
+                    }
+                </>}
             </div>
         </React.Fragment>):(<React.Fragment>
         <div className="container" id="login_container">
@@ -155,19 +140,6 @@ const LoginPage = (props) => {
                 <center id="login_auth_cancel" style={{display:"none",marginTop:"10px"}}>
                     <NavLink to={Client.Path("/info")} style={{fontSize:"small",cursor:"pointer",color:"blue"}}>Cancel</NavLink>
                 </center>
-            { (Client.IsLocal() && showingAuthBox) && (
-                <div className="container" style={{maxWidth:"290pt",marginTop:"-20pt"}}>
-                    <div className="boxstyle check-fail" style={{margin:"20pt",padding:"10pt",borderWidth:"2",borderColor:"red"}}>
-                        <img src={"https://i.stack.imgur.com/DPBue.png"} style={{height:"35",verticalAlign:"bottom"}} /> <b style={{fontSize:"x-large"}}>&nbsp;Attention ...</b> <br />
-                        <hr style={{borderTop: "2px solid red",marginTop:"8px",marginBottom:"8px"}}/>
-                        As you appear to be <b>running</b> Foursight <b>locally</b> {Context.IsLocalCrossOrigin() && <span>(cross-origin)</span>}, the above <a href="https://auth0.com/" style={{color:"red"}} target="_blank">Auth0</a> login <u><b>may not work</b></u>. <br />
-                        <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
-                        It <u><b>should work</b></u> but just in case you can bypass this and <b>faux</b> login below. 
-                        <hr style={{borderTop: "1px solid red",marginTop:"8px",marginBottom:"8px"}}/>
-                        Click <Link to={{pathname: "/redirect"}} state={{url: Page.LastPath()}} onClick={() => Cookie.SetFauxLogin()} style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer",color:"darkred"}}>here</Link> to faux <Link to={{pathname: "/redirect"}} state={{url: Page.LastPath()}} onClick={() => Cookie.SetFauxLogin()} style={{cursor:"pointer",color:"darkred"}}><b>login</b></Link> locally.
-                    </div>
-                </div>
-            )}
             { showAuthBoxAtOutset && (setTimeout(() => { if (showAuthBoxAtOutset && !showingAuthBox) { showAuthBox(); }}, 10), "") }
         </div>
         </React.Fragment>)}

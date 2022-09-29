@@ -46,14 +46,6 @@ function IsDefaultEnv(env, header) {
 // -------------------------------------------------------------------------------------------------
 
 function GetAllowedEnvs(header) {
-    if (Auth.IsFauxLoggedIn()) {
-        //
-        // If we are faux logged in then allow all environments since we we (the React API)
-        // are not able to determine the list of allowed environment without a real authenticated
-        // user; if we don't do this then the faux logged in user won't be able to do anything.
-        //
-        return GetKnownEnvs(header);
-    }
     const allowedEnvs = header?.auth?.allowed_envs || Cookie.AllowedEnvs();
     //
     // The list of known environments are of the annotated variety.
@@ -221,7 +213,7 @@ function GetFoursightEnvName(env, header) {
 }
 
 function GetPreferredEnvName(env, header) {
-    return IsFoursightFourfront(header) ? GetPublicEnvName(env) : GetFullEnvName(env);
+    return IsFoursightFourfront(header) ? GetPublicEnvName(env, header) : GetFullEnvName(env, header);
 }
 
 // -------------------------------------------------------------------------------------------------

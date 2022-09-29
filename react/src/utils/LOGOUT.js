@@ -11,7 +11,6 @@ import SERVER from './SERVER';
 // The server should redirect back to the value of Client.LastPath (from the lasturl cookie)
 //
 function LOGOUT() {
-    Cookie.DeleteFauxLogin();
     Cookie.DeleteAuth();
     Cookie.SetRedirect(Page.LastUrl());
     window.location.replace(SERVER.Url("/logout", ENV.Current()));

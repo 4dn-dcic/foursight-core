@@ -12,7 +12,6 @@ const _cookies                = new Cookies()
 const _authTokenCookieName    = "authtoken";
 const _authEnvsCookieName     = "authenvs";
 const _authCookieName         = "auth";
-const _fauxLoginCookieName    = "test_mode_login_localhost";
 const _redirectCookieName     = "reactredir";
 const _lastUrlCookieName      = "lasturl";
 const _readOnlyModeCookieName = "readonly";
@@ -190,22 +189,6 @@ function DeleteAuthCookie() {
 }
 
 // -------------------------------------------------------------------------------------------------
-// Faux login related cookies.
-// -------------------------------------------------------------------------------------------------
-
-function HasFauxLoginCookie() {
-    return GetCookie(_fauxLoginCookieName) === "1";
-}
-
-function SetFauxLoginCookie() {
-    return SetCookie(_fauxLoginCookieName, "1");
-}
-
-function DeleteFauxLoginCookie() {
-    return DeleteCookie(_fauxLoginCookieName);
-}
-
-// -------------------------------------------------------------------------------------------------
 // Last URL related cookies.
 // -------------------------------------------------------------------------------------------------
 
@@ -267,16 +250,13 @@ export default {
     AuthToken:       GetAuthTokenCookie,
     Delete:          DeleteCookie,
     DeleteAuth:      DeleteAuthCookie,
-    DeleteFauxLogin: DeleteFauxLoginCookie,
     Get:             GetCookie,
     DefaultEnv:      GetDefaultEnvCookie,
     KnownEnvs:       GetKnownEnvsCookie,
     LastUrl:         GetLastUrlCookie,
     HasAuthToken:    HasAuthTokenCookie,
-    HasFauxLogin:    HasFauxLoginCookie,
     IsReadOnlyMode:  IsReadOnlyMode,
     Set:             SetCookie,
-    SetFauxLogin:    SetFauxLoginCookie,
     SetLastUrl:      SetLastUrlCookie,
     SetReadOnlyMode: SetReadOnlyMode,
     SetRedirect:     SetRedirectCookie,

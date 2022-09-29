@@ -12,15 +12,6 @@ import Cookie from './Cookie';
 
 function IsLoggedIn(header) {
     //
-    // We can either check the global header auth field or check for the cookie. 
-    // Probably better more React-ish to check this global state, especially
-    // since the way we detect the existence of the authtoken cookie is a bit
-    // hacky since it is an HttpOnly cookie (see Cookie.HasAuthToken).
-    //
-    if (Context.Client.IsLocal() && IsFauxLoggedIn()) {
-        return true;
-    }
-    //
     // Actually need this because we do not know that we are logged
     // in on refresh unless/until the /header is fetched.
     //
@@ -33,21 +24,11 @@ function IsLoggedIn(header) {
     return false;
 }
 
-function IsFauxLoggedIn() {
-    return Context.Client.IsLocal() && Cookie.HasFauxLogin();
-}
-
 function LoggedInUser(header) {
-    if (Context.Client.IsLocal() && IsFauxLoggedIn()) {
-        return "faux-login";
-    }
     return header?.auth?.authorized ? header.auth?.user : "unknown";
 }
 
 function LoggedInUserName(header) {
-    if (Context.Client.IsLocal() && IsFauxLoggedIn()) {
-        return "faux-login";
-    }
     const first_name = header?.auth?.authorized ? header.auth?.first_name : "";
     const last_name = header?.auth?.authorized ? header.auth?.last_name : "";
     return first_name + " " + last_name;
@@ -74,7 +55,6 @@ function LoggedInUserJwt(header) {
 // -------------------------------------------------------------------------------------------------
 
 export default {
-    IsFauxLoggedIn:            IsFauxLoggedIn,
     IsLoggedIn:                IsLoggedIn,
     Token:                     Cookie.AuthToken,
     LoggedInUser:              LoggedInUser,

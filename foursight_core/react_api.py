@@ -106,23 +106,6 @@ class ReactApi:
                 logger.error(e)
         return (known_envs, allowed_envs, first_name, last_name)
 
-    def is_local_faux_logged_in(self, request: dict) -> bool:
-        """
-        Returns True if and only if: this request is a LOCAL (localhost) requests AND it
-        contains a cookie (set by the React UI) indicating that the user is faux logged in.
-        This is supported just in case there are issues with local Auth0 authentication/login.
-
-        N.B. If this returns True then it will entirely short-circuit the authorization check
-        for the protected React API endpoint (see the authorization function below).
-        So be careful with this.
-        """
-        # TODO: remove this faux stuff.
-        if not self.is_running_locally(request):
-            return False
-        if self.read_cookie("test_mode_login_localhost", request) != "1":
-            return False
-        return True
-
     def decode_authtoken(self, authtoken: str, env: str) -> dict:
         """
         Fully decode AND verify the given encrypted/encoded authtoken (cookie).
@@ -184,35 +167,36 @@ class ReactApi:
         return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
     def authorize(self, request, env) -> dict:
+        def unauthorized_response(status):
+            known_envs = self.get_unique_annotated_environment_names()
+            return {
+                "authorized": False,
+                "status": status,
+                "known_envs": known_envs,
+                "default_env": self.get_default_env()
+             }
+
         if not request:
-            return { "authorized": False, "status": "no-request" }
+            return unauthorized_response("no-request")
         if not isinstance(request, dict):
             request = request.to_dict();
-        if self.is_running_locally(request):
-            #
-            # If running locally (localhost) AND if this is request indicates that the user is
-            # faux logged in then we bypass authentication altogether and return authorized response.
-            #
-            if self.is_local_faux_logged_in(request):
-                return { "authorized": True, "user": "faux" }
         try:
             test_mode_not_authorized = self.read_cookie("test_mode_not_authorized", request)
             if test_mode_not_authorized == "1":
-                return { "authorized": False, "status": "test-mode-not-authorized" }
+                return unauthorized_response("test-mode-not-authorized")
 
             authtoken = self.read_cookie("authtoken", request)
             if not authtoken:
-                return { "authorized": False, "status": "no-authtoken" }
+                return unauthorized_response("no-authtoken")
 
             authtoken_decoded = self.decode_authtoken(authtoken, env)
             if not authtoken_decoded:
-                return { "authorized": False, "status": "invalid-authtoken" }
+                return unauthorized_response("invalid-authtoken")
 
             return authtoken_decoded
 
         except Exception as e:
-            print(e)
-            return { "authorized": False, "status": "exception", "exception": str(e) }
+            return unauthorized_response("exception: " + str(e))
 
     def react_forbidden_response(self, body):
         response = self.create_standard_response("react_forbidden_response")
