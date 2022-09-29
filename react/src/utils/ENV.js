@@ -5,7 +5,7 @@
 import Auth from './Auth';
 import Context from './Context';
 import Cookie from './Cookie';
-import PATH from './PATH';
+import Path from './Path';
 import Str from './Str';
 import Type from './Type';
 
@@ -143,7 +143,7 @@ function AreSameEnvs(envA, envB) {
 // given global header data), then return the default environment from this global header data object.
 //
 function GetCurrentEnv(header = null) {
-    const currentPath = PATH.Normalize(Context.Client.CurrentPath());
+    const currentPath = Path.Normalize(Context.Client.CurrentPath());
     const basePathWithTrailingSlash = Context.Client.BasePath() + "/";
     let env = "";
     if (currentPath.startsWith(basePathWithTrailingSlash)) {

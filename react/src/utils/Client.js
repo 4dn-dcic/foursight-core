@@ -5,7 +5,7 @@
 import Context from './Context';
 import Cookie from './Cookie';
 import ENV from './ENV';
-import PATH from './PATH';
+import Path from './Path';
 import Str from './Str';
 import Type from './Type';
 
@@ -35,7 +35,7 @@ function GetPath(path, env = true, envFallback = null) {
     if (!path.startsWith("/")) {
         path = "/" + path;
     }
-    path = PATH.Normalize(path);
+    path = Path.Normalize(path);
     if (Type.IsBoolean(env)) {
         if (env) {
             //
@@ -90,7 +90,7 @@ function GetPath(path, env = true, envFallback = null) {
 // -------------------------------------------------------------------------------------------------
 
 function GetCurrentLogicalPath() {
-    const currentPath = PATH.Normalize(window.location.pathname);
+    const currentPath = Path.Normalize(window.location.pathname);
     const basePathWithTrailingSlash = Context.Client.BasePath() + "/";
     if (currentPath.startsWith(basePathWithTrailingSlash)) {
         const pathSansBasePath = currentPath.substring(basePathWithTrailingSlash.length);
