@@ -21,12 +21,13 @@ const Header = (props) => {
 
     const [ header ] = useContext(Global);
     //
-    // Very odd but this below (dummy) usage of useNavigate is REQUIRED in order for
-    // the header navigation links (e.g. HOME, INFO) to work properly. If this is not
-    // here, for example, then the (target) values do not get updated properly when on the
-    // EnvPage and clicking from one environment to another. No idea why. Fun tracking down.
+    // Very odd but this below (navigate) declartion of useNavigate is REQUIRED, even if not
+    // used here, in order for the header navigation links (e.g. HOME, INFO) to work properly.
+    // If this is not here, for example, then the (target) values do not get updated properly
+    // when on the EnvPage and clicking from one environment to another. No idea why.
+    // Fun tracking this down.
     //
-    const dummy = useNavigate();
+    const navigate = useNavigate();
 
     let titleBackgroundColor = Env.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
     let subTitleBackgroundColor = Env.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
@@ -103,7 +104,7 @@ const Header = (props) => {
                     </a>
                 </td>
                 <td width="34%" align="center" style={{whiteSpace:"nowrap"}}>
-                    <div style={{fontSize:"20pt",color:"white",cursor:"default"}}>
+                    <div style={{fontSize:"20pt",color:"white",cursor:"pointer"}} onClick={() => navigate(Client.Path("/login"))}>
                         { header.app?.stage === 'dev' ? (<>
                             { header.app?.local ? (<>
                                 <span title="Running locally." style={{position:"relative",bottom:"3pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;

@@ -157,9 +157,9 @@ const LoginPage = (props) => {
                             <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken")} style={{float:"right",height:"20px",cursor:"copy"}} />
                             {Yaml.Format(Cookie.AuthToken())}
                         </pre>
-                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkred",fontWeight:"bold",marginTop:"-3pt"}}>
+                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkred",fontWeight:"bold",marginTop:"-3pt",whiteSpace:"break-spaces"}}>
                             <span style={{fontSize:"0",opacity:"0"}} id={"authtoken-raw"}>{Cookie.AuthTokenRaw()}</span>
-                            <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken-raw")} style={{float:"right",height:"20px",whiteSpace:"break-spaces",cursor:"copy"}} />
+                            <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken-raw")} style={{float:"right",height:"20px",cursor:"copy"}} />
                             {Cookie.AuthTokenRaw()}
                         </pre>
                     </div>
