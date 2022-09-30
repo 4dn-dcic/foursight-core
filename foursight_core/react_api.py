@@ -3,28 +3,18 @@ import base64
 import cron_descriptor
 import os
 import io
-from os.path import dirname
 import jwt as jwtlib
 import boto3
 import datetime
-import ast
 import copy
-from http.cookies import SimpleCookie
 import json
 import pkg_resources
 import platform
-import pytz
-import requests
 import re
 import socket
-import sys
 import time
-import types
 import urllib.parse
-import uuid
-import logging
 from itertools import chain
-from dateutil import tz
 from dcicutils.diff_utils import DiffManager
 from dcicutils.env_utils import (
     EnvUtils,
@@ -36,18 +26,10 @@ from dcicutils.env_utils import (
     short_env_name,
 )
 from dcicutils import ff_utils
-from dcicutils.lang_utils import disjoined_list
 from dcicutils.misc_utils import get_error_message, override_environ
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
-from typing import Optional
 from .decorators import Decorators
-from .s3_connection import S3Connection
-from .fs_connection import FSConnection
-from .check_utils import CheckHandler
-from .sqs_utils import SQS
-from .stage import Stage
-from .encryption import Encryption
 
 
 class ReactApi:
@@ -61,7 +43,7 @@ class ReactApi:
 
     def create_standard_response(self, label: str, content_type: str = "application/json"):
         response = Response(label)
-        response.headers = { "Content-Type": content_type }     
+        response.headers = { "Content-Type": content_type }
         response.status_code = 200
         return response
 
@@ -245,7 +227,8 @@ class ReactApi:
 
             allowed_envs = authtoken_decoded["allowed_envs"]
             if not self.is_allowed_env(env, allowed_envs):
-                return self.create_unauthorized_response(request, "not-authorized-env", env, authtoken=authtoken_decoded)
+                status = "not-authorized-env" if self.is_known_env(env) else "not-authorized-unknown-env"
+                return self.create_unauthorized_response(request, status, env, authtoken=authtoken_decoded)
 
             print(f"XYZZY:AUTHORIZE-OK:[{env}]")
             return authtoken_decoded
@@ -388,7 +371,7 @@ class ReactApi:
                 return {}
         return credentials_info
 
-    def is_known_environment_name(self, env_name: str) -> bool:
+    def is_known_env(self, env_name: str) -> bool:
         if not env_name:
             return False
         env_name = env_name.upper()
@@ -411,7 +394,7 @@ class ReactApi:
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         default_env = self.get_default_env()
-        if not self.is_known_environment_name(environ):
+        if not self.is_known_env(environ):
             env_unknown = True
         else:
             env_unknown = False
@@ -653,7 +636,7 @@ class ReactApi:
         response.body = self.compare_gacs(environ, environ_compare)
         response.headers = {
             "Content-Type": "application/json"
-        }     
+        }
         response.status_code = 200
         response = self.process_response(response)
         return response
@@ -757,7 +740,7 @@ class ReactApi:
                 return {}
         boto_cloudformation = boto3.client('cloudformation')
         return boto_cloudformation.get_template(StackName=stack_name)
- 
+
     def get_lambdas_from_template(self, stack_template: dict) -> dict:
         lambda_definitions = []
         stack_template = stack_template["TemplateBody"]["Resources"]

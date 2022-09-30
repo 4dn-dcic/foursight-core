@@ -1929,4 +1929,4 @@ class AppUtils(AppUtilsCore):  # for compatibility with older imports
     """
     pass
 
-from .routes import *
+from .routes import Routes
