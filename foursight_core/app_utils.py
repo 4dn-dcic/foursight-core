@@ -974,7 +974,7 @@ class AppUtilsCore(ReactApi):
         html_resp.status_code = 200
         return self.process_response(html_resp)
 
-    def view_reload_lambda(self, request, environ, is_admin=False, domain="", context="/", lambda_name: str = None):
+    def reactapi_route_reload_lambda(self, request, environ, domain="", context="/", lambda_name: str = None):
         self.reload_lambda(lambda_name)
         time.sleep(3)
         resp_headers = {'Location': f"{context}info/{environ}"}

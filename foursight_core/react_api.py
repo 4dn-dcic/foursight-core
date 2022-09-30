@@ -201,15 +201,8 @@ class ReactApi:
 
         return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
-    # Decorator in progress.
-    def requires_authorization(env: str):
-        def wrapper(f):
-            authorize_response = self.authorize(request.to_dict(), environ)
-            if not authorize_response or not authorize_response["authorized"]:
-                return self.react_forbidden_response(authorize_response)
-        return wrapper
-
     def authorize(self, request, env) -> dict:
+        print(f"XYZZY:AUTHORIZE:[{env}]")
         if not request:
             return self.create_unauthorized_response(request, "no-request", env)
         if not isinstance(request, dict):
@@ -254,6 +247,7 @@ class ReactApi:
             if not self.is_allowed_env(env, allowed_envs):
                 return self.create_unauthorized_response(request, "not-authorized-env", env, authtoken=authtoken_decoded)
 
+            print(f"XYZZY:AUTHORIZE-OK:[{env}]")
             return authtoken_decoded
 
         except Exception as e:
@@ -412,12 +406,7 @@ class ReactApi:
                 return True
         return False
 
-    def react_get_info(self, request, environ, domain="", context="/"):
-
-        # TODO: Put this in a decorator and at the route level.
-        authorize_response = self.authorize(request.to_dict(), environ)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
+    def reactapi_route_info(self, request, environ, domain="", context="/"):
 
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
@@ -436,7 +425,7 @@ class ReactApi:
         else:
             environment_and_bucket_info = None
             portal_url = None
-        response = Response('react_get_info')
+        response = Response('reactapi_route_info')
         response.body = {
             "app": {
                 "title": self.html_main_title,
@@ -510,11 +499,7 @@ class ReactApi:
         response.status_code = 200
         return self.process_response(response)
 
-    def react_get_users(self, request, environ):
-
-        authorize_response = self.authorize(request.to_dict(), environ)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
+    def reactapi_route_users(self, request, environ):
 
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
@@ -542,16 +527,13 @@ class ReactApi:
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
                 "modified": self.convert_utc_datetime_to_useastern_datetime(last_modified)})
-        response = Response('react_get_users')
+        response = Response('reactapi_route_users')
         response.body = sorted(users, key=lambda key: key["email_address"])
         response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
         return self.process_response(response)
 
-    def react_get_user(self, request, environ, email=None):
-        authorize_response = self.authorize(request.to_dict(), environ)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
+    def reactapi_route_users_user(self, request, environ, email=None):
         users = []
         for email_address in email.split(","):
             try:
@@ -560,31 +542,31 @@ class ReactApi:
                 users.append({"email_address": email_address, "record": user})
             except Exception as e:
                 users.append({"email_address": email_address, "record": {"error": str(e)}})
-        response = Response('react_get_user')
+        response = Response('reactapi_route_users_user')
         response.body = sorted(users, key=lambda key: key["email_address"])
         response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
         return self.process_response(response)
 
-    def react_clear_cache(self, request, env, is_admin=False, domain="", context="/"):
+    def reactapi_route_clear_cache(self, request, env, domain="", context="/"):
         pass
 
-    def react_get_header(self, request, env, domain="", context="/"):
+    def reactapi_route_header(self, request, env, domain="", context="/"):
         # Note that this route is not protected but/and we return the results from authorize.
         # TODO: remove stuff we don't need like credentials and also auth also version of other stuff and gac_name ...
         #       review all these data points and see which ones really need ...
         auth = self.authorize(request, env)
         data = ReactApi.Cache.header.get(env)
         if not data:
-            data = self.react_get_header_nocache(request, env, domain, context)
+            data = self.reactapi_route_header_nocache(request, env, domain, context)
             ReactApi.Cache.header[env] = data
         data = copy.deepcopy(data)
         data["auth"] = auth
-        response = self.create_standard_response("react_get_header")
+        response = self.create_standard_response("reactapi_route_header")
         response.body = data
         return self.process_response(response)
 
-    def react_get_header_nocache(self, request, env, domain="", context="/"):
+    def reactapi_route_header_nocache(self, request, env, domain="", context="/"):
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         default_env = self.get_default_env()
@@ -664,10 +646,10 @@ class ReactApi:
             env["gac_name"] = self.get_gac_name(env["full_name"])
         return envs
 
-    def react_compare_gacs(self, request, environ, environ_compare, is_admin=False, domain="", context="/"):
+    def reactapi_route_gac_compare(self, request, environ, environ_compare, is_admin=False, domain="", context="/"):
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
-        response = Response('react_compare_gacs')
+        response = Response('reactapi_route_gac_compare')
         response.body = self.compare_gacs(environ, environ_compare)
         response.headers = {
             "Content-Type": "application/json"
@@ -904,50 +886,30 @@ class ReactApi:
                         check_setup_item["registered_kwargs"] = checks_decorator_kwargs
 
 
-    def react_route_checks_raw(self, request, env: str) -> dict:
-
-        authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
-
+    def reactapi_route_checks_raw(self, request, env: str) -> dict:
         response = self.create_standard_response("react_route_checks")
         response.body = self.get_checks_raw()
         response = self.process_response(response)
         return response
 
-    def react_route_checks_registry(self, request, env: str) -> dict:
-
-        authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
-
-        response = self.create_standard_response("react_route_checks_grouped")
+    def reactapi_route_checks_registry(self, request, env: str) -> dict:
+        response = self.create_standard_response("reactapi_route_checks_registry")
         response.body = Decorators.get_registry()
         response = self.process_response(response)
         return response
 
-    def react_route_checks_grouped(self, request, env: str) -> dict:
-
-        authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
-
-        response = self.create_standard_response("react_route_checks_grouped")
+    def reactapi_route_checks(self, request, env: str) -> dict:
+        response = self.create_standard_response("reactapi_route_checks")
         response.body = self.get_checks_grouped(env)
         response = self.process_response(response)
         return response
 
-    def react_route_check_history(self, request, env: str, check: str, offset: int = 0, limit: int = 25, sort: str = None) -> dict:
-
+    def reactapi_route_checks_history(self, request, env: str, check: str, offset: int = 0, limit: int = 25, sort: str = None) -> dict:
         if offset < 0:
             offset = 0
         if limit < 0:
             limit = 0
-        authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
-
-        response = self.create_standard_response("react_route_check_history")
+        response = self.create_standard_response("reactapi_route_checks_history")
         check_record = self.get_check(env, check)
         connection = self.init_connection(env)
         history, total = self.get_foursight_history(connection, check, offset, limit, sort)
@@ -980,13 +942,8 @@ class ReactApi:
         response = self.process_response(response)
         return response
 
-    def react_route_checks_status(self, request, env: str) -> dict:
-
-        authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
-
-        response = self.create_standard_response("react_route_checks_status")
+    def reactapi_route_checks_status(self, request, env: str) -> dict:
+        response = self.create_standard_response("reactapi_route_checks_status")
         checks_queue = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
         checks_running = checks_queue.get('ApproximateNumberOfMessagesNotVisible')
         checks_queued = checks_queue.get('ApproximateNumberOfMessages')
@@ -997,11 +954,6 @@ class ReactApi:
         return self.process_response(response)
 
     def reactapi_route_lambdas(self, request, env: str) -> dict:
-
-        authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
-
         response = self.create_standard_response("reactapi_route_lambdas")
         response.body = self.get_annotated_lambdas()
         response = self.process_response(response)
@@ -1011,10 +963,6 @@ class ReactApi:
         """
         Returns the latest result from the given check.
         """
-        authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
-
         response = self.create_standard_response("react_route_check_results")
         try:
             connection = self.init_connection(env)
@@ -1035,10 +983,6 @@ class ReactApi:
         Returns the specified result, by uuid, for the given check.
         Analogous legacy function is app_utils.view_foursight_check.
         """
-        authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
-
         response = []
         servers = []
         try:
@@ -1068,9 +1012,9 @@ class ReactApi:
                 })
         return response
 
-    def reactapi_route_check_run(self, request, env: str, check: str, args: str):
+    def reactapi_route_checks_run(self, request, env: str, check: str, args: str):
         # TODO: What is this primary thing for? It is an option on the old/existing UI.
-        response = self.create_standard_response("reactapi_route_check_run")
+        response = self.create_standard_response("reactapi_route_checks_run")
         args = self.encryption.decode(args)
         args = json.loads(args)
         queued_uuid = self.queue_check(env, check, args)
@@ -1079,7 +1023,7 @@ class ReactApi:
         response.body = {"check": check, "env": env, "uuid": queued_uuid}
         return self.process_response(response)
 
-    def reactapi_route_get_logout(self, request, environ) -> dict:
+    def reactapi_route_logout(self, request, environ) -> dict:
         request_dict = request.to_dict()
         domain, context = self.get_domain_and_context(request_dict)
         redirect_url = self.read_cookie("reactredir", request_dict)
@@ -1091,11 +1035,9 @@ class ReactApi:
             # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
             redirect_url = urllib.parse.unquote(redirect_url)
         authtoken_cookie_deletion = self.create_delete_cookie_string(request_dict, "authtoken", domain)
-        auth_cookie_deletion = self.create_delete_cookie_string(request_dict, "auth", domain)
         headers = {
             "location": redirect_url,
-            "set-cookie": authtoken_cookie_deletion,
-            "Set-Cookie": auth_cookie_deletion
+            "set-cookie": authtoken_cookie_deletion
         }
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
@@ -1137,32 +1079,17 @@ class ReactApi:
             print("Get bucket key contents error: " + str(e))
 
     def reactapi_route_aws_s3_buckets(self, request, env: str):
-
-        authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
-
         response = self.create_standard_response("reactapi_route_aws_s3_buckets")
         response.body = self.get_buckets()
         return self.process_response(response)
 
-    def reactapi_route_aws_s3_bucket_keys(self, request, env: str, bucket: str):
-
-        authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
-
-        response = self.create_standard_response("reactapi_route_aws_s3_buckets")
+    def reactapi_route_aws_s3_buckets_keys(self, request, env: str, bucket: str):
+        response = self.create_standard_response("reactapi_route_aws_s3_buckets_keys")
         response.body = self.get_bucket_keys(bucket)
         return self.process_response(response)
 
-    def reactapi_route_aws_s3_bucket_key_content(self, request, env: str, bucket: str, key: str):
-
-        authorize_response = self.authorize(request, env)
-        if not authorize_response or not authorize_response["authorized"]:
-            return self.react_forbidden_response(authorize_response)
-
+    def reactapi_route_aws_s3_buckets_key_contents(self, request, env: str, bucket: str, key: str):
         key = urllib.parse.unquote(key)
-        response = self.create_standard_response("reactapi_route_aws_s3_bucket_key_content")
+        response = self.create_standard_response("reactapi_route_aws_s3_buckets_key_contents")
         response.body = self.get_bucket_key_contents(bucket, key)
         return self.process_response(response)
