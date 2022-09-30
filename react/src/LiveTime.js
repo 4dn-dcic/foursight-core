@@ -3,7 +3,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import { useEffect, useState } from 'react';
-import Time from "./utils/Time";
+import Time from './utils/Time';
 
 const _CURRENT_TIME_INTERVAL = 1100;
 

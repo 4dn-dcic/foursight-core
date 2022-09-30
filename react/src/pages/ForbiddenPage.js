@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import Global from "../Global";
+import Global from '../Global';
 import Env from '../utils/Env';
 import Client from '../utils/Client';
 import Logout from '../utils/Logout';

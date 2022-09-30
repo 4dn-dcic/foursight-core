@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { RingSpinner } from "../Spinners";
-import Fetch from "../utils/Fetch";
-import Server from "../utils/Server";
-import Client from "../utils/Client";
+import { RingSpinner } from '../Spinners';
+import Fetch from '../utils/Fetch';
+import Server from '../utils/Server';
+import Client from '../utils/Client';
 
 const UsersPage = () => {
 

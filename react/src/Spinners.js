@@ -1,10 +1,10 @@
-import RingLoader from "react-spinners/RingLoader";
-import BarLoader from "react-spinners/BarLoader";
-import DotLoader from "react-spinners/DotLoader";
-import ScaleLoader from "react-spinners/ScaleLoader";
-import ClipLoader from "react-spinners/ClipLoader";
-import CircleLoader from "react-spinners/CircleLoader";
-import PuffLoader from "react-spinners/PuffLoader";
+import RingLoader from 'react-spinners/RingLoader';
+import BarLoader from 'react-spinners/BarLoader';
+import DotLoader from 'react-spinners/DotLoader';
+import ScaleLoader from 'react-spinners/ScaleLoader';
+import ClipLoader from 'react-spinners/ClipLoader';
+import CircleLoader from 'react-spinners/CircleLoader';
+import PuffLoader from 'react-spinners/PuffLoader';
 
 export const RingSpinner = ({loading, color, size}) => {
     const override: CSSProperties = {

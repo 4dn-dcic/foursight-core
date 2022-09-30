@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { BarSpinner } from "../../Spinners";
+import { BarSpinner } from '../../Spinners';
 import Clipboard from '../../utils/Clipboard';
 import Fetch from '../../utils/Fetch';
 import Image from '../../utils/Image';

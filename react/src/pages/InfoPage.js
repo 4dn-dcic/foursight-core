@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Global from "../Global";
+import Global from '../Global';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';

@@ -1,6 +1,6 @@
 import { useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Global from "../Global";
+import Global from '../Global';
 import Page from '../Page';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';

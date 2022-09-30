@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
-import Global from "../Global";
+import Global from '../Global';
 import Server from '../utils/Server';
 import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';

@@ -1,8 +1,8 @@
 import './css/App.css';
 import { useContext } from 'react';
-import Global from "./Global";
-import Env from "./utils/Env";
-import Image from "./utils/Image";
+import Global from './Global';
+import Env from './utils/Env';
+import Image from './utils/Image';
 
 const Footer = (props) => {
 

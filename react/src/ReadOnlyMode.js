@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import Client from "./utils/Client";
-import Cookie from "./utils/Cookie";
-import Image from "./utils/Image";
-import Type from "./utils/Type";
+import Client from './utils/Client';
+import Cookie from './utils/Cookie';
+import Image from './utils/Image';
+import Type from './utils/Type';
 
 let _callbacks = [];
 

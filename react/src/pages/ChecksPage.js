@@ -1,8 +1,8 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { BarSpinner } from "../Spinners";
-import { RingSpinner } from "../Spinners";
+import { BarSpinner } from '../Spinners';
+import { RingSpinner } from '../Spinners';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
