@@ -53,40 +53,6 @@ from .environment import Environment
 from .react_api import ReactApi
 from .app_utils import app, AppUtilsCore as app_utils, DEFAULT_ENV
 
-# XYZZY
-#DEFAULT_ENV = os.environ.get("ENV_NAME", "env-name-unintialized")
-
-# When running 'chalice local' we do not (and seemingly can not) get the same "/api" prefix
-# as we see when deployed to AWS (Lambda). So we set it explicitly here if your CHALICE_LOCAL
-# environment variable is set. Seems to be a known issue: https://github.com/aws/chalice/issues/838
-#
-# Also set CORS to True if CHALICE_LOCAL; not needed if running React (nascent support of which
-# is experimental and under development in distinct branch) from Foursight directly, on the same
-# port (e.g. 8000), but useful if/when running React on a separate port (e.g. 3000) via npm start
-# in foursight-core/react to facilitate easy/quick development/changes directly to React code.
-
-CHALICE_LOCAL = (os.environ.get("CHALICE_LOCAL") == "1")
-if CHALICE_LOCAL:
-    ROUTE_PREFIX = "/api/"
-    ROUTE_EMPTY_PREFIX = "/api"
-    ROUTE_PREFIX_EXPLICIT = "/api/"
-    #
-    # Very specific requirements for running Foursight React UI/API
-    # in CORS mode (i.e. UI on localhost:3000 and API on localhost:8000).
-    # The allow_origin must be exact (i.e. no "*" allowed),
-    # and allow_credentials must be True. And on the caller (React UI)
-    # side we must include 'credentials: "include"' in the fetch.
-    #
-    CORS = CORSConfig(
-            allow_origin='http://localhost:3000', # need this to be explicit not '*'
-            allow_credentials=True, # need this
-            )
-else:
-    ROUTE_PREFIX = "/"
-    ROUTE_EMPTY_PREFIX = "/"
-    ROUTE_PREFIX_EXPLICIT = "/api/"
-    CORS = False
-
 # When running 'chalice local' we do not (and seemingly can not) get the same "/api" prefix
 # as we see when deployed to AWS (Lambda). So we set it explicitly here if your CHALICE_LOCAL
 # environment variable is set. Seems to be a known issue: https://github.com/aws/chalice/issues/838
@@ -362,7 +328,7 @@ class Routes:
         return Routes.reactui_serve_static_file(environ, **{"path1": path1, "path2": path2, "path3": path3, "path4": path4})
 
     # ----------------------------------------------------------------------------------------------
-    # Foursiht React API routes.
+    # Foursight React API routes.
     # ----------------------------------------------------------------------------------------------
 
     def route_requires_authorization(f):
