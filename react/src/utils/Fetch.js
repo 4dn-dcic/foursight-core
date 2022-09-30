@@ -3,6 +3,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import Cookie from '../utils/Cookie';
+import Context from '../utils/Context';
 import Logout from '../utils/Logout';
 
 function SLEEP(time) {
@@ -28,8 +29,8 @@ function fetchData(url, setData, setLoading, setError) {
     else {
         console.log("FETCHING: " + url);
     }
-    const headers = {}
-    return fetch(url, { headers: headers, credentials:"include"}).then(response => {
+    const args = Context.IsLocalCrossOrigin() ? { credentials: "include" } : {};
+    return fetch(url, args).then(response => {
         console.log("FETCH STATUS CODE IS " + response.status + ": " + url);
         if (response.status === 200) {
             response.json().then(responseJson => {

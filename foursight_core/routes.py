@@ -104,8 +104,8 @@ if CHALICE_LOCAL:
     #
     # Very specific requirements for running Foursight React UI/API
     # in CORS mode (i.e. UI on localhost:3000 and API on localhost:8000).
-    # The allow_origin must be exact (i.e. no "*" allowed),
-    # and allow_credentials must be True. And on the caller (React UI)
+    # The allow_origin must be exact (i.e. no "*" allowed), and the
+    # allow_credentials must be True. On the caller/client (React UI)
     # side we must include 'credentials: "include"' in the fetch.
     #
     CORS = CORSConfig(
@@ -124,7 +124,7 @@ class Routes:
     # Foursight Legacy routes.
     # ----------------------------------------------------------------------------------------------
 
-    @app.route((ROUTE_PREFIX if not CHALICE_LOCAL else "/") + 'callback', cors=CORS)
+    @app.route((ROUTE_PREFIX if not CHALICE_LOCAL else "/") + 'callback')
     def auth0_callback():
         """
         Special callback route, only to be used as a callback from auth0
@@ -135,7 +135,7 @@ class Routes:
         return app_utils.singleton().auth0_callback(request, default_env)
 
     if ROUTE_PREFIX != ROUTE_EMPTY_PREFIX:
-        @app.route("/", methods=['GET'], cors=CORS)
+        @app.route("/", methods=['GET'])
         def index_chalice_local():
             """
             Redirect with 302 to view page of DEFAULT_ENV
@@ -147,7 +147,7 @@ class Routes:
             resp_headers = {'Location': redirect_path}
             return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
-    @app.route(ROUTE_EMPTY_PREFIX, methods=['GET'], cors=CORS)
+    @app.route(ROUTE_EMPTY_PREFIX, methods=['GET'])
     def index():
         """
         Redirect with 302 to view page of DEFAULT_ENV
@@ -159,14 +159,14 @@ class Routes:
         headers = {'Location': redirect_path}
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
-    @app.route(ROUTE_PREFIX + "view", methods=['GET'], cors=CORS)
+    @app.route(ROUTE_PREFIX + "view", methods=['GET'])
     def route_view():
         default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
         redirect_path = ROUTE_PREFIX_EXPLICIT + 'view/' + default_env
         headers = {"Location": redirect_path}
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
-    @app.route(ROUTE_PREFIX + 'introspect', methods=['GET'], cors=CORS)
+    @app.route(ROUTE_PREFIX + 'introspect', methods=['GET'])
     def introspect(environ):
         """
         Test route
@@ -177,7 +177,7 @@ class Routes:
         else:
             return app_utils.singleton().forbidden_response()
 
-    @app.route(ROUTE_PREFIX + 'view_run/{environ}/{check}/{method}', methods=['GET'], cors=CORS)
+    @app.route(ROUTE_PREFIX + 'view_run/{environ}/{check}/{method}', methods=['GET'])
     def view_run_route(environ, check, method):
         """
         Protected route
@@ -193,7 +193,7 @@ class Routes:
         else:
             return app_utils.singleton().forbidden_response(context)
 
-    @app.route(ROUTE_PREFIX + 'view/{environ}', methods=['GET'], cors=CORS)
+    @app.route(ROUTE_PREFIX + 'view/{environ}', methods=['GET'])
     def view_route(environ):
         """
         Non-protected route
@@ -202,7 +202,7 @@ class Routes:
         domain, context = app_utils.singleton().get_domain_and_context(req_dict)
         return app_utils.singleton().view_foursight(app.current_request, environ, app_utils.singleton().check_authorization(req_dict, environ), domain, context)
 
-    @app.route(ROUTE_PREFIX + 'view/{environ}/{check}/{uuid}', methods=['GET'], cors=CORS)
+    @app.route(ROUTE_PREFIX + 'view/{environ}/{check}/{uuid}', methods=['GET'])
     def view_check_route(environ, check, uuid):
         """
         Protected route
@@ -214,7 +214,7 @@ class Routes:
         else:
             return app_utils.singleton().forbidden_response()
 
-    @app.route(ROUTE_PREFIX + 'history/{environ}/{check}', methods=['GET'], cors=CORS)
+    @app.route(ROUTE_PREFIX + 'history/{environ}/{check}', methods=['GET'])
     def history_route(environ, check):
         """
         Non-protected route
@@ -228,7 +228,7 @@ class Routes:
         return app_utils.singleton().view_foursight_history(app.current_request, environ, check, start, limit,
                                       app_utils.singleton().check_authorization(req_dict, environ), domain, context)
 
-    @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}/{uuid}', methods=['GET'], cors=CORS)
+    @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}/{uuid}', methods=['GET'])
     def get_check_with_uuid_route(environ, check, uuid):
         """
         Protected route
@@ -238,7 +238,7 @@ class Routes:
         else:
             return app_utils.singleton().forbidden_response()
 
-    @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}', methods=['GET'], cors=CORS)
+    @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}', methods=['GET'])
     def get_check_route(environ, check):
         """
         Protected route
@@ -248,7 +248,7 @@ class Routes:
         else:
             return app_utils.singleton().forbidden_response()
 
-    @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}', methods=['PUT'], cors=CORS)
+    @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}', methods=['PUT'])
     def put_check_route(environ, check):
         """
         Take a PUT request. Body of the request should be a json object with keys
@@ -266,7 +266,7 @@ class Routes:
         else:
             return app_utils.singleton().forbidden_response()
 
-    @app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['PUT'], cors=CORS)
+    @app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['PUT'])
     def put_environment(environ):
         """
         Take a PUT request that has a json payload with 'fourfront' (ff server)
@@ -283,7 +283,7 @@ class Routes:
         else:
             return app_utils.singleton().forbidden_response()
 
-    @app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['GET'], cors=CORS)
+    @app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['GET'])
     def get_environment_route(environ):
         """
         Protected route
@@ -293,7 +293,7 @@ class Routes:
         else:
             return app_utils.singleton().forbidden_response()
 
-    @app.route(ROUTE_PREFIX + 'environments/{environ}/delete', methods=['DELETE'], cors=CORS)
+    @app.route(ROUTE_PREFIX + 'environments/{environ}/delete', methods=['DELETE'])
     def delete_environment(environ):
         """
         Takes a DELETE request and purges the foursight environment specified by 'environ'.
@@ -309,19 +309,19 @@ class Routes:
 
     # dmichaels/2022-07-31:
     # For testing/debugging/troubleshooting.
-    @app.route(ROUTE_PREFIX + 'info/{environ}', methods=['GET'], cors=CORS)
+    @app.route(ROUTE_PREFIX + 'info/{environ}', methods=['GET'])
     def get_view_info_route(environ):
         req_dict = app.current_request.to_dict()
         domain, context = app_utils.singleton().get_domain_and_context(req_dict)
         return app_utils.singleton().view_info(request=app.current_request, environ=environ, is_admin=app_utils.singleton().check_authorization(req_dict, environ), domain=domain, context=context)
 
-    @app.route(ROUTE_PREFIX + 'users/{environ}/{email}', cors=CORS)
+    @app.route(ROUTE_PREFIX + 'users/{environ}/{email}')
     def get_view_user_route(environ, email):
         req_dict = app.current_request.to_dict()
         domain, context = app_utils.singleton().get_domain_and_context(req_dict)
         return app_utils.singleton().view_user(request=app.current_request, environ=environ, is_admin=app_utils.singleton().check_authorization(req_dict, environ), domain=domain, context=context, email=email)
 
-    @app.route(ROUTE_PREFIX + 'users/{environ}', cors=CORS)
+    @app.route(ROUTE_PREFIX + 'users/{environ}')
     def get_view_users_route(environ):
         req_dict = app.current_request.to_dict()
         domain, context = app_utils.singleton().get_domain_and_context(req_dict)
