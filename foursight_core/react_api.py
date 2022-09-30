@@ -521,29 +521,29 @@ class ReactApi:
         response.status_code = 200
         return self.process_response(response)
 
-    def react_clear_cache(self, request, environ, is_admin=False, domain="", context="/"):
+    def react_clear_cache(self, request, env, is_admin=False, domain="", context="/"):
         pass
 
-    def react_get_header(self, request, environ, domain="", context="/"):
+    def react_get_header(self, request, env, domain="", context="/"):
         # Note that this route is not protected but/and we return the results from authorize.
         # TODO: remove stuff we don't need like credentials and also auth also version of other stuff and gac_name ...
         #       review all these data points and see which ones really need ...
-        auth = self.authorize(request, environ)
-        data = ReactApi.Cache.header.get(environ)
+        auth = self.authorize(request, env)
+        data = ReactApi.Cache.header.get(env)
         if not data:
-            data = self.react_get_header_nocache(request, environ, domain, context)
-            ReactApi.Cache.header[environ] = data
+            data = self.react_get_header_nocache(request, env, domain, context)
+            ReactApi.Cache.header[env] = data
         data = copy.deepcopy(data)
         data["auth"] = auth
         response = self.create_standard_response("react_get_header")
         response.body = data
         return self.process_response(response)
 
-    def react_get_header_nocache(self, request, environ, domain="", context="/"):
+    def react_get_header_nocache(self, request, env, domain="", context="/"):
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         default_env = self.get_default_env()
-        aws_credentials = self.react_get_credentials_info(environ if environ else default_env);
+        aws_credentials = self.react_get_credentials_info(env if env else default_env);
         response = {
             "app": {
                 "title": self.html_main_title,
@@ -556,7 +556,7 @@ class ReactApi:
                 "credentials": {
                     "aws_account_number": aws_credentials["aws_account_number"]
                 },
-              # self.react_get_credentials_info(environ if environ else default_env),
+              # self.react_get_credentials_info(env if env else default_env),
                 "launched": self.init_load_time,
                 "deployed": self.get_lambda_last_modified()
             },

@@ -18,6 +18,11 @@ function IsLoggedIn(header) {
         return true;
     }
     if (Cookie.HasAuthToken()) {
+        if (header?.auth) {
+            if (!header.auth.authorized) {
+                return false;
+            }
+        }
         return true;
     }
     return false;

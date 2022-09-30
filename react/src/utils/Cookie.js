@@ -97,6 +97,10 @@ function GetAuthTokenCookie() {
     return [];
 }
 
+function GetAuthTokenRawCookie() {
+    return GetCookie(_authTokenCookieName);
+}
+
 function GetKnownEnvsCookie() {
     try {
         const knownEnvs = GetAuthTokenCookie()?.known_envs || [];
@@ -192,6 +196,7 @@ function HasTestModeFoursightCgapCookie() {
 const Exports = {
     AllowedEnvs:     GetAllowedEnvsCookie,
     AuthToken:       GetAuthTokenCookie,
+    AuthTokenRaw:    GetAuthTokenRawCookie,
     Delete:          DeleteCookie,
     DeleteAuth:      DeleteAuthCookie,
     Get:             GetCookie,
