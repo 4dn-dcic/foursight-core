@@ -18,18 +18,19 @@ function IsLoggedIn(header) {
         return true;
     }
     if (Cookie.HasAuthToken()) {
-        if (header?.auth) {
-            if (!header.auth.authorized) {
-                return false;
-            }
-        }
+    //  if (header?.auth) {
+    //      if (!header.auth.authorized) {
+    //          return false;
+    //      }
+    //  }
         return true;
     }
     return false;
 }
 
 function LoggedInUser(header) {
-    return header?.auth?.authorized ? header.auth?.user : "unknown";
+        // TODO xyzzy
+    return header?.auth?.user || "unknown";
 }
 
 function LoggedInUserName(header) {
