@@ -18,24 +18,18 @@ function IsLoggedIn(header) {
         return true;
     }
     if (Cookie.HasAuthToken()) {
-    //  if (header?.auth) {
-    //      if (!header.auth.authorized) {
-    //          return false;
-    //      }
-    //  }
         return true;
     }
     return false;
 }
 
 function LoggedInUser(header) {
-        // TODO xyzzy
-    return header?.auth?.user || "unknown";
+    return header?.auth?.user || Cookie.AuthToken()?.user || "unknown";
 }
 
 function LoggedInUserName(header) {
-    const first_name = header?.auth?.authorized ? header.auth?.first_name : "";
-    const last_name = header?.auth?.authorized ? header.auth?.last_name : "";
+    const first_name = header.auth?.first_name || Cookie.AuthToken()?.user || "";
+    const last_name = header.auth?.last_name || Cookie.AuthToken()?.user || "";
     return first_name + " " + last_name;
 }
 
