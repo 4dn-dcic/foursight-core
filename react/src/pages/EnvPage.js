@@ -113,19 +113,19 @@ const EnvPage = (props) => {
                                 <td>
                                     { Auth.IsLoggedIn(header) && !Env.IsAllowed(env, header) ? (<>
                                         <span className={"tool-tip"} data-text={"This is a restricted environment!"} style={{color:"red"}}>
-                                            <Link to={Client.Path("/env", env.public_name)} onClick={() => updateHeader(env.public_name)} style={{color:"inherit",textDecoration:IsCurrentEnv(env) ? "underline" : "normal"}}><b>{env.public_name}</b></Link>
+                                            <Link to={Client.Path("/env", Env.PreferredName(env, header))} onClick={() => updateHeader(Env.PreferredName(env, header))} style={{color:"inherit",textDecoration:IsCurrentEnv(env) ? "underline" : "normal"}}><b>{Env.PreferredName(env, header)}</b></Link>
                                             { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             &nbsp;&#x2192; You do not have permission for this environment.
                                         </span>
                                     </>):(<>
                                         { IsCurrentEnv(env) ? (<>
                                             <span className={"tool-tip"} data-text={"This is the current environment."} style={{color:"black"}}>
-                                                <Link to={Client.Path("/env", env.public_name)} onClick={() => updateHeader(env.public_name)} style={{color:"inherit"}}><b><u>{env.public_name}</u></b></Link>
+                                                <Link to={Client.Path("/env", Env.PreferredName(env, header))} onClick={() => updateHeader(Env.PreferredName(env, header))} style={{color:"inherit"}}><b><u>{Env.PreferredName(env, header)}</u></b></Link>
                                                 { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             </span>
                                         </>):(<>
                                             <span>
-                                                <Link to={Client.Path("/env", env.public_name)} onClick={() => updateHeader(env.public_name)} style={{color:"inherit"}}><b>{env.public_name}</b></Link>
+                                                <Link to={Client.Path("/env", Env.PreferredName(env, header))} onClick={() => updateHeader(Env.PreferredName(env, header))} style={{color:"inherit"}}><b>{Env.PreferredName(env, header)}</b></Link>
                                                 { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             </span>
                                         </>)}
