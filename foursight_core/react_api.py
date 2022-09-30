@@ -229,24 +229,29 @@ class ReactApi:
         except Exception as e:
             return self.create_unauthorized_response(request, "exception: " + str(e), env)
 
-    def react_forbidden_response(self, body):
+    def react_forbidden_response(self, body = None):
         response = self.create_standard_response("react_forbidden_response")
         if not body or not isinstance(body, dict):
-            body = { "forbidden": true }
+            body = { "forbidden": True }
         response.body = body
         response.status_code = 403
         return self.process_response(response)
 
     def react_serve_static_file(self, environ, is_admin=False, domain="", context="/", **kwargs):
 
-        # -------------------------------------------------------------------------------
-        # TODO: More security WRT exactly what we allow to serve here.
-        # Idea: whitelist ... serving very few and known files.
-        # -------------------------------------------------------------------------------
+        whitelisted_file_path_suffixes = [
+            "/index.html",
+            "/main.js",
+            "/main.css",
+            "/manifest.json",
+            "/asset-manifest.json",
+            ".jpeg",
+            ".jpg",
+            ".png",
+            ".ico"
+        ]
 
-        # TODO: Maybe cache output. But if so provide backdoor way of invalidating cache.
-
-        print(f"Serve React file called with: environ={environ}, is_admin={is_admin}")
+        # print(f"Serve React static file: environ={environ} kwargs={kwargs}")
         environ = environ.replace("{environ}", environ)
 
         BASE_DIR = os.path.dirname(__file__)
@@ -256,13 +261,13 @@ class ReactApi:
         if environ == "static":
             # If the environ is 'static' then we take this to mean the 'static'
             # sub-directory; this is the directory where the static (js, css, etc)
-            # React files live. Note that this means 'environ' may be 'static'.
+            # React files live. Note that this means a real 'environ' may not be 'static'.
             file = os.path.join(BASE_DIR, REACT_BASE_DIR, "static")
         else:
             file = os.path.join(BASE_DIR, REACT_BASE_DIR)
         args = kwargs.values()
         if not args:
-            # TODO: png not downloading right!
+            # TODO: png (et.al.) not downloading right!
             # Running chalice local it works though.
             # Actually it also works in cgap-supertest:
             # https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/react/logo192.png
@@ -271,8 +276,9 @@ class ReactApi:
             # The correct one has: content-length: 7132
             # The incorrect one has: content-length: 5347
             # The file itself (oddly) is 5347.
-            if (environ.endswith(".html") or environ.endswith(".json")
-               or environ.endswith(".map") or environ.endswith(".txt")
+            # Anyways for now the React UI references images at external sites not from here.
+            if (environ.endswith(".js") or environ.endswith(".html") or environ.endswith(".json")
+               or environ.endswith(".jpg") or environ.endswith(".jpeg")
                or environ.endswith(".png") or environ.endswith(".ico")):
                 # If the 'environ' appears to refer to a file then we take this
                 # to mean the file in the main React directory. Note that this
@@ -289,7 +295,7 @@ class ReactApi:
         elif file.endswith(".css"):
             content_type = "application/css"
             open_mode = "r"
-        elif file.endswith(".json") or file.endswith(".map"):
+        elif file.endswith(".json"):
             content_type = "application/json"
             open_mode = "r"
         elif file.endswith(".png"):
@@ -298,9 +304,6 @@ class ReactApi:
         elif file.endswith(".jpeg") or file.endswith(".jpg"):
             content_type = "image/jpeg"
             open_mode = "rb"
-        elif file.endswith(".svg"):
-            content_type = "image/svg+xml"
-            open_mode = "r"
         elif file.endswith(".ico"):
             content_type = "image/x-icon"
             open_mode = "rb"
@@ -308,8 +311,20 @@ class ReactApi:
             file = os.path.join(BASE_DIR, REACT_BASE_DIR, REACT_DEFAULT_FILE)
             content_type = "text/html"
             open_mode = "r"
+            # Be as restrictive as possible. ONLY allow above files.
 
-        if not ReactApi.Cache.static_files.get(file):
+        # print(f"Attempting to serve React static file: [{file}]")
+        may_serve_file = False
+        for whitelisted_file_path_suffix in whitelisted_file_path_suffixes:
+            if file.endswith(whitelisted_file_path_suffix):
+                may_serve_file = True
+                break
+        if not may_serve_file:
+            print(f"Not serving forbidden React static file (5): [{file}]")
+            return self.react_forbidden_response()
+
+        response = ReactApi.Cache.static_files.get(file)
+        if not response:
             response = self.create_standard_response("react_serve_static_file", content_type)
             print(f"Serving React file: {file} (content-type: {content_type}).")
             with io.open(file, open_mode) as f:
@@ -321,7 +336,7 @@ class ReactApi:
                     print(e)
             response = self.process_response(response)
             ReactApi.Cache.static_files[file] = response
-        return ReactApi.Cache.static_files.get(file)
+        return response
 
     # TODO: Refactor.
     def react_get_credentials_info(self, env: str) -> dict:
