@@ -107,17 +107,7 @@ class ReactApi:
                 print(e)
         return (known_envs, allowed_envs, first_name, last_name)
 
-    def decode_authtoken(self, authtoken: str, env: str) -> dict:
-        """
-        Fully decode AND verify the given encrypted/encoded authtoken (cookie).
-        If not verified (by the decode_jwt function) then None will be returned.
-        This authtoken is a JWT-encoded (signed, actually) token containing the
-        list of environments the authenticated user is allowed to access.
-        Returns this info fully decrypted in a dictionary.
-        """
-        return self.decode_jwt(authtoken, env)
-
-    def create_authtoken(self, jwt: str, env: str):
+    def create_authtoken(self, jwt: str, domain: str, env: str):
         """
         Augments the given JWT with the list of known environments; the default environments;
         and the list of allowed (authorized) environments for the user associated with the
@@ -140,6 +130,7 @@ class ReactApi:
             "allowed_envs": allowed_envs,
             "known_envs": known_envs,
             "default_env": self.get_default_env(),
+            "domain": domain,
             "aud": self.get_auth0_client_id(env) # The 'aud' must be Auth0 client ID for JWT decode to work.
         }
         auth0_secret = self.get_auth0_secret(env)
@@ -153,6 +144,27 @@ class ReactApi:
 
         return authtoken
 
+    def decode_authtoken(self, authtoken: str, env: str) -> dict:
+        """
+        Fully decode AND verify the given encrypted/encoded authtoken (cookie).
+        If not verified (by the decode_jwt function) then None will be returned.
+        This authtoken is a JWT-signed-encoded token containing the list of
+        environments the authenticated user is allowed to access.
+        Returns this info in a dictionary.
+        """
+        return self.decode_jwt(authtoken, env)
+
+    def create_unauthorized_response(self, request, status, env):
+        known_envs = self.get_unique_annotated_environment_names()
+        return {
+            "authorized": False,
+            "status": status,
+            "known_envs": known_envs,
+            "default_env": self.get_default_env(),
+            "domain": self.get_domain(request),
+            "aud": self.get_auth0_client_id(env) # Need this for Auth0 login box.
+         }
+
     # TODO: This needs massive cleanup after messing with WRT React.
     def auth0_react_finish_callback(self, request, env, domain, jwt, jwt_expires):
 
@@ -163,7 +175,7 @@ class ReactApi:
             react_redir_url = urllib.parse.unquote(react_redir_url)
             response_headers = {"Location": react_redir_url}
 
-        authtoken = self.create_authtoken(jwt, env)
+        authtoken = self.create_authtoken(jwt, domain, env)
         authtoken_cookie = self.create_set_cookie_string(request, name="authtoken",
                                                          value=authtoken,
                                                          domain=domain,
@@ -174,37 +186,48 @@ class ReactApi:
         return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
     def authorize(self, request, env) -> dict:
-        def unauthorized_response(status):
-            known_envs = self.get_unique_annotated_environment_names()
-            return {
-                "authorized": False,
-                "status": status,
-                "known_envs": known_envs,
-                "default_env": self.get_default_env(),
-                "aud": self.get_auth0_client_id(env) # Need this for Auth0 login box.
-             }
-
         if not request:
-            return unauthorized_response("no-request")
+            return self.create_unauthorized_response(request, "no-request", env)
         if not isinstance(request, dict):
             request = request.to_dict();
         try:
             test_mode_not_authorized = self.read_cookie("test_mode_not_authorized", request)
             if test_mode_not_authorized == "1":
-                return unauthorized_response("test-mode-not-authorized")
+                return self.create_unauthorized_response(request, "test-mode-not-authorized", env)
+
+            # Read the authtoken cookie.
 
             authtoken = self.read_cookie("authtoken", request)
             if not authtoken:
-                return unauthorized_response("no-authtoken")
+                return self.create_unauthorized_response(request, "no-authtoken", env)
+
+            # Decode the authtoken cookie.
 
             authtoken_decoded = self.decode_authtoken(authtoken, env)
             if not authtoken_decoded:
-                return unauthorized_response("invalid-authtoken")
+                return self.create_unauthorized_response(request, "invalid-authtoken", env)
+
+            # Sanity check the decoded authtoken.
+
+            auth0_client_id = self.get_auth0_client_id(env)
+            if auth0_client_id != authtoken_decoded["aud"]:
+                return self.create_unauthorized_response(request, "invalid-authtoken-aud", env)
+
+            domain = self.get_domain(request)
+            if domain != authtoken_decoded["domain"]:
+                return self.create_unauthorized_response(request, "invalid-authtoken-domain", env)
+
+            # Check the authtoken expiration time (it expiration time must be in the future).
+
+            authtoken_expires_time_t = authtoken_decoded["authorized_until"]
+            current_time_t = int(time.time())
+            if authtoken_expires_time_t <= current_time_t:
+                return self.create_unauthorized_response(request, "authtoken-expired", env)
 
             return authtoken_decoded
 
         except Exception as e:
-            return unauthorized_response("exception: " + str(e))
+            return self.create_unauthorized_response(request, "exception: " + str(e), env)
 
     def react_forbidden_response(self, body):
         response = self.create_standard_response("react_forbidden_response")

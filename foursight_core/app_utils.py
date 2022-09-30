@@ -523,6 +523,16 @@ class AppUtilsCore(ReactApi):
         """
         return cls.FAVICON  # want full HTTPS, so hard-coded in
 
+    def get_domain(self, request):
+        if request:
+            try:
+                if not isinstance(request, dict):
+                    request = request.to_dict()
+                return request.get("headers", {}).get("host")
+            except:
+                pass
+        return ""
+
     def get_domain_and_context(self, request_dict):
         """
         Given a request that has already been dict-transformed, get the host
