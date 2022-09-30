@@ -394,8 +394,10 @@ class ReactApi:
                 "portal": portal_url,
                 "es": self.host,
                 "rds": os.environ["RDS_HOSTNAME"],
+                # TODO: cache this (slow).
                 "sqs": self.sqs.get_sqs_queue().url,
             },
+            # TODO: cache this (slow).
             "buckets": {
                 "env": self.environment.get_env_bucket_name(),
                 "foursight": get_foursight_bucket(envname=environ if environ else default_env, stage=stage_name),
@@ -413,6 +415,7 @@ class ReactApi:
                 "running": 0,
                 "queued": 0
             },
+            # TODO: cache this (slow).
             "gac": {
                 "name": get_identity_name(),
                 "values": self.sort_dictionary_by_lowercase_keys(obfuscate_dict(get_identity_secrets())),
