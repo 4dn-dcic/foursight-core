@@ -121,7 +121,14 @@ const LoginPage = (props) => {
             </div>
         </React.Fragment>):(<React.Fragment>
         <div className="container" id="login_container">
-            <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt"}}>
+            <div style={{float:"right",marginRight:"94pt",color:"darkred",fontSize:"small",cursor:"pointer"}}>
+                { showingAuthToken ? <>
+                    <span onClick={() => setShowAuthToken(false)}>Auth &#x2193;</span>
+                </>:<>
+                    <span onClick={() => setShowAuthToken(true)}>Auth &#x2191;</span>
+                </>}
+            </div>
+            <div className="boxstyle check-warn" style={{marginTop:"15pt",marginLeft:"90pt",marginRight:"90pt",padding:"10pt",color:"darkred"}}>
                 Not logged in.
                 Click <u style={{cursor:"pointer"}} onClick={() => login()}><b>here</b></u> to <span style={{cursor:"pointer"}} onClick={() => login()}>login</span>.
                 {(header?.app?.credentials?.aws_account_number) ? (<React.Fragment>
@@ -130,6 +137,12 @@ const LoginPage = (props) => {
                 </React.Fragment>):(<React.Fragment>
                 </React.Fragment>)}
             </div>
+            { showingAuthToken && <>
+                <div className="boxstyle check-warn" style={{marginLeft:"90pt",marginRight:"90pt",color:"darkred",fontSize:"small"}}>
+                    <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkred"}}><b>Auth</b> from API</span>
+                    <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkred",fontWeight:"bold",marginTop:"6pt"}}>{Yaml.Format(header?.auth)}</pre>
+                </div>
+            </>}
         </div>
         <br /><br /><br />
         <div>
