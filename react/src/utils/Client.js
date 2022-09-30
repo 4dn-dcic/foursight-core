@@ -122,17 +122,7 @@ function GetPortalLink(header) {
 // -------------------------------------------------------------------------------------------------
 
 function IsReadOnlyMode(header) {
-    return header?.readOnlyMode || Cookie.IsReadOnlyMode();
-}
-
-function SetReadOnlyMode(value, setHeader) {
-    
-    if (Type.IsBoolean(value)) {
-        if (Type.IsFunction(setHeader)) {
-            setHeader(e => ({...e, readOnlyMode: value}));
-        }
-        Cookie.SetReadOnlyMode(value);
-    }
+    return Cookie.IsReadOnlyMode();
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -148,7 +138,6 @@ const Exports = {
     IsReadOnlyMode:  IsReadOnlyMode,
     Origin:          Context.Client.Origin,
     Path:            GetPath,
-    PortalLink:     GetPortalLink,
-    SetReadOnlyMode: SetReadOnlyMode
+    PortalLink:      GetPortalLink
 };
 export default Exports;
