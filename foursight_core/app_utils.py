@@ -271,6 +271,7 @@ class AppUtilsCore(ReactApi):
 
     def get_auth0_client_id_from_portal(self, env_name: str) -> str:
         logger.warn(f"Fetching Auth0 client ID from portal.")
+        print('xyzzyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
         portal_url = self.get_portal_url(env_name)
         auth0_config_url = portal_url + "/auth0_config?format=json"
         if not self.auth0_client_id:
@@ -505,7 +506,10 @@ class AppUtilsCore(ReactApi):
                 return None
             auth0_client_id = self.get_auth0_client_id(env_name)
             auth0_secret = self.get_auth0_secret(env_name)
-            # leeway accounts for clock drift between us and auth0
+            # The leeway accounts for a bit of clock drift between us and Auth0.
+            # This decoding WITH signature verification is very fast;
+            # on my (dmichaels) MacBook it generally takes less than 0.04ms;
+            # very good since we do this on every (protected) React API call.
             return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30, options={"verify_signature": True}, algorithms=["HS256"])
         except Exception as e:
             logger.warn(f"foursight_core: Exception decoding JWT token: {jwt_token}")

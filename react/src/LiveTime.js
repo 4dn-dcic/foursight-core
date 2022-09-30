@@ -9,20 +9,29 @@ const _CURRENT_TIME_INTERVAL = 1100;
 
 const FormatDateTime = ({verbose = false}) => {
     const [ now, setNow ] = useState(new Date());
-    useEffect(() => {setInterval(() => setNow(new Date()), _CURRENT_TIME_INTERVAL); }, []);
+    useEffect(() => {
+        const intervalId = setInterval(() => setNow(new Date()), _CURRENT_TIME_INTERVAL);
+        return () => clearInterval(intervalId);
+    }, []);
     return <>{Time.FormatDateTime(now, verbose)}</>
 }
 
-const FormatDuration = ({start = null, end = null, verbose = false, fallback = "", suffix = "", tooltip = false}) => {
+const FormatDuration = ({start = null, end = null, verbose = false, fallback = "", prefix = "", suffix = "", tooltip = false}) => {
+    if (prefix === "datetime") {
+        prefix = Time.FormatDateTime(start || end) + " |";
+    }
     const [ now, setNow ] = useState(new Date());
-    useEffect(() => {setInterval(() => setNow(new Date()), _CURRENT_TIME_INTERVAL); }, []);
+    useEffect(() => {
+        const intervalId = setInterval(() => { setNow(new Date()); }, _CURRENT_TIME_INTERVAL);
+        return () => clearInterval(intervalId);
+    }, []);
     return <>
         { tooltip ? <>
             <span className="tool-tip" data-text={Time.FormatDateTime(start || end)}>
-                {Time.FormatDuration(start || now, end || now, verbose, fallback, null, suffix)}
+                {Time.FormatDuration(start || now, end || now, verbose, fallback, prefix, suffix)}
             </span>
         </>:<>
-            {Time.FormatDuration(start || now, end || now, verbose, fallback, null, suffix)}
+            {Time.FormatDuration(start || now, end || now, verbose, fallback, prefix, suffix)}
         </>}
     </>
 }

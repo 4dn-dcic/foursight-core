@@ -81,6 +81,8 @@ function HasAuthTokenCookie() {
 // Authorized environments (known, default, allowed) cookie (authenvs) related functions.
 // -------------------------------------------------------------------------------------------------
 
+// Returns the DECODED (but not signature-verified) authtoken cookie.
+//
 function GetAuthTokenCookie() {
     try {
         const authTokenCookie = GetCookie(_authTokenCookieName);

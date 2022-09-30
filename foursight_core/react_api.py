@@ -57,6 +57,7 @@ class ReactApi:
         header = {}
         checks = None
         lambdas = None
+        credentials_info = {}
 
     def create_standard_response(self, label: str, content_type: str = "application/json"):
         response = Response(label)
@@ -129,7 +130,6 @@ class ReactApi:
         email_verified = jwt_decoded.get("email_verified")
         known_envs, allowed_envs, first_name, last_name = self.get_envs(email)
         authtoken_decoded = {
-            "aud": self.get_auth0_client_id(env), # The 'aud' must be Auth0 client ID for JWT decode to work.
             "user": email,
             "user_verified": email_verified,
             "first_name": first_name,
@@ -140,6 +140,7 @@ class ReactApi:
             "allowed_envs": allowed_envs,
             "known_envs": known_envs,
             "default_env": self.get_default_env(),
+            "aud": self.get_auth0_client_id(env) # The 'aud' must be Auth0 client ID for JWT decode to work.
         }
         auth0_secret = self.get_auth0_secret(env)
         if not auth0_secret:
@@ -179,7 +180,8 @@ class ReactApi:
                 "authorized": False,
                 "status": status,
                 "known_envs": known_envs,
-                "default_env": self.get_default_env()
+                "default_env": self.get_default_env(),
+                "aud": self.get_auth0_client_id(env) # Need this for Auth0 login box.
              }
 
         if not request:
@@ -299,26 +301,30 @@ class ReactApi:
         return ReactApi.Cache.static_files.get(file)
 
     # TODO: Refactor.
-    def react_get_credentials_info(self, env_name: str) -> dict:
-        try:
-            session = boto3.session.Session()
-            credentials = session.get_credentials()
-            access_key_id = credentials.access_key
-            region_name = session.region_name
-            caller_identity = boto3.client("sts").get_caller_identity()
-            user_arn = caller_identity["Arn"]
-            account_number = caller_identity["Account"]
-            auth0_client_id = self.get_auth0_client_id(env_name)
-            return {
-                "aws_account_number": account_number,
-                "aws_user_arn": user_arn,
-                "aws_access_key_id": access_key_id,
-                "aws_region": region_name,
-                "auth0_client_id": auth0_client_id
-            }
-        except Exception as e:
-            self.note_non_fatal_error_for_ui_info(e, 'get_obfuscated_credentials_info')
-            return {}
+    def react_get_credentials_info(self, env: str) -> dict:
+        credentials_info = ReactApi.Cache.credentials_info.get(env)
+        if not credentials_info:
+            try:
+                session = boto3.session.Session()
+                credentials = session.get_credentials()
+                access_key_id = credentials.access_key
+                region_name = session.region_name
+                caller_identity = boto3.client("sts").get_caller_identity()
+                user_arn = caller_identity["Arn"]
+                account_number = caller_identity["Account"]
+                auth0_client_id = self.get_auth0_client_id(env)
+                credentials_info = {
+                    "aws_account_number": account_number,
+                    "aws_user_arn": user_arn,
+                    "aws_access_key_id": access_key_id,
+                    "aws_region": region_name,
+                    "auth0_client_id": auth0_client_id
+                }
+                ReactApi.Cache.credentials_info[env] = credentials_info
+            except Exception as e:
+                self.note_non_fatal_error_for_ui_info(e, 'get_obfuscated_credentials_info')
+                return {}
+        return credentials_info
 
     def is_known_environment_name(self, env_name: str) -> bool:
         if not env_name:
@@ -364,17 +370,31 @@ class ReactApi:
             portal_url = None
         response = Response('react_get_info')
         response.body = {
-            "page": {
-                "path": request_dict.get("context").get("path"),
-                "endpoint": request.path,
-                "loaded": self.get_load_time()
+            "app": {
+                "title": self.html_main_title,
+                "package": self.APP_PACKAGE_NAME,
+                "stage": stage_name,
+                "version": self.get_app_version(),
+                "domain": domain,
+                "context": context,
+                "local": self.is_running_locally(request_dict),
+                "credentials": self.react_get_credentials_info(environ if environ else default_env),
+                "launched": self.init_load_time,
+                "deployed": self.get_lambda_last_modified()
+            },
+            "versions": {
+                "foursight": self.get_app_version(),
+                "foursight_core": pkg_resources.get_distribution('foursight-core').version,
+                "dcicutils": pkg_resources.get_distribution('dcicutils').version,
+                "python": platform.python_version(),
+                "chalice": chalice_version
             },
             "server": {
                 "foursight": socket.gethostname(),
                 "portal": portal_url,
                 "es": self.host,
                 "rds": os.environ["RDS_HOSTNAME"],
-                "sqs": self.sqs.get_sqs_queue().url
+                "sqs": self.sqs.get_sqs_queue().url,
             },
             "buckets": {
                 "env": self.environment.get_env_bucket_name(),
@@ -383,6 +403,12 @@ class ReactApi:
                 "info": environment_and_bucket_info,
                 "ecosystem": self.sort_dictionary_by_lowercase_keys(EnvUtils.declared_data()),
             },
+            "page": {
+                "path": request_dict.get("context").get("path"),
+                "endpoint": request.path,
+                "loaded": self.get_load_time()
+            },
+            # TODD: Move these out to another API.
             "checks": {
                 "running": 0,
                 "queued": 0
@@ -491,6 +517,7 @@ class ReactApi:
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         default_env = self.get_default_env()
+        aws_credentials = self.react_get_credentials_info(environ if environ else default_env);
         response = {
             "app": {
                 "title": self.html_main_title,
@@ -500,7 +527,10 @@ class ReactApi:
                 "domain": domain,
                 "context": context,
                 "local": self.is_running_locally(request_dict),
-                "credentials": self.react_get_credentials_info(environ if environ else default_env),
+                "credentials": {
+                    "aws_account_number": aws_credentials["aws_account_number"]
+                },
+              # self.react_get_credentials_info(environ if environ else default_env),
                 "launched": self.init_load_time,
                 "deployed": self.get_lambda_last_modified()
             },
@@ -511,8 +541,8 @@ class ReactApi:
                 "python": platform.python_version(),
                 "chalice": chalice_version
             },
-            "known_envs": self.get_unique_annotated_environments(),
-            "default_env": default_env
+          # "known_envs": self.get_unique_annotated_environments(),
+          # "default_env": default_env
         }
 
         hack_for_local_testing = False

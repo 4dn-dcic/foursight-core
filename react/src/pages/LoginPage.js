@@ -51,8 +51,8 @@ const LoginPage = (props) => {
     }
 
     function createAuth0Lock() {
-        const loginCallback = Context.Authentication.CallbackUrl();
-        const loginClientId = Context.Authentication.CallbackId(header);
+        const loginCallback = Context.Auth0.CallbackUrl();
+        const loginClientId = Context.Auth0.CallbackId(header);
         const loginPayload = {
             container: "login_auth_container",
             auth: {

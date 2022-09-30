@@ -13,7 +13,8 @@ import Type from './Type';
 // -------------------------------------------------------------------------------------------------
 
 function GetKnownEnvs(header) {
-    return header?.known_envs || Cookie.KnownEnvs();
+    return header?.auth?.known_envs || Cookie.KnownEnvs();
+ // return header?.known_envs || Cookie.KnownEnvs();
 }
 
 function IsKnownEnv(env, header) {
@@ -33,7 +34,8 @@ function IsKnownEnv(env, header) {
 // -------------------------------------------------------------------------------------------------
 
 function GetDefaultEnv(header) {
-    return header?.default_env || Cookie.DefaultEnv();
+    return header?.auth?.default_env || Cookie.DefaultEnv();
+    // return header?.default_env || Cookie.DefaultEnv();
 }
 
 function IsDefaultEnv(env, header) {
@@ -154,7 +156,8 @@ function GetCurrentEnv(header = null) {
     }
     if (Type.IsObject(header)) {
         if (!IsKnownEnv(env, header)) {
-            env = header?.default_env;
+            env = GetDefaultEnv(header);
+            // env = header?.default_env;
         }
     }
     return env;

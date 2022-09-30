@@ -22,10 +22,6 @@ function IsNonEmptyObject(value) {
     return value !== undefined && value !== null && value.constructor === Object && Object.keys(value).length > 0;
 }
 
-function CopyObject(value) {
-    return IsObject(value) ? JSON.parse(JSON.stringify(value)) : {};
-}
-
 function IsArray(value) {
     return Array.isArray(value);
 }
@@ -51,7 +47,6 @@ function IsNull(value) {
 // -------------------------------------------------------------------------------------------------
 
 const Exports = {
-    CopyObject:       CopyObject,
     IsArray:          IsArray,
     IsBoolean:        IsBoolean,
     IsDateTime:       IsDateTime,

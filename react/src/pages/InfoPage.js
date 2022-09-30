@@ -8,8 +8,10 @@ import Context from '../utils/Context';
 import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
 import Image from '../utils/Image';
+import LiveTime from '../LiveTime';
 import Server from '../utils/Server';
 import Time from '../utils/Time';
+import Type from '../utils/Type';
 import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';
 
@@ -103,7 +105,11 @@ const InfoPage = () => {
                             { link && value ? (<span>
                                 <Link to={link}>{value}</Link>
                             </span>):(<span>
-                                {value || <span>&#x2205;</span>}
+                                { Type.IsNonEmptyObject(value) ? <>
+                                    {value}
+                                </>:<>
+                                    {value || <span>&#x2205;</span>}
+                                </>}
                             </span>)}
                             {checkElement}
                         </div>
@@ -124,11 +130,11 @@ const InfoPage = () => {
             <InfoRow name={"python"} value={header.versions?.python} monospace={true} copy={true} python={true} size="2" />
         </InfoBox>
         <InfoBox title="Credentials Info">
-            <InfoRow name={"AWS Account Number"} value={header.app?.credentials?.aws_account_number} monospace={true} copy={true} size="2" />
-            <InfoRow name={"AWS User ARN"} value={header.app?.credentials?.aws_user_arn} monospace={true} copy={true} size="2" />
-            <InfoRow name={"AWS Access Key ID"} value={header.app?.credentials?.aws_access_key_id} monospace={true} copy={true} size="2" />
-            <InfoRow name={"AWS Region Name"} value={header.app?.credentials?.aws_region} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Auth0 Client ID"} value={header.app?.credentials?.auth0_client_id} monospace={true} copy={true} size="2" />
+            <InfoRow name={"AWS Account Number"} value={info.app?.credentials?.aws_account_number} monospace={true} copy={true} size="2" />
+            <InfoRow name={"AWS User ARN"} value={info.app?.credentials?.aws_user_arn} monospace={true} copy={true} size="2" />
+            <InfoRow name={"AWS Access Key ID"} value={info.app?.credentials?.aws_access_key_id} monospace={true} copy={true} size="2" />
+            <InfoRow name={"AWS Region Name"} value={info.app?.credentials?.aws_region} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Auth0 Client ID"} value={info.app?.credentials?.auth0_client_id} monospace={true} copy={true} size="2" />
         </InfoBox>
         <InfoBox title="Resources">
             <InfoRow name={"Foursight Server"} value={info?.server?.foursight} monospace={true} copy={true} size="2" />
@@ -167,14 +173,14 @@ const InfoPage = () => {
             <InfoRow name={"Last Name"} value={Auth.Token()?.last_name} monospace={true} copy={true} size="2" />
             <InfoRow name={"Environments"} value={Auth.Token()?.allowed_envs.join(", ")} monospace={true} copy={true} size="2" />
             <InfoRow name={"Audience"} value={Auth.Token()?.aud} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Issued At"} value={Time.FormatDateTime(Auth.Token()?.authorized_at) + Time.FormatDuration(Auth.Token()?.authorized_at, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Expires At"} value={Time.FormatDateTime(Auth.Token()?.authorized_until) + Time.FormatDuration(new Date(), Auth.Token()?.authorized_until, true, "now", "|", "from now")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Issued At"} monospace={true} copy={true} size="2" value={<LiveTime.FormatDuration start={Auth.Token()?.authorized_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} prefix="datetime" />} />
+            <InfoRow name={"Expires At"} monospace={true} copy={true} size="2" value={<LiveTime.FormatDuration end={Auth.Token()?.authorized_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} prefix="datetime"/>} />
             <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
                 { showingAuthToken ? (<>
-                    <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Hide AuthToken</u></b></small> <i>(server-side encrypted cookie)</i>
+                    <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>AuthToken</u>&nbsp;&#x2193;</b></small>
                     <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{Yaml.Format(Auth.Token())}</pre>
                 </>):(<>
-                    <small onClick={() => setShowAuthToken(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>Show AuthToken</u></b></small>
+                    <small onClick={() => setShowAuthToken(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>AuthToken</u>&nbsp;&#x2191;</b></small>
                     <br />
                 </>)}
         </InfoBox>
