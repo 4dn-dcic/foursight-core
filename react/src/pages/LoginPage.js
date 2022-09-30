@@ -9,6 +9,7 @@ import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
 import Context from '../utils/Context';
 import Cookie from '../utils/Cookie';
+import Env from '../utils/Env';
 import Image from '../utils/Image';
 import LiveTime from '../LiveTime';
 import Logout from '../utils/Logout';
@@ -89,25 +90,31 @@ const LoginPage = (props) => {
                     </>}
                 </div>
                 <div className="boxstyle info" style={{marginLeft:"0pt",padding:"10pt",color:"darkblue"}}>
-                        <table style={{color:"inherit"}}><tbody><tr>
-                            <td align="top" style={{whiteSpace:"nowrap"}}>
-                                Logged in as:&nbsp;
-                                <Link to={Client.Path("/users/" + Auth.LoggedInUser(header))}><b style={{color:"darkblue"}}>{Auth.LoggedInUser(header)}</b></Link> <br />
-                                <div style={{fontSize:"small",marginTop:"3pt"}}>
-                                    Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}}
-                                            onClick={()=> Logout()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</span>.
-                                </div>
-                            </td>
-                            <td style={{width:"8pt"}}></td>
-                            <td style={{background:"darkblue",width:"2px"}}></td>
-                            <td style={{width:"8pt"}}></td>
-                            <td style={{textAlign:"top"}}><small style={{marginTop:"20pt"}}>
-                                Logged in: <LiveTime.FormatDuration start={Auth.Token().authorized_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
-                                <br />
-                                Session expires: <LiveTime.FormatDuration end={Auth.Token().authorized_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
-                            </small></td>
-                        </tr></tbody></table>
+                    <table style={{color:"inherit"}}><tbody><tr>
+                        <td align="top" style={{whiteSpace:"nowrap"}}>
+                            Logged in as:&nbsp;
+                            <Link to={Client.Path("/users/" + Auth.LoggedInUser(header))}><b style={{color:"darkblue"}}>{Auth.LoggedInUser(header)}</b></Link> <br />
+                            <div style={{fontSize:"small",marginTop:"3pt"}}>
+                                Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}}
+                                        onClick={()=> Logout()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</span>.
+                            </div>
+                        </td>
+                        <td style={{width:"8pt"}}></td>
+                        <td style={{background:"darkblue",width:"2px"}}></td>
+                        <td style={{width:"8pt"}}></td>
+                        <td style={{textAlign:"top"}}><small style={{marginTop:"20pt"}}>
+                            Logged in: <LiveTime.FormatDuration start={Auth.Token().authorized_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
+                            <br />
+                            Session expires: <LiveTime.FormatDuration end={Auth.Token().authorized_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
+                        </small></td>
+                    </tr></tbody></table>
                 </div>
+                { Env.IsCurrentAllowed(header) && <>
+                    <div className="boxstyle check-warn" style={{marginTop:"2pt",padding:"9pt",color:"darkred"}}>
+                        Note that though you are logged in, you do not have permission to access the currently selected environment: <b style={{color:"red"}}>{Env.Current()}</b> <br />
+                        <small>Click <Link to={Client.Path("/env")} style={{color:"darkred"}}><b><u>here</u></b></Link> to go the the <Link to={Client.Path("/env")} style={{color:"darkred"}}><b>Environments Page</b></Link> to select another environment.</small>
+                    </div>
+                </>}
                 { showingAuthToken && <>
                     <div className="boxstyle info" style={{paddingLeft:"8pt",color:"darkblue",fontSize:"small"}}>
                         <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>AuthToken</b> from Cookie</span>
