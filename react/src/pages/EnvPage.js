@@ -1,18 +1,31 @@
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Global from "../Global";
 import Page from '../Page';
 import Auth from '../utils/Auth';
-import Env from '../utils/Env';
 import Client from '../utils/Client';
+import Env from '../utils/Env';
+import Fetch from '../utils/Fetch';
+import Server from '../utils/Server';
+import Str from '../utils/Str';
 import Uuid from '../utils/Uuid';
 
 const EnvPage = (props) => {
 
     Page.NoteLastUrl();
 
+    const [ header, setHeader ] = useContext(Global);
+
+    function updateHeader(env) {
+        if (!Str.HasValue(env)) {
+            env = Env.Current();
+        }
+        const url = Server.Url("/header");
+        console.log("UPDATING /header ...")
+        Fetch.get(url, data => { console.log("UPDATED /header ..."); console.log(data); setHeader(e => ({...data})); });
+    }
+
     let navigate = useNavigate();
-    const [ header ] = useContext(Global);
 
     function IsKnownCurrentEnv() {
         return Env.IsCurrentKnown(header);
@@ -73,8 +86,8 @@ const EnvPage = (props) => {
                         <br />
                         <small>
                             {/* TODO: use short/public name with Foursight-Front but full name with Foursight-CGAP */}
-                            Click <Link style={{fontWeight:"bold",color:"darkred"}} to={Client.Path("/env", GetDefaultEnv())}>here</Link> to use this default environment:
-                            &nbsp;<Link style={{fontWeight:"bold",color:"darkred"}} to={Client.Path("/env", GetDefaultEnv())}>{GetDefaultEnv()}</Link>
+                            Click <Link to={Client.Path("/env", GetDefaultEnv())} onClick={() => updateHeader(GetDefaultEnv())} style={{fontWeight:"bold",color:"darkred"}}>here</Link> to use this default environment:
+                            &nbsp;<Link to={Client.Path("/env", GetDefaultEnv())} onClick={() => updateHeader(GetDefaultEnv())} style={{fontWeight:"bold",color:"darkred"}}>{GetDefaultEnv()}</Link>
                         </small>
                     </div>
                 </>):(<>
@@ -100,19 +113,19 @@ const EnvPage = (props) => {
                                 <td>
                                     { Auth.IsLoggedIn(header) && !Env.IsAllowed(env, header) ? (<>
                                         <span className={"tool-tip"} data-text={"This is a restricted environment!"} style={{color:"red"}}>
-                                            <Link style={{color:"inherit",textDecoration:IsCurrentEnv(env) ? "underline" : "normal"}} to={Client.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
+                                            <Link to={Client.Path("/env", env.public_name)} onClick={() => updateHeader(env.public_name)} style={{color:"inherit",textDecoration:IsCurrentEnv(env) ? "underline" : "normal"}}><b>{env.public_name}</b></Link>
                                             { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             &nbsp;&#x2192; You do not have permission for this environment.
                                         </span>
                                     </>):(<>
                                         { IsCurrentEnv(env) ? (<>
                                             <span className={"tool-tip"} data-text={"This is the current environment."} style={{color:"black"}}>
-                                                <Link style={{color:"inherit"}} to={Client.Path("/env", env.public_name)}><b><u>{env.public_name}</u></b></Link>
+                                                <Link to={Client.Path("/env", env.public_name)} onClick={() => updateHeader(env.public_name)} style={{color:"inherit"}}><b><u>{env.public_name}</u></b></Link>
                                                 { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             </span>
                                         </>):(<>
                                             <span>
-                                                <Link style={{color:"inherit"}} to={Client.Path("/env", env.public_name)}><b>{env.public_name}</b></Link>
+                                                <Link to={Client.Path("/env", env.public_name)} onClick={() => updateHeader(env.public_name)} style={{color:"inherit"}}><b>{env.public_name}</b></Link>
                                                 { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;&#x272e;</b> }
                                             </span>
                                         </>)}
