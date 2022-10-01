@@ -1,6 +1,6 @@
 from chalice import Response
 import json
-from .app_utils import app, AppUtilsCore as app_utils, DEFAULT_ENV
+from .app import app
 from .route_prefixes import *
 
 
@@ -17,8 +17,7 @@ class LegacyRoutes:
         Will return a redirect to view on error/any missing callback info.
         """
         request = app.current_request
-        default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
-        return app_utils.singleton().auth0_callback(request, default_env)
+        return app.core.auth0_callback(request, app.core.get_default_env())
 
     if ROUTE_PREFIX != ROUTE_EMPTY_PREFIX:
         @app.route("/", methods=['GET'])
@@ -27,9 +26,8 @@ class LegacyRoutes:
             Redirect with 302 to view page of DEFAULT_ENV
             Non-protected route
             """
-            default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
-            domain, context = app_utils.singleton().get_domain_and_context(app.current_request.to_dict())
-            redirect_path = ROUTE_PREFIX + 'view/' + default_env
+            domain, context = app.core.get_domain_and_context(app.current_request.to_dict())
+            redirect_path = ROUTE_PREFIX + 'view/' + app.core.get_default_env()
             resp_headers = {'Location': redirect_path}
             return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
@@ -39,16 +37,14 @@ class LegacyRoutes:
         Redirect with 302 to view page of DEFAULT_ENV
         Non-protected route
         """
-        default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
-        domain, context = app_utils.singleton().get_domain_and_context(app.current_request.to_dict())
-        redirect_path = ROUTE_PREFIX_EXPLICIT + 'view/' + default_env
+        domain, context = app.core.get_domain_and_context(app.current_request.to_dict())
+        redirect_path = ROUTE_PREFIX_EXPLICIT + 'view/' + app.core.get_default_env()
         headers = {'Location': redirect_path}
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
     @app.route(ROUTE_PREFIX + "view", methods=['GET'])
     def route_view():
-        default_env = os.environ.get("ENV_NAME", DEFAULT_ENV)
-        redirect_path = ROUTE_PREFIX_EXPLICIT + 'view/' + default_env
+        redirect_path = ROUTE_PREFIX_EXPLICIT + 'view/' + app.core.get_default_env()
         headers = {"Location": redirect_path}
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
@@ -57,11 +53,11 @@ class LegacyRoutes:
         """
         Test route
         """
-        auth = app_utils.singleton().check_authorization(app.current_request.to_dict(), environ)
+        auth = app.core.check_authorization(app.current_request.to_dict(), environ)
         if auth:
             return Response(status_code=200, body=json.dumps(app.current_request.to_dict()))
         else:
-            return app_utils.singleton().forbidden_response()
+            return app.core.forbidden_response()
 
     @app.route(ROUTE_PREFIX + 'view_run/{environ}/{check}/{method}', methods=['GET'])
     def view_run_route(environ, check, method):
@@ -69,15 +65,15 @@ class LegacyRoutes:
         Protected route
         """
         req_dict = app.current_request.to_dict()
-        domain, context = app_utils.singleton().get_domain_and_context(req_dict)
+        domain, context = app.core.get_domain_and_context(req_dict)
         query_params = req_dict.get('query_params', {})
-        if app_utils.singleton().check_authorization(req_dict, environ):
+        if app.core.check_authorization(req_dict, environ):
             if method == 'action':
-                return app_utils.singleton().view_run_action(environ, check, query_params, context)
+                return app.core.view_run_action(environ, check, query_params, context)
             else:
-                return app_utils.singleton().view_run_check(environ, check, query_params, context)
+                return app.core.view_run_check(environ, check, query_params, context)
         else:
-            return app_utils.singleton().forbidden_response(context)
+            return app.core.forbidden_response(context)
 
     @app.route(ROUTE_PREFIX + 'view/{environ}', methods=['GET'])
     def view_route(environ):
@@ -85,8 +81,8 @@ class LegacyRoutes:
         Non-protected route
         """
         req_dict = app.current_request.to_dict()
-        domain, context = app_utils.singleton().get_domain_and_context(req_dict)
-        return app_utils.singleton().view_foursight(app.current_request, environ, app_utils.singleton().check_authorization(req_dict, environ), domain, context)
+        domain, context = app.core.get_domain_and_context(req_dict)
+        return app.core.view_foursight(app.current_request, environ, app.core.check_authorization(req_dict, environ), domain, context)
 
     @app.route(ROUTE_PREFIX + 'view/{environ}/{check}/{uuid}', methods=['GET'])
     def view_check_route(environ, check, uuid):
@@ -94,11 +90,11 @@ class LegacyRoutes:
         Protected route
         """
         req_dict = app.current_request.to_dict()
-        domain, context = app_utils.singleton().get_domain_and_context(req_dict)
-        if app_utils.singleton().check_authorization(req_dict, environ):
-            return app_utils.singleton().view_foursight_check(app.current_request, environ, check, uuid, True, domain, context)
+        domain, context = app.core.get_domain_and_context(req_dict)
+        if app.core.check_authorization(req_dict, environ):
+            return app.core.view_foursight_check(app.current_request, environ, check, uuid, True, domain, context)
         else:
-            return app_utils.singleton().forbidden_response()
+            return app.core.forbidden_response()
 
     @app.route(ROUTE_PREFIX + 'history/{environ}/{check}', methods=['GET'])
     def history_route(environ, check):
@@ -110,29 +106,29 @@ class LegacyRoutes:
         query_params = req_dict.get('query_params')
         start = int(query_params.get('start', '0')) if query_params else 0
         limit = int(query_params.get('limit', '25')) if query_params else 25
-        domain, context = app_utils.singleton().get_domain_and_context(req_dict)
-        return app_utils.singleton().view_foursight_history(app.current_request, environ, check, start, limit,
-                                      app_utils.singleton().check_authorization(req_dict, environ), domain, context)
+        domain, context = app.core.get_domain_and_context(req_dict)
+        return app.core.view_foursight_history(app.current_request, environ, check, start, limit,
+                                      app.core.check_authorization(req_dict, environ), domain, context)
 
     @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}/{uuid}', methods=['GET'])
     def get_check_with_uuid_route(environ, check, uuid):
         """
         Protected route
         """
-        if app_utils.singleton().check_authorization(app.current_request.to_dict(), environ):
-            return app_utils.singleton().run_get_check(environ, check, uuid)
+        if app.core.check_authorization(app.current_request.to_dict(), environ):
+            return app.core.run_get_check(environ, check, uuid)
         else:
-            return app_utils.singleton().forbidden_response()
+            return app.core.forbidden_response()
 
     @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}', methods=['GET'])
     def get_check_route(environ, check):
         """
         Protected route
         """
-        if app_utils.singleton().check_authorization(app.current_request.to_dict(), environ):
-            return app_utils.singleton().run_get_check(environ, check, None)
+        if app.core.check_authorization(app.current_request.to_dict(), environ):
+            return app.core.run_get_check(environ, check, None)
         else:
-            return app_utils.singleton().forbidden_response()
+            return app.core.forbidden_response()
 
     @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}', methods=['PUT'])
     def put_check_route(environ, check):
@@ -146,11 +142,11 @@ class LegacyRoutes:
         Protected route
         """
         request = app.current_request
-        if app_utils.singleton().check_authorization(request.to_dict(), environ):
+        if app.core.check_authorization(request.to_dict(), environ):
             put_data = request.json_body
-            return app_utils.singleton().run_put_check(environ, check, put_data)
+            return app.core.run_put_check(environ, check, put_data)
         else:
-            return app_utils.singleton().forbidden_response()
+            return app.core.forbidden_response()
 
     @app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['PUT'])
     def put_environment(environ):
@@ -163,21 +159,21 @@ class LegacyRoutes:
         Protected route
         """
         request = app.current_request
-        if app_utils.singleton().check_authorization(request.to_dict(), environ):
+        if app.core.check_authorization(request.to_dict(), environ):
             env_data = request.json_body
-            return app_utils.singleton().run_put_environment(environ, env_data)
+            return app.core.run_put_environment(environ, env_data)
         else:
-            return app_utils.singleton().forbidden_response()
+            return app.core.forbidden_response()
 
     @app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['GET'])
     def get_environment_route(environ):
         """
         Protected route
         """
-        if app_utils.singleton().check_authorization(app.current_request.to_dict(), environ):
-            return app_utils.singleton().run_get_environment(environ)
+        if app.core.check_authorization(app.current_request.to_dict(), environ):
+            return app.core.run_get_environment(environ)
         else:
-            return app_utils.singleton().forbidden_response()
+            return app.core.forbidden_response()
 
     @app.route(ROUTE_PREFIX + 'environments/{environ}/delete', methods=['DELETE'])
     def delete_environment(environ):
@@ -188,27 +184,27 @@ class LegacyRoutes:
 
         Protected route
         """
-        if app_utils.singleton().check_authorization(app.current_request.to_dict(), environ):  # TODO (C4-138) Centralize authorization check
-            return app_utils.singleton().run_delete_environment(environ)
+        if app.core.check_authorization(app.current_request.to_dict(), environ):  # TODO (C4-138) Centralize authorization check
+            return app.core.run_delete_environment(environ)
         else:
-            return app_utils.singleton().forbidden_response()
+            return app.core.forbidden_response()
 
     # dmichaels/2022-07-31:
     # For testing/debugging/troubleshooting.
     @app.route(ROUTE_PREFIX + 'info/{environ}', methods=['GET'])
     def get_view_info_route(environ):
         req_dict = app.current_request.to_dict()
-        domain, context = app_utils.singleton().get_domain_and_context(req_dict)
-        return app_utils.singleton().view_info(request=app.current_request, environ=environ, is_admin=app_utils.singleton().check_authorization(req_dict, environ), domain=domain, context=context)
+        domain, context = app.core.get_domain_and_context(req_dict)
+        return app.core.view_info(request=app.current_request, environ=environ, is_admin=app.core.check_authorization(req_dict, environ), domain=domain, context=context)
 
     @app.route(ROUTE_PREFIX + 'users/{environ}/{email}')
     def get_view_user_route(environ, email):
         req_dict = app.current_request.to_dict()
-        domain, context = app_utils.singleton().get_domain_and_context(req_dict)
-        return app_utils.singleton().view_user(request=app.current_request, environ=environ, is_admin=app_utils.singleton().check_authorization(req_dict, environ), domain=domain, context=context, email=email)
+        domain, context = app.core.get_domain_and_context(req_dict)
+        return app.core.view_user(request=app.current_request, environ=environ, is_admin=app.core.check_authorization(req_dict, environ), domain=domain, context=context, email=email)
 
     @app.route(ROUTE_PREFIX + 'users/{environ}')
     def get_view_users_route(environ):
         req_dict = app.current_request.to_dict()
-        domain, context = app_utils.singleton().get_domain_and_context(req_dict)
-        return app_utils.singleton().view_users(request=app.current_request, environ=environ, is_admin=app_utils.singleton().check_authorization(req_dict, environ), domain=domain, context=context)
+        domain, context = app.core.get_domain_and_context(req_dict)
+        return app.core.view_users(request=app.current_request, environ=environ, is_admin=app.core.check_authorization(req_dict, environ), domain=domain, context=context)

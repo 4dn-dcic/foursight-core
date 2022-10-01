@@ -52,14 +52,18 @@ from .environment import Environment
 from .misc_utils import sort_dictionary_by_lowercase_keys
 from .react.api.react_api import ReactApi
 from .cookie_utils import read_cookie, create_set_cookie_string
+from .legacy_routes import LegacyRoutes
+from .react.api.react_routes import ReactRoutes
+from .app import app
 
-app = Chalice(app_name='foursight-core')
+#app = Chalice(app_name='foursight-core')
 DEFAULT_ENV = os.environ.get("ENV_NAME", "env-name-unintialized")
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
+print(f'xyzzy;app-utils;id(app) = {id(app)} ........................................................................')
 
-class AppUtilsCore(ReactApi):
+class AppUtilsCore(ReactApi, ReactRoutes, LegacyRoutes):
     """
     This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
     so that a class named AppUtils is easier to define in libraries that import foursight-core.
@@ -270,7 +274,6 @@ class AppUtilsCore(ReactApi):
 
     def get_auth0_client_id_from_portal(self, env_name: str) -> str:
         logger.warn(f"Fetching Auth0 client ID from portal.")
-        print('xyzzyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
         portal_url = self.get_portal_url(env_name)
         auth0_config_url = portal_url + "/auth0_config?format=json"
         if not self.auth0_client_id:
@@ -1788,6 +1791,9 @@ class AppUtilsCore(ReactApi):
             if not cls:
                 cls = AppUtilsCore
             AppUtilsCore._app_utils = cls()
+            # xyzzy
+            # Tuck a reference to this AppUtilsCore into a property of the Chalice app object for easy access by routes.
+            app.core = AppUtilsCore._app_utils
         return AppUtilsCore._app_utils
 
 # TODO: See if we can get rid of this.
@@ -1801,5 +1807,3 @@ class AppUtils(AppUtilsCore):  # for compatibility with older imports
     import if you're making an AppUtils in some other library.
     """
     pass
-
-from .routes import Routes
