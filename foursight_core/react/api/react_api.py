@@ -31,7 +31,7 @@ from .react_ui import ReactUi
 from .aws_s3 import AwsS3
 
 
-class ReactApi():
+class ReactApi:
 
     def __init__(self, app_utils):
         super(ReactApi, self).__init__()
@@ -43,7 +43,6 @@ class ReactApi():
         self.react_ui = ReactUi(self)
 
     class Cache:
-        static_files = {}
         header = {}
 
     def create_standard_response(self, label: str, content_type: str = "application/json"):

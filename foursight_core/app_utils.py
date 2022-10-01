@@ -1790,6 +1790,9 @@ class AppUtilsCore(ReactApi):
             AppUtilsCore._app_utils = cls()
         return AppUtilsCore._app_utils
 
+# TODO: See if we can get rid of this.
+#       ONLY used by: foursight/chalicelib/app_utils.py
+#       NOT used by: foursight-cgap/chalicelib/app_utils
 class AppUtils(AppUtilsCore):  # for compatibility with older imports
     """
     Class AppUtils is the most high-level class that's used directy by Chalice object app.

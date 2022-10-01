@@ -11,10 +11,12 @@ def base64_encode(value) -> str:
         value = json.dumps(value)
     return base64_encode_to_bytes(value).decode("utf-8")
 
+
 def base64_decode(value: str) -> str:
     if not value:
         return ""
     return base64_decode_to_bytes(value).decode("utf-8")
+
 
 def base64_encode_to_bytes(string_or_bytes) -> bytes:
     if isinstance(string_or_bytes, str):
@@ -24,6 +26,7 @@ def base64_encode_to_bytes(string_or_bytes) -> bytes:
     else:
         return bytes("", "utf-8")
 
+
 def base64_decode_to_bytes(string_or_bytes) -> bytes:
     if isinstance(string_or_bytes, str):
         return base64.b64decode(string_to_bytes(string_or_bytes))
@@ -32,8 +35,10 @@ def base64_decode_to_bytes(string_or_bytes) -> bytes:
     else:
         return bytes("", "utf-8")
 
+
 def string_to_bytes(value: str) -> bytes:
     return value.encode("utf-8") if isinstance(value, str) else "".encode("utf-8")
+
 
 def bytes_to_string(value: bytes) -> str:
     return value.decode("utf-8") if isinstance(value, bytes) else ""
