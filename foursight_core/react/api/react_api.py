@@ -18,6 +18,7 @@ from dcicutils.env_utils import (
 from dcicutils import ff_utils
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
+from ...app import app
 from ...cookie_utils import create_delete_cookie_string, read_cookie
 from ...datetime_utils import convert_utc_datetime_to_useastern_datetime
 from ...decorators import Decorators
@@ -36,11 +37,11 @@ class ReactApi(ReactRoutes):
 
     def __init__(self, app_utils):
         super(ReactApi, self).__init__()
-        self.envs = Envs(self.get_unique_annotated_environment_names())
-        self.checks = Checks(self.check_handler.CHECK_SETUP)
+        self.envs = Envs(app.core.get_unique_annotated_environment_names())
+        self.checks = Checks(app.core.check_handler.CHECK_SETUP)
         self.gac = Gac()
-        self.auth = Auth(self.get_auth0_client_id(self.get_default_env()),
-                         self.get_auth0_secret(self.get_default_env()), self.envs)
+        self.auth = Auth(app.core.get_auth0_client_id(app.core.get_default_env()),
+                         app.core.get_auth0_secret(app.core.get_default_env()), self.envs)
         self.react_ui = ReactUi(self)
 
     class Cache:

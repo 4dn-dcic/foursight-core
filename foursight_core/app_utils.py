@@ -93,6 +93,9 @@ class AppUtilsCore(ReactApi, Routes):
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
     def __init__(self):
+        # Store a reference to this singleton AppUtilsCore object into
+        # a property of the Chalice app object for easy access by routes.
+        app.core = self
         self.init_load_time = self.get_load_time()
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
@@ -1768,20 +1771,20 @@ class AppUtilsCore(ReactApi, Routes):
         # eliminate duplicates
         return set(complete)
 
-    _app_utils = None
+    _singleton = None
     @staticmethod
     def singleton(cls = None):
-        if not AppUtilsCore._app_utils:
-            if not cls:
-                cls = AppUtilsCore
-            AppUtilsCore._app_utils = cls()
-            # Store a reference to this singleton AppUtilsCore object into
-            # a property of the Chalice app object for easy access by routes.
-            app.core = AppUtilsCore._app_utils
-        return AppUtilsCore._app_utils
+        # A little wonky having a singleton with an argument but this is sort of the way it
+        # was but in 4dn-cloud-infra/app-{cgap,fourfront}.py and we know the only place we create
+        # this is from there and also from foursight-cgap/chalicelib/app.py and foursight/app.py
+        # with the appropriate locally derived (from this AppUtilsCore) AppUtils.
+        if not AppUtilsCore._singleton:
+            AppUtilsCore._singleton = cls() if cls else AppUtilsCore()
+        return AppUtilsCore._singleton
+
 
 # TODO: See if we can get rid of this.
-#       ONLY used by: foursight/chalicelib/app_utils.py
+#       ONLY used by: foursight/chalicelib/app_utils.py but seems it could use AppUtilsCore instead.
 #       NOT used by: foursight-cgap/chalicelib/app_utils
 class AppUtils(AppUtilsCore):  # for compatibility with older imports
     """
