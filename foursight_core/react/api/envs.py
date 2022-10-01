@@ -1,38 +1,11 @@
-from chalice import Response, __version__ as chalice_version
-import base64
-import cron_descriptor
 import os
-import io
-import jwt as jwtlib
-import boto3
-import datetime
-import copy
-import json
-import pkg_resources
-import platform
-import re
-import socket
-import time
-import urllib.parse
-from itertools import chain
-from dcicutils.diff_utils import DiffManager
 from dcicutils.env_utils import (
-    EnvUtils,
-    get_foursight_bucket,
-    get_foursight_bucket_prefix,
     infer_foursight_from_env,
     full_env_name,
     public_env_name,
     short_env_name,
 )
 from dcicutils import ff_utils
-from dcicutils.misc_utils import get_error_message, override_environ
-from dcicutils.obfuscation_utils import obfuscate_dict
-from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
-from ...decorators import Decorators
-from ...misc_utils import sort_dictionary_by_lowercase_keys
-from .encoding_utils import base64_decode
-from .gac_utils import get_gac_name, compare_gacs
 
 
 class Envs:
@@ -94,10 +67,9 @@ class Envs:
         the user (for informational/display purposes).
         """
         allowed_envs = []
-        known_envs = self.known_envs #self.get_unique_annotated_environment_names()
         first_name = None
         last_name = None
-        for known_env in known_envs:
+        for known_env in self.known_envs:
             try:
                 user = ff_utils.get_metadata('users/' + email.lower(), ff_env=known_env["full_name"], add_on="frame=object&datastore=database")
                 if user:
@@ -109,4 +81,4 @@ class Envs:
             except Exception as e:
                 print(f"Exception getting allowed envs for: {email}")
                 print(e)
-        return (known_envs, allowed_envs, first_name, last_name)
+        return (self.known_envs, allowed_envs, first_name, last_name)

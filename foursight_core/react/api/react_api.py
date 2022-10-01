@@ -1,32 +1,21 @@
 from chalice import Response, __version__ as chalice_version
-import base64
-import cron_descriptor
 import os
-import io
-import jwt as jwtlib
-import boto3
 import datetime
 import copy
 import json
 import pkg_resources
 import platform
-import re
 import socket
 import time
 import urllib.parse
 from itertools import chain
-from dcicutils.diff_utils import DiffManager
 from dcicutils.env_utils import (
     EnvUtils,
     get_foursight_bucket,
     get_foursight_bucket_prefix,
-    infer_foursight_from_env,
-    full_env_name,
-    public_env_name,
-    short_env_name,
+    full_env_name
 )
 from dcicutils import ff_utils
-from dcicutils.misc_utils import get_error_message, override_environ
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from ...cookie_utils import create_delete_cookie_string, read_cookie
@@ -66,7 +55,10 @@ class ReactApi():
     def authorize(self, request, env):
         return self.auth.authorize(request, env)
 
-    def auth0_react_finish_callback(self, request, env, domain, jwt, expires):
+    def is_react_authentication(self, auth_response: dict) -> bool:
+        return "react" in auth0_response.get("scope", "")
+
+    def react_authentication(self, request, env, domain, jwt, expires):
         return self.auth.authorization_callback(request, env, domain, jwt, expires)
 
     def react_forbidden_response(self, body = None):
@@ -439,3 +431,9 @@ class ReactApi():
         response = self.create_standard_response("reactapi_route_aws_s3_buckets_key_contents")
         response.body = AwsS3.get_bucket_key_contents(bucket, key)
         return self.process_response(response)
+
+    def reactapi_route_reload_lambda(self, request, environ, domain="", context="/", lambda_name: str = None):
+        self.reload_lambda(lambda_name)
+        time.sleep(3)
+        resp_headers = {'Location': f"{context}info/{environ}"}
+        return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)

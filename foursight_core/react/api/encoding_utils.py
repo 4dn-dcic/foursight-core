@@ -9,7 +9,7 @@ def base64_encode(value) -> str:
         return ""
     if isinstance(value, dict) or isinstance(value, list):
         value = json.dumps(value)
-    return _encode_to_bytes(value).decode("utf-8")
+    return base64_encode_to_bytes(value).decode("utf-8")
 
 def base64_decode(value: str) -> str:
     if not value:

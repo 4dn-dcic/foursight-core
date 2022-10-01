@@ -3,14 +3,13 @@
 import os
 from pyDes import triple_des
 import uuid
-from .encoding_utils import base64_decode, base64_decode_to_bytes, base64_encode, bytes_to_string
+from .encoding_utils import base64_decode_to_bytes, base64_encode, bytes_to_string
 
 # TODO:
 # Note that triple_des not secure really.
-#
 # Try (from Will): https://github.com/wbond/oscrypto (AES 256)
-# Although we are no longer using this as we're using a
-# JWT-signed-encodde authtokn rather than server-side encrypted.
+# Note however that we are NO LONGER USING THIS as we're using a
+# JWT-signed-encodde authtoken rather than server-side encrypted.
 class Encryption:
 
     def __init__(self, encryption_password = None):

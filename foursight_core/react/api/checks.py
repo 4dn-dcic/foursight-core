@@ -2,7 +2,7 @@ import cron_descriptor
 import os
 import boto3
 from ...decorators import Decorators
-from .env_utils import is_same_env
+from .envs import Envs
 
 
 class Checks:
@@ -14,10 +14,10 @@ class Checks:
         checks = None
         lambdas = None
 
-    def get_checks_raw(self):
+    def get_checks_raw(self) -> list:
         return self.check_setup
 
-    def get_checks(self, env: str):
+    def get_checks(self, env: str) -> list:
         if not Checks.Cache.checks:
             checks = self.get_checks_raw()
             for check_key in checks.keys():
@@ -29,7 +29,7 @@ class Checks:
             Checks.Cache.checks = checks
         return self.filter_checks_by_env(Checks.Cache.checks, env)
 
-    def get_checks_grouped(self, env: str) -> None:
+    def get_checks_grouped(self, env: str) -> list:
         checks_groups = []
         checks = self.get_checks(env)
         for check_setup_item_name in checks:
@@ -46,13 +46,12 @@ class Checks:
                 checks_groups.append({ "group": check_setup_item_group, "checks": [check_setup_item]})
         return checks_groups
 
-    def get_checks_grouped_by_schedule(self, env: str) -> None:
+    def get_checks_grouped_by_schedule(self, env: str) -> list:
         checks_grouped_by_schedule = []
-        checks = self.get_checks(env)
         # TODO
         return checks_grouped_by_schedule
 
-    def get_check(self, env: str, check: str):
+    def get_check(self, env: str, check: str) -> dict:
         checks = self.get_checks(env)
         for check_key in checks.keys():
             if check_key == check:
@@ -67,14 +66,14 @@ class Checks:
             if checks[check_key]["schedule"]:
                 for check_schedule_key in checks[check_key]["schedule"].keys():
                     for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
-                        if check_env_key == "all" or is_same_env(check_env_key, env):
+                        if check_env_key == "all" or Envs.is_same_env(check_env_key, env):
                             checks_for_env[check_key] = checks[check_key]
             else:
                 # If no schedule section (which has the env section) then include it.
                 checks_for_env[check_key] = checks[check_key]
         return checks_for_env
 
-    def get_stack_name(self):
+    def get_stack_name(self) -> str:
         return os.environ.get("STACK_NAME")
 
     def get_stack_template(self, stack_name: str = None) -> dict:
@@ -85,7 +84,7 @@ class Checks:
         boto_cloudformation = boto3.client('cloudformation')
         return boto_cloudformation.get_template(StackName=stack_name)
 
-    def get_lambdas_from_template(self, stack_template: dict) -> dict:
+    def get_lambdas_from_template(self, stack_template: dict) -> list:
         lambda_definitions = []
         stack_template = stack_template["TemplateBody"]["Resources"]
         for resource_key in stack_template:
@@ -104,7 +103,7 @@ class Checks:
                 })
         return lambda_definitions
 
-    def annotate_lambdas_with_schedules_from_template(self, lambdas: dict, stack_template: dict) -> list:
+    def annotate_lambdas_with_schedules_from_template(self, lambdas: list, stack_template: dict) -> list:
         stack_template = stack_template["TemplateBody"]["Resources"]
         for resource_key in stack_template:
             resource_type = stack_template[resource_key]["Type"]
@@ -134,7 +133,7 @@ class Checks:
                                         la["lambda_schedule_description"] = cron_description
         return lambdas
 
-    def annotate_lambdas_with_function_metadata(self, lambdas: dict) -> list:
+    def annotate_lambdas_with_function_metadata(self, lambdas: list) -> list:
         boto_lambda = boto3.client("lambda")
         lambda_functions = boto_lambda.list_functions()["Functions"]
         for lambda_function in lambda_functions:
@@ -162,7 +161,7 @@ class Checks:
                         pass
         return lambdas
 
-    def annotate_lambdas_with_check_setup(self, lambdas: dict, checks: dict) -> dict:
+    def annotate_lambdas_with_check_setup(self, lambdas: list, checks: list) -> list:
         if not checks or not isinstance(checks, dict):
             return lambdas
         for check_setup_item_name in checks:

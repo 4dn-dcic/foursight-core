@@ -1,4 +1,4 @@
-from chalice import Chalice, CORSConfig
+from chalice import CORSConfig
 import urllib.parse
 from ...app_utils import app, AppUtilsCore as app_utils, DEFAULT_ENV
 from ...route_prefixes import *

@@ -404,15 +404,13 @@ class AppUtilsCore(ReactApi):
 
         # This "react" scope is set on the React UI side at Auth0 invocation time.
 
-        is_react = "react" in auth0_response_json.get("scope", "")
-
         if jwt_token:
             #
             # N.B. When running on localhost cookies cannot be set unless we leave off the domain entirely.
             # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
             #
-            if is_react:
-                return self.auth0_react_finish_callback(request, env, domain, jwt_token, jwt_expires);
+            if self.is_react_authentication(auth0_response_json):
+                return self.react_authentication(request, env, domain, jwt_token, jwt_expires);
 
             cookie_str = create_set_cookie_string(request, name="jwtToken",
                                                            value=jwt_token,
@@ -851,12 +849,6 @@ class AppUtilsCore(ReactApi):
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
-
-    def reactapi_route_reload_lambda(self, request, environ, domain="", context="/", lambda_name: str = None):
-        self.reload_lambda(lambda_name)
-        time.sleep(3)
-        resp_headers = {'Location': f"{context}info/{environ}"}
-        return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
     # dmichaels/2020-08-01:
     # Added /info/{environ} for debugging/troubleshooting purposes.
