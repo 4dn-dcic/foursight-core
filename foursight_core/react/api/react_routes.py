@@ -77,10 +77,8 @@ class ReactRoutes:
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/header', methods=["GET"], cors=CORS)
     def reactapi_route_header(environ):
-        request = app.current_request
-        request_dict = request.to_dict()
-        domain, context = app.core.get_domain_and_context(request_dict)
-        return app.core.reactapi_route_header(request=request, env=environ, domain=domain, context=context)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_header(request=request, env=environ)
 
     @app.route(ROUTE_PREFIX + 'reactapi/__clearcache__', cors=CORS)
     @route_requires_authorization

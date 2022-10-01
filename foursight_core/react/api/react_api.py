@@ -191,14 +191,14 @@ class ReactApi(ReactRoutes):
     def reactapi_route_clear_cache(self, request, env, domain="", context="/"):
         pass
 
-    def reactapi_route_header(self, request, env, domain="", context="/"):
+    def reactapi_route_header(self, request, env):
         # Note that this route is not protected but/and we return the results from authorize.
         # TODO: remove stuff we don't need like credentials and also auth also version of other stuff and gac_name ...
         #       review all these data points and see which ones really need ...
         auth = self.auth.authorize(request, env)
         data = ReactApi.Cache.header.get(env)
         if not data:
-            data = self.reactapi_route_header_nocache(request, env, domain, context)
+            data = self.reactapi_route_header_nocache(request, env)
             ReactApi.Cache.header[env] = data
         data = copy.deepcopy(data)
         data["auth"] = auth
@@ -206,8 +206,8 @@ class ReactApi(ReactRoutes):
         response.body = data
         return response
 
-    def reactapi_route_header_nocache(self, request, env, domain="", context="/"):
-        request_dict = request.to_dict()
+    def reactapi_route_header_nocache(self, request, env):
+        domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
         default_env = app.core.get_default_env()
         aws_credentials = self.auth.get_aws_credentials(env if env else default_env);
@@ -219,7 +219,7 @@ class ReactApi(ReactRoutes):
                 "version": app.core.get_app_version(),
                 "domain": domain,
                 "context": context,
-                "local": app.core.is_running_locally(request_dict),
+                "local": app.core.is_running_locally(request),
                 "credentials": {
                     "aws_account_number": aws_credentials["aws_account_number"]
                 },
@@ -234,7 +234,6 @@ class ReactApi(ReactRoutes):
                 "chalice": chalice_version
             },
         }
-
         return response
 
     def reactapi_route_gac_compare(self, request, environ, environ_compare):
