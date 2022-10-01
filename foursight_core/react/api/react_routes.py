@@ -200,8 +200,8 @@ class ReactRoutes:
     # ----------------------------------------------------------------------------------------------
 
     @staticmethod
-    def reactui_serve_static_file(environ, **kwargs):
-        return app.core.react_serve_static_file(environ, **kwargs)
+    def reactui_serve_static_file(environ: str, **kwargs):
+        return app.core.react_serve_static_file(env=environ, **kwargs)
 
     @app.route(ROUTE_PREFIX + 'react', cors=CORS)
     def reactui_route_static_file_noenv():

@@ -23,13 +23,13 @@ class ReactUi():
     class Cache:
         static_files = {}
 
-    def serve_static_file(self, environ, domain="", context="/", **kwargs):
+    def serve_static_file(self, env: str, **kwargs):
 
-        environ = environ.replace("{environ}", environ)
+        # TODO: commentary on this.
+        env = env.replace("{environ}", env)
 
-
-        if environ == "static":
-            # If the environ is 'static' then we take this to mean the 'static'
+        if env == "static":
+            # If the env is 'static' then we take this to mean the 'static'
             # sub-directory; this is the directory where the static (js, css, etc)
             # React files live. Note that this means a real 'environ' may not be 'static'.
             file = os.path.join(REACT_BASE_DIR, "static")
@@ -44,13 +44,13 @@ class ReactUi():
             # But not in 4dn/foursight-development:
             # https://cm3dqx36s7.execute-api.us-east-1.amazonaws.com/api/react/logo192.png
             # Anyways for now the React UI references images at external sites not from here.
-            if (environ.endswith(".js") or environ.endswith(".html") or environ.endswith(".json")
-               or environ.endswith(".jpg") or environ.endswith(".jpeg")
-               or environ.endswith(".png") or environ.endswith(".ico")):
+            if (env.endswith(".js") or env.endswith(".html") or env.endswith(".json")
+               or env.endswith(".jpg") or env.endswith(".jpeg")
+               or env.endswith(".png") or env.endswith(".ico")):
                 # If the 'environ' appears to refer to a file then we take this
                 # to mean the file in the main React directory. Note that this
                 # means 'environ' may NOT be a value ending in the above suffixes.
-                args = [environ]
+                args = [env]
         for path in args:
             file = os.path.join(file, path)
         if file.endswith(".html"):
