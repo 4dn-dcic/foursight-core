@@ -21,39 +21,41 @@ if ROUTE_CHALICE_LOCAL:
 else:
     CORS = False
 
+
+def route_requires_authorization(f):
+    """
+    Decorator for Chalice routes which should be PROTECTED by an AUTHORIZATION check.
+    This ASSUMES that the FIRST argument to the route function using this decorator
+    is the ENVIRONMENT name. The Chalice request is gotten from app.current_request.
+
+    If the request is NOT authorized then a forbidden (HTTP 403) response is returned,
+    otherwise we go ahead with the function/route invocation. A request is authorized
+    iff the user is AUTHENTICATED, i.e. has successfully logged in, AND also have
+    PERMISSION to access the specified environment. The info to determine this is
+    pass via the authtoken cookie, which is a (server-side) JWT-signed-encode value
+    containing authentication info and list allowed environment for the user; this
+    value/cookie is set server-side at login time.
+
+    Note that ONLY two React API routes should NOT be authorization protected by
+    this decorator: the /{environ}/header and the /{environ}/logout endpoints/routes.
+    """
+    def wrapper(*args, **kwargs):
+        if not kwargs or len(kwargs) < 1:
+            raise Exception("Invalid arguments to requires_authorization decorator!")
+        env = kwargs["environ"]
+        request = app.current_request
+        authorize_response = app_utils.singleton().authorize(request, env)
+        if not authorize_response or not authorize_response["authorized"]:
+            return app_utils.singleton().forbidden_response(authorize_response)
+        return f(*args, **kwargs)
+    return wrapper
+
+
 class ReactRoutes:
 
     # ----------------------------------------------------------------------------------------------
     # Foursight React API routes.
     # ----------------------------------------------------------------------------------------------
-
-    def route_requires_authorization(f):
-        """
-        Decorator for Chalice routes which should be PROTECTED by an AUTHORIZATION check.
-        This ASSUMES that the FIRST argument to the route function using this decorator
-        is the ENVIRONMENT name. The Chalice request is gotten from app.current_request.
-
-        If the request is NOT authorized then a forbidden (HTTP 403) response is returned,
-        otherwise we go ahead with the function/route invocation. A request is authorized
-        iff the user is AUTHENTICATED, i.e. has successfully logged in, AND also have
-        PERMISSION to access the specified environment. The info to determine this is
-        pass via the authtoken cookie, which is a (server-side) JWT-signed-encode value
-        containing authentication info and list allowed environment for the user; this
-        value/cookie is set server-side at login time.
-
-        Note that ONLY two React API routes should NOT be authorization protected by
-        this decorator: the /{environ}/header and the /{environ}/logout endpoints/routes.
-        """
-        def wrapper(*args, **kwargs):
-            if not kwargs or len(kwargs) < 1:
-                raise Exception("Invalid arguments to requires_authorization decorator!")
-            env = kwargs["environ"]
-            request = app.current_request
-            authorize_response = app_utils.singleton().authorize(request, env)
-            if not authorize_response or not authorize_response["authorized"]:
-                return app_utils.singleton().forbidden_response(authorize_response)
-            return f(*args, **kwargs)
-        return wrapper
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/users', cors=CORS)
     @route_requires_authorization
