@@ -379,17 +379,16 @@ class AppUtilsCore(ReactApi, Routes):
             #
             auth0_redirect_url = f"https://{domain}{context if context else '/'}callback/"
 
-        auth0_payload = {
+        payload = {
             "grant_type": "authorization_code",
             "client_id": auth0_client,
             "client_secret": auth0_secret,
             "code": auth0_code,
-            # TODO: maybe here put in allowed envs ?
             "redirect_uri": auth0_redirect_url
         }
-        auth0_payload_string = json.dumps(auth0_payload)
+        json_payload = json.dumps(payload)
         auth0_headers = {"content-type": "application/json"}
-        auth0_response = requests.post(self.OAUTH_TOKEN_URL, data=auth0_payload_string, headers=auth0_headers)
+        auth0_response = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=auth0_headers)
         auth0_response_json = auth0_response.json()
         jwt_token = auth0_response_json.get("id_token")
         jwt_expires = auth0_response_json.get("expires_in")
