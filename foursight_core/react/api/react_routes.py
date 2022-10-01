@@ -60,20 +60,20 @@ class ReactRoutes:
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/users', cors=CORS)
     @route_requires_authorization
     def reactapi_route_users(environ):
-        return app.core.reactapi_route_users(request=app.current_request, environ=environ)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_users(request=request, environ=environ)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/users/{email}', cors=CORS)
     @route_requires_authorization
-    def reactpi_route_users_user(environ, email):
-        return app.core.reactapi_route_users_user(request=app.current_request, environ=environ, email=email)
+    def reactapi_route_users_user(environ, email):
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_users_user(request=request, environ=environ, email=email)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/info', cors=CORS)
     @route_requires_authorization
     def reactapi_route_info(environ):
-        request = app.current_request
-        request_dict = request.to_dict()
-        domain, context = app.core.get_domain_and_context(request_dict)
-        return app.core.reactapi_route_info(request=request, environ=environ, domain=domain, context=context)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_info(request=request, environ=environ)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/header', methods=["GET"], cors=CORS)
     def reactapi_route_header(environ):
@@ -93,10 +93,8 @@ class ReactRoutes:
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/gac/{environ_compare}', cors=CORS)
     @route_requires_authorization
     def reactapi_route_gac_compare(environ, environ_compare):
-        request = app.current_request
-        request_dict = request.to_dict()
-        domain, context = app.core.get_domain_and_context(request_dict)
-        return app.core.reactapi_route_gac_compare(request=request, environ=environ, environ_compare=environ_compare, domain=domain, context=context)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_gac_compare(request=request, environ=environ, environ_compare=environ_compare)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/__reloadlambda__', methods=['GET'], cors=CORS)
     @route_requires_authorization

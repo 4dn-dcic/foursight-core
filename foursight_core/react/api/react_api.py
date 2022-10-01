@@ -73,9 +73,8 @@ class ReactApi(ReactRoutes):
     def react_serve_static_file(self, environ, domain="", context="/", **kwargs):
         return self.react_ui.serve_static_file(environ, domain, context, **kwargs)
 
-    def reactapi_route_info(self, request, environ, domain="", context="/"):
-
-        request_dict = request.to_dict()
+    def reactapi_route_info(self, request, environ):
+        domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
         default_env = app.core.get_default_env()
         if not self.envs.is_known_env(environ):
@@ -92,7 +91,7 @@ class ReactApi(ReactRoutes):
         else:
             environment_and_bucket_info = None
             portal_url = None
-        response = Response('reactapi_route_info')
+        response = self.create_standard_response("reactapi_route_info")
         response.body = {
             "app": {
                 "title": app.core.html_main_title,
@@ -101,7 +100,7 @@ class ReactApi(ReactRoutes):
                 "version": app.core.get_app_version(),
                 "domain": domain,
                 "context": context,
-                "local": app.core.is_running_locally(request_dict),
+                "local": app.core.is_running_locally(request),
                 "credentials": self.auth.get_aws_credentials(environ if environ else default_env),
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified()
@@ -130,8 +129,8 @@ class ReactApi(ReactRoutes):
                 "ecosystem": sort_dictionary_by_lowercase_keys(EnvUtils.declared_data()),
             },
             "page": {
-                "path": request_dict.get("context").get("path"),
-                "endpoint": request.path,
+                "path": request.get("context").get("path"),
+                "endpoint": request.get("path"),
                 "loaded": app.core.get_load_time()
             },
             # TODD: Move these out to another API.
@@ -146,14 +145,9 @@ class ReactApi(ReactRoutes):
              },
             "environ": sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
         }
-        response.headers = {'Content-Type': 'application/json'}
-        response.status_code = 200
         return response
 
     def reactapi_route_users(self, request, environ):
-
-        request_dict = request.to_dict()
-        stage_name = app.core.stage.get_stage()
         users = []
         # TODO: Support paging.
         user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000')
@@ -178,25 +172,20 @@ class ReactApi(ReactRoutes):
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
                 "modified": convert_utc_datetime_to_useastern_datetime(last_modified)})
-        response = Response('reactapi_route_users')
+        response = self.create_standard_response("reactapi_route_users")
         response.body = sorted(users, key=lambda key: key["email_address"])
-        response.headers = {'Content-Type': 'application/json'}
-        response.status_code = 200
         return response
 
-    def reactapi_route_users_user(self, request, environ, email=None):
+    def reactapi_route_users_user(self, request, environ, email):
         users = []
         for email_address in email.split(","):
             try:
-                user = ff_utils.get_metadata('users/' + email_address.lower(),
-                                             ff_env=full_env_name(environ), add_on='frame=object')
+                user = ff_utils.get_metadata('users/' + email_address.lower(), ff_env=full_env_name(environ), add_on='frame=object')
                 users.append({"email_address": email_address, "record": user})
             except Exception as e:
                 users.append({"email_address": email_address, "record": {"error": str(e)}})
-        response = Response('reactapi_route_users_user')
+        response = self.create_standard_response("reactapi_route_users_user")
         response.body = sorted(users, key=lambda key: key["email_address"])
-        response.headers = {'Content-Type': 'application/json'}
-        response.status_code = 200
         return response
 
     def reactapi_route_clear_cache(self, request, env, domain="", context="/"):
@@ -248,15 +237,9 @@ class ReactApi(ReactRoutes):
 
         return response
 
-    def reactapi_route_gac_compare(self, request, environ, environ_compare, is_admin=False, domain="", context="/"):
-        request_dict = request.to_dict()
-        stage_name = app.core.stage.get_stage()
-        response = Response('reactapi_route_gac_compare')
+    def reactapi_route_gac_compare(self, request, environ, environ_compare):
+        response = self.create_standard_response("reactapi_route_gac_compare")
         response.body = self.gac.compare_gacs(environ, environ_compare)
-        response.headers = {
-            "Content-Type": "application/json"
-        }
-        response.status_code = 200
         return response
 
     def reactapi_route_checks_raw(self, request, env: str) -> dict:
