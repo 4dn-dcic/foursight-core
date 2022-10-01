@@ -1,7 +1,7 @@
 from chalice import Chalice, CORSConfig
 import urllib.parse
-from .app_utils import app, AppUtilsCore as app_utils, DEFAULT_ENV
-from .route_prefixes import *
+from ...app_utils import app, AppUtilsCore as app_utils, DEFAULT_ENV
+from ...route_prefixes import *
 
 
 # Set CORS to True if CHALICE_LOCAL; not needed if running React (nascent support of which
@@ -32,10 +32,11 @@ class ReactRoutes:
         Decorator for Chalice routes which should be PROTECTED by an AUTHORIZATION check.
         This ASSUMES that the FIRST argument to the route function using this decorator
         is the ENVIRONMENT name. The Chalice request is gotten from app.current_request.
+
         If the request is NOT authorized then a forbidden (HTTP 403) response is returned,
         otherwise we go ahead with the function/route invocation. A request is authorized
         iff the user is AUTHENTICATED, i.e. has successfully logged in, AND also have
-        PERMISSION to access the specified environment. The info to determin this is
+        PERMISSION to access the specified environment. The info to determine this is
         pass via the authtoken cookie, which is a (server-side) JWT-signed-encode value
         containing authentication info and list allowed environment for the user; this
         value/cookie is set server-side at login time.
@@ -120,12 +121,12 @@ class ReactRoutes:
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}', methods=['GET'], cors=CORS)
     @route_requires_authorization
     def reactapi_route_check_results(environ: str, check: str):
-        return app_utils.singleton().react_route_check_results(request=app.current_request, env=environ, check=check)
+        return app_utils.singleton().reactapi_route_check_results(request=app.current_request, env=environ, check=check)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}/{uuid}', methods=['GET'], cors=CORS)
     @route_requires_authorization
-    def reactapi_route_check_results(environ: str, check: str, uuid: str):
-        return app_utils.singleton().react_route_check_result(request=app.current_request, env=environ, check=check, uuid=uuid)
+    def reactapi_route_check_result(environ: str, check: str, uuid: str):
+        return app_utils.singleton().reactapi_route_check_result(request=app.current_request, env=environ, check=check, uuid=uuid)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}/history', methods=['GET'], cors=CORS)
     @route_requires_authorization

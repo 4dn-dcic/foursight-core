@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Global from '../Global';
 import Page from '../Page';
@@ -12,9 +12,12 @@ import Uuid from '../utils/Uuid';
 
 const EnvPage = (props) => {
 
-    Page.NoteLastUrl();
-
     const [ header, setHeader ] = useContext(Global);
+
+    Page.NoteLastUrl(header);
+
+    const [ info, setInfo ] = useState();
+    useEffect(() => { if (Auth.IsLoggedIn()) Fetch.get(Server.Url("/info"), setInfo); }, []);
 
     function updateHeader(env) {
         if (!Str.HasValue(env)) {
@@ -134,16 +137,17 @@ const EnvPage = (props) => {
                                     Full Name: <span style={envNameTextStyles(env.full_name)}>{env.full_name}</span> <br />
                                     Short Name: <span style={envNameTextStyles(env.short_name)}>{env.short_name}</span> <br />
                                     Public Name: <span style={envNameTextStyles(env.public_name)}>{env.public_name}</span> <br />
-                                    GAC Name: {env.gac_name} <br />
-                                    { IsKnownCurrentEnv() ? (<>
-                                        <select style={{border:"0",background:"transparent","WebkitAppearance":"none"}} onChange={(selected) => onChange(selected, Env.PreferredName(env, header))}>
-                                            <option>GAC Compare &#x2193;</option>
-                                            { Env.KnownEnvs(header).map((env) =>
-                                                <option key={Uuid()}>{Env.PreferredName(env, header)}</option>
-                                            )}
-                                        </select>
-                                    </>):(<>
-                                    </>)}
+                                    { Auth.IsLoggedIn() && <>
+                                        GAC Name: {info?.gac?.name || <i>Fetching ...</i>} <br />
+                                        { IsKnownCurrentEnv() && <>
+                                            <select style={{border:"0",background:"transparent","WebkitAppearance":"none"}} onChange={(selected) => onChange(selected, Env.PreferredName(env, header))}>
+                                                <option>GAC Compare &#x2193;</option>
+                                                { Env.KnownEnvs(header).map((env) =>
+                                                    <option key={Uuid()}>{Env.PreferredName(env, header)}</option>
+                                                )}
+                                            </select>
+                                        </>}
+                                    </>}
                                     { (envIndex < Env.KnownEnvs(header).length - 1) ? (<span>
                                         <br /><br />
                                     </span>):(<span/>)}

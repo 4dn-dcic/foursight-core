@@ -32,6 +32,6 @@ mv ${MAIN_CSS_HASHED_FILE} ${REACT_BUILD_DIR}/static/css/main.css
 
 rm -f ${REACT_BUILD_DIR}/static/js/*.LICENSE.txt
 
-rm -rf foursight_core/react
-mkdir foursight_core/react
-cp -pR react/build/* foursight_core/react
+rm -rf foursight_core/react/ui
+mkdir foursight_core/react/ui
+cp -pR react/build/* foursight_core/react/ui

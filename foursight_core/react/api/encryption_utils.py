@@ -1,10 +1,16 @@
-import os
-import base64
-import json
-import uuid
-from pyDes import triple_des
+# Encryption utility class.
 
-# TODO: triple_des not secure really - try (from Will): https://github.com/wbond/oscrypto (AES 256)
+import os
+from pyDes import triple_des
+import uuid
+from .encoding_utils import base64_decode, base64_decode_to_bytes, base64_encode, bytes_to_string
+
+# TODO:
+# Note that triple_des not secure really.
+#
+# Try (from Will): https://github.com/wbond/oscrypto (AES 256)
+# Although we are no longer using this as we're using a
+# JWT-signed-encodde authtokn rather than server-side encrypted.
 class Encryption:
 
     def __init__(self, encryption_password = None):
@@ -50,7 +56,7 @@ class Encryption:
             password = self.get_encryption_password()
             encryption = triple_des(password)
             encrypted_value_bytes = encryption.encrypt(plaintext_value, padmode=2)
-            encoded_encrypted_value = self.encode(encrypted_value_bytes)
+            encoded_encrypted_value = base64_encode(encrypted_value_bytes)
             return encoded_encrypted_value
         except Exception as e:
             print('Encryption error: ' + str(e))
@@ -60,45 +66,10 @@ class Encryption:
         try:
             password = self.get_encryption_password()
             encryption = triple_des(password)
-            decoded_encrypted_value_bytes = self.decode_to_bytes(encrypted_value)
+            decoded_encrypted_value_bytes = base64_decode_to_bytes(encrypted_value)
             decrypted_value_bytes = encryption.decrypt(decoded_encrypted_value_bytes, padmode=2)
-            decrypted_value = self.bytes_to_string(decrypted_value_bytes)
+            decrypted_value = bytes_to_string(decrypted_value_bytes)
             return decrypted_value
         except Exception as e:
             print('Decryption error: ' + str(e))
             return ""
-
-    def encode(self, value) -> str:
-        if not value:
-            return ""
-        if isinstance(value, dict) or isinstance(value, list):
-            value = json.dumps(value)
-        return self.encode_to_bytes(value).decode("utf-8")
-
-    def decode(self, value: str) -> str:
-        if not value:
-            return ""
-        return self.decode_to_bytes(value).decode("utf-8")
-
-    def encode_to_bytes(self, string_or_bytes) -> bytes:
-        if isinstance(string_or_bytes, str):
-            return base64.b64encode(self.string_to_bytes(string_or_bytes))
-        elif isinstance(string_or_bytes, bytes):
-            return base64.b64encode(string_or_bytes)
-        else:
-            return bytes("", "utf-8")
-
-    def decode_to_bytes(self, string_or_bytes) -> bytes:
-        if isinstance(string_or_bytes, str):
-            return base64.b64decode(self.string_to_bytes(string_or_bytes))
-        elif isinstance(string_or_bytes, bytes):
-            return base64.b64decode(string_or_bytes)
-        else:
-            return bytes("", "utf-8")
-
-    def string_to_bytes(self, value: str) -> bytes:
-        return value.encode("utf-8") if isinstance(value, str) else "".encode("utf-8")
-
-    def bytes_to_string(self, value: bytes) -> str:
-        return value.decode("utf-8") if isinstance(value, bytes) else ""
-

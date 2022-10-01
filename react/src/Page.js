@@ -44,19 +44,19 @@ function KnownEnvRequired({ children }) {
 // page, if not authenticated, or to the /env page, if authenticated by not authorized.
 //
 function AuthorizationRequired({ children }) {
-    NoteLastUrl();
     const [ header ] = useContext(Global);
-    if (!Env.IsCurrentKnown(header)) {
-        console.log("XYZZY:REDIRECT TO /env (b)");
-        return <Navigate to={Client.Path("/env")} replace />
-    }
-    else if (!Auth.IsLoggedIn(header)) {
+    NoteLastUrl(header);
+    if (!Auth.IsLoggedIn(header)) {
         console.log("XYZZY:REDIRECT TO /login (c)");
         console.log(header);
-        return <Navigate to={Client.Path("/login")} replace />
+        return <Navigate to={Client.Path("/env")} replace />
     }
     else if (!Env.IsAllowed(Env.Current(), header)) {
         console.log("XYZZY:REDIRECT TO /env (d)");
+        return <Navigate to={Client.Path("/env")} replace />
+    }
+    else if (!Env.IsCurrentKnown(header)) {
+        console.log("XYZZY:REDIRECT TO /env (b)");
         return <Navigate to={Client.Path("/env")} replace />
     }
     else {
@@ -68,8 +68,10 @@ function AuthorizationRequired({ children }) {
 // Last path/URL related fnctions.
 // -------------------------------------------------------------------------------------------------
 
-function NoteLastUrl() {
-    Cookie.SetLastUrl(window.location.href);
+function NoteLastUrl(header) {
+    if (Env.IsCurrentKnown(header)) {
+        Cookie.SetLastUrl(window.location.href);
+    }
 }
 
 function GetLastUrl() {

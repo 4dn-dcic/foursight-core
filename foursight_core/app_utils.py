@@ -10,7 +10,6 @@ import boto3
 import datetime
 import ast
 import copy
-from http.cookies import SimpleCookie
 import pkg_resources
 import platform
 # TODO: do not import start import specific thing which i think is triple_des
@@ -48,14 +47,14 @@ from .fs_connection import FSConnection
 from .check_utils import CheckHandler
 from .sqs_utils import SQS
 from .stage import Stage
-from .encryption import Encryption
+from .datetime_utils import convert_time_t_to_useastern_datetime, convert_utc_datetime_to_useastern_datetime
 from .environment import Environment
-from .react_api import ReactApi
+from .misc_utils import sort_dictionary_by_lowercase_keys
+from .react.api.react_api import ReactApi
+from .cookie_utils import read_cookie, create_set_cookie_string
 
 app = Chalice(app_name='foursight-core')
 DEFAULT_ENV = os.environ.get("ENV_NAME", "env-name-unintialized")
-
-
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
@@ -118,8 +117,8 @@ class AppUtilsCore(ReactApi):
         self.auth0_client_id = None
         self.user_records = {}
         self.lambda_last_modified = None
-        self.encryption = Encryption()
         self.cached_portal_url = {}
+        super(AppUtilsCore, self).__init__()
 
     @staticmethod
     def note_non_fatal_error_for_ui_info(error_object, calling_function):
@@ -211,8 +210,8 @@ class AppUtilsCore(ReactApi):
                         last_name = name.get("name_last")
                 subject = jwt_decoded.get("sub")
                 audience = jwt_decoded.get("aud")
-                issued_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("iat"))
-                expiration_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("exp"))
+                issued_time = convert_time_t_to_useastern_datetime(jwt_decoded.get("iat"))
+                expiration_time = convert_time_t_to_useastern_datetime(jwt_decoded.get("exp"))
         except Exception as e:
             self.note_non_fatal_error_for_ui_info(e, 'get_logged_in_user_info')
         return {"email_address": email_address,
@@ -291,68 +290,6 @@ class AppUtilsCore(ReactApi):
     def get_default_env(self) -> str:
         return os.environ.get("ENV_NAME", DEFAULT_ENV)
 
-    def read_cookies(self, request) -> dict:
-        if not request:
-            return {}
-        if not isinstance(request, dict):
-            request = request.to_dict()
-        cookies = request.get("headers", {}).get("cookie")
-        if not cookies:
-            return {}
-        simple_cookies = SimpleCookie()
-        simple_cookies.load(cookies)
-        return {key: value.value for key, value in simple_cookies.items()}
-
-    def read_cookie(self, cookie_name: str, request) -> str:
-        if not cookie_name or not request:
-            return ""
-        if not isinstance(request, dict):
-            request = request.to_dict()
-        simple_cookies = self.read_cookies(request)
-        return simple_cookies.get(cookie_name)
-
-    def create_set_cookie_string(self, request, name: str,
-                                                value: str,
-                                                domain: str,
-                                                path: str = "/",
-                                                expires = None,
-                                                http_only: bool = False) -> str:
-        """
-        Returns a string suitable for an HTTP response to set a cookie for this given cookie info.
-        If the given expires arg is "now" then then the expiration time for the cookie will be
-        set to the epoch (i.e. 1970-01-01) indicating this it has expired; used effectively for delete.
-        """ 
-        if not name or not request:
-            return ""
-        if not isinstance(request, dict):
-            request = request.to_dict()
-        cookie = name + "=" + (value if value else "") + ";"
-        if domain and not self.is_running_locally(request):
-            # N.B. When running on localhost cookies cannot be set unless we leave off the domain entirely.
-            # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
-            cookie += f" Domain={domain};"
-        if not path:
-            path = "/";
-        cookie += f" Path={path};"
-        if expires:
-            if isinstance(expires, datetime.datetime):
-                expires = expires.strftime("%a, %d %b %Y %H:%M:%S GMT")
-            elif isinstance(expires, int):
-                expires = (datetime.datetime.utcnow() + datetime.timedelta(seconds=expires)).strftime("%a, %d %b %Y %H:%M:%S GMT")
-            elif isinstance(expires, str):
-                if expires.lower() == "now":
-                    expires = "Expires=Thu, 01 Jan 1970 00:00:00 UTC"
-            else:
-                expires = None
-            if expires:
-                cookie += f" Expires={expires};"
-        if http_only:
-            cookie += " HttpOnly;"
-        return cookie
-
-    def create_delete_cookie_string(self, request, name: str, domain: str, path: str = "/") -> str:
-        return self.create_set_cookie_string(request, name=name, value=None, domain=domain, path=path, expires="now") 
-
     def check_authorization(self, request_dict, env=None):
         """
         Manual authorization, since the builtin chalice @app.authorizer() was not
@@ -420,7 +357,7 @@ class AppUtilsCore(ReactApi):
         auth0_client = self.get_auth0_client_id(env)
         auth0_secret = self.get_auth0_secret(env)
 
-        redir_url_cookie = self.read_cookie("redir", request_dict)
+        redir_url_cookie = read_cookie("redir", request_dict)
         redir_url = redir_url_cookie if redir_url_cookie else f"{context if context else '/'}view/{env}"
 
         response_headers = {"Location": redir_url}
@@ -477,10 +414,10 @@ class AppUtilsCore(ReactApi):
             if is_react:
                 return self.auth0_react_finish_callback(request, env, domain, jwt_token, jwt_expires);
 
-            cookie_str = self.create_set_cookie_string(request, name="jwtToken",
-                                                                value=jwt_token,
-                                                                domain=domain,
-                                                                expires=jwt_expires)
+            cookie_str = create_set_cookie_string(request, name="jwtToken",
+                                                           value=jwt_token,
+                                                           domain=domain,
+                                                           expires=jwt_expires)
             response_headers["set-cookie"] = cookie_str
 
         return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
@@ -490,7 +427,7 @@ class AppUtilsCore(ReactApi):
         Simple function to extract a jwt from a request that has already been
         dict-transformed
         """
-        return self.read_cookie("jwtToken", request_dict)
+        return read_cookie("jwtToken", request_dict)
 
     def get_decoded_jwt_token(self, env_name: str, request_dict) -> dict:
         try:
@@ -522,16 +459,6 @@ class AppUtilsCore(ReactApi):
         Returns faviron
         """
         return cls.FAVICON  # want full HTTPS, so hard-coded in
-
-    def get_domain(self, request):
-        if request:
-            try:
-                if not isinstance(request, dict):
-                    request = request.to_dict()
-                return request.get("headers", {}).get("host")
-            except:
-                pass
-        return ""
 
     def get_domain_and_context(self, request_dict):
         """
@@ -630,17 +557,6 @@ class AppUtilsCore(ReactApi):
             return cls.TRIM_ERR_OUTPUT
         return output
 
-    def sort_dictionary_by_lowercase_keys(self, dictionary: dict) -> dict:
-        """
-        Returns the given dictionary sorted by key values (yes, dictionaries are ordered as of Python 3.7).
-        If the given value is not a dictionary it will be coerced to one.
-        :param dictionary: Dictionary to sort.
-        :return: Given dictionary sorted by key value.
-        """
-        if not dictionary or not isinstance(dictionary, dict):
-            return {}
-        return {key: dictionary[key] for key in sorted(dictionary.keys(), key=lambda key: key.lower())}
-
     def get_aws_account_number(self) -> dict:
         try:
             caller_identity = boto3.client("sts").get_caller_identity()
@@ -670,44 +586,6 @@ class AppUtilsCore(ReactApi):
         except Exception as e:
             self.note_non_fatal_error_for_ui_info(e, 'get_obfuscated_credentials_info')
             return {}
-
-    def convert_utc_datetime_to_useastern_datetime(self, t) -> str:
-        """
-        Converts the given UTC datetime object or string into a US/Eastern datetime string
-        and returns its value in a form that looks like 2022-08-22 13:25:34 EDT.
-        If the argument is a string it is ASSUMED to have a value which looks
-        like 2022-08-22T14:24:49.000+0000; this is the datetime string format
-        we get from AWS via boto3 (e.g. for a lambda last-modified value).
-
-        :param t: UTC datetime object or string value.
-        :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
-        """
-        try:
-            if isinstance(t, str):
-                t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
-            t = t.replace(tzinfo=pytz.UTC).astimezone(pytz.timezone("US/Eastern"))
-            return t.strftime("%Y-%m-%d %H:%M:%S %Z")
-        except Exception as e:
-            self.note_non_fatal_error_for_ui_info(e, 'convert_utc_datetime_to_useastern_datetime')
-            return ""
-
-    def convert_time_t_to_useastern_datetime(self, time_t: int) -> str:
-        """
-        Converts the given "epoch" time (seconds since 1970-01-01T00:00:00Z)
-        integer value to a US/Eastern datetime string and returns its value
-        in a form that looks like 2022-08-22 13:25:34 EDT.
-
-        :param time_t: Epoch time value (i.e. seconds since 1970-01-01T00:00:00Z)
-        :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
-        """
-        try:
-            if not isinstance(time_t, int):
-                return ""
-            t = datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
-            return self.convert_utc_datetime_to_useastern_datetime(t)
-        except Exception as e:
-            self.note_non_fatal_error_for_ui_info(e, 'convert_time_t_to_useastern_datetime')
-            return ""
 
     def ping_elasticsearch(self, env_name: str) -> bool:
         logger.warn(f"foursight_core: Pinging ElasticSearch: {self.host}")
@@ -805,10 +683,10 @@ class AppUtilsCore(ReactApi):
                 lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
                 lambda_last_modified_tag = lambda_tags.get("last_modified")
                 if lambda_last_modified_tag:
-                    lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified_tag)
+                    lambda_last_modified = convert_utc_datetime_to_useastern_datetime(lambda_last_modified_tag)
                 else:
                     lambda_last_modified = lambda_info["Configuration"]["LastModified"]
-                    lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified)
+                    lambda_last_modified = convert_utc_datetime_to_useastern_datetime(lambda_last_modified)
                 if lambda_current:
                     self.lambda_last_modified = lambda_last_modified
                 return lambda_last_modified
@@ -1011,10 +889,10 @@ class AppUtilsCore(ReactApi):
             "Foursight Bucket Prefix:": get_foursight_bucket_prefix()
         }
         gac_name = get_identity_name()
-        gac_values = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(get_identity_secrets()))
-        environment_and_bucket_info = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(
+        gac_values = sort_dictionary_by_lowercase_keys(obfuscate_dict(get_identity_secrets()))
+        environment_and_bucket_info = sort_dictionary_by_lowercase_keys(obfuscate_dict(
                                         self.environment.get_environment_and_bucket_info(environ, stage_name)))
-        declared_data = self.sort_dictionary_by_lowercase_keys(EnvUtils.declared_data())
+        declared_data = sort_dictionary_by_lowercase_keys(EnvUtils.declared_data())
         dcicutils_version = pkg_resources.get_distribution('dcicutils').version
         foursight_core_version = pkg_resources.get_distribution('foursight-core').version
         versions = {
@@ -1034,7 +912,7 @@ class AppUtilsCore(ReactApi):
         }
         aws_credentials = self.get_obfuscated_credentials_info(environ)
         aws_account_number = aws_credentials.get("AWS Account Number:")
-        os_environ = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
+        os_environ = sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
         request_dict = request.to_dict()
 
         html_resp.body = template.render(
@@ -1154,7 +1032,7 @@ class AppUtilsCore(ReactApi):
                 "first_name": user_record.get("first_name"),
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
-                "modified": self.convert_utc_datetime_to_useastern_datetime(last_modified)})
+                "modified": convert_utc_datetime_to_useastern_datetime(last_modified)})
         users = sorted(users, key=lambda key: key["email_address"])
         template = self.jin_env.get_template('users.html')
         html_resp.body = template.render(
