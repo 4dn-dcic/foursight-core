@@ -35,7 +35,7 @@ from .react_ui import ReactUi
 
 class ReactApi(ReactRoutes):
 
-    def __init__(self, app_utils):
+    def __init__(self):
         super(ReactApi, self).__init__()
         self.envs = Envs(app.core.get_unique_annotated_environment_names())
         self.checks = Checks(app.core.check_handler.CHECK_SETUP)
@@ -76,16 +76,16 @@ class ReactApi(ReactRoutes):
     def reactapi_route_info(self, request, environ, domain="", context="/"):
 
         request_dict = request.to_dict()
-        stage_name = self.stage.get_stage()
-        default_env = self.get_default_env()
+        stage_name = app.core.stage.get_stage()
+        default_env = app.core.get_default_env()
         if not self.envs.is_known_env(environ):
             env_unknown = True
         else:
             env_unknown = False
         if not env_unknown:
             try:
-                environment_and_bucket_info = sort_dictionary_by_lowercase_keys(obfuscate_dict(self.environment.get_environment_and_bucket_info(environ, stage_name))),
-                portal_url = self.get_portal_url(environ)
+                environment_and_bucket_info = sort_dictionary_by_lowercase_keys(obfuscate_dict(app.core.environment.get_environment_and_bucket_info(environ, stage_name))),
+                portal_url = app.core.get_portal_url(environ)
             except:
                 environment_and_bucket_info = None
                 portal_url = None
@@ -95,19 +95,19 @@ class ReactApi(ReactRoutes):
         response = Response('reactapi_route_info')
         response.body = {
             "app": {
-                "title": self.html_main_title,
-                "package": self.APP_PACKAGE_NAME,
+                "title": app.core.html_main_title,
+                "package": app.core.APP_PACKAGE_NAME,
                 "stage": stage_name,
-                "version": self.get_app_version(),
+                "version": app.core.get_app_version(),
                 "domain": domain,
                 "context": context,
-                "local": self.is_running_locally(request_dict),
+                "local": app.core.is_running_locally(request_dict),
                 "credentials": self.auth.get_aws_credentials(environ if environ else default_env),
-                "launched": self.init_load_time,
-                "deployed": self.get_lambda_last_modified()
+                "launched": app.core.init_load_time,
+                "deployed": app.core.get_lambda_last_modified()
             },
             "versions": {
-                "foursight": self.get_app_version(),
+                "foursight": app.core.get_app_version(),
                 "foursight_core": pkg_resources.get_distribution('foursight-core').version,
                 "dcicutils": pkg_resources.get_distribution('dcicutils').version,
                 "python": platform.python_version(),
@@ -116,14 +116,14 @@ class ReactApi(ReactRoutes):
             "server": {
                 "foursight": socket.gethostname(),
                 "portal": portal_url,
-                "es": self.host,
+                "es": app.core.host,
                 "rds": os.environ["RDS_HOSTNAME"],
                 # TODO: cache this (slow).
-                "sqs": self.sqs.get_sqs_queue().url,
+                "sqs": app.core.sqs.get_sqs_queue().url,
             },
             # TODO: cache this (slow).
             "buckets": {
-                "env": self.environment.get_env_bucket_name(),
+                "env": app.core.environment.get_env_bucket_name(),
                 "foursight": get_foursight_bucket(envname=environ if environ else default_env, stage=stage_name),
                 "foursight_prefix": get_foursight_bucket_prefix(),
                 "info": environment_and_bucket_info,
@@ -132,7 +132,7 @@ class ReactApi(ReactRoutes):
             "page": {
                 "path": request_dict.get("context").get("path"),
                 "endpoint": request.path,
-                "loaded": self.get_load_time()
+                "loaded": app.core.get_load_time()
             },
             # TODD: Move these out to another API.
             "checks": {
@@ -153,7 +153,7 @@ class ReactApi(ReactRoutes):
     def reactapi_route_users(self, request, environ):
 
         request_dict = request.to_dict()
-        stage_name = self.stage.get_stage()
+        stage_name = app.core.stage.get_stage()
         users = []
         # TODO: Support paging.
         user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000')
@@ -219,26 +219,26 @@ class ReactApi(ReactRoutes):
 
     def reactapi_route_header_nocache(self, request, env, domain="", context="/"):
         request_dict = request.to_dict()
-        stage_name = self.stage.get_stage()
-        default_env = self.get_default_env()
+        stage_name = app.core.stage.get_stage()
+        default_env = app.core.get_default_env()
         aws_credentials = self.auth.get_aws_credentials(env if env else default_env);
         response = {
             "app": {
-                "title": self.html_main_title,
-                "package": self.APP_PACKAGE_NAME,
+                "title": app.core.html_main_title,
+                "package": app.core.APP_PACKAGE_NAME,
                 "stage": stage_name,
-                "version": self.get_app_version(),
+                "version": app.core.get_app_version(),
                 "domain": domain,
                 "context": context,
-                "local": self.is_running_locally(request_dict),
+                "local": app.core.is_running_locally(request_dict),
                 "credentials": {
                     "aws_account_number": aws_credentials["aws_account_number"]
                 },
-                "launched": self.init_load_time,
-                "deployed": self.get_lambda_last_modified()
+                "launched": app.core.init_load_time,
+                "deployed": app.core.get_lambda_last_modified()
             },
             "versions": {
-                "foursight": self.get_app_version(),
+                "foursight": app.core.get_app_version(),
                 "foursight_core": pkg_resources.get_distribution('foursight-core').version,
                 "dcicutils": pkg_resources.get_distribution('dcicutils').version,
                 "python": platform.python_version(),
@@ -250,7 +250,7 @@ class ReactApi(ReactRoutes):
 
     def reactapi_route_gac_compare(self, request, environ, environ_compare, is_admin=False, domain="", context="/"):
         request_dict = request.to_dict()
-        stage_name = self.stage.get_stage()
+        stage_name = app.core.stage.get_stage()
         response = Response('reactapi_route_gac_compare')
         response.body = self.gac.compare_gacs(environ, environ_compare)
         response.headers = {
@@ -281,10 +281,10 @@ class ReactApi(ReactRoutes):
             limit = 0
         response = self.create_standard_response("reactapi_route_checks_history")
         check_record = self.checks.get_check(env, check)
-        connection = self.init_connection(env)
-        history, total = self.get_foursight_history(connection, check, offset, limit, sort)
+        connection = app.core.init_connection(env)
+        history, total = app.core.get_foursight_history(connection, check, offset, limit, sort)
         history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
-        queue_attr = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
+        queue_attr = app.core.sqs.get_sqs_attributes(app.core.sqs.get_sqs_queue().url)
         running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
         queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         for item in history:
@@ -313,7 +313,7 @@ class ReactApi(ReactRoutes):
 
     def reactapi_route_checks_status(self, request, env: str) -> dict:
         response = self.create_standard_response("reactapi_route_checks_status")
-        checks_queue = self.sqs.get_sqs_attributes(self.sqs.get_sqs_queue().url)
+        checks_queue = app.core.sqs.get_sqs_attributes(app.core.sqs.get_sqs_queue().url)
         checks_running = checks_queue.get('ApproximateNumberOfMessagesNotVisible')
         checks_queued = checks_queue.get('ApproximateNumberOfMessages')
         response.body = {
@@ -333,8 +333,8 @@ class ReactApi(ReactRoutes):
         """
         response = self.create_standard_response("reactapi_route_check_results")
         try:
-            connection = self.init_connection(env)
-            check_results = self.CheckResult(connection, check)
+            connection = app.core.init_connection(env)
+            check_results = app.core.CheckResult(connection, check)
             #check_results = check_results.get_closest_result()
             check_results = check_results.get_latest_result()
             uuid = check_results["uuid"]
@@ -354,12 +354,12 @@ class ReactApi(ReactRoutes):
         response = []
         servers = []
         try:
-            connection = self.init_connection(env)
+            connection = app.core.init_connection(env)
         except Exception:
             connection = None
         if connection:
             servers.append(connection.ff_server)
-            check_result = self.CheckResult(connection, check)
+            check_result = app.core.CheckResult(connection, check)
             if check_result:
                 data = check_result.get_result_by_uuid(uuid)
                 if data is None:
@@ -371,8 +371,8 @@ class ReactApi(ReactRoutes):
                         'summary': 'Check has not yet run',
                         'description': 'Check has not yet run'
                     }
-                title = self.check_handler.get_check_title_from_setup(check)
-                processed_result = self.process_view_result(connection, data, is_admin=True)
+                title = app.core.check_handler.get_check_title_from_setup(check)
+                processed_result = app.core.process_view_result(connection, data, is_admin=True)
                 response.append({
                     'status': 'success',
                     'env': env,
@@ -385,7 +385,7 @@ class ReactApi(ReactRoutes):
         response = self.create_standard_response("reactapi_route_checks_run")
         args = base64_decode(args)
         args = json.loads(args)
-        queued_uuid = self.queue_check(env, check, args)
+        queued_uuid = app.core.queue_check(env, check, args)
         #params = {"primary": True}
         #queued_uuid = self.queue_check(env, check, params)
         response.body = {"check": check, "env": env, "uuid": queued_uuid}
@@ -393,10 +393,10 @@ class ReactApi(ReactRoutes):
 
     def reactapi_route_logout(self, request, environ) -> dict:
         request_dict = request.to_dict()
-        domain, context = self.get_domain_and_context(request_dict)
+        domain, context = app.core.get_domain_and_context(request_dict)
         redirect_url = read_cookie("reactredir", request_dict)
         if not redirect_url:
-            http = "https" if not self.is_running_locally(request_dict) else "http"
+            http = "https" if not app.core.is_running_locally(request_dict) else "http"
             redirect_url = f"{http}://{domain}{context if context else ''}react/{environ}/login"
         else:
             # Not certain if by design but the React library (universal-cookie) used to
@@ -428,7 +428,7 @@ class ReactApi(ReactRoutes):
         return response
 
     def reactapi_route_reload_lambda(self, request, environ, domain="", context="/", lambda_name: str = None):
-        self.reload_lambda(lambda_name)
+        app.core.reload_lambda(lambda_name)
         time.sleep(3)
         resp_headers = {'Location': f"{context}info/{environ}"}
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)

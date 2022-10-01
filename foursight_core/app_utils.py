@@ -112,7 +112,7 @@ class AppUtilsCore(ReactApi, Routes):
         self.user_records = {}
         self.lambda_last_modified = None
         self.cached_portal_url = {}
-        super(AppUtilsCore, self).__init__(self)
+        super(AppUtilsCore, self).__init__()
 
     @staticmethod
     def note_non_fatal_error_for_ui_info(error_object, calling_function):
