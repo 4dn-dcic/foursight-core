@@ -94,37 +94,29 @@ class Auth():
 
     def authorization_callback(self, request, env, domain, jwt, expires):
 
-        print('xyzzy-1')
         react_redir_url = read_cookie("reactredir", request)
-        print('xyzzy-2')
         if react_redir_url:
-            print('xyzzy-3')
             # Not certain if by design but the React library (universal-cookie) used to
             # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
             react_redir_url = urllib.parse.unquote(react_redir_url)
             response_headers = {"Location": react_redir_url}
 
-        print('xyzzy-4')
         authtoken = self.create_authtoken(jwt, domain, env)
-        print('xyzzy-5')
         authtoken_cookie = create_set_cookie_string(request, name="authtoken",
                                                     value=authtoken,
                                                     domain=domain,
                                                     expires=expires,
                                                     http_only=False)
-        print('xyzzy-6')
         response_headers["set-cookie"] = authtoken_cookie
 
         return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
     def authorize(self, request, env) -> dict:
-        print('xyzzy-7')
         if not request:
             return self.create_unauthorized_response(request, "no-request", env)
         if not isinstance(request, dict):
             request = request.to_dict();
         try:
-            print('xyzzy-8')
             test_mode_not_authorized = read_cookie("test_mode_not_authorized", request)
             if test_mode_not_authorized == "1":
                 return self.create_unauthorized_response(request, "not-authorized-test-mode", env)
@@ -167,7 +159,6 @@ class Auth():
             return authtoken_decoded
 
         except Exception as e:
-            print('xyzzy-9')
             print(e)
             return self.create_unauthorized_response(request, "exception: " + str(e), env)
 
@@ -185,7 +176,6 @@ class Auth():
                                       options={"verify_signature": True},
                                       algorithms=["HS256"])
         except Exception as e:
-            print(f"foursight_core: Exception decoding JWT token: {jwt}")
             print(e)
             return None
 

@@ -33,7 +33,7 @@ from .aws_s3 import AwsS3
 
 class ReactApi():
 
-    def __init__(self):
+    def __init__(self, app_utils):
         super(ReactApi, self).__init__()
         self.envs = Envs(self.get_unique_annotated_environment_names())
         self.checks = Checks(self.check_handler.CHECK_SETUP)
@@ -52,22 +52,22 @@ class ReactApi():
         response.status_code = 200
         return response
 
-    def authorize(self, request, env):
-        return self.auth.authorize(request, env)
-
-    def is_react_authentication(self, auth_response: dict) -> bool:
-        return "react" in auth0_response.get("scope", "")
+    def is_react_authentication(self, auth0_response: dict) -> bool:
+        return "react" in auth0_response.get("scope", "") if auth0_response else False
 
     def react_authentication(self, request, env, domain, jwt, expires):
         return self.auth.authorization_callback(request, env, domain, jwt, expires)
 
-    def react_forbidden_response(self, body = None):
-        response = self.create_standard_response("react_forbidden_response")
+    def authorize(self, request, env):
+        return self.auth.authorize(request, env)
+
+    def forbidden_response(self, body = None):
+        response = self.create_standard_response("forbidden_response")
         if not body or not isinstance(body, dict):
             body = { "forbidden": True }
         response.body = body
         response.status_code = 403
-        return self.process_response(response)
+        return response
 
     def react_serve_static_file(self, environ, domain="", context="/", **kwargs):
         return self.react_ui.serve_static_file(environ, domain, context, **kwargs)
@@ -147,7 +147,7 @@ class ReactApi():
         }
         response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
-        return self.process_response(response)
+        return response
 
     def reactapi_route_users(self, request, environ):
 
@@ -181,7 +181,7 @@ class ReactApi():
         response.body = sorted(users, key=lambda key: key["email_address"])
         response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
-        return self.process_response(response)
+        return response
 
     def reactapi_route_users_user(self, request, environ, email=None):
         users = []
@@ -196,7 +196,7 @@ class ReactApi():
         response.body = sorted(users, key=lambda key: key["email_address"])
         response.headers = {'Content-Type': 'application/json'}
         response.status_code = 200
-        return self.process_response(response)
+        return response
 
     def reactapi_route_clear_cache(self, request, env, domain="", context="/"):
         pass
@@ -214,7 +214,7 @@ class ReactApi():
         data["auth"] = auth
         response = self.create_standard_response("reactapi_route_header")
         response.body = data
-        return self.process_response(response)
+        return response
 
     def reactapi_route_header_nocache(self, request, env, domain="", context="/"):
         request_dict = request.to_dict()
@@ -256,25 +256,21 @@ class ReactApi():
             "Content-Type": "application/json"
         }
         response.status_code = 200
-        response = self.process_response(response)
         return response
 
     def reactapi_route_checks_raw(self, request, env: str) -> dict:
         response = self.create_standard_response("reactapi_route_checks_raw")
         response.body = self.checks.get_checks_raw()
-        response = self.process_response(response)
         return response
 
     def reactapi_route_checks_registry(self, request, env: str) -> dict:
         response = self.create_standard_response("reactapi_route_checks_registry")
         response.body = Decorators.get_registry()
-        response = self.process_response(response)
         return response
 
     def reactapi_route_checks(self, request, env: str) -> dict:
         response = self.create_standard_response("reactapi_route_checks")
         response.body = self.checks.get_checks_grouped(env)
-        response = self.process_response(response)
         return response
 
     def reactapi_route_checks_history(self, request, env: str, check: str, offset: int = 0, limit: int = 25, sort: str = None) -> dict:
@@ -312,7 +308,6 @@ class ReactApi():
             "list": history
         }
         response.body = history
-        response = self.process_response(response)
         return response
 
     def reactapi_route_checks_status(self, request, env: str) -> dict:
@@ -324,12 +319,11 @@ class ReactApi():
             "checks_running": checks_running,
             "checks_queued": checks_queued
         }
-        return self.process_response(response)
+        return response
 
     def reactapi_route_lambdas(self, request, env: str) -> dict:
         response = self.create_standard_response("reactapi_route_lambdas")
         response.body = self.checks.get_annotated_lambdas()
-        response = self.process_response(response)
         return response
 
     def reactapi_route_check_results(self, request, env: str, check: str) -> dict:
@@ -349,7 +343,7 @@ class ReactApi():
             response.body = check_results
         except Exception as e:
             response.body = {}
-        return self.process_response(response)
+        return response
 
     def reactapi_route_check_result(self, request, env: str, check: str, uuid: str) -> dict:
         """
@@ -394,7 +388,7 @@ class ReactApi():
         #params = {"primary": True}
         #queued_uuid = self.queue_check(env, check, params)
         response.body = {"check": check, "env": env, "uuid": queued_uuid}
-        return self.process_response(response)
+        return response
 
     def reactapi_route_logout(self, request, environ) -> dict:
         request_dict = request.to_dict()
@@ -419,18 +413,18 @@ class ReactApi():
     def reactapi_route_aws_s3_buckets(self, request, env: str):
         response = self.create_standard_response("reactapi_route_aws_s3_buckets")
         response.body = AwsS3.get_buckets()
-        return self.process_response(response)
+        return response
 
     def reactapi_route_aws_s3_buckets_keys(self, request, env: str, bucket: str):
         response = self.create_standard_response("reactapi_route_aws_s3_buckets_keys")
         response.body = AwsS3.get_bucket_keys(bucket)
-        return self.process_response(response)
+        return response
 
     def reactapi_route_aws_s3_buckets_key_contents(self, request, env: str, bucket: str, key: str):
         key = urllib.parse.unquote(key)
         response = self.create_standard_response("reactapi_route_aws_s3_buckets_key_contents")
         response.body = AwsS3.get_bucket_key_contents(bucket, key)
-        return self.process_response(response)
+        return response
 
     def reactapi_route_reload_lambda(self, request, environ, domain="", context="/", lambda_name: str = None):
         self.reload_lambda(lambda_name)

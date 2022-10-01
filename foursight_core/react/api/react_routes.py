@@ -51,7 +51,7 @@ class ReactRoutes:
             request = app.current_request
             authorize_response = app_utils.singleton().authorize(request, env)
             if not authorize_response or not authorize_response["authorized"]:
-                return app_utils.singleton().react_forbidden_response(authorize_response)
+                return app_utils.singleton().forbidden_response(authorize_response)
             return f(*args, **kwargs)
         return wrapper
 
