@@ -18,13 +18,14 @@ class Auth():
     class Cache:
         aws_credentials = {}
 
-    def create_authtoken(self, jwt: str, domain: str, env: str):
+    def create_authtoken(self, jwt: str, domain: str, env: str) -> str:
         """
         Augments the given JWT with the list of known environments; the default environments;
         and the list of allowed (authorized) environments for the user associated with the
         given JWT; and the first/last name of the user associated with the JWT. The allowed
         environments and first/last name are obtained via the users store (in ElasticSearch).
         The first/last name FYI is just or informational/display purposes in the client.
+        Returns the JWT-signed-encoded authtoken value as a string.
         """
         jwt_decoded = self.decode_jwt(jwt)
         email = jwt_decoded.get("email")
@@ -45,7 +46,7 @@ class Auth():
             # The 'aud' must be Auth0 client ID for JWT decode to work.
             "aud": self.auth0_client_id
         }
-        # Re-encode (sign) the JWT using our Auth0 secret.
+        # JWT-sign-encode authtoken using our Auth0 secret.
         authtoken = jwtlib.encode(authtoken_decoded, self.auth0_secret, algorithm="HS256")
         if isinstance(authtoken, bytes):
             # Depending on version jwtlib.encode returns bytes or string :-(
