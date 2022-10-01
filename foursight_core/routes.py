@@ -4,10 +4,10 @@ from .app import app
 from .route_prefixes import *
 
 
-class LegacyRoutes:
+class Routes:
 
     # ----------------------------------------------------------------------------------------------
-    # Foursight Legacy routes.
+    # Foursight Original routes.
     # ----------------------------------------------------------------------------------------------
 
     @app.route((ROUTE_PREFIX if not ROUTE_CHALICE_LOCAL else "/") + 'callback')

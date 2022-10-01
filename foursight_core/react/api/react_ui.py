@@ -1,6 +1,19 @@
 import os
 import io
 
+REACT_BASE_DIR = os.path.join(os.path.dirname(__file__), "../../react/ui")
+REACT_DEFAULT_FILE = "index.html"
+REACT_WHITELISTED_FILE_PATH_SUFFIXES = [
+    "/index.html",
+    "/main.js",
+    "/main.css",
+    "/manifest.json",
+    "/asset-manifest.json",
+    ".jpeg",
+    ".jpg",
+    ".png",
+    ".ico"
+]
 
 class ReactUi():
 
@@ -12,31 +25,16 @@ class ReactUi():
 
     def serve_static_file(self, environ, domain="", context="/", **kwargs):
 
-        whitelisted_file_path_suffixes = [
-            "/index.html",
-            "/main.js",
-            "/main.css",
-            "/manifest.json",
-            "/asset-manifest.json",
-            ".jpeg",
-            ".jpg",
-            ".png",
-            ".ico"
-        ]
-
         environ = environ.replace("{environ}", environ)
 
-        BASE_DIR = os.path.dirname(__file__)
-        REACT_BASE_DIR = "../../react/ui"
-        REACT_DEFAULT_FILE = "index.html"
 
         if environ == "static":
             # If the environ is 'static' then we take this to mean the 'static'
             # sub-directory; this is the directory where the static (js, css, etc)
             # React files live. Note that this means a real 'environ' may not be 'static'.
-            file = os.path.join(BASE_DIR, REACT_BASE_DIR, "static")
+            file = os.path.join(REACT_BASE_DIR, "static")
         else:
-            file = os.path.join(BASE_DIR, REACT_BASE_DIR)
+            file = REACT_BASE_DIR
         args = kwargs.values()
         if not args:
             # TODO: png (et.al.) not downloading right!
@@ -77,14 +75,14 @@ class ReactUi():
             content_type = "image/x-icon"
             open_mode = "rb"
         else:
-            file = os.path.join(BASE_DIR, REACT_BASE_DIR, REACT_DEFAULT_FILE)
+            file = os.path.join(REACT_BASE_DIR, REACT_DEFAULT_FILE)
             content_type = "text/html"
             open_mode = "r"
             # Be as restrictive as possible. ONLY allow above files.
 
         may_serve_file = False
-        for whitelisted_file_path_suffix in whitelisted_file_path_suffixes:
-            if file.endswith(whitelisted_file_path_suffix):
+        for suffix in REACT_WHITELISTED_FILE_PATH_SUFFIXES:
+            if file.endswith(suffix):
                 may_serve_file = True
                 break
         if not may_serve_file:

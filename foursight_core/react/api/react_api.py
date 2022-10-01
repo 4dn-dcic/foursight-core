@@ -24,14 +24,15 @@ from ...decorators import Decorators
 from ...misc_utils import sort_dictionary_by_lowercase_keys
 from .encoding_utils import base64_decode
 from .auth import Auth
+from .aws_s3 import AwsS3
 from .checks import Checks
 from .envs import Envs
 from .gac import Gac
+from .react_routes import ReactRoutes
 from .react_ui import ReactUi
-from .aws_s3 import AwsS3
 
 
-class ReactApi:
+class ReactApi(ReactRoutes):
 
     def __init__(self, app_utils):
         super(ReactApi, self).__init__()

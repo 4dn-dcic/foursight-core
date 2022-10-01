@@ -1,6 +1,4 @@
 from chalice import Response
-from chalice import Chalice
-import base64
 import jinja2
 import json
 import os
@@ -13,16 +11,10 @@ import copy
 import pkg_resources
 import platform
 # TODO: do not import start import specific thing which i think is triple_des
-from pyDes import *
-import pytz
 import requests
 import socket
-import string
 import sys
-import time
 import types
-import urllib.parse
-import uuid
 import logging
 from itertools import chain
 from dateutil import tz
@@ -41,29 +33,24 @@ from dcicutils.misc_utils import get_error_message, PRINT
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from typing import Optional
-from .identity import apply_identity_globally
-from .s3_connection import S3Connection
-from .fs_connection import FSConnection
+from .app import app
 from .check_utils import CheckHandler
-from .sqs_utils import SQS
-from .stage import Stage
+from .cookie_utils import read_cookie, create_set_cookie_string
+from .fs_connection import FSConnection
 from .datetime_utils import convert_time_t_to_useastern_datetime, convert_utc_datetime_to_useastern_datetime
 from .environment import Environment
 from .misc_utils import sort_dictionary_by_lowercase_keys
 from .react.api.react_api import ReactApi
-from .cookie_utils import read_cookie, create_set_cookie_string
-from .legacy_routes import LegacyRoutes
-from .react.api.react_routes import ReactRoutes
-from .app import app
+from .routes import Routes
+from .s3_connection import S3Connection
+from .sqs_utils import SQS
+from .stage import Stage
 
-#app = Chalice(app_name='foursight-core')
 DEFAULT_ENV = os.environ.get("ENV_NAME", "env-name-unintialized")
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
-print(f'xyzzy;app-utils;id(app) = {id(app)} ........................................................................')
-
-class AppUtilsCore(ReactApi, ReactRoutes, LegacyRoutes):
+class AppUtilsCore(ReactApi, Routes):
     """
     This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
     so that a class named AppUtils is easier to define in libraries that import foursight-core.
@@ -346,7 +333,6 @@ class AppUtilsCore(ReactApi, ReactRoutes, LegacyRoutes):
         logger.error("foursight_core.check_authorization: Returning False ")
         return False
 
-    # TODO: This needs massive cleanup after messing with WRT React.
     def auth0_callback(self, request, env):
 
         request_dict = request.to_dict()
@@ -404,8 +390,6 @@ class AppUtilsCore(ReactApi, ReactRoutes, LegacyRoutes):
         auth0_response_json = auth0_response.json()
         jwt_token = auth0_response_json.get("id_token")
         jwt_expires = auth0_response_json.get("expires_in")
-
-        # This "react" scope is set on the React UI side at Auth0 invocation time.
 
         if jwt_token:
             #
@@ -1791,8 +1775,8 @@ class AppUtilsCore(ReactApi, ReactRoutes, LegacyRoutes):
             if not cls:
                 cls = AppUtilsCore
             AppUtilsCore._app_utils = cls()
-            # xyzzy
-            # Tuck a reference to this AppUtilsCore into a property of the Chalice app object for easy access by routes.
+            # Store a reference to this singleton AppUtilsCore object into
+            # a property of the Chalice app object for easy access by routes.
             app.core = AppUtilsCore._app_utils
         return AppUtilsCore._app_utils
 
