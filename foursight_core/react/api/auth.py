@@ -63,8 +63,7 @@ class Auth():
         """
         return self.decode_jwt(authtoken)
 
-    def create_unauthorized_response(self, request, status, env, authtoken=None):
-        # known_envs = self.get_unique_annotated_environment_names()
+    def create_unauthorized_response(self, request: dict, status: str, env: str, authtoken: dict = None) -> dict:
         known_envs = self.envs.get_known_envs()
         response = {
             "authorized": False,
@@ -72,8 +71,7 @@ class Auth():
             "known_envs": known_envs,
             "default_env": self.envs.get_default_env(),
             "domain": self.get_domain(request),
-            # Need this for Auth0 login box.
-            "aud": self.auth0_client_id
+            "aud": self.auth0_client_id # Need this for Auth0 login box.
         }
         if authtoken:
             if authtoken["user"]:
@@ -92,8 +90,7 @@ class Auth():
                 response["default_env"] = authtoken["default_env"]
         return response
 
-    def authorization_callback(self, request, env, domain, jwt, expires):
-
+    def authorization_callback(self, request: dict, env: str, domain: str, jwt: str, expires: int):
         react_redir_url = read_cookie("reactredir", request)
         if react_redir_url:
             # Not certain if by design but the React library (universal-cookie) used to
@@ -172,11 +169,9 @@ class Auth():
             print(e)
             return None
 
-    def get_domain(self, request):
+    def get_domain(self, request: dict) -> str:
         if request:
             try:
-                if not isinstance(request, dict):
-                    request = request.to_dict()
                 return request.get("headers", {}).get("host")
             except:
                 pass

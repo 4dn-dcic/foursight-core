@@ -56,7 +56,7 @@ class ReactApi(ReactRoutes):
     def is_react_authentication(self, auth0_response: dict) -> bool:
         return "react" in auth0_response.get("scope", "") if auth0_response else False
 
-    def react_authentication(self, request, env, domain, jwt, expires):
+    def react_authentication(self, request: dict, env: str, domain: str, jwt: str, expires: int):
         return self.auth.authorization_callback(request, env, domain, jwt, expires)
 
     def authorize(self, request: dict, env: str) -> dict:

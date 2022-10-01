@@ -399,7 +399,7 @@ class AppUtilsCore(ReactApi, Routes):
             # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
             #
             if self.is_react_authentication(auth0_response_json):
-                return self.react_authentication(request, env, domain, jwt_token, jwt_expires);
+                return self.react_authentication(request_dict, env, domain, jwt_token, jwt_expires);
 
             cookie_str = create_set_cookie_string(request, name="jwtToken",
                                                            value=jwt_token,

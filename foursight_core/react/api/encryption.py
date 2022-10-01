@@ -25,7 +25,7 @@ class Encryption:
     # and is SUPER slow, but OK for now for our purposes of just decrypting the authToken
     # on each protected API call. I.e. it takes nearly 100ms to decrypt 500 characters!
 
-    def get_encryption_password(self):
+    def get_encryption_password(self) -> str:
         if not self.encryption_password:
             encryption_password = os.environ.get("S3_AWS_SECRET_ACCESS_KEY")
             if not encryption_password:
