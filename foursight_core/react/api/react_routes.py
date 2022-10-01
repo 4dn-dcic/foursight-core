@@ -43,7 +43,7 @@ def route_requires_authorization(f):
         if not kwargs or len(kwargs) < 1:
             raise Exception("Invalid arguments to requires_authorization decorator!")
         env = kwargs["environ"]
-        request = app.current_request
+        request = app.current_request.to_dict()
         authorize_response = app.core.authorize(request, env)
         if not authorize_response or not authorize_response["authorized"]:
             return app.core.forbidden_response(authorize_response)
@@ -59,99 +59,105 @@ class ReactRoutes:
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/users', cors=CORS)
     @route_requires_authorization
-    def reactapi_route_users(environ):
+    def reactapi_route_users(environ: str):
         request = app.current_request.to_dict()
-        return app.core.reactapi_route_users(request=request, environ=environ)
+        return app.core.reactapi_route_users(request=request, env=environ)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/users/{email}', cors=CORS)
     @route_requires_authorization
-    def reactapi_route_users_user(environ, email):
+    def reactapi_route_users_user(environ: str, email: str):
         request = app.current_request.to_dict()
-        return app.core.reactapi_route_users_user(request=request, environ=environ, email=email)
+        return app.core.reactapi_route_users_user(request=request, env=environ, email=email)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/info', cors=CORS)
     @route_requires_authorization
-    def reactapi_route_info(environ):
+    def reactapi_route_info(environ: str):
         request = app.current_request.to_dict()
-        return app.core.reactapi_route_info(request=request, environ=environ)
+        return app.core.reactapi_route_info(request=request, env=environ)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/header', methods=["GET"], cors=CORS)
-    def reactapi_route_header(environ):
+    def reactapi_route_header(environ: str):
         request = app.current_request.to_dict()
         return app.core.reactapi_route_header(request=request, env=environ)
 
     @app.route(ROUTE_PREFIX + 'reactapi/__clearcache__', cors=CORS)
     @route_requires_authorization
-    def reactapi_route_clear_cache(environ): # not yet implemented
-        request = app.current_request
-        request_dict = request.to_dict()
-        domain, context = app.core.get_domain_and_context(request_dict)
-        return app.core.reactapi_route_clear_cache(request=request, env=environ, domain=domain, context=context)
+    def reactapi_route_clear_cache(environ: str): # not yet implemented
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_clear_cache(request=request, env=environ)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/gac/{environ_compare}', cors=CORS)
     @route_requires_authorization
-    def reactapi_route_gac_compare(environ, environ_compare):
+    def reactapi_route_gac_compare(environ: str, environ_compare: str):
         request = app.current_request.to_dict()
-        return app.core.reactapi_route_gac_compare(request=request, environ=environ, environ_compare=environ_compare)
+        return app.core.reactapi_route_gac_compare(request=request, env=environ, env_compare=environ_compare)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/__reloadlambda__', methods=['GET'], cors=CORS)
     @route_requires_authorization
-    def reactapi_route_reload_lambda(environ):
-        req_dict = app.current_request.to_dict()
-        domain, context = app.core.get_domain_and_context(req_dict)
-        return app.core.reactapi_route_reload_lambda(request=app.current_request, environ=environ, lambda_name='default', domain=domain, context=context)
+    def reactapi_route_reload_lambda(environ: str):
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_reload_lambda(request=request, env=environ, lambda_name='default')
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks-raw', methods=['GET'], cors=CORS)
     @route_requires_authorization
     def reactapi_route_checks_raw(environ: str):
-        return app.core.reactapi_route_checks_raw(request=app.current_request, env=environ)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_checks_raw(request=request, env=environ)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks-registry', methods=['GET'], cors=CORS)
     @route_requires_authorization
     def reactapi_route_checks_registry(environ: str):
-        return app.core.reactapi_route_checks_registry(request=app.current_request, env=environ)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_checks_registry(request=request, env=environ)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks', methods=['GET'], cors=CORS)
     @route_requires_authorization
     def reactapi_route_checks(environ: str):
-        return app.core.reactapi_route_checks(request=app.current_request, env=environ)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_checks(request=request, env=environ)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}', methods=['GET'], cors=CORS)
     @route_requires_authorization
     def reactapi_route_check_results(environ: str, check: str):
-        return app.core.reactapi_route_check_results(request=app.current_request, env=environ, check=check)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_check_results(request=request, env=environ, check=check)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}/{uuid}', methods=['GET'], cors=CORS)
     @route_requires_authorization
     def reactapi_route_check_result(environ: str, check: str, uuid: str):
-        return app.core.reactapi_route_check_result(request=app.current_request, env=environ, check=check, uuid=uuid)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_check_result(request=request, env=environ, check=check, uuid=uuid)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}/history', methods=['GET'], cors=CORS)
     @route_requires_authorization
     def reactapi_route_checks_history(environ: str, check: str):
-        params = app.current_request.to_dict().get("query_params")
+        request = app.current_request.to_dict()
+        params = request.get("query_params")
         offset = int(params.get("offset", "0")) if params else 0
         limit = int(params.get("limit", "25")) if params else 25
         sort = params.get("sort", "timestamp.desc") if params else "timestamp.desc"
         sort = urllib.parse.unquote(sort)
-        return app.core.reactapi_route_checks_history(request=app.current_request, env=environ, check=check, offset=offset, limit=limit, sort=sort)
+        return app.core.reactapi_route_checks_history(request=request, env=environ, check=check, offset=offset, limit=limit, sort=sort)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks/{check}/run', methods=['GET'], cors=CORS)
     @route_requires_authorization
     def reactapi_route_checks_run(environ: str, check: str):
-        args = app.current_request.to_dict().get('query_params', {})
+        request = app.current_request.to_dict()
+        args = request.get('query_params', {})
         args = args.get('args')
-        return app.core.reactapi_route_checks_run(request=app.current_request, env=environ, check=check, args=args)
+        return app.core.reactapi_route_checks_run(request=request, env=environ, check=check, args=args)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/checks-status', methods=['GET'], cors=CORS)
     @route_requires_authorization
     def reactapi_route_checks_status(environ: str):
-        return app.core.reactapi_route_checks_status(request=app.current_request, env=environ)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_checks_status(request=request, env=environ)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/lambdas', methods=['GET'], cors=CORS)
     @route_requires_authorization
     def reactapi_route_lambdas(environ: str):
-        return app.core.reactapi_route_lambdas(request=app.current_request, env=environ)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_lambdas(request=request, env=environ)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/aws/s3/buckets', methods=['GET'], cors=CORS)
     @route_requires_authorization
@@ -159,7 +165,8 @@ class ReactRoutes:
         """
         Return the list of all AWS S3 bucket names for the current AWS environment.
         """
-        return app.core.reactapi_route_aws_s3_buckets(request=app.current_request, env=environ)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_aws_s3_buckets(request=request, env=environ)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/aws/s3/buckets/{bucket}', methods=['GET'], cors=CORS)
     @route_requires_authorization
@@ -167,7 +174,8 @@ class ReactRoutes:
         """
         Return the list of AWS S3 bucket key names in the given bucket for the current AWS environment.
         """
-        return app.core.reactapi_route_aws_s3_buckets_keys(request=app.current_request, env=environ, bucket=bucket)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_aws_s3_buckets_keys(request=request, env=environ, bucket=bucket)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/aws/s3/buckets/{bucket}/{key}', methods=['GET'], cors=CORS)
     @route_requires_authorization
@@ -175,14 +183,16 @@ class ReactRoutes:
         """
         Return the content of the given AWS S3 bucket key in the given bucket for the current AWS environment.
         """
-        return app.core.reactapi_route_aws_s3_buckets_key_contents(request=app.current_request, env=environ, bucket=bucket, key=key)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_aws_s3_buckets_key_contents(request=request, env=environ, bucket=bucket, key=key)
 
     @app.route(ROUTE_PREFIX + 'reactapi/{environ}/logout', methods=['GET'], cors=CORS)
-    def reactapi_route_logout(environ):
+    def reactapi_route_logout(environ: str):
         #
         # The environ on strictly required for logout (as we logout from all envs) but useful for redirect back.
         #
-        return app.core.reactapi_route_logout(request=app.current_request, environ=environ)
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_logout(request=request, env=environ)
 
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes.

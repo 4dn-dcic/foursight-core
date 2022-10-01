@@ -59,7 +59,7 @@ class ReactApi(ReactRoutes):
     def react_authentication(self, request, env, domain, jwt, expires):
         return self.auth.authorization_callback(request, env, domain, jwt, expires)
 
-    def authorize(self, request, env):
+    def authorize(self, request: dict, env: str) -> dict:
         return self.auth.authorize(request, env)
 
     def forbidden_response(self, body = None):
@@ -73,18 +73,18 @@ class ReactApi(ReactRoutes):
     def react_serve_static_file(self, environ, domain="", context="/", **kwargs):
         return self.react_ui.serve_static_file(environ, domain, context, **kwargs)
 
-    def reactapi_route_info(self, request, environ):
+    def reactapi_route_info(self, request: dict, env: str):
         domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
         default_env = app.core.get_default_env()
-        if not self.envs.is_known_env(environ):
+        if not self.envs.is_known_env(env):
             env_unknown = True
         else:
             env_unknown = False
         if not env_unknown:
             try:
-                environment_and_bucket_info = sort_dictionary_by_lowercase_keys(obfuscate_dict(app.core.environment.get_environment_and_bucket_info(environ, stage_name))),
-                portal_url = app.core.get_portal_url(environ)
+                environment_and_bucket_info = sort_dictionary_by_lowercase_keys(obfuscate_dict(app.core.environment.get_environment_and_bucket_info(env, stage_name))),
+                portal_url = app.core.get_portal_url(env)
             except:
                 environment_and_bucket_info = None
                 portal_url = None
@@ -101,7 +101,7 @@ class ReactApi(ReactRoutes):
                 "domain": domain,
                 "context": context,
                 "local": app.core.is_running_locally(request),
-                "credentials": self.auth.get_aws_credentials(environ if environ else default_env),
+                "credentials": self.auth.get_aws_credentials(env if env else default_env),
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified()
             },
@@ -123,7 +123,7 @@ class ReactApi(ReactRoutes):
             # TODO: cache this (slow).
             "buckets": {
                 "env": app.core.environment.get_env_bucket_name(),
-                "foursight": get_foursight_bucket(envname=environ if environ else default_env, stage=stage_name),
+                "foursight": get_foursight_bucket(envname=env if env else default_env, stage=stage_name),
                 "foursight_prefix": get_foursight_bucket_prefix(),
                 "info": environment_and_bucket_info,
                 "ecosystem": sort_dictionary_by_lowercase_keys(EnvUtils.declared_data()),
@@ -147,10 +147,10 @@ class ReactApi(ReactRoutes):
         }
         return response
 
-    def reactapi_route_users(self, request, environ):
+    def reactapi_route_users(self, request: dict, env: str):
         users = []
         # TODO: Support paging.
-        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000')
+        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(env), add_on='frame=object&limit=10000')
         for user_record in user_records["@graph"]:
             last_modified = user_record.get("last_modified")
             if last_modified:
@@ -176,11 +176,11 @@ class ReactApi(ReactRoutes):
         response.body = sorted(users, key=lambda key: key["email_address"])
         return response
 
-    def reactapi_route_users_user(self, request, environ, email):
+    def reactapi_route_users_user(self, request: dict, env: str, email: str):
         users = []
         for email_address in email.split(","):
             try:
-                user = ff_utils.get_metadata('users/' + email_address.lower(), ff_env=full_env_name(environ), add_on='frame=object')
+                user = ff_utils.get_metadata('users/' + email_address.lower(), ff_env=full_env_name(env), add_on='frame=object')
                 users.append({"email_address": email_address, "record": user})
             except Exception as e:
                 users.append({"email_address": email_address, "record": {"error": str(e)}})
@@ -188,10 +188,10 @@ class ReactApi(ReactRoutes):
         response.body = sorted(users, key=lambda key: key["email_address"])
         return response
 
-    def reactapi_route_clear_cache(self, request, env, domain="", context="/"):
+    def reactapi_route_clear_cache(self, request: dict, env: str):
         pass
 
-    def reactapi_route_header(self, request, env):
+    def reactapi_route_header(self, request: dict, env: str):
         # Note that this route is not protected but/and we return the results from authorize.
         # TODO: remove stuff we don't need like credentials and also auth also version of other stuff and gac_name ...
         #       review all these data points and see which ones really need ...
@@ -206,7 +206,7 @@ class ReactApi(ReactRoutes):
         response.body = data
         return response
 
-    def reactapi_route_header_nocache(self, request, env):
+    def reactapi_route_header_nocache(self, request: dict, env: str):
         domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
         default_env = app.core.get_default_env()
@@ -236,27 +236,27 @@ class ReactApi(ReactRoutes):
         }
         return response
 
-    def reactapi_route_gac_compare(self, request, environ, environ_compare):
+    def reactapi_route_gac_compare(self, request: dict, env: str, env_compare: str):
         response = self.create_standard_response("reactapi_route_gac_compare")
-        response.body = self.gac.compare_gacs(environ, environ_compare)
+        response.body = self.gac.compare_gacs(env, env_compare)
         return response
 
-    def reactapi_route_checks_raw(self, request, env: str) -> dict:
+    def reactapi_route_checks_raw(self, request: dict, env: str):
         response = self.create_standard_response("reactapi_route_checks_raw")
         response.body = self.checks.get_checks_raw()
         return response
 
-    def reactapi_route_checks_registry(self, request, env: str) -> dict:
+    def reactapi_route_checks_registry(self, request: dict, env: str):
         response = self.create_standard_response("reactapi_route_checks_registry")
         response.body = Decorators.get_registry()
         return response
 
-    def reactapi_route_checks(self, request, env: str) -> dict:
+    def reactapi_route_checks(self, request: dict, env: str):
         response = self.create_standard_response("reactapi_route_checks")
         response.body = self.checks.get_checks_grouped(env)
         return response
 
-    def reactapi_route_checks_history(self, request, env: str, check: str, offset: int = 0, limit: int = 25, sort: str = None) -> dict:
+    def reactapi_route_checks_history(self, request: dict, env: str, check: str, offset: int = 0, limit: int = 25, sort: str = None):
         if offset < 0:
             offset = 0
         if limit < 0:
@@ -293,7 +293,7 @@ class ReactApi(ReactRoutes):
         response.body = history
         return response
 
-    def reactapi_route_checks_status(self, request, env: str) -> dict:
+    def reactapi_route_checks_status(self, request: dict, env: str):
         response = self.create_standard_response("reactapi_route_checks_status")
         checks_queue = app.core.sqs.get_sqs_attributes(app.core.sqs.get_sqs_queue().url)
         checks_running = checks_queue.get('ApproximateNumberOfMessagesNotVisible')
@@ -304,12 +304,12 @@ class ReactApi(ReactRoutes):
         }
         return response
 
-    def reactapi_route_lambdas(self, request, env: str) -> dict:
+    def reactapi_route_lambdas(self, request: dict, env: str):
         response = self.create_standard_response("reactapi_route_lambdas")
         response.body = self.checks.get_annotated_lambdas()
         return response
 
-    def reactapi_route_check_results(self, request, env: str, check: str) -> dict:
+    def reactapi_route_check_results(self, request: dict, env: str, check: str):
         """
         Returns the latest result from the given check.
         """
@@ -328,7 +328,7 @@ class ReactApi(ReactRoutes):
             response.body = {}
         return response
 
-    def reactapi_route_check_result(self, request, env: str, check: str, uuid: str) -> dict:
+    def reactapi_route_check_result(self, request: dict, env: str, check: str, uuid: str):
         """
         Returns the specified result, by uuid, for the given check.
         Analogous legacy function is app_utils.view_foursight_check.
@@ -362,55 +362,49 @@ class ReactApi(ReactRoutes):
                 })
         return response
 
-    def reactapi_route_checks_run(self, request, env: str, check: str, args: str):
-        # TODO: What is this primary thing for? It is an option on the old/existing UI.
+    def reactapi_route_checks_run(self, request: dict, env: str, check: str, args: str):
         response = self.create_standard_response("reactapi_route_checks_run")
         args = base64_decode(args)
         args = json.loads(args)
         queued_uuid = app.core.queue_check(env, check, args)
-        #params = {"primary": True}
-        #queued_uuid = self.queue_check(env, check, params)
         response.body = {"check": check, "env": env, "uuid": queued_uuid}
         return response
 
-    def reactapi_route_logout(self, request, environ) -> dict:
-        request_dict = request.to_dict()
-        domain, context = app.core.get_domain_and_context(request_dict)
-        redirect_url = read_cookie("reactredir", request_dict)
+    def reactapi_route_logout(self, request: dict, env: str):
+        domain, context = app.core.get_domain_and_context(request)
+        redirect_url = read_cookie("reactredir", request)
         if not redirect_url:
-            http = "https" if not app.core.is_running_locally(request_dict) else "http"
-            redirect_url = f"{http}://{domain}{context if context else ''}react/{environ}/login"
+            http = "https" if not app.core.is_running_locally(request) else "http"
+            redirect_url = f"{http}://{domain}{context if context else ''}react/{env}/login"
         else:
             # Not certain if by design but the React library (universal-cookie) used to
             # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
             redirect_url = urllib.parse.unquote(redirect_url)
-        authtoken_cookie_deletion = create_delete_cookie_string(request=request_dict,
-                                                                 name="authtoken",
-                                                                 domain=domain)
+        authtoken_cookie_deletion = create_delete_cookie_string(request=request, name="authtoken", domain=domain)
         headers = {
             "location": redirect_url,
             "set-cookie": authtoken_cookie_deletion
         }
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
-    def reactapi_route_aws_s3_buckets(self, request, env: str):
+    def reactapi_route_aws_s3_buckets(self, request: dict, env: str):
         response = self.create_standard_response("reactapi_route_aws_s3_buckets")
         response.body = AwsS3.get_buckets()
         return response
 
-    def reactapi_route_aws_s3_buckets_keys(self, request, env: str, bucket: str):
+    def reactapi_route_aws_s3_buckets_keys(self, request: dict, env: str, bucket: str):
         response = self.create_standard_response("reactapi_route_aws_s3_buckets_keys")
         response.body = AwsS3.get_bucket_keys(bucket)
         return response
 
-    def reactapi_route_aws_s3_buckets_key_contents(self, request, env: str, bucket: str, key: str):
+    def reactapi_route_aws_s3_buckets_key_contents(self, request: dict, env: str, bucket: str, key: str):
         key = urllib.parse.unquote(key)
         response = self.create_standard_response("reactapi_route_aws_s3_buckets_key_contents")
         response.body = AwsS3.get_bucket_key_contents(bucket, key)
         return response
 
-    def reactapi_route_reload_lambda(self, request, environ, domain="", context="/", lambda_name: str = None):
+    def reactapi_route_reload_lambda(self, request: dict, env: str, lambda_name: str):
         app.core.reload_lambda(lambda_name)
         time.sleep(3)
-        resp_headers = {'Location': f"{context}info/{environ}"}
-        return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
+        headers = {'Location': f"{context}info/{environ}"}
+        return Response(status_code=302, body=json.dumps(headers), headers=headers)

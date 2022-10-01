@@ -111,15 +111,8 @@ class Auth():
 
         return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
-    def authorize(self, request, env) -> dict:
-        if not request:
-            return self.create_unauthorized_response(request, "no-request", env)
-        if not isinstance(request, dict):
-            request = request.to_dict();
+    def authorize(self, request: dict, env: str) -> dict:
         try:
-            test_mode_not_authorized = read_cookie("test_mode_not_authorized", request)
-            if test_mode_not_authorized == "1":
-                return self.create_unauthorized_response(request, "not-authorized-test-mode", env)
 
             # Read the authtoken cookie.
 
