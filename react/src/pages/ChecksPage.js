@@ -8,6 +8,7 @@ import Client from '../utils/Client';
 import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
 import Image from '../utils/Image';
+import Json from '../utils/Json';
 import ReadOnlyMode from '../ReadOnlyMode';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
@@ -288,7 +289,7 @@ const ChecksPage = (props) => {
     function runCheck(check) {
         console.log("RUNNING CHECK:")
         const args = check.kwargs;
-        const argsString = JSON.stringify(args);
+        const argsString = Json.Str(args);
         const argsEncoded = btoa(argsString);
         console.log(args);
         console.log(argsString);
@@ -600,7 +601,7 @@ const ChecksPage = (props) => {
     const ResultDetailsBox = ({check, style}) => {
         return <pre className={check.results?.status?.toUpperCase() === "PASS" ? "check-pass" : "check-warn"} style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
             <div style={{float:"right",marginTop:"-10px"}}>
-            <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{JSON.stringify(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
+            <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{Json.Str(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
             <img alt="copy" onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
             &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(); } }>{check.showingResultDetailsFull ? <span title="Show full results output.">&#x2191;</span> : <span>&#x2193;</span>}</span>
             &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>X</span>

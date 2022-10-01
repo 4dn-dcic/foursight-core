@@ -8,6 +8,7 @@ import Context from '../utils/Context';
 import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
 import Image from '../utils/Image';
+import Json from '../utils/Json';
 import LiveTime from '../LiveTime';
 import Server from '../utils/Server';
 import Time from '../utils/Time';
@@ -179,7 +180,7 @@ const InfoPage = () => {
                 { showingAuthToken ? (<>
                     <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>AuthToken</u>&nbsp;&#x2193;</b></small>
                     <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>
-                        <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{JSON.stringify(Auth.Token())}</span>
+                        <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{Json.Str(Auth.Token())}</span>
                         <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken")} style={{float:"right",height:"20px",cursor:"copy"}} />
                         {Yaml.Format(Auth.Token())}
                     </pre>

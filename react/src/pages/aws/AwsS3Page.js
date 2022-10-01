@@ -5,6 +5,7 @@ import { BarSpinner } from '../../Spinners';
 import Clipboard from '../../utils/Clipboard';
 import Fetch from '../../utils/Fetch';
 import Image from '../../utils/Image';
+import Json from '../../utils/Json';
 import Server from '../../utils/Server';
 import Yaml from '../../utils/Yaml';
 import TableHead from '../../TableHead';
@@ -277,7 +278,7 @@ const AwsS3Page = (props) => {
                 <p />
                 { <Spinner condition={bucketKeyContent.loading} label={"Fetching bucket key content"} color={"darkblue"} /> }
                 { bucketKeyContent.content && <pre style={{marginTop:"6pt",marginBottom:"0pt",background:"inherit",borderRadius:"8pt",filter:"brightness(1.1)",maxWidth:"800pt"}}>
-                    <span style={{fontSize:"0",opacity:"0"}} id={bucketKeyContent.key}>{JSON.stringify(bucketKeyContent.content)}</span>
+                    <span style={{fontSize:"0",opacity:"0"}} id={bucketKeyContent.key}>{Json.Str(bucketKeyContent.content)}</span>
                     <img alt="copy" onClick={() => Clipboard.Copy(bucketKeyContent.key)} style={{cursor:"copy",float:"right",fontFamily:"monospace"}} src={Image.Clipboard()} height="19" />
                     {Yaml.Format(bucketKeyContent.content)}
                 </pre> }

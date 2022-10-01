@@ -11,6 +11,7 @@ import Context from '../utils/Context';
 import Cookie from '../utils/Cookie';
 import Env from '../utils/Env';
 import Image from '../utils/Image';
+import Json from '../utils/Json';
 import LiveTime from '../LiveTime';
 import Logout from '../utils/Logout';
 import Yaml from '../utils/Yaml';
@@ -119,7 +120,7 @@ const LoginPage = (props) => {
                     <div className="boxstyle info" style={{paddingLeft:"8pt",color:"darkblue",fontSize:"small"}}>
                         <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>AuthToken</b> from Cookie</span>
                         <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>
-                            <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{JSON.stringify(Auth.Token())}</span>
+                            <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{Json.Str(Auth.Token())}</span>
                             <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken")} style={{float:"right",height:"20px",cursor:"copy"}} />
                             {Yaml.Format(Auth.Token())}
                         </pre>
@@ -129,7 +130,7 @@ const LoginPage = (props) => {
                             {Cookie.AuthTokenRaw()}
                         </pre>
                     </div>
-                    { (JSON.stringify(Auth.Token()) !== JSON.stringify(header?.auth)) &&
+                    { (Json.Str(Auth.Token()) !== Json.Str(header?.auth)) &&
                         <div className="boxstyle info" style={{paddingLeft:"8pt",color:"darkblue",fontSize:"small"}}>
                             <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>Auth</b> from API</span>
                             <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{Yaml.Format(header?.auth)}</pre>
@@ -160,7 +161,7 @@ const LoginPage = (props) => {
                     <div className="boxstyle check-warn" style={{marginLeft:"90pt",marginRight:"90pt",color:"darkred",fontSize:"small"}}>
                         <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkred"}}><b>AuthToken</b> from Cookie</span>
                         <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkred",fontWeight:"bold",marginTop:"6pt"}}>
-                            <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{JSON.stringify(header?.auth)}</span>
+                            <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{Json.Str(header?.auth)}</span>
                             <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken")} style={{float:"right",height:"20px",cursor:"copy"}} />
                             {Yaml.Format(Cookie.AuthToken())}
                         </pre>
@@ -174,7 +175,7 @@ const LoginPage = (props) => {
                 <div className="boxstyle check-warn" style={{marginLeft:"90pt",marginRight:"90pt",color:"darkred",fontSize:"small"}}>
                     <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkred"}}><b>Auth</b> from API</span>
                     <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkred",fontWeight:"bold",marginTop:"6pt"}}>
-                        <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{JSON.stringify(header?.auth)}</span>
+                        <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{Json.Str(header?.auth)}</span>
                         <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken")} style={{float:"right",height:"20px",cursor:"copy"}} />
                         {Yaml.Format(header?.auth)}
                     </pre>
