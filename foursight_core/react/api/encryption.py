@@ -12,7 +12,7 @@ from .encoding_utils import base64_decode_to_bytes, base64_encode, bytes_to_stri
 # JWT-signed-encodde authtoken rather than server-side encrypted.
 class Encryption:
 
-    def __init__(self, encryption_password = None):
+    def __init__(self, encryption_password: str = None):
         self.encryption_password = encryption_password
 
     # We use encryption for the React 'authToken' cookie, which is a JSON object containing
