@@ -8,14 +8,12 @@ import boto3
 import datetime
 import ast
 import copy
-from http.cookies import SimpleCookie
 import pkg_resources
 import platform
-import pytz
+# TODO: do not import start import specific thing which i think is triple_des
 import requests
 import socket
 import sys
-import time
 import types
 import logging
 from itertools import chain
@@ -35,20 +33,22 @@ from dcicutils.misc_utils import get_error_message, PRINT
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from typing import Optional
-from .s3_connection import S3Connection
-from .fs_connection import FSConnection
-from .check_utils import CheckHandler
-from .sqs_utils import SQS
-from .stage import Stage
-from .environment import Environment
 from .app import app
+from .check_utils import CheckHandler
+from .cookie_utils import read_cookie, create_set_cookie_string
+from .fs_connection import FSConnection
+from .datetime_utils import convert_time_t_to_useastern_datetime, convert_utc_datetime_to_useastern_datetime
+from .environment import Environment
+from .misc_utils import sort_dictionary_by_lowercase_keys
 from .react.api.react_api import ReactApi
 from .routes import Routes
+from .s3_connection import S3Connection
+from .sqs_utils import SQS
+from .stage import Stage
 
-
+DEFAULT_ENV = os.environ.get("ENV_NAME", "env-name-unintialized")
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-
 
 class AppUtilsCore(ReactApi, Routes):
     """
@@ -93,6 +93,8 @@ class AppUtilsCore(ReactApi, Routes):
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
     def __init__(self):
+        # Store a reference to this singleton AppUtilsCore object into
+        # a property of the Chalice app object for easy access by routes.
         app.core = self
         self.init_load_time = self.get_load_time()
         self.environment = Environment(self.prefix)
@@ -105,18 +107,12 @@ class AppUtilsCore(ReactApi, Routes):
             loader=jinja2.FileSystemLoader(self.get_template_path()),
             autoescape=jinja2.select_autoescape(['html', 'xml'])
         )
+        self.portal_url = None
         self.auth0_client_id = None
         self.user_records = {}
-        # self.user_record = None
-        # self.user_record_error = None
-        # self.user_record_error_email = None
         self.lambda_last_modified = None
         self.cached_portal_url = {}
         super(AppUtilsCore, self).__init__()
-
-    @classmethod
-    def get_default_env(cls) -> str:
-        return os.environ.get("ENV_NAME", cls.DEFAULT_ENV)
 
     @staticmethod
     def note_non_fatal_error_for_ui_info(error_object, calling_function):
@@ -155,7 +151,7 @@ class AppUtilsCore(ReactApi, Routes):
         Returns an FSConnection object or raises an error.
         """
         environments = self.init_environments(environ) if _environments is None else _environments
-        PRINT("environments = %s" % str(environments))
+        print("environments = %s" % str(environments))
         # if still not there, return an error
         if environ not in environments:
             error_res = {
@@ -208,8 +204,8 @@ class AppUtilsCore(ReactApi, Routes):
                         last_name = name.get("name_last")
                 subject = jwt_decoded.get("sub")
                 audience = jwt_decoded.get("aud")
-                issued_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("iat"))
-                expiration_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("exp"))
+                issued_time = convert_time_t_to_useastern_datetime(jwt_decoded.get("iat"))
+                expiration_time = convert_time_t_to_useastern_datetime(jwt_decoded.get("exp"))
         except Exception as e:
             self.note_non_fatal_error_for_ui_info(e, 'get_logged_in_user_info')
         return {"email_address": email_address,
@@ -262,6 +258,7 @@ class AppUtilsCore(ReactApi, Routes):
             # Just in case. We should already have this value from the GAC.
             # But Will said get it from the portal (was hardcoded in the template),
             # so I had written code to do that; just call as fallback for now.
+            # TODO: Also if we do get it then do we assume it varies per env; if so need to handle caching different.
             auth0_client_id = self.get_auth0_client_id_from_portal(env_name)
         return auth0_client_id
 
@@ -283,6 +280,9 @@ class AppUtilsCore(ReactApi, Routes):
     def get_auth0_secret(self, env_name: str) -> str:
         return os.environ.get("CLIENT_SECRET")
 
+    def get_default_env(self) -> str:
+        return os.environ.get("ENV_NAME", DEFAULT_ENV)
+
     def check_authorization(self, request_dict, env=None):
         """
         Manual authorization, since the builtin chalice @app.authorizer() was not
@@ -292,26 +292,23 @@ class AppUtilsCore(ReactApi, Routes):
         Take in a dictionary format of the request (app.current_request) so we
         can test this.
         """
-        print('xyzzy;checkauth')
         # first check the Authorization header
         dev_auth = request_dict.get('headers', {}).get('authorization')
         # grant admin if dev_auth equals secret value
         if dev_auth and dev_auth == os.environ.get('DEV_SECRET'):
-            print('xyzzy;checkauth;true-1')
             return True
         # if we're on localhost, automatically grant authorization
         # this looks bad but isn't because request authentication will
         # still fail if local keys are not configured
-        # if self.is_running_locally(request_dict):
-        #     print('xyzzy;checkauth;true-2')
-        #     return True
+        #if self.is_running_locally(request_dict):
+        #    return True
         jwt_decoded = self.get_decoded_jwt_token(env, request_dict)
         if jwt_decoded:
             try:
                 if env is None:
-                    print('xyzzy;checkauth;true-3')
                     return False  # we have no env to check auth
                 for env_info in self.init_environments(env).values():
+                    logger.warn("foursight_core.check_authorization: feteching users for env: {env_info['ff_env']}")
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
                                                      ff_env=env_info['ff_env'],
                                                      add_on='frame=object&datastore=database')
@@ -323,137 +320,120 @@ class AppUtilsCore(ReactApi, Routes):
                     if not groups:
                         logger.warn("foursight_core.check_authorization: No 'groups' element for user record! Returning False.")
                         self.set_user_record(email=jwt_decoded.get('email'), record=None, error="nogroups", exception=None)
-                        # self.user_record = None
-                        # self.user_record_error = "nogroups"
-                        # self.user_record_error_email = jwt_decoded.get('email')
                         return False
                     if not (('admin' in user_res['groups'] or 'foursight' in user_res['groups']) and jwt_decoded.get('email_verified')):
                         logger.error("foursight_core.check_authorization: Returning False")
-                        # if unauthorized for one, unauthorized for all
                         self.set_user_record(email=jwt_decoded.get('email'), record=None, error="noadmin", exception=None)
-                        # self.user_record = None
-                        # self.user_record_error = "noadmin"
-                        # self.user_record_error_email = jwt_decoded.get('email')
+                        # if unauthorized for one, unauthorized for all
                         return False
                     self.set_user_record(email=jwt_decoded.get('email'), record=user_res, error=None, exception=None)
-                    # self.user_record = user_res
-                    # self.user_record_error = None
-                    # self.user_record_error_email = None
                 logger.warn("foursight_core.check_authorization: Returning True")
                 return True
             except Exception as e:
-                logger.error("foursight_core.check_authorization: Exception on check_authorization")
                 self.set_user_record(email=jwt_decoded.get('email'), record=None, error="exception", exception=str(e))
-                # self.user_record = None
-                # self.user_record_error = "exception"
-                # self.user_record_error_email = jwt_decoded.get('email')
+                logger.error("foursight_core.check_authorization: Exception on check_authorization")
                 logger.error(e)
         logger.error("foursight_core.check_authorization: Returning False ")
         return False
 
     def auth0_callback(self, request, env):
-        print('xyzzy;calback')
-        req_dict = request.to_dict()
-        domain, context = self.get_domain_and_context(req_dict)
-        # extract redir cookie
-        cookies = req_dict.get('headers', {}).get('cookie')
-        redir_url = context + 'view/' + env
 
-#       for cookie in cookies.split(';'):
-#           name, val = cookie.strip().split('=')
-#           if name == 'redir':
-#               redir_url = val
-        try:
-            simple_cookies = SimpleCookie()
-            simple_cookies.load(cookies)
-            simple_cookies = {k: v.value for k, v in simple_cookies.items()}
-            redir_url_cookie = simple_cookies.get("redir")
-            if redir_url_cookie:
-                redir_url = redir_url_cookie
-        except Exception as e:
-            PRINT("Exception loading cookies: {cookies}")
-            PRINT(e)
+        request_dict = request.to_dict()
+        domain, context = self.get_domain_and_context(request_dict)
 
-        resp_headers = {'Location': redir_url}
-        params = req_dict.get('query_params')
-        if not params:
-            print('xyzzy;calback;no-params')
+        auth0_params = request_dict.get("query_params")
+        if not auth0_params:
             return self.forbidden_response()
-        auth0_code = params.get('code', None)
+
+        auth0_code = auth0_params.get("code")
         auth0_client = self.get_auth0_client_id(env)
         auth0_secret = self.get_auth0_secret(env)
+
+        redir_url_cookie = read_cookie("redir", request_dict)
+        redir_url = redir_url_cookie if redir_url_cookie else f"{context if context else '/'}view/{env}"
+
+        response_headers = {"Location": redir_url}
+
         if not (domain and auth0_code and auth0_client and auth0_secret):
-            print('xyzzy;calback;no-domain-or')
-            return Response(status_code=301, body=json.dumps(resp_headers), headers=resp_headers)
-        print('xyzzy;calback;authclient')
-        print(auth0_client)
-        print(auth0_secret)
-        print(auth0_code)
-        if self.is_running_locally(req_dict):
-            redir_url = f"http://{domain}/callback/"
+            #
+            # TODO: What case is this really handling?
+            # If any of these things (domain and Auth0 credentials) are not set
+            # then something is seriously wrong, but redirecting back to main Foursight page.
+            # TODO: Not detecting if this is Foursight React here as we just don't know until
+            # we make the Auth0 call below where a scope token comes back with a React indicator.
+            #
+            return Response(status_code=301, body=json.dumps(response_headers), headers=response_headers)
+
+        if self.is_running_locally(request_dict):
+            #
+            # For the localhost situation the URL registered at Auth0
+            # as a valid callback does not have the "/api" prefix (context).
+            # http://localhost:8000/callback/
+            #
+            auth0_redirect_url = f"http://{domain}/callback/"
         else:
-            redir_url = f"https://{domain}{context if context else '/'}callback/"
+            #
+            # For normal (non-localhost) operation the URL registered at Auth0
+            # as a valid callback has the "/api" prefix (context):
+            # https://foursight-domain/api/callback/
+            #
+            auth0_redirect_url = f"https://{domain}{context if context else '/'}callback/"
+
         payload = {
-            'grant_type': 'authorization_code',
-            'client_id': auth0_client,
-            'client_secret': auth0_secret,
-            'code': auth0_code,
-            'redirect_uri': redir_url
-            # 'redirect_uri': ''.join(['https://', domain, context, 'callback/'])
+            "grant_type": "authorization_code",
+            "client_id": auth0_client,
+            "client_secret": auth0_secret,
+            "code": auth0_code,
+            "redirect_uri": auth0_redirect_url
         }
         json_payload = json.dumps(payload)
-        print(json_payload)
-        headers = {'content-type': "application/json"}
-        print('xyzzy;calback;post')
-        res = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
-        id_token = res.json().get('id_token', None)
-        print('xyzzy;calback;post-done')
-        print(res)
-        print(id_token)
-        if id_token:
-            print('xyzzy;check-is-react')
-            print(res.json())
-            expires_in = res.json().get('expires_in', None)
-            if self.is_react_authentication(res.json()):
-                print('xyzzy;check-is-react-okay')
-                return self.react_authentication(req_dict, env, domain, id_token, expires_in);
-            if domain and not self.is_running_locally(req_dict):
-                cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
-            else:
-                # N.B. When running on localhost cookies cannot be set unless we leave off the domain entirely.
-                # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
-                cookie_str = ''.join(['jwtToken=', id_token, '; Path=/;'])
-            if expires_in:
-                expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
-                cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
-            resp_headers['Set-Cookie'] = cookie_str
-            print('xyzzy;calback;set-cookie')
-            print(cookie_str)
-        return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
+        auth0_headers = {"content-type": "application/json"}
+        auth0_response = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=auth0_headers)
+        auth0_response_json = auth0_response.json()
+        jwt_token = auth0_response_json.get("id_token")
+        jwt_expires = auth0_response_json.get("expires_in")
+
+        if jwt_token:
+            #
+            # N.B. When running on localhost cookies cannot be set unless we leave off the domain entirely.
+            # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
+            #
+            if self.is_react_authentication(auth0_response_json):
+                return self.react_authentication(request_dict, env, domain, jwt_token, jwt_expires);
+
+            cookie_str = create_set_cookie_string(request, name="jwtToken",
+                                                           value=jwt_token,
+                                                           domain=domain,
+                                                           expires=jwt_expires)
+            response_headers["set-cookie"] = cookie_str
+
+        return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
     def get_jwt_token(self, request_dict) -> str:
         """
         Simple function to extract a jwt from a request that has already been
         dict-transformed
         """
-        cookies = request_dict.get('headers', {}).get('cookie')
-        cookie_dict = {}
-        if cookies:
-            for cookie in cookies.split(';'):
-                cookie_split = cookie.strip().split('=')
-                if len(cookie_split) == 2:
-                    cookie_dict[cookie_split[0]] = cookie_split[1]
-        token = cookie_dict.get('jwtToken', None)
-        return token
+        return read_cookie("jwtToken", request_dict)
 
     def get_decoded_jwt_token(self, env_name: str, request_dict) -> dict:
         try:
             jwt_token = self.get_jwt_token(request_dict)
+            return self.decode_jwt(jwt_token, env_name)
+        except:
+            logger.warn(f"foursight_core: Exception getting decoded JWT token.")
+            return None
+
+    def decode_jwt(self, jwt_token: str, env_name: str) -> dict:
+        try:
             if not jwt_token:
                 return None
             auth0_client_id = self.get_auth0_client_id(env_name)
             auth0_secret = self.get_auth0_secret(env_name)
-            # leeway accounts for clock drift between us and auth0
+            # The leeway accounts for a bit of clock drift between us and Auth0.
+            # This decoding WITH signature verification is very fast;
+            # on my (dmichaels) MacBook it generally takes less than 0.04ms;
+            # very good since we do this on every (protected) React API call.
             return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30, options={"verify_signature": True}, algorithms=["HS256"])
         except Exception as e:
             logger.warn(f"foursight_core: Exception decoding JWT token: {jwt_token}")
@@ -489,9 +469,9 @@ class AppUtilsCore(ReactApi, Routes):
         Does any final processing of a Foursight response before returning it. Right now, this includes:
         * Changing the response body if it is greater than 5.5 MB (Lambda body max is 6 MB)
         """
-        if cls.get_size(response.body) > cls.LAMBDA_MAX_BODY_SIZE:  # should be much faster than json.dumps
-            response.body = 'Body size exceeded 6 MB maximum.'
-            response.status_code = 413
+#       if cls.get_size(response.body) > cls.LAMBDA_MAX_BODY_SIZE:  # should be much faster than json.dumps
+#           response.body = 'Body size exceeded 6 MB maximum.'
+#           response.status_code = 413
         return response
 
     @classmethod
@@ -500,6 +480,7 @@ class AppUtilsCore(ReactApi, Routes):
         Simple function to loop through the query params and convert them to
         bools/ints/floats other literals as applicable
         """
+        params = params or {}
         to_delete = []
         for key, value in params.items():
             if not value:
@@ -563,17 +544,6 @@ class AppUtilsCore(ReactApi, Routes):
             return cls.TRIM_ERR_OUTPUT
         return output
 
-    def sort_dictionary_by_lowercase_keys(self, dictionary: dict) -> dict:
-        """
-        Returns the given dictionary sorted by key values (yes, dictionaries are ordered as of Python 3.7).
-        If the given value is not a dictionary it will be coerced to one.
-        :param dictionary: Dictionary to sort.
-        :return: Given dictionary sorted by key value.
-        """
-        if not dictionary or not isinstance(dictionary, dict):
-            return {}
-        return {key: dictionary[key] for key in sorted(dictionary.keys(), key=lambda key: key.lower())}
-
     def get_aws_account_number(self) -> dict:
         try:
             caller_identity = boto3.client("sts").get_caller_identity()
@@ -603,44 +573,6 @@ class AppUtilsCore(ReactApi, Routes):
         except Exception as e:
             self.note_non_fatal_error_for_ui_info(e, 'get_obfuscated_credentials_info')
             return {}
-
-    def convert_utc_datetime_to_useastern_datetime(self, t) -> str:
-        """
-        Converts the given UTC datetime object or string into a US/Eastern datetime string
-        and returns its value in a form that looks like 2022-08-22 13:25:34 EDT.
-        If the argument is a string it is ASSUMED to have a value which looks
-        like 2022-08-22T14:24:49.000+0000; this is the datetime string format
-        we get from AWS via boto3 (e.g. for a lambda last-modified value).
-
-        :param t: UTC datetime object or string value.
-        :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
-        """
-        try:
-            if isinstance(t, str):
-                t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
-            t = t.replace(tzinfo=pytz.UTC).astimezone(pytz.timezone("US/Eastern"))
-            return t.strftime("%Y-%m-%d %H:%M:%S %Z")
-        except Exception as e:
-            self.note_non_fatal_error_for_ui_info(e, 'convert_utc_datetime_to_useastern_datetime')
-            return ""
-
-    def convert_time_t_to_useastern_datetime(self, time_t: int) -> str:
-        """
-        Converts the given "epoch" time (seconds since 1970-01-01T00:00:00Z)
-        integer value to a US/Eastern datetime string and returns its value
-        in a form that looks like 2022-08-22 13:25:34 EDT.
-
-        :param time_t: Epoch time value (i.e. seconds since 1970-01-01T00:00:00Z)
-        :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
-        """
-        try:
-            if not isinstance(time_t, int):
-                return ""
-            t = datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
-            return self.convert_utc_datetime_to_useastern_datetime(t)
-        except Exception as e:
-            self.note_non_fatal_error_for_ui_info(e, 'convert_time_t_to_useastern_datetime')
-            return ""
 
     def ping_elasticsearch(self, env_name: str) -> bool:
         logger.warn(f"foursight_core: Pinging ElasticSearch: {self.host}")
@@ -738,10 +670,10 @@ class AppUtilsCore(ReactApi, Routes):
                 lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
                 lambda_last_modified_tag = lambda_tags.get("last_modified")
                 if lambda_last_modified_tag:
-                    lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified_tag)
+                    lambda_last_modified = convert_utc_datetime_to_useastern_datetime(lambda_last_modified_tag)
                 else:
                     lambda_last_modified = lambda_info["Configuration"]["LastModified"]
-                    lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified)
+                    lambda_last_modified = convert_utc_datetime_to_useastern_datetime(lambda_last_modified)
                 if lambda_current:
                     self.lambda_last_modified = lambda_last_modified
                 return lambda_last_modified
@@ -893,9 +825,6 @@ class AppUtilsCore(ReactApi, Routes):
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
             user_record=self.get_user_record(environ, request_dict),
-            # user_record=self.user_record,
-            # user_record_error=self.user_record_error,
-            # user_record_error_email=self.user_record_error_email,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
@@ -909,12 +838,6 @@ class AppUtilsCore(ReactApi, Routes):
         )
         html_resp.status_code = 200
         return self.process_response(html_resp)
-
-    def view_reload_lambda(self, request, environ, is_admin=False, domain="", context="/", lambda_name: str = None):
-        self.reload_lambda(lambda_name)
-        time.sleep(3)
-        resp_headers = {'Location': f"{context}info/{environ}"}
-        return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
     # dmichaels/2020-08-01:
     # Added /info/{environ} for debugging/troubleshooting purposes.
@@ -947,10 +870,10 @@ class AppUtilsCore(ReactApi, Routes):
             "Foursight Bucket Prefix:": get_foursight_bucket_prefix()
         }
         gac_name = get_identity_name()
-        gac_values = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(get_identity_secrets()))
-        environment_and_bucket_info = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(
+        gac_values = sort_dictionary_by_lowercase_keys(obfuscate_dict(get_identity_secrets()))
+        environment_and_bucket_info = sort_dictionary_by_lowercase_keys(obfuscate_dict(
                                         self.environment.get_environment_and_bucket_info(environ, stage_name)))
-        declared_data = self.sort_dictionary_by_lowercase_keys(EnvUtils.declared_data())
+        declared_data = sort_dictionary_by_lowercase_keys(EnvUtils.declared_data())
         dcicutils_version = pkg_resources.get_distribution('dcicutils').version
         foursight_core_version = pkg_resources.get_distribution('foursight-core').version
         versions = {
@@ -970,7 +893,7 @@ class AppUtilsCore(ReactApi, Routes):
         }
         aws_credentials = self.get_obfuscated_credentials_info(environ)
         aws_account_number = aws_credentials.get("AWS Account Number:")
-        os_environ = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
+        os_environ = sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
         request_dict = request.to_dict()
 
         html_resp.body = template.render(
@@ -988,9 +911,6 @@ class AppUtilsCore(ReactApi, Routes):
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
             user_record=self.get_user_record(environ, request_dict),
-            # user_record=self.user_record,
-            # user_record_error=self.user_record_error,
-            # user_record_error_email=self.user_record_error_email,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_credentials=aws_credentials,
             aws_account_number=aws_account_number,
@@ -1031,6 +951,8 @@ class AppUtilsCore(ReactApi, Routes):
                                                   add_on='frame=object&datastore=database')
                 users.append({"email": this_email, "record": this_user})
             except Exception as e:
+                # TODO
+                # Pass this error back to caller (status code not 200).
                 users.append({"email": this_email, "record": {"error": str(e)}})
         template = self.jin_env.get_template('user.html')
         html_resp.body = template.render(
@@ -1048,9 +970,6 @@ class AppUtilsCore(ReactApi, Routes):
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
             user_record=self.get_user_record(environ, request_dict),
-            # user_record=self.user_record,
-            # user_record_error=self.user_record_error,
-            # user_record_error_email=self.user_record_error_email,
             users=users,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
@@ -1094,7 +1013,7 @@ class AppUtilsCore(ReactApi, Routes):
                 "first_name": user_record.get("first_name"),
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
-                "modified": self.convert_utc_datetime_to_useastern_datetime(last_modified)})
+                "modified": convert_utc_datetime_to_useastern_datetime(last_modified)})
         users = sorted(users, key=lambda key: key["email_address"])
         template = self.jin_env.get_template('users.html')
         html_resp.body = template.render(
@@ -1112,9 +1031,6 @@ class AppUtilsCore(ReactApi, Routes):
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
             user_record=self.get_user_record(environ, request_dict),
-            # user_record=self.user_record,
-            # user_record_error=self.user_record_error,
-            # user_record_error_email=self.user_record_error_email,
             users=users,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
@@ -1188,9 +1104,6 @@ class AppUtilsCore(ReactApi, Routes):
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
             user_record=self.get_user_record(environ, request_dict),
-            # user_record=self.user_record,
-            # user_record_error=self.user_record_error,
-            # user_record_error_email=self.user_record_error_email,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             running_checks=running_checks,
@@ -1350,9 +1263,6 @@ class AppUtilsCore(ReactApi, Routes):
             is_running_locally=self.is_running_locally(request_dict),
             logged_in_as=self.get_logged_in_user_info(environ, request_dict),
             user_record=self.get_user_record(environ, request_dict),
-            # user_record=self.user_record,
-            # user_record_error=self.user_record_error,
-            # user_record_error_email=self.user_record_error_email,
             auth0_client_id=self.get_auth0_client_id(environ),
             aws_account_number=self.get_aws_account_number(),
             domain=domain,
@@ -1621,14 +1531,14 @@ class AppUtilsCore(ReactApi, Routes):
             logger.warn(f"queue_scheduled_checks: have schedule_name")
             logger.warn(f"queue_scheduled_checks: environment.is_valid_environment_name(sched_environ, or_all=True)={self.environment.is_valid_environment_name(sched_environ, or_all=True)}")
             if not self.environment.is_valid_environment_name(sched_environ, or_all=True):
-                PRINT(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
+                print(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
                 return
             sched_environs = self.environment.get_selected_environment_names(sched_environ)
             logger.warn(f"queue_scheduled_checks: sched_environs={sched_environs}")
             check_schedule = self.check_handler.get_check_schedule(schedule_name, conditions)
             logger.warn(f"queue_scheduled_checks: sched_environs={check_schedule}")
             if not check_schedule:
-                PRINT(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
+                print(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
                 return
             for environ in sched_environs:
                 # add the run info from 'all' as well as this specific environ
@@ -1797,7 +1707,7 @@ class AppUtilsCore(ReactApi, Routes):
             deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
             finished_dependencies = set(deps_w_uuid).issubset(already_run)
             if not finished_dependencies:
-                PRINT(f'-RUN-> Not ready for: {run_name}')
+                pass
         else:
             finished_dependencies = True
         connection = self.init_connection(run_env)
@@ -1812,7 +1722,6 @@ class AppUtilsCore(ReactApi, Routes):
                 found_rec = connection.get_object(rec_key)
                 if found_rec is not None:
                     # the action record has been written. Abort and propogate
-                    PRINT(f'-RUN-> Found existing action record: {rec_key}. Skipping')
                     self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
                     return None
                 else:
@@ -1823,9 +1732,9 @@ class AppUtilsCore(ReactApi, Routes):
                     # This was changed per Will's suggestion in code review. -kmp 7-Jun-2022
                     # connection.put_object(rec_key, rec_body)
                     connection.connections['s3'].put_object(rec_key, rec_body)
-                    PRINT(f'-RUN-> Wrote action record: {rec_key}')
+                    print(f'-RUN-> Wrote action record: {rec_key}')
             run_result = self.check_handler.run_check_or_action(connection, run_name, run_kwargs)
-            PRINT('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))
+            print('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))
             # invoke action if running a check and kwargs['queue_action'] matches stage
             stage = self.stage.get_stage()
             if run_result['type'] == 'check' and run_result['kwargs']['queue_action'] == stage:
@@ -1837,16 +1746,16 @@ class AppUtilsCore(ReactApi, Routes):
                         self.queue_action(run_env, run_result['action'],
                                           params=action_params, uuid=run_uuid)
                     except Exception as exc:
-                        PRINT('-RUN-> Could not queue action %s on stage %s with kwargs: %s. Error: %s'
+                        print('-RUN-> Could not queue action %s on stage %s with kwargs: %s. Error: %s'
                               % (run_result['action'], stage, action_params, str(exc)))
                     else:
-                        PRINT('-RUN-> Queued action %s on stage %s with kwargs: %s'
+                        print('-RUN-> Queued action %s on stage %s with kwargs: %s'
                               % (run_result['action'], stage, action_params))
-            PRINT(f'-RUN-> Finished: {run_name}')
+            print(f'-RUN-> Finished: {run_name}')
             self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return run_result
         else:
-            PRINT(f'-RUN-> Recovered: {run_name}')
+            print(f'-RUN-> Recovered: {run_name}')
             self.sqs.recover_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
 
@@ -1873,6 +1782,9 @@ class AppUtilsCore(ReactApi, Routes):
         return AppUtilsCore._singleton
 
 
+# TODO: See if we can get rid of this.
+#       ONLY used by: foursight/chalicelib/app_utils.py but seems it could use AppUtilsCore instead.
+#       NOT used by: foursight-cgap/chalicelib/app_utils
 class AppUtils(AppUtilsCore):  # for compatibility with older imports
     """
     Class AppUtils is the most high-level class that's used directy by Chalice object app.
