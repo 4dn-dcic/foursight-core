@@ -109,10 +109,10 @@ const LoginPage = (props) => {
                         <td style={{width:"8pt"}}></td>
                         <td style={{textAlign:"top",verticalAlign:"top"}}><small style={{marginTop:"20pt"}}>
                             { Env.Current() && <>
-                                Current environment: <b>{Env.Current()}</b> <br />
+                                Current environment: <Link to={Client.Path("/env")} style={{color:"inherit"}}><b>{Env.Current()}</b></Link> <br />
                             </>}
                             { header?.auth?.initial_env && <>
-                                Initial environment: <b>{header.auth.initial_env}</b> <br />
+                                Initial environment: <Link to={Client.Path("/env")} style={{color:"inherit"}}><b>{header.auth.initial_env}</b></Link> <br />
                             </>}
                             {(header?.app?.credentials?.aws_account_number) && <>
                                 AWS Account: {header?.app?.credentials?.aws_account_number} <br />
@@ -159,7 +159,10 @@ const LoginPage = (props) => {
             </div>
             <div className="boxstyle check-warn" style={{marginTop:"15pt",marginLeft:"90pt",marginRight:"90pt",padding:"10pt",color:"darkred"}}>
                 Not logged in.
-                Click <u style={{cursor:"pointer"}} onClick={() => login()}><b>here</b></u> to <span style={{cursor:"pointer"}} onClick={() => login()}>login</span>.
+                Click <u style={{cursor:"pointer"}} onClick={() => login()}><b>here</b></u> to <span style={{cursor:"pointer"}} onClick={() => login()}><b>login</b></span>.
+                {(header?.app?.credentials?.aws_account_number) && <>
+                    <br /> <small>AWS Account: {header?.app?.credentials?.aws_account_number}</small>
+                </>}
             </div>
             { showingAuthToken && <>
                 { Cookie.HasAuthToken() &&
