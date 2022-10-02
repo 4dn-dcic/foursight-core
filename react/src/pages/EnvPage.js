@@ -16,6 +16,7 @@ const EnvPage = (props) => {
 
     Page.NoteLastUrl(header);
 
+    // TODO: Wrong ... this is just to get the GAC name ... but we want it for EACH env on this page ...
     const [ info, setInfo ] = useState();
     useEffect(() => { if (Auth.IsLoggedIn()) Fetch.get(Server.Url("/info"), setInfo); }, []);
 
