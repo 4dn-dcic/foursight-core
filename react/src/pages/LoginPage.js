@@ -95,18 +95,28 @@ const LoginPage = (props) => {
                         <td align="top" style={{whiteSpace:"nowrap"}}>
                             Logged in as:&nbsp;
                             <Link to={Client.Path("/users/" + Auth.LoggedInUser(header))}><b style={{color:"darkblue"}}>{Auth.LoggedInUser(header)}</b></Link> <br />
-                            <div style={{fontSize:"small",marginTop:"3pt"}}>
+                            <div style={{fontSize:"small",marginTop:"6pt",paddingTop:"5pt",borderTop:"1px solid"}}>
+                                Session started: <LiveTime.FormatDuration start={Auth.Token().authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
+                                <br />
+                                Session expires: <LiveTime.FormatDuration end={Auth.Token().authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
+                                <br />
                                 Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}}
-                                        onClick={()=> Logout()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</span>.
+                                    onClick={()=> Logout()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</span>.
                             </div>
                         </td>
                         <td style={{width:"8pt"}}></td>
                         <td style={{background:"darkblue",width:"2px"}}></td>
                         <td style={{width:"8pt"}}></td>
-                        <td style={{textAlign:"top"}}><small style={{marginTop:"20pt"}}>
-                            Logged in: <LiveTime.FormatDuration start={Auth.Token().authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
-                            <br />
-                            Session expires: <LiveTime.FormatDuration end={Auth.Token().authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
+                        <td style={{textAlign:"top",verticalAlign:"top"}}><small style={{marginTop:"20pt"}}>
+                            { Env.Current() && <>
+                                Current environment: <b>{Env.Current()}</b> <br />
+                            </>}
+                            { header?.auth?.initial_env && <>
+                                Initial environment: <b>{header.auth.initial_env}</b> <br />
+                            </>}
+                            {(header?.app?.credentials?.aws_account_number) && <>
+                                AWS Account: {header?.app?.credentials?.aws_account_number} <br />
+                            </>}
                         </small></td>
                     </tr></tbody></table>
                 </div>
@@ -150,11 +160,6 @@ const LoginPage = (props) => {
             <div className="boxstyle check-warn" style={{marginTop:"15pt",marginLeft:"90pt",marginRight:"90pt",padding:"10pt",color:"darkred"}}>
                 Not logged in.
                 Click <u style={{cursor:"pointer"}} onClick={() => login()}><b>here</b></u> to <span style={{cursor:"pointer"}} onClick={() => login()}>login</span>.
-                {(header?.app?.credentials?.aws_account_number) ? (<React.Fragment>
-                    <br /> <small> AWS Account: {header?.app?.credentials?.aws_account_number} </small>
-                    <br/>
-                </React.Fragment>):(<React.Fragment>
-                </React.Fragment>)}
             </div>
             { showingAuthToken && <>
                 { Cookie.HasAuthToken() &&

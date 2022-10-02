@@ -1,3 +1,4 @@
+import copy
 import os
 from dcicutils.env_utils import (
     infer_foursight_from_env,
@@ -15,6 +16,12 @@ class Envs:
 
     def get_known_envs(self) -> str:
         return self.known_envs
+
+    def get_known_envs_with_gac_names(self, gac) -> list:
+        known_envs = copy.deepcopy(self.get_known_envs())
+        for known_env in known_envs:
+            known_env["gac_name"] = gac.get_gac_name(known_env["full_name"])
+        return known_envs
 
     def get_default_env(self) -> str:
         return os.environ.get("ENV_NAME", "no-default-env")

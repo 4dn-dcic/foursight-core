@@ -8,17 +8,18 @@ import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
+import Type from '../utils/Type';
 import Uuid from '../utils/Uuid';
 
 const EnvPage = (props) => {
 
     const [ header, setHeader ] = useContext(Global);
 
-    Page.NoteLastUrl(header);
-
-    // TODO: Wrong ... this is just to get the GAC name ... but we want it for EACH env on this page ...
+    // Call the /info endpoint API just to get the GAC names.
     const [ info, setInfo ] = useState();
     useEffect(() => { if (Auth.IsLoggedIn()) Fetch.get(Server.Url("/info"), setInfo); }, []);
+
+    Page.NoteLastUrl(header);
 
     function updateHeader(env) {
         if (!Str.HasValue(env)) {
@@ -50,6 +51,18 @@ const EnvPage = (props) => {
     function onChange(arg, env) {
         const environCompare = arg.target.value;
         navigate(Client.Path("/gac/" + environCompare, env))
+    }
+
+    function GetGacName(env, info) {
+        if (!Type.IsNonEmptyObject(info)) return "Fetching ..."
+        const known_env = info.known_envs?.filter(known_env => Env.Equals(known_env, env));
+        return (Type.IsNonEmptyArray(known_env) && known_env[0].gac_name) || "GAC name unknown";
+    }
+
+    function HasGacName(env, info) {
+        if (!Type.IsNonEmptyObject(info)) return false;
+        const known_env = info.known_envs?.filter(known_env => Env.Equals(known_env, env));
+        return (Type.IsNonEmptyArray(known_env) && known_env[0].gac_name) && true || false;
     }
 
     // TODO: clean up this styles stuff.
@@ -139,8 +152,8 @@ const EnvPage = (props) => {
                                     Short Name: <span style={envNameTextStyles(env.short_name)}>{env.short_name}</span> <br />
                                     Public Name: <span style={envNameTextStyles(env.public_name)}>{env.public_name}</span> <br />
                                     { Auth.IsLoggedIn() && <>
-                                        GAC Name: {info?.gac?.name || <i>Fetching ...</i>} <br />
-                                        { IsKnownCurrentEnv() && <>
+                                        GAC Name: {GetGacName(env, info)} <br />
+                                        { IsKnownCurrentEnv() && HasGacName(env, info) && <>
                                             <select style={{border:"0",background:"transparent","WebkitAppearance":"none"}} onChange={(selected) => onChange(selected, Env.PreferredName(env, header))}>
                                                 <option>GAC Compare &#x2193;</option>
                                                 { Env.KnownEnvs(header).map((env) =>

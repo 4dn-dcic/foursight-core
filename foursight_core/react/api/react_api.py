@@ -145,6 +145,7 @@ class ReactApi(ReactRoutes):
         else:
             environment_and_bucket_info = None
             portal_url = None
+        # Get known envs with GAC name for each.
         response = self.create_standard_response("reactapi_route_info")
         response.body = {
             "app": {
@@ -192,6 +193,7 @@ class ReactApi(ReactRoutes):
                 "running": 0,
                 "queued": 0
             },
+            "known_envs": self.envs.get_known_envs_with_gac_names(self.gac),
             # TODO: cache this (slow).
             "gac": {
                 "name": get_identity_name(),
