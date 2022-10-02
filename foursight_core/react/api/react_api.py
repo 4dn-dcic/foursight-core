@@ -73,6 +73,68 @@ class ReactApi(ReactRoutes):
     def react_serve_static_file(self, env: str, **kwargs):
         return self.react_ui.serve_static_file(env, **kwargs)
 
+    def reactapi_route_logout(self, request: dict, env: str):
+        domain, context = app.core.get_domain_and_context(request)
+        redirect_url = read_cookie("reactredir", request)
+        if not redirect_url:
+            http = "https" if not app.core.is_running_locally(request) else "http"
+            redirect_url = f"{http}://{domain}{context if context else ''}react/{env}/login"
+        else:
+            # Not certain if by design but the React library (universal-cookie) used to
+            # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
+            redirect_url = urllib.parse.unquote(redirect_url)
+        authtoken_cookie_deletion = create_delete_cookie_string(request=request, name="authtoken", domain=domain)
+        headers = {
+            "location": redirect_url,
+            "set-cookie": authtoken_cookie_deletion
+        }
+        return Response(status_code=302, body=json.dumps(headers), headers=headers)
+
+    def reactapi_route_header(self, request: dict, env: str):
+        # Note that this route is not protected but/and we return the results from authorize.
+        # TODO: remove stuff we don't need like credentials and also auth also version of other stuff and gac_name ...
+        #       review all these data points and see which ones really need ...
+        auth = self.auth.authorize(request, env)
+        data = ReactApi.Cache.header.get(env)
+        if not data:
+            data = self.reactapi_route_header_nocache(request, env)
+            ReactApi.Cache.header[env] = data
+        data = copy.deepcopy(data)
+        data["auth"] = auth
+        response = self.create_standard_response("reactapi_route_header")
+        response.body = data
+        return response
+
+    def reactapi_route_header_nocache(self, request: dict, env: str):
+        domain, context = app.core.get_domain_and_context(request)
+        stage_name = app.core.stage.get_stage()
+        default_env = app.core.get_default_env()
+        aws_credentials = self.auth.get_aws_credentials(env if env else default_env);
+        response = {
+            "app": {
+                "title": app.core.html_main_title,
+                "package": app.core.APP_PACKAGE_NAME,
+                "stage": stage_name,
+                "version": app.core.get_app_version(),
+                "domain": domain,
+                "context": context,
+                "local": app.core.is_running_locally(request),
+                "credentials": {
+                    "aws_account_number": aws_credentials["aws_account_number"]
+                },
+                "launched": app.core.init_load_time,
+                "deployed": app.core.get_lambda_last_modified()
+            },
+            "versions": {
+                "foursight": app.core.get_app_version(),
+                "foursight_core": pkg_resources.get_distribution('foursight-core').version,
+                "dcicutils": pkg_resources.get_distribution('dcicutils').version,
+                "python": platform.python_version(),
+                "chalice": chalice_version
+            },
+        }
+        return response
+
     def reactapi_route_info(self, request: dict, env: str):
         domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
@@ -186,54 +248,6 @@ class ReactApi(ReactRoutes):
                 users.append({"email_address": email_address, "record": {"error": str(e)}})
         response = self.create_standard_response("reactapi_route_users_user")
         response.body = sorted(users, key=lambda key: key["email_address"])
-        return response
-
-    def reactapi_route_clear_cache(self, request: dict, env: str):
-        pass
-
-    def reactapi_route_header(self, request: dict, env: str):
-        # Note that this route is not protected but/and we return the results from authorize.
-        # TODO: remove stuff we don't need like credentials and also auth also version of other stuff and gac_name ...
-        #       review all these data points and see which ones really need ...
-        auth = self.auth.authorize(request, env)
-        data = ReactApi.Cache.header.get(env)
-        if not data:
-            data = self.reactapi_route_header_nocache(request, env)
-            ReactApi.Cache.header[env] = data
-        data = copy.deepcopy(data)
-        data["auth"] = auth
-        response = self.create_standard_response("reactapi_route_header")
-        response.body = data
-        return response
-
-    def reactapi_route_header_nocache(self, request: dict, env: str):
-        domain, context = app.core.get_domain_and_context(request)
-        stage_name = app.core.stage.get_stage()
-        default_env = app.core.get_default_env()
-        aws_credentials = self.auth.get_aws_credentials(env if env else default_env);
-        response = {
-            "app": {
-                "title": app.core.html_main_title,
-                "package": app.core.APP_PACKAGE_NAME,
-                "stage": stage_name,
-                "version": app.core.get_app_version(),
-                "domain": domain,
-                "context": context,
-                "local": app.core.is_running_locally(request),
-                "credentials": {
-                    "aws_account_number": aws_credentials["aws_account_number"]
-                },
-                "launched": app.core.init_load_time,
-                "deployed": app.core.get_lambda_last_modified()
-            },
-            "versions": {
-                "foursight": app.core.get_app_version(),
-                "foursight_core": pkg_resources.get_distribution('foursight-core').version,
-                "dcicutils": pkg_resources.get_distribution('dcicutils').version,
-                "python": platform.python_version(),
-                "chalice": chalice_version
-            },
-        }
         return response
 
     def reactapi_route_gac_compare(self, request: dict, env: str, env_compare: str):
@@ -370,23 +384,6 @@ class ReactApi(ReactRoutes):
         response.body = {"check": check, "env": env, "uuid": queued_uuid}
         return response
 
-    def reactapi_route_logout(self, request: dict, env: str):
-        domain, context = app.core.get_domain_and_context(request)
-        redirect_url = read_cookie("reactredir", request)
-        if not redirect_url:
-            http = "https" if not app.core.is_running_locally(request) else "http"
-            redirect_url = f"{http}://{domain}{context if context else ''}react/{env}/login"
-        else:
-            # Not certain if by design but the React library (universal-cookie) used to
-            # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
-            redirect_url = urllib.parse.unquote(redirect_url)
-        authtoken_cookie_deletion = create_delete_cookie_string(request=request, name="authtoken", domain=domain)
-        headers = {
-            "location": redirect_url,
-            "set-cookie": authtoken_cookie_deletion
-        }
-        return Response(status_code=302, body=json.dumps(headers), headers=headers)
-
     def reactapi_route_aws_s3_buckets(self, request: dict, env: str):
         response = self.create_standard_response("reactapi_route_aws_s3_buckets")
         response.body = AwsS3.get_buckets()
@@ -408,3 +405,6 @@ class ReactApi(ReactRoutes):
         time.sleep(3)
         headers = {'Location': f"{context}info/{environ}"}
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
+
+    def reactapi_route_clear_cache(self, request: dict, env: str):
+        pass
