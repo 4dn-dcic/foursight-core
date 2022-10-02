@@ -1774,7 +1774,7 @@ class AppUtilsCore(ReactApi, Routes):
     @staticmethod
     def singleton(cls = None):
         # A little wonky having a singleton with an argument but this is sort of the way it
-        # was but in 4dn-cloud-infra/app-{cgap,fourfront}.py and we know the only place we create
+        # was in 4dn-cloud-infra/app-{cgap,fourfront}.py; and we know the only place we create
         # this is from there and also from foursight-cgap/chalicelib/app.py and foursight/app.py
         # with the appropriate locally derived (from this AppUtilsCore) AppUtils.
         if not AppUtilsCore._singleton:
