@@ -14,7 +14,7 @@ function IsLoggedIn(header) {
     // Actually need this because we do not know that we are logged
     // in on refresh unless/until the /header is fetched.
     //
-    if (header?.auth?.authorized) {
+    if (header?.auth?.authenticated) {
         return true;
     }
     if (Cookie.HasAuthToken()) {

@@ -104,9 +104,9 @@ const LoginPage = (props) => {
                         <td style={{background:"darkblue",width:"2px"}}></td>
                         <td style={{width:"8pt"}}></td>
                         <td style={{textAlign:"top"}}><small style={{marginTop:"20pt"}}>
-                            Logged in: <LiveTime.FormatDuration start={Auth.Token().authorized_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
+                            Logged in: <LiveTime.FormatDuration start={Auth.Token().authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
                             <br />
-                            Session expires: <LiveTime.FormatDuration end={Auth.Token().authorized_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
+                            Session expires: <LiveTime.FormatDuration end={Auth.Token().authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
                         </small></td>
                     </tr></tbody></table>
                 </div>

@@ -46,10 +46,16 @@ def route_requires_authorization(f):
         request = app.current_request.to_dict()
         authorize_response = app.core.react_authorize(request, env)
         if not authorize_response or not authorize_response["authorized"]:
-            return app.core.react_forbidden_response(authorize_response)
+            response = app.core.create_standard_response("route_requires_authorization")
+            response.body = authorize_response
+            # HTTP 401 - Unauthorized (more precisely: Unauthenticated):
+            # Request has no credentials or invalid credentials.
+            # HTTP 403 - Forbidden (more precisely: Unauthorized):
+            # Request has valid credentials but not enough privileges to perform an action on a resource.
+            response.status_code = 401 if not authorize_response["authenticated"] else 403
+            return response
         return f(*args, **kwargs)
     return wrapper
-
 
 class ReactRoutes:
 

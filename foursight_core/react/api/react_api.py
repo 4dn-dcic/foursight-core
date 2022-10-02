@@ -62,14 +62,6 @@ class ReactApi(ReactRoutes):
     def react_authorize(self, request: dict, env: str) -> dict:
         return self.auth.authorize(request, env)
 
-    def react_forbidden_response(self, body: dict = None):
-        response = self.create_standard_response("react_forbidden_response")
-        if not body or not isinstance(body, dict):
-            body = { "forbidden": True }
-        response.body = body
-        response.status_code = 403
-        return response
-
     def react_serve_static_file(self, env: str, **kwargs):
         return self.react_ui.serve_static_file(env, **kwargs)
 

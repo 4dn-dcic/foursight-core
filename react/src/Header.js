@@ -154,7 +154,7 @@ const Header = (props) => {
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { Env.KnownEnvs(header).map(env => 
                                     Env.Equals(env, Env.Current()) ?
-                                        <span key={env.full_name}>{Env.PreferredName(env, header)}&nbsp;&nbsp;&#x2713;{ !Env.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</span>
+                                        <span key={env.full_name}>{Env.PreferredName(env, header)}&nbsp;&nbsp;&#x2713;{ !Env.IsAllowed(env, header) && Auth.IsLoggedIn(header) && <>&nbsp;&nbsp;&#x26A0;</>}</span>
                                     :
                                         Env.IsAllowed(env, header) ?
                                             // This works "okay" 2022-09-18 but does not refresh/refetch (say) /users page data on select new env
@@ -162,7 +162,7 @@ const Header = (props) => {
                                             // So doing this funky double redirect to get it to ... TODO: figure out right/React of of doing this
                                             <Link key={env.full_name} to={{pathname: "/redirect"}} state={{url: !Env.IsCurrentKnown(header) ? Client.Path("/env", Env.PreferredName(Env.Default(header), header)) : Client.Path(null, Env.PreferredName(env, header))}}>{Env.PreferredName(env, header)}</Link>
                                         :
-                                            <Link key={env.public_name} to={Client.Path("/env", Env.PreferredName(env, header))}>{Env.PreferredName(env, header)}{!Env.IsAllowed(env, header) && <>&nbsp;&nbsp;&#x26A0;</>}</Link>
+                                            <Link key={env.public_name} to={Client.Path("/env", Env.PreferredName(env, header))}>{Env.PreferredName(env, header)}{!Env.IsAllowed(env, header) && Auth.IsLoggedIn(header) && <>&nbsp;&nbsp;&#x26A0;</>}</Link>
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
                                 <Link id="__envinfo__" to={Client.Path("/env")}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</Link>

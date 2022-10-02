@@ -18,7 +18,7 @@ class Auth():
     class Cache:
         aws_credentials = {}
 
-    def create_authtoken(self, jwt: str, domain: str, env: str) -> str:
+    def create_authtoken(self, jwt: str, domain: str) -> str:
         """
         Augments the given JWT with the list of known environments; the default environments;
         and the list of allowed (authorized) environments for the user associated with the
@@ -32,13 +32,14 @@ class Auth():
         email_verified = jwt_decoded.get("email_verified")
         known_envs, allowed_envs, first_name, last_name = self.envs.get_envs_for_user(email)
         authtoken_decoded = {
+            "authenticated": True,
+            "authenticated_at": jwt_decoded.get("iat"),
+            "authenticated_until": jwt_decoded.get("exp"),
+            "authorized": True,
             "user": email,
             "user_verified": email_verified,
             "first_name": first_name,
             "last_name": last_name,
-            "authorized": True,
-            "authorized_at": jwt_decoded.get("iat"),
-            "authorized_until": jwt_decoded.get("exp"),
             "allowed_envs": allowed_envs,
             "known_envs": known_envs,
             "default_env": self.envs.get_default_env(),
@@ -54,7 +55,7 @@ class Auth():
 
         return authtoken
 
-    def decode_authtoken(self, authtoken: str, env: str) -> dict:
+    def decode_authtoken(self, authtoken: str) -> dict:
         """
         Fully decode AND verify the given JWT-signed-encoded authtoken (cookie).
         If not verified (by the decode_jwt function) then None will be returned.
@@ -64,32 +65,23 @@ class Auth():
         """
         return self.decode_jwt(authtoken)
 
-    def create_unauthorized_response(self, request: dict, status: str, env: str, authtoken: dict = None) -> dict:
-        known_envs = self.envs.get_known_envs()
-        response = {
-            "authorized": False,
-            "status": status,
-            "known_envs": known_envs,
-            "default_env": self.envs.get_default_env(),
-            "domain": self.get_domain(request),
-            "aud": self.auth0_client_id # Need this for Auth0 login box.
-        }
-        if authtoken:
-            if authtoken["user"]:
-                response["user"] = authtoken["user"]
-            if authtoken["user_verified"]:
-                response["user_verified"] = authtoken["user_verified"]
-            if authtoken["first_name"]:
-                response["first_name"] = authtoken["first_name"]
-            if authtoken["last_name"]:
-                response["last_name"] = authtoken["last_name"]
-            if authtoken["allowed_envs"]:
-                response["allowed_envs"] = authtoken["allowed_envs"]
-            if authtoken["known_envs"]:
-                response["known_envs"] = authtoken["known_envs"]
-            if authtoken["default_env"]:
-                response["default_env"] = authtoken["default_env"]
+    def create_not_authorized_response(self, request: dict, status: str, authtoken_decoded: dict, authenticated: bool = True) -> dict:
+        if authtoken_decoded:
+            response = authtoken_decoded
+        else:
+            response = {
+                "known_envs": self.envs.get_known_envs(),
+                "default_env": self.envs.get_default_env(),
+                "domain": self.get_domain(request),
+                "aud": self.auth0_client_id # Needed for Auth0 login box.
+            }
+        response["authenticated"] = authenticated
+        response["authorized"] = False
+        response["status"] = status
         return response
+
+    def create_not_authenticated_response(self, request: dict, status: str, authtoken_decoded: dict = None) -> dict:
+        return self.create_not_authorized_response(request, status, authtoken_decoded, False)
 
     def authorization_callback(self, request: dict, env: str, domain: str, jwt: str, expires: int):
         react_redir_url = read_cookie("reactredir", request)
@@ -98,15 +90,12 @@ class Auth():
             # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
             react_redir_url = urllib.parse.unquote(react_redir_url)
             response_headers = {"Location": react_redir_url}
-
-        authtoken = self.create_authtoken(jwt, domain, env)
+        authtoken = self.create_authtoken(jwt, domain)
         authtoken_cookie = create_set_cookie_string(request, name="authtoken",
                                                     value=authtoken,
                                                     domain=domain,
-                                                    expires=expires,
-                                                    http_only=False)
+                                                    expires=expires, http_only=False)
         response_headers["set-cookie"] = authtoken_cookie
-
         return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
     def authorize(self, request: dict, env: str) -> dict:
@@ -116,42 +105,43 @@ class Auth():
 
             authtoken = read_cookie("authtoken", request)
             if not authtoken:
-                return self.create_unauthorized_response(request, "no-authtoken", env)
+                return self.create_not_authenticated_response(request, "no-authtoken")
 
             # Decode the authtoken cookie.
 
-            authtoken_decoded = self.decode_authtoken(authtoken, env)
+            authtoken_decoded = self.decode_authtoken(authtoken)
             if not authtoken_decoded:
-                return self.create_unauthorized_response(request, "invalid-authtoken", env, authtoken=authtoken_decoded)
+                return self.create_not_authenticated_response(request, "invalid-authtoken")
 
             # Sanity check the decoded authtoken.
 
             if self.auth0_client_id != authtoken_decoded["aud"]:
-                return self.create_unauthorized_response(request, "invalid-authtoken-aud", env, authtoken=authtoken_decoded)
+                return self.create_not_authenticated_response(request, "invalid-authtoken-aud", authtoken_decoded)
 
             domain = self.get_domain(request)
             if domain != authtoken_decoded["domain"]:
-                return self.create_unauthorized_response(request, "invalid-authtoken-domain", env, authtoken=authtoken_decoded)
+                return self.create_not_authenticated_response(request, "invalid-authtoken-domain", authtoken_decoded)
 
             # Check the authtoken expiration time (it expiration time must be in the future).
 
-            authtoken_expires_time_t = authtoken_decoded["authorized_until"]
+            authtoken_expires_time_t = authtoken_decoded["authenticated_until"]
             current_time_t = int(time.time())
             if authtoken_expires_time_t <= current_time_t:
-                return self.create_unauthorized_response(request, "authtoken-expired", env, authtoken=authtoken_decoded)
+                return self.create_not_authenticated_response(request, "authtoken-expired", authtoken_decoded)
 
             # Check that the specified environment is allowed.
 
             allowed_envs = authtoken_decoded["allowed_envs"]
             if not self.envs.is_allowed_env(env, allowed_envs):
                 status = "not-authorized-env" if self.envs.is_known_env(env) else "not-authorized-unknown-env"
-                return self.create_unauthorized_response(request, status, env, authtoken=authtoken_decoded)
+                return self.create_not_authorized_response(request, status, authtoken_decoded)
 
             return authtoken_decoded
 
         except Exception as e:
+            print("xyzzy;authorized-exception")
             print(e)
-            return self.create_unauthorized_response(request, "exception: " + str(e), env)
+            return self.create_not_authenticated_response(request, "exception: " + str(e))
 
     def decode_jwt(self, jwt: str) -> dict:
         try:
@@ -167,6 +157,7 @@ class Auth():
                                       options={"verify_signature": True},
                                       algorithms=["HS256"])
         except Exception as e:
+            print("Decode JWT exception")
             print(e)
             return None
 

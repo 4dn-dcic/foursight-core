@@ -20,7 +20,6 @@ function SLEEP(time) {
 // See: https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React#Authentication-%26-Authorization
 //
 // TODO: Handle timeouts!
-// TODO: Handle 403 forbidden specifically indicating that the (JWT within the) authtoken has expired.
 //
 function fetchData(url, setData, setLoading, setError) {
     if (Cookie.TestMode.HasFetchSleep()) {
@@ -62,9 +61,12 @@ function fetchData(url, setData, setLoading, setError) {
         else {
             console.log("FETCH STATUS CODE IS NOT 200 BUT " + response.status + ": " + url);
             console.log(response);
-            if (response.status === 403) {
-                console.log("FETCH IS FORBIDDEN! " + url);
+            if (response.status === 401) {
+                console.log("FETCH IS UNAUTHENTICATED! " + url);
                 Logout();
+            }
+            else if (response.status === 403) {
+                console.log("FETCH IS UNAUTHORIZED! " + url);
             }
             if (setError) {
                 setError(response.status);
