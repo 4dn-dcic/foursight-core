@@ -5,6 +5,7 @@ import ScaleLoader from 'react-spinners/ScaleLoader';
 import ClipLoader from 'react-spinners/ClipLoader';
 import CircleLoader from 'react-spinners/CircleLoader';
 import PuffLoader from 'react-spinners/PuffLoader';
+import GridLoader from 'react-spinners/GridLoader';
 
 export const RingSpinner = ({loading, color, size}) => {
     const override: CSSProperties = {
@@ -65,6 +66,14 @@ export const ClipSpinner = ({loading, color, size}) => {
         margin: "0 auto"
     };
     return <ClipLoader color={color} loading={loading} cssOverride={override} width={size} />
+}
+
+export const GridSpinner = ({loading, color, size}) => {
+    const override: CSSProperties = {
+        display: "block",
+        margin: "0 auto"
+    };
+    return <GridLoader color={color} loading={loading} cssOverride={override} size={size} />
 }
 
 export const StandardSpinner = ({condition, color = "darkblue", size = 100, label = "Loading"}) => {

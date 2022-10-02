@@ -12,6 +12,7 @@ import Env from './utils/Env';
 import Image from './utils/Image';
 import Logout from './utils/Logout';
 import ReadOnlyMode from './ReadOnlyMode';
+// import JustLoggedIn from './JustLoggedIn';
 // Issues with serving images ONLY from 4dn-dcic/dev NOT from cgap-supertest ...
 // So serve from my GitHub account for now ...
 // import LockImage from './media/lock.jpg';
@@ -229,7 +230,10 @@ const Header = (props) => {
                 </div>
                 </>)}
                 <div>
-                    <ReadOnlyMode.Lock />
+                    <table><tbody><tr>
+                        {/* <td style={{}}><JustLoggedIn /></td> */}
+                        <td style={{paddingLeft:"10pt"}}><ReadOnlyMode.Lock /></td>
+                    </tr></tbody></table>
                 </div>
             </div>
             </React.Fragment>)}

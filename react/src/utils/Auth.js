@@ -23,6 +23,10 @@ function IsLoggedIn(header) {
     return false;
 }
 
+function LoggedInInfo(header) {
+    return header?.auth || Cookie.AuthToken();
+}
+
 function LoggedInUser(header) {
     return header?.auth?.user || Cookie.AuthToken()?.user || "unknown";
 }
@@ -38,9 +42,10 @@ function LoggedInUserName(header) {
 // -------------------------------------------------------------------------------------------------
 
 const Exports = {
-    IsLoggedIn:                IsLoggedIn,
-    LoggedInUser:              LoggedInUser,
-    LoggedInUserName:          LoggedInUserName,
-    Token:                     Cookie.AuthToken
+    IsLoggedIn:       IsLoggedIn,
+    LoggedInInfo:     LoggedInInfo,
+    LoggedInUser:     LoggedInUser,
+    LoggedInUserName: LoggedInUserName,
+    Token:            Cookie.AuthToken
 };
 export default Exports;
