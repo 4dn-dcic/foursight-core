@@ -56,14 +56,14 @@ class ReactApi(ReactRoutes):
     def is_react_authentication(self, auth0_response: dict) -> bool:
         return "react" in auth0_response.get("scope", "") if auth0_response else False
 
-    def react_authentication(self, request: dict, env: str, domain: str, jwt: str, expires: int):
+    def react_authentication_callback(self, request: dict, env: str, domain: str, jwt: str, expires: int):
         return self.auth.authorization_callback(request, env, domain, jwt, expires)
 
-    def authorize(self, request: dict, env: str) -> dict:
+    def react_authorize(self, request: dict, env: str) -> dict:
         return self.auth.authorize(request, env)
 
-    def forbidden_response(self, body: dict = None):
-        response = self.create_standard_response("forbidden_response")
+    def react_forbidden_response(self, body: dict = None):
+        response = self.create_standard_response("react_forbidden_response")
         if not body or not isinstance(body, dict):
             body = { "forbidden": True }
         response.body = body

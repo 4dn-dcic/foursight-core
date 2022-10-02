@@ -44,9 +44,9 @@ def route_requires_authorization(f):
             raise Exception("Invalid arguments to requires_authorization decorator!")
         env = kwargs["environ"]
         request = app.current_request.to_dict()
-        authorize_response = app.core.authorize(request, env)
+        authorize_response = app.core.react_authorize(request, env)
         if not authorize_response or not authorize_response["authorized"]:
-            return app.core.forbidden_response(authorize_response)
+            return app.core.react_forbidden_response(authorize_response)
         return f(*args, **kwargs)
     return wrapper
 
@@ -79,6 +79,11 @@ class ReactRoutes:
     def reactapi_route_header(environ: str):
         request = app.current_request.to_dict()
         return app.core.reactapi_route_header(request=request, env=environ)
+
+    @app.route(ROUTE_PREFIX + 'reactapi/header', methods=["GET"], cors=CORS)
+    def reactapi_route_header_noenv():
+        request = app.current_request.to_dict()
+        return app.core.reactapi_route_header(request=request, env=app.core.get_default_env())
 
     @app.route(ROUTE_PREFIX + 'reactapi/__clearcache__', cors=CORS)
     @route_requires_authorization

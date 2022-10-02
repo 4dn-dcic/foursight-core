@@ -86,7 +86,7 @@ class ReactUi():
                 may_serve_file = True
                 break
         if not may_serve_file:
-            return self.react_api.forbidden_response()
+            return self.react_api.react_forbidden_response()
 
         response = ReactUi.Cache.static_files.get(file)
         if not response:

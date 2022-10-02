@@ -81,7 +81,7 @@ const EnvPage = (props) => {
                 <b>&nbsp;Environment</b>
                 { !IsKnownCurrentEnv() ? (<>
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
-                        { (Env.Current()) ? (<>
+                        { (Env.Current() && Env.Current() !== 'env') ? (<>
                             Unknown environment: <b style={{color:"darkred"}}>{Env.Current()}</b>
                         </>):(<>
                             No environment specified in URL!

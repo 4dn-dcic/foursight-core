@@ -292,24 +292,20 @@ class AppUtilsCore(ReactApi, Routes):
         Take in a dictionary format of the request (app.current_request) so we
         can test this.
         """
-        print('xyzzy;checkauth')
         # first check the Authorization header
         dev_auth = request_dict.get('headers', {}).get('authorization')
         # grant admin if dev_auth equals secret value
         if dev_auth and dev_auth == os.environ.get('DEV_SECRET'):
-            print('xyzzy;checkauth;true-1')
             return True
         # if we're on localhost, automatically grant authorization
         # this looks bad but isn't because request authentication will
         # still fail if local keys are not configured
         # if self.is_running_locally(request_dict):
-        #     print('xyzzy;checkauth;true-2')
         #     return True
         jwt_decoded = self.get_decoded_jwt_token(env, request_dict)
         if jwt_decoded:
             try:
                 if env is None:
-                    print('xyzzy;checkauth;true-3')
                     return False  # we have no env to check auth
                 for env_info in self.init_environments(env).values():
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
@@ -352,7 +348,6 @@ class AppUtilsCore(ReactApi, Routes):
         return False
 
     def auth0_callback(self, request, env):
-        print('xyzzy;calback')
         req_dict = request.to_dict()
         domain, context = self.get_domain_and_context(req_dict)
         # extract redir cookie
@@ -377,18 +372,12 @@ class AppUtilsCore(ReactApi, Routes):
         resp_headers = {'Location': redir_url}
         params = req_dict.get('query_params')
         if not params:
-            print('xyzzy;calback;no-params')
             return self.forbidden_response()
         auth0_code = params.get('code', None)
         auth0_client = self.get_auth0_client_id(env)
         auth0_secret = self.get_auth0_secret(env)
         if not (domain and auth0_code and auth0_client and auth0_secret):
-            print('xyzzy;calback;no-domain-or')
             return Response(status_code=301, body=json.dumps(resp_headers), headers=resp_headers)
-        print('xyzzy;calback;authclient')
-        print(auth0_client)
-        print(auth0_secret)
-        print(auth0_code)
         if self.is_running_locally(req_dict):
             redir_url = f"http://{domain}/callback/"
         else:
@@ -402,21 +391,13 @@ class AppUtilsCore(ReactApi, Routes):
             # 'redirect_uri': ''.join(['https://', domain, context, 'callback/'])
         }
         json_payload = json.dumps(payload)
-        print(json_payload)
         headers = {'content-type': "application/json"}
-        print('xyzzy;calback;post')
         res = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
         id_token = res.json().get('id_token', None)
-        print('xyzzy;calback;post-done')
-        print(res)
-        print(id_token)
         if id_token:
-            print('xyzzy;check-is-react')
-            print(res.json())
             expires_in = res.json().get('expires_in', None)
             if self.is_react_authentication(res.json()):
-                print('xyzzy;check-is-react-okay')
-                return self.react_authentication(req_dict, env, domain, id_token, expires_in);
+                return self.react_authentication_callback(req_dict, env, domain, id_token, expires_in);
             if domain and not self.is_running_locally(req_dict):
                 cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
             else:
@@ -427,8 +408,6 @@ class AppUtilsCore(ReactApi, Routes):
                 expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
                 cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
             resp_headers['Set-Cookie'] = cookie_str
-            print('xyzzy;calback;set-cookie')
-            print(cookie_str)
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
     def get_jwt_token(self, request_dict) -> str:

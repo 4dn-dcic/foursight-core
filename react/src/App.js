@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Navigate, BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Global from './Global';
 import Env from './utils/Env';
 import Fetch from './utils/Fetch';
@@ -42,6 +42,8 @@ const App = () => {
 
     const url = Server.Url("/header");
     useEffect(() => {
+            console.log('Fetch header ...')
+            console.log(url)
         Fetch.get(
             url,
             data => {
@@ -61,7 +63,7 @@ const App = () => {
             <div style={{margin:"20px"}}>
                 <Routes>
                     <Route path="/api/react" element={
-                        <EnvPage />
+                        <Navigate to={"/api/react/env"} />
                     } />
                     <Route path="/api/react/:environ/env" element={
                         <EnvPage />
