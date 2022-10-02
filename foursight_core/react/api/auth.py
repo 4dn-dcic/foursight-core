@@ -18,7 +18,7 @@ class Auth():
     class Cache:
         aws_credentials = {}
 
-    def create_authtoken(self, jwt: str, domain: str) -> str:
+    def create_authtoken(self, jwt: str, env: str, domain: str) -> str:
         """
         Augments the given JWT with the list of known environments; the default environments;
         and the list of allowed (authorized) environments for the user associated with the
@@ -43,9 +43,9 @@ class Auth():
             "allowed_envs": allowed_envs,
             "known_envs": known_envs,
             "default_env": self.envs.get_default_env(),
+            "initial_env": env,
             "domain": domain,
-            # The 'aud' must be Auth0 client ID for JWT decode to work.
-            "aud": self.auth0_client_id
+            "aud": self.auth0_client_id # The "aud" (Auth0 client ID) required Auth0 to decode JWT.
         }
         # JWT-sign-encode authtoken using our Auth0 secret.
         authtoken = jwtlib.encode(authtoken_decoded, self.auth0_secret, algorithm="HS256")
@@ -90,7 +90,7 @@ class Auth():
             # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
             react_redir_url = urllib.parse.unquote(react_redir_url)
             response_headers = {"Location": react_redir_url}
-        authtoken = self.create_authtoken(jwt, domain)
+        authtoken = self.create_authtoken(jwt, env, domain)
         authtoken_cookie = create_set_cookie_string(request, name="authtoken",
                                                     value=authtoken,
                                                     domain=domain,
@@ -139,8 +139,7 @@ class Auth():
             return authtoken_decoded
 
         except Exception as e:
-            print("xyzzy;authorized-exception")
-            print(e)
+            print("Authorize exception: " + str(e))
             return self.create_not_authenticated_response(request, "exception: " + str(e))
 
     def decode_jwt(self, jwt: str) -> dict:
@@ -157,8 +156,7 @@ class Auth():
                                       options={"verify_signature": True},
                                       algorithms=["HS256"])
         except Exception as e:
-            print("Decode JWT exception")
-            print(e)
+            print("Decode JWT exception: " + str(e))
             return None
 
     def get_domain(self, request: dict) -> str:
