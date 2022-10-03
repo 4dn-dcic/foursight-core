@@ -164,7 +164,7 @@ const LoginPage = (props) => {
             <div className="boxstyle check-warn" style={{marginTop:"15pt",marginLeft:"90pt",marginRight:"90pt",padding:"10pt",color:"darkred"}}>
                 Not logged in.
                 { Cookie.HasAuthToken() && Auth.SessionExpired() && <>
-                    &nbsp;Login expired: <LiveTime.FormatDuration start={Auth.Token().authenticated_at} verbose={true} tooltip={true} /> ago.
+                    &nbsp;Login expired: <LiveTime.FormatDuration start={Auth.Token().authenticated_until} verbose={true} tooltip={true} /> ago.
                 </>}
                 <br />
                 Click <u style={{cursor:"pointer"}} onClick={() => login()}><b>here</b></u> to <span style={{cursor:"pointer"}} onClick={() => login()}><b>login</b></span>.
