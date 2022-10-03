@@ -4,6 +4,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import Cookie from './Cookie';
+import Time from './Time';
 
 // -------------------------------------------------------------------------------------------------
 // Authentication related functions.
@@ -18,6 +19,9 @@ function IsLoggedIn(header) {
         return true;
     }
     if (Cookie.HasAuthToken()) {
+        if (Cookie.AuthToken().authenticated_until <= Time.Now()) {
+            return false;
+        }
         return true;
     }
     return false;

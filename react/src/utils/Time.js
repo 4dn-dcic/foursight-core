@@ -37,11 +37,12 @@ function FormatDuration(startDate, endDate = new Date(), verbose = false, fallba
     const msPerHour   = 3600000;
     const msPerMinute = 60000;
     const msPerSecond = 1000;
-    const ms          = (endDate - startDate);
+    const ms          = endDate >= startDate ? (endDate - startDate) : (startDate - endDate);
     const days        = Math.floor  (ms / msPerDay);
     const hours       = Math.floor ((ms % msPerDay) / msPerHour);
     const minutes     = Math.round(((ms % msPerDay) % msPerHour)   / msPerMinute);
     const seconds     = Math.round(((ms % msPerDay) % msPerMinute) / msPerSecond);
+    const negative    = endDate < startDate;
     if (days === 0 && hours === 0 && minutes === 0 && seconds === 0) {
         if (Str.HasValue(fallback)) {
             return (prefix ? (" " + prefix + " ") : "") + fallback;
@@ -52,6 +53,7 @@ function FormatDuration(startDate, endDate = new Date(), verbose = false, fallba
     }
     if (verbose) {
         return (prefix ? " " + prefix + " " : "")
+               + (negative ? "MINUS " : "")
                + (days    > 0 ? days    + (days    === 1 ? " day "    : " days "   ) : "")
                + (hours   > 0 ? hours   + (hours   === 1 ? " hour "   : " hours "  ) : "")
                + (minutes > 0 ? minutes + (minutes === 1 ? " minute " : " minutes ") : "")
@@ -59,6 +61,7 @@ function FormatDuration(startDate, endDate = new Date(), verbose = false, fallba
                + (suffix ? " " + suffix : "");
     }
     return (prefix ? " " + prefix + " " : "")
+           + (negative ? "MINUS " : "")
            + (days > 0 ? days + (days === 1 ? " day " : " days " ) : "")
            + (hours.toString().padStart(2, "0") + ":")
            + (minutes.toString().padStart(2, "0") + ":")

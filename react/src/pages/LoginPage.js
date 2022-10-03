@@ -14,6 +14,7 @@ import Image from '../utils/Image';
 import Json from '../utils/Json';
 import LiveTime from '../LiveTime';
 import Logout from '../utils/Logout';
+import Time from '../utils/Time';
 import Yaml from '../utils/Yaml';
 import Page from '../Page';
 
@@ -162,6 +163,10 @@ const LoginPage = (props) => {
             </div>
             <div className="boxstyle check-warn" style={{marginTop:"15pt",marginLeft:"90pt",marginRight:"90pt",padding:"10pt",color:"darkred"}}>
                 Not logged in.
+                { Cookie.HasAuthToken() && Auth.Token().authenticated_until <= Time.Now() && <>
+                    &nbsp;Login expired: <LiveTime.FormatDuration start={Auth.Token().authenticated_at} verbose={true} tooltip={true} /> ago.
+                </>}
+                <br />
                 Click <u style={{cursor:"pointer"}} onClick={() => login()}><b>here</b></u> to <span style={{cursor:"pointer"}} onClick={() => login()}><b>login</b></span>.
                 {(header?.app?.credentials?.aws_account_number) && <>
                     <br /> <small>AWS Account: {header?.app?.credentials?.aws_account_number}</small>

@@ -84,7 +84,7 @@ const EnvPage = (props) => {
             { !Auth.IsLoggedIn(header) && IsKnownCurrentEnv() ? (
                 <div className="container">
                     <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>
-                        <b>Not Logged In</b> <br />
+                        <Link to={Client.Path("/login")} style={{color:"inherit"}}><b>Not Logged In</b></Link> <br />
                         <small>
                             Click <Link to={Client.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b><u>here</u></b></Link> to go to the <Link to={Client.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
                         </small>
