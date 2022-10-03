@@ -688,7 +688,7 @@ const ChecksPage = (props) => {
                     <table style={{width:"100%"}} border="0">
                         <TableHead columns={columns} list={check.history.list} update={() => noteChangedHistories()} style={{color:"darkgreen",fontWeight:"bold"}} lines={true} />
                     <tbody>
-                    {check.history.list.map((history, index) => <>
+                    {check.history.list.map((history, index) => <React.Fragment key={index}>
                         <React.Fragment key={extractUuid(history)}>
                             { index !== 0 && (<>
                                 <tr><td style={{paddingTop:"2px"}}></td></tr>
@@ -739,7 +739,7 @@ const ChecksPage = (props) => {
                                 </td>
                             </tr>
                         }
-                    </>)}
+                    </React.Fragment>)}
                     </tbody>
                     </table>
                 </>):(<>
@@ -798,7 +798,7 @@ const ChecksPage = (props) => {
         history.__resultLoading = true;
         history.__resultError = false;
         noteChangedHistories();
-        const url = Server.Url(`/checks/${check}/${uuid}`, environ);
+        const url = Server.Url(`/checks/${check.name}/${uuid}`, environ);
         Fetch.get(url, response => {
             if (history.__resultShowing) {
                 history.__result = response;
