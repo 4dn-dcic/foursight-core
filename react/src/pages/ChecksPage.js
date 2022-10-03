@@ -1,8 +1,8 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { BarSpinner } from '../Spinners';
 import { RingSpinner } from '../Spinners';
+import { StandardSpinner } from '../Spinners';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
@@ -19,6 +19,8 @@ import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';
 
 const ChecksPage = (props) => {
+
+    // TODO: Lots refactoring ...
 
     let { environ } = useParams();
     let [ groupedChecks, setGroupedChecks ] = useState([]);
@@ -322,7 +324,7 @@ const ChecksPage = (props) => {
             <div className="boxstyle check-pass" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                 { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}></span> }
                 {  check.queuedCheckRun && <small><b>Queued check run {Time.FormatDateTime(Time.Now())} &#x2192; <u>{check.queuedCheckRun}</u></b></small> }
-                { !check.queuedCheckRun && <Spinner condition={check.queueingCheckRun} label={" Queueing check run"} color={"darkgreen"} /> }
+                { !check.queuedCheckRun && <StandardSpinner condition={check.queueingCheckRun} label={" Queueing check run"} color={"darkgreen"} /> }
             </div>
         </div>
     } 
@@ -606,8 +608,7 @@ const ChecksPage = (props) => {
             &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(); } }>{check.showingResultDetailsFull ? <span title="Show full results output.">&#x2191;</span> : <span>&#x2193;</span>}</span>
             &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>X</span>
             </div>
-    
-            {!check.results ? <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? (Yaml.Format(check.showingResultDetailsFull ? check.results.full_output : check.results)) : "No results.") }
+            {!check.results ? <StandardSpinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? (Yaml.Format(check.showingResultDetailsFull ? check.results.full_output : check.results)) : "No results.") }
         </pre>
     }
 
@@ -630,13 +631,11 @@ const ChecksPage = (props) => {
                 </>)}
             </small> }
             {/* Results details or loading results box */}
-            { check.showingResultDetails ? (
+            { check.showingResultDetails ? <>
                 <ResultDetailsBox check={check} />
-            ):(
-                <span>
-                    { !check.results && <Spinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> }
-                </span>
-            )}
+            </>:<>
+                { !check.results && <StandardSpinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> }
+            </>}
         </div>
     }
 
@@ -649,16 +648,9 @@ const ChecksPage = (props) => {
         </div>
     }
 
-    const Spinner = ({condition, color = "darkblue", size = 100, label = "Loading"}) => {
-        return <table><tbody><tr>
-            {label && <td nowrap="1"><small style={{color:color}}><b><i>{label}</i></b></small>&nbsp;&nbsp;</td>}
-            <td style={{paddingTop:"5px"}} nowrap="1"> <BarSpinner loading={condition} size={size} color={color} /></td>
-        </tr></tbody></table>
-    }
-
     const ResultsHistoryBox = ({check}) => {
 
-        function extractUUID(history) {
+        function extractUuid(history) {
             return !history ? "uuid" : history[2].uuid;
         }
         function extractStatus(history) {
@@ -693,11 +685,11 @@ const ChecksPage = (props) => {
             <div style={{marginBottom:"6pt"}}/>
             { check.showingHistory && (<>
                 { check.history?.list?.length > 0 ? (<>
-                    <table style={{width:"100%"}}>
+                    <table style={{width:"100%"}} border="0">
                         <TableHead columns={columns} list={check.history.list} update={() => noteChangedHistories()} style={{color:"darkgreen",fontWeight:"bold"}} lines={true} />
                     <tbody>
-                    {check.history.list.map((history, index) =>
-                        <React.Fragment key={extractUUID(history)}>
+                    {check.history.list.map((history, index) => <>
+                        <React.Fragment key={extractUuid(history)}>
                             { index !== 0 && (<>
                                 <tr><td style={{paddingTop:"2px"}}></td></tr>
                                 <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
@@ -712,7 +704,7 @@ const ChecksPage = (props) => {
                                 </>)}
                             &nbsp;&nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
-                                {extractTimestamp(history)}
+                                <span onClick={() => {toggleHistoryResult(check, history, extractUuid(history)); }} style={{cursor:"pointer"}}>{extractTimestamp(history)}</span>
                             &nbsp;&nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
                                 {extractStatus(history) === "PASS" ? (<>
@@ -729,14 +721,32 @@ const ChecksPage = (props) => {
                             &nbsp;&nbsp;</td>
                             </tr>
                         </React.Fragment>
-                    )}
+                        { (history.__resultShowing) &&
+                            <tr>
+                                <td colSpan="9">
+                                    <pre style={{background:"#DFF0D8",filter:"brightness(1.2)",borderColor:"darkgreen",borderWidth:"1",wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"600pt"}}>
+                                        { history.__resultLoading ? <>
+                                            <StandardSpinner condition={history.__resultLoading} color={"darkgreen"} label="Loading result"/>
+                                        </>:<>
+                                            <div style={{float:"right",marginTop:"-0px"}}>
+                                                <span style={{fontSize:"0",opacity:"0"}} id={check}>{Json.Str(history.__result[0])}</span>
+                                                <img alt="copy" onClick={() => Clipboard.Copy(check)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
+                                                <span onClick={() => hideHistoryResult(history)} style={{marginLeft:"6pt",marginRight:"2pt",fontSize:"large",fontWeight:"bold",cursor:"pointer"}}>X</span>
+                                            </div>
+                                            {Yaml.Format(history.__result[0])}
+                                        </>}
+                                    </pre>
+                                </td>
+                            </tr>
+                        }
+                    </>)}
                     </tbody>
                     </table>
                 </>):(<>
                     { check.history?.list ? (<>
                         <span style={{color:"black"}}>No history.</span>
                     </>):(<>
-                        <Spinner condition={!check.history} color={"darkgreen"} label="Loading history" />
+                        <StandardSpinner condition={!check.history} color={"darkgreen"} label="Loading history" />
                     </>)}
                 </>)}
             </>)}
@@ -780,6 +790,37 @@ const ChecksPage = (props) => {
                 const resultsHistoryUrl = Server.Url(`/checks/${check.name}/history`, environ);
                 Fetch.get(resultsHistoryUrl, history => { check.history = history; console.log(check); noteChangedHistories(); });
             }
+        }
+    }
+
+    function showHistoryResult(check, history, uuid) {
+        history.__resultShowing = true;
+        history.__resultLoading = true;
+        history.__resultError = false;
+        noteChangedHistories();
+        const url = Server.Url(`/checks/${check}/${uuid}`, environ);
+        Fetch.get(url, response => {
+            if (history.__resultShowing) {
+                history.__result = response;
+               noteChangedHistories();
+            }
+        }, () => { history.__resultLoading = false; noteChangedHistories(); }, () => { history.__resultError = true; } );
+    }
+
+    function hideHistoryResult(history) {
+        history.__resultShowing = false;
+        history.__result = null;
+        history.__resultLoading = false;
+        history.__resultError = false;
+        noteChangedHistories();
+    }
+
+    function toggleHistoryResult(check, history, uuid) {
+        if (history.__resultShowing) {
+            hideHistoryResult(history);
+        }
+        else {
+            showHistoryResult(check, history, uuid);
         }
     }
 
@@ -880,7 +921,7 @@ const ChecksPage = (props) => {
             &nbsp;&nbsp;
             </td><td>
             { checksStatusLoading ? <>
-                { <BarSpinner loading={checksStatusLoading} size={60} color={"black"} /> }
+                { <StandardSpinner loading={checksStatusLoading} label={""} size={60} color={"black"} /> }
             </>:<>
                 <b style={{cursor:"pointer"}} onClick={() => refreshChecksStatus()}>&#8635;</b>
             </>}
