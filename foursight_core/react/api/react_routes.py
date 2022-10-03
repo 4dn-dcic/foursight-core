@@ -59,6 +59,9 @@ def route_requires_authorization(f):
 
 class ReactRoutes:
 
+    def __init__(self):
+        super(ReactRoutes, self).__init__()
+
     # ----------------------------------------------------------------------------------------------
     # Foursight React API routes.
     # ----------------------------------------------------------------------------------------------

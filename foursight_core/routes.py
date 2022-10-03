@@ -3,8 +3,10 @@ import json
 from .app import app
 from .route_prefixes import *
 
-
 class Routes:
+
+    def __init__(self):
+        super(Routes, self).__init__()
 
     # ----------------------------------------------------------------------------------------------
     # Foursight Original routes.

@@ -82,7 +82,7 @@ const LoginPage = (props) => {
     if (header.error) return <>Cannot load Foursight.</>
     return <>
         { Auth.IsLoggedIn(header) ? (<React.Fragment>
-            <div className="container" style={{width:"40%"}}>
+            <div className="container" style={{width:"60%"}}>
                 {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt",color:"darkblue"}}>Hello, {Auth.LoggedInUserName(header)} ...</b>}
                 <div style={{float:"right",marginRight:"8pt",color:"darkblue",fontSize:"small",cursor:"pointer"}}>
                     { showingAuthToken ? <>
