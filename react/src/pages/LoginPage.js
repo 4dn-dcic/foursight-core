@@ -81,7 +81,7 @@ const LoginPage = (props) => {
     if (header.error) return <>Cannot load Foursight.</>
     return <>
         { Auth.IsLoggedIn(header) ? (<React.Fragment>
-            <div className="container">
+            <div className="container" style={{width:"40%"}}>
                 {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt",color:"darkblue"}}>Hello, {Auth.LoggedInUserName(header)} ...</b>}
                 <div style={{float:"right",marginRight:"8pt",color:"darkblue",fontSize:"small",cursor:"pointer"}}>
                     { showingAuthToken ? <>
@@ -109,10 +109,13 @@ const LoginPage = (props) => {
                         <td style={{width:"8pt"}}></td>
                         <td style={{textAlign:"top",verticalAlign:"top"}}><small style={{marginTop:"20pt"}}>
                             { Env.Current() && <>
-                                Current environment: <Link to={Client.Path("/env")} style={{color:"inherit"}}><b>{Env.Current()}</b></Link> <br />
+                                Current environment: <Link to={Client.Path("/env", Env.PreferredName(Env.Current(), header))} style={{color:"inherit"}}><b>{Env.PreferredName(Env.Current(), header)}</b></Link> <br />
                             </>}
                             { header?.auth?.initial_env && <>
-                                Initial environment: <Link to={Client.Path("/env")} style={{color:"inherit"}}><b>{header.auth.initial_env}</b></Link> <br />
+                                Initial environment: <Link to={Client.Path("/env", Env.PreferredName(header.auth.initial_env, header))} style={{color:"inherit"}}><b>{Env.PreferredName(header.auth.initial_env, header)}</b></Link> <br />
+                            </>}
+                            { header?.auth?.known_envs && <>
+                                Available environments: {header.auth.known_envs.map((env, index) => { return <span key={index}>{index > 0 && <>, </>}<b>{Env.PreferredName(env, header)}</b></span>})} <br />
                             </>}
                             {(header?.app?.credentials?.aws_account_number) && <>
                                 AWS Account: {header?.app?.credentials?.aws_account_number} <br />
