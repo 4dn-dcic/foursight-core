@@ -1,22 +1,22 @@
 import ReactPaginate from 'react-paginate';
 import { ScaleSpinner } from './Spinners';
 
-export const PaginationControl = ({pages, onChange, page = 1, spinner = true, loading = false}) => {
+export const PaginationControl = (props) => {
     //
     // This double div with not-allowed cursor pointer-events none when disabled
     // is necessary as if putting them in one the cursor will not take. 
     //
     return <table><tbody><tr><td>
-           <div style={{cursor:loading ? "not-allowed" : ""}}>
-                <div style={{pointerEvents:loading ? "none" : "", opacity:loading ? "0.4" : "",fontSize:"8pt",fontWeight:"bold"}} className={"pagination-control"}>
+           <div style={{cursor:props.loading ? "not-allowed" : ""}}>
+                <div style={{pointerEvents:props.loading ? "none" : "", opacity:props.loading ? "0.4" : "",fontSize:"8pt",fontWeight:"bold"}} className={"pagination-control"}>
                     <ReactPaginate
                         nextLabel="NEXT"
-                        onPageChange={onChange}
+                        onPageChange={props.onChange}
                         pageRangeDisplayed={2}
-                        initialPage={page}
+                        initialPage={props.page}
                         disableInitialCallback={true}
                         marginPagesDisplayed={2}
-                        pageCount={pages}
+                        pageCount={props.pages}
                         previousLabel="PREV"
                         pageClassName="pagination"
                         pageLinkClassName="page-link"
@@ -33,9 +33,9 @@ export const PaginationControl = ({pages, onChange, page = 1, spinner = true, lo
                 </div>
            </div>
            </td>
-           { spinner &&
+           { props.spinner &&
                <td style={{whiteSpace:"nowrap",paddingLeft:"6pt",paddingBottom:"2pt"}}>
-                    { loading && <ScaleSpinner label="" condition={true||loading} width="3px" height="20px" color="darkblue" /> }
+                    { props.loading && <ScaleSpinner label="" condition={true||props.loading} width="3px" height="20px" color="darkblue" /> }
                </td>
            }
            </tr></tbody></table>
