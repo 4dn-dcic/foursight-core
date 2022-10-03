@@ -19,12 +19,14 @@ function IsLoggedIn(header) {
         return true;
     }
     if (Cookie.HasAuthToken()) {
-        if (Cookie.AuthToken().authenticated_until <= Time.Now()) {
-            return false;
-        }
-        return true;
+        return !SessionExpired();
     }
     return false;
+}
+
+function SessionExpired() {
+    const authenticatedUntil = Cookie.AuthToken()?.authenticated_until;
+    return authenticatedUntil && authenticatedUntil <= Math.floor(Time.Now().getTime() / 1000);
 }
 
 function LoggedInInfo(header) {
@@ -50,6 +52,7 @@ const Exports = {
     LoggedInInfo:     LoggedInInfo,
     LoggedInUser:     LoggedInUser,
     LoggedInUserName: LoggedInUserName,
+    SessionExpired:   SessionExpired,
     Token:            Cookie.AuthToken
 };
 export default Exports;
