@@ -50,6 +50,9 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
+# The ReactApi is included in here to for the React version, which runs side-by-side
+# with the regular version. This and a check and call in auth0_callback are the only real
+# changes here for the React version; all React specific code is in the react sub-directory.
 class AppUtilsCore(ReactApi, Routes):
     """
     This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
@@ -93,6 +96,8 @@ class AppUtilsCore(ReactApi, Routes):
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
     def __init__(self):
+        # Tuck a reference to this (singleton) instance into
+        # a "core" field for convenient access by the routing code.
         app.core = self
         self.init_load_time = self.get_load_time()
         self.environment = Environment(self.prefix)
@@ -223,7 +228,8 @@ class AppUtilsCore(ReactApi, Routes):
                 "expiration_time": expiration_time,
                 "jwt": jwt_decoded}
 
-    # THis is quite a hack, this whole user_records thing. Will straighten out eventually (perhaps with React version someday).
+    # This is a bit of a hack, this whole user_records thing.
+    # Will eventually be supplanted by and corrected in the React version.
     def get_user_record(self, environ: str, request_dict: dict) -> dict:
         user_info = self.get_logged_in_user_info(environ, request_dict)
         if not user_info:

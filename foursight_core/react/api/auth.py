@@ -8,6 +8,8 @@ from ...cookie_utils import create_set_cookie_string, read_cookie
 from .envs import Envs
 
 
+# Authentication and authorization related functions.
+#
 class Auth():
 
     def __init__(self, auth0_client_id: str, auth0_secret: str, envs: Envs):
@@ -48,7 +50,7 @@ class Auth():
             "default_env": self.envs.get_default_env(),
             "initial_env": env,
             "domain": domain,
-            "aud": self.auth0_client_id # The "aud" (Auth0 client ID) required Auth0 to decode JWT.
+            "aud": self.auth0_client_id # The aud (Auth0 client ID) required by Auth0 for JWT.
         }
         # JWT-sign-encode authtoken using our Auth0 secret.
         authtoken = jwtlib.encode(authtoken_decoded, self.auth0_secret, algorithm="HS256")
@@ -69,9 +71,11 @@ class Auth():
 
     def create_not_authorized_response(self, request: dict, status: str, authtoken_decoded: dict, authenticated: bool = True) -> dict:
         """
-        Creates a response suitable for a request which is NOT authorized,
-        or NOT authenticated (depending on authenticated argument).
-        Note that we still want to return basic environments info, i.e. list of known environments, default environment.
+        Creates a response suitable for a request which is NOT authorized, or NOT authenticated,
+        depending on authenticated argument. Note that we still want to return some basic info,
+        i.e. list of known environments, default environment, domain, and aud (Auth0 client ID)
+        is required for the Auth0 login box (Auth0Lock) on the client-side (i.e. React UI). This
+        info is gotten from the given decoded authtoken or if not set then sets this info explicitly.
         """
         if authtoken_decoded:
             response = authtoken_decoded
@@ -116,6 +120,12 @@ class Auth():
         return Response(status_code=302, body=json.dumps(response_headers), headers=response_headers)
 
     def authorize(self, request: dict, env: str) -> dict:
+        """
+        Verifies that the given request is authenticated AND authorized, based on the authtoken
+        cookie (a JWT-signed-encoded value) in the request. If so, returns the decoded/verified
+        authtoken as a dictionary. If not, returns a dictionary indicating not authorized and/or
+        not authenticated, and the basic info contained in the authtoken.
+        """
         try:
 
             # Read the authtoken cookie.
@@ -166,6 +176,10 @@ class Auth():
             return self.create_not_authenticated_response(request, "exception: " + str(e))
 
     def decode_jwt(self, jwt: str) -> dict:
+        """
+        Verifies (importantly) and decodes the given given signed JWT.
+        If cannot be successfully verified and/or decoded then returns None.
+        """
         try:
             if not jwt:
                 return None
@@ -191,6 +205,12 @@ class Auth():
         return ""
 
     def get_aws_credentials(self, env: str) -> dict:
+        """
+        Returns basic AWS credentials info (NOT the secret).
+        This is just for informational/display purposes in the UI.
+        This has nothing to do with the rest of the authentication
+        and authorization stuff here but vaguely related so here seems fine.
+        """
         aws_credentials = Auth.Cache.aws_credentials.get(env)
         if not aws_credentials:
             try:
