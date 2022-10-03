@@ -112,7 +112,8 @@ class ReactApi(ReactRoutes):
                 "context": context,
                 "local": app.core.is_running_locally(request),
                 "credentials": {
-                    "aws_account_number": aws_credentials["aws_account_number"]
+                    "aws_account_number": aws_credentials["aws_account_number"],
+                    "aws_account_name": aws_credentials["aws_account_name"]
                 },
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified()

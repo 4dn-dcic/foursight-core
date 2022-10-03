@@ -113,13 +113,17 @@ const LoginPage = (props) => {
                                 Current environment: <Link to={Client.Path("/env", Env.PreferredName(Env.Current(), header))} style={{color:"inherit"}}><b>{Env.PreferredName(Env.Current(), header)}</b></Link> <br />
                             </>}
                             { header?.auth?.initial_env && <>
-                                Initial environment: <Link to={Client.Path("/env", Env.PreferredName(header.auth.initial_env, header))} style={{color:"inherit"}}><b>{Env.PreferredName(header.auth.initial_env, header)}</b></Link> <br />
+                                Initial environment: <Link to={Client.Path("/env", Env.PreferredName(header.auth.initial_env, header))} style={{color:"inherit"}}>{Env.PreferredName(header.auth.initial_env, header)}</Link> <br />
                             </>}
                             { header?.auth?.known_envs && <>
-                                Available environments: {header.auth.known_envs.map((env, index) => { return <span key={index}>{index > 0 && <>, </>}<b>{Env.PreferredName(env, header)}</b></span>})} <br />
+                                Available environments: {header.auth.known_envs.map((env, index) => { return <span key={index}>{index > 0 && <>, </>}{Env.PreferredName(env, header)}</span>})} <br />
                             </>}
                             {(header?.app?.credentials?.aws_account_number) && <>
-                                AWS Account: {header?.app?.credentials?.aws_account_number} <br />
+                                AWS Account: {header?.app?.credentials?.aws_account_number}
+                                {(header?.app?.credentials?.aws_account_name) && <>
+                                    &nbsp;({header?.app?.credentials?.aws_account_name})
+                                </>}
+                                <br />
                             </>}
                         </small></td>
                     </tr></tbody></table>
@@ -169,7 +173,13 @@ const LoginPage = (props) => {
                 <br />
                 Click <u style={{cursor:"pointer"}} onClick={() => login()}><b>here</b></u> to <span style={{cursor:"pointer"}} onClick={() => login()}><b>login</b></span>.
                 {(header?.app?.credentials?.aws_account_number) && <>
-                    <br /> <small>AWS Account: {header?.app?.credentials?.aws_account_number}</small>
+                    <br />
+                    <small>
+                        AWS Account Name: {header?.app?.credentials?.aws_account_number}
+                        {(header?.app?.credentials?.aws_account_name) && <>
+                            &nbsp;({header?.app?.credentials?.aws_account_name})
+                        </>}
+                    </small>
                 </>}
             </div>
             { showingAuthToken && <>
