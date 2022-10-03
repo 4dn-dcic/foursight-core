@@ -20,11 +20,14 @@ class Auth():
 
     def create_authtoken(self, jwt: str, env: str, domain: str) -> str:
         """
-        Augments the given JWT with the list of known environments; the default environments;
-        and the list of allowed (authorized) environments for the user associated with the
-        given JWT; and the first/last name of the user associated with the JWT. The allowed
-        environments and first/last name are obtained via the users store (in ElasticSearch).
-        The first/last name FYI is just or informational/display purposes in the client.
+        Creates a new JWT to be used as the login authtoken (cookie) from the given JWT containing:
+        - The list of known environments
+        - The default environment;
+        - The initial environment (i.e. the environment in which the user was first authenticated).
+        - The list of allowed (authorized) environments for the user associated with the given JWT.
+        - The first/last name of the user associated with the given JWT.
+        The allowed environments and first/last name are obtained via the users ElasticSearch store.
+        The first/last name FYI are just for informational/display purposes in the client.
         Returns the JWT-signed-encoded authtoken value as a string.
         """
         jwt_decoded = self.decode_jwt(jwt)
@@ -57,15 +60,19 @@ class Auth():
 
     def decode_authtoken(self, authtoken: str) -> dict:
         """
-        Fully decode AND verify the given JWT-signed-encoded authtoken (cookie).
+        Fully decodes AND verify and returns the given JWT-signed-encoded authtoken (cookie).
         If not verified (by the decode_jwt function) then None will be returned.
-        This authtoken is a JWT-signed-encoded token containing the list of
-        environments the authenticated user is allowed to access.
-        Returns this info in a dictionary.
+        See create_authtoken (above) for an enumeration of the contents of the authtoken.
+        Returns the decoded/verified JWT as a dictionary.
         """
         return self.decode_jwt(authtoken)
 
     def create_not_authorized_response(self, request: dict, status: str, authtoken_decoded: dict, authenticated: bool = True) -> dict:
+        """
+        Creates a response suitable for a request which is NOT authorized,
+        or NOT authenticated (depending on authenticated argument).
+        Note that we still want to return basic environments info, i.e. list of known environments, default environment.
+        """
         if authtoken_decoded:
             response = authtoken_decoded
         else:
@@ -81,9 +88,19 @@ class Auth():
         return response
 
     def create_not_authenticated_response(self, request: dict, status: str, authtoken_decoded: dict = None) -> dict:
+        """
+        Creates a response suitable for a request which is NOT authenticated.
+        """
         return self.create_not_authorized_response(request, status, authtoken_decoded, False)
 
     def authorization_callback(self, request: dict, env: str, domain: str, jwt: str, expires: int):
+        """
+        Called from the main Auth0 callback, in app_utils/auth0_callback, AFTER the Auth0 HTTP POST
+        which does the actual authentication; this POST returns the JWT which is received by this
+        function. So at this point, the user has been successfully authenticated and we have a
+        valid/authenticated JWT; if this were not so we would have returned  before this call,
+        in app_utils/auth_callback.
+        """
         react_redir_url = read_cookie("reactredir", request)
         if react_redir_url:
             # Not certain if by design but the React library (universal-cookie) used to
