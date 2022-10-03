@@ -228,6 +228,23 @@ class Auth():
                     "aws_region": region_name,
                     "auth0_client_id": self.auth0_client_id
                 }
+                # Try getting the account name though probably no permission at the moment.
+                aws_account_name = None
+                try:
+                    aws_credentials["aws_account_name"] = \
+                        boto3.client('iam').list_account_aliases()['AccountAliases'][0]
+                except Exception as e:
+                    print('xyzzy;exception on account name 1')
+                    print(e)
+                    pass
+                if not aws_account_name:
+                    try:
+                        aws_credentials["aws_account_name"] = \
+                            boto3.client('organizations').describe_account(AccountId=account_number).get('Account').get('Name')
+                    except Exception as e:
+                        print('xyzzy;exception on account name 2')
+                        print(e)
+                        pass
                 Auth.Cache.aws_credentials[env] = aws_credentials
             except Exception as e:
                 return {}
