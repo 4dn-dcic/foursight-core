@@ -132,6 +132,9 @@ class Auth():
 
             # Sanity check the decoded authtoken.
 
+            if authtoken_decoded["authorized"] != True or authtoken_decoded["authenticated"] != True:
+                return self.create_not_authenticated_response(request, "invalid-authtoken-auth", authtoken_decoded)
+
             if self.auth0_client_id != authtoken_decoded["aud"]:
                 return self.create_not_authenticated_response(request, "invalid-authtoken-aud", authtoken_decoded)
 
@@ -139,14 +142,17 @@ class Auth():
             if domain != authtoken_decoded["domain"]:
                 return self.create_not_authenticated_response(request, "invalid-authtoken-domain", authtoken_decoded)
 
-            # Check the authtoken expiration time (it expiration time must be in the future).
+            # Check the authtoken expiration time (its expiration time must be in the future i.e. greater than now).
 
             authtoken_expires_time_t = authtoken_decoded["authenticated_until"]
             current_time_t = int(time.time())
             if authtoken_expires_time_t <= current_time_t:
                 return self.create_not_authenticated_response(request, "authtoken-expired", authtoken_decoded)
 
-            # Check that the specified environment is allowed.
+            # Check that the specified environment is allowed, i.e. that the request is authorized.
+            # Note that if not, we end up returning HTTP 403 and, not 401, as we would do (above)
+            # if not authenticated (this is done in react_routes/route_requires_authorization);
+            # the UI acts differently for these two cases. 
 
             allowed_envs = authtoken_decoded["allowed_envs"]
             if not self.envs.is_allowed_env(env, allowed_envs):
