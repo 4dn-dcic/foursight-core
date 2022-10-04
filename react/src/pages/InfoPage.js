@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { StandardSpinner } from '../Spinners';
 import Global from '../Global';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
@@ -25,11 +26,12 @@ const InfoPage = () => {
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
     let [ showingAuthToken, setShowAuthToken ] = useState(false);
+    const [ reloadingApp, setReloadingApp ] = useState(false);
     useEffect(() => { Fetch.get(url, setInfo, setLoading, setError)}, []);
 
     function initiateAppReload() {
-        const url = Server.Url("/reloadlambda", false);
-        Fetch.get(url);
+        setReloadingApp(true);
+        Fetch.get(Server.Url("/__reloadlambda__"), () => setReloadingApp(false));
     }
 
     const InfoBox = ({title, children}) => {
@@ -196,6 +198,11 @@ const InfoPage = () => {
             </InfoBox>
         </>}
         <InfoBox title="Miscellany">
+            { reloadingApp ? <>
+                <div data-text={"Reloading the Foursight app."} className="tool-tip" style={{float:"right"}}><StandardSpinner condition={reloadingApp} label={""} color={"darkblue"} /></div>
+            </>:<>
+                <b onClick={() => initiateAppReload()}data-text={"Click here to reload the Foursight app."} className={"tool-tip"} style={{float:"right",cursor:"pointer"}}>&#8635;</b>
+            </>}
             <InfoRow name={"App Deployed At"} value={Server.IsLocal() ? "running locally" + (Context.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + Time.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
             <InfoRow name={"App Launched At"} value={header.app?.launched + Time.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Page Loaded At"} value={info.page?.loaded + Time.FormatDuration(info.page?.loaded, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />

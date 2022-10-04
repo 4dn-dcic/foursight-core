@@ -427,9 +427,10 @@ class ReactApi(ReactRoutes):
         return response
 
     def reactapi_route_reload_lambda(self, request: dict, env: str, lambda_name: str):
+        domain, context = app.core.get_domain_and_context(request)
         app.core.reload_lambda(lambda_name)
         time.sleep(3)
-        return self.create_redirect_response(f"{context}info/{environ}")
+        return self.reactapi_route_info(request, env)
 
     def reactapi_route_clear_cache(self, request: dict, env: str):
         # TODO

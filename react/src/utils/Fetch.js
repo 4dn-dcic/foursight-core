@@ -36,7 +36,9 @@ function fetchData(url, setData, setLoading, setError) {
                 if (Cookie.TestMode.HasFetchSleep()) {
                     SLEEP(Cookie.TestMode.FetchSleep()).then(() => {
                         console.log("FETCHING DONE WITH " + Cookie.TestMode.FetchSleep() + "ms SLEEP: " + url);
-                        setData(responseJson)
+                        if (setData) {
+                            setData(responseJson)
+                        }
                         if (setLoading) {
                             setLoading(false);
                         }
@@ -45,7 +47,9 @@ function fetchData(url, setData, setLoading, setError) {
                 }
                 else {
                     console.log("FETCHING SET DATA DONE: " + url);
-                    setData(responseJson);
+                    if (setData) {
+                        setData(responseJson);
+                    }
                     if (setLoading) {
                         setLoading(false);
                     }

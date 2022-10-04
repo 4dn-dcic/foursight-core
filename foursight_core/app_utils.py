@@ -672,7 +672,7 @@ class AppUtilsCore(ReactApi, Routes):
         to get the last modified time of the lambda needs to look first at this tag and take that
         if it exists before looking at the real last modified time.
         """
-        if not lambda_name or lambda_name.lower() == "current":
+        if not lambda_name or lambda_name.lower() == "current" or lambda_name.lower() == "default":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
             if not lambda_name:
                 return False
