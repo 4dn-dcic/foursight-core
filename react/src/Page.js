@@ -49,7 +49,7 @@ function AuthorizationRequired({ children }) {
     if (!Auth.IsLoggedIn(header)) {
         console.log("XYZZY:REDIRECT TO /login (c)");
         console.log(header);
-        return <Navigate to={Client.Path("/env")} replace />
+        return <Navigate to={Client.Path("/login")} replace />
     }
     else if (!Env.IsAllowed(Env.Current(), header)) {
         console.log("XYZZY:REDIRECT TO /env (d)");
