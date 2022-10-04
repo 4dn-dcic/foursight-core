@@ -1,17 +1,20 @@
 import copy
 import os
-from dcicutils.env_utils import (
-    infer_foursight_from_env,
-    full_env_name,
-    public_env_name,
-    short_env_name,
-)
+#from dcicutils.env_utils import (
+#    infer_foursight_from_env,
+#    full_env_name,
+#    public_env_name,
+#    short_env_name,
+#)
 from dcicutils import ff_utils
 
 
 class Envs:
 
     def __init__(self, known_envs: list):
+        # This known_envs should be the list of annotated environment name objects 
+        # as returned by app_utils.get_unique_annotated_environment_names, where each
+        # object contains these fields: name, short_name, full_name, public_name, foursight_name
         self.known_envs = known_envs
 
     def get_known_envs(self) -> str:
@@ -27,21 +30,20 @@ class Envs:
         return os.environ.get("ENV_NAME", "no-default-env")
 
     def is_known_env(self, env: str) -> bool:
+        return self.find_known_env(env) is not None
+
+    def find_known_env(self, env: str) -> dict:
         if not env:
-            return False
-        env = env.upper()
-        for environment_name in self.known_envs:
-            if environment_name["name"].upper() == env:
-                return True
-            if environment_name["short_name"].upper() == env:
-                return True
-            if environment_name["full_name"].upper() == env:
-                return True
-            if environment_name["public_name"].upper() == env:
-                return True
-            if environment_name["foursight_name"].upper() == env:
-                return True
-        return False
+            return None
+        env = env.lower()
+        for known_env in self.known_envs:
+            if (known_env["name"].lower() == env
+             or known_env["short_name"].lower() == env
+             or known_env["full_name"].lower() == env
+             or known_env["public_name"].lower() == env
+             or known_env["foursight_name"].lower() == env):
+                return known_env
+        return None
 
     def is_allowed_env(self, env: str, allowed_envs: list) -> bool:
         if not env or not allowed_envs:
@@ -51,20 +53,25 @@ class Envs:
                 return True
         return False
 
-    @staticmethod
-    def is_same_env(env_a: str, env_b: str) -> bool:
+    def is_same_env(self, env_a: str, env_b: str) -> bool:
         if not env_a or not env_b:
             return False
-        env_b = env_b.lower()
-        full_env_a = full_env_name(env_a) or ""
-        short_env_a = short_env_name(env_a) or ""
-        public_env_a = public_env_name(env_a) or ""
-        foursight_env_a = infer_foursight_from_env(envname=env_a) or ""
-        return (env_a.lower() == env_b
-            or  full_env_a.lower() == env_b
-            or  short_env_a.lower() == env_b
-            or  public_env_a.lower() == env_b
-            or  foursight_env_a.lower() == env_b)
+        known_env_a = self.find_known_env(env_a)
+        known_env_b = self.find_known_env(env_b)
+        if not known_env_a or not known_env_b:
+            return False
+        return id(known_env_a) == id(known_env_b)
+
+#       env_b = env_b.lower()
+#       full_env_a = full_env_name(env_a) or ""
+#       short_env_a = short_env_name(env_a) or ""
+#       public_env_a = public_env_name(env_a) or ""
+#       foursight_env_a = infer_foursight_from_env(envname=env_a) or ""
+#       return (env_a.lower() == env_b
+#           or  full_env_a.lower() == env_b
+#           or  short_env_a.lower() == env_b
+#           or  public_env_a.lower() == env_b
+#           or  foursight_env_a.lower() == env_b)
 
     def get_user_auth_info(self, email: str) -> [list, list, str]:
         """

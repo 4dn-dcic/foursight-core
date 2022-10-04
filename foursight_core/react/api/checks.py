@@ -7,8 +7,9 @@ from .envs import Envs
 
 class Checks:
 
-    def __init__(self, check_setup):
+    def __init__(self, check_setup, envs: Envs):
         self.check_setup = check_setup
+        self.envs = envs
 
     class Cache:
         checks = None
@@ -66,7 +67,7 @@ class Checks:
             if checks[check_key]["schedule"]:
                 for check_schedule_key in checks[check_key]["schedule"].keys():
                     for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
-                        if check_env_key == "all" or Envs.is_same_env(check_env_key, env):
+                        if check_env_key == "all" or self.envs.is_same_env(check_env_key, env):
                             checks_for_env[check_key] = checks[check_key]
             else:
                 # If no schedule section (which has the env section) then include it.

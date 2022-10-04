@@ -31,7 +31,7 @@ class Auth:
 
             # Read the authtoken cookie.
 
-            authtoken = read_cookie("authtoken", request)
+            authtoken = read_cookie(request, "authtoken")
             if not authtoken:
                 return self._create_not_authenticated_response(request, "no-authtoken")
 

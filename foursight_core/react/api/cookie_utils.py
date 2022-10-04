@@ -2,20 +2,16 @@ import datetime
 from http.cookies import SimpleCookie
 
 
-def read_cookie(cookie_name: str, request) -> str:
+def read_cookie(request: dict, cookie_name: str) -> str:
     if not cookie_name or not request:
         return ""
-    if not isinstance(request, dict):
-        request = request.to_dict()
     simple_cookies = read_cookies(request)
     return simple_cookies.get(cookie_name)
 
 
-def read_cookies(request) -> dict:
+def read_cookies(request: dict) -> dict:
     if not request:
         return {}
-    if not isinstance(request, dict):
-        request = request.to_dict()
     cookies = request.get("headers", {}).get("cookie")
     if not cookies:
         return {}
@@ -24,12 +20,12 @@ def read_cookies(request) -> dict:
     return {key: value.value for key, value in simple_cookies.items()}
 
 
-def create_set_cookie_string(request, name: str,
-                                      value: str,
-                                      domain: str,
-                                      path: str = "/",
-                                      expires = None,
-                                      http_only: bool = False) -> str:
+def create_set_cookie_string(request: dict, name: str,
+                                            value: str,
+                                            domain: str,
+                                            path: str = "/",
+                                            expires = None,
+                                            http_only: bool = False) -> str:
     """
     Returns a string suitable for an HTTP response to set a cookie for this given cookie info.
     If the given expires arg is "now" then then the expiration time for the cookie will be
@@ -64,7 +60,7 @@ def create_set_cookie_string(request, name: str,
     return cookie
 
 
-def create_delete_cookie_string(request, name: str, domain: str, path: str = "/") -> str:
+def create_delete_cookie_string(request: dict, name: str, domain: str, path: str = "/") -> str:
     return create_set_cookie_string(request, name=name, value=None, domain=domain, path=path, expires="now") 
 
 def is_running_locally(request_dict) -> bool:

@@ -34,7 +34,7 @@ class ReactApi(ReactRoutes):
     def __init__(self):
         super(ReactApi, self).__init__()
         self.envs = Envs(app.core.get_unique_annotated_environment_names())
-        self.checks = Checks(app.core.check_handler.CHECK_SETUP)
+        self.checks = Checks(app.core.check_handler.CHECK_SETUP, self.envs)
         self.gac = Gac()
         self.auth = Auth(app.core.get_auth0_client_id(self.envs.get_default_env()),
                          app.core.get_auth0_secret(self.envs.get_default_env()), self.envs)
@@ -76,7 +76,7 @@ class ReactApi(ReactRoutes):
         return self.create_redirect_response(redirect_url, {"set-cookie": authtoken_cookie})
 
     def _get_redirect_url(self, request: dict, env: str, domain: str, context: str):
-        redirect_url = read_cookie("reactredir", request)
+        redirect_url = read_cookie(request, "reactredir")
         if not redirect_url:
             is_running_locally = app.core.is_running_locally(request)
             if is_running_locally:
