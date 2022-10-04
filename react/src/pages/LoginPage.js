@@ -175,7 +175,7 @@ const LoginPage = (props) => {
                 {(header?.app?.credentials?.aws_account_number) && <>
                     <br />
                     <small>
-                        AWS Account Name: {header?.app?.credentials?.aws_account_number}
+                        AWS Account: {header?.app?.credentials?.aws_account_number}
                         {(header?.app?.credentials?.aws_account_name) && <>
                             &nbsp;({header?.app?.credentials?.aws_account_name})
                         </>}
