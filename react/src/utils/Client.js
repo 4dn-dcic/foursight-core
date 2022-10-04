@@ -130,14 +130,15 @@ function IsReadOnlyMode(header) {
 // -------------------------------------------------------------------------------------------------
 
 const Exports = {
-    BasePath:        Context.Client.BasePath,
-    BaseUrl:         Context.Client.BaseUrl,
-    Domain:          Context.Client.Domain,
-    HomeUrl:         GetHomeUrl,
-    IsLocal:         Context.Client.IsLocal,
-    IsReadOnlyMode:  IsReadOnlyMode,
-    Origin:          Context.Client.Origin,
-    Path:            GetPath,
-    PortalLink:      GetPortalLink
+    BasePath:           Context.Client.BasePath,
+    BaseUrl:            Context.Client.BaseUrl,
+    CurrentLogicalPath: GetCurrentLogicalPath,
+    Domain:             Context.Client.Domain,
+    HomeUrl:            GetHomeUrl,
+    IsLocal:            Context.Client.IsLocal,
+    IsReadOnlyMode:     IsReadOnlyMode,
+    Origin:             Context.Client.Origin,
+    Path:               GetPath,
+    PortalLink:         GetPortalLink
 };
 export default Exports;

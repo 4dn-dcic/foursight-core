@@ -2,6 +2,7 @@
 // Fetch (HTTP GET et cetera) related functions.
 // -------------------------------------------------------------------------------------------------
 
+import Client from '../utils/Client';
 import Cookie from '../utils/Cookie';
 import Context from '../utils/Context';
 import Logout from '../utils/Logout';
@@ -66,11 +67,19 @@ function fetchData(url, setData, setLoading, setError) {
             console.log("FETCH STATUS CODE IS NOT 200 BUT " + response.status + ": " + url);
             console.log(response);
             if (response.status === 401) {
+                //
+                // TODO
+                // Perhaps somewhat questionable behavior.
+                // If we EVER get an HTTP 401 then we just logout the user.
+                //
                 console.log("FETCH IS UNAUTHENTICATED! " + url);
                 Logout();
             }
             else if (response.status === 403) {
                 console.log("FETCH IS UNAUTHORIZED! " + url);
+                if (Client.CurrentLogicalPath() != "/env") {
+                    window.location.pathname = Client.Path("/env");
+                }
             }
             if (setError) {
                 setError(response.status);

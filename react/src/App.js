@@ -42,8 +42,6 @@ const App = () => {
 
     const url = Server.Url("/header");
     useEffect(() => {
-            console.log('Fetch header ...')
-            console.log(url)
         Fetch.get(
             url,
             data => {
