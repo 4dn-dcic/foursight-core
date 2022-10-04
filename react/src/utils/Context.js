@@ -92,7 +92,6 @@ function Auth0CallbackUrl() {
 
 function Auth0CallbackId(header) {
     return header?.auth?.aud;
- // return header?.app?.credentials?.auth0_client_id;
 }
 
 // -------------------------------------------------------------------------------------------------

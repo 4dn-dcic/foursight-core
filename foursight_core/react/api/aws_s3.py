@@ -1,5 +1,5 @@
 import boto3
-from ...datetime_utils import convert_utc_datetime_to_useastern_datetime
+from .datetime_utils import convert_utc_datetime_to_useastern_datetime
 
 class AwsS3:
 

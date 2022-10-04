@@ -403,7 +403,7 @@ class AppUtilsCore(ReactApi, Routes):
         if id_token:
             expires_in = res.json().get('expires_in', None)
             if self.is_react_authentication(res.json()):
-                return self.react_authentication_callback(req_dict, env, domain, id_token, expires_in);
+                return self.react_authentication_callback(req_dict, env, id_token, expires_in, domain, context);
             if domain and not self.is_running_locally(req_dict):
                 cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
             else:

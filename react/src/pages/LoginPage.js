@@ -57,6 +57,14 @@ const LoginPage = (props) => {
 
     function createAuth0Lock() {
         const loginCallback = Context.Auth0.CallbackUrl();
+        //
+        // We get the Auth0 client ID, aka audience, aka "aud",
+        // from the non-protected /header Foursight React API.
+        // It must match what is registered at Auth0, and on
+        // the server-side (Foursight React API) we also use
+        // this value, and its associated secret, to decode
+        // the JWT resulting from a successful authentication.
+        //
         const loginClientId = Context.Auth0.CallbackId(header);
         const loginPayload = {
             container: "login_auth_container",
@@ -93,7 +101,7 @@ const LoginPage = (props) => {
                 </div>
                 <div className="boxstyle info" style={{marginLeft:"0pt",padding:"10pt",color:"darkblue"}}>
                     <table style={{color:"inherit"}}><tbody><tr>
-                        <td align="top" style={{whiteSpace:"nowrap"}}>
+                        <td align="top" style={{verticalAlign:"top",whiteSpace:"nowrap",width:"40%"}}>
                             Logged in as:&nbsp;
                             <Link to={Client.Path("/users/" + Auth.LoggedInUser(header))}><b style={{color:"darkblue"}}>{Auth.LoggedInUser(header)}</b></Link> <br />
                             <div style={{fontSize:"small",marginTop:"6pt",paddingTop:"5pt",borderTop:"1px solid"}}>
@@ -105,10 +113,10 @@ const LoginPage = (props) => {
                                     onClick={()=> Logout()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</span>.
                             </div>
                         </td>
-                        <td style={{width:"8pt"}}></td>
-                        <td style={{background:"darkblue",width:"2px"}}></td>
-                        <td style={{width:"8pt"}}></td>
-                        <td style={{textAlign:"top",verticalAlign:"top"}}><small style={{marginTop:"20pt"}}>
+                        <td style={{minWidth:"8pt"}}>&nbsp;</td>
+                        <td style={{background:"darkblue",minWidth:"2px",maxWidth:"2px"}}></td>
+                        <td style={{minWidth:"8pt"}}>&nbsp;</td>
+                        <td style={{width:"60%",textAlign:"top",verticalAlign:"top"}}><small style={{marginTop:"20pt"}}>
                             { Env.Current() && <>
                                 Current environment: <Link to={Client.Path("/env", Env.PreferredName(Env.Current(), header))} style={{color:"inherit"}}><b>{Env.PreferredName(Env.Current(), header)}</b></Link> <br />
                             </>}
@@ -117,6 +125,9 @@ const LoginPage = (props) => {
                             </>}
                             { header?.auth?.known_envs && <>
                                 Available environments: {header.auth.known_envs.map((env, index) => { return <span key={index}>{index > 0 && <>, </>}{Env.PreferredName(env, header)}</span>})} <br />
+                            </>}
+                            { header?.auth?.domain && <>
+                                Domain: {header.auth.domain} <br />
                             </>}
                             {(header?.app?.credentials?.aws_account_number) && <>
                                 AWS Account: {header?.app?.credentials?.aws_account_number}

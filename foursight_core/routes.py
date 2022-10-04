@@ -17,6 +17,8 @@ class Routes:
         """
         Special callback route, only to be used as a callback from auth0
         Will return a redirect to view on error/any missing callback info.
+        Note this is NOT /api/callback RATHER it is just /callback;
+        for both normal and local deployment scenarios.
         """
         request = app.current_request
         return app.core.auth0_callback(request, app.core.get_default_env())

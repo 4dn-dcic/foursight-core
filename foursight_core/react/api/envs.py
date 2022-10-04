@@ -66,7 +66,7 @@ class Envs:
             or  public_env_a.lower() == env_b
             or  foursight_env_a.lower() == env_b)
 
-    def get_envs_for_user(self, email: str) -> [list, list, str, str]:
+    def get_user_auth_info(self, email: str) -> [list, list, str]:
         """
         Returns a tuple containing (in left-right order): the list of known environments;
         the list of allowed environment names (via the users store in ElasticSearch);
@@ -88,4 +88,5 @@ class Envs:
             except Exception as e:
                 print(f"Exception getting allowed envs for: {email}")
                 print(e)
-        return (self.known_envs, allowed_envs, first_name, last_name)
+        #return (self.known_envs, allowed_envs, first_name, last_name)
+        return (allowed_envs, first_name, last_name)

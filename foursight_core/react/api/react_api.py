@@ -9,24 +9,20 @@ import socket
 import time
 import urllib.parse
 from itertools import chain
-from dcicutils.env_utils import (
-    EnvUtils,
-    get_foursight_bucket,
-    get_foursight_bucket_prefix,
-    full_env_name
-)
+from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils import ff_utils
 from dcicutils.obfuscation_utils import obfuscate_dict
-from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
+from dcicutils.secrets_utils import get_identity_name, get_identity_secrets
 from ...app import app
-from ...cookie_utils import create_delete_cookie_string, read_cookie
-from ...datetime_utils import convert_utc_datetime_to_useastern_datetime
 from ...decorators import Decorators
 from ...misc_utils import sort_dictionary_by_lowercase_keys
+from ...route_prefixes import ROUTE_PREFIX
+from .datetime_utils import convert_utc_datetime_to_useastern_datetime
 from .encoding_utils import base64_decode
 from .auth import Auth
 from .aws_s3 import AwsS3
 from .checks import Checks
+from .cookie_utils import create_delete_cookie_string, create_set_cookie_string, read_cookie
 from .envs import Envs
 from .gac import Gac
 from .react_routes import ReactRoutes
@@ -40,8 +36,8 @@ class ReactApi(ReactRoutes):
         self.envs = Envs(app.core.get_unique_annotated_environment_names())
         self.checks = Checks(app.core.check_handler.CHECK_SETUP)
         self.gac = Gac()
-        self.auth = Auth(app.core.get_auth0_client_id(app.core.get_default_env()),
-                         app.core.get_auth0_secret(app.core.get_default_env()), self.envs)
+        self.auth = Auth(app.core.get_auth0_client_id(self.envs.get_default_env()),
+                         app.core.get_auth0_secret(self.envs.get_default_env()), self.envs)
         self.react_ui = ReactUi(self)
 
     class Cache:
@@ -53,11 +49,57 @@ class ReactApi(ReactRoutes):
         response.status_code = 200
         return response
 
+    def create_redirect_response(self, location: str, headers: dict):
+        if not headers:
+            headers = {}
+        headers["location"] = location
+        return Response(status_code=302, body=json.dumps(headers), headers=headers)
+
     def is_react_authentication(self, auth0_response: dict) -> bool:
         return "react" in auth0_response.get("scope", "") if auth0_response else False
 
-    def react_authentication_callback(self, request: dict, env: str, domain: str, jwt: str, expires: int):
-        return self.auth.authorization_callback(request, env, domain, jwt, expires)
+    def react_authentication_callback(self, request: dict, env: str, jwt: str, jwt_expires: int, domain: str, context: str):
+        """
+        Called from the main Auth0 callback, in app_utils/auth0_callback, AFTER the Auth0 HTTP POST
+        which does the actual authentication; that POST returns the JWT which is received by this
+        function. So at this point, the user HAS been SUCCESSFULLY authenticated and we have a
+        VALID/authenticated JWT; if this were not so we would have returned  before this call,
+        in app_utils/auth_callback. We create a new JWT from the given JWT, which we call authtoken,
+        and set this as a cookie on the redirect (HTTP 302) response which we return.
+        """
+        authtoken = self.auth.create_authtoken(jwt, env, domain)
+        authtoken_cookie = create_set_cookie_string(request, name="authtoken",
+                                                    value=authtoken,
+                                                    domain=domain,
+                                                    expires=jwt_expires, http_only=False)
+        redirect_url = self._get_redirect_url(request, env, domain, context)
+        return self.create_redirect_response(redirect_url, {"set-cookie": authtoken_cookie})
+
+    def _get_redirect_url(self, request: dict, env: str, domain: str, context: str):
+        redirect_url = read_cookie("reactredir", request)
+        if not redirect_url:
+            is_running_locally = app.core.is_running_locally(request)
+            if is_running_locally:
+                http = "http"
+                # Using ROUTE_PREFIX here instead of context because may be just "/" for the local
+                # deploy case because we get here via the /callback endpoint (during authentication).
+                # Due to confusion between local deploy not implicitly using /api as context so setting
+                # it explicitly; this is just so we are dealing with the same paths for either case.
+                context = ROUTE_PREFIX
+            else:
+                http = "https"
+            if not env:
+                env = self.envs.get_default_env()
+            if not context:
+                context = "/"
+            elif not context.endswith("/"):
+                context = context = "/"
+            redirect_url = f"{http}://{domain}{context}react/{env}/login"
+        else:
+            # Not certain if by design but the React library (universal-cookie) used to
+            # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
+            redirect_url = urllib.parse.unquote(redirect_url)
+        return redirect_url
 
     def react_authorize(self, request: dict, env: str) -> dict:
         return self.auth.authorize(request, env)
@@ -67,20 +109,9 @@ class ReactApi(ReactRoutes):
 
     def reactapi_route_logout(self, request: dict, env: str):
         domain, context = app.core.get_domain_and_context(request)
-        redirect_url = read_cookie("reactredir", request)
-        if not redirect_url:
-            http = "https" if not app.core.is_running_locally(request) else "http"
-            redirect_url = f"{http}://{domain}{context if context else ''}react/{env}/login"
-        else:
-            # Not certain if by design but the React library (universal-cookie) used to
-            # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
-            redirect_url = urllib.parse.unquote(redirect_url)
         authtoken_cookie_deletion = create_delete_cookie_string(request=request, name="authtoken", domain=domain)
-        headers = {
-            "location": redirect_url,
-            "set-cookie": authtoken_cookie_deletion
-        }
-        return Response(status_code=302, body=json.dumps(headers), headers=headers)
+        redirect_url = self._get_redirect_url(request, env, domain, context)
+        return self.create_redirect_response(redirect_url, {"set-cookie": authtoken_cookie_deletion})
 
     def reactapi_route_header(self, request: dict, env: str):
         # Note that this route is not protected but/and we return the results from authorize.
@@ -100,7 +131,7 @@ class ReactApi(ReactRoutes):
     def reactapi_route_header_nocache(self, request: dict, env: str):
         domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
-        default_env = app.core.get_default_env()
+        default_env = self.envs.get_default_env()
         aws_credentials = self.auth.get_aws_credentials(env if env else default_env);
         response = {
             "app": {
@@ -131,7 +162,7 @@ class ReactApi(ReactRoutes):
     def reactapi_route_info(self, request: dict, env: str):
         domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
-        default_env = app.core.get_default_env()
+        default_env = self.envs.get_default_env()
         if not self.envs.is_known_env(env):
             env_unknown = True
         else:
@@ -398,8 +429,8 @@ class ReactApi(ReactRoutes):
     def reactapi_route_reload_lambda(self, request: dict, env: str, lambda_name: str):
         app.core.reload_lambda(lambda_name)
         time.sleep(3)
-        headers = {'Location': f"{context}info/{environ}"}
-        return Response(status_code=302, body=json.dumps(headers), headers=headers)
+        return self.create_redirect_response(f"{context}info/{environ}")
 
     def reactapi_route_clear_cache(self, request: dict, env: str):
+        # TODO
         pass
