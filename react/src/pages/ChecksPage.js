@@ -935,7 +935,7 @@ const ChecksPage = (props) => {
         </>
     }
 
-    if (error) return <>Cannot load users from Foursight: {error}</>;
+    if (error) return <>Cannot load checks from Foursight: {error}</>;
     if (loading) {
         return <>
             <div style={{marginTop:"30px"}}>
