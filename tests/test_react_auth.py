@@ -35,8 +35,9 @@ ALLOWED_ENVS = ["env-b-full-name", "env-c-full-name"]
 DEFAULT_ENV = "env-a-full-name"
 INITIAL_ENV = "env-b-full-name"
 
-ISSUED_AT = int(time.time())
-EXPIRES_AT =int(time.time()) + (60 * 60 * 24)
+ISSUED_AT  = int(time.time())
+EXPIRES_IN = (60 * 60 * 24)
+EXPIRES_AT = int(time.time()) + EXPIRES_IN
 
 ENVS = Envs(KNOWN_ENVS)
 EMAIL = "some-email@some-domain.edu"
@@ -54,8 +55,7 @@ def _create_test_jwt_unencoded():
         "email_verified": True,
         "some-property": "some-value",
         "another-property": "another-value",
-        "iat": ISSUED_AT,
-        "exp": EXPIRES_AT
+        "iat": ISSUED_AT
     }
 
 
@@ -67,7 +67,7 @@ def _create_test_authtoken():
     jwt = _create_test_jwt()
     os.environ["ENV_NAME"] = DEFAULT_ENV
     auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
-    authtoken = auth.create_authtoken(jwt, INITIAL_ENV, DOMAIN)
+    authtoken = auth.create_authtoken(jwt, EXPIRES_AT, INITIAL_ENV, DOMAIN)
     return authtoken
 
 

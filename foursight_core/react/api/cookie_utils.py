@@ -1,6 +1,7 @@
 import datetime
 from typing import Any, Optional
 from http.cookies import SimpleCookie
+from .datetime_utils import convert_time_t_to_datetime
 
 
 def read_cookie(request: dict, cookie_name: str) -> str:
@@ -42,7 +43,9 @@ def create_set_cookie_string(request: dict, name: str, value: Optional[str],
         if isinstance(expires, datetime.datetime):
             expires = expires.strftime("%a, %d %b %Y %H:%M:%S GMT")
         elif isinstance(expires, int):
-            expires = (datetime.datetime.utcnow() + datetime.timedelta(seconds=expires)).strftime("%a, %d %b %Y %H:%M:%S GMT")
+            #expires = (datetime.datetime.utcnow() + datetime.timedelta(seconds=expires)).strftime("%a, %d %b %Y %H:%M:%S GMT")
+            expires = convert_time_t_to_datetime(expires)
+            expires = expires.strftime("%a, %d %b %Y %H:%M:%S GMT")
         elif isinstance(expires, str):
             if expires.lower() == "now":
                 expires = "Expires=Thu, 01 Jan 1970 00:00:00 UTC"

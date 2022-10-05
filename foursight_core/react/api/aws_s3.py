@@ -1,5 +1,5 @@
 import boto3
-from .datetime_utils import convert_utc_datetime_to_useastern_datetime
+from .datetime_utils import convert_utc_datetime_to_useastern_datetime_string
 
 
 class AwsS3:
@@ -28,7 +28,7 @@ class AwsS3:
                         results.append({
                             "key": bucket_key["Key"],
                             "size": bucket_key["Size"],
-                            "modified": convert_utc_datetime_to_useastern_datetime(bucket_key["LastModified"])
+                            "modified": convert_utc_datetime_to_useastern_datetime_string(bucket_key["LastModified"])
                         })
 
         except Exception as e:

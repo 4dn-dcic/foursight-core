@@ -2,7 +2,7 @@ import datetime
 import pytz
 
 
-def convert_utc_datetime_to_useastern_datetime(t) -> str:
+def convert_utc_datetime_to_useastern_datetime_string(t) -> str:
     """
     Converts the given UTC datetime object or string into a US/Eastern datetime string
     and returns its value in a form that looks like 2022-08-22 13:25:34 EDT.
@@ -22,7 +22,7 @@ def convert_utc_datetime_to_useastern_datetime(t) -> str:
         return "datetime-utc-parse-error"
 
 
-def convert_time_t_to_useastern_datetime(time_t: int) -> str:
+def convert_time_t_to_useastern_datetime_string(time_t: int) -> str:
     """
     Converts the given "epoch" time (seconds since 1970-01-01T00:00:00Z)
     integer value to a US/Eastern datetime string and returns its value
@@ -35,6 +35,12 @@ def convert_time_t_to_useastern_datetime(time_t: int) -> str:
         if not isinstance(time_t, int):
             return ""
         t = datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
-        return convert_utc_datetime_to_useastern_datetime(t)
+        return convert_utc_datetime_to_useastern_datetime_string(t)
     except:
         return "datetime-parse-error"
+
+def convert_time_t_to_datetime(time_t: int) -> datetime.datetime:
+    return datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
+
+def convert_datetime_to_time_t(value: datetime.datetime) -> int:
+    return int(value.timestamp())

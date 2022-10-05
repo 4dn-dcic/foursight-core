@@ -1,8 +1,8 @@
 from chalice import Response, __version__ as chalice_version
-import os
-import datetime
 import copy
+import datetime
 import json
+import os
 import pkg_resources
 import platform
 import socket
@@ -17,12 +17,12 @@ from ...app import app
 from ...decorators import Decorators
 from ...misc_utils import sort_dictionary_by_lowercase_keys
 from ...route_prefixes import ROUTE_PREFIX
-from .datetime_utils import convert_utc_datetime_to_useastern_datetime
-from .encoding_utils import base64_decode
 from .auth import Auth
 from .aws_s3 import AwsS3
 from .checks import Checks
 from .cookie_utils import create_delete_cookie_string, create_set_cookie_string, read_cookie
+from .datetime_utils import convert_datetime_to_time_t, convert_utc_datetime_to_useastern_datetime_string
+from .encoding_utils import base64_decode
 from .envs import Envs
 from .gac import Gac
 from .react_routes import ReactRoutes
@@ -58,7 +58,7 @@ class ReactApi(ReactRoutes):
     def is_react_authentication(self, auth0_response: dict) -> bool:
         return "react" in auth0_response.get("scope", "") if auth0_response else False
 
-    def react_authentication_callback(self, request: dict, env: str, jwt: str, jwt_expires: int, domain: str, context: str):
+    def react_authentication_callback(self, request: dict, env: str, jwt: str, jwt_expires_in: int, domain: str, context: str):
         """
         Called from the main Auth0 callback, in app_utils/auth0_callback, AFTER the Auth0 HTTP POST
         which does the actual authentication; that POST returns the JWT which is received by this
@@ -66,12 +66,16 @@ class ReactApi(ReactRoutes):
         VALID/authenticated JWT; if this were not so we would have returned  before this call,
         in app_utils/auth_callback. We create a new JWT from the given JWT, which we call authtoken,
         and set this as a cookie on the redirect (HTTP 302) response which we return.
+        The jwt_expires_in is the number of seconds from now when the given JWT will expire;
+        this is directly from the (above mentioned) Auth0 POST; this is NOT the exp from
+        the JWT which seems to be different from (like 14 hours less than) jwt_expires_in.
         """
-        authtoken = self.auth.create_authtoken(jwt, env, domain)
+        jwt_expires_at = convert_datetime_to_time_t(datetime.datetime.utcnow() + datetime.timedelta(seconds=jwt_expires_in))
+        authtoken = self.auth.create_authtoken(jwt, jwt_expires_at, env, domain)
         authtoken_cookie = create_set_cookie_string(request, name="authtoken",
                                                     value=authtoken,
                                                     domain=domain,
-                                                    expires=jwt_expires, http_only=False)
+                                                    expires=jwt_expires_at, http_only=False)
         redirect_url = self._get_redirect_url(request, env, domain, context)
         return self.create_redirect_response(redirect_url, {"set-cookie": authtoken_cookie})
 
@@ -259,7 +263,7 @@ class ReactApi(ReactRoutes):
                 "first_name": user_record.get("first_name"),
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
-                "modified": convert_utc_datetime_to_useastern_datetime(last_modified)})
+                "modified": convert_utc_datetime_to_useastern_datetime_string(last_modified)})
         response = self.create_standard_response("reactapi_users")
         response.body = sorted(users, key=lambda key: key["email_address"])
         return response

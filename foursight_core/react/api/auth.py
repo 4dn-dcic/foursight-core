@@ -73,7 +73,7 @@ class Auth:
             print("Authorize exception: " + str(e))
             return self._create_not_authenticated_response(request, "exception: " + str(e))
 
-    def create_authtoken(self, jwt: str, env: str, domain: str) -> str:
+    def create_authtoken(self, jwt: str, jwt_expires_at: int, env: str, domain: str) -> str:
         """
         Creates and returns a new signed JWT, to be used as the login authtoken (cookie), from
         the given AUTHENTICATED and signend and encoded JWT, which will contain the following:
@@ -84,6 +84,8 @@ class Auth:
         - The initial environment (i.e. the environment in which the user was first authenticated).
         - The list of allowed (authorized) environments for the user associated with the given JWT.
         - The first/last name of the user associated with the given JWT.
+        - The timestamp of when the given JWT was issued (UTC time_t/epoch format).
+        - The timestamp of when the given JWT expires issued (UTC time_t/epoch format).
         - The audience (aka "aud" aka Auth0 client ID).
         The allowed environments and first/last name are obtained via the users ElasticSearch store;
         the first/last names are just for informational/display purposes in the client.
@@ -95,7 +97,7 @@ class Auth:
         authtoken_decoded = {
             "authenticated": True,
             "authenticated_at": jwt_decoded.get("iat"),
-            "authenticated_until": jwt_decoded.get("exp"),
+            "authenticated_until": jwt_expires_at,
             "authorized": True,
             "user": email,
             "user_verified": jwt_decoded.get("email_verified"),
