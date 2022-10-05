@@ -1,6 +1,7 @@
-import cron_descriptor
-import os
 import boto3
+import cron_descriptor
+from typing import Optional
+import os
 from ...decorators import Decorators
 from .envs import Envs
 
@@ -15,10 +16,10 @@ class Checks:
         checks = None
         lambdas = None
 
-    def get_checks_raw(self) -> list:
+    def get_checks_raw(self) -> dict:
         return self.check_setup
 
-    def get_checks(self, env: str) -> list:
+    def get_checks(self, env: str) -> dict:
         if not Checks.Cache.checks:
             checks = self.get_checks_raw()
             for check_key in checks.keys():
@@ -44,7 +45,7 @@ class Checks:
                     found = True
                     break
             if not found:
-                checks_groups.append({ "group": check_setup_item_group, "checks": [check_setup_item]})
+                checks_groups.append({"group": check_setup_item_group, "checks": [check_setup_item]})
         return checks_groups
 
     def get_checks_grouped_by_schedule(self, env: str) -> list:
@@ -52,18 +53,23 @@ class Checks:
         # TODO
         return checks_grouped_by_schedule
 
-    def get_check(self, env: str, check: str) -> dict:
+    def get_check(self, env: str, check: str) -> Optional[dict]:
         checks = self.get_checks(env)
         for check_key in checks.keys():
             if check_key == check:
                 return checks[check_key]
-        return check
+        return None
 
     def filter_checks_by_env(self, checks: dict, env) -> dict:
+        print('xyzzy;filter_checks_by_env')
+        print(type(checks))
         if not env:
+            print('xyzzy;filter_checks_by_env;no-env')
             return checks
         checks_for_env = {}
-        for check_key in checks:
+        for check_key in checks.keys():
+            print('xyzzy;filter_checks_by_env;loop')
+            print(check_key)
             if checks[check_key]["schedule"]:
                 for check_schedule_key in checks[check_key]["schedule"].keys():
                     for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
@@ -72,9 +78,13 @@ class Checks:
             else:
                 # If no schedule section (which has the env section) then include it.
                 checks_for_env[check_key] = checks[check_key]
+        print('xyzzy;filter_checks_by_env;return')
+        print(checks_for_env)
+        print(type(checks_for_env))
         return checks_for_env
 
-    def get_stack_name(self) -> str:
+    @staticmethod
+    def get_stack_name() -> str:
         return os.environ.get("STACK_NAME")
 
     def get_stack_template(self, stack_name: str = None) -> dict:
@@ -154,15 +164,15 @@ class Checks:
                     # time, so that process also squirrels away the real lambda modified time in a
                     # tag called last_modified. See the reload_lambda function for details of this.
                     try:
-                       lambda_function_tags = boto_lambda.list_tags(Resource=lambda_function["FunctionArn"])["Tags"]
-                       lambda_modified = lambda_function_tags.get("last_modified")
-                       if lambda_modified:
+                        lambda_function_tags = boto_lambda.list_tags(Resource=lambda_function["FunctionArn"])["Tags"]
+                        lambda_modified = lambda_function_tags.get("last_modified")
+                        if lambda_modified:
                             la["lambda_modified"] = lambda_modified
                     except:
                         pass
         return lambdas
 
-    def annotate_lambdas_with_check_setup(self, lambdas: list, checks: list) -> list:
+    def annotate_lambdas_with_check_setup(self, lambdas: list, checks: dict) -> list:
         if not checks or not isinstance(checks, dict):
             return lambdas
         for check_setup_item_name in checks:

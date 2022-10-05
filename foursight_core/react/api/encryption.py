@@ -1,9 +1,11 @@
 # Encryption utility class.
 
+import json
 import os
 from pyDes import triple_des
 import uuid
 from .encoding_utils import base64_decode_to_bytes, base64_encode, bytes_to_string
+
 
 # TODO:
 # Note that triple_des not secure really.
@@ -38,9 +40,9 @@ class Encryption:
                     # not be able to decrypt any authTokens existing out
                     # there, meaning users will have to login again.
                     #
-                    encryption_password = str(uuid.uuid4()).replace('-','')
+                    encryption_password = str(uuid.uuid4()).replace('-', '')
             if not encryption_password:
-                encryption_password = str(uuid.uuid4()).replace('-','')[0:24]
+                encryption_password = str(uuid.uuid4()).replace('-', '')[0:24]
             elif len(encryption_password) < 24:
                 encryption_password = encryption_password.ljust(24, 'x')
             elif len(encryption_password) > 24:

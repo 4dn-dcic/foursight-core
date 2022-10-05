@@ -15,7 +15,7 @@ REACT_WHITELISTED_FILE_PATH_SUFFIXES = [
     ".ico"
 ]
 
-class ReactUi():
+class ReactUi:
 
     def __init__(self, react_api):
         self.react_api = react_api

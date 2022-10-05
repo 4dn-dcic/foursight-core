@@ -1,8 +1,5 @@
-from chalice import Response
 import boto3
-import json
 import time
-import urllib.parse
 from .cookie_utils import read_cookie
 from .envs import Envs
 from .jwt_utils import jwt_decode, jwt_encode
@@ -142,7 +139,7 @@ class Auth:
                 "known_envs": self.envs.get_known_envs(),
                 "default_env": self.envs.get_default_env(),
                 "domain": self._get_domain(request),
-                "aud": self.auth0_client_id # Needed for Auth0Lock login box on client-side.
+                "aud": self.auth0_client_id  # Needed for Auth0Lock login box on client-side.
             }
         response["authenticated"] = authenticated
         response["authorized"] = False
@@ -155,7 +152,8 @@ class Auth:
         """
         return self._create_not_authorized_response(request, status, authtoken_decoded, False)
 
-    def _get_domain(self, request: dict) -> str:
+    @staticmethod
+    def _get_domain(request: dict) -> str:
         if request:
             try:
                 return request.get("headers", {}).get("host")
@@ -192,15 +190,15 @@ class Auth:
                 try:
                     aws_credentials["aws_account_name"] = \
                         boto3.client('iam').list_account_aliases()['AccountAliases'][0]
-                except Exception as e:
+                except:
                     pass
                 if not aws_account_name:
                     try:
                         aws_credentials["aws_account_name"] = \
                             boto3.client('organizations').describe_account(AccountId=account_number).get('Account').get('Name')
-                    except Exception as e:
+                    except:
                         pass
                 Auth.Cache.aws_credentials[env] = aws_credentials
-            except Exception as e:
+            except:
                 return {}
         return aws_credentials

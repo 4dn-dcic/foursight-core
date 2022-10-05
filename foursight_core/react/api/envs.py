@@ -1,23 +1,18 @@
 import copy
+from typing import Optional
 import os
-#from dcicutils.env_utils import (
-#    infer_foursight_from_env,
-#    full_env_name,
-#    public_env_name,
-#    short_env_name,
-#)
 from dcicutils import ff_utils
 
 
 class Envs:
 
     def __init__(self, known_envs: list):
-        # This known_envs should be the list of annotated environment name objects 
+        # This known_envs should be the list of annotated environment name objects
         # as returned by app_utils.get_unique_annotated_environment_names, where each
         # object contains these fields: name, short_name, full_name, public_name, foursight_name
         self.known_envs = known_envs
 
-    def get_known_envs(self) -> str:
+    def get_known_envs(self) -> list:
         return self.known_envs
 
     def get_known_envs_with_gac_names(self, gac) -> list:
@@ -32,16 +27,16 @@ class Envs:
     def is_known_env(self, env: str) -> bool:
         return self.find_known_env(env) is not None
 
-    def find_known_env(self, env: str) -> dict:
+    def find_known_env(self, env: str) -> Optional[dict]:
         if not env:
             return None
         env = env.lower()
         for known_env in self.known_envs:
             if (known_env["name"].lower() == env
-             or known_env["short_name"].lower() == env
-             or known_env["full_name"].lower() == env
-             or known_env["public_name"].lower() == env
-             or known_env["foursight_name"].lower() == env):
+                or known_env["short_name"].lower() == env
+                or known_env["full_name"].lower() == env
+                or known_env["public_name"].lower() == env
+                or known_env["foursight_name"].lower() == env):
                 return known_env
         return None
 
@@ -95,5 +90,4 @@ class Envs:
             except Exception as e:
                 print(f"Exception getting allowed envs for: {email}")
                 print(e)
-        #return (self.known_envs, allowed_envs, first_name, last_name)
         return (allowed_envs, first_name, last_name)
