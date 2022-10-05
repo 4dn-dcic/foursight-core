@@ -57,17 +57,6 @@ class Envs:
             return False
         return id(known_env_a) == id(known_env_b)
 
-#       env_b = env_b.lower()
-#       full_env_a = full_env_name(env_a) or ""
-#       short_env_a = short_env_name(env_a) or ""
-#       public_env_a = public_env_name(env_a) or ""
-#       foursight_env_a = infer_foursight_from_env(envname=env_a) or ""
-#       return (env_a.lower() == env_b
-#           or  full_env_a.lower() == env_b
-#           or  short_env_a.lower() == env_b
-#           or  public_env_a.lower() == env_b
-#           or  foursight_env_a.lower() == env_b)
-
     def get_user_auth_info(self, email: str) -> [list, list, str]:
         """
         Returns a tuple containing (in left-right order): the list of known environments;

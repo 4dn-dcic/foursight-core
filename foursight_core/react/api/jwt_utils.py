@@ -45,10 +45,6 @@ def jwt_decode(jwt: str, audience: str, secret: str) -> dict:
         # This decoding WITH signature verification is very fast;
         # on my (dmichaels) MacBook it generally takes less than 0.04ms;
         # very good since we do this on every (protected) React API call.
-        return jwtlib.decode(jwt, secret,
-                                  audience=audience,
-                                  leeway=30,
-                                  options={"verify_signature": True},
-                                  algorithms=["HS256"])
+        return jwtlib.decode(jwt, secret, audience=audience, leeway=30, options={"verify_signature": True}, algorithms=["HS256"])
     except Exception as e:
         raise Exception(f"Exception verifying/decoding JWT: {str(e)}")
