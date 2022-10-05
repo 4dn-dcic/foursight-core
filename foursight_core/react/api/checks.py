@@ -61,15 +61,10 @@ class Checks:
         return None
 
     def filter_checks_by_env(self, checks: dict, env) -> dict:
-        print('xyzzy;filter_checks_by_env')
-        print(type(checks))
         if not env:
-            print('xyzzy;filter_checks_by_env;no-env')
             return checks
         checks_for_env = {}
         for check_key in checks.keys():
-            print('xyzzy;filter_checks_by_env;loop')
-            print(check_key)
             if checks[check_key]["schedule"]:
                 for check_schedule_key in checks[check_key]["schedule"].keys():
                     for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
@@ -78,9 +73,6 @@ class Checks:
             else:
                 # If no schedule section (which has the env section) then include it.
                 checks_for_env[check_key] = checks[check_key]
-        print('xyzzy;filter_checks_by_env;return')
-        print(checks_for_env)
-        print(type(checks_for_env))
         return checks_for_env
 
     @staticmethod

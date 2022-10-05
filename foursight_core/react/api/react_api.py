@@ -107,28 +107,28 @@ class ReactApi(ReactRoutes):
     def react_serve_static_file(self, env: str, **kwargs):
         return self.react_ui.serve_static_file(env, **kwargs)
 
-    def reactapi_route_logout(self, request: dict, env: str):
+    def reactapi_logout(self, request: dict, env: str):
         domain, context = app.core.get_domain_and_context(request)
         authtoken_cookie_deletion = create_delete_cookie_string(request=request, name="authtoken", domain=domain)
         redirect_url = self._get_redirect_url(request, env, domain, context)
         return self.create_redirect_response(redirect_url, {"set-cookie": authtoken_cookie_deletion})
 
-    def reactapi_route_header(self, request: dict, env: str):
+    def reactapi_header(self, request: dict, env: str):
         # Note that this route is not protected but/and we return the results from authorize.
         # TODO: remove stuff we don't need like credentials and also auth also version of other stuff and gac_name ...
         #       review all these data points and see which ones really need ...
         auth = self.auth.authorize(request, env)
         data = ReactApi.Cache.header.get(env)
         if not data:
-            data = self.reactapi_route_header_nocache(request, env)
+            data = self.reactapi_header_nocache(request, env)
             ReactApi.Cache.header[env] = data
         data = copy.deepcopy(data)
         data["auth"] = auth
-        response = self.create_standard_response("reactapi_route_header")
+        response = self.create_standard_response("reactapi_header")
         response.body = data
         return response
 
-    def reactapi_route_header_nocache(self, request: dict, env: str):
+    def reactapi_header_nocache(self, request: dict, env: str):
         domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
         default_env = self.envs.get_default_env()
@@ -159,7 +159,7 @@ class ReactApi(ReactRoutes):
         }
         return response
 
-    def reactapi_route_info(self, request: dict, env: str):
+    def reactapi_info(self, request: dict, env: str):
         domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
         default_env = self.envs.get_default_env()
@@ -178,7 +178,7 @@ class ReactApi(ReactRoutes):
             environment_and_bucket_info = None
             portal_url = None
         # Get known envs with GAC name for each.
-        response = self.create_standard_response("reactapi_route_info")
+        response = self.create_standard_response("reactapi_info")
         response.body = {
             "app": {
                 "title": app.core.html_main_title,
@@ -235,7 +235,7 @@ class ReactApi(ReactRoutes):
         }
         return response
 
-    def reactapi_route_users(self, request: dict, env: str):
+    def reactapi_users(self, request: dict, env: str):
         users = []
         # TODO: Support paging.
         user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(env), add_on='frame=object&limit=10000')
@@ -260,11 +260,11 @@ class ReactApi(ReactRoutes):
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
                 "modified": convert_utc_datetime_to_useastern_datetime(last_modified)})
-        response = self.create_standard_response("reactapi_route_users")
+        response = self.create_standard_response("reactapi_users")
         response.body = sorted(users, key=lambda key: key["email_address"])
         return response
 
-    def reactapi_route_users_user(self, request: dict, env: str, email: str):
+    def reactapi_users_user(self, request: dict, env: str, email: str):
         users = []
         for email_address in email.split(","):
             try:
@@ -272,36 +272,36 @@ class ReactApi(ReactRoutes):
                 users.append({"email_address": email_address, "record": user})
             except Exception as e:
                 users.append({"email_address": email_address, "record": {"error": str(e)}})
-        response = self.create_standard_response("reactapi_route_users_user")
+        response = self.create_standard_response("reactapi_users_user")
         response.body = sorted(users, key=lambda key: key["email_address"])
         return response
 
-    def reactapi_route_gac_compare(self, request: dict, env: str, env_compare: str):
-        response = self.create_standard_response("reactapi_route_gac_compare")
+    def reactapi_gac_compare(self, request: dict, env: str, env_compare: str):
+        response = self.create_standard_response("reactapi_gac_compare")
         response.body = self.gac.compare_gacs(env, env_compare)
         return response
 
-    def reactapi_route_checks_raw(self, request: dict, env: str):
-        response = self.create_standard_response("reactapi_route_checks_raw")
+    def reactapi_checks_raw(self, request: dict, env: str):
+        response = self.create_standard_response("reactapi_checks_raw")
         response.body = self.checks.get_checks_raw()
         return response
 
-    def reactapi_route_checks_registry(self, request: dict, env: str):
-        response = self.create_standard_response("reactapi_route_checks_registry")
+    def reactapi_checks_registry(self, request: dict, env: str):
+        response = self.create_standard_response("reactapi_checks_registry")
         response.body = Decorators.get_registry()
         return response
 
-    def reactapi_route_checks(self, request: dict, env: str):
-        response = self.create_standard_response("reactapi_route_checks")
+    def reactapi_checks(self, request: dict, env: str):
+        response = self.create_standard_response("reactapi_checks")
         response.body = self.checks.get_checks_grouped(env)
         return response
 
-    def reactapi_route_checks_history(self, request: dict, env: str, check: str, offset: int = 0, limit: int = 25, sort: str = None):
+    def reactapi_checks_history(self, request: dict, env: str, check: str, offset: int = 0, limit: int = 25, sort: str = None):
         if offset < 0:
             offset = 0
         if limit < 0:
             limit = 0
-        response = self.create_standard_response("reactapi_route_checks_history")
+        response = self.create_standard_response("reactapi_checks_history")
         check_record = self.checks.get_check(env, check)
         connection = app.core.init_connection(env)
         history, total = app.core.get_foursight_history(connection, check, offset, limit, sort)
@@ -333,8 +333,8 @@ class ReactApi(ReactRoutes):
         response.body = history
         return response
 
-    def reactapi_route_checks_status(self, request: dict, env: str):
-        response = self.create_standard_response("reactapi_route_checks_status")
+    def reactapi_checks_status(self, request: dict, env: str):
+        response = self.create_standard_response("reactapi_checks_status")
         checks_queue = app.core.sqs.get_sqs_attributes(app.core.sqs.get_sqs_queue().url)
         checks_running = checks_queue.get('ApproximateNumberOfMessagesNotVisible')
         checks_queued = checks_queue.get('ApproximateNumberOfMessages')
@@ -344,16 +344,16 @@ class ReactApi(ReactRoutes):
         }
         return response
 
-    def reactapi_route_lambdas(self, request: dict, env: str):
-        response = self.create_standard_response("reactapi_route_lambdas")
+    def reactapi_lambdas(self, request: dict, env: str):
+        response = self.create_standard_response("reactapi_lambdas")
         response.body = self.checks.get_annotated_lambdas()
         return response
 
-    def reactapi_route_check_results(self, request: dict, env: str, check: str):
+    def reactapi_check_results(self, request: dict, env: str, check: str):
         """
         Returns the latest result from the given check.
         """
-        response = self.create_standard_response("reactapi_route_check_results")
+        response = self.create_standard_response("reactapi_check_results")
         try:
             connection = app.core.init_connection(env)
             check_results = app.core.CheckResult(connection, check)
@@ -368,7 +368,7 @@ class ReactApi(ReactRoutes):
             response.body = {}
         return response
 
-    def reactapi_route_check_result(self, request: dict, env: str, check: str, uuid: str):
+    def reactapi_check_result(self, request: dict, env: str, check: str, uuid: str):
         """
         Returns the specified result, by uuid, for the given check.
         Analogous legacy function is app_utils.view_foursight_check.
@@ -402,36 +402,36 @@ class ReactApi(ReactRoutes):
                 })
         return response
 
-    def reactapi_route_checks_run(self, request: dict, env: str, check: str, args: str):
-        response = self.create_standard_response("reactapi_route_checks_run")
+    def reactapi_checks_run(self, request: dict, env: str, check: str, args: str):
+        response = self.create_standard_response("reactapi_checks_run")
         args = base64_decode(args)
         args = json.loads(args)
         queued_uuid = app.core.queue_check(env, check, args)
         response.body = {"check": check, "env": env, "uuid": queued_uuid}
         return response
 
-    def reactapi_route_aws_s3_buckets(self, request: dict, env: str):
-        response = self.create_standard_response("reactapi_route_aws_s3_buckets")
+    def reactapi_aws_s3_buckets(self, request: dict, env: str):
+        response = self.create_standard_response("reactapi_aws_s3_buckets")
         response.body = AwsS3.get_buckets()
         return response
 
-    def reactapi_route_aws_s3_buckets_keys(self, request: dict, env: str, bucket: str):
-        response = self.create_standard_response("reactapi_route_aws_s3_buckets_keys")
+    def reactapi_aws_s3_buckets_keys(self, request: dict, env: str, bucket: str):
+        response = self.create_standard_response("reactapi_aws_s3_buckets_keys")
         response.body = AwsS3.get_bucket_keys(bucket)
         return response
 
-    def reactapi_route_aws_s3_buckets_key_contents(self, request: dict, env: str, bucket: str, key: str):
+    def reactapi_aws_s3_buckets_key_contents(self, request: dict, env: str, bucket: str, key: str):
         key = urllib.parse.unquote(key)
-        response = self.create_standard_response("reactapi_route_aws_s3_buckets_key_contents")
+        response = self.create_standard_response("reactapi_aws_s3_buckets_key_contents")
         response.body = AwsS3.get_bucket_key_contents(bucket, key)
         return response
 
-    def reactapi_route_reload_lambda(self, request: dict, env: str, lambda_name: str):
+    def reactapi_reload_lambda(self, request: dict, env: str, lambda_name: str):
         domain, context = app.core.get_domain_and_context(request)
         app.core.reload_lambda(lambda_name)
         time.sleep(3)
-        return self.reactapi_route_info(request, env)
+        return self.reactapi_info(request, env)
 
-    def reactapi_route_clear_cache(self, request: dict, env: str):
+    def reactapi_clear_cache(self, request: dict, env: str):
         # TODO
         pass
