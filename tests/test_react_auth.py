@@ -16,6 +16,33 @@ from foursight_core.react.api import cookie_utils # import read_cookie
 from test_react_auth_defs import *
 
 
+def assert_authorized_response(response):
+    assert response["authenticated"] == True
+    assert response["authenticated_at"] == ISSUED_AT
+    assert response["authenticated_until"] == EXPIRES_AT
+    assert response["authorized"] == True
+    assert response["user"] == EMAIL
+    assert response["user_verified"] == True
+    assert response["first_name"] == FIRST_NAME
+    assert response["last_name"] == LAST_NAME
+    assert response["known_envs"] == KNOWN_ENVS
+    assert response["allowed_envs"] == ALLOWED_ENVS
+    assert response["default_env"] == DEFAULT_ENV
+    assert response["initial_env"] == INITIAL_ENV
+    assert response["domain"] == DOMAIN
+    assert response["aud"] == AUTH0_CLIENT_ID
+
+
+def assert_unauthenticated_response(response):
+    assert response["authenticated"] == False
+    assert response["authorized"] == False
+
+
+def assert_unauthorized_response(response):
+    assert response["authenticated"] == True
+    assert response["authorized"] == False
+
+
 def test_jwt_encode_and_decode():
     jwt = create_test_jwt()
     jwt_decoded = jwt_decode(jwt, AUTH0_CLIENT_ID, AUTH0_SECRET)
@@ -25,54 +52,39 @@ def test_jwt_encode_and_decode():
 
 
 def test_react_create_and_decode_authtoken():
-
     authtoken = create_test_authtoken_good()
     auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
     authtoken_decoded = auth.decode_authtoken(authtoken)
-    assert authtoken_decoded["authenticated"] == True
-    assert authtoken_decoded["authenticated_at"] == ISSUED_AT
-    assert authtoken_decoded["authenticated_until"] == EXPIRES_AT
-    assert authtoken_decoded["authorized"] == True
-    assert authtoken_decoded["user"] == EMAIL
-    assert authtoken_decoded["user_verified"] == True
-    assert authtoken_decoded["first_name"] == FIRST_NAME
-    assert authtoken_decoded["last_name"] == LAST_NAME
-    assert authtoken_decoded["known_envs"] == KNOWN_ENVS
-    assert authtoken_decoded["allowed_envs"] == ALLOWED_ENVS
-    assert authtoken_decoded["default_env"] == DEFAULT_ENV
-    assert authtoken_decoded["initial_env"] == INITIAL_ENV
-    assert authtoken_decoded["domain"] == DOMAIN
-    assert authtoken_decoded["aud"] == AUTH0_CLIENT_ID
+    assert_authorized_response(authtoken_decoded)
 
-def test_react_authenticate():
+
+def test_react_authorize():
     auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
     authtoken = create_test_authtoken_good()
     request = create_test_request(authtoken)
-    authorize_response = auth.authorize(request, SOME_ALLOWED_ENV)
-    assert authorize_response["authenticated"] == True
-    assert authorize_response["authenticated_at"] == ISSUED_AT
-    assert authorize_response["authenticated_until"] == EXPIRES_AT
-    assert authorize_response["authorized"] == True
-    assert authorize_response["user"] == EMAIL
-    assert authorize_response["user_verified"] == True
-    assert authorize_response["first_name"] == FIRST_NAME
-    assert authorize_response["last_name"] == LAST_NAME
-    assert authorize_response["known_envs"] == KNOWN_ENVS
-    assert authorize_response["allowed_envs"] == ALLOWED_ENVS
-    assert authorize_response["default_env"] == DEFAULT_ENV
-    assert authorize_response["initial_env"] == INITIAL_ENV
-    assert authorize_response["domain"] == DOMAIN
-    assert authorize_response["aud"] == AUTH0_CLIENT_ID
+    response = auth.authorize(request, SOME_ALLOWED_ENV)
+    assert_authorized_response(response)
 
-def test_react_authenticate_failure():
+
+def test_react_authorize_unauthorized():
+    auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
+    authtoken = create_test_authtoken_good()
+    request = create_test_request(authtoken)
+    response = auth.authorize(request, SOME_DISALLOWED_ENV)
+    assert_unauthorized_response(response)
+
+
+def test_react_authorize_expired():
+    auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
+    authtoken = create_test_authtoken_expired()
+    request = create_test_request(authtoken)
+    response = auth.authorize(request, SOME_ALLOWED_ENV)
+    assert_unauthenticated_response(response)
+
+
+def test_react_authorize_munged():
     auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
     authtoken = create_test_authtoken_munged()
-    request = {
-        "headers": {
-            "host": "some-domain",
-            "cookie": f"some-cookie=some-cookie-value; authtoken={authtoken}"
-        }
-    }
-    authorize_response = auth.authorize(request, SOME_ALLOWED_ENV)
-    assert authorize_response["authenticated"] == False
-    assert authorize_response["authorized"] == False
+    request = create_test_request(authtoken)
+    response = auth.authorize(request, SOME_ALLOWED_ENV)
+    assert_unauthenticated_response(response)
