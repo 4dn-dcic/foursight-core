@@ -16,6 +16,33 @@ from foursight_core.react.api import cookie_utils # import read_cookie
 from test_react_auth_defs import *
 
 
+def create_test_route_response_body():
+    return {"react-response-property": "react-response-value"}
+
+
+def create_test_route_response():
+    response = ReactApi.create_standard_response()
+    response.body = create_test_route_response_body()
+    return response
+
+
+def assert_authorized_response(response):
+    assert response.status_code == 200
+    assert response.body == create_test_route_response_body()
+
+
+def assert_unauthenticated_response(response):
+    assert response.status_code == 401
+    assert response.body["authenticated"] == False
+    assert response.body["authorized"] == False
+
+
+def assert_unauthorized_response(response):
+    assert response.status_code == 403
+    assert response.body["authenticated"] == True
+    assert response.body["authorized"] == False
+
+
 class MockChaliceApp:
 
     class MockReactApi:
@@ -44,79 +71,54 @@ class MockChaliceApp:
 
 def test_react_authentication_decorator_good():
     request = create_test_request(create_test_authtoken_good())
-    chalice_app = MockChaliceApp(request)
-    with mock.patch.object(react_routes, "app", chalice_app):
-        test_response_body = {"react-response-property": "react-response-value"}
+    app = MockChaliceApp(request)
+    with mock.patch.object(react_routes, "app", app):
         @react_routes.route_requires_authorization
         def test_react_route(environ: str, **kwargs):
-            response = ReactApi.create_standard_response()
-            response.body = test_response_body
-            return response
+            return create_test_route_response()
         response = test_react_route(environ=SOME_ALLOWED_ENV)
-        assert response.status_code == 200
-        assert response.body == test_response_body
+        assert_authorized_response(response)
 
 
 def test_react_authentication_decorator_unauthorized():
     request = create_test_request(create_test_authtoken_good())
-    chalice_app = MockChaliceApp(request)
-    with mock.patch.object(react_routes, "app", chalice_app):
-        test_response_body = {"react-response-property": "react-response-value"}
+    app = MockChaliceApp(request)
+    with mock.patch.object(react_routes, "app", app):
         @react_routes.route_requires_authorization
         def test_react_route(environ: str, **kwargs):
-            response = ReactApi.create_standard_response()
-            response.body = test_response_body
-            return response
+            return create_test_route_response()
         response = test_react_route(environ=SOME_DISALLOWED_ENV) # Note disallowed env
-        assert response.status_code == 403
-        assert response.body["authenticated"] == True
-        assert response.body["authorized"] == False
+        assert_unauthorized_response(response)
 
 
 def test_react_authentication_decorator_unauthenticated_expired():
     request = create_test_request(create_test_authtoken_expired())
-    chalice_app = MockChaliceApp(request)
-    with mock.patch.object(react_routes, "app", chalice_app):
-        test_response_body = {"react-response-property": "react-response-value"}
+    app = MockChaliceApp(request)
+    with mock.patch.object(react_routes, "app", app):
         @react_routes.route_requires_authorization
         def test_react_route(environ: str, **kwargs):
-            response = ReactApi.create_standard_response()
-            response.body = test_response_body
-            return response
+            return create_test_route_response()
         response = test_react_route(environ=SOME_ALLOWED_ENV)
-        assert response.status_code == 401
-        assert response.body["authenticated"] == False
-        assert response.body["authorized"] == False
+        assert_unauthenticated_response(response)
 
 
 def test_react_authentication_decorator_unauthenticated_invalid_auth0_secret():
     request = create_test_request(create_test_authtoken_good())
-    chalice_app = MockChaliceApp(request, use_invalid_auth0_secret=True)
-    with mock.patch.object(react_routes, "app", chalice_app):
-        test_response_body = {"react-response-property": "react-response-value"}
+    app = MockChaliceApp(request, use_invalid_auth0_secret=True)
+    with mock.patch.object(react_routes, "app", app):
         @react_routes.route_requires_authorization
         def test_react_route(environ: str, **kwargs):
-            response = ReactApi.create_standard_response()
-            response.body = test_response_body
-            return response
+            return create_test_route_response()
         response = test_react_route(environ=SOME_ALLOWED_ENV)
-        assert response.status_code == 401
-        assert response.body["authenticated"] == False
-        assert response.body["authorized"] == False
+        assert_unauthenticated_response(response)
 
 
 def test_react_authentication_decorator_unauthenticated_munged():
-    authtoken = create_test_authtoken_munged()
-    request = create_test_request(authtoken)
-    chalice_app = MockChaliceApp(request)
-    with mock.patch.object(react_routes, "app", chalice_app):
-        test_response_body = {"react-response-property": "react-response-value"}
+    request = create_test_request(create_test_authtoken_munged())
+    app = MockChaliceApp(request)
+    with mock.patch.object(react_routes, "app", app):
         @react_routes.route_requires_authorization
         def test_react_route(environ: str, **kwargs):
-            response = ReactApi.create_standard_response()
-            response.body = test_response_body
-            return response
+            return create_test_route_response()
         response = test_react_route(environ=SOME_ALLOWED_ENV)
-        assert response.status_code == 401
-        assert response.body["authenticated"] == False
-        assert response.body["authorized"] == False
+        assert_unauthenticated_response(response)

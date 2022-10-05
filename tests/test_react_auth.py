@@ -48,7 +48,7 @@ def test_react_authenticate():
     auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
     authtoken = create_test_authtoken_good()
     request = create_test_request(authtoken)
-    authorize_response = auth.authorize(request, "env-b")
+    authorize_response = auth.authorize(request, SOME_ALLOWED_ENV)
     assert authorize_response["authenticated"] == True
     assert authorize_response["authenticated_at"] == ISSUED_AT
     assert authorize_response["authenticated_until"] == EXPIRES_AT
@@ -73,6 +73,6 @@ def test_react_authenticate_failure():
             "cookie": f"some-cookie=some-cookie-value; authtoken={authtoken}"
         }
     }
-    authorize_response = auth.authorize(request, "env-b")
+    authorize_response = auth.authorize(request, SOME_ALLOWED_ENV)
     assert authorize_response["authenticated"] == False
     assert authorize_response["authorized"] == False
