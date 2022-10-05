@@ -4,16 +4,16 @@ from ...app import app
 from ...route_prefixes import *
 
 
-# Set CORS to True if CHALICE_LOCAL; not needed if running React (nascent support of which
-# is experimental and under development in distinct branch) from Foursight directly, on the same
-# port (e.g. 8000), but useful if/when running React on a separate port (e.g. 3000) via npm start
-# in foursight-core/react to facilitate easy/quick development/changes directly to React code.
+# Set CORS to True if CHALICE_LOCAL; not needed if running React from Foursight
+# directly, on the same port (e.g. 8000), but useful if/when running React on a
+# separate port (e.g. 3000) via npm start in foursight-core/react to facilitate
+# easy/quick development/changes directly to React UI code.
 if ROUTE_CHALICE_LOCAL:
-    # Very specific requirements for running Foursight React UI/API
+    # Very specific/tricky requirements for running Foursight React UI/API
     # in CORS mode (i.e. UI on localhost:3000 and API on localhost:8000).
     # The allow_origin must be exact (i.e. no "*" allowed), and the
-    # allow_credentials must be True. On the caller/client (React UI)
-    # side we must include 'credentials: "include"' in the fetch.
+    # allow_credentials must be True. On the client-side (React UI)
+    # we must include 'credentials: "include"' in the fetch.
     CORS = CORSConfig(
         allow_origin="http://localhost:3000", # need this to be explicit not "*"
         allow_credentials=True, # need this
@@ -21,6 +21,8 @@ if ROUTE_CHALICE_LOCAL:
 else:
     CORS = False
 
+HTTP_UNAUTHENTICATED = 401
+HTTP_UNAUTHORIZED = 403
 
 def route_requires_authorization(f):
     """
@@ -28,13 +30,16 @@ def route_requires_authorization(f):
     This ASSUMES that the FIRST argument to the route function using this decorator
     is the ENVIRONMENT name. The Chalice request is gotten from app.current_request.
 
-    If the request is NOT authorized then a forbidden (HTTP 403) response is returned,
-    otherwise we go ahead with the function/route invocation. A request is authorized
-    iff the user is AUTHENTICATED, i.e. has successfully logged in, AND also have
-    PERMISSION to access the specified environment. The info to determine this is
-    pass via the authtoken cookie, which is a (server-side) JWT-signed-encode value
-    containing authentication info and list allowed environment for the user; this
-    value/cookie is set server-side at login time.
+    If the request is NOT authorized/authenticated then a forbidden (HTTP 403 or 401)
+    response is returned, otherwise we go ahead with the function/route invocation.
+    A request is authorized iff it is AUTHENTICATED, i.e. the user has successfully
+    logged in, AND also has PERMISSION to access the specified environment. If the
+    request is not authorized an HTTP 401 is returned; if the request is authenticated
+    but is not authorized (for the specified environment) and HTTP 403 is returned.
+
+    The info to determine this is pass via the authtoken cookie, which is a (server-side)
+    JWT-signed-encode value containing authentication info and list allowed environment
+    for the user; this value/cookie is set server-side at login time.
 
     Note that ONLY two React API routes should NOT be authorization protected by
     this decorator: the /{environ}/header and the /{environ}/logout endpoints/routes.
@@ -49,10 +54,13 @@ def route_requires_authorization(f):
             response = app.core.create_standard_response("route_requires_authorization")
             response.body = authorize_response
             # HTTP 401 - Unauthorized (more precisely: Unauthenticated):
-            # Request has no credentials or invalid credentials.
+            # Request has no or invalid credentials.
             # HTTP 403 - Forbidden (more precisely: Unauthorized):
-            # Request has valid credentials but not enough privileges to perform an action on a resource.
-            response.status_code = 401 if not authorize_response["authenticated"] else 403
+            # Request has valid credentials but no privileges for resource.
+            if not authorize_response["authenticated"]:
+                response.status_code = HTTP_UNAUTHENTICATED
+            else:
+                response.status_code = HTTP_UNAUTHORIZED
             return response
         return f(*args, **kwargs)
     return wrapper
@@ -78,9 +86,9 @@ class ReactRoutes:
 
     @app.route(ROUTE_PREFIX + "reactapi/{environ}/logout", methods=["GET"], cors=CORS)
     def reactapi_route_logout(environ: str):
-        #
-        # The environ on strictly required for logout (as we logout from all envs) but useful for redirect back.
-        #
+        # The environ is not strictly required for logout,
+        # since we logout from all environments, but is useful
+        # for the redirect back, and just for completeness.
         request = app.current_request.to_dict()
         return app.core.reactapi_logout(request=request, env=environ)
 

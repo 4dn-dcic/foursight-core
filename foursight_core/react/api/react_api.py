@@ -64,7 +64,7 @@ class ReactApi(ReactRoutes):
         Called from the main Auth0 callback, in app_utils/auth0_callback, AFTER the Auth0 HTTP POST
         which does the actual authentication; that POST returns the JWT which is received by this
         function. So at this point, the user HAS been SUCCESSFULLY authenticated and we have a
-        VALID/authenticated JWT; if this were not so we would have returned  before this call,
+        VALID/authenticated JWT; if this were not so we would have returned before this call,
         in app_utils/auth_callback. We create a new JWT from the given JWT, which we call authtoken,
         and set this as a cookie on the redirect (HTTP 302) response which we return.
         The jwt_expires_in is the number of seconds from now when the given JWT will expire;
