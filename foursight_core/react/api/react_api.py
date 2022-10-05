@@ -45,7 +45,7 @@ class ReactApi(ReactRoutes):
 
     def create_standard_response(self, label: str, content_type: str = "application/json"):
         response = Response(label)
-        response.headers = { "Content-Type": content_type }
+        response.headers = {"Content-Type": content_type}
         response.status_code = 200
         return response
 
@@ -93,7 +93,7 @@ class ReactApi(ReactRoutes):
             if not context:
                 context = "/"
             elif not context.endswith("/"):
-                context = context = "/"
+                context = context + "/"
             redirect_url = f"{http}://{domain}{context}react/{env}/login"
         else:
             # Not certain if by design but the React library (universal-cookie) used to
@@ -132,7 +132,7 @@ class ReactApi(ReactRoutes):
         domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
         default_env = self.envs.get_default_env()
-        aws_credentials = self.auth.get_aws_credentials(env if env else default_env);
+        aws_credentials = self.auth.get_aws_credentials(env if env else default_env)
         response = {
             "app": {
                 "title": app.core.html_main_title,
@@ -364,7 +364,7 @@ class ReactApi(ReactRoutes):
             check_datetime = convert_utc_datetime_to_useastern_datetime(check_datetime)
             check_results["timestamp"] = check_datetime
             response.body = check_results
-        except Exception as e:
+        except:
             response.body = {}
         return response
 
@@ -427,7 +427,6 @@ class ReactApi(ReactRoutes):
         return response
 
     def reactapi_reload_lambda(self, request: dict, env: str, lambda_name: str):
-        domain, context = app.core.get_domain_and_context(request)
         app.core.reload_lambda(lambda_name)
         time.sleep(3)
         return self.reactapi_info(request, env)
