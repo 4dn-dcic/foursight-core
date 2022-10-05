@@ -1,18 +1,4 @@
-from chalice import Chalice
-import json
-import mock
-import os
-import pytest
-from random import randrange
-import time
-import uuid
-from foursight_core.react.api import react_routes
-from foursight_core.react.api.react_api import ReactApi
-from foursight_core.react.api.auth import Auth
-from foursight_core.react.api import auth as auth_module
-from foursight_core.react.api.envs import Envs
-from foursight_core.react.api.jwt_utils import jwt_decode, jwt_encode
-from foursight_core.react.api import cookie_utils # import read_cookie
+from foursight_core.react.api.jwt_utils import jwt_decode
 from test_react_auth_defs import *
 
 
@@ -53,38 +39,39 @@ def test_jwt_encode_and_decode():
 
 def test_react_create_and_decode_authtoken():
     authtoken = create_test_authtoken_good()
-    auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
-    authtoken_decoded = auth.decode_authtoken(authtoken)
+    authtoken_decoded = AUTH.decode_authtoken(authtoken)
     assert_authorized_response(authtoken_decoded)
 
 
 def test_react_authorize():
-    auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
     authtoken = create_test_authtoken_good()
     request = create_test_request(authtoken)
-    response = auth.authorize(request, SOME_ALLOWED_ENV)
+    response = AUTH.authorize(request, SOME_ALLOWED_ENV)
     assert_authorized_response(response)
 
 
 def test_react_authorize_unauthorized():
-    auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
     authtoken = create_test_authtoken_good()
     request = create_test_request(authtoken)
-    response = auth.authorize(request, SOME_DISALLOWED_ENV)
+    response = AUTH.authorize(request, SOME_DISALLOWED_ENV) # Note disallowed env
     assert_unauthorized_response(response)
 
 
 def test_react_authorize_expired():
-    auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
     authtoken = create_test_authtoken_expired()
     request = create_test_request(authtoken)
-    response = auth.authorize(request, SOME_ALLOWED_ENV)
+    response = AUTH.authorize(request, SOME_ALLOWED_ENV)
+    assert_unauthenticated_response(response)
+
+def test_react_authorize_invalid_auth0_secret():
+    authtoken = create_test_authtoken_invalid_auth0_secret()
+    request = create_test_request(authtoken)
+    response = AUTH.authorize(request, SOME_ALLOWED_ENV)
     assert_unauthenticated_response(response)
 
 
 def test_react_authorize_munged():
-    auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
     authtoken = create_test_authtoken_munged()
     request = create_test_request(authtoken)
-    response = auth.authorize(request, SOME_ALLOWED_ENV)
+    response = AUTH.authorize(request, SOME_ALLOWED_ENV)
     assert_unauthenticated_response(response)
