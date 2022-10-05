@@ -43,7 +43,8 @@ class ReactApi(ReactRoutes):
     class Cache:
         header = {}
 
-    def create_standard_response(self, label: str, content_type: str = "application/json"):
+    @staticmethod
+    def create_standard_response(label: str = "react_standard_response", content_type: str = "application/json"):
         response = Response(label)
         response.headers = {"Content-Type": content_type}
         response.status_code = 200
