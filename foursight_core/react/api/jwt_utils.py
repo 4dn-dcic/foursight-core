@@ -1,6 +1,5 @@
 import copy
 import jwt as jwtlib
-from typing import Optional
 
 
 def jwt_encode(value: dict, audience: str, secret: str) -> str:

@@ -319,7 +319,7 @@ class ReactApi(ReactRoutes):
                     uuid = subitem.get("uuid")
                     if uuid:
                         timestamp = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-                        timestamp = convert_utc_datetime_to_useastern_datetime(timestamp)
+                        timestamp = convert_utc_datetime_to_useastern_datetime_string(timestamp)
                         subitem["timestamp"] = timestamp
         history = {
             "check": check_record,
@@ -365,7 +365,7 @@ class ReactApi(ReactRoutes):
             check_results = check_results.get_latest_result()
             uuid = check_results["uuid"]
             check_datetime = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-            check_datetime = convert_utc_datetime_to_useastern_datetime(check_datetime)
+            check_datetime = convert_utc_datetime_to_useastern_datetime_string(check_datetime)
             check_results["timestamp"] = check_datetime
             response.body = check_results
         except:
