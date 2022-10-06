@@ -193,8 +193,8 @@ const InfoPage = () => {
         </InfoBox>
         { info.environ?.AWS_LAMBDA_LOG_GROUP_NAME && info.environ?.AWS_LAMBDA_LOG_STREAM_NAME && <>
             <InfoBox title="Logs">
-                <InfoRow name={"Log Group"} value={info.environ.AWS_LAMBDA_LOG_GROUP_NAME} size="2" />
-                <InfoRow name={"Log Stream"} value={info.environ.AWS_LAMBDA_LOG_STREAM_NAME} size="2" />
+                <InfoRow name={"Log Group"} value={info.environ.AWS_LAMBDA_LOG_GROUP_NAME} monospace={true} size="2" />
+                <InfoRow name={"Log Stream"} value={info.environ.AWS_LAMBDA_LOG_STREAM_NAME} monospace={true} size="2" />
             </InfoBox>
         </>}
         <InfoBox title="Miscellany">
