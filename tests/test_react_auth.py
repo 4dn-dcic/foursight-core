@@ -46,32 +46,32 @@ def test_react_create_and_decode_authtoken():
 def test_react_authorize():
     authtoken = create_test_authtoken_good()
     request = create_test_request(authtoken)
-    response = AUTH.authorize(request, SOME_ALLOWED_ENV)
+    response = AUTH.authorize(request, ALLOWED_ENV)
     assert_authorized_response(response)
 
 
 def test_react_authorize_unauthorized():
     authtoken = create_test_authtoken_good()
     request = create_test_request(authtoken)
-    response = AUTH.authorize(request, SOME_DISALLOWED_ENV) # Note disallowed env
+    response = AUTH.authorize(request, DISALLOWED_ENV) # Note disallowed env
     assert_unauthorized_response(response)
 
 
 def test_react_authorize_expired():
     authtoken = create_test_authtoken_expired()
     request = create_test_request(authtoken)
-    response = AUTH.authorize(request, SOME_ALLOWED_ENV)
+    response = AUTH.authorize(request, ALLOWED_ENV)
     assert_unauthenticated_response(response)
 
 def test_react_authorize_invalid_auth0_secret():
     authtoken = create_test_authtoken_invalid_auth0_secret()
     request = create_test_request(authtoken)
-    response = AUTH.authorize(request, SOME_ALLOWED_ENV)
+    response = AUTH.authorize(request, ALLOWED_ENV)
     assert_unauthenticated_response(response)
 
 
 def test_react_authorize_munged():
     authtoken = create_test_authtoken_munged()
     request = create_test_request(authtoken)
-    response = AUTH.authorize(request, SOME_ALLOWED_ENV)
+    response = AUTH.authorize(request, ALLOWED_ENV)
     assert_unauthenticated_response(response)

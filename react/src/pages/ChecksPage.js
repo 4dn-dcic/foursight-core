@@ -31,7 +31,7 @@ const ChecksPage = (props) => {
     let [ selectedHistories, setSelectedHistories ] = useState([])
     let [ checksStatus, setChecksStatus ] = useState({});
     let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
-    const [ readOnlyMode, setReadOnlyMode ] = useState();
+    let [ readOnlyMode, setReadOnlyMode ] = useState();
 
     useEffect(() => {
 
@@ -789,7 +789,7 @@ const ChecksPage = (props) => {
             noteChangedHistories();
             if (!check.history) {
                 const resultsHistoryUrl = Server.Url(`/checks/${check.name}/history`, environ);
-                Fetch.get(resultsHistoryUrl, history => { check.history = history; console.log(check); noteChangedHistories(); });
+                Fetch.get(resultsHistoryUrl, history => { check.history = history; noteChangedHistories(); });
             }
         }
     }
@@ -915,6 +915,71 @@ const ChecksPage = (props) => {
         return check?.showingResults;
     }
 
+    // TODO
+    // Need to start figuring out how to factor out all of this stuff into sub-components.
+
+    let [ checksRaw , setChecksRaw] = useState(null);
+    let [ checksRawHide, setChecksRawHide] = useState(false);
+
+    function isShowingChecksRaw() {
+        return checksRaw;
+    }
+
+    function isLoadingChecksRaw() {
+        return checksRaw && checksRaw.__loading;
+    }
+
+    function showChecksRaw() {
+        setChecksRawHide(false);
+        setChecksRaw({__loading: true});
+        Fetch.get(Server.Url(`/checks-raw`, environ), data => {
+            delete data.__loading;
+            setChecksRaw(data);
+        });
+    }
+
+    function hideChecksRaw() {
+        setChecksRaw(null);
+        setChecksRawHide(true);
+    }
+
+    function toggleChecksRaw() {
+        if (isShowingChecksRaw()) {
+            hideChecksRaw();
+        }
+        else {
+            showChecksRaw();
+        }
+    }
+
+    const ChecksRaw = () => {
+        return <>
+            <div className="boxstyle check-pass padding-small cursor-hand" style={{fontWeight:isShowingChecksRaw() ? "bold" : "normal"}}>
+                <span onClick={() => toggleChecksRaw()}>Raw Checks File</span>
+            </div>
+        </>
+    }
+
+    const ChecksRawContent = () => {
+        return isShowingChecksRaw() && !checksRawHide && <>
+            <b>Raw Checks File</b>
+            <div style={{marginTop:"3pt"}}>
+            <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderRadius:"4pt"}}>
+            { isLoadingChecksRaw() ? <>
+                <StandardSpinner loading={isLoadingChecksRaw()} label={"Loading raw checks file"} size={60} color={"black"} />
+            </>:<>
+                <div style={{float:"right",marginTop:"-2pt"}}>
+                    <span style={{fontSize:"0",opacity:"0"}} id={"checks-raw"}>{Json.Str(checksRaw)}</span>
+                    <img alt="copy" onClick={() => Clipboard.Copy("checks-raw")} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
+                    &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => hideChecksRaw()}>X</span>
+                </div>
+                {Yaml.Format(checksRaw)}
+            </>}
+                    </pre>
+            </div>
+        </>
+    }
+
     const ChecksStatus = () => {
         return <>
             <table><tbody><tr><td style={{whiteSpace:"nowrap"}}>
@@ -928,9 +993,9 @@ const ChecksPage = (props) => {
             </>}
             </td></tr></tbody></table>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                <b>Running</b>: {!checksStatusLoading ? checksStatus.checks_running : "..."}
+                Running: {!checksStatusLoading ? checksStatus.checks_running : "..."}
                 <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
-                <b>Queued</b>: {!checksStatusLoading ? checksStatus.checks_queued : "..."}
+                Queued: {!checksStatusLoading ? checksStatus.checks_queued : "..."}
            </div>
         </>
     }
@@ -949,10 +1014,12 @@ const ChecksPage = (props) => {
                 <tr>
                     <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>
                         <ChecksGroupBox />
+                        <ChecksRaw />
                         <ChecksStatus />
                         <LambdasBox />
                     </td>
                     <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>
+                        <ChecksRawContent />
                         <SelectedGroupsPanel />
                     </td>
                     <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>

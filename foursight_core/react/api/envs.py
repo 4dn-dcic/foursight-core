@@ -79,4 +79,4 @@ class Envs:
             except Exception as e:
                 print(f"Exception getting allowed envs for: {email}")
                 print(e)
-        return (allowed_envs, first_name, last_name)
+        return allowed_envs, first_name, last_name

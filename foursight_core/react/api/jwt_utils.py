@@ -17,9 +17,9 @@ def jwt_encode(value: dict, audience: str, secret: str) -> str:
         # jwtlib will raise: Exception decoding JWT - Token is missing the "aud" claim.
         value_aud = value.get("aud")
         if value_aud != audience:
-            # If given an audience and it doesn't match the audience in
-            # the given value then make a copy (we don't want to change
-            # the given value out from under the caller) and update it.
+            # If given an audience, and it doesn't match the audience in
+            # the given value, then make a copy (we don't want to change
+            # the given value out from under the caller), and update it.
             value = copy.deepcopy(value)
             value["aud"] = audience
     try:

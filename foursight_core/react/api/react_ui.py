@@ -30,7 +30,7 @@ class ReactUi:
 
         if env == "static":
             # If the env is 'static' then we take this to mean the 'static'
-            # sub-directory; this is the directory where the static (js, css, etc)
+            # subdirectory; this is the directory where the static (js, css, etc)
             # React files live. Note that this means a real 'environ' may not be 'static'.
             file = os.path.join(REACT_BASE_DIR, "static")
         else:

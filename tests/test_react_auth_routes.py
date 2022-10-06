@@ -61,8 +61,8 @@ def test_react_authentication_decorator_good():
         @react_routes.route_requires_authorization
         def test_react_route(environ: str):
             return create_test_route_response(environ)
-        response = test_react_route(environ=SOME_ALLOWED_ENV)
-        assert_authorized_response(response, SOME_ALLOWED_ENV)
+        response = test_react_route(environ=ALLOWED_ENV)
+        assert_authorized_response(response, ALLOWED_ENV)
 
 
 def test_react_authentication_decorator_unauthorized():
@@ -72,7 +72,7 @@ def test_react_authentication_decorator_unauthorized():
         @react_routes.route_requires_authorization
         def test_react_route(environ: str):
             return create_test_route_response(environ)
-        response = test_react_route(environ=SOME_DISALLOWED_ENV)  # Note disallowed env
+        response = test_react_route(environ=DISALLOWED_ENV)  # Note disallowed env
         assert_unauthorized_response(response)
 
 
@@ -83,7 +83,7 @@ def test_react_authentication_decorator_unauthenticated_expired():
         @react_routes.route_requires_authorization
         def test_react_route(environ: str):
             return create_test_route_response(environ)
-        response = test_react_route(environ=SOME_ALLOWED_ENV)
+        response = test_react_route(environ=ALLOWED_ENV)
         assert_unauthenticated_response(response)
 
 
@@ -94,7 +94,7 @@ def test_react_authentication_decorator_unauthenticated_invalid_auth0_secret():
         @react_routes.route_requires_authorization
         def test_react_route(environ: str):
             return create_test_route_response(environ)
-        response = test_react_route(environ=SOME_ALLOWED_ENV)
+        response = test_react_route(environ=ALLOWED_ENV)
         assert_unauthenticated_response(response)
 
 
@@ -105,5 +105,5 @@ def test_react_authentication_decorator_unauthenticated_munged():
         @react_routes.route_requires_authorization
         def test_react_route(environ: str):
             return create_test_route_response(environ)
-        response = test_react_route(environ=SOME_ALLOWED_ENV)
+        response = test_react_route(environ=ALLOWED_ENV)
         assert_unauthenticated_response(response)

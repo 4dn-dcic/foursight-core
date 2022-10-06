@@ -42,6 +42,12 @@
 .vspace-large {
     margin-top: 1.0em;
 }
+.padding-medium {
+    padding: 0.5em !important;
+}
+.padding-small {
+    padding: 0.2em 0.5em !important;
+}
 .mono {
     font-family: monospace;
     font-size: 0.9em;
@@ -51,6 +57,9 @@
     height: 1px;
     border-top: 1px solid var(--box-color);
     margin-bottom: 0.4em;
+}
+.cursor-hand {
+    cursor: pointer;
 }
 
 body {

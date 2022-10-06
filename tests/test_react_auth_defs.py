@@ -27,8 +27,8 @@ KNOWN_ENVS = [
       "foursight_name": "env-c-foursight-name" }
 ]
 ALLOWED_ENVS = ["env-b-full-name", "env-c-full-name"]
-SOME_ALLOWED_ENV = "env-c-full-name"
-SOME_DISALLOWED_ENV = "env-a-full-name"
+ALLOWED_ENV = "env-c-full-name"
+DISALLOWED_ENV = "env-a-full-name"
 DEFAULT_ENV = "env-a-full-name"
 INITIAL_ENV = "env-b-full-name"
 
