@@ -36,14 +36,13 @@ class ESConnection(AbstractConnection):
 
     ES_SEARCH_SIZE = 10000
 
-    def __init__(self, index=None, doc_type='result', host=None):
+    def __init__(self, index=None, host=None):
         if not host:
             raise ElasticsearchException("ESConnection error: Host must be specified")
         self.es = es_utils.create_es_client(host, use_aws_url=True)
         self.index = index
         if index and not self.index_exists(index):
             self.create_index(index)
-        self.doc_type = doc_type
 
     def index_exists(self, name):
         """
@@ -105,7 +104,7 @@ class ESConnection(AbstractConnection):
         if not self.index:
             return False
         try:
-            res = self.es.index(index=self.index, id=key, doc_type=self.doc_type, body=value)
+            res = self.es.index(index=self.index, id=key, body=value)
             return res['result'] == 'created'
         except Exception as e:
             print('Failed to add object id: %s with error: %s and body %s' % (key, str(e), value))
@@ -119,7 +118,7 @@ class ESConnection(AbstractConnection):
         if not self.index:
             return None
         try:
-            return self.es.get(index=self.index, doc_type=self.doc_type, id=key)['_source']
+            return self.es.get(index=self.index, id=key)['_source']
         except Exception:
             return None
 

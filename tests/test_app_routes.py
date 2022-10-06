@@ -173,7 +173,7 @@ class TestAppRoutes:
         assert (res.status_code == 200)
         put_res = res.body['updated_content']
         assert (put_res['brief_output'] == ['res1', 'res2'])
-        assert (put_res['full_output'] == 'abc 123')
+        assert (put_res['full_output'] == '123')
         # lastly, cover bad output
         put_data = 'NOT_A_DICT'
         res = app_utils_obj.run_put_check(DEV_ENV, check_name, put_data)

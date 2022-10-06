@@ -14,7 +14,7 @@ GLOBAL_ENV_BUCKET = 'GLOBAL_ENV_BUCKET'
 FOURSIGHT_PREFIX = 'foursight-core-simulated'
 SIMULATED_GLOBAL_ENV_BUCKET = FOURSIGHT_PREFIX + '-envs'
 DEV_ENV = 'simulated'
-ES_HOST = 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
+ES_HOST = 'https://search-fourfront-testing-opensearch-kqm7pliix4wgiu4druk2indorq.us-east-1.es.amazonaws.com'
 SIMULATED_ENV_CONFIG = {
     'simulated': {
         'fourfront': 'dummy-url',
