@@ -3,6 +3,7 @@ import json
 from .app import app
 from .route_prefixes import *
 
+
 class Routes:
 
     def __init__(self):
@@ -12,6 +13,7 @@ class Routes:
     # Foursight Original routes.
     # ----------------------------------------------------------------------------------------------
 
+    @staticmethod
     @app.route((ROUTE_PREFIX if not ROUTE_CHALICE_LOCAL else "/") + 'callback')
     def auth0_callback():
         """
@@ -24,34 +26,36 @@ class Routes:
         return app.core.auth0_callback(request, app.core.get_default_env())
 
     if ROUTE_PREFIX != ROUTE_EMPTY_PREFIX:
+        @staticmethod
         @app.route("/", methods=['GET'])
         def index_chalice_local():
             """
             Redirect with 302 to view page of DEFAULT_ENV
             Non-protected route
             """
-            domain, context = app.core.get_domain_and_context(app.current_request.to_dict())
             redirect_path = ROUTE_PREFIX + 'view/' + app.core.get_default_env()
             resp_headers = {'Location': redirect_path}
             return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
+    @staticmethod
     @app.route(ROUTE_EMPTY_PREFIX, methods=['GET'])
     def index():
         """
         Redirect with 302 to view page of DEFAULT_ENV
         Non-protected route
         """
-        domain, context = app.core.get_domain_and_context(app.current_request.to_dict())
         redirect_path = ROUTE_PREFIX_EXPLICIT + 'view/' + app.core.get_default_env()
         headers = {'Location': redirect_path}
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + "view", methods=['GET'])
     def route_view():
         redirect_path = ROUTE_PREFIX_EXPLICIT + 'view/' + app.core.get_default_env()
         headers = {"Location": redirect_path}
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'introspect', methods=['GET'])
     def introspect(environ):
         """
@@ -63,6 +67,7 @@ class Routes:
         else:
             return app.core.forbidden_response()
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'view_run/{environ}/{check}/{method}', methods=['GET'])
     def view_run_route(environ, check, method):
         """
@@ -79,6 +84,7 @@ class Routes:
         else:
             return app.core.forbidden_response(context)
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'view/{environ}', methods=['GET'])
     def view_route(environ):
         """
@@ -88,6 +94,7 @@ class Routes:
         domain, context = app.core.get_domain_and_context(req_dict)
         return app.core.view_foursight(app.current_request, environ, app.core.check_authorization(req_dict, environ), domain, context)
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'view/{environ}/{check}/{uuid}', methods=['GET'])
     def view_check_route(environ, check, uuid):
         """
@@ -100,6 +107,7 @@ class Routes:
         else:
             return app.core.forbidden_response()
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'history/{environ}/{check}', methods=['GET'])
     def history_route(environ, check):
         """
@@ -114,6 +122,7 @@ class Routes:
         return app.core.view_foursight_history(app.current_request, environ, check, start, limit,
                                       app.core.check_authorization(req_dict, environ), domain, context)
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}/{uuid}', methods=['GET'])
     def get_check_with_uuid_route(environ, check, uuid):
         """
@@ -124,6 +133,7 @@ class Routes:
         else:
             return app.core.forbidden_response()
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}', methods=['GET'])
     def get_check_route(environ, check):
         """
@@ -134,6 +144,7 @@ class Routes:
         else:
             return app.core.forbidden_response()
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}', methods=['PUT'])
     def put_check_route(environ, check):
         """
@@ -152,6 +163,7 @@ class Routes:
         else:
             return app.core.forbidden_response()
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['PUT'])
     def put_environment(environ):
         """
@@ -169,6 +181,7 @@ class Routes:
         else:
             return app.core.forbidden_response()
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['GET'])
     def get_environment_route(environ):
         """
@@ -179,6 +192,7 @@ class Routes:
         else:
             return app.core.forbidden_response()
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'environments/{environ}/delete', methods=['DELETE'])
     def delete_environment(environ):
         """
@@ -195,18 +209,21 @@ class Routes:
 
     # dmichaels/2022-07-31:
     # For testing/debugging/troubleshooting.
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'info/{environ}', methods=['GET'])
     def get_view_info_route(environ):
         req_dict = app.current_request.to_dict()
         domain, context = app.core.get_domain_and_context(req_dict)
         return app.core.view_info(request=app.current_request, environ=environ, is_admin=app.core.check_authorization(req_dict, environ), domain=domain, context=context)
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'users/{environ}/{email}')
     def get_view_user_route(environ, email):
         req_dict = app.current_request.to_dict()
         domain, context = app.core.get_domain_and_context(req_dict)
         return app.core.view_user(request=app.current_request, environ=environ, is_admin=app.core.check_authorization(req_dict, environ), domain=domain, context=context, email=email)
 
+    @staticmethod
     @app.route(ROUTE_PREFIX + 'users/{environ}')
     def get_view_users_route(environ):
         req_dict = app.current_request.to_dict()
