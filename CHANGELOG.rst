@@ -6,10 +6,10 @@ foursight-core
 Change Log
 ----------
 
-2.0.2
+2.1.0
 =====
-* Change some print statements to logger.debug in check_utils.py
-
+* In progress ...
+  * React-ifying Foursight (experiment).
 
 2.0.0
 =====

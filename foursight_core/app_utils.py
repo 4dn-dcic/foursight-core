@@ -41,13 +41,19 @@ from .check_utils import CheckHandler
 from .sqs_utils import SQS
 from .stage import Stage
 from .environment import Environment
+from .app import app
+from .react.api.react_api import ReactApi
+from .routes import Routes
 
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
-class AppUtilsCore:
+# The ReactApi is included in here to for the React version, which runs side-by-side
+# with the regular version. This and a check and call in auth0_callback are the only real
+# changes here for the React version; all React specific code is in the react sub-directory.
+class AppUtilsCore(ReactApi, Routes):
     """
     This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
     so that a class named AppUtils is easier to define in libraries that import foursight-core.
@@ -90,6 +96,9 @@ class AppUtilsCore:
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
     def __init__(self):
+        # Tuck a reference to this (singleton) instance into
+        # a "core" field for convenient access by the routing code.
+        app.core = self
         self.init_load_time = self.get_load_time()
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
@@ -108,6 +117,11 @@ class AppUtilsCore:
         # self.user_record_error_email = None
         self.lambda_last_modified = None
         self.cached_portal_url = {}
+        super(AppUtilsCore, self).__init__()
+
+    @classmethod
+    def get_default_env(cls) -> str:
+        return os.environ.get("ENV_NAME", cls.DEFAULT_ENV)
 
     @staticmethod
     def note_non_fatal_error_for_ui_info(error_object, calling_function):
@@ -214,7 +228,8 @@ class AppUtilsCore:
                 "expiration_time": expiration_time,
                 "jwt": jwt_decoded}
 
-    # THis is quite a hack, this whole user_records thing. Will straighten out eventually (perhaps with React version someday).
+    # This is a bit of a hack, this whole user_records thing.
+    # Will eventually be supplanted by and corrected in the React version.
     def get_user_record(self, environ: str, request_dict: dict) -> dict:
         user_info = self.get_logged_in_user_info(environ, request_dict)
         if not user_info:
@@ -291,8 +306,8 @@ class AppUtilsCore:
         # if we're on localhost, automatically grant authorization
         # this looks bad but isn't because request authentication will
         # still fail if local keys are not configured
-        if self.is_running_locally(request_dict):
-            return True
+        # if self.is_running_locally(request_dict):
+        #     return True
         jwt_decoded = self.get_decoded_jwt_token(env, request_dict)
         if jwt_decoded:
             try:
@@ -369,20 +384,32 @@ class AppUtilsCore:
         auth0_secret = self.get_auth0_secret(env)
         if not (domain and auth0_code and auth0_client and auth0_secret):
             return Response(status_code=301, body=json.dumps(resp_headers), headers=resp_headers)
+        if self.is_running_locally(req_dict):
+            redir_url = f"http://{domain}/callback/"
+        else:
+            redir_url = f"https://{domain}{context if context else '/'}callback/"
         payload = {
             'grant_type': 'authorization_code',
             'client_id': auth0_client,
             'client_secret': auth0_secret,
             'code': auth0_code,
-            'redirect_uri': ''.join(['https://', domain, context, 'callback/'])
+            'redirect_uri': redir_url
+            # 'redirect_uri': ''.join(['https://', domain, context, 'callback/'])
         }
         json_payload = json.dumps(payload)
         headers = {'content-type': "application/json"}
         res = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
         id_token = res.json().get('id_token', None)
         if id_token:
-            cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
             expires_in = res.json().get('expires_in', None)
+            if self.is_react_authentication(res.json()):
+                return self.react_authentication_callback(req_dict, env, id_token, expires_in, domain, context);
+            if domain and not self.is_running_locally(req_dict):
+                cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
+            else:
+                # N.B. When running on localhost cookies cannot be set unless we leave off the domain entirely.
+                # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
+                cookie_str = ''.join(['jwtToken=', id_token, '; Path=/;'])
             if expires_in:
                 expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
                 cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
@@ -412,9 +439,10 @@ class AppUtilsCore:
             auth0_client_id = self.get_auth0_client_id(env_name)
             auth0_secret = self.get_auth0_secret(env_name)
             # leeway accounts for clock drift between us and auth0
-            return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30)
-        except:
+            return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30, options={"verify_signature": True}, algorithms=["HS256"])
+        except Exception as e:
             logger.warn(f"foursight_core: Exception decoding JWT token: {jwt_token}")
+            print(e)
             return None
 
     @classmethod
@@ -644,7 +672,7 @@ class AppUtilsCore:
         to get the last modified time of the lambda needs to look first at this tag and take that
         if it exists before looking at the real last modified time.
         """
-        if not lambda_name or lambda_name.lower() == "current":
+        if not lambda_name or lambda_name.lower() == "current" or lambda_name.lower() == "default":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
             if not lambda_name:
                 return False
@@ -774,11 +802,11 @@ class AppUtilsCore:
         unique_environment_names = self.environment.list_unique_environment_names()
         unique_annotated_environment_names = [
             {"name": env,
-             "short": short_env_name(env),
-             "full": full_env_name(env),
-             "public": public_env_name(env) if public_env_name(env) else short_env_name(env),
-             "foursight": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
-        return sorted(unique_annotated_environment_names, key=lambda key: key["full"])
+             "short_name": short_env_name(env),
+             "full_name": full_env_name(env),
+             "public_name": public_env_name(env) if public_env_name(env) else short_env_name(env),
+             "foursight_name": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
+        return sorted(unique_annotated_environment_names, key=lambda key: key["public_name"])
 
     def view_foursight(self, request, environ, is_admin=False, domain="", context="/"):
         """
@@ -1273,7 +1301,7 @@ class AppUtilsCore:
             connection = None
         if connection:
             # server = connection.ff_server
-            history = self.get_foursight_history(connection, check, start, limit)
+            history, total = self.get_foursight_history(connection, check, start, limit)
             history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
         else:
             history, history_kwargs = [], []
@@ -1324,7 +1352,7 @@ class AppUtilsCore:
         html_resp.status_code = 200
         return self.process_response(html_resp)
 
-    def get_foursight_history(self, connection, check, start, limit):
+    def get_foursight_history(self, connection, check, start, limit, sort = None) -> [list, int]:
         """
         Get a brief form of the historical results for a check, including
         UUID, status, kwargs. Limit the number of results recieved to 500, unless
@@ -1337,8 +1365,9 @@ class AppUtilsCore:
         limit = 500 if limit > 500 else limit
         result_obj = self.check_handler.init_check_or_action_res(connection, check)
         if not result_obj:
-            return []
-        return result_obj.get_result_history(start, limit)
+            return [], 0
+        result, total = result_obj.get_result_history(start, limit, sort)
+        return result, total
 
     def run_get_check(self, environ, check, uuid=None):
         """
@@ -1816,6 +1845,17 @@ class AppUtilsCore:
         complete = s3_connection.list_all_keys_w_prefix(run_prefix)
         # eliminate duplicates
         return set(complete)
+
+    _singleton = None
+    @staticmethod
+    def singleton(cls = None):
+        # A little wonky having a singleton with an argument but this is sort of the way it
+        # was in 4dn-cloud-infra/app-{cgap,fourfront}.py; and we know the only place we create
+        # this is from there and also from foursight-cgap/chalicelib/app.py and foursight/app.py
+        # with the appropriate locally derived (from this AppUtilsCore) AppUtils.
+        if not AppUtilsCore._singleton:
+            AppUtilsCore._singleton = cls() if cls else AppUtilsCore()
+        return AppUtilsCore._singleton
 
 
 class AppUtils(AppUtilsCore):  # for compatibility with older imports

@@ -224,7 +224,7 @@ class RunResult(object):
 
         return num_deleted_s3, num_deleted_es
 
-    def get_result_history(self, start, limit, after_date=None):
+    def get_result_history(self, start, limit, sort, after_date=None) -> [list, int]:
         """
         Used to get the uuid, status, and kwargs for a specific check.
         Results are ordered by uuid (timestamped) and sliced from start to limit.
@@ -234,18 +234,19 @@ class RunResult(object):
         Returns a list of lists (inner lists: [status, kwargs])
         """
         if self.es:
-            history = self.connections['es'].get_result_history(self.name, start, limit)
+            history, total = self.connections['es'].get_result_history(self.name, start, limit, sort)
 
             def wrapper(obj):
                 filename = obj.get('_id')
                 if filename is None:
                     filename = obj.get('name') + '/' + obj.get('kwargs').get('uuid') + '.json'
-                return self.filename_to_datetime(filename)
+                return self.filename_to_datetime(filename), total
 
             if after_date is not None:
                 history = list(filter(lambda k: wrapper(k) >= after_date, history))
         else:
             all_keys = self.connections['s3'].list_all_keys_w_prefix(self.name, records_only=True)
+            total = len(all_keys)
             all_keys.sort(key=self.filename_to_datetime, reverse=True)
             if after_date is not None:
                 all_keys = list(filter(lambda k: self.filename_to_datetime(k) >= after_date, all_keys))
@@ -268,7 +269,7 @@ class RunResult(object):
             for remove_key in ['_run_info']:
                 res_val[2].pop(remove_key, None)
             results.append(res_val)
-        return results
+        return results, total
 
     def store_formatted_result(self, uuid, formatted, primary):
         """

@@ -1,0 +1,75 @@
+:root {
+    --foursight-fourfront-box-background: #DDFFEE;
+    --foursight-fourfront-box-color: #09430C;
+
+    --foursight-cgap-box-background: #DDEEFF;
+    --foursight-cgap-box-color: #000069;
+
+    --box-color: var(--foursight-fourfront-box-color);
+    --box-background: var(--foursight-fourfront-box-background);
+}
+
+.box {
+    background: var(--box-background);
+    color: var(--box-color);
+    border-radius: 6px;
+    padding: 0.2em 0.5em;
+}
+.border {
+    border: 1px solid;
+}
+.border-thick {
+    border: 2px solid;
+}
+.lightened {
+    filter: brightness(1.1);
+}
+.darkened {
+    filter: brightness(0.9);
+}
+.vspace-tiny {
+    margin-top: 0.1em;
+}
+.vspace-small {
+    margin-top: 0.2em;
+}
+.vspace-normal {
+    margin-top: 0.3em;
+}
+.vspace-medium {
+    margin-top: 0.5em;
+}
+.vspace-large {
+    margin-top: 1.0em;
+}
+.padding-medium {
+    padding: 0.5em !important;
+}
+.padding-small {
+    padding: 0.2em 0.5em !important;
+}
+.mono {
+    font-family: monospace;
+    font-size: 0.9em;
+}
+.hline {
+    margin-top: 0.4em;
+    height: 1px;
+    border-top: 1px solid var(--box-color);
+    margin-bottom: 0.4em;
+}
+.cursor-hand {
+    cursor: pointer;
+}
+
+body {
+  margin: 0;
+  font-family: 'tahoma', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size:12pt;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
