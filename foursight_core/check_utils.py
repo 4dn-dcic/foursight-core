@@ -2,12 +2,17 @@ import os
 import importlib
 import copy
 import json
+import logging
 from dcicutils.env_base import EnvBase
 from dcicutils.env_utils import infer_foursight_from_env
 from .check_schema import CheckSchema
 from .exceptions import BadCheckSetup
 from .environment import Environment
 from .decorators import Decorators
+
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 
 class CheckHandler(object):
@@ -32,15 +37,15 @@ class CheckHandler(object):
         if not os.path.exists(setup_path):
             raise BadCheckSetup('Did not locate the specified check_setup: %s, looking in: %s' %
                                 (setup_path, os.listdir(check_setup_dir)))
-        print(f"foursight_core/CheckHandler: Loading check_setup.json file: {setup_path}")
+        logger.debug(f"foursight_core/CheckHandler: Loading check_setup.json file: {setup_path}")
         with open(setup_path, 'r') as jfile:
             self.CHECK_SETUP = json.load(jfile)
-        print(f"foursight_core/CheckHandler: Loaded check_setup.json file: {setup_path} ...")
-        print(self.CHECK_SETUP)
+        logger.debug(f"foursight_core/CheckHandler: Loaded check_setup.json file: {setup_path} ...")
+        logger.debug(self.CHECK_SETUP)
         # Validate and finalize CHECK_SETUP
-        print(f"foursight_core/CheckHandler: Validating check_setup.json file: {setup_path}")
+        logger.debug(f"foursight_core/CheckHandler: Validating check_setup.json file: {setup_path}")
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
-        print(f"foursight_core/CheckHandler: Done validating check_setup.json file: {setup_path}")
+        logger.debug(f"foursight_core/CheckHandler: Done validating check_setup.json file: {setup_path}")
 
     def get_module_names(self):
         check_modules = importlib.import_module('.checks', self.check_package_name)
@@ -293,7 +298,7 @@ class CheckHandler(object):
             setup_info = self.CHECK_SETUP.get(res['name'])
             # this should not happen, but fail gracefully
             if not setup_info:
-                print('-VIEW-> Check %s not found in CHECK_SETUP for env %s' % (res['name'], connection.fs_env))
+                logger.debug('-VIEW-> Check %s not found in CHECK_SETUP for env %s' % (res['name'], connection.fs_env))
                 continue
             # make sure this environment displays this check
             used_envs = [env for sched in setup_info['schedule'].values() for env in sched]
