@@ -15,7 +15,6 @@ from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import get_identity_name, get_identity_secrets
 from ...app import app
 from ...decorators import Decorators
-from ...misc_utils import sort_dictionary_by_lowercase_keys
 from ...route_prefixes import ROUTE_PREFIX
 from .auth import Auth
 from .aws_s3 import AwsS3
@@ -25,6 +24,7 @@ from .datetime_utils import convert_datetime_to_time_t, convert_utc_datetime_to_
 from .encoding_utils import base64_decode
 from .envs import Envs
 from .gac import Gac
+from .misc_utils import sort_dictionary_by_lowercase_keys
 from .react_routes import ReactRoutes
 from .react_ui import ReactUi
 

@@ -5,7 +5,7 @@ from dcicutils.env_utils import short_env_name
 from dcicutils.misc_utils import override_environ
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import get_identity_secrets
-from ...misc_utils import sort_dictionary_by_lowercase_keys
+from .misc_utils import sort_dictionary_by_lowercase_keys
 
 
 class Gac:
