@@ -41,8 +41,8 @@ const UseGlobalState = (global) => {
     // defined above, but just using the underlying global variable, i.e.  global.__value, works;
     // this global state is updated just by virtue of setState being called (above), on what is
     // now effectively just a dummy value; it (the above setState) could even just be called with
-    // and empty object and it works (though with no argument or null does not work); this worries
-    // me; is this somehow working by accident; is this causing too much re-rendering.
+    // an empty object and it works (though with no, or a null, argument it does not work);
+    // worrisome; maybe somehow working by accident; maybe causing too much re-rendering.
     //
     return {
         value: state, // global.__value works also for some not-understood reason (see above)
