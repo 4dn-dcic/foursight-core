@@ -77,7 +77,7 @@ function fetchData(url, setData, setLoading, setError) {
             }
             else if (response.status === 403) {
                 console.log("FETCH IS UNAUTHORIZED! " + url);
-                if (Client.CurrentLogicalPath() != "/env") {
+                if (Client.CurrentLogicalPath() !== "/env") {
                     window.location.pathname = Client.Path("/env");
                 }
             }

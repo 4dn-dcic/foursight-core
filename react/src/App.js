@@ -40,8 +40,8 @@ const App = () => {
 
     let [ header, setHeader ] = useState({loading: true});
 
-    const url = Server.Url("/header");
     useEffect(() => {
+        const url = Server.Url("/header");
         Fetch.get(
             url,
             data => {

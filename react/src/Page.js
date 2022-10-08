@@ -29,7 +29,6 @@ function KnownEnvRequired({ children }) {
     //
     if (header.loading) return children;
     if (!Env.IsKnown(Env.Current(), header) ) {
-        console.log("XYZZY:REDIRECT TO /env (a)");
         return <Navigate to={Client.Path("/env")} replace />
     }
     else {
@@ -47,16 +46,12 @@ function AuthorizationRequired({ children }) {
     const [ header ] = useContext(Global);
     NoteLastUrl(header);
     if (!Auth.IsLoggedIn(header)) {
-        console.log("XYZZY:REDIRECT TO /login (c)");
-        console.log(header);
         return <Navigate to={Client.Path("/login")} replace />
     }
     else if (!Env.IsAllowed(Env.Current(), header)) {
-        console.log("XYZZY:REDIRECT TO /env (d)");
         return <Navigate to={Client.Path("/env")} replace />
     }
     else if (!Env.IsCurrentKnown(header)) {
-        console.log("XYZZY:REDIRECT TO /env (b)");
         return <Navigate to={Client.Path("/env")} replace />
     }
     else {

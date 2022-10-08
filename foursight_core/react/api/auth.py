@@ -5,8 +5,6 @@ from .envs import Envs
 from .jwt_utils import jwt_decode, jwt_encode
 
 
-# Authentication and authorization related functions.
-#
 class Auth:
 
     def __init__(self, auth0_client_id: str, auth0_secret: str, envs: Envs):

@@ -28,7 +28,7 @@ const CheckHistoryPage = (props) => {
 
     useEffect(() => {
         update(limit, offset, sort);
-    }, []);
+    }, [limit, offset, sort]);
 
     function update(limit, offset, sort) {
         setHistory(e => ({...e, loading: true}));
@@ -106,9 +106,9 @@ const CheckHistoryPage = (props) => {
         function extractState(history) {
             return !history ? "state" : history[2].queue_action;
         }
-        function extractSummary(history) {
-            return !history ? "summary" : history[1];
-        }
+     // function extractSummary(history) {
+     //     return !history ? "summary" : history[1];
+     // }
 
         let columns = [
             { label: "" },
@@ -170,12 +170,7 @@ const CheckHistoryPage = (props) => {
                                 </>):(<>
                                     <b style={{color:"darkred"}}>ERROR</b>
                                 </>)}
-                                {/*
-                                <br/>
-                                <small>
-                                    {extractSummary(history)}
-                                </small>
-                                */}
+                                {/* <br/> <small> {extractSummary(history)} </small> */}
                             &nbsp;&nbsp;</td>
                             <td style={{verticalAlign:"top",textAlign:"right"}}>
                                 {extractDuration(history)}

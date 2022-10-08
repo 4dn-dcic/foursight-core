@@ -129,7 +129,7 @@ function IsReadOnlyMode(header) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-const Exports = {
+const exports = {
     BasePath:           Context.Client.BasePath,
     BaseUrl:            Context.Client.BaseUrl,
     CurrentLogicalPath: GetCurrentLogicalPath,
@@ -140,5 +140,4 @@ const Exports = {
     Origin:             Context.Client.Origin,
     Path:               GetPath,
     PortalLink:         GetPortalLink
-};
-export default Exports;
+}; export default exports;

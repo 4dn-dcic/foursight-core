@@ -11,7 +11,9 @@ const UsersPage = () => {
     let [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
-    useEffect(() => { Fetch.get(url, setUsers, setLoading, setError)}, []);
+    useEffect(() => {
+        Fetch.get(url, setUsers, setLoading, setError)
+    }, [url]);
 
     if (error) return <>Cannot load users from Foursight: {error}</>;
     if (loading) {

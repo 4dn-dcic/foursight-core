@@ -7,6 +7,7 @@ import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
+import GlobalState from '../GlobalState';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
 import ReadOnlyMode from '../ReadOnlyMode';
@@ -31,11 +32,9 @@ const ChecksPage = (props) => {
     let [ selectedHistories, setSelectedHistories ] = useState([])
     let [ checksStatus, setChecksStatus ] = useState({});
     let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
-    let [ readOnlyMode, setReadOnlyMode ] = useState();
+    let readOnlyMode = GlobalState.Use(ReadOnlyMode.Global);
 
     useEffect(() => {
-
-        ReadOnlyMode.RegisterCallback(setReadOnlyMode);
 
         const groupedChecksUrl = Server.Url(`/checks`, environ);
         Fetch.get(groupedChecksUrl, groupedChecks => {
@@ -59,7 +58,7 @@ const ChecksPage = (props) => {
         // This running periodically screws up the check run configuration inputs.
         // setInterval(() =>  refreshChecksStatus(), 10000);
 
-        return () => ReadOnlyMode.UnregisterCallback(setReadOnlyMode);
+        //return () => ReadOnlyMode.UnregisterCallback(setReadOnlyMode);
 
     }, []);
 
@@ -121,7 +120,7 @@ const ChecksPage = (props) => {
     }
 
     function saveInputKwargs(check) {
-        Object.keys(check.kwargs).map(key => {
+        Object.keys(check.kwargs).forEach(key => {
             if (!Type.IsBoolean(check.kwargs[key]) && !Type.IsNonEmptyArray(check.kwargs[key])) {
                 const inputId = `${check.name}.${key}`;
                 const inputElement = document.getElementById(inputId);
@@ -477,10 +476,10 @@ const ChecksPage = (props) => {
             </div>
         }
         return <div>
-            <div className={"check-run-button"} style={{...style, cursor:readOnlyMode && check.configuringCheckRun ? "not-allowed" : "",background:readOnlyMode && check.configuringCheckRun ? "#888888" : "",color:check.configuringCheckRun ? "yellow" : ""}}
+            <div className={"check-run-button"} style={{...style, cursor:readOnlyMode.value && check.configuringCheckRun ? "not-allowed" : "",background:readOnlyMode.value && check.configuringCheckRun ? "#888888" : "",color:check.configuringCheckRun ? "yellow" : ""}}
                 onClick={(e) => {
                     if (check.configuringCheckRun) {
-                        if (!readOnlyMode) {
+                        if (!readOnlyMode.value) {
                             saveInputKwargs(check);
                             showResultBox(check);
                             runCheck(check);
@@ -492,8 +491,8 @@ const ChecksPage = (props) => {
                         noteChangedCheckBox(check);
                     }
                 }}>
-                <span className={"tool-tip"} data-text={readOnlyMode ? "Run disabled because in readonly mode." : "Click to run this check."}>
-                    { !readOnlyMode ? <>
+                <span className={"tool-tip"} data-text={readOnlyMode.value ? "Run disabled because in readonly mode." : "Click to run this check."}>
+                    { !readOnlyMode.value ? <>
                         { check.configuringCheckRun ? <>
                             <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<span>Run</span>
                         </>:<>

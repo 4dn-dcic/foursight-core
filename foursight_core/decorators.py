@@ -17,8 +17,8 @@ from .sqs_utils import SQS
 # Added this to get a handle on the check function kwargs defined via the check_function
 # decorator on the checks. Currently the Foursight UI seems to display these only by
 # virtue of them having been in a result set of an actual check run. But we would
-# like to get and present these without having to get the check history; and only
-# displaying if the check has ever been run.
+# like to get and present these without having to get the check history;
+# and without the check having to been run.
 _decorator_registry = []
 
 class Decorators(object):

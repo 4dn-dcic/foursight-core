@@ -27,7 +27,9 @@ const InfoPage = () => {
     let [ error, setError ] = useState(false);
     let [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [ reloadingApp, setReloadingApp ] = useState(false);
-    useEffect(() => { Fetch.get(url, setInfo, setLoading, setError)}, []);
+    useEffect(() => {
+        Fetch.get(url, setInfo, setLoading, setError)
+    }, [url]);
 
     function initiateAppReload() {
         setReloadingApp(true);

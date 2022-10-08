@@ -5,8 +5,18 @@ import jwt as jwtlib
 def jwt_encode(value: dict, audience: str, secret: str) -> str:
     """
     JWT signs and encodes the given (dictionary) value and returns its string.
-    Uses the given audience (aka Auth0 client ID) and associated secret.
-    If an error occurs and exception will be raised.
+    Uses the given audience (aka Auth0 client ID) and associated secret for signing.
+    If the given value does NOT already have an "aud" property, then we add it,
+    setting it to the given audience value; or if it is present and a non-empty
+    audience is given then it is used as the "aud" property. If no "aud" property
+    is present and no audience is given, or ie any other error occurs, then an
+    exception will be raised.
+
+    Note that strictly speaking, a JWT may be created (signed/encoded) WITHOUT
+    an "aud" property, but an exception will be raised when attempting
+    to verify/decode such a JWT; so best to disallow that case here.
+    The exception we'd get verifying/decoding such a JWT looks like this FYI:
+    Exception verifying/decoding JWT: Token is missing the "aud" claim
     """
     if not value:
         raise Exception("Attempt to encode JWT for empty value.")
@@ -18,10 +28,12 @@ def jwt_encode(value: dict, audience: str, secret: str) -> str:
         value_aud = value.get("aud")
         if value_aud != audience:
             # If given an audience, and it doesn't match the audience in
-            # the given value, then make a copy (we don't want to change
+            # the given value, then make a copy (as we don't want to change
             # the given value out from under the caller), and update it.
             value = copy.deepcopy(value)
             value["aud"] = audience
+    if not value.get("aud"):
+        raise Exception("Cannot encode object as JWT without an 'aud' property")
     try:
         encoded_value = jwtlib.encode(value, secret, algorithm="HS256")
         if isinstance(encoded_value, bytes):
@@ -34,8 +46,8 @@ def jwt_encode(value: dict, audience: str, secret: str) -> str:
 
 def jwt_decode(jwt: str, audience: str, secret: str) -> dict:
     """
-    Verifies the signature (importantly) and decodes the given signed and encoded
-    JWT and returns its (dictionary) value. If cannot be successfully verified
+    Verifies (importantly) the signature and decodes the given signed and encoded
+    JWT and returns its (dictionary) value. If it cannot be successfully verified
     and/or decoded then an exception will be raised. Uses the given audience,
     aka "aud", aka Auth0 client ID, and the given associated secret to verify and
     decode. This must match the values specified when the JWT was signed/encoded.

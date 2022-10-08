@@ -9,22 +9,31 @@ from foursight_core.react.api.jwt_utils import jwt_encode
 AUTH0_CLIENT_ID = str(uuid.uuid4())
 AUTH0_SECRET = str(uuid.uuid4())
 AUTH0_SECRET_INVALID = str(uuid.uuid4())
+KNOWN_ENV_A = {
+    "name": "env-a",
+    "full_name": "env-a-full-name",
+    "short_name": "env-a-short-name",
+    "public_name": "env-a-public-name",
+    "foursight_name": "env-a-foursight-name"
+}
+KNOWN_ENV_B = {
+    "name": "env-b",
+    "full_name": "env-b-full-name",
+    "short_name": "env-b-short-name",
+    "public_name": "env-b-public-name",
+    "foursight_name": "env-b-foursight-name"
+}
+KNOWN_ENV_C = {
+    "name": "env-c",
+    "full_name": "env-c-full-name",
+    "short_name": "env-c-short-name",
+    "public_name": "env-c-public-name",
+    "foursight_name": "env-c-foursight-name"
+}
 KNOWN_ENVS = [
-    { "name": "env-a",
-      "full_name": "env-a-full-name",
-      "short_name": "env-a-short-name",
-      "public_name": "env-a-public-name",
-      "foursight_name": "env-a-foursight-name" },
-    { "name": "env-b",
-      "full_name": "env-b-full-name",
-      "short_name": "env-b-short-name",
-      "public_name": "env-b-public-name",
-      "foursight_name": "env-b-foursight-name" },
-    { "name": "env-c",
-      "full_name": "env-c-full-name",
-      "short_name": "env-c-short-name",
-      "public_name": "env-c-public-name",
-      "foursight_name": "env-c-foursight-name" }
+    KNOWN_ENV_A,
+    KNOWN_ENV_B,
+    KNOWN_ENV_C,
 ]
 ALLOWED_ENVS = ["env-b-full-name", "env-c-full-name"]
 ALLOWED_ENV = "env-c-full-name"

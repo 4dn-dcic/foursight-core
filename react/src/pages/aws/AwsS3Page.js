@@ -26,7 +26,7 @@ const AwsS3Page = (props) => {
         Fetch.get(bucketsUrl, bucketList => {
             setBucketList(bucketList);
         }, setLoading, setError);
-    }, []);
+    }, [environ]);
 
     // Only allow fetching/displaying S3 bucket key content for keys (file) with a '.json' suffix,
     // or all files within a bucket with a name ending with '-envs'; AND which are not too large.

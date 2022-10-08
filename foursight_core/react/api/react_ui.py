@@ -79,8 +79,8 @@ class ReactUi:
             file = os.path.join(REACT_BASE_DIR, REACT_DEFAULT_FILE)
             content_type = "text/html"
             open_mode = "r"
-            # Be as restrictive as possible. ONLY allow above files.
 
+        # Be as restrictive as possible. ONLY allow above whitelistted files.
         may_serve_file = False
         for suffix in REACT_WHITELISTED_FILE_PATH_SUFFIXES:
             if file.endswith(suffix):
@@ -91,7 +91,7 @@ class ReactUi:
 
         response = ReactUi.Cache.static_files.get(file)
         if not response:
-            response = self.react_api.create_standard_response("ReactUi.serve_static_file", content_type)
+            response = self.react_api.create_standard_response("react_serve_static_file", content_type)
             with io.open(file, open_mode) as f:
                 try:
                     response.body = f.read()

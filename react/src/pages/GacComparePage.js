@@ -21,7 +21,7 @@ const GacComparePage = (props) => {
     let [ error, setError ] = useState(false);
     useEffect(() => {
             Fetch.get(url, setData, setLoading, setError)
-    }, []);
+    }, [url]);
     let navigate = useNavigate();
 
     function getUniqueKeys(gac, gac_compare) {
@@ -29,12 +29,12 @@ const GacComparePage = (props) => {
         if (!gac || !gac_compare) {
             return uniqueKeys;
         }
-        Object.keys(gac)?.map((key) => {
+        Object.keys(gac)?.forEach((key) => {
             if (!uniqueKeys.includes(key)) {
                 uniqueKeys.push(key);
             }
         });
-        Object.keys(gac_compare)?.map((key) => {
+        Object.keys(gac_compare)?.forEach((key) => {
             if (!uniqueKeys.includes(key)) {
                 uniqueKeys.push(key);
             }

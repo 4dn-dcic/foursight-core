@@ -1,7 +1,6 @@
 import { useContext } from 'react';
-import Global from '../Global';
 import Env from '../utils/Env';
-import Styles from '../Styles';
+import Global from '../Global';
 
 const HomePage = (props) => {
 

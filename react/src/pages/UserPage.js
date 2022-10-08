@@ -12,7 +12,9 @@ const UserPage = (props) => {
     const [ users, setUsers ] = useState([]);
     let [ loading, setLoading ] = useState(true);
     let [ error, setError ] = useState(false);
-    useEffect(() => { Fetch.get(url, setUsers, setLoading, setError)}, []);
+    useEffect(() => {
+        Fetch.get(url, setUsers, setLoading, setError)
+    }, [url]);
 
     if (error) return <>Cannot load user ({email}) from Foursight: {error}</>;
     if (loading) {

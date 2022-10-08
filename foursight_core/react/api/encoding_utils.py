@@ -1,5 +1,3 @@
-# Base64 encoding/decoding utility functions.
-
 import base64
 import json
 

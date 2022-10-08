@@ -257,7 +257,7 @@ function GetLegacyFoursightLink(header) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-const Exports = {
+const exports = {
     AllowedEnvs:          GetAllowedEnvs,
     Current:              GetCurrentEnv,
     Default:              GetDefaultEnv,
@@ -277,5 +277,4 @@ const Exports = {
     PublicName:           GetPublicEnvName,
     RegularName:          GetRegularEnvName,
     ShortName:            GetShortEnvName
-};
-export default Exports;
+}; export default exports;

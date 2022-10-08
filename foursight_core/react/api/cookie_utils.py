@@ -23,7 +23,8 @@ def read_cookies(request: dict) -> dict:
 
 
 def create_set_cookie_string(request: dict, name: str, value: Optional[str],
-                             domain: str, path: str = "/", expires: Optional[Any] = None, http_only: bool = False) -> str:
+                             domain: str, path: str = "/", expires: Optional[Any] = None,
+                             http_only: bool = False) -> str:
     """
     Returns a string suitable for an HTTP response to set a cookie for this given cookie info.
     If the given expires arg is "now" then then the expiration time for the cookie will be
@@ -43,7 +44,6 @@ def create_set_cookie_string(request: dict, name: str, value: Optional[str],
         if isinstance(expires, datetime.datetime):
             expires = expires.strftime("%a, %d %b %Y %H:%M:%S GMT")
         elif isinstance(expires, int):
-            #expires = (datetime.datetime.utcnow() + datetime.timedelta(seconds=expires)).strftime("%a, %d %b %Y %H:%M:%S GMT")
             expires = convert_time_t_to_datetime(expires)
             expires = expires.strftime("%a, %d %b %Y %H:%M:%S GMT")
         elif isinstance(expires, str):

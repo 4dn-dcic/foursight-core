@@ -145,7 +145,6 @@ function GetLastUrlCookie() {
 }
 
 function SetLastUrlCookie(url) {
-        console.log("SET-LAST-URL: " + url);
     SetCookie(_lastUrlCookieName, url);
 }
 

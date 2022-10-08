@@ -26,8 +26,7 @@ const EnvPage = (props) => {
             env = Env.Current();
         }
         const url = Server.Url("/header");
-        console.log("UPDATING /header ...")
-        Fetch.get(url, data => { console.log("UPDATED /header ..."); console.log(data); setHeader(e => ({...data})); });
+        Fetch.get(url, data => setHeader(e => ({...data})));
     }
 
     let navigate = useNavigate();
@@ -62,7 +61,7 @@ const EnvPage = (props) => {
     function HasGacName(env, info) {
         if (!Type.IsNonEmptyObject(info)) return false;
         const known_env = info.known_envs?.filter(known_env => Env.Equals(known_env, env));
-        return (Type.IsNonEmptyArray(known_env) && known_env[0].gac_name) && true || false;
+        return Type.IsNonEmptyArray(known_env) && known_env[0].gac_name;
     }
 
     // TODO: clean up this styles stuff.
