@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Global from '../Global';
+import HeaderData from '../HeaderData';
 import Page from '../Page';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
@@ -13,7 +13,7 @@ import Uuid from '../utils/Uuid';
 
 const EnvPage = (props) => {
 
-    const [ header, setHeader ] = useContext(Global);
+    const [ header, setHeader ] = useContext(HeaderData);
 
     // Call the /info endpoint API just to get the GAC names.
     const [ info, setInfo ] = useState();

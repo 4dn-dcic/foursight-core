@@ -1,6 +1,6 @@
 import Cookie from './utils/Cookie';
-import GlobalState from './GlobalState';
-import { defineGlobal, useGlobal } from './GlobalState';
+import Global from './Global';
+import { defineGlobal, useGlobal } from './Global';
 import Image from './utils/Image';
 
 const _ReadOnlyModeGlobal = defineGlobal(() => Cookie.IsReadOnlyMode());
@@ -17,7 +17,7 @@ const _ReadOnlyModeDisplay = () => {
 
 const exports = {
     Display: _ReadOnlyModeDisplay,
-    Use:     () => GlobalState.Use(_ReadOnlyModeGlobal)
+    Use:     () => Global.Use(_ReadOnlyModeGlobal)
 }; export default exports;
 
 // For a more React-ish usage.

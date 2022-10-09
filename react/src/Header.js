@@ -2,7 +2,7 @@ import './css/App.css';
 import React from 'react';
 import { useContext } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import Global from './Global';
+import HeaderData from './HeaderData';
 import { BarSpinner } from './Spinners';
 import Auth from './utils/Auth';
 import Client from './utils/Client';
@@ -20,7 +20,7 @@ import { ReadOnlyModeDisplay } from './ReadOnlyMode';
 
 const Header = (props) => {
 
-    const [ header ] = useContext(Global);
+    const [ header ] = useContext(HeaderData);
     //
     // Very odd but this below (navigate) declartion of useNavigate is REQUIRED, even if not
     // used here, in order for the header navigation links (e.g. HOME, INFO) to work properly.

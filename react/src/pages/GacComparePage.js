@@ -3,14 +3,14 @@ import { useContext, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
-import Global from '../Global';
+import HeaderData from '../HeaderData';
 import Server from '../utils/Server';
 import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';
 
 const GacComparePage = (props) => {
 
-    const [ header ] = useContext(Global);
+    const [ header ] = useContext(HeaderData);
 
     let { environCompare } = useParams();
     const url = Server.Url(`/gac/${environCompare}`, Env.Current());

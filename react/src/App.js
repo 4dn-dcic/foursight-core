@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Navigate, BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Global from './Global';
+import HeaderData from './HeaderData';
 import Env from './utils/Env';
 import Fetch from './utils/Fetch';
 import Image from './utils/Image';
@@ -56,7 +56,7 @@ const App = () => {
     }, []);
 
     return <Router>
-        <Global.Provider value={[header, setHeader]}>
+        <HeaderData.Provider value={[header, setHeader]}>
             <Header />
             <div style={{margin:"20px"}}>
                 <Routes>
@@ -132,7 +132,7 @@ const App = () => {
                 </Routes>
             </div>
             <Footer />
-        </Global.Provider>
+        </HeaderData.Provider>
     </Router>
 };
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import Global from '../Global';
+import HeaderData from '../HeaderData';
 import Auth0Lock from 'auth0-lock';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
@@ -19,7 +19,7 @@ import Page from '../Page';
 
 const LoginPage = (props) => {
 
-    const [ header ] = useContext(Global);
+    const [ header ] = useContext(HeaderData);
     const [ showingAuthBox, setShowingAuthBox ] = useState(false);
     let [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [args] = useSearchParams();

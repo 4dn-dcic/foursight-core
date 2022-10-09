@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { StandardSpinner } from '../Spinners';
-import Global from '../Global';
+import HeaderData from '../HeaderData';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
@@ -19,7 +19,7 @@ import Yaml from '../utils/Yaml';
 
 const InfoPage = () => {
 
-    const [ header ] = useContext(Global);
+    const [ header ] = useContext(HeaderData);
 
     const url = Server.Url("/info");
     const [ info, setInfo ] = useState([]);

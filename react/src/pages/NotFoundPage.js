@@ -1,12 +1,12 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import Global from '../Global';
+import HeaderData from '../HeaderData';
 import Env from '../utils/Env';
 import Client from '../utils/Client';
 
 const NotFoundPage = (props) => {
 
-    const [ header ] = useContext(Global);
+    const [ header ] = useContext(HeaderData);
 
     return <>
         <div className="container" id="login_container">

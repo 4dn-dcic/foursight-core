@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
-import Global from './Global';
+import HeaderData from './HeaderData';
 import Auth from './utils/Auth';
 import Env from './utils/Env';
 import Client from './utils/Client';
@@ -20,7 +20,7 @@ function KnownEnvRequired({ children }) {
     // i.e. all protected pages except the /login page.
     // NoteLastUrl();
     //
-    const [ header ] = useContext(Global);
+    const [ header ] = useContext(HeaderData);
     //
     // TODO: More fully understand this next line added 2022-09-16.
     // If not here then going to the /login page redirects to the /env page because /header API is still in progress.
@@ -43,7 +43,7 @@ function KnownEnvRequired({ children }) {
 // page, if not authenticated, or to the /env page, if authenticated by not authorized.
 //
 function AuthorizationRequired({ children }) {
-    const [ header ] = useContext(Global);
+    const [ header ] = useContext(HeaderData);
     NoteLastUrl(header);
     if (!Auth.IsLoggedIn(header)) {
         return <Navigate to={Client.Path("/login")} replace />

@@ -1,10 +1,10 @@
 import { useContext } from 'react';
 import Env from '../utils/Env';
-import Global from '../Global';
+import HeaderData from '../HeaderData';
 
 const HomePage = (props) => {
 
-    const [ header ] = useContext(Global);
+    const [ header ] = useContext(HeaderData);
 
     return <>
         <div className="container">

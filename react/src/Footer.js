@@ -1,12 +1,12 @@
 import './css/App.css';
 import { useContext } from 'react';
-import Global from './Global';
+import HeaderData from './HeaderData';
 import Env from './utils/Env';
 import Image from './utils/Image';
 
 const Footer = (props) => {
 
-    const [ header ] = useContext(Global);
+    const [ header ] = useContext(HeaderData);
 
     if (header.loading) return null;
     return <>
