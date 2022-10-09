@@ -11,7 +11,7 @@ const _ReadOnlyModeDisplay = () => {
             onClick={() => {
                 Cookie.SetReadOnlyMode(!readOnlyMode);
                 setReadOnlyMode(!readOnlyMode);
-            }}/>
+            }} />
     </span>
 }
 
