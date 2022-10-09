@@ -43,7 +43,7 @@ import { useEffect, useState } from 'react';
 //   return <div>
 //     Your global value is: {yourGlobal}
 //     Click the button to update your global value:
-//     <button onClick={() => setYourGlobal(your-updated-value-or-function)}>Update Your Global</button>
+//     <button onClick={() => setYourGlobal(your-updated-value-or-function)}>Update YourGlobal</button>
 //   </div>
 
 const _DefineGlobalState = (initial = null) => {
