@@ -11,7 +11,7 @@ import LiveTime from './LiveTime';
 import Env from './utils/Env';
 import Image from './utils/Image';
 import Logout from './utils/Logout';
-import ReadOnlyMode from './ReadOnlyMode';
+import { ReadOnlyModeDisplay } from './ReadOnlyMode';
 // import JustLoggedIn from './JustLoggedIn';
 // Issues with serving images ONLY from 4dn-dcic/dev NOT from cgap-supertest ...
 // So serve from my GitHub account for now ...
@@ -232,7 +232,7 @@ const Header = (props) => {
                 <div>
                     <table><tbody><tr>
                         {/* <td style={{}}><JustLoggedIn /></td> */}
-                        <td style={{paddingLeft:"10pt"}}><ReadOnlyMode.Display /></td>
+                        <td style={{paddingLeft:"10pt"}}><ReadOnlyModeDisplay /></td>
                     </tr></tbody></table>
                 </div>
             </div>

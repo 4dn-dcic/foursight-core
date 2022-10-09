@@ -1,20 +1,26 @@
 import Cookie from './utils/Cookie';
 import GlobalState from './GlobalState';
+import { defineGlobal, useGlobal } from './GlobalState';
 import Image from './utils/Image';
 
-const ReadOnlyModeGlobal = GlobalState.Define(() => Cookie.IsReadOnlyMode());
-const ReadOnlyModeDisplay = function() {
-    const readOnlyMode = GlobalState.Use(ReadOnlyModeGlobal);
-    return <span title={`You are in ${readOnlyMode.value ? 'readonly' : 'read/write'} mode. Click to enter ${readOnlyMode.value ? 'read/write' : 'readonly'} mode.`}>
-        <img alt="lock" src={readOnlyMode.value ? Image.Lock() : Image.Unlock()} style={{height:"35",cursor:"pointer"}}
+const _ReadOnlyModeGlobal = defineGlobal(() => Cookie.IsReadOnlyMode());
+const _ReadOnlyModeDisplay = () => {
+    const [ readOnlyMode, setReadOnlyMode ] = useGlobal(_ReadOnlyModeGlobal);
+    return <span title={`You are in ${readOnlyMode ? 'readonly' : 'read/write'} mode. Click to enter ${readOnlyMode ? 'read/write' : 'readonly'} mode.`}>
+        <img alt="lock" src={readOnlyMode ? Image.Lock() : Image.Unlock()} style={{height:"35",cursor:"pointer"}}
             onClick={() => {
-                Cookie.SetReadOnlyMode(!readOnlyMode.value);
-                readOnlyMode.update(!readOnlyMode.value);
+                Cookie.SetReadOnlyMode(!readOnlyMode);
+                setReadOnlyMode(!readOnlyMode);
             }}/>
     </span>
 }
 
 const exports = {
-    Display: ReadOnlyModeDisplay,
-    Use:     () => GlobalState.Use(ReadOnlyModeGlobal)
+    Display: _ReadOnlyModeDisplay,
+    Use:     () => GlobalState.Use(_ReadOnlyModeGlobal)
 }; export default exports;
+
+// For a more React-ish usage.
+//
+export const ReadOnlyModeDisplay = _ReadOnlyModeDisplay;
+export const useReadOnlyMode = () => useGlobal(_ReadOnlyModeGlobal);

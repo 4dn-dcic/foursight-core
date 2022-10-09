@@ -22,17 +22,36 @@ import { useEffect, useState } from 'react';
 //   const yourGlobal = GlobalState.Use(YourGlobal);
 //   ...
 //   return <div>
-//       Your global value is: {yourGlobal.value}
-//       Click button update your global value:
-//       <b onClick={() => yourGlobal.update(your-updated-value-or-function)}>Button</b>
+//     Your global value is: {yourGlobal.value}
+//     Click button update your global value:
+//     <b onClick={() => yourGlobal.update(your-updated-value-or-function)}>Button</b>
+//   </div>
+//
+// Alternatively you can employ a more React-ish usage:
+//
+// - YourGlobal.js:
+//   import { defineGlobal } from './GlobalState'; 
+//   const YourGlobal = defineGlobal(your-initial-value-or-function);
+//   export default YourGlobal;
+//
+// - YourGlobalUsage.js:
+//   import { useGlobal } from './GlobalState'; 
+//   import YourGlobal from './YourGlobal'; 
+//   ...
+//   const [ yourGlobal, setYourGlobal ] = useGlobal(YourGlobal);
+//   ...
+//   return <div>
+//     Your global value is: {yourGlobal}
+//     Click the button to update your global value:
+//     <button onClick={() => setYourGlobal(your-updated-value-or-function)}>Update Your Global</button>
 //   </div>
 
-const DefineGlobalState = (initial = null) => {
+const _DefineGlobalState = (initial = null) => {
     if (typeof initial === "function") initial = initial(null);
     return { __value: initial, __listeners: new Set() };
 }
 
-const UseGlobalState = (global) => {
+const _UseGlobalState = (global) => {
     const [ , listener ] = useState();
     useEffect(() => {
         global.__listeners.add(listener);
@@ -48,6 +67,11 @@ const UseGlobalState = (global) => {
 };
 
 const exports = {
-    Define: DefineGlobalState,
-    Use: UseGlobalState
+    Define: _DefineGlobalState,
+    Use: _UseGlobalState
 }; export default exports;
+
+// For a more React-ish usage.
+//
+export const defineGlobal = _DefineGlobalState;
+export const useGlobal = (global) => [ _UseGlobalState(global).value, _UseGlobalState(global).update ];

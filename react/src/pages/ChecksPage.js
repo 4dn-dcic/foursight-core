@@ -3,14 +3,13 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { RingSpinner } from '../Spinners';
 import { StandardSpinner } from '../Spinners';
+import { useReadOnlyMode } from '../ReadOnlyMode';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
-import GlobalState from '../GlobalState';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
-import ReadOnlyMode from '../ReadOnlyMode';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
 import TableHead from '../TableHead';
@@ -32,7 +31,7 @@ const ChecksPage = (props) => {
     let [ selectedHistories, setSelectedHistories ] = useState([])
     let [ checksStatus, setChecksStatus ] = useState({});
     let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
-    const readOnlyMode = ReadOnlyMode.Use();
+    const [ readOnlyMode ] = useReadOnlyMode();
 
     useEffect(() => {
 
@@ -475,10 +474,10 @@ const ChecksPage = (props) => {
             </div>
         }
         return <div>
-            <div className={"check-run-button"} style={{...style, cursor:readOnlyMode.value && check.configuringCheckRun ? "not-allowed" : "",background:readOnlyMode.value && check.configuringCheckRun ? "#888888" : "",color:check.configuringCheckRun ? "yellow" : ""}}
+            <div className={"check-run-button"} style={{...style, cursor:readOnlyMode && check.configuringCheckRun ? "not-allowed" : "",background:readOnlyMode && check.configuringCheckRun ? "#888888" : "",color:check.configuringCheckRun ? "yellow" : ""}}
                 onClick={(e) => {
                     if (check.configuringCheckRun) {
-                        if (!readOnlyMode.value) {
+                        if (!readOnlyMode) {
                             saveInputKwargs(check);
                             showResultBox(check);
                             runCheck(check);
@@ -490,8 +489,8 @@ const ChecksPage = (props) => {
                         noteChangedCheckBox(check);
                     }
                 }}>
-                <span className={"tool-tip"} data-text={readOnlyMode.value ? "Run disabled because in readonly mode." : "Click to run this check."}>
-                    { !readOnlyMode.value ? <>
+                <span className={"tool-tip"} data-text={readOnlyMode ? "Run disabled because in readonly mode." : "Click to run this check."}>
+                    { !readOnlyMode ? <>
                         { check.configuringCheckRun ? <>
                             <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<span>Run</span>
                         </>:<>
