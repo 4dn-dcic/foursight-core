@@ -32,7 +32,7 @@ const ChecksPage = (props) => {
     let [ selectedHistories, setSelectedHistories ] = useState([])
     let [ checksStatus, setChecksStatus ] = useState({});
     let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
-    let readOnlyMode = GlobalState.Use(ReadOnlyMode.Global);
+    const readOnlyMode = ReadOnlyMode.Use();
 
     useEffect(() => {
 
@@ -55,10 +55,9 @@ const ChecksPage = (props) => {
         });
 
         refreshChecksStatus();
+
         // This running periodically screws up the check run configuration inputs.
         // setInterval(() =>  refreshChecksStatus(), 10000);
-
-        //return () => ReadOnlyMode.UnregisterCallback(setReadOnlyMode);
 
     }, []);
 

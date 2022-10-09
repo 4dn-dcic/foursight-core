@@ -232,7 +232,7 @@ const Header = (props) => {
                 <div>
                     <table><tbody><tr>
                         {/* <td style={{}}><JustLoggedIn /></td> */}
-                        <td style={{paddingLeft:"10pt"}}><ReadOnlyMode.Lock /></td>
+                        <td style={{paddingLeft:"10pt"}}><ReadOnlyMode.Display /></td>
                     </tr></tbody></table>
                 </div>
             </div>

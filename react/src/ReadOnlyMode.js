@@ -2,10 +2,9 @@ import Cookie from './utils/Cookie';
 import GlobalState from './GlobalState';
 import Image from './utils/Image';
 
-const _ReadOnlyModeGlobal = GlobalState.Define(Cookie.IsReadOnlyMode());
-
-const _ReadOnlyModeLock = function() {
-    const readOnlyMode = GlobalState.Use(_ReadOnlyModeGlobal);
+const ReadOnlyModeGlobal = GlobalState.Define(Cookie.IsReadOnlyMode());
+const ReadOnlyModeDisplay = function() {
+    const readOnlyMode = GlobalState.Use(ReadOnlyModeGlobal);
     return <>
         { readOnlyMode.value ? <>
             <span className={"tool-tip"} data-text={"You are in readonly mode. Click to enter read/write mode."}>
@@ -33,6 +32,6 @@ const _ReadOnlyModeLock = function() {
 }
 
 const exports = {
-    Lock:   _ReadOnlyModeLock,
-    Global: _ReadOnlyModeGlobal
+    Display: ReadOnlyModeDisplay,
+    Use:     () => GlobalState.Use(ReadOnlyModeGlobal)
 }; export default exports;
