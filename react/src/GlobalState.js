@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 // Came up with half of this idea originally for the ReadOnlyMode component; then that idea,
 // of using (registered) callbacks (aka listeners) to update global state, was generalized
 // after looking at this article which validated and expanded on this idea (from Diashi Kato):
-//
-// - https://blog.openreplay.com/steps-to-develop-global-state-for-react-with-hooks-without-context/
+// See: https://blog.openreplay.com/steps-to-develop-global-state-for-react-with-hooks-without-context
+// Also see: https://stackoverflow.com/questions/63209420/react-global-state-no-context-or-redux
 //
 // Usage example:
 //
@@ -24,29 +24,21 @@ import { useEffect, useState } from 'react';
 //   return <div onClick={() => yourGlobal.update(your-updated-value)}>{yourGlobal.value}</div>
 //
 const DefineGlobalState = (initial = null) => {
+    if (typeof initial === "function") initial = initial(null);
     return { __value: initial, __listeners: new Set() };
 }
 
 const UseGlobalState = (global) => {
-    const [ state, setState ] = useState(global.__value);
+    const [ , listener ] = useState();
     useEffect(() => {
-        const listener = (value) => setState(value);
         global.__listeners.add(listener);
         listener(global.__value);
         return () => global.__listeners.delete(listener);
-    }, [global.__value, global.__listeners]);
-    //
-    // After a hard time getting this to even work at all, I now don't fully understand how this
-    // even works at all. Thought we needed to return a reference the useState variable (state)
-    // defined above, but just using the underlying global variable, i.e.  global.__value, works;
-    // this global state is updated just by virtue of setState being called (above), on what is
-    // now effectively just a dummy value; it (the above setState) could even just be called with
-    // an empty object and it works (though with no, or a null, argument it does not work);
-    // worrisome; maybe somehow working by accident; maybe causing too much re-rendering.
-    //
+    }, [ global.__value, global.__listeners ]);
     return {
-        value: state, // global.__value works also for some not-understood reason (see above)
+        value: global.__value,
         update: (value) => {
+            if (typeof value === "function") value = value(global.__value);
             global.__value = value;
             global.__listeners.forEach(listener => listener(value));
          }
