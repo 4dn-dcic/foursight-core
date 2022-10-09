@@ -74,4 +74,4 @@ const exports = {
 // For a more React-ish usage.
 //
 export const defineGlobal = _DefineGlobal;
-export const useGlobal = (global) => [ _UseGlobal(global).value, _UseGlobal(global).update ];
+export const useGlobal = (global) => { const g = _UseGlobal(global); return [ g.value, g.update ] };
