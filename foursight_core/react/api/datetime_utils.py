@@ -40,7 +40,15 @@ def convert_time_t_to_useastern_datetime_string(time_t: int) -> str:
         return "datetime-parse-error"
 
 def convert_time_t_to_datetime(time_t: int) -> datetime.datetime:
+    """
+    Converts the given "epoch" time (seconds since 1970-01-01T00:00:00Z)
+    to a datetime and returns its value.
+    """
     return datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
 
 def convert_datetime_to_time_t(value: datetime.datetime) -> int:
+    """
+    Converts the given datatime value to an "epoch"
+    time (seconds since 1970-01-01T00:00:00Z) and returns its value.
+    """
     return int(value.timestamp())

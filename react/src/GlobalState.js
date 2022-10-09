@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react';
 //
 // - YourGlobal.js:
 //   import GlobalState from './GlobalState'; 
-//   const YourGlobal = GlobalState.Define(your-initial-value);
+//   const YourGlobal = GlobalState.Define(your-initial-value-or-function);
 //   export default YourGlobal;
 //
 // - YourGlobalUsage.js:
@@ -21,8 +21,12 @@ import { useEffect, useState } from 'react';
 //   ...
 //   const yourGlobal = GlobalState.Use(YourGlobal);
 //   ...
-//   return <div onClick={() => yourGlobal.update(your-updated-value)}>{yourGlobal.value}</div>
-//
+//   return <div>
+//       Your global value is: {yourGlobal.value}
+//       Click button update your global value:
+//       <b onClick={() => yourGlobal.update(your-updated-value-or-function)}>Button</b>
+//   </div>
+
 const DefineGlobalState = (initial = null) => {
     if (typeof initial === "function") initial = initial(null);
     return { __value: initial, __listeners: new Set() };
@@ -32,13 +36,11 @@ const UseGlobalState = (global) => {
     const [ , listener ] = useState();
     useEffect(() => {
         global.__listeners.add(listener);
-        listener(global.__value);
         return () => global.__listeners.delete(listener);
     }, [ global.__value, global.__listeners ]);
     return {
         value: global.__value,
         update: (value) => {
-            if (typeof value === "function") value = value(global.__value);
             global.__value = value;
             global.__listeners.forEach(listener => listener(value));
          }
