@@ -104,7 +104,6 @@ const DEFAULT_FETCH_TIMEOUT = 1000; // 10 * 1000;
 function _fetch(url, setData, setLoading, setStatus, setTimeout, setError, timeout) {
 
     timeout = timeout > 0 ? timeout : DEFAULT_FETCH_TIMEOUT;
-    const delay = 0;
 
     function handleResponse(response) {
         const status = response.status;
@@ -116,8 +115,8 @@ function _fetch(url, setData, setLoading, setStatus, setTimeout, setError, timeo
 
     function handleError(error) {
         let status = error.response?.status || 0;
-        setError(error.message);
         setStatus(status);
+        setError(error.message);
         setLoading(false);
         if (status === 401) {
             //
@@ -136,7 +135,6 @@ function _fetch(url, setData, setLoading, setStatus, setTimeout, setError, timeo
             }
         }
         else {
-            const code = error.code;
             if (error.code === "ECONNABORTED") {
                 if (!status) {
                     setStatus(408);
@@ -152,7 +150,7 @@ function _fetch(url, setData, setLoading, setStatus, setTimeout, setError, timeo
                 // https://github.com/axios/axios/issues/4420
                 //
                 if (!status) {
-                    setStatus(403);
+                    setStatus(404);
                 }
             }
             else {
@@ -170,10 +168,12 @@ function _fetch(url, setData, setLoading, setStatus, setTimeout, setError, timeo
     const method = "GET";
     const data = null;
 
+    let delay = Cookie.TestMode.HasFetchSleep() ? Cookie.TestMode.FetchSleep() : 0;
+
     axios({ url: url, method: method, data: data, timeout: timeout })
         .then(response => {
             if (delay > 0) {
-                setTimeout(() => handleResponse(response), delay);
+                window.setTimeout(() => handleResponse(response), delay);
             }
             else {
                 handleResponse(response);
@@ -181,7 +181,7 @@ function _fetch(url, setData, setLoading, setStatus, setTimeout, setError, timeo
         })
         .catch(error => {
             if (delay > 0) {
-                setTimeout(() => handleError(error), delay);
+                window.setTimeout(() => handleError(error), delay);
             }
             else {
                 handleError(error);
@@ -196,7 +196,6 @@ export const useFetch = (url, options = { timeout: DEFAULT_FETCH_TIMEOUT } ) => 
     const [ status, setStatus ] = useState();
     const [ timeout, setTimeout ] = useState();
     const [ error, setError ] = useState();
-    const delay = 0;
 
     useEffect(() => {
         _fetch(url, setData, setLoading, setStatus, setTimeout, setError, options?.timeout);
