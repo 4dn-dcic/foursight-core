@@ -174,6 +174,7 @@ export const useFetches = () => {
 export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError, fetching, fetches, options) => {
 
     function handleResponse(response, id) {
+        console.log(`FETCH-HOOK-RESPONSE: ${url}`);
         const status = response.status;
         const data = response.data;
         setData(data);
@@ -183,6 +184,7 @@ export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError
     }
 
     function handleError(error, id) {
+        console.log(`FETCH-HOOK-ERROR: ${url}`);
         let status = error.response?.status || 0;
         setStatus(status);
         setError(error.message);
@@ -255,6 +257,7 @@ export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError
     const delay = options?.delay > 0 ? options.delay : (Cookie.TestMode.HasFetchSleep() ? Cookie.TestMode.FetchSleep() : 0);
     const fetch = { url: url, method: method, data: data, withCredentials: "include", timeout: timeout };
 
+    console.log(`FETCH-HOOK: ${url}`);
     const id = noteFetchBegin(fetch);
     axios(fetch)
         .then(response => {

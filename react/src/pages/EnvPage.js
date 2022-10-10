@@ -19,6 +19,10 @@ const EnvPage = (props) => {
     const [ response ] = useFetch(Auth.IsLoggedIn() ? Server.Url("/info") : null);
     const [ , refreshHeader ] = useFetch(Server.Url("/header"), false); // TODO: Experimental
 
+        useEffect(() => {
+                console.log('USE-EFFECT-ENV-PAGE');
+        }, []);
+
     Page.NoteLastUrl(header);
 
     function updateHeader(env) {
@@ -80,8 +84,8 @@ const EnvPage = (props) => {
 
     // This page is unprotected.
 
-    if (response.error) return <>Cannot load Foursight</>;
-    if (response.loading) return <>Loading ...</>;
+    if (header.error) return <>Cannot load Foursight</>;
+    if (header.loading) return <>Loading ...</>;
     return <div>
             { !Auth.IsLoggedIn(header) && IsKnownCurrentEnv() ? (
                 <div className="container">
