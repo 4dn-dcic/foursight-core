@@ -2,6 +2,8 @@
 // Fetch (HTTP GET et cetera) related functions.
 // -------------------------------------------------------------------------------------------------
 
+import axios from 'axios';
+import { useEffect, useState } from 'react';
 import Client from '../utils/Client';
 import Cookie from '../utils/Cookie';
 import Context from '../utils/Context';
@@ -94,11 +96,115 @@ function fetchData(url, setData, setLoading, setError) {
     });
 }
 
-// -------------------------------------------------------------------------------------------------
-// Exported functions.
-// -------------------------------------------------------------------------------------------------
+const DEFAULT_FETCH_TIMEOUT = 1000; // 10 * 1000;
 
-const Exports = {
+// export const doFetch = (url, response, timeout = DEFAULT_FETCH_TIMEOUT) => {
+// }
+
+function _fetch(url, setData, setLoading, setStatus, setTimeout, setError, timeout) {
+
+    timeout = timeout > 0 ? timeout : DEFAULT_FETCH_TIMEOUT;
+    const delay = 0;
+
+    function handleResponse(response) {
+        const status = response.status;
+        const data = response.data;
+        setData(data);
+        setStatus(status);
+        setLoading(false);
+    }
+
+    function handleError(error) {
+        let status = error.response?.status || 0;
+        setError(error.message);
+        setStatus(status);
+        setLoading(false);
+        if (status === 401) {
+            //
+            // If we EVER get an HTTP 401 (not authenticated)
+            // then we just logout the user.
+            //
+            // Logout();
+        }
+        else if (status === 403) {
+            //
+            // If we EVER get an HTTP 403 (not authorized)
+            // then redirect to th the /env page.
+            //
+            if (Client.CurrentLogicalPath() !== "/env") {
+                window.location.pathname = Client.Path("/env");
+            }
+        }
+        else {
+            const code = error.code;
+            if (error.code === "ECONNABORTED") {
+                if (!status) {
+                    setStatus(408);
+                }
+                setTimeout(true);
+            }
+            else if (error.code === "ERR_NETWORK") {
+                //
+                // FYI when getting a CORS error (should not happen in real life rather
+                // just local dev/testing and only things are not setup right) we do not
+                // get an HTTP status code rather just and ERR_NETWORK eror in error.code.
+                // though the Chrome debugger shows an HTTP 403.
+                // https://github.com/axios/axios/issues/4420
+                //
+                if (!status) {
+                    setStatus(403);
+                }
+            }
+            else {
+                setError(`Unknown HTTP error (code: ${error.code}).`);
+            }
+        }
+    }
+
+    setData(null);
+    setLoading(true);
+    setTimeout(false);
+    setError(null);
+    setStatus(0);
+
+    const method = "GET";
+    const data = null;
+
+    axios({ url: url, method: method, data: data, timeout: timeout })
+        .then(response => {
+            if (delay > 0) {
+                setTimeout(() => handleResponse(response), delay);
+            }
+            else {
+                handleResponse(response);
+            }
+        })
+        .catch(error => {
+            if (delay > 0) {
+                setTimeout(() => handleError(error), delay);
+            }
+            else {
+                handleError(error);
+            }
+        });
+}
+
+export const useFetch = (url, options = { timeout: DEFAULT_FETCH_TIMEOUT } ) => {
+
+    const [ data, setData ] = useState();
+    const [ loading, setLoading ] = useState();
+    const [ status, setStatus ] = useState();
+    const [ timeout, setTimeout ] = useState();
+    const [ error, setError ] = useState();
+    const delay = 0;
+
+    useEffect(() => {
+        _fetch(url, setData, setLoading, setStatus, setTimeout, setError, options?.timeout);
+    }, [url])
+
+    return { data: data, loading: loading,  status: status, timeout: timeout, error: error };
+}
+
+const exports = {
     get: fetchData
-};
-export default Exports;
+}; export default exports;

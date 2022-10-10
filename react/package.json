@@ -8,6 +8,7 @@
     "@testing-library/user-event": "^13.5.0",
     "assert": "^2.0.0",
     "auth0-lock": "^11.33.3",
+    "axios": "^1.1.2",
     "babel-standalone": "^6.26.0",
     "browserify-cipher": "^1.0.1",
     "browserify-zlib": "^0.2.0",

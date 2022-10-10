@@ -1,10 +1,19 @@
 import { Component } from 'react';
 import Styles from '../Styles';
+import Server from '../utils/Server';
+import { useFetch } from '../utils/Fetch';
 
-class TestPage extends Component {
+const TestPage = () => {
 
-    render() {
-        return (<>
+    const fetch = useFetch(Server.Url("/header"));
+        console.log('TEST-PAGE-AFTER-FETCH-HOOK:')
+
+        return <>
+                <pre> LOADING: {fetch.loading ? 'YES' : 'NO'} </pre>
+                <pre> STATUS: {fetch.status} </pre>
+                <pre> TIMEOUT: {fetch.timeout ? 'YES' : 'NO'} </pre>
+                <pre> ERROR: {fetch.error} </pre>
+                <pre> RESPONSE: {JSON.stringify(fetch.data, null, 2)} </pre>
                 <span onClick={() => Styles.SetFoursightFourfront()}>SET FOURSIGHT-FOURFRONT STYLES</span> <br />
                 <span onClick={() => Styles.SetFoursightCgap()}>SET FOURSIGHT-CGAP STYLES</span> <br />
                     <div className="box border-thick darkened">
@@ -23,8 +32,7 @@ class TestPage extends Component {
                     <div className={"vspace-normal"} />
                 </div>
             <span>Hello, world!</span>
-        </>);
-    }
+        </>;
 }
 
 export default TestPage;
