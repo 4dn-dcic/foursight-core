@@ -129,6 +129,7 @@ class ReactApi(ReactRoutes):
             ReactApi.Cache.header[env] = data
         data = copy.deepcopy(data)
         data["auth"] = auth
+        data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow());
         response = self.create_standard_response("reactapi_header")
         response.body = data
         return response

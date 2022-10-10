@@ -61,7 +61,7 @@ const _UseGlobal = (global) => {
         value: global.__value,
         update: (value) => {
             global.__value = value;
-            global.__listeners.forEach(listener => listener(value));
+            global.__listeners.forEach(listener => listener(e => ({...value})));
          }
     }
 };

@@ -4,10 +4,13 @@
 
 import axios from 'axios';
 import { useEffect, useState } from 'react';
+import { defineGlobal, useGlobal } from '../Global';
 import Client from '../utils/Client';
 import Cookie from '../utils/Cookie';
 import Context from '../utils/Context';
+import Global from '../Global';
 import Logout from '../utils/Logout';
+import Uuid from '../utils/Uuid';
 
 function SLEEP(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -96,24 +99,22 @@ function fetchData(url, setData, setLoading, setError) {
     });
 }
 
-const DEFAULT_FETCH_TIMEOUT = 1000; // 10 * 1000;
+const _DEFAULT_FETCH_TIMEOUT = 30000;
+const _fetching = new Map();
+const _fetches = [];
 
-// export const doFetch = (url, response, timeout = DEFAULT_FETCH_TIMEOUT) => {
-// }
+export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError, setFetching, setFetches, options) => {
 
-function _fetch(url, setData, setLoading, setStatus, setTimeout, setError, timeout) {
-
-    timeout = timeout > 0 ? timeout : DEFAULT_FETCH_TIMEOUT;
-
-    function handleResponse(response) {
+    function handleResponse(response, id) {
         const status = response.status;
         const data = response.data;
         setData(data);
         setStatus(status);
         setLoading(false);
+        noteFetchEnd(id);
     }
 
-    function handleError(error) {
+    function handleError(error, id) {
         let status = error.response?.status || 0;
         setStatus(status);
         setError(error.message);
@@ -123,85 +124,141 @@ function _fetch(url, setData, setLoading, setStatus, setTimeout, setError, timeo
             // If we EVER get an HTTP 401 (not authenticated)
             // then we just logout the user.
             //
-            // Logout();
+            if (options?.nologout !== true) {
+                Logout();
+            }
         }
         else if (status === 403) {
             //
             // If we EVER get an HTTP 403 (not authorized)
             // then redirect to th the /env page.
             //
-            if (Client.CurrentLogicalPath() !== "/env") {
-                window.location.pathname = Client.Path("/env");
+            if (options?.noredirect !== true) {
+                if (Client.CurrentLogicalPath() !== "/env") {
+                    window.location.pathname = Client.Path("/env");
+                }
+            }
+        }
+        else if (error.code === "ECONNABORTED") {
+            //
+            // This is what we get on timeout; no status code; set status to 408,
+            // though not necessarily a server timeout, so not strictly accurate;
+            //
+            if (!status) {
+                setStatus(408);
+            }
+            setTimeout(true);
+        }
+        else if (error.code === "ERR_NETWORK") {
+            //
+            // When getting a CORS error (should not happen in real life rather just
+            // local dev/testing and only things are not setup right) we do not get
+            // an HTTP status code rather just and ERR_NETWORK eror in error.code.
+            // though the Chrome debugger shows an HTTP 403.
+            // https://github.com/axios/axios/issues/4420
+            //
+            if (!status) {
+                setStatus(404);
             }
         }
         else {
-            if (error.code === "ECONNABORTED") {
-                if (!status) {
-                    setStatus(408);
-                }
-                setTimeout(true);
-            }
-            else if (error.code === "ERR_NETWORK") {
-                //
-                // FYI when getting a CORS error (should not happen in real life rather
-                // just local dev/testing and only things are not setup right) we do not
-                // get an HTTP status code rather just and ERR_NETWORK eror in error.code.
-                // though the Chrome debugger shows an HTTP 403.
-                // https://github.com/axios/axios/issues/4420
-                //
-                if (!status) {
-                    setStatus(404);
-                }
-            }
-            else {
-                setError(`Unknown HTTP error (code: ${error.code}).`);
-            }
+            setError(`Unknown HTTP error (code: ${error.code}).`);
+        }
+        noteFetchEnd(id);
+    }
+
+    function noteFetchBegin(args) {
+        const id = Uuid(); args.id = id;
+        _fetching.set(id, args);
+        if (setFetching) {
+            setFetching(_fetching);
+        }
+        return id;
+    }
+
+    function noteFetchEnd(id) {
+        const fetch = _fetching.get(id);
+        _fetching.delete(id);
+        _fetches.push(fetch);
+        if (setFetching) {
+            setFetching(_fetching);
+        }
+        if (setFetches) {
+            setFetches(_fetches);
         }
     }
 
+    if (!setData) setData = () => {}
+    if (!setLoading) setLoading = () => {}
+    if (!setStatus) setStatus = () => {}
+    if (!setTimeout) setTimeout = () => {}
+    if (!setError) setError = () => {}
+
     setData(null);
     setLoading(true);
+    setStatus(0);
     setTimeout(false);
     setError(null);
-    setStatus(0);
 
     const method = "GET";
     const data = null;
+    const timeout = options?.timeout > 0 ? options?.timeout : _DEFAULT_FETCH_TIMEOUT;
+    const delay = options?.delay > 0 ? options?.delay : (Cookie.TestMode.HasFetchSleep() ? Cookie.TestMode.FetchSleep() : 0);
+    const fetch = { url: url, method: method, data: data, timeout: timeout };
 
-    let delay = Cookie.TestMode.HasFetchSleep() ? Cookie.TestMode.FetchSleep() : 0;
-
-    axios({ url: url, method: method, data: data, timeout: timeout })
+    const id = noteFetchBegin(fetch);
+    axios(fetch)
         .then(response => {
             if (delay > 0) {
-                window.setTimeout(() => handleResponse(response), delay);
+                window.setTimeout(() => handleResponse(response, id), delay);
             }
             else {
-                handleResponse(response);
+                handleResponse(response, id);
             }
         })
         .catch(error => {
             if (delay > 0) {
-                window.setTimeout(() => handleError(error), delay);
+                window.setTimeout(() => handleError(error, id), delay);
             }
             else {
-                handleError(error);
+                handleError(error, id);
             }
         });
 }
 
-export const useFetch = (url, options = { timeout: DEFAULT_FETCH_TIMEOUT } ) => {
+export const Fetching = defineGlobal(_fetching);
+export const Fetches  = defineGlobal(_fetches);
+
+export const useFetch = (url, options = { timeout: _DEFAULT_FETCH_TIMEOUT } ) => {
 
     const [ data, setData ] = useState();
     const [ loading, setLoading ] = useState();
     const [ status, setStatus ] = useState();
     const [ timeout, setTimeout ] = useState();
     const [ error, setError ] = useState();
+    const [ fetching, setFetching ] = useGlobal(Fetching);
+    const [ fetches, setFetches ] = useGlobal(Fetches);
 
     useEffect(() => {
-        _fetch(url, setData, setLoading, setStatus, setTimeout, setError, options?.timeout);
+        _fetch(url, setData, setLoading, setStatus, setTimeout, setError, setFetching, setFetches, { ...options });
     }, [url])
 
-    return { data: data, loading: loading,  status: status, timeout: timeout, error: error };
+    return [ { data: data, loading: loading, status: status, timeout: timeout, error: error },
+             () => _fetch(url, setData, setLoading, setStatus, setTimeout, setError, setFetching, setFetches, { ...options }) ];
+}
+
+export const useFetchFunction = (url, options = { timeout: _DEFAULT_FETCH_TIMEOUT } ) => {
+
+    const [ data, setData ] = useState();
+    const [ loading, setLoading ] = useState();
+    const [ status, setStatus ] = useState();
+    const [ timeout, setTimeout ] = useState();
+    const [ error, setError ] = useState();
+    const [ fetching, setFetching ] = useGlobal(Fetching);
+    const [ fetches, setFetches ] = useGlobal(Fetches);
+
+    return [ { data: data, loading: loading, status: status, timeout: timeout, error: error },
+             () => _fetch(url, setData, setLoading, setStatus, setTimeout, setError, setFetching, setFetches, { ...options }) ];
 }
 
 const exports = {
