@@ -1,31 +1,29 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { RingSpinner } from '../Spinners';
-import Fetch from '../utils/Fetch';
+import { useFetch } from '../utils/Fetch';
 import Server from '../utils/Server';
 import Client from '../utils/Client';
 
 const UsersPage = () => {
 
-    const url = Server.Url("/users", true);
-    let [ users, setUsers ] = useState([]);
-    let [ loading, setLoading ] = useState(true);
-    let [ error, setError ] = useState(false);
-    useEffect(() => {
-        Fetch.get(url, setUsers, setLoading, setError)
-    }, [url]);
+    const [ response, refresh ] = useFetch(Server.Url("/users"));
 
-    if (error) return <>Cannot load users from Foursight: {error}</>;
-    if (loading) {
+    if (response.error) return <>Cannot load users from Foursight: {response.error}</>;
+    if (response.loading) {
         return <>
             <div style={{marginTop:"30px"}}>
-                <RingSpinner loading={loading} color={'blue'} size={90} />
+                <RingSpinner loading={response.loading} color={'blue'} size={90} />
             </div>
         </>
     }
     return <>
         <div className="container">
-            <div className="info boxstyle">
+            <div>
+                <b>Users</b>
+                <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={() => refresh()}>&#8635;&nbsp;</b>
+            </div>
+            <div className="info boxstyle" style={{marginTop:"4pt"}}>
                 <table style={{width:"100%"}}>
                 <thead>
                     <tr style={{borderBottom:"2px solid darkblue"}}>
@@ -41,7 +39,7 @@ const UsersPage = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {users.map(user => (
+                    {response.data?.map(user => (
                         <tr key={user.uuid} style={{borderBottom:"1px solid gray"}}>
                             <td style={{borderBottom:"1px solid gray",padding:"10px"}}>
                                 <Link to={Client.Path("/users/" + user.email_address)}><b>{user.email_address}</b></Link> <br />

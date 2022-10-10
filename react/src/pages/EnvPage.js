@@ -6,6 +6,7 @@ import Auth from '../utils/Auth';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
 import Fetch from '../utils/Fetch';
+import { useFetch } from '../utils/Fetch';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
 import Type from '../utils/Type';
@@ -14,19 +15,21 @@ import Uuid from '../utils/Uuid';
 const EnvPage = (props) => {
 
     const [ header, setHeader ] = useContext(HeaderData);
-
-    // Call the /info endpoint API just to get the GAC names.
-    const [ info, setInfo ] = useState();
-    useEffect(() => { if (Auth.IsLoggedIn()) Fetch.get(Server.Url("/info"), setInfo); }, []);
+    // We call the /info endpoint API just to get the GAC names.
+    const [ response ] = useFetch(Auth.IsLoggedIn() ? Server.Url("/info") : null);
+    const [ , refreshHeader ] = useFetch(Server.Url("/header"), false); // TODO: Experimental
 
     Page.NoteLastUrl(header);
 
     function updateHeader(env) {
+        refreshHeader(header.update);
+/*
         if (!Str.HasValue(env)) {
             env = Env.Current();
         }
         const url = Server.Url("/header");
         Fetch.get(url, data => setHeader(e => ({...data})));
+*/
     }
 
     let navigate = useNavigate();
@@ -77,8 +80,8 @@ const EnvPage = (props) => {
 
     // This page is unprotected.
 
-    if (header.error) return <>Cannot load Foursight</>;
-    if (header.loading) return <>Loading ...</>;
+    if (response.error) return <>Cannot load Foursight</>;
+    if (response.loading) return <>Loading ...</>;
     return <div>
             { !Auth.IsLoggedIn(header) && IsKnownCurrentEnv() ? (
                 <div className="container">
@@ -151,8 +154,8 @@ const EnvPage = (props) => {
                                     Short Name: <span style={envNameTextStyles(env.short_name)}>{env.short_name}</span> <br />
                                     Public Name: <span style={envNameTextStyles(env.public_name)}>{env.public_name}</span> <br />
                                     { Auth.IsLoggedIn() && <>
-                                        GAC Name: {GetGacName(env, info)} <br />
-                                        { IsKnownCurrentEnv() && HasGacName(env, info) && <>
+                                        GAC Name: {GetGacName(env, response.data)} <br />
+                                        { IsKnownCurrentEnv() && HasGacName(env, response.data) && <>
                                             <select style={{border:"0",background:"transparent","WebkitAppearance":"none"}} onChange={(selected) => onChange(selected, Env.PreferredName(env, header))}>
                                                 <option>GAC Compare &#x2193;</option>
                                                 { Env.KnownEnvs(header).map((env) =>

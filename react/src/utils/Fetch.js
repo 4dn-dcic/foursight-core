@@ -10,6 +10,7 @@ import Cookie from '../utils/Cookie';
 import Context from '../utils/Context';
 import Global from '../Global';
 import Logout from '../utils/Logout';
+import Str from '../utils/Str';
 import Uuid from '../utils/Uuid';
 
 function SLEEP(time) {
@@ -242,23 +243,17 @@ export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError
         fetches.add(fetching.remove(id));
     }
 
-    if (!setData) setData = () => {}
-    if (!setLoading) setLoading = () => {}
-    if (!setStatus) setStatus = () => {}
-    if (!setTimeout) setTimeout = () => {}
-    if (!setError) setError = () => {}
-
-    setData(null);
-    setLoading(true);
-    setStatus(0);
-    setTimeout(false);
-    setError(null);
+    // setData(null);
+    // setLoading(true);
+    // setStatus(0);
+    // setTimeout(false);
+    // setError(null);
 
     const method = "GET";
     const data = null;
     const timeout = options?.timeout > 0 ? options.timeout : _DEFAULT_FETCH_TIMEOUT;
     const delay = options?.delay > 0 ? options.delay : (Cookie.TestMode.HasFetchSleep() ? Cookie.TestMode.FetchSleep() : 0);
-    const fetch = { url: url, method: method, data: data, timeout: timeout };
+    const fetch = { url: url, method: method, data: data, withCredentials: "include", timeout: timeout };
 
     const id = noteFetchBegin(fetch);
     axios(fetch)
@@ -282,20 +277,20 @@ export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError
 
 export const useFetch = (url, fetch = true, options = { timeout: _DEFAULT_FETCH_TIMEOUT } ) => {
 
-    const [ data, setData ] = useState();
-    const [ loading, setLoading ] = useState();
-    const [ status, setStatus ] = useState();
-    const [ timeout, setTimeout ] = useState();
-    const [ error, setError ] = useState();
+    const [ data, setData ] = useState(null);
+    const [ loading, setLoading ] = useState(true);
+    const [ status, setStatus ] = useState(0);
+    const [ timeout, setTimeout ] = useState(false);
+    const [ error, setError ] = useState(null);
 
     const fetching = _useFetching();
     const fetches = _useFetches();
 
-    const request = () => _fetch(url, setData, setLoading, setStatus, setTimeout, setError, fetching, fetches, { ...options });
+    const request = (update) => _fetch(url, update || setData, setLoading, setStatus, setTimeout, setError, fetching, fetches, { ...options });
     const response = { data: data, loading: loading, status: status, timeout: timeout, error: error };
 
     useEffect(() => {
-        if (fetch) {
+        if (fetch && Str.HasValue(url)) {
             request();
         }
     }, [])

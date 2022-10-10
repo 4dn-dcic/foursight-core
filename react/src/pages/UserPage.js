@@ -2,33 +2,30 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { RingSpinner } from '../Spinners';
 import Server from '../utils/Server';
-import Fetch from '../utils/Fetch';
+import { useFetch } from '../utils/Fetch';
 import Yaml from '../utils/Yaml';
 
 const UserPage = (props) => {
 
     const { email } = useParams()
-    const url = Server.Url(`/users/${email}`, true);
-    const [ users, setUsers ] = useState([]);
-    let [ loading, setLoading ] = useState(true);
-    let [ error, setError ] = useState(false);
-    useEffect(() => {
-        Fetch.get(url, setUsers, setLoading, setError)
-    }, [url]);
+    const [ response, refresh ] = useFetch(Server.Url(`/users/${email}`));
 
-    if (error) return <>Cannot load user ({email}) from Foursight: {error}</>;
-    if (loading) {
+    if (response.error) return <>Cannot load user ({email}) from Foursight: {response.error}</>;
+    if (response.loading) {
         return <>
             <div style={{marginTop:"30px"}}>
-                <RingSpinner loading={loading} color={'blue'} size={90} />
+                <RingSpinner loading={response.loading} color={'blue'} size={90} />
             </div>
         </>
     }
     return <>
         <div className="container">
-            {users.length > 0 && users.map(user => (
+            {response.data?.length > 0 && response.data.map(user => (
                 <div key={user.record.uuid}>
-                    <div style={{fontWeight:"bold",marginBottom:"6px"}}>{user.email_address}</div>
+                    <div style={{fontWeight:"bold",marginBottom:"6px"}}>
+                        {user.email_address}
+                        <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={() => refresh()}>&#8635;&nbsp;</b>
+                    </div>
                         <pre className="info">
                             {Yaml.Format(user.record)}
                         </pre>
