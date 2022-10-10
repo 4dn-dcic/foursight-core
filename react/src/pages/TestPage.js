@@ -2,43 +2,38 @@ import { Component, useState } from 'react';
 import { defineGlobal, useGlobal } from '../Global';
 import Styles from '../Styles';
 import Server from '../utils/Server';
-import { useFetch, useFetchFunction, Fetching, Fetches } from '../utils/Fetch';
-
-const x = ["abc","def","ghi"]
-x.push('xyzy')
+import { useFetch, useFetching, useFetches } from '../utils/Fetch';
 
 const TestPage = () => {
 
-    const [ fetching, setFetching ] = useGlobal(Fetching);
-    const [ fetches, setFetches ] = useGlobal(Fetches);
     const [ mainFetchResponse, mainFetchFunction ] = useFetch(Server.Url("/header"));
     const [ someFetchResponse, someFetchFunction ] = useFetch(Server.Url("/header"), false, { nologout: true, delay: 3000 });
-        console.log('TEST-PAGE-AFTER-FETCH-HOOK:')
+    const [ fetching ] = useFetching();
+    const [ fetches ] = useFetches();
 
-        return <>
-            <div><span className="cursor-hand" onClick={() => mainFetchFunction()}>MAIN-FETCH</span>&nbsp;|&nbsp;
-                 <span className="cursor-hand" onClick={() => someFetchFunction()}>SOME-FETCH</span></div>
-            <div>
-                <div style={{float:"left"}}>
-                    <pre> FETCHING: {JSON.stringify(Object.fromEntries(fetching), null, 2)} </pre>
-                    <pre> FETCHES : {JSON.stringify(fetches, null, 2)} </pre>
-                </div>
-                <div style={{float:"left",marginLeft:"10pt"}}>
-                    <pre> MAIN-FETCH-LOADING: {mainFetchResponse.loading ? 'YES' : 'NO'} </pre>
-                    <pre> MAIN-FETCH-STATUS: {mainFetchResponse.status} </pre>
-                    <pre> MAIN-FETCH-TIMEOUT: {mainFetchResponse.timeout ? 'YES' : 'NO'} </pre>
-                    <pre> MAIN-FETCH-ERROR: {mainFetchResponse.error} </pre>
-                    <pre> MAIN-RESPONSE: {JSON.stringify(mainFetchResponse.data, null, 2)} </pre>
-                </div>
-                <div style={{float:"left",marginLeft:"10pt"}}>
-                    <pre> SOME-FETCH-LOADING: {someFetchResponse.loading ? 'YES' : 'NO'} </pre>
-                    <pre> SOME-FETCH-STATUS: {someFetchResponse.status} </pre>
-                    <pre> SOME-FETCH-TIMEOUT: {someFetchResponse.timeout ? 'YES' : 'NO'} </pre>
-                    <pre> SOME-FETCH-ERROR: {someFetchResponse.error} </pre>
-                    <pre> SOME-RESPONSE: {JSON.stringify(someFetchResponse.data, null, 2)} </pre>
-                </div>
+    return <>
+        <div><span className="cursor-hand" onClick={() => mainFetchFunction()}>MAIN-FETCH</span>&nbsp;|&nbsp;
+             <span className="cursor-hand" onClick={() => someFetchFunction()}>SOME-FETCH</span></div>
+        <div>
+            <div style={{float:"left"}}>
+                <pre> FETCHING: {JSON.stringify(fetching, null, 2)} </pre>
+                <pre> FETCHES : {JSON.stringify(fetches, null, 2)} </pre>
             </div>
-
+            <div style={{float:"left",marginLeft:"10pt"}}>
+                <pre> MAIN-FETCH-LOADING: {mainFetchResponse.loading ? 'YES' : 'NO'} </pre>
+                <pre> MAIN-FETCH-STATUS: {mainFetchResponse.status} </pre>
+                <pre> MAIN-FETCH-TIMEOUT: {mainFetchResponse.timeout ? 'YES' : 'NO'} </pre>
+                <pre> MAIN-FETCH-ERROR: {mainFetchResponse.error} </pre>
+                <pre> MAIN-RESPONSE: {JSON.stringify(mainFetchResponse.data, null, 2)} </pre>
+            </div>
+            <div style={{float:"left",marginLeft:"10pt"}}>
+                <pre> SOME-FETCH-LOADING: {someFetchResponse.loading ? 'YES' : 'NO'} </pre>
+                <pre> SOME-FETCH-STATUS: {someFetchResponse.status} </pre>
+                <pre> SOME-FETCH-TIMEOUT: {someFetchResponse.timeout ? 'YES' : 'NO'} </pre>
+                <pre> SOME-FETCH-ERROR: {someFetchResponse.error} </pre>
+                <pre> SOME-RESPONSE: {JSON.stringify(someFetchResponse.data, null, 2)} </pre>
+            </div>
+        </div>
 {/*
             <div>
                 <span onClick={() => Styles.SetFoursightFourfront()}>SET FOURSIGHT-FOURFRONT STYLES</span> <br />

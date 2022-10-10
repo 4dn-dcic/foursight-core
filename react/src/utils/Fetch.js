@@ -102,6 +102,17 @@ function fetchData(url, setData, setLoading, setError) {
 const _DEFAULT_FETCH_TIMEOUT = 30000;
 const _fetching = new Map();
 const _fetches = [];
+const _fetchingGlobal = defineGlobal(_fetching);
+const _fetchesGlobal  = defineGlobal(_fetches);
+
+export const useFetching = () => {
+    const [ fetching, setFetching ] = useGlobal(_fetchingGlobal);
+    return [ Array.from(fetching.values()), setFetching ];
+}
+
+export const useFetches = () => {
+    return useGlobal(_fetchesGlobal);
+}
 
 export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError, setFetching, setFetches, options) => {
 
@@ -226,9 +237,6 @@ export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError
         });
 }
 
-export const Fetching = defineGlobal(_fetching);
-export const Fetches  = defineGlobal(_fetches);
-
 export const useFetch = (url, fetch = true, options = { timeout: _DEFAULT_FETCH_TIMEOUT } ) => {
 
     const [ data, setData ] = useState();
@@ -237,8 +245,9 @@ export const useFetch = (url, fetch = true, options = { timeout: _DEFAULT_FETCH_
     const [ timeout, setTimeout ] = useState();
     const [ error, setError ] = useState();
 
-    const [ , setFetching ] = useGlobal(Fetching);
-    const [ , setFetches ] = useGlobal(Fetches);
+    const [ , setFetching ] = useGlobal(_fetchingGlobal);
+    //const [ , setFetching ] = useFetching();
+    const [ , setFetches ] = useGlobal(_fetchesGlobal);
 
     const request = () => _fetch(url, setData, setLoading, setStatus, setTimeout, setError, setFetching, setFetches, { ...options });
     const response = { data: data, loading: loading, status: status, timeout: timeout, error: error };

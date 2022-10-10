@@ -5,6 +5,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import HeaderData from './HeaderData';
 import { BarSpinner } from './Spinners';
 import Auth from './utils/Auth';
+import { useGlobal } from './Global';
 import Client from './utils/Client';
 import Context from './utils/Context';
 import LiveTime from './LiveTime';
@@ -12,6 +13,7 @@ import Env from './utils/Env';
 import Image from './utils/Image';
 import Logout from './utils/Logout';
 import { ReadOnlyModeDisplay } from './ReadOnlyMode';
+import { useFetching, useFetches } from './utils/Fetch';
 // import JustLoggedIn from './JustLoggedIn';
 // Issues with serving images ONLY from 4dn-dcic/dev NOT from cgap-supertest ...
 // So serve from my GitHub account for now ...
@@ -29,6 +31,8 @@ const Header = (props) => {
     // Fun tracking this down.
     //
     const navigate = useNavigate();
+    const [ fetching ] = useFetching();
+    const [ fetches ] = useFetches();
 
     let titleBackgroundColor = Env.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
     let subTitleBackgroundColor = Env.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
@@ -210,6 +214,8 @@ const Header = (props) => {
                                 Running locally
                             </>)}
                         </>}
+                        FETCHING:[{JSON.stringify(fetching)}]
+                        FETCHES:[{JSON.stringify(fetches)}]
                     </td>
                 </tr>
                 <tr>
