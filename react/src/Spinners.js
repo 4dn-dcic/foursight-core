@@ -79,6 +79,6 @@ export const GridSpinner = ({loading, color, size}) => {
 export const StandardSpinner = ({condition, color = "darkblue", size = 100, label = "Loading"}) => {
     return <table><tbody><tr>
         {label && <td nowrap="1"><small style={{color:color}}><b><i>{label}</i></b></small>&nbsp;&nbsp;</td>}
-        <td style={{paddingTop:"5px"}} nowrap="1"> <BarSpinner loading={condition} size={size} color={color} /></td>
+        <td style={{paddingTop:"6px"}} nowrap="1"> <BarSpinner loading={condition} size={size} color={color} /></td>
     </tr></tbody></table>
 }

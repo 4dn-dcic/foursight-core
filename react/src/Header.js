@@ -3,7 +3,7 @@ import React from 'react';
 import { useContext } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import HeaderData from './HeaderData';
-import { BarSpinner } from './Spinners';
+import { BarSpinner, StandardSpinner } from './Spinners';
 import Auth from './utils/Auth';
 import { useGlobal } from './Global';
 import Client from './utils/Client';
@@ -206,16 +206,27 @@ const Header = (props) => {
                     <td style={{background:"lightyellow"}}>
                         {/* <BarSpinner loading={header.contentLoading} color="darkred" size="160"/> */}
                     </td>
-                    <td style={{background:"lightyellow",color:"darkred",textAlign:"right",paddingRight:"10pt",fontSize:"small",fontStyle:"italic"}}>
-                        { Client.IsLocal() && <>
-                            { Context.IsLocalCrossOrigin() ? (<>
-                                Running locally cross-origin
-                            </>):(<>
-                                Running locally
-                            </>)}
-                        </>}
-                        FETCHING:[{JSON.stringify(fetching)}]
-                        FETCHES:[{JSON.stringify(fetches)}]
+                    <td style={{background:"lightyellow",color:"darkred",fontSize:"small"}}>
+                        <table width="100%"><tbody><tr>
+                        <td style={{float:"right",width:"98%",whiteSpace:"nowrap",align:"right"}} align="right">
+                            { fetching.length > 0 && <>
+                                <span><StandardSpinner loading={fetching.length > 0} color={'darkred'} label="" size={150} style={{marginRight:"20px"}} /></span>
+                            </>}
+                        </td>
+                        <td style={{width:"1%",color:"darkred"}}>
+                            {fetching.length > 0 && <small>&nbsp;&nbsp;[{fetching.length}]</small>}
+                        </td>
+                        <td style={{color:"darkred",textAlign:"right",paddingRight:"10pt",width:"1%",fontSize:"small",fontStyle:"italic",whiteSpace:"nowrap"}}>
+                            { Client.IsLocal() && <>
+                                &nbsp;&nbsp;
+                                { Context.IsLocalCrossOrigin() ? (<>
+                                    Running locally cross-origin
+                                </>):(<>
+                                    Running locally
+                                </>)}
+                            </>}
+                        </td>
+                        </tr></tbody></table>
                     </td>
                 </tr>
                 <tr>
