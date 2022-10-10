@@ -100,21 +100,77 @@ function fetchData(url, setData, setLoading, setError) {
 }
 
 const _DEFAULT_FETCH_TIMEOUT = 30000;
-const _fetching = new Map();
-const _fetches = [];
-const _fetchingGlobal = defineGlobal(_fetching);
-const _fetchesGlobal  = defineGlobal(_fetches);
+const _MAX_FETCHES_SAVED = 200;
 
-export const useFetching = () => {
+// We maintain a lists of currently fetching and
+// completed fetches for troubleshooting and general FYI.
+
+const _fetchingGlobal = defineGlobal(new Map());
+const _fetchesGlobal  = defineGlobal([]);
+
+// Internal use only hook to maintain the list of curently fetching.
+//
+const _useFetching = () => {
     const [ fetching, setFetching ] = useGlobal(_fetchingGlobal);
-    return [ Array.from(fetching.values()), setFetching ];
+    const add = (fetch) => {
+        const id = Uuid();
+        fetch.id = id;
+        fetch.timestamp = new Date();
+        fetching.set(id, fetch);
+        //
+        // TODO
+        // Maintain a maximum of _MAX_FETCHES_SAVED fetches.
+        //
+        setFetching(fetching); return id;
+    }
+    const remove = (id) => {
+        const fetch = fetching.get(id);
+        fetching.delete(id);
+        setFetching(fetching);
+        return fetch;
+    }
+    const clear = () => {
+        fetching.clear();
+        setFetching(fetching);
+    }
+    return { value: fetching, add: add, remove: remove, clear: clear };
 }
 
+// Internal use only hook to maintain the list of completed fetches.
+//
+const _useFetches = () => {
+    const [ fetches, setFetches ] = useGlobal(_fetchesGlobal);
+    const add = (fetch) => {
+        delete fetch.data;
+        fetch.duration = new Date() - fetch.timestamp;
+        fetches.push(fetch);
+        setFetches(fetches);
+    }
+    const clear = () => {
+        //
+        // Not used yet.
+        //
+        fetches.length = 0;
+        setFetches(fetches);
+    }
+    return { value: fetches, add: add, clear: clear }
+}
+
+// Readonly hook to get the list of currently fetching.
+//
+export const useFetching = () => {
+    return [ Array.from(useGlobal(_fetchingGlobal)[0].values()) ];
+}
+
+// Readonly hook to get the list of completed fetches.
+//
 export const useFetches = () => {
-    return useGlobal(_fetchesGlobal);
+    return [ useGlobal(_fetchesGlobal)[0] ];
 }
 
-export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError, setFetching, setFetches, options) => {
+// Internal fetch function.
+//
+export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError, fetching, fetches, options) => {
 
     function handleResponse(response, id) {
         const status = response.status;
@@ -178,25 +234,12 @@ export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError
         noteFetchEnd(id);
     }
 
-    function noteFetchBegin(args) {
-        const id = Uuid(); args.id = id;
-        _fetching.set(id, args);
-        if (setFetching) {
-            setFetching(_fetching);
-        }
-        return id;
+    function noteFetchBegin(fetch) {
+        return fetching.add(fetch);
     }
 
     function noteFetchEnd(id) {
-        const fetch = _fetching.get(id);
-        _fetching.delete(id);
-        _fetches.push(fetch);
-        if (setFetching) {
-            setFetching(_fetching);
-        }
-        if (setFetches) {
-            setFetches(_fetches);
-        }
+        fetches.add(fetching.remove(id));
     }
 
     if (!setData) setData = () => {}
@@ -245,11 +288,10 @@ export const useFetch = (url, fetch = true, options = { timeout: _DEFAULT_FETCH_
     const [ timeout, setTimeout ] = useState();
     const [ error, setError ] = useState();
 
-    const [ , setFetching ] = useGlobal(_fetchingGlobal);
-    //const [ , setFetching ] = useFetching();
-    const [ , setFetches ] = useGlobal(_fetchesGlobal);
+    const fetching = _useFetching();
+    const fetches = _useFetches();
 
-    const request = () => _fetch(url, setData, setLoading, setStatus, setTimeout, setError, setFetching, setFetches, { ...options });
+    const request = () => _fetch(url, setData, setLoading, setStatus, setTimeout, setError, fetching, fetches, { ...options });
     const response = { data: data, loading: loading, status: status, timeout: timeout, error: error };
 
     useEffect(() => {

@@ -48,7 +48,7 @@ import { useEffect, useState } from 'react';
 
 const _DefineGlobal = (initial = null) => {
     if (typeof initial === "function") initial = initial(null);
-    return { __value: initial, __listeners: new Set() };
+    return { value: initial, __listeners: new Set() };
 }
 
 const _UseGlobal = (global) => {
@@ -56,12 +56,16 @@ const _UseGlobal = (global) => {
     useEffect(() => {
         global.__listeners.add(listener);
         return () => global.__listeners.delete(listener);
-    }, [ global.__value, global.__listeners ]);
+    }, [ global.value, global.__listeners ]);
     return {
-        value: global.__value,
+        value: global.value,
         update: (value) => {
-            global.__value = value;
-            global.__listeners.forEach(listener => listener(e => ({...value})));
+            global.value = value;
+            //
+            // Don't actually even need to specify a value here ...
+            // global.__listeners.forEach(listener => listener(e => ({...value})));
+            //
+            global.__listeners.forEach(listener => listener(({})));
          }
     }
 };
