@@ -12,7 +12,7 @@ const TestPage = () => {
     const [ fetching, setFetching ] = useGlobal(Fetching);
     const [ fetches, setFetches ] = useGlobal(Fetches);
     const [ mainFetchResponse, mainFetchFunction ] = useFetch(Server.Url("/header"));
-    const [ someFetchResponse, someFetchFunction ] = useFetchFunction(Server.Url("/header"), { nologout: true, delay: 3000 });
+    const [ someFetchResponse, someFetchFunction ] = useFetch(Server.Url("/header"), false, { nologout: true, delay: 3000 });
         console.log('TEST-PAGE-AFTER-FETCH-HOOK:')
 
         return <>

@@ -27,7 +27,7 @@ import { useEffect, useState } from 'react';
 //     <b onClick={() => yourGlobal.update(your-updated-value-or-function)}>Button</b>
 //   </div>
 //
-// Alternatively you can employ a more React-ish usage:
+// Alternatively you can employ a more React-ish style usage:
 //
 // - YourGlobal.js:
 //   import { defineGlobal } from './Global'; 
@@ -71,7 +71,7 @@ const exports = {
     Use: _UseGlobal
 }; export default exports;
 
-// For a more React-ish usage.
+// For a more React-ish style usage.
 //
 export const defineGlobal = _DefineGlobal;
 export const useGlobal = (global) => { const g = _UseGlobal(global); return [ g.value, g.update ] };

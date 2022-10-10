@@ -15,12 +15,5 @@ const _ReadOnlyModeDisplay = () => {
     </span>
 }
 
-const exports = {
-    Display: _ReadOnlyModeDisplay,
-    Use:     () => Global.Use(_ReadOnlyModeGlobal)
-}; export default exports;
-
-// For a more React-ish usage.
-//
 export const ReadOnlyModeDisplay = _ReadOnlyModeDisplay;
 export const useReadOnlyMode = () => useGlobal(_ReadOnlyModeGlobal);

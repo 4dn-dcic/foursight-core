@@ -142,7 +142,7 @@ export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError
         else if (error.code === "ECONNABORTED") {
             //
             // This is what we get on timeout; no status code; set status to 408,
-            // though not necessarily a server timeout, so not strictly accurate;
+            // though not necessarily a server timeout, so not strictly accurate.
             //
             if (!status) {
                 setStatus(408);
@@ -151,11 +151,11 @@ export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError
         }
         else if (error.code === "ERR_NETWORK") {
             //
-            // When getting a CORS error (should not happen in real life rather just
-            // local dev/testing and only things are not setup right) we do not get
-            // an HTTP status code rather just and ERR_NETWORK eror in error.code.
-            // though the Chrome debugger shows an HTTP 403.
-            // https://github.com/axios/axios/issues/4420
+            // When getting a CORS error (should not happen in real life, rather just
+            // in local dev/testing, and only when things are not setup right) we do
+            // not get an HTTP status code but rather just an ERR_NETWORK error in
+            // error.code; though the Chrome debugger shows an HTTP 403.
+            // See: https://github.com/axios/axios/issues/4420
             //
             if (!status) {
                 setStatus(404);
@@ -202,8 +202,8 @@ export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError
 
     const method = "GET";
     const data = null;
-    const timeout = options?.timeout > 0 ? options?.timeout : _DEFAULT_FETCH_TIMEOUT;
-    const delay = options?.delay > 0 ? options?.delay : (Cookie.TestMode.HasFetchSleep() ? Cookie.TestMode.FetchSleep() : 0);
+    const timeout = options?.timeout > 0 ? options.timeout : _DEFAULT_FETCH_TIMEOUT;
+    const delay = options?.delay > 0 ? options.delay : (Cookie.TestMode.HasFetchSleep() ? Cookie.TestMode.FetchSleep() : 0);
     const fetch = { url: url, method: method, data: data, timeout: timeout };
 
     const id = noteFetchBegin(fetch);
@@ -229,36 +229,27 @@ export const _fetch = (url, setData, setLoading, setStatus, setTimeout, setError
 export const Fetching = defineGlobal(_fetching);
 export const Fetches  = defineGlobal(_fetches);
 
-export const useFetch = (url, options = { timeout: _DEFAULT_FETCH_TIMEOUT } ) => {
+export const useFetch = (url, fetch = true, options = { timeout: _DEFAULT_FETCH_TIMEOUT } ) => {
 
     const [ data, setData ] = useState();
     const [ loading, setLoading ] = useState();
     const [ status, setStatus ] = useState();
     const [ timeout, setTimeout ] = useState();
     const [ error, setError ] = useState();
-    const [ fetching, setFetching ] = useGlobal(Fetching);
-    const [ fetches, setFetches ] = useGlobal(Fetches);
+
+    const [ , setFetching ] = useGlobal(Fetching);
+    const [ , setFetches ] = useGlobal(Fetches);
+
+    const request = () => _fetch(url, setData, setLoading, setStatus, setTimeout, setError, setFetching, setFetches, { ...options });
+    const response = { data: data, loading: loading, status: status, timeout: timeout, error: error };
 
     useEffect(() => {
-        _fetch(url, setData, setLoading, setStatus, setTimeout, setError, setFetching, setFetches, { ...options });
-    }, [url])
+        if (fetch) {
+            request();
+        }
+    }, [])
 
-    return [ { data: data, loading: loading, status: status, timeout: timeout, error: error },
-             () => _fetch(url, setData, setLoading, setStatus, setTimeout, setError, setFetching, setFetches, { ...options }) ];
-}
-
-export const useFetchFunction = (url, options = { timeout: _DEFAULT_FETCH_TIMEOUT } ) => {
-
-    const [ data, setData ] = useState();
-    const [ loading, setLoading ] = useState();
-    const [ status, setStatus ] = useState();
-    const [ timeout, setTimeout ] = useState();
-    const [ error, setError ] = useState();
-    const [ fetching, setFetching ] = useGlobal(Fetching);
-    const [ fetches, setFetches ] = useGlobal(Fetches);
-
-    return [ { data: data, loading: loading, status: status, timeout: timeout, error: error },
-             () => _fetch(url, setData, setLoading, setStatus, setTimeout, setError, setFetching, setFetches, { ...options }) ];
+    return [ response, request ];
 }
 
 const exports = {
