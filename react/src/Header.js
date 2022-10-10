@@ -13,7 +13,7 @@ import Env from './utils/Env';
 import Image from './utils/Image';
 import Logout from './utils/Logout';
 import { ReadOnlyModeDisplay } from './ReadOnlyMode';
-import { useFetching, useFetches } from './utils/Fetch';
+import { useFetching } from './utils/Fetch';
 // import JustLoggedIn from './JustLoggedIn';
 // Issues with serving images ONLY from 4dn-dcic/dev NOT from cgap-supertest ...
 // So serve from my GitHub account for now ...
@@ -32,7 +32,6 @@ const Header = (props) => {
     //
     const navigate = useNavigate();
     const [ fetching ] = useFetching();
-    const [ fetches ] = useFetches();
 
     let titleBackgroundColor = Env.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
     let subTitleBackgroundColor = Env.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
