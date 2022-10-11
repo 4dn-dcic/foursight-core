@@ -1,6 +1,11 @@
 // -------------------------------------------------------------------------------------------------
 // Fetch (HTTP GET et cetera) related functions.
 // -------------------------------------------------------------------------------------------------
+//
+// N.B. In the process of moving from using the main fetchData function here
+// to using the new useFetch React hook here. This will be cleaner and will
+// also easily allow us to track (globally) all currently running fetches,
+// for global spinner display purposes (useful for user and troubleshooting).
 
 import axios from 'axios';
 import { useEffect, useState } from 'react';
@@ -101,20 +106,30 @@ function fetchData(url, setData, setLoading, setError) {
     });
 }
 
+// This is the new useFetch React hook code.
+// This will eventually supplant the above.
+
 const _MAX_FETCHES_SAVED = 200;
 
 function default_timeout() {
     return 30 * 1000;
 }
 
+// This fetch delay is use ONLY for testing purposes, i.e. to simulate slow fetches,
+// and to make sure things work well WRT that. Slow/delayed fetching can be
+// globally enabled by (manuallly) setting the cookie test_mode_fetch_sleep
+// to some number of milliseconds to delay fetches by.
+//
 function default_delay() {
     const delay = Cookie.TestMode.FetchSleep();
     return (delay > 0 ? delay : 0);
 }
 
-// We maintain a lists of currently fetching and
-// completed fetches for troubleshooting and general FYI.
-
+// We maintain lists of currently fetching, and completed fetches.
+// The former is to display a global spinner indicating outstanding
+// fetches, useful for the end user and also for troubleshooting; the
+// latter MAY also be useful for the end user and for troubleshooting.
+//
 const _fetchingGlobal = defineGlobal(new Map());
 const _fetchesGlobal  = defineGlobal([]);
 
@@ -179,7 +194,7 @@ export const useFetches = () => {
 }
 
 // Internal use only fetch function.
-// Assumed args have been validated and setup properly; they must contain (exhaustively):
+// Assumes args have been validated and setup properly; must contain (exhaustively):
 // url, setData, onData, onDone, setLoading, setStatus, setTimeout, setError, fetching, fetches, timeout, delay, nologout, noredirect
 //
 export const _fetch = (args) => {
@@ -319,7 +334,9 @@ export const useFetch = (url, args) => {
 
     // TODO
     // Note really sure we need/want to allow override of these: setLoading, setStatus, setTimeout, setError;
-    // or even setData; the caller can get/modify the fetched data via onData.
+    // or even setData; the caller can easily get/modify the fetched data via onData; and can get easy
+    // notification then the fetch completed via onDone; so little to no real use for caller to
+    // override the others, and doing so may even allow things to function oddly.
 
     function assembleArgs(url, largs) {
         if (Type.IsObject(url)) {

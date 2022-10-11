@@ -51,8 +51,11 @@ logger = logging.getLogger(__name__)
 
 
 # The ReactApi is included in here to for the React version, which runs side-by-side
-# with the regular version. This and a check and call in auth0_callback are the only real
+# with the regular version. This and a React check/call in auth0_callback are the only real
 # changes here for the React version; all React specific code is in the react sub-directory.
+# Also, not directly related to React but done in conjunction with it, we moved all of the
+# Chalice route definitions from foursight-cgap and foursight into foursight-core here,
+# specifically, into routes.py and (for React routes) react/api/react_routes.py.
 class AppUtilsCore(ReactApi, Routes):
     """
     This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
