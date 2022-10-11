@@ -318,43 +318,71 @@ export const _fetch = (args) => {
 // The useFetch React hook.
 // This will eventually supplant the fetchData function above.
 //
-// Arguments:
+// ARGUMENTS
 //
 // For convenience, arguments may be either an url string argument followed by an args
 // object argument, OR just an args object argument which should contain the url string.
 //
-// Properties for args: url, onData, onDone, timeout, nofetch nologout, noredirect, delay
+// Properties for the args are as follows:
 //
-// The url property is (obviously) the URL to fetch.
+// - url
+//   URL (obviously) to fetch. If not a non-empty string then same as nofetch.
 //
-// The onData property is a function called when the data fetch is complete; it is called
-// with the fetched (JSON) data, and this function should return this same passed data,
-// or some modified version of it or whatever is desired as the result of the fetch.
+// - onData
+//   Function to call when a successful data fetch is completed; it is called with the
+//   fetched (JSON) data as an argument; this function should return that same passed data,
+//   or some modified version of it, or whatever is desired, as the result of the fetch.
 //
-// The timeout property is the number milliiseconds to wait for the fetch to complete before
-// resulting in failure (an HTTP status code of 408 will be set on timeout).
+// - onDone
+//   Function to call when the fetch is complete, whether or not the fetch was successful;
+//   it is called with an object which is effectively the same as the response/state object
+//   returned (as the first array item) from this hook, i.e. contain these properties:
+//   data, loading, status, timeout, error; see description of the return value below.
 //
-// The nofetch property is useful to setup/define a fetch for calling later (not at useFetch invocation
-// time), via the second array item in the return value from this hook; and this same return value can
-// be used in any case to refresh/refetch the query.
+// - timeout
+//   Number of milliiseconds to wait for the fetch to complete before
+//   resulting in failure (an HTTP status code of 408 will be set on timeout).
 //
-// The delay property is useful ONLY for testing purposes, i.e. to simulate slow fetches,
-// and to make sure things work well WRT that; slow/delayed fetching can be globally enabled
-// by (manuallly) setting the cookie test_mode_fetch_sleep to some number of milliseconds.
+// - nofetch
+//   Boolean indicating, if true, that a fetch should actually not be done at all.
+//   By default (and when this is false) the fetch is initiated immediately when this
+//   hook is called. Useful when the fetch defined by this hook needs to be called later,
+//   via the refresh function returned (as the second array item) from this hook; this same
+//   refresh function (return value) can be used in any case to refresh/refetch the data.
 //
-// Returns:
+// - nologout
+//   Boolean indicating, if true, that the default behavior, of automatically logging out
+//   the user if we get an unauthenticated (HTTP 401) response for the fetch, is disabled.
 //
-// The return value for this hook is a two-item array.
+// - noredirect
+//   Boolean indicating, if true, that the default behavior, of automatically redirecting the
+//   user to the /env page if we get an unauthorized (HTTP 403) response for the fetch, is disabled.
 //
-// The first item is the state of the fetch containing these (hopefully self-explanatory) fields:
+// - delay
+//   Number of milliseconds to delay the fetch.
+//   To be used ONLY for testing purposes, i.e. to simulate slow fetches, and to make sure
+//   things work well WRT that. Slow/delayed fetching can be globally enabled by (manuallly)
+//   setting the test_mode_fetch_sleep cookie to some number of milliseconds to delay fetches by.
+//
+// RETURN VALUE
+//
+// The return value for this hook is a Reac-ish two-item array.
+//
+// The first item is the response/state of the fetch containing the following properties; these
+// are the key values upon which the caller will normally rely to get all fetch related information.
+//
 // - data
 //   JSON data fetched (optionally modified via onData arg/function), or null on error or timeout.
+//
 // - loading
 //   Boolean indicating whether or not the fetch is in progress.
+//
 // - status
 //   HTTP status code (e.g. 200).
+//
 // - timeout
 //   Boolean indicating whether or not the fetch timed out.
+//
 // - error.
 //   String containing the description of error which occurred, or null if no error.
 //
