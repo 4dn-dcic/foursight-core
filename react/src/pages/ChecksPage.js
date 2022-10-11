@@ -4,6 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { RingSpinner } from '../Spinners';
 import { StandardSpinner } from '../Spinners';
 import { useReadOnlyMode } from '../ReadOnlyMode';
+import { useFetch } from '../utils/Fetch';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
@@ -32,9 +33,27 @@ const ChecksPage = (props) => {
     let [ checksStatus, setChecksStatus ] = useState({});
     let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
     const [ readOnlyMode ] = useReadOnlyMode();
+        
+    // TODO: IN PROGRESS: MOVING TO NEW onFetch HOOK.
+    const [ groupedChecks2 ] = useFetch(Server.Url(`/checks`, environ), {
+        onData: (data) => {
+            data.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0));
+            if (data.length > 0) {
+                //
+                // Choose some group as default to show.
+                //
+                let group = data.find(item => item.group.toLowerCase().includes("elasticsearch"));
+                if (!group) group = data[0];
+                showGroup(group);
+            }
+            return data;
+        },
+        onDone: (response) => {
+        }
+    });
 
     useEffect(() => {
-        
+
         Fetch.get(Server.Url(`/checks`, environ),
                   groupedChecks => {
                       setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));

@@ -180,7 +180,7 @@ export const useFetches = () => {
 
 // Internal use only fetch function.
 // Assumed args have been validated and setup properly; they must contain (exhaustively):
-// url, setData, setLoading, setStatus, setTimeout, setError, fetching, fetches, timeout, delay, nologout, noredirect
+// url, setData, onData, onDone, setLoading, setStatus, setTimeout, setError, fetching, fetches, timeout, delay, nologout, noredirect
 //
 export const _fetch = (args) => {
 
@@ -188,10 +188,11 @@ export const _fetch = (args) => {
         console.log(`FETCH-HOOK-RESPONSE: ${args.url}`);
         const status = response.status;
         const data = response.data;
-        args.setData(data);
+        args.setData(args.onData(data));
         args.setStatus(status);
         args.setLoading(false);
         noteFetchEnd(id);
+        args.onDone({ data: data, loading: false, status: status, timeout: false, error: null });
     }
 
     function handleError(error, id) {
@@ -226,7 +227,8 @@ export const _fetch = (args) => {
             // though not necessarily a server timeout, so not strictly accurate.
             //
             if (!status) {
-                args.setStatus(408);
+                status = 408;
+                args.setStatus(status);
             }
             args.setTimeout(true);
         }
@@ -239,13 +241,15 @@ export const _fetch = (args) => {
             // See: https://github.com/axios/axios/issues/4420
             //
             if (!status) {
-                args.setStatus(404);
+                status = 404;
+                args.setStatus(status);
             }
         }
         else {
             args.setError(`Unknown HTTP error (code: ${error.code}).`);
         }
         noteFetchEnd(id);
+        args.onDone({ data: null, loading: false, status: status, timeout: status == 408, error: error.message });
     }
 
     function noteFetchBegin(fetch) {
@@ -316,6 +320,8 @@ export const useFetch = (url, args) => {
         return {
             url:        Str.HasValue(url)                  ? url              : (Str.HasValue(largs?.url)          ? largs.url       : args?.url),
             setData:    Type.IsFunction(largs?.setData)    ? largs.setData    : (Type.IsFunction(args?.setData)    ? args.setData    : setData),
+            onData:     Type.IsFunction(largs?.onData)     ? largs.onData     : (Type.IsFunction(args?.onData)     ? args.onData     : (data) => data),
+            onDone:     Type.IsFunction(largs?.onDone)     ? largs.onDone     : (Type.IsFunction(args?.onDone)     ? args.onDone     : (response) => {}),
             setLoading: Type.IsFunction(largs?.setLoading) ? largs.setLoading : (Type.IsFunction(args?.setLoading) ? args.setLoading : setLoading),
             setStatus:  Type.IsFunction(largs?.setStatus)  ? largs.setStatus  : (Type.IsFunction(args?.setStatus)  ? args.setStatus  : setStatus),
             setTimeout: Type.IsFunction(largs?.setTimeout) ? largs.setTimeout : (Type.IsFunction(args?.setTimeout) ? args.setTimeout : setTimeout),
