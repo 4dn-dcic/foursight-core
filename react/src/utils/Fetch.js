@@ -203,7 +203,11 @@ const _useFetching = () => {
 
 const _useFetched = () => {
     const [ fetched, setFetched ] = useGlobal(_fetchedGlobal);
-    const add = (fetch) => {
+    const add = (fetch, data) => {
+		//
+		// Don't currently include the fetched (given) data in save fetches.
+		// Not sure needed and in any case this isn't actually used yet.
+		//
         fetch.duration = new Date() - fetch.timestamp;
         if (fetched.length >= MAX_SAVE) {
             //
@@ -227,18 +231,18 @@ const _useFetched = () => {
 
 // Internal _doFetch function to actualy do the fetch using axios.
 // Assumes args have been validated and setup properly; must contain (exhaustively):
-// url, setData, onData, onDone, setLoading, setStatus, setTimeout, setError, fetching, fetched, timeout, delay, nologout, noredirect
+// url, setData, onData, onDone, timeout, delay, nologout, noredirect, setLoading, setStatus, setTimeout, setError, fetching, fetched.
 //
 export const _doFetch = (args) => {
 
     function handleResponse(response, id) {
         console.log(`FETCH-HOOK-RESPONSE: ${args.url}`);
         const status = response.status;
-        const data = response.data;
-        args.setData(args.onData(data));
+        const data = args.onData(response.data);
+        args.setData(data);
         args.setStatus(status);
         args.setLoading(false);
-        noteFetchEnd(id);
+        noteFetchEnd(id, data);
         args.onDone({ data: data, loading: false, status: status, timeout: false, error: null });
     }
 
@@ -304,8 +308,8 @@ export const _doFetch = (args) => {
         return args.fetching.add(fetch);
     }
 
-    function noteFetchEnd(id) {
-        args.fetched.add(args.fetching.remove(id));
+    function noteFetchEnd(id, data) {
+        args.fetched.add(args.fetching.remove(id), data);
     }
 
     // Don't think we want to reset the data; leave
@@ -326,8 +330,8 @@ export const _doFetch = (args) => {
     }
 
     const method = "GET";
-    const data = null;
-    const fetch = { url: args.url, method: method, data: data, withCredentials: "include", timeout: args.timeout };
+    const payload = null;
+    const fetch = { url: args.url, method: method, data: payload, withCredentials: "include", timeout: args.timeout };
 
     console.log(`FETCH-HOOK: ${args.url}`);
 
