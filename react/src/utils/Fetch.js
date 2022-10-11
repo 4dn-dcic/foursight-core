@@ -298,8 +298,8 @@ export const _fetch = (args) => {
 }
 
 // The main useFetch hook.
-// Arguments may be either an url string argument followed an args object argument OR
-// just an args object arguent which should contain the url string argument.
+// Arguments may be either an url string argument followed by an args object
+// argument, OR just an args object argument which should contain the url string.
 //
 export const useFetch = (url, args) => {
 
