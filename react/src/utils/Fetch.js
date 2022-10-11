@@ -316,6 +316,7 @@ export const _fetch = (args) => {
 }
 
 // The useFetch React hook.
+// Used to define and/or initiaze an HTTP fetch to the server for some data.
 // This will eventually supplant the fetchData function above.
 //
 // ARGUMENTS
