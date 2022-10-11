@@ -101,8 +101,16 @@ function fetchData(url, setData, setLoading, setError) {
     });
 }
 
-const _DEFAULT_FETCH_TIMEOUT = 30000;
 const _MAX_FETCHES_SAVED = 200;
+
+function default_timeout() {
+    return 30 * 1000;
+}
+
+function default_delay() {
+    const delay = Cookie.TestMode.FetchSleep();
+    return (delay > 0 ? delay : 0);
+}
 
 // We maintain a lists of currently fetching and
 // completed fetches for troubleshooting and general FYI.
@@ -170,32 +178,34 @@ export const useFetches = () => {
     return [ useGlobal(_fetchesGlobal)[0] ];
 }
 
-// Internal fetch function.
+// Internal use only fetch function.
+// Assumed args have been validated and setup properly; they must contain (exhaustively):
+// url, setData, setLoading, setStatus, setTimeout, setError, fetching, fetches, timeout, delay, nologout, noredirect
 //
-export const _fetch_OBSOLETE = (url, setData, setLoading, setStatus, setTimeout, setError, fetching, fetches, options) => {
+export const _fetch = (args) => {
 
     function handleResponse(response, id) {
-        console.log(`FETCH-HOOK-RESPONSE: ${url}`);
+        console.log(`FETCH-HOOK-RESPONSE: ${args.url}`);
         const status = response.status;
         const data = response.data;
-        setData(data);
-        setStatus(status);
-        setLoading(false);
+        args.setData(data);
+        args.setStatus(status);
+        args.setLoading(false);
         noteFetchEnd(id);
     }
 
     function handleError(error, id) {
-        console.log(`FETCH-HOOK-ERROR: ${url}`);
+        console.log(`FETCH-HOOK-ERROR: ${args.url}`);
         let status = error.response?.status || 0;
-        setStatus(status);
-        setError(error.message);
-        setLoading(false);
+        args.setStatus(status);
+        args.setError(error.message);
+        args.setLoading(false);
         if (status === 401) {
             //
             // If we EVER get an HTTP 401 (not authenticated)
             // then we just logout the user.
             //
-            if (options?.nologout !== true) {
+            if (!args.nologout) {
                 Logout();
             }
         }
@@ -204,7 +214,7 @@ export const _fetch_OBSOLETE = (url, setData, setLoading, setStatus, setTimeout,
             // If we EVER get an HTTP 403 (not authorized)
             // then redirect to th the /env page.
             //
-            if (options?.noredirect !== true) {
+            if (!args.noredirect) {
                 if (Client.CurrentLogicalPath() !== "/env") {
                     window.location.pathname = Client.Path("/env");
                 }
@@ -216,9 +226,9 @@ export const _fetch_OBSOLETE = (url, setData, setLoading, setStatus, setTimeout,
             // though not necessarily a server timeout, so not strictly accurate.
             //
             if (!status) {
-                setStatus(408);
+                args.setStatus(408);
             }
-            setTimeout(true);
+            args.setTimeout(true);
         }
         else if (error.code === "ERR_NETWORK") {
             //
@@ -229,49 +239,53 @@ export const _fetch_OBSOLETE = (url, setData, setLoading, setStatus, setTimeout,
             // See: https://github.com/axios/axios/issues/4420
             //
             if (!status) {
-                setStatus(404);
+                args.setStatus(404);
             }
         }
         else {
-            setError(`Unknown HTTP error (code: ${error.code}).`);
+            args.setError(`Unknown HTTP error (code: ${error.code}).`);
         }
         noteFetchEnd(id);
     }
 
     function noteFetchBegin(fetch) {
-        return fetching.add(fetch);
+        return args.fetching.add(fetch);
     }
 
     function noteFetchEnd(id) {
-        fetches.add(fetching.remove(id));
+        args.fetches.add(args.fetching.remove(id));
     }
 
-    // setData(null);
-    // setLoading(true);
-    // setStatus(0);
-    // setTimeout(false);
-    // setError(null);
+ // args.setData(null);  // TODO: Not sure we want to reset this.
+    args.setLoading(true);
+    args.setStatus(0);
+    args.setTimeout(false);
+    args.setError(null);
+
+    if (args.nofetch || !Str.HasValue(args.url)) {
+        args.setLoading(false);
+        return;
+    }
 
     const method = "GET";
     const data = null;
-    const timeout = options?.timeout > 0 ? options.timeout : _DEFAULT_FETCH_TIMEOUT;
-    const delay = options?.delay > 0 ? options.delay : (Cookie.TestMode.HasFetchSleep() ? Cookie.TestMode.FetchSleep() : 0);
-    const fetch = { url: url, method: method, data: data, withCredentials: "include", timeout: timeout };
+    const fetch = { url: args.url, method: method, data: data, withCredentials: "include", timeout: args.timeout };
 
-    console.log(`FETCH-HOOK: ${url}`);
+    console.log(`FETCH-HOOK: ${args.url}`);
+
     const id = noteFetchBegin(fetch);
     axios(fetch)
         .then(response => {
-            if (delay > 0) {
-                window.setTimeout(() => handleResponse(response, id), delay);
+            if (args.delay > 0) {
+                window.setTimeout(() => handleResponse(response, id), args.delay);
             }
             else {
                 handleResponse(response, id);
             }
         })
         .catch(error => {
-            if (delay > 0) {
-                window.setTimeout(() => handleError(error, id), delay);
+            if (args.delay > 0) {
+                window.setTimeout(() => handleError(error, id), args.delay);
             }
             else {
                 handleError(error, id);
@@ -279,119 +293,9 @@ export const _fetch_OBSOLETE = (url, setData, setLoading, setStatus, setTimeout,
         });
 }
 
-export const _fetch = (url, options) => {
-
-    // The options should contain:
-    // setData, setLoading, setStatus, setTimeout, setError, fetching, fetches, timeout
-
-    function handleResponse(response, id) {
-        console.log(`FETCH-HOOK-RESPONSE: ${url}`);
-        const status = response.status;
-        const data = response.data;
-        options.setData(data);
-        options.setStatus(status);
-        options.setLoading(false);
-        noteFetchEnd(id);
-    }
-
-    function handleError(error, id) {
-        console.log(`FETCH-HOOK-ERROR: ${url}`);
-        let status = error.response?.status || 0;
-        options.setStatus(status);
-        options.setError(error.message);
-        options.setLoading(false);
-        if (status === 401) {
-            //
-            // If we EVER get an HTTP 401 (not authenticated)
-            // then we just logout the user.
-            //
-            if (options?.nologout !== true) {
-                Logout();
-            }
-        }
-        else if (status === 403) {
-            //
-            // If we EVER get an HTTP 403 (not authorized)
-            // then redirect to th the /env page.
-            //
-            if (options?.noredirect !== true) {
-                if (Client.CurrentLogicalPath() !== "/env") {
-                    window.location.pathname = Client.Path("/env");
-                }
-            }
-        }
-        else if (error.code === "ECONNABORTED") {
-            //
-            // This is what we get on timeout; no status code; set status to 408,
-            // though not necessarily a server timeout, so not strictly accurate.
-            //
-            if (!status) {
-                options.setStatus(408);
-            }
-            options.setTimeout(true);
-        }
-        else if (error.code === "ERR_NETWORK") {
-            //
-            // When getting a CORS error (should not happen in real life, rather just
-            // in local dev/testing, and only when things are not setup right) we do
-            // not get an HTTP status code but rather just an ERR_NETWORK error in
-            // error.code; though the Chrome debugger shows an HTTP 403.
-            // See: https://github.com/axios/axios/issues/4420
-            //
-            if (!status) {
-                options.setStatus(404);
-            }
-        }
-        else {
-            options.setError(`Unknown HTTP error (code: ${error.code}).`);
-        }
-        noteFetchEnd(id);
-    }
-
-    function noteFetchBegin(fetch) {
-        return options.fetching.add(fetch);
-    }
-
-    function noteFetchEnd(id) {
-        options.fetches.add(options.fetching.remove(id));
-    }
-
- // options.setData(null);  // TODO: Not sure we want to reset this.
-    options.setLoading(true);
-    options.setStatus(0);
-    options.setTimeout(false);
-    options.setError(null);
-
-    const method = "GET";
-    const data = null;
-    const timeout = options?.timeout > 0 ? options.timeout : _DEFAULT_FETCH_TIMEOUT;
-    const delay = options?.delay > 0 ? options.delay : (Cookie.TestMode.HasFetchSleep() ? Cookie.TestMode.FetchSleep() : 0);
-    const fetch = { url: url, method: method, data: data, withCredentials: "include", timeout: timeout };
-
-    console.log(`FETCH-HOOK: ${url}`);
-
-    const id = noteFetchBegin(fetch);
-    axios(fetch)
-        .then(response => {
-            if (delay > 0) {
-                window.setTimeout(() => handleResponse(response, id), delay);
-            }
-            else {
-                handleResponse(response, id);
-            }
-        })
-        .catch(error => {
-            if (delay > 0) {
-                window.setTimeout(() => handleError(error, id), delay);
-            }
-            else {
-                handleError(error, id);
-            }
-        });
-}
-
-// TODO
-// Need to be able to take in callbacks so caller can to other setup on completion.
+// The main useFetch hook.
+// Arguments may be either an url string argument followed an args object argument OR
+// just an args object arguent which should contain the url string argument.
 //
 export const useFetch = (url, args) => {
 
@@ -404,38 +308,37 @@ export const useFetch = (url, args) => {
     const fetching = _useFetching();
     const fetches = _useFetches();
 
-    function assembleArgs(largs = null) {
+    function assembleArgs(url, largs) {
+        if (Type.IsObject(url)) {
+            largs = url;
+            url = null;
+        }
         return {
-            setData:    largs?.setData    || args?.setData    || setData,
-            setLoading: largs?.setLoading || args?.setLoading || setLoading,
-            setStatus:  largs?.setStatus  || args?.setStatus  || setStatus,
-            setTimeout: largs?.setTimeout || args?.setTimeout || setTimeout,
-            setError:   largs?.setError   || args?.setError   || setError,
-            timeout:    largs?.timeout > 0 ? largs.timeout : (args?.timeout > 0 ? args.timeout : _DEFAULT_FETCH_TIMEOUT),
-            delay:      largs?.delay   > 0 ? largs.delay   : (args?.delay   > 0 ? args.delay   : 0),
+            url:        Str.HasValue(url)                  ? url              : (Str.HasValue(largs?.url)          ? largs.url       : args?.url),
+            setData:    Type.IsFunction(largs?.setData)    ? largs.setData    : (Type.IsFunction(args?.setData)    ? args.setData    : setData),
+            setLoading: Type.IsFunction(largs?.setLoading) ? largs.setLoading : (Type.IsFunction(args?.setLoading) ? args.setLoading : setLoading),
+            setStatus:  Type.IsFunction(largs?.setStatus)  ? largs.setStatus  : (Type.IsFunction(args?.setStatus)  ? args.setStatus  : setStatus),
+            setTimeout: Type.IsFunction(largs?.setTimeout) ? largs.setTimeout : (Type.IsFunction(args?.setTimeout) ? args.setTimeout : setTimeout),
+            setError:   Type.IsFunction(largs?.setError)   ? largs.setError   : (Type.IsFunction(args?.setError)   ? args.setError   : setError),
+            timeout:    Type.IsInteger(largs?.timeout)     ? largs.timeout    : (Type.IsInteger(args?.timeout)     ? args.timeout    : default_timeout()),
+            delay:      Type.IsInteger(largs?.delay)       ? largs.delay      : (Type.IsInteger(args?.delay)       ? args.delay      : default_delay()),
+            nologout:   Type.IsBoolean(largs?.nologout)    ? largs.nologout   : (Type.IsBoolean(args?.nologout)    ? args.nologout   : false),
+            noredirect: Type.IsBoolean(largs?.noredirect)  ? largs.noredirect : (Type.IsBoolean(args?.noredirect)  ? args.noredirect : false),
+            nofetch:    Type.IsBoolean(largs?.nofetch)     ? largs.nofetch    : (Type.IsBoolean(args?.nofetch)     ? args.nofetch    : false),
             fetching:   fetching,
-            fetches:    fetches,
+            fetches:    fetches
         };
     }
 
-    if (!Str.HasValue(url)) {
-        url = args?.url;
-    }
-    args = assembleArgs();
-    const nofetch = Type.IsBoolean(args?.nofetch) ? args.nofetch : false;
+    args = assembleArgs(url, args);
 
     useEffect(() => {
-        if (!nofetch && Str.HasValue(url)) {
-            _fetch(url, args);
-        }
-        else {
-            args.setLoading(false);
-        }
+        _fetch(args);
     }, [])
 
     return [
         { data: data, loading: loading, status: status, timeout: timeout, error: error },
-        (args) => _fetch(args?.url || url, assembleArgs(args))
+        (url, args) => { args = assembleArgs(url, args); args.nofetch = false; _fetch(args); }
     ];
 }
 

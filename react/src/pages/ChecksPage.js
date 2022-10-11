@@ -34,24 +34,25 @@ const ChecksPage = (props) => {
     const [ readOnlyMode ] = useReadOnlyMode();
 
     useEffect(() => {
+        
+        Fetch.get(Server.Url(`/checks`, environ),
+                  groupedChecks => {
+                      setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
+                      if (groupedChecks.length > 0) {
+                          //
+                          // Choose some group as default to show.
+                          //
+                          let group = groupedChecks.find(item => item.group.toLowerCase().includes("elasticsearch"));
+                          group = group ? group : groupedChecks[0];
+                          showGroup(group);
+                      }
+                  },
+                  setLoading, setError);
 
-        const groupedChecksUrl = Server.Url(`/checks`, environ);
-        Fetch.get(groupedChecksUrl, groupedChecks => {
-            setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
-            if (groupedChecks.length > 0) {
-                //
-                // Choose some group as default to show.
-                //
-                let group = groupedChecks.find(item => item.group.toLowerCase().includes("elasticsearch"));
-                group = group ? group : groupedChecks[0];
-                showGroup(group);
-            }
-        }, setLoading, setError);
-
-        const lambdasUrl = Server.Url(`/lambdas`, environ);
-        Fetch.get(lambdasUrl, lambdas => {
-            setLambdas(lambdas.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0)));
-        });
+        Fetch.get(Server.Url(`/lambdas`, environ),
+                  lambdas => {
+                      setLambdas(lambdas.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0)));
+                  });
 
         refreshChecksStatus();
 
@@ -62,10 +63,11 @@ const ChecksPage = (props) => {
 
     function refreshChecksStatus() {
         setChecksStatusLoading(true);
-        const url = Server.Url(`/checks-status`, environ);
-        Fetch.get(url, response => {
-            setChecksStatus(e => ({...response}));
-        }, setChecksStatusLoading);
+        Fetch.get(Server.Url(`/checks-status`, environ),
+                  response => {
+                      setChecksStatus(e => ({...response}));
+                  },
+                  setChecksStatusLoading);
     }
 
     // This is a bit tedious to unwrap. This is what a check record looks like:
@@ -295,10 +297,14 @@ const ChecksPage = (props) => {
         console.log(argsEncoded);
         hideCheckRunningBox(check);
         noteChangedCheckBox();
-        const runCheckUrl = Server.Url(`/checks/${check.name}/run?args=${argsEncoded}`, environ);
         check.queueingCheckRun = true;
         check.fetchingResult = true;
-        Fetch.get(runCheckUrl, response => { check.queueingCheckRun = false; check.fetchingResult = false; check.queuedCheckRun = response.uuid });
+        Fetch.get(Server.Url(`/checks/${check.name}/run?args=${argsEncoded}`, environ),
+                  response => {
+                      check.queueingCheckRun = false;
+                      check.fetchingResult = false;
+                      check.queuedCheckRun = response.uuid
+                  });
         check.queuedCheckRun = null;
         showCheckRunningBox(check);
         showHistory(check);
@@ -785,8 +791,8 @@ const ChecksPage = (props) => {
             selectedHistories.unshift(check);
             noteChangedHistories();
             if (!check.history) {
-                const resultsHistoryUrl = Server.Url(`/checks/${check.name}/history`, environ);
-                Fetch.get(resultsHistoryUrl, history => { check.history = history; noteChangedHistories(); });
+                Fetch.get(Server.Url(`/checks/${check.name}/history`, environ),
+                          history => { check.history = history; noteChangedHistories(); });
             }
         }
     }
@@ -796,11 +802,10 @@ const ChecksPage = (props) => {
         history.__resultLoading = true;
         history.__resultError = false;
         noteChangedHistories();
-        const url = Server.Url(`/checks/${check.name}/${uuid}`, environ);
-        Fetch.get(url, response => {
+        Fetch.get(Server.Url(`/checks/${check.name}/${uuid}`, environ), response => {
             if (history.__resultShowing) {
                 history.__result = response;
-               noteChangedHistories();
+                noteChangedHistories();
             }
         }, () => { history.__resultLoading = false; noteChangedHistories(); }, () => { history.__resultError = true; } );
     }
@@ -897,9 +902,10 @@ const ChecksPage = (props) => {
         noteChangedSelectedGroups();
         if (!check.results) {
             // Fetch the latest results for this check.
-            const checkResultsUrl = Server.Url(`/checks/${check.name}`, environ);
             check.fetchingResult = true;
-            Fetch.get(checkResultsUrl, checkResults => { check.results = checkResults; check.fetchingResult = false; noteChangedResults(); }, setLoading, setError)
+            Fetch.get(Server.Url(`/checks/${check.name}`, environ),
+                      checkResults => { check.results = checkResults; check.fetchingResult = false; noteChangedResults(); },
+                      setLoading, setError);
         }
     }
 
@@ -929,10 +935,11 @@ const ChecksPage = (props) => {
     function showChecksRaw() {
         setChecksRawHide(false);
         setChecksRaw({__loading: true});
-        Fetch.get(Server.Url(`/checks-raw`, environ), data => {
-            delete data.__loading;
-            setChecksRaw(data);
-        });
+        Fetch.get(Server.Url(`/checks-raw`, environ),
+                  data => {
+                      delete data.__loading;
+                      setChecksRaw(data);
+                  });
     }
 
     function hideChecksRaw() {
