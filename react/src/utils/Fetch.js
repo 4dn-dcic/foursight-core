@@ -390,6 +390,18 @@ export const _fetch = (args) => {
 // the data. Arguments to this refresh function are exactly like those for this useFetch hook function,
 // and/but may also be individually overidden with different values, e.g. to refresh with a different URL.
 //
+// ADDITIONALLY
+//
+// All fetches executed via this hook will be tracked in global state which is available via these hooks:
+//
+// - useFetching
+//   Hook returning the array of all currently executing fetches,
+//   in the order of when the fetches were started.
+//
+// - useFetches
+//   Hook returning the array of all the most recent completed fetches, up to some maximum number,
+//   in the order of when the fetches were started.
+//
 export const useFetch = (url, args) => {
 
     const [ data, setData ] = useState(null);
