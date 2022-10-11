@@ -32,8 +32,6 @@ function SLEEP(time) {
 // like a valid JWT token and that it's not expired, etc.
 // See: https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React#Authentication-%26-Authorization
 //
-// TODO: Handle timeouts!
-//
 function fetchData(url, setData, setLoading, setError) {
     if (Cookie.TestMode.HasFetchSleep()) {
         console.log("FETCHING WITH " + Cookie.TestMode.FetchSleep() + "ms SLEEP: " + url);
@@ -276,8 +274,8 @@ export const _fetch = (args) => {
         args.fetches.add(args.fetching.remove(id));
     }
 
-    // Don't think we want to reset the data;
-    // leave whatver was there until there is something new.
+    // Don't think we want to reset the data; leave
+    // whatever was there until there is something new.
     // args.setData(null);
 
     args.setLoading(true);
@@ -287,6 +285,7 @@ export const _fetch = (args) => {
 
     if (args.nofetch || !Str.HasValue(args.url)) {
         args.setLoading(false);
+        args.onDone({ data: null, loading: false, status: 0, timeout: false, error: null });
         return;
     }
 
@@ -316,9 +315,9 @@ export const _fetch = (args) => {
         });
 }
 
-// The main useFetch hook.
-// Arguments may be either an url string argument followed by an args object
-// argument, OR just an args object argument which should contain the url string.
+// The main useFetch hook (will eventually supplant the fetchData function above).
+// For convenience, arguments may be either an url string argument followed by an args
+// object argument, OR just an args object argument which should contain the url string.
 //
 // Properties supported for args: url, onData, onDone, timeout, delay, nologout, noredirect, nofetch
 // The nofetch feature is useful to setup/define a fetch for calling later (not at useFetch invocation
