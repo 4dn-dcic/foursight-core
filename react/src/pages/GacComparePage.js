@@ -1,5 +1,5 @@
 import React from 'react';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFetch } from '../utils/Fetch';
 import Env from '../utils/Env';
@@ -13,8 +13,6 @@ const GacComparePage = (props) => {
     const [ header ] = useContext(HeaderData);
 
     let { environCompare } = useParams();
-    const url = Server.Url(`/gac/${environCompare}`, Env.Current());
-    const [ data, setData ] = useState([]);
     const [ showingRaw, setShowingRaw ] = useState(false);
     const [ showingType, setShowingType ] = useState("all");
     const [ response, refresh ] = useFetch(Server.Url(`/gac/${environCompare}`, Env.Current()))

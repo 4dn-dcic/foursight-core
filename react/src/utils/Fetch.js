@@ -13,7 +13,6 @@ import { defineGlobal, useGlobal } from '../Global';
 import Client from '../utils/Client';
 import Cookie from '../utils/Cookie';
 import Context from '../utils/Context';
-import Global from '../Global';
 import Logout from '../utils/Logout';
 import Str from '../utils/Str';
 import Type from '../utils/Type';
@@ -298,7 +297,7 @@ export const _doFetch = (args) => {
             args.setError(`Unknown HTTP error (code: ${error.code}).`);
         }
         noteFetchEnd(id);
-        args.onDone({ data: null, loading: false, status: status, timeout: status == 408, error: error.message });
+        args.onDone({ data: null, loading: false, status: status, timeout: status === 408, error: error.message });
     }
 
     function noteFetchBegin(fetch) {
@@ -317,6 +316,8 @@ export const _doFetch = (args) => {
     args.setStatus(0);
     args.setTimeout(false);
     args.setError(null);
+	console.log("STARTING doFetch ...")
+	console.log(args)
 
     if (args.nofetch || !Str.HasValue(args.url)) {
         args.setLoading(false);

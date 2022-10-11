@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { RingSpinner } from '../Spinners';
 import Server from '../utils/Server';

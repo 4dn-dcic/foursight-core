@@ -1,13 +1,11 @@
-import { Component, useState } from 'react';
-import { defineGlobal, useGlobal } from '../Global';
-import Styles from '../Styles';
+// import Styles from '../Styles';
 import Server from '../utils/Server';
 import { useFetch, useFetching, useFetched } from '../utils/Fetch';
 
 const TestPage = () => {
 
     const [ mainFetchResponse, mainFetchFunction ] = useFetch(Server.Url("/header"));
-    const [ someFetchResponse, someFetchFunction ] = useFetch(Server.Url("/header"), { nofetch: true, nologout: true, delay: 60 * 1000 });
+    const [ someFetchResponse, someFetchFunction ] = useFetch(Server.Url("/header"), { nofetch: true, nologout: true, delay: 7 * 1000 });
     const [ fetching ] = useFetching();
     const [ fetched ] = useFetched();
 

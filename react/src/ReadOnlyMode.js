@@ -1,5 +1,4 @@
 import Cookie from './utils/Cookie';
-import Global from './Global';
 import { defineGlobal, useGlobal } from './Global';
 import Image from './utils/Image';
 

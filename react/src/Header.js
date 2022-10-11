@@ -5,7 +5,6 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import HeaderData from './HeaderData';
 import { BarSpinner, StandardSpinner } from './Spinners';
 import Auth from './utils/Auth';
-import { useGlobal } from './Global';
 import Client from './utils/Client';
 import Context from './utils/Context';
 import LiveTime from './LiveTime';
