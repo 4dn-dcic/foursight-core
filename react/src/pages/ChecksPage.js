@@ -21,7 +21,7 @@ import Yaml from '../utils/Yaml';
 
 const ChecksPage = (props) => {
 
-    // TODO: Lots refactoring ...
+    // TODO: Lotsa refactoring ...
 
     let { environ } = useParams();
     let [ groupedChecks, setGroupedChecks ] = useState([]);
@@ -34,7 +34,7 @@ const ChecksPage = (props) => {
     let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
     const [ readOnlyMode ] = useReadOnlyMode();
         
-    // TODO: IN PROGRESS: MOVING TO NEW onFetch HOOK.
+    // TODO IN PROGRESS: MOVING TO NEW onFetch HOOK.
     const [ groupedChecks2 ] = useFetch(Server.Url(`/checks`, environ), {
         onData: (data) => {
             data.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0));
@@ -47,8 +47,6 @@ const ChecksPage = (props) => {
                 showGroup(group);
             }
             return data;
-        },
-        onDone: (response) => {
         }
     });
 

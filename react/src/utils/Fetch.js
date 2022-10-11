@@ -315,16 +315,52 @@ export const _fetch = (args) => {
         });
 }
 
-// The main useFetch hook (will eventually supplant the fetchData function above).
+// The useFetch React hook.
+// This will eventually supplant the fetchData function above.
+//
+// Arguments:
+//
 // For convenience, arguments may be either an url string argument followed by an args
 // object argument, OR just an args object argument which should contain the url string.
 //
-// Properties supported for args: url, onData, onDone, timeout, delay, nologout, noredirect, nofetch
-// The nofetch feature is useful to setup/define a fetch for calling later (not at useFetch invocation
+// Properties for args: url, onData, onDone, timeout, nofetch nologout, noredirect, delay
+//
+// The url property is (obviously) the URL to fetch.
+//
+// The onData property is a function called when the data fetch is complete; it is called
+// with the fetched (JSON) data, and this function should return this same passed data,
+// or some modified version of it or whatever is desired as the result of the fetch.
+//
+// The timeout property is the number milliiseconds to wait for the fetch to complete before
+// resulting in failure (an HTTP status code of 408 will be set on timeout).
+//
+// The nofetch property is useful to setup/define a fetch for calling later (not at useFetch invocation
 // time), via the second array item in the return value from this hook; and this same return value can
 // be used in any case to refresh/refetch the query.
 //
-// Returns an object containing state for: data, loading, status, timeout, error
+// The delay property is useful ONLY for testing purposes, i.e. to simulate slow fetches,
+// and to make sure things work well WRT that; slow/delayed fetching can be globally enabled
+// by (manuallly) setting the cookie test_mode_fetch_sleep to some number of milliseconds.
+//
+// Returns:
+//
+// The return value for this hook is a two-item array.
+//
+// The first item is the state of the fetch containing these (hopefully self-explanatory) fields:
+// - data
+//   JSON data fetched (optionally modified via onData arg/function), or null on error or timeout.
+// - loading
+//   Boolean indicating whether or not the fetch is in progress.
+// - status
+//   HTTP status code (e.g. 200).
+// - timeout
+//   Boolean indicating whether or not the fetch timed out.
+// - error.
+//   String containing the description of error which occurred, or null if no error.
+//
+// The second item is a refresh function which can be called to refresh, i.e. redo the fetch for,
+// the data. Arguments to this refresh function are exactly like those for this useFetch hook function,
+// and/but may also be individually overidden with different values, e.g. to refresh with a different URL.
 //
 export const useFetch = (url, args) => {
 
@@ -367,10 +403,10 @@ export const useFetch = (url, args) => {
         _fetch(args);
     }, [])
 
-    return [
-        { data: data, loading: loading, status: status, timeout: timeout, error: error },
-        (url, args) => { args = assembleArgs(url, args); args.nofetch = false; _fetch(args); }
-    ];
+    const response = { data: data, loading: loading, status: status, timeout: timeout, error: error };
+    const refresh = (url, args) => { args = assembleArgs(url, args); args.nofetch = false; _fetch(args); };
+
+    return [ response, refresh ];
 }
 
 const exports = {
