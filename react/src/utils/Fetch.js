@@ -142,7 +142,7 @@ const _useFetching = () => {
         fetching.set(id, fetch);
         //
         // TODO
-        // Maintain a maximum of _MAX_FETCHES_SAVED fetches.
+        // Maintain a only maximum of _MAX_FETCHES_SAVED fetches.
         //
         setFetching(fetching); return id;
     }
@@ -182,6 +182,10 @@ const _useFetches = () => {
 // Readonly hook to get the list of currently fetching.
 //
 export const useFetching = () => {
+    //
+    // TODO
+    // Order this by timestamp.
+    //
     return [ Array.from(useGlobal(_fetchingGlobal)[0].values()) ];
 }
 
@@ -390,6 +394,7 @@ export const _fetch = (args) => {
 // The second item is a refresh function which can be called to refresh, i.e. redo the fetch for,
 // the data. Arguments to this refresh function are exactly like those for this useFetch hook function,
 // and/but may also be individually overidden with different values, e.g. to refresh with a different URL.
+// Unlike this onFetch hook, the refresh function returns no value.
 //
 // ADDITIONALLY
 //
