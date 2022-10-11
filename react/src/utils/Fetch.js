@@ -162,31 +162,32 @@ export const useFetch = (url, args) => {
 // See ADDITIONALLY section in onFetch comments above.
 //
 export const useFetching = () => {
-    return [ Array.from(useGlobal(_fetchingGlobal)[0].values()) ];
+    return [ Array.from(useGlobal(_fetchingData)[0].values()) ];
 }
 
 // Readonly hook to get the list of completed fetches.
 // See ADDITIONALLY section in onFetch comments above.
 //
 export const useFetched = () => {
-    return [ useGlobal(_fetchedGlobal)[0] ];
+    return [ useGlobal(_fetchedData)[0] ];
 }
 
 // -------------------------------------------------------------------------------------------------
 // Internal use only.
 // -------------------------------------------------------------------------------------------------
 
-const _fetchingGlobal = defineGlobal(new Map());
-const _fetchedGlobal  = defineGlobal([]);
+const _fetchingData = defineGlobal(new Map());
+const _fetchedData  = defineGlobal([]);
 
 const _useFetching = () => {
-    const [ fetching, setFetching ] = useGlobal(_fetchingGlobal);
+    const [ fetching, setFetching ] = useGlobal(_fetchingData);
     const add = (fetch) => {
         const id = Uuid();
         fetch.id = id;
         fetch.timestamp = new Date();
         fetching.set(id, fetch);
-        setFetching(fetching); return id;
+        setFetching(fetching);
+		return id;
     }
     const remove = (id) => {
         const fetch = fetching.get(id);
@@ -202,7 +203,7 @@ const _useFetching = () => {
 }
 
 const _useFetched = () => {
-    const [ fetched, setFetched ] = useGlobal(_fetchedGlobal);
+    const [ fetched, setFetched ] = useGlobal(_fetchedData);
     const add = (fetch, data) => {
 		//
 		// Don't currently include the fetched (given) data in save fetches.
