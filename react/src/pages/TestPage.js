@@ -2,14 +2,14 @@ import { Component, useState } from 'react';
 import { defineGlobal, useGlobal } from '../Global';
 import Styles from '../Styles';
 import Server from '../utils/Server';
-import { useFetch, useFetching, useFetches } from '../utils/Fetch';
+import { useFetch, useFetching, useFetched } from '../utils/Fetch';
 
 const TestPage = () => {
 
     const [ mainFetchResponse, mainFetchFunction ] = useFetch(Server.Url("/header"));
-    const [ someFetchResponse, someFetchFunction ] = useFetch(Server.Url("/header"), { nofetch: true, nologout: true, delay: 3001 });
+    const [ someFetchResponse, someFetchFunction ] = useFetch(Server.Url("/header"), { nofetch: true, nologout: true, delay: 60 * 1000 });
     const [ fetching ] = useFetching();
-    const [ fetches ] = useFetches();
+    const [ fetched ] = useFetched();
 
     return <>
         <div><span className="cursor-hand" onClick={() => mainFetchFunction()}>MAIN-FETCH</span>&nbsp;|&nbsp;
@@ -17,7 +17,7 @@ const TestPage = () => {
         <div>
             <div style={{float:"left"}}>
                 <pre> FETCHING: {JSON.stringify(fetching, null, 2)} </pre>
-                <pre> FETCHES : {JSON.stringify(fetches, null, 2)} </pre>
+                <pre> FETCHED : {JSON.stringify(fetched, null, 2)} </pre>
             </div>
             <div style={{float:"left",marginLeft:"10pt"}}>
                 <pre> MAIN-FETCH-LOADING: {mainFetchResponse.loading ? 'YES' : 'NO'} </pre>
