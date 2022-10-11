@@ -319,6 +319,12 @@ export const _fetch = (args) => {
 // The main useFetch hook.
 // Arguments may be either an url string argument followed by an args object
 // argument, OR just an args object argument which should contain the url string.
+//
+// Properties supported for args: url, onData, onDone, timeout, delay, nologout, noredirect, nofetch
+// The nofetch feature is useful to setup/define a fetch for calling later (not at useFetch invocation
+// time), via the second array item in the return value from this hook; and this same return value can
+// be used in any case to refresh/refetch the query.
+//
 // Returns an object containing state for: data, loading, status, timeout, error
 //
 export const useFetch = (url, args) => {
@@ -332,12 +338,6 @@ export const useFetch = (url, args) => {
     const fetching = _useFetching();
     const fetches = _useFetches();
 
-    // TODO
-    // Note really sure we need/want to allow override of these: setLoading, setStatus, setTimeout, setError;
-    // or even setData; the caller can easily get/modify the fetched data via onData; and can get easy
-    // notification then the fetch completed via onDone; so little to no real use for caller to
-    // override the others, and doing so may even allow things to function oddly.
-
     function assembleArgs(url, largs) {
         if (Type.IsObject(url)) {
             largs = url;
@@ -345,24 +345,18 @@ export const useFetch = (url, args) => {
         }
         return {
             url:        Str.HasValue(url)                  ? url              : (Str.HasValue(largs?.url)          ? largs.url       : args?.url),
-            setData:    Type.IsFunction(largs?.setData)    ? largs.setData    : (Type.IsFunction(args?.setData)    ? args.setData    : setData),
             onData:     Type.IsFunction(largs?.onData)     ? largs.onData     : (Type.IsFunction(args?.onData)     ? args.onData     : (data) => data),
             onDone:     Type.IsFunction(largs?.onDone)     ? largs.onDone     : (Type.IsFunction(args?.onDone)     ? args.onDone     : (response) => {}),
-            setLoading: Type.IsFunction(largs?.setLoading) ? largs.setLoading : (Type.IsFunction(args?.setLoading) ? args.setLoading : setLoading),
-            setStatus:  Type.IsFunction(largs?.setStatus)  ? largs.setStatus  : (Type.IsFunction(args?.setStatus)  ? args.setStatus  : setStatus),
-            setTimeout: Type.IsFunction(largs?.setTimeout) ? largs.setTimeout : (Type.IsFunction(args?.setTimeout) ? args.setTimeout : setTimeout),
-            setError:   Type.IsFunction(largs?.setError)   ? largs.setError   : (Type.IsFunction(args?.setError)   ? args.setError   : setError),
             timeout:    Type.IsInteger(largs?.timeout)     ? largs.timeout    : (Type.IsInteger(args?.timeout)     ? args.timeout    : default_timeout()),
             delay:      Type.IsInteger(largs?.delay)       ? largs.delay      : (Type.IsInteger(args?.delay)       ? args.delay      : default_delay()),
             nologout:   Type.IsBoolean(largs?.nologout)    ? largs.nologout   : (Type.IsBoolean(args?.nologout)    ? args.nologout   : false),
             noredirect: Type.IsBoolean(largs?.noredirect)  ? largs.noredirect : (Type.IsBoolean(args?.noredirect)  ? args.noredirect : false),
-            //
-            // This nofetch feature is useful to setup/define a fetch for calling
-            // later (not at useFetch invocation time), via the second array item
-            // in the return value from this hook; and this same return value can
-            // be used in any case to refresh/refetch the query.
-            //
             nofetch:    Type.IsBoolean(largs?.nofetch)     ? largs.nofetch    : (Type.IsBoolean(args?.nofetch)     ? args.nofetch    : false),
+            setData:    setData,
+            setLoading: setLoading,
+            setStatus:  setStatus,
+            setTimeout: setTimeout,
+            setError:   setError,
             fetching:   fetching,
             fetches:    fetches
         };
