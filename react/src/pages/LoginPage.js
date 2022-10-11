@@ -71,6 +71,11 @@ const LoginPage = (props) => {
                 redirectUrl: loginCallback,
                 responseType: "code",
                 sso: false,
+                //
+                // N.B. the "react" string in the "scope" here is used on the React API
+                // to distinguish this authentication as relating to the React version.
+                // See: foursight_core.react.api.react_api.is_react_authentication.
+                //
                 params: { scope: "openid email react", prompt: "select_account" }
             },
             socialButtonStyle: "big",

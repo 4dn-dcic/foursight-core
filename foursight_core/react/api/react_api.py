@@ -57,6 +57,13 @@ class ReactApi(ReactRoutes):
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
     def is_react_authentication(self, auth0_response: dict) -> bool:
+        """
+        Returns True iff the given Auth0 authentication response (specifically, from the POST
+        to https://hms-dbmi.auth0.com/oauth/token which happens in app_utils.auth0_callback)
+        is for authentication from the React UI. This is communicated via an Auth0 "scope"
+        which is setup on the React UI side to contain a "react" string.
+        See: react/src/pages/LoginPage/createAuth0Lock.
+        """
         return "react" in auth0_response.get("scope", "") if auth0_response else False
 
     def react_authentication_callback(self, request: dict, env: str, jwt: str, jwt_expires_in: int, domain: str, context: str):
@@ -120,8 +127,6 @@ class ReactApi(ReactRoutes):
 
     def reactapi_header(self, request: dict, env: str):
         # Note that this route is not protected but/and we return the results from authorize.
-        # TODO: remove stuff we don't need like credentials and also auth also version of other stuff and gac_name ...
-        #       review all these data points and see which ones really need ...
         auth = self.auth.authorize(request, env)
         data = ReactApi.Cache.header.get(env)
         if not data:
