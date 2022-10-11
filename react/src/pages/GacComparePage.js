@@ -1,8 +1,8 @@
 import React from 'react';
 import { useContext, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useFetch } from '../utils/Fetch';
 import Env from '../utils/Env';
-import Fetch from '../utils/Fetch';
 import HeaderData from '../HeaderData';
 import Server from '../utils/Server';
 import Uuid from '../utils/Uuid';
@@ -17,11 +17,7 @@ const GacComparePage = (props) => {
     const [ data, setData ] = useState([]);
     const [ showingRaw, setShowingRaw ] = useState(false);
     const [ showingType, setShowingType ] = useState("all");
-    let [ loading, setLoading ] = useState(true);
-    let [ error, setError ] = useState(false);
-    useEffect(() => {
-            Fetch.get(url, setData, setLoading, setError)
-    }, [url]);
+    const [ response, refresh ] = useFetch(Server.Url(`/gac/${environCompare}`, Env.Current()))
     let navigate = useNavigate();
 
     function getUniqueKeys(gac, gac_compare) {
@@ -149,7 +145,8 @@ const GacComparePage = (props) => {
         let url = Server.Url("/gac/" + environCompare, environ);
         const path = "/api/react/" + environ + "/gac/" + environCompare;
         navigate(path);
-        Fetch.get(url, setData, setLoading, setError)
+     // Fetch.get(url, setData, setLoading, setError)
+        refresh({ url: url });
     }
 
     let OnChangeEnvCompare = (arg) => {
@@ -157,13 +154,14 @@ const GacComparePage = (props) => {
         let url = Server.Url("/gac/" + environCompare, Env.Current());
         const path = "/api/react/" + Env.Current() + "/gac/" + environCompare;
         navigate(path);
-        Fetch.get(url, setData, setLoading, setError)
+     // Fetch.get(url, setData, setLoading, setError)
+        refresh({ url: url });
     }
 
-    if (error) return <>Cannot load GAC comparison from Foursight: {error}</>;
-    if (loading) return <>Loading content ...</>;
+    if (response.error) return <>Cannot load GAC comparison from Foursight: {response.error}</>;
+    if (response.loading) return <>Loading content ...</>;
 
-    let unique_keys = getUniqueKeys(data?.gac, data?.gac_compare);
+    let unique_keys = getUniqueKeys(response.data?.gac, response.data?.gac_compare);
     let knownEnvs = Env.KnownEnvs();
 
     return <>
@@ -199,7 +197,7 @@ const GacComparePage = (props) => {
                                 )}
                             </select>&nbsp;<span style={{color:"blue"}}>&#x2193;</span>
                             <br />
-                            {getGacName(data?.gac)}
+                            {getGacName(response.data?.gac)}
                         </td>
                         <td>
                             <select defaultValue={environCompare} style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","WebkitAppearance":"none"}} onChange={(arg) => OnChangeEnvCompare(arg)}>
@@ -210,7 +208,7 @@ const GacComparePage = (props) => {
                                 )}
                             </select>&nbsp;<span style={{color:"blue"}}>&#x2193;</span>
                             <br />
-                            {getGacName(data?.gac_compare)}
+                            {getGacName(response.data?.gac_compare)}
                         </td>
                     </tr>
                     <tr><td style={{height:"3px"}} colSpan="4"></td></tr>
@@ -221,23 +219,23 @@ const GacComparePage = (props) => {
                     { unique_keys?.map((key, keyIndex) => {
                         return <React.Fragment key={Uuid()}>
                             { (showingAll() ||
-                               (showingMatches() && sameGacValue(key, data)) ||
-                               (showingNonMatches() && !sameGacValue(key, data)) ||
-                               (showingDifferences() && !sameGacValue(key, data) && !(addedGacValue(key, data) || removedGacValue(key, data))) ||
-                               (showingMissing() && (addedGacValue(key, data) || removedGacValue(key, data)))) ?
+                               (showingMatches() && sameGacValue(key, response.data)) ||
+                               (showingNonMatches() && !sameGacValue(key, response.data)) ||
+                               (showingDifferences() && !sameGacValue(key, response.data) && !(addedGacValue(key, response.data) || removedGacValue(key, response.data))) ||
+                               (showingMissing() && (addedGacValue(key, response.data) || removedGacValue(key, response.data)))) ?
                             (<React.Fragment>
-                            <tr key={Uuid()} style={{color:sameGacValue(key, data) ? "inherit" : (removedGacValue(key, data) || addedGacValue(key, data) ? "red" : "darkred")}}>
+                            <tr key={Uuid()} style={{color:sameGacValue(key, response.data) ? "inherit" : (removedGacValue(key, response.data) || addedGacValue(key, response.data) ? "red" : "darkred")}}>
                             <td>
-                                {sameGacValue(key, data) ? <span>&#x2713;</span> : <span>&#x2717;</span>}&nbsp;
+                                {sameGacValue(key, response.data) ? <span>&#x2713;</span> : <span>&#x2717;</span>}&nbsp;
                             </td>
                             <td>
                                 <b>{key}</b>
                             </td>
                             <td style={{paddingRight:"8pt"}}>
-                                <span>{addedGacValue(key, data) ? <b>MISSING</b> : ((appearsToBeObfuscated(data.gac[key]) ? <b>OBFUSCATED</b> : data.gac[key]) || <b>&#x2205;</b>)}</span>
+                                <span>{addedGacValue(key, response.data) ? <b>MISSING</b> : ((appearsToBeObfuscated(response.data.gac[key]) ? <b>OBFUSCATED</b> : response.data.gac[key]) || <b>&#x2205;</b>)}</span>
                             </td>
                             <td>
-                                <span>{removedGacValue(key, data) ? <b>MISSING</b> : ((appearsToBeObfuscated(data.gac_compare[key]) ? <b>OBFUSCATED</b> : data.gac_compare[key]) || <b>&#x2205;</b>)}</span>
+                                <span>{removedGacValue(key, response.data) ? <b>MISSING</b> : ((appearsToBeObfuscated(response.data.gac_compare[key]) ? <b>OBFUSCATED</b> : response.data.gac_compare[key]) || <b>&#x2205;</b>)}</span>
                             </td>
                             </tr>
                             { keyIndex < unique_keys.length - 1 ? (<React.Fragment>
@@ -252,7 +250,7 @@ const GacComparePage = (props) => {
                 </table>
             </div>
             <pre id="raw" className="info" style={{display:"none"}}>
-                {Yaml.Format(data)}
+                {Yaml.Format(response.data)}
             </pre>
         </div>
     </>

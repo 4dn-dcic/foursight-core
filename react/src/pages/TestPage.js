@@ -7,7 +7,7 @@ import { useFetch, useFetching, useFetches } from '../utils/Fetch';
 const TestPage = () => {
 
     const [ mainFetchResponse, mainFetchFunction ] = useFetch(Server.Url("/header"));
-    const [ someFetchResponse, someFetchFunction ] = useFetch(Server.Url("/header"), false, { nologout: true, delay: 3000 });
+    const [ someFetchResponse, someFetchFunction ] = useFetch(Server.Url("/header"), { nofetch: true, nologout: true, delay: 3001 });
     const [ fetching ] = useFetching();
     const [ fetches ] = useFetches();
 

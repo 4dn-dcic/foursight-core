@@ -17,23 +17,12 @@ const EnvPage = (props) => {
     const [ header, setHeader ] = useContext(HeaderData);
     // We call the /info endpoint API just to get the GAC names.
     const [ response ] = useFetch(Auth.IsLoggedIn() ? Server.Url("/info") : null);
-    const [ , refreshHeader ] = useFetch(Server.Url("/header"), false); // TODO: Experimental
-
-        useEffect(() => {
-                console.log('USE-EFFECT-ENV-PAGE');
-        }, []);
+    const [ , refreshHeader ] = useFetch(Server.Url("/header"), { nofetch: true }); // TODO: Experimental
 
     Page.NoteLastUrl(header);
 
     function updateHeader(env) {
-        refreshHeader(header.update);
-/*
-        if (!Str.HasValue(env)) {
-            env = Env.Current();
-        }
-        const url = Server.Url("/header");
-        Fetch.get(url, data => setHeader(e => ({...data})));
-*/
+        refreshHeader({ setData: (value) => { header.update(value); } });
     }
 
     let navigate = useNavigate();

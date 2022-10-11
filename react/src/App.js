@@ -38,7 +38,7 @@ function setFavicon(header) {
 
 const App = () => {
 
-    let [ header, setHeader ] = useState({loading: true});
+    let [ header, setHeader ] = useState({ loading: true });
 
     useEffect(() => {
         const url = Server.Url("/header");

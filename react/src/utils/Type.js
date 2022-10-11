@@ -38,6 +38,10 @@ function IsFunction(value) {
     return typeof value == 'function';
 }
 
+function IsInteger(value) {
+    return Number.isInteger(value);
+}
+
 function IsNull(value) {
     return value === null || value === undefined;
 }
@@ -51,6 +55,7 @@ const Exports = {
     IsBoolean:        IsBoolean,
     IsDateTime:       IsDateTime,
     IsFunction:       IsFunction,
+    IsInteger:        IsInteger,
     IsNonEmptyArray:  IsNonEmptyArray,
     IsNonEmptyObject: IsNonEmptyObject,
     IsNull:           IsNull,
