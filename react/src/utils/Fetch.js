@@ -198,6 +198,7 @@ export const _fetch = (args) => {
     function handleError(error, id) {
         console.log(`FETCH-HOOK-ERROR: ${args.url}`);
         let status = error.response?.status || 0;
+        args.setData(null);
         args.setStatus(status);
         args.setError(error.message);
         args.setLoading(false);
@@ -260,7 +261,10 @@ export const _fetch = (args) => {
         args.fetches.add(args.fetching.remove(id));
     }
 
- // args.setData(null);  // TODO: Not sure we want to reset this.
+    // Don't think we want to reset the data;
+    // leave whatver was there until there is something new.
+    // args.setData(null);
+
     args.setLoading(true);
     args.setStatus(0);
     args.setTimeout(false);
@@ -300,6 +304,7 @@ export const _fetch = (args) => {
 // The main useFetch hook.
 // Arguments may be either an url string argument followed by an args object
 // argument, OR just an args object argument which should contain the url string.
+// Returns an object containing state for: data, loading, status, timeout, error
 //
 export const useFetch = (url, args) => {
 
@@ -311,6 +316,10 @@ export const useFetch = (url, args) => {
 
     const fetching = _useFetching();
     const fetches = _useFetches();
+
+    // TODO
+    // Note really sure we need/want to allow override of these: setLoading, setStatus, setTimeout, setError;
+    // or even setData; the caller can get/modify the fetched data via onData.
 
     function assembleArgs(url, largs) {
         if (Type.IsObject(url)) {
