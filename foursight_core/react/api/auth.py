@@ -74,7 +74,7 @@ class Auth:
     def create_authtoken(self, jwt: str, jwt_expires_at: int, env: str, domain: str) -> str:
         """
         Creates and returns a new signed JWT, to be used as the login authtoken (cookie), from
-        the given AUTHENTICATED and signend and encoded JWT, which will contain the following:
+        the given AUTHENTICATED and signed and encoded JWT, which will contain the following:
         - Booleans indicating authenticated AND authorized.
         - The user name (from the "email" field of the given JWT).
         - The list of known environments.
