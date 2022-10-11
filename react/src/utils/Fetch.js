@@ -356,6 +356,12 @@ export const useFetch = (url, args) => {
             delay:      Type.IsInteger(largs?.delay)       ? largs.delay      : (Type.IsInteger(args?.delay)       ? args.delay      : default_delay()),
             nologout:   Type.IsBoolean(largs?.nologout)    ? largs.nologout   : (Type.IsBoolean(args?.nologout)    ? args.nologout   : false),
             noredirect: Type.IsBoolean(largs?.noredirect)  ? largs.noredirect : (Type.IsBoolean(args?.noredirect)  ? args.noredirect : false),
+            //
+            // This nofetch feature is useful to setup/define a fetch for calling
+            // later (not at useFetch invocation time), via the second array item
+            // in the return value from this hook; and this same return value can
+            // be used in any case to refresh/refetch the query.
+            //
             nofetch:    Type.IsBoolean(largs?.nofetch)     ? largs.nofetch    : (Type.IsBoolean(args?.nofetch)     ? args.nofetch    : false),
             fetching:   fetching,
             fetches:    fetches
