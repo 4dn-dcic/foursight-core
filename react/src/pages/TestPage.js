@@ -1,17 +1,51 @@
 // import Styles from '../Styles';
+import { useEffect } from 'react';
 import Server from '../utils/Server';
 import { useFetch, useFetching, useFetched } from '../utils/Fetch';
+import Uuid from 'react-uuid';
 
 const TestPage = () => {
 
+        function clone(value) {
+            return JSON.parse(JSON.stringify(value));
+        }
+
+    const [ someFetchResponse, someFetchFunction ] = useFetch({
+        url: Server.Url("/header"),
+        onData: (data) => {
+        },
+        nofetch: true,
+        nologout: true,
+        delay: 0.2 * 1000
+    });
+
+        useEffect(() => {
+                console.log('use-effect');
+        }, []);
+
     const [ mainFetchResponse, mainFetchFunction ] = useFetch(Server.Url("/header"));
-    const [ someFetchResponse, someFetchFunction ] = useFetch(Server.Url("/header"), { nofetch: true, nologout: true, delay: 7 * 1000 });
     const [ fetching ] = useFetching();
     const [ fetched ] = useFetched();
 
     return <>
         <div><span className="cursor-hand" onClick={() => mainFetchFunction()}>MAIN-FETCH</span>&nbsp;|&nbsp;
-             <span className="cursor-hand" onClick={() => someFetchFunction()}>SOME-FETCH</span></div>
+             <span className="cursor-hand" onClick={() => someFetchFunction()}>SOME-FETCH</span>&nbsp;|&nbsp;
+             <span className="cursor-hand"
+                onClick={() => {
+                        console.log('foo')
+                    //someFetchResponse.update(e => ({...{"adsfa":Uuid()}}))
+                    let newData = {"uuid":Uuid()}
+                    someFetchResponse.data.app.title = "PRUFROCK";
+                        newData = someFetchResponse.data;
+                        //newData = clone(someFetchResponse.data);
+                    someFetchResponse.update(newData)
+                    // someFetchResponse.data.app.title = "FOOBAR";
+                    //someFetchResponse.data.push(8);
+                    //someFetchResponse.update(e => { console.log('x'); console.log(e); return {...someFetchResponse.data}; });
+                    //someFetchResponse.update({"asdfsdf":"dsafadf"});
+                    //someFetchResponse.update(e => ({...someFetchResponse.data}));
+                }}>UPDATE-SOME-DATA</span>
+        </div>
         <div>
             <div style={{float:"left"}}>
                 <pre> FETCHING: {JSON.stringify(fetching, null, 2)} </pre>

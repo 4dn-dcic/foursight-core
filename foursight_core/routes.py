@@ -163,23 +163,27 @@ class Routes:
         else:
             return app.core.forbidden_response()
 
-    @staticmethod
-    @app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['PUT'])
-    def put_environment(environ):
-        """
-        Take a PUT request that has a json payload with 'fourfront' (ff server)
-        and 'es' (es server).
-        Attempts to generate an new environment and runs all checks initially
-        if successful.
-
-        Protected route
-        """
-        request = app.current_request
-        if app.core.check_authorization(request.to_dict(), environ):
-            env_data = request.json_body
-            return app.core.run_put_environment(environ, env_data)
-        else:
-            return app.core.forbidden_response()
+# Commented out based on feedback PR-33 from Will ...
+# As it is incompatible with EnvUtils at this time.
+# Can create a ticket to make it compatible in the future.
+#
+#   @staticmethod
+#   @app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['PUT'])
+#   def put_environment(environ):
+#       """
+#       Take a PUT request that has a json payload with 'fourfront' (ff server)
+#       and 'es' (es server).
+#       Attempts to generate an new environment and runs all checks initially
+#       if successful.
+#
+#       Protected route
+#       """
+#       request = app.current_request
+#       if app.core.check_authorization(request.to_dict(), environ):
+#           env_data = request.json_body
+#           return app.core.run_put_environment(environ, env_data)
+#       else:
+#           return app.core.forbidden_response()
 
     @staticmethod
     @app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['GET'])
@@ -192,20 +196,24 @@ class Routes:
         else:
             return app.core.forbidden_response()
 
-    @staticmethod
-    @app.route(ROUTE_PREFIX + 'environments/{environ}/delete', methods=['DELETE'])
-    def delete_environment(environ):
-        """
-        Takes a DELETE request and purges the foursight environment specified by 'environ'.
-        NOTE: This only de-schedules all checks, it does NOT wipe data associated with this
-        environment - that can only be done directly from S3 (for safety reasons).
-
-        Protected route
-        """
-        if app.core.check_authorization(app.current_request.to_dict(), environ):  # TODO (C4-138) Centralize authorization check
-            return app.core.run_delete_environment(environ)
-        else:
-            return app.core.forbidden_response()
+# Commented out based on feedback PR-33 from Will ...
+# As it is incompatible with EnvUtils at this time.
+# Can create a ticket to make it compatible in the future.
+#
+#   @staticmethod
+#   @app.route(ROUTE_PREFIX + 'environments/{environ}/delete', methods=['DELETE'])
+#   def delete_environment(environ):
+#       """
+#       Takes a DELETE request and purges the foursight environment specified by 'environ'.
+#       NOTE: This only de-schedules all checks, it does NOT wipe data associated with this
+#       environment - that can only be done directly from S3 (for safety reasons).
+#
+#       Protected route
+#       """
+#       if app.core.check_authorization(app.current_request.to_dict(), environ):  # TODO (C4-138) Centralize authorization check
+#           return app.core.run_delete_environment(environ)
+#       else:
+#           return app.core.forbidden_response()
 
     # dmichaels/2022-07-31:
     # For testing/debugging/troubleshooting.

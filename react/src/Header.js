@@ -23,7 +23,7 @@ const Header = (props) => {
 
     const [ header ] = useContext(HeaderData);
     //
-    // Very odd but this below (navigate) declartion of useNavigate is REQUIRED, even if not
+    // Very odd but this below (navigate) declaration of useNavigate is REQUIRED, even if not
     // used here, in order for the header navigation links (e.g. HOME, INFO) to work properly.
     // If this is not here, for example, then the (target) values do not get updated properly
     // when on the EnvPage and clicking from one environment to another. No idea why.

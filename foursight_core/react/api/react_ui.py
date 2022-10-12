@@ -21,8 +21,7 @@ class ReactUi:
     def __init__(self, react_api):
         self.react_api = react_api
 
-    class Cache:
-        static_files = {}
+    cache_static_files = {}
 
     def serve_static_file(self, env: str, **kwargs):
 
@@ -89,9 +88,9 @@ class ReactUi:
         if not may_serve_file:
             return self.react_api.react_forbidden_response()
 
-        response = ReactUi.Cache.static_files.get(file)
+        response = ReactUi.cache_static_files.get(file)
         if not response:
-            response = self.react_api.create_standard_response("react_serve_static_file", content_type)
+            response = self.react_api.create_success_response("react_serve_static_file", content_type)
             with io.open(file, open_mode) as f:
                 try:
                     response.body = f.read()
@@ -99,5 +98,5 @@ class ReactUi:
                     print(f"ERROR: Exception on serving React file: {file} (content-type: {content_type}).")
                     print(e)
             response = self.react_api.process_response(response)
-            ReactUi.Cache.static_files[file] = response
+            ReactUi.cache_static_files[file] = response
         return response

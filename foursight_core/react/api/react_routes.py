@@ -52,7 +52,7 @@ def route_requires_authorization(f):
         request = app.current_request.to_dict()
         authorize_response = app.core.react_authorize(request, env)
         if not authorize_response or not authorize_response["authorized"]:
-            response = app.core.create_standard_response("route_requires_authorization")
+            response = app.core.create_success_response("route_requires_authorization")
             response.body = authorize_response
             # HTTP 401 - Unauthorized (more precisely: Unauthenticated):
             # Request has no or invalid credentials.
@@ -226,22 +226,23 @@ class ReactRoutes:
         return app.core.reactapi_aws_s3_buckets_key_contents(request=request, env=environ, bucket=bucket, key=key)
 
     @staticmethod
-    @app.route(ROUTE_PREFIX + "reactapi/__clearcache__", cors=CORS)
-    @route_requires_authorization
-    def reactapi_route_clear_cache(environ: str):  # Not yet implemented
-        request = app.current_request.to_dict()
-        return app.core.reactapi_clear_cache(request=request, env=environ)
-
-    @staticmethod
     @app.route(ROUTE_PREFIX + "reactapi/{environ}/__reloadlambda__", methods=["GET"], cors=CORS)
     @route_requires_authorization
     def reactapi_route_reload_lambda(environ: str):
         request = app.current_request.to_dict()
         return app.core.reactapi_reload_lambda(request=request, env=environ, lambda_name="default")
 
+    @staticmethod
+    @app.route(ROUTE_PREFIX + "reactapi/__clearcache__", cors=CORS)
+    @route_requires_authorization
+    def reactapi_route_clear_cache(environ: str):  # Not yet implemented
+        request = app.current_request.to_dict()
+        return app.core.reactapi_clear_cache(request=request, env=environ)
+
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes.
     # TODO: See if there is a better way to deal with variadic paths.
+    # TODO: Maybe end up serving these from S3, for more security, and smaller Chalice package size.
     # ----------------------------------------------------------------------------------------------
 
     @staticmethod

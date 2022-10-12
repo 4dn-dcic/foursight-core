@@ -8,3 +8,7 @@ def sort_dictionary_by_lowercase_keys(dictionary: dict) -> dict:
     if not dictionary or not isinstance(dictionary, dict):
         return {}
     return {key: dictionary[key] for key in sorted(dictionary.keys(), key=lambda key: key.lower())}
+
+
+def is_running_locally(request: dict) -> bool:
+    return request.get('context', {}).get('identity', {}).get('sourceIp', '') == "127.0.0.1"

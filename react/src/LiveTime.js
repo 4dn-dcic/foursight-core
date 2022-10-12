@@ -5,12 +5,12 @@
 import { useEffect, useState } from 'react';
 import Time from './utils/Time';
 
-const _CURRENT_TIME_INTERVAL = 1100;
+const _CURRENT_TIME_INTERVAL_MS = 1100;
 
 const FormatDateTime = ({verbose = false}) => {
     const [ now, setNow ] = useState(new Date());
     useEffect(() => {
-        const intervalId = setInterval(() => setNow(new Date()), _CURRENT_TIME_INTERVAL);
+        const intervalId = setInterval(() => setNow(new Date()), _CURRENT_TIME_INTERVAL_MS);
         return () => clearInterval(intervalId);
     }, []);
     return <>{Time.FormatDateTime(now, verbose)}</>
@@ -22,7 +22,7 @@ const FormatDuration = ({start = null, end = null, verbose = false, fallback = "
     }
     const [ now, setNow ] = useState(new Date());
     useEffect(() => {
-        const intervalId = setInterval(() => { setNow(new Date()); }, _CURRENT_TIME_INTERVAL);
+        const intervalId = setInterval(() => { setNow(new Date()); }, _CURRENT_TIME_INTERVAL_MS);
         return () => clearInterval(intervalId);
     }, []);
     return <>

@@ -12,6 +12,7 @@
 
 import axios from 'axios';
 import { useEffect, useState } from 'react';
+import uuid from 'react-uuid';
 import { defineGlobal, useGlobal } from '../Global';
 import Client from '../utils/Client';
 import Cookie from '../utils/Cookie';
@@ -20,39 +21,29 @@ import Debug from '../utils/Debug';
 import Logout from '../utils/Logout';
 import Str from '../utils/Str';
 import Type from '../utils/Type';
-import Uuid from '../utils/Uuid';
 
 const DEFAULT_TIMEOUT = 30 * 1000;
 const DEFAULT_DELAY = () => { const delay = Cookie.TestMode.FetchSleep(); return delay > 0 ? delay : 0; };
 const MAX_SAVE = 100;
 
-// A useFetch React hook.
-// Used to define and/or initiaze an HTTP fetch to the server for some data.
-// Takes and URL and various arguments (see below) and returns (see below)state wrapping
+// This useFetch React hook is used to centrally facilitate HTTP fetches.
+// Used to define, initialize, and/or refresh an HTTP fetch to the server for some data.
+// Takes an URL and various arguments (see below) and returns state (see below) wrapping
 // up pertinent info (data, loading, status, timeout, error) as well as a refresh function.
-// Also globally tracks all outstanding fetches (e.g. useful for a global fetching spinnner).
-// This is new (2022-10-09) and will eventually supplant the fetchData function at the end of this module.
+// Also globally tracks all outstanding fetches (e.g. useful for a global fetching spinnner),
+// as well as all completed fetches (not yet used).
+//
+// This is new (2022-10-09) and will eventually supplant fetchData at the end of this module.
 //
 // ARGUMENTS
 //
 // For convenience, arguments may be either an url string argument followed by an args
-// object argument, OR just an args object argument which should contain the url string.
+// object argument, OR just an args object argument which should contain the URL string.
 //
 // Properties for the args are as follows:
 //
 // - url
 //   URL (obviously) to fetch. If not a non-empty string then same as nofetch.
-//
-// - onData
-//   Function to call when a successful data fetch is completed; it is called with the
-//   fetched (JSON) data as an argument; this function should return that same passed data,
-//   or some modified version of it, or whatever is desired, as the result of the fetch.
-//
-// - onDone
-//   Function to call when the fetch is complete, whether or not the fetch was successful;
-//   it is called with an object which is effectively the same as the response/state object
-//   returned (as the first array item) from this hook, i.e. contain these properties:
-//   data, loading, status, timeout, error; see the RETURN VALUE section below.
 //
 // - timeout
 //   Number of milliiseconds to wait for the fetch to complete before
@@ -79,12 +70,25 @@ const MAX_SAVE = 100;
 //   things work well WRT that. Slow/delayed fetching can be globally enabled by (manuallly)
 //   setting the test_mode_fetch_sleep cookie to some number of milliseconds to delay fetches by.
 //
+// - onData
+//   Function to call when a SUCCESSFUL data fetch is completed; it is called with the
+//   fetched (JSON) data as an argument; this function should return that same passed data,
+//   or some modified version of it, or whatever is desired, as the result of the fetch.
+//
+// - onDone
+//   Function to call when the fetch is complete, whether or not the fetch was successful;
+//   it is called with an object which is effectively the same as the response/state object
+//   returned (as the first array item) from this hook, i.e. contain these properties:
+//   data, loading, status, timeout, error; see the RETURN VALUE section below.
+//   If the fetch is unsuccessful (timeout or error) then data is null.
+//
 // RETURN VALUE
 //
-// The return value for this hook is a Reac-ish two-item array.
+// The return value for this hook is a Reac-ish array with TWO elements.
 //
-// The first item is the response/state of the fetch containing the following properties; these
-// are the key values upon which the caller will normally rely to get all fetch related information.
+// The FIRST element in the returned array is the response states of the fetch, specifically,
+// an object containing the following properties; these are the key values upon which the
+// caller will normally rely to get all fetch related information (and to update the data).
 //
 // - data
 //   JSON data fetched (optionally modified via onData arg/function), or null on error or timeout.
@@ -98,33 +102,50 @@ const MAX_SAVE = 100;
 // - timeout
 //   Boolean indicating whether or not the fetch timed out.
 //
-// - error.
+// - error
 //   String containing the description of error which occurred, or null if no error.
 //
-// The second item is a refresh function which can be called to refresh, i.e. redo the fetch for,
-// the data. Arguments to this refresh function are exactly like those for this useFetch hook function,
-// but may also be individually overidden with different values, e.g. to refresh with a different URL.
-// This refresh function returns the (exact) same first item of return value of the associated
-// useFetch call which returned this refresh function, in a single element array.
+// - update
+//   Function to dynamically update the data state. This will do a
+//   proper deep update of the data, which is usually what is desired.
+//
+// - set
+//   Function to dynamically update the data state. This uses the React useState setter
+//   function associated with the data, and which does NOT automatically do a deep update
+//   of the data, e.g. if the data is an object and only a property of it has been changed.
+//
+// - refresh - TODO: moving the second element value of the return value to this.
+//   Function to dynamically refresh, i.e. redo the fetch for, the data. Arguments to this
+//   are exactly like those for this useFetch hook function, and may be used to individually
+//   overide the useFetch arguments with different values, e.g. to refresh with a different URL.
+//   This refresh function returns the exact same first item/object of the return value of the
+//   useFetch call (which returned this refresh function), but in a single element array.
+//
+// The SECOND element in the returned array is a refresh function which can be called to refresh,
+// i.e. redo the fetch for, the data. Arguments to this refresh function are exactly like those
+// for this useFetch hook function, and may be used to individually overide the useFetch arguments
+// with different values, e.g. to refresh with a different URL. This refresh function returns the
+// exact same first item/object of the return value of the useFetch call (which returned this
+// refresh function), but in a single element array.
 //
 // Note that this refresh function will update the same state variables (data, loading, status, timeout,
-// error) returned by that inital useFetch call; so this is not meant for multiple independent fetches;
-// use multiple useFetch calls for that. The main use of this is to do simple refreshes of an initial
-// fetch, and also (when using the nofetch argument) to just obtain a fetch function to later use.
+// error) returned by that inital useFetch call. So this is not meant for multiple independent fetches;
+// use multiple useFetch instantiations for that. The main use of this is to do simple refreshes of an
+// initial fetch, and also (when using the nofetch argument) to obtain a fetch function for later use.
 //
 // ADDITIONALLY
 //
 // All fetches executed via this hook will be tracked in global state which is available via these hooks:
 //
 // - useFetching
-//   Hook returning the array of all currently executing fetches,
-//   in the order of when the fetches were started. Useful for troubleshooting and for the end user,
-//   e.g. to display a spinner/whatever indicating the existence and count of outstanding fetches.
+//   Hook returning the array of all currently executing fetches, in the order of when the
+//   fetches were started. Useful for troubleshooting and for the end user, e.g. to display
+//   a spinner/whatever indicating the existence and count of outstanding fetches.
 //
 // - useFetched
-//   Hook returning the array of all the most recent completed fetches, up to
-//   some maximum (MAX_SAVE) number, in the order of when the fetches were started.
-//   This may be useful for troubleshooting, but is not yet currently used.
+//   Hook returning the array of all the most recent completed fetches, up to some
+//   maximum (MAX_SAVE) number (the most recent are saved), in the order of when
+//   the fetches were started. May be useful for troubleshooting but not yet used.
 //
 // LIMITATIONS
 //
@@ -141,84 +162,83 @@ export const useFetch = (url, args) => {
     const fetching = _useFetching();
     const fetched = _useFetched();
 
-    if (Type.IsObject(url)) {
-        args = url;
-        url = null;
+    function assembleArgs(urlOverride = null, argsOverride = null, nonofetch = false) {
+        return _assembleFetchArgs(url, args, urlOverride, argsOverride,
+                                  setData, setLoading, setStatus, setTimeout, setError,
+                                  fetching, fetched, nonofetch);
     }
 
-    function assembleArgs(url, largs) {
-        if (Type.IsObject(url)) {
-            largs = url;
-            url = null;
-        }
-        return {
-            url:        Str.HasValue(url)                  ? url              : (Str.HasValue(largs?.url)          ? largs.url       : args?.url),
-            onData:     Type.IsFunction(largs?.onData)     ? largs.onData     : (Type.IsFunction(args?.onData)     ? args.onData     : (data) => data),
-            onDone:     Type.IsFunction(largs?.onDone)     ? largs.onDone     : (Type.IsFunction(args?.onDone)     ? args.onDone     : (response) => {}),
-            timeout:    Type.IsInteger(largs?.timeout)     ? largs.timeout    : (Type.IsInteger(args?.timeout)     ? args.timeout    : DEFAULT_TIMEOUT),
-            delay:      Type.IsInteger(largs?.delay)       ? largs.delay      : (Type.IsInteger(args?.delay)       ? args.delay      : DEFAULT_DELAY()),
-            nologout:   Type.IsBoolean(largs?.nologout)    ? largs.nologout   : (Type.IsBoolean(args?.nologout)    ? args.nologout   : false),
-            noredirect: Type.IsBoolean(largs?.noredirect)  ? largs.noredirect : (Type.IsBoolean(args?.noredirect)  ? args.noredirect : false),
-            nofetch:    Type.IsBoolean(largs?.nofetch)     ? largs.nofetch    : (Type.IsBoolean(args?.nofetch)     ? args.nofetch    : false),
-            setData:    setData,
-            setLoading: setLoading,
-            setStatus:  setStatus,
-            setTimeout: setTimeout,
-            setError:   setError,
-            fetching:   fetching,
-            fetched:    fetched
-        };
-    }
-
-    args = assembleArgs(url, args);
+    args = assembleArgs();
 
     useEffect(() => {
         _doFetch(args);
     }, [])
 
-    const response = { data: data, loading: loading, status: status, timeout: timeout, error: error };
-    const refresh = (url, args) => { args = assembleArgs(url, args); args.nofetch = false; _doFetch(args); return [ response ]; };
+    const update = (data) => {
+        if (Type.IsObject(data)) {
+            setData({...data});
+        }
+        else if (Type.IsArray(data)) {
+            setData([...data]);
+        }
+        else if (Type.IsFunction(data)) {
+            setData(data());
+        }
+        else {
+            setData(data);
+        }
+    }
+
+    const refresh = (url, args) => {
+        args = assembleArgs(url, args, true);
+        _doFetch(args);
+        return [ response ];
+    };
+
+    const response = {
+        data: data,
+        loading: loading,
+        status: status,
+        timeout: timeout,
+        error: error,
+        set: setData,
+        update: update,
+        refresh: refresh
+    };
 
     return [ response, refresh ];
 }
 
-// A more generic useFetchFunction hook analogous to the above useFetch hook, which also ties into
-// globally tracked all outstanding (and completed) fetches (e.g. useful for a global fetching spinnner).
-// This doesn't setup any state like useFunction (except for the aforementioned global fetches/fetched
-// state - which is why we need a hook rather than a simple function); rather this just returns a fetch
-// function which takes the same kind of onData and onDone function callback arguments as useFetch.
+// This useFetchFunction React hook, like useFetch, is also used to centrally facilitate HTTP fetches,
+// and also ties into a globally tracked list of all outstanding (and completed) fetches.  But this
+// is simpler. It doesn't setup any state like useFetch, except for the aforementioned global
+// fetches/fetched state - which BTW is actually why we need a hook rather than a simple function.
+// This hook returns a fetch function which takes the same kind of
+// arguments as useFetch. Of particular interest in this case are the onData and onDone function
+// callbacks, which (since no associated state is setup) is how the caller of the returned function
+// gets a handle on the fetched data and on the fetch status.
 //
-export const useFetchFunction = (url, args) => {
+// Stated more plainly: This hook can be use to obtain a simple (stateless) fetch function which
+// can be used just as you'd expect, passing into it in an url, and an onData and/or onDone
+// callback function to grab the results of the fetch. Any arguments passed to this hook
+// act as fallback arguments to those passed into the actual fetch function call.
+//
+// You may ask: Why do we need this hook to return us a simple function; why not just
+// define a fetch function and use it? The answer is that since we want to centerally,
+// globally, and transparently track outstanding and completed fetches, and since these
+// are maintained by global React state (via useFetching, useFetched, useGlobal hooks),
+// and since React is very particular about where such hooks are used (only allowed within
+// components or other hooks), we need to wrap access to the fetch function within a hook.
+//
+export const useFetchFunction = (url = null, args = null) => {
 
     const fetching = _useFetching();
     const fetched = _useFetched();
 
-    if (Type.IsObject(url)) {
-        args = url;
-        url = null;
-    }
-
-    function assembleArgs(url, largs) {
-        if (Type.IsObject(url)) {
-            largs = url;
-            url = null;
-        }
-        return {
-            url:        Str.HasValue(url)                  ? url              : (Str.HasValue(largs?.url)          ? largs.url       : args?.url),
-            onData:     Type.IsFunction(largs?.onData)     ? largs.onData     : (Type.IsFunction(args?.onData)     ? args.onData     : (data) => data),
-            onDone:     Type.IsFunction(largs?.onDone)     ? largs.onDone     : (Type.IsFunction(args?.onDone)     ? args.onDone     : (response) => {}),
-            timeout:    Type.IsInteger(largs?.timeout)     ? largs.timeout    : (Type.IsInteger(args?.timeout)     ? args.timeout    : DEFAULT_TIMEOUT),
-            delay:      Type.IsInteger(largs?.delay)       ? largs.delay      : (Type.IsInteger(args?.delay)       ? args.delay      : DEFAULT_DELAY()),
-            nologout:   Type.IsBoolean(largs?.nologout)    ? largs.nologout   : (Type.IsBoolean(args?.nologout)    ? args.nologout   : false),
-            noredirect: Type.IsBoolean(largs?.noredirect)  ? largs.noredirect : (Type.IsBoolean(args?.noredirect)  ? args.noredirect : false),
-            setData:    () => {},
-            setLoading: () => {},
-            setStatus:  () => {},
-            setTimeout: () => {},
-            setError:   () => {},
-            fetching:   fetching,
-            fetched:    fetched
-        };
+    function assembleArgs(urlOverride, argsOverride) {
+        return _assembleFetchArgs(url, args, urlOverride, argsOverride,
+                                  () => {}, () => {}, () => {}, () => {}, () => {},
+                                  fetching, fetched, true);
     }
 
     return (url, args) => _doFetch(assembleArgs(url, args));
@@ -248,7 +268,7 @@ const _fetchedData  = defineGlobal([]);
 const _useFetching = () => {
     const [ fetching, setFetching ] = useGlobal(_fetchingData);
     const add = (fetch) => {
-        const id = Uuid();
+        const id = uuid();
         fetch.id = id;
         fetch.timestamp = new Date();
         fetching.set(id, fetch);
@@ -297,9 +317,10 @@ const _useFetched = () => {
     return { value: fetched, add: add, clear: clear }
 }
 
-// Internal _doFetch function to actualy do the fetch using axios.
+// Internal _doFetch function to actually do the fetch using axios.
 // Assumes args have been validated and setup properly; must contain (exhaustively):
-// url, setData, onData, onDone, timeout, delay, nologout, noredirect, setLoading, setStatus, setTimeout, setError, fetching, fetched.
+// url, setData, onData, onDone, timeout, delay, nologout, noredirect,
+// setLoading, setStatus, setTimeout, setError, fetching, fetched.
 //
 const _doFetch = (args) => {
 
@@ -376,6 +397,7 @@ const _doFetch = (args) => {
             args.setError(`Unknown HTTP error (code: ${error.code}).`);
         }
         noteFetchEnd(id);
+        args.onError({ data: null, loading: false, status: status, timeout: status === 408, error: error.message });
         args.onDone({ data: null, loading: false, status: status, timeout: status === 408, error: error.message });
     }
 
@@ -404,7 +426,7 @@ const _doFetch = (args) => {
 
     const method = "GET";
     const payload = null;
-    const fetch = { url: args.url, method: method, data: payload, withCredentials: "include", timeout: args.timeout };
+    const fetch = { url: args.url, method: method, data: payload, timeout: args.timeout, withCredentials: "include" };
 
     Debug.Info(`FETCH-HOOK: ${args.url}`);
 
@@ -423,6 +445,41 @@ const _doFetch = (args) => {
         });
 }
 
+function _assembleFetchArgs(url, args, urlOverride, argsOverride,
+                            setData, setLoading, setStatus, setTimeout, setError,
+                            fetching, fetched, nonofetch) {
+    if (Type.IsObject(url)) {
+        args = url;
+        url = null;
+    }
+    if (Type.IsObject(urlOverride)) {
+        argsOverride = urlOverride;
+        urlOverride = null;
+    }
+    args = {
+        url:        Type.First([ urlOverride, argsOverride?.url, url, args?.url, "" ], Str.HasValue),
+        onData:     Type.First([ argsOverride?.onData, args?.onData, () => {} ], Type.IsFunction),
+        onDone:     Type.First([ argsOverride?.onDone, args?.onDone , () => {}], Type.IsFunction),
+        onError:    Type.First([ argsOverride?.onError, args?.onError , () => {}], Type.IsFunction),
+        timeout:    Type.First([ argsOverride?.timeout, args?.timeout, DEFAULT_TIMEOUT ], Type.IsInteger),
+        delay:      Type.First([ argsOverride?.delay, args?.delay, DEFAULT_DELAY() ], Type.IsInteger),
+        nologout:   Type.First([ argsOverride?.nologout, args?.nologout, false ], Type.IsBoolean),
+        noredirect: Type.First([ argsOverride?.noredirect, args?.noredirect, false ], Type.IsBoolean),
+        nofetch:    Type.First([ argsOverride?.nofetch, args?.nofetch, false ], Type.IsBoolean),
+        setData:    setData,
+        setLoading: setLoading,
+        setStatus:  setStatus,
+        setTimeout: setTimeout,
+        setError:   setError,
+        fetching:   fetching,
+        fetched:    fetched
+    };
+    if (nonofetch) {
+        delete args.nofetch;
+    }
+    return args;
+}
+
 
 
 
@@ -433,11 +490,6 @@ const _doFetch = (args) => {
 // -------------------------------------------------------------------------------------------------
 // LEGACY fetchData ... WILL BE SUPPLANTED BY useFetch HOOK ABOVE ...
 // -------------------------------------------------------------------------------------------------
-
-function SLEEP(time) {
-  return new Promise((resolve) => setTimeout(resolve, time));
-}
-
 // The Foursight API we call (foursight-core/foursight_core/react_api.py) is protected
 // with a  new 'authtoken' cookie which was created along with the 'jwtToken' cookie;
 // We don't need to know this here but this authTokn is the jwtToken encrypted by the
@@ -447,7 +499,7 @@ function SLEEP(time) {
 // like a valid JWT token and that it's not expired, etc.
 // See: https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React#Authentication-%26-Authorization
 //
-function fetchData(url, setData, setLoading, setError) {
+function OBSOLETE_fetchData(url, setData, setLoading, setError) {
     if (Cookie.TestMode.HasFetchSleep()) {
         Debug.Info("FETCHING WITH " + Cookie.TestMode.FetchSleep() + "ms SLEEP: " + url);
     }
@@ -518,7 +570,7 @@ function fetchData(url, setData, setLoading, setError) {
         }
     });
 }
+function SLEEP(time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
 
-const exports = {
-    get: fetchData
-}; export default exports;

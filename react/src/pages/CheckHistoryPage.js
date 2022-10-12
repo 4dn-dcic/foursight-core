@@ -1,11 +1,10 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { useFetch } from '../utils/Fetch';
+import { useFetchFunction } from '../utils/Fetch';
 import { StandardSpinner } from '../Spinners';
 import PaginationControl from '../PaginationControl';
 import Clipboard from '../utils/Clipboard';
-import Fetch from '../utils/Fetch';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
 import Server from '../utils/Server';
@@ -27,16 +26,49 @@ const CheckHistoryPage = (props) => {
     const [ pages, setPages ] = useState(Math.max(1, page + 1));
     const [ history, setHistory ] = useState({loading: true});
 
+    const fetch = useFetchFunction();
+
     useEffect(() => {
-        update(limit, offset, sort);
+        updateData(limit, offset, sort);
     }, [limit, offset, sort]);
 
     function update(limit, offset, sort) {
+        setLimit(limit);
+        setOffset(offset);
+        setSort(sort);
+    }
+
+    function updateData(limit, offset, sort) {
         setHistory(e => ({...e, loading: true}));
         if (!Str.HasValue(sort)) {
             sort = "timestamp.desc";
         }
 		setArgs({...args,  "limit": limit, "offset": offset, "sort": sort });
+        fetch({
+            url: Server.Url(`/checks/${check}/history?limit=${limit}&offset=${offset}&sort=${sort}`, environ),
+            onData: (response) => {
+                response.loading = false;
+                setHistory(response);
+                if (limit > response.paging.total) {
+                    offset = 0;
+                }
+                // setLimit(limit);
+                // setOffset(offset);
+                // setSort(sort);
+                setPages(Math.ceil(response.paging.total / limit));
+                setPage(Math.floor(offset / limit));
+            },
+            onDone: (response) => {
+                history.loading = false;
+                if (response.error) {
+                    history.error = true;
+                }
+            },
+            onError: () => {
+                history.error = true;
+            }
+        });
+/*
         const url = Server.Url(`/checks/${check}/history?limit=${limit}&offset=${offset}&sort=${sort}`, environ);
         Fetch.get(url, response => {
             response.loading = false;
@@ -47,6 +79,7 @@ const CheckHistoryPage = (props) => {
             setPages(Math.ceil(response.paging.total / limit));
             setPage(Math.floor(offset / limit));
         }, () => { history.loading = false; }, () => { history.error = true; } );
+*/
     }
 
     function onPaginationClick(event) {
@@ -64,6 +97,23 @@ const CheckHistoryPage = (props) => {
         history.__resultLoading = true;
         history.__resultError = false;
         setHistory(e => ({...e}));
+        fetch({
+            url: Server.Url(`/checks/${check}/${uuid}`, environ),
+            onData: (data) => {
+                if (history.__resultShowing) {
+                    history.__result = data;
+                    setHistory(e => ({...e}));
+                }
+            },
+            onDone: () => {
+                history.__resultLoading = false;
+                setHistory(e => ({...e}));
+            },
+            onError: () => {
+                history.__resultError = true;
+            }
+        });
+/*
         const url = Server.Url(`/checks/${check}/${uuid}`, environ);
         Fetch.get(url, response => {
             if (history.__resultShowing) {
@@ -71,6 +121,7 @@ const CheckHistoryPage = (props) => {
                 setHistory(e => ({...e}));
             }
         }, () => { history.__resultLoading = false; setHistory(e => ({...e})); }, () => { history.__resultError = true; } );
+*/
     }
 
     function hideResult(history) {

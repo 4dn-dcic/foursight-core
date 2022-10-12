@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Navigate, BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HeaderData from './HeaderData';
 import Env from './utils/Env';
-import Fetch from './utils/Fetch';
+import { useFetchFunction } from './utils/Fetch';
 import Image from './utils/Image';
 import Server from './utils/Server';
 
@@ -39,8 +39,24 @@ function setFavicon(header) {
 const App = () => {
 
     let [ header, setHeader ] = useState({ loading: true });
+    const fetch = useFetchFunction();
 
     useEffect(() => {
+        fetch({
+            url: Server.Url("/header"),
+            onData: (data) => {
+                data.loading = false;
+                data.update = (value) => setHeader(value); // TODO: Experimental - See EnvPage (updating header on fly).
+                setHeader(data);
+                setFavicon(data);
+            },
+            onDone: (response) => {
+                if (response.error) {
+                    setHeader(header => ({...header, ...{ error: true }}));
+                }
+            }
+        });
+/*
         const url = Server.Url("/header");
         Fetch.get(
             url,
@@ -54,6 +70,7 @@ const App = () => {
             error => {
                 setHeader(header => ({...header, ...{error:true}}));
             })
+*/
     }, []);
 
     return <Router>

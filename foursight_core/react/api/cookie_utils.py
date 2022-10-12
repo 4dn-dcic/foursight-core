@@ -1,7 +1,12 @@
 import datetime
 from typing import Any, Optional
 from http.cookies import SimpleCookie
-from .datetime_utils import convert_time_t_to_datetime
+from .datetime_utils import (
+    convert_time_t_to_datetime,
+    convert_utc_datetime_to_cookie_expires_format,
+    EPOCH
+)
+from .misc_utils import is_running_locally
 
 
 def read_cookie(request: dict, cookie_name: str) -> str:
@@ -27,8 +32,8 @@ def create_set_cookie_string(request: dict, name: str, value: Optional[str],
                              http_only: bool = False) -> str:
     """
     Returns a string suitable for an HTTP response to set a cookie for this given cookie info.
-    If the given expires arg is "now" then then the expiration time for the cookie will be
-    set to the epoch (i.e. 1970-01-01) indicating this it has expired; used effectively for delete.
+    If the given expires arg is "now" then then the expiration time for the cookie will be set
+    to the epoch (i.e. 1970-01-01 00:00:00) indicating it has expired; used to delete cookie.
     """
     if not name or not request:
         return ""
@@ -48,7 +53,7 @@ def create_set_cookie_string(request: dict, name: str, value: Optional[str],
             expires = expires.strftime("%a, %d %b %Y %H:%M:%S GMT")
         elif isinstance(expires, str):
             if expires.lower() == "now":
-                expires = "Expires=Thu, 01 Jan 1970 00:00:00 UTC"
+                expires = f"Expires={convert_utc_datetime_to_cookie_expires_format(EPOCH)}"
         else:
             expires = None
         if expires:
@@ -60,7 +65,3 @@ def create_set_cookie_string(request: dict, name: str, value: Optional[str],
 
 def create_delete_cookie_string(request: dict, name: str, domain: str, path: str = "/") -> str:
     return create_set_cookie_string(request, name=name, value=None, domain=domain, path=path, expires="now")
-
-
-def is_running_locally(request_dict) -> bool:
-    return request_dict.get('context', {}).get('identity', {}).get('sourceIp', '') == "127.0.0.1"

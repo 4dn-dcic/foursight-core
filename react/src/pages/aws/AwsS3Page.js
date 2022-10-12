@@ -3,36 +3,44 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { BarSpinner } from '../../Spinners';
 import Clipboard from '../../utils/Clipboard';
-import Fetch from '../../utils/Fetch';
+//import Fetch from '../../utils/Fetch';
+import { useFetch, useFetchFunction } from '../../utils/Fetch';
 import Image from '../../utils/Image';
 import Json from '../../utils/Json';
 import Server from '../../utils/Server';
 import Yaml from '../../utils/Yaml';
 import TableHead from '../../TableHead';
 
+const SHOW_BUCKET_KEY_CONENT_MAX_SIZE = 50000;
+
 const AwsS3Page = (props) => {
 
     let { environ } = useParams();
-    let [ bucketList, setBucketList ] = useState([]);
+    // let [ bucketList, setBucketList ] = useState([]);
+    let [ bucketList, setBucketList ] = useFetch(Server.Url("/aws/s3/buckets", environ));
     let [ bucketKeysList, setBucketKeysList ] = useState([]);
     let [ bucketKeyContentList, setBucketKeyContentList ] = useState([]);
     let [ bucketListFilter, setBucketListFilter ] = useState("");
 
-    let [ loading, setLoading ] = useState(true);
+    let [ loading, setLoading ] = useState(false);
     let [ error, setError ] = useState(false);
 
+    const fetch = useFetchFunction();
+
+/*
     useEffect(() => {
         const bucketsUrl = Server.Url("/aws/s3/buckets", environ);
         Fetch.get(bucketsUrl, bucketList => {
             setBucketList(bucketList);
         }, setLoading, setError);
     }, [environ]);
+*/
 
     // Only allow fetching/displaying S3 bucket key content for keys (file) with a '.json' suffix,
     // or all files within a bucket with a name ending with '-envs'; AND which are not too large.
     //
     function mayLookAtKeyContent(bucket, key, size) {
-        if (size > 50000) {
+        if (size > SHOW_BUCKET_KEY_CONENT_MAX_SIZE) {
             return false;
         }
         if (key.endsWith(".json")) {
@@ -47,12 +55,13 @@ const AwsS3Page = (props) => {
     // Bucket list functions.
 
     function getBucketList() {
-        return bucketList.filter(bucket => bucket.toLowerCase().includes(bucketListFilter.toLowerCase()));
+        return bucketList.data?.filter(bucket => bucket.toLowerCase().includes(bucketListFilter.toLowerCase())) || [];
     }
 
     function onBucketListSearch(e) {
         setBucketListFilter(e.currentTarget.value);
-        setBucketList(existing => [...existing]);
+        //setBucketList(existing => [...existing]);
+        //setBucketList.update(existing => [...existing]);
     }
 
     // Bucket keys list functions.
@@ -77,11 +86,27 @@ const AwsS3Page = (props) => {
         bucketKeysList.unshift(bucketKeys);
         setBucketKeysList(existing => [...existing]);
         const bucketKeysUrl = Server.Url(`/aws/s3/buckets/${bucket}`, environ);
+        fetch({
+            url: Server.Url(`/aws/s3/buckets/${bucket}`, environ),
+            onData: (data) => {
+                bucketKeys.keys = data;
+                bucketKeys.loading = false;
+                setBucketKeysList(existing => [...existing]);
+            },
+            onDone: (response) => {
+                setLoading(false);
+                if (response.error) {
+                    setError(true);
+                }
+            }
+        });
+/*
         Fetch.get(bucketKeysUrl, data => {
             bucketKeys.keys = data;
             bucketKeys.loading = false;
             setBucketKeysList(existing => [...existing]);
         }, setLoading, setError);
+*/
     }
 
     function hideBucketKeysBox(bucket) {
@@ -129,19 +154,35 @@ const AwsS3Page = (props) => {
         }
         key = encodeURIComponent(key);
         const url = Server.Url(`/aws/s3/buckets/${bucket}/${key}`, environ);
-        let data = {
+        let contentData = {
             bucket: bucket,
             key: key,
             content: null,
             loading: true
         };
-        bucketKeyContentList.unshift(data);
+        bucketKeyContentList.unshift(contentData);
         setBucketKeyContentList(existing => [...existing]);
+        fetch({
+            url: Server.Url(`/aws/s3/buckets/${bucket}/${key}`, environ),
+            onData: (data) => {
+                contentData.content = data;
+                contentData.loading = false;
+                setBucketKeyContentList(existing => [...existing]);
+            },
+            onDone: (response) => {
+                setLoading(false);
+                if (response.error) {
+                    setError(true);
+                }
+            }
+        });
+/*
         Fetch.get(url, response => {
-            data.content = response;
-            data.loading = false;
+            contentData.content = response;
+            contentData.loading = false;
             setBucketKeyContentList(existing => [...existing]);
         }, setLoading, setError);
+*/
     }
 
     function hideBucketKeyContentBox(bucket, key) {
@@ -216,10 +257,11 @@ const AwsS3Page = (props) => {
                 { bucketKeys.keys.length > 0 ? (<>
                     <div style={{height:"1px",background:"darkblue",marginBottom:"1pt"}}></div>
                     <table width="100%">
-                        <TableHead columns={columns} list={bucketKeys.keys} update={() => setBucketKeysList(existing => [...existing])} style={{color:"darkblue",fontWeight:"bold"}}/>
-                        <tr><td style={{paddingTop:"1pt"}}></td></tr>
-                        <tr><td style={{height:"1px",background:"darkblue"}} colSpan="3"></td></tr>
-                        <tr><td style={{paddingTop:"4pt"}}></td></tr>
+                        <TableHead columns={columns} list={bucketKeys.keys} update={() => setBucketKeysList(existing => [...existing])} style={{color:"darkblue",fontWeight:"bold"}}>
+                            <tr><td style={{paddingTop:"1pt"}}></td></tr>
+                            <tr><td style={{height:"1px",background:"darkblue"}} colSpan="3"></td></tr>
+                            <tr><td style={{paddingTop:"4pt"}}></td></tr>
+                        </TableHead>
                         <tbody>
                         { bucketKeys.keys.map((bucketKey, i) => { return <React.Fragment key={i}>
                             <tr key={i}>
@@ -246,9 +288,9 @@ const AwsS3Page = (props) => {
                             &nbsp;&nbsp;</td>
                             </tr>
                             { i < bucketKeys.keys.length - 1 && <> 
-                                <tr><td style={{paddingTop:"2pt"}}></td></tr>
+                                <tr><td style={{paddingTop:"4pt"}}></td></tr>
                                 <tr><td style={{height:"1px",background:"lightblue"}} colSpan="3"></td></tr>
-                                <tr><td style={{paddingTop:"2pt"}}></td></tr>
+                                <tr><td style={{paddingTop:"1pt"}}></td></tr>
                             </>}
                         </React.Fragment>})}
                 </tbody>

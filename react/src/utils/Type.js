@@ -46,11 +46,24 @@ function IsNull(value) {
     return value === null || value === undefined;
 }
 
+// Returns the first value in the given array which is of a type
+// specified by the given ofType function.
+//
+function FirstOfType(values, ofType) {
+    for (const value of values) {
+        if (ofType(value)) {
+            return value;
+        }
+    }
+    return null;
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 const Exports = {
+    First:            FirstOfType,
     IsArray:          IsArray,
     IsBoolean:        IsBoolean,
     IsDateTime:       IsDateTime,

@@ -177,7 +177,7 @@ function HasTestModeFetchSleepCookie() {
 }
 
 function GetTestModeFetchSleepCookie() {
-    return GetCookie("test_mode_fetch_sleep");
+    return parseInt(GetCookie("test_mode_fetch_sleep"));
 }
 
 function HasTestModeFoursightFourfrontCookie() {

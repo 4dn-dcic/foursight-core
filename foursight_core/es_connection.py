@@ -242,7 +242,7 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        raw_result, total = self.search(search)
+        raw_result, _ = self.search(search)
         if checks is not None:
             # figure out which checks we didn't find, add a placeholder check so
             # that check is still rendered on the UI
@@ -271,7 +271,7 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        result, total = self.search(search, key='_id')
+        result, _ = self.search(search, key='_id')
         return result
 
     def list_all_keys_w_prefix(self, prefix):
@@ -296,7 +296,7 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        result, total = self.search(search, key='_id')
+        result, _ = self.search(search, key='_id')
         return result
 
     def get_all_objects(self):
@@ -317,7 +317,7 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        result, total = self.search(search)
+        result, _ = self.search(search)
         return result
 
     def delete_keys(self, key_list):

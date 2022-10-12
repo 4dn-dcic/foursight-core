@@ -1455,59 +1455,63 @@ class AppUtilsCore(ReactApi, Routes):
         response.status_code = 200
         return self.process_response(response)
 
-    def run_put_environment(self, environ, env_data):
-        """
-        Abstraction of the functionality of put_environment without the current_request
-        to allow for testing.
-        """
-        proc_environ = environ.split('-')[-1] if environ.startswith('fourfront-') else environ
-        if isinstance(env_data, dict) and {'fourfront', 'es'} <= set(env_data):
-            ff_address = env_data['fourfront'] if env_data['fourfront'].endswith('/') else env_data['fourfront'] + '/'
-            es_address = env_data['es'] if env_data['es'].endswith('/') else env_data['es'] + '/'
-            ff_env = env_data['ff_env'] if 'ff_env' in env_data else ''.join(['fourfront-', proc_environ])
-            env_entry = {
-                'fourfront': ff_address,
-                'es': es_address,
-                'ff_env': ff_env
-            }
-            s3_connection = S3Connection(self.prefix + '-envs')
-            s3_connection.put_object(proc_environ, json.dumps(env_entry))
-            stage = self.stage.get_stage()
-            s3_bucket = ''.join([self.prefix + '-', stage, '-', proc_environ])
-            bucket_res = s3_connection.create_bucket(s3_bucket)
-            if not bucket_res:
-                response = Response(
-                    body={
-                        'status': 'error',
-                        'description': f'Could not create bucket: {s3_bucket}',
-                        'environment': proc_environ
-                    },
-                    status_code=500
-                )
-            else:
-                # if not testing, queue checks with 'put_env' condition for the new env
-                if 'test' not in self.stage.get_queue_name():
-                    for sched in self.check_handler.get_schedule_names():
-                        self.queue_scheduled_checks(environ, sched, conditions=['put_env'])
-                response = Response(
-                    body={
-                        'status': 'success',
-                        'description': ' '.join(['Succesfully made:', proc_environ]),
-                        'environment': proc_environ
-                    },
-                    status_code=200
-                )
-        else:
-            response = Response(
-                body={
-                    'status': 'error',
-                    'description': 'Environment creation failed',
-                    'body': env_data,
-                    'environment': proc_environ
-                },
-                status_code=400
-            )
-        return self.process_response(response)
+# Commented out based on feedback PR-33 from Will ...
+# As it is incompatible with EnvUtils at this time.
+# Can create a ticket to make it compatible in the future.
+#
+#   def run_put_environment(self, environ, env_data):
+#       """
+#       Abstraction of the functionality of put_environment without the current_request
+#       to allow for testing.
+#       """
+#       proc_environ = environ.split('-')[-1] if environ.startswith('fourfront-') else environ
+#       if isinstance(env_data, dict) and {'fourfront', 'es'} <= set(env_data):
+#           ff_address = env_data['fourfront'] if env_data['fourfront'].endswith('/') else env_data['fourfront'] + '/'
+#           es_address = env_data['es'] if env_data['es'].endswith('/') else env_data['es'] + '/'
+#           ff_env = env_data['ff_env'] if 'ff_env' in env_data else ''.join(['fourfront-', proc_environ])
+#           env_entry = {
+#               'fourfront': ff_address,
+#               'es': es_address,
+#               'ff_env': ff_env
+#           }
+#           s3_connection = S3Connection(self.prefix + '-envs')
+#           s3_connection.put_object(proc_environ, json.dumps(env_entry))
+#           stage = self.stage.get_stage()
+#           s3_bucket = ''.join([self.prefix + '-', stage, '-', proc_environ])
+#           bucket_res = s3_connection.create_bucket(s3_bucket)
+#           if not bucket_res:
+#               response = Response(
+#                   body={
+#                       'status': 'error',
+#                       'description': f'Could not create bucket: {s3_bucket}',
+#                       'environment': proc_environ
+#                   },
+#                   status_code=500
+#               )
+#           else:
+#               # if not testing, queue checks with 'put_env' condition for the new env
+#               if 'test' not in self.stage.get_queue_name():
+#                   for sched in self.check_handler.get_schedule_names():
+#                       self.queue_scheduled_checks(environ, sched, conditions=['put_env'])
+#               response = Response(
+#                   body={
+#                       'status': 'success',
+#                       'description': ' '.join(['Succesfully made:', proc_environ]),
+#                       'environment': proc_environ
+#                   },
+#                   status_code=200
+#               )
+#       else:
+#           response = Response(
+#               body={
+#                   'status': 'error',
+#                   'description': 'Environment creation failed',
+#                   'body': env_data,
+#                   'environment': proc_environ
+#               },
+#               status_code=400
+#           )
+#       return self.process_response(response)
 
     def run_get_environment(self, environ):
         """
@@ -1536,47 +1540,51 @@ class AppUtilsCore(ReactApi, Routes):
             )
         return self.process_response(response)
 
-    @classmethod
-    def run_delete_environment(cls, environ, bucket=None):
-        """
-        Removes the environ entry from the Foursight envs bucket. This effectively de-schedules all checks
-        but does not remove any data.
-        """
-        if not bucket:
-            bucket = cls.prefix + '-envs'
-        s3_connection = S3Connection(bucket)
-        s3_resp = s3_connection.delete_keys([environ])
-        keys_deleted = s3_resp['Deleted']
-        if not keys_deleted:
-            response = Response(
-                body={
-                    'status': 'error',
-                    'description': 'Unable to comply with request',
-                    'environment': environ
-                },
-                status_code=400
-            )
-        else:
-            our_key = keys_deleted[0]  # since we only passed one key to be deleted, response will be a length 1 list
-            if our_key['Key'] != environ:
-                response = Response(
-                    body={
-                        'status': 'error',
-                        'description': 'An error occurred during environment deletion, please check S3 directly',
-                        'environment': environ
-                    },
-                    status_code=400
-                )
-            else:  # we were successful
-                response = Response(
-                    body={
-                        'status': 'success',
-                        'details': f'Successfully deleted environment {environ}',
-                        'environment': environ
-                    },
-                    status_code=200
-                )
-        return cls.process_response(response)
+# Commented out based on feedback PR-33 from Will ...
+# As it is incompatible with EnvUtils at this time.
+# Can create a ticket to make it compatible in the future.
+#
+#   @classmethod
+#   def run_delete_environment(cls, environ, bucket=None):
+#       """
+#       Removes the environ entry from the Foursight envs bucket. This effectively de-schedules all checks
+#       but does not remove any data.
+#       """
+#       if not bucket:
+#           bucket = cls.prefix + '-envs'
+#       s3_connection = S3Connection(bucket)
+#       s3_resp = s3_connection.delete_keys([environ])
+#       keys_deleted = s3_resp['Deleted']
+#       if not keys_deleted:
+#           response = Response(
+#               body={
+#                   'status': 'error',
+#                   'description': 'Unable to comply with request',
+#                   'environment': environ
+#               },
+#               status_code=400
+#           )
+#       else:
+#           our_key = keys_deleted[0]  # since we only passed one key to be deleted, response will be a length 1 list
+#           if our_key['Key'] != environ:
+#               response = Response(
+#                   body={
+#                       'status': 'error',
+#                       'description': 'An error occurred during environment deletion, please check S3 directly',
+#                       'environment': environ
+#                   },
+#                   status_code=400
+#               )
+#           else:  # we were successful
+#               response = Response(
+#                   body={
+#                       'status': 'success',
+#                       'details': f'Successfully deleted environment {environ}',
+#                       'environment': environ
+#                   },
+#                   status_code=200
+#               )
+#       return cls.process_response(response)
 
     # ===== QUEUE / CHECK RUNNER FUNCTIONS =====
 

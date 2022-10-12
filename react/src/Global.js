@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-// This defines a global state mechanism WITHOUT the need for createContext and useContext,
+// This defines a global state mechanism (hook) WITHOUT the need for createContext/useContext,
 // and which therefore does NOT require wrapping (e.g. the entire App) in a context Provider.
 // Came up with half of this idea originally for the ReadOnlyMode component; then that idea,
 // of using (registered) callbacks (aka listeners) to update global state, was generalized

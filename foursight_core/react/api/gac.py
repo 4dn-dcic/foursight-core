@@ -31,7 +31,7 @@ class Gac:
         env_name_short = short_env_name(env_name)
         pattern = re.compile(".*" + env_name_short.replace('-', '.*').replace('_', '.*') + ".*", re.IGNORECASE)
         matching_gac_names = [gac_name for gac_name in gac_names if pattern.match(gac_name)]
-        if len(matching_gac_names):
+        if len(matching_gac_names) == 1:
             return matching_gac_names[0]
         else:
             return " OR ".join(matching_gac_names)

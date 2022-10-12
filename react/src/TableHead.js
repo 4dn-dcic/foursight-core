@@ -1,6 +1,6 @@
 import React from 'react';
+import Uuid from 'react-uuid';
 import Type from './utils/Type';
-import Uuid from './utils/Uuid';
 import { PuffSpinner } from './Spinners';
 
 // -------------------------------------------------------------------------------------------------
@@ -26,7 +26,7 @@ import { PuffSpinner } from './Spinners';
 // So we stored the sort state in hidden fields within the given list itself.
 // -------------------------------------------------------------------------------------------------
 
-const TableHead = ({columns, list, update, state = null, lines = false, style = {}, spinner = false, loading = false}) => {
+const TableHead = ({columns, list, update, state = null, lines = false, style = {}, spinner = false, loading = false, children}) => {
     function sort(list, key, direction) {
         let comparator = Type.IsFunction(key)
                          ? (direction > 0
@@ -50,6 +50,11 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
                 { column.key ? (<>
                     <span style={{...style, cursor: loading ? "not-allowed" : "pointer"}}
                         onClick={() => {
+                            //
+                            // TODO
+                            // Don't pass anonymous function here, and (lotsa places) elsewhere ...
+                            // https://user3141592.medium.com/react-gotchas-and-best-practices-2d47fd67dd22
+                            //
                             if (loading) return;
                             list.__sort.key = column.key;
                             list.__sort.order = list.__sort.order ? -list.__sort.order : 1;
@@ -83,7 +88,8 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
         { lines && <><tr><td style={{paddingBottom:"0pt"}}></td></tr>
                       <tr><td style={{height:"1px",background:style?.color ? style.color : "red"}} colSpan="9"></td></tr>
                       <tr><td style={{height:"4pt"}} colSpan="6"></td></tr></>}
-       </thead>
+        {children}
+    </thead>
 }
 
 // -------------------------------------------------------------------------------------------------

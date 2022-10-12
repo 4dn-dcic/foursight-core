@@ -1,5 +1,9 @@
 // Styles ...
 
+// TODO
+// NOT IN USE YET
+// Starting to experiment with setting styles dynamically based on Fourfront vs. CGAP styles.
+
 const styles                          = getComputedStyle(document.documentElement)
 const foursightFourfrontBoxColor      = styles.getPropertyValue("--foursight-fourfront-box-color");
 const foursightFourfrontBoxBackground = styles.getPropertyValue("--foursight-fourfront-box-background");

@@ -1,5 +1,6 @@
 import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
+import Uuid from 'react-uuid';
 import { StandardSpinner } from '../Spinners';
 import HeaderData from '../HeaderData';
 import Auth from '../utils/Auth';
@@ -7,15 +8,13 @@ import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
 import Context from '../utils/Context';
 import Env from '../utils/Env';
-import Fetch from '../utils/Fetch';
-import { useFetch } from '../utils/Fetch';
+import { useFetch, useFetchFunction } from '../utils/Fetch';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
 import LiveTime from '../LiveTime';
 import Server from '../utils/Server';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
-import Uuid from '../utils/Uuid';
 import Yaml from '../utils/Yaml';
 
 const InfoPage = () => {
@@ -24,10 +23,11 @@ const InfoPage = () => {
     const [ response, refresh ] = useFetch(Server.Url("/info"));
     const [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [ reloadingApp, setReloadingApp ] = useState(false);
+    const fetch = useFetchFunction();
 
     function initiateAppReload() {
         setReloadingApp(true);
-        Fetch.get(Server.Url("/__reloadlambda__"), () => setReloadingApp(false));
+        fetch(Server.Url("/__reloadlambda__"), { onDone: () => setReloadingApp(false) });
     }
 
     const InfoBox = ({title, children}) => {

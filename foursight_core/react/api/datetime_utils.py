@@ -2,6 +2,9 @@ import datetime
 import pytz
 
 
+EPOCH = datetime.datetime.utcfromtimestamp(0)  # I.e.: 1970-01-01 00:00:00 UTC
+
+
 def convert_utc_datetime_to_useastern_datetime_string(t) -> str:
     """
     Converts the given UTC datetime object or string into a US/Eastern datetime string
@@ -52,3 +55,10 @@ def convert_datetime_to_time_t(value: datetime.datetime) -> int:
     time (seconds since 1970-01-01T00:00:00Z) and returns its value.
     """
     return int(value.timestamp())
+
+def convert_utc_datetime_to_cookie_expires_format(t) -> str:
+    """
+    Converts the given UTC datetime object or string format suitable
+    for use by a cookie expires date/time value.
+    """
+    return t.strftime("%a, %d %b %Y %H:%M:%S GMT")

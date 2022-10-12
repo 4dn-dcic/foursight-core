@@ -1,5 +1,6 @@
 import { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Uuid from 'react-uuid';
 import HeaderData from '../HeaderData';
 import Page from '../Page';
 import Auth from '../utils/Auth';
@@ -8,7 +9,6 @@ import Env from '../utils/Env';
 import { useFetch } from '../utils/Fetch';
 import Server from '../utils/Server';
 import Type from '../utils/Type';
-import Uuid from '../utils/Uuid';
 
 const EnvPage = (props) => {
 

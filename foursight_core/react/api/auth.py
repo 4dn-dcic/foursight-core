@@ -12,8 +12,7 @@ class Auth:
         self.auth0_secret = auth0_secret
         self.envs = envs
 
-    class Cache:
-        aws_credentials = {}
+    cache_aws_credentials = {}
 
     def authorize(self, request: dict, env: str) -> dict:
         """
@@ -168,7 +167,7 @@ class Auth:
         This has nothing to do with the rest of the authentication
         and authorization stuff here but vaguely related so here seems fine.
         """
-        aws_credentials = Auth.Cache.aws_credentials.get(env)
+        aws_credentials = Auth.cache_aws_credentials.get(env)
         if not aws_credentials:
             try:
                 session = boto3.session.Session()
@@ -198,7 +197,7 @@ class Auth:
                             boto3.client('organizations').describe_account(AccountId=account_number).get('Account').get('Name')
                     except:
                         pass
-                Auth.Cache.aws_credentials[env] = aws_credentials
+                Auth.cache_aws_credentials[env] = aws_credentials
             except:
                 return {}
         return aws_credentials

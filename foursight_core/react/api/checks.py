@@ -12,24 +12,23 @@ class Checks:
         self.check_setup = check_setup
         self.envs = envs
 
-    class Cache:
-        checks = None
-        lambdas = None
+    cache_checks = None
+    cache_lambdas = None
 
     def get_checks_raw(self) -> dict:
         return self.check_setup
 
     def get_checks(self, env: str) -> dict:
-        if not Checks.Cache.checks:
+        if not Checks.cache_checks:
             checks = self.get_checks_raw()
             for check_key in checks.keys():
                 checks[check_key]["name"] = check_key
                 checks[check_key]["group"] = checks[check_key]["group"]
             lambdas = self.get_annotated_lambdas()
-            self.annotate_checks_with_schedules_from_lambdas(checks, lambdas)
-            self.annotate_checks_with_kwargs_from_decorators(checks)
-            Checks.Cache.checks = checks
-        return self.filter_checks_by_env(Checks.Cache.checks, env)
+            self._annotate_checks_with_schedules_from_lambdas(checks, lambdas)
+            self._annotate_checks_with_kwargs_from_decorators(checks)
+            Checks.cache_checks = checks
+        return self._filter_checks_by_env(Checks.cache_checks, env)
 
     def get_checks_grouped(self, env: str) -> list:
         checks_groups = []
@@ -37,7 +36,7 @@ class Checks:
         for check_setup_item_name in checks:
             check_setup_item = checks[check_setup_item_name]
             check_setup_item_group = check_setup_item["group"]
-            # TODO: Probably a nore pythonic way to do this.
+            # TODO: Probably a more pythonic way to do this.
             found = False
             for grouped_check in checks_groups:
                 if grouped_check["group"] == check_setup_item_group:
@@ -48,11 +47,6 @@ class Checks:
                 checks_groups.append({"group": check_setup_item_group, "checks": [check_setup_item]})
         return checks_groups
 
-    def get_checks_grouped_by_schedule(self, env: str) -> list:
-        checks_grouped_by_schedule = []
-        # TODO
-        return checks_grouped_by_schedule
-
     def get_check(self, env: str, check: str) -> Optional[dict]:
         checks = self.get_checks(env)
         for check_key in checks.keys():
@@ -60,7 +54,7 @@ class Checks:
                 return checks[check_key]
         return None
 
-    def filter_checks_by_env(self, checks: dict, env) -> dict:
+    def _filter_checks_by_env(self, checks: dict, env) -> dict:
         if not env:
             return checks
         checks_for_env = {}
@@ -76,18 +70,18 @@ class Checks:
         return checks_for_env
 
     @staticmethod
-    def get_stack_name() -> str:
+    def _get_stack_name() -> str:
         return os.environ.get("STACK_NAME")
 
-    def get_stack_template(self, stack_name: str = None) -> dict:
+    def _get_stack_template(self, stack_name: str = None) -> dict:
         if not stack_name:
-            stack_name = self.get_stack_name()
+            stack_name = self._get_stack_name()
             if not stack_name:
                 return {}
         boto_cloudformation = boto3.client('cloudformation')
         return boto_cloudformation.get_template(StackName=stack_name)
 
-    def get_lambdas_from_template(self, stack_template: dict) -> list:
+    def _get_lambdas_from_template(self, stack_template: dict) -> list:
         lambda_definitions = []
         stack_template = stack_template["TemplateBody"]["Resources"]
         for resource_key in stack_template:
@@ -106,7 +100,7 @@ class Checks:
                 })
         return lambda_definitions
 
-    def annotate_lambdas_with_schedules_from_template(self, lambdas: list, stack_template: dict) -> list:
+    def _annotate_lambdas_with_schedules_from_template(self, lambdas: list, stack_template: dict) -> list:
         stack_template = stack_template["TemplateBody"]["Resources"]
         for resource_key in stack_template:
             resource_type = stack_template[resource_key]["Type"]
@@ -136,7 +130,7 @@ class Checks:
                                         la["lambda_schedule_description"] = cron_description
         return lambdas
 
-    def annotate_lambdas_with_function_metadata(self, lambdas: list) -> list:
+    def _annotate_lambdas_with_function_metadata(self, lambdas: list) -> list:
         boto_lambda = boto3.client("lambda")
         lambda_functions = boto_lambda.list_functions()["Functions"]
         for lambda_function in lambda_functions:
@@ -164,7 +158,7 @@ class Checks:
                         pass
         return lambdas
 
-    def annotate_lambdas_with_check_setup(self, lambdas: list, checks: dict) -> list:
+    def _annotate_lambdas_with_check_setup(self, lambdas: list, checks: dict) -> list:
         if not checks or not isinstance(checks, dict):
             return lambdas
         for check_setup_item_name in checks:
@@ -181,17 +175,17 @@ class Checks:
         return lambdas
 
     def get_annotated_lambdas(self) -> dict:
-        if not Checks.Cache.lambdas:
-            stack_name = self.get_stack_name()
-            stack_template = self.get_stack_template(stack_name)
-            lambdas = self.get_lambdas_from_template(stack_template)
-            lambdas = self.annotate_lambdas_with_schedules_from_template(lambdas, stack_template)
-            lambdas = self.annotate_lambdas_with_function_metadata(lambdas)
-            lambdas = self.annotate_lambdas_with_check_setup(lambdas, self.get_checks_raw())
-            Checks.Cache.lambdas = lambdas
-        return Checks.Cache.lambdas
+        if not Checks.cache_lambdas:
+            stack_name = self._get_stack_name()
+            stack_template = self._get_stack_template(stack_name)
+            lambdas = self._get_lambdas_from_template(stack_template)
+            lambdas = self._annotate_lambdas_with_schedules_from_template(lambdas, stack_template)
+            lambdas = self._annotate_lambdas_with_function_metadata(lambdas)
+            lambdas = self._annotate_lambdas_with_check_setup(lambdas, self.get_checks_raw())
+            Checks.cache_lambdas = lambdas
+        return Checks.cache_lambdas
 
-    def annotate_checks_with_schedules_from_lambdas(self, checks: dict, lambdas: dict) -> None:
+    def _annotate_checks_with_schedules_from_lambdas(self, checks: dict, lambdas: dict) -> None:
         for check_setup_item_name in checks:
             check_setup_item = checks[check_setup_item_name]
             check_setup_item_schedule = check_setup_item.get("schedule")
@@ -202,7 +196,7 @@ class Checks:
                             check_setup_item_schedule[check_setup_item_schedule_name]["cron"] = la["lambda_schedule"]
                             check_setup_item_schedule[check_setup_item_schedule_name]["cron_description"] = la["lambda_schedule_description"]
 
-    def annotate_checks_with_kwargs_from_decorators(self, checks: dict) -> None:
+    def _annotate_checks_with_kwargs_from_decorators(self, checks: dict) -> None:
         checks_decorators = Decorators.get_registry()
         for check_setup_item_name in checks:
             check_setup_item = checks[check_setup_item_name]
