@@ -5,7 +5,7 @@ import Uuid from 'react-uuid';
 import { RingSpinner } from '../Spinners';
 import { StandardSpinner } from '../Spinners';
 import { useReadOnlyMode } from '../ReadOnlyMode';
-import { useFetch, useFetchFunction } from '../utils/Fetch';
+import { useFetchNew, useFetch, useFetchFunction } from '../utils/Fetch';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
@@ -37,7 +37,7 @@ const ChecksPage = (props) => {
         
     // TODO IN PROGRESS: MOVING TO NEW useFetch HOOK.
 
-    const [ checks ] = useFetch({
+    const checks = useFetchNew({
         url: Server.Url("/checks", environ),
         onData: (data) => {
             data.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0));

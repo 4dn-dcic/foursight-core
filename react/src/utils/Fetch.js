@@ -84,6 +84,8 @@ const MAX_SAVE = 100;
 //
 // RETURN VALUE
 //
+// TODO: In process of changing this to return just a single value ...
+//
 // The return value for this hook is a Reac-ish array with TWO elements.
 //
 // The FIRST element in the returned array is the response states of the fetch, specifically,
@@ -207,6 +209,65 @@ export const useFetch = (url, args) => {
     };
 
     return [ response, refresh ];
+}
+
+// Same as above but returns single value. Migrate to this.
+export const useFetchNew = (url, args) => {
+
+    const [ data, setData ] = useState(null);
+    const [ loading, setLoading ] = useState(true);
+    const [ status, setStatus ] = useState(0);
+    const [ timeout, setTimeout ] = useState(false);
+    const [ error, setError ] = useState(null);
+
+    const fetching = _useFetching();
+    const fetched = _useFetched();
+
+    function assembleArgs(urlOverride = null, argsOverride = null, nonofetch = false) {
+        return _assembleFetchArgs(url, args, urlOverride, argsOverride,
+                                  setData, setLoading, setStatus, setTimeout, setError,
+                                  fetching, fetched, nonofetch);
+    }
+
+    args = assembleArgs();
+
+    useEffect(() => {
+        _doFetch(args);
+    }, [])
+
+    const update = (data) => {
+        if (Type.IsObject(data)) {
+            setData({...data});
+        }
+        else if (Type.IsArray(data)) {
+            setData([...data]);
+        }
+        else if (Type.IsFunction(data)) {
+            setData(data());
+        }
+        else {
+            setData(data);
+        }
+    }
+
+    const refresh = (url, args) => {
+        args = assembleArgs(url, args, true);
+        _doFetch(args);
+        return [ response ];
+    };
+
+    const response = {
+        data: data,
+        loading: loading,
+        status: status,
+        timeout: timeout,
+        error: error,
+        set: setData,
+        update: update,
+        refresh: refresh
+    };
+
+    return response;
 }
 
 // This useFetchFunction React hook, like useFetch, is also used to centrally facilitate HTTP fetches,
