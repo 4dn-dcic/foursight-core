@@ -13,18 +13,22 @@ import { defineGlobal, useGlobal } from '../Global';
 import Client from '../utils/Client';
 import Cookie from '../utils/Cookie';
 import Context from '../utils/Context';
+import Debug from '../utils/Debug';
 import Logout from '../utils/Logout';
 import Str from '../utils/Str';
 import Type from '../utils/Type';
 import Uuid from '../utils/Uuid';
 
 const DEFAULT_TIMEOUT = 30 * 1000;
-const DEFAULT_DELAY = () => { const delay = Cookie.TestMode.FetchSleep(); return delay > 0 ? delay : 0; }
+const DEFAULT_DELAY = () => { const delay = Cookie.TestMode.FetchSleep(); return delay > 0 ? delay : 0; };
 const MAX_SAVE = 100;
 
-// The useFetch React hook.
+// A useFetch React hook.
 // Used to define and/or initiaze an HTTP fetch to the server for some data.
-// This will eventually supplant the fetchData function above.
+// Takes and URL and various arguments (see below) and returns (see below)state wrapping
+// up pertinent info (data, loading, status, timeout, error) as well as a refresh function.
+// Also globally tracks all outstanding fetches (e.g. useful for a global fetching spinnner).
+// This is new (2022-10-09) and will eventually supplant the fetchData function at the end of this module.
 //
 // ARGUMENTS
 //
@@ -96,8 +100,14 @@ const MAX_SAVE = 100;
 //
 // The second item is a refresh function which can be called to refresh, i.e. redo the fetch for,
 // the data. Arguments to this refresh function are exactly like those for this useFetch hook function,
-// and/but may also be individually overidden with different values, e.g. to refresh with a different URL.
-// Unlike this onFetch hook, the refresh function returns no value.
+// but may also be individually overidden with different values, e.g. to refresh with a different URL.
+// This refresh function returns the (exact) same first item of return value of the associated
+// useFetch call which returned this refresh function, in a single element array.
+//
+// Note that this refresh function will update the same state variables (data, loading, status, timeout,
+// error) returned by that inital useFetch call; so this is not meant for multiple independent fetches;
+// use multiple useFetch calls for that. The main use of this is to do simple refreshes of an initial
+// fetch, and also (when using the nofetch argument) to just obtain a fetch function to later use.
 //
 // ADDITIONALLY
 //
@@ -105,11 +115,17 @@ const MAX_SAVE = 100;
 //
 // - useFetching
 //   Hook returning the array of all currently executing fetches,
-//   in the order of when the fetches were started.
+//   in the order of when the fetches were started. Useful for troubleshooting and for the end user,
+//   e.g. to display a spinner/whatever indicating the existence and count of outstanding fetches.
 //
 // - useFetched
-//   Hook returning the array of all the most recent completed fetches, up to some
-//   maximum (MAX_SAVE) number, in the order of when the fetches were started.
+//   Hook returning the array of all the most recent completed fetches, up to
+//   some maximum (MAX_SAVE) number, in the order of when the fetches were started.
+//   This may be useful for troubleshooting, but is not yet currently used.
+//
+// LIMITATIONS
+//
+// Currently just for HTTP GET. Will add support for other verbs as/when necessary.
 //
 export const useFetch = (url, args) => {
 
@@ -121,6 +137,11 @@ export const useFetch = (url, args) => {
 
     const fetching = _useFetching();
     const fetched = _useFetched();
+
+    if (Type.IsObject(url)) {
+        args = url;
+        url = null;
+    }
 
     function assembleArgs(url, largs) {
         if (Type.IsObject(url)) {
@@ -153,20 +174,62 @@ export const useFetch = (url, args) => {
     }, [])
 
     const response = { data: data, loading: loading, status: status, timeout: timeout, error: error };
-    const refresh = (url, args) => { args = assembleArgs(url, args); args.nofetch = false; _doFetch(args); };
+    const refresh = (url, args) => { args = assembleArgs(url, args); args.nofetch = false; _doFetch(args); return [ response ]; };
 
     return [ response, refresh ];
 }
 
+// A more generic useFetchFunction hook analogous to the above useFetch hook, which also ties into
+// globally tracked all outstanding (and completed) fetches (e.g. useful for a global fetching spinnner).
+// This doesn't setup any state like useFunction (except for the aforementioned global fetches/fetched
+// state - which is why we need a hook rather than a simple function); rather this just returns a fetch
+// function which takes the same kind of onData and onDone function callback arguments as useFetch.
+//
+export const useFetchFunction = (url, args) => {
+
+    const fetching = _useFetching();
+    const fetched = _useFetched();
+
+    if (Type.IsObject(url)) {
+        args = url;
+        url = null;
+    }
+
+    function assembleArgs(url, largs) {
+        if (Type.IsObject(url)) {
+            largs = url;
+            url = null;
+        }
+        return {
+            url:        Str.HasValue(url)                  ? url              : (Str.HasValue(largs?.url)          ? largs.url       : args?.url),
+            onData:     Type.IsFunction(largs?.onData)     ? largs.onData     : (Type.IsFunction(args?.onData)     ? args.onData     : (data) => data),
+            onDone:     Type.IsFunction(largs?.onDone)     ? largs.onDone     : (Type.IsFunction(args?.onDone)     ? args.onDone     : (response) => {}),
+            timeout:    Type.IsInteger(largs?.timeout)     ? largs.timeout    : (Type.IsInteger(args?.timeout)     ? args.timeout    : DEFAULT_TIMEOUT),
+            delay:      Type.IsInteger(largs?.delay)       ? largs.delay      : (Type.IsInteger(args?.delay)       ? args.delay      : DEFAULT_DELAY()),
+            nologout:   Type.IsBoolean(largs?.nologout)    ? largs.nologout   : (Type.IsBoolean(args?.nologout)    ? args.nologout   : false),
+            noredirect: Type.IsBoolean(largs?.noredirect)  ? largs.noredirect : (Type.IsBoolean(args?.noredirect)  ? args.noredirect : false),
+            setData:    () => {},
+            setLoading: () => {},
+            setStatus:  () => {},
+            setTimeout: () => {},
+            setError:   () => {},
+            fetching:   fetching,
+            fetched:    fetched
+        };
+    }
+
+    return (url, args) => _doFetch(assembleArgs(url, args));
+}
+
 // Readonly hook to get the list of currently fetching.
-// See ADDITIONALLY section in onFetch comments above.
+// See ADDITIONALLY section in useFetch comments above.
 //
 export const useFetching = () => {
     return [ Array.from(useGlobal(_fetchingData)[0].values()) ];
 }
 
 // Readonly hook to get the list of completed fetches.
-// See ADDITIONALLY section in onFetch comments above.
+// See ADDITIONALLY section in useFetch comments above.
 //
 export const useFetched = () => {
     return [ useGlobal(_fetchedData)[0] ];
@@ -234,12 +297,15 @@ const _useFetched = () => {
 // Assumes args have been validated and setup properly; must contain (exhaustively):
 // url, setData, onData, onDone, timeout, delay, nologout, noredirect, setLoading, setStatus, setTimeout, setError, fetching, fetched.
 //
-export const _doFetch = (args) => {
+const _doFetch = (args) => {
 
     function handleResponse(response, id) {
-        console.log(`FETCH-HOOK-RESPONSE: ${args.url}`);
         const status = response.status;
+        Debug.Info(`FETCH-HOOK-RESPONSE: ${args.url} -> HTTP ${status}`);
+        Debug.Info(response.data);
         const data = args.onData(response.data);
+        Debug.Info(`FETCH-HOOK-BAKED-RESPONSE: ${args.url} -> HTTP ${status}`);
+        Debug.Info(data);
         args.setData(data);
         args.setStatus(status);
         args.setLoading(false);
@@ -248,8 +314,8 @@ export const _doFetch = (args) => {
     }
 
     function handleError(error, id) {
-        console.log(`FETCH-HOOK-ERROR: ${args.url}`);
         let status = error.response?.status || 0;
+        Debug.Info(`FETCH-HOOK-ERROR: ${args.url} -> HTTP ${status}`);
         args.setData(null);
         args.setStatus(status);
         args.setError(error.message);
@@ -321,8 +387,6 @@ export const _doFetch = (args) => {
     args.setStatus(0);
     args.setTimeout(false);
     args.setError(null);
-	console.log("STARTING doFetch ...")
-	console.log(args)
 
     if (args.nofetch || !Str.HasValue(args.url)) {
         args.setLoading(false);
@@ -334,7 +398,7 @@ export const _doFetch = (args) => {
     const payload = null;
     const fetch = { url: args.url, method: method, data: payload, withCredentials: "include", timeout: args.timeout };
 
-    console.log(`FETCH-HOOK: ${args.url}`);
+    Debug.Info(`FETCH-HOOK: ${args.url}`);
 
     const id = noteFetchBegin(fetch);
     axios(fetch)
@@ -347,14 +411,14 @@ export const _doFetch = (args) => {
             }
         })
         .catch(error => {
-            if (args.delay > 0) {
-                window.setTimeout(() => handleError(error, id), args.delay);
-            }
-            else {
-                handleError(error, id);
-            }
+            handleError(error, id);
         });
 }
+
+
+
+
+
 
 
 
@@ -377,19 +441,19 @@ function SLEEP(time) {
 //
 function fetchData(url, setData, setLoading, setError) {
     if (Cookie.TestMode.HasFetchSleep()) {
-        console.log("FETCHING WITH " + Cookie.TestMode.FetchSleep() + "ms SLEEP: " + url);
+        Debug.Info("FETCHING WITH " + Cookie.TestMode.FetchSleep() + "ms SLEEP: " + url);
     }
     else {
-        console.log("FETCHING: " + url);
+        Debug.Info("FETCHING: " + url);
     }
     const args = Context.IsLocalCrossOrigin() ? { credentials: "include" } : {};
     return fetch(url, args).then(response => {
-        console.log("FETCH STATUS CODE IS " + response.status + ": " + url);
+        Debug.Info("FETCH STATUS CODE IS " + response.status + ": " + url);
         if (response.status === 200) {
             response.json().then(responseJson => {
                 if (Cookie.TestMode.HasFetchSleep()) {
                     SLEEP(Cookie.TestMode.FetchSleep()).then(() => {
-                        console.log("FETCHING DONE WITH " + Cookie.TestMode.FetchSleep() + "ms SLEEP: " + url);
+                        Debug.Info("FETCHING DONE WITH " + Cookie.TestMode.FetchSleep() + "ms SLEEP: " + url);
                         if (setData) {
                             setData(responseJson)
                         }
@@ -400,7 +464,7 @@ function fetchData(url, setData, setLoading, setError) {
                     });
                 }
                 else {
-                    console.log("FETCHING SET DATA DONE: " + url);
+                    Debug.Info("FETCHING SET DATA DONE: " + url);
                     if (setData) {
                         setData(responseJson);
                     }
@@ -409,27 +473,27 @@ function fetchData(url, setData, setLoading, setError) {
                     }
                 }
             }).catch(error => {
-                console.log("FETCH JSON ERROR: " + url);
-                console.log(error);
+                Debug.Info("FETCH JSON ERROR: " + url);
+                Debug.Info(error);
                 if (setError) {
                     setError(error);
                 }
             });
         }
         else {
-            console.log("FETCH STATUS CODE IS NOT 200 BUT " + response.status + ": " + url);
-            console.log(response);
+            Debug.Info("FETCH STATUS CODE IS NOT 200 BUT " + response.status + ": " + url);
+            Debug.Info(response);
             if (response.status === 401) {
                 //
                 // TODO
                 // Perhaps somewhat questionable behavior.
                 // If we EVER get an HTTP 401 then we just logout the user.
                 //
-                console.log("FETCH IS UNAUTHENTICATED! " + url);
+                Debug.Info("FETCH IS UNAUTHENTICATED! " + url);
                 Logout();
             }
             else if (response.status === 403) {
-                console.log("FETCH IS UNAUTHORIZED! " + url);
+                Debug.Info("FETCH IS UNAUTHORIZED! " + url);
                 if (Client.CurrentLogicalPath() !== "/env") {
                     window.location.pathname = Client.Path("/env");
                 }
@@ -439,8 +503,8 @@ function fetchData(url, setData, setLoading, setError) {
             }
         }
     }).catch(error => {
-        console.log("FETCH ERROR: " + url);
-        console.log(error);
+        Debug.Info("FETCH ERROR: " + url);
+        Debug.Info(error);
         if (setError) {
             setError(error);
         }

@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { RingSpinner } from '../Spinners';
 import { StandardSpinner } from '../Spinners';
 import { useReadOnlyMode } from '../ReadOnlyMode';
-import { useFetch } from '../utils/Fetch';
+import { useFetch, useFetchFunction } from '../utils/Fetch';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
@@ -23,19 +23,23 @@ const ChecksPage = (props) => {
 
     // TODO: Lotsa refactoring ...
 
+    const fetch = useFetchFunction();
+
     let { environ } = useParams();
-    let [ groupedChecks, setGroupedChecks ] = useState([]);
-    let [ lambdas, setLambdas ] = useState([]);
-    let [ loading, setLoading ] = useState(true);
-    let [ error, setError ] = useState(false);
+    // let [ groupedChecks, setGroupedChecks ] = useState([]);
+//  let [ lambdas, setLambdas ] = useState([]);
+//  let [ loading, setLoading ] = useState(true);
+//  let [ error, setError ] = useState(false);
     let [ selectedGroups, setSelectedGroups ] = useState([])
     let [ selectedHistories, setSelectedHistories ] = useState([])
-    let [ checksStatus, setChecksStatus ] = useState({});
-    let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
+//  let [ checksStatus, setChecksStatus ] = useState({});
+//  let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
     const [ readOnlyMode ] = useReadOnlyMode();
         
-    // TODO IN PROGRESS: MOVING TO NEW onFetch HOOK.
-    const [ groupedChecks2 ] = useFetch(Server.Url(`/checks`, environ), {
+    // TODO IN PROGRESS: MOVING TO NEW useFetch HOOK.
+
+    const [ checks ] = useFetch({
+        url: Server.Url("/checks", environ),
         onData: (data) => {
             data.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0));
             if (data.length > 0) {
@@ -49,9 +53,17 @@ const ChecksPage = (props) => {
             return data;
         }
     });
+    const [ lambdas ] = useFetch({
+        url: Server.Url("/lambdas", environ),
+        onData: (data) => {
+            data.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0));
+            return data;
+        }
+    });
 
     useEffect(() => {
 
+/*
         Fetch.get(Server.Url(`/checks`, environ),
                   groupedChecks => {
                       setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
@@ -65,11 +77,11 @@ const ChecksPage = (props) => {
                       }
                   },
                   setLoading, setError);
-
         Fetch.get(Server.Url(`/lambdas`, environ),
                   lambdas => {
                       setLambdas(lambdas.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0)));
                   });
+*/
 
         refreshChecksStatus();
 
@@ -78,13 +90,17 @@ const ChecksPage = (props) => {
 
     }, []);
 
+    const [ checksStatus, fetchChecksStatus ] = useFetch({ nofetch: true });
     function refreshChecksStatus() {
+        fetchChecksStatus(Server.Url(`/checks-status`, environ));
+/*
         setChecksStatusLoading(true);
         Fetch.get(Server.Url(`/checks-status`, environ),
                   response => {
                       setChecksStatus(e => ({...response}));
                   },
                   setChecksStatusLoading);
+*/
     }
 
     // This is a bit tedious to unwrap. This is what a check record looks like:
@@ -209,11 +225,11 @@ const ChecksPage = (props) => {
     }
 
     function onGroupSelectAll(group) {
-        if (groupedChecks.length === selectedGroups.length) {
-            setSelectedGroups([groupedChecks[0]]);
+        if (checks.data.length === selectedGroups.length) {
+            setSelectedGroups([checks.data[0]]);
         }
         else {
-            setSelectedGroups([...groupedChecks]);
+            setSelectedGroups([...checks.data]);
         }
     }
 
@@ -221,12 +237,12 @@ const ChecksPage = (props) => {
         return <div style={{minWidth:"150pt"}}>
             <div style={{fontWeight:"bold",paddingBottom:"3pt",cursor:"pointer"}} onClick={() => onGroupSelectAll()}>&nbsp;Check Groups</div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                { groupedChecks.map((datum, index) =>
+                { checks.data.map((datum, index) =>
                     <div key={datum.group}>
                         <span style={{fontWeight:isSelectedGroup(datum) ? "bold" : "normal",cursor:"pointer"}} onClick={() => toggleShowGroup(datum)}>
                             {datum.group}
                         </span>
-                        { index < groupedChecks.length - 1 &&
+                        { index < checks.data.length - 1 &&
                             <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
                         }
                     </div>
@@ -239,10 +255,10 @@ const ChecksPage = (props) => {
         return <div>
             <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;Lambdas</div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                { lambdas.map((datum, index) =>
+                { lambdas.data.map((datum, index) =>
                     <div key={datum.lambda_name} title={datum.lambda_function_name}>
                         {datum.lambda_name}
-                        { index < lambdas.length - 1 &&
+                        { index < lambdas.data.length - 1 &&
                             <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
                         }
                     </div>
@@ -304,6 +320,8 @@ const ChecksPage = (props) => {
         noteChangedResults();
     }
 
+
+    const [ , fetchCheckRun ] = useFetch({ nofetch: true });
     function runCheck(check) {
         console.log("RUNNING CHECK:")
         const args = check.kwargs;
@@ -316,16 +334,39 @@ const ChecksPage = (props) => {
         noteChangedCheckBox();
         check.queueingCheckRun = true;
         check.fetchingResult = true;
+        fetchCheckRun({
+            url: Server.Url(`/checks/${check.name}/run?args=${argsEncoded}`, environ),
+            onData: (data) => {
+                //
+                // The only thing we need/want from this is the UUID identifying the check run.
+                //
+                check.queueingCheckRun = false;
+                check.fetchingResult = false;
+                check.queuedCheckRun = data.uuid;
+                //
+                // For user convenience do what they plausably would do anyways: refresh the history,
+                // a few (4) seconds after this check run completes (here).
+                //
+                setTimeout(() => {
+                    if (!check.fetchingResult) {
+                        refreshHistory(check); noteChangedCheckBox();
+                    }
+                }, 4 * 1000);
+                return data.uuid;
+            }
+        });
+/*
         Fetch.get(Server.Url(`/checks/${check.name}/run?args=${argsEncoded}`, environ),
                   response => {
                       check.queueingCheckRun = false;
                       check.fetchingResult = false;
                       check.queuedCheckRun = response.uuid
                   });
+*/
         check.queuedCheckRun = null;
         showCheckRunningBox(check);
         showHistory(check);
-        setTimeout(() => { if (!check.fetchingResult) { refreshHistory(check); noteChangedCheckBox(); } }, 10000);
+        // setTimeout(() => { if (!check.fetchingResult) { refreshHistory(check); noteChangedCheckBox(); } }, 10000);
     }
 
     function showCheckRunningBox(check) {
@@ -802,36 +843,75 @@ const ChecksPage = (props) => {
         }
     }
 
+    const [ , fetchCheckHistory ] = useFetch({ nofetch: true });
     function showHistory(check) {
         if (!check.showingHistory) {
             check.showingHistory = true;
             selectedHistories.unshift(check);
             noteChangedHistories();
             if (!check.history) {
+                fetch({
+                    url: Server.Url(`/checks/${check.name}/history`, environ),
+                    onData: (data) => {
+                        check.history = data;
+                        noteChangedHistories();
+                    },
+                    onDone: (response) => {
+                    }
+                });
+                    /*
+                fetchCheckHistory({
+                    url: Server.Url(`/checks/${check.name}/history`, environ),
+                    onData: (data) => {
+                        check.history = data;
+                        noteChangedHistories();
+                        return data;
+                    }
+                });
+                */
+/*
                 Fetch.get(Server.Url(`/checks/${check.name}/history`, environ),
                           history => { check.history = history; noteChangedHistories(); });
+*/
             }
         }
     }
 
+    const [ , fetchCheckHistoryResult ] = useFetch({ nofetch: true });
     function showHistoryResult(check, history, uuid) {
         history.__resultShowing = true;
         history.__resultLoading = true;
-        history.__resultError = false;
+//      history.__resultError = false;
         noteChangedHistories();
+        fetchCheckHistoryResult({
+            url: Server.Url(`/checks/${check.name}/${uuid}`, environ),
+            onData: (data) => {
+                if (history.__resultShowing) {
+                    history.__result = data;
+                    noteChangedHistories();
+                }
+                return data;
+            },
+            onDone: (response) => {
+                history.__resultLoading = false;
+                noteChangedHistories();
+            }
+        });
+/*
         Fetch.get(Server.Url(`/checks/${check.name}/${uuid}`, environ), response => {
             if (history.__resultShowing) {
                 history.__result = response;
                 noteChangedHistories();
             }
         }, () => { history.__resultLoading = false; noteChangedHistories(); }, () => { history.__resultError = true; } );
+*/
     }
 
     function hideHistoryResult(history) {
         history.__resultShowing = false;
         history.__result = null;
         history.__resultLoading = false;
-        history.__resultError = false;
+//      history.__resultError = false;
         noteChangedHistories();
     }
 
@@ -914,15 +994,27 @@ const ChecksPage = (props) => {
         checks.map((check) => check.showingResults && hideResultBox(check));
     }
 
+    const [ , fetchCheckResult ] = useFetch({ nofetch: true });
     function showResultBox(check) {
         check.showingResults = true;
         noteChangedSelectedGroups();
         if (!check.results) {
             // Fetch the latest results for this check.
             check.fetchingResult = true;
+            fetchCheckResult({
+                url: Server.Url(`/checks/${check.name}`, environ),
+                onData: (data) => {
+                    check.results = data;
+                    check.fetchingResult = false;
+                    noteChangedResults();
+                    return data;
+                }
+            });
+/*
             Fetch.get(Server.Url(`/checks/${check.name}`, environ),
                       checkResults => { check.results = checkResults; check.fetchingResult = false; noteChangedResults(); },
-                      setLoading, setError);
+                      null, setError);
+*/
         }
     }
 
@@ -949,9 +1041,16 @@ const ChecksPage = (props) => {
         return checksRaw && checksRaw.__loading;
     }
 
+    const [ , fetchChecksRaw ] = useFetch({ nofetch: true });
     function showChecksRaw() {
         setChecksRawHide(false);
         setChecksRaw({__loading: true});
+        fetchChecksRaw({
+            url: Server.Url(`/checks-raw`, environ),
+            onData: (data) => {
+                setChecksRaw(data);
+            }
+        });
         Fetch.get(Server.Url(`/checks-raw`, environ),
                   data => {
                       delete data.__loading;
@@ -1007,25 +1106,25 @@ const ChecksPage = (props) => {
             &nbsp;<b style={{cursor:"pointer"}} onClick={() => refreshChecksStatus()}>Checks Status</b>
             &nbsp;&nbsp;
             </td><td>
-            { checksStatusLoading ? <>
-                { <StandardSpinner loading={checksStatusLoading} label={""} size={60} color={"black"} /> }
+            { checksStatus.loading ? <>
+                { <StandardSpinner loading={checksStatus.loading} label={""} size={60} color={"black"} /> }
             </>:<>
                 <b style={{cursor:"pointer"}} onClick={() => refreshChecksStatus()}>&#8635;</b>
             </>}
             </td></tr></tbody></table>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                Running: {!checksStatusLoading ? checksStatus.checks_running : "..."}
+                Running: {!checksStatus.loading ? checksStatus.data?.checks_running : "..."}
                 <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
-                Queued: {!checksStatusLoading ? checksStatus.checks_queued : "..."}
+                Queued: {!checksStatus.loading ? checksStatus.data?.checks_queued : "..."}
            </div>
         </>
     }
 
-    if (error) return <>Cannot load checks from Foursight: {error}</>;
-    if (loading) {
+    if (checks.error) return <>Cannot load checks from Foursight: {checks.error}</>;
+    if (checks.loading) {
         return <>
             <div style={{marginTop:"30px"}}>
-                <RingSpinner loading={loading} color={'blue'} size={90} />
+                <RingSpinner loading={checks.loading} color={'blue'} size={90} />
             </div>
         </>
     }
