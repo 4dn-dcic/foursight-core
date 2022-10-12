@@ -1,11 +1,14 @@
 // -------------------------------------------------------------------------------------------------
-// Fetch (HTTP GET et cetera) related functions.
+// HTTP fetch related functions.
 // -------------------------------------------------------------------------------------------------
 
-// N.B. In the process of moving from using the main fetchData function here
-// to using the new useFetch React hook here. This will be cleaner and will
-// also easily allow us to track (globally) all currently running fetches,
-// for global spinner display purposes (useful for user and troubleshooting).
+// -------------------------------------------------------------------------------------------------
+// N.B. In the process of moving from using the main fetchData function (at the bottom here) to the
+// new useFetch and useFetchFunction React hooks (below. This will be cleaner and will also easily
+// allow us to track (globally) all currently running and completed fetches; the former for global
+// spinner display purposes (useful for user and troubleshooting); the latter possibly also useful.
+// These new hooks also use axios rather than the builtin fetch function to do its work.
+// -------------------------------------------------------------------------------------------------
 
 import axios from 'axios';
 import { useEffect, useState } from 'react';
@@ -268,10 +271,11 @@ const _useFetching = () => {
 const _useFetched = () => {
     const [ fetched, setFetched ] = useGlobal(_fetchedData);
     const add = (fetch, data) => {
-		//
-		// Don't currently include the fetched (given) data in save fetches.
-		// Not sure needed and in any case this isn't actually used yet.
-		//
+        //
+        // Note the next line causes the fetched data to be
+        // included within the global list of completed fetches.
+        //
+        fetch.data = data;
         fetch.duration = new Date() - fetch.timestamp;
         if (fetched.length >= MAX_SAVE) {
             //
@@ -303,7 +307,11 @@ const _doFetch = (args) => {
         const status = response.status;
         Debug.Info(`FETCH-HOOK-RESPONSE: ${args.url} -> HTTP ${status}`);
         Debug.Info(response.data);
-        const data = args.onData(response.data);
+        //
+        // Note the next line specifies that if the onDone callback
+        // returns nothing then we set the data to, well, the data.
+        //
+        const data = args.onData(response.data) || response.data;
         Debug.Info(`FETCH-HOOK-BAKED-RESPONSE: ${args.url} -> HTTP ${status}`);
         Debug.Info(data);
         args.setData(data);
