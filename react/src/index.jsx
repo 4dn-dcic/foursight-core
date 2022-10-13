@@ -6,6 +6,15 @@ import Cookie from './utils/Cookie';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
+// N.B. When using StrictMode, which is NOT enabled for production builds,
+// components (seem to) get rendered TWICE, i.e. e.g. useEffect is called
+// twice, resulting in double fetches from the API depending on the component.
+// This is said to be done to enable more checking during development, but it
+// also is confusing and obfuscates what's going on when you want to make sure
+// you're not in fact calling APIs more often than should be for other (bad)
+// reasons. So we turn it off by default, but can turn it on by manually
+// setting the test_mode_strict_mode cookie.
+
 if (Cookie.Get("test_mode_strict_mode") === "1") {
     root.render(
         <React.StrictMode>

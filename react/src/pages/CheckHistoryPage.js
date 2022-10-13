@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { useFetchFunction } from '../utils/Fetch';
+import { useFetch } from '../utils/Fetch';
 import { StandardSpinner } from '../Spinners';
 import PaginationControl from '../PaginationControl';
 import Clipboard from '../utils/Clipboard';
@@ -24,9 +24,8 @@ const CheckHistoryPage = (props) => {
 
     const [ page, setPage ] = useState(Math.floor(offset / limit));
     const [ pages, setPages ] = useState(Math.max(1, page + 1));
-    const [ history, setHistory ] = useState({loading: true});
 
-    const fetch = useFetchFunction();
+    const history = useFetch();
 
     useEffect(() => {
         updateData(limit, offset, sort);
@@ -39,33 +38,19 @@ const CheckHistoryPage = (props) => {
     }
 
     function updateData(limit, offset, sort) {
-        setHistory(e => ({...e, loading: true}));
         if (!Str.HasValue(sort)) {
             sort = "timestamp.desc";
         }
-		setArgs({...args,  "limit": limit, "offset": offset, "sort": sort });
-        fetch({
+		setArgs({...args, "limit": limit, "offset": offset, "sort": sort });
+        history.refresh({
             url: Server.Url(`/checks/${check}/history?limit=${limit}&offset=${offset}&sort=${sort}`, environ),
-            onData: (response) => {
-                response.loading = false;
-                setHistory(response);
-                if (limit > response.paging.total) {
-                    offset = 0;
+            onData: (data) => {
+                if (limit > data.paging.total) {
+                    setOffset(0);
                 }
-                // setLimit(limit);
-                // setOffset(offset);
-                // setSort(sort);
-                setPages(Math.ceil(response.paging.total / limit));
+                setPages(Math.ceil(data.paging.total / limit));
                 setPage(Math.floor(offset / limit));
-            },
-            onDone: (response) => {
-                history.loading = false;
-                if (response.error) {
-                    history.error = true;
-                }
-            },
-            onError: () => {
-                history.error = true;
+                return data;
             }
         });
 /*
@@ -83,7 +68,7 @@ const CheckHistoryPage = (props) => {
     }
 
     function onPaginationClick(event) {
-        const offset = event.selected * limit % history.paging.total;
+        const offset = event.selected * limit % history.data.paging.total;
         update(limit, offset, sort);
     }
 
@@ -92,25 +77,23 @@ const CheckHistoryPage = (props) => {
         update(limit, offset, sort);
     }
 
-    function showResult(check, history, uuid) {
-        history.__resultShowing = true;
-        history.__resultLoading = true;
-        history.__resultError = false;
-        setHistory(e => ({...e}));
-        fetch({
+    function showResult(check, specificHistory, uuid) {
+        specificHistory.__resultShowing = true;
+        specificHistory.__resultLoading = true;
+        specificHistory.__resultError = false;
+        history.refresh({
             url: Server.Url(`/checks/${check}/${uuid}`, environ),
-            onData: (data) => {
-                if (history.__resultShowing) {
-                    history.__result = data;
-                    setHistory(e => ({...e}));
+            onData: (data, current) => {
+                if (specificHistory.__resultShowing) {
+                    specificHistory.__result = data;
                 }
+                return current;
             },
             onDone: () => {
-                history.__resultLoading = false;
-                setHistory(e => ({...e}));
+                specificHistory.__resultLoading = false;
             },
             onError: () => {
-                history.__resultError = true;
+                specificHistory.__resultError = true;
             }
         });
 /*
@@ -124,20 +107,21 @@ const CheckHistoryPage = (props) => {
 */
     }
 
-    function hideResult(history) {
-        history.__resultShowing = false;
-        history.__result = null;
-        history.__resultLoading = false;
-        history.__resultError = false;
-        setHistory(e => ({...e}));
+    function hideResult(specificHistory) {
+        specificHistory.__resultShowing = false;
+        specificHistory.__result = null;
+        specificHistory.__resultLoading = false;
+        specificHistory.__resultError = false;
+        history.update();
+        //setHistory(e => ({...e}));
     }
 
-    function toggleResult(check, history, uuid) {
-        if (history.__resultShowing) {
-            hideResult(history);
+    function toggleResult(check, specificHistory, uuid) {
+        if (specificHistory.__resultShowing) {
+            hideResult(specificHistory);
         }
         else {
-            showResult(check, history, uuid);
+            showResult(check, specificHistory, uuid);
         }
     }
 
@@ -179,18 +163,18 @@ const CheckHistoryPage = (props) => {
                 <span style={{float:"right",cursor:"pointer"}} onClick={() => {}}><b>&#x2717;</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
-                { history?.list?.length > 0 ? (<>
+                { history.data?.list?.length > 0 ? (<>
                     <table style={{width:"100%"}}>
                         <TableHead
                             columns={columns}
-                            list={history.list}
+                            list={history.data.list}
                             state={{key: extractTimestamp, order: sort.endsWith(".desc") ? -1 : 1}}
                             update={(key, order) => {onSort(key, order);}}
                             lines={true}
                             style={{color:"darkblue",fontWeight:"bold"}}
                             loading={history.loading} />
                     <tbody>
-                    {history?.list.map((history, index) =>
+                    {history.data?.list.map((history, index) =>
                         <React.Fragment key={extractUUID(history)}>
                             { index !== 0 && (<>
                                 <tr><td style={{paddingTop:"2px"}}></td></tr>
@@ -272,6 +256,7 @@ const CheckHistoryPage = (props) => {
 
     if (history.error) return <>Cannot load data from Foursight: {history.error}</>;
     return <>
+                <pre>{JSON.stringify(history)}</pre>
         <table style={{maxWidth:"1000pt"}}><tbody>
             <tr>
                 <td style={{paddingRight:"10pt",paddingBottom:"4pt"}}>
@@ -299,7 +284,7 @@ const CheckHistoryPage = (props) => {
                             </select>
                             </span></span>
                             |
-                            Showing {offset + 1} thru {offset + limit} | Total: {history?.paging?.total}&nbsp;&nbsp;
+                            Showing {offset + 1} thru {offset + limit} | Total: {history.data?.paging?.total}&nbsp;&nbsp;
                         </div>
                     </td>
                     </tr></tbody></table>
@@ -322,7 +307,7 @@ const CheckHistoryPage = (props) => {
                             <tr><td style={{paddingBottom:"2px"}}></td></tr>
                             <tr>
                                 <td style={{paddingRight:"8pt"}}><b>Group</b>:</td>
-                                <td>{history?.check?.group}</td>
+                                <td>{history.data?.check?.group}</td>
                             </tr>
                             <tr><td style={{paddingTop:"2px"}}></td></tr>
                             <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
@@ -330,10 +315,10 @@ const CheckHistoryPage = (props) => {
                             <tr>
                                 <td style={{verticalAlign:"top",paddingRight:"8pt"}}><b>Schedule:</b></td>
                                 <td>
-                                    {getCronDescriptionFromCheck(history.check)}
+                                    {getCronDescriptionFromCheck(history.data?.check)}
                                     <br />
                                     <span style={{fontFamily:"monospace"}}>
-                                        {getCronFromCheck(history.check)}
+                                        {getCronFromCheck(history.data?.check)}
                                     </span>
                                 </td>
                             </tr>

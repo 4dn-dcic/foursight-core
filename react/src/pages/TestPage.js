@@ -13,7 +13,7 @@ const TestPage = () => {
         },
         nofetch: true,
         nologout: true,
-        delay: 0.0 * 1000
+        delay: 1.0 * 1000
     });
 
         useEffect(() => {
@@ -35,6 +35,8 @@ const TestPage = () => {
              <span className="cursor-hand"
                 onClick={() => {
                     someFetchResponse.refresh({
+                            url: Server.Url("/users"),
+                            timeout: 2000,
                         onData: (data, currentData) => {
                             console.log('refresh.ondone');
                             console.log(currentData)

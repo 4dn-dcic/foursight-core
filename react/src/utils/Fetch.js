@@ -106,23 +106,23 @@ const MAX_SAVE = 25;
 //   String containing a short description of any error which occurred; null if no error.
 //
 // - update
-//   Function to dynamically update the data state. This will do a proper deep update of the data,
-//   which is usually what is desired. Any data may be passed as an argument to this update function.
-//   Or, if no argument is passed, it will use the data associated with the useFetch response
-//   object through which this update was called.
+//   Function to dynamically update the data state. Any data may be passed as an argument to
+//   this update function. This will do a proper deep update of the data, which is usually
+//   what is desired. If no argument is passed, this will use the data associated with the
+//   useFetch response object through which this update was called.
 //
 // - set
-//   Function to dynamically update the data state. This uses the vanilla React useState
-//   setter function associated with the data, which does NOT automatically do a deep update
-//   of the data, e.g. if the data is an object and only a property of it has been changed.
-//   This behavior is a common source of confusion; is often not what is expecte or desired;
-//   use the update function (above) to force the data state to fully update.
+//   Function to dynamically update the data state. Any data may be passed as an argument to
+//   this update function. This uses the vanilla React useState setter function associated
+//   with the data, which does NOT automatically do a deep update of the data, e.g. if the
+//   data is an object and only a property of it has been changed. This behavior is a common
+//   source of confusion; is often not what is expecte or desired; use the update function,
+//   described above, to force the data state to be fully updated.
 //
 // - refresh
 //   Function to dynamically refresh, i.e. redo the fetch for, the data. Arguments to this
 //   are exactly like those for this useFetch hook function, AND may be used to INDIVIDUALLY
-//   overide the useFetch arguments with different values, e.g. to refresh with a different URL.
-//   This refresh function returns the exact same return value as the useFetch call.
+//   override the useFetch arguments with different values, e.g. to refresh with a different URL.
 //
 //   Note that this refresh function will update the same state variables (data, loading, status, timeout,
 //   error) returned by that inital useFetch call. So this is not meant for multiple independent fetches;
@@ -174,8 +174,13 @@ export const useFetch = (url, args) => {
                                   fetching, fetched, nonofetch);
     }
 
+    args = assembleArgs();
+
     useEffect(() => {
-        _doFetch(assembleArgs());
+        if (args.initial) {
+            setData(args.initial);
+        }
+        _doFetch(args);
     }, [])
 
     const update = function(data) {
@@ -186,14 +191,14 @@ export const useFetch = (url, args) => {
             //
             data = this;
         }
-        if (data?.__usefetch_response__ === true) {
+        if (data?.__usefetch_response === true) {
             //
             // If the argument is the useFetch response itself then
             // implicitly use the data associated with that response.
             //
             data = data.data;
         }
-        if (this && this.__usefetch_response__ && (this.data !== data)) {
+        if (this && this.__usefetch_response && (this.data !== data)) {
             //
             // If data argument is different, by reference, than the current
             // data associated with the useFetch response through which this
@@ -222,9 +227,7 @@ export const useFetch = (url, args) => {
         }
     }
     const refresh = function(url, args) {
-        _doFetch(assembleArgs(url, args, true),
-                 this && this.__usefetch_response__ === true ? this.data : undefined);
-        return response;
+        _doFetch(assembleArgs(url, args, true), this && this.__usefetch_response === true ? this.data : undefined);
     };
     const response = {
         data: data,
@@ -233,7 +236,14 @@ export const useFetch = (url, args) => {
         timeout: timeout,
         error: error,
         set: setData,
-        __usefetch_response__: true
+        //
+        // Previously had a case where i5 seemed loading wasn't getting updated properly;
+        // and where turning it into a computed property fixed it; cannot reproduce at
+        // the moment so backing it out; think it was fixed elsewhere here; leaving
+        // this here for now in case we run into again, to see how it's done.
+        // get ["loading"]() { return loading; },
+        //
+        __usefetch_response: true
     };
     response.update = update.bind(response)
     response.refresh = refresh.bind(response)
@@ -386,7 +396,6 @@ const _doFetch = (args, current = undefined) => {
 
     function handleError(error, id) {
         let status = error.response?.status || 0;
-        Debug.Info(`FETCH ERROR: ${args.url} -> HTTP ${status}`);
         args.setData(null);
         args.setStatus(status);
         args.setError(error.message);
@@ -396,6 +405,7 @@ const _doFetch = (args, current = undefined) => {
             // If we EVER get an HTTP 401 (not authenticated)
             // then we just logout the user, unless this behavior is disabled.
             //
+            Debug.Info(`FETCH UNAUTHENTICATED ERROR: ${args.url} -> HTTP ${status}`);
             if (!args.nologout) {
                 Logout();
             }
@@ -405,6 +415,7 @@ const _doFetch = (args, current = undefined) => {
             // If we EVER get an HTTP 403 (not authorized)
             // then redirect to th the /env page, unless this behavior is disabled.
             //
+            Debug.Info(`FETCH UNAUTHORIZED ERROR: ${args.url} -> HTTP ${status}`);
             if (!args.noredirect) {
                 if (Client.CurrentLogicalPath() !== "/env") {
                     window.location.pathname = Client.Path("/env");
@@ -416,6 +427,7 @@ const _doFetch = (args, current = undefined) => {
             // This is what we get on timeout; no status code; set status to 408,
             // though not necessarily a server timeout, so not strictly accurate.
             //
+            Debug.Info(`FETCH TIMEOUT ERROR: ${args.url} -> HTTP ${status}`);
             if (!status) {
                 status = 408;
                 args.setStatus(status);
@@ -430,12 +442,14 @@ const _doFetch = (args, current = undefined) => {
             // error.code; though the Chrome debugger shows an HTTP 403.
             // See: https://github.com/axios/axios/issues/4420
             //
+            Debug.Info(`FETCH NETWORK ERROR: ${args.url} -> HTTP ${status}`);
             if (!status) {
                 status = 404;
                 args.setStatus(status);
             }
         }
         else {
+            Debug.Info(`FETCH ERROR: ${args.url} -> HTTP ${status}`);
             args.setError(`Unknown HTTP error (code: ${error.code}).`);
         }
         noteFetchEnd(id);
@@ -452,6 +466,11 @@ const _doFetch = (args, current = undefined) => {
         args.fetched.add(args.fetching.remove(id), data);
     }
 
+    if (args.nofetch || !Str.HasValue(args.url)) {
+        args.setLoading(false);
+        return;
+    }
+
     // Don't think we want to reset the data; leave
     // whatever was there until there is something new.
     // args.setData(null);
@@ -461,19 +480,13 @@ const _doFetch = (args, current = undefined) => {
     args.setTimeout(false);
     args.setError(null);
 
-    if (args.nofetch || !Str.HasValue(args.url)) {
-        args.setLoading(false);
-        args.onDone({ data: null, loading: false, status: 0, timeout: false, error: null });
-        return;
-    }
-
     // Expand to handle otther verb later (e.g. PUT, POST).
 
     const method = "GET";
     const payload = null;
     const fetch = { url: args.url, method: method, data: payload, timeout: args.timeout, withCredentials: "include" };
 
-    Debug.Info(`FETCH: ${args.url}`);
+    Debug.Info(`FETCH: ${args.url} (TIMEOUT: ${args.timeout})`);
 
     // Finally, the actual (Axois based) HTTP fetch happens here.
 
@@ -507,14 +520,15 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
     }
     args = {
         url:        Type.First([ urlOverride, argsOverride?.url, url, args?.url, "" ], Str.HasValue),
+        timeout:    Type.First([ argsOverride?.timeout, args?.timeout, DEFAULT_TIMEOUT ], Type.IsInteger),
+        initial:    Type.First([ argsOverride?.initial, args?.initial, null ], (value) => !Type.IsNull(value)),
+        nofetch:    Type.First([ argsOverride?.nofetch, args?.nofetch, false ], Type.IsBoolean),
+        nologout:   Type.First([ argsOverride?.nologout, args?.nologout, false ], Type.IsBoolean),
+        noredirect: Type.First([ argsOverride?.noredirect, args?.noredirect, false ], Type.IsBoolean),
+        delay:      Type.First([ argsOverride?.delay, args?.delay, DEFAULT_DELAY() ], Type.IsInteger),
         onData:     Type.First([ argsOverride?.onData, args?.onData, () => {} ], Type.IsFunction),
         onDone:     Type.First([ argsOverride?.onDone, args?.onDone , () => {}], Type.IsFunction),
         onError:    Type.First([ argsOverride?.onError, args?.onError , () => {}], Type.IsFunction),
-        timeout:    Type.First([ argsOverride?.timeout, args?.timeout, DEFAULT_TIMEOUT ], Type.IsInteger),
-        delay:      Type.First([ argsOverride?.delay, args?.delay, DEFAULT_DELAY() ], Type.IsInteger),
-        nologout:   Type.First([ argsOverride?.nologout, args?.nologout, false ], Type.IsBoolean),
-        noredirect: Type.First([ argsOverride?.noredirect, args?.noredirect, false ], Type.IsBoolean),
-        nofetch:    Type.First([ argsOverride?.nofetch, args?.nofetch, false ], Type.IsBoolean),
         setData:    setData,
         setLoading: setLoading,
         setStatus:  setStatus,
