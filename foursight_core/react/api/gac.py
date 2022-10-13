@@ -31,7 +31,13 @@ class Gac:
         env_name_short = short_env_name(env_name)
         pattern = re.compile(".*" + env_name_short.replace('-', '.*').replace('_', '.*') + ".*", re.IGNORECASE)
         matching_gac_names = [gac_name for gac_name in gac_names if pattern.match(gac_name)]
-        if len(matching_gac_names) == 1:
+        if len(matching_gac_names) > 0:
+            #
+            # TODO
+            # We really want the above check to be if == 1 ...
+            # But if we return multiple results then what to actually do?
+            # Currently just (randomly) take the first one.
+            #
             return matching_gac_names[0]
         else:
             return " OR ".join(matching_gac_names)
@@ -40,6 +46,9 @@ class Gac:
     def compare_gacs(env_name_a: str, env_name_b: str) -> dict:
         gac_name_a = Gac.get_gac_name(env_name_a)
         gac_name_b = Gac.get_gac_name(env_name_b)
+        print('xyzzy..........................................')
+        print(gac_name_a)
+        print(gac_name_b)
         with override_environ(IDENTITY=gac_name_a):
             gac_values_a = get_identity_secrets()
         with override_environ(IDENTITY=gac_name_b):

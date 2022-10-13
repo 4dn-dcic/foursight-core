@@ -1,13 +1,5 @@
 // -------------------------------------------------------------------------------------------------
-// HTTP fetch related functions.
-// -------------------------------------------------------------------------------------------------
-
-// -------------------------------------------------------------------------------------------------
-// N.B. In the process of moving from using the main fetchData function (at the bottom here) to the
-// new useFetch and useFetchFunction React hooks (below. This will be cleaner and will also easily
-// allow us to track (globally) all currently running and completed fetches; the former for global
-// spinner display purposes (useful for user and troubleshooting); the latter possibly also useful.
-// These new hooks also use axios rather than the builtin fetch function to do its work.
+// HTTP fetch related hooks: useFetch, useFetchFunction, useFetching, useFetched
 // -------------------------------------------------------------------------------------------------
 
 import axios from 'axios';
@@ -16,7 +8,6 @@ import uuid from 'react-uuid';
 import { defineGlobal, useGlobal } from '../Global';
 import Client from '../utils/Client';
 import Cookie from '../utils/Cookie';
-import Context from '../utils/Context';
 import Debug from '../utils/Debug';
 import Logout from '../utils/Logout';
 import Str from '../utils/Str';
@@ -26,14 +17,12 @@ const DEFAULT_TIMEOUT = 30 * 1000;
 const DEFAULT_DELAY = () => { const delay = Cookie.TestMode.FetchSleep(); return delay > 0 ? delay : 0; };
 const MAX_SAVE = 100;
 
-// This useFetch React hook is used to centrally facilitate HTTP fetches.
-// Used to define, initialize, and/or refresh an HTTP fetch to the server for some data.
+// This useFetch React hook is used to centrally facilitate all App HTTP fetches.
+// Used to define or initiate HTTP fetches, and update or refresh the fetched data.
 // Takes an URL and various arguments (see below) and returns state (see below) wrapping
-// up pertinent info (data, loading, status, timeout, error) as well as a refresh function.
-// Also globally tracks all outstanding fetches (e.g. useful for a global fetching spinnner),
-// as well as all completed fetches (not yet used).
-//
-// This is new (2022-10-09) and will eventually supplant fetchData at the end of this module.
+// up pertinent info (data, loading, status, timeout, error) as well as a data update and
+// refresh function. Also globally tracks all outstanding (in progress) fetches (e.g. useful
+// for a global fetching spinnner), as well as all completed fetches (not yet used).
 //
 // ARGUMENTS
 //
@@ -73,36 +62,42 @@ const MAX_SAVE = 100;
 // - onData
 //   Function to call when a SUCCESSFUL data fetch is completed; it is called with the
 //   fetched (JSON) data as an argument; this function should return that same passed data,
-//   or some modified version of it, or whatever is desired, as the result of the fetch.
-//   If the invocation of the fetch which triggered this callback was via the refresh
-//   function (see return values below) then a second argument is passed to this callback
+//   OR some modified version of it, or whatever is desired; this returned value will be
+//   set as the result the fetch; if nothing at all is returned (i.e. undefined) then the
+//   fetched data will implicitly be used (if null is desired, then return null explicitly).
+//
+//   Iff the invocation of the fetch which triggered this callback was via the refresh
+//   function (see the RETURN VALUE below) then a second argument is passed to this callback
 //   which is the value of the previously (or rather current, at this point) fetched data.
 //
 // - onDone
 //   Function to call when the fetch is complete, whether or not the fetch was successful;
 //   it is called with an object which is effectively the same as the response/state object
-//   returned (as the first array item) from this hook, i.e. contain these properties:
-//   data, loading, status, timeout, error; see the RETURN VALUE section below.
-//   If the fetch is unsuccessful (timeout or error) then data is null.
+//   returned from this hook, i.e. containing these properties: data, loading, status,
+//   timeout, error; see the RETURN VALUE section below. If the fetch is unsuccessful,
+//   i.e.  timeout or error, then data is null.
+//
+// - onError
+//   Same as onDone but call ONLY on error (or timeout).
 //
 // RETURN VALUE
 //
-// TODO: In process of changing this to return just a single value ...
-//
-// The return value for this hook is a Reac-ish array with TWO elements.
-//
-// The FIRST element in the returned array is the response states of the fetch, specifically,
-// an object containing the following properties; these are the key values upon which the
-// caller will normally rely to get all fetch related information (and to update the data).
+// The return value for this hook is an object containing the state of the fetch,
+// including whether or not it the fetch is in progress, whether or not the fetch
+// was successful, and the fetched data itself on fetch completion; it also contains
+// functions to set, update, and/or refresh the fetched data. Details below on the
+// properties of this returned object; these are the key values upon which the caller
+// will normally rely to get all fetch related information (and to update the data).
 //
 // - data
-//   JSON data fetched (optionally modified via onData arg/function), or null on error or timeout.
+//   JSON data fetched (optionally modified via onData arg/function),
+//   or null on error or timeout.
 //
 // - loading
 //   Boolean indicating whether or not the fetch is in progress.
 //
 // - status
-//   HTTP status code (e.g. 200).
+//   Integer HTTP status code (e.g. 200).
 //
 // - timeout
 //   Boolean indicating whether or not the fetch timed out.
@@ -111,34 +106,26 @@ const MAX_SAVE = 100;
 //   String containing the description of error which occurred, or null if no error.
 //
 // - update
-//   Function to dynamically update the data state. This will do a
-//   proper deep update of the data, which is usually what is desired.
-//   The data, or any data for that matter, may be passed as an argument
-//   to this udpate function. Or, if no argument is passed, it data will
-//   just use the data on for the object through which this update was called.
+//   Function to dynamically update the data state. This will do a proper deep update of the data,
+//   which is usually what is desired. Any data may be passed as an argument to this update function.
+//   Or, if no argument is passed, it will use the data associated with the useFetch response
+//   object through which this update was called.
 //
 // - set
-//   Function to dynamically update the data state. This uses the React useState setter
-//   function associated with the data, and which does NOT automatically do a deep update
-//   of the data, e.g. if the data is an object and only a property of it has been changed.
+//   Function to dynamically update the data state. This uses the vanila React useState setter
+//   function associated with the data, and which does NOT automatically do a deep update of
+//   the data, e.g. if the data is an object and only a property of it has been changed.
 //
-// - refresh - TODO: moving the second element value of the return value to this.
+// - refresh
 //   Function to dynamically refresh, i.e. redo the fetch for, the data. Arguments to this
 //   are exactly like those for this useFetch hook function, and may be used to individually
 //   overide the useFetch arguments with different values, e.g. to refresh with a different URL.
 //   This refresh function returns the exact same return value as the useFetch call.
 //
-// The SECOND element in the returned array is a refresh function which can be called to refresh,
-// i.e. redo the fetch for, the data. Arguments to this refresh function are exactly like those
-// for this useFetch hook function, and may be used to individually overide the useFetch arguments
-// with different values, e.g. to refresh with a different URL. This refresh function returns the
-// exact same first item/object of the return value of the useFetch call (which returned this
-// refresh function), but in a single element array.
-//
-// Note that this refresh function will update the same state variables (data, loading, status, timeout,
-// error) returned by that inital useFetch call. So this is not meant for multiple independent fetches;
-// use multiple useFetch instantiations for that. The main use of this is to do simple refreshes of an
-// initial fetch, and also (when using the nofetch argument) to obtain a fetch function for later use.
+//   Note that this refresh function will update the same state variables (data, loading, status, timeout,
+//   error) returned by that inital useFetch call. So this is not meant for multiple independent fetches;
+//   use multiple useFetch instantiations for that. The main use of this is to do simple refreshes of an
+//   initial fetch, and also (when using the nofetch argument) to obtain a fetch function for later use.
 //
 // ADDITIONALLY
 //
@@ -158,6 +145,11 @@ const MAX_SAVE = 100;
 //
 // Currently just for HTTP GET. Will add support for other verbs as/when necessary.
 //
+// OTHER COMMENTS
+//
+// Looking back over this, this does look rather complex, but be assured the goal was to make
+// the USAGE simple; this grew organically over time; time will tell if we've achieved simplicity.
+
 export const useFetch = (url, args) => {
 
     const [ data, setData ] = useState(null);
@@ -183,78 +175,35 @@ export const useFetch = (url, args) => {
 
     const update = function(data) {
         if (data === undefined) {
-            data = this;
-        }
-        if (data.__usefetch_response__ === true) {
-            data = data.data;
-        }
-        if (Type.IsObject(data)) {
-            setData({...data});
-        }
-        else if (Type.IsArray(data)) {
-            setData([...data]);
-        }
-        else if (Type.IsFunction(data)) {
-            setData(data());
-        }
-        else {
-            setData(data);
-        }
-    }
-
-    const refresh = function(url, args) {
-        args = assembleArgs(url, args, true);
-        _doFetch(args);
-        return [ response ];
-    };
-
-    const response = {
-        data: data,
-        loading: loading,
-        status: status,
-        timeout: timeout,
-        error: error,
-        set: setData,
-        update: update,
-        refresh: refresh,
-        __usefetch_response__: true
-    };
-
-    return [ response, refresh ];
-}
-
-// Same as above but returns single value. Migrate to this.
-export const useFetchNew = (url, args) => {
-
-    const [ data, setData ] = useState(null);
-    const [ loading, setLoading ] = useState(true);
-    const [ status, setStatus ] = useState(0);
-    const [ timeout, setTimeout ] = useState(false);
-    const [ error, setError ] = useState(null);
-
-    const fetching = _useFetching();
-    const fetched = _useFetched();
-
-    function assembleArgs(urlOverride = null, argsOverride = null, nonofetch = false) {
-        return _assembleFetchArgs(url, args, urlOverride, argsOverride,
-                                  setData, setLoading, setStatus, setTimeout, setError,
-                                  fetching, fetched, nonofetch);
-    }
-
-    args = assembleArgs();
-
-    useEffect(() => {
-        _doFetch(args);
-    }, [])
-
-    const update = function(data) {
-        if (data === undefined) {
+            //
+            // If no argument is passed then implicitly use the
+            // useFetch response through which this update call was made.
+            //
             data = this;
         }
         if (data?.__usefetch_response__ === true) {
+            //
+            // If the argument is the useFetch response itself then
+            // implicitly use the data associated with that response.
+            //
             data = data.data;
         }
-        if (Type.IsObject(data)) {
+        if (this && this.__usefetch_response__ && (this.data !== data)) {
+            //
+            // If data argument is different, by reference, than the current
+            // data associated with the useFetch response through which this
+            // update call was made, then we can do a simple setData since
+            // React, in such a case, will update the data state properly.
+            //
+            // Otherwise, below, since the object references are the same,
+            // by default React will not update the state, since it does
+            // not update if the references are the same; this is usually
+            // not what we want, so this update function will force an
+            // update by impliclitly creating a new (appropriate) object.
+            //
+            setData(data);
+        }
+        else if (Type.IsObject(data)) {
             setData({...data});
         }
         else if (Type.IsArray(data)) {
@@ -270,8 +219,7 @@ export const useFetchNew = (url, args) => {
 
     const refresh = function(url, args) {
         args = assembleArgs(url, args, true);
-        const current = this.__usefetch_response__ === true ? this.data : undefined;
-        _doFetch(args, current);
+        _doFetch(args, this && this.__usefetch_response__ === true ? this.data : undefined);
         return response;
     };
 
@@ -282,16 +230,16 @@ export const useFetchNew = (url, args) => {
         timeout: timeout,
         error: error,
         set: setData,
-        update: update,
-        refresh: refresh,
         __usefetch_response__: true
     };
+    response.update = update.bind(response)
+    response.refresh = refresh.bind(response)
 
     return response;
 }
 
 // This useFetchFunction React hook, like useFetch, is also used to centrally facilitate HTTP fetches,
-// and also ties into a globally tracked list of all outstanding (and completed) fetches.  But this
+// and also ties into a globally tracked list of all outstanding (and completed) fetches. But this
 // is simpler. It doesn't setup any state like useFetch, except for the aforementioned global
 // fetches/fetched state - which BTW is actually why we need a hook rather than a simple function.
 // This hook returns a fetch function which takes the same kind of arguments as useFetch.
@@ -327,14 +275,14 @@ export const useFetchFunction = (url = null, args = null) => {
     return (url, args) => _doFetch(assembleArgs(url, args));
 }
 
-// Readonly hook to get the list of currently fetching.
+// Readonly exported hook to get the list of currently fetching.
 // See ADDITIONALLY section in useFetch comments above.
 //
 export const useFetching = () => {
     return [ Array.from(useGlobal(_fetchingData)[0].values()) ];
 }
 
-// Readonly hook to get the list of completed fetches.
+// Readonly exported hook to get the list of completed fetches.
 // See ADDITIONALLY section in useFetch comments above.
 //
 export const useFetched = () => {
@@ -382,7 +330,7 @@ const _useFetched = () => {
         fetch.duration = new Date() - fetch.timestamp;
         if (fetched.length >= MAX_SAVE) {
             //
-            // Maximum number of save fetches reached;
+            // Maximum number of saved fetches reached;
             // remove the oldest (first) item.
             //
             fetched.shift();
@@ -428,12 +376,13 @@ const _doFetch = (args, current = undefined) => {
         args.setStatus(status);
         args.setLoading(false);
         noteFetchEnd(id, data);
-        args.onDone({ data: data, loading: false, status: status, timeout: false, error: null });
+        const onArg = { data: data, loading: false, status: status, timeout: false, error: null };
+        args.onDone(onArg);
     }
 
     function handleError(error, id) {
         let status = error.response?.status || 0;
-        Debug.Info(`FETCH -ERROR: ${args.url} -> HTTP ${status}`);
+        Debug.Info(`FETCH ERROR: ${args.url} -> HTTP ${status}`);
         args.setData(null);
         args.setStatus(status);
         args.setError(error.message);
@@ -486,8 +435,9 @@ const _doFetch = (args, current = undefined) => {
             args.setError(`Unknown HTTP error (code: ${error.code}).`);
         }
         noteFetchEnd(id);
-        args.onError({ data: null, loading: false, status: status, timeout: status === 408, error: error.message });
-        args.onDone({ data: null, loading: false, status: status, timeout: status === 408, error: error.message });
+        const onArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
+        args.onError(onArg);
+        args.onDone(onArg);
     }
 
     function noteFetchBegin(fetch) {
@@ -513,11 +463,15 @@ const _doFetch = (args, current = undefined) => {
         return;
     }
 
+    // Expand to handle otther verb later (e.g. PUT, POST).
+
     const method = "GET";
     const payload = null;
     const fetch = { url: args.url, method: method, data: payload, timeout: args.timeout, withCredentials: "include" };
 
     Debug.Info(`FETCH: ${args.url}`);
+
+    // Finally, the actualy (Axois base) HTTP fetch happens here.
 
     const id = noteFetchBegin(fetch);
     axios(fetch)
@@ -570,98 +524,3 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
     }
     return args;
 }
-
-
-
-
-
-
-
-
-// -------------------------------------------------------------------------------------------------
-// LEGACY fetchData ... WILL BE SUPPLANTED BY useFetch HOOK ABOVE ...
-// -------------------------------------------------------------------------------------------------
-// The Foursight API we call (foursight-core/foursight_core/react_api.py) is protected
-// with a  new 'authtoken' cookie which was created along with the 'jwtToken' cookie;
-// We don't need to know this here but this authTokn is the jwtToken encrypted by the
-// API (server-side) using a password it got from its GAC (namely S3_AWS_ACCESS_KEY_ID).
-// This authtoken cookie get automatically passed React API. The React API decrypts
-// this using its password (from the GAC) and checks that the decrypted value looks
-// like a valid JWT token and that it's not expired, etc.
-// See: https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React#Authentication-%26-Authorization
-//
-function OBSOLETE_fetchData(url, setData, setLoading, setError) {
-    if (Cookie.TestMode.HasFetchSleep()) {
-        Debug.Info("FETCHING WITH " + Cookie.TestMode.FetchSleep() + "ms SLEEP: " + url);
-    }
-    else {
-        Debug.Info("FETCHING: " + url);
-    }
-    const args = Context.IsLocalCrossOrigin() ? { credentials: "include" } : {};
-    return fetch(url, args).then(response => {
-        Debug.Info("FETCH STATUS CODE IS " + response.status + ": " + url);
-        if (response.status === 200) {
-            response.json().then(responseJson => {
-                if (Cookie.TestMode.HasFetchSleep()) {
-                    SLEEP(Cookie.TestMode.FetchSleep()).then(() => {
-                        Debug.Info("FETCHING DONE WITH " + Cookie.TestMode.FetchSleep() + "ms SLEEP: " + url);
-                        if (setData) {
-                            setData(responseJson)
-                        }
-                        if (setLoading) {
-                            setLoading(false);
-                        }
-                        return true;
-                    });
-                }
-                else {
-                    Debug.Info("FETCHING SET DATA DONE: " + url);
-                    if (setData) {
-                        setData(responseJson);
-                    }
-                    if (setLoading) {
-                        setLoading(false);
-                    }
-                }
-            }).catch(error => {
-                Debug.Info("FETCH JSON ERROR: " + url);
-                Debug.Info(error);
-                if (setError) {
-                    setError(error);
-                }
-            });
-        }
-        else {
-            Debug.Info("FETCH STATUS CODE IS NOT 200 BUT " + response.status + ": " + url);
-            Debug.Info(response);
-            if (response.status === 401) {
-                //
-                // TODO
-                // Perhaps somewhat questionable behavior.
-                // If we EVER get an HTTP 401 then we just logout the user.
-                //
-                Debug.Info("FETCH IS UNAUTHENTICATED! " + url);
-                Logout();
-            }
-            else if (response.status === 403) {
-                Debug.Info("FETCH IS UNAUTHORIZED! " + url);
-                if (Client.CurrentLogicalPath() !== "/env") {
-                    window.location.pathname = Client.Path("/env");
-                }
-            }
-            if (setError) {
-                setError(response.status);
-            }
-        }
-    }).catch(error => {
-        Debug.Info("FETCH ERROR: " + url);
-        Debug.Info(error);
-        if (setError) {
-            setError(error);
-        }
-    });
-}
-function SLEEP(time) {
-  return new Promise((resolve) => setTimeout(resolve, time));
-}
-

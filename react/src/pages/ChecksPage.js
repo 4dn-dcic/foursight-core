@@ -5,7 +5,7 @@ import Uuid from 'react-uuid';
 import { RingSpinner } from '../Spinners';
 import { StandardSpinner } from '../Spinners';
 import { useReadOnlyMode } from '../ReadOnlyMode';
-import { useFetchNew, useFetch, useFetchFunction } from '../utils/Fetch';
+import { useFetch, useFetchFunction } from '../utils/Fetch';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
@@ -37,7 +37,7 @@ const ChecksPage = (props) => {
         
     // TODO IN PROGRESS: MOVING TO NEW useFetch HOOK.
 
-    const checks = useFetchNew({
+    const checks = useFetch({
         url: Server.Url("/checks", environ),
         onData: (data) => {
             data.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0));
@@ -52,7 +52,7 @@ const ChecksPage = (props) => {
             return data;
         }
     });
-    const [ lambdas ] = useFetch({
+    const lambdas = useFetch({
         url: Server.Url("/lambdas", environ),
         onData: (data) => {
             data.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0));
@@ -89,17 +89,9 @@ const ChecksPage = (props) => {
 
     }, []);
 
-    const [ checksStatus, fetchChecksStatus ] = useFetch({ nofetch: true });
+    const checksStatus = useFetch();
     function refreshChecksStatus() {
-        fetchChecksStatus(Server.Url(`/checks-status`, environ));
-/*
-        setChecksStatusLoading(true);
-        Fetch.get(Server.Url(`/checks-status`, environ),
-                  response => {
-                      setChecksStatus(e => ({...response}));
-                  },
-                  setChecksStatusLoading);
-*/
+        checksStatus.refresh(Server.Url(`/checks-status`, environ));
     }
 
     // This is a bit tedious to unwrap. This is what a check record looks like:

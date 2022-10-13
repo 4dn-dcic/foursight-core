@@ -6,7 +6,7 @@ import Client from '../utils/Client';
 
 const UsersPage = () => {
 
-    const [ response, refresh ] = useFetch(Server.Url("/users"));
+    const response = useFetch(Server.Url("/users"));
 
     if (response.error) return <>Cannot load users from Foursight: {response.error}</>;
     if (response.loading) {
@@ -20,7 +20,7 @@ const UsersPage = () => {
         <div className="container">
             <div>
                 <b>Users</b>
-                <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={() => refresh()}>&#8635;&nbsp;</b>
+                <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>&#8635;&nbsp;</b>
             </div>
             <div className="info boxstyle" style={{marginTop:"4pt"}}>
                 <table style={{width:"100%"}}>

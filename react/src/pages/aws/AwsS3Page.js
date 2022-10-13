@@ -1,9 +1,9 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { BarSpinner } from '../../Spinners';
 import Clipboard from '../../utils/Clipboard';
-import { useFetchNew, useFetch, useFetchFunction } from '../../utils/Fetch';
+import { useFetch, useFetchFunction } from '../../utils/Fetch';
 import Image from '../../utils/Image';
 import Json from '../../utils/Json';
 import Server from '../../utils/Server';
@@ -16,9 +16,9 @@ const AwsS3Page = (props) => {
 
     let { environ } = useParams();
     // let [ bucketList, setBucketList ] = useState([]);
-    let bucketList = useFetchNew(Server.Url("/aws/s3/buckets", environ));
+    let bucketList = useFetch(Server.Url("/aws/s3/buckets", environ));
     //let [ bucketKeysList, setBucketKeysList ] = useState([]);
-    let bucketKeysList = useFetchNew();
+    let bucketKeysList = useFetch();
     let [ bucketKeyContentList, setBucketKeyContentList ] = useState([]);
     let [ bucketListFilter, setBucketListFilter ] = useState("");
 
@@ -26,15 +26,6 @@ const AwsS3Page = (props) => {
     let [ error, setError ] = useState(false);
 
     const fetch = useFetchFunction();
-
-/*
-    useEffect(() => {
-        const bucketsUrl = Server.Url("/aws/s3/buckets", environ);
-        Fetch.get(bucketsUrl, bucketList => {
-            setBucketList(bucketList);
-        }, setLoading, setError);
-    }, [environ]);
-*/
 
     // Only allow fetching/displaying S3 bucket key content for keys (file) with a '.json' suffix,
     // or all files within a bucket with a name ending with '-envs'; AND which are not too large.
@@ -179,7 +170,6 @@ const AwsS3Page = (props) => {
             return;
         }
         key = encodeURIComponent(key);
-        const url = Server.Url(`/aws/s3/buckets/${bucket}/${key}`, environ);
         let contentData = {
             bucket: bucket,
             key: key,

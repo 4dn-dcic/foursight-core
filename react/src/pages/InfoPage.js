@@ -20,7 +20,7 @@ import Yaml from '../utils/Yaml';
 const InfoPage = () => {
 
     const [ header ] = useContext(HeaderData);
-    const [ response, refresh ] = useFetch(Server.Url("/info"));
+    const response = useFetch(Server.Url("/info"));
     const [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [ reloadingApp, setReloadingApp ] = useState(false);
     const fetch = useFetchFunction();
@@ -34,7 +34,7 @@ const InfoPage = () => {
         return <>
             <div className="container">
                 <b>{title}</b>
-                { title === "Versions" && <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={() => refresh()}>&#8635;&nbsp;</b> }
+                { title === "Versions" && <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>&#8635;&nbsp;</b> }
                 <ul className="top-level-list">
                     <div className="info boxstyle" style={{paddingLeft:"8pt",paddingTop:"6pt",paddingBottom:"8pt"}}>
                         {children}

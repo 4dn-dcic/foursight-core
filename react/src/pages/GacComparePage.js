@@ -11,12 +11,11 @@ import Yaml from '../utils/Yaml';
 const GacComparePage = (props) => {
 
     const [ header ] = useContext(HeaderData);
-
-    let { environCompare } = useParams();
+    const { environCompare } = useParams();
     const [ showingRaw, setShowingRaw ] = useState(false);
     const [ showingType, setShowingType ] = useState("all");
-    const [ response, refresh ] = useFetch(Server.Url(`/gac/${environCompare}`, Env.Current()))
-    let navigate = useNavigate();
+    const response = useFetch(Server.Url(`/gac/${environCompare}`, Env.Current()))
+    const navigate = useNavigate();
 
     function getUniqueKeys(gac, gac_compare) {
         let uniqueKeys = [];
@@ -144,7 +143,7 @@ const GacComparePage = (props) => {
         const path = "/api/react/" + environ + "/gac/" + environCompare;
         navigate(path);
      // Fetch.get(url, setData, setLoading, setError)
-        refresh({ url: url });
+        response.refresh({ url: url });
     }
 
     let OnChangeEnvCompare = (arg) => {
@@ -153,7 +152,7 @@ const GacComparePage = (props) => {
         const path = "/api/react/" + Env.Current() + "/gac/" + environCompare;
         navigate(path);
      // Fetch.get(url, setData, setLoading, setError)
-        refresh({ url: url });
+        response.refresh({ url: url });
     }
 
     if (response.error) return <>Cannot load GAC comparison from Foursight: {response.error}</>;

@@ -46,7 +46,6 @@ const App = () => {
             url: Server.Url("/header"),
             onData: (data) => {
                 data.loading = false;
-                data.update = (value) => setHeader(value); // TODO: Experimental - See EnvPage (updating header on fly).
                 setHeader(data);
                 setFavicon(data);
             },

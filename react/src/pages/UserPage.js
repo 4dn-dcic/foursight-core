@@ -7,7 +7,7 @@ import Yaml from '../utils/Yaml';
 const UserPage = (props) => {
 
     const { email } = useParams()
-    const [ response, refresh ] = useFetch(Server.Url(`/users/${email}`));
+    const response = useFetch(Server.Url(`/users/${email}`));
 
     if (response.error) return <>Cannot load user ({email}) from Foursight: {response.error}</>;
     if (response.loading) {
@@ -23,7 +23,7 @@ const UserPage = (props) => {
                 <div key={user.record.uuid}>
                     <div style={{fontWeight:"bold",marginBottom:"6px"}}>
                         {user.email_address}
-                        <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={() => refresh()}>&#8635;&nbsp;</b>
+                        <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>&#8635;&nbsp;</b>
                     </div>
                         <pre className="info">
                             {Yaml.Format(user.record)}

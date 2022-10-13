@@ -1,19 +1,13 @@
 // import Styles from '../Styles';
 import { useEffect } from 'react';
 import Server from '../utils/Server';
-import { useFetchNew, useFetch, useFetching, useFetched } from '../utils/Fetch';
+import { useFetch, useFetching, useFetched } from '../utils/Fetch';
 import uuid from 'react-uuid';
 
 const TestPage = () => {
-
     
-    const info = useFetchNew(Server.Url("/checks"));
-
-        function clone(value) {
-            return JSON.parse(JSON.stringify(value));
-        }
-
-    const someFetchResponse = useFetchNew({
+ // const info = useFetch(Server.Url("/checks"));
+    const someFetchResponse = useFetch({
         url: Server.Url("/header"),
         onData: (data) => {
         },
@@ -26,12 +20,12 @@ const TestPage = () => {
                 console.log('use-effect');
         }, []);
 
-    const [ mainFetchResponse, mainFetchFunction ] = useFetch(Server.Url("/header"), { nofetch: true });
+    const mainFetchResponse = useFetch(Server.Url("/header"), { nofetch: true });
     const [ fetching ] = useFetching();
     const [ fetched ] = useFetched();
 
     return <>
-        <div><span className="cursor-hand" onClick={() => mainFetchFunction()}>MAIN-FETCH</span>&nbsp;|&nbsp;
+        <div><span className="cursor-hand" onClick={() => mainFetchResponse.refresh()}>MAIN-FETCH</span>&nbsp;|&nbsp;
              <span className="cursor-hand" onClick={() => someFetchResponse.refresh()}>SOME-FETCH</span>&nbsp;|&nbsp;
              <span className="cursor-hand"
                 onClick={() => {

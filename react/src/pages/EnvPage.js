@@ -6,21 +6,21 @@ import Page from '../Page';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
-import { useFetch } from '../utils/Fetch';
+import { useFetch, useFetchFunction } from '../utils/Fetch';
 import Server from '../utils/Server';
 import Type from '../utils/Type';
 
 const EnvPage = (props) => {
 
-    const [ header ] = useContext(HeaderData);
+    const [ header, setHeader ] = useContext(HeaderData);
     // We call the /info endpoint API just to get the GAC names.
-    const [ response ] = useFetch(Auth.IsLoggedIn() ? Server.Url("/info") : null);
-    const [ , refreshHeader ] = useFetch(Server.Url("/header"), { nofetch: true }); // TODO: Experimental
+    const response = useFetch(Auth.IsLoggedIn() ? Server.Url("/info") : null);
+    const refreshHeader = useFetchFunction(Server.Url("/header"));
 
     Page.NoteLastUrl(header);
 
     function updateHeader(env) {
-        refreshHeader({ setData: (value) => { header.update(value); } });
+        refreshHeader({ onData: (data) => { setHeader(data); } });
     }
 
     let navigate = useNavigate();

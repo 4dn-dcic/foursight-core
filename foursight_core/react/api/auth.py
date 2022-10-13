@@ -156,8 +156,10 @@ class Auth:
         if request:
             try:
                 return request.get("headers", {}).get("host")
-            except:
+            except KeyError:
                 pass
+            except Exception as e:
+                raise e
         return ""
 
     def get_aws_credentials(self, env: str) -> dict:
