@@ -151,7 +151,7 @@ const MAX_SAVE = 25;
 //
 // Looking back over this, this does look rather complex, but be assured the goal was to make
 // the USAGE simple; to be able to fetch and update data with as little detailed logic and friction
-// as possible; and to be able to globally track outstanding fetching, to have a global fetching
+// as possible; and to be able to globally track outstanding fetching, and to have a global fetching
 // spinner, which will obviate the need to have these on individual pages which would otherwise
 // complicate the logic there. This grew organically over time; time will tell if we've achieved
 // the desired simplicity of use. And note that the usage of the latest iteration of this has
@@ -159,7 +159,13 @@ const MAX_SAVE = 25;
 
 export const useFetch = (url, args) => {
 
-    const [ data, setData ] = useState(null);
+    // Grab the initial value from the arguments before the assembleArgs
+    // call below since that call requires these useState setters but
+    // we want to set the initial value for the data at definition time.
+    //
+    const initial = Type.IsObject(url) ? url.initial : (Type.IsObject(args) ? args.initial : null);
+
+    const [ data, setData ] = useState(initial);
     const [ loading, setLoading ] = useState(false);
     const [ status, setStatus ] = useState(0);
     const [ timeout, setTimeout ] = useState(false);
@@ -177,9 +183,6 @@ export const useFetch = (url, args) => {
     args = assembleArgs();
 
     useEffect(() => {
-        if (args.initial) {
-            setData(args.initial);
-        }
         _doFetch(args);
     }, [])
 
@@ -205,7 +208,7 @@ export const useFetch = (url, args) => {
             // update call was made, then we can do a simple setData since
             // React, in such a case, will update the data state properly.
             //
-            // Otherwise, below, since the object references are the same,
+            // Otherwise (elses), since the object references are the same,
             // by default React will not update the state, since it does
             // no update if the references are the same; this is usually
             // not what we want, so this update function will force an
@@ -247,6 +250,71 @@ export const useFetch = (url, args) => {
     };
     response.update = update.bind(response)
     response.refresh = refresh.bind(response)
+    {
+        // Experimental (perhaps too clever by half):
+        // Specialized, specific data update functions,
+        // e.g. to prepend, append, or insert into array, etc.
+        // Used currently, experimentally only in AwsS3Page.
+        //
+        const length = function() {
+            if (this && this.__usefetch_response && Type.IsArray(this.data)) {
+                return this.data.length;
+            }
+        }
+        const get = function(index) {
+            if (this && this.__usefetch_response) {
+                if (Type.IsInteger(index) && index >= 0 && index < this.data.length) {
+                    return this.data[index];
+                }
+                return null;
+            }
+        }
+        const append = function(element) {
+            if (this && this.__usefetch_response && Type.IsArray(this.data)) {
+                if (element) {
+                    this.data.push(element);
+                }
+            }
+        }
+        const prepend = function(element) {
+            if (this && this.__usefetch_response && Type.IsArray(this.data)) {
+                if (element) {
+                    this.data.unshift(element);
+                }
+            }
+        }
+        const remove = function(index) {
+            if (this && this.__usefetch_response && Type.IsArray(this.data)) {
+                if (Type.IsInteger(index) && index >= 0 && index < this.data.length) {
+                    this.data.splice(index, 1);
+                    this.update();
+                }
+            }
+        }
+        const filter = function(f) {
+            if (this && this.__usefetch_response && Type.IsArray(this.data)) {
+                if (Type.IsFunction(f)) {
+                    return this.data.filter(f) || [];
+                }
+                return this.data;
+            }
+        }
+        const map = function(f) {
+            if (this && this.__usefetch_response && Type.IsArray(this.data)) {
+                if (Type.IsFunction(f)) {
+                    return this.data.map(f);
+                }
+                return this.data;
+            }
+        }
+        Object.defineProperty(response, "length", { get: length.bind(response) });
+        response.get = get.bind(response);
+        response.append = append.bind(response);
+        response.prepend = prepend.bind(response);
+        response.remove = remove.bind(response);
+        response.filter = filter.bind(response);
+        response.map = map.bind(response);
+    }
     return response;
 }
 

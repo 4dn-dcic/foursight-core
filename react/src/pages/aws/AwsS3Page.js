@@ -15,7 +15,7 @@ const SHOW_BUCKET_KEY_CONTENT_MAX_SIZE_BYTES = 50000;
 const AwsS3Page = (props) => {
 
     const { environ } = useParams();
-    const bucketList = useFetch(Server.Url("/aws/s3/buckets", environ));
+    const bucketList = useFetch(Server.Url("/aws/s3/buckets", environ), { initial: [] });
     const bucketKeysList = useFetch({ initial: [] });
     const bucketKeyContentList = useFetch({ initial: [] });
     const [ bucketListFilter, setBucketListFilter ] = useState("");
@@ -39,7 +39,8 @@ const AwsS3Page = (props) => {
     // Bucket list functions.
 
     function getBucketList() {
-        return bucketList.data?.filter(bucket => bucket.toLowerCase().includes(bucketListFilter.toLowerCase())) || [];
+        // return bucketList.data?.filter(bucket => bucket.toLowerCase().includes(bucketListFilter.toLowerCase())) || [];
+        return bucketList.filter(bucket => bucket.toLowerCase().includes(bucketListFilter.toLowerCase())); // Experimental.
     }
 
     function onBucketListSearch(e) {
@@ -49,7 +50,8 @@ const AwsS3Page = (props) => {
     // Bucket keys list functions.
 
     function isShowingAnyBucketKeys() {
-        return bucketKeysList.data?.length > 0;
+        // return bucketKeysList.data?.length > 0;
+        return bucketKeysList.length > 0; // Experimental.
     }
 
     function isShowingBucketKeysBox(bucket) {
@@ -67,8 +69,9 @@ const AwsS3Page = (props) => {
         // or append to a array, like this below, et cetera.
         //
         const keysData = { bucket: bucket, keys: null, loading: true };
-        bucketKeysList.data.unshift(keysData);
-        bucketKeysList.update();
+        // bucketKeysList.data.unshift(keysData);
+        // bucketKeysList.update();
+        bucketKeysList.prepend(keysData); // Experimental (see useFetch).
         bucketKeysList.refresh({
             url: Server.Url(`/aws/s3/buckets/${bucket}`, environ),
             onData: (data, current) => {
@@ -84,8 +87,9 @@ const AwsS3Page = (props) => {
         if (index < 0) {
             return;
         }
-        bucketKeysList.data?.splice(index, 1);
-        bucketKeysList.update();
+        // bucketKeysList.data?.splice(index, 1);
+        // bucketKeysList.update();
+        bucketKeysList.remove(index); // Experimental.
     }
 
     function toggleBucketKeysBox(bucket) {
@@ -99,8 +103,10 @@ const AwsS3Page = (props) => {
     }
 
     function findBucketKeysListIndex(bucket) {
-        for (let i = 0 ; i < bucketKeysList.data?.length ; i++) {
-            const bucketKeys = bucketKeysList.data[i]
+        // for (let i = 0 ; i < bucketKeysList.data?.length ; i++) {
+        for (let i = 0 ; i < bucketKeysList.length ; i++) { // Experimental.
+            // const bucketKeys = bucketKeysList.data[i]
+            const bucketKeys = bucketKeysList.get(i) // Experimental.
             if (bucketKeys.bucket === bucket) {
                 return i;
             }
@@ -111,7 +117,8 @@ const AwsS3Page = (props) => {
     // Bucket key content list functions.
 
     function isShowingAnyBucketKeyContent() {
-        return bucketKeyContentList.data?.length > 0;
+        // return bucketKeyContentList.data?.length > 0;
+        return bucketKeyContentList.length > 0; // Experimental.
     }
 
     function isShowingBucketKeyContentBox(bucket, key) {
@@ -123,7 +130,8 @@ const AwsS3Page = (props) => {
             return;
         }
         const contentData = { bucket: bucket, key: key, content: null, loading: true };
-        bucketKeyContentList.data.unshift(contentData);
+        // bucketKeyContentList.data.unshift(contentData);
+        bucketKeyContentList.prepend(contentData); // Experimental (see useFetch).
         bucketKeyContentList.refresh({
             url: Server.Url(`/aws/s3/buckets/${bucket}/${encodeURIComponent(key)}`, environ),
             onData: (data, current) => {
@@ -139,8 +147,9 @@ const AwsS3Page = (props) => {
         if (index < 0) {
             return;
         }
-        bucketKeyContentList.data?.splice(index, 1);
-        bucketKeyContentList.update();
+        // bucketKeyContentList.data?.splice(index, 1);
+        // bucketKeyContentList.update();
+        bucketKeyContentList.remove(index); // Experimental (see useFetch).
     }
 
     function toggleBucketKeyContentBox(bucket, key) {
@@ -154,8 +163,10 @@ const AwsS3Page = (props) => {
     }
 
     function findBucketKeyContentListIndex(bucket, key) {
-        for (let i = 0 ; i < bucketKeyContentList.data?.length ; i++) {
-            const bucketKeyContent = bucketKeyContentList.data[i]
+        // for (let i = 0 ; i < bucketKeyContentList.data?.length ; i++) {
+        for (let i = 0 ; i < bucketKeyContentList.length ; i++) { // Experimental.
+            // const bucketKeyContent = bucketKeyContentList.data[i]
+            const bucketKeyContent = bucketKeyContentList.get(i) // Experimental.
             if ((bucketKeyContent.bucket === bucket) && (bucketKeyContent.key === key)) {
                 return i;
             }
@@ -183,9 +194,15 @@ const AwsS3Page = (props) => {
     const BucketKeysPanel = () => {
         return isShowingAnyBucketKeys() && <div>
             <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;S3 Bucket Keys</div>
+            {/* Experimental */}
+            { bucketKeysList.map((bucketKeys, i) => {
+                return <BucketKeysBox key={i} bucketKeys={bucketKeys} style={{paddingTop:"3pt"}}/>
+            })}
+{/*
             { bucketKeysList.data?.map((bucketKeys, i) => {
                 return <BucketKeysBox key={i} bucketKeys={bucketKeys} style={{paddingTop:"3pt"}}/>
             })}
+*/}
         </div>
     }
 
@@ -254,9 +271,14 @@ const AwsS3Page = (props) => {
     const BucketKeyContentPanel = () => {
         return isShowingAnyBucketKeyContent() && <div>
             <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;S3 Bucket Key Content</div>
+            { bucketKeyContentList.map((bucketKeyContent, i) => {
+                return <BucketKeyContentBox key={i} bucketKeyContent={bucketKeyContent} style={{paddingTop:"3pt"}}/>
+            })}
+{/*
             { bucketKeyContentList.data?.map((bucketKeyContent, i) => {
                 return <BucketKeyContentBox key={i} bucketKeyContent={bucketKeyContent} style={{paddingTop:"3pt"}}/>
             })}
+*/}
         </div>
     }
 

@@ -838,9 +838,10 @@ const ChecksPage = (props) => {
         if (!check.showingHistory) {
             check.showingHistory = true;
             selectedHistories.unshift(check);
+            // historyList.data?.unshift(check); // TODO NEW
             noteChangedHistories();
             if (!check.history) {
-                    /*
+                /* TODO NEW
                 historyList.refresh({
                     url: Server.Url(`/checks/${check.name}/history`, environ),
                     onData: (data, current) => {
@@ -915,6 +916,7 @@ const ChecksPage = (props) => {
             check.showingHistory = false;
             const index = findResultsHistoryIndex(check);
             selectedHistories.splice(index, 1);
+            // historyList.data?.splice(index, 1); // TODO NEW
             noteChangedHistories();
         }
     }
