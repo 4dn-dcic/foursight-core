@@ -6,18 +6,16 @@ import Cookie from './utils/Cookie';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
-if (Cookie.Get("test_mode_dummy_page") === "1") {
-    root.render(
-        <div>
-            Foursight: Hello, world!
-        </div>
-    );
-}
-else {
+if (Cookie.Get("test_mode_strict_mode") === "1") {
     root.render(
         <React.StrictMode>
             <App />
         </React.StrictMode>
+    );
+}
+else {
+    root.render(
+        <App />
     );
 }
 

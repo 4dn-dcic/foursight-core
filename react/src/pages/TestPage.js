@@ -1,50 +1,53 @@
 // import Styles from '../Styles';
 import { useEffect } from 'react';
 import Server from '../utils/Server';
-import { useFetch, useFetching, useFetched } from '../utils/Fetch';
-import Uuid from 'react-uuid';
+import { useFetchNew, useFetch, useFetching, useFetched } from '../utils/Fetch';
+import uuid from 'react-uuid';
 
 const TestPage = () => {
+
+    
+    const info = useFetchNew(Server.Url("/checks"));
 
         function clone(value) {
             return JSON.parse(JSON.stringify(value));
         }
 
-    const [ someFetchResponse, someFetchFunction ] = useFetch({
+    const someFetchResponse = useFetchNew({
         url: Server.Url("/header"),
         onData: (data) => {
         },
         nofetch: true,
         nologout: true,
-        delay: 0.2 * 1000
+        delay: 0.0 * 1000
     });
 
         useEffect(() => {
                 console.log('use-effect');
         }, []);
 
-    const [ mainFetchResponse, mainFetchFunction ] = useFetch(Server.Url("/header"));
+    const [ mainFetchResponse, mainFetchFunction ] = useFetch(Server.Url("/header"), { nofetch: true });
     const [ fetching ] = useFetching();
     const [ fetched ] = useFetched();
 
     return <>
         <div><span className="cursor-hand" onClick={() => mainFetchFunction()}>MAIN-FETCH</span>&nbsp;|&nbsp;
-             <span className="cursor-hand" onClick={() => someFetchFunction()}>SOME-FETCH</span>&nbsp;|&nbsp;
+             <span className="cursor-hand" onClick={() => someFetchResponse.refresh()}>SOME-FETCH</span>&nbsp;|&nbsp;
              <span className="cursor-hand"
                 onClick={() => {
-                        console.log('foo')
-                    //someFetchResponse.update(e => ({...{"adsfa":Uuid()}}))
-                    let newData = {"uuid":Uuid()}
-                    someFetchResponse.data.app.title = "PRUFROCK";
-                        newData = someFetchResponse.data;
-                        //newData = clone(someFetchResponse.data);
-                    someFetchResponse.update(newData)
-                    // someFetchResponse.data.app.title = "FOOBAR";
-                    //someFetchResponse.data.push(8);
-                    //someFetchResponse.update(e => { console.log('x'); console.log(e); return {...someFetchResponse.data}; });
-                    //someFetchResponse.update({"asdfsdf":"dsafadf"});
-                    //someFetchResponse.update(e => ({...someFetchResponse.data}));
-                }}>UPDATE-SOME-DATA</span>
+                    if (someFetchResponse.data?.app) someFetchResponse.data.app.title = uuid();
+                    someFetchResponse.update();
+                }}>UPDATE-SOME-DATA</span>&nbsp;|&nbsp;
+             <span className="cursor-hand"
+                onClick={() => {
+                    someFetchResponse.refresh({
+                        onData: (data, currentData) => {
+                            console.log('refresh.ondone');
+                            console.log(currentData)
+                            console.log(data)
+                        }
+                    });
+                }}>REFRESH-SOME-DATA</span>
         </div>
         <div>
             <div style={{float:"left"}}>

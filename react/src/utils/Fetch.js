@@ -74,6 +74,9 @@ const MAX_SAVE = 100;
 //   Function to call when a SUCCESSFUL data fetch is completed; it is called with the
 //   fetched (JSON) data as an argument; this function should return that same passed data,
 //   or some modified version of it, or whatever is desired, as the result of the fetch.
+//   If the invocation of the fetch which triggered this callback is was via the refresh
+//   function (see return values below) then a second argument is passed to this callback
+//   which is the value of the previously (or rather current still at this point) fetched data.
 //
 // - onDone
 //   Function to call when the fetch is complete, whether or not the fetch was successful;
@@ -110,6 +113,9 @@ const MAX_SAVE = 100;
 // - update
 //   Function to dynamically update the data state. This will do a
 //   proper deep update of the data, which is usually what is desired.
+//   The data, or any data for that matter, may be passed as an argument
+//   to this udpate function. Or, if no argument is passed, it data will
+//   just use the data on for the object through which this update was called.
 //
 // - set
 //   Function to dynamically update the data state. This uses the React useState setter
@@ -120,8 +126,7 @@ const MAX_SAVE = 100;
 //   Function to dynamically refresh, i.e. redo the fetch for, the data. Arguments to this
 //   are exactly like those for this useFetch hook function, and may be used to individually
 //   overide the useFetch arguments with different values, e.g. to refresh with a different URL.
-//   This refresh function returns the exact same first item/object of the return value of the
-//   useFetch call (which returned this refresh function), but in a single element array.
+//   This refresh function returns the exact same return value as the useFetch call.
 //
 // The SECOND element in the returned array is a refresh function which can be called to refresh,
 // i.e. redo the fetch for, the data. Arguments to this refresh function are exactly like those
@@ -176,7 +181,13 @@ export const useFetch = (url, args) => {
         _doFetch(args);
     }, [])
 
-    const update = (data) => {
+    const update = function(data) {
+        if (data === undefined) {
+            data = this;
+        }
+        if (data.__usefetch_response__ === true) {
+            data = data.data;
+        }
         if (Type.IsObject(data)) {
             setData({...data});
         }
@@ -191,7 +202,7 @@ export const useFetch = (url, args) => {
         }
     }
 
-    const refresh = (url, args) => {
+    const refresh = function(url, args) {
         args = assembleArgs(url, args, true);
         _doFetch(args);
         return [ response ];
@@ -205,7 +216,8 @@ export const useFetch = (url, args) => {
         error: error,
         set: setData,
         update: update,
-        refresh: refresh
+        refresh: refresh,
+        __usefetch_response__: true
     };
 
     return [ response, refresh ];
@@ -235,7 +247,13 @@ export const useFetchNew = (url, args) => {
         _doFetch(args);
     }, [])
 
-    const update = (data) => {
+    const update = function(data) {
+        if (data === undefined) {
+            data = this;
+        }
+        if (data?.__usefetch_response__ === true) {
+            data = data.data;
+        }
         if (Type.IsObject(data)) {
             setData({...data});
         }
@@ -250,10 +268,10 @@ export const useFetchNew = (url, args) => {
         }
     }
 
-    const refresh = (url, args) => {
+    const refresh = function(url, args) {
         args = assembleArgs(url, args, true);
-        _doFetch(args);
-        return [ response ];
+        _doFetch(args, this.__usefetch_response__ === true ? this.data : undefined);
+        return response;
     };
 
     const response = {
@@ -264,7 +282,8 @@ export const useFetchNew = (url, args) => {
         error: error,
         set: setData,
         update: update,
-        refresh: refresh
+        refresh: refresh,
+        __usefetch_response__: true
     };
 
     return response;
@@ -274,9 +293,9 @@ export const useFetchNew = (url, args) => {
 // and also ties into a globally tracked list of all outstanding (and completed) fetches.  But this
 // is simpler. It doesn't setup any state like useFetch, except for the aforementioned global
 // fetches/fetched state - which BTW is actually why we need a hook rather than a simple function.
-// This hook returns a fetch function which takes the same kind of
-// arguments as useFetch. Of particular interest in this case are the onData and onDone function
-// callbacks, which (since no associated state is setup) is how the caller of the returned function
+// This hook returns a fetch function which takes the same kind of arguments as useFetch.
+// Of particular interest in this case are the onData and onDone function callbacks,
+// which (since no associated state is setup) is how the caller of the returned function
 // gets a handle on the fetched data and on the fetch status.
 //
 // Stated more plainly: This hook can be use to obtain a simple (stateless) fetch function which
@@ -290,6 +309,8 @@ export const useFetchNew = (url, args) => {
 // are maintained by global React state (via useFetching, useFetched, useGlobal hooks),
 // and since React is very particular about where such hooks are used (only allowed within
 // components or other hooks), we need to wrap access to the fetch function within a hook.
+// Once this function is gotten from where it's okay to call a hook, we can use it
+// anywhere where a hook connot be called, e.g. within a callback function.
 //
 export const useFetchFunction = (url = null, args = null) => {
 
@@ -383,19 +404,25 @@ const _useFetched = () => {
 // url, setData, onData, onDone, timeout, delay, nologout, noredirect,
 // setLoading, setStatus, setTimeout, setError, fetching, fetched.
 //
-const _doFetch = (args) => {
+const _doFetch = (args, currentData = undefined) => {
 
     function handleResponse(response, id) {
         const status = response.status;
-        Debug.Info(`FETCH-HOOK-RESPONSE: ${args.url} -> HTTP ${status}`);
+        Debug.Info(`FETCH RESPONSE: ${args.url} -> HTTP ${status}`);
         Debug.Info(response.data);
         //
-        // Note the next line specifies that if the onDone callback
-        // returns nothing then we set the data to, well, the data.
+        // This currentData argument is only set in the case where this
+        // is being call from the refresh function returned by useFetch; it
+        // is the value of the previously fetched data, if any, otherwise null.
         //
-        const data = args.onData(response.data) || response.data;
-        Debug.Info(`FETCH-HOOK-BAKED-RESPONSE: ${args.url} -> HTTP ${status}`);
-        Debug.Info(data);
+        let data = args.onData(response.data, currentData);
+        //
+        // The next lines specifies that if the onDone callback returns
+        // nothing (undefined) then we set the data to, well, the data.
+        //
+        if (data === undefined) {
+            data = response.data;
+        }
         args.setData(data);
         args.setStatus(status);
         args.setLoading(false);
@@ -405,7 +432,7 @@ const _doFetch = (args) => {
 
     function handleError(error, id) {
         let status = error.response?.status || 0;
-        Debug.Info(`FETCH-HOOK-ERROR: ${args.url} -> HTTP ${status}`);
+        Debug.Info(`FETCH -ERROR: ${args.url} -> HTTP ${status}`);
         args.setData(null);
         args.setStatus(status);
         args.setError(error.message);
@@ -489,7 +516,7 @@ const _doFetch = (args) => {
     const payload = null;
     const fetch = { url: args.url, method: method, data: payload, timeout: args.timeout, withCredentials: "include" };
 
-    Debug.Info(`FETCH-HOOK: ${args.url}`);
+    Debug.Info(`FETCH: ${args.url}`);
 
     const id = noteFetchBegin(fetch);
     axios(fetch)
