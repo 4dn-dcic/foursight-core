@@ -14,8 +14,9 @@ import Str from '../utils/Str';
 import Type from '../utils/Type';
 
 const DEFAULT_TIMEOUT = 30 * 1000;
-const DEFAULT_DELAY = () => { const delay = Cookie.TestMode.FetchSleep(); return delay > 0 ? delay : 0; };
-const MAX_SAVE = 100;
+const DEFAULT_DELAY = () => { return TEST_MODE_DELAY > 0 ? TEST_MODE_DELAY : 0; };
+const TEST_MODE_DELAY = Cookie.TestMode.FetchSleep();
+const MAX_SAVE = 25;
 
 // This useFetch React hook is used to centrally facilitate all App HTTP fetches.
 // Used to define or initiate HTTP fetches, and update or refresh the fetched data.
@@ -149,7 +150,11 @@ const MAX_SAVE = 100;
 // OTHER COMMENTS
 //
 // Looking back over this, this does look rather complex, but be assured the goal was to make
-// the USAGE simple; this grew organically over time; time will tell if we've achieved simplicity.
+// the USAGE simple; to be able to fetch and update data with as little detailed logic and friction
+// as possible; and to be able to globally track outstanding fetching, to have a global fetching
+// spinner, which will obviate the need to have these on individual pages which would otherwise
+// complicate the logic there. This grew organically over time; time will tell if we've achieved
+// the desired simplicity of use.
 
 export const useFetch = (url, args) => {
 
@@ -168,10 +173,8 @@ export const useFetch = (url, args) => {
                                   fetching, fetched, nonofetch);
     }
 
-    args = assembleArgs();
-
     useEffect(() => {
-        _doFetch(args);
+        _doFetch(assembleArgs());
     }, [])
 
     const update = function(data) {
@@ -217,13 +220,11 @@ export const useFetch = (url, args) => {
             setData(data);
         }
     }
-
     const refresh = function(url, args) {
-        args = assembleArgs(url, args, true);
-        _doFetch(args, this && this.__usefetch_response__ === true ? this.data : undefined);
+        _doFetch(assembleArgs(url, args, true),
+                 this && this.__usefetch_response__ === true ? this.data : undefined);
         return response;
     };
-
     const response = {
         data: data,
         loading: loading,
@@ -235,7 +236,6 @@ export const useFetch = (url, args) => {
     };
     response.update = update.bind(response)
     response.refresh = refresh.bind(response)
-
     return response;
 }
 

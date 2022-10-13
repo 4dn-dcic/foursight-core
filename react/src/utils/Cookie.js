@@ -172,10 +172,6 @@ function SetReadOnlyMode(value) {
 // Test mode related cookies.
 // -------------------------------------------------------------------------------------------------
 
-function HasTestModeFetchSleepCookie() {
-    return GetCookie("test_mode_fetch_sleep") > 0;
-}
-
 function GetTestModeFetchSleepCookie() {
     return parseInt(GetCookie("test_mode_fetch_sleep"));
 }
@@ -210,7 +206,6 @@ const Exports = {
     SetRedirect:     SetRedirectCookie,
 
     TestMode: {
-        HasFetchSleep:         HasTestModeFetchSleepCookie,
         FetchSleep:            GetTestModeFetchSleepCookie,
         HasFoursightFourfront: HasTestModeFoursightFourfrontCookie,
         HasFoursightCgap:      HasTestModeFoursightCgapCookie
