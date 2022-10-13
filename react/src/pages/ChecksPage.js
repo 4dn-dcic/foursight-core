@@ -34,6 +34,7 @@ const ChecksPage = (props) => {
 //  let [ checksStatus, setChecksStatus ] = useState({});
 //  let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
     const [ readOnlyMode ] = useReadOnlyMode();
+    const historyList = useFetch({ initial: [] });
         
     // TODO IN PROGRESS: MOVING TO NEW useFetch HOOK.
 
@@ -839,6 +840,15 @@ const ChecksPage = (props) => {
             selectedHistories.unshift(check);
             noteChangedHistories();
             if (!check.history) {
+                    /*
+                historyList.refresh({
+                    url: Server.Url(`/checks/${check.name}/history`, environ),
+                    onData: (data, current) => {
+                        check.history = data;
+                        return current;
+                    }
+                });
+                */
                 fetch({
                     url: Server.Url(`/checks/${check.name}/history`, environ),
                     onData: (data) => {

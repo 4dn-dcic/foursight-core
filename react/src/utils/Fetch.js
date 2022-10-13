@@ -160,7 +160,7 @@ const MAX_SAVE = 25;
 export const useFetch = (url, args) => {
 
     const [ data, setData ] = useState(null);
-    const [ loading, setLoading ] = useState(true);
+    const [ loading, setLoading ] = useState(false);
     const [ status, setStatus ] = useState(0);
     const [ timeout, setTimeout ] = useState(false);
     const [ error, setError ] = useState(null);
@@ -207,7 +207,7 @@ export const useFetch = (url, args) => {
             //
             // Otherwise, below, since the object references are the same,
             // by default React will not update the state, since it does
-            // not update if the references are the same; this is usually
+            // no update if the references are the same; this is usually
             // not what we want, so this update function will force an
             // update by impliclitly creating a new (appropriate) object.
             //
@@ -238,10 +238,10 @@ export const useFetch = (url, args) => {
         set: setData,
         //
         // Previously had a case where i5 seemed loading wasn't getting updated properly;
-        // and where turning it into a computed property fixed it; cannot reproduce at
-        // the moment so backing it out; think it was fixed elsewhere here; leaving
-        // this here for now in case we run into again, to see how it's done.
-        // get ["loading"]() { return loading; },
+        // and where turning it into a computed property seemed to fixed it; cannot
+        // reproduce this now so backing it out; think it was fixed elsewhere here;
+        // leaving this here for now in case we run into again; see how it's done.
+        // get ["loading"]() { return loading; }
         //
         __usefetch_response: true
     };
@@ -369,6 +369,10 @@ const _useFetched = () => {
 //
 const _doFetch = (args, current = undefined) => {
 
+    if (args.nofetch || !Str.HasValue(args.url)) {
+        return;
+    }
+
     function handleResponse(response, id) {
         const status = response.status;
         Debug.Info(`FETCH RESPONSE: ${args.url} -> HTTP ${status}`);
@@ -464,11 +468,6 @@ const _doFetch = (args, current = undefined) => {
 
     function noteFetchEnd(id, data) {
         args.fetched.add(args.fetching.remove(id), data);
-    }
-
-    if (args.nofetch || !Str.HasValue(args.url)) {
-        args.setLoading(false);
-        return;
     }
 
     // Don't think we want to reset the data; leave

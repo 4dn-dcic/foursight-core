@@ -256,7 +256,6 @@ const CheckHistoryPage = (props) => {
 
     if (history.error) return <>Cannot load data from Foursight: {history.error}</>;
     return <>
-                <pre>{JSON.stringify(history)}</pre>
         <table style={{maxWidth:"1000pt"}}><tbody>
             <tr>
                 <td style={{paddingRight:"10pt",paddingBottom:"4pt"}}>
