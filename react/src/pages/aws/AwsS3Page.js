@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { BarSpinner } from '../../Spinners';
 import Clipboard from '../../utils/Clipboard';
-//import Fetch from '../../utils/Fetch';
 import { useFetchNew, useFetch, useFetchFunction } from '../../utils/Fetch';
 import Image from '../../utils/Image';
 import Json from '../../utils/Json';
@@ -79,6 +78,17 @@ const AwsS3Page = (props) => {
         if (isShowingBucketKeysBox(bucket)) {
             return;
         }
+        bucketKeysList.refresh({
+            url: Server.Url(`/aws/s3/buckets/${bucket}`, environ),
+            onData: (data, current) => {
+                if (!current) {
+                    current = [];
+                }
+                current.unshift({ bucket: bucket, keys: data });
+                return current;
+            }
+        });
+/*
         fetch({
             url: Server.Url(`/aws/s3/buckets/${bucket}`, environ),
             onData: (data) => {
@@ -88,9 +98,6 @@ const AwsS3Page = (props) => {
                 }
                 list.unshift({ bucket: bucket, keys: data, loading: false });
                 bucketKeysList.update(list);
-                //bucketKeys.keys = data;
-                //bucketKeys.loading = false;
-                    return bucketKeysList;
             },
             onDone: function (response) {
                 setLoading(false);
@@ -99,6 +106,7 @@ const AwsS3Page = (props) => {
                 }
             }
         });
+*/
 /*
         bucketKeysList.unshift(bucketKeys);
         setBucketKeysList(existing => [...existing]);

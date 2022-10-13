@@ -529,6 +529,8 @@ const _doFetch = (args, currentData = undefined) => {
             }
         })
         .catch(error => {
+            Debug.Info(`FETCH EXCEPTION: ${args.url}`);
+            Debug.Info(error);
             handleError(error, id);
         });
 }
