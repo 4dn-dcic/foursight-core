@@ -42,8 +42,7 @@ const MAX_SAVE = 100;
 //   Boolean indicating, if true, that a fetch should actually not be done at all.
 //   By default (and when this is false) the fetch is initiated immediately when this
 //   hook is called. Useful when the fetch defined by this hook needs to be called later,
-//   via the refresh function returned (as the second array item) from this hook; this same
-//   refresh function (return value) can be used in any case to refresh/refetch the data.
+//   via the refresh function returned from this hook (see the RETURN VALUE section below).
 //
 // - nologout
 //   Boolean indicating, if true, that the default behavior, of automatically logging out
@@ -62,13 +61,13 @@ const MAX_SAVE = 100;
 // - onData
 //   Function to call when a SUCCESSFUL data fetch is completed; it is called with the
 //   fetched (JSON) data as an argument; this function should return that same passed data,
-//   OR some modified version of it, or whatever is desired; this returned value will be
+//   OR some modified version of it, OR whatever is desired; this returned value will be
 //   set as the result the fetch; if nothing at all is returned (i.e. undefined) then the
 //   fetched data will implicitly be used (if null is desired, then return null explicitly).
 //
 //   Iff the invocation of the fetch which triggered this callback was via the refresh
-//   function (see the RETURN VALUE below) then a second argument is passed to this callback
-//   which is the value of the previously (or rather current, at this point) fetched data.
+//   function (see the RETURN VALUE section below) then a second argument is passed to
+//   this callback which is the previously (or rather current, at this point) fetched data.
 //
 // - onDone
 //   Function to call when the fetch is complete, whether or not the fetch was successful;
@@ -103,7 +102,7 @@ const MAX_SAVE = 100;
 //   Boolean indicating whether or not the fetch timed out.
 //
 // - error
-//   String containing the description of error which occurred, or null if no error.
+//   String containing a short description of any error which occurred; null if no error.
 //
 // - update
 //   Function to dynamically update the data state. This will do a proper deep update of the data,
@@ -112,13 +111,15 @@ const MAX_SAVE = 100;
 //   object through which this update was called.
 //
 // - set
-//   Function to dynamically update the data state. This uses the vanila React useState setter
-//   function associated with the data, and which does NOT automatically do a deep update of
-//   the data, e.g. if the data is an object and only a property of it has been changed.
+//   Function to dynamically update the data state. This uses the vanilla React useState
+//   setter function associated with the data, which does NOT automatically do a deep update
+//   of the data, e.g. if the data is an object and only a property of it has been changed.
+//   This behavior is a common source of confusion; is often not what is expecte or desired;
+//   use the update function (above) to force the data state to fully update.
 //
 // - refresh
 //   Function to dynamically refresh, i.e. redo the fetch for, the data. Arguments to this
-//   are exactly like those for this useFetch hook function, and may be used to individually
+//   are exactly like those for this useFetch hook function, AND may be used to INDIVIDUALLY
 //   overide the useFetch arguments with different values, e.g. to refresh with a different URL.
 //   This refresh function returns the exact same return value as the useFetch call.
 //
@@ -348,10 +349,12 @@ const _useFetched = () => {
     return { value: fetched, add: add, clear: clear }
 }
 
-// Internal _doFetch function to actually do the fetch using axios.
+// Internal _doFetch function to actually do the fetch using the Axios library.
 // Assumes args have been validated and setup properly; must contain (exhaustively):
-// url, setData, onData, onDone, timeout, delay, nologout, noredirect,
-// setLoading, setStatus, setTimeout, setError, fetching, fetched.
+// url, setData, onData, onDone, onError, timeout, delay, nologout, noredirect,
+// setLoading, setStatus, setTimeout, setError, fetching, fetched. Second (current)
+// argument is only set when called via the refresh function returned by the useFetch
+// hook; it is the previous (current, at this point) fetched data.
 //
 const _doFetch = (args, current = undefined) => {
 
@@ -366,7 +369,7 @@ const _doFetch = (args, current = undefined) => {
         //
         let data = args.onData(response.data, current);
         //
-        // The next lines specifies that if the onDone callback returns
+        // The next lines specify that if the onDone callback returns
         // nothing (undefined) then we set the data to, well, the data.
         //
         if (data === undefined) {
@@ -390,7 +393,7 @@ const _doFetch = (args, current = undefined) => {
         if (status === 401) {
             //
             // If we EVER get an HTTP 401 (not authenticated)
-            // then we just logout the user.
+            // then we just logout the user, unless this behavior is disabled.
             //
             if (!args.nologout) {
                 Logout();
@@ -399,7 +402,7 @@ const _doFetch = (args, current = undefined) => {
         else if (status === 403) {
             //
             // If we EVER get an HTTP 403 (not authorized)
-            // then redirect to th the /env page.
+            // then redirect to th the /env page, unless this behavior is disabled.
             //
             if (!args.noredirect) {
                 if (Client.CurrentLogicalPath() !== "/env") {
@@ -471,7 +474,7 @@ const _doFetch = (args, current = undefined) => {
 
     Debug.Info(`FETCH: ${args.url}`);
 
-    // Finally, the actualy (Axois base) HTTP fetch happens here.
+    // Finally, the actual (Axois based) HTTP fetch happens here.
 
     const id = noteFetchBegin(fetch);
     axios(fetch)
