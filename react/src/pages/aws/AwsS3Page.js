@@ -18,7 +18,7 @@ const AwsS3Page = (props) => {
     // let [ bucketList, setBucketList ] = useState([]);
     let bucketList = useFetchNew(Server.Url("/aws/s3/buckets", environ));
     //let [ bucketKeysList, setBucketKeysList ] = useState([]);
-    let bucketKeysList = useFetchNew({ nofetch: true });
+    let bucketKeysList = useFetchNew();
     let [ bucketKeyContentList, setBucketKeyContentList ] = useState([]);
     let [ bucketListFilter, setBucketListFilter ] = useState("");
 

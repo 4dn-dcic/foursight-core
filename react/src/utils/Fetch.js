@@ -74,9 +74,9 @@ const MAX_SAVE = 100;
 //   Function to call when a SUCCESSFUL data fetch is completed; it is called with the
 //   fetched (JSON) data as an argument; this function should return that same passed data,
 //   or some modified version of it, or whatever is desired, as the result of the fetch.
-//   If the invocation of the fetch which triggered this callback is was via the refresh
+//   If the invocation of the fetch which triggered this callback was via the refresh
 //   function (see return values below) then a second argument is passed to this callback
-//   which is the value of the previously (or rather current still at this point) fetched data.
+//   which is the value of the previously (or rather current, at this point) fetched data.
 //
 // - onDone
 //   Function to call when the fetch is complete, whether or not the fetch was successful;
@@ -270,7 +270,8 @@ export const useFetchNew = (url, args) => {
 
     const refresh = function(url, args) {
         args = assembleArgs(url, args, true);
-        _doFetch(args, this.__usefetch_response__ === true ? this.data : undefined);
+        const current = this.__usefetch_response__ === true ? this.data : undefined;
+        _doFetch(args, current);
         return response;
     };
 
@@ -404,18 +405,18 @@ const _useFetched = () => {
 // url, setData, onData, onDone, timeout, delay, nologout, noredirect,
 // setLoading, setStatus, setTimeout, setError, fetching, fetched.
 //
-const _doFetch = (args, currentData = undefined) => {
+const _doFetch = (args, current = undefined) => {
 
     function handleResponse(response, id) {
         const status = response.status;
         Debug.Info(`FETCH RESPONSE: ${args.url} -> HTTP ${status}`);
         Debug.Info(response.data);
         //
-        // This currentData argument is only set in the case where this
-        // is being call from the refresh function returned by useFetch; it
-        // is the value of the previously fetched data, if any, otherwise null.
+        // This current argument is only set in the case where this is being
+        // called from the refresh function returned by useFetch; it is the value
+        // of the previously fetched (i.e. current) data, if any, otherwise null.
         //
-        let data = args.onData(response.data, currentData);
+        let data = args.onData(response.data, current);
         //
         // The next lines specifies that if the onDone callback returns
         // nothing (undefined) then we set the data to, well, the data.
