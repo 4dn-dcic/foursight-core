@@ -154,7 +154,8 @@ const MAX_SAVE = 25;
 // as possible; and to be able to globally track outstanding fetching, to have a global fetching
 // spinner, which will obviate the need to have these on individual pages which would otherwise
 // complicate the logic there. This grew organically over time; time will tell if we've achieved
-// the desired simplicity of use.
+// the desired simplicity of use. And note that the usage of the latest iteration of this has
+// not yet been fully taken advantage of in the calling components; still TODO.
 
 export const useFetch = (url, args) => {
 
