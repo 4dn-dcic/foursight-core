@@ -38,7 +38,7 @@ const UsersPage = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {response.data?.map(user => (
+                    {response.map(user => (
                         <tr key={user.uuid} style={{borderBottom:"1px solid gray"}}>
                             <td style={{borderBottom:"1px solid gray",padding:"10px"}}>
                                 <Link to={Client.Path("/users/" + user.email_address)}><b>{user.email_address}</b></Link> <br />

@@ -939,20 +939,16 @@ const ChecksPage = (props) => {
 //      history.__resultError = false;
         // noteChangedHistories();
         historyList.update(); // Experimental
-        fetch({
+        historyList.refresh({
             url: Server.Url(`/checks/${check.name}/${uuid}`, environ),
-            onData: (data) => {
+            onData: (data, current) => {
                 if (history.__resultShowing) {
                     history.__result = data;
-                    // noteChangedHistories();
-                    historyList.update(); // Experimental
                 }
-                return data;
+                return current;
             },
             onDone: (response) => {
                 history.__resultLoading = false;
-                // noteChangedHistories();
-                historyList.update(); // Experimental
             }
         });
 /*
@@ -1107,37 +1103,20 @@ const ChecksPage = (props) => {
     // TODO
     // Need to start figuring out how to factor out all of this stuff into sub-components.
 
-    let [ checksRaw , setChecksRaw] = useState(null);
-    let [ checksRawHide, setChecksRawHide] = useState(false);
+    const checksRaw = useFetch(null);
+    const [ checksRawHide, setChecksRawHide] = useState(false);
 
     function isShowingChecksRaw() {
-        return checksRaw;
-    }
-
-    function isLoadingChecksRaw() {
-        return checksRaw && checksRaw.__loading;
+        return checksRaw.data;
     }
 
     function showChecksRaw() {
         setChecksRawHide(false);
-        setChecksRaw({__loading: true});
-        fetch({
-            url: Server.Url(`/checks-raw`, environ),
-            onData: (data) => {
-                setChecksRaw(data);
-            }
-        });
-            /*
-        Fetch.get(Server.Url(`/checks-raw`, environ),
-                  data => {
-                      delete data.__loading;
-                      setChecksRaw(data);
-                  });
-                  */
+        checksRaw.refresh(Server.Url(`/checks-raw`, environ));
     }
 
     function hideChecksRaw() {
-        setChecksRaw(null);
+        checksRaw.set(null);
         setChecksRawHide(true);
     }
 
@@ -1163,15 +1142,15 @@ const ChecksPage = (props) => {
             <b>Raw Checks File</b>
             <div style={{marginTop:"3pt"}}>
             <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderRadius:"4pt"}}>
-            { isLoadingChecksRaw() ? <>
-                <StandardSpinner loading={isLoadingChecksRaw()} label={"Loading raw checks file"} size={60} color={"black"} />
+            { checksRaw.loading ? <>
+                <StandardSpinner loading={checksRaw.loading} label={"Loading raw checks file"} size={60} color={"black"} />
             </>:<>
                 <div style={{float:"right",marginTop:"-2pt"}}>
-                    <span style={{fontSize:"0",opacity:"0"}} id={"checks-raw"}>{Json.Str(checksRaw)}</span>
+                    <span style={{fontSize:"0",opacity:"0"}} id={"checks-raw"}>{Json.Str(checksRaw.data)}</span>
                     <img alt="copy" onClick={() => Clipboard.Copy("checks-raw")} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
                     &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => hideChecksRaw()}>X</span>
                 </div>
-                {Yaml.Format(checksRaw)}
+                {checksRaw.yaml()}
             </>}
                     </pre>
             </div>

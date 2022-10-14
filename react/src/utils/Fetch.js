@@ -216,7 +216,7 @@ export const useFetch = (url, args) => {
         _update(setData, data, this && this.__usefetch_response ? this.data : undefined);
     }).bind(response);
 
-    // This block is xperimental (perhaps too clever by half):
+    // This block is experimental (perhaps too clever by half):
     // Specialized, specific data update functions, e.g. to prepend, append, or insert
     // into array, etc. Simplifies acess to useFetch (return) value, i.e not having to
     // always dereference via useFetchResult.data. And since we're doing this at all,
@@ -292,14 +292,9 @@ export const useFetch = (url, args) => {
                     this.update();
                 }
             }
-            else if (Type.IsObject(this.data)) {
-                //
-                // TODO
-                //
-            }
         }).bind(response);
 
-        response.filter = (function(f) {
+        response.filter = (function(f, other) {
             if (!this || !this.__usefetch_response) return;
             if (Type.IsArray(this.data)) {
                 if (Type.IsFunction(f)) {
@@ -308,9 +303,15 @@ export const useFetch = (url, args) => {
                 return this.data;
             }
             else if (Type.IsObject(this.data)) {
-                //
-                // TODO
-                //
+                if (Str.HasValue(f) && Type.IsFunction(other)) {
+                    const name = f; f = other;
+                    const data = this.get(name);
+                    if (Type.IsArray(data)) {
+                        return data.filter(f) || [];
+                    }
+                    return data;
+                }
+                return this.data;
             }
         }).bind(response);
 
@@ -318,7 +319,7 @@ export const useFetch = (url, args) => {
             if (!this || !this.__usefetch_response) return;
             if (Type.IsArray(this.data)) {
                 if (Type.IsFunction(f)) {
-                    return this.data.map(f);
+                    return this.data.map(f) || [];
                 }
                 return this.data;
             }
@@ -327,7 +328,27 @@ export const useFetch = (url, args) => {
                     const name = f; f = other;
                     const data = this.get(name);
                     if (Type.IsArray(data)) {
-                        return data.map(f);
+                        return data.map(f) || [];
+                    }
+                    return data;
+                }
+                return this.data;
+            }
+        }).bind(response);
+
+        response.forEach = (function(f, other) {
+            if (!this || !this.__usefetch_response) return;
+            if (Type.IsArray(this.data)) {
+                if (Type.IsFunction(f)) {
+                    this.data.forEach(f);
+                }
+            }
+            else if (Type.IsObject(this.data)) {
+                if (Str.HasValue(f) && Type.IsFunction(other)) {
+                    const name = f; f = other;
+                    const data = this.get(name);
+                    if (Type.IsArray(data)) {
+                        data.forEach(f);
                     }
                 }
             }

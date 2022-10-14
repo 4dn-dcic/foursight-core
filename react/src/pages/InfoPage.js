@@ -20,7 +20,7 @@ import Yaml from '../utils/Yaml';
 const InfoPage = () => {
 
     const [ header ] = useContext(HeaderData);
-    const response = useFetch(Server.Url("/info"));
+    const info = useFetch(Server.Url("/info"));
     const [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [ reloadingApp, setReloadingApp ] = useState(false);
     const fetch = useFetchFunction();
@@ -34,7 +34,7 @@ const InfoPage = () => {
         return <>
             <div className="container">
                 <b>{title}</b>
-                { title === "Versions" && <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>&#8635;&nbsp;</b> }
+                { title === "Versions" && <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={info.refresh}>&#8635;&nbsp;</b> }
                 <ul className="top-level-list">
                     <div className="info boxstyle" style={{paddingLeft:"8pt",paddingTop:"6pt",paddingBottom:"8pt"}}>
                         {children}
@@ -119,8 +119,8 @@ const InfoPage = () => {
         </>
     }
 
-    if (response.error) return <>Cannot load data from Foursight API: {response.error}</>;
-    if (response.loading) return <>Loading ...</>;
+    if (info.error) return <>Cannot load data from Foursight API: {info.error}</>;
+    if (info.loading) return <>Loading ...</>;
     return <div className="container">
         <InfoBox title="Versions">
             <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={Env.IsFoursightFourfront(header) ? "4dn-dcic" : "dbmi-bgm"} size="2" />
@@ -130,41 +130,41 @@ const InfoPage = () => {
             <InfoRow name={"python"} value={header.versions?.python} monospace={true} copy={true} python={true} size="2" />
         </InfoBox>
         <InfoBox title="Credentials Info">
-            <InfoRow name={"AWS Account Number"} value={response.data?.app?.credentials?.aws_account_number} monospace={true} copy={true} size="2" />
-            <InfoRow name={"AWS User ARN"} value={response.data?.app?.credentials?.aws_user_arn} monospace={true} copy={true} size="2" />
-            <InfoRow name={"AWS Access Key ID"} value={response.data?.app?.credentials?.aws_access_key_id} monospace={true} copy={true} size="2" />
-            <InfoRow name={"AWS Region Name"} value={response.data?.app?.credentials?.aws_region} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Auth0 Client ID"} value={response.data?.app?.credentials?.auth0_client_id} monospace={true} copy={true} size="2" />
+            <InfoRow name={"AWS Account Number"} value={info.get("app.credentials.aws_account_number")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"AWS User ARN"} value={info.get("app.credentials.aws_user_arn")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"AWS Access Key ID"} value={info.get("app.credentials.aws_access_key_id")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"AWS Region Name"} value={info.get("app.credentials.aws_region")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Auth0 Client ID"} value={info.get("app.credentials.auth0_client_id")} monospace={true} copy={true} size="2" />
         </InfoBox>
         <InfoBox title="Resources">
-            <InfoRow name={"Foursight Server"} value={response.data?.server?.foursight} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Portal Server"} value={response.data?.server?.portal} monospace={true} copy={true} size="2" />
-            <InfoRow name={"ElasticSearch Server"} value={response.data?.server?.es} monospace={true} copy={true} size="2" />
-            <InfoRow name={"RDS Server"} value={response.data?.server?.rds} monospace={true} copy={true} size="2" />
-            <InfoRow name={"SQS Server"} value={response.data?.server?.sqs} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Foursight Server"} value={info.get("server.foursight")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Portal Server"} value={info.get("server.portal")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"ElasticSearch Server"} value={info.get("server.es")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"RDS Server"} value={info.get("server.rds")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"SQS Server"} value={info.get("server.sqs")} monospace={true} copy={true} size="2" />
         </InfoBox>
         <InfoBox title="Environment Names">
-            <InfoRow name={"Environment Name"} value={Env.RegularName(Env.Current(), response.data)} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Full)"} value={Env.FullName(Env.Current(), response.data)} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Short)"} value={Env.ShortName(Env.Current(), response.data)} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Public)"} value={Env.PublicName(Env.Current(), response.data)} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Foursight)"} value={Env.FoursightName(Env.Current(), response.data)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name"} value={Env.RegularName(Env.Current(), info.data)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Full)"} value={Env.FullName(Env.Current(), info.data)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Short)"} value={Env.ShortName(Env.Current(), info.data)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Public)"} value={Env.PublicName(Env.Current(), info.data)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Foursight)"} value={Env.FoursightName(Env.Current(), info.data)} monospace={true} copy={true} size="3" />
         </InfoBox>
         <InfoBox title="Bucket Names">
-            <InfoRow name={"Environment Bucket Name"} value={response.data?.buckets?.env} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Foursight Bucket Name"} value={response.data?.buckets?.foursight} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Foursight Bucket Prefix"} value={response.data?.buckets?.foursight_prefix} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Bucket Name"} value={info.get("buckets.env")} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Foursight Bucket Name"} value={info.get("buckets.foursight")} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Foursight Bucket Prefix"} value={info.get("buckets.foursight_prefix")} monospace={true} copy={true} size="3" />
         </InfoBox>
         <InfoBox title="Environment & Bucket Names">
             <pre className="info" style={{border:"0",margin:"0",padding:"8",paddingBottom:"8",marginTop:"0"}}>
-                { response.data?.buckets?.info && response.data?.buckets.info.map(bucket_info => {
-                    return <span key={Uuid()}>{Yaml.Format(bucket_info)}{response.data?.buckets.info.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
+                { info.map("buckets.info", bucket_info => {
+                    return <span key={Uuid()}>{Yaml.Format(bucket_info)}{info.get("buckets.info")?.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
                 })}
             </pre>
         </InfoBox>
         <InfoBox title="Ecosystem">
             <pre className="info" style={{border:"0",margin:"0",paddingTop:"8",paddingBottom:"8",marginTop:"0"}}>
-                {Yaml.Format(response.data?.buckets?.ecosystem)}
+                {Yaml.Format(info.get("buckets.ecosystem"))}
             </pre>
         </InfoBox>
         <InfoBox title="Authentication/Authorization Info">
@@ -188,10 +188,10 @@ const InfoPage = () => {
                     <br />
                 </>)}
         </InfoBox>
-        { response.data?.environ?.AWS_LAMBDA_LOG_GROUP_NAME && response.data?.environ?.AWS_LAMBDA_LOG_STREAM_NAME && <>
+        { info.get("environ.AWS_LAMBDA_LOG_GROUP_NAME") && info.get("environ.AWS_LAMBDA_LOG_STREAM_NAME") && <>
             <InfoBox title="Logs">
-                <InfoRow name={"Log Group"} value={response.data?.environ.AWS_LAMBDA_LOG_GROUP_NAME} monospace={true} size="2" />
-                <InfoRow name={"Log Stream"} value={response.data?.environ.AWS_LAMBDA_LOG_STREAM_NAME} monospace={true} size="2" />
+                <InfoRow name={"Log Group"} value={info.get("environ.AWS_LAMBDA_LOG_GROUP_NAME")} monospace={true} size="2" />
+                <InfoRow name={"Log Stream"} value={info.get("environ.AWS_LAMBDA_LOG_STREAM_NAME")} monospace={true} size="2" />
             </InfoBox>
         </>}
         <InfoBox title="Miscellany">
@@ -202,28 +202,28 @@ const InfoPage = () => {
             </>}
             <InfoRow name={"App Deployed At"} value={Server.IsLocal() ? "running locally" + (Context.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + Time.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
             <InfoRow name={"App Launched At"} value={header.app?.launched + Time.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
-            <InfoRow name={"Page Loaded At"} value={response.data?.page?.loaded + Time.FormatDuration(response.data?.page?.loaded, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
+            <InfoRow name={"Page Loaded At"} value={info.get("page.loaded") + Time.FormatDuration(info.get("page.loaded"), new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Package"} value={header.app?.package} monospace={true} size="2" />
             <InfoRow name={"Stage"} value={header.app?.stage} monospace={true} size="2" />
             <InfoRow name={"Environment"} value={Env.Current()} monospace={true} size="2" />
             <InfoRow name={"Domain"} value={header.app?.domain} monospace={true} size="2" />
             <InfoRow name={"Context"} value={header.app?.context} monospace={true} size="2" />
-            <InfoRow name={"Path"} value={response.data?.page?.path} monospace={true} size="2" />
-            <InfoRow name={"Endpoint"} value={response.data?.page?.endpoint} monospace={true} size="2" />
+            <InfoRow name={"Path"} value={info.get("page.path")} monospace={true} size="2" />
+            <InfoRow name={"Endpoint"} value={info.get("page.endpoint")} monospace={true} size="2" />
             <InfoRow name={"Client (React UI)"} value={Client.BaseUrl()} monospace={true} size="2" />
             <InfoRow name={"Server (React API)"} value={Server.BaseUrl()} monospace={true} size="2" />
         </InfoBox>
-        <InfoBox title={`GAC: ${response.data?.gac?.name}`}>
-            { response.data?.gac?.values ? (<span>
-                { Object.keys(response.data?.gac?.values).map((key) => {
-                    return <InfoRow key={key} name={key} value={response.data?.gac.values[key]} monospace={true} copy={true} />
+        <InfoBox title={`GAC: ${info.get("gac.name")}`}>
+            { info.get("gac.values") ? (<span>
+                { Object.keys(info.get("gac.values")).map((key) => {
+                    return <InfoRow key={key} name={key} value={info.get("gac.values")[key]} monospace={true} copy={true} />
                 })}
             </span>):(<span/>)}
         </InfoBox>
         <InfoBox title="Environment Variables">
-            { response.data?.environ ? (<span>
-                { Object.keys(response.data?.environ).map((key) => {
-                    return <InfoRow key={key} name={key} value={response.data?.environ[key]} monospace={true} copy={true} />
+            { info.get("environ") ? (<span>
+                { Object.keys(info.get("environ")).map((key) => {
+                    return <InfoRow key={key} name={key} value={info.get("environ")[key]} monospace={true} copy={true} />
                 })}
             </span>):(<span/>)}
         </InfoBox>

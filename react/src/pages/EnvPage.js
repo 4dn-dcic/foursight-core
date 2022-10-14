@@ -14,7 +14,7 @@ const EnvPage = (props) => {
 
     const [ header, setHeader ] = useContext(HeaderData);
     // We call the /info endpoint API just to get the GAC names.
-    const response = useFetch(Auth.IsLoggedIn() ? Server.Url("/info") : null);
+    const info = useFetch(Auth.IsLoggedIn() ? Server.Url("/info") : null);
     const refreshHeader = useFetchFunction(Server.Url("/header"));
 
     Page.NoteLastUrl(header);
@@ -145,8 +145,8 @@ const EnvPage = (props) => {
                                     Short Name: <span style={envNameTextStyles(env.short_name)}>{env.short_name}</span> <br />
                                     Public Name: <span style={envNameTextStyles(env.public_name)}>{env.public_name}</span> <br />
                                     { Auth.IsLoggedIn() && <>
-                                        GAC Name: {GetGacName(env, response.data)} <br />
-                                        { IsKnownCurrentEnv() && HasGacName(env, response.data) && <>
+                                        GAC Name: {GetGacName(env, info.data)} <br />
+                                        { IsKnownCurrentEnv() && HasGacName(env, info.data) && <>
                                             <select style={{border:"0",background:"transparent","WebkitAppearance":"none"}} onChange={(selected) => onChange(selected, Env.PreferredName(env, header))}>
                                                 <option>GAC Compare &#x2193;</option>
                                                 { Env.KnownEnvs(header).map((env) =>

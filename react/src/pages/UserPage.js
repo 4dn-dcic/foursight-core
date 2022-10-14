@@ -19,7 +19,7 @@ const UserPage = (props) => {
     }
     return <>
         <div className="container">
-            {response.data?.length > 0 && response.data.map(user => (
+            {response.length > 0 && response.map(user => (
                 <div key={user.record.uuid}>
                     <div style={{fontWeight:"bold",marginBottom:"6px"}}>
                         {user.email_address}
