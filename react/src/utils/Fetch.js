@@ -413,7 +413,7 @@ const _useFetched = () => {
 // Assumes args have been validated and setup properly; must contain (exhaustively):
 // url, setData, onData, onDone, onError, timeout, delay, nologout, noredirect,
 // setLoading, setStatus, setTimeout, setError, fetching, fetched. Second (current)
-// argument is only set when called via the refresh function returned by the useFetch
+// argument is ONLY set when called via the refresh function returned by the useFetch
 // hook; it is the previous (current, at this point) fetched data.
 //
 const _doFetch = (args, current = undefined) => {
@@ -440,18 +440,14 @@ const _doFetch = (args, current = undefined) => {
         }
         //
         // TODO
-        // May want to do an "update" here, i.e. if Object.is(data, current)
-        // then do a "deep" update, like the update function within useFetch.
-        // Normally, data will be a new object so it shouldn't be a problem,
-        // but the caller, via onData, could return the previous item.
-        // I.e.: _update(args.setData, data, current)
+        // Maybe do _update(args.setData, data, current) here rather than setData.
+        // Normally, data will be a new object so it shouldn't be a problem; but if not ...
         //
         args.setData(data);
         args.setStatus(status);
         args.setLoading(false);
         noteFetchEnd(id, data);
-        const onArg = { data: data, loading: false, status: status, timeout: false, error: null };
-        args.onDone(onArg);
+        args.onDone({ data: data, loading: false, status: status, timeout: false, error: null });
     }
 
     function handleError(error, id) {
