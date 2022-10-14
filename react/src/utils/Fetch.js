@@ -67,15 +67,15 @@ const MAX_SAVE = 25;
 //   fetched data will implicitly be used (if null is desired, then return null explicitly).
 //
 //   Iff the invocation of the fetch which triggered this callback was via the refresh
-//   function (see the RETURN VALUE section below) then a second argument is passed to
-//   this callback which is the previously (or rather current, at this point) fetched data.
+//   function (see the RETURN VALUE section below) then a SECOND argument is passed to
+//   this callback which is the previously fetched data.
 //
 // - onDone
 //   Function to call when the fetch is complete, whether or not the fetch was successful;
 //   it is called with an object which is effectively the same as the response/state object
 //   returned from this hook, i.e. containing these properties: data, loading, status,
 //   timeout, error; see the RETURN VALUE section below. If the fetch is unsuccessful,
-//   i.e.  timeout or error, then data is null.
+//   i.e. timeout or error, then data is null.
 //
 // - onError
 //   Same as onDone but call ONLY on error (or timeout).
@@ -201,18 +201,21 @@ export const useFetch = (url, args) => {
             //
             data = data.data;
         }
+        //
+        // TODO
+        // Factor this out into a State.Update function or something.
+        //
         if (this && this.__usefetch_response && !Object.is(this.data, data) /* (this.data !== data) */ ) {
             //
-            // If data argument is different, by reference, than the current
-            // data associated with the useFetch response through which this
-            // update call was made, then we can do a simple setData since
-            // React, in such a case, will update the data state properly.
+            // If data argument is different, by reference, than the current,
+            // previously fetched data associated with the useFetch response
+            // through which this update call was made, then we can do a simple
+            // setData since React, in this case, will update the data state properly.
             //
-            // Otherwise (elses), since the object references are the same,
-            // by default React will not update the state, since it does
-            // no update if the references are the same; this is usually
-            // not what we want, so this update function will force an
-            // update by impliclitly creating a new (appropriate) object.
+            // Otherwise (elses), since the object references are the same, by default,
+            // React will not update the state, since it does no update if the references
+            // are the same; this is usually not what we want, so this update function
+            // will force an update by impliclitly creating a new (appropriate) object.
             //
             setData(data);
         }
@@ -465,6 +468,13 @@ const _doFetch = (args, current = undefined) => {
         if (data === undefined) {
             data = response.data;
         }
+        //
+        // TODO
+        // May want to do an "update" here, i.e. if Object.is(data, current)
+        // then do a "deep" update, like the update function within useFetch.
+        // Normally, data will be a new object so it shouldn't be a problem,
+        // but the caller, via onData, could return the previous item.
+        //
         args.setData(data);
         args.setStatus(status);
         args.setLoading(false);

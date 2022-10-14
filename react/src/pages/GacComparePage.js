@@ -53,7 +53,7 @@ const GacComparePage = (props) => {
 
     function getGacName(gac) {
         // Should return this explicitly from API.
-        return gac["ENCODED_IDENTITY"];
+        return gac ? gac["ENCODED_IDENTITY"] : "";
     }
 
     function showRawData() {
