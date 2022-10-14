@@ -44,10 +44,12 @@ def test_random_nums(connection, **kwargs):
     output = []
     for i in range(random.randint(1, 20)):
         output.append(random.randint(1, 100))
-    check.full_output = output
+    check.full_output = {
+        "output": output
+    }
     check.description = 'A test check'
     # sleep for 2 secs because this is used to test timing out
-    time.sleep(2)
+    time.sleep(4)
     return check
 
 
@@ -60,7 +62,9 @@ def test_random_nums_2(connection, **kwargs):
     output = []
     for i in range(random.randint(1, 20)):
         output.append(random.randint(1, 100))
-    check.full_output = output
+    check.full_output = {
+        "output": output
+    }
     check.description = 'A test check as well'
     return check
 

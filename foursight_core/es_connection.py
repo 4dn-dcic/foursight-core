@@ -56,12 +56,7 @@ class ESConnection(AbstractConnection):
         """
         try:
             mapping = self.load_mapping()
-            self.es.indices.create(index=name, body={
-                "settings": {
-                    "index.mapper.dynamic": False
-                },
-                "mappings": mapping.get('mappings')
-            }, ignore=400)
+            self.es.indices.create(index=name, body=mapping, ignore=400)
             return True
         except Exception as e:
             raise ElasticsearchException(str(e))
@@ -92,10 +87,9 @@ class ESConnection(AbstractConnection):
 
     def refresh_index(self):
         """
-        Refreshes the index, then waits 3 seconds
+        Refreshes the index (wait removed, no need for it
         """
-        self.es.indices.refresh(index=self.index)
-        time.sleep(3)
+        return self.es.indices.refresh(index=self.index)
 
     def put_object(self, key, value):
         """
@@ -128,8 +122,9 @@ class ESConnection(AbstractConnection):
         failure.
         """
         try:
-            return self.es.count(self.index).get('count')
-        except Exception:
+            return self.es.count(index=self.index).get('count')
+        except Exception as e:
+            print(f'Failed to execute count: {e}')
             return 0
 
     def get_size_bytes(self):

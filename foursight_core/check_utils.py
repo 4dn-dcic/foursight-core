@@ -94,6 +94,18 @@ class CheckHandler(object):
             checks_in_schedule.append(check_name)
         return checks_in_schedule
 
+    def locate_defined_checks(self):
+        """ Helper function for getting all available check strings (useful for mocking) """
+        found_checks = {}
+        all_check_strings = self.get_check_strings()
+        # validate all checks
+        for check_string in all_check_strings:
+            mod_name, check_name = check_string.split('/')
+            if check_name in found_checks:
+                raise BadCheckSetup(f'More than one check with name "{check_name}" was found. See module "{mod_name}"')
+            found_checks[check_name] = mod_name
+        return found_checks
+
     def validate_check_setup(self, check_setup):
         """
         Go through the check_setup json that was read in and make sure everything
@@ -104,14 +116,7 @@ class CheckHandler(object):
         same name and adds check module information to the check setup. Accordingly,
         verifies that each check in the check_setup is a real check.
         """
-        found_checks = {}
-        all_check_strings = self.get_check_strings()
-        # validate all checks
-        for check_string in all_check_strings:
-            mod_name, check_name = check_string.split('/')
-            if check_name in found_checks:
-                raise BadCheckSetup(f'More than one check with name "{check_name}" was found. See module "{mod_name}"')
-            found_checks[check_name] = mod_name
+        found_checks = self.locate_defined_checks()
         for check_name in check_setup:
             if check_name not in found_checks:
                 raise BadCheckSetup(f'Check with name {check_name} was in check_setup.json'

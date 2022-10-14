@@ -3,7 +3,7 @@ from conftest import *
 import run_result
 
 
-class TestCheckResult():
+class TestCheckResult:
     # use a fake check name and store on DEV_ENV
     check_name = 'test_only_check'
     # another fake check, with only ERROR results

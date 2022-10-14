@@ -8,6 +8,7 @@ from dcicutils.misc_utils import override_environ, ignored, PRINT
 from foursight_core.app_utils import AppUtils
 from foursight_core.sqs_utils import SQS
 from foursight_core.environment import Environment
+from foursight_core.decorators import Decorators
 
 
 GLOBAL_ENV_BUCKET = 'GLOBAL_ENV_BUCKET'
@@ -63,6 +64,13 @@ SIMULATED_ENV_HEALTH_PAGE = {
     "tibanna_output_bucket": "tibanna-output",
     "utils_version": "3.12.0.1b0"
 }
+
+
+deco = Decorators('placeholder_prefix')
+CheckResult = deco.CheckResult
+ActionResult = deco.ActionResult
+check_function = deco.check_function
+action_function = deco.action_function
 
 
 class SimulatedAppUtils(AppUtils):
