@@ -247,7 +247,7 @@ const GacComparePage = (props) => {
                 </table>
             </div>
             <pre id="raw" className="info" style={{display:"none"}}>
-                {Yaml.Format(response.data)}
+                {response.yaml()}
             </pre>
         </div>
     </>

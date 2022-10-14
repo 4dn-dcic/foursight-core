@@ -6,12 +6,13 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import uuid from 'react-uuid';
 import { defineGlobal, useGlobal } from '../Global';
-import Client from '../utils/Client';
-import Cookie from '../utils/Cookie';
-import Debug from '../utils/Debug';
-import Logout from '../utils/Logout';
-import Str from '../utils/Str';
-import Type from '../utils/Type';
+import Client from './Client';
+import Cookie from './Cookie';
+import Debug from './Debug';
+import Logout from './Logout';
+import Str from './Str';
+import Type from './Type';
+import Yaml from './Yaml';
 
 const DEFAULT_TIMEOUT = 30 * 1000;
 const DEFAULT_DELAY = () => { return TEST_MODE_DELAY > 0 ? TEST_MODE_DELAY : 0; };
@@ -177,7 +178,27 @@ export const useFetch = (url, args) => {
         _doFetch(assembleArgs());
     }, [])
 
-    const update = function(data) {
+    const response = {
+        data: data,
+        loading: loading,
+        status: status,
+        timeout: timeout,
+        error: error,
+        set: setData,
+        __usefetch_response: true // For sanity checking args to bound functions.
+        //
+        // Previously had a case where it seemed loading wasn't getting updated properly;
+        // and where turning it into a computed property seemed to fixed it; cannot
+        // reproduce this now so backing it out; think it was fixed elsewhere here;
+        // leaving this here for now in case we run into again; see how it's done.
+        // get ["loading"]() { return loading; }
+    };
+
+    response.refresh = (function(url, args) {
+        _doFetch(assembleArgs(url, args, true), this && this.__usefetch_response === true ? this.data : undefined);
+    }).bind(response);
+
+    response.update = (function(data) {
         if (data === undefined) {
             //
             // If no argument is passed then implicitly use the
@@ -193,150 +214,131 @@ export const useFetch = (url, args) => {
             data = data.data;
         }
         _update(setData, data, this && this.__usefetch_response ? this.data : undefined);
-    }
-    const refresh = function(url, args) {
-        _doFetch(assembleArgs(url, args, true), this && this.__usefetch_response === true ? this.data : undefined);
-    };
-    const response = {
-        data: data,
-        loading: loading,
-        status: status,
-        timeout: timeout,
-        error: error,
-        set: setData,
-        //
-        // Previously had a case where it seemed loading wasn't getting updated properly;
-        // and where turning it into a computed property seemed to fixed it; cannot
-        // reproduce this now so backing it out; think it was fixed elsewhere here;
-        // leaving this here for now in case we run into again; see how it's done.
-        // get ["loading"]() { return loading; }
-        //
-        __usefetch_response: true
-    };
-    response.update = update.bind(response)
-    response.refresh = refresh.bind(response)
+    }).bind(response);
+
+    // This block is xperimental (perhaps too clever by half):
+    // Specialized, specific data update functions, e.g. to prepend, append, or insert
+    // into array, etc. Simplifies acess to useFetch (return) value, i.e not having to
+    // always dereference via useFetchResult.data. And since we're doing this at all,
+    // might as well introduce some niceties to these functions.
     {
-        // Experimental (perhaps too clever by half):
-        // Specialized, specific data update functions, e.g. to prepend, append, or insert
-        // into array, etc. Simplifies acess to useFetch (return) value, i.e not having to
-        // always dereference via useFetchResult.data. And since we're doing this at all,
-        // might as well introduce some niceties to these functions.
-        //
-        const length = function() {
-            if (this && this.__usefetch_response && Type.IsArray(this.data)) {
-                return this.data.length;
-            }
-        }
-        const get = function(index) {
-            if (this && this.__usefetch_response) {
-                let data = this.data;
-                if (Type.IsArray(data)) {
-                    if (Type.IsInteger(index)) {
-                        if (index < 0) index = 0;
-                        if (index >= data.length) index = data.length - 1;
-                        data = data[index];
-                    }
+        Object.defineProperty(response, "length", { get:
+            (function() {
+                if (!this || !this.__usefetch_response) return;
+                if (Type.IsArray(this.data)) {
+                    return this.data.length;
                 }
-                else if (Type.IsObject(data)) {
-                    if (Str.HasValue(index)) {
-                        const names = index.split(".");
-                        for (const name of names) {
-                            if (!Type.IsObject(data)) {
-                                return null;
-                            }
-                            data = data[name];
+            }).bind(response)
+        });
+
+        response.get = (function(index) {
+            if (!this || !this.__usefetch_response) return;
+            let data = this.data;
+            if (Type.IsArray(data)) {
+                if (Type.IsInteger(index)) {
+                    if (index < 0) index = 0;
+                    if (index >= data.length) index = data.length - 1;
+                    data = data[index];
+                }
+            }
+            else if (Type.IsObject(data)) {
+                if (Str.HasValue(index)) {
+                    const names = index.split(".");
+                    for (const name of names) {
+                        if (!Type.IsObject(data)) {
+                            return null;
                         }
-                    }
-                }
-                return data;
-            }
-        }
-        const append = function(element) {
-            if (this && this.__usefetch_response) {
-                if (Type.IsArray(this.data)) {
-                    if (element) {
-                        this.data.push(element);
-                        this.update();
+                        data = data[name];
                     }
                 }
             }
-        }
-        const prepend = function(element) {
-            if (this && this.__usefetch_response) {
-                if (Type.IsArray(this.data)) {
-                    if (element) {
-                        //
-                        // For some reason this (unshift, and push above) doesn't require
-                        // updating after, at least for the case I'm seeing (in AwsS3Path);
-                        // but doing a splice (below) I *do* need to update. Understand the
-                        // latter, just not sure why the former works without explicit update.
-                        // https://beta.reactjs.org/learn/updating-arrays-in-state
-                        //
-                        this.data.unshift(element);
-                        this.update();
-                    }
+            return data;
+        }).bind(response);
+
+        response.append = (function(element) {
+            if (!this || !this.__usefetch_response) return;
+            if (Type.IsArray(this.data)) {
+                if (element) {
+                    this.data.push(element);
+                    this.update();
                 }
             }
-        }
-        const remove = function(index) {
-            if (this && this.__usefetch_response) {
-                if (Type.IsArray(this.data)) {
-                    if (Type.IsInteger(index)) {
-                        if (index < 0) index = 0;
-                        if (index >= data.length) index = data.length - 1;
-                        this.data.splice(index, 1);
-                        this.update();
-                    }
-                }
-                else if (Type.IsObject(this.data)) {
+        }).bind(response);
+
+        response.prepend = (function(element) {
+            if (!this || !this.__usefetch_response) return;
+            if (Type.IsArray(this.data)) {
+                if (element) {
                     //
-                    // TODO
+                    // For some reason this (unshift, and push above) doesn't require
+                    // updating after, at least for the case I'm seeing (in AwsS3Path);
+                    // but doing a splice (below) I *do* need to update. Understand the
+                    // latter, just not sure why the former works without explicit update.
+                    // https://beta.reactjs.org/learn/updating-arrays-in-state
                     //
+                    this.data.unshift(element);
+                    this.update();
                 }
             }
-        }
-        const filter = function(f) {
-            if (this && this.__usefetch_response) {
-                if (Type.IsArray(this.data)) {
-                    if (Type.IsFunction(f)) {
-                        return this.data.filter(f) || [];
-                    }
-                    return this.data;
-                }
-                else if (Type.IsObject(this.data)) {
-                    //
-                    // TODO
-                    //
+        }).bind(response);
+
+        response.remove = (function(index) {
+            if (!this || !this.__usefetch_response) return;
+            if (Type.IsArray(this.data)) {
+                if (Type.IsInteger(index)) {
+                    if (index < 0) index = 0;
+                    if (index >= data.length) index = data.length - 1;
+                    this.data.splice(index, 1);
+                    this.update();
                 }
             }
-        }
-        const map = function(f, other) {
-            if (this && this.__usefetch_response) {
-                if (Type.IsArray(this.data)) {
-                    if (Type.IsFunction(f)) {
-                        return this.data.map(f);
-                    }
-                    return this.data;
+            else if (Type.IsObject(this.data)) {
+                //
+                // TODO
+                //
+            }
+        }).bind(response);
+
+        response.filter = (function(f) {
+            if (!this || !this.__usefetch_response) return;
+            if (Type.IsArray(this.data)) {
+                if (Type.IsFunction(f)) {
+                    return this.data.filter(f) || [];
                 }
-                else if (Type.IsObject(this.data)) {
-                    if (Str.HasValue(f) && Type.IsFunction(other)) {
-                        const name = f; f = other;
-                        const data = this.get(name);
-                        if (Type.IsArray(data)) {
-                            return data.map(f);
-                        }
+                return this.data;
+            }
+            else if (Type.IsObject(this.data)) {
+                //
+                // TODO
+                //
+            }
+        }).bind(response);
+
+        response.map = (function(f, other) {
+            if (!this || !this.__usefetch_response) return;
+            if (Type.IsArray(this.data)) {
+                if (Type.IsFunction(f)) {
+                    return this.data.map(f);
+                }
+                return this.data;
+            }
+            else if (Type.IsObject(this.data)) {
+                if (Str.HasValue(f) && Type.IsFunction(other)) {
+                    const name = f; f = other;
+                    const data = this.get(name);
+                    if (Type.IsArray(data)) {
+                        return data.map(f);
                     }
                 }
             }
-        }
-        Object.defineProperty(response, "length", { get: length.bind(response) });
-        response.get = get.bind(response);
-        response.append = append.bind(response);
-        response.prepend = prepend.bind(response);
-        response.remove = remove.bind(response);
-        response.filter = filter.bind(response);
-        response.map = map.bind(response);
+        }).bind(response);
+
+        response.yaml = (function() {
+            if (!this || !this.__usefetch_response) return;
+            return Yaml.Format(this.data);
+        }).bind(response);
     }
+
     return response;
 }
 
