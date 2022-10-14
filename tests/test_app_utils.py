@@ -1,7 +1,6 @@
 from conftest import DEV_ENV
 import pytest
 import chalice
-from unittest import mock
 from foursight_core import app_utils as app_utils_module
 from foursight_core.app_utils import AppUtilsCore
 from unittest import mock
@@ -9,7 +8,7 @@ from unittest import mock
 
 class TestAppUtils:
     """
-    Meant for non-route utilities in chalicelib/app_utils.py
+    Meant for non-route utilities in foursight_core/app_utils.py
     """
     environ = DEV_ENV
 
@@ -109,18 +108,18 @@ class TestAppUtils:
             "name": "Dummy",
             "iat": 1516239022
         }  # mock a 'correct' jwt decode
-        with mock.patch('chalicelib.app_utils.AppUtils.get_jwt_token', return_value='token'):
+        with mock.patch('foursight_core.app_utils.AppUtils.get_jwt_token', return_value='token'):
             with mock.patch('jwt.decode', return_value=payload1):
                 auth = app_utils.check_authorization(ctx, env=self.environ)
             assert auth
-        with mock.patch('chalicelib.app_utils.AppUtils.get_jwt_token', return_value='token'):
+        with mock.patch('foursight_core.app_utils.AppUtils.get_jwt_token', return_value='token'):
             with mock.patch('jwt.decode', return_value=payload1):
                 # test authenticating on more than one env
                 auth = app_utils.check_authorization(ctx, env=self.environ)
             assert auth
         auth = app_utils.check_authorization(ctx, env='all')
         assert auth
-        with mock.patch('chalicelib.app_utils.AppUtils.get_jwt_token', return_value='token'):
+        with mock.patch('foursight_core.app_utils.AppUtils.get_jwt_token', return_value='token'):
             with mock.patch('jwt.decode', return_value=payload1):
                 auth = app_utils.check_authorization(ctx, env='data,staging')  # test more than one
             assert auth
