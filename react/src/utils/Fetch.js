@@ -201,7 +201,7 @@ export const useFetch = (url, args) => {
             //
             data = data.data;
         }
-        if (this && this.__usefetch_response && (this.data !== data)) {
+        if (this && this.__usefetch_response && !Object.is(this.data, data) /* (this.data !== data) */ ) {
             //
             // If data argument is different, by reference, than the current
             // data associated with the useFetch response through which this
@@ -279,6 +279,13 @@ export const useFetch = (url, args) => {
         const prepend = function(element) {
             if (this && this.__usefetch_response && Type.IsArray(this.data)) {
                 if (element) {
+                    //
+                    // For some reason this (unshift, and push above) doesn't require
+                    // updating after, at least for the case I'm seeing (in AwsS3Path);
+                    // but doing a splice (below) I *do* need to update. Understand the
+                    // latter, just not sure why the former works without explicit update.
+                    // https://beta.reactjs.org/learn/updating-arrays-in-state
+                    //
                     this.data.unshift(element);
                 }
             }
