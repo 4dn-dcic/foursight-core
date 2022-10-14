@@ -201,36 +201,7 @@ export const useFetch = (url, args) => {
             //
             data = data.data;
         }
-        //
-        // TODO
-        // Factor this out into a State.Update function or something.
-        //
-        if (this && this.__usefetch_response && !Object.is(this.data, data) /* (this.data !== data) */ ) {
-            //
-            // If data argument is different, by reference, than the current,
-            // previously fetched data associated with the useFetch response
-            // through which this update call was made, then we can do a simple
-            // setData since React, in this case, will update the data state properly.
-            //
-            // Otherwise (elses), since the object references are the same, by default,
-            // React will not update the state, since it does no update if the references
-            // are the same; this is usually not what we want, so this update function
-            // will force an update by impliclitly creating a new (appropriate) object.
-            //
-            setData(data);
-        }
-        else if (Type.IsObject(data)) {
-            setData({...data});
-        }
-        else if (Type.IsArray(data)) {
-            setData([...data]);
-        }
-        else if (Type.IsFunction(data)) {
-            setData(data());
-        }
-        else {
-            setData(data);
-        }
+        _update(setData, data, this && this.__usefetch_response ? this.data : undefined);
     }
     const refresh = function(url, args) {
         _doFetch(assembleArgs(url, args, true), this && this.__usefetch_response === true ? this.data : undefined);
@@ -474,6 +445,7 @@ const _doFetch = (args, current = undefined) => {
         // then do a "deep" update, like the update function within useFetch.
         // Normally, data will be a new object so it shouldn't be a problem,
         // but the caller, via onData, could return the previous item.
+        // I.e.: _update(args.setData, data, current)
         //
         args.setData(data);
         args.setStatus(status);
@@ -589,6 +561,35 @@ const _doFetch = (args, current = undefined) => {
             Debug.Info(error);
             handleError(error, id);
         });
+}
+
+function _update(setData, newData, currentData) {
+    if (!Object.is(newData, currentData)) {
+        //
+        // If data argument is different, by reference, than the current,
+        // previously fetched data associated with the useFetch response
+        // through which this update call was made, then we can do a simple
+        // setData since React, in this case, will update the data state properly.
+        //
+        // Otherwise (elses), since the object references are the same, by default,
+        // React will not update the state, since it does no update if the references
+        // are the same; this is usually not what we want, so this update function
+        // will force an update by impliclitly creating a new (appropriate) object.
+        //
+        setData(newData);
+    }
+    else if (Type.IsObject(newData)) {
+        setData({...newData});
+    }
+    else if (Type.IsArray(newData)) {
+        setData([...newData]);
+    }
+    else if (Type.IsFunction(newData)) {
+        setData(newData());
+    }
+    else {
+        setData(newData);
+    }
 }
 
 function _assembleFetchArgs(url, args, urlOverride, argsOverride,
