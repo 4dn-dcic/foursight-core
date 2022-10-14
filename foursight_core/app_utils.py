@@ -177,7 +177,7 @@ class AppUtilsCore:
     def is_running_locally(self, request_dict) -> bool:
         return request_dict.get('context', {}).get('identity', {}).get('sourceIp', '') == "127.0.0.1"
 
-    def get_logged_in_user_info(self, environ: str, request_dict: dict) -> str:
+    def get_logged_in_user_info(self, environ: str, request_dict: dict) -> dict:
         email_address = ""
         email_verified = ""
         first_name = ""
@@ -1755,7 +1755,7 @@ class AppUtilsCore:
         # find information from s3 about completed checks in this run
         # actual id stored in s3 has key: <run_uuid>/<run_name>
         if run_deps and isinstance(run_deps, list):
-            already_run = self.collect_run_info(run_uuid)
+            already_run = self.collect_run_info(run_uuid, run_env)
             deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
             finished_dependencies = set(deps_w_uuid).issubset(already_run)
             if not finished_dependencies:
@@ -1813,11 +1813,12 @@ class AppUtilsCore:
             return None
 
     @classmethod
-    def collect_run_info(cls, run_uuid):
+    def collect_run_info(cls, run_uuid, env):
         """
         Returns a set of run checks under this run uuid
         """
-        s3_connection = S3Connection(cls.prefix + '-runs')
+        bucket = get_foursight_bucket(envname=env, stage=Stage(cls.prefix).get_stage())
+        s3_connection = S3Connection(bucket)
         run_prefix = ''.join([run_uuid, '/'])
         complete = s3_connection.list_all_keys_w_prefix(run_prefix)
         # eliminate duplicates
