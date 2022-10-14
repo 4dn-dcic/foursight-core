@@ -54,28 +54,25 @@ const MAX_SAVE = 25;
 //   user to the /env page if we get an unauthorized (HTTP 403) response for the fetch, is disabled.
 //
 // - delay
-//   Number of milliseconds to delay the fetch.
-//   To be used ONLY for testing purposes, i.e. to simulate slow fetches, and to make sure
-//   things work well WRT that. Slow/delayed fetching can be globally enabled by (manuallly)
-//   setting the test_mode_fetch_sleep cookie to some number of milliseconds to delay fetches by.
+//   Number of milliseconds to delay the fetch. Used ONLY for testing purposes, to simulate slow
+//   fetches, to ensure things work WRT that. Slow/delayed fetching can be globally enabled by
+//   manuallly setting the test_mode_fetch_sleep cookie to milliseconds to delay fetches by.
 //
 // - onData
 //   Function to call when a SUCCESSFUL data fetch is completed; it is called with the
 //   fetched (JSON) data as an argument; this function should return that same passed data,
 //   OR some modified version of it, OR whatever is desired; this returned value will be
-//   set as the result the fetch; if nothing at all is returned (i.e. undefined) then the
-//   fetched data will implicitly be used (if null is desired, then return null explicitly).
+//   set as the result of the fetch; if nothing is returned (i.e. undefined) then the
+//   fetched data will implicitly be used (if null is desired, return null explicitly).
 //
 //   Iff the invocation of the fetch which triggered this callback was via the refresh
 //   function (see the RETURN VALUE section below) then a SECOND argument is passed to
 //   this callback which is the previously fetched data.
 //
 // - onDone
-//   Function to call when the fetch is complete, whether or not the fetch was successful;
-//   it is called with an object which is effectively the same as the response/state object
-//   returned from this hook, i.e. containing these properties: data, loading, status,
-//   timeout, error; see the RETURN VALUE section below. If the fetch is unsuccessful,
-//   i.e. timeout or error, then data is null.
+//   Function to call when the fetch is COMPLETE, whether or NOT it was successful;
+//   it is called with an object containing these properties: data, loading, status,
+//   timeout, error. If the fetch is unsuccessful (timeout or error), then data is null.
 //
 // - onError
 //   Same as onDone but call ONLY on error (or timeout).
@@ -129,7 +126,7 @@ const MAX_SAVE = 25;
 //   use multiple useFetch instantiations for that. The main use of this is to do simple refreshes of an
 //   initial fetch, and also (when using the nofetch argument) to obtain a fetch function for later use.
 //
-// ADDITIONALLY
+// FETCH TRACKING
 //
 // All fetches executed via this hook will be tracked in global state which is available via these hooks:
 //
@@ -427,8 +424,7 @@ const _doFetch = (args, current = undefined) => {
 
     function handleResponse(response, id) {
         const status = response.status;
-        Debug.Info(`FETCH RESPONSE: ${args.url} -> HTTP ${status}`);
-        Debug.Info(response.data);
+        Debug.Info(`FETCH RESPONSE: ${args.url} -> HTTP ${status}`, response.data);
         //
         // This current argument is only set in the case where this is being
         // called from the refresh function returned by useFetch; it is the value
@@ -560,8 +556,7 @@ const _doFetch = (args, current = undefined) => {
             }
         })
         .catch(error => {
-            Debug.Info(`FETCH EXCEPTION: ${args.url}`);
-            Debug.Info(error);
+            Debug.Info(`FETCH EXCEPTION: ${args.url}`, error);
             handleError(error, id);
         });
 }
