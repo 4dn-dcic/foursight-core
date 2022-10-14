@@ -6,6 +6,12 @@ foursight-core
 Change Log
 ----------
 
+3.0.0
+=====
+
+* ElasticSearch 7 compatibility
+* Reintroduce tests for a large chunk of core functionality
+
 2.0.2
 =====
 * Change some print statements to logger.debug in check_utils.py
