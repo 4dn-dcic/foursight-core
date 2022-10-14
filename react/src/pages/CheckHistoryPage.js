@@ -68,7 +68,7 @@ const CheckHistoryPage = (props) => {
     }
 
     function onPaginationClick(event) {
-        const offset = event.selected * limit % history.data.paging.total;
+        const offset = event.selected * limit % history.get("paging.total");
         update(limit, offset, sort);
     }
 
@@ -163,18 +163,18 @@ const CheckHistoryPage = (props) => {
                 <span style={{float:"right",cursor:"pointer"}} onClick={() => {}}><b>&#x2717;</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
-                { history.data?.list?.length > 0 ? (<>
+                { history.get("list")?.length > 0 ? (<>
                     <table style={{width:"100%"}}>
                         <TableHead
                             columns={columns}
-                            list={history.data.list}
+                            list={history.get("list")}
                             state={{key: extractTimestamp, order: sort.endsWith(".desc") ? -1 : 1}}
                             update={(key, order) => {onSort(key, order);}}
                             lines={true}
                             style={{color:"darkblue",fontWeight:"bold"}}
                             loading={history.loading} />
                     <tbody>
-                    {history.data?.list.map((history, index) =>
+                    {history.get("list")?.map((history, index) =>
                         <React.Fragment key={extractUUID(history)}>
                             { index !== 0 && (<>
                                 <tr><td style={{paddingTop:"2px"}}></td></tr>
@@ -283,7 +283,7 @@ const CheckHistoryPage = (props) => {
                             </select>
                             </span></span>
                             |
-                            Showing {offset + 1} thru {offset + limit} | Total: {history.data?.paging?.total}&nbsp;&nbsp;
+                            Showing {offset + 1} thru {offset + limit} | Total: {history.get("paging.total")}&nbsp;&nbsp;
                         </div>
                     </td>
                     </tr></tbody></table>
@@ -306,7 +306,7 @@ const CheckHistoryPage = (props) => {
                             <tr><td style={{paddingBottom:"2px"}}></td></tr>
                             <tr>
                                 <td style={{paddingRight:"8pt"}}><b>Group</b>:</td>
-                                <td>{history.data?.check?.group}</td>
+                                <td>{history.get("check.group")}</td>
                             </tr>
                             <tr><td style={{paddingTop:"2px"}}></td></tr>
                             <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
@@ -314,10 +314,10 @@ const CheckHistoryPage = (props) => {
                             <tr>
                                 <td style={{verticalAlign:"top",paddingRight:"8pt"}}><b>Schedule:</b></td>
                                 <td>
-                                    {getCronDescriptionFromCheck(history.data?.check)}
+                                    {getCronDescriptionFromCheck(history.get("check"))}
                                     <br />
                                     <span style={{fontFamily:"monospace"}}>
-                                        {getCronFromCheck(history.data?.check)}
+                                        {getCronFromCheck(history.get("check"))}
                                     </span>
                                 </td>
                             </tr>

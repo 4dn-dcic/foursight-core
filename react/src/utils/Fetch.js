@@ -205,7 +205,7 @@ export const useFetch = (url, args) => {
         error: error,
         set: setData,
         //
-        // Previously had a case where i5 seemed loading wasn't getting updated properly;
+        // Previously had a case where it seemed loading wasn't getting updated properly;
         // and where turning it into a computed property seemed to fixed it; cannot
         // reproduce this now so backing it out; think it was fixed elsewhere here;
         // leaving this here for now in case we run into again; see how it's done.
@@ -230,18 +230,26 @@ export const useFetch = (url, args) => {
         }
         const get = function(index) {
             if (this && this.__usefetch_response) {
-                if (Type.IsArray(this.data)) {
-                    if (Type.IsInteger(index) && index >= 0 && index < this.data.length) {
-                        return this.data[index];
+                let data = this.data;
+                if (Type.IsArray(data)) {
+                    if (Type.IsInteger(index)) {
+                        if (index < 0) index = 0;
+                        if (index >= data.length) index = data.length - 1;
+                        data = data[index];
                     }
-                    return null;
                 }
-                else if (Type.IsObject(this.data)) {
+                else if (Type.IsObject(data)) {
                     if (Str.HasValue(index)) {
-                        const name = index;
-                        return this.data[name];
+                        const names = index.split(".");
+                        for (const name of names) {
+                            if (!Type.IsObject(data)) {
+                                return null;
+                            }
+                            data = data[name];
+                        }
                     }
                 }
+                return data;
             }
         }
         const append = function(element) {

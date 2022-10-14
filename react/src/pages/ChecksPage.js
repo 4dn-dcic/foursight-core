@@ -259,7 +259,7 @@ const ChecksPage = (props) => {
         return <div style={{minWidth:"150pt"}}>
             <div style={{fontWeight:"bold",paddingBottom:"3pt",cursor:"pointer"}} onClick={() => onGroupSelectAll()}>&nbsp;Check Groups</div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                { checks.data?.map((datum, index) =>
+                { checks.map((datum, index) =>
                     <div key={datum.group}>
                         <span style={{fontWeight:isSelectedGroup(datum) ? "bold" : "normal",cursor:"pointer"}} onClick={() => toggleShowGroup(datum)}>
                             {datum.group}
@@ -277,7 +277,7 @@ const ChecksPage = (props) => {
         return <div>
             <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;Lambdas</div>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                { lambdas.data?.map((datum, index) =>
+                { lambdas.map((datum, index) =>
                     <div key={datum.lambda_name} title={datum.lambda_function_name}>
                         {datum.lambda_name}
                         { index < lambdas.data.length - 1 &&
