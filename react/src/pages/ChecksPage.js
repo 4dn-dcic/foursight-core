@@ -30,7 +30,7 @@ const ChecksPage = (props) => {
 //  let [ loading, setLoading ] = useState(true);
 //  let [ error, setError ] = useState(false);
     let [ selectedGroups, setSelectedGroups ] = useState([])
-    let [ selectedHistories, setSelectedHistories ] = useState([])
+//  let [ selectedHistories, setSelectedHistories ] = useState([])
 //  let [ checksStatus, setChecksStatus ] = useState({});
 //  let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
     const [ readOnlyMode ] = useReadOnlyMode();
@@ -187,9 +187,9 @@ const ChecksPage = (props) => {
         setSelectedGroups(existing => [...existing]);
     }
 
-    function noteChangedHistories() {
-        setSelectedHistories(existing => [...existing]);
-    }
+//  function noteChangedHistories() {
+//      setSelectedHistories(existing => [...existing]);
+//  }
 
     function toggleShowGroup(group, showResults = true) {
         if (isSelectedGroup(group)) {
@@ -739,7 +739,7 @@ const ChecksPage = (props) => {
             { check.showingHistory && (<>
                 { check.history?.list?.length > 0 ? (<>
                     <table style={{width:"100%"}} border="0">
-                        <TableHead columns={columns} list={check.history.list} update={() => noteChangedHistories()} style={{color:"darkgreen",fontWeight:"bold"}} lines={true} />
+                        <TableHead columns={columns} list={check.history.list} update={(e) => historyList.update()} style={{color:"darkgreen",fontWeight:"bold"}} lines={true} />
                     <tbody>
                     {check.history.list.map((history, index) => <React.Fragment key={index}>
                         <React.Fragment key={extractUuid(history)}>
@@ -807,7 +807,8 @@ const ChecksPage = (props) => {
     }
 
     const ResultsHistoryPanel = () => {
-        let histories = selectedHistories?.filter((check) => check.showingHistory);
+        // let histories = selectedHistories?.filter((check) => check.showingHistory);
+        let histories = historyList.filter((check) => check.showingHistory); // Experimental
         if (histories.length <= 0) {
             return <span />
         }
@@ -837,19 +838,18 @@ const ChecksPage = (props) => {
     function showHistory(check) {
         if (!check.showingHistory) {
             check.showingHistory = true;
-            selectedHistories.unshift(check);
-            // historyList.data?.unshift(check); // TODO NEW
-            noteChangedHistories();
+            // selectedHistories.unshift(check);
+            // noteChangedHistories();
+            historyList.prepend(check); // Experimental
             if (!check.history) {
-                /* TODO NEW
-                historyList.refresh({
+                historyList.refresh({ // Experimental
                     url: Server.Url(`/checks/${check.name}/history`, environ),
                     onData: (data, current) => {
                         check.history = data;
                         return current;
                     }
                 });
-                */
+/*
                 fetch({
                     url: Server.Url(`/checks/${check.name}/history`, environ),
                     onData: (data) => {
@@ -857,6 +857,7 @@ const ChecksPage = (props) => {
                         noteChangedHistories();
                     }
                 });
+*/
 /*
                 Fetch.get(Server.Url(`/checks/${check.name}/history`, environ),
                           history => { check.history = history; noteChangedHistories(); });
@@ -869,19 +870,22 @@ const ChecksPage = (props) => {
         history.__resultShowing = true;
         history.__resultLoading = true;
 //      history.__resultError = false;
-        noteChangedHistories();
+        // noteChangedHistories();
+        historyList.update(); // Experimental
         fetch({
             url: Server.Url(`/checks/${check.name}/${uuid}`, environ),
             onData: (data) => {
                 if (history.__resultShowing) {
                     history.__result = data;
-                    noteChangedHistories();
+                    // noteChangedHistories();
+                    historyList.update(); // Experimental
                 }
                 return data;
             },
             onDone: (response) => {
                 history.__resultLoading = false;
-                noteChangedHistories();
+                // noteChangedHistories();
+                historyList.update(); // Experimental
             }
         });
 /*
@@ -899,7 +903,8 @@ const ChecksPage = (props) => {
         history.__result = null;
         history.__resultLoading = false;
 //      history.__resultError = false;
-        noteChangedHistories();
+        // noteChangedHistories();
+        historyList.update(); // Experimental
     }
 
     function toggleHistoryResult(check, history, uuid) {
@@ -915,19 +920,27 @@ const ChecksPage = (props) => {
         if (check.showingHistory) {
             check.showingHistory = false;
             const index = findResultsHistoryIndex(check);
-            selectedHistories.splice(index, 1);
-            // historyList.data?.splice(index, 1); // TODO NEW
-            noteChangedHistories();
+            // selectedHistories.splice(index, 1);
+            // noteChangedHistories();
+            historyList.remove(index); // Experimental
         }
     }
 
     function findResultsHistoryIndex(check) {
+        for (let i = 0 ; i < historyList.length ; i++) {
+            const selectedHistory = historyList.get(i)
+            if (selectedHistory.name === check.name) {
+                return i;
+            }
+        }
+/*
         for (let i = 0 ; i < selectedHistories.length ; i++) {
             const selectedHistory = selectedHistories[i]
             if (selectedHistory.name === check.name) {
                 return i;
             }
         }
+*/
         return -1;
     }
 
