@@ -9,7 +9,6 @@ import sqs_utils
 import run_result
 import check_utils
 import decorators
-from chalicelib import __file__ as chalicelib_path
 from conftest import *
 
 
@@ -208,55 +207,55 @@ class TestCheckRunner:
         assert (test_success)
         assert (runner_res is None)
 
-    @pytest.mark.skip
-    def test_queue_check_group(self, app_utils_obj_conn):
-        """ This test relies on elasticbeanstalk health check, it causes us to get rate limited
-            on that API - so disabling this test. - Will Oct 28 2021
-
-            Checks that a group of checks can be queued. Since this test is disabled, we should
-            watch deployments carefully to ensure checks are being queued, or consider occasionally
-            running this check and using a special schedule.
-        """
-        # find the checks we will be using
-        use_schedule = 'ten_min_checks'
-
-        check_handler = check_utils.CheckHandler(FOURSIGHT_PREFIX,
-                                                 check_setup_dir=os.path.dirname(chalicelib_path),
-                                                 check_package_name='chalicelib')
-        check_schedule = check_handler.get_check_schedule(use_schedule)
-        use_checks = [cs[0].split('/')[1] for env in check_schedule for cs in check_schedule[env]]
-        # get a reference point for check results
-        prior_res = check_handler.get_check_results(self.connection, checks=use_checks, use_latest=True)
-        run_input = self.app_utils_obj.queue_scheduled_checks(self.environ, 'ten_min_checks')
-        assert (self.queue_name in run_input.get('sqs_url'))
-        finished_count = 0  # since queue attrs are approximate
-        error_count = 0
-        # wait for queue to empty
-        while finished_count < 2:
-            time.sleep(1)
-            sqs_attrs = self.sqs.get_sqs_attributes(run_input.get('sqs_url'))
-            vis_messages = int(sqs_attrs.get('ApproximateNumberOfMessages'))
-            invis_messages = int(sqs_attrs.get('ApproximateNumberOfMessagesNotVisible'))
-            if vis_messages == 0 and invis_messages == 0:
-                finished_count += 1
-            else:
-                error_count += 1
-                # eat up residual messages
-                self.app_utils_obj.run_check_runner({'sqs_url': self.queue.url}, propogate=False)
-            if error_count > 60:  # test should fail
-                print('Did not locate result.')
-                assert (False)
-        # queue should be empty. check results
-        post_res = check_handler.get_check_results(self.connection, checks=use_checks, use_latest=True)
-        # compare the runtimes to ensure checks have run
-        res_compare = {}
-        for check_res in post_res:
-            res_compare[check_res['name']] = {'post': check_res['uuid']}
-        for check_res in prior_res:
-            res_compare[check_res['name']]['prior'] = check_res['uuid']
-        for check_name in res_compare:
-            assert ('post' in res_compare[check_name] and 'prior' in res_compare[check_name])
-            assert (res_compare[check_name]['prior'] != res_compare[check_name]['post'])
+    # @pytest.mark.skip
+    # def test_queue_check_group(self, app_utils_obj_conn):
+    #     """ This test relies on elasticbeanstalk health check, it causes us to get rate limited
+    #         on that API - so disabling this test. - Will Oct 28 2021
+    #
+    #         Checks that a group of checks can be queued. Since this test is disabled, we should
+    #         watch deployments carefully to ensure checks are being queued, or consider occasionally
+    #         running this check and using a special schedule.
+    #     """
+    #     # find the checks we will be using
+    #     use_schedule = 'ten_min_checks'
+    #
+    #     check_handler = check_utils.CheckHandler(FOURSIGHT_PREFIX,
+    #                                              check_setup_dir=os.path.dirname(chalicelib_path),
+    #                                              check_package_name='chalicelib')
+    #     check_schedule = check_handler.get_check_schedule(use_schedule)
+    #     use_checks = [cs[0].split('/')[1] for env in check_schedule for cs in check_schedule[env]]
+    #     # get a reference point for check results
+    #     prior_res = check_handler.get_check_results(self.connection, checks=use_checks, use_latest=True)
+    #     run_input = self.app_utils_obj.queue_scheduled_checks(self.environ, 'ten_min_checks')
+    #     assert (self.queue_name in run_input.get('sqs_url'))
+    #     finished_count = 0  # since queue attrs are approximate
+    #     error_count = 0
+    #     # wait for queue to empty
+    #     while finished_count < 2:
+    #         time.sleep(1)
+    #         sqs_attrs = self.sqs.get_sqs_attributes(run_input.get('sqs_url'))
+    #         vis_messages = int(sqs_attrs.get('ApproximateNumberOfMessages'))
+    #         invis_messages = int(sqs_attrs.get('ApproximateNumberOfMessagesNotVisible'))
+    #         if vis_messages == 0 and invis_messages == 0:
+    #             finished_count += 1
+    #         else:
+    #             error_count += 1
+    #             # eat up residual messages
+    #             self.app_utils_obj.run_check_runner({'sqs_url': self.queue.url}, propogate=False)
+    #         if error_count > 60:  # test should fail
+    #             print('Did not locate result.')
+    #             assert (False)
+    #     # queue should be empty. check results
+    #     post_res = check_handler.get_check_results(self.connection, checks=use_checks, use_latest=True)
+    #     # compare the runtimes to ensure checks have run
+    #     res_compare = {}
+    #     for check_res in post_res:
+    #         res_compare[check_res['name']] = {'post': check_res['uuid']}
+    #     for check_res in prior_res:
+    #         res_compare[check_res['name']]['prior'] = check_res['uuid']
+    #     for check_name in res_compare:
+    #         assert ('post' in res_compare[check_name] and 'prior' in res_compare[check_name])
+    #         assert (res_compare[check_name]['prior'] != res_compare[check_name]['post'])
 
     def test_queue_check(self, app_utils_obj_conn):
         """ This used to be an integrated test, but fails now due to changes in the structure
