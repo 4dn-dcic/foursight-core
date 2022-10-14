@@ -239,7 +239,7 @@ const ChecksPage = (props) => {
     }
 
     function onGroupSelectAll(group) {
-        if (checks.data.length === groupList.length) { // Experimental
+        if (checks.length === groupList.length) { // Experimental
             groupList.update([checks.data[0]]);
         }
         else {
@@ -264,7 +264,7 @@ const ChecksPage = (props) => {
                         <span style={{fontWeight:isSelectedGroup(datum) ? "bold" : "normal",cursor:"pointer"}} onClick={() => toggleShowGroup(datum)}>
                             {datum.group}
                         </span>
-                        { index < checks.data.length - 1 &&
+                        { index < checks.length - 1 &&
                             <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
                         }
                     </div>
@@ -280,7 +280,7 @@ const ChecksPage = (props) => {
                 { lambdas.map((datum, index) =>
                     <div key={datum.lambda_name} title={datum.lambda_function_name}>
                         {datum.lambda_name}
-                        { index < lambdas.data.length - 1 &&
+                        { index < lambdas.length - 1 &&
                             <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
                         }
                     </div>
@@ -1191,9 +1191,9 @@ const ChecksPage = (props) => {
             </>}
             </td></tr></tbody></table>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                Running: {!checksStatus.loading ? checksStatus.data?.checks_running : "..."}
+                Running: {!checksStatus.loading ? checksStatus.get("checks_running") : "..."}
                 <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
-                Queued: {!checksStatus.loading ? checksStatus.data?.checks_queued : "..."}
+                Queued: {!checksStatus.loading ? checksStatus.get("checks_queued") : "..."}
            </div>
         </>
     }

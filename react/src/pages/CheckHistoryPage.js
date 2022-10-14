@@ -174,7 +174,7 @@ const CheckHistoryPage = (props) => {
                             style={{color:"darkblue",fontWeight:"bold"}}
                             loading={history.loading} />
                     <tbody>
-                    {history.get("list")?.map((history, index) =>
+                    {history.map("list", (history, index) =>
                         <React.Fragment key={extractUUID(history)}>
                             { index !== 0 && (<>
                                 <tr><td style={{paddingTop:"2px"}}></td></tr>

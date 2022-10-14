@@ -217,11 +217,10 @@ export const useFetch = (url, args) => {
     response.refresh = refresh.bind(response)
     {
         // Experimental (perhaps too clever by half):
-        // Specialized, specific data update functions,
-        // e.g. to prepend, append, or insert into array, etc.
-        // Simplifies acess to useFetch (return) value, i.e not
-        // having to always dereference via useFetchResult.data.
-        // Used currently, only in AwsS3Page and some others.
+        // Specialized, specific data update functions, e.g. to prepend, append, or insert
+        // into array, etc. Simplifies acess to useFetch (return) value, i.e not having to
+        // always dereference via useFetchResult.data. And since we're doing this at all,
+        // might as well introduce some niceties to these functions.
         //
         const length = function() {
             if (this && this.__usefetch_response && Type.IsArray(this.data)) {
@@ -253,50 +252,81 @@ export const useFetch = (url, args) => {
             }
         }
         const append = function(element) {
-            if (this && this.__usefetch_response && Type.IsArray(this.data)) {
-                if (element) {
-                    this.data.push(element);
-                    this.update();
+            if (this && this.__usefetch_response) {
+                if (Type.IsArray(this.data)) {
+                    if (element) {
+                        this.data.push(element);
+                        this.update();
+                    }
                 }
             }
         }
         const prepend = function(element) {
-            if (this && this.__usefetch_response && Type.IsArray(this.data)) {
-                if (element) {
-                    //
-                    // For some reason this (unshift, and push above) doesn't require
-                    // updating after, at least for the case I'm seeing (in AwsS3Path);
-                    // but doing a splice (below) I *do* need to update. Understand the
-                    // latter, just not sure why the former works without explicit update.
-                    // https://beta.reactjs.org/learn/updating-arrays-in-state
-                    //
-                    this.data.unshift(element);
-                    this.update();
+            if (this && this.__usefetch_response) {
+                if (Type.IsArray(this.data)) {
+                    if (element) {
+                        //
+                        // For some reason this (unshift, and push above) doesn't require
+                        // updating after, at least for the case I'm seeing (in AwsS3Path);
+                        // but doing a splice (below) I *do* need to update. Understand the
+                        // latter, just not sure why the former works without explicit update.
+                        // https://beta.reactjs.org/learn/updating-arrays-in-state
+                        //
+                        this.data.unshift(element);
+                        this.update();
+                    }
                 }
             }
         }
         const remove = function(index) {
-            if (this && this.__usefetch_response && Type.IsArray(this.data)) {
-                if (Type.IsInteger(index) && index >= 0 && index < this.data.length) {
-                    this.data.splice(index, 1);
-                    this.update();
+            if (this && this.__usefetch_response) {
+                if (Type.IsArray(this.data)) {
+                    if (Type.IsInteger(index)) {
+                        if (index < 0) index = 0;
+                        if (index >= data.length) index = data.length - 1;
+                        this.data.splice(index, 1);
+                        this.update();
+                    }
+                }
+                else if (Type.IsObject(this.data)) {
+                    //
+                    // TODO
+                    //
                 }
             }
         }
         const filter = function(f) {
-            if (this && this.__usefetch_response && Type.IsArray(this.data)) {
-                if (Type.IsFunction(f)) {
-                    return this.data.filter(f) || [];
+            if (this && this.__usefetch_response) {
+                if (Type.IsArray(this.data)) {
+                    if (Type.IsFunction(f)) {
+                        return this.data.filter(f) || [];
+                    }
+                    return this.data;
                 }
-                return this.data;
+                else if (Type.IsObject(this.data)) {
+                    //
+                    // TODO
+                    //
+                }
             }
         }
-        const map = function(f) {
-            if (this && this.__usefetch_response && Type.IsArray(this.data)) {
-                if (Type.IsFunction(f)) {
-                    return this.data.map(f);
+        const map = function(f, other) {
+            if (this && this.__usefetch_response) {
+                if (Type.IsArray(this.data)) {
+                    if (Type.IsFunction(f)) {
+                        return this.data.map(f);
+                    }
+                    return this.data;
                 }
-                return this.data;
+                else if (Type.IsObject(this.data)) {
+                    if (Str.HasValue(f) && Type.IsFunction(other)) {
+                        const name = f; f = other;
+                        const data = this.get(name);
+                        if (Type.IsArray(data)) {
+                            return data.map(f);
+                        }
+                    }
+                }
             }
         }
         Object.defineProperty(response, "length", { get: length.bind(response) });

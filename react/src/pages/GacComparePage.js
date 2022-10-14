@@ -158,7 +158,7 @@ const GacComparePage = (props) => {
     if (response.error) return <>Cannot load GAC comparison from Foursight: {response.error}</>;
     if (response.loading) return <>Loading content ...</>;
 
-    let unique_keys = getUniqueKeys(response.data?.gac, response.data?.gac_compare);
+    let unique_keys = getUniqueKeys(response.get("gac"), response.get("gac_compare"));
     let knownEnvs = Env.KnownEnvs();
 
     return <>
@@ -194,7 +194,7 @@ const GacComparePage = (props) => {
                                 )}
                             </select>&nbsp;<span style={{color:"blue"}}>&#x2193;</span>
                             <br />
-                            {getGacName(response.data?.gac)}
+                            {getGacName(response.get("gac"))}
                         </td>
                         <td>
                             <select defaultValue={environCompare} style={{border:"0",fontWeight:"normal",fontStyle:"italic",color:"blue",background:"transparent","WebkitAppearance":"none"}} onChange={(arg) => OnChangeEnvCompare(arg)}>
@@ -205,7 +205,7 @@ const GacComparePage = (props) => {
                                 )}
                             </select>&nbsp;<span style={{color:"blue"}}>&#x2193;</span>
                             <br />
-                            {getGacName(response.data?.gac_compare)}
+                            {getGacName(response.get("gac_compare"))}
                         </td>
                     </tr>
                     <tr><td style={{height:"3px"}} colSpan="4"></td></tr>
