@@ -143,25 +143,22 @@ const MAX_SAVE = 25;
 //   maximum (MAX_SAVE) number (the most recent are saved), in the order of when
 //   the fetches were started. May be useful for troubleshooting but not yet used.
 //
-// LIMITATIONS
-//
-// Currently just for HTTP GET. Will add support for other verbs as/when necessary.
-//
 // OTHER COMMENTS
 //
-// Looking back over this, this does look rather complex, but be assured the goal was to make
-// the USAGE simple; to be able to fetch and update data with as little detailed logic and friction
-// as possible; and to be able to globally track outstanding fetching, and to have a global fetching
-// spinner, which will obviate the need to have these on individual pages which would otherwise
-// complicate the logic there. This grew organically over time; time will tell if we've achieved
-// the desired simplicity of use. And note that the usage of the latest iteration of this has
-// not yet been fully taken advantage of in the calling components; still TODO.
+// - Currently just for HTTP GET. Will add support for other verbs as/when necessary.
+// - Looking back over this, it does look rather complex, but the goal was to make the USAGE
+//   simple; to fetch, update, manipulate data with as little detailed logic and friction as
+//   possible; to globally track outstanding fetching, to facilitate a global fetching spinner,
+//   which obviates the need for these on individual pages which would otherwise complicate
+//   logic. This grew organically over time; time will tell if we've achieved the desired
+//   simplicity of use. And note that the usage of the latest iteration of this has not
+//   yet been fully taken advantage of in the calling components; still TODO.
 
 export const useFetch = (url, args) => {
 
     // Grab the initial value from the arguments before the assembleArgs
-    // call below since that call requires these useState setters but
-    // we want to set the initial value for the data at definition time.
+    // call below since that call requires these useState setters but we
+    // want to set the initial value for the data here at definition time.
     //
     const initial = Type.IsObject(url) ? url.initial : (Type.IsObject(args) ? args.initial : null);
 
@@ -170,7 +167,6 @@ export const useFetch = (url, args) => {
     const [ status, setStatus ] = useState(0);
     const [ timeout, setTimeout ] = useState(false);
     const [ error, setError ] = useState(null);
-
     const fetching = _useFetching();
     const fetched = _useFetched();
 
@@ -180,10 +176,8 @@ export const useFetch = (url, args) => {
                                   fetching, fetched, nonofetch);
     }
 
-    args = assembleArgs();
-
     useEffect(() => {
-        _doFetch(args);
+        _doFetch(assembleArgs());
     }, [])
 
     const update = function(data) {
@@ -228,7 +222,9 @@ export const useFetch = (url, args) => {
         // Experimental (perhaps too clever by half):
         // Specialized, specific data update functions,
         // e.g. to prepend, append, or insert into array, etc.
-        // Used currently, experimentally only in AwsS3Page.
+        // Simplifies acess to useFetch (return) value, i.e not
+        // having to always dereference via useFetchResult.data.
+        // Used currently, only in AwsS3Page and some others.
         //
         const length = function() {
             if (this && this.__usefetch_response && Type.IsArray(this.data)) {
@@ -237,16 +233,25 @@ export const useFetch = (url, args) => {
         }
         const get = function(index) {
             if (this && this.__usefetch_response) {
-                if (Type.IsInteger(index) && index >= 0 && index < this.data.length) {
-                    return this.data[index];
+                if (Type.IsArray(this.data)) {
+                    if (Type.IsInteger(index) && index >= 0 && index < this.data.length) {
+                        return this.data[index];
+                    }
+                    return null;
                 }
-                return null;
+                else if (Type.IsObject(this.data)) {
+                    if (Str.HasValue(index)) {
+                        const name = index;
+                        return this.data[name];
+                    }
+                }
             }
         }
         const append = function(element) {
             if (this && this.__usefetch_response && Type.IsArray(this.data)) {
                 if (element) {
                     this.data.push(element);
+                    this.update();
                 }
             }
         }
@@ -261,6 +266,7 @@ export const useFetch = (url, args) => {
                     // https://beta.reactjs.org/learn/updating-arrays-in-state
                     //
                     this.data.unshift(element);
+                    this.update();
                 }
             }
         }
@@ -323,16 +329,13 @@ export const useFetch = (url, args) => {
 // anywhere where a hook connot be called, e.g. within a callback function.
 //
 export const useFetchFunction = (url = null, args = null) => {
-
     const fetching = _useFetching();
     const fetched = _useFetched();
-
     function assembleArgs(urlOverride, argsOverride) {
         return _assembleFetchArgs(url, args, urlOverride, argsOverride,
                                   () => {}, () => {}, () => {}, () => {}, () => {},
                                   fetching, fetched, true);
     }
-
     return (url, args) => _doFetch(assembleArgs(url, args));
 }
 

@@ -29,12 +29,13 @@ const ChecksPage = (props) => {
 //  let [ lambdas, setLambdas ] = useState([]);
 //  let [ loading, setLoading ] = useState(true);
 //  let [ error, setError ] = useState(false);
-    let [ selectedGroups, setSelectedGroups ] = useState([])
+//  let [ selectedGroups, setSelectedGroups ] = useState([])
 //  let [ selectedHistories, setSelectedHistories ] = useState([])
 //  let [ checksStatus, setChecksStatus ] = useState({});
 //  let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
     const [ readOnlyMode ] = useReadOnlyMode();
     const historyList = useFetch({ initial: [] });
+    const groupList = useFetch({ initial: [] });
         
     // TODO IN PROGRESS: MOVING TO NEW useFetch HOOK.
 
@@ -156,35 +157,54 @@ const ChecksPage = (props) => {
     }
 
     function isSelectedGroup(group) {
+        for (let i = 0 ; i < groupList.length ; i++) { // Experimental
+            const selectedGroup = groupList.get(i);
+            if (selectedGroup.group === group.group) {
+                return true;
+            }
+        }
+/*
         for (let i = 0 ; i < selectedGroups?.length ; i++) {
             const selectedGroup = selectedGroups[i]
             if (selectedGroup.group === group.group) {
                 return true;
             }
         }
+*/
         return false;
     }
 
     function findSelectedGroupIndex(group) {
+        for (let i = 0 ; i < groupList.length ; i++) {
+            const selectedGroup = groupList.get(i);
+            if (selectedGroup.group === group.group) {
+                return i;
+            }
+        }
+/*
         for (let i = 0 ; i < selectedGroups.length ; i++) {
             const selectedGroup = selectedGroups[i]
             if (selectedGroup.group === group.group) {
                 return i;
             }
         }
+*/
         return -1;
     }
 
     function noteChangedSelectedGroups() {
-        setSelectedGroups(existing => [...existing]);
+        // setSelectedGroups(existing => [...existing]);
+        groupList.update(); // Experimental
     }
 
     function noteChangedResults() {
-        setSelectedGroups(existing => [...existing]);
+        // setSelectedGroups(existing => [...existing]);
+        groupList.update(); // Experimental
     }
 
     function noteChangedCheckBox() {
-        setSelectedGroups(existing => [...existing]);
+        // setSelectedGroups(existing => [...existing]);
+        groupList.update(); // Experimental
     }
 
 //  function noteChangedHistories() {
@@ -203,8 +223,9 @@ const ChecksPage = (props) => {
         if (isSelectedGroup(group)) {
             return;
         }
-        selectedGroups.unshift(group);
-        noteChangedResults();
+        // selectedGroups.unshift(group);
+        // noteChangedResults();
+        groupList.prepend(group); // Experimental
         if (showResults) {
             group.checks.map(check => showResultBox(check));
         }
@@ -212,17 +233,26 @@ const ChecksPage = (props) => {
     function hideGroup(group) {
         group.checks.map(check => hideHistory(check));
         const index = findSelectedGroupIndex(group);
-        selectedGroups.splice(index, 1);
-        noteChangedResults();
+        // selectedGroups.splice(index, 1);
+        // noteChangedResults();
+        groupList.remove(index); // Experimental
     }
 
     function onGroupSelectAll(group) {
+        if (checks.data.length === groupList.length) { // Experimental
+            groupList.update([checks.data[0]]);
+        }
+        else {
+            groupList.update([...checks.data]);
+        }
+/*
         if (checks.data.length === selectedGroups.length) {
             setSelectedGroups([checks.data[0]]);
         }
         else {
             setSelectedGroups([...checks.data]);
         }
+*/
     }
 
     const ChecksGroupBox = ({props}) => {
@@ -261,6 +291,15 @@ const ChecksPage = (props) => {
 
     function onClickSelectedGroupsTitle(checks) {
         const showingAnyGroupsResults = isShowingAnyGroupsResults();
+        for (let i = 0 ; i < groupList.length ; i++) {
+            if (showingAnyGroupsResults) {
+                hideAllResults(groupList.get(i).checks);
+            }
+            else {
+                showAllResults(groupList.get(i).checks);
+            }
+        }
+/*
         for (let i = 0 ; i < selectedGroups.length ; i++) {
             if (showingAnyGroupsResults) {
                 hideAllResults(selectedGroups[i].checks);
@@ -269,18 +308,34 @@ const ChecksPage = (props) => {
                 showAllResults(selectedGroups[i].checks);
             }
         }
+*/
     }
 
     function isShowingAnyGroupsResults() {
+        for (let i = 0 ; i < groupList.length ; i++) {
+            if (isShowingAnyResults(groupList.get(i)?.checks)) {
+                return true;
+            }
+        }
+/*
         for (let i = 0 ; i < selectedGroups.length ; i++) {
             if (isShowingAnyResults(selectedGroups[i]?.checks)) {
                 return true;
             }
         }
+*/
         return false;
     }
 
     function isShowingAnyResultDetails() {
+        for (let i = 0 ; i < groupList.length ; i++) {
+            for (let j = 0 ; j < groupList.get(i)?.checks?.length ; j++) {
+                if (groupList.get(i).checks[j].showingResultDetails) {
+                    return true;
+                }
+            }
+        }
+/*
         for (let i = 0 ; i < selectedGroups?.length ; i++) {
             for (let j = 0 ; j < selectedGroups[i]?.checks?.length ; j++) {
                 if (selectedGroups[i].checks[j].showingResultDetails) {
@@ -288,10 +343,19 @@ const ChecksPage = (props) => {
                 }
             }
         }
+*/
         return false;
     }
 
     function isShowingAllResultDetails() {
+        for (let i = 0 ; i < groupList.length ; i++) {
+            for (let j = 0 ; j < groupList.get(i)?.checks?.length ; j++) {
+                if (!groupList.get(i).checks[j].showingResultDetails) {
+                    return false;
+                }
+            }
+        }
+/*
         for (let i = 0 ; i < selectedGroups?.length ; i++) {
             for (let j = 0 ; j < selectedGroups[i]?.checks?.length ; j++) {
                 if (!selectedGroups[i].checks[j].showingResultDetails) {
@@ -299,16 +363,19 @@ const ChecksPage = (props) => {
                 }
             }
         }
+*/
         return true;
     }
 
     function showAllResultDetails() {
-        selectedGroups?.map(group => group.checks.map(check => check.showingResultDetails = true));
+        // selectedGroups?.map(group => group.checks.map(check => check.showingResultDetails = true));
+        groupList.map(group => group.checks.map(check => check.showingResultDetails = true));
         noteChangedResults();
     }
 
     function hideAllResultDetails() {
-        selectedGroups?.map(group => group.checks.map(check => check.showingResultDetails = false));
+        // selectedGroups?.map(group => group.checks.map(check => check.showingResultDetails = false));
+        groupList.map(group => group.checks.map(check => check.showingResultDetails = false));
         noteChangedResults();
     }
 
@@ -459,7 +526,7 @@ const ChecksPage = (props) => {
 
     const SelectedGroupsPanel = ({props}) => {
         return <div>
-            { selectedGroups.length > 0 ? (<>
+            { groupList.length > 0 /* selectedGroups.length > 0 */ ? (<>
                 <div style={{paddingBottom:"3pt"}}>
                     <span style={{cursor:"pointer"}} onClick={() => onClickSelectedGroupsTitle()}>
                         &nbsp;
@@ -486,7 +553,7 @@ const ChecksPage = (props) => {
                         &nbsp;
                     </span>
                 </div>
-                { selectedGroups?.map((selectedGroup, index) =>
+                { groupList.map((selectedGroup, index) /* selectedGroups?.map((selectedGroup, index) */ =>
                     <SelectedGroupBox key={index} group={selectedGroup} style={{paddingBottom:"6pt"}}/>
                 )}
             </>):(<></>)}
@@ -1001,6 +1068,15 @@ const ChecksPage = (props) => {
         if (!check.results) {
             // Fetch the latest results for this check.
             check.fetchingResult = true;
+            groupList.refresh({ // Experimental
+                url: Server.Url(`/checks/${check.name}`, environ),
+                onData: (data, current) => {
+                    check.results = data;
+                    check.fetchingResult = false;
+                    return current;
+                }
+            });
+/*
             fetch({
                 url: Server.Url(`/checks/${check.name}`, environ),
                 onData: (data) => {
@@ -1010,6 +1086,7 @@ const ChecksPage = (props) => {
                     return data;
                 }
             });
+*/
 /*
             Fetch.get(Server.Url(`/checks/${check.name}`, environ),
                       checkResults => { check.results = checkResults; check.fetchingResult = false; noteChangedResults(); },
