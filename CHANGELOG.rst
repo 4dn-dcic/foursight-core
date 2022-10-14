@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+2.0.2
+=====
+* Change some print statements to logger.debug in check_utils.py
+
+
 2.0.0
 =====
 
