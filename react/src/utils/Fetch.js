@@ -145,13 +145,14 @@ const MAX_SAVE = 25;
 // OTHER COMMENTS
 //
 // - Currently just for HTTP GET. Will add support for other verbs as/when necessary.
+//
 // - Looking back over this, it does look rather complex, but the goal was to make the USAGE
 //   simple; to fetch, update, manipulate data with as little detailed logic and friction as
-//   possible; to globally track outstanding fetching, to facilitate a global fetching spinner,
-//   which obviates the need for these on individual pages which would otherwise complicate
-//   logic. This grew organically over time; time will tell if we've achieved the desired
-//   simplicity of use. And note that the usage of the latest iteration of this has not
-//   yet been fully taken advantage of in the calling components; still TODO.
+//   possible; and to globally track outstanding fetching, e.g. to facilitate a global fetching
+//   spinner, which obviates the need for these on individual pages which would otherwise
+//   complicate logic. This grew organically over time; time will tell if we've achieved the
+//   desired simplicity of use. And note that the usage of the latest iteration of this
+//   module has not yet been fully taken advantage of in the calling components; still TODO.
 
 export const useFetch = (url, args) => {
 
