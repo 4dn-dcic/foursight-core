@@ -9,6 +9,7 @@ import { defineGlobal, useGlobal } from '../Global';
 import Client from './Client';
 import Cookie from './Cookie';
 import Debug from './Debug';
+import Json from './Json';
 import Logout from './Logout';
 import Str from './Str';
 import Type from './Type';
@@ -231,6 +232,22 @@ export const useFetch = (url, args) => {
             }).bind(response)
         });
 
+        Object.defineProperty(response, "null", { get:
+            (function() {
+                if (!this || !this.__usefetch_response) return;
+                return this.data === undefined || this.data === null;
+            }).bind(response)
+        });
+
+        Object.defineProperty(response, "empty", { get:
+            (function() {
+                if (!this || !this.__usefetch_response) return;
+                return this.data === undefined || this.data === null ||
+                       (Type.IsArray(this.data) && this.data.length == 0) ||
+                       (Type.IsObject(this.data) && Object.keys(this.data).length == 0);
+            }).bind(response)
+        });
+
         response.get = (function(index) {
             if (!this || !this.__usefetch_response) return;
             let data = this.data;
@@ -352,6 +369,11 @@ export const useFetch = (url, args) => {
                     }
                 }
             }
+        }).bind(response);
+
+        response.json = (function(formatted = false) {
+            if (!this || !this.__usefetch_response) return;
+            return Type.IsBoolean(formatted) && formatted ? Json.Format(this.data) : Json.Str(this.data);
         }).bind(response);
 
         response.yaml = (function() {

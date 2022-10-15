@@ -240,7 +240,7 @@ const ChecksPage = (props) => {
 
     function onGroupSelectAll(group) {
         if (checks.length === groupList.length) { // Experimental
-            groupList.update([checks.data[0]]);
+            groupList.update([]);
         }
         else {
             groupList.update([...checks.data]);
@@ -1107,7 +1107,7 @@ const ChecksPage = (props) => {
     const [ checksRawHide, setChecksRawHide] = useState(false);
 
     function isShowingChecksRaw() {
-        return checksRaw.data;
+        return !checksRaw.empty;
     }
 
     function showChecksRaw() {
@@ -1146,7 +1146,7 @@ const ChecksPage = (props) => {
                 <StandardSpinner loading={checksRaw.loading} label={"Loading raw checks file"} size={60} color={"black"} />
             </>:<>
                 <div style={{float:"right",marginTop:"-2pt"}}>
-                    <span style={{fontSize:"0",opacity:"0"}} id={"checks-raw"}>{Json.Str(checksRaw.data)}</span>
+                    <span style={{fontSize:"0",opacity:"0"}} id={"checks-raw"}>{checksRaw.json()}</span>
                     <img alt="copy" onClick={() => Clipboard.Copy("checks-raw")} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
                     &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => hideChecksRaw()}>X</span>
                 </div>
