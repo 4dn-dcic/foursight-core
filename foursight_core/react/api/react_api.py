@@ -43,17 +43,29 @@ class ReactApi(ReactRoutes):
     cache_header = {}
 
     @staticmethod
-    def create_success_response(label: str = "react_standard_response", content_type: str = "application/json"):
+    def create_success_response(label: str = "create_success_response", content_type: str = "application/json"):
         response = Response(label)
         response.headers = {"Content-Type": content_type}
         response.status_code = 200
         return response
 
-    def create_redirect_response(self, location: str, headers: dict):
+    @staticmethod
+    def create_redirect_response(location: str, headers: dict):
         if not headers:
             headers = {}
         headers["location"] = location
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
+
+    @staticmethod
+    def create_not_implemented_response(request: dict):
+        status = 501
+        headers = { "Content-Type": "application/json" }
+        method = request.get("method")
+        context = request.get("context")
+        path = context.get("path") if isinstance(context, dict) else None
+        error = "Not implemented."
+        body = { "error": error, "method": method, "path": path }
+        return Response(status_code=status, body=json.dumps(body), headers=headers)
 
     def is_react_authentication(self, auth0_response: dict) -> bool:
         """
@@ -503,6 +515,12 @@ class ReactApi(ReactRoutes):
         Called from react_routes for endpoint: /reactapi/{environ}/s3/buckets/{bucket}/{key}
         Return the contents of the AWS S3 bucket key in the given bucket for the current AWS environment.
         """
+        if True:
+            #
+            # TODO!!!
+            # Disabling this feature for now until we can discuss/resolve security concerns.
+            #
+            return self.create_not_implemented_response(request)
         key = urllib.parse.unquote(key)
         response = self.create_success_response("reactapi_aws_s3_buckets_key_contents")
         response.body = AwsS3.get_bucket_key_contents(bucket, key)
