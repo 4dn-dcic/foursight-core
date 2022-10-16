@@ -113,6 +113,8 @@ def create_test_request(authtoken: str):
 
 
 def _change_random_character_within_string_ntimes(value: str, n: int) -> str:
+    # TODO: This is rather lame. Just want to randomly munge the string
+    # a bit without changing it entirely; come up with something better.
     for i in range(n):
         random_position = randrange(len(value))
         value = value[0:random_position] + "X" + value[random_position + 1:]
