@@ -26,6 +26,7 @@ const MAX_SAVE = 25;
 // up pertinent info (data, loading, status, timeout, error) as well as a data update and
 // refresh function. Also globally tracks all outstanding (in progress) fetches (e.g. useful
 // for a global fetching spinnner), as well as all completed fetches (not yet used).
+// We use the axios library for the fetches.
 //
 // ARGUMENTS
 //
@@ -153,6 +154,10 @@ const MAX_SAVE = 25;
 //   pages which would otherwise complicate logic. This grew organically over time; time will
 //   tell if we've achieved the desired simplicity of use. And note that the usage of the latest
 //   iteration of this module has not yet been fully taken advantage of in the calling components.
+//
+//   USAGE EXAMPLES
+//
+//   TODO
 
 export const useFetch = (url, args) => {
 
