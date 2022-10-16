@@ -1,5 +1,6 @@
 import React from 'react';
 import Uuid from 'react-uuid';
+import Char from './utils/Char';
 import Type from './utils/Type';
 import { PuffSpinner } from './Spinners';
 
@@ -67,7 +68,7 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
                         { keysEqual(list.__sort.key, column.key) ? (<>
                             <td>
                                 <span style={{...style}}>{column.label}</span>
-                                { !loading && <span style={{fontWeight:"normal"}}>&nbsp;{list.__sort.order > 0 ? <>&#x2193;</> : <>&#x2191;</>}</span> }
+                                { !loading && <span style={{fontWeight:"normal"}}>&nbsp;{list.__sort.order > 0 ? <>{Char.DownArrow}</> : <>{Char.UpArrow}</>}</span> }
                             </td>
                             <td style={{paddingLeft:"3pt",paddingTop:"2pt"}}>
                                 { loading && <><PuffSpinner condition={true} size={"16px"}/></> }
@@ -75,7 +76,7 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
                         </>):(<>
                             <td >
                                 <span style={{...style}}>{column.label}</span>
-                                <div style={{position:"relative",top:"-1pt",display:"inline-block",fontSize:"7pt",opacity:"0.5"}}>&nbsp;&#x2022;</div>
+                                <div style={{position:"relative",top:"-1pt",display:"inline-block",fontSize:"7pt",opacity:"0.5"}}>&nbsp;{Char.Dot}</div>
                             </td>
                         </>)}
                         </tr></tbody></table>

@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useFetch } from '../utils/Fetch';
 import { StandardSpinner } from '../Spinners';
 import PaginationControl from '../PaginationControl';
+import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
@@ -160,7 +161,6 @@ const CheckHistoryPage = (props) => {
 
             <div title={check}>
                 <b>Check: {check}</b>&nbsp;
-                <span style={{float:"right",cursor:"pointer"}} onClick={() => {}}><b>&#x2717;</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
                 { history.get("list")?.length > 0 ? (<>
@@ -184,9 +184,9 @@ const CheckHistoryPage = (props) => {
                             <tr>
                             <td style={{verticalAlign:"top"}}>
                                 {extractStatus(history) === "PASS" ? (<>
-                                    <span style={{color:"darkblue"}}>&#x2713;</span>
+                                    <span style={{color:"darkblue"}}>{Char.Check}</span>
                                 </>):(<>
-                                    <span style={{color:"darkred"}}>&#x2717;</span>
+                                    <span style={{color:"darkred"}}>{Char.X}</span>
                                 </>)}
                             &nbsp;&nbsp;</td>
                             <td style={{verticalAlign:"top",textAlign:"right"}}>

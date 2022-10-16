@@ -1,7 +1,8 @@
 import { useParams } from 'react-router-dom';
 import { RingSpinner } from '../Spinners';
-import Server from '../utils/Server';
 import { useFetch } from '../utils/Fetch';
+import Char from '../utils/Char';
+import Server from '../utils/Server';
 import Yaml from '../utils/Yaml';
 
 const UserPage = (props) => {
@@ -23,7 +24,7 @@ const UserPage = (props) => {
                 <div key={user.record.uuid}>
                     <div style={{fontWeight:"bold",marginBottom:"6px"}}>
                         {user.email_address}
-                        <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>&#8635;&nbsp;</b>
+                        <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>{Char.Refresh}&nbsp;</b>
                     </div>
                         <pre className="info">
                             {Yaml.Format(user.record)}

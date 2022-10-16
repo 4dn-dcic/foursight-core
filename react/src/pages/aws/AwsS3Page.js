@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { BarSpinner } from '../../Spinners';
 import Clipboard from '../../utils/Clipboard';
 import { useFetch } from '../../utils/Fetch';
+import Char from '../../utils/Char';
 import Image from '../../utils/Image';
 import Json from '../../utils/Json';
 import Server from '../../utils/Server';
@@ -216,7 +217,7 @@ const AwsS3Page = (props) => {
 
         return <>
             <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt",minWidth:"240pt"}}>
-                <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideBucketKeysBox(bucketKeys.bucket)})}><b>&nbsp;&nbsp;&#x2717;</b></span>
+                <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideBucketKeysBox(bucketKeys.bucket)})}><b>&nbsp;&nbsp;{Char.X}</b></span>
                 <b>{bucketKeys.bucket}</b>
                 <p />
                 { <Spinner condition={bucketKeys.loading} label={"Fetching bucket keys"} color={"darkblue"} /> }
@@ -285,7 +286,7 @@ const AwsS3Page = (props) => {
     const BucketKeyContentBox = ({bucketKeyContent}) => {
         return <>
             <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt",minWidth:"300pt"}}>
-                <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideBucketKeyContentBox(bucketKeyContent.bucket, bucketKeyContent.key)})}><b>&nbsp;&nbsp;&#x2717;</b></span>
+                <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideBucketKeyContentBox(bucketKeyContent.bucket, bucketKeyContent.key)})}><b>&nbsp;&nbsp;{Char.X}</b></span>
                 Bucket: <b>{bucketKeyContent.bucket}</b> <br />
                 Key: <b>{bucketKeyContent.key}</b>
                 <p />

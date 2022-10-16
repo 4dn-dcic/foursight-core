@@ -6,6 +6,7 @@ import { RingSpinner } from '../Spinners';
 import { StandardSpinner } from '../Spinners';
 import { useReadOnlyMode } from '../ReadOnlyMode';
 import { useFetch, useFetchFunction } from '../utils/Fetch';
+import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
@@ -442,7 +443,7 @@ const ChecksPage = (props) => {
         return !check.showingCheckRunningBox ? <span /> : <div>
             <div className="boxstyle check-pass" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                 { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}></span> }
-                {  check.queuedCheckRun && <small><b>Queued check run {Time.FormatDateTime(Time.Now())} &#x2192; <u>{check.queuedCheckRun}</u></b></small> }
+                {  check.queuedCheckRun && <small><b>Queued check run {Time.FormatDateTime(Time.Now())} {Char.RightArrow} <u>{check.queuedCheckRun}</u></b></small> }
                 { !check.queuedCheckRun && <StandardSpinner condition={check.queueingCheckRun} label={" Queueing check run"} color={"darkgreen"} /> }
             </div>
         </div>
@@ -532,9 +533,9 @@ const ChecksPage = (props) => {
                         &nbsp;
                         <b>Check Details</b>
                         { isShowingAnyGroupsResults() ? (<>
-                            &nbsp;&#x2193;
+                            &nbsp;{Char.DownArrow}
                         </>):(<>
-                            &nbsp;&#x2191;
+                            &nbsp;{Char.UpArrow}
                         </>)}
                     </span>
                     <span style={{float:"right",fontSize:"x-small",marginTop:"6px",color:"darkgreen"}}>
@@ -565,8 +566,8 @@ const ChecksPage = (props) => {
         return <div style={style}>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"300pt"}}>
                 <div>
-                    <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks)}><b>{group?.group}</b> {isShowingAnyResults(group?.checks) ? (<span>&#x2193;</span>) : (<span>&#x2191;</span>)}</span>
-                    <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideGroup(group)})}><b>&#x2717;</b></span>
+                    <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks)}><b>{group?.group}</b> {isShowingAnyResults(group?.checks) ? (<span>{Char.DownArrow}</span>) : (<span>{Char.UpArrow}</span>)}</span>
+                    <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideGroup(group)})}><b>{Char.X}</b></span>
                 </div>
                 <div style={{marginTop:"6pt"}} />
                 { group?.checks?.map((check, index) =>
@@ -614,7 +615,7 @@ const ChecksPage = (props) => {
                 <span className={"tool-tip"} data-text={readOnlyMode ? "Run disabled because in readonly mode." : "Click to run this check."}>
                     { !readOnlyMode ? <>
                         { check.configuringCheckRun ? <>
-                            <span style={{fontSize:"small"}}>&#x25Ba;</span>&nbsp;<span>Run</span>
+                            <span style={{fontSize:"small"}}>{Char.RightFatArrow}</span>&nbsp;<span>Run</span>
                         </>:<>
                             <span style={{fontSize:"small"}}></span>&nbsp;<span>Run ...</span>
                         </>}
@@ -633,7 +634,7 @@ const ChecksPage = (props) => {
     const RefreshResultButton = ({check, style}) => {
         return <span>
             <span style={{...style, cursor:!check.fetchingResult ? "pointer" : "not-allowed",color:"darkred",fontSize:"12pt"}} onClick={() => !check.fetchingResult && refreshResults(check)}>
-                <b data-text={check.results ? "Click here to fetch the latest results." : "Fetching the latest results."} className={"tool-tip"}>&#8635;</b>
+                <b data-text={check.results ? "Click here to fetch the latest results." : "Fetching the latest results."} className={"tool-tip"}>{Char.Refresh}</b>
             </span>
         </span>
     }
@@ -643,7 +644,7 @@ const ChecksPage = (props) => {
             <span data-text={"Click here to " + (check.showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
                 <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"4px",height:"17"}} />
             </span>
-            { check.showingHistory ? <span style={{xpaddingTop:"10px"}}>&#x2192;</span> : <></> }
+            { check.showingHistory ? <span style={{xpaddingTop:"10px"}}>{Char.RightArrow}</span> : <></> }
         </span>
     }
 
@@ -655,7 +656,7 @@ const ChecksPage = (props) => {
                     <tr style={{height:"3pt"}}><td></td></tr>
                     <tr>
                         <td style={{verticalAlign:"top",width:"1%","cursor":"pointer"}} onClick={() => {toggleCheckResultsBox(check)}}>
-                            <b>{ isShowingSelectedCheckResultsBox(check) ? <span>&#x2193;</span> : <span>&#x2192;</span> }&nbsp;</b>
+                            <b>{ isShowingSelectedCheckResultsBox(check) ? <span>{Char.DownArrow}</span> : <span>{Char.RightArrow}</span> }&nbsp;</b>
                         </td>
                         <td style={{veriticalAlign:"top",maxWidth:"600pt",width:"100%"}} title={check.name}>
                             { (!check.configuringCheckRun) ? <>
@@ -663,7 +664,7 @@ const ChecksPage = (props) => {
                             </>:<>
                                 { (check.queueingCheckRun || check.fetchingResult) ? <>
                                     <div className={"check-config-wait-button"} style={{float:"right"}}>
-                                        <span className={"tool-tip"} data-text={"Configure run below."} style={{}}><span style={{fontSize:"small"}}>&#x25BC;</span>&nbsp;Configure</span>
+                                        <span className={"tool-tip"} data-text={"Configure run below."} style={{}}><span style={{fontSize:"small"}}>{Char.DownFatArrow}</span>&nbsp;Configure</span>
                                     </div>
                                 </>:<>
                                     <div
@@ -682,7 +683,7 @@ const ChecksPage = (props) => {
                                             className={"tool-tip"}
                                             data-text={"Configure run below."}
                                             style={{}}>
-                                            <span style={{fontSize:"small"}}>&#x25BC;</span>&nbsp;Configure
+                                            <span style={{fontSize:"small"}}>{Char.DownFatArrow}</span>&nbsp;Configure
                                         </span>
                                     </div>
                                 </>}
@@ -724,7 +725,7 @@ const ChecksPage = (props) => {
             <div style={{float:"right",marginTop:"-10px"}}>
             <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{Json.Str(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
             <img alt="copy" onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
-            &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(); } }>{check.showingResultDetailsFull ? <span title="Show full results output.">&#x2191;</span> : <span>&#x2193;</span>}</span>
+            &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(); } }>{check.showingResultDetailsFull ? <span title="Show full results output.">{Char.UpArrow}</span> : <span>{Char.DownArrow}</span>}</span>
             &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>X</span>
             </div>
             {!check.results ? <StandardSpinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? (Yaml.Format(check.showingResultDetailsFull ? check.results.full_output : check.results)) : "No results.") }
@@ -738,13 +739,13 @@ const ChecksPage = (props) => {
                     { !check.showingCheckRunningBox && <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div> }
                     <span>Latest Results: {check.results?.timestamp}</span>
                         { check.showingResultDetails ? (
-                            <b className={"tool-tip"} data-text={"Click to hide result details."}>&nbsp;&#x2193;</b>
+                            <b className={"tool-tip"} data-text={"Click to hide result details."}>&nbsp;{Char.DownArrow}</b>
                         ):(
-                            <b className={"tool-tip"} data-text={"Click to show result details."}>&nbsp;&#x2191;</b>
+                            <b className={"tool-tip"} data-text={"Click to show result details."}>&nbsp;{Char.UpArrow}</b>
                         )}
                     <br />
                     <span style={{color:check.results?.status?.toUpperCase() === "PASS" ? "darkgreen" : "red"}}><span className={"tool-tip"} data-text={"Click to " + (check.showingResultDetails ? "hide" : "show") + " result details."}>Results Summary</span>: {check.results?.summary}</span>&nbsp;&nbsp;
-                    { check.results?.status?.toUpperCase() === "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>&#x2713;</b>) : (<b style={{fontSize:"13pt",color:"red"}}>&#x2717;</b>) }
+                    { check.results?.status?.toUpperCase() === "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>{Char.Check}</b>) : (<b style={{fontSize:"13pt",color:"red"}}>{Char.X}</b>) }
                 </>):(<>
                     { !check.showingResultDetails && <span>No recent results.</span> }
                 </>)}
@@ -798,9 +799,9 @@ const ChecksPage = (props) => {
                 <b className="tool-tip" data-text={`Group: ${check.group}. Check: ${check.name}. Click for full history.`}>
                     <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"darkgreen"}} target="_blank">{check.title}</Link>
                 </b>&nbsp;
-                { check.history && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",color:"darkred",fontWeight:"bold"}} onClick={() => {refreshHistory(check)}}>&#8635;&nbsp;&nbsp;</span></span> }
+                { check.history && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",color:"darkred",fontWeight:"bold"}} onClick={() => {refreshHistory(check)}}>{Char.Refresh}&nbsp;&nbsp;</span></span> }
                 <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"4px",height:"17"}} /></Link>
-                <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check)})}><b>&#x2717;</b></span>
+                <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check)})}><b>{Char.X}</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
             { check.showingHistory && (<>
@@ -818,9 +819,9 @@ const ChecksPage = (props) => {
                             <tr>
                             <td>
                                 {extractStatus(history) === "PASS" ? (<>
-                                    <span style={{color:"darkgreen"}}>&#x2713;</span>
+                                    <span style={{color:"darkgreen"}}>{Char.Check}</span>
                                 </>):(<>
-                                    <span style={{color:"darkred"}}>&#x2717;</span>
+                                    <span style={{color:"darkred"}}>{Char.X}</span>
                                 </>)}
                             &nbsp;&nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
@@ -1166,7 +1167,7 @@ const ChecksPage = (props) => {
             { checksStatus.loading ? <>
                 { <StandardSpinner loading={checksStatus.loading} label={""} size={60} color={"black"} /> }
             </>:<>
-                <b style={{cursor:"pointer"}} onClick={() => refreshChecksStatus()}>&#8635;</b>
+                <b style={{cursor:"pointer"}} onClick={() => refreshChecksStatus()}>{Char.Refresh}</b>
             </>}
             </td></tr></tbody></table>
             <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>

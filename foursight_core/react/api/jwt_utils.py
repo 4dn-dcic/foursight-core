@@ -19,7 +19,7 @@ def jwt_encode(value: dict, audience: str, secret: str) -> str:
     Exception verifying/decoding JWT: Token is missing the "aud" claim
     """
     if not value:
-        raise Exception("Attempt to encode JWT for empty value.")
+        raise ValueError("Attempt to encode JWT for empty value.")
     elif not isinstance(value, dict):
         raise Exception("Attempt to encode JWT for non-dictionary value.")
     if audience:

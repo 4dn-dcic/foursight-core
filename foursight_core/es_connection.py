@@ -145,7 +145,8 @@ class ESConnection(AbstractConnection):
     def search(self, search, key='_source') -> [list, int]:
         """
         Inner function that passes doc as a search parameter to ES. Based on the
-        execute_search method in Fourfront
+        execute_search method in Fourfront.
+        Returns a tuple with search results as a list and the total count as an integer.
         """
         if not self.index:
             return []
@@ -242,7 +243,7 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        raw_result, _ = self.search(search)
+        raw_result, unused_total = self.search(search)
         if checks is not None:
             # figure out which checks we didn't find, add a placeholder check so
             # that check is still rendered on the UI
@@ -271,7 +272,7 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        result, _ = self.search(search, key='_id')
+        result, unused_total = self.search(search, key='_id')
         return result
 
     def list_all_keys_w_prefix(self, prefix):
@@ -296,7 +297,7 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        result, _ = self.search(search, key='_id')
+        result, unused_total = self.search(search, key='_id')
         return result
 
     def get_all_objects(self):
@@ -317,7 +318,7 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        result, _ = self.search(search)
+        result, unused_total = self.search(search)
         return result
 
     def delete_keys(self, key_list):

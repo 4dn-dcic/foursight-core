@@ -9,7 +9,7 @@ def create_test_route_response_body(environ: str):
 
 
 def create_test_route_response(environ: str):
-    response = ReactApi.create_standard_response()
+    response = ReactApi.create_success_response()
     response.body = create_test_route_response_body(environ)
     return response
 
@@ -36,7 +36,7 @@ class MockChaliceApp:
     class MockReactApi:
         def __init__(self):
             self.react_authorize = AUTH.authorize
-            self.create_standard_response = ReactApi.create_standard_response
+            self.create_success_response = ReactApi.create_success_response
 
     class MockChaliceRequest:
         def __init__(self, request: dict) -> None:

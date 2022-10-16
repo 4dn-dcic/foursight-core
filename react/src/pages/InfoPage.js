@@ -6,6 +6,7 @@ import HeaderData from '../HeaderData';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
+import Char from '../utils/Char';
 import Context from '../utils/Context';
 import Env from '../utils/Env';
 import { useFetch, useFetchFunction } from '../utils/Fetch';
@@ -34,7 +35,7 @@ const InfoPage = () => {
         return <>
             <div className="container">
                 <b>{title}</b>
-                { title === "Versions" && <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={info.refresh}>&#8635;&nbsp;</b> }
+                { title === "Versions" && <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={info.refresh}>{Char.Refresh}&nbsp;</b> }
                 <ul className="top-level-list">
                     <div className="info boxstyle" style={{paddingLeft:"8pt",paddingTop:"6pt",paddingBottom:"8pt"}}>
                         {children}
@@ -66,7 +67,7 @@ const InfoPage = () => {
         } : {};
         let checkElement = check ?
             <span>
-                &nbsp;<b style={{fontSize:"13pt",color:"green"}}>&#x2713;</b>
+                &nbsp;<b style={{fontSize:"13pt",color:"green"}}>{Char.Check}</b>
             </span> : <span/>
         const pypiElement = pypi ?
             <span>
@@ -108,7 +109,7 @@ const InfoPage = () => {
                                 { Type.IsNonEmptyObject(value) ? <>
                                     {value}
                                 </>:<>
-                                    {value || <span>&#x2205;</span>}
+                                    {value || <span>{Char.EmptySet}</span>}
                                 </>}
                             </span>)}
                             {checkElement}
@@ -177,14 +178,14 @@ const InfoPage = () => {
             <InfoRow name={"Expires At"} monospace={true} copy={true} size="2" value={<LiveTime.FormatDuration end={Auth.Token()?.authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} prefix="datetime"/>} />
             <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
                 { showingAuthToken ? (<>
-                    <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>AuthToken</u>&nbsp;&#x2193;</b></small>
+                    <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>AuthToken</u>&nbsp;{Char.DownArrow}</b></small>
                     <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>
                         <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{Json.Str(Auth.Token())}</span>
                         <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken")} style={{float:"right",height:"20px",cursor:"copy"}} />
                         {Yaml.Format(Auth.Token())}
                     </pre>
                 </>):(<>
-                    <small onClick={() => setShowAuthToken(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>AuthToken</u>&nbsp;&#x2191;</b></small>
+                    <small onClick={() => setShowAuthToken(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>AuthToken</u>&nbsp;{Char.UpArrow}</b></small>
                     <br />
                 </>)}
         </InfoBox>
@@ -198,7 +199,7 @@ const InfoPage = () => {
             { reloadingApp ? <>
                 <div data-text={"Reloading the Foursight app."} className="tool-tip" style={{float:"right"}}><StandardSpinner condition={reloadingApp} label={""} color={"darkblue"} /></div>
             </>:<>
-                <b onClick={() => initiateAppReload()}data-text={"Click here to reload the Foursight app."} className={"tool-tip"} style={{float:"right",cursor:"pointer"}}>&#8635;</b>
+                <b onClick={() => initiateAppReload()}data-text={"Click here to reload the Foursight app."} className={"tool-tip"} style={{float:"right",cursor:"pointer"}}>{Char.Refresh}</b>
             </>}
             <InfoRow name={"App Deployed At"} value={Server.IsLocal() ? "running locally" + (Context.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + Time.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
             <InfoRow name={"App Launched At"} value={header.app?.launched + Time.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />

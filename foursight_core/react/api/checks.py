@@ -197,11 +197,18 @@ class Checks:
                             check_setup_item_schedule[check_setup_item_schedule_name]["cron_description"] = la["lambda_schedule_description"]
 
     def _annotate_checks_with_kwargs_from_decorators(self, checks: dict) -> None:
+        # Decorators.get_registry() is a dictionary keyed by (unique) decorator function name;
+        # the value of each key is an object contain these fields: args, kwargs.
+        #
         checks_decorators = Decorators.get_registry()
+        if not checks_decorators:
+            return
         for check_setup_item_name in checks:
             check_setup_item = checks[check_setup_item_name]
-            for checks_decorator in checks_decorators:
-                checks_decorator_function_name = checks_decorator.get("function")
+            for checks_decorator_function_name_key in checks_decorators:
+                checks_decorator = checks_decorators[checks_decorator_function_name_key]
+              # checks_decorator_function_name = checks_decorator.get("function")
+                checks_decorator_function_name = checks_decorator_function_name_key
                 if check_setup_item_name == checks_decorator_function_name:
                     checks_decorator_kwargs = checks_decorator.get("kwargs")
                     if checks_decorator_kwargs:

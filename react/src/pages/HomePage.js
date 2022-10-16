@@ -1,4 +1,5 @@
 import { useContext } from 'react';
+import Char from '../utils/Char';
 import Env from '../utils/Env';
 import HeaderData from '../HeaderData';
 
@@ -9,7 +10,7 @@ const HomePage = (props) => {
     return <>
         <div className="container">
             <div className="boxstyle check-warn" style={{margin:"20pt",padding:"10pt",color:"#6F4E37"}}>
-                <span style={{fontSize:"xx-large"}}>&#x26A0;</span>&nbsp;
+                <span style={{fontSize:"xx-large"}}>{Char.Warning}</span>&nbsp;
                 <b style={{fontSize:"x-large"}}> Note ...</b>
                 <p />
                 <span>

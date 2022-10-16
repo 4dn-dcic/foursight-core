@@ -5,6 +5,7 @@ import { Link, NavLink } from 'react-router-dom';
 import HeaderData from '../HeaderData';
 import Auth0Lock from 'auth0-lock';
 import Auth from '../utils/Auth';
+import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
 import Context from '../utils/Context';
@@ -98,9 +99,9 @@ const LoginPage = (props) => {
                 {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt",color:"darkblue"}}>Hello, {Auth.LoggedInUserName(header)} ...</b>}
                 <div style={{float:"right",marginRight:"8pt",color:"darkblue",fontSize:"small",cursor:"pointer"}}>
                     { showingAuthToken ? <>
-                        <span onClick={() => setShowAuthToken(false)}>Auth &#x2193;</span>
+                        <span onClick={() => setShowAuthToken(false)}>Auth {Char.DownArrow}</span>
                     </>:<>
-                        <span onClick={() => setShowAuthToken(true)}>Auth &#x2191;</span>
+                        <span onClick={() => setShowAuthToken(true)}>Auth {Char.UpArrow}</span>
                     </>}
                 </div>
                 <div className="boxstyle info" style={{marginLeft:"0pt",padding:"10pt",color:"darkblue"}}>
@@ -175,9 +176,9 @@ const LoginPage = (props) => {
         <div className="container" id="login_container">
             <div style={{float:"right",marginRight:"94pt",color:"darkred",fontSize:"small",cursor:"pointer"}}>
                 { showingAuthToken ? <>
-                    <span onClick={() => setShowAuthToken(false)}>Auth &#x2193;</span>
+                    <span onClick={() => setShowAuthToken(false)}>Auth {Char.DownArrow}</span>
                 </>:<>
-                    <span onClick={() => setShowAuthToken(true)}>Auth &#x2191;</span>
+                    <span onClick={() => setShowAuthToken(true)}>Auth {Char.UpArrow}</span>
                 </>}
             </div>
             <div className="boxstyle check-warn" style={{marginTop:"15pt",marginLeft:"90pt",marginRight:"90pt",padding:"10pt",color:"darkred"}}>

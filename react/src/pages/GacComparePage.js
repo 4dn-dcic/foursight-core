@@ -3,6 +3,7 @@ import { useContext, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import { useFetch } from '../utils/Fetch';
+import Char from '../utils/Char';
 import Env from '../utils/Env';
 import HeaderData from '../HeaderData';
 import Server from '../utils/Server';
@@ -192,7 +193,7 @@ const GacComparePage = (props) => {
                                         <option key={Env.PreferredName(env, header)}>{Env.PreferredName(env, header)}</option> :
                                         <option key={Env.PreferredName(env, header)}>{Env.PreferredName(env, header)}</option>
                                 )}
-                            </select>&nbsp;<span style={{color:"blue"}}>&#x2193;</span>
+                            </select>&nbsp;<span style={{color:"blue"}}>{Char.DownArrow}</span>
                             <br />
                             {getGacName(response.get("gac"))}
                         </td>
@@ -203,7 +204,7 @@ const GacComparePage = (props) => {
                                         <option key={Env.PreferredName(env, header)}>{Env.PreferredName(env, header)}</option> :
                                         <option key={Env.PreferredName(env, header)}>{Env.PreferredName(env, header)}</option>
                                 )}
-                            </select>&nbsp;<span style={{color:"blue"}}>&#x2193;</span>
+                            </select>&nbsp;<span style={{color:"blue"}}>{Char.DownArrow}</span>
                             <br />
                             {getGacName(response.get("gac_compare"))}
                         </td>
@@ -223,16 +224,16 @@ const GacComparePage = (props) => {
                             (<React.Fragment>
                             <tr key={Uuid()} style={{color:sameGacValue(key, response.data) ? "inherit" : (removedGacValue(key, response.data) || addedGacValue(key, response.data) ? "red" : "darkred")}}>
                             <td>
-                                {sameGacValue(key, response.data) ? <span>&#x2713;</span> : <span>&#x2717;</span>}&nbsp;
+                                {sameGacValue(key, response.data) ? <span>{Char.Check}</span> : <span>{Char.X}</span>}&nbsp;
                             </td>
                             <td>
                                 <b>{key}</b>
                             </td>
                             <td style={{paddingRight:"8pt"}}>
-                                <span>{addedGacValue(key, response.data) ? <b>MISSING</b> : ((appearsToBeObfuscated(response.data.gac[key]) ? <b>OBFUSCATED</b> : response.data.gac[key]) || <b>&#x2205;</b>)}</span>
+                                <span>{addedGacValue(key, response.data) ? <b>MISSING</b> : ((appearsToBeObfuscated(response.data.gac[key]) ? <b>OBFUSCATED</b> : response.data.gac[key]) || <b>{Char.EmptySet}</b>)}</span>
                             </td>
                             <td>
-                                <span>{removedGacValue(key, response.data) ? <b>MISSING</b> : ((appearsToBeObfuscated(response.data.gac_compare[key]) ? <b>OBFUSCATED</b> : response.data.gac_compare[key]) || <b>&#x2205;</b>)}</span>
+                                <span>{removedGacValue(key, response.data) ? <b>MISSING</b> : ((appearsToBeObfuscated(response.data.gac_compare[key]) ? <b>OBFUSCATED</b> : response.data.gac_compare[key]) || <b>{Char.EmptySet}</b>)}</span>
                             </td>
                             </tr>
                             { keyIndex < unique_keys.length - 1 ? (<React.Fragment>

@@ -5,6 +5,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import HeaderData from './HeaderData';
 import { BarSpinner, StandardSpinner } from './Spinners';
 import Auth from './utils/Auth';
+import Char from './utils/Char';
 import Client from './utils/Client';
 import Context from './utils/Context';
 import LiveTime from './LiveTime';
@@ -110,21 +111,21 @@ const Header = (props) => {
                     <div style={{fontSize:"20pt",color:"white",cursor:"pointer"}} onClick={() => navigate(Client.Path("/login"))}>
                         { header.app?.stage === 'dev' ? (<>
                             { header.app?.local ? (<>
-                                <span title="Running locally." style={{position:"relative",bottom:"3pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;
-                                <span title="Stage is DEV. Running locally" style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"26pt"}}>&#x269B;</span>&nbsp;&nbsp;
+                                <span title="Running locally." style={{position:"relative",bottom:"3pt",color:"yellow",fontSize:"17pt"}}>{Char.DoNotEnter}</span>&nbsp;
+                                <span title="Stage is DEV. Running locally" style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"26pt"}}>{Char.Atom}</span>&nbsp;&nbsp;
                                 <span className="title-font" style={{position:"relative",bottom:"3pt",color:"white",fontWeight:"bold"}}>{header.app?.title.toUpperCase()}</span>&nbsp;&nbsp;
-                                <span title="Stage is DEV. Running locally" style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>&nbsp;
-                                <span title="Running locally." style={{position:"relative",bottom:"3pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;&nbsp;
+                                <span title="Stage is DEV. Running locally" style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"24pt"}}>{Char.Atom}</span>&nbsp;
+                                <span title="Running locally." style={{position:"relative",bottom:"3pt",color:"yellow",fontSize:"17pt"}}>{Char.DoNotEnter}</span>&nbsp;&nbsp;
                             </>):(<>
-                                <span title="Stage is DEV." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>&nbsp;&nbsp;
+                                <span title="Stage is DEV." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"24pt"}}>{Char.Atom}</span>&nbsp;&nbsp;
                                 <span className="title-font" style={{position:"relative",bottom:"2pt",color:"white",fontWeight:"bold"}}>{header.app?.title.toUpperCase()}</span>&nbsp;&nbsp;
-                                <span title="Stage is DEV." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"24pt"}}>&#x269B;</span>&nbsp;
+                                <span title="Stage is DEV." style={{position:"relative",bottom:"1pt",color:"yellow",fontSize:"24pt"}}>{Char.Atom}</span>&nbsp;
                             </>)}
                         </>):(<>
                             { header.app?.local ? (<>
-                                <span title="Running locally." style={{position:"relative",bottom:"2pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;&nbsp;
+                                <span title="Running locally." style={{position:"relative",bottom:"2pt",color:"yellow",fontSize:"17pt"}}>{Char.DoNotEnter}</span>&nbsp;&nbsp;
                                 <span className="title-font" style={{position:"relative",bottom:"1pt",color:"white",fontWeight:"bold"}}>{header.app?.title.toUpperCase()}</span>&nbsp;&nbsp;
-                                <span title="Running locally." style={{position:"relative",bottom:"2pt",color:"yellow",fontSize:"17pt"}}>&#8861;</span>&nbsp;&nbsp;
+                                <span title="Running locally." style={{position:"relative",bottom:"2pt",color:"yellow",fontSize:"17pt"}}>{Char.DoNotEnter}</span>&nbsp;&nbsp;
                             </>):(<>
                                 <span className="title-font" style={{position:"relative",bottom:"1pt",color:"white",fontWeight:"bold"}}>{header.app?.title.toUpperCase()}</span>&nbsp;&nbsp;
                             </>)}
@@ -156,7 +157,7 @@ const Header = (props) => {
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { Env.KnownEnvs(header).map(env => 
                                     Env.Equals(env, Env.Current()) ?
-                                        <span key={env.full_name}>{Env.PreferredName(env, header)}&nbsp;&nbsp;&#x2713;{ !Env.IsAllowed(env, header) && Auth.IsLoggedIn(header) && <>&nbsp;&nbsp;&#x26A0;</>}</span>
+                                        <span key={env.full_name}>{Env.PreferredName(env, header)}&nbsp;&nbsp;{Char.Check}{ !Env.IsAllowed(env, header) && Auth.IsLoggedIn(header) && <>&nbsp;&nbsp;{Char.Warning}</>}</span>
                                     :
                                         Env.IsAllowed(env, header) ?
                                             // This works "okay" 2022-09-18 but does not refresh/refetch (say) /users page data on select new env
@@ -164,7 +165,7 @@ const Header = (props) => {
                                             // So doing this funky double redirect to get it to ... TODO: figure out right/React of of doing this
                                             <Link key={env.full_name} to={{pathname: "/redirect"}} state={{url: !Env.IsCurrentKnown(header) ? Client.Path("/env", Env.PreferredName(Env.Default(header), header)) : Client.Path(null, Env.PreferredName(env, header))}}>{Env.PreferredName(env, header)}</Link>
                                         :
-                                            <Link key={env.public_name} to={Client.Path("/env", Env.PreferredName(env, header))}>{Env.PreferredName(env, header)}{!Env.IsAllowed(env, header) && Auth.IsLoggedIn(header) && <>&nbsp;&nbsp;&#x26A0;</>}</Link>
+                                            <Link key={env.public_name} to={Client.Path("/env", Env.PreferredName(env, header))}>{Env.PreferredName(env, header)}{!Env.IsAllowed(env, header) && Auth.IsLoggedIn(header) && <>&nbsp;&nbsp;{Char.Warning}</>}</Link>
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
                                 <Link id="__envinfo__" to={Client.Path("/env")}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</Link>

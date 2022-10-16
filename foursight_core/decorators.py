@@ -19,7 +19,8 @@ from .sqs_utils import SQS
 # virtue of them having been in a result set of an actual check run. But we would
 # like to get and present these without having to get the check history;
 # and without the check having to been run.
-_decorator_registry = []
+# _decorator_registry = []
+_decorator_registry = {}
 
 class Decorators(object):
 
@@ -72,11 +73,12 @@ class Decorators(object):
 
         def check_deco(func):
             decorator_registry_record = {
-                "function": func.__name__,
+              # "function": func.__name__,
                 "args": default_args,
                 "kwargs": default_kwargs,
             }
-            _decorator_registry.append(decorator_registry_record)
+          # _decorator_registry.append(decorator_registry_record)
+            _decorator_registry[func.__name__] = decorator_registry_record
             @wraps(func)
             def wrapper(*args, **kwargs):
                 start_time = time.time()

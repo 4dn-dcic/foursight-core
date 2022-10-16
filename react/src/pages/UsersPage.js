@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { RingSpinner } from '../Spinners';
 import { useFetch } from '../utils/Fetch';
-import Server from '../utils/Server';
+import Char from '../utils/Char';
 import Client from '../utils/Client';
+import Server from '../utils/Server';
 
 const UsersPage = () => {
 
@@ -20,7 +21,7 @@ const UsersPage = () => {
         <div className="container">
             <div>
                 <b>Users</b>
-                <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>&#8635;&nbsp;</b>
+                <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>{Char.Refresh}&nbsp;</b>
             </div>
             <div className="info boxstyle" style={{marginTop:"4pt"}}>
                 <table style={{width:"100%"}}>
