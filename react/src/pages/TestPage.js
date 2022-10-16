@@ -1,8 +1,30 @@
+// -------------------------------------------------------------------------------------------------
+// PLEASE IGNORE THIS PAGE!
+// THIS WILL GO AWAY - IT IS A LITTLE SANDBOX FOR GENERAL REACT EXPERIMENTATION
+// -------------------------------------------------------------------------------------------------
+
 // import Styles from '../Styles';
 import { useEffect } from 'react';
 import Server from '../utils/Server';
 import { useFetch, useFetching, useFetched } from '../utils/Fetch';
 import uuid from 'react-uuid';
+import XyzzyComponent from './XyzzyComponent';
+
+/*
+const XyzzyComponent = () => {
+    const xyzzy = useFetch(Server.Url("/info"));
+     useEffect(() => {
+        xyzzy.refresh(Server.Url("/header"));
+     }, []);
+    return <pre>XYZZY: {JSON.stringify(xyzzy)}</pre>
+}
+*/
+
+const TestSub = () => {
+        return <>
+            <XyzzyComponent />
+        </>
+}
 
 const TestPage = () => {
     
@@ -25,6 +47,7 @@ const TestPage = () => {
     const [ fetched ] = useFetched();
 
     return <>
+                <TestSub/>
         <div><span className="cursor-hand" onClick={() => mainFetchResponse.refresh()}>MAIN-FETCH</span>&nbsp;|&nbsp;
              <span className="cursor-hand" onClick={() => someFetchResponse.refresh()}>SOME-FETCH</span>&nbsp;|&nbsp;
              <span className="cursor-hand"

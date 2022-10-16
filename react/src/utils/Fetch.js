@@ -620,7 +620,7 @@ const _doFetch = (args, current = undefined) => {
     args.setTimeout(false);
     args.setError(null);
 
-    // Expand to handle otther verb later (e.g. PUT, POST).
+    // Expand to handle other verb later (e.g. PUT, POST).
 
     const method = "GET";
     const payload = null;
