@@ -46,9 +46,6 @@ class Gac:
     def compare_gacs(env_name_a: str, env_name_b: str) -> dict:
         gac_name_a = Gac.get_gac_name(env_name_a)
         gac_name_b = Gac.get_gac_name(env_name_b)
-        print('xyzzy..........................................')
-        print(gac_name_a)
-        print(gac_name_b)
         with override_environ(IDENTITY=gac_name_a):
             gac_values_a = get_identity_secrets()
         with override_environ(IDENTITY=gac_name_b):

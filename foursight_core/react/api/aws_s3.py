@@ -11,7 +11,7 @@ class AwsS3:
             s3 = boto3.resource("s3")
             results = sorted([bucket.name for bucket in s3.buckets.all()])
         except Exception as e:
-            print("Get buckets error: " + str(e))
+            print(f"Get buckets error: {e}")
             pass
         return results
 
@@ -32,7 +32,7 @@ class AwsS3:
                         })
 
         except Exception as e:
-            print("Get bucket keys error: " + str(e))
+            print(f"Get bucket keys error: {e}")
         return results
 
     SHOW_BUCKET_KEY_CONTENT_MAX_SIZE_BYTES = 50000

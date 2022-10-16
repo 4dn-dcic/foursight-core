@@ -40,7 +40,7 @@ function KnownEnvRequired({ children }) {
 // environment (i.e. if authenticated user is NOT allowed to access the environment from
 // the current URL, according to the allowed_envs list in the auth record of the global
 // header data (from the React API /header endpoint), then redirect to either the /login
-// page, if not authenticated, or to the /env page, if authenticated by not authorized.
+// page, if not authenticated, or to the /env page, if authenticated but not authorized.
 //
 function AuthorizationRequired({ children }) {
     const [ header ] = useContext(HeaderData);

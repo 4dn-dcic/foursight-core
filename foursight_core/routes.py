@@ -165,7 +165,7 @@ class Routes:
 
 # Commented out based on feedback PR-33 from Will ...
 # As it is incompatible with EnvUtils at this time.
-# Can create a ticket to make it compatible in the future.
+# TODO: Create a ticket explaining the environment need.
 #
 #   @staticmethod
 #   @app.route(ROUTE_PREFIX + 'environments/{environ}', methods=['PUT'])
@@ -199,6 +199,7 @@ class Routes:
 # Commented out based on feedback PR-33 from Will ...
 # As it is incompatible with EnvUtils at this time.
 # Can create a ticket to make it compatible in the future.
+# TODO: Create a ticket explaining the environment need.
 #
 #   @staticmethod
 #   @app.route(ROUTE_PREFIX + 'environments/{environ}/delete', methods=['DELETE'])
