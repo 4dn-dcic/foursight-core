@@ -70,6 +70,17 @@ class ReactApi(ReactRoutes):
         return Response(status_code=status, body=json.dumps(body), headers=ReactApi.JSON_HEADER)
 
     @staticmethod
+    def create_forbidden_response() -> Response:
+        """
+        Note that this is different from the unauthenticated and/or unauthorized response
+        if the user is not logged in or does not have access to the given environment.
+        This is for other forbidden case, e.g. access to static files we restrict access to.
+        """
+        status = 403
+        body = {"status": "Forbidden."}
+        return Response(status_code=status, body=json.dumps(body), headers=ReactApi.JSON_HEADER)
+
+    @staticmethod
     def create_error_response(message: str) -> Response:
         status = 500
         body = {"error": message}
