@@ -13,7 +13,7 @@ import Server from './Server';
 function Logout() {
     Cookie.DeleteAuth();
     Cookie.SetRedirect(Page.LastUrl());
-    window.location.replace(Server.Url("/logout", Env.Current()));
+    window.location.replace(Server.Url("/logout"));
 }
 
 export default Logout;
