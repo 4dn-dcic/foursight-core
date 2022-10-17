@@ -1,3 +1,4 @@
+from chalice import Response
 import os
 import io
 
@@ -23,7 +24,7 @@ class ReactUi:
 
     cache_static_files = {}
 
-    def serve_static_file(self, env: str, **kwargs):
+    def serve_static_file(self, env: str, **kwargs) -> Response:
 
         # TODO: commentary on this.
         env = env.replace("{environ}", env)

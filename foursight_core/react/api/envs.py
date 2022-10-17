@@ -1,7 +1,8 @@
 import copy
-from typing import Optional
+from typing import Optional, Tuple
 import os
 from dcicutils import ff_utils
+from .gac import Gac
 
 
 class Envs:
@@ -15,7 +16,7 @@ class Envs:
     def get_known_envs(self) -> list:
         return self.known_envs
 
-    def get_known_envs_with_gac_names(self, gac) -> list:
+    def get_known_envs_with_gac_names(self, gac: Gac) -> list:
         known_envs = copy.deepcopy(self.get_known_envs())
         for known_env in known_envs:
             known_env["gac_name"] = gac.get_gac_name(known_env["full_name"])
@@ -57,7 +58,7 @@ class Envs:
             return False
         return id(known_env_a) == id(known_env_b)
 
-    def get_user_auth_info(self, email: str) -> tuple[list, list, str]:
+    def get_user_auth_info(self, email: str) -> Tuple[list, list, str]:
         """
         Returns a tuple containing (in left-right order): the list of known environments;
         the list of allowed environment names (via the users store in ElasticSearch);

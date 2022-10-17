@@ -17,7 +17,6 @@ class AwsS3:
             results = sorted([bucket.name for bucket in s3.buckets.all()])
         except Exception as e:
             logger.error(f"Exception getting S3 bucket list: {e}")
-            pass
         return results
 
     @staticmethod
@@ -43,7 +42,7 @@ class AwsS3:
     SHOW_BUCKET_KEY_CONTENT_MAX_SIZE_BYTES = 50000
 
     @staticmethod
-    def _may_look_at_key_content(bucket, key, size):
+    def _may_look_at_key_content(bucket, key, size) -> bool:
         if size > AwsS3.SHOW_BUCKET_KEY_CONTENT_MAX_SIZE_BYTES:
             return False
         if key.endswith(".json"):
