@@ -62,7 +62,7 @@ function FirstOfType(values, ofType) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-const Exports = {
+const exports = {
     First:            FirstOfType,
     IsArray:          IsArray,
     IsBoolean:        IsBoolean,
@@ -75,5 +75,4 @@ const Exports = {
     IsNumber:         IsNumber,
     IsObject:         IsObject,
     IsString:         IsString
-};
-export default Exports;
+}; export default exports;

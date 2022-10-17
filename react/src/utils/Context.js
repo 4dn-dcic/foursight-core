@@ -98,7 +98,7 @@ function Auth0CallbackId(header) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-const Exports = {
+const exports = {
 
     IsLocal:              IsLocal,
     IsLocalCrossOrigin:   IsLocalCrossOrigin,
@@ -121,5 +121,4 @@ const Exports = {
         CallbackUrl:        Auth0CallbackUrl,
         CallbackId:         Auth0CallbackId
     }
-};
-export default Exports;
+}; export default exports;

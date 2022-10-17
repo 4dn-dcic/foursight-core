@@ -54,7 +54,7 @@ function GetFoursightFourfrontLogoImage() {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-const Exports = {
+const exports = {
     Clipboard:                 GetClipboardImage,
     GitHub:                    GetGitHubImage,
     Lock:                      GetLockImage,
@@ -67,5 +67,4 @@ const Exports = {
     PyPi:                      GetPyPiImage,
     Python:                    GetPythonImage,
     Unlock:                    GetUnlockImage
-};
-export default Exports;
+}; export default exports;

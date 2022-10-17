@@ -6,8 +6,7 @@
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-const Exports = {
+const exports = {
     Str:    (value) => { return JSON.stringify(value) },
     Format: (value) => { return JSON.stringify(value, null, 2) }
-};
-export default Exports;
+}; export default exports;

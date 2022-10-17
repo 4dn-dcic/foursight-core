@@ -104,10 +104,9 @@ function ToDateTime(value) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-const Exports = {
+const exports = {
     FormatDuration: FormatDuration,
     FormatDateTime: FormatDateTime,
     ToDateTime:     ToDateTime,
     Now:            () => new Date()
-};
-export default Exports;
+}; export default exports;

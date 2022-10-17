@@ -188,7 +188,7 @@ function HasTestModeFoursightCgapCookie() {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-const Exports = {
+const exports = {
     AllowedEnvs:     GetAllowedEnvsCookie,
     AuthToken:       GetAuthTokenCookie,
     AuthTokenRaw:    GetAuthTokenRawCookie,
@@ -210,5 +210,4 @@ const Exports = {
         HasFoursightFourfront: HasTestModeFoursightFourfrontCookie,
         HasFoursightCgap:      HasTestModeFoursightCgapCookie
     }
-};
-export default Exports;
+}; export default exports;

@@ -646,6 +646,11 @@ const _doFetch = (args, current = undefined) => {
         });
 }
 
+// This _update function is a modified version of the React useState setter function,
+// which will do a deep update of the specified data. By default, the React useState
+// setter function will only update if the reference to the new data is different
+// from the existing/current data, which is often not what we want.
+//
 function _update(setData, newData, currentData) {
     if (!Object.is(newData, currentData)) {
         //

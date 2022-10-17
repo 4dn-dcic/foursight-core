@@ -47,12 +47,11 @@ function LoggedInUserName(header) {
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
-const Exports = {
+const exports = {
     IsLoggedIn:       IsLoggedIn,
     LoggedInInfo:     LoggedInInfo,
     LoggedInUser:     LoggedInUser,
     LoggedInUserName: LoggedInUserName,
     SessionExpired:   SessionExpired,
     Token:            Cookie.AuthToken
-};
-export default Exports;
+}; export default exports;
