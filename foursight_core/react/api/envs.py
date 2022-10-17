@@ -57,7 +57,7 @@ class Envs:
             return False
         return id(known_env_a) == id(known_env_b)
 
-    def get_user_auth_info(self, email: str) -> [list, list, str]:
+    def get_user_auth_info(self, email: str) -> tuple[list, list, str]:
         """
         Returns a tuple containing (in left-right order): the list of known environments;
         the list of allowed environment names (via the users store in ElasticSearch);
@@ -69,7 +69,8 @@ class Envs:
         last_name = None
         for known_env in self.known_envs:
             try:
-                user = ff_utils.get_metadata('users/' + email.lower(), ff_env=known_env["full_name"], add_on="frame=object&datastore=database")
+                user = ff_utils.get_metadata('users/' + email.lower(),
+                                             ff_env=known_env["full_name"], add_on="frame=object&datastore=database")
                 if user:
                     if not first_name:
                         first_name = user.get("first_name")

@@ -91,7 +91,7 @@ class ReactRoutes:
     @staticmethod
     @app.route(ROUTE_PREFIX + "reactapi/{environ}/logout", methods=["GET"], cors=CORS)
     def reactapi_route_logout(environ: str):
-        # The environ is not strictly required for logout,
+        # Note that environ is not strictly required for logout,
         # since we logout from all environments, but is useful
         # for the redirect back, and just for completeness.
         request = app.current_request.to_dict()
@@ -149,7 +149,8 @@ class ReactRoutes:
         limit = int(params.get("limit", "25")) if params else 25
         sort = params.get("sort", "timestamp.desc") if params else "timestamp.desc"
         sort = urllib.parse.unquote(sort)
-        return app.core.reactapi_checks_history(request=request, env=environ, check=check, offset=offset, limit=limit, sort=sort)
+        return app.core.reactapi_checks_history(request=request, env=environ,
+                                                check=check, offset=offset, limit=limit, sort=sort)
 
     @staticmethod
     @app.route(ROUTE_PREFIX + "reactapi/{environ}/checks/{check}/run", methods=["GET"], cors=CORS)
@@ -277,4 +278,5 @@ class ReactRoutes:
     @staticmethod
     @app.route(ROUTE_PREFIX + "react/{environ}/{path1}/{path2}/{path3}/{path4}", cors=CORS)
     def reactui_route_4(environ, path1, path2, path3, path4):
-        return ReactRoutes.reactui_serve_static_file(environ, **{"path1": path1, "path2": path2, "path3": path3, "path4": path4})
+        return ReactRoutes.reactui_serve_static_file(environ, **{"path1": path1,
+                                                                 "path2": path2, "path3": path3, "path4": path4})

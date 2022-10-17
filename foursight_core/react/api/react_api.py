@@ -21,7 +21,7 @@ from .aws_s3 import AwsS3
 from .checks import Checks
 from .cookie_utils import create_delete_cookie_string, create_set_cookie_string, read_cookie
 from .datetime_utils import convert_datetime_to_time_t, convert_utc_datetime_to_useastern_datetime_string
-from .encoding_utils import base64_decode
+from .encoding_utils import base64_decode_to_json
 from .envs import Envs
 from .gac import Gac
 from .misc_utils import is_running_locally, sort_dictionary_by_lowercase_keys
@@ -59,12 +59,12 @@ class ReactApi(ReactRoutes):
     @staticmethod
     def create_not_implemented_response(request: dict):
         status = 501
-        headers = { "Content-Type": "application/json" }
+        headers = {"Content-Type": "application/json"}
         method = request.get("method")
         context = request.get("context")
         path = context.get("path") if isinstance(context, dict) else None
         error = "Not implemented."
-        body = { "error": error, "method": method, "path": path }
+        body = {"error": error, "method": method, "path": path}
         return Response(status_code=status, body=json.dumps(body), headers=headers)
 
     def is_react_authentication(self, auth0_response: dict) -> bool:
@@ -77,7 +77,8 @@ class ReactApi(ReactRoutes):
         """
         return "react" in auth0_response.get("scope", "") if auth0_response else False
 
-    def react_authentication_callback(self, request: dict, env: str, jwt: str, jwt_expires_in: int, domain: str, context: str):
+    def react_authentication_callback(self, request: dict, env: str,
+                                      jwt: str, jwt_expires_in: int, domain: str, context: str):
         """
         Called from the main Auth0 callback, in app_utils/auth0_callback, AFTER the Auth0 HTTP POST
         which does the actual authentication; that POST returns the JWT which is received by this
@@ -89,7 +90,8 @@ class ReactApi(ReactRoutes):
         this is directly from the (above mentioned) Auth0 POST; this is NOT the exp from
         the JWT which seems to be different from (like 14 hours less than) jwt_expires_in.
         """
-        jwt_expires_at = convert_datetime_to_time_t(datetime.datetime.utcnow() + datetime.timedelta(seconds=jwt_expires_in))
+        jwt_expires_at = convert_datetime_to_time_t(datetime.datetime.utcnow() +
+                                                    datetime.timedelta(seconds=jwt_expires_in))
         authtoken = self.auth.create_authtoken(jwt, jwt_expires_at, env, domain)
         authtoken_cookie = create_set_cookie_string(request, name="authtoken",
                                                     value=authtoken,
@@ -152,7 +154,7 @@ class ReactApi(ReactRoutes):
             ReactApi.cache_header[env] = data
         data = copy.deepcopy(data)
         data["auth"] = auth
-        data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow());
+        data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
         response = self.create_success_response("reactapi_header")
         response.body = data
         return response
@@ -204,9 +206,10 @@ class ReactApi(ReactRoutes):
             env_unknown = False
         if not env_unknown:
             try:
-                environment_and_bucket_info = sort_dictionary_by_lowercase_keys(obfuscate_dict(app.core.environment.get_environment_and_bucket_info(env, stage_name))),
+                environment_and_bucket_info = sort_dictionary_by_lowercase_keys(
+                    obfuscate_dict(app.core.environment.get_environment_and_bucket_info(env, stage_name))),
                 portal_url = app.core.get_portal_url(env)
-            except:
+            except Exception as e:
                 environment_and_bucket_info = None
                 portal_url = None
         else:
@@ -314,7 +317,8 @@ class ReactApi(ReactRoutes):
         users = []
         for email_address in email.split(","):
             try:
-                user = ff_utils.get_metadata('users/' + email_address.lower(), ff_env=full_env_name(env), add_on='frame=object')
+                user = ff_utils.get_metadata('users/' + email_address.lower(),
+                                             ff_env=full_env_name(env), add_on='frame=object')
                 users.append({"email_address": email_address, "record": user})
             except Exception as e:
                 users.append({"email_address": email_address, "record": {"error": str(e)}})
@@ -340,14 +344,13 @@ class ReactApi(ReactRoutes):
         try:
             connection = app.core.init_connection(env)
             check_results = app.core.CheckResult(connection, check)
-            #check_results = check_results.get_closest_result()
             check_results = check_results.get_latest_result()
             uuid = check_results["uuid"]
             check_datetime = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
             check_datetime = convert_utc_datetime_to_useastern_datetime_string(check_datetime)
             check_results["timestamp"] = check_datetime
             response.body = check_results
-        except:
+        except Exception as e:
             response.body = {}
         return response
 
@@ -361,7 +364,7 @@ class ReactApi(ReactRoutes):
         servers = []
         try:
             connection = app.core.init_connection(env)
-        except Exception:
+        except Exception as e:
             connection = None
         if connection:
             servers.append(connection.ff_server)
@@ -433,8 +436,7 @@ class ReactApi(ReactRoutes):
         Kicks off a run for the given check (name).
         """
         response = self.create_success_response("reactapi_checks_run")
-        args = base64_decode(args)
-        args = json.loads(args)
+        args = base64_decode_to_json(args)
         queued_uuid = app.core.queue_check(env, check, args)
         response.body = {"check": check, "env": env, "uuid": queued_uuid}
         return response

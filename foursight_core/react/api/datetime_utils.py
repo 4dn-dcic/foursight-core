@@ -5,7 +5,7 @@ import pytz
 EPOCH = datetime.datetime.utcfromtimestamp(0)  # I.e.: 1970-01-01 00:00:00 UTC
 
 
-def convert_utc_datetime_to_useastern_datetime_string(t) -> str:
+def convert_utc_datetime_to_useastern_datetime_string(t: datetime.datetime) -> str:
     """
     Converts the given UTC datetime object or string into a US/Eastern datetime string
     and returns its value in a form that looks like 2022-08-22 13:25:34 EDT.

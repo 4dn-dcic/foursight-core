@@ -615,7 +615,7 @@ const ChecksPage = (props) => {
                 <span className={"tool-tip"} data-text={readOnlyMode ? "Run disabled because in readonly mode." : "Click to run this check."}>
                     { !readOnlyMode ? <>
                         { check.configuringCheckRun ? <>
-                            <span style={{fontSize:"small"}}>{Char.RightFatArrow}</span>&nbsp;<span>Run</span>
+                            <span style={{fontSize:"small"}}>{Char.RightArrowFat}</span>&nbsp;<span>Run</span>
                         </>:<>
                             <span style={{fontSize:"small"}}></span>&nbsp;<span>Run ...</span>
                         </>}
@@ -664,7 +664,7 @@ const ChecksPage = (props) => {
                             </>:<>
                                 { (check.queueingCheckRun || check.fetchingResult) ? <>
                                     <div className={"check-config-wait-button"} style={{float:"right"}}>
-                                        <span className={"tool-tip"} data-text={"Configure run below."} style={{}}><span style={{fontSize:"small"}}>{Char.DownFatArrow}</span>&nbsp;Configure</span>
+                                        <span className={"tool-tip"} data-text={"Configure run below."} style={{}}><span style={{fontSize:"small"}}>{Char.DownArrowFat}</span>&nbsp;Configure</span>
                                     </div>
                                 </>:<>
                                     <div
@@ -683,7 +683,7 @@ const ChecksPage = (props) => {
                                             className={"tool-tip"}
                                             data-text={"Configure run below."}
                                             style={{}}>
-                                            <span style={{fontSize:"small"}}>{Char.DownFatArrow}</span>&nbsp;Configure
+                                            <span style={{fontSize:"small"}}>{Char.DownArrowFat}</span>&nbsp;Configure
                                         </span>
                                     </div>
                                 </>}
