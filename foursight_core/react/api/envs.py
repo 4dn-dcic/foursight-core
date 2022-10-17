@@ -34,10 +34,10 @@ class Envs:
         env = env.lower()
         for known_env in self.known_envs:
             if (known_env["name"].lower() == env
-                or known_env["short_name"].lower() == env
-                or known_env["full_name"].lower() == env
-                or known_env["public_name"].lower() == env
-                or known_env["foursight_name"].lower() == env):
+                    or known_env["short_name"].lower() == env
+                    or known_env["full_name"].lower() == env
+                    or known_env["public_name"].lower() == env
+                    or known_env["foursight_name"].lower() == env):
                 return known_env
         return None
 
