@@ -7,9 +7,9 @@ from typing import Optional
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
-REACT_BASE_DIR = os.path.join(os.path.dirname(__file__), "../../react/ui")
-REACT_DEFAULT_FILE = "index.html"
-REACT_STATIC_FILE_TYPES = [
+_REACT_BASE_DIR = os.path.join(os.path.dirname(__file__), "../../react/ui")
+_REACT_DEFAULT_FILE = "index.html"
+_REACT_STATIC_FILE_TYPES = [
     {"suffix":       ".html",
      "content_type": "text/html",
      "open_mode":    "r"},
@@ -35,7 +35,7 @@ REACT_STATIC_FILE_TYPES = [
      "content_type": "image/x-icon",
      "open_mode":    "rb"}
 ]
-REACT_WHITELISTED_FILE_PATH_SUFFIXES = [
+_REACT_WHITELISTED_FILE_PATH_SUFFIXES = [
     "/index.html",
     "/main.js",
     "/main.css",
@@ -57,11 +57,11 @@ class ReactUi:
 
     @staticmethod
     def _is_known_file_suffix(file: str) -> bool:
-        return any(file.endswith(file_info["suffix"]) for file_info in REACT_STATIC_FILE_TYPES)
+        return any(file.endswith(file_info["suffix"]) for file_info in _REACT_STATIC_FILE_TYPES)
 
     @staticmethod
     def _get_file_info(file: str) -> Optional[dict]:
-        for info in REACT_STATIC_FILE_TYPES:
+        for info in _REACT_STATIC_FILE_TYPES:
             if file.endswith(info["suffix"]):
                 return info
         return None
@@ -71,7 +71,7 @@ class ReactUi:
         """
         To be as restrictive as possible we ONLY allow the above whitelistted files.
         """
-        for suffix in REACT_WHITELISTED_FILE_PATH_SUFFIXES:
+        for suffix in _REACT_WHITELISTED_FILE_PATH_SUFFIXES:
             if file.endswith(suffix):
                 return True
         return False
@@ -82,13 +82,12 @@ class ReactUi:
             # If the env is 'static' then we take this to mean the 'static' subdirectory;
             # this is the directory where the static (js, css, etc) React files reside.
             # Note that this means a real 'environ' may not be the literal string 'static'.
-            file = os.path.join(REACT_BASE_DIR, "static")
+            file = os.path.join(_REACT_BASE_DIR, "static")
         else:
-            file = REACT_BASE_DIR
+            file = _REACT_BASE_DIR
         args = kwargs.values()
         if not args:
-            # TODO: png (et.al.) not downloading right!
-            # Running chalice local it works though.
+            # TODO: Not downloading png (et.al.) right! Works with chalice local!
             # Actually it also works in cgap-supertest:
             # https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/react/logo192.png
             # But not in 4dn/foursight-development:
@@ -109,7 +108,7 @@ class ReactUi:
         else:
             # If not recognized then serve the default (index.html) file;
             # this is actually the common case of getting any React UI path.
-            file = os.path.join(REACT_BASE_DIR, REACT_DEFAULT_FILE)
+            file = os.path.join(_REACT_BASE_DIR, _REACT_DEFAULT_FILE)
             content_type = "text/html"
             open_mode = "r"
         file = os.path.normpath(file)
