@@ -1,6 +1,10 @@
 from chalice import Response
+import logging
 import os
 import io
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 REACT_BASE_DIR = os.path.join(os.path.dirname(__file__), "../../react/ui")
 REACT_DEFAULT_FILE = "index.html"
@@ -92,12 +96,13 @@ class ReactUi:
         response = ReactUi.cache_static_files.get(file)
         if not response:
             response = self.react_api.create_success_response("react_serve_static_file", content_type)
-            with io.open(file, open_mode) as f:
-                try:
+            try:
+                with io.open(file, open_mode) as f:
                     response.body = f.read()
-                except Exception as e:
-                    print(f"ERROR: Exception on serving React file: {file} (content-type: {content_type}).")
-                    print(e)
+            except Exception as e:
+                message = f"Exception serving static React file ({file} | {content_type}): {e}"
+                logger.error(message)
+                return self.react_api.create_error_response(message)
             response = self.react_api.process_response(response)
             ReactUi.cache_static_files[file] = response
         return response

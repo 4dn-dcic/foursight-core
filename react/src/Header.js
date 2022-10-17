@@ -153,7 +153,7 @@ const Header = (props) => {
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (Env.KnownEnvs(header).length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:(!Env.IsCurrentKnown(header) || (Auth.IsLoggedIn(header) && !Env.IsCurrentAllowed(header))) ? "red" : "#143c53"}} title={"Environment: " + Env.Current() + (!Env.IsCurrentKnown(header) ? " -> UNKNOWN" : "")}>{Env.Current() || "unknown-env"}</b>
+                            <b className="dropdown-button" style={{color:(!Env.IsKnown(Env.Current(), header) || (Auth.IsLoggedIn(header) && !Env.IsAllowed(Env.Current(), header))) ? "red" : "#143c53"}} title={"Environment: " + Env.Current() + (!Env.IsKnown(Env.Current(), header) ? " -> UNKNOWN" : "")}>{Env.Current() || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { Env.KnownEnvs(header).map(env => 
                                     Env.Equals(env, Env.Current()) ?
@@ -163,7 +163,7 @@ const Header = (props) => {
                                             // This works "okay" 2022-09-18 but does not refresh/refetch (say) /users page data on select new env
                                             // <Link key={env.public_name} to={Client.Path(null, env.public_name)}>{env.public_name}</Link>
                                             // So doing this funky double redirect to get it to ... TODO: figure out right/React of of doing this
-                                            <Link key={env.full_name} to={{pathname: "/redirect"}} state={{url: !Env.IsCurrentKnown(header) ? Client.Path("/env", Env.PreferredName(Env.Default(header), header)) : Client.Path(null, Env.PreferredName(env, header))}}>{Env.PreferredName(env, header)}</Link>
+                                            <Link key={env.full_name} to={{pathname: "/redirect"}} state={{url: !Env.IsKnown(Env.Current(), header) ? Client.Path("/env", Env.PreferredName(Env.Default(header), header)) : Client.Path(null, Env.PreferredName(env, header))}}>{Env.PreferredName(env, header)}</Link>
                                         :
                                             <Link key={env.public_name} to={Client.Path("/env", Env.PreferredName(env, header))}>{Env.PreferredName(env, header)}{!Env.IsAllowed(env, header) && Auth.IsLoggedIn(header) && <>&nbsp;&nbsp;{Char.Warning}</>}</Link>
                                 )}

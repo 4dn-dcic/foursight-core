@@ -1,5 +1,29 @@
 from foursight_core.react.api.jwt_utils import jwt_decode
-from test_react_auth_defs import *
+from test_react_auth_defs import (
+    ALLOWED_ENV,
+    ALLOWED_ENVS,
+    AUTH0_CLIENT_ID,
+    AUTH0_SECRET,
+    AUTH,
+    DEFAULT_ENV,
+    DISALLOWED_ENV,
+    DOMAIN,
+    EMAIL,
+    EXPIRES_AT,
+    EXPIRED_AT,
+    FIRST_NAME,
+    INITIAL_ENV,
+    LAST_NAME,
+    ISSUED_AT,
+    KNOWN_ENVS,
+    create_test_authtoken_expired,
+    create_test_authtoken_good,
+    create_test_authtoken_invalid_auth0_secret,
+    create_test_authtoken_munged,
+    create_test_jwt,
+    create_test_jwt_unencoded,
+    create_test_request
+)
 
 
 def assert_authorized_response(response):

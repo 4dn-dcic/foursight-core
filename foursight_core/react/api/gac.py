@@ -1,11 +1,15 @@
 import re
 import boto3
+import logging
 from dcicutils.diff_utils import DiffManager
 from dcicutils.env_utils import short_env_name
 from dcicutils.misc_utils import override_environ
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import get_identity_secrets
 from .misc_utils import sort_dictionary_by_lowercase_keys
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 
 class Gac:
@@ -16,8 +20,7 @@ class Gac:
             boto_secrets_manager = boto3.client('secretsmanager')
             return [secrets['Name'] for secrets in boto_secrets_manager.list_secrets()['SecretList']]
         except Exception as e:
-            print("Exception getting secrets")
-            print(e)
+            logger.error(f"Exception getting secrets: {e}")
             return []
 
     @staticmethod

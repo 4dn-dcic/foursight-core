@@ -31,6 +31,8 @@ from .react_ui import ReactUi
 
 class ReactApi(ReactRoutes):
 
+    JSON_HEADER = {"Content-Type": "application/json"}
+
     def __init__(self):
         super(ReactApi, self).__init__()
         self.envs = Envs(app.core.get_unique_annotated_environment_names())
@@ -60,13 +62,18 @@ class ReactApi(ReactRoutes):
     @staticmethod
     def create_not_implemented_response(request: dict) -> Response:
         status = 501
-        headers = {"Content-Type": "application/json"}
         method = request.get("method")
         context = request.get("context")
         path = context.get("path") if isinstance(context, dict) else None
         error = "Not implemented."
         body = {"error": error, "method": method, "path": path}
-        return Response(status_code=status, body=json.dumps(body), headers=headers)
+        return Response(status_code=status, body=json.dumps(body), headers=ReactApi.JSON_HEADER)
+
+    @staticmethod
+    def create_error_response(message: str) -> Response:
+        status = 500
+        body = {"error": message}
+        return Response(status_code=status, body=json.dumps(body), headers=ReactApi.JSON_HEADER)
 
     def is_react_authentication(self, auth0_response: dict) -> bool:
         """

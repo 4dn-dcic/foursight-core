@@ -51,7 +51,7 @@ function AuthorizationRequired({ children }) {
     else if (!Env.IsAllowed(Env.Current(), header)) {
         return <Navigate to={Client.Path("/env")} replace />
     }
-    else if (!Env.IsCurrentKnown(header)) {
+    else if (!Env.IsKnown(Env.Current(), header)) {
         return <Navigate to={Client.Path("/env")} replace />
     }
     else {
@@ -64,7 +64,7 @@ function AuthorizationRequired({ children }) {
 // -------------------------------------------------------------------------------------------------
 
 function NoteLastUrl(header) {
-    if (Env.IsCurrentKnown(header)) {
+    if (Env.IsKnown(Env.Current(), header)) {
         Cookie.SetLastUrl(window.location.href);
     }
 }

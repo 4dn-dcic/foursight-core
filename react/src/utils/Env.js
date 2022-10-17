@@ -35,7 +35,6 @@ function IsKnownEnv(env, header) {
 
 function GetDefaultEnv(header) {
     return header?.auth?.default_env || Cookie.DefaultEnv();
-    // return header?.default_env || Cookie.DefaultEnv();
 }
 
 function IsDefaultEnv(env, header) {
@@ -167,14 +166,6 @@ function IsCurrentEnv(env) {
     return AreSameEnvs(GetCurrentEnv(), env);
 }
 
-function IsCurrentEnvKnown(header) {
-    return IsKnownEnv(GetCurrentEnv(), header);
-}
-
-function IsCurrentEnvAllowed(header) {
-    return IsAllowedEnv(GetCurrentEnv(), header);
-}
-
 // -------------------------------------------------------------------------------------------------
 // Environment name variants related functions.
 // -------------------------------------------------------------------------------------------------
@@ -266,8 +257,6 @@ const exports = {
     FullName:             GetFullEnvName,
     IsAllowed:            IsAllowedEnv,
     IsCurrent:            IsCurrentEnv,
-    IsCurrentAllowed:     IsCurrentEnvAllowed,
-    IsCurrentKnown:       IsCurrentEnvKnown,
     IsDefault:            IsDefaultEnv,
     IsFoursightFourfront: IsFoursightFourfront,
     IsKnown:              IsKnownEnv,

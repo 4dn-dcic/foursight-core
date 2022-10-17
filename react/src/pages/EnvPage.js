@@ -27,7 +27,7 @@ const EnvPage = (props) => {
     let navigate = useNavigate();
 
     function IsKnownCurrentEnv() {
-        return Env.IsCurrentKnown(header);
+        return Env.IsKnown(Env.Current(), header);
     }
 
     function IsCurrentEnv(env) {
@@ -61,8 +61,8 @@ const EnvPage = (props) => {
 
     // TODO: clean up this styles stuff.
 
-    const boxClass = IsKnownCurrentEnv() && Env.IsCurrentAllowed(header) ? ("boxstyle info") : "boxstyle check-warn";
-    const boxTextColor = IsKnownCurrentEnv() && Env.IsCurrentAllowed(header) ? "darkblue" : "#6F4E37";
+    const boxClass = IsKnownCurrentEnv() && Env.IsAllowed(Env.Current(), header) ? ("boxstyle info") : "boxstyle check-warn";
+    const boxTextColor = IsKnownCurrentEnv() && Env.IsAllowed(Env.Current(), header) ? "darkblue" : "#6F4E37";
 
     function envNameTextStyles(env) {
         return {

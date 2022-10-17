@@ -1,8 +1,12 @@
 import copy
+import logging
 from typing import Optional, Tuple
 import os
 from dcicutils import ff_utils
 from .gac import Gac
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 
 class Envs:
@@ -79,6 +83,5 @@ class Envs:
                         last_name = user.get("last_name")
                     allowed_envs.append(known_env["full_name"])
             except Exception as e:
-                print(f"Exception getting allowed envs for: {email}")
-                print(e)
+                logger.warning(f"Exception getting allowed envs for {email}: {e}")
         return allowed_envs, first_name, last_name

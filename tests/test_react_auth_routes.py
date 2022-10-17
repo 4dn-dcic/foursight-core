@@ -1,7 +1,17 @@
 import mock
 from foursight_core.react.api import react_routes
 from foursight_core.react.api.react_api import ReactApi
-from test_react_auth_defs import *
+from test_react_auth_defs import (
+    ALLOWED_ENV,
+    AUTH,
+    DEFAULT_ENV,
+    DISALLOWED_ENV,
+    create_test_authtoken_expired,
+    create_test_authtoken_good,
+    create_test_authtoken_invalid_auth0_secret,
+    create_test_authtoken_munged,
+    create_test_request
+)
 
 
 def create_test_route_response_body(environ: str):

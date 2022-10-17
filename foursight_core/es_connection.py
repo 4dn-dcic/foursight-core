@@ -1,7 +1,9 @@
 import os
 import json
 import time
+from typing import Tuple
 from .abstract_connection import AbstractConnection
+from dcicutils.misc_utils import ignored
 from elasticsearch import (
     # Elasticsearch,
     # TransportError,
@@ -142,7 +144,7 @@ class ESConnection(AbstractConnection):
         resp = self.es.indices.stats(index=self.index, metric='store')
         return resp['_all']['total']['store']['size_in_bytes']
 
-    def search(self, search, key='_source') -> [list, int]:
+    def search(self, search, key='_source') -> Tuple[list, int]:
         """
         Inner function that passes doc as a search parameter to ES. Based on the
         execute_search method in Fourfront.
@@ -243,7 +245,8 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        raw_result, unused_total = self.search(search)
+        raw_result, total = self.search(search)
+        ignored(total)
         if checks is not None:
             # figure out which checks we didn't find, add a placeholder check so
             # that check is still rendered on the UI
@@ -272,7 +275,8 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        result, unused_total = self.search(search, key='_id')
+        result, total = self.search(search, key='_id')
+        ignored(total)
         return result
 
     def list_all_keys_w_prefix(self, prefix):
@@ -297,7 +301,8 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        result, unused_total = self.search(search, key='_id')
+        result, total = self.search(search, key='_id')
+        ignored(total)
         return result
 
     def get_all_objects(self):
@@ -318,7 +323,8 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        result, unused_total = self.search(search)
+        result, total = self.search(search)
+        ignored(total)
         return result
 
     def delete_keys(self, key_list):
