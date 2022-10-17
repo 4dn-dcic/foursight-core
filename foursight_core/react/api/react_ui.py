@@ -51,12 +51,23 @@ REACT_WHITELISTED_FILE_PATH_SUFFIXES = [
 class ReactUi:
 
     def __init__(self, react_api):
-        self.react_api = react_api
+        self._react_api = react_api
 
-    cache_static_files = {}
+    _cache_static_files = {}
 
     @staticmethod
-    def is_file_whitelisted(file: str) -> bool:
+    def _is_known_file_suffix(file: str) -> bool:
+        return any(file.endswith(file_info["suffix"]) for file_info in REACT_STATIC_FILE_TYPES)
+
+    @staticmethod
+    def _get_file_info(file: str) -> Optional[dict]:
+        for info in REACT_STATIC_FILE_TYPES:
+            if file.endswith(info["suffix"]):
+                return info
+        return None
+
+    @staticmethod
+    def _is_file_whitelisted(file: str) -> bool:
         """
         To be as restrictive as possible we ONLY allow the above whitelistted files.
         """
@@ -64,13 +75,6 @@ class ReactUi:
             if file.endswith(suffix):
                 return True
         return False
-
-    @staticmethod
-    def get_file_info(file: str) -> Optional[dict]:
-        for info in REACT_STATIC_FILE_TYPES:
-            if file.endswith(info["suffix"]):
-                return info
-        return None
 
     def serve_static_file(self, env: str, **kwargs) -> Response:
 
@@ -93,7 +97,7 @@ class ReactUi:
             # But not in 4dn/foursight-development:
             # https://cm3dqx36s7.execute-api.us-east-1.amazonaws.com/api/react/logo192.png
             # Anyways for now the React UI references images at external sites not from here.
-            if any(env.endswith(file["suffix"]) for file in REACT_FILE_TYPES):
+            if self._is_known_file_suffix(env):
                 # If the 'environ' appears to refer to a file then we take this
                 # to mean the file in the main React directory. Note that this
                 # means 'environ' may NOT be a value ending in the above suffixes.
@@ -101,26 +105,32 @@ class ReactUi:
         for path in args:
             file = os.path.join(file, path)
 
-        if not self.is_file_whitelisted(file):
-            return self.react_api.create_forbidden_response()
+        file_info = self._get_file_info(file)
+        if file_info:
+            content_type = file_info["content_type"]
+            open_mode = file_info["open_mode"]
+        else:
+            # If not recognized then serve the default (index.html) file;
+            # this is actually the common case of getting any React UI path.
+            file = os.path.join(REACT_BASE_DIR, REACT_DEFAULT_FILE)
+            content_type = "text/html"
+            open_mode = "r"
+        file = os.path.normpath(file)
 
-        file_info = self.get_file_info(file)
-        if not file_info:
-            return self.react_api.create_forbidden_response()
+        # Restrict to known whitelisted files.
+        if not self._is_file_whitelisted(file):
+            return self._react_api.create_forbidden_response()
 
-        content_type = file_info["content_type"]
-        open_mode = file_info["open_mode"]
-
-        response = ReactUi.cache_static_files.get(file)
+        response = ReactUi._cache_static_files.get(file)
         if not response:
-            response = self.react_api.create_success_response("react_serve_static_file", content_type)
+            response = self._react_api.create_success_response("react_serve_static_file", content_type)
             try:
                 with io.open(file, open_mode) as f:
                     response.body = f.read()
             except Exception as e:
                 message = f"Exception serving static React file ({file} | {content_type}): {e}"
                 logger.error(message)
-                return self.react_api.create_error_response(message)
-            response = self.react_api.process_response(response)
-            ReactUi.cache_static_files[file] = response
+                return self._react_api.create_error_response(message)
+            response = self._react_api.process_response(response)
+            ReactUi._cache_static_files[file] = response
         return response
