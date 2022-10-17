@@ -1,9 +1,13 @@
 import boto3
 import cron_descriptor
+import logging
 from typing import Optional
 import os
 from ...decorators import Decorators
 from .envs import Envs
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 
 class Checks:
@@ -16,9 +20,18 @@ class Checks:
     cache_lambdas = None
 
     def get_checks_raw(self) -> dict:
+        """
+        Returns a dictionary containing the pristine, original check_setup.json file contents.
+        """
         return self.check_setup
 
-    def get_checks(self, env: str) -> dict:
+    def _get_checks(self, env: str) -> dict:
+        """
+        Returns a dictionary containing all checks, annotated with various info,
+        e.g. the (cron) schedule from the associated lambdas, and check kwargs,
+        from the check function decorators; filtered by the given env name.
+        Cached on/after the first call.
+        """
         if not Checks.cache_checks:
             checks = self.get_checks_raw()
             for check_key in checks.keys():
@@ -31,30 +44,39 @@ class Checks:
         return self._filter_checks_by_env(Checks.cache_checks, env)
 
     def get_checks_grouped(self, env: str) -> list:
+        """
+        Like _get_checks but returns the checks grouped by their group names.
+        """
         checks_groups = []
-        checks = self.get_checks(env)
-        for check_setup_item_name in checks:
-            check_setup_item = checks[check_setup_item_name]
-            check_setup_item_group = check_setup_item["group"]
+        checks = self._get_checks(env)
+        for check_name in checks:
+            check_item = checks[check_name]
+            check_item_group = check_item["group"]
             # TODO: Probably a more pythonic way to do this.
             found = False
             for grouped_check in checks_groups:
-                if grouped_check["group"] == check_setup_item_group:
-                    grouped_check["checks"].append(check_setup_item)
+                if grouped_check["group"] == check_item_group:
+                    grouped_check["checks"].append(check_item)
                     found = True
                     break
             if not found:
-                checks_groups.append({"group": check_setup_item_group, "checks": [check_setup_item]})
+                checks_groups.append({"group": check_item_group, "checks": [check_item]})
         return checks_groups
 
     def get_check(self, env: str, check: str) -> Optional[dict]:
-        checks = self.get_checks(env)
+        """
+        Returns the check for the given check name; filtered by the given env name.
+        """
+        checks = self._get_checks(env)
         for check_key in checks.keys():
             if check_key == check:
                 return checks[check_key]
         return None
 
-    def _filter_checks_by_env(self, checks: dict, env) -> dict:
+    def _filter_checks_by_env(self, checks: dict, env: str) -> dict:
+        """
+        Returns the given checks filtered by the given env name.
+        """
         if not env:
             return checks
         checks_for_env = {}
@@ -71,9 +93,15 @@ class Checks:
 
     @staticmethod
     def _get_stack_name() -> str:
+        """
+        Returns our AWS defined stack name, as specified by the STACK_NAME environment variable.
+        """
         return os.environ.get("STACK_NAME")
 
     def _get_stack_template(self, stack_name: str = None) -> dict:
+        """
+        Returns our AWS stack template, for our defined AWS stack.
+        """
         if not stack_name:
             stack_name = self._get_stack_name()
             if not stack_name:
@@ -81,7 +109,11 @@ class Checks:
         boto_cloudformation = boto3.client('cloudformation')
         return boto_cloudformation.get_template(StackName=stack_name)
 
-    def _get_lambdas_from_template(self, stack_template: dict) -> list:
+    @staticmethod
+    def _get_lambdas_from_template(stack_template: dict) -> list:
+        """
+        Returns the list of lambda names and associated info for our defined AWS stack.
+        """
         lambda_definitions = []
         stack_template = stack_template["TemplateBody"]["Resources"]
         for resource_key in stack_template:
@@ -100,7 +132,12 @@ class Checks:
                 })
         return lambda_definitions
 
-    def _annotate_lambdas_with_schedules_from_template(self, lambdas: list, stack_template: dict) -> list:
+    @staticmethod
+    def _annotate_lambdas_with_schedules_from_template(lambdas: list, stack_template: dict) -> list:
+        """
+        Annotates and returns the given AWS lambdas list with
+        the (cron) schedules from the given associated AWS stack template.
+        """
         stack_template = stack_template["TemplateBody"]["Resources"]
         for resource_key in stack_template:
             resource_type = stack_template[resource_key]["Type"]
@@ -130,7 +167,12 @@ class Checks:
                                         la["lambda_schedule_description"] = cron_description
         return lambdas
 
-    def _annotate_lambdas_with_function_metadata(self, lambdas: list) -> list:
+    @staticmethod
+    def _annotate_lambdas_with_function_metadata(lambdas: list) -> list:
+        """
+        Annotates and returns the given AWS lambdas list with various AWS lambda metadata,
+        e.g. the function name and ARN, code size, role, and description.
+        """
         boto_lambda = boto3.client("lambda")
         lambda_functions = boto_lambda.list_functions()["Functions"]
         for lambda_function in lambda_functions:
@@ -154,27 +196,36 @@ class Checks:
                         lambda_modified = lambda_function_tags.get("last_modified")
                         if lambda_modified:
                             la["lambda_modified"] = lambda_modified
-                    except:
+                    except Exception as e:
+                        logger.warning(f"Exception getting AWS lambdas info: {e}")
                         pass
         return lambdas
 
-    def _annotate_lambdas_with_check_setup(self, lambdas: list, checks: dict) -> list:
+    @staticmethod
+    def _annotate_lambdas_with_check_setup(lambdas: list, checks: dict) -> list:
+        """
+        Annotates and returns the given AWS lambdas list with info from the given checks.
+        """
         if not checks or not isinstance(checks, dict):
             return lambdas
-        for check_setup_item_name in checks:
-            check_setup_item = checks[check_setup_item_name]
-            check_setup_item_schedule = check_setup_item.get("schedule")
-            if check_setup_item_schedule:
-                for check_setup_item_schedule_name in check_setup_item_schedule.keys():
+        for check_name in checks:
+            check_item = checks[check_name]
+            check_item_schedule = check_item.get("schedule")
+            if check_item_schedule:
+                for check_item_schedule_name in check_item_schedule.keys():
                     for la in lambdas:
-                        if la["lambda_handler"] == check_setup_item_schedule_name or la["lambda_handler"] == "app." + check_setup_item_schedule_name:
+                        if (la["lambda_handler"] == check_item_schedule_name
+                                or la["lambda_handler"] == "app." + check_item_schedule_name):
                             if not la.get("lambda_checks"):
-                                la["lambda_checks"] = [check_setup_item_schedule_name]
-                            elif check_setup_item_schedule_name not in la["lambda_checks"]:
-                                la["lambda_checks"].append(check_setup_item_schedule_name)
+                                la["lambda_checks"] = [check_item_schedule_name]
+                            elif check_item_schedule_name not in la["lambda_checks"]:
+                                la["lambda_checks"].append(check_item_schedule_name)
         return lambdas
 
     def get_annotated_lambdas(self) -> dict:
+        """
+        Returns the dictionary of all AWS lambdas for our defined stack.
+        """
         if not Checks.cache_lambdas:
             stack_name = self._get_stack_name()
             stack_template = self._get_stack_template(stack_name)
@@ -185,31 +236,37 @@ class Checks:
             Checks.cache_lambdas = lambdas
         return Checks.cache_lambdas
 
-    def _annotate_checks_with_schedules_from_lambdas(self, checks: dict, lambdas: dict) -> None:
-        for check_setup_item_name in checks:
-            check_setup_item = checks[check_setup_item_name]
-            check_setup_item_schedule = check_setup_item.get("schedule")
-            if check_setup_item_schedule:
-                for check_setup_item_schedule_name in check_setup_item_schedule.keys():
+    @staticmethod
+    def _annotate_checks_with_schedules_from_lambdas(checks: dict, lambdas: dict) -> None:
+        """
+        Annotates the given checks with the (cron) schedule from the given associated AWS lambdas.
+        """
+        for check_name in checks:
+            check_item = checks[check_name]
+            check_schedule = check_item.get("schedule")
+            if check_schedule:
+                for check_schedule_name in check_schedule.keys():
                     for la in lambdas:
-                        if la["lambda_handler"] == check_setup_item_schedule_name or la["lambda_handler"] == "app." + check_setup_item_schedule_name:
-                            check_setup_item_schedule[check_setup_item_schedule_name]["cron"] = la["lambda_schedule"]
-                            check_setup_item_schedule[check_setup_item_schedule_name]["cron_description"] = la["lambda_schedule_description"]
+                        if (la["lambda_handler"] == check_schedule_name
+                                or la["lambda_handler"] == "app." + check_schedule_name):
+                            check_schedule[check_schedule_name]["cron"] = la["lambda_schedule"]
+                            check_schedule[check_schedule_name]["cron_description"] = la["lambda_schedule_description"]
 
-    def _annotate_checks_with_kwargs_from_decorators(self, checks: dict) -> None:
-        # Decorators.get_registry() is a dictionary keyed by (unique) decorator function name;
-        # the value of each key is an object contain these fields: args, kwargs.
-        #
+    @staticmethod
+    def _annotate_checks_with_kwargs_from_decorators(checks: dict) -> None:
+        """
+        Annotates the given checks with kwargs info from the check functions decorators.
+        """
+        # Decorators.get_registry() is a dictionary keyed by (unique) decorator function
+        # name; the value of each key is an object contain these fields: args, kwargs.
         checks_decorators = Decorators.get_registry()
         if not checks_decorators:
             return
-        for check_setup_item_name in checks:
-            check_setup_item = checks[check_setup_item_name]
-            for checks_decorator_function_name_key in checks_decorators:
-                checks_decorator = checks_decorators[checks_decorator_function_name_key]
-              # checks_decorator_function_name = checks_decorator.get("function")
-                checks_decorator_function_name = checks_decorator_function_name_key
-                if check_setup_item_name == checks_decorator_function_name:
-                    checks_decorator_kwargs = checks_decorator.get("kwargs")
-                    if checks_decorator_kwargs:
-                        check_setup_item["registered_kwargs"] = checks_decorator_kwargs
+        for check_name in checks:
+            check_item = checks[check_name]
+            for check_decorator_function_name in checks_decorators:
+                check_decorator = checks_decorators[check_decorator_function_name]
+                if check_name == check_decorator_function_name:
+                    check_decorator_kwargs = check_decorator.get("kwargs")
+                    if check_decorator_kwargs:
+                        check_item["registered_kwargs"] = check_decorator_kwargs

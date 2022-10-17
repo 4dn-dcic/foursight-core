@@ -1,5 +1,10 @@
 import boto3
+import logging
+from typing import Optional
 from .datetime_utils import convert_utc_datetime_to_useastern_datetime_string
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 
 class AwsS3:
@@ -11,7 +16,7 @@ class AwsS3:
             s3 = boto3.resource("s3")
             results = sorted([bucket.name for bucket in s3.buckets.all()])
         except Exception as e:
-            print(f"Get buckets error: {e}")
+            logger.error(f"Exception getting S3 bucket list: {e}")
             pass
         return results
 
@@ -32,39 +37,39 @@ class AwsS3:
                         })
 
         except Exception as e:
-            print(f"Get bucket keys error: {e}")
+            logger.error(f"Exception getting S3 bucket key list: {e}")
         return results
 
     SHOW_BUCKET_KEY_CONTENT_MAX_SIZE_BYTES = 50000
 
     @staticmethod
-    def  may_look_at_key_content(bucket, key, size):
+    def _may_look_at_key_content(bucket, key, size):
         if size > AwsS3.SHOW_BUCKET_KEY_CONTENT_MAX_SIZE_BYTES:
-            return False;
+            return False
         if key.endswith(".json"):
-            return True;
+            return True
         if bucket.endswith("-envs"):
-            return True;
-        return False;
+            return True
+        return False
 
     @staticmethod
-    def get_bucket_key_content_size(bucket_name: str, bucket_key_name) -> list:
+    def _get_bucket_key_content_size(bucket_name: str, bucket_key_name) -> int:
         try:
             s3 = boto3.client('s3')
             response = s3.head_object(Bucket=bucket_name, Key=bucket_key_name)
             size = response['ContentLength']
             return size
         except Exception as e:
-            print(e)
+            logger.error(f"Exception getting S3 key content size: {e}")
 
     @staticmethod
-    def get_bucket_key_contents(bucket_name: str, bucket_key_name) -> list:
+    def get_bucket_key_contents(bucket_name: str, bucket_key_name) -> Optional[list]:
         try:
-            size = AwsS3.get_bucket_key_content_size(bucket_name, bucket_key_name)
-            if not AwsS3.may_look_at_key_content(bucket_name, bucket_key_name, size):
+            size = AwsS3._get_bucket_key_content_size(bucket_name, bucket_key_name)
+            if not AwsS3._may_look_at_key_content(bucket_name, bucket_key_name, size):
                 return None
             s3 = boto3.resource("s3")
             s3_object = s3.Object(bucket_name, bucket_key_name)
             return s3_object.get()["Body"].read().decode("utf-8")
         except Exception as e:
-            print("Get bucket key contents error: " + str(e))
+            logger.error(f"Exception getting S3 key content: {e}")

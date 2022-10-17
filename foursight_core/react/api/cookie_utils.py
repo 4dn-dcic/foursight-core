@@ -9,22 +9,30 @@ from .datetime_utils import (
 from .misc_utils import is_running_locally
 
 
-def read_cookie(request: dict, cookie_name: str) -> str:
+def read_cookie(request: dict, cookie_name: str) -> Optional[str]:
+    """
+    Returns the value of the cookie of the given name from within the given request,
+    or None if it does not exist.
+    """
     if not cookie_name or not request:
         return ""
-    simple_cookies = read_cookies(request)
-    return simple_cookies.get(cookie_name)
+    simple_cookies = _read_cookies(request)
+    cookie_morsel = simple_cookies.get(cookie_name) if simple_cookies else None
+    return cookie_morsel.value if cookie_morsel else None
 
 
-def read_cookies(request: dict) -> dict:
+def _read_cookies(request: dict) -> Optional[SimpleCookie]:
+    """
+    Returns the cookies from the given request as a SimpleCookie object.
+    """
     if not request:
-        return {}
+        return None
     cookies = request.get("headers", {}).get("cookie")
     if not cookies:
-        return {}
+        return None
     simple_cookies = SimpleCookie()
     simple_cookies.load(cookies)
-    return {key: value.value for key, value in simple_cookies.items()}
+    return simple_cookies
 
 
 def create_set_cookie_string(request: dict, name: str, value: Optional[str],
@@ -32,7 +40,7 @@ def create_set_cookie_string(request: dict, name: str, value: Optional[str],
                              http_only: bool = False) -> str:
     """
     Returns a string suitable for an HTTP response to set a cookie for this given cookie info.
-    If the given expires arg is "now" then then the expiration time for the cookie will be set
+    If the given expires arg is "now" then the expiration time for the cookie will be set
     to the epoch (i.e. 1970-01-01 00:00:00) indicating it has expired; used to delete cookie.
     """
     if not name or not request:

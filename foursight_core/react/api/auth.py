@@ -1,8 +1,12 @@
 import boto3
+import logging
 import time
 from .cookie_utils import read_cookie
 from .envs import Envs
 from .jwt_utils import jwt_decode, jwt_encode
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 
 class Auth:
@@ -19,7 +23,7 @@ class Auth:
         Verifies that the given request is authenticated AND authorized, based on the authtoken
         cookie (a JWT-signed-encoded value) in the given request. If so, returns the verified and
         decoded authtoken as a dictionary. If not, returns a dictionary indicating not authorized
-        and/or not authenticated, and the basic info contained in the authtoken.
+        and/or not authenticated, and containing the basic info from the authtoken.
         """
         try:
 
@@ -67,7 +71,7 @@ class Auth:
             return authtoken_decoded
 
         except Exception as e:
-            print("Authorize exception: " + str(e))
+            logger.error(f"Authorization exception: {e}")
             return self._create_not_authenticated_response(request, "exception: " + str(e))
 
     def create_authtoken(self, jwt: str, jwt_expires_at: int, env: str, domain: str) -> str:
@@ -123,7 +127,8 @@ class Auth:
         """
         return jwt_decode(authtoken, self.auth0_client_id, self.auth0_secret)
 
-    def _create_not_authorized_response(self, request: dict, status: str, authtoken_decoded: dict, authenticated: bool = True) -> dict:
+    def _create_not_authorized_response(self, request: dict, status: str,
+                                        authtoken_decoded: dict, authenticated: bool = True) -> dict:
         """
         Creates a response suitable for a request which is NOT authorized, or NOT authenticated,
         depending on authenticated argument. Note that we still want to return some basic info,
@@ -191,15 +196,18 @@ class Auth:
                 try:
                     aws_credentials["aws_account_name"] = \
                         boto3.client('iam').list_account_aliases()['AccountAliases'][0]
-                except:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Exception (not fatal) getting AWS account alias: {e}")
                 if not aws_account_name:
                     try:
-                        aws_credentials["aws_account_name"] = \
-                            boto3.client('organizations').describe_account(AccountId=account_number).get('Account').get('Name')
-                    except:
-                        pass
+                        aws_credentials["aws_account_name"] = (
+                            boto3.client('organizations').
+                            describe_account(AccountId=account_number).get('Account').get('Name')
+                        )
+                    except Exception as e:
+                        logger.warning(f"Exception (not fatal) getting AWS account name: {e}")
                 Auth.cache_aws_credentials[env] = aws_credentials
-            except:
+            except Exception as e:
+                logger.warning(f"Exception (not fatal) getting AWS account info: {e}")
                 return {}
         return aws_credentials
