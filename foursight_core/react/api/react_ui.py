@@ -78,9 +78,6 @@ class ReactUi:
 
     def serve_static_file(self, env: str, **kwargs) -> Response:
 
-        # TODO: Some commentary on this.
-        env = env.replace("{environ}", env)
-
         if env == "static":
             # If the env is 'static' then we take this to mean the 'static' subdirectory;
             # this is the directory where the static (js, css, etc) React files reside.
@@ -131,6 +128,5 @@ class ReactUi:
                 message = f"Exception serving static React file ({file} | {content_type}): {e}"
                 logger.error(message)
                 return self._react_api.create_error_response(message)
-            response = self._react_api.process_response(response)
-            ReactUi._cache_static_files[file] = response
+            ReactUi._cache_static_files[file] = response = self._react_api.process_response(response)
         return response
