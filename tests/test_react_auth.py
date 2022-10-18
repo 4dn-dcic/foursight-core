@@ -30,7 +30,6 @@ def assert_authorized_response(response):
     assert response["authenticated"] == True
     assert response["authenticated_at"] == ISSUED_AT
     assert response["authenticated_until"] == EXPIRES_AT
-    assert response["authorized"] == True
     assert response["user"] == EMAIL
     assert response["user_verified"] == True
     assert response["first_name"] == FIRST_NAME

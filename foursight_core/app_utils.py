@@ -551,10 +551,11 @@ class AppUtilsCore(ReactApi, Routes):
             return cls.TRIM_ERR_OUTPUT
         return output
 
-    def sort_dictionary_by_lowercase_keys(self, dictionary: dict) -> dict:
+    def sort_dictionary_by_case_insensitive_keys(self, dictionary: dict) -> dict:
         """
-        Returns the given dictionary sorted by key values (yes, dictionaries are ordered as of Python 3.7).
-        If the given value is not a dictionary it will be coerced to one.
+        Returns the given dictionary sorted by (case-insensitive) key values; yes,
+        dictionaries are ordered as of Python 3.7. If the given value is not a
+        dictionary it will be coerced to one.
         :param dictionary: Dictionary to sort.
         :return: Given dictionary sorted by key value.
         """
@@ -935,10 +936,10 @@ class AppUtilsCore(ReactApi, Routes):
             "Foursight Bucket Prefix:": get_foursight_bucket_prefix()
         }
         gac_name = get_identity_name()
-        gac_values = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(get_identity_secrets()))
-        environment_and_bucket_info = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(
+        gac_values = self.sort_dictionary_by_case_insensitive_keys(obfuscate_dict(get_identity_secrets()))
+        environment_and_bucket_info = self.sort_dictionary_by_case_insensitive_keys(obfuscate_dict(
                                         self.environment.get_environment_and_bucket_info(environ, stage_name)))
-        declared_data = self.sort_dictionary_by_lowercase_keys(EnvUtils.declared_data())
+        declared_data = self.sort_dictionary_by_case_insensitive_keys(EnvUtils.declared_data())
         dcicutils_version = pkg_resources.get_distribution('dcicutils').version
         foursight_core_version = pkg_resources.get_distribution('foursight-core').version
         versions = {
@@ -958,7 +959,7 @@ class AppUtilsCore(ReactApi, Routes):
         }
         aws_credentials = self.get_obfuscated_credentials_info(environ)
         aws_account_number = aws_credentials.get("AWS Account Number:")
-        os_environ = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
+        os_environ = self.sort_dictionary_by_case_insensitive_keys(obfuscate_dict(dict(os.environ)))
         request_dict = request.to_dict()
 
         html_resp.body = template.render(

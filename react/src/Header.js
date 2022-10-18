@@ -199,7 +199,7 @@ const Header = (props) => {
                 </tr>
                 <tr>
                     <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="1">
-                        <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight <b>React</b>. For more info click <b><a href="https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React" style={{color:"darkred"}} target="_blank" rel="noreferrer"><u>here</u></a></b>.
+                        <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight <b>React</b>.
                         For the real Foursight click <a href={Env.LegacyFoursightLink(header)} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
                     </td>
                     <td style={{background:"lightyellow"}}>

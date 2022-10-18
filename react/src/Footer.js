@@ -8,6 +8,9 @@ const Footer = (props) => {
 
     const [ header ] = useContext(HeaderData);
 
+    // TODO
+    // Get the URLs CGAP/4DN URLs below directly from the Portal.
+
     if (header.loading) return null;
     return <>
         <br />

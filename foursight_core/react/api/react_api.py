@@ -24,7 +24,7 @@ from .datetime_utils import convert_datetime_to_time_t, convert_utc_datetime_to_
 from .encoding_utils import base64_decode_to_json
 from .envs import Envs
 from .gac import Gac
-from .misc_utils import is_running_locally, sort_dictionary_by_lowercase_keys
+from .misc_utils import is_running_locally, sort_dictionary_by_case_insensitive_keys
 from .react_routes import ReactRoutes
 from .react_ui import ReactUi
 
@@ -53,11 +53,11 @@ class ReactApi(ReactRoutes):
         return response
 
     @staticmethod
-    def create_redirect_response(location: str, headers: dict) -> Response:
+    def create_redirect_response(location: str, headers: dict, body: dict = None) -> Response:
         if not headers:
             headers = {}
         headers["location"] = location
-        return Response(status_code=302, body=json.dumps(headers), headers=headers)
+        return Response(status_code=302, body=json.dumps(body if body else headers), headers=headers)
 
     @staticmethod
     def create_not_implemented_response(request: dict) -> Response:
@@ -155,10 +155,15 @@ class ReactApi(ReactRoutes):
         Called from react_routes for endpoint: /reactapi/{environ}/logout
         Note that this in an UNPROTECTED route.
         """
+        authorize_response = self.react_authorize(request, env)
+        if not authorize_response or not authorize_response["authorized"]:
+            body = {"status": "Already logged out."}
+        else:
+            body = {"status": "Logged out."}
         domain, context = app.core.get_domain_and_context(request)
         authtoken_cookie_deletion = create_delete_cookie_string(request=request, name="authtoken", domain=domain)
         redirect_url = self._get_redirect_url(request, env, domain, context)
-        return self.create_redirect_response(redirect_url, {"set-cookie": authtoken_cookie_deletion})
+        return self.create_redirect_response(redirect_url, {"set-cookie": authtoken_cookie_deletion}, body)
 
     def reactapi_header(self, request: dict, env: str) -> Response:
         """
@@ -236,7 +241,7 @@ class ReactApi(ReactRoutes):
             env_unknown = False
         if not env_unknown:
             try:
-                environment_and_bucket_info = sort_dictionary_by_lowercase_keys(
+                environment_and_bucket_info = sort_dictionary_by_case_insensitive_keys(
                     obfuscate_dict(app.core.environment.get_environment_and_bucket_info(env, stage_name))),
                 portal_url = app.core.get_portal_url(env)
             except Exception as e:
@@ -281,7 +286,7 @@ class ReactApi(ReactRoutes):
                 "foursight": get_foursight_bucket(envname=env if env else default_env, stage=stage_name),
                 "foursight_prefix": get_foursight_bucket_prefix(),
                 "info": environment_and_bucket_info,
-                "ecosystem": sort_dictionary_by_lowercase_keys(EnvUtils.declared_data()),
+                "ecosystem": sort_dictionary_by_case_insensitive_keys(EnvUtils.declared_data()),
             },
             "page": {
                 "path": request.get("context").get("path"),
@@ -297,9 +302,9 @@ class ReactApi(ReactRoutes):
             # TODO: cache this (slow).
             "gac": {
                 "name": get_identity_name(),
-                "values": sort_dictionary_by_lowercase_keys(obfuscate_dict(get_identity_secrets())),
+                "values": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(get_identity_secrets())),
              },
-            "environ": sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
+            "environ": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(dict(os.environ)))
         }
         return response
 
@@ -339,7 +344,7 @@ class ReactApi(ReactRoutes):
         response.body = sorted(users, key=lambda key: key["email_address"])
         return response
 
-    def reactapi_users_user(self, request: dict, env: str, email: str) -> Response:
+    def reactapi_get_user(self, request: dict, env: str, email: str) -> Response:
         """
         Called from react_routes for endpoint: /reactapi/{environ}/user/{email}
         Returns info on the specified user (email).
@@ -352,7 +357,7 @@ class ReactApi(ReactRoutes):
                 users.append({"email_address": email_address, "record": user})
             except Exception as e:
                 users.append({"email_address": email_address, "record": {"error": str(e)}})
-        response = self.create_success_response("reactapi_users_user")
+        response = self.create_success_response("reactapi_get_user")
         response.body = sorted(users, key=lambda key: key["email_address"])
         return response
 

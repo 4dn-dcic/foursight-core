@@ -79,18 +79,21 @@ class ReactRoutes:
     @staticmethod
     @app.route(ROUTE_PREFIX + "reactapi/{environ}/header", methods=["GET"], cors=CORS)
     def reactapi_route_header(environ: str):
+        # Note NON-PROTECTED route.
         request = app.current_request.to_dict()
         return app.core.reactapi_header(request=request, env=environ)
 
     @staticmethod
     @app.route(ROUTE_PREFIX + "reactapi/header", methods=["GET"], cors=CORS)
     def reactapi_route_header_noenv():
+        # Note NON-PROTECTED route.
         request = app.current_request.to_dict()
         return app.core.reactapi_header(request=request, env=app.core.get_default_env())
 
     @staticmethod
     @app.route(ROUTE_PREFIX + "reactapi/{environ}/logout", methods=["GET"], cors=CORS)
     def reactapi_route_logout(environ: str):
+        # Note NON-PROTECTED route. But send back message if already logged out.
         # Note that environ is not strictly required for logout,
         # since we logout from all environments, but is useful
         # for the redirect back, and just for completeness.
@@ -116,7 +119,7 @@ class ReactRoutes:
     @route_requires_authorization
     def reactapi_route_users_user(environ: str, email: str):
         request = app.current_request.to_dict()
-        return app.core.reactapi_users_user(request=request, env=environ, email=email)
+        return app.core.reactapi_get_user(request=request, env=environ, email=email)
 
     @staticmethod
     @app.route(ROUTE_PREFIX + "reactapi/{environ}/checks", methods=["GET"], cors=CORS)

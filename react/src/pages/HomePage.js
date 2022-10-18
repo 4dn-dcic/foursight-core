@@ -19,8 +19,7 @@ const HomePage = (props) => {
                     To go to the <b>real</b> Foursight click <a href={Env.LegacyFoursightLink(header)} style={{color:"darkred"}}><b><u>here</u></b></a>. <br />
                     <hr style={{borderTop:"1px solid darkred",marginTop:"8",marginBottom:"8"}}/>
                     <small>
-                        For more info click <b><a href="https://hms-dbmi.atlassian.net/wiki/spaces/~627943f598eae500689dbdc7/pages/2882699270/Foursight+React" style={{color:"#8A6D3B"}} target="_blank" rel="noreferrer"><u>here</u></a></b> or
-                        contact: <b><a href="mailto:david_michaels@hms.harvard.edu" style={{color:"#8A6D3B",textDecoration:"none"}}>david_michaels@hms.harvard.edu</a></b>
+                        For more info contact: <b><a href="mailto:david_michaels@hms.harvard.edu" style={{color:"#8A6D3B",textDecoration:"none"}}>david_michaels@hms.harvard.edu</a></b>
                     </small>
                 </span>
             </div>

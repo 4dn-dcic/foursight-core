@@ -27,6 +27,7 @@ function GetHomeUrl() {
 // then will not include an environment (unusual if not erroneous); or if
 // the env argument is an object then it is assumed to be the global header
 // data object from which we will use the default environment.
+// For example: GetPath("/users", "some-env") == "/api/react/some-env/users"
 //
 function GetPath(path, env = true, envFallback = null) {
     if (!Str.HasValue(path)) {
@@ -108,6 +109,9 @@ function GetCurrentLogicalPath() {
 // Links functions.
 // -------------------------------------------------------------------------------------------------
 
+// TODO
+// Get these kinds of URLs CGAP/4DN URLs below directly from the Portal or env bucket.
+//
 function GetPortalLink(header) {
     if (Env.IsFoursightFourfront(header)) {
         return "https://" +  Env.PublicName(Env.Current(), header) + ".4dnucleome.org/";

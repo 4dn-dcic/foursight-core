@@ -1,5 +1,6 @@
 import copy
 import jwt as jwtlib
+from dcicutils.misc_utils import get_error_message
 
 JWT_AUDIENCE_PROPERTY_NAME = "aud"
 
@@ -23,7 +24,7 @@ def jwt_encode(value: dict, audience: str, secret: str) -> str:
     if not value:
         raise ValueError("Attempt to encode JWT for empty value.")
     elif not isinstance(value, dict):
-        raise Exception("Attempt to encode JWT for non-dictionary value.")
+        raise ValueError("Attempt to encode JWT for non-dictionary value.")
     if audience:
         # Note: if an audience (aud) is NOT present in the value to sign/encode then
         # jwtlib will raise: Exception decoding JWT - Token is missing the "aud" claim.
@@ -43,7 +44,7 @@ def jwt_encode(value: dict, audience: str, secret: str) -> str:
             encoded_value = encoded_value.decode("utf-8")
         return encoded_value
     except Exception as e:
-        raise Exception(f"Exception signing/encoding JWT: {str(e)}")
+        raise Exception(f"Exception signing/encoding JWT: {get_error_message(e)}")
 
 
 def jwt_decode(jwt: str, audience: str, secret: str) -> dict:
@@ -61,4 +62,4 @@ def jwt_decode(jwt: str, audience: str, secret: str) -> dict:
         # very good since we do this on every (protected) React API call.
         return jwtlib.decode(jwt, secret, audience=audience, leeway=30, options={"verify_signature": True}, algorithms=["HS256"])
     except Exception as e:
-        raise Exception(f"Exception verifying/decoding JWT: {str(e)}")
+        raise Exception(f"Exception verifying/decoding JWT: {get_error_message(e)}")

@@ -3,15 +3,16 @@ import boto3
 import logging
 from dcicutils.diff_utils import DiffManager
 from dcicutils.env_utils import short_env_name
-from dcicutils.misc_utils import override_environ
+from dcicutils.misc_utils import override_environ, get_error_message
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import get_identity_secrets
-from .misc_utils import sort_dictionary_by_lowercase_keys
+from .misc_utils import sort_dictionary_by_case_insensitive_keys
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
+# The main purpose of this is to get the GAC name and to support comparison of two GACs. 
 class Gac:
 
     @staticmethod
@@ -20,7 +21,7 @@ class Gac:
             boto_secrets_manager = boto3.client('secretsmanager')
             return [secrets['Name'] for secrets in boto_secrets_manager.list_secrets()['SecretList']]
         except Exception as e:
-            logger.error(f"Exception getting secrets: {e}")
+            logger.error(f"Exception getting secrets: {get_error_message(e)}")
             return []
 
     @staticmethod
@@ -56,7 +57,7 @@ class Gac:
         diff = DiffManager(label=None)
         diffs = diff.diffs(gac_values_a, gac_values_b)
         return {
-            "gac": sort_dictionary_by_lowercase_keys(obfuscate_dict(gac_values_a)),
-            "gac_compare": sort_dictionary_by_lowercase_keys(obfuscate_dict(gac_values_b)),
+            "gac": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(gac_values_a)),
+            "gac_compare": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(gac_values_b)),
             "gac_diffs": diffs
         }
