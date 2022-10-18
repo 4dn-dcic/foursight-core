@@ -14,7 +14,6 @@ import Type from './Type';
 
 function GetKnownEnvs(header) {
     return header?.auth?.known_envs || Cookie.KnownEnvs();
- // return header?.known_envs || Cookie.KnownEnvs();
 }
 
 function IsKnownEnv(env, header) {
@@ -156,7 +155,6 @@ function GetCurrentEnv(header = null) {
     if (Type.IsObject(header)) {
         if (!IsKnownEnv(env, header)) {
             env = GetDefaultEnv(header);
-            // env = header?.default_env;
         }
     }
     return env;

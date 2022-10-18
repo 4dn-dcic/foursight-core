@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 class Envs:
 
+    _DEFAULT_ENV_PLACHOLDER = 'no-default-env'
+
     def __init__(self, known_envs: list):
         # This known_envs should be the list of annotated environment name objects
         # as returned by app_utils.get_unique_annotated_environment_names, where each
@@ -27,7 +29,7 @@ class Envs:
         return known_envs
 
     def get_default_env(self) -> str:
-        return os.environ.get("ENV_NAME", "no-default-env")
+        return os.environ.get("ENV_NAME", Envs._DEFAULT_ENV_PLACHOLDER)
 
     def is_known_env(self, env: str) -> bool:
         return self.find_known_env(env) is not None

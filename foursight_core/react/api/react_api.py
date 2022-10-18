@@ -147,8 +147,8 @@ class ReactApi(ReactRoutes):
     def react_authorize(self, request: dict, env: str) -> dict:
         return self.auth.authorize(request, env)
 
-    def react_serve_static_file(self, env: str, **kwargs) -> Response:
-        return self.react_ui.serve_static_file(env, **kwargs)
+    def react_serve_static_file(self, env: str, paths: list) -> Response:
+        return self.react_ui.serve_static_file(env, paths)
 
     def reactapi_logout(self, request: dict, env: str) -> Response:
         """

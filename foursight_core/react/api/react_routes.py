@@ -247,36 +247,35 @@ class ReactRoutes:
     # ----------------------------------------------------------------------------------------------
 
     @staticmethod
-    def reactui_serve_static_file(environ: str, **kwargs):
-        return app.core.react_serve_static_file(env=environ, **kwargs)
+    def reactui_serve_static_file(env: str, paths: list):
+        return app.core.react_serve_static_file(env=env, paths=paths)
 
     @staticmethod
     @app.route(ROUTE_PREFIX + "react", cors=CORS)
     def reactui_route_static_file_noenv():
-        return ReactRoutes.reactui_serve_static_file(app.core.get_default_env(), **{})
+        return ReactRoutes.reactui_serve_static_file(env=app.core.get_default_env(), paths=[])
 
     @staticmethod
     @app.route(ROUTE_PREFIX + "react/{environ}", cors=CORS)
     def reactui_route_0(environ):
-        return ReactRoutes.reactui_serve_static_file(environ, **{})
+        return ReactRoutes.reactui_serve_static_file(env=environ, paths=[])
 
     @staticmethod
     @app.route(ROUTE_PREFIX + "react/{environ}/{path1}", cors=CORS)
     def reactui_route_1(environ, path1):
-        return ReactRoutes.reactui_serve_static_file(environ, **{"path1": path1})
+        return ReactRoutes.reactui_serve_static_file(env=environ, paths=[path1])
 
     @staticmethod
     @app.route(ROUTE_PREFIX + "react/{environ}/{path1}/{path2}", cors=CORS)
     def reactui_route_2(environ, path1, path2):
-        return ReactRoutes.reactui_serve_static_file(environ, **{"path1": path1, "path2": path2})
+        return ReactRoutes.reactui_serve_static_file(env=environ, paths=[path1, path2])
 
     @staticmethod
     @app.route(ROUTE_PREFIX + "react/{environ}/{path1}/{path2}/{path3}", cors=CORS)
     def reactui_route_3(environ, path1, path2, path3):
-        return ReactRoutes.reactui_serve_static_file(environ, **{"path1": path1, "path2": path2, "path3": path3})
+        return ReactRoutes.reactui_serve_static_file(env=environ, paths=[path1, path2, path3])
 
     @staticmethod
     @app.route(ROUTE_PREFIX + "react/{environ}/{path1}/{path2}/{path3}/{path4}", cors=CORS)
     def reactui_route_4(environ, path1, path2, path3, path4):
-        return ReactRoutes.reactui_serve_static_file(environ, **{"path1": path1,
-                                                                 "path2": path2, "path3": path3, "path4": path4})
+        return ReactRoutes.reactui_serve_static_file(env=environ, paths=[path1, path2, path3, path4])

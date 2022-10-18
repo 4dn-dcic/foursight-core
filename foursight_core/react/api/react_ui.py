@@ -76,7 +76,7 @@ class ReactUi:
                 return True
         return False
 
-    def serve_static_file(self, env: str, **kwargs) -> Response:
+    def serve_static_file(self, env: str, paths: list) -> Response:
 
         if env == "static":
             # If the env is 'static' then we take this to mean the 'static' subdirectory;
@@ -85,8 +85,7 @@ class ReactUi:
             file = os.path.join(_REACT_BASE_DIR, "static")
         else:
             file = _REACT_BASE_DIR
-        args = kwargs.values()
-        if not args:
+        if not paths:
             # TODO: Not downloading png (et.al.) right! Works with chalice local!
             # Actually it also works in cgap-supertest:
             # https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/react/logo192.png
@@ -97,8 +96,8 @@ class ReactUi:
                 # If the 'environ' appears to refer to a file then we take this
                 # to mean the file in the main React directory. Note that this
                 # means 'environ' may NOT be a value ending in the above suffixes.
-                args = [env]
-        for path in args:
+                paths = [env]
+        for path in paths:
             file = os.path.join(file, path)
 
         file_info = self._get_file_info(file)
