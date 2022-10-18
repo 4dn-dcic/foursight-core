@@ -109,7 +109,7 @@ const EnvPage = (props) => {
                 </>)}
             </div>
             <div className="container">
-                <b>&nbsp;Available Environments</b>
+                <b>&nbsp;Available Environments</b> { header.auth?.known_envs_actual_count > Env.KnownEnvs(header)?.length && <small>&nbsp;({header.auth.known_envs_actual_count})</small> }
                 <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
                     <table style={{color:"inherit"}}><thead></thead><tbody>
                         {Env.KnownEnvs(header).map((env, envIndex) =>

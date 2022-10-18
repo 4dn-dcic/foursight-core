@@ -140,7 +140,9 @@ class Auth:
             response = authtoken_decoded
         else:
             response = {
-                "known_envs": self.envs.get_known_envs(),
+                # 2022-10-18
+                # No longer including known-envs in unauthorized responses.
+                # "known_envs": self.envs.get_known_envs(),
                 "default_env": self.envs.get_default_env(),
                 "domain": self._get_domain(request),
                 JWT_AUDIENCE_PROPERTY_NAME: self.auth0_client_id  # Needed for Auth0Lock login box on client-side.

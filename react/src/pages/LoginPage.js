@@ -128,8 +128,14 @@ const LoginPage = (props) => {
                             { header?.auth?.initial_env && <>
                                 Initial environment: <Link to={Client.Path("/env", Env.PreferredName(header.auth.initial_env, header))} style={{color:"inherit"}}>{Env.PreferredName(header.auth.initial_env, header)}</Link> <br />
                             </>}
-                            { header?.auth?.known_envs && <>
-                                Available environments: {header.auth.known_envs.map((env, index) => { return <span key={index}>{index > 0 && <>, </>}{Env.PreferredName(env, header)}</span>})} <br />
+                            { Env.KnownEnvs(header) && <>
+                                Available environments:
+                                {Env.KnownEnvs(header).map((env, index) => {
+                                    return <span key={index}>
+                                        {index > 0 && <>,</>}
+                                        &nbsp;{Env.PreferredName(env, header)}
+                                    </span>
+                                })} <br />
                             </>}
                             { header?.auth?.domain && <>
                                 Domain: {header.auth.domain} <br />

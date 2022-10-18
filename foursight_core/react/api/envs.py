@@ -22,6 +22,9 @@ class Envs:
     def get_known_envs(self) -> list:
         return self.known_envs
 
+    def get_known_envs_count(self) -> int:
+        return len(self.known_envs)
+
     def get_known_envs_with_gac_names(self, gac: Gac) -> list:
         known_envs = copy.deepcopy(self.get_known_envs())
         for known_env in known_envs:

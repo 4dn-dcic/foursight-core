@@ -145,11 +145,11 @@ const InfoPage = () => {
             <InfoRow name={"SQS Server"} value={info.get("server.sqs")} monospace={true} copy={true} size="2" />
         </InfoBox>
         <InfoBox title="Environment Names">
-            <InfoRow name={"Environment Name"} value={Env.RegularName(Env.Current(), info.data)} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Full)"} value={Env.FullName(Env.Current(), info.data)} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Short)"} value={Env.ShortName(Env.Current(), info.data)} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Public)"} value={Env.PublicName(Env.Current(), info.data)} monospace={true} copy={true} size="3" />
-            <InfoRow name={"Environment Name (Foursight)"} value={Env.FoursightName(Env.Current(), info.data)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name"} value={Env.RegularName(Env.Current(), header)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Full)"} value={Env.FullName(Env.Current(), header)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Short)"} value={Env.ShortName(Env.Current(), header)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Public)"} value={Env.PublicName(Env.Current(), header)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Foursight)"} value={Env.FoursightName(Env.Current(), header)} monospace={true} copy={true} size="3" />
         </InfoBox>
         <InfoBox title="Bucket Names">
             <InfoRow name={"Environment Bucket Name"} value={info.get("buckets.env")} monospace={true} copy={true} size="3" />

@@ -173,6 +173,17 @@ class ReactApi(ReactRoutes):
             ReactApi.cache_header[env] = data
         data = copy.deepcopy(data)
         data["auth"] = auth
+        # 2022-10-18
+        # No longer sharing known-envs widely; send only if authenticated;
+        # if not authenticated then act as-if the default-env is the only known-env,
+        # and in this case also include (as an FYI for the UI) the real number of known-envs.
+        if auth["authenticated"]:
+            data["auth"]["known_envs"] = self.envs.get_known_envs_with_gac_names(self.gac)
+        else:
+            known_envs_default = self.envs.find_known_env(self.envs.get_default_env())
+            known_envs_actual_count = self.envs.get_known_envs_count()
+            data["auth"]["known_envs"] = [ known_envs_default ]
+            data["auth"]["known_envs_actual_count"] = known_envs_actual_count
         data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
         response = self.create_success_response("reactapi_header")
         response.body = data

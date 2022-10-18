@@ -101,9 +101,8 @@ function GetAuthTokenCookie() {
                 return authToken || {};
             }
         }
-    }
-    catch { }
-    return [];
+    } catch {}
+    return {};
 }
 
 function GetAuthTokenRawCookie() {
@@ -111,34 +110,16 @@ function GetAuthTokenRawCookie() {
 }
 
 function GetKnownEnvsCookie() {
-    try {
-        const knownEnvs = GetAuthTokenCookie()?.known_envs || [];
-        return knownEnvs;
-    }
-    catch {
-        return [];
-    }
+    return GetAuthTokenCookie()?.known_envs || [];
 }
 
 function GetDefaultEnvCookie() {
-    try {
-        const defaultEnv = GetAuthTokenCookie()?.default_env || "";
-        return defaultEnv;
-    }
-    catch {
-        return [];
-    }
+    return GetAuthTokenCookie()?.default_env || "";
 }
 
 
 function GetAllowedEnvsCookie() {
-    try {
-        const allowedEnvs = GetAuthTokenCookie()?.allowed_envs || [];
-        return allowedEnvs;
-    }
-    catch {
-        return [];
-    }
+    return GetAuthTokenCookie()?.allowed_envs || [];
 }
 
 function DeleteAuthCookie() {
