@@ -17,6 +17,7 @@ from ...app import app
 from ...decorators import Decorators
 from ...route_prefixes import ROUTE_PREFIX
 from .auth import Auth
+from .auth0_config import Auth0Config
 from .aws_s3 import AwsS3
 from .checks import Checks
 from .cookie_utils import create_delete_cookie_string, create_set_cookie_string, read_cookie
@@ -41,6 +42,8 @@ class ReactApi(ReactRoutes):
         self.auth = Auth(app.core.get_auth0_client_id(self.envs.get_default_env()),
                          app.core.get_auth0_secret(self.envs.get_default_env()), self.envs)
         self.react_ui = ReactUi(self)
+        # TODO: This needs to be per env.
+        self.auth0_config = Auth0Config(app.core.get_portal_url(self.envs.get_default_env()))
 
     cache_header = {}
 
@@ -564,6 +567,11 @@ class ReactApi(ReactRoutes):
         response.body = AwsS3.get_bucket_key_contents(bucket, key)
         return response
 
+    def reactapi_auth0_config(self, request: dict):
+        response = self.create_success_response("reactapi_auth0_config")
+        response.body = self.auth0_config.get_config_data()
+        return response
+
     def reactapi_reload_lambda(self, request: dict, env: str, lambda_name: str) -> Response:
         """
         Called from react_routes for endpoint: /reactapi/{environ}/__reloadlambda__
@@ -578,5 +586,4 @@ class ReactApi(ReactRoutes):
         Called from react_routes for endpoint: /reactapi/{environ}/__clearcache___
         Not yet implemented.
         """
-        # TODO
-        pass
+        return self.create_not_implemented_response(request)

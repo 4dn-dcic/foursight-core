@@ -9,6 +9,8 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
+# TODO
+# Rationalize this with dcicutil.utils env_utils functions for name versions, normalizations, comparisons.
 class Envs:
 
     _DEFAULT_ENV_PLACHOLDER = 'no-default-env'

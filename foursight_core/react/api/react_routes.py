@@ -230,6 +230,13 @@ class ReactRoutes:
         return app.core.reactapi_aws_s3_buckets_key_contents(request=request, env=environ, bucket=bucket, key=key)
 
     @staticmethod
+    @app.route(ROUTE_PREFIX + "reactapi/auth0_config", methods=["GET"], cors=CORS)
+    def reactapi_route_auth0_config():
+        # Note NON-PROTECTED route.
+        request = app.current_request.to_dict()
+        return app.core.reactapi_auth0_config(request=request)
+
+    @staticmethod
     @app.route(ROUTE_PREFIX + "reactapi/{environ}/__reloadlambda__", methods=["GET"], cors=CORS)
     @route_requires_authorization
     def reactapi_route_reload_lambda(environ: str):
