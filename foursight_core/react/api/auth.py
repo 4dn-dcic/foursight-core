@@ -158,14 +158,7 @@ class Auth:
 
     @staticmethod
     def _get_domain(request: dict) -> str:
-        if request:
-            try:
-                return request.get("headers", {}).get("host")
-            except KeyError:
-                pass
-            except Exception as e:
-                raise e
-        return ""
+        return request.get("headers", {}).get("host")
 
     def get_aws_credentials(self, env: str) -> dict:
         """
