@@ -39,7 +39,6 @@ logger = logging.getLogger(__name__)
 # - prompt (e.g. "select_account")
 # - connections (e.g. ["github", "google-oauth2"])
 #
-
 class Auth0Config:
 
     def __init__(self, portal_url: str) -> None:
@@ -63,10 +62,10 @@ class Auth0Config:
         This caches its data.  
         """
         if not self._config_data:
-            self._config_data = self.get_config_data_nocache()
+            self._config_data = self._get_config_data_nocache()
         return self._config_data
 
-    def get_config_data_nocache(self) -> dict:
+    def _get_config_data_nocache(self) -> dict:
         """
         Returns relevant info (dicionary) from the Auth0 config URL in canonical form.
         It contains these properties: domain, client, sso, scope, prompt, connections.
@@ -97,10 +96,10 @@ class Auth0Config:
         This caches its data.  
         """
         if not self._config_raw_data:
-            self._config_raw_data = self.get_config_raw_data_nocache()
+            self._config_raw_data = self._get_config_raw_data_nocache()
         return self._config_raw_data
 
-    def get_config_raw_data_nocache(self) -> dict:
+    def _get_config_raw_data_nocache(self) -> dict:
         """
         Returns raw data (dictionary) from the Auth0 config URL.
         This does NOT caches its data.  
@@ -112,6 +111,9 @@ class Auth0Config:
             return None
 
     def refresh(self) -> None:
+        """
+        Clears out the caches, so next call to get_config_data() and get_config_raw_data() get fresh data.
+        """
         self._config_data = self._config_raw_data = {}
 
     def get_domain(self) -> Optional[str]:

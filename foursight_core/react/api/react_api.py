@@ -568,6 +568,7 @@ class ReactApi(ReactRoutes):
         return response
 
     def reactapi_auth0_config(self, request: dict):
+        # TODO: This needs to be per env.
         response = self.create_success_response("reactapi_auth0_config")
         response.body = self.auth0_config.get_config_data()
         return response

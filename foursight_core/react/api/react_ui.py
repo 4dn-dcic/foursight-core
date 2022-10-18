@@ -81,7 +81,7 @@ class ReactUi:
         if env == "static":
             # If the env is 'static' then we take this to mean the 'static' subdirectory;
             # this is the directory where the static (js, css, etc) React files reside.
-            # Note that this means a real 'environ' may not be the literal string 'static'.
+            # Note this means that an environment name may not be the literal string 'static'.
             file = os.path.join(_REACT_BASE_DIR, "static")
         else:
             file = _REACT_BASE_DIR
@@ -93,9 +93,9 @@ class ReactUi:
             # https://cm3dqx36s7.execute-api.us-east-1.amazonaws.com/api/react/logo192.png
             # Anyways for now the React UI references images at external sites not from here.
             if self._is_known_file_suffix(env):
-                # If the 'environ' appears to refer to a file then we take this
-                # to mean the file in the main React directory. Note that this
-                # means 'environ' may NOT be a value ending in the above suffixes.
+                # If the env appears to refer to a file name then we take this
+                # to mean a file in the main React directory. Note this means means
+                # the environment name may NOT be a value ending in the above suffixes.
                 paths = [env]
         for path in paths:
             file = os.path.join(file, path)

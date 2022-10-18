@@ -233,6 +233,7 @@ class ReactRoutes:
     @app.route(ROUTE_PREFIX + "reactapi/auth0_config", methods=["GET"], cors=CORS)
     def reactapi_route_auth0_config():
         # Note NON-PROTECTED route.
+        # TODO: This needs to be per env.
         request = app.current_request.to_dict()
         return app.core.reactapi_auth0_config(request=request)
 
