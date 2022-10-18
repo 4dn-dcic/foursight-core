@@ -1,6 +1,8 @@
 import copy
 import jwt as jwtlib
 
+JWT_AUDIENCE_PROPERTY_NAME = "aud"
+
 
 def jwt_encode(value: dict, audience: str, secret: str) -> str:
     """
@@ -25,14 +27,14 @@ def jwt_encode(value: dict, audience: str, secret: str) -> str:
     if audience:
         # Note: if an audience (aud) is NOT present in the value to sign/encode then
         # jwtlib will raise: Exception decoding JWT - Token is missing the "aud" claim.
-        value_aud = value.get("aud")
+        value_aud = value.get(JWT_AUDIENCE_PROPERTY_NAME)
         if value_aud != audience:
             # If given an audience, and it doesn't match the audience in
             # the given value, then make a copy (as we don't want to change
             # the given value out from under the caller), and update it.
             value = copy.deepcopy(value)
-            value["aud"] = audience
-    if not value.get("aud"):
+            value[JWT_AUDIENCE_PROPERTY_NAME] = audience
+    if not value.get(JWT_AUDIENCE_PROPERTY_NAME):
         raise Exception("Cannot encode object as JWT without an 'aud' property")
     try:
         encoded_value = jwtlib.encode(value, secret, algorithm="HS256")

@@ -3,7 +3,7 @@ import logging
 import time
 from .cookie_utils import read_cookie
 from .envs import Envs
-from .jwt_utils import jwt_decode, jwt_encode
+from .jwt_utils import JWT_AUDIENCE_PROPERTY_NAME, jwt_decode, jwt_encode
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -41,10 +41,11 @@ class Auth:
 
             # Sanity check the decoded authtoken.
 
+            # TODO: Rethink this next line ...
             if authtoken_decoded["authorized"] is not True or authtoken_decoded["authenticated"] is not True:
                 return self._create_not_authenticated_response(request, "invalid-authtoken-auth", authtoken_decoded)
 
-            if self.auth0_client_id != authtoken_decoded["aud"]:
+            if self.auth0_client_id != authtoken_decoded[JWT_AUDIENCE_PROPERTY_NAME]:
                 return self._create_not_authenticated_response(request, "invalid-authtoken-aud", authtoken_decoded)
 
             domain = self._get_domain(request)
@@ -143,7 +144,7 @@ class Auth:
                 "known_envs": self.envs.get_known_envs(),
                 "default_env": self.envs.get_default_env(),
                 "domain": self._get_domain(request),
-                "aud": self.auth0_client_id  # Needed for Auth0Lock login box on client-side.
+                JWT_AUDIENCE_PROPERTY_NAME: self.auth0_client_id  # Needed for Auth0Lock login box on client-side.
             }
         response["authenticated"] = authenticated
         response["authorized"] = False
@@ -187,8 +188,8 @@ class Auth:
                 # Try getting the account name though probably no permission at the moment.
                 aws_account_name = None
                 try:
-                    aws_credentials["aws_account_name"] = \
-                        boto3.client('iam').list_account_aliases()['AccountAliases'][0]
+                    aws_credentials["aws_account_name"] = (
+                        boto3.client('iam').list_account_aliases()['AccountAliases'][0])
                 except Exception as e:
                     logger.warning(f"Exception (not fatal) getting AWS account alias: {e}")
                 if not aws_account_name:
