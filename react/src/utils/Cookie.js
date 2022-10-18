@@ -16,6 +16,7 @@ const _lastUrlCookieName      = "lasturl";
 const _readOnlyModeCookieName = "readonly";
 const _cookiePath             = "/";
 const _cookieDomain           = document.location.hostname;
+const _EPOCH_DATE_STRING      = "Thu, 01 Jan 1970 00:00:00 UTC";
 
 // -------------------------------------------------------------------------------------------------
 // General cookie functions.
@@ -25,6 +26,8 @@ function GetCookieDomain() {
     return Context.Client.IsLocal() ? _cookieDomain : "." + _cookieDomain;
 }
 
+// Gets (reads) the value of the cookie of the given name.
+//
 function GetCookie(name) {
     if (Str.HasValue(name)) {
         const value = _cookies.get(name);
@@ -33,6 +36,8 @@ function GetCookie(name) {
     return null;
 }
 
+// Deletes the cookie of the given name.
+//
 function DeleteCookie(name) {
     if (Str.HasValue(name)) {
          //
@@ -44,19 +49,23 @@ function DeleteCookie(name) {
         // _cookies.remove(name, { path: _cookiePath });
         //
         const domain = GetCookieDomain();
-        const cookieDeletionString = `${name}=; Path=${_cookiePath}; Domain=${domain}; Expires=Thu, 01 Jan 1970 00:00:00 UTC`;
+        const cookieDeletionString = `${name}=; Path=${_cookiePath}; Domain=${domain}; Expires=${_EPOCH_DATE_STRING}`;
         document.cookie = cookieDeletionString;
     }
 }
 
+// Sets (writes) the cookie of the given name with the given value.
+// The optional expires argument should be a Date object specifying
+// the absolute (local) time at which the cookie should expires;
+// if not set then no expiration time (i.e. session cookie).
+//
 function SetCookie(name, value, expires = null) {
     if (Str.HasValue(name)) {
         if (Str.HasValue(value)) {
-            //
-            // _cookies.set(name, value, { path: _cookiePath, expires: expires });
-            //
-            const domain = GetCookieDomain();
-            _cookies.set(name, value, { domain: domain, path: _cookiePath});
+            if (!Type.IsDateTime(expires)) {
+                expires = null;
+            }
+            _cookies.set(name, value, { domain: GetCookieDomain(), path: _cookiePath, expires: expires});
         } else if (Type.IsNull(value)) {
             DeleteCookie(name);
         }
@@ -158,6 +167,8 @@ function SetRedirectCookie(url, expires = null) {
 
 // -------------------------------------------------------------------------------------------------
 // Readonly mode related cookies.
+// Boolean value indicating whether or not we are (globally) in "read-only" mode, meaning that
+// possibly destructive (i.e. not read-only, i.e. possibly read-write) operations are disabled.
 // -------------------------------------------------------------------------------------------------
 
 function IsReadOnlyMode() {

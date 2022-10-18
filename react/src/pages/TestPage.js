@@ -6,6 +6,7 @@
 // import Styles from '../Styles';
 import { useEffect } from 'react';
 import Server from '../utils/Server';
+import Cookie from '../utils/Cookie';
 import { useFetch, useFetching, useFetched } from '../utils/Fetch';
 import uuid from 'react-uuid';
 import XyzzyComponent from './XyzzyComponent';
@@ -47,7 +48,8 @@ const TestPage = () => {
     const [ fetched ] = useFetched();
 
     return <>
-                <TestSub/>
+        <span onClick={() => Cookie.Set('goo', 'bar')}>write-cookie</span>
+        <TestSub/>
         <div><span className="cursor-hand" onClick={() => mainFetchResponse.refresh()}>MAIN-FETCH</span>&nbsp;|&nbsp;
              <span className="cursor-hand" onClick={() => someFetchResponse.refresh()}>SOME-FETCH</span>&nbsp;|&nbsp;
              <span className="cursor-hand"

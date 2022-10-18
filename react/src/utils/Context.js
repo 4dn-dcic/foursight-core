@@ -3,6 +3,21 @@
 // I.e. Locations of client (React UI), server (React API), authentication (Auth0).
 // -------------------------------------------------------------------------------------------------
 
+// N.B. If the client (React UI) is running locally (localhost) then assume the server (React API)
+// is as well. Same deal actually if not running locally (otherwise CORS issues ensue). The only
+// time these (UI and API) are different are when running locally (localhost) in cross-origin mode,
+// e.g. with the client running on (localhost) port 3000 and the server running on (localhost) port
+// 8000; when running the server locally, i.e. chalice local, we do setup CORS to allow cross-origin
+// mode. It is currently not possible to run the client locally and the server not locally.
+// See GetServerOrigin.
+//
+// N.B. There is currently no real support for running locally (localhost) using an explicitly
+// specified, arbitrary hostname, e.g. via the /etc/hosts file. This is because Auth0 is only
+// setup to recognize a specific (whitelisted) list of URLs for the authentication callback; 
+// and a localhost URL is included, but the other URLs included are for real/existing
+// instances running non-locally.
+//
+
 const _CLIENT_BASE_PATH  = "/api/react";
 const _SERVER_BASE_PATH  = "/api/reactapi";
 const _SERVER_LOCAL_PORT = 8000
@@ -32,8 +47,7 @@ function GetClientCurrentPath() {
 }
 
 function IsLocalClient() {
-    const origin = GetClientOrigin();
-    return origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
+    return window.location.hostname === "localhost";
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -41,10 +55,20 @@ function IsLocalClient() {
 // -------------------------------------------------------------------------------------------------
 
 function GetServerOrigin() {
-    //
-    // N.B. If the client (React UI) is running locally then assume the server (React API) is as well.
-    //
-    return IsLocalClient() ? "http://localhost:" + _SERVER_LOCAL_PORT : window.location.origin;
+    if (IsLocalClient()) {
+        if (_SERVER_LOCAL_PORT === 443) {
+            return "https://localhost";
+        }
+        else if (_SERVER_LOCAL_PORT === 80) {
+            return "http://localhost";
+        }
+        else {
+            return "http://localhost:" + _SERVER_LOCAL_PORT;
+        }
+    }
+    else {
+        return window.location.origin;
+    }
 }
 
 function GetServerBasePath() {

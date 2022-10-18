@@ -31,33 +31,33 @@ class Auth:
 
             authtoken = read_cookie(request, "authtoken")
             if not authtoken:
-                return self._create_not_authenticated_response(request, "no-authtoken")
+                return self._create_unauthenticated_response(request, "no-authtoken")
 
             # Decode the authtoken cookie.
 
             authtoken_decoded = self.decode_authtoken(authtoken)
             if not authtoken_decoded:
-                return self._create_not_authenticated_response(request, "invalid-authtoken")
+                return self._create_unauthenticated_response(request, "invalid-authtoken")
 
             # Sanity check the decoded authtoken.
 
-            # TODO: Rethink this next line ...
-            if authtoken_decoded["authorized"] is not True or authtoken_decoded["authenticated"] is not True:
-                return self._create_not_authenticated_response(request, "invalid-authtoken-auth", authtoken_decoded)
+            if authtoken_decoded["authenticated"] is not True:
+                return self._create_unauthenticated_response(request, "invalid-authtoken-auth", authtoken_decoded)
+
 
             if self.auth0_client_id != authtoken_decoded[JWT_AUDIENCE_PROPERTY_NAME]:
-                return self._create_not_authenticated_response(request, "invalid-authtoken-aud", authtoken_decoded)
+                return self._create_unauthenticated_response(request, "invalid-authtoken-aud", authtoken_decoded)
 
             domain = self._get_domain(request)
             if domain != authtoken_decoded["domain"]:
-                return self._create_not_authenticated_response(request, "invalid-authtoken-domain", authtoken_decoded)
+                return self._create_unauthenticated_response(request, "invalid-authtoken-domain", authtoken_decoded)
 
             # Check the authtoken expiration time (its expiration time must be in the future i.e. greater than now).
 
             authtoken_expires_time_t = authtoken_decoded["authenticated_until"]
             current_time_t = int(time.time())
             if authtoken_expires_time_t <= current_time_t:
-                return self._create_not_authenticated_response(request, "authtoken-expired", authtoken_decoded)
+                return self._create_unauthenticated_response(request, "authtoken-expired", authtoken_decoded)
 
             # Check that the specified environment is allowed, i.e. that the request is authorized.
             # Note that if not, we end up returning HTTP 403 (not authorized) and, NOT 401 (not authenticated),
@@ -67,13 +67,13 @@ class Auth:
             allowed_envs = authtoken_decoded["allowed_envs"]
             if not self.envs.is_allowed_env(env, allowed_envs):
                 status = "not-authorized-env" if self.envs.is_known_env(env) else "not-authorized-unknown-env"
-                return self._create_not_authorized_response(request, status, authtoken_decoded)
+                return self._create_unauthorized_response(request, status, authtoken_decoded, but_is_authenticated=True)
 
-            return authtoken_decoded
+            return {**authtoken_decoded, "authorized": True}
 
         except Exception as e:
             logger.error(f"Authorization exception: {e}")
-            return self._create_not_authenticated_response(request, "exception: " + str(e))
+            return self._create_unauthenticated_response(request, "exception: " + str(e))
 
     def create_authtoken(self, jwt: str, jwt_expires_at: int, env: str, domain: str) -> str:
         """
@@ -100,7 +100,6 @@ class Auth:
             "authenticated": True,
             "authenticated_at": jwt_decoded.get("iat"),
             "authenticated_until": jwt_expires_at,
-            "authorized": True,
             "user": email,
             "user_verified": jwt_decoded.get("email_verified"),
             "first_name": first_name,
@@ -128,8 +127,8 @@ class Auth:
         """
         return jwt_decode(authtoken, self.auth0_client_id, self.auth0_secret)
 
-    def _create_not_authorized_response(self, request: dict, status: str,
-                                        authtoken_decoded: dict, authenticated: bool = True) -> dict:
+    def _create_unauthorized_response(self, request: dict, status: str,
+                                      authtoken_decoded: dict, but_is_authenticated: bool) -> dict:
         """
         Creates a response suitable for a request which is NOT authorized, or NOT authenticated,
         depending on authenticated argument. Note that we still want to return some basic info,
@@ -146,16 +145,16 @@ class Auth:
                 "domain": self._get_domain(request),
                 JWT_AUDIENCE_PROPERTY_NAME: self.auth0_client_id  # Needed for Auth0Lock login box on client-side.
             }
-        response["authenticated"] = authenticated
+        response["authenticated"] = but_is_authenticated
         response["authorized"] = False
         response["status"] = status
         return response
 
-    def _create_not_authenticated_response(self, request: dict, status: str, authtoken_decoded: dict = None) -> dict:
+    def _create_unauthenticated_response(self, request: dict, status: str, authtoken_decoded: dict = None) -> dict:
         """
         Creates a response suitable for a request which is NOT authenticated.
         """
-        return self._create_not_authorized_response(request, status, authtoken_decoded, False)
+        return self._create_unauthorized_response(request, status, authtoken_decoded, but_is_authenticated=False)
 
     @staticmethod
     def _get_domain(request: dict) -> str:
