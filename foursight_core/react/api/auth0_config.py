@@ -115,24 +115,19 @@ class Auth0Config:
         self._config_data = self._config_raw_data = {}
 
     def get_domain(self) -> Optional[str]:
-        config_raw_data = self.get_config_raw_data()
-        return config_raw_data.get("auth0Domain")
+        return self.get_config_data().get("domain")
 
     def get_client(self) -> Optional[str]:
-        config_raw_data = self.get_config_raw_data()
-        return config_raw_data.get("auth0Client")
+        return self.get_config_data().get("client")
 
     def get_sso(self) -> Optional[str]:
-        config_raw_data = self.get_config_raw_data()
-        options = config_raw_data.get("auth0Options")
-        options_auth = options.get("auth") if options else None
-        return options_auth.get("sso") if options_auth else None
+        return self.get_config_data().get("sso")
 
     def get_scope(self) -> Optional[str]:
-        config_raw_data = self.get_config_raw_data()
-        options = config_raw_data.get("auth0Options")
-        options_auth = options.get("auth") if options else None
-        options_auth_param = options_auth.get("params") if options_auth else None
-        return options_auth_param.get("scope") if options_auth_param else None
+        return self.get_config_data().get("scope")
 
-ac = Auth0Config
+    def get_prompt(self) -> Optional[str]:
+        return self.get_config_data().get("prompt")
+
+    def get_connections(self) -> Optional[str]:
+        return self.get_config_data().get("connections")
