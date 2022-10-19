@@ -152,21 +152,11 @@ class Auth0ConfigPerEnv:
         self._per_env_data = {}
 
     def define_auth0_config(self, env: str, portal_url: str) -> Auth0Config:
-        print('define auth0_config 1')
-        print(env)
-        print(portal_url)
         if not env:
-            print('define auth0_config 2')
             raise ValueError("Invalid environment argument to Auth0ConfigPerEnv.")
-        print('define auth0_config 3')
         per_env_data = self._per_env_data.get(env)
-        print('define auth0_config 4')
         if not per_env_data:
-            print('define auth0_config')
-            print(portal_url)
-            print('ok auth0_config')
             self._per_env_data[env] = Auth0Config(portal_url)
-        print('define auth0_config 5')
         return self._per_env_data[env]
 
     def get_portal_url(self, env: str) -> Optional[str]:
