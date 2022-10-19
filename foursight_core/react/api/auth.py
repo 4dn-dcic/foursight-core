@@ -1,6 +1,7 @@
 import boto3
 import logging
 import time
+from typing import Optional
 from .cookie_utils import read_cookie
 from .envs import Envs
 from .jwt_utils import JWT_AUDIENCE_PROPERTY_NAME, jwt_decode, jwt_encode
@@ -18,7 +19,7 @@ class Auth:
 
     cache_aws_credentials = {}
 
-    def authorize(self, request: dict, env: str) -> dict:
+    def authorize(self, request: dict, env: Optional[str] = None) -> dict:
         """
         Verifies that the given request is authenticated AND authorized, based on the authtoken
         cookie (a JWT-signed-encoded value) in the given request. If so, returns the verified and
@@ -59,15 +60,17 @@ class Auth:
             if authtoken_expires_time_t <= current_time_t:
                 return self._create_unauthenticated_response(request, "authtoken-expired", authtoken_decoded)
 
-            # Check that the specified environment is allowed, i.e. that the request is authorized.
-            # Note that if not, we end up returning HTTP 403 (not authorized) and, NOT 401 (not authenticated),
-            # as we would do (above) if not authenticated (done in react_routes/route_requires_authorization);
-            # the UI acts differently for these two cases.
+            # If given an env, then check that the specified environment is allowed, i.e. that
+            # the request is AUTHORIZED. If not, return HTTP 403 (not authorized); we do NOT,
+            # in this case, return 401 (not authenticated), as (above) if not authenticated;
+            # the UI acts differently for these two cases. These HTTP status are actually
+            # set in via the decorator in react_route_utils.
 
-            allowed_envs = authtoken_decoded["allowed_envs"]
-            if not self.envs.is_allowed_env(env, allowed_envs):
-                status = "not-authorized-env" if self.envs.is_known_env(env) else "not-authorized-unknown-env"
-                return self._create_unauthorized_response(request, status, authtoken_decoded, but_is_authenticated=True)
+            if env:
+                allowed_envs = authtoken_decoded["allowed_envs"]
+                if not self.envs.is_allowed_env(env, allowed_envs):
+                    status = "not-authorized-env" if self.envs.is_known_env(env) else "not-authorized-unknown-env"
+                    return self._create_unauthorized_response(request, status, authtoken_decoded, but_is_authenticated=True)
 
             return {**authtoken_decoded, "authorized": True}
 

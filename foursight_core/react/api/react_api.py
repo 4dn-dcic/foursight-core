@@ -1,7 +1,6 @@
 from chalice import Response, __version__ as chalice_version
 import copy
 import datetime
-import json
 import os
 import pkg_resources
 import platform
@@ -12,7 +11,6 @@ import urllib.parse
 from itertools import chain
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils import ff_utils
-from dcicutils.misc_utils import get_error_message
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import get_identity_name, get_identity_secrets
 from ...app import app
@@ -62,7 +60,7 @@ class ReactApi(ReactRoutes):
         if content_type:
             if id(headers) == id(ReactApi.STANDARD_HEADERS):
                 headers = {**headers}
-            headers[ReactApi.CONTENT_TYPE] = content_type if content_type else ReactApi.JSON_CONTENT_TYPE
+            headers[ReactApi.CONTENT_TYPE] = content_type
         return Response(status_code=http_status, body=body, headers=headers)
 
     @staticmethod
