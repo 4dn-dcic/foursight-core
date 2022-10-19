@@ -1,8 +1,11 @@
 from chalice import CORSConfig
+from functools import wraps
+from typing import Tuple
 import urllib.parse
 from ...app import app
 from ...route_prefixes import *
 
+import inspect
 
 # Set CORS to True if CHALICE_LOCAL; not needed if running React from Foursight
 # directly, on the same port (e.g. 8000), but useful if/when running React on a
@@ -24,6 +27,119 @@ else:
 HTTP_UNAUTHENTICATED = 401
 HTTP_UNAUTHORIZED = 403
 
+def __xyzzyroute(*args, **kwargs):
+    print("route-decorator")
+    if args:
+        print('have-args')
+        print(type(args))
+        print(args)
+        print(len(args))
+        print(args[0])
+        if isinstance(args, Tuple):
+            print('have-tuple')
+            path = args[0]
+            print("path = " + str(path) + " (" + str(type(path)) + ")")
+    else:
+        print('no-args')
+    print(kwargs)
+    def inner_route(f):
+        print('inner_route')
+        print(f)
+        print(type(f))
+        def inner_inner_route(*args, **kwargs):
+            print('inner_inner_route')
+            return f(**kwargs)
+    return inner_route(args[0], **kwargs) if isinstance(args, Tuple) and len(args) > 0 else inner_route
+
+def xyzzyroute(*args, **kwargs):
+    print("route-decorator")
+    if args:
+        print('have-args')
+        print(type(args))
+        print(args)
+        print(len(args))
+        print(args[0])
+        if isinstance(args, Tuple):
+            print('have-tuple')
+            path = args[0]
+            print("path = " + str(path) + " (" + str(type(path)) + ")")
+    else:
+        print('no-args')
+    print(kwargs)
+    if kwargs.get("authorize"):
+        print('have-authorize')
+        authorize = True
+        del kwargs["authorize"]
+    else:
+        authorize = False
+    print(authorize)
+    def inner_route(f):
+        print("inner_route")
+        print(type(f))
+        print(f)
+        print(args)
+        print(kwargs)
+        path = args[0]
+        def inner_inner_route(*args, **kwargs):
+            request = app.current_request.to_dict()
+            print('inner_inner_route call!')
+            if authorize:
+                print('SHOULD-AUTH')
+            else:
+                print('SHOULD-NOT-AUTH')
+            print(type(f))
+            print(f)
+            print(args)
+            print(kwargs)
+            print(request)
+            auth = route_requires_authorization(f)
+            print('inner_inner_route call auth object.')
+            print(type(auth))
+            print(auth)
+            auth_response = auth(*args, **kwargs)
+            print('inner_inner_route call auth response.')
+            print(auth_response)
+            print(auth_response.status_code)
+            print(auth_response.headers)
+            print(auth_response.body)
+            print('inner_inner_route returning auth response.')
+            return auth_response
+            result = f(**kwargs)
+            result.body["inner_inner_route"] = 12345678;
+            return result
+            #return {"inner_inner_route":123}
+        print('XYZZY:REGISTER:ROUTE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        xyzzy = app.route(path, **kwargs)(inner_inner_route)
+        print('inner_route: after app.route')
+        print(type(xyzzy))
+        print(xyzzy)
+        return inner_inner_route
+    return inner_route
+    #return inner_route(args[0]) if isinstance(args, Tuple) and len(args) > 0 else inner_route
+
+def route(*args, **kwargs):
+    if isinstance(args, Tuple) and len(args) > 0:
+        path = args[0]
+    else:
+        raise Exception("No arguments found for route configuration!")
+    if "authorize" in kwargs:
+        authorize = kwargs["authorize"]
+        authorize = isinstance(authorize, bool) and authorize
+        del kwargs["authorize"]
+    else:
+        authorize = False
+    def route_registration(wrapped_route_function):
+        def route_function(*args, **kwargs):
+            request = app.current_request.to_dict()
+            if authorize:
+                authorization_decorator = route_requires_authorization(wrapped_route_function)
+                return authorization_decorator(*args, **kwargs)
+            return wrapped_route_function(**kwargs)
+        if CORS:
+            kwargs["cors"] = CORS
+        app.route(path, **kwargs)(route_function)
+        return route_function
+    return route_registration
 
 def route_requires_authorization(f):
     """
@@ -42,8 +158,11 @@ def route_requires_authorization(f):
     JWT-signed-encode value containing authentication info and list allowed environment
     for the user; this value/cookie is set server-side at login time.
 
-    Note that ONLY two React API routes should NOT be authorization protected by
-    this decorator: the /{environ}/header and the /{environ}/logout endpoints/routes.
+    Note that ONLY three React API routes should NOT be authorization protected by this decorator:
+      -> /{environ}/auth0_config
+      -> /{environ}/header
+      -> /{environ}/logout
+
     """
     def wrapper(*args, **kwargs):
         if not kwargs or len(kwargs) < 1:
@@ -52,16 +171,12 @@ def route_requires_authorization(f):
         request = app.current_request.to_dict()
         authorize_response = app.core.react_authorize(request, env)
         if not authorize_response or not authorize_response["authorized"]:
-            response = app.core.create_success_response("route_requires_authorization")
-            response.body = authorize_response
             # HTTP 401 - Unauthorized (more precisely: Unauthenticated):
             # Request has no or invalid credentials.
             # HTTP 403 - Forbidden (more precisely: Unauthorized):
             # Request has valid credentials but no privileges for resource.
-            if not authorize_response["authenticated"]:
-                response.status_code = HTTP_UNAUTHENTICATED
-            else:
-                response.status_code = HTTP_UNAUTHORIZED
+            http_status = HTTP_UNAUTHENTICATED if not authorize_response["authenticated"] else HTTP_UNAUTHORIZED
+            return app.core.create_response(http_status=http_status, body=authorize_response)
             return response
         return f(*args, **kwargs)
     return wrapper
@@ -77,7 +192,8 @@ class ReactRoutes:
     # ----------------------------------------------------------------------------------------------
 
     @staticmethod
-    @app.route(ROUTE_PREFIX + "reactapi/{environ}/header", methods=["GET"], cors=CORS)
+#   @app.route(ROUTE_PREFIX + "reactapi/{environ}/header", methods=["GET"], cors=CORS)
+    @route(ROUTE_PREFIX + "reactapi/{environ}/header", authorize=False)
     def reactapi_route_header(environ: str):
         # Note NON-PROTECTED route.
         request = app.current_request.to_dict()
@@ -101,8 +217,9 @@ class ReactRoutes:
         return app.core.reactapi_logout(request=request, env=environ)
 
     @staticmethod
-    @app.route(ROUTE_PREFIX + "reactapi/{environ}/info", cors=CORS)
-    @route_requires_authorization
+    @route(ROUTE_PREFIX + "reactapi/{environ}/info", authorize=True)
+#   @app.route(ROUTE_PREFIX + "reactapi/{environ}/info", cors=CORS)
+#   @route_requires_authorization
     def reactapi_route_info(environ: str):
         request = app.current_request.to_dict()
         return app.core.reactapi_info(request=request, env=environ)
@@ -230,12 +347,18 @@ class ReactRoutes:
         return app.core.reactapi_aws_s3_buckets_key_contents(request=request, env=environ, bucket=bucket, key=key)
 
     @staticmethod
-    @app.route(ROUTE_PREFIX + "reactapi/auth0_config", methods=["GET"], cors=CORS)
-    def reactapi_route_auth0_config():
+    @app.route(ROUTE_PREFIX + "reactapi/{environ}/auth0_config", methods=["GET"], cors=CORS)
+    def reactapi_route_auth0_config(environ):
         # Note NON-PROTECTED route.
-        # TODO: This needs to be per env.
         request = app.current_request.to_dict()
-        return app.core.reactapi_auth0_config(request=request)
+        return app.core.reactapi_auth0_config(request=request, env=environ)
+
+    @staticmethod
+    @app.route(ROUTE_PREFIX + "reactapi/auth0_config", methods=["GET"], cors=CORS)
+    def reactapi_route_auth0_config_noenv():
+        # Note NON-PROTECTED route.
+        request = app.current_request.to_dict()
+        return app.core.reactapi_auth0_config(request=request, env=app.core.get_default_env())
 
     @staticmethod
     @app.route(ROUTE_PREFIX + "reactapi/{environ}/__reloadlambda__", methods=["GET"], cors=CORS)
@@ -251,6 +374,22 @@ class ReactRoutes:
         request = app.current_request.to_dict()
         return app.core.reactapi_clear_cache(request=request, env=environ)
 
+    def foo(environ: str):
+        return {"afdasdfadfa":"helloxyzzy"}
+        pass
+    xyzzy = app.route(ROUTE_PREFIX + "reactapi/{environ}/xyzzy", cors=CORS)(foo)
+
+    @staticmethod
+    @xyzzyroute(ROUTE_PREFIX + "reactapi/{environ}/xyzzy2", cors=CORS, authorize=True)
+    def goo(environ: str):
+        print(f"GOO.............................................{environ}")
+        return app.core.create_success_response(body={"goo":"hello-goo:" + environ})
+
+#    @xyzzyroute(ROUTE_PREFIX + "reactapi/{environ}/xyzzy", cors=CORS)
+#   def reactapi_route_info(environ: str):
+#       request = app.current_request.to_dict()
+#       return app.core.reactapi_info(request=request, env=environ)
+
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes.
     # TODO: See if there is a better way to deal with variadic paths.
@@ -262,31 +401,31 @@ class ReactRoutes:
         return app.core.react_serve_static_file(env=env, paths=paths)
 
     @staticmethod
-    @app.route(ROUTE_PREFIX + "react", cors=CORS)
+    @app.route(ROUTE_PREFIX + "react")
     def reactui_route_static_file_noenv():
         return ReactRoutes.reactui_serve_static_file(env=app.core.get_default_env(), paths=[])
 
     @staticmethod
-    @app.route(ROUTE_PREFIX + "react/{environ}", cors=CORS)
+    @app.route(ROUTE_PREFIX + "react/{environ}")
     def reactui_route_0(environ):
         return ReactRoutes.reactui_serve_static_file(env=environ, paths=[])
 
     @staticmethod
-    @app.route(ROUTE_PREFIX + "react/{environ}/{path1}", cors=CORS)
+    @app.route(ROUTE_PREFIX + "react/{environ}/{path1}")
     def reactui_route_1(environ, path1):
         return ReactRoutes.reactui_serve_static_file(env=environ, paths=[path1])
 
     @staticmethod
-    @app.route(ROUTE_PREFIX + "react/{environ}/{path1}/{path2}", cors=CORS)
+    @app.route(ROUTE_PREFIX + "react/{environ}/{path1}/{path2}")
     def reactui_route_2(environ, path1, path2):
         return ReactRoutes.reactui_serve_static_file(env=environ, paths=[path1, path2])
 
     @staticmethod
-    @app.route(ROUTE_PREFIX + "react/{environ}/{path1}/{path2}/{path3}", cors=CORS)
+    @app.route(ROUTE_PREFIX + "react/{environ}/{path1}/{path2}/{path3}")
     def reactui_route_3(environ, path1, path2, path3):
         return ReactRoutes.reactui_serve_static_file(env=environ, paths=[path1, path2, path3])
 
     @staticmethod
-    @app.route(ROUTE_PREFIX + "react/{environ}/{path1}/{path2}/{path3}/{path4}", cors=CORS)
+    @app.route(ROUTE_PREFIX + "react/{environ}/{path1}/{path2}/{path3}/{path4}")
     def reactui_route_4(environ, path1, path2, path3, path4):
         return ReactRoutes.reactui_serve_static_file(env=environ, paths=[path1, path2, path3, path4])

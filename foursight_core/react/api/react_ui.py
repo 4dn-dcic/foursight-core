@@ -118,7 +118,7 @@ class ReactUi:
 
         response = ReactUi._cache_static_files.get(file)
         if not response:
-            response = self._react_api.create_success_response("react_serve_static_file", content_type)
+            response = self._react_api.create_success_response(content_type=content_type)
             try:
                 with io.open(file, open_mode) as f:
                     response.body = f.read()
