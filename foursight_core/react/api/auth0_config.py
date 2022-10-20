@@ -140,6 +140,10 @@ class Auth0ConfigPerEnv:
         self._per_env_data = {}
 
     def define_auth0_config(self, env: str, portal_url: str) -> Auth0Config:
+        """
+        If an Auth0Config is already defined for the given env then return it,
+        otherwise create one and return it.
+        """
         if not env:
             raise ValueError("Invalid environment argument to Auth0ConfigPerEnv.")
         per_env_data = self._per_env_data.get(env)
@@ -155,11 +159,11 @@ class Auth0ConfigPerEnv:
         per_env_data = self._per_env_data.get(env)
         return per_env_data.get_config_url() if per_env_data else None
 
-    def get_config_data(self, env: str) -> Optional[str]:
+    def get_config_data(self, env: str) -> Optional[dict]:
         per_env_data = self._per_env_data.get(env)
         return per_env_data.get_config_data() if per_env_data else None
 
-    def get_config_raw_data(self, env: str) -> Optional[str]:
+    def get_config_raw_data(self, env: str) -> Optional[dict]:
         per_env_data = self._per_env_data.get(env)
         return per_env_data.get_config_raw_data() if per_env_data else None
 
