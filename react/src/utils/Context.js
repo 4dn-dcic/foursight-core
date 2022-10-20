@@ -114,10 +114,6 @@ function Auth0CallbackUrl() {
     }
 }
 
-function Auth0CallbackId(header) {
-    return header?.auth?.aud;
-}
-
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
@@ -142,7 +138,6 @@ const exports = {
         Origin:            GetServerOrigin
     },
     Auth0: {
-        CallbackUrl:        Auth0CallbackUrl,
-        CallbackId:         Auth0CallbackId
+        CallbackUrl:        Auth0CallbackUrl
     }
 }; export default exports;

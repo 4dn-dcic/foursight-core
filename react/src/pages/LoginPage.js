@@ -11,10 +11,12 @@ import Clipboard from '../utils/Clipboard';
 import Context from '../utils/Context';
 import Cookie from '../utils/Cookie';
 import Env from '../utils/Env';
+import { useFetch } from '../utils/Fetch';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
 import LiveTime from '../LiveTime';
 import Logout from '../utils/Logout';
+import Server from '../utils/Server';
 import Yaml from '../utils/Yaml';
 import Page from '../Page';
 
@@ -22,9 +24,22 @@ const LoginPage = (props) => {
 
     const [ header ] = useContext(HeaderData);
     const [ showingAuthBox, setShowingAuthBox ] = useState(false);
-    let [ showingAuthToken, setShowAuthToken ] = useState(false);
-    const [args] = useSearchParams();
+    const [ showingAuthToken, setShowAuthToken ] = useState(false);
+    const [ args ] = useSearchParams();
     const showAuthBoxAtOutset = args.get("auth")?.length >= 0;
+
+    const auth0Config = useFetch({
+        url: Server.Url("/auth0_config"),
+        onData: (data) => {
+            //
+            // The Auth0 config contains "partners" in the allowedConnections
+            // which is something we don't want, as it causes a generic diplay
+            // of yours@example.com option to login in the Auth0 (lock) box.
+            //
+            data.connections = data.connections.filter(connection => connection != "partners");
+            return data;
+        }
+    });
 
     function login() {
         showAuthBox();
@@ -65,19 +80,23 @@ const LoginPage = (props) => {
         // this value, and its associated secret, to decode
         // the JWT resulting from a successful authentication.
         //
-        const loginClientId = Context.Auth0.CallbackId(header);
+        const loginClientId = auth0Config?.data?.client; // Context.Auth0.CallbackId(header);
         const loginPayload = {
             container: "login_auth_container",
             auth: {
                 redirectUrl: loginCallback,
                 responseType: "code",
-                sso: false,
+                sso: auth0Config?.data?.sso, // false,
                 //
-                // N.B. the "react" string in the "scope" here is used on the React API
-                // to distinguish this authentication as relating to the React version.
+                // N.B. There is a "react" string in the "scope" here (no setup on the
+                // React API via the /{env}/auth0_config endpoint) is used on the React
+                // API to distinguish this authentication as relating to the React version.
                 // See: foursight_core.react.api.react_api.is_react_authentication.
                 //
-                params: { scope: "openid email react", prompt: "select_account" }
+                params: {
+                    scope: auth0Config?.data?.scope,  // "openid email react",
+                    prompt: auth0Config?.data?.prompt // "select_account"
+                }
             },
             socialButtonStyle: "big",
             languageDictionary: { title: "Foursight Login" },
@@ -86,12 +105,12 @@ const LoginPage = (props) => {
                 backgroundColor: "blue",
                 logo: "",
             },
-            allowedConnections: [ "google-oauth2", "github" ]
+            allowedConnections: auth0Config?.data?.connections // [ "google-oauth2", "github" ]
         };
-        return new Auth0Lock(loginClientId, "hms-dbmi.auth0.com", loginPayload);
+        return new Auth0Lock(loginClientId, auth0Config?.data?.domain /* "hms-dbmi.auth0.com" */ , loginPayload);
     }
 
-    if (header.loading && !header.error) return <>Loading ...</>
+    if ((header.loading || auth0Config.loading) && !header.error) return <>Loading ...</>
     if (header.error) return <>Cannot load Foursight.</>
     return <>
         { Auth.IsLoggedIn(header) ? (<React.Fragment>
@@ -230,14 +249,16 @@ const LoginPage = (props) => {
                 </div>
             </>}
         </div>
-        <br /><br /><br />
-        <div>
-            <div id="login_auth_container" style={{verticalAlign:"top",align:"top",backgroundColor:"#143c53", height: "fit-content", borderRadius: "8px", borderStyle: "solid", borderWidth: "1px", display: "none", width:"fit-content", padding:"0px", margin: "auto"}}></div>
-                <center id="login_auth_cancel" style={{display:"none",marginTop:"10px"}}>
-                    <NavLink to={Client.Path("/info")} style={{fontSize:"small",cursor:"pointer",color:"blue"}}>Cancel</NavLink>
-                </center>
-            { showAuthBoxAtOutset && (setTimeout(() => { if (showAuthBoxAtOutset && !showingAuthBox) { showAuthBox(); }}, 10), "") }
-        </div>
+        { (auth0Config.loading) ? <>Loading Auth0 configuration ...</> : <>
+            <br /><br /><br />
+            <div>
+                <div id="login_auth_container" style={{verticalAlign:"top",align:"top",backgroundColor:"#143c53", height: "fit-content", borderRadius: "8px", borderStyle: "solid", borderWidth: "1px", display: "none", width:"fit-content", padding:"0px", margin: "auto"}}></div>
+                    <center id="login_auth_cancel" style={{display:"none",marginTop:"10px"}}>
+                        <NavLink to={Client.Path("/info")} style={{fontSize:"small",cursor:"pointer",color:"blue"}}>Cancel</NavLink>
+                    </center>
+                { showAuthBoxAtOutset && (setTimeout(() => { if (showAuthBoxAtOutset && !showingAuthBox) { showAuthBox(); }}, 10), "") }
+            </div>
+        </>}
         </React.Fragment>)}
     </>
 };

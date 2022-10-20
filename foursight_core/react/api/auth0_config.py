@@ -47,7 +47,7 @@ class Auth0Config:
         "domain": "hms-dbmi.auth0.com",
         "client": "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB",
         "sso": False,
-        "scope": "openid email",
+        "scope": "openid email react",
         "prompt": "select_account",
         "connections": [ "github", "google-oauth2" ]
     }
@@ -90,6 +90,12 @@ class Auth0Config:
         options_auth_params = options_auth.get("params") if options_auth else None
         sso = options_auth.get("sso") if options_auth else None
         scope = options_auth_params.get("scope") if options_auth_params else None
+        # This is for us to know that this is a React login;
+        # see react_api.is_react_authentication and app_utils.auth0_callback.
+        if scope:
+            scope += " react"
+        else:
+            scope = "react"
         prompt = options_auth_params.get("prompt") if options_auth_params else None
         connections = options.get("allowedConnections") if options else None
         return {
