@@ -161,6 +161,26 @@ class ReactApi(ReactRoutes):
     def react_serve_static_file(self, env: str, paths: list) -> Response:
         return self.react_ui.serve_static_file(env, paths)
 
+    # ----------------------------------------------------------------------------------------------
+    # Below are the implementation functions corresponding directly to the routes in react_routes.
+    # ----------------------------------------------------------------------------------------------
+
+    def reactapi_auth0_config(self, request: dict, env: str):
+        """
+        Called from react_routes for endpoint: /reactapi/{environ}/auth0_config
+        Note that this in an UNPROTECTED route.
+        """
+        response = self.create_success_response()
+        auth0_config = self.auth0_config_per_env.define_auth0_config(env, app.core.get_portal_url(env))
+        response.body = auth0_config.get_config_data()
+        try:
+            response = self.create_success_response()
+            auth0_config = self.auth0_config_per_env.define_auth0_config(env, app.core.get_portal_url(env))
+            response.body = auth0_config.get_config_data()
+            return response
+        except Exception as e:
+            return self.create_error_response(f"Error getting Auth0 config ({env}): {e}")
+
     def reactapi_logout(self, request: dict, env: str) -> Response:
         """
         Called from react_routes for endpoint: /reactapi/{environ}/logout
@@ -186,7 +206,7 @@ class ReactApi(ReactRoutes):
         auth = self.auth.authorize(request, env)
         data = ReactApi._cached_header.get(env)
         if not data:
-            data = self.reactapi_header_nocache(request, env)
+            data = self._reactapi_header_nocache(request, env)
             ReactApi._cached_header[env] = data
         data = copy.deepcopy(data)
         data["auth"] = auth
@@ -206,7 +226,7 @@ class ReactApi(ReactRoutes):
         response.body = data
         return response
 
-    def reactapi_header_nocache(self, request: dict, env: str) -> Response:
+    def _reactapi_header_nocache(self, request: dict, env: str) -> Response:
         """
         No-cache version of above reactapi_header function.
         """
@@ -576,26 +596,14 @@ class ReactApi(ReactRoutes):
         response.body = AwsS3.get_bucket_key_contents(bucket, key)
         return response
 
-    def reactapi_auth0_config(self, request: dict, env: str):
-        response = self.create_success_response()
-        auth0_config = self.auth0_config_per_env.define_auth0_config(env, app.core.get_portal_url(env))
-        response.body = auth0_config.get_config_data()
-        try:
-            response = self.create_success_response()
-            auth0_config = self.auth0_config_per_env.define_auth0_config(env, app.core.get_portal_url(env))
-            response.body = auth0_config.get_config_data()
-            return response
-        except Exception as e:
-            return self.create_error_response(f"Error getting Auth0 config ({env}): {e}")
-
-    def reactapi_reload_lambda(self, request: dict, env: str, lambda_name: str) -> Response:
+    def reactapi_reload_lambda(self, request: dict, lambda_name: str = "default") -> Response:
         """
         Called from react_routes for endpoint: /reactapi/{environ}/__reloadlambda__
         Kicks off a reload of the given lambda name. For troubleshooting only.
         """
         app.core.reload_lambda(lambda_name)
         time.sleep(3)
-        return self.reactapi_info(request, env)
+        return self.create_success_response(body={"status": "OK"})
 
     def reactapi_clear_cache(self, request: dict, env: str) -> Response:
         """
