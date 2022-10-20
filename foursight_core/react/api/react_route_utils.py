@@ -94,6 +94,7 @@ def route(*args, **kwargs):
     path = args[0]
     route_prefix = ROUTE_PREFIX + ("/" if not ROUTE_PREFIX.endswith("/") else "")
     if "static" in kwargs:
+        # This is for serving static files which live in a different/specific directory.
         route_prefix = route_prefix + "react"
         del kwargs["static"]
     else:
@@ -107,7 +108,9 @@ def route(*args, **kwargs):
         authorize = isinstance(authorize, bool) and authorize
         del kwargs["authorize"]
     else:
-        authorize = True  # Note we DEFAULT to AUTHORIZE!
+        # Note we DEFAULT to AUTHORIZE!
+        # Only way to turn it off is to pass authorize=False to the route decorator.
+        authorize = True
 
     def route_registration(wrapped_route_function):
         def route_function(*args, **kwargs):
@@ -119,6 +122,7 @@ def route(*args, **kwargs):
                     return unauthorized_response
             return wrapped_route_function(*args, **kwargs)
         if _CORS:
+            # Only used currently for cross-origin localhost development.
             kwargs["cors"] = _CORS
         app.route(path, **kwargs)(route_function)
         return route_function

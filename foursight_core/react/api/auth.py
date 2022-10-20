@@ -45,7 +45,6 @@ class Auth:
             if authtoken_decoded["authenticated"] is not True:
                 return self._create_unauthenticated_response(request, "invalid-authtoken-auth", authtoken_decoded)
 
-
             if self._auth0_client_id != authtoken_decoded[JWT_AUDIENCE_PROPERTY_NAME]:
                 return self._create_unauthenticated_response(request, "invalid-authtoken-aud", authtoken_decoded)
 

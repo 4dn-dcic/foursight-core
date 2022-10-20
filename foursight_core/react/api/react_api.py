@@ -199,7 +199,7 @@ class ReactApi(ReactRoutes):
         else:
             known_envs_default = self.envs.find_known_env(self.envs.get_default_env())
             known_envs_actual_count = self.envs.get_known_envs_count()
-            data["auth"]["known_envs"] = [ known_envs_default ]
+            data["auth"]["known_envs"] = [known_envs_default]
             data["auth"]["known_envs_actual_count"] = known_envs_actual_count
         data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
         response = self.create_success_response()

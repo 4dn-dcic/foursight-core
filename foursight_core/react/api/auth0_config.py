@@ -1,7 +1,5 @@
-import boto3
 import logging
 import requests
-import time
 from typing import Optional
 from dcicutils.misc_utils import get_error_message
 
@@ -49,7 +47,7 @@ class Auth0Config:
         "sso": False,
         "scope": "openid email react",
         "prompt": "select_account",
-        "connections": [ "github", "google-oauth2" ]
+        "connections": ["github", "google-oauth2"]
     }
 
     def __init__(self, portal_url: str) -> None:
@@ -70,7 +68,7 @@ class Auth0Config:
         """
         Returns relevant info (dictionary) from the Auth0 config URL in canonical form.
         It contains these properties: domain, client, sso, scope, prompt, connections.
-        This caches its data.  
+        This caches its data.
         """
         if not self._config_data:
             self._config_data = self._get_config_data_nocache() or {}
@@ -80,7 +78,7 @@ class Auth0Config:
         """
         Returns relevant info (dictionary) from the Auth0 config URL in canonical form.
         It contains these properties: domain, client, sso, scope, prompt, connections.
-        This does NOT cache its data.  
+        This does NOT cache its data.
         """
         config_raw_data = self.get_config_raw_data()
         domain = config_raw_data.get("auth0Domain") if config_raw_data else None
@@ -110,7 +108,7 @@ class Auth0Config:
     def get_config_raw_data(self) -> dict:
         """
         Returns raw data (dictionary) from the Auth0 config URL.
-        This caches its data.  
+        This caches its data.
         """
         if not self._config_raw_data:
             self._config_raw_data = self._get_config_raw_data_nocache() or {}
@@ -119,7 +117,7 @@ class Auth0Config:
     def _get_config_raw_data_nocache(self) -> dict:
         """
         Returns raw data (dictionary) from the Auth0 config URL.
-        This does NOT caches its data.  
+        This does NOT caches its data.
         """
         try:
             return requests.get(self.get_config_url()).json() or {}
@@ -132,24 +130,6 @@ class Auth0Config:
         Clears out the caches, so next call to get_config_data() and get_config_raw_data() get fresh data.
         """
         self._config_data = self._config_raw_data = {}
-
-    def get_domain(self) -> Optional[str]:
-        return self.get_config_data().get("domain")
-
-    def get_client(self) -> Optional[str]:
-        return self.get_config_data().get("client")
-
-    def get_sso(self) -> Optional[str]:
-        return self.get_config_data().get("sso")
-
-    def get_scope(self) -> Optional[str]:
-        return self.get_config_data().get("scope")
-
-    def get_prompt(self) -> Optional[str]:
-        return self.get_config_data().get("prompt")
-
-    def get_connections(self) -> Optional[str]:
-        return self.get_config_data().get("connections")
 
 
 class Auth0ConfigPerEnv:
@@ -181,36 +161,7 @@ class Auth0ConfigPerEnv:
         per_env_data = self._per_env_data.get(env)
         return per_env_data.get_config_raw_data() if per_env_data else None
 
-    def get_config_raw_data(self, env: str) -> Optional[str]:
-        per_env_data = self._per_env_data.get(env)
-        return per_env_data.get_config_raw_data() if per_env_data else None
-
     def refresh(self) -> None:
         for per_env_data in self._per_env_data:
             per_env_data.refresh()
         self._per_env_data = {}
-
-    def get_domain(self) -> Optional[str]:
-        per_env_data = self._per_env_data.get(env)
-        return per_env_data.get_domain() if per_env_data else None
-
-    def get_client(self) -> Optional[str]:
-        per_env_data = self._per_env_data.get(env)
-        return per_env_data.get_client() if per_env_data else None
-
-    def get_sso(self) -> Optional[str]:
-        per_env_data = self._per_env_data.get(env)
-        return per_env_data.get_sso() if per_env_data else None
-
-    def get_scope(self) -> Optional[str]:
-        per_env_data = self._per_env_data.get(env)
-        return per_env_data.get_scope() if per_env_data else None
-
-    def get_prompt(self) -> Optional[str]:
-        per_env_data = self._per_env_data.get(env)
-        return per_env_data.get_prompt() if per_env_data else None
-
-    def get_connections(self) -> Optional[str]:
-        per_env_data = self._per_env_data.get(env)
-        return per_env_data.get_connections() if per_env_data else None
-
