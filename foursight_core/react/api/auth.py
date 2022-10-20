@@ -13,11 +13,11 @@ logger = logging.getLogger(__name__)
 class Auth:
 
     def __init__(self, auth0_client_id: str, auth0_secret: str, envs: Envs):
-        self.auth0_client_id = auth0_client_id
-        self.auth0_secret = auth0_secret
-        self.envs = envs
+        self._auth0_client_id = auth0_client_id
+        self._auth0_secret = auth0_secret
+        self._envs = envs
 
-    cache_aws_credentials = {}
+    _cache_aws_credentials = {}
 
     def authorize(self, request: dict, env: Optional[str] = None) -> dict:
         """
@@ -46,7 +46,7 @@ class Auth:
                 return self._create_unauthenticated_response(request, "invalid-authtoken-auth", authtoken_decoded)
 
 
-            if self.auth0_client_id != authtoken_decoded[JWT_AUDIENCE_PROPERTY_NAME]:
+            if self._auth0_client_id != authtoken_decoded[JWT_AUDIENCE_PROPERTY_NAME]:
                 return self._create_unauthenticated_response(request, "invalid-authtoken-aud", authtoken_decoded)
 
             domain = self._get_domain(request)
@@ -68,8 +68,8 @@ class Auth:
 
             if env:
                 allowed_envs = authtoken_decoded["allowed_envs"]
-                if not self.envs.is_allowed_env(env, allowed_envs):
-                    status = "not-authorized-env" if self.envs.is_known_env(env) else "not-authorized-unknown-env"
+                if not self._envs.is_allowed_env(env, allowed_envs):
+                    status = "not-authorized-env" if self._envs.is_known_env(env) else "not-authorized-unknown-env"
                     return self._create_unauthorized_response(request, status, authtoken_decoded, but_is_authenticated=True)
 
             return {**authtoken_decoded, "authorized": True}
@@ -96,9 +96,9 @@ class Auth:
         the first/last names are just for informational/display purposes in the client.
         Returns the JWT-signed-encoded authtoken value as a string.
         """
-        jwt_decoded = jwt_decode(jwt, self.auth0_client_id, self.auth0_secret)
+        jwt_decoded = jwt_decode(jwt, self._auth0_client_id, self._auth0_secret)
         email = jwt_decoded.get("email")
-        allowed_envs, first_name, last_name = self.envs.get_user_auth_info(email)
+        allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email)
         authtoken_decoded = {
             "authenticated": True,
             "authenticated_at": jwt_decoded.get("iat"),
@@ -108,18 +108,18 @@ class Auth:
             "first_name": first_name,
             "last_name": last_name,
             "allowed_envs": allowed_envs,
-            "known_envs": self.envs.get_known_envs(),
-            "default_env": self.envs.get_default_env(),
+            "known_envs": self._envs.get_known_envs(),
+            "default_env": self._envs.get_default_env(),
             "initial_env": env,
             "domain": domain
         }
         # JWT-sign-encode the authtoken using our Auth0 client ID (aka audience aka "aud") and
         # secret. This *required* audience is added to the JWT before encoding (done in the
-        # jwt_encode function), set to the value we pass here, namely, self.auth0_client_id;
+        # jwt_encode function), set to the value we pass here, namely, self._auth0_client_id;
         # it was also in the given JWT (i.e. jwt_decoded["aud"]), and these should match (no
         # need to check); it came from the original Auth0 invocation on the client-side (in the
         # Auth0Lock box); we communicate it to the client-side via the non-protected /header endpoint.
-        return jwt_encode(authtoken_decoded, audience=self.auth0_client_id, secret=self.auth0_secret)
+        return jwt_encode(authtoken_decoded, audience=self._auth0_client_id, secret=self._auth0_secret)
 
     def _decode_authtoken(self, authtoken: str) -> dict:
         """
@@ -128,7 +128,7 @@ class Auth:
         See create_authtoken (above) for an enumeration of the contents of the authtoken.
         Returns the verified/decoded JWT as a dictionary.
         """
-        return jwt_decode(authtoken, self.auth0_client_id, self.auth0_secret)
+        return jwt_decode(authtoken, self._auth0_client_id, self._auth0_secret)
 
     def _create_unauthorized_response(self, request: dict, status: str,
                                       authtoken_decoded: dict, but_is_authenticated: bool) -> dict:
@@ -145,10 +145,10 @@ class Auth:
             response = {
                 # 2022-10-18
                 # No longer including known-envs in unauthorized responses.
-                # "known_envs": self.envs.get_known_envs(),
-                "default_env": self.envs.get_default_env(),
+                # "known_envs": self._envs.get_known_envs(),
+                "default_env": self._envs.get_default_env(),
                 "domain": self._get_domain(request),
-                JWT_AUDIENCE_PROPERTY_NAME: self.auth0_client_id  # Needed for Auth0Lock login box on client-side.
+                JWT_AUDIENCE_PROPERTY_NAME: self._auth0_client_id  # Needed for Auth0Lock login box on client-side.
             }
         response["authenticated"] = but_is_authenticated
         response["authorized"] = False
@@ -172,7 +172,7 @@ class Auth:
         This has nothing to do with the rest of the authentication
         and authorization stuff here but vaguely related so here seems fine.
         """
-        aws_credentials = Auth.cache_aws_credentials.get(env)
+        aws_credentials = Auth._cache_aws_credentials.get(env)
         if not aws_credentials:
             try:
                 session = boto3.session.Session()
@@ -187,7 +187,7 @@ class Auth:
                     "aws_user_arn": user_arn,
                     "aws_access_key_id": access_key_id,
                     "aws_region": region_name,
-                    "auth0_client_id": self.auth0_client_id
+                    "auth0_client_id": self._auth0_client_id
                 }
                 # Try getting the account name though probably no permission at the moment.
                 aws_account_name = None
@@ -204,7 +204,7 @@ class Auth:
                         )
                     except Exception as e:
                         logger.warning(f"Exception (not fatal) getting AWS account name: {e}")
-                Auth.cache_aws_credentials[env] = aws_credentials
+                Auth._cache_aws_credentials[env] = aws_credentials
             except Exception as e:
                 logger.warning(f"Exception (not fatal) getting AWS account info: {e}")
                 return {}
