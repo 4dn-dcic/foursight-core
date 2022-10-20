@@ -36,7 +36,7 @@ class Auth:
 
             # Decode the authtoken cookie.
 
-            authtoken_decoded = self._decode_authtoken(authtoken)
+            authtoken_decoded = self.decode_authtoken(authtoken)
             if not authtoken_decoded:
                 return self._create_unauthenticated_response(request, "invalid-authtoken")
 
@@ -120,7 +120,7 @@ class Auth:
         # Auth0Lock box); we communicate it to the client-side via the non-protected /header endpoint.
         return jwt_encode(authtoken_decoded, audience=self._auth0_client_id, secret=self._auth0_secret)
 
-    def _decode_authtoken(self, authtoken: str) -> dict:
+    def decode_authtoken(self, authtoken: str) -> dict:
         """
         Fully verifies AND decodes and returns the given JWT-signed-encoded authtoken (cookie).
         If not verified (by the jwt_decode function) then None will be returned.
