@@ -41,7 +41,7 @@ class Auth0Config:
 
     # Fallback values only because at least currently (2022-10-18) this is only returning auth0Client:
     # http://cgap-supertest-1972715139.us-east-1.elb.amazonaws.com/auth0_config?format=json
-    # This has been fixed but leaving this here for now just in case.
+    # This has been FIXED but leaving this here for now just in case.
     # Note that the secret associated with the Auth0 client is in the GAC (ENCODED_AUTH0_SECRET).
     FALLBACK_VALUES = {
         "domain": "hms-dbmi.auth0.com",

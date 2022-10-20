@@ -109,11 +109,17 @@ def route(*args, **kwargs):
         del kwargs["authorize"]
     else:
         # Note we DEFAULT to AUTHORIZE!
-        # Only way to turn it off is to pass authorize=False to the route decorator.
+        # Only way to turn it off is to explicitly pass authorize=False to the route decorator.
         authorize = True
 
     def route_registration(wrapped_route_function):
+        """
+        This function is called once for each defined route/endpoint.
+        """
         def route_function(*args, **kwargs):
+            """
+            This is the function called on each route/endpoint (API) call.
+            """
             if authorize:
                 # Used to call the _route_requires_authorization decorator; now do it directly.
                 # return _route_requires_authorization(wrapped_route_function)(*args, **kwargs)
@@ -122,8 +128,9 @@ def route(*args, **kwargs):
                     return unauthorized_response
             return wrapped_route_function(*args, **kwargs)
         if _CORS:
-            # Only used currently for cross-origin localhost development.
+            # Only used for cross-origin localhost development (e.g. UI on 3000 and API on 8000).
             kwargs["cors"] = _CORS
+        # This is the call that registers the Chalice route/endpoint.
         app.route(path, **kwargs)(route_function)
         return route_function
     return route_registration
