@@ -127,7 +127,7 @@ class Auth0Config:
             logger.error(f"Exception fetching Auth0 config ({self.get_config_url()}): {get_error_message(e)}")
             return {}
 
-    def refresh(self) -> None:
+    def cache_clear(self) -> None:
         """
         Clears out the caches, so next call to get_config_data() and get_config_raw_data() get fresh data.
         """
@@ -163,7 +163,7 @@ class Auth0ConfigPerEnv:
         per_env_data = self._per_env_data.get(env)
         return per_env_data.get_config_raw_data() if per_env_data else None
 
-    def refresh(self) -> None:
+    def cache_clear(self) -> None:
         for per_env_data in self._per_env_data:
-            per_env_data.refresh()
+            per_env_data.cache_clear()
         self._per_env_data = {}

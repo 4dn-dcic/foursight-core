@@ -40,15 +40,12 @@ class ReactApi(ReactRoutes):
 
     def __init__(self):
         super(ReactApi, self).__init__()
-        self.envs = Envs(app.core.get_unique_annotated_environment_names())
-        self.checks = Checks(app.core.check_handler.CHECK_SETUP, self.envs)
-        self.gac = Gac()
-        self.auth = Auth(app.core.get_auth0_client_id(self.envs.get_default_env()),
-                         app.core.get_auth0_secret(self.envs.get_default_env()), self.envs)
-        self.react_ui = ReactUi(self)
-        # TODO: This needs to be per env.
-        self.auth0_config = Auth0Config(app.core.get_portal_url(self.envs.get_default_env()))
-        self.auth0_config_per_env = Auth0ConfigPerEnv()
+        self._envs = Envs(app.core.get_unique_annotated_environment_names())
+        self._auth = Auth(app.core.get_auth0_client_id(self._envs.get_default_env()),
+                          app.core.get_auth0_secret(self._envs.get_default_env()), self._envs)
+        self._auth0_config = Auth0ConfigPerEnv()
+        self._checks = Checks(app.core.check_handler.CHECK_SETUP, self._envs)
+        self._react_ui = ReactUi(self)
 
     @staticmethod
     def create_response(http_status: int = 200,
@@ -121,7 +118,7 @@ class ReactApi(ReactRoutes):
         """
         jwt_expires_at = convert_datetime_to_time_t(datetime.datetime.utcnow() +
                                                     datetime.timedelta(seconds=jwt_expires_in))
-        authtoken = self.auth.create_authtoken(jwt, jwt_expires_at, env, domain)
+        authtoken = self._auth.create_authtoken(jwt, jwt_expires_at, env, domain)
         authtoken_cookie = create_set_cookie_string(request, name="authtoken",
                                                     value=authtoken,
                                                     domain=domain,
@@ -143,7 +140,7 @@ class ReactApi(ReactRoutes):
             else:
                 scheme = "https"
             if not env:
-                env = self.envs.get_default_env()
+                env = self._envs.get_default_env()
             if not context:
                 context = "/"
             elif not context.endswith("/"):
@@ -156,10 +153,10 @@ class ReactApi(ReactRoutes):
         return redirect_url
 
     def react_authorize(self, request: dict, env: str) -> dict:
-        return self.auth.authorize(request, env)
+        return self._auth.authorize(request, env)
 
     def react_serve_static_file(self, env: str, paths: list) -> Response:
-        return self.react_ui.serve_static_file(env, paths)
+        return self._react_ui.serve_static_file(env, paths)
 
     # ----------------------------------------------------------------------------------------------
     # Below are the implementation functions corresponding directly to the routes in react_routes.
@@ -171,11 +168,11 @@ class ReactApi(ReactRoutes):
         Note that this in an UNPROTECTED route.
         """
         response = self.create_success_response()
-        auth0_config = self.auth0_config_per_env.define_auth0_config(env, app.core.get_portal_url(env))
+        auth0_config = self._auth0_config.define_auth0_config(env, app.core.get_portal_url(env))
         response.body = auth0_config.get_config_data()
         try:
             response = self.create_success_response()
-            auth0_config = self.auth0_config_per_env.define_auth0_config(env, app.core.get_portal_url(env))
+            auth0_config = self._auth0_config.define_auth0_config(env, app.core.get_portal_url(env))
             response.body = auth0_config.get_config_data()
             return response
         except Exception as e:
@@ -203,7 +200,7 @@ class ReactApi(ReactRoutes):
         Note that this in an UNPROTECTED route.
         """
         # Note that this route is not protected but/and we return the results from authorize.
-        auth = self.auth.authorize(request, env)
+        auth = self._auth.authorize(request, env)
         data = ReactApi._cached_header.get(env)
         if not data:
             data = self._reactapi_header_nocache(request, env)
@@ -215,10 +212,10 @@ class ReactApi(ReactRoutes):
         # if not authenticated then act as-if the default-env is the only known-env,
         # and in this case also include (as an FYI for the UI) the real number of known-envs.
         if auth["authenticated"]:
-            data["auth"]["known_envs"] = self.envs.get_known_envs_with_gac_names(self.gac)
+            data["auth"]["known_envs"] = self._envs.get_known_envs_with_gac_names()
         else:
-            known_envs_default = self.envs.find_known_env(self.envs.get_default_env())
-            known_envs_actual_count = self.envs.get_known_envs_count()
+            known_envs_default = self._envs.find_known_env(self._envs.get_default_env())
+            known_envs_actual_count = self._envs.get_known_envs_count()
             data["auth"]["known_envs"] = [known_envs_default]
             data["auth"]["known_envs_actual_count"] = known_envs_actual_count
         data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
@@ -232,8 +229,8 @@ class ReactApi(ReactRoutes):
         """
         domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
-        default_env = self.envs.get_default_env()
-        aws_credentials = self.auth.get_aws_credentials(env if env else default_env)
+        default_env = self._envs.get_default_env()
+        aws_credentials = self._auth.get_aws_credentials(env if env else default_env)
         response = {
             "app": {
                 "title": app.core.html_main_title,
@@ -266,8 +263,8 @@ class ReactApi(ReactRoutes):
         """
         domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
-        default_env = self.envs.get_default_env()
-        if not self.envs.is_known_env(env):
+        default_env = self._envs.get_default_env()
+        if not self._envs.is_known_env(env):
             env_unknown = True
         else:
             env_unknown = False
@@ -293,7 +290,7 @@ class ReactApi(ReactRoutes):
                 "domain": domain,
                 "context": context,
                 "local": is_running_locally(request),
-                "credentials": self.auth.get_aws_credentials(env if env else default_env),
+                "credentials": self._auth.get_aws_credentials(env if env else default_env),
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified()
             },
@@ -330,13 +327,15 @@ class ReactApi(ReactRoutes):
                 "running": 0,
                 "queued": 0
             },
-            "known_envs": self.envs.get_known_envs_with_gac_names(self.gac),
+            "known_envs": self._envs.get_known_envs_with_gac_names(),
             # TODO: cache this (slow).
             "gac": {
                 "name": get_identity_name(),
                 "values": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(get_identity_secrets())),
              },
             "environ": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(dict(os.environ)))
+
+            ,"xyzzy": self._envs.is_same_env.cache_info()
         }
         return response
 
@@ -399,7 +398,7 @@ class ReactApi(ReactRoutes):
         Returns a summary (list) of all defined checks.
         """
         response = self.create_success_response()
-        response.body = self.checks.get_checks_grouped(env)
+        response.body = self._checks.get_checks_grouped(env)
         return response
 
     def reactapi_check_results(self, request: dict, env: str, check: str) -> Response:
@@ -467,7 +466,7 @@ class ReactApi(ReactRoutes):
         if limit < 0:
             limit = 0
         response = self.create_success_response()
-        check_record = self.checks.get_check(env, check)
+        check_record = self._checks.get_check(env, check)
         connection = app.core.init_connection(env)
         history, total = app.core.get_foursight_history(connection, check, offset, limit, sort)
         history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
@@ -530,7 +529,7 @@ class ReactApi(ReactRoutes):
         Returns the content of the raw/original check_setup.json file.
         """
         response = self.create_success_response()
-        response.body = self.checks.get_checks_raw()
+        response.body = self._checks.get_checks_raw()
         return response
 
     def reactapi_checks_registry(self, request: dict, env: str) -> Response:
@@ -549,7 +548,7 @@ class ReactApi(ReactRoutes):
         Returns a summary (list) of all defined AWS lambdas for the current AWS environment.
         """
         response = self.create_success_response()
-        response.body = self.checks.get_annotated_lambdas()
+        response.body = self._checks.get_annotated_lambdas()
         return response
 
     def reactapi_gac_compare(self, request: dict, env: str, env_compare: str) -> Response:
@@ -558,7 +557,7 @@ class ReactApi(ReactRoutes):
         Returns differences between two GACs (global application configurations).
         """
         response = self.create_success_response()
-        response.body = self.gac.compare_gacs(env, env_compare)
+        response.body = Gac.compare_gacs(env, env_compare)
         return response
 
     def reactapi_aws_s3_buckets(self, request: dict, env: str) -> Response:
@@ -596,18 +595,26 @@ class ReactApi(ReactRoutes):
         response.body = AwsS3.get_bucket_key_contents(bucket, key)
         return response
 
-    def reactapi_reload_lambda(self, request: dict, lambda_name: str = "default") -> Response:
+    def reactapi_reload_lambda(self, request: dict) -> Response:
         """
-        Called from react_routes for endpoint: /reactapi/{environ}/__reloadlambda__
+        Called from react_routes for endpoint: /reactapi/__reloadlambda__
         Kicks off a reload of the given lambda name. For troubleshooting only.
         """
-        app.core.reload_lambda(lambda_name)
+        app.core.reload_lambda()
         time.sleep(3)
         return self.create_success_response(body={"status": "OK"})
 
-    def reactapi_clear_cache(self, request: dict, env: str) -> Response:
+    def reactapi_clear_cache(self, request: dict) -> Response:
         """
-        Called from react_routes for endpoint: /reactapi/{environ}/__clearcache___
+        Called from react_routes for endpoint: /reactapi/__clearcache___
         Not yet implemented.
         """
+        self.cache_clear()
         return self.create_not_implemented_response(request)
+
+    def cache_clear(self) -> None:
+        self._auth.cache_clear()
+        self._auth0_config.cache_clear()
+        self._envs.cache_clear()
+        Gac.cache_clear()
+        self._cached_header = {}

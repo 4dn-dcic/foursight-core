@@ -13,17 +13,17 @@ logger = logging.getLogger(__name__)
 class Checks:
 
     def __init__(self, check_setup, envs: Envs):
-        self.check_setup = check_setup
-        self.envs = envs
+        self._check_setup = check_setup
+        self._envs = envs
 
-    cache_checks = None
-    cache_lambdas = None
+    _cached_checks = None
+    _cached_lambdas = None
 
     def get_checks_raw(self) -> dict:
         """
         Returns a dictionary containing the pristine, original check_setup.json file contents.
         """
-        return self.check_setup
+        return self._check_setup
 
     def _get_checks(self, env: str) -> dict:
         """
@@ -32,7 +32,7 @@ class Checks:
         from the check function decorators; filtered by the given env name.
         Cached on/after the first call.
         """
-        if not Checks.cache_checks:
+        if not Checks._cached_checks:
             checks = self.get_checks_raw()
             for check_key in checks.keys():
                 checks[check_key]["name"] = check_key
@@ -40,8 +40,8 @@ class Checks:
             lambdas = self.get_annotated_lambdas()
             self._annotate_checks_with_schedules_from_lambdas(checks, lambdas)
             self._annotate_checks_with_kwargs_from_decorators(checks)
-            Checks.cache_checks = checks
-        return self._filter_checks_by_env(Checks.cache_checks, env)
+            Checks._cached_checks = checks
+        return self._filter_checks_by_env(Checks._cached_checks, env)
 
     def get_checks_grouped(self, env: str) -> list:
         """
@@ -84,7 +84,7 @@ class Checks:
             if checks[check_key]["schedule"]:
                 for check_schedule_key in checks[check_key]["schedule"].keys():
                     for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
-                        if check_env_key == "all" or self.envs.is_same_env(check_env_key, env):
+                        if check_env_key == "all" or self._envs.is_same_env(check_env_key, env):
                             checks_for_env[check_key] = checks[check_key]
             else:
                 # If no schedule section (which has the env section) then include it.
@@ -226,15 +226,15 @@ class Checks:
         """
         Returns the dictionary of all AWS lambdas for our defined stack.
         """
-        if not Checks.cache_lambdas:
+        if not Checks._cached_lambdas:
             stack_name = self._get_stack_name()
             stack_template = self._get_stack_template(stack_name)
             lambdas = self._get_lambdas_from_template(stack_template)
             lambdas = self._annotate_lambdas_with_schedules_from_template(lambdas, stack_template)
             lambdas = self._annotate_lambdas_with_function_metadata(lambdas)
             lambdas = self._annotate_lambdas_with_check_setup(lambdas, self.get_checks_raw())
-            Checks.cache_lambdas = lambdas
-        return Checks.cache_lambdas
+            Checks._cached_lambdas = lambdas
+        return Checks._cached_lambdas
 
     @staticmethod
     def _annotate_checks_with_schedules_from_lambdas(checks: dict, lambdas: dict) -> None:
@@ -270,3 +270,7 @@ class Checks:
                     check_decorator_kwargs = check_decorator.get("kwargs")
                     if check_decorator_kwargs:
                         check_item["registered_kwargs"] = check_decorator_kwargs
+
+    def cache_clear(self) -> None:
+        self._cached_checks = None
+        self._cached_lambdas = None

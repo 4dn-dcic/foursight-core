@@ -17,7 +17,7 @@ class Auth:
         self._auth0_secret = auth0_secret
         self._envs = envs
 
-    _cache_aws_credentials = {}
+    _cached_aws_credentials = {}
 
     def authorize(self, request: dict, env: Optional[str] = None) -> dict:
         """
@@ -171,7 +171,7 @@ class Auth:
         This has nothing to do with the rest of the authentication
         and authorization stuff here but vaguely related so here seems fine.
         """
-        aws_credentials = Auth._cache_aws_credentials.get(env)
+        aws_credentials = Auth._cached_aws_credentials.get(env)
         if not aws_credentials:
             try:
                 session = boto3.session.Session()
@@ -203,8 +203,11 @@ class Auth:
                         )
                     except Exception as e:
                         logger.warning(f"Exception (not fatal) getting AWS account name: {e}")
-                Auth._cache_aws_credentials[env] = aws_credentials
+                Auth._cached_aws_credentials[env] = aws_credentials
             except Exception as e:
                 logger.warning(f"Exception (not fatal) getting AWS account info: {e}")
                 return {}
         return aws_credentials
+
+    def cache_clear(self) -> None:
+        self._cached_aws_credentials = {}

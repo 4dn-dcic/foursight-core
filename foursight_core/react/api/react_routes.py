@@ -228,21 +228,19 @@ class ReactRoutes:
 
     @staticmethod
     @route("/__reloadlambda__", methods=["GET"], authorize=True)
-    def reactapi_route_reload_lambda(env: str):
+    def reactapi_route_reload_lambda():
         """
         For troubleshooting only. Reload the lambda code.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_reload_lambda(request=request, lambda_name="default")
+        return app.core.reactapi_reload_lambda(request=app.current_request.to_dict())
 
     @staticmethod
     @route("/__clearcache__", authorize=True)
-    def reactapi_route_clear_cache(env: str):
+    def reactapi_route_clear_cache():
         """
         For troubleshooting only. Clear any/all internal caches. Not yet implemented.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_clear_cache(request=request, env=env)
+        return app.core.reactapi_clear_cache(request=app.current_request.to_dict())
 
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes.
