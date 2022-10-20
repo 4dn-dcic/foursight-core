@@ -31,9 +31,8 @@ _HTTP_UNAUTHORIZED = 403
 
 def _authorize(request: dict, env: Optional[str]) -> Optional[Response]:
     """
-    If the given request is unauthorized (which included if no unauthenticated)
-    then return an appropriate unauthorized (or unauthenticated response),
-    otherwise return None.
+    If the given request is unauthorized (or unauthenticated) then return
+    an appropriate unauthorized (or unauthenticated) response, otherwise None.
     """
     authorize_response = app.core.react_authorize(request, env)
     if not authorize_response or not authorize_response["authorized"]:
