@@ -26,13 +26,9 @@ const FormatDuration = ({start = null, end = null, verbose = false, fallback = "
         return () => clearInterval(intervalId);
     }, []);
     return <>
-        { tooltip ? <>
-            <span className="tool-tip" data-text={Time.FormatDateTime(start || end)}>
-                {Time.FormatDuration(start || now, end || now, verbose, fallback, prefix, suffix)}
-            </span>
-        </>:<>
+        <span className={tooltip ? "tool-tip" : ""} data-text={Time.FormatDateTime(start || end)}>
             {Time.FormatDuration(start || now, end || now, verbose, fallback, prefix, suffix)}
-        </>}
+        </span>
     </>
 }
 
