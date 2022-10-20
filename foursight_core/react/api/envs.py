@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 
 # TODO
 # Rationalize this with dcicutil.utils env_utils functions for name versions, normalizations, comparisons.
+# Did at least some of this (below, e.g. find_known_env, is_same_env); but see if we can perhaps get away
+# from even having to keep these (5) name versions around (i.e. name, short_name, full_name, public_name,
+# foursight_name); the UI currently relies on these.
 class Envs:
 
     _DEFAULT_ENV_PLACHOLDER = 'no-default-env'
