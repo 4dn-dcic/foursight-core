@@ -170,9 +170,9 @@ class ReactApi(ReactRoutes):
         """
         Called by the main authentication callback function (app_utils.auth0_callback)
         if the above is_react_authentication_callback returns True. Performs the actual
-        Auth0 authentication via the Auth0 (HTTP POST) API. If successful, then returns
-        a redirect response (to the UI) with a cookie setting for the login authtoken.
-        If unsuccessful, then returnes a forbidden (HTTP 403) response.
+        Auth0 authentication for login via the Auth0 (HTTP POST) API. If successful,
+        returns a redirect response (to the UI) with a cookie setting for the login
+        authtoken. If unsuccessful, returnes a forbidden (HTTP 403) response.
         """
 
         auth0_code = get_request_arg(request, "code")
@@ -216,7 +216,7 @@ class ReactApi(ReactRoutes):
         redirect_url = self._get_redirect_url(request, env, domain, context)
         return self.create_redirect_response(location=redirect_url, headers={"Set-Cookie": authtoken_cookie})
 
-    def react_authorize(self, request: dict, env: str) -> dict:
+    def react_authorize(self, request: dict, env: Optional[str]) -> dict:
         """
         Exposed for call from "route" decorator for endpoint authentication protection.
         """
