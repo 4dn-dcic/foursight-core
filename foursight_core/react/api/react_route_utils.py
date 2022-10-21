@@ -1,29 +1,31 @@
 # This module defines a "route" decorator which wraps the Chalice route decorator,
 # and does authorization (and authentication) checking, tweaks the path appropriately,
-# sets up CORS if necessary (only for local development), and common exception handling.
-# We DEFAULT to AUTHORIZATION checking; if not wanted us authorize=False in route decorator.
+# sets up CORS if necessary (only for local development), and has common exception handling.
+# We DEFAULT to AUTHORIZATION checking; if not wanted use authorize=False in route decorator.
 
 from chalice import CORSConfig, Response
 from typing import Optional, Tuple
 from ...app import app
 from ...route_prefixes import ROUTE_CHALICE_LOCAL, ROUTE_PREFIX
 
+# CORS is need ONLY for local DEVELOPMENT, i.e. when using chalice local!
 # Set CORS to True if CHALICE_LOCAL; not needed if running React from Foursight
 # directly, on the same port (e.g. 8000), but useful if/when running React on a
 # separate port (e.g. 3000) via npm start in foursight-core/react to facilitate
 # easy/quick development/changes directly to React UI code.
 if ROUTE_CHALICE_LOCAL:
-    # Very specific/tricky requirements for running Foursight React UI/API
-    # in CORS mode (i.e. UI on localhost:3000 and API on localhost:8000).
-    # The allow_origin must be exact (i.e. no "*" allowed), and the
-    # allow_credentials must be True. On the client-side (React UI)
-    # we must include 'credentials: "include"' in the fetch.
+    # Very specific/tricky requirements for running Foursight React UI/API in CORS
+    # mode (i.e. UI on localhost:3000 and API on localhost:8000). The allow_origin
+    # must be exact (i.e. no "*" allowed), and the allow_credentials must be True.
+    # On the client-side (React UI) we must include 'credentials: "include"' in the
+    # fetch (if using React fetch, though now we use axios, where we require, in
+    # any case, 'withCredentials: "include"').
     _CORS = CORSConfig(
         allow_origin="http://localhost:3000",  # Need this to be explicit not "*"
         allow_credentials=True  # Need this
     )
 else:
-    _CORS = False
+    _CORS = None
 
 _HTTP_UNAUTHENTICATED = 401
 _HTTP_UNAUTHORIZED = 403
