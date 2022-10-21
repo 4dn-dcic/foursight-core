@@ -1,4 +1,5 @@
 import urllib.parse
+from dcicutils.misc_utils import ignored
 from ...app import app
 from .react_route_utils import route
 
@@ -15,12 +16,13 @@ class ReactRoutes:
     @staticmethod
     @route("/{env}/auth0_config", methods=["GET"], authorize=False)
     def reactapi_route_auth0_config(env):
+        ignored(env)
         """
         Note that this in an UNPROTECTED route.
         Returns the Auth0 configuration info required for login.
         """
         request = app.current_request.to_dict()
-        return app.core.reactapi_auth0_config(request=request, env=env)
+        return app.core.reactapi_auth0_config(request=request)
 
     @staticmethod
     @route("/auth0_config", methods=["GET"], authorize=False)
@@ -46,13 +48,13 @@ class ReactRoutes:
 
     @staticmethod
     @route("/logout", methods=["GET"], authorize=False)
-    def reactapi_route_logout_noenv(env: str):
+    def reactapi_route_logout_noenv():
         """
         Note that this in an UNPROTECTED route.
         No-env version of above /{env}/logout route.
         """
         request = app.current_request.to_dict()
-        return app.core.reactapi_logout(request=request, env=env)
+        return app.core.reactapi_logout(request=request, env=app.core.get_default_env())
 
     @staticmethod
     @route("/{env}/header", methods=["GET"], authorize=False)

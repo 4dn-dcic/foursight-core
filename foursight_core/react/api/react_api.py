@@ -13,6 +13,7 @@ import urllib.parse
 from itertools import chain
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils import ff_utils
+from dcicutils.misc_utils import get_error_message
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import get_identity_name, get_identity_secrets
 from ...app import app
@@ -54,9 +55,11 @@ class ReactApi(ReactRoutes):
 
     @staticmethod
     def create_response(http_status: int = 200,
-                        body: Union[dict, list] = {},
-                        headers: dict = {},
+                        body: Union[dict, list] = None,
+                        headers: dict = None,
                         content_type: str = JSON_CONTENT_TYPE) -> Response:
+        if not body:
+            body = {}
         if not headers:
             headers = ReactApi.STANDARD_HEADERS
         if content_type:
@@ -66,15 +69,24 @@ class ReactApi(ReactRoutes):
         return Response(status_code=http_status, body=body, headers=headers)
 
     @staticmethod
-    def create_success_response(body: Union[dict, list] = {}, content_type: str = JSON_CONTENT_TYPE) -> Response:
+    def create_success_response(body: Union[dict, list] = None, content_type: str = JSON_CONTENT_TYPE) -> Response:
+        if not body:
+            body = {}
         return ReactApi.create_response(http_status=200, body=body, content_type=content_type)
 
     @staticmethod
-    def create_redirect_response(location: str, body: dict = {}, headers: dict = {}) -> Response:
+    def create_redirect_response(location: str, body: dict = None, headers: dict = None) -> Response:
+        if not body:
+            body = {}
         if not headers:
-            headers = {}
-        if location:
+            if not location:
+                raise Exception("No location specified for HTTP redirect.")
+            headers = {"Location": location}
+        elif location:
+            headers = copy.deepcopy(headers)
             headers["Location"] = location
+        elif "location" not in [key.lower() for key in headers.keys()]:
+            raise Exception("No location specified in header for HTTP redirect.")
         return ReactApi.create_response(http_status=302, body=body, headers=headers)
 
     @staticmethod
@@ -96,7 +108,9 @@ class ReactApi(ReactRoutes):
         return ReactApi.create_response(http_status=403, body={"status": "Forbidden."})
 
     @staticmethod
-    def create_error_response(message: str) -> Response:
+    def create_error_response(message: Union[str, Exception]) -> Response:
+        if isinstance(message, Exception):
+            message = get_error_message(message)
         return ReactApi.create_response(http_status=500, body={"error": message})
 
     def _get_redirect_url(self, request: dict, env: str, domain: str, context: str) -> str:
@@ -133,7 +147,7 @@ class ReactApi(ReactRoutes):
         Returns the URL for our authentication callback endpoint.
         Note this callback endpoint is (still) defined in the legacy Foursight routes.py.
         """
-        domain, context = self.get_domain_and_context(request)
+        domain, context = app.core.get_domain_and_context(request)
         headers = request.get("headers", {})
         scheme = headers.get("x-forwarded-proto", "http")
         if is_running_locally(request):
@@ -193,7 +207,7 @@ class ReactApi(ReactRoutes):
         jwt_expires_in = auth0_response_json.get("expires_in")
         jwt_expires_at = convert_datetime_to_time_t(datetime.datetime.utcnow() +
                                                     datetime.timedelta(seconds=jwt_expires_in))
-        domain, context = self.get_domain_and_context(request)
+        domain, context = app.core.get_domain_and_context(request)
         authtoken = self._auth.create_authtoken(jwt, jwt_expires_at, env, domain)
         authtoken_cookie = create_set_cookie_string(request, name="authtoken",
                                                     value=authtoken,
@@ -213,9 +227,14 @@ class ReactApi(ReactRoutes):
     # ----------------------------------------------------------------------------------------------
 
     def react_serve_static_file(self, env: str, paths: list) -> Response:
+        """
+        Called from react_routes for endpoint: /react/{environ}/{paths}
+        Serves static UI related (JavaScript, CSS, HTML) files.
+        Note that this in an UNPROTECTED route.
+        """
         return self._react_ui.serve_static_file(env, paths)
 
-    def reactapi_auth0_config(self, request: dict, env: str):
+    def reactapi_auth0_config(self, request: dict):
         """
         Called from react_routes for endpoint: /reactapi/{environ}/auth0_config
         Note that this in an UNPROTECTED route.
@@ -266,11 +285,9 @@ class ReactApi(ReactRoutes):
             data["auth"]["known_envs"] = [known_envs_default]
             data["auth"]["known_envs_actual_count"] = known_envs_actual_count
         data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
-        response = self.create_success_response()
-        response.body = data
-        return response
+        return self.create_success_response(body=data)
 
-    def _reactapi_header_nocache(self, request: dict, env: str) -> Response:
+    def _reactapi_header_nocache(self, request: dict, env: str) -> dict:
         """
         No-cache version of above reactapi_header function.
         """
@@ -327,8 +344,7 @@ class ReactApi(ReactRoutes):
             environment_and_bucket_info = None
             portal_url = None
         # Get known envs with GAC name for each.
-        response = self.create_success_response()
-        response.body = {
+        body = {
             "app": {
                 "title": app.core.html_main_title,
                 "package": app.core.APP_PACKAGE_NAME,
@@ -381,10 +397,8 @@ class ReactApi(ReactRoutes):
                 "values": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(get_identity_secrets())),
              },
             "environ": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(dict(os.environ)))
-
-            ,"xyzzy": self._envs.is_same_env.cache_info()
         }
-        return response
+        return self.create_success_response(body=body)
 
     def reactapi_users(self, request: dict, env: str) -> Response:
         """
@@ -418,9 +432,7 @@ class ReactApi(ReactRoutes):
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
                 "modified": convert_utc_datetime_to_useastern_datetime_string(last_modified)})
-        response = self.create_success_response()
-        response.body = sorted(users, key=lambda key: key["email_address"])
-        return response
+        return self.create_success_response(body=sorted(users, key=lambda key: key["email_address"]))
 
     def reactapi_get_user(self, request: dict, env: str, email: str) -> Response:
         """
@@ -435,37 +447,28 @@ class ReactApi(ReactRoutes):
                 users.append({"email_address": email_address, "record": user})
             except Exception as e:
                 users.append({"email_address": email_address, "record": {"error": str(e)}})
-        response = self.create_success_response()
-        response.body = sorted(users, key=lambda key: key["email_address"])
-        return response
+        return self.create_success_response(body=sorted(users, key=lambda key: key["email_address"]))
 
     def reactapi_checks(self, request: dict, env: str) -> Response:
         """
         Called from react_routes for endpoint: /reactapi/{environ}/checks
         Returns a summary (list) of all defined checks.
         """
-        response = self.create_success_response()
-        response.body = self._checks.get_checks_grouped(env)
-        return response
+        return self.create_success_response(body=self._checks.get_checks_grouped(env))
 
     def reactapi_check_results(self, request: dict, env: str, check: str) -> Response:
         """
         Called from react_routes for endpoint: /reactapi/{environ}/checks/{check}
         Returns the latest result from the given check (name).
         """
-        response = self.create_success_response()
-        try:
-            connection = app.core.init_connection(env)
-            check_results = app.core.CheckResult(connection, check)
-            check_results = check_results.get_latest_result()
-            uuid = check_results["uuid"]
-            check_datetime = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-            check_datetime = convert_utc_datetime_to_useastern_datetime_string(check_datetime)
-            check_results["timestamp"] = check_datetime
-            response.body = check_results
-        except Exception as e:
-            response.body = {}
-        return response
+        connection = app.core.init_connection(env)
+        check_results = app.core.CheckResult(connection, check)
+        check_results = check_results.get_latest_result()
+        uuid = check_results["uuid"]
+        check_datetime = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
+        check_datetime = convert_utc_datetime_to_useastern_datetime_string(check_datetime)
+        check_results["timestamp"] = check_datetime
+        return self.create_success_response(body=check_results)
 
     def reactapi_check_result(self, request: dict, env: str, check: str, uuid: str) -> Response:
         """
@@ -473,14 +476,12 @@ class ReactApi(ReactRoutes):
         Returns the check result for the given check (name) and uuid.
         Analogous legacy function is app_utils.view_foursight_check.
         """
-        response = []
-        servers = []
+        body = []
         try:
             connection = app.core.init_connection(env)
         except Exception as e:
             connection = None
         if connection:
-            servers.append(connection.ff_server)
             check_result = app.core.CheckResult(connection, check)
             if check_result:
                 data = check_result.get_result_by_uuid(uuid)
@@ -495,12 +496,12 @@ class ReactApi(ReactRoutes):
                     }
                 title = app.core.check_handler.get_check_title_from_setup(check)
                 processed_result = app.core.process_view_result(connection, data, is_admin=True)
-                response.append({
+                body.append({
                     'status': 'success',
                     'env': env,
                     'checks': {title: processed_result}
                 })
-        return response
+        return self.create_success_response(body=body)
 
     def reactapi_checks_history(self, request: dict, env: str,
                                 check: str, offset: int = 0, limit: int = 25, sort: str = None) -> Response:
@@ -512,14 +513,11 @@ class ReactApi(ReactRoutes):
             offset = 0
         if limit < 0:
             limit = 0
-        response = self.create_success_response()
         check_record = self._checks.get_check(env, check)
         connection = app.core.init_connection(env)
         history, total = app.core.get_foursight_history(connection, check, offset, limit, sort)
         history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
         queue_attr = app.core.sqs.get_sqs_attributes(app.core.sqs.get_sqs_queue().url)
-        running_checks = queue_attr.get('ApproximateNumberOfMessagesNotVisible')
-        queued_checks = queue_attr.get('ApproximateNumberOfMessages')
         for item in history:
             for subitem in item:
                 if isinstance(subitem, dict):
@@ -528,7 +526,7 @@ class ReactApi(ReactRoutes):
                         timestamp = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
                         timestamp = convert_utc_datetime_to_useastern_datetime_string(timestamp)
                         subitem["timestamp"] = timestamp
-        history = {
+        body = {
             "check": check_record,
             "env": env,
             "history_kwargs": history_kwargs,
@@ -541,43 +539,33 @@ class ReactApi(ReactRoutes):
             },
             "list": history
         }
-        response.body = history
-        return response
+        return self.create_success_response(body=body)
 
     def reactapi_checks_run(self, request: dict, env: str, check: str, args: str) -> Response:
         """
         Called from react_routes for endpoint: /reactapi/{environ}/checks/{check}/run
         Kicks off a run for the given check (name).
         """
-        response = self.create_success_response()
         args = base64_decode_to_json(args)
         queued_uuid = app.core.queue_check(env, check, args)
-        response.body = {"check": check, "env": env, "uuid": queued_uuid}
-        return response
+        return self.create_success_response(body={"check": check, "env": env, "uuid": queued_uuid})
 
     def reactapi_checks_status(self, request: dict, env: str) -> Response:
         """
         Called from react_routes for endpoint: /reactapi/{environ}/checks-status
         Returns the status of any/all currently running or queued checks.
         """
-        response = self.create_success_response()
         checks_queue = app.core.sqs.get_sqs_attributes(app.core.sqs.get_sqs_queue().url)
         checks_running = checks_queue.get('ApproximateNumberOfMessagesNotVisible')
         checks_queued = checks_queue.get('ApproximateNumberOfMessages')
-        response.body = {
-            "checks_running": checks_running,
-            "checks_queued": checks_queued
-        }
-        return response
+        return self.create_success_response(body={"checks_running": checks_running, "checks_queued": checks_queued})
 
     def reactapi_checks_raw(self, request: dict, env: str) -> Response:
         """
         Called from react_routes for endpoint: /reactapi/{environ}/checks-raw
         Returns the content of the raw/original check_setup.json file.
         """
-        response = self.create_success_response()
-        response.body = self._checks.get_checks_raw()
-        return response
+        return self.create_success_response(body=self._checks.get_checks_raw())
 
     def reactapi_checks_registry(self, request: dict, env: str) -> Response:
         """
@@ -585,36 +573,28 @@ class ReactApi(ReactRoutes):
         Returns the content of the checks registry collected for the check_function
         decorator in decorators.py.
         """
-        response = self.create_success_response()
-        response.body = Decorators.get_registry()
-        return response
+        return self.create_success_response(body=Decorators.get_registry())
 
     def reactapi_lambdas(self, request: dict, env: str) -> Response:
         """
         Called from react_routes for endpoint: /reactapi/{environ}/lambdas
         Returns a summary (list) of all defined AWS lambdas for the current AWS environment.
         """
-        response = self.create_success_response()
-        response.body = self._checks.get_annotated_lambdas()
-        return response
+        return self.create_success_response(body=self._checks.get_annotated_lambdas())
 
     def reactapi_gac_compare(self, request: dict, env: str, env_compare: str) -> Response:
         """
         Called from react_routes for endpoint: /reactapi/{environ}/gac/{environ_compare}
         Returns differences between two GACs (global application configurations).
         """
-        response = self.create_success_response()
-        response.body = Gac.compare_gacs(env, env_compare)
-        return response
+        return self.create_success_response(body=Gac.compare_gacs(env, env_compare))
 
     def reactapi_aws_s3_buckets(self, request: dict, env: str) -> Response:
         """
         Called from react_routes for endpoint: /reactapi/{environ}/s3/buckets
         Return a list of all AWS S3 bucket names for the current AWS environment.
         """
-        response = self.create_success_response()
-        response.body = AwsS3.get_buckets()
-        return response
+        return self.create_success_response(body=AwsS3.get_buckets())
 
     def reactapi_aws_s3_buckets_keys(self, request: dict, env: str, bucket: str) -> Response:
         """
@@ -622,9 +602,7 @@ class ReactApi(ReactRoutes):
         Return a list of all AWS S3 bucket key names in the given bucket
         for the current AWS environment.
         """
-        response = self.create_success_response()
-        response.body = AwsS3.get_bucket_keys(bucket)
-        return response
+        return self.create_success_response(body=AwsS3.get_bucket_keys(bucket))
 
     def reactapi_aws_s3_buckets_key_contents(self, request: dict, env: str, bucket: str, key: str) -> Response:
         """
@@ -638,9 +616,7 @@ class ReactApi(ReactRoutes):
             #
             return self.create_not_implemented_response(request)
         key = urllib.parse.unquote(key)
-        response = self.create_success_response()
-        response.body = AwsS3.get_bucket_key_contents(bucket, key)
-        return response
+        return self.create_success_response(body=AwsS3.get_bucket_key_contents(bucket, key))
 
     def reactapi_reload_lambda(self, request: dict) -> Response:
         """

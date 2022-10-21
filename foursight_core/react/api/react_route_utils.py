@@ -1,7 +1,7 @@
 # This module defines a "route" decorator which wraps the Chalice route decorator,
 # and does authorization (and authentication) checking, tweaks the path appropriately,
-# and sets up CORS if necessary (only for local development). We DEFAULT to doing
-# AUTHORIZATION checking; if not desired pass authorize=False to the route decorator.
+# sets up CORS if necessary (only for local development), and common exception handling.
+# We DEFAULT to AUTHORIZATION checking; if not wanted us authorize=False in route decorator.
 
 from chalice import CORSConfig, Response
 from typing import Optional, Tuple
@@ -29,6 +29,65 @@ _HTTP_UNAUTHENTICATED = 401
 _HTTP_UNAUTHORIZED = 403
 
 
+def route(*args, **kwargs):
+    """
+    Decorator to wrap the Chalice route decorator to do our authentication and
+    authorization checking; also tweaks the path appropriately; sets up CORS
+    if necessary (only for local development); and handles exceptions.
+    """
+    if not isinstance(args, Tuple) or len(args) == 0:
+        raise Exception("No arguments found for route configuration!")
+
+    path = args[0]
+    route_prefix = ROUTE_PREFIX + ("/" if not ROUTE_PREFIX.endswith("/") else "")
+    if "static" in kwargs:
+        # This is for serving static files which live in a different/specific directory.
+        route_prefix = route_prefix + "react"
+        del kwargs["static"]
+    else:
+        route_prefix = route_prefix + "reactapi"
+    path = route_prefix + path
+    if path.endswith("/"):
+        path = path[:-1]
+
+    if "authorize" in kwargs:
+        authorize = kwargs["authorize"]
+        authorize = isinstance(authorize, bool) and authorize
+        del kwargs["authorize"]
+    else:
+        # Note we DEFAULT to AUTHORIZE!
+        # Only way to turn it off is to explicitly pass authorize=False to the route decorator.
+        authorize = True
+
+    def route_registration(wrapped_route_function):
+        """
+        This function is called once for each defined route/endpoint (at app startup).
+        """
+        def route_function(*args, **kwargs):
+            """
+            This is the function called on each route/endpoint (API) call.
+            """
+            try:
+                if authorize:
+                    # Used to call the _route_requires_authorization decorator; now do it directly.
+                    # return _route_requires_authorization(wrapped_route_function)(*args, **kwargs)
+                    # Note that we access the env argument in kwargs; ASSUME this name from the route.
+                    unauthorized_response = _authorize(app.current_request.to_dict(), kwargs.get("env"))
+                    if unauthorized_response:
+                        return unauthorized_response
+                return wrapped_route_function(*args, **kwargs)
+            except Exception as e:
+                # Common endpoint exception handling here.
+                return app.core.create_error_response(e)
+        if _CORS:
+            # Only used for cross-origin localhost development (e.g. UI on 3000 and API on 8000).
+            kwargs["cors"] = _CORS
+        # This is the call that registers the Chalice route/endpoint.
+        app.route(path, **kwargs)(route_function)
+        return route_function
+    return route_registration
+
+
 def _authorize(request: dict, env: Optional[str]) -> Optional[Response]:
     """
     If the given request is unauthorized (or unauthenticated) then return
@@ -47,6 +106,9 @@ def _authorize(request: dict, env: Optional[str]) -> Optional[Response]:
 
 def _route_requires_authorization(f):
     """
+    THIS DECORATOR NOT USED ANYMORE.
+    Functionality now wrapped in common route decorator above.
+
     Decorator for Chalice routes which should be PROTECTED by an AUTHORIZATION check.
     This ASSUMES that the FIRST argument to the route function using this decorator
     is the ENVIRONMENT name. The Chalice request is gotten from app.current_request.
@@ -81,56 +143,3 @@ def _route_requires_authorization(f):
             return unauthorized_response
         return f(*args, **kwargs)
     return wrapper
-
-
-def route(*args, **kwargs):
-    """
-    Decorator that wraps the Chalice route decorator and our route_requires_authorization decorator;
-    as well as setting up CORS for the route if necessary, and tweaking the path appropriately.
-    """
-    if not isinstance(args, Tuple) or len(args) == 0:
-        raise Exception("No arguments found for route configuration!")
-
-    path = args[0]
-    route_prefix = ROUTE_PREFIX + ("/" if not ROUTE_PREFIX.endswith("/") else "")
-    if "static" in kwargs:
-        # This is for serving static files which live in a different/specific directory.
-        route_prefix = route_prefix + "react"
-        del kwargs["static"]
-    else:
-        route_prefix = route_prefix + "reactapi"
-    path = route_prefix + path
-    if path.endswith("/"):
-        path = path[:-1]
-
-    if "authorize" in kwargs:
-        authorize = kwargs["authorize"]
-        authorize = isinstance(authorize, bool) and authorize
-        del kwargs["authorize"]
-    else:
-        # Note we DEFAULT to AUTHORIZE!
-        # Only way to turn it off is to explicitly pass authorize=False to the route decorator.
-        authorize = True
-
-    def route_registration(wrapped_route_function):
-        """
-        This function is called once for each defined route/endpoint.
-        """
-        def route_function(*args, **kwargs):
-            """
-            This is the function called on each route/endpoint (API) call.
-            """
-            if authorize:
-                # Used to call the _route_requires_authorization decorator; now do it directly.
-                # return _route_requires_authorization(wrapped_route_function)(*args, **kwargs)
-                unauthorized_response = _authorize(app.current_request.to_dict(), kwargs.get("env"))
-                if unauthorized_response:
-                    return unauthorized_response
-            return wrapped_route_function(*args, **kwargs)
-        if _CORS:
-            # Only used for cross-origin localhost development (e.g. UI on 3000 and API on 8000).
-            kwargs["cors"] = _CORS
-        # This is the call that registers the Chalice route/endpoint.
-        app.route(path, **kwargs)(route_function)
-        return route_function
-    return route_registration
