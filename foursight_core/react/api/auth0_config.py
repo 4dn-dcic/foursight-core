@@ -55,7 +55,7 @@ class Auth0Config:
 
     def __init__(self, portal_url: str) -> None:
         if not portal_url:
-            raise ValueError("URL required for Auth0Config usage.")
+            raise ValueError("Portal URL required for Auth0Config usage.")
         self._portal_url = portal_url
         self._config_url = f"{portal_url}{'/' if not portal_url.endswith('/') else ''}auth0_config?format=json"
         self._config_data = {}
