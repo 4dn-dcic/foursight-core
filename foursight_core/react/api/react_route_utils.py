@@ -71,7 +71,7 @@ def route(*args, **kwargs):
             """
             try:
                 if authorize:
-                    # Used to call the _route_requires_authorization decorator; now do it directly.
+                    # Was calling the _route_requires_authorization decorator; now do it directly.
                     # return _route_requires_authorization(wrapped_route_function)(*args, **kwargs)
                     # Note that we access the env argument in kwargs; ASSUME this name from the route.
                     unauthorized_response = _authorize(app.current_request.to_dict(), kwargs.get("env"))

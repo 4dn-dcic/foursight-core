@@ -240,7 +240,7 @@ class ReactRoutes:
     @route("/__clearcache__", authorize=True)
     def reactapi_route_clear_cache():
         """
-        For troubleshooting only. Clear any/all internal caches. Not yet implemented.
+        For troubleshooting only. Clear any/all internal caches.
         """
         return app.core.reactapi_clear_cache(request=app.current_request.to_dict())
 
