@@ -463,7 +463,11 @@ class ReactApi(ReactRoutes):
         """
         connection = app.core.init_connection(env)
         check_results = app.core.CheckResult(connection, check)
+        if not check_results:
+            return self.create_success_response({})
         check_results = check_results.get_latest_result()
+        if not check_results:
+            return self.create_success_response({})
         uuid = check_results["uuid"]
         check_datetime = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
         check_datetime = convert_utc_datetime_to_useastern_datetime_string(check_datetime)
