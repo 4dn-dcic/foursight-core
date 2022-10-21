@@ -359,6 +359,8 @@ class AppUtilsCore(ReactApi, Routes):
 
     def auth0_callback(self, request, env):
         req_dict = request.to_dict()
+        if self.is_react_authentication_callback(req_dict):
+            return self.react_authentication_callback(req_dict, env)
         domain, context = self.get_domain_and_context(req_dict)
         # extract redir cookie
         cookies = req_dict.get('headers', {}).get('cookie')
@@ -398,7 +400,6 @@ class AppUtilsCore(ReactApi, Routes):
             'client_secret': auth0_secret,
             'code': auth0_code,
             'redirect_uri': redir_url
-            # 'redirect_uri': ''.join(['https://', domain, context, 'callback/'])
         }
         json_payload = json.dumps(payload)
         headers = {'content-type': "application/json"}
@@ -406,8 +407,6 @@ class AppUtilsCore(ReactApi, Routes):
         id_token = res.json().get('id_token', None)
         if id_token:
             expires_in = res.json().get('expires_in', None)
-            if self.is_react_authentication(res.json()):
-                return self.react_authentication_callback(req_dict, env, id_token, expires_in, domain, context);
             if domain and not self.is_running_locally(req_dict):
                 cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
             else:

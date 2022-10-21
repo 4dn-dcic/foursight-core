@@ -23,6 +23,7 @@ class Routes:
         for both normal and local deployment scenarios.
         """
         request = app.current_request
+        # Note that we login to the default environment.
         return app.core.auth0_callback(request, app.core.get_default_env())
 
     if ROUTE_PREFIX != ROUTE_EMPTY_PREFIX:

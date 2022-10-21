@@ -27,19 +27,7 @@ const LoginPage = (props) => {
     const [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [ args ] = useSearchParams();
     const showAuthBoxAtOutset = args.get("auth")?.length >= 0;
-
-    const auth0Config = useFetch({
-        url: Server.Url("/auth0_config"),
-        onData: (data) => {
-            //
-            // The Auth0 config contains "partners" in the allowedConnections
-            // which is something we don't want, as it causes a generic diplay
-            // of yours@example.com option to login in the Auth0 (lock) box.
-            //
-            data.connections = data.connections.filter(connection => connection != "partners");
-            return data;
-        }
-    });
+    const auth0Config = useFetch(Server.Url("/auth0_config"));
 
     function login() {
         showAuthBox();
@@ -71,31 +59,15 @@ const LoginPage = (props) => {
     }
 
     function createAuth0Lock() {
-        const loginCallback = Context.Auth0.CallbackUrl();
-        //
-        // We get the Auth0 client ID, aka audience, aka "aud",
-        // from the non-protected /header Foursight React API.
-        // It must match what is registered at Auth0, and on
-        // the server-side (Foursight React API) we also use
-        // this value, and its associated secret, to decode
-        // the JWT resulting from a successful authentication.
-        //
-        const loginClientId = auth0Config?.data?.client; // Context.Auth0.CallbackId(header);
-        const loginPayload = {
+        const payload = {
             container: "login_auth_container",
             auth: {
-                redirectUrl: loginCallback,
+                redirectUrl: auth0Config?.data?.callback, // e.g. http://localhost:8000/callback?react
                 responseType: "code",
-                sso: auth0Config?.data?.sso, // false,
-                //
-                // N.B. There is a "react" string in the "scope" here (no setup on the
-                // React API via the /{env}/auth0_config endpoint) is used on the React
-                // API to distinguish this authentication as relating to the React version.
-                // See: foursight_core.react.api.react_api.is_react_authentication.
-                //
+                sso: auth0Config?.data?.sso,
                 params: {
-                    scope: auth0Config?.data?.scope,  // "openid email react",
-                    prompt: auth0Config?.data?.prompt // "select_account"
+                    scope: auth0Config?.data?.scope,  // e.g. "openid email",
+                    prompt: auth0Config?.data?.prompt // e.g. "select_account"
                 }
             },
             socialButtonStyle: "big",
@@ -105,9 +77,9 @@ const LoginPage = (props) => {
                 backgroundColor: "blue",
                 logo: "",
             },
-            allowedConnections: auth0Config?.data?.connections // [ "google-oauth2", "github" ]
+            allowedConnections: auth0Config?.data?.connections // e.g. [ "google-oauth2", "github" ]
         };
-        return new Auth0Lock(loginClientId, auth0Config?.data?.domain /* "hms-dbmi.auth0.com" */ , loginPayload);
+        return new Auth0Lock(auth0Config?.data?.client, auth0Config?.data?.domain, payload);
     }
 
     if ((header.loading || auth0Config.loading) && !header.error) return <>Loading ...</>

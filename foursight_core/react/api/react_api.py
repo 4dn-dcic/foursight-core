@@ -1,9 +1,11 @@
 from chalice import Response, __version__ as chalice_version
 import copy
 import datetime
+import json
 import os
 import pkg_resources
 import platform
+import requests
 import socket
 import time
 from typing import Union
@@ -17,7 +19,7 @@ from ...app import app
 from ...decorators import Decorators
 from ...route_prefixes import ROUTE_PREFIX
 from .auth import Auth
-from .auth0_config import Auth0Config, Auth0ConfigPerEnv
+from .auth0_config import Auth0Config
 from .aws_s3 import AwsS3
 from .checks import Checks
 from .cookie_utils import create_delete_cookie_string, create_set_cookie_string, read_cookie
@@ -25,7 +27,11 @@ from .datetime_utils import convert_datetime_to_time_t, convert_utc_datetime_to_
 from .encoding_utils import base64_decode_to_json
 from .envs import Envs
 from .gac import Gac
-from .misc_utils import is_running_locally, sort_dictionary_by_case_insensitive_keys
+from .misc_utils import (
+    get_request_arg,
+    is_running_locally,
+    sort_dictionary_by_case_insensitive_keys
+)
 from .react_routes import ReactRoutes
 from .react_ui import ReactUi
 
@@ -41,9 +47,8 @@ class ReactApi(ReactRoutes):
     def __init__(self):
         super(ReactApi, self).__init__()
         self._envs = Envs(app.core.get_unique_annotated_environment_names())
-        self._auth = Auth(app.core.get_auth0_client_id(self._envs.get_default_env()),
-                          app.core.get_auth0_secret(self._envs.get_default_env()), self._envs)
-        self._auth0_config = Auth0ConfigPerEnv()
+        self._auth0_config = Auth0Config(app.core.get_portal_url(self._envs.get_default_env()))
+        self._auth = Auth(self._auth0_config.get_client(), self._auth0_config.get_secret(), self._envs)
         self._checks = Checks(app.core.check_handler.CHECK_SETUP, self._envs)
         self._react_ui = ReactUi(self)
 
@@ -93,40 +98,6 @@ class ReactApi(ReactRoutes):
     def create_error_response(message: str) -> Response:
         return ReactApi.create_response(http_status=500, body={"error": message})
 
-    def is_react_authentication(self, auth0_response: dict) -> bool:
-        """
-        Returns True iff the given Auth0 authentication response (specifically, from the POST
-        to https://hms-dbmi.auth0.com/oauth/token which happens in app_utils.auth0_callback)
-        is for authentication from the React UI. This is communicated via an Auth0 "scope"
-        which is setup on the React UI side to contain a "react" string.
-        See: react/src/pages/LoginPage/createAuth0Lock.
-        """
-        return "react" in auth0_response.get("scope", "") if auth0_response else False
-
-    def react_authentication_callback(self, request: dict, env: str,
-                                      jwt: str, jwt_expires_in: int, domain: str, context: str) -> Response:
-        """
-        Called from the main Auth0 callback, in app_utils/auth0_callback, AFTER the Auth0 HTTP POST
-        which does the actual authentication; that POST returns the JWT which is received by this
-        function. So at this point, the user HAS been SUCCESSFULLY authenticated and we have a
-        VALID/authenticated JWT; if this were not so we would have returned before this call,
-        in app_utils/auth_callback. We create a new JWT from the given JWT, which we call authtoken,
-        and set this as a cookie on the redirect (HTTP 302) response which we return.
-        The jwt_expires_in is the number of seconds from now when the given JWT will expire;
-        this is directly from the (above mentioned) Auth0 POST; this is NOT the exp from
-        the JWT which seems to be different from (like 14 hours less than) jwt_expires_in.
-        """
-        jwt_expires_at = convert_datetime_to_time_t(datetime.datetime.utcnow() +
-                                                    datetime.timedelta(seconds=jwt_expires_in))
-        authtoken = self._auth.create_authtoken(jwt, jwt_expires_at, env, domain)
-        authtoken_cookie = create_set_cookie_string(request, name="authtoken",
-                                                    value=authtoken,
-                                                    domain=domain,
-                                                    expires=jwt_expires_at, http_only=False)
-        redirect_url = self._get_redirect_url(request, env, domain, context)
-        headers = {"Set-Cookie": authtoken_cookie}
-        return self.create_redirect_response(location=redirect_url, headers=headers)
-
     def _get_redirect_url(self, request: dict, env: str, domain: str, context: str) -> str:
         redirect_url = read_cookie(request, "reactredir")
         if not redirect_url:
@@ -152,7 +123,76 @@ class ReactApi(ReactRoutes):
             redirect_url = urllib.parse.unquote(redirect_url)
         return redirect_url
 
+    @staticmethod
+    def _get_authentication_callback_url(request: dict) -> str:
+        """
+        Returns the URL for our authentication callback endpoint.
+        Note this callback endpoint is (still) defined in the legacy Foursight routes.py.
+        """
+        headers = request.get("headers", {})
+        scheme = headers.get("x-forwarded-proto", "http")
+        host = headers.get("host")
+        return f"{scheme}://{host}/callback/?react"
+
+    def is_react_authentication_callback(self, request: dict) -> bool:
+        """
+        Returns True iff the given Auth0 authentication/login callback request, i.e. from
+        the /callback route which is defined in the main routes.py for both React and non-React
+        Auth0 authentication/login, is for a React authentication/login. This is communicated
+        via "react" URL parameter in the callback URL, which is setup on the React UI side;
+        note this was PREVIOUSLY done there via a "react" string in Auth0 "scope", but changed
+        so we can get the Auth0 config (e.g. domain) for the POST to Auth0 using our Auth0Config.
+        See: react/src/pages/LoginPage/createAuth0Lock.
+        """
+        return get_request_arg(request, "react") is not None
+
+    def react_authentication_callback(self, request: dict, env: str) -> Response:
+
+        auth0_code = get_request_arg(request, "code")
+        auth0_domain = self._auth0_config.get_domain()
+        auth0_client = self._auth0_config.get_client()
+        auth0_secret = self._auth0_config.get_secret()
+        if not (auth0_code and auth0_domain and auth0_client and auth0_secret):
+            return self.create_forbidden_response()
+
+        # Not actually sure what this auth0_redirect_uri is needed
+        # for, but needed it does seem to be, for this Auth0 POST;
+        # it evidently needs to be (this) authentication callback URL.
+        auth0_redirect_uri = self._get_authentication_callback_url(request)
+        auth0_payload = {
+            'grant_type': 'authorization_code',
+            'client_id': auth0_client,
+            'client_secret': auth0_secret,
+            'code': auth0_code,
+            'redirect_uri': auth0_redirect_uri
+        }
+        auth0_post_url = f"https://{auth0_domain}/oauth/token"
+
+        auth0_payload_json = json.dumps(auth0_payload)
+        auth0_headers = ReactApi.STANDARD_HEADERS
+        auth0_response = requests.post(auth0_post_url, data=auth0_payload_json, headers=auth0_headers)
+        auth0_response_json = auth0_response.json()
+        jwt = auth0_response_json.get("id_token")
+
+        if not jwt:
+            return self.create_forbidden_response()
+
+        jwt_expires_in = auth0_response_json.get("expires_in")
+        jwt_expires_at = convert_datetime_to_time_t(datetime.datetime.utcnow() +
+                                                    datetime.timedelta(seconds=jwt_expires_in))
+        domain, context = self.get_domain_and_context(request)
+        authtoken = self._auth.create_authtoken(jwt, jwt_expires_at, env, domain)
+        authtoken_cookie = create_set_cookie_string(request, name="authtoken",
+                                                    value=authtoken,
+                                                    domain=domain,
+                                                    expires=jwt_expires_at, http_only=False)
+        redirect_url = self._get_redirect_url(request, env, domain, context)
+        return self.create_redirect_response(location=redirect_url, headers={"Set-Cookie": authtoken_cookie})
+
     def react_authorize(self, request: dict, env: str) -> dict:
+        """
+        Exposed for call from "route" decorator for endpoint authentication protection.
+        """
         return self._auth.authorize(request, env)
 
     def react_serve_static_file(self, env: str, paths: list) -> Response:
@@ -167,16 +207,10 @@ class ReactApi(ReactRoutes):
         Called from react_routes for endpoint: /reactapi/{environ}/auth0_config
         Note that this in an UNPROTECTED route.
         """
-        response = self.create_success_response()
-        auth0_config = self._auth0_config.define_auth0_config(env, app.core.get_portal_url(env))
-        response.body = auth0_config.get_config_data()
-        try:
-            response = self.create_success_response()
-            auth0_config = self._auth0_config.define_auth0_config(env, app.core.get_portal_url(env))
-            response.body = auth0_config.get_config_data()
-            return response
-        except Exception as e:
-            return self.create_error_response(f"Error getting Auth0 config ({env}): {e}")
+        auth0_config = self._auth0_config.get_config_data()
+        # Note we add the callback for the UI to setup its Auth0 login for.
+        auth0_config["callback"] = self._get_authentication_callback_url(request)
+        return self.create_success_response(body=self._auth0_config.get_config_data())
 
     def reactapi_logout(self, request: dict, env: str) -> Response:
         """

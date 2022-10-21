@@ -1,6 +1,6 @@
 import logging
+import os
 import requests
-from typing import Optional
 from dcicutils.misc_utils import get_error_message
 
 logging.basicConfig()
@@ -47,7 +47,7 @@ class Auth0Config:
         "domain": "hms-dbmi.auth0.com",
         "client": "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB",
         "sso": False,
-        "scope": "openid email react",
+        "scope": "openid email",
         "prompt": "select_account",
         "connections": ["github", "google-oauth2"]
     }
@@ -90,17 +90,16 @@ class Auth0Config:
         options_auth_params = options_auth.get("params") if options_auth else None
         sso = options_auth.get("sso") if options_auth else None
         scope = options_auth_params.get("scope") if options_auth_params else None
-        # This is for us to know that this is a React login;
-        # see react_api.is_react_authentication and app_utils.auth0_callback.
-        if scope:
-            scope += " react"
-        else:
-            scope = "react"
         prompt = options_auth_params.get("prompt") if options_auth_params else None
         connections = options.get("allowedConnections") if options else None
+        # The Auth0 config may contain "partners" in the allowedConnections,
+        # which is something we don't want, as it causes a generic diplay
+        # of yours@example.com option to login in the Auth0 (lock) box.
+        if connections and "partners" in connections:
+            connections.remove("partners")
         return {
-            "domain": domain or Auth0Config.FALLBACK_VALUES["domain"],
             "client": client or Auth0Config.FALLBACK_VALUES["client"],
+            "domain": domain or Auth0Config.FALLBACK_VALUES["domain"],
             "sso": sso or Auth0Config.FALLBACK_VALUES["sso"],
             "scope": scope or Auth0Config.FALLBACK_VALUES["scope"],
             "prompt": prompt or Auth0Config.FALLBACK_VALUES["prompt"],
@@ -127,47 +126,21 @@ class Auth0Config:
             logger.error(f"Exception fetching Auth0 config ({self.get_config_url()}): {get_error_message(e)}")
             return {}
 
+    def get_client(self) -> str:
+        return self.get_config_data()["client"]
+
+    def get_domain(self) -> str:
+        return self.get_config_data()["domain"]
+
+    def get_secret(self) -> str:
+        """
+        Returns the Auth0 secret.
+        Currently we get this environment variables setup from the GAC; see identity.py.
+        """
+        return os.environ.get("CLIENT_SECRET", os.environ.get("ENCODED_AUTH0_CLIENT"))
+
     def cache_clear(self) -> None:
         """
         Clears out the caches, so next call to get_config_data() and get_config_raw_data() get fresh data.
         """
         self._config_data = self._config_raw_data = {}
-
-
-class Auth0ConfigPerEnv:
-
-    def __init__(self) -> None:
-        self._per_env_data = {}
-
-    def define_auth0_config(self, env: str, portal_url: str) -> Auth0Config:
-        """
-        If an Auth0Config is already defined for the given env then return it,
-        otherwise create one and return it.
-        """
-        if not env:
-            raise ValueError("Invalid environment argument to Auth0ConfigPerEnv.")
-        per_env_data = self._per_env_data.get(env)
-        if not per_env_data:
-            self._per_env_data[env] = Auth0Config(portal_url)
-        return self._per_env_data[env]
-
-    def get_portal_url(self, env: str) -> Optional[str]:
-        per_env_data = self._per_env_data.get(env)
-        return per_env_data.get_portal_url() if per_env_data else None
-
-    def get_config_url(self, env: str) -> Optional[str]:
-        per_env_data = self._per_env_data.get(env)
-        return per_env_data.get_config_url() if per_env_data else None
-
-    def get_config_data(self, env: str) -> Optional[dict]:
-        per_env_data = self._per_env_data.get(env)
-        return per_env_data.get_config_data() if per_env_data else None
-
-    def get_config_raw_data(self, env: str) -> Optional[dict]:
-        per_env_data = self._per_env_data.get(env)
-        return per_env_data.get_config_raw_data() if per_env_data else None
-
-    def cache_clear(self) -> None:
-        for per_env_data in self._per_env_data:
-            per_env_data.cache_clear()
-        self._per_env_data = {}

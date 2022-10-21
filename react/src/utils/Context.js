@@ -102,19 +102,6 @@ function IsLocalCrossOrigin() {
 }
 
 // -------------------------------------------------------------------------------------------------
-// Authentication (Auth0) callback info.
-// -------------------------------------------------------------------------------------------------
-
-function Auth0CallbackUrl() {
-    if (IsLocalClient()) {
-        return GetServerOrigin() + "/callback/";
-    }
-    else {
-        return GetServerOrigin() + "/api/callback/";
-    }
-}
-
-// -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
@@ -137,7 +124,4 @@ const exports = {
         BaseUrl:           GetServerBaseUrl,
         Origin:            GetServerOrigin
     },
-    Auth0: {
-        CallbackUrl:        Auth0CallbackUrl
-    }
 }; export default exports;
