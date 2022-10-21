@@ -123,16 +123,17 @@ class ReactApi(ReactRoutes):
             redirect_url = urllib.parse.unquote(redirect_url)
         return redirect_url
 
-    @staticmethod
-    def _get_authentication_callback_url(request: dict) -> str:
+    def _get_authentication_callback_url(self, request: dict) -> str:
         """
         Returns the URL for our authentication callback endpoint.
         Note this callback endpoint is (still) defined in the legacy Foursight routes.py.
         """
+        domain, context = self.get_domain_and_context(request)
         headers = request.get("headers", {})
         scheme = headers.get("x-forwarded-proto", "http")
-        host = headers.get("host")
-        return f"{scheme}://{host}/callback/?react"
+        if is_running_locally(request):
+            context = "/"
+        return f"{scheme}://{domain}{context}callback/?react"
 
     def is_react_authentication_callback(self, request: dict) -> bool:
         """
