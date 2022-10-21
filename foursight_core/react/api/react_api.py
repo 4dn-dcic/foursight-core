@@ -90,7 +90,8 @@ class ReactApi(ReactRoutes):
         """
         Note that this is different from the unauthenticated and/or unauthorized response
         if the user is not logged in or does not have access to the given environment.
-        This is for other forbidden case, e.g. access to static files we restrict access to.
+        This is for other forbidden cases, e.g. access to static files we restrict
+        access to, or a failed login/authentication attempt.
         """
         return ReactApi.create_response(http_status=403, body={"status": "Forbidden."})
 
@@ -99,6 +100,10 @@ class ReactApi(ReactRoutes):
         return ReactApi.create_response(http_status=500, body={"error": message})
 
     def _get_redirect_url(self, request: dict, env: str, domain: str, context: str) -> str:
+        """
+        Returns the redirect URL to the UI from the reactredir cookie,
+        or if that is not set then to the /login page of the UI.
+        """
         redirect_url = read_cookie(request, "reactredir")
         if not redirect_url:
             if is_running_locally(request):
@@ -148,6 +153,13 @@ class ReactApi(ReactRoutes):
         return get_request_arg(request, "react") is not None
 
     def react_authentication_callback(self, request: dict, env: str) -> Response:
+        """
+        Called by the main authentication callback function (app_utils.auth0_callback)
+        if the above is_react_authentication_callback returns True. Performs the actual
+        Auth0 authentication via the Auth0 (HTTP POST) API. If successful, then returns
+        a redirect response (to the UI) with a cookie setting for the login authtoken.
+        If unsuccessful, then returnes a forbidden (HTTP 403) response.
+        """
 
         auth0_code = get_request_arg(request, "code")
         auth0_domain = self._auth0_config.get_domain()
@@ -196,12 +208,12 @@ class ReactApi(ReactRoutes):
         """
         return self._auth.authorize(request, env)
 
-    def react_serve_static_file(self, env: str, paths: list) -> Response:
-        return self._react_ui.serve_static_file(env, paths)
-
     # ----------------------------------------------------------------------------------------------
     # Below are the implementation functions corresponding directly to the routes in react_routes.
     # ----------------------------------------------------------------------------------------------
+
+    def react_serve_static_file(self, env: str, paths: list) -> Response:
+        return self._react_ui.serve_static_file(env, paths)
 
     def reactapi_auth0_config(self, request: dict, env: str):
         """
