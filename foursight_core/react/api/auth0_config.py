@@ -7,9 +7,10 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
-# Class to encapsulate Auth0 configuration parameters,
+# Class to encapsulate the Auth0 configuration
+# parameters from the Portal /auth0_config endpoint,
 # e.g. from: https://cgap-mgb.hms.harvard.edu/auth0_config?format=json
-#        or: https://data.4dnucleome.org/auth0_config?format=json
+#         or: https://data.4dnucleome.org/auth0_config?format=json
 #  {
 #    "title": "Auth0 Config",
 #    "auth0Client": "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB",
