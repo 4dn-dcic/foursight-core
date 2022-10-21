@@ -8,7 +8,7 @@ import platform
 import requests
 import socket
 import time
-from typing import Union
+from typing import Optional, Union
 import urllib.parse
 from itertools import chain
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
@@ -633,11 +633,12 @@ class ReactApi(ReactRoutes):
         Not yet implemented.
         """
         self.cache_clear()
-        return self.create_not_implemented_response(request)
+        return self.create_success_response(body={"status": "OK"})
 
     def cache_clear(self) -> None:
         self._auth.cache_clear()
         self._auth0_config.cache_clear()
         self._envs.cache_clear()
+        self._checks.cache_clear()
         Gac.cache_clear()
         self._cached_header = {}
