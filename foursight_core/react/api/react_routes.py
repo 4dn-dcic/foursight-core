@@ -1,5 +1,6 @@
-import urllib.parse
+from urllib.parse import urlparse
 from dcicutils.misc_utils import ignored
+import json
 from ...app import app
 from .react_route_utils import route
 
@@ -14,7 +15,7 @@ class ReactRoutes:
     # ----------------------------------------------------------------------------------------------
 
     @staticmethod
-    @route("/{env}/auth0_config", methods=["GET"], authorize=False)
+    @route("/{env}/auth0_config", authorize=False)
     def reactapi_route_auth0_config(env):
         ignored(env)
         """
@@ -25,7 +26,7 @@ class ReactRoutes:
         return app.core.reactapi_auth0_config(request=request)
 
     @staticmethod
-    @route("/auth0_config", methods=["GET"], authorize=False)
+    @route("/auth0_config", authorize=False)
     def reactapi_route_auth0_config_noenv():
         """
         Note that this in an UNPROTECTED route.
@@ -35,7 +36,7 @@ class ReactRoutes:
         return app.core.reactapi_auth0_config(request=request, env=app.core.get_default_env())
 
     @staticmethod
-    @route("/{env}/logout", methods=["GET"], authorize=False)
+    @route("/{env}/logout", authorize=False)
     def reactapi_route_logout(env: str):
         """
         Note that this in an UNPROTECTED route.
@@ -47,7 +48,7 @@ class ReactRoutes:
         return app.core.reactapi_logout(request=request, env=env)
 
     @staticmethod
-    @route("/logout", methods=["GET"], authorize=False)
+    @route("/logout", authorize=False)
     def reactapi_route_logout_noenv():
         """
         Note that this in an UNPROTECTED route.
@@ -57,7 +58,7 @@ class ReactRoutes:
         return app.core.reactapi_logout(request=request, env=app.core.get_default_env())
 
     @staticmethod
-    @route("/{env}/header", methods=["GET"], authorize=False)
+    @route("/{env}/header", authorize=False)
     def reactapi_route_header(env: str):
         """
         Note that this in an UNPROTECTED route.
@@ -67,7 +68,7 @@ class ReactRoutes:
         return app.core.reactapi_header(request=request, env=env)
 
     @staticmethod
-    @route("/header", methods=["GET"], authorize=False)
+    @route("/header", authorize=False)
     def reactapi_route_header_noenv():
         """
         Note that this in an UNPROTECTED route.
@@ -77,7 +78,7 @@ class ReactRoutes:
         return app.core.reactapi_header(request=request, env=app.core.get_default_env())
 
     @staticmethod
-    @route("/{env}/info", methods=["GET"], authorize=True)
+    @route("/{env}/info", authorize=True)
     def reactapi_route_info(env: str):
         """
         Returns various/sundry info about the app.
@@ -86,7 +87,7 @@ class ReactRoutes:
         return app.core.reactapi_info(request=request, env=env)
 
     @staticmethod
-    @route("/{env}/users", methods=["GET"], authorize=True)
+    @route("/{env}/users", authorize=True)
     def reactapi_route_users(env: str):
         """
         Returns the list of all defined users (TODO: not yet paged).
@@ -95,16 +96,59 @@ class ReactRoutes:
         return app.core.reactapi_users(request=request, env=env)
 
     @staticmethod
-    @route("/{env}/users/{email}", methods=["GET"], authorize=True)
-    def reactapi_route_users_user(env: str, email: str):
+    @route("/{env}/users/{email}", authorize=True)
+    def reactapi_route_get_user(env: str, email: str):
         """
         Returns detailed info the given user (email).
         """
         request = app.current_request.to_dict()
         return app.core.reactapi_get_user(request=request, env=env, email=email)
 
+    # XYZZY:NEW
+
+    # Looks like PATCH and DELETE (still) not supported at least in chalice local mode;
+    # complaint about this from 2016; says fixed but another complaint from June 2021.
+    #
+    # https://github.com/aws/chalice/issues/167
+    # https://github.com/aws/chalice/pull/173
+    #
+    # So looks like not a priority to fix and too much of a pain to maintain separate
+    # endpoints for chalice local and normal operation so making all of these POSTs
+    # with different endpoint paths.
+
     @staticmethod
-    @route("/{env}/checks", methods=["GET"], authorize=True)
+    @route("/{env}/users/create", method="POST", authorize=False) # TODO: unauthorized while testing
+    def reactapi_route_post_user(env: str):
+        """
+        Creates a new user described by the given data.
+        """
+        request = app.current_request.to_dict()
+        user = json.loads(app.current_request.raw_body.decode())
+        return app.core.reactapi_post_user(request=request, env=env, user=user)
+
+    @staticmethod
+    @route("/{env}/users/update/{uuid}", method="POST", authorize=False) # TODO: unauthorized while testing
+    def reactapi_route_patch_user(env: str, uuid: str):
+        """
+        Updates the user identified by the given uuid with the given data.
+        """
+        request = app.current_request.to_dict()
+        user = json.loads(app.current_request.raw_body.decode())
+        return app.core.reactapi_patch_user(request=request, env=env, uuid=uuid, user=user)
+
+    @staticmethod
+    @route("/{env}/users/delete/{uuid}", method="POST", authorize=False) # TODO: unauthorized while testing
+    def reactapi_route_patch_user(env: str, uuid: str):
+        """
+        Updates the user identified by the given uuid with the given data.
+        """
+        request = app.current_request.to_dict()
+        return app.core.reactapi_delete_user(request=request, env=env, uuid=uuid)
+
+    # XYZZY:NEW
+
+    @staticmethod
+    @route("/{env}/checks", authorize=True)
     def reactapi_route_checks(env: str):
         """
         Returns detailed info on all defined checks.
@@ -113,7 +157,7 @@ class ReactRoutes:
         return app.core.reactapi_checks(request=request, env=env)
 
     @staticmethod
-    @route("/{env}/checks/{check}", methods=["GET"], authorize=True)
+    @route("/{env}/checks/{check}", authorize=True)
     def reactapi_route_check_results(env: str, check: str):
         """
         Returns the most result of the most recent run for the given check.
@@ -122,7 +166,7 @@ class ReactRoutes:
         return app.core.reactapi_check_results(request=request, env=env, check=check)
 
     @staticmethod
-    @route("/{env}/checks/{check}/{uuid}", methods=["GET"], authorize=True)
+    @route("/{env}/checks/{check}/{uuid}", authorize=True)
     def reactapi_route_check_result(env: str, check: str, uuid: str):
         """
         Returns the result of the given check.
@@ -131,7 +175,7 @@ class ReactRoutes:
         return app.core.reactapi_check_result(request=request, env=env, check=check, uuid=uuid)
 
     @staticmethod
-    @route("/{env}/checks/{check}/history", methods=["GET"], authorize=True)
+    @route("/{env}/checks/{check}/history", authorize=True)
     def reactapi_route_checks_history(env: str, check: str):
         """
         Returns detailed info on the run histories of the given check (paged).
@@ -141,12 +185,12 @@ class ReactRoutes:
         offset = int(params.get("offset", "0")) if params else 0
         limit = int(params.get("limit", "25")) if params else 25
         sort = params.get("sort", "timestamp.desc") if params else "timestamp.desc"
-        sort = urllib.parse.unquote(sort)
+        sort = urlparse.unquote(sort)
         return app.core.reactapi_checks_history(request=request, env=env,
                                                 check=check, offset=offset, limit=limit, sort=sort)
 
     @staticmethod
-    @route("/{env}/checks/{check}/run", methods=["GET"], authorize=True)
+    @route("/{env}/checks/{check}/run", authorize=True)
     def reactapi_route_checks_run(env: str, check: str):
         """
         Kicks off a run of the given check.
@@ -157,7 +201,7 @@ class ReactRoutes:
         return app.core.reactapi_checks_run(request=request, env=env, check=check, args=args)
 
     @staticmethod
-    @route("/{env}/checks-status", methods=["GET"], authorize=True)
+    @route("/{env}/checks-status", authorize=True)
     def reactapi_route_checks_status(env: str):
         """
         Returns info on currently running/queueued checks.
@@ -166,7 +210,7 @@ class ReactRoutes:
         return app.core.reactapi_checks_status(request=request, env=env)
 
     @staticmethod
-    @route("/{env}/checks-raw", methods=["GET"], authorize=True)
+    @route("/{env}/checks-raw", authorize=True)
     def reactapi_route_checks_raw(env: str):
         """
         Returns the contents of the raw check_setup.json file.
@@ -175,7 +219,7 @@ class ReactRoutes:
         return app.core.reactapi_checks_raw(request=request, env=env)
 
     @staticmethod
-    @route("/{env}/checks-registry", methods=["GET"], authorize=True)
+    @route("/{env}/checks-registry", authorize=True)
     def reactapi_route_checks_registry(env: str):
         """
         Returns detailed registered checks functions.
@@ -184,7 +228,7 @@ class ReactRoutes:
         return app.core.reactapi_checks_registry(request=request, env=env)
 
     @staticmethod
-    @route("/{env}/lambdas", methods=["GET"], authorize=True)
+    @route("/{env}/lambdas", authorize=True)
     def reactapi_route_lambdas(env: str):
         """
         Returns detailed info on defined lambdas.
@@ -202,7 +246,7 @@ class ReactRoutes:
         return app.core.reactapi_gac_compare(request=request, env=env, env_compare=environ_compare)
 
     @staticmethod
-    @route("/{env}/aws/s3/buckets", methods=["GET"], authorize=True)
+    @route("/{env}/aws/s3/buckets", authorize=True)
     def reactapi_route_aws_s3_buckets(env: str):
         """
         Return the list of all AWS S3 bucket names for the current AWS environment.
@@ -211,7 +255,7 @@ class ReactRoutes:
         return app.core.reactapi_aws_s3_buckets(request=request, env=env)
 
     @staticmethod
-    @route("/{env}/aws/s3/buckets/{bucket}", methods=["GET"], authorize=True)
+    @route("/{env}/aws/s3/buckets/{bucket}", authorize=True)
     def reactapi_route_aws_s3_buckets_keys(env: str, bucket: str):
         """
         Return the list of AWS S3 bucket key names in the given bucket for the current AWS environment.
@@ -220,7 +264,7 @@ class ReactRoutes:
         return app.core.reactapi_aws_s3_buckets_keys(request=request, env=env, bucket=bucket)
 
     @staticmethod
-    @route("/{env}/aws/s3/buckets/{bucket}/{key}", methods=["GET"], authorize=True)
+    @route("/{env}/aws/s3/buckets/{bucket}/{key}", authorize=True)
     def reactapi_route_aws_s3_buckets_key_contents(env: str, bucket: str, key: str):
         """
         Return the content of the given AWS S3 bucket key in the given bucket for the current AWS environment.
@@ -229,7 +273,7 @@ class ReactRoutes:
         return app.core.reactapi_aws_s3_buckets_key_contents(request=request, env=env, bucket=bucket, key=key)
 
     @staticmethod
-    @route("/__reloadlambda__", methods=["GET"], authorize=True)
+    @route("/__reloadlambda__", authorize=True)
     def reactapi_route_reload_lambda():
         """
         For troubleshooting only. Reload the lambda code.

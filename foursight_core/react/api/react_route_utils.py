@@ -61,6 +61,18 @@ def route(*args, **kwargs):
         # Only way to turn it off is to explicitly pass authorize=False to the route decorator.
         authorize = True
 
+    if "methods" not in kwargs:
+        if "method" in kwargs:
+            # Allow singular method kwarg in addition to Chalice methods kwarg.
+            kwargs["methods"] = [kwargs["method"]]
+            del kwargs["method"]
+        else:
+            # If no methods given the default to GET.
+            kwargs["methods"] = ["GET"]
+    elif "method" in kwargs:
+        kwargs["method"]
+
+
     def route_registration(wrapped_route_function):
         """
         This function is called once for each defined route/endpoint (at app startup).
@@ -85,6 +97,9 @@ def route(*args, **kwargs):
             # Only used for cross-origin localhost development (e.g. UI on 3000 and API on 8000).
             kwargs["cors"] = _CORS
         # This is the call that registers the Chalice route/endpoint.
+        print('xyzzy;chalice;route')
+        print(path)
+        print(kwargs)
         app.route(path, **kwargs)(route_function)
         return route_function
     return route_registration

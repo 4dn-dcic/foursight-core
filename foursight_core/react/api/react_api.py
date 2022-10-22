@@ -457,6 +457,15 @@ class ReactApi(ReactRoutes):
                 users.append({"email_address": email_address, "record": {"error": str(e)}})
         return self.create_success_response(sorted(users, key=lambda key: key["email_address"]))
 
+    def reactapi_post_user(self, request: dict, env: str, user: dict) -> Response:
+        return self.create_not_implemented_response(request)
+
+    def reactapi_patch_user(self, request: dict, env: str, uuid: str, user: dict) -> Response:
+        return self.create_not_implemented_response(request)
+
+    def reactapi_delete_user(self, request: dict, env: str, uuid: str) -> Response:
+        return self.create_not_implemented_response(request)
+
     def reactapi_checks(self, request: dict, env: str) -> Response:
         """
         Called from react_routes for endpoint: /{env}/checks
