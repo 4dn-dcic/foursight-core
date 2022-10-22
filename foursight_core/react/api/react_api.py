@@ -228,7 +228,7 @@ class ReactApi(ReactRoutes):
 
     def react_serve_static_file(self, env: str, paths: list) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/{paths}
+        Called from react_routes for static endpoints: /{env}/{path}/{etc}
         Serves static UI related (JavaScript, CSS, HTML) files.
         Note that this in an UNPROTECTED route.
         """
@@ -555,7 +555,6 @@ class ReactApi(ReactRoutes):
         return self.create_success_response(body)
 
     def reactapi_checks_history(self, request: dict, env: str, check: str, args: Optional[dict] = None) -> Response:
-            # check: str, offset: int = 0, limit: int = 25, sort: str = None) -> Response:
         """
         Called from react_routes for endpoint: /{env}/checks/check/history
         Returns a (paged) summary (list) of check results for the given check (name).
