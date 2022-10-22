@@ -495,8 +495,8 @@ class ReactApi(ReactRoutes):
         Deletes the user identified by the given uuid.
         TODO
         """
-        response = ff_utils.delete_metadata(obj_id="users/{uuid}", ff_env=full_env_name(env))
-        response = ff_utils.purge_metadata(obj_id="users/{uuid}", ff_env=full_env_name(env))
+        response = ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
+        response = ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
         return self.create_success_response({"status": "Deleted", "uuid": uuid})
 
     def reactapi_checks(self, request: dict, env: str) -> Response:

@@ -104,20 +104,18 @@ class ReactRoutes:
         request = app.current_request.to_dict()
         return app.core.reactapi_get_user(request=request, env=env, email=email)
 
-    # XYZZY:NEW
-
-    # Looks like PATCH and DELETE (still) not supported at least in chalice local mode;
-    # complaint about this from 2016; says fixed but another complaint from June 2021.
+    # Looks like PATCH and DELETE not supported, at least in chalice local mode, still;
+    # complaints about this from 2016; says fixed but another complaint from June 2021.
     #
     # https://github.com/aws/chalice/issues/167
     # https://github.com/aws/chalice/pull/173
     #
-    # So looks like not a priority to fix and too much of a pain to maintain separate
-    # endpoints for chalice local and normal operation so making all of these POSTs
-    # with different endpoint paths.
+    # So evidently not a priority to fix and too much of a pain to maintain separate
+    # endpoints for chalice local and normal operation so making all of these POSTs,
+    # with different (create, update, delete) endpoint paths.
 
     @staticmethod
-    @route("/{env}/users/create", method="POST", authorize=False) # TODO: unauthorized while testing
+    @route("/{env}/users/create", method="POST", authorize=True)
     def reactapi_route_post_user(env: str):
         """
         Creates a new user described by the given data.
@@ -127,7 +125,7 @@ class ReactRoutes:
         return app.core.reactapi_post_user(request=request, env=env, user=user)
 
     @staticmethod
-    @route("/{env}/users/update/{uuid}", method="POST", authorize=False) # TODO: unauthorized while testing
+    @route("/{env}/users/update/{uuid}", method="POST", authorize=True)
     def reactapi_route_patch_user(env: str, uuid: str):
         """
         Updates the user identified by the given uuid with the given data.
@@ -137,15 +135,13 @@ class ReactRoutes:
         return app.core.reactapi_patch_user(request=request, env=env, uuid=uuid, user=user)
 
     @staticmethod
-    @route("/{env}/users/delete/{uuid}", method="POST", authorize=False) # TODO: unauthorized while testing
+    @route("/{env}/users/delete/{uuid}", method="POST", authorize=True)
     def reactapi_route_patch_user(env: str, uuid: str):
         """
         Deletes the user identified by the given uuid.
         """
         request = app.current_request.to_dict()
         return app.core.reactapi_delete_user(request=request, env=env, uuid=uuid)
-
-    # XYZZY:NEW
 
     @staticmethod
     @route("/{env}/checks", authorize=True)
