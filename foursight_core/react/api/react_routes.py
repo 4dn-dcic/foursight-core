@@ -286,41 +286,38 @@ class ReactRoutes:
 
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes.
+    # Note that these are all UNPROTECTED routes.
     # ----------------------------------------------------------------------------------------------
 
     # TODO: See if there is a better way to deal with variadic paths.
     # TODO: Maybe end up serving these from S3, for more security, and smaller Chalice package size.
 
     @staticmethod
-    def reactui_serve_static_file(env: str, paths: list):
-        return app.core.react_serve_static_file(env=env, paths=paths)
-
-    @staticmethod
     @route("/", static=True, authorize=False)
     def reactui_route_static_file_noenv():
-        return ReactRoutes.reactui_serve_static_file(env=app.core.get_default_env(), paths=[])
+        return app.core.react_serve_static_file(env=app.core.get_default_env(), paths=[])
 
     @staticmethod
     @route("/{env}", static=True, authorize=False)
     def reactui_route_0(env):
-        return ReactRoutes.reactui_serve_static_file(env=env, paths=[])
+        return app.core.react_serve_static_file(env=env, paths=[])
 
     @staticmethod
     @route("/{env}/{path1}", static=True, authorize=False)
     def reactui_route_1(env, path1):
-        return ReactRoutes.reactui_serve_static_file(env=env, paths=[path1])
+        return app.core.react_serve_static_file(env=env, paths=[path1])
 
     @staticmethod
     @route("/{env}/{path1}/{path2}", static=True, authorize=False)
     def reactui_route_2(env, path1, path2):
-        return ReactRoutes.reactui_serve_static_file(env=env, paths=[path1, path2])
+        return app.core.react_serve_static_file(env=env, paths=[path1, path2])
 
     @staticmethod
     @route("/{env}/{path1}/{path2}/{path3}", static=True, authorize=False)
     def reactui_route_3(env, path1, path2, path3):
-        return ReactRoutes.reactui_serve_static_file(env=env, paths=[path1, path2, path3])
+        return app.core.react_serve_static_file(env=env, paths=[path1, path2, path3])
 
     @staticmethod
     @route("/{env}/{path1}/{path2}/{path3}/{path4}", static=True, authorize=False)
     def reactui_route_4(env, path1, path2, path3, path4):
-        return ReactRoutes.reactui_serve_static_file(env=env, paths=[path1, path2, path3, path4])
+        return app.core.react_serve_static_file(env=env, paths=[path1, path2, path3, path4])
