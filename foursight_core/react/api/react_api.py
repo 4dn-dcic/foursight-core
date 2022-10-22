@@ -698,4 +698,4 @@ class ReactApi(ReactRoutes):
         self._checks.cache_clear()
         self._react_ui.cache_clear()
         Gac.cache_clear()
-        self._cached_header = {}
+        ReactApi._cached_header = {}
