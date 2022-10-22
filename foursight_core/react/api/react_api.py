@@ -463,7 +463,6 @@ class ReactApi(ReactRoutes):
         Creates a new user described by the given data.
         Given user data looks like:
         {email': 'japrufrock@hms.harvard.edu', 'first_name': 'J. Alfred', 'last_name': 'Prufrock'}
-        TODO
         """
         response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env))
         #
@@ -484,7 +483,6 @@ class ReactApi(ReactRoutes):
         """
         Called from react_routes for endpoint: POST /{env}/users/update/{uuid}
         Updates the user identified by the given uuid with the given data.
-        TODO
         """
         response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env))
         return self.create_success_response({"status": "Updated", "uuid": uuid})
@@ -493,7 +491,6 @@ class ReactApi(ReactRoutes):
         """
         Called from react_routes for endpoint: POST /{env}/users/delete/{uuid}
         Deletes the user identified by the given uuid.
-        TODO
         """
         response = ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
         response = ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
