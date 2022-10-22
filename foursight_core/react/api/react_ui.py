@@ -53,7 +53,7 @@ class ReactUi:
     def __init__(self, react_api):
         self._react_api = react_api
 
-    _cache_static_files = {}
+    _cached_static_files = {}
 
     @staticmethod
     def _is_known_file_suffix(file: str) -> bool:
@@ -116,7 +116,7 @@ class ReactUi:
         if not self._is_file_whitelisted(file):
             return self._react_api.create_forbidden_response()
 
-        response = ReactUi._cache_static_files.get(file)
+        response = ReactUi._cached_static_files.get(file)
         if not response:
             response = self._react_api.create_success_response(content_type=content_type)
             try:
@@ -126,5 +126,8 @@ class ReactUi:
                 message = f"Exception serving static React file ({file} | {content_type}): {e}"
                 logger.error(message)
                 return self._react_api.create_error_response(message)
-            ReactUi._cache_static_files[file] = response = self._react_api.process_response(response)
+            ReactUi._cached_static_files[file] = response = self._react_api.process_response(response)
         return response
+
+    def cache_clear(self) -> None:
+        ReactUi._cached_static_files = {}

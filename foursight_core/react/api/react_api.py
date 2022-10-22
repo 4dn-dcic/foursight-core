@@ -652,5 +652,6 @@ class ReactApi(ReactRoutes):
         self._auth0_config.cache_clear()
         self._envs.cache_clear()
         self._checks.cache_clear()
+        self._react_ui.cache_clear()
         Gac.cache_clear()
         self._cached_header = {}
