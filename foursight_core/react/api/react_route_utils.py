@@ -72,7 +72,6 @@ def route(*args, **kwargs):
     elif "method" in kwargs:
         kwargs["method"]
 
-
     def route_registration(wrapped_route_function):
         """
         This function is called once for each defined route/endpoint (at app startup).
