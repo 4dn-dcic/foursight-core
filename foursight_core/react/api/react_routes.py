@@ -140,7 +140,7 @@ class ReactRoutes:
     @route("/{env}/users/delete/{uuid}", method="POST", authorize=False) # TODO: unauthorized while testing
     def reactapi_route_patch_user(env: str, uuid: str):
         """
-        Updates the user identified by the given uuid with the given data.
+        Deletes the user identified by the given uuid.
         """
         request = app.current_request.to_dict()
         return app.core.reactapi_delete_user(request=request, env=env, uuid=uuid)

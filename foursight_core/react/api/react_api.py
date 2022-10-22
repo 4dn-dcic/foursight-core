@@ -458,13 +458,46 @@ class ReactApi(ReactRoutes):
         return self.create_success_response(sorted(users, key=lambda key: key["email_address"]))
 
     def reactapi_post_user(self, request: dict, env: str, user: dict) -> Response:
-        return self.create_not_implemented_response(request)
+        """
+        Called from react_routes for endpoint: POST /{env}/users/create
+        Creates a new user described by the given data.
+        Given user data looks like:
+        {email': 'japrufrock@hms.harvard.edu', 'first_name': 'J. Alfred', 'last_name': 'Prufrock'}
+        TODO
+        """
+        response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env))
+        #
+        # Response looks like:
+        # {'status': 'success', '@type': ['result'], '@graph': [{'date_created': '2022-10-22T18:39:16.973680+00:00', 'submitted_by': '/users/b5f738b6-455a-42e5-bc1c-77fbfd9b15d2/', 'schema_version': '1', 'status': 'current', 'email': 'test_user@hms.harvard.edu', 'first_name': 'J. Alfred', 'last_name': 'Prufrock', 'timezone': 'US/Eastern', 'last_modified': {'modified_by': '/users/b5f738b6-455a-42e5-bc1c-77fbfd9b15d2/', 'date_modified': '2022-10-22T18:39:16.975477+00:00'}, '@id': '/users/03cb92c4-b086-47e5-a875-42a01dc63581/', '@type': ['User', 'Item'], 'uuid': '03cb92c4-b086-47e5-a875-42a01dc63581', 'principals_allowed': {'view': ['group.admin', 'remoteuser.EMBED', 'remoteuser.INDEXER', 'userid.03cb92c4-b086-47e5-a875-42a01dc63581'], 'edit': ['group.admin']}, 'display_title': 'J. Alfred Prufrock', 'title': 'J. Alfred Prufrock', 'contact_email': 'test_user@hms.harvard.edu'}]}
+        status = response.get("status")
+        if status != "success":
+            return self.create_error_response(json.dumps(response))
+        graph = response.get("@graph")
+        if not graph or not isinstance(graph, dict):
+            return self.create_error_response(json.dumps(response))
+        uuid = graph.get("uuid")
+        if not uuid:
+            return self.create_error_response(json.dumps(response))
+        return self.create_success_response({"status": "Created", "uuid": uuid})
 
     def reactapi_patch_user(self, request: dict, env: str, uuid: str, user: dict) -> Response:
-        return self.create_not_implemented_response(request)
+        """
+        Called from react_routes for endpoint: POST /{env}/users/update/{uuid}
+        Updates the user identified by the given uuid with the given data.
+        TODO
+        """
+        response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env))
+        return self.create_success_response({"status": "Updated", "uuid": uuid})
 
     def reactapi_delete_user(self, request: dict, env: str, uuid: str) -> Response:
-        return self.create_not_implemented_response(request)
+        """
+        Called from react_routes for endpoint: POST /{env}/users/delete/{uuid}
+        Deletes the user identified by the given uuid.
+        TODO
+        """
+        response = ff_utils.delete_metadata(obj_id="users/{uuid}", ff_env=full_env_name(env))
+        response = ff_utils.purge_metadata(obj_id="users/{uuid}", ff_env=full_env_name(env))
+        return self.create_success_response({"status": "Deleted", "uuid": uuid})
 
     def reactapi_checks(self, request: dict, env: str) -> Response:
         """
