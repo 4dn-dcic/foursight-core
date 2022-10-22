@@ -1,8 +1,8 @@
 import boto3
 import cron_descriptor
 import logging
-from typing import Optional
 import os
+from typing import Callable, Optional
 from ...decorators import Decorators
 from .envs import Envs
 
@@ -174,7 +174,8 @@ class Checks:
         e.g. the function name and ARN, code size, role, and description.
         """
         boto_lambda = boto3.client("lambda")
-        lambda_functions = boto_lambda.list_functions()["Functions"]
+      # lambda_functions = boto_lambda.list_functions()["Functions"]
+        lambda_functions = Checks._get_all_lambda_functions()
         for lambda_function in lambda_functions:
             lambda_function_handler = lambda_function["Handler"]
             for la in lambdas:
@@ -270,6 +271,28 @@ class Checks:
                     check_decorator_kwargs = check_decorator.get("kwargs")
                     if check_decorator_kwargs:
                         check_item["registered_kwargs"] = check_decorator_kwargs
+
+    @staticmethod
+    def _get_all_lambda_functions(lambda_filter: Optional[Callable] = None) -> list:
+        boto_lambda = boto3.client("lambda")
+        results = []
+        marker = None
+        while True:
+            if marker:
+                lambda_functions = boto_lambda.list_functions(Marker=marker)
+            else:
+                lambda_functions = boto_lambda.list_functions()
+            if not lambda_functions or not lambda_functions.get("Functions"):
+                break
+            for lambda_function in lambda_functions["Functions"]:
+                if isinstance(lambda_filter, Callable):
+                    if not lambda_filter(lambda_function):
+                        continue
+                results.append(lambda_function)
+            marker = lambda_functions.get("NextMarker")
+            if not marker:
+                break
+        return results
 
     def cache_clear(self) -> None:
         self._cached_checks = None

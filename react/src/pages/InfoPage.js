@@ -195,6 +195,17 @@ const InfoPage = () => {
                 <InfoRow name={"Log Stream"} value={info.get("environ.AWS_LAMBDA_LOG_STREAM_NAME")} monospace={true} size="2" />
             </InfoBox>
         </>}
+        { info.get("app.lambda") &&
+            <InfoBox title="Lambda">
+                <InfoRow name={"Name"} value={info.get("app.lambda.lambda_name")} monospace={true} size="2" />
+                <InfoRow name={"Function"} value={info.get("app.lambda.lambda_function_name")} monospace={true} size="2" />
+                <InfoRow name={"ARN"} value={info.get("app.lambda.lambda_function_arn")} monospace={true} size="2" />
+                <InfoRow name={"S3 Location"} value={info.get("app.lambda.lambda_code_s3_bucket") + "/" + info.get("app.lambda.lambda_code_s3_bucket_key")} monospace={true} size="2" />
+                <InfoRow name={"Size"} value={info.get("app.lambda.lambda_code_size")} monospace={true} size="2" />
+                <InfoRow name={"Modified"} value={Time.FormatDateTime(info.get("app.lambda.lambda_modified"))} monospace={true} size="2" />
+                <InfoRow name={"Role"} value={info.get("app.lambda.lambda_role")} monospace={true} size="2" />
+            </InfoBox>
+        }
         <InfoBox title="Miscellany">
             { reloadingApp ? <>
                 <div data-text={"Reloading the Foursight app."} className="tool-tip" style={{float:"right"}}><StandardSpinner condition={reloadingApp} label={""} color={"darkblue"} /></div>

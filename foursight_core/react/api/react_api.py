@@ -343,6 +343,13 @@ class ReactApi(ReactRoutes):
         else:
             environment_and_bucket_info = None
             portal_url = None
+        lambda_function_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+        lambdas = self._checks.get_annotated_lambdas()
+        lambda_function_info = [info for info in lambdas if info.get("lambda_function_name") == lambda_function_name]
+        if len(lambda_function_info) == 1:
+            lambda_function_info = lambda_function_info[0]
+        else:
+            lambda_function_info = {}
         # Get known envs with GAC name for each.
         body = {
             "app": {
@@ -355,7 +362,8 @@ class ReactApi(ReactRoutes):
                 "local": is_running_locally(request),
                 "credentials": self._auth.get_aws_credentials(env if env else default_env),
                 "launched": app.core.init_load_time,
-                "deployed": app.core.get_lambda_last_modified()
+                "deployed": app.core.get_lambda_last_modified(),
+                "lambda": lambda_function_info
             },
             "versions": {
                 "foursight": app.core.get_app_version(),
