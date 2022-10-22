@@ -97,9 +97,6 @@ def route(*args, **kwargs):
             # Only used for cross-origin localhost development (e.g. UI on 3000 and API on 8000).
             kwargs["cors"] = _CORS
         # This is the call that registers the Chalice route/endpoint.
-        print('xyzzy;chalice;route')
-        print(path)
-        print(kwargs)
         app.route(path, **kwargs)(route_function)
         return route_function
     return route_registration
@@ -119,44 +116,3 @@ def _authorize(request: dict, env: Optional[str]) -> Optional[Response]:
         http_status = _HTTP_UNAUTHENTICATED if not authorize_response["authenticated"] else _HTTP_UNAUTHORIZED
         return app.core.create_response(http_status=http_status, body=authorize_response)
     return None
-
-
-def _route_requires_authorization(f):
-    """
-    THIS DECORATOR NOT USED ANYMORE.
-    Functionality now wrapped in common route decorator above.
-
-    Decorator for Chalice routes which should be PROTECTED by an AUTHORIZATION check.
-    This ASSUMES that the FIRST argument to the route function using this decorator
-    is the ENVIRONMENT name. The Chalice request is gotten from app.current_request.
-
-    If the request is NOT authorized/authenticated then a forbidden (HTTP 403 or 401)
-    response is returned, otherwise we go ahead with the function/route invocation.
-    A request is authorized iff it is AUTHENTICATED, i.e. the user has successfully
-    logged in, AND also has PERMISSION to access the specified environment. If the
-    request is not authorized an HTTP 401 is returned; if the request is authenticated
-    but is not authorized (for the specified environment) and HTTP 403 is returned.
-
-    The info to determine this is pass via the authtoken cookie, which is a (server-side)
-    JWT-signed-encode value containing authentication info and list allowed environment
-    for the user; this value/cookie is set server-side at login time.
-
-    Note that ONLY three React API routes should NOT be authorization protected by this decorator:
-      -> /{env}/auth0_config
-      -> /{env}/header
-      -> /{env}/logout
-
-    N.B. This was originally used to decorate each route, then created the below "route"
-    wrapper which called this. And then changed that (below) "route" wrapper to call
-    the function directly (maybe more efficient); so this is actually NO LONGER USED.
-    Keeping here just for now just in case.
-
-    """
-    def wrapper(*args, **kwargs):
-        if not kwargs or len(kwargs) < 1:
-            raise Exception("Invalid arguments to requires_authorization decorator!")
-        unauthorized_response = _authorize(app.current_request.to_dict(), kwargs.get("env"))
-        if unauthorized_response:
-            return unauthorized_response
-        return f(*args, **kwargs)
-    return wrapper

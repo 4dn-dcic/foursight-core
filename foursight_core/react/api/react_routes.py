@@ -1,4 +1,4 @@
-from urllib.parse import urlparse
+#from urllib.parse import urlparse
 from dcicutils.misc_utils import ignored
 import json
 from ...app import app
@@ -22,8 +22,7 @@ class ReactRoutes:
         Note that this in an UNPROTECTED route.
         Returns the Auth0 configuration info required for login.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_auth0_config(request=request)
+        return app.core.reactapi_auth0_config(app.current_request.to_dict())
 
     @staticmethod
     @route("/auth0_config", authorize=False)
@@ -32,8 +31,7 @@ class ReactRoutes:
         Note that this in an UNPROTECTED route.
         No-env version of above /{env}/auth0_config route.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_auth0_config(request=request, env=app.core.get_default_env())
+        return app.core.reactapi_auth0_config(app.current_request.to_dict(), app.core.get_default_env())
 
     @staticmethod
     @route("/{env}/logout", authorize=False)
@@ -44,8 +42,7 @@ class ReactRoutes:
         The env is not strictly required for logout, since we logout from all environments,
         but it is is useful for the redirect back, and also just for consistency/completeness.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_logout(request=request, env=env)
+        return app.core.reactapi_logout(app.current_request.to_dict(), env)
 
     @staticmethod
     @route("/logout", authorize=False)
@@ -54,8 +51,7 @@ class ReactRoutes:
         Note that this in an UNPROTECTED route.
         No-env version of above /{env}/logout route.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_logout(request=request, env=app.core.get_default_env())
+        return app.core.reactapi_logout(app.current_request.to_dict(), app.core.get_default_env())
 
     @staticmethod
     @route("/{env}/header", authorize=False)
@@ -64,8 +60,7 @@ class ReactRoutes:
         Note that this in an UNPROTECTED route.
         Returns minimal data for React UI to get up and running.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_header(request=request, env=env)
+        return app.core.reactapi_header(app.current_request.to_dict(), env)
 
     @staticmethod
     @route("/header", authorize=False)
@@ -74,8 +69,7 @@ class ReactRoutes:
         Note that this in an UNPROTECTED route.
         No-env version of above /{env}/header route.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_header(request=request, env=app.core.get_default_env())
+        return app.core.reactapi_header(app.current_request.to_dict(), app.core.get_default_env())
 
     @staticmethod
     @route("/{env}/info", authorize=True)
@@ -83,8 +77,7 @@ class ReactRoutes:
         """
         Returns various/sundry info about the app.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_info(request=request, env=env)
+        return app.core.reactapi_info(app.current_request.to_dict(), env)
 
     @staticmethod
     @route("/{env}/users", authorize=True)
@@ -92,17 +85,15 @@ class ReactRoutes:
         """
         Returns the list of all defined users (TODO: not yet paged).
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_users(request=request, env=env)
+        return app.core.reactapi_users(app.current_request.to_dict(), env)
 
     @staticmethod
     @route("/{env}/users/{email}", authorize=True)
     def reactapi_route_get_user(env: str, email: str):
         """
-        Returns detailed info the given user (email).
+        Returns detailed info for the given user (email).
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_get_user(request=request, env=env, email=email)
+        return app.core.reactapi_get_user(app.current_request.to_dict(), env, email=email)
 
     # Looks like PATCH and DELETE not supported, at least in chalice local mode, still;
     # complaints about this from 2016; says fixed but another complaint from June 2021.
@@ -120,9 +111,8 @@ class ReactRoutes:
         """
         Creates a new user described by the given data.
         """
-        request = app.current_request.to_dict()
         user = json.loads(app.current_request.raw_body.decode())
-        return app.core.reactapi_post_user(request=request, env=env, user=user)
+        return app.core.reactapi_post_user(app.current_request.to_dict(), env, user=user)
 
     @staticmethod
     @route("/{env}/users/update/{uuid}", method="POST", authorize=True)
@@ -130,9 +120,8 @@ class ReactRoutes:
         """
         Updates the user identified by the given uuid with the given data.
         """
-        request = app.current_request.to_dict()
         user = json.loads(app.current_request.raw_body.decode())
-        return app.core.reactapi_patch_user(request=request, env=env, uuid=uuid, user=user)
+        return app.core.reactapi_patch_user(app.current_request.to_dict(), env, uuid=uuid, user=user)
 
     @staticmethod
     @route("/{env}/users/delete/{uuid}", method="POST", authorize=True)
@@ -140,8 +129,7 @@ class ReactRoutes:
         """
         Deletes the user identified by the given uuid.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_delete_user(request=request, env=env, uuid=uuid)
+        return app.core.reactapi_delete_user(app.current_request.to_dict(), env, uuid=uuid)
 
     @staticmethod
     @route("/{env}/checks", authorize=True)
@@ -149,8 +137,7 @@ class ReactRoutes:
         """
         Returns detailed info on all defined checks.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_checks(request=request, env=env)
+        return app.core.reactapi_checks(app.current_request.to_dict(), env)
 
     @staticmethod
     @route("/{env}/checks/{check}", authorize=True)
@@ -158,8 +145,7 @@ class ReactRoutes:
         """
         Returns the most result of the most recent run for the given check.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_check_results(request=request, env=env, check=check)
+        return app.core.reactapi_check_results(app.current_request.to_dict(), env, check=check)
 
     @staticmethod
     @route("/{env}/checks/{check}/{uuid}", authorize=True)
@@ -167,8 +153,7 @@ class ReactRoutes:
         """
         Returns the result of the given check.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_check_result(request=request, env=env, check=check, uuid=uuid)
+        return app.core.reactapi_check_result(app.current_request.to_dict(), env, check=check, uuid=uuid)
 
     @staticmethod
     @route("/{env}/checks/{check}/history", authorize=True)
@@ -177,13 +162,8 @@ class ReactRoutes:
         Returns detailed info on the run histories of the given check (paged).
         """
         request = app.current_request.to_dict()
-        params = request.get("query_params")
-        offset = int(params.get("offset", "0")) if params else 0
-        limit = int(params.get("limit", "25")) if params else 25
-        sort = params.get("sort", "timestamp.desc") if params else "timestamp.desc"
-        sort = urlparse.unquote(sort)
-        return app.core.reactapi_checks_history(request=request, env=env,
-                                                check=check, offset=offset, limit=limit, sort=sort)
+        args = request.get("query_params")
+        return app.core.reactapi_checks_history(request, env, check=check, args=args)
 
     @staticmethod
     @route("/{env}/checks/{check}/run", authorize=True)
@@ -194,7 +174,7 @@ class ReactRoutes:
         request = app.current_request.to_dict()
         args = request.get("query_params", {})
         args = args.get("args")
-        return app.core.reactapi_checks_run(request=request, env=env, check=check, args=args)
+        return app.core.reactapi_checks_run(request, env, check=check, args=args)
 
     @staticmethod
     @route("/{env}/checks-status", authorize=True)
@@ -202,8 +182,7 @@ class ReactRoutes:
         """
         Returns info on currently running/queueued checks.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_checks_status(request=request, env=env)
+        return app.core.reactapi_checks_status(app.current_request.to_dict(), env)
 
     @staticmethod
     @route("/{env}/checks-raw", authorize=True)
@@ -211,8 +190,7 @@ class ReactRoutes:
         """
         Returns the contents of the raw check_setup.json file.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_checks_raw(request=request, env=env)
+        return app.core.reactapi_checks_raw(app.current_request.to_dict(), env)
 
     @staticmethod
     @route("/{env}/checks-registry", authorize=True)
@@ -220,8 +198,7 @@ class ReactRoutes:
         """
         Returns detailed registered checks functions.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_checks_registry(request=request, env=env)
+        return app.core.reactapi_checks_registry(app.current_request.to_dict(), env)
 
     @staticmethod
     @route("/{env}/lambdas", authorize=True)
@@ -229,17 +206,15 @@ class ReactRoutes:
         """
         Returns detailed info on defined lambdas.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_lambdas(request=request, env=env)
+        return app.core.reactapi_lambdas(app.current_request.to_dict(), env)
 
     @staticmethod
-    @route("/{env}/gac/{environ_compare}", authorize=True)
-    def reactapi_route_gac_compare(env: str, environ_compare: str):
+    @route("/{env}/gac/{env_compare}", authorize=True)
+    def reactapi_route_gac_compare(env: str, env_compare: str):
         """
         Compares and returns diffs for values in the given two GACs.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_gac_compare(request=request, env=env, env_compare=environ_compare)
+        return app.core.reactapi_gac_compare(app.current_request.to_dict(), env, env_compare=env_compare)
 
     @staticmethod
     @route("/{env}/aws/s3/buckets", authorize=True)
@@ -247,8 +222,7 @@ class ReactRoutes:
         """
         Return the list of all AWS S3 bucket names for the current AWS environment.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_aws_s3_buckets(request=request, env=env)
+        return app.core.reactapi_aws_s3_buckets(app.current_request.to_dict(), env)
 
     @staticmethod
     @route("/{env}/aws/s3/buckets/{bucket}", authorize=True)
@@ -256,8 +230,7 @@ class ReactRoutes:
         """
         Return the list of AWS S3 bucket key names in the given bucket for the current AWS environment.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_aws_s3_buckets_keys(request=request, env=env, bucket=bucket)
+        return app.core.reactapi_aws_s3_buckets_keys(app.current_request.to_dict(), env, bucket=bucket)
 
     @staticmethod
     @route("/{env}/aws/s3/buckets/{bucket}/{key}", authorize=True)
@@ -265,8 +238,7 @@ class ReactRoutes:
         """
         Return the content of the given AWS S3 bucket key in the given bucket for the current AWS environment.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_aws_s3_buckets_key_contents(request=request, env=env, bucket=bucket, key=key)
+        return app.core.reactapi_aws_s3_buckets_key_contents(app.current_request.to_dict(), env, bucket=bucket, key=key)
 
     @staticmethod
     @route("/__reloadlambda__", authorize=True)
@@ -274,7 +246,7 @@ class ReactRoutes:
         """
         For troubleshooting only. Reload the lambda code.
         """
-        return app.core.reactapi_reload_lambda(request=app.current_request.to_dict())
+        return app.core.reactapi_reload_lambda(app.current_request.to_dict())
 
     @staticmethod
     @route("/__clearcache__", authorize=True)
@@ -282,7 +254,7 @@ class ReactRoutes:
         """
         For troubleshooting only. Clear any/all internal caches.
         """
-        return app.core.reactapi_clear_cache(request=app.current_request.to_dict())
+        return app.core.reactapi_clear_cache(app.current_request.to_dict())
 
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes.
@@ -295,29 +267,29 @@ class ReactRoutes:
     @staticmethod
     @route("/", static=True, authorize=False)
     def reactui_route_static_file_noenv():
-        return app.core.react_serve_static_file(env=app.core.get_default_env(), paths=[])
+        return app.core.react_serve_static_file(app.core.get_default_env(), [])
 
     @staticmethod
     @route("/{env}", static=True, authorize=False)
     def reactui_route_0(env):
-        return app.core.react_serve_static_file(env=env, paths=[])
+        return app.core.react_serve_static_file(env, [])
 
     @staticmethod
     @route("/{env}/{path1}", static=True, authorize=False)
     def reactui_route_1(env, path1):
-        return app.core.react_serve_static_file(env=env, paths=[path1])
+        return app.core.react_serve_static_file(env, [path1])
 
     @staticmethod
     @route("/{env}/{path1}/{path2}", static=True, authorize=False)
     def reactui_route_2(env, path1, path2):
-        return app.core.react_serve_static_file(env=env, paths=[path1, path2])
+        return app.core.react_serve_static_file(env, [path1, path2])
 
     @staticmethod
     @route("/{env}/{path1}/{path2}/{path3}", static=True, authorize=False)
     def reactui_route_3(env, path1, path2, path3):
-        return app.core.react_serve_static_file(env=env, paths=[path1, path2, path3])
+        return app.core.react_serve_static_file(env, [path1, path2, path3])
 
     @staticmethod
     @route("/{env}/{path1}/{path2}/{path3}/{path4}", static=True, authorize=False)
     def reactui_route_4(env, path1, path2, path3, path4):
-        return app.core.react_serve_static_file(env=env, paths=[path1, path2, path3, path4])
+        return app.core.react_serve_static_file(env, [path1, path2, path3, path4])

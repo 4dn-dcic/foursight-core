@@ -554,16 +554,22 @@ class ReactApi(ReactRoutes):
                 })
         return self.create_success_response(body)
 
-    def reactapi_checks_history(self, request: dict, env: str,
-                                check: str, offset: int = 0, limit: int = 25, sort: str = None) -> Response:
+    def reactapi_checks_history(self, request: dict, env: str, check: str, args: Optional[dict] = None) -> Response:
+            # check: str, offset: int = 0, limit: int = 25, sort: str = None) -> Response:
         """
         Called from react_routes for endpoint: /{env}/checks/check/history
         Returns a (paged) summary (list) of check results for the given check (name).
         """
+        offset = int(args.get("offset", "0")) if args else 0
+        limit = int(args.get("limit", "25")) if args else 25
+        sort = args.get("sort", "timestamp.desc") if args else "timestamp.desc"
+        sort = urllib.parse.unquote(sort)
+
         if offset < 0:
             offset = 0
         if limit < 0:
             limit = 0
+
         check_record = self._checks.get_check(env, check)
         connection = app.core.init_connection(env)
         history, total = app.core.get_foursight_history(connection, check, offset, limit, sort)
