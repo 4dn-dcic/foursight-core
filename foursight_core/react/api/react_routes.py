@@ -2,7 +2,7 @@
 from dcicutils.misc_utils import ignored
 import json
 from ...app import app
-from .react_route_utils import route
+from .react_route_decorator import route
 
 
 class ReactRoutes:

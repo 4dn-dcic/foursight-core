@@ -63,7 +63,7 @@ class Auth:
             # the request is AUTHORIZED. If not, return HTTP 403 (not authorized); we do NOT,
             # in this case, return 401 (not authenticated), as (above) if not authenticated;
             # the UI acts differently for these two cases. These HTTP status are actually
-            # set in via the decorator in react_route_utils.
+            # set in via the decorator in react_route_decorator.
 
             if env:
                 allowed_envs = authtoken_decoded["allowed_envs"]
