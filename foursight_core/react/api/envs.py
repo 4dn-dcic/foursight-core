@@ -83,10 +83,10 @@ class Envs:
 
     def get_user_auth_info(self, email: str) -> Tuple[list, list, str]:
         """
-        Returns a tuple containing (in left-right order): the list of known environments;
-        the list of allowed environment names (via the users store in ElasticSearch);
-        and (since we're getting the user record anyways) the first and last name of
-        the user (for informational/display purposes).
+        Returns a tuple containing (in left-right order): the list of known environments,
+        i.e the list of annotated environment name objects; the list of allowed environment
+        names for the given user/email, via the users store in ElasticSearch; and since we're
+        getting the user record anyways, the first/last name of the user, for display only.
         """
         allowed_envs = []
         first_name = None
