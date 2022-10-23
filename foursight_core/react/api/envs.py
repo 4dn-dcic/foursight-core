@@ -50,17 +50,6 @@ class Envs:
     @memoize(100)
     def find_known_env(self, env: str) -> Optional[dict]:
         return find_association(self._known_envs, foursight_name=foursight_env_name(env))
-#       if not env:
-#           return None
-#       env = env.lower()
-#       for known_env in self._known_envs:
-#           if (known_env["name"].lower() == env
-#                   or known_env["short_name"].lower() == env
-#                   or known_env["full_name"].lower() == env
-#                   or known_env["public_name"].lower() == env
-#                   or known_env["foursight_name"].lower() == env):
-#               return known_env
-#       return None
 
     def is_allowed_env(self, env: str, allowed_envs: list) -> bool:
         if not env or not allowed_envs:
@@ -73,13 +62,6 @@ class Envs:
     @memoize(100)
     def is_same_env(self, env_a: str, env_b: str) -> bool:
         return foursight_env_name(env_a) == foursight_env_name(env_b)
-#       if not env_a or not env_b:
-#           return False
-#       known_env_a = self.find_known_env(env_a)
-#       known_env_b = self.find_known_env(env_b)
-#       if not known_env_a or not known_env_b:
-#           return False
-#       return id(known_env_a) == id(known_env_b)
 
     def get_user_auth_info(self, email: str) -> Tuple[list, list, str]:
         """
