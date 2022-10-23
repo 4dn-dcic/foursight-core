@@ -2,6 +2,7 @@ from chalice import Response
 from dcicutils.misc_utils import ignored
 import json
 from ...app import app
+from .misc_utils import get_request_body
 from .react_route_decorator import route
 
 
@@ -95,8 +96,8 @@ class ReactRoutes:
         """
         return app.core.reactapi_get_user(app.current_request.to_dict(), env, email=email)
 
-    # Looks like PATCH and DELETE not supported, at least in chalice local mode, still;
-    # complaints about this from 2016; says fixed but another complaint from June 2021.
+    # Looks like PUT, PATCH, and DELETE are not supported, at least in chalice local mode,
+    # still; complaints about this from 2016; says fixed but another complaint from June 2021.
     #
     # https://github.com/aws/chalice/issues/167
     # https://github.com/aws/chalice/pull/173
@@ -111,7 +112,7 @@ class ReactRoutes:
         """
         Creates a new user described by the given data.
         """
-        user = json.loads(app.current_request.raw_body.decode())
+        user = get_request_body(app.current_request)
         return app.core.reactapi_post_user(app.current_request.to_dict(), env, user=user)
 
     @staticmethod
@@ -120,7 +121,7 @@ class ReactRoutes:
         """
         Updates the user identified by the given uuid with the given data.
         """
-        user = json.loads(app.current_request.raw_body.decode())
+        user = get_request_body(app.current_request)
         return app.core.reactapi_patch_user(app.current_request.to_dict(), env, uuid=uuid, user=user)
 
     @staticmethod
@@ -258,7 +259,7 @@ class ReactRoutes:
 
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes.
-    # Note that these are all UNPROTECTED routes.
+    # Note that ALL of these are UNPROTECTED routes.
     # ----------------------------------------------------------------------------------------------
 
     # TODO: See if there is a better way to deal with variadic paths.

@@ -1,3 +1,6 @@
+#from chalice import Request
+from chalice.app import Request
+import json
 from typing import Optional
 
 def sort_dictionary_by_case_insensitive_keys(dictionary: dict) -> dict:
@@ -26,6 +29,10 @@ def get_request_arg(request: dict, name: str) -> Optional[str]:
     """
     query_params = request.get("query_params")
     return query_params.get(name, None) if query_params else None
+
+
+def get_request_body(request: Request) -> Optional[str]:
+    return json.loads(request.raw_body.decode())
 
 
 def is_running_locally(request: dict) -> bool:
