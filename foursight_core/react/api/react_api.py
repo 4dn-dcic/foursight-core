@@ -256,20 +256,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "modified": convert_utc_datetime_to_useastern_datetime_string(last_modified)})
         return self.create_success_response(sorted(users, key=lambda key: key["email_address"]))
 
-    def reactapi_get_user(self, request: dict, env: str, email: str) -> Response:
+    def reactapi_get_user(self, request: dict, env: str, email_or_uuid: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/user/{email}
+        Called from react_routes for endpoint: /{env}/user/{email_or_uuid}
         Returns info on the specified user (email).
         """
         users = []
-        for email_address in email.split(","):
+        for item in email_or_uuid.split(","):
+            is_email = "@" in item
+            item_name = "email_address" if is_email else "uuid"
             try:
-                user = ff_utils.get_metadata('users/' + email_address.lower(),
+                # Note these call works for both email address or user UUID.
+                user = ff_utils.get_metadata('users/' + item.lower(),
                                              ff_env=full_env_name(env), add_on='frame=object')
-                users.append({"email_address": email_address, "record": user})
+                users.append({item_name: item, "record": user})
             except Exception as e:
-                users.append({"email_address": email_address, "record": {"error": str(e)}})
-        return self.create_success_response(sorted(users, key=lambda key: key["email_address"]))
+                users.append({item_name: item, "record": {"error": str(e)}})
+        return self.create_success_response(users)
 
     def reactapi_post_user(self, request: dict, env: str, user: dict) -> Response:
         """

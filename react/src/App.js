@@ -22,6 +22,8 @@ import Page from './Page';
 import RedirectPage from './pages/RedirectPage';
 import TestPage from './pages/TestPage';
 import UserPage from './pages/UserPage';
+import UserCreatePage from './pages/UserCreatePage';
+import UserEditPage from './pages/UserEditPage';
 import UsersPage from './pages/UsersPage';
 
 function setFavicon(header) {
@@ -121,6 +123,16 @@ const App = () => {
                             <UserPage />
                         </Page.AuthorizationRequired>
                     }/>
+                    <Route path="/api/react/:environ/users/edit/:uuid" element={
+                        <Page.AuthorizationRequired>
+                            <UserEditPage />
+                        </Page.AuthorizationRequired>
+                    } />
+                    <Route path="/api/react/:environ/users/create" element={
+                        <Page.AuthorizationRequired>
+                            <UserCreatePage />
+                        </Page.AuthorizationRequired>
+                    } />
                     <Route path="/api/react/:environ/gac/:environCompare" element={
                         <Page.AuthorizationRequired>
                             <GacComparePage />

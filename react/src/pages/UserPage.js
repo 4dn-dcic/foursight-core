@@ -23,7 +23,7 @@ const UserPage = (props) => {
             {response.length > 0 && response.map(user => (
                 <div key={user.record.uuid}>
                     <div style={{fontWeight:"bold",marginBottom:"6px"}}>
-                        {user.email_address}
+                        {user.record?.email} <small style={{fontWeight:"normal"}}>({user.record?.uuid})</small>
                         <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>{Char.Refresh}&nbsp;</b>
                     </div>
                         <pre className="info">

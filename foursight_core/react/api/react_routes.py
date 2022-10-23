@@ -89,12 +89,12 @@ class ReactRoutes:
         return app.core.reactapi_users(app.current_request.to_dict(), env)
 
     @staticmethod
-    @route("/{env}/users/{email}", authorize=True)
-    def reactapi_route_get_user(env: str, email: str) -> Response:
+    @route("/{env}/users/{email_or_uuid}", authorize=True)
+    def reactapi_route_get_user(env: str, email_or_uuid: str) -> Response:
         """
         Returns detailed info for the given user (email).
         """
-        return app.core.reactapi_get_user(app.current_request.to_dict(), env, email=email)
+        return app.core.reactapi_get_user(app.current_request.to_dict(), env, email_or_uuid=email_or_uuid)
 
     # Looks like PUT, PATCH, and DELETE are not supported, at least in chalice local mode,
     # still; complaints about this from 2016; says fixed but another complaint from June 2021.
