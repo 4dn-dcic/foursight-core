@@ -118,7 +118,7 @@ class ReactRoutes:
         distinguish between which method is used programmatically as we do here.
         """
         if app.current_request.method == "GET":
-            return app.core.reactapi_get_user(app.current_request.to_dict(), env, uuid_or_email=uuid)
+            return app.core.reactapi_get_user(app.current_request.to_dict(), env, uuid=uuid)
         elif app.current_request.method == "PATCH":
             user = get_request_body(app.current_request)
             return app.core.reactapi_patch_user(app.current_request.to_dict(), env, uuid=uuid, user=user)

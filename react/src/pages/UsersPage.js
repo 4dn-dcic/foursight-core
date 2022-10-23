@@ -36,6 +36,7 @@ const UsersPage = () => {
                         <td style={{padding:"10px",fontWeight:"bold",width:"60%"}}>
                             Modified
                         </td>
+                        <td></td>
                     </tr>
                 </thead>
                 <tbody>
@@ -51,6 +52,9 @@ const UsersPage = () => {
                             </td>
                             <td style={{padding:"10px",verticalAlign:"top"}}>
                                 {user.modified}
+                            </td>
+                            <td style={{padding:"10px",verticalAlign:"top"}}>
+                                <Link to={Client.Path(`/users/edit/${user.uuid}`)}>Edit</Link>
                             </td>
                         </tr>
                     ))}

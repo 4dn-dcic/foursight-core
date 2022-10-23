@@ -50,7 +50,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_auth0_config(self, request: dict) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/auth0_config
+        Called from react_routes for endpoint: GET /{env}/auth0_config
         Note that this in an UNPROTECTED route.
         """
         auth0_config = self._auth0_config.get_config_data()
@@ -60,7 +60,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_logout(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/logout
+        Called from react_routes for endpoint: GET /{env}/logout
         Note that this in an UNPROTECTED route.
         """
         authorize_response = self._auth.authorize(request, env)
@@ -76,7 +76,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_header(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/header
+        Called from react_routes for endpoint: GET /{env}/header
         Note that this in an UNPROTECTED route.
         """
         # Note that this route is not protected but/and we return the results from authorize.
@@ -137,7 +137,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_info(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/info
+        Called from react_routes for endpoint: GET /{env}/info
         """
         domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
@@ -224,7 +224,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_users(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/users
+        Called from react_routes for endpoint: GET /{env}/users
         Returns info on all users. TODO: No paging supported yet!
         """
         users = []
@@ -256,13 +256,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "modified": convert_utc_datetime_to_useastern_datetime_string(last_modified)})
         return self.create_success_response(sorted(users, key=lambda key: key["email_address"]))
 
-    def reactapi_get_user(self, request: dict, env: str, uuid_or_email: str) -> Response:
+    def reactapi_get_user(self, request: dict, env: str, uuid: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/user/{uuid_or_email}
-        Returns info on the specified user (email).
+        Called from react_routes for endpoint: GET /{env}/user/{uuid}
+        Returns info on the specified user uuid. The uuid can actually also
+        be an email address, and can also be a comma-separated list of these.
         """
         users = []
-        for item in uuid_or_email.split(","):
+        for item in uuid.split(","):
             is_email = "@" in item
             item_name = "email_address" if is_email else "uuid"
             try:
@@ -298,7 +299,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_patch_user(self, request: dict, env: str, uuid: str, user: dict) -> Response:
         """
-        Called from react_routes for endpoint: POST /{env}/users/update/{uuid}
+        Called from react_routes for endpoint: PATCH /{env}/users/update/{uuid}
         Updates the user identified by the given uuid with the given data.
         """
         response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env))
@@ -306,7 +307,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_delete_user(self, request: dict, env: str, uuid: str) -> Response:
         """
-        Called from react_routes for endpoint: POST /{env}/users/delete/{uuid}
+        Called from react_routes for endpoint: DELETE /{env}/users/delete/{uuid}
         Deletes the user identified by the given uuid.
         """
         response = ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
@@ -315,14 +316,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/checks
+        Called from react_routes for endpoint: GET /{env}/checks
         Returns a summary (list) of all defined checks.
         """
         return self.create_success_response(self._checks.get_checks_grouped(env))
 
     def reactapi_check_results(self, request: dict, env: str, check: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/checks/{check}
+        Called from react_routes for endpoint: GET /{env}/checks/{check}
         Returns the latest result from the given check (name).
         """
         connection = app.core.init_connection(env)
@@ -340,7 +341,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_check_result(self, request: dict, env: str, check: str, uuid: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/checks/{check}/{uuid}
+        Called from react_routes for endpoint: GET /{env}/checks/{check}/{uuid}
         Returns the check result for the given check (name) and uuid.
         Analogous legacy function is app_utils.view_foursight_check.
         """
@@ -373,7 +374,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_history(self, request: dict, env: str, check: str, args: Optional[dict] = None) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/checks/check/history
+        Called from react_routes for endpoint: GET /{env}/checks/check/history
         Returns a (paged) summary (list) of check results for the given check (name).
         """
         offset = int(args.get("offset", "0")) if args else 0
@@ -416,7 +417,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_run(self, request: dict, env: str, check: str, args: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/checks/{check}/run
+        Called from react_routes for endpoint: GET /{env}/checks/{check}/run
         Kicks off a run for the given check (name).
         """
         args = base64_decode_to_json(args)
@@ -425,7 +426,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_status(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/checks-status
+        Called from react_routes for endpoint: GET /{env}/checks-status
         Returns the status of any/all currently running or queued checks.
         """
         checks_queue = app.core.sqs.get_sqs_attributes(app.core.sqs.get_sqs_queue().url)
@@ -435,14 +436,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_raw(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/checks-raw
+        Called from react_routes for endpoint: GET /{env}/checks-raw
         Returns the content of the raw/original check_setup.json file.
         """
         return self.create_success_response(self._checks.get_checks_raw())
 
     def reactapi_checks_registry(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/checks-registry
+        Called from react_routes for endpoint: GET /{env}/checks-registry
         Returns the content of the checks registry collected for the check_function
         decorator in decorators.py.
         """
@@ -450,28 +451,28 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_lambdas(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/lambdas
+        Called from react_routes for endpoint: GET /{env}/lambdas
         Returns a summary (list) of all defined AWS lambdas for the current AWS environment.
         """
         return self.create_success_response(self._checks.get_annotated_lambdas())
 
     def reactapi_gac_compare(self, request: dict, env: str, env_compare: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/gac/{environ_compare}
+        Called from react_routes for endpoint: GET /{env}/gac/{environ_compare}
         Returns differences between two GACs (global application configurations).
         """
         return self.create_success_response(Gac.compare_gacs(env, env_compare))
 
     def reactapi_aws_s3_buckets(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/s3/buckets
+        Called from react_routes for endpoint: GET /{env}/s3/buckets
         Return a list of all AWS S3 bucket names for the current AWS environment.
         """
         return self.create_success_response(AwsS3.get_buckets())
 
     def reactapi_aws_s3_buckets_keys(self, request: dict, env: str, bucket: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/s3/buckets/{bucket}
+        Called from react_routes for endpoint: GET /{env}/s3/buckets/{bucket}
         Return a list of all AWS S3 bucket key names in the given bucket
         for the current AWS environment.
         """
@@ -479,7 +480,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_aws_s3_buckets_key_contents(self, request: dict, env: str, bucket: str, key: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/s3/buckets/{bucket}/{key}
+        Called from react_routes for endpoint: GET /{env}/s3/buckets/{bucket}/{key}
         Return the contents of the AWS S3 bucket key in the given bucket for the current AWS environment.
         """
         if True:
@@ -493,7 +494,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_reload_lambda(self, request: dict) -> Response:
         """
-        Called from react_routes for endpoint: /__reloadlambda__
+        Called from react_routes for endpoint: GET /__reloadlambda__
         Kicks off a reload of the given lambda name. For troubleshooting only.
         """
         app.core.reload_lambda()
@@ -502,7 +503,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_clear_cache(self, request: dict) -> Response:
         """
-        Called from react_routes for endpoint: /__clearcache___
+        Called from react_routes for endpoint: GET /__clearcache___
         Not yet implemented.
         """
         self.cache_clear()
