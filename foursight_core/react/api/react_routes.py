@@ -292,5 +292,5 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/{path1}/{path2}/{path3}/{path4}/{path5}", static=True, authorize=False)
-    def reactui_route_4(env, path1, path2, path3, path4, path5) -> Response:
+    def reactui_route_5(env, path1, path2, path3, path4, path5) -> Response:
         return app.core.react_serve_static_file(env, [path1, path2, path3, path4, path5])
