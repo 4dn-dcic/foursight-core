@@ -256,13 +256,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "modified": convert_utc_datetime_to_useastern_datetime_string(last_modified)})
         return self.create_success_response(sorted(users, key=lambda key: key["email_address"]))
 
-    def reactapi_get_user(self, request: dict, env: str, email_or_uuid: str) -> Response:
+    def reactapi_get_user(self, request: dict, env: str, uuid_or_email: str) -> Response:
         """
-        Called from react_routes for endpoint: /{env}/user/{email_or_uuid}
+        Called from react_routes for endpoint: /{env}/user/{uuid_or_email}
         Returns info on the specified user (email).
         """
         users = []
-        for item in email_or_uuid.split(","):
+        for item in uuid_or_email.split(","):
             is_email = "@" in item
             item_name = "email_address" if is_email else "uuid"
             try:
@@ -294,7 +294,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         uuid = graph.get("uuid")
         if not uuid:
             return self.create_error_response(json.dumps(response))
-        return self.create_success_response({"status": "Created", "uuid": uuid})
+        return self.create_success_response({"status": "User created.", "uuid": uuid})
 
     def reactapi_patch_user(self, request: dict, env: str, uuid: str, user: dict) -> Response:
         """
@@ -302,7 +302,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Updates the user identified by the given uuid with the given data.
         """
         response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env))
-        return self.create_success_response({"status": "Updated", "uuid": uuid})
+        return self.create_success_response({"status": "User updated.", "uuid": uuid})
 
     def reactapi_delete_user(self, request: dict, env: str, uuid: str) -> Response:
         """
@@ -311,7 +311,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         response = ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
         response = ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
-        return self.create_success_response({"status": "Deleted", "uuid": uuid})
+        return self.create_success_response({"status": "User deleted.", "uuid": uuid})
 
     def reactapi_checks(self, request: dict, env: str) -> Response:
         """

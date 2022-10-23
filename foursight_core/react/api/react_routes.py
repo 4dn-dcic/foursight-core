@@ -12,7 +12,7 @@ class ReactRoutes:
         super(ReactRoutes, self).__init__()
 
     # ----------------------------------------------------------------------------------------------
-    # Foursight React API routes.
+    # Foursight React API routes UNPROTECTED by authorization/authentication.
     # ----------------------------------------------------------------------------------------------
 
     @staticmethod
@@ -72,65 +72,60 @@ class ReactRoutes:
         """
         return app.core.reactapi_header(app.current_request.to_dict(), app.core.get_default_env())
 
+    # ----------------------------------------------------------------------------------------------
+    # Foursight React API routes PROTECTED by authorization/authentication.
+    # ----------------------------------------------------------------------------------------------
+
     @staticmethod
     @route("/{env}/info", authorize=True)
     def reactapi_route_info(env: str) -> Response:
         """
-        Returns various/sundry info about the app.
+        Returns sundry info about the app.
         """
         return app.core.reactapi_info(app.current_request.to_dict(), env)
 
     @staticmethod
-    @route("/{env}/users", authorize=True)
-    def reactapi_route_users(env: str) -> Response:
+    @route("/{env}/users", methods=["GET", "POST"], authorize=True)
+    def reactapi_route_users_get_or_post(env: str) -> Response:
         """
-        Returns the list of all defined users (TODO: not yet paged).
+        GET:  Returns the list of all defined users (TODO: not yet paged).
+        POST: Creates a new user described by the given data;
+              must contain: email, first_name, last_name.
+
+        Note that you cannot have more than one route with the same path even
+        if the methods are different; rather you must bundle them together and
+        distinguish between which method is used programmatically as we do here.
         """
-        return app.core.reactapi_users(app.current_request.to_dict(), env)
+        if app.current_request.method == "GET":
+            return app.core.reactapi_users(app.current_request.to_dict(), env)
+        elif app.current_request.method == "POST":
+            user = get_request_body(app.current_request)
+            return app.core.reactapi_post_user(app.current_request.to_dict(), env, user=user)
+        else:
+            return app.core.create_forbidden_response()
 
     @staticmethod
-    @route("/{env}/users/{email_or_uuid}", authorize=True)
-    def reactapi_route_get_user(env: str, email_or_uuid: str) -> Response:
+    @route("/{env}/users/{uuid}", methods=["GET", "PATCH", "DELETE"], authorize=True)
+    def reactapi_route_user_get_or_patch_or_delete(env: str, uuid: str) -> Response:
         """
-        Returns detailed info for the given user (email).
-        """
-        return app.core.reactapi_get_user(app.current_request.to_dict(), env, email_or_uuid=email_or_uuid)
+        GET:    Returns detailed info for the user identified by the given uuid (may also be email).
+        PATCH:  Updates the user identified by the given uuid with the given data;
+                must contain: email, first_name, last_name.
+        DELETE: Deletes the user identified by the given uuid.
 
-    # Looks like PUT, PATCH, and DELETE are not supported, at least in chalice local mode,
-    # still; complaints about this from 2016; says fixed but another complaint from June 2021.
-    #
-    # https://github.com/aws/chalice/issues/167
-    # https://github.com/aws/chalice/pull/173
-    #
-    # So evidently not a priority to fix and too much of a pain to maintain separate
-    # endpoints for chalice local and normal operation so making all of these POSTs,
-    # with different (create, update, delete) endpoint paths.
-
-    @staticmethod
-    @route("/{env}/users/create", method="POST", authorize=True)
-    def reactapi_route_post_user(env: str) -> Response:
+        Note that you cannot have more than one route with the same path even
+        if the methods are different; rather you must bundle them together and
+        distinguish between which method is used programmatically as we do here.
         """
-        Creates a new user described by the given data.
-        """
-        user = get_request_body(app.current_request)
-        return app.core.reactapi_post_user(app.current_request.to_dict(), env, user=user)
-
-    @staticmethod
-    @route("/{env}/users/update/{uuid}", method="POST", authorize=True)
-    def reactapi_route_patch_user(env: str, uuid: str) -> Response:
-        """
-        Updates the user identified by the given uuid with the given data.
-        """
-        user = get_request_body(app.current_request)
-        return app.core.reactapi_patch_user(app.current_request.to_dict(), env, uuid=uuid, user=user)
-
-    @staticmethod
-    @route("/{env}/users/delete/{uuid}", method="POST", authorize=True)
-    def reactapi_route_patch_user(env: str, uuid: str) -> Response:
-        """
-        Deletes the user identified by the given uuid.
-        """
-        return app.core.reactapi_delete_user(app.current_request.to_dict(), env, uuid=uuid)
+        if app.current_request.method == "GET":
+            return app.core.reactapi_get_user(app.current_request.to_dict(), env, uuid_or_email=uuid)
+        elif app.current_request.method == "PATCH":
+            user = get_request_body(app.current_request)
+            return app.core.reactapi_patch_user(app.current_request.to_dict(), env, uuid=uuid, user=user)
+        elif app.current_request.method == "DELETE":
+            return app.core.reactapi_delete_user(app.current_request.to_dict(), env, uuid=uuid)
+        else:
+            return app.core.create_forbidden_response()
 
     @staticmethod
     @route("/{env}/checks", authorize=True)
@@ -294,3 +289,8 @@ class ReactRoutes:
     @route("/{env}/{path1}/{path2}/{path3}/{path4}", static=True, authorize=False)
     def reactui_route_4(env, path1, path2, path3, path4) -> Response:
         return app.core.react_serve_static_file(env, [path1, path2, path3, path4])
+
+    @staticmethod
+    @route("/{env}/{path1}/{path2}/{path3}/{path4}/{path5}", static=True, authorize=False)
+    def reactui_route_4(env, path1, path2, path3, path4, path5) -> Response:
+        return app.core.react_serve_static_file(env, [path1, path2, path3, path4, path5])

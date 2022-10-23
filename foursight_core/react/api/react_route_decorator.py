@@ -1,4 +1,4 @@
-# This module defines a "route" decorator which wraps the Chalice route decorator,
+# This module defines a "route" decorator that wraps the Chalice route decorator,
 # and does authorization (and authentication) checking, tweaks the path appropriately,
 # sets up CORS if necessary (only for local development), and has common exception handling.
 # We DEFAULT to AUTHORIZATION checking; if not wanted use authorize=False in route decorator.
@@ -67,7 +67,7 @@ def route(*args, **kwargs):
             kwargs["methods"] = [kwargs["method"]]
             del kwargs["method"]
         else:
-            # If no methods given the default to GET.
+            # If no methods given then default to GET.
             kwargs["methods"] = ["GET"]
     elif "method" in kwargs:
         kwargs["method"]

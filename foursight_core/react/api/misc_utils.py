@@ -31,7 +31,7 @@ def get_request_arg(request: dict, name: str) -> Optional[str]:
     return query_params.get(name, None) if query_params else None
 
 
-def get_request_body(request: Request) -> Optional[str]:
+def get_request_body(request: Request) -> dict:
     return json.loads(request.raw_body.decode())
 
 
