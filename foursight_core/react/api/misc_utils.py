@@ -13,6 +13,10 @@ def sort_dictionary_by_case_insensitive_keys(dictionary: dict) -> dict:
     return {key: dictionary[key] for key in sorted(dictionary.keys(), key=lambda key: key.lower())}
 
 
+def get_request_domain(request: dict) -> str:
+    return request.get("headers", {}).get("host")
+
+
 def get_request_arg(request: dict, name: str) -> Optional[str]:
     """
     Returns the value of the given URL query parameter name for the given request;

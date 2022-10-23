@@ -5,6 +5,7 @@ from typing import Optional
 from .cookie_utils import read_cookie
 from .envs import Envs
 from .jwt_utils import JWT_AUDIENCE_PROPERTY_NAME, jwt_decode, jwt_encode
+from .misc_utils import get_request_domain
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -12,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 class Auth:
 
-    def __init__(self, auth0_client_id: str, auth0_secret: str, envs: Envs):
-        self._auth0_client_id = auth0_client_id
+    def __init__(self, auth0_client: str, auth0_secret: str, envs: Envs):
+        self._auth0_client = auth0_client
         self._auth0_secret = auth0_secret
         self._envs = envs
 
@@ -45,10 +46,10 @@ class Auth:
             if authtoken_decoded["authenticated"] is not True:
                 return self._create_unauthenticated_response(request, "invalid-authtoken-auth", authtoken_decoded)
 
-            if self._auth0_client_id != authtoken_decoded[JWT_AUDIENCE_PROPERTY_NAME]:
+            if self._auth0_client != authtoken_decoded[JWT_AUDIENCE_PROPERTY_NAME]:
                 return self._create_unauthenticated_response(request, "invalid-authtoken-aud", authtoken_decoded)
 
-            domain = self._get_domain(request)
+            domain = get_request_domain(request)
             if domain != authtoken_decoded["domain"]:
                 return self._create_unauthenticated_response(request, "invalid-authtoken-domain", authtoken_decoded)
 
@@ -95,7 +96,7 @@ class Auth:
         the first/last names are just for informational/display purposes in the client.
         Returns the JWT-signed-encoded authtoken value as a string.
         """
-        jwt_decoded = jwt_decode(jwt, self._auth0_client_id, self._auth0_secret)
+        jwt_decoded = jwt_decode(jwt, self._auth0_client, self._auth0_secret)
         email = jwt_decoded.get("email")
         allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email)
         authtoken_decoded = {
@@ -114,11 +115,11 @@ class Auth:
         }
         # JWT-sign-encode the authtoken using our Auth0 client ID (aka audience aka "aud") and
         # secret. This *required* audience is added to the JWT before encoding (done in the
-        # jwt_encode function), set to the value we pass here, namely, self._auth0_client_id;
+        # jwt_encode function), set to the value we pass here, namely, self._auth0_client;
         # it was also in the given JWT (i.e. jwt_decoded["aud"]), and these should match (no
         # need to check); it came from the original Auth0 invocation on the client-side (in the
         # Auth0Lock box); we communicate it to the client-side via the non-protected /header endpoint.
-        return jwt_encode(authtoken_decoded, audience=self._auth0_client_id, secret=self._auth0_secret)
+        return jwt_encode(authtoken_decoded, audience=self._auth0_client, secret=self._auth0_secret)
 
     def decode_authtoken(self, authtoken: str) -> dict:
         """
@@ -127,7 +128,7 @@ class Auth:
         See create_authtoken (above) for an enumeration of the contents of the authtoken.
         Returns the verified/decoded JWT as a dictionary.
         """
-        return jwt_decode(authtoken, self._auth0_client_id, self._auth0_secret)
+        return jwt_decode(authtoken, self._auth0_client, self._auth0_secret)
 
     def _create_unauthorized_response(self, request: dict, status: str,
                                       authtoken_decoded: dict, but_is_authenticated: bool) -> dict:
@@ -146,8 +147,8 @@ class Auth:
                 # No longer including known-envs in unauthorized responses.
                 # "known_envs": self._envs.get_known_envs(),
                 "default_env": self._envs.get_default_env(),
-                "domain": self._get_domain(request),
-                JWT_AUDIENCE_PROPERTY_NAME: self._auth0_client_id  # Needed for Auth0Lock login box on client-side.
+                "domain": get_request_domain(request),
+                JWT_AUDIENCE_PROPERTY_NAME: self._auth0_client  # Needed for Auth0Lock login box on client-side.
             }
         response["authenticated"] = but_is_authenticated
         response["authorized"] = False
@@ -159,10 +160,6 @@ class Auth:
         Creates a response suitable for a request which is NOT authenticated.
         """
         return self._create_unauthorized_response(request, status, authtoken_decoded, but_is_authenticated=False)
-
-    @staticmethod
-    def _get_domain(request: dict) -> str:
-        return request.get("headers", {}).get("host")
 
     def get_aws_credentials(self, env: str) -> dict:
         """
@@ -186,7 +183,7 @@ class Auth:
                     "aws_user_arn": user_arn,
                     "aws_access_key_id": access_key_id,
                     "aws_region": region_name,
-                    "auth0_client_id": self._auth0_client_id
+                    "auth0_client_id": self._auth0_client
                 }
                 # Try getting the account name though probably no permission at the moment.
                 aws_account_name = None

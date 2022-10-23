@@ -2,6 +2,7 @@ import logging
 import os
 import requests
 from dcicutils.misc_utils import get_error_message
+from .misc_utils import get_request_domain, is_running_locally
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -139,6 +140,19 @@ class Auth0Config:
         Currently we get this environment variables setup from the GAC; see identity.py.
         """
         return os.environ.get("CLIENT_SECRET", os.environ.get("ENCODED_AUTH0_CLIENT"))
+
+    def get_callback_url(self, request: dict) -> str:
+        """
+        Returns the URL for our authentication callback endpoint.
+        Note this callback endpoint is (still) defined in the legacy Foursight routes.py.
+        """
+        domain = get_request_domain(request)
+        # The context (route prefix) for the Auth0 callback is effectively hardcoded at Auth0.
+        # but note different for running locally (localhost) and normal server operation.
+        context = "/api/" if not is_running_locally(request) else "/"
+        headers = request.get("headers", {})
+        scheme = headers.get("x-forwarded-proto", "http")
+        return f"{scheme}://{domain}{context}callback/?react"
 
     def cache_clear(self) -> None:
         """

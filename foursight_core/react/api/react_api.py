@@ -5,226 +5,40 @@ import json
 import os
 import pkg_resources
 import platform
-import requests
 import socket
 import time
-from typing import Optional, Union
+from typing import Optional
 import urllib.parse
 from itertools import chain
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils import ff_utils
-from dcicutils.misc_utils import get_error_message
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import get_identity_name, get_identity_secrets
 from ...app import app
 from ...decorators import Decorators
-from ...route_prefixes import ROUTE_PREFIX
-from .auth import Auth
-from .auth0_config import Auth0Config
 from .aws_s3 import AwsS3
 from .checks import Checks
-from .cookie_utils import create_delete_cookie_string, create_set_cookie_string, read_cookie
-from .datetime_utils import convert_datetime_to_time_t, convert_utc_datetime_to_useastern_datetime_string
+from .cookie_utils import create_delete_cookie_string
+from .datetime_utils import convert_utc_datetime_to_useastern_datetime_string
 from .encoding_utils import base64_decode_to_json
-from .envs import Envs
 from .gac import Gac
 from .misc_utils import (
-    get_request_arg,
     is_running_locally,
     sort_dictionary_by_case_insensitive_keys
 )
 from .react_routes import ReactRoutes
+from .react_api_base import ReactApiBase
 from .react_ui import ReactUi
 
 
-class ReactApi(ReactRoutes):
-
-    CONTENT_TYPE = "Content-Type"
-    JSON_CONTENT_TYPE = "application/json"
-    STANDARD_HEADERS = {CONTENT_TYPE: JSON_CONTENT_TYPE}
-
-    _cached_header = {}
+# Implementation functions corresponding directly to the routes in react_routes.
+class ReactApi(ReactApiBase, ReactRoutes):
 
     def __init__(self):
         super(ReactApi, self).__init__()
-        self._envs = Envs(app.core.get_unique_annotated_environment_names())
-        self._auth0_config = Auth0Config(app.core.get_portal_url(self._envs.get_default_env()))
-        self._auth = Auth(self._auth0_config.get_client(), self._auth0_config.get_secret(), self._envs)
-        self._checks = Checks(app.core.check_handler.CHECK_SETUP, self._envs)
         self._react_ui = ReactUi(self)
-
-    @staticmethod
-    def create_response(http_status: int = 200,
-                        body: Union[dict, list] = None,
-                        headers: dict = None,
-                        content_type: str = JSON_CONTENT_TYPE) -> Response:
-        if not body:
-            body = {}
-        if not headers:
-            headers = ReactApi.STANDARD_HEADERS
-        if content_type:
-            if id(headers) == id(ReactApi.STANDARD_HEADERS):
-                headers = {**headers}
-            headers[ReactApi.CONTENT_TYPE] = content_type
-        return Response(status_code=http_status, body=body, headers=headers)
-
-    @staticmethod
-    def create_success_response(body: Union[dict, list] = None, content_type: str = JSON_CONTENT_TYPE) -> Response:
-        if not body:
-            body = {}
-        return ReactApi.create_response(http_status=200, body=body, content_type=content_type)
-
-    @staticmethod
-    def create_redirect_response(location: str, body: dict = None, headers: dict = None) -> Response:
-        if not body:
-            body = {}
-        if not headers:
-            if not location:
-                raise Exception("No location specified for HTTP redirect.")
-            headers = {"Location": location}
-        elif location:
-            headers = copy.deepcopy(headers)
-            headers["Location"] = location
-        elif "location" not in [key.lower() for key in headers.keys()]:
-            raise Exception("No location specified in header for HTTP redirect.")
-        return ReactApi.create_response(http_status=302, body=body, headers=headers)
-
-    @staticmethod
-    def create_not_implemented_response(request: dict) -> Response:
-        method = request.get("method")
-        context = request.get("context")
-        path = context.get("path") if isinstance(context, dict) else None
-        body = {"error": "Not implemented.", "method": method, "path": path}
-        return ReactApi.create_response(http_status=501, body=body)
-
-    @staticmethod
-    def create_forbidden_response() -> Response:
-        """
-        Note that this is different from the unauthenticated and/or unauthorized response
-        if the user is not logged in or does not have access to the given environment.
-        This is for other forbidden cases, e.g. access to static files we restrict
-        access to, or a failed login/authentication attempt.
-        """
-        return ReactApi.create_response(http_status=403, body={"status": "Forbidden."})
-
-    @staticmethod
-    def create_error_response(message: Union[str, Exception]) -> Response:
-        if isinstance(message, Exception):
-            message = get_error_message(message)
-        return ReactApi.create_response(http_status=500, body={"error": message})
-
-    def _get_redirect_url(self, request: dict, env: str, domain: str, context: str) -> str:
-        """
-        Returns the redirect URL to the UI from the reactredir cookie,
-        or if that is not set then to the /login page of the UI.
-        """
-        redirect_url = read_cookie(request, "reactredir")
-        if not redirect_url:
-            if is_running_locally(request):
-                scheme = "http"
-                # Using ROUTE_PREFIX here instead of context because may be just "/" for the local
-                # deploy case because we get here via the /callback endpoint (during authentication).
-                # Due to confusion between local deploy not implicitly using /api as context so setting
-                # it explicitly; this is just so we are dealing with the same paths for either case.
-                context = ROUTE_PREFIX
-            else:
-                scheme = "https"
-            if not env:
-                env = self._envs.get_default_env()
-            if not context:
-                context = "/"
-            elif not context.endswith("/"):
-                context = context + "/"
-            redirect_url = f"{scheme}://{domain}{context}react/{env}/login"
-        else:
-            # Not certain if by design but the React library (universal-cookie) used to
-            # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
-            redirect_url = urllib.parse.unquote(redirect_url)
-        return redirect_url
-
-    def _get_authentication_callback_url(self, request: dict) -> str:
-        """
-        Returns the URL for our authentication callback endpoint.
-        Note this callback endpoint is (still) defined in the legacy Foursight routes.py.
-        """
-        domain, context = app.core.get_domain_and_context(request)
-        headers = request.get("headers", {})
-        scheme = headers.get("x-forwarded-proto", "http")
-        if is_running_locally(request):
-            context = "/"
-        return f"{scheme}://{domain}{context}callback/?react"
-
-    def is_react_authentication_callback(self, request: dict) -> bool:
-        """
-        Returns True iff the given Auth0 authentication/login callback request, i.e. from
-        the /callback route which is defined in the main routes.py for both React and non-React
-        Auth0 authentication/login, is for a React authentication/login. This is communicated
-        via "react" URL parameter in the callback URL, which is setup on the React UI side;
-        note this was PREVIOUSLY done there via a "react" string in Auth0 "scope", but changed
-        so we can get the Auth0 config (e.g. domain) for the POST to Auth0 using our Auth0Config.
-        See: react/src/pages/LoginPage/createAuth0Lock.
-        """
-        return get_request_arg(request, "react") is not None
-
-    def react_authentication_callback(self, request: dict, env: str) -> Response:
-        """
-        Called by the main authentication callback function (app_utils.auth0_callback)
-        if the above is_react_authentication_callback returns True. Performs the actual
-        Auth0 authentication for login via the Auth0 (HTTP POST) API. If successful,
-        returns a redirect response (to the UI) with a cookie setting for the login
-        authtoken. If unsuccessful, returnes a forbidden (HTTP 403) response.
-        """
-
-        auth0_code = get_request_arg(request, "code")
-        auth0_domain = self._auth0_config.get_domain()
-        auth0_client = self._auth0_config.get_client()
-        auth0_secret = self._auth0_config.get_secret()
-        if not (auth0_code and auth0_domain and auth0_client and auth0_secret):
-            return self.create_forbidden_response()
-
-        # Not actually sure what this auth0_redirect_uri is needed
-        # for, but needed it does seem to be, for this Auth0 POST;
-        # it evidently needs to be (this) authentication callback URL.
-        auth0_redirect_uri = self._get_authentication_callback_url(request)
-        auth0_payload = {
-            'grant_type': 'authorization_code',
-            'client_id': auth0_client,
-            'client_secret': auth0_secret,
-            'code': auth0_code,
-            'redirect_uri': auth0_redirect_uri
-        }
-        auth0_post_url = f"https://{auth0_domain}/oauth/token"
-
-        auth0_payload_json = json.dumps(auth0_payload)
-        auth0_headers = ReactApi.STANDARD_HEADERS
-        auth0_response = requests.post(auth0_post_url, data=auth0_payload_json, headers=auth0_headers)
-        auth0_response_json = auth0_response.json()
-        jwt = auth0_response_json.get("id_token")
-
-        if not jwt:
-            return self.create_forbidden_response()
-
-        jwt_expires_in = auth0_response_json.get("expires_in")
-        jwt_expires_at = convert_datetime_to_time_t(datetime.datetime.utcnow() +
-                                                    datetime.timedelta(seconds=jwt_expires_in))
-        domain, context = app.core.get_domain_and_context(request)
-        authtoken = self._auth.create_authtoken(jwt, jwt_expires_at, env, domain)
-        authtoken_cookie = create_set_cookie_string(request, name="authtoken",
-                                                    value=authtoken,
-                                                    domain=domain,
-                                                    expires=jwt_expires_at, http_only=False)
-        redirect_url = self._get_redirect_url(request, env, domain, context)
-        return self.create_redirect_response(location=redirect_url, headers={"Set-Cookie": authtoken_cookie})
-
-    def react_authorize(self, request: dict, env: Optional[str]) -> dict:
-        """
-        Exposed for call from "route" decorator for endpoint authentication protection.
-        """
-        return self._auth.authorize(request, env)
-
-    # ----------------------------------------------------------------------------------------------
-    # Below are the implementation functions corresponding directly to the routes in react_routes.
-    # ----------------------------------------------------------------------------------------------
+        self._checks = Checks(app.core.check_handler.CHECK_SETUP, self._envs)
+        self._cached_header = {}
 
     def react_serve_static_file(self, env: str, paths: list) -> Response:
         """
@@ -241,7 +55,7 @@ class ReactApi(ReactRoutes):
         """
         auth0_config = self._auth0_config.get_config_data()
         # Note we add the callback for the UI to setup its Auth0 login for.
-        auth0_config["callback"] = self._get_authentication_callback_url(request)
+        auth0_config["callback"] = self._auth0_config.get_callback_url(request)
         return self.create_success_response(self._auth0_config.get_config_data())
 
     def reactapi_logout(self, request: dict, env: str) -> Response:
@@ -249,14 +63,14 @@ class ReactApi(ReactRoutes):
         Called from react_routes for endpoint: /{env}/logout
         Note that this in an UNPROTECTED route.
         """
-        authorize_response = self.react_authorize(request, env)
+        authorize_response = self._auth.authorize(request, env)
         if not authorize_response or not authorize_response["authorized"]:
             body = {"status": "Already logged out."}
         else:
             body = {"status": "Logged out."}
         domain, context = app.core.get_domain_and_context(request)
         authtoken_cookie_deletion = create_delete_cookie_string(request=request, name="authtoken", domain=domain)
-        redirect_url = self._get_redirect_url(request, env, domain, context)
+        redirect_url = self.get_redirect_url(request, env, domain, context)
         headers = {"Set-Cookie": authtoken_cookie_deletion}
         return self.create_redirect_response(location=redirect_url, body=body, headers=headers)
 
@@ -267,10 +81,10 @@ class ReactApi(ReactRoutes):
         """
         # Note that this route is not protected but/and we return the results from authorize.
         auth = self._auth.authorize(request, env)
-        data = ReactApi._cached_header.get(env)
+        data = self._cached_header.get(env)
         if not data:
             data = self._reactapi_header_nocache(request, env)
-            ReactApi._cached_header[env] = data
+            self._cached_header[env] = data
         data = copy.deepcopy(data)
         data["auth"] = auth
         # 2022-10-18
@@ -681,7 +495,7 @@ class ReactApi(ReactRoutes):
         """
         app.core.reload_lambda()
         time.sleep(3)
-        return self.create_success_response({"status": "OK"})
+        return self.create_success_response({"status": "Lambda reloaded."})
 
     def reactapi_clear_cache(self, request: dict) -> Response:
         """
@@ -689,13 +503,11 @@ class ReactApi(ReactRoutes):
         Not yet implemented.
         """
         self.cache_clear()
-        return self.create_success_response({"status": "OK"})
+        return self.create_success_response({"status": "Caches cleared."})
 
     def cache_clear(self) -> None:
-        self._auth.cache_clear()
-        self._auth0_config.cache_clear()
-        self._envs.cache_clear()
+        super().cache_clear()
         self._checks.cache_clear()
         self._react_ui.cache_clear()
         Gac.cache_clear()
-        ReactApi._cached_header = {}
+        self._cached_header = {}
