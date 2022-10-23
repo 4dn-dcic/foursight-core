@@ -48,7 +48,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         return self._react_ui.serve_static_file(env, paths)
 
-    def reactapi_auth0_config(self, request: dict):
+    def reactapi_auth0_config(self, request: dict) -> Response:
         """
         Called from react_routes for endpoint: /{env}/auth0_config
         Note that this in an UNPROTECTED route.

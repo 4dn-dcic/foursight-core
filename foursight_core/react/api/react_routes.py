@@ -1,4 +1,4 @@
-#from urllib.parse import urlparse
+from chalice import Response
 from dcicutils.misc_utils import ignored
 import json
 from ...app import app
@@ -16,7 +16,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/auth0_config", authorize=False)
-    def reactapi_route_auth0_config(env):
+    def reactapi_route_auth0_config(env) -> Response:
         ignored(env)
         """
         Note that this in an UNPROTECTED route.
@@ -26,7 +26,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/auth0_config", authorize=False)
-    def reactapi_route_auth0_config_noenv():
+    def reactapi_route_auth0_config_noenv() -> Response:
         """
         Note that this in an UNPROTECTED route.
         No-env version of above /{env}/auth0_config route.
@@ -35,7 +35,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/logout", authorize=False)
-    def reactapi_route_logout(env: str):
+    def reactapi_route_logout(env: str) -> Response:
         """
         Note that this in an UNPROTECTED route.
         Logs out the user. Sends back specific message if already logged out, or not.
@@ -46,7 +46,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/logout", authorize=False)
-    def reactapi_route_logout_noenv():
+    def reactapi_route_logout_noenv() -> Response:
         """
         Note that this in an UNPROTECTED route.
         No-env version of above /{env}/logout route.
@@ -55,7 +55,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/header", authorize=False)
-    def reactapi_route_header(env: str):
+    def reactapi_route_header(env: str) -> Response:
         """
         Note that this in an UNPROTECTED route.
         Returns minimal data for React UI to get up and running.
@@ -64,7 +64,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/header", authorize=False)
-    def reactapi_route_header_noenv():
+    def reactapi_route_header_noenv() -> Response:
         """
         Note that this in an UNPROTECTED route.
         No-env version of above /{env}/header route.
@@ -73,7 +73,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/info", authorize=True)
-    def reactapi_route_info(env: str):
+    def reactapi_route_info(env: str) -> Response:
         """
         Returns various/sundry info about the app.
         """
@@ -81,7 +81,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/users", authorize=True)
-    def reactapi_route_users(env: str):
+    def reactapi_route_users(env: str) -> Response:
         """
         Returns the list of all defined users (TODO: not yet paged).
         """
@@ -89,7 +89,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/users/{email}", authorize=True)
-    def reactapi_route_get_user(env: str, email: str):
+    def reactapi_route_get_user(env: str, email: str) -> Response:
         """
         Returns detailed info for the given user (email).
         """
@@ -107,7 +107,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/users/create", method="POST", authorize=True)
-    def reactapi_route_post_user(env: str):
+    def reactapi_route_post_user(env: str) -> Response:
         """
         Creates a new user described by the given data.
         """
@@ -116,7 +116,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/users/update/{uuid}", method="POST", authorize=True)
-    def reactapi_route_patch_user(env: str, uuid: str):
+    def reactapi_route_patch_user(env: str, uuid: str) -> Response:
         """
         Updates the user identified by the given uuid with the given data.
         """
@@ -125,7 +125,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/users/delete/{uuid}", method="POST", authorize=True)
-    def reactapi_route_patch_user(env: str, uuid: str):
+    def reactapi_route_patch_user(env: str, uuid: str) -> Response:
         """
         Deletes the user identified by the given uuid.
         """
@@ -133,7 +133,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/checks", authorize=True)
-    def reactapi_route_checks(env: str):
+    def reactapi_route_checks(env: str) -> Response:
         """
         Returns detailed info on all defined checks.
         """
@@ -141,7 +141,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/checks/{check}", authorize=True)
-    def reactapi_route_check_results(env: str, check: str):
+    def reactapi_route_check_results(env: str, check: str) -> Response:
         """
         Returns the most result of the most recent run for the given check.
         """
@@ -149,7 +149,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/checks/{check}/{uuid}", authorize=True)
-    def reactapi_route_check_result(env: str, check: str, uuid: str):
+    def reactapi_route_check_result(env: str, check: str, uuid: str) -> Response:
         """
         Returns the result of the given check.
         """
@@ -157,7 +157,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/checks/{check}/history", authorize=True)
-    def reactapi_route_checks_history(env: str, check: str):
+    def reactapi_route_checks_history(env: str, check: str) -> Response:
         """
         Returns detailed info on the run histories of the given check (paged).
         """
@@ -167,7 +167,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/checks/{check}/run", authorize=True)
-    def reactapi_route_checks_run(env: str, check: str):
+    def reactapi_route_checks_run(env: str, check: str) -> Response:
         """
         Kicks off a run of the given check.
         """
@@ -178,7 +178,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/checks-status", authorize=True)
-    def reactapi_route_checks_status(env: str):
+    def reactapi_route_checks_status(env: str) -> Response:
         """
         Returns info on currently running/queueued checks.
         """
@@ -186,7 +186,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/checks-raw", authorize=True)
-    def reactapi_route_checks_raw(env: str):
+    def reactapi_route_checks_raw(env: str) -> Response:
         """
         Returns the contents of the raw check_setup.json file.
         """
@@ -194,7 +194,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/checks-registry", authorize=True)
-    def reactapi_route_checks_registry(env: str):
+    def reactapi_route_checks_registry(env: str) -> Response:
         """
         Returns detailed registered checks functions.
         """
@@ -202,7 +202,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/lambdas", authorize=True)
-    def reactapi_route_lambdas(env: str):
+    def reactapi_route_lambdas(env: str) -> Response:
         """
         Returns detailed info on defined lambdas.
         """
@@ -210,7 +210,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/gac/{env_compare}", authorize=True)
-    def reactapi_route_gac_compare(env: str, env_compare: str):
+    def reactapi_route_gac_compare(env: str, env_compare: str) -> Response:
         """
         Compares and returns diffs for values in the given two GACs.
         """
@@ -218,7 +218,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/aws/s3/buckets", authorize=True)
-    def reactapi_route_aws_s3_buckets(env: str):
+    def reactapi_route_aws_s3_buckets(env: str) -> Response:
         """
         Return the list of all AWS S3 bucket names for the current AWS environment.
         """
@@ -226,7 +226,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/aws/s3/buckets/{bucket}", authorize=True)
-    def reactapi_route_aws_s3_buckets_keys(env: str, bucket: str):
+    def reactapi_route_aws_s3_buckets_keys(env: str, bucket: str) -> Response:
         """
         Return the list of AWS S3 bucket key names in the given bucket for the current AWS environment.
         """
@@ -234,7 +234,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/{env}/aws/s3/buckets/{bucket}/{key}", authorize=True)
-    def reactapi_route_aws_s3_buckets_key_contents(env: str, bucket: str, key: str):
+    def reactapi_route_aws_s3_buckets_key_contents(env: str, bucket: str, key: str) -> Response:
         """
         Return the content of the given AWS S3 bucket key in the given bucket for the current AWS environment.
         """
@@ -242,7 +242,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/__reloadlambda__", authorize=True)
-    def reactapi_route_reload_lambda():
+    def reactapi_route_reload_lambda() -> Response:
         """
         For troubleshooting only. Reload the lambda code.
         """
@@ -250,7 +250,7 @@ class ReactRoutes:
 
     @staticmethod
     @route("/__clearcache__", authorize=True)
-    def reactapi_route_clear_cache():
+    def reactapi_route_clear_cache() -> Response:
         """
         For troubleshooting only. Clear any/all internal caches.
         """
@@ -266,30 +266,30 @@ class ReactRoutes:
 
     @staticmethod
     @route("/", static=True, authorize=False)
-    def reactui_route_static_file_noenv():
+    def reactui_route_static_file_noenv() -> Response:
         return app.core.react_serve_static_file(app.core.get_default_env(), [])
 
     @staticmethod
     @route("/{env}", static=True, authorize=False)
-    def reactui_route_0(env):
+    def reactui_route_0(env) -> Response:
         return app.core.react_serve_static_file(env, [])
 
     @staticmethod
     @route("/{env}/{path1}", static=True, authorize=False)
-    def reactui_route_1(env, path1):
+    def reactui_route_1(env, path1) -> Response:
         return app.core.react_serve_static_file(env, [path1])
 
     @staticmethod
     @route("/{env}/{path1}/{path2}", static=True, authorize=False)
-    def reactui_route_2(env, path1, path2):
+    def reactui_route_2(env, path1, path2) -> Response:
         return app.core.react_serve_static_file(env, [path1, path2])
 
     @staticmethod
     @route("/{env}/{path1}/{path2}/{path3}", static=True, authorize=False)
-    def reactui_route_3(env, path1, path2, path3):
+    def reactui_route_3(env, path1, path2, path3) -> Response:
         return app.core.react_serve_static_file(env, [path1, path2, path3])
 
     @staticmethod
     @route("/{env}/{path1}/{path2}/{path3}/{path4}", static=True, authorize=False)
-    def reactui_route_4(env, path1, path2, path3, path4):
+    def reactui_route_4(env, path1, path2, path3, path4) -> Response:
         return app.core.react_serve_static_file(env, [path1, path2, path3, path4])

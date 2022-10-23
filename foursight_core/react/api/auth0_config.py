@@ -39,6 +39,9 @@ logger = logging.getLogger(__name__)
 # - prompt (e.g. "select_account")
 # - connections (e.g. ["github", "google-oauth2"])
 #
+# Note that these Auth0 configuration parameters are NOT environment specific.
+# We ASSUME the same credentials/configuration across all environments for a deployment.
+#
 class Auth0Config:
 
     # Fallback values only because at least currently (2022-10-18) this is only returning auth0Client:
