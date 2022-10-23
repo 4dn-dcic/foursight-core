@@ -43,7 +43,7 @@ class Gac:
             # We really want the above check to be if == 1 ...
             # But if we return multiple results then what to actually do?
             # Currently just (randomly) take the first one.
-            # OOOH ... Should be getting this just from the IDENTITY.
+            # OOOH ... Should be getting this just from the IDENTITY. TODO.
             #
             return matching_gac_names[0]
         else:
