@@ -134,10 +134,10 @@ class Auth:
                                       authtoken_decoded: dict, but_is_authenticated: bool) -> dict:
         """
         Creates a response suitable for a request which is NOT authorized, or NOT authenticated,
-        depending on authenticated argument. Note that we still want to return some basic info,
-        i.e. list of known environments, default environment, domain, and aud (Auth0 client ID)
-        is required for the Auth0 login box (Auth0Lock) on the client-side (i.e. React UI). This
-        info is gotten from the given decoded authtoken or if not set then sets this info explicitly.
+        depending on the but_is_authenticated argument. Note that we still want to return some
+        basic info, i.e. the default environment, domain, and aud (Auth0 client ID) is required
+        for the Auth0 login box (Auth0Lock) on the client-side (i.e. React UI). This info is
+        gotten from the given decoded authtoken or if not set then sets this info explicitly.
         """
         if authtoken_decoded:
             response = authtoken_decoded
