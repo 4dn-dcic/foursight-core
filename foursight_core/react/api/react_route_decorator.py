@@ -93,9 +93,9 @@ def route(*args, **kwargs):
                 # Common endpoint exception handling here.
                 return app.core.create_error_response(e)
         if _CORS:
-            # Only used for cross-origin localhost development (e.g. UI on 3000 and API on 8000).
+            # Only used for (cross-origin) localhost development (e.g. UI on 3000 and API on 8000).
             kwargs["cors"] = _CORS
-        # This is the call that registers the Chalice route/endpoint.
+        # This is the call that actually registers the Chalice route/endpoint.
         app.route(path, **kwargs)(route_function)
         return route_function
     return route_registration
