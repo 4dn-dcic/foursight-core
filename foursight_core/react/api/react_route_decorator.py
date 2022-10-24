@@ -70,7 +70,7 @@ def route(*args, **kwargs):
             # If no methods given then default to GET.
             kwargs["methods"] = ["GET"]
     elif "method" in kwargs:
-        kwargs["method"]
+        del kwargs["method"]
 
     def route_registration(wrapped_route_function):
         """
