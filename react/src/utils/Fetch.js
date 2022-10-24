@@ -15,6 +15,7 @@ import Str from './Str';
 import Type from './Type';
 import Yaml from './Yaml';
 
+const DEFAULT_METHOD = "GET";
 const DEFAULT_TIMEOUT = 30 * 1000;
 const DEFAULT_DELAY = () => { return TEST_MODE_DELAY > 0 ? TEST_MODE_DELAY : 0; };
 const TEST_MODE_DELAY = Cookie.TestMode.FetchSleep();
@@ -513,7 +514,7 @@ const _doFetch = (args, current = undefined) => {
 
     function handleResponse(response, id) {
         const status = response.status;
-        Debug.Info(`FETCH RESPONSE: ${args.url} -> HTTP ${status}`, response.data);
+        Debug.Info(`FETCH RESPONSE: ${args.method} ${args.url} -> HTTP ${status}`, response.data);
         //
         // This current argument is only set in the case where this is being
         // called from the refresh function returned by useFetch; it is the value
@@ -550,7 +551,7 @@ const _doFetch = (args, current = undefined) => {
             // If we EVER get an HTTP 401 (not authenticated)
             // then we just logout the user, unless this behavior is disabled.
             //
-            Debug.Info(`FETCH UNAUTHENTICATED ERROR: ${args.url} -> HTTP ${status}`);
+            Debug.Info(`FETCH UNAUTHENTICATED ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
             if (!args.nologout) {
                 Logout();
             }
@@ -560,7 +561,7 @@ const _doFetch = (args, current = undefined) => {
             // If we EVER get an HTTP 403 (not authorized)
             // then redirect to th the /env page, unless this behavior is disabled.
             //
-            Debug.Info(`FETCH UNAUTHORIZED ERROR: ${args.url} -> HTTP ${status}`);
+            Debug.Info(`FETCH UNAUTHORIZED ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
             if (!args.noredirect) {
                 if (Client.CurrentLogicalPath() !== "/env") {
                     window.location.pathname = Client.Path("/env");
@@ -572,7 +573,7 @@ const _doFetch = (args, current = undefined) => {
             // This is what we get on timeout; no status code; set status to 408,
             // though not necessarily a server timeout, so not strictly accurate.
             //
-            Debug.Info(`FETCH TIMEOUT ERROR: ${args.url} -> HTTP ${status}`);
+            Debug.Info(`FETCH TIMEOUT ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
             if (!status) {
                 status = 408;
                 args.setStatus(status);
@@ -587,14 +588,14 @@ const _doFetch = (args, current = undefined) => {
             // error.code; though the Chrome debugger shows an HTTP 403.
             // See: https://github.com/axios/axios/issues/4420
             //
-            Debug.Info(`FETCH NETWORK ERROR: ${args.url} -> HTTP ${status}`);
+            Debug.Info(`FETCH NETWORK ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
             if (!status) {
                 status = 404;
                 args.setStatus(status);
             }
         }
         else {
-            Debug.Info(`FETCH ERROR: ${args.url} -> HTTP ${status}`);
+            Debug.Info(`FETCH ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
             args.setError(`Unknown HTTP error (code: ${error.code}).`);
         }
         noteFetchEnd(id);
@@ -622,11 +623,10 @@ const _doFetch = (args, current = undefined) => {
 
     // Expand to handle other verb later (e.g. PUT, POST).
 
-    const method = "GET";
     const payload = null;
-    const fetch = { url: args.url, method: method, data: payload, timeout: args.timeout, withCredentials: "include" };
+    const fetch = { url: args.url, method: args.method, data: payload, timeout: args.timeout, withCredentials: "include" };
 
-    Debug.Info(`FETCH: ${args.url} (TIMEOUT: ${args.timeout})`);
+    Debug.Info(`FETCH: ${args.method} ${args.url} (TIMEOUT: ${args.timeout})`);
 
     // Finally, the actual (Axois based) HTTP fetch happens here.
 
@@ -641,7 +641,7 @@ const _doFetch = (args, current = undefined) => {
             }
         })
         .catch(error => {
-            Debug.Info(`FETCH EXCEPTION: ${args.url}`, error);
+            Debug.Info(`FETCH EXCEPTION: ${args.method} ${args.url}`, error);
             handleError(error, id);
         });
 }
@@ -693,6 +693,7 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
     }
     args = {
         url:        Type.First([ urlOverride, argsOverride?.url, url, args?.url, "" ], Str.HasValue),
+        method:     Type.First([ argsOverride?.method, args?.method, DEFAULT_METHOD ], Str.HasValue),
         timeout:    Type.First([ argsOverride?.timeout, args?.timeout, DEFAULT_TIMEOUT ], Type.IsInteger),
         initial:    Type.First([ argsOverride?.initial, args?.initial, null ], (value) => !Type.IsNull(value)),
         nofetch:    Type.First([ argsOverride?.nofetch, args?.nofetch, false ], Type.IsBoolean),
