@@ -109,7 +109,7 @@ class ReactRoutes:
     def reactapi_route_user_get_or_patch_or_delete(env: str, uuid: str) -> Response:
         """
         GET:    Returns detailed info for the user identified by the given uuid (may also be email).
-        PATCH:  Updates the user identified by the given uuid with the given data;
+        PATCH:  Updates the user identified by the given uuid with the given user data;
                 must contain: email, first_name, last_name.
         DELETE: Deletes the user identified by the given uuid.
 
