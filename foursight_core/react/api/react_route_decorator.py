@@ -8,6 +8,9 @@ from typing import Optional, Tuple
 from ...app import app
 from ...route_prefixes import ROUTE_CHALICE_LOCAL, ROUTE_PREFIX
 
+REACT_API_PATH_COMPONENT = "reactapi"
+REACT_UI_PATH_COMPONENT = "react"
+
 # CORS is need ONLY for local DEVELOPMENT, i.e. when using chalice local!
 # Set CORS to True if CHALICE_LOCAL; not needed if running React from Foursight
 # directly, on the same port (e.g. 8000), but useful if/when running React on a
@@ -44,10 +47,10 @@ def route(*args, **kwargs):
     route_prefix = ROUTE_PREFIX + ("/" if not ROUTE_PREFIX.endswith("/") else "")
     if "static" in kwargs:
         # This is for serving static files which live in a different/specific directory.
-        route_prefix = route_prefix + "react"
+        route_prefix = route_prefix + REACT_UI_PATH_COMPONENT
         del kwargs["static"]
     else:
-        route_prefix = route_prefix + "reactapi"
+        route_prefix = route_prefix + REACT_API_PATH_COMPONENT
     path = route_prefix + path
     if path.endswith("/"):
         path = path[:-1]
@@ -82,9 +85,9 @@ def route(*args, **kwargs):
             """
             try:
                 if authorize:
-                    # Was calling the _route_requires_authorization decorator; now do it directly.
-                    # return _route_requires_authorization(wrapped_route_function)(*args, **kwargs)
-                    # Note that we access the env argument in kwargs; ASSUME this name from the route.
+                    # Note that we access the "env" argument in kwargs as the environment name in the
+                    # endpoint path; it does not HAVE to be present in the endpoint path, but if it
+                    # is then it MUST be "env", otherwise we won't properly do per-env authorization.
                     unauthorized_response = _authorize(app.current_request.to_dict(), kwargs.get("env"))
                     if unauthorized_response:
                         return unauthorized_response
