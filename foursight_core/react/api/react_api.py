@@ -260,20 +260,22 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         Called from react_routes for endpoint: GET /{env}/user/{uuid}
         Returns info on the specified user uuid. The uuid can actually also
-        be an email address, and can also be a comma-separated list of these.
+        be an email address; and can also be a comma-separated list of these;
+        if just one requested then return a single object, otherwise return an array.
         """
         users = []
-        for item in uuid.split(","):
-            is_email = "@" in item
-            item_name = "email_address" if is_email else "uuid"
+        items = uuid.split(",")
+        for item in items:
+            item_is_email = "@" in item
+            item_name = "email_address" if item_is_email else "uuid"
             try:
                 # Note these call works for both email address or user UUID.
                 user = ff_utils.get_metadata('users/' + item.lower(),
                                              ff_env=full_env_name(env), add_on='frame=object')
-                users.append({item_name: item, "record": user})
+                users.append(user)
             except Exception as e:
-                users.append({item_name: item, "record": {"error": str(e)}})
-        return self.create_success_response(users)
+                users.append({"error": str(e)})
+        return self.create_success_response(users[0] if len(items) == 1 else users)
 
     def reactapi_post_user(self, request: dict, env: str, user: dict) -> Response:
         """
@@ -302,8 +304,18 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: PATCH /{env}/users/update/{uuid}
         Updates the user identified by the given uuid with the given data.
         """
+        # Note that there may easily be a delay after update until the record is actually updated.
+        # TODO: Find out precisely why this is so, and if and how to specially handle it on the client side.
         response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env))
-        return self.create_success_response({"status": "User updated.", "uuid": uuid})
+        status = response.get("status")
+        if status != "success":
+            return self.create_error_response(json.dumps(response))
+        graph = response.get("@graph")
+        if not graph or not isinstance(graph, list) or len(graph) != 1:
+            return self.create_error_response(json.dumps(response))
+        patched_user = graph[0]
+        xyzzy = ff_utils.get_metadata('users/' + uuid, ff_env=full_env_name(env), add_on='frame=object')
+        return self.create_success_response(patched_user)
 
     def reactapi_delete_user(self, request: dict, env: str, uuid: str) -> Response:
         """

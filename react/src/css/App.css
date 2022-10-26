@@ -337,3 +337,76 @@
 .pagination-control * {
     margin: 0;
 }
+
+/* New */
+
+:root {
+    --foursight-fourfront-box-background: #DDFFEE;
+    --foursight-fourfront-box-color: #09430C;
+
+    --foursight-cgap-box-background: #DDEEFF;
+    --foursight-cgap-box-color: #000069;
+
+    --box-color: var(--foursight-fourfront-box-color);
+    --box-background: var(--foursight-fourfront-box-background);
+}
+
+.box {
+    background: var(--box-background);
+    color: var(--box-color);
+    border-radius: 6px;
+    border: 2px solid var(--box-color);
+    border-color: var(--box-color);
+    padding: 0.6em 1.0em;
+    vertical-align: middle;
+    display: table-cell;
+}
+
+.input {
+    margin-left: 0;
+    height: 14pt;
+    width: 30em;
+    xbackground: lightyellow;
+    background: var(--box-background-lighten);
+    border-radius: 4px;
+    border: 1px solid gray;
+    padding: 0.7em 0.3em;
+}
+.input:focus {
+    outline: none;
+    border:1px solid var(--box-color);
+    box-shadow: 0 0 2px var(--box-color);
+}
+.input::placeholder {
+    font-style: italic;
+    opacity: .4;
+}
+.input:read-only {
+    border: 0;
+    box-shadow: 0 0 1px var(--box-color);
+    background: var(--box-background);
+    outline: none;
+}
+
+.button {
+    border: 1px solid green;
+    background: var(--box-color);
+    color: var(--box-background);
+    padding: 0.1em 0.4em 0.25em 0.4em;
+    border-radius: 6px;
+    min-width: 4em;
+}
+.button:active {
+    background: yellow;
+    color: red;
+}
+.button:disabled {
+    background: gray;
+    color: white;
+    cursor: not-allowed;
+}
+
+/* This gets rid of extra vertical space introduced normally, for some reason, on forms */
+form {
+    display:inline;
+}

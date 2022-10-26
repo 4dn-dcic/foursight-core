@@ -94,6 +94,8 @@ def route(*args, **kwargs):
                 return wrapped_route_function(*args, **kwargs)
             except Exception as e:
                 # Common endpoint exception handling here.
+                print("*** EXCEPTION IN ROUTE")
+                print(e)
                 return app.core.create_error_response(e)
         if _CORS:
             # Only used for (cross-origin) localhost development (e.g. UI on 3000 and API on 8000).

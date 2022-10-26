@@ -83,7 +83,13 @@ class Envs:
                         first_name = user.get("first_name")
                     if not last_name:
                         last_name = user.get("last_name")
-                    allowed_envs.append(known_env["full_name"])
+                    if True:
+                        # New; 2022-10-25; almost forgot; from app_utils.check_authorization; check groups.
+                        groups = user.get("groups")
+                        if groups and "admin" in groups or "foursight" in groups:
+                            allowed_envs.append(known_env["full_name"])
+                    else:
+                        allowed_envs.append(known_env["full_name"])
             except Exception as e:
                 logger.warning(f"Exception getting allowed envs for {email}: {e}")
         return allowed_envs, first_name, last_name

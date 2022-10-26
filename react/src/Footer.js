@@ -1,4 +1,3 @@
-import './css/App.css';
 import { useContext } from 'react';
 import HeaderData from './HeaderData';
 import Env from './utils/Env';

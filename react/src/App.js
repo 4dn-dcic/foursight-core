@@ -20,6 +20,7 @@ import GacComparePage from './pages/GacComparePage';
 import NotFoundPage from './pages/NotFoundPage';
 import Page from './Page';
 import RedirectPage from './pages/RedirectPage';
+import Styles from './Styles';
 import TestPage from './pages/TestPage';
 import UserPage from './pages/UserPage';
 import UserCreatePage from './pages/UserCreatePage';
@@ -31,9 +32,11 @@ function setFavicon(header) {
     if (faviconElement) {
         if (Env.IsFoursightFourfront(header)) {
             faviconElement.href = Image.FoursightFourfrontFavicon();
+            Styles.SetFoursightFourfrontStyles();
         }
         else {
             faviconElement.href = Image.FoursightCgapFavicon();
+            Styles.SetFoursightCgap();
         }
     }
 }

@@ -193,7 +193,17 @@ export const useFetch = (url, args) => {
         timeout: timeout,
         error: error,
         set: setData,
-        __usefetch_response: true // For sanity checking args to bound functions.
+        //
+        // Usage of these (setLoading and setError) should be rather unusual and special case,
+        // as the useFetch hook should normally be responsible for managing these states.
+        // But one example is UserEditPage.js.
+        //
+        setLoading: setLoading,
+        setError: setLoading,
+        //
+        // The below is for sanity checking args to bound functions.
+        //
+        __usefetch_response: true
         //
         // Previously had a case where it seemed loading wasn't getting updated properly;
         // and where turning it into a computed property seemed to fixed it; cannot
@@ -623,10 +633,16 @@ const _doFetch = (args, current = undefined) => {
 
     // Expand to handle other verb later (e.g. PUT, POST).
 
-    const payload = null;
-    const fetch = { url: args.url, method: args.method, data: payload, timeout: args.timeout, withCredentials: "include" };
+    const fetch = {
+        url: args.url,
+        method: args.method,
+        data: args.payload,
+        timeout: args.timeout,
+        withCredentials: "include",
+    };
 
     Debug.Info(`FETCH: ${args.method} ${args.url} (TIMEOUT: ${args.timeout})`);
+    Debug.Info(fetch)
 
     // Finally, the actual (Axois based) HTTP fetch happens here.
 
@@ -694,6 +710,7 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
     args = {
         url:        Type.First([ urlOverride, argsOverride?.url, url, args?.url, "" ], Str.HasValue),
         method:     Type.First([ argsOverride?.method, args?.method, DEFAULT_METHOD ], Str.HasValue),
+        payload:    Type.First([ argsOverride?.payload, args?.payload, null ], Type.IsObject),
         timeout:    Type.First([ argsOverride?.timeout, args?.timeout, DEFAULT_TIMEOUT ], Type.IsInteger),
         initial:    Type.First([ argsOverride?.initial, args?.initial, null ], (value) => !Type.IsNull(value)),
         nofetch:    Type.First([ argsOverride?.nofetch, args?.nofetch, false ], Type.IsBoolean),
