@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useFetch } from '../utils/Fetch';
 import { StandardSpinner } from '../Spinners';
@@ -8,9 +8,11 @@ import Server from '../utils/Server';
 
 const InputsBox = ({inputs, title, loading, onSave, onCancel, onRefresh}) => {
 
+    const [ updating, setUpdating ] = useState(false);
+
     function handleSave(e) {
-            console.log('*** handleSave')
         if (onSave) {
+            setUpdating(true);
             e.preventDefault();
             const values = {}
             for (const input of inputs) {
@@ -23,7 +25,6 @@ const InputsBox = ({inputs, title, loading, onSave, onCancel, onRefresh}) => {
     }
 
     function handleCancel(e) {
-            console.log('*** handleCancel')
         if (onCancel) {
             e.preventDefault();
             onCancel();
@@ -31,12 +32,11 @@ const InputsBox = ({inputs, title, loading, onSave, onCancel, onRefresh}) => {
     }
 
     function handleChange(e) {
-            console.log('*** handleChange')
         document.getElementById("save").disabled = (e.target.value == e.target.defaultValue);
     }
 
     function handleRefresh() {
-            console.log('*** handleRefresh')
+        setUpdating(false);
         if (!loading && onRefresh) {
             onRefresh();
         }
@@ -70,7 +70,7 @@ const InputsBox = ({inputs, title, loading, onSave, onCancel, onRefresh}) => {
                 <td style={{verticalAlign:"bottom"}}><span style={{padding:"1px 5px", borderRadius:"4px", border:"1px solid gray", cursor:loading ? "not-allowed" : "pointer"}} onClick={handleRefresh}>{Char.Refresh}</span><>&nbsp;</></td>
                 <td align="right" style={{paddingTop:"0.8em"}}>
                     { loading ?
-                      <div style={{marginTop:"1.05em"}}> <StandardSpinner condition={loading} label=""/> </div>
+                      <div style={{marginTop:"0.45em"}}> <StandardSpinner condition={loading} label={updating ? "Updating" : "Loading"}/> </div>
                     : <>
                         
                         <button className="button" type="button" onClick={handleCancel}>Cancel</button><>&nbsp;</>

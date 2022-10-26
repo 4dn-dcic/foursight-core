@@ -68,9 +68,9 @@ const UserEditPage = () => {
     }
 
     return <>
-            <center>
-                <EditBox title={"Edit User"} inputs={inputs} onSave={onSave} onCancel={onCancel} onRefresh={onRefresh} loading={user.loading} />
-            </center>
+        <center>
+            <EditBox title={"Edit User"} inputs={inputs} onSave={onSave} onCancel={onCancel} onRefresh={onRefresh} loading={user.loading} />
+        </center>
     </>
 }
 
