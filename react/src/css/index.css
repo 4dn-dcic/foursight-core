@@ -2,7 +2,7 @@
     border: 1px solid;
 }
 .border-thick {
-    border: 2px solid var(--box-color);
+    border: 2px solid var(--box-fg);
 }
 .lightened {
     filter: brightness(1.1);
@@ -38,7 +38,7 @@
 .hline {
     margin-top: 0.4em;
     height: 1px;
-    border-top: 1px solid var(--box-color);
+    border-top: 1px solid var(--box-fg);
     margin-bottom: 0.4em;
 }
 .cursor-hand {

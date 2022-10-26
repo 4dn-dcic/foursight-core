@@ -8,7 +8,6 @@ import Auth from '../utils/Auth';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
-import Context from '../utils/Context';
 import Cookie from '../utils/Cookie';
 import Env from '../utils/Env';
 import { useFetch } from '../utils/Fetch';

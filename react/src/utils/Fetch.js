@@ -260,8 +260,8 @@ export const useFetch = (url, args) => {
             (function() {
                 if (!this || !this.__usefetch_response) return;
                 return this.data === undefined || this.data === null ||
-                       (Type.IsArray(this.data) && this.data.length == 0) ||
-                       (Type.IsObject(this.data) && Object.keys(this.data).length == 0);
+                       (Type.IsArray(this.data) && this.data.length === 0) ||
+                       (Type.IsObject(this.data) && Object.keys(this.data).length === 0);
             }).bind(response)
         });
 

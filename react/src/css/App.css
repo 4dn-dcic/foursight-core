@@ -341,22 +341,20 @@
 /* New */
 
 :root {
-    --foursight-fourfront-box-background: #DDFFEE;
-    --foursight-fourfront-box-color: #09430C;
-
-    --foursight-cgap-box-background: #DDEEFF;
-    --foursight-cgap-box-color: #000069;
-
-    --box-color: var(--foursight-fourfront-box-color);
-    --box-background: var(--foursight-fourfront-box-background);
+    --foursight-fourfront-box-bg:#DDFFEE;
+    --foursight-fourfront-box-fg:#09430C;
+    --foursight-cgap-box-bg:#DDEEFF;
+    --foursight-cgap-box-fg:#000069;
+    --box-fg:var(--foursight-fourfront-box-fg);
+    --box-bg:var(--foursight-fourfront-box-bg);
 }
 
 .box {
-    background: var(--box-background);
-    color: var(--box-color);
+    background: var(--box-bg);
+    color: var(--box-fg);
     border-radius: 6px;
-    border: 2px solid var(--box-color);
-    border-color: var(--box-color);
+    border: 2px solid var(--box-fg);
+    border-color: var(--box-fg);
     padding: 0.6em 1.0em;
     vertical-align: middle;
     display: table-cell;
@@ -366,15 +364,15 @@
     margin-left: 0;
     height: 14pt;
     width: 30em;
-    background: var(--box-background-lighten);
+    background: var(--box-bg-lighten);
     border-radius: 4px;
     border: 1px solid gray;
     padding: 0.7em 0.3em;
 }
 .input:focus {
     outline: none;
-    border:1px solid var(--box-color);
-    box-shadow: 0 0 2px var(--box-color);
+    border:1px solid var(--box-fg);
+    box-shadow: 0 0 2px var(--box-fg);
 }
 .input::placeholder {
     font-style: italic;
@@ -382,15 +380,15 @@
 }
 .input:read-only {
     border: 0;
-    box-shadow: 0 0 1px var(--box-color);
-    background: var(--box-background);
+    box-shadow: 0 0 1px var(--box-fg);
+    background: var(--box-bg);
     outline: none;
 }
 
 .button {
     border: 1px solid green;
-    background: var(--box-color);
-    color: var(--box-background);
+    background: var(--box-fg);
+    color: var(--box-bg);
     padding: 0.1em 0.4em 0.25em 0.4em;
     border-radius: 6px;
     min-width: 4em;
@@ -405,8 +403,8 @@
     cursor: not-allowed;
 }
 .button.cancel {
-    background: var(--box-background);
-    color: var(--box-color);
+    background: var(--box-bg);
+    color: var(--box-fg);
     filter: brightness(1.02);
 }
 .button.cancel:active {

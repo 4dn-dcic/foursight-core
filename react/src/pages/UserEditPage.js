@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useFetch } from '../utils/Fetch';
 import Client from '../utils/Client';
 import EditBox from './EditBox';
-import Json from '../utils/Json';
 import Server from '../utils/Server';
 import Time from '../utils/Time';
 import UserDefs from './UserDefs';
@@ -31,7 +30,7 @@ const UserEditPage = () => {
     }
 
     function onUpdate(values) {
-        let existingGroupsWithoutAnyAdmin = user.get("groups").filter(group => group !== "admin");
+        let existingGroupsWithoutAnyAdmin = user.get("groups")?.filter(group => group !== "admin") || [];
         if (values.admin) {
             delete values["admin"]
             values = {...values, "groups": [ ...existingGroupsWithoutAnyAdmin, "admin" ] }

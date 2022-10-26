@@ -3,7 +3,6 @@
 // -------------------------------------------------------------------------------------------------
 
 import Cookie from './Cookie';
-import Env from './Env';
 import Page from '../Page';
 import Server from './Server';
 

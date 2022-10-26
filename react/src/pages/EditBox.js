@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { useFetch } from '../utils/Fetch';
 import { StandardSpinner } from '../Spinners';
-import Uuid from 'react-uuid';
-import Json from '../utils/Json';
 import Char from '../utils/Char';
-import Server from '../utils/Server';
-import Yaml from '../utils/Yaml';
 
 // Generic box to edit (create, update, delete) a list of plain input fields representing some data record.
 // If the onCreate argument is specified then assume this is a create.

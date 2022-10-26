@@ -1,18 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useFetch } from '../utils/Fetch';
 import Client from '../utils/Client';
 import EditBox from './EditBox';
-import Json from '../utils/Json';
 import Server from '../utils/Server';
-import Time from '../utils/Time';
 import UserDefs from './UserDefs';
 
 const UserCreatePage = () => {
     
     const user = useFetch(Server.Url("/users"), { method: "POST", nofetch: true });
     const navigate = useNavigate();
-    const [ inputs, setInputs ] = useState(UserDefs.Inputs());
+    const [ inputs ] = useState(UserDefs.Inputs());
 
     function onCreate(values) {
         console.log('*** oncreate')
