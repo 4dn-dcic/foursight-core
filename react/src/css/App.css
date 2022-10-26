@@ -366,7 +366,6 @@
     margin-left: 0;
     height: 14pt;
     width: 30em;
-    xbackground: lightyellow;
     background: var(--box-background-lighten);
     border-radius: 4px;
     border: 1px solid gray;
@@ -404,6 +403,23 @@
     background: gray;
     color: white;
     cursor: not-allowed;
+}
+.button.cancel {
+    background: var(--box-background);
+    color: var(--box-color);
+    filter: brightness(1.02);
+}
+.button.cancel:active {
+    background: yellow;
+    color: red;
+}
+.button.delete {
+    background: red;
+    color: yellow;
+}
+.button.delete:active {
+    background: yellow;
+    color: red;
 }
 
 /* This gets rid of extra vertical space introduced normally, for some reason, on forms */

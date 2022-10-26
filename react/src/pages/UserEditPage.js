@@ -1,61 +1,59 @@
-import { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useFetch } from '../utils/Fetch';
 import Client from '../utils/Client';
 import EditBox from './EditBox';
 import Json from '../utils/Json';
 import Server from '../utils/Server';
 import Time from '../utils/Time';
+import UserDefs from './UserDefs';
 
 const UserEditPage = () => {
     
     const { uuid } = useParams();
-    const user = useFetch(Server.Url(`/users/${uuid}`))
+    const user = useFetch(Server.Url(`/users/${uuid}`), { onData: updateUserData });
     const navigate = useNavigate();
+    const [ inputs, setInputs ] = useState(UserDefs.Inputs());
 
-    const inputs = [
-        {
-            name: "email",
-            label: "Email Address",
-            value: () => user.get("email"),
-            focus: true
-        },
-        {
-            name: "first_name",
-            label: "First Name",
-            value: () => user.get("first_name")
-        },
-        {
-            name: "last_name",
-            label: "Last Name",
-            value: () => user.get("last_name")
-        },
-        {
-            name: "created",
-            label: "Created",
-            value: () => Time.FormatDateTime(user.get("date_created")),
-            readonly: true
-        },
-        {
-            name: "modified",
-            label: "Modified",
-            value: () => Time.FormatDateTime(user.get("last_modified.date_modified")),
-            readonly: true
-        },
-        {
-            name: "uuid",
-            label: "UUID",
-            value: () => user.get("uuid"),
-            readonly: true
-        },
-    ];
+    function updateUserData(data) {
+        setInputs(inputs => {
+            for (const input of inputs) {
+                if      (input.name === "email")      input.value = data?.email;
+                else if (input.name === "first_name") input.value = data?.first_name;
+                else if (input.name === "last_name")  input.value = data?.last_name;
+                else if (input.name === "admin")      input.value = data?.groups?.includes("admin") ? true : false;
+                else if (input.name === "created")    input.value = Time.FormatDateTime(data?.date_created);
+                else if (input.name === "modified")   input.value = Time.FormatDateTime(data?.last_modified?.date_modified);
+                else if (input.name === "uuid")       input.value = data?.uuid;
+            }
+            return [...inputs];
+        });
+    }
 
-    function onSave(values) {
+    function onUpdate(values) {
+        let existingGroupsWithoutAnyAdmin = user.get("groups").filter(group => group !== "admin");
+        if (values.admin) {
+            delete values["admin"]
+            values = {...values, "groups": [ ...existingGroupsWithoutAnyAdmin, "admin" ] }
+        }
+        else {
+            delete values["admin"]
+            values = {...values, "groups": existingGroupsWithoutAnyAdmin }
+        }
         user.refresh({
-                onData: (data) => { console.log('xxxxxxxxxxxxxxxxxxxxxx'); console.log(data); },
             url: Server.Url(`/users/${uuid}`),
             method: "PATCH",
             payload: values
+        });
+    }
+
+    function onDelete() {
+        user.refresh({
+            url: Server.Url(`/users/${uuid}`),
+            method: "DELETE",
+            onSuccess: (response) => {
+                navigate(Client.Path(`/users`));
+            }
         });
     }
 
@@ -69,7 +67,18 @@ const UserEditPage = () => {
 
     return <>
         <center>
-            <EditBox title={"Edit User"} inputs={inputs} onSave={onSave} onCancel={onCancel} onRefresh={onRefresh} loading={user.loading} />
+            <div style={{display:"table-row"}}>
+                <b style={{paddingLeft:"0.2em",float:"left"}}>Edit User</b>
+                <Link to={Client.Path("/users/create")} style={{fontSize:"small",paddingRight:"0.2em",float:"right"}}>New User</Link>
+            </div>
+            <EditBox
+                title={"Edit User"}
+                inputs={inputs}
+                onUpdate={onUpdate}
+                onDelete={onDelete}
+                onCancel={onCancel}
+                onRefresh={onRefresh}
+                loading={user.loading} />
         </center>
     </>
 }

@@ -31,7 +31,7 @@ const UsersPage = () => {
                             User
                         </td>
                         <td style={{padding:"10px",fontWeight:"bold",width:"20"}}>
-                            Roles
+                            Groups
                         </td>
                         <td style={{padding:"10px",fontWeight:"bold",width:"60%"}}>
                             Modified
@@ -43,12 +43,12 @@ const UsersPage = () => {
                     {response.map(user => (
                         <tr key={user.uuid} style={{borderBottom:"1px solid gray"}}>
                             <td style={{borderBottom:"1px solid gray",padding:"10px"}}>
-                                <Link to={Client.Path("/users/" + user.email_address)}><b>{user.email_address}</b></Link> <br />
+                                <Link to={Client.Path("/users/" + user.email)}><b>{user.email}</b></Link> <br />
                                 {user["first_name"]} {user["last_name"]} <br />
                                 <small id="{user.uuid}" style={{cursor:"copy"}}>{user.uuid}</small>
                             </td>
                             <td style={{padding:"10px",verticalAlign:"top"}}>
-                                TODO
+                                {user.groups}
                             </td>
                             <td style={{padding:"10px",verticalAlign:"top"}}>
                                 {user.modified}

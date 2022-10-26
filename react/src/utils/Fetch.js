@@ -547,7 +547,9 @@ const _doFetch = (args, current = undefined) => {
         args.setStatus(status);
         args.setLoading(false);
         noteFetchEnd(id, data);
-        args.onDone({ data: data, loading: false, status: status, timeout: false, error: null });
+        const onArg = { data: data, loading: false, status: status, timeout: false, error: null };
+        args.onSuccess(onArg);
+        args.onDone(onArg);
     }
 
     function handleError(error, id) {
@@ -718,8 +720,9 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
         noredirect: Type.First([ argsOverride?.noredirect, args?.noredirect, false ], Type.IsBoolean),
         delay:      Type.First([ argsOverride?.delay, args?.delay, DEFAULT_DELAY() ], Type.IsInteger),
         onData:     Type.First([ argsOverride?.onData, args?.onData, () => {} ], Type.IsFunction),
-        onDone:     Type.First([ argsOverride?.onDone, args?.onDone , () => {}], Type.IsFunction),
+        onSuccess:  Type.First([ argsOverride?.onSuccess, args?.onSuccess , () => {}], Type.IsFunction),
         onError:    Type.First([ argsOverride?.onError, args?.onError , () => {}], Type.IsFunction),
+        onDone:     Type.First([ argsOverride?.onDone, args?.onDone , () => {}], Type.IsFunction),
         setData:    setData,
         setLoading: setLoading,
         setStatus:  setStatus,

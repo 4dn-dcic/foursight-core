@@ -4,7 +4,9 @@
 # We DEFAULT to AUTHORIZATION checking; if not wanted use authorize=False in route decorator.
 
 from chalice import CORSConfig, Response
+import logging
 from typing import Optional, Tuple
+from dcicutils.misc_utils import get_error_message
 from ...app import app
 from ...route_prefixes import ROUTE_CHALICE_LOCAL, ROUTE_PREFIX
 
@@ -32,6 +34,9 @@ else:
 
 _HTTP_UNAUTHENTICATED = 401
 _HTTP_UNAUTHORIZED = 403
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 
 def route(*args, **kwargs):
@@ -94,8 +99,7 @@ def route(*args, **kwargs):
                 return wrapped_route_function(*args, **kwargs)
             except Exception as e:
                 # Common endpoint exception handling here.
-                print("*** EXCEPTION IN ROUTE")
-                print(e)
+                logger.error(f"Exception in route: {get_error_message(e)}")
                 return app.core.create_error_response(e)
         if _CORS:
             # Only used for (cross-origin) localhost development (e.g. UI on 3000 and API on 8000).

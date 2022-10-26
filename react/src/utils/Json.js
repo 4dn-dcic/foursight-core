@@ -8,5 +8,6 @@
 
 const exports = {
     Str:    (value) => { return JSON.stringify(value) },
-    Format: (value) => { return JSON.stringify(value, null, 2) }
+    Format: (value) => { return JSON.stringify(value, null, 2) },
+    Clone:  (value) => JSON.parse(JSON.stringify(value))
 }; export default exports;

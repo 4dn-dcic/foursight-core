@@ -232,7 +232,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # TODO: Consider adding ability to search for both normal users and
         #       admin/foursight users (who would have access to foursight);
         #       and more advanced, the ability to grant foursight access.
-        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(env), add_on='frame=object&limit=10000')
+        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(env), add_on='frame=object&datastore=database&limit=10000')
         for user_record in user_records["@graph"]:
             last_modified = user_record.get("last_modified")
             if last_modified:
@@ -249,12 +249,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
             #         "principals_edit": principals_edit
             #     })
             users.append({
-                "email_address": user_record.get("email"),
+                "email": user_record.get("email"),
                 "first_name": user_record.get("first_name"),
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
+                "groups": user_record.get("groups"),
                 "modified": convert_utc_datetime_to_useastern_datetime_string(last_modified)})
-        return self.create_success_response(sorted(users, key=lambda key: key["email_address"]))
+        return self.create_success_response(sorted(users, key=lambda key: key["email"]))
 
     def reactapi_get_user(self, request: dict, env: str, uuid: str) -> Response:
         """
@@ -266,12 +267,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         users = []
         items = uuid.split(",")
         for item in items:
-            item_is_email = "@" in item
-            item_name = "email_address" if item_is_email else "uuid"
             try:
                 # Note these call works for both email address or user UUID.
                 user = ff_utils.get_metadata('users/' + item.lower(),
-                                             ff_env=full_env_name(env), add_on='frame=object')
+                                             ff_env=full_env_name(env), add_on='frame=object&datastore=database')
                 users.append(user)
             except Exception as e:
                 users.append({"error": str(e)})
@@ -283,6 +282,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Creates a new user described by the given data.
         Given user data looks like:
         {email': 'japrufrock@hms.harvard.edu', 'first_name': 'J. Alfred', 'last_name': 'Prufrock'}
+        Returns the same response as GET /{env}/users/{uuid} (i.e. reactpi_get_user).
         """
         response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env))
         #
@@ -292,9 +292,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if status != "success":
             return self.create_error_response(json.dumps(response))
         graph = response.get("@graph")
-        if not graph or not isinstance(graph, dict):
+        if not graph or not isinstance(graph, list) or len(graph) != 1:
             return self.create_error_response(json.dumps(response))
-        uuid = graph.get("uuid")
+        created_user = graph[0]
+        uuid = created_user.get("uuid")
         if not uuid:
             return self.create_error_response(json.dumps(response))
         return self.create_success_response({"status": "User created.", "uuid": uuid})
@@ -303,6 +304,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         Called from react_routes for endpoint: PATCH /{env}/users/update/{uuid}
         Updates the user identified by the given uuid with the given data.
+        Returns the same response as GET /{env}/users/{uuid} (i.e. reactpi_get_user).
         """
         # Note that there may easily be a delay after update until the record is actually updated.
         # TODO: Find out precisely why this is so, and if and how to specially handle it on the client side.
@@ -313,9 +315,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         graph = response.get("@graph")
         if not graph or not isinstance(graph, list) or len(graph) != 1:
             return self.create_error_response(json.dumps(response))
-        patched_user = graph[0]
-        xyzzy = ff_utils.get_metadata('users/' + uuid, ff_env=full_env_name(env), add_on='frame=object')
-        return self.create_success_response(patched_user)
+        updated_user = graph[0]
+        xyzzy = ff_utils.get_metadata('users/' + uuid, ff_env=full_env_name(env), add_on='frame=object&datastore=database')
+        return self.create_success_response(updated_user)
 
     def reactapi_delete_user(self, request: dict, env: str, uuid: str) -> Response:
         """
