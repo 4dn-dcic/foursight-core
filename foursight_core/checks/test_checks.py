@@ -48,7 +48,7 @@ def test_random_nums(connection, **kwargs):
         "output": output
     }
     check.description = 'A test check'
-    # sleep for 2 secs because this is used to test timing out
+    # sleep for 4 secs because this is used to test timing out
     time.sleep(4)
     return check
 

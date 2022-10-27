@@ -63,6 +63,22 @@ class CheckHandler(object):
     def import_check_module(self, module_package, module_name):
         return importlib.import_module('.checks.' + module_name, module_package)
 
+    def _extract_module_and_functions(self, mod_package, mod_name, func_type, specific_func=None):
+        """ Extracts the module and check or action names from the given mod_name - if
+            a specific check is given then just return that check, otherwise
+            append to all_checks
+        """
+        collected_funcs = []
+        mod = self.import_check_module(mod_package, mod_name)
+        methods = self.get_methods_by_deco(mod, func_type)
+        for method in methods:
+            func_str = '/'.join([mod_name, method.__name__])
+            if specific_func and specific_func == method.__name__:
+                return func_str
+            elif mod_name != 'test_checks':
+                collected_funcs.append(func_str)
+        return collected_funcs
+
     def get_check_strings(self, specific_check=None):
         """
         Return a list of all formatted check strings (<module>/<check_name>) in system.
@@ -74,14 +90,12 @@ class CheckHandler(object):
         all_checks = []
         for mod_package, mods in self.get_module_names().items():
             for mod_name in mods:
-                mod = self.import_check_module(mod_package, mod_name)
-                methods = self.get_methods_by_deco(mod, self.CHECK_DECO)
-                for method in methods:
-                    check_str = '/'.join([mod_name, method.__name__])
-                    if specific_check and specific_check == method.__name__:
-                        return check_str
-                    elif mod_name != 'test_checks':
-                        all_checks.append(check_str)
+                collected_checks = self._extract_module_and_functions(mod_package, mod_name, self.CHECK_DECO,
+                                                                   specific_check)
+                if specific_check and isinstance(collected_checks, str):
+                    return collected_checks  # we are looking for a specific one and should return
+                else:
+                    all_checks += collected_checks
         if specific_check:
             # if we've gotten here, it means the specific check was not checks_found
             return None
@@ -195,14 +209,13 @@ class CheckHandler(object):
         all_actions = []
         for mod_package, mods in self.get_module_names().items():
             for mod_name in mods:
-                mod = self.import_check_module(mod_package, mod_name)
-                methods = self.get_methods_by_deco(mod, self.ACTION_DECO)
-                for method in methods:
-                    act_str = '/'.join([mod_name, method.__name__])
-                    if specific_action and specific_action == method.__name__:
-                        return act_str
-                    elif mod_name != 'test_checks':
-                        all_actions.append(act_str)
+                collected_actions = self._extract_module_and_functions(mod_package, mod_name, self.ACTION_DECO,
+                                                                       specific_action)
+                if specific_action and isinstance(collected_actions, str):
+                    return collected_actions  # we are looking for a specific one and should return
+                else:
+                    all_actions += collected_actions
+
         if specific_action:
             # if we've gotten here, it means the specific action was not found
             return None

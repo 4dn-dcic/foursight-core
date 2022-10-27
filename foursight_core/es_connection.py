@@ -87,7 +87,7 @@ class ESConnection(AbstractConnection):
 
     def refresh_index(self):
         """
-        Refreshes the index (wait removed, no need for it
+        Refreshes the index (wait removed, no need for it)
         """
         return self.es.indices.refresh(index=self.index)
 

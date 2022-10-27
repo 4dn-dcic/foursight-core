@@ -62,18 +62,18 @@ class TestCheckRunner:
                 # allow existing checks to terminate via long polling
                 if found_clear:
                     break
-                time.sleep(12)
+                time.sleep(6)
                 found_clear = True
             elif invis_messages > 0:
                 # if orphaned messages are in the queue, eat them up
-                print("%d orphaned messages at in the queue" % invis_messages)
+                print(f"{invis_messages} orphaned messages at in the queue")
                 app_utils_obj.run_check_runner({'sqs_url': self.queue.url}, propogate=False)
                 tries += 1
                 found_clear = False
                 time.sleep(2)
             else:
                 # wait less time to see if processing is finished
-                print("%d visible messages at in the queue" % vis_messages)
+                print(f"{invis_messages} visible messages at in the queue")
                 tries += 1
                 found_clear = False
                 time.sleep(2)
@@ -85,8 +85,8 @@ class TestCheckRunner:
             process checks on the test-check_queue. Have to manually invoke the lambda locally.
         """
         # ensure we have the right queue and runner names
-        assert (self.queue_name == FOURSIGHT_PREFIX + '-test-check_queue')
-        assert (self.runner_name == FOURSIGHT_PREFIX + '-dev-check_runner')
+        assert self.queue_name == FOURSIGHT_PREFIX + '-test-check_queue'
+        assert self.runner_name == FOURSIGHT_PREFIX + '-dev-check_runner'
 
     @pytest.mark.common_fail
     def test_check_runner_manually(self, app_utils_obj_conn):
@@ -99,12 +99,12 @@ class TestCheckRunner:
         app_utils_obj, connection = app_utils_obj_conn
         connection.connections['es'] = None  # disable es
         cleared = self.clear_queue_and_runners(app_utils_obj)
-        assert (cleared)
+        assert cleared
         check = run_result.CheckResult(connection, 'test_random_nums')
         prior_res = check.get_latest_result()
         # first, bad input
         bad_res = app_utils_obj.run_check_runner({'sqs_url': None})
-        assert (bad_res is None)
+        assert bad_res is None
         # queue a check without invoking runner. Get resulting run uuid
         to_send = ['test_checks/test_random_nums', {}, []]
         tries = 0
@@ -119,21 +119,21 @@ class TestCheckRunner:
             read_out = out.getvalue().strip()
             if res and res.get('uuid') == run_uuid:
                 # check the result from run_check_runner
-                assert (res['name'] == 'test_random_nums')
-                assert (res['uuid'] == run_uuid)
-                assert ('_run_info' in res['kwargs'])
-                assert (res['kwargs']['_run_info']['run_id'] == run_uuid)
+                assert res['name'] == 'test_random_nums'
+                assert res['uuid'] == run_uuid
+                assert '_run_info' in res['kwargs']
+                assert res['kwargs']['_run_info']['run_id'] == run_uuid
                 # check a couple things about printed runner output
-                assert ('%s (uuid)' % run_uuid in read_out)
-                assert ('Finished: test_checks/test_random_nums' in read_out)
+                assert '%s (uuid)' % run_uuid in read_out
+                assert 'Finished: test_checks/test_random_nums' in read_out
                 test_success = True
-        assert (test_success)
+        assert test_success
         # check the stored result as well
         post_res = check.get_result_by_uuid(run_uuid)
-        assert (post_res is not None)
-        assert ('_run_info' in post_res['kwargs'])
-        assert ({'run_id', 'receipt', 'sqs_url'} <= set(post_res['kwargs']['_run_info'].keys()))
-        assert (post_res['kwargs']['_run_info']['run_id'] == run_uuid)
+        assert post_res is not None
+        assert '_run_info' in post_res['kwargs']
+        assert {'run_id', 'receipt', 'sqs_url'} <= set(post_res['kwargs']['_run_info'].keys())
+        assert post_res['kwargs']['_run_info']['run_id'] == run_uuid
 
     @pytest.mark.common_fail
     def test_check_runners_manually_with_associated_action(self):
@@ -141,7 +141,7 @@ class TestCheckRunner:
         connection.connections['es'] = None  # disable es
         print("Clearing queue..")
         cleared = self.clear_queue_and_runners(app_utils_obj)
-        assert (cleared)
+        assert cleared
         print("Queue cleared")
         # queue a check with queue_action="dev" kwarg, meaning the associated
         # action will automatically be queued after completion
@@ -169,25 +169,25 @@ class TestCheckRunner:
                 latest_act_res = action.get_latest_result()
                 if latest_act_res and latest_act_res['uuid'] >= run_uuid:
                     action_done = True
-        assert (check_done and action_done)
+        assert check_done and action_done
         # get the check and action by run_uuid
         run_check = check.get_result_by_uuid(run_uuid)
-        assert (run_check is not None)
+        assert run_check is not None
         run_action = action.get_result_by_uuid(run_uuid)
-        assert (run_action is not None)
+        assert run_action is not None
         # confirm some fields on final result
-        assert (run_action['kwargs']['check_name']) == 'test_random_nums'
-        assert (run_action['kwargs']['called_by'] == run_uuid)
-        assert (run_action['kwargs']['_run_info']['run_id'] == run_uuid)
+        assert run_action['kwargs']['check_name'] == 'test_random_nums'
+        assert run_action['kwargs']['called_by'] == run_uuid
+        assert run_action['kwargs']['_run_info']['run_id'] == run_uuid
 
         # ensure that the action_record was written correctly
         action_rec_key = '/'.join(['test_random_nums/action_records', run_uuid])
         assc_action_key = connection.connections['s3'].get_object(action_rec_key)
-        assert (assc_action_key is not None)
+        assert assc_action_key is not None
         assc_action_key = assc_action_key.decode()  # in bytes
         # expect the contents of the action record to be s3 location of action
         expected_key = ''.join([action.name, '/', run_uuid, action.extension])
-        assert (assc_action_key == expected_key)
+        assert assc_action_key == expected_key
         # further actions cannot be run with the check
         act_kwargs = {'check_name': run_check['name'], 'called_by': run_check['uuid']}
         tries = 0
@@ -198,14 +198,14 @@ class TestCheckRunner:
             app_utils_obj.send_single_to_queue(self.environ, to_send, None, invoke_runner=False)
             time.sleep(1)
             with captured_output() as (out, err):
-                # invoke runner manually (without a lamba) and do not propogate
+                # invoke runner manually (without a lambda) and do not propogate
                 runner_res = app_utils_obj.run_check_runner({'sqs_url': self.queue.url},
                                                             propogate=False)
             read_out = out.getvalue().strip()
             if 'Found existing action record' in read_out:
                 test_success = True
-        assert (test_success)
-        assert (runner_res is None)
+        assert test_success
+        assert runner_res is None
 
     # @pytest.mark.skip
     # def test_queue_check_group(self, app_utils_obj_conn):
@@ -278,11 +278,11 @@ class TestCheckRunner:
                 tries += 1
             if tries > 60:  # test should fail
                 print('Did not locate result.')
-                assert (False)
+                assert False
         # get the check by run_uuid
         run_check = check.get_result_by_uuid(run_uuid)
-        assert (run_check is not None)
-        assert (run_check['kwargs']['uuid'] == run_uuid)
+        assert run_check is not None
+        assert run_check['kwargs']['uuid'] == run_uuid
 
     def test_queue_action(self, app_utils_obj_conn):
         """ This used to be an integrated test, but fails now due to changes in the structure
@@ -306,18 +306,18 @@ class TestCheckRunner:
                 tries += 1
             if tries > 60:  # test should fail
                 print('Did not locate result.')
-                assert (False)
+                assert False
         # get the action by run_uuid
         run_action = action.get_result_by_uuid(run_uuid)
-        assert (run_action is not None)
-        assert (run_action['kwargs']['uuid'] == run_uuid)
-        assert (run_action['kwargs']['_run_info']['run_id'] == run_uuid)
-        assert ('Action failed to run' in run_action['description'])
+        assert run_action is not None
+        assert run_action['kwargs']['uuid'] == run_uuid
+        assert run_action['kwargs']['_run_info']['run_id'] == run_uuid
+        assert 'Action failed to run' in run_action['description']
 
     def test_get_sqs_attributes(self):
         # bad sqs url
         bad_sqs_attrs = self.sqs.get_sqs_attributes('not_a_queue')
-        assert (bad_sqs_attrs.get('ApproximateNumberOfMessages') == bad_sqs_attrs.get('ApproximateNumberOfMessagesNotVisible') == 'ERROR')
+        assert bad_sqs_attrs.get('ApproximateNumberOfMessages') == bad_sqs_attrs.get('ApproximateNumberOfMessagesNotVisible') == 'ERROR'
 
     def test_record_and_collect_run_info(self, app_utils_obj_conn):
         app_utils_obj, connection = app_utils_obj_conn
@@ -325,6 +325,6 @@ class TestCheckRunner:
         check = decorators.Decorators(FOURSIGHT_PREFIX).CheckResult(connection, 'not_a_real_check')
         check.kwargs['_run_info'] = {'run_id': 'test_run_uuid'}
         resp = check.record_run_info()
-        assert (resp is not None)
+        assert resp is not None
         found_ids = app_utils_obj.collect_run_info('test_run_uuid')
-        assert ({'test_run_uuid/not_a_real_check'} <= found_ids)
+        assert {'test_run_uuid/not_a_real_check'} <= found_ids

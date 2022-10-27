@@ -4,7 +4,8 @@ import app
 import boto3
 from dcicutils.env_utils import EnvUtils
 from dcicutils.env_manager import EnvManager
-from dcicutils.misc_utils import override_environ, ignored, PRINT
+from dcicutils.misc_utils import override_environ, ignored
+from dcicutils.env_base import EnvBase
 from foursight_core.app_utils import AppUtils
 from foursight_core.sqs_utils import SQS
 from foursight_core.environment import Environment
@@ -102,7 +103,7 @@ def setup():
 
 @pytest.yield_fixture(scope='function')
 def global_env_bucket():
-    with override_environ(GLOBAL_ENV_BUCKET=SIMULATED_GLOBAL_ENV_BUCKET):
+    with EnvBase.global_env_bucket_named(SIMULATED_GLOBAL_ENV_BUCKET):
         yield
 
 

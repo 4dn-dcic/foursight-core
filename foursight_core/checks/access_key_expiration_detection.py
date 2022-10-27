@@ -29,20 +29,20 @@ def access_key_status(connection, **kwargs):
     now = datetime.now()
     if now > one_week_to_expiration:
         check.status = 'FAIL'
-        check.summary = f'Application access keys will expire in less than 7 days! Please run' \
-                        f' the deployment action ASAP'
+        check.summary = (f'Application access keys will expire in less than 7 days! Please run'
+                         f' the deployment action ASAP')
         check.brief_output = check.full_output = check.summary
         return check
     elif now > three_weeks_to_expiration:
         check.status = 'WARN'
-        check.summary = f'Application access keys will expire in less than 21 days! Please run' \
-                        f' the deployment action soon'
+        check.summary = (f'Application access keys will expire in less than 21 days! Please run'
+                         f' the deployment action soon')
         check.brief_output = check.full_output = check.summary
         return check
     else:
         check.status = 'PASS'
-        check.summary = f'Application access keys expiration is more than 3 weeks away. All good.' \
-                        f' Expiration date: {expiration_date}'
+        check.summary = (f'Application access keys expiration is more than 3 weeks away. All good.'
+                         f' Expiration date: {expiration_date}')
         return check
 
 
@@ -54,6 +54,9 @@ def refresh_access_keys(connection, **kwargs):
                   ('tibanna.app@gmail.com', 'access_key_tibanna'),
                   ('foursight.app@gmail.com', 'access_key_foursight')]
     s3 = s3_utils.s3Utils()
+    full_output = {
+        'successfully_generated': []
+    }
     for email, kp_name in admin_keys:
         user = get_metadata(f'/users/{email}?datastore=database')
         user_uuid = user['uuid']
@@ -69,9 +72,11 @@ def refresh_access_keys(connection, **kwargs):
         s3_obj = {'secret': access_key_res['secret_access_key'],
                   'key': access_key_res['access_key_id'],
                   'server': s3.url}
-        s3.s3_put_secret(
-            s3_obj, kp_name
-        )
+        s3.s3_put_secret(s3_obj, kp_name)
+        full_output['successfully_generated'].append(email)
+    action.full_output = full_output
+    action.status = 'DONE'
+    return action
 
 
 
