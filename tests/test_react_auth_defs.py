@@ -119,3 +119,14 @@ def _change_random_character_within_string_ntimes(value: str, n: int) -> str:
         random_position = randrange(len(value))
         value = value[0:random_position] + "X" + value[random_position + 1:]
     return value
+
+
+def mock_foursight_env_name(env):
+    if env.startswith("env-a"):
+        return "env-a-foursight-name"
+    elif env.startswith("env-b"):
+        return "env-b-foursight-name"
+    elif env.startswith("env-c"):
+        return "env-c-foursight-name"
+    else:
+        return env

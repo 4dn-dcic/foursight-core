@@ -1,5 +1,6 @@
 import mock
-from foursight_core.react.api import react_route_utils
+from foursight_core.react.api import envs
+from foursight_core.react.api import react_route_decorator
 from foursight_core.react.api import react_routes
 from foursight_core.react.api.react_api import ReactApi
 from test_react_auth_defs import (
@@ -11,7 +12,8 @@ from test_react_auth_defs import (
     create_test_authtoken_good,
     create_test_authtoken_invalid_auth0_secret,
     create_test_authtoken_munged,
-    create_test_request
+    create_test_request,
+    mock_foursight_env_name
 )
 
 
@@ -71,55 +73,60 @@ class MockChaliceApp:
 
 
 def test_react_authentication_decorator_good():
-    request = create_test_request(create_test_authtoken_good())
-    app = MockChaliceApp(request)
-    with mock.patch.object(react_route_utils, "app", app):
-        @react_route_utils.route("/{env}/dummy", authorize=True)
-        def test_react_route(env: str):
-            return create_test_route_response(env)
-        response = test_react_route(env=ALLOWED_ENV)
-        assert_authorized_response(response, ALLOWED_ENV)
+    with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
+        request = create_test_request(create_test_authtoken_good())
+        app = MockChaliceApp(request)
+        with mock.patch.object(react_route_decorator, "app", app):
+            @react_route_decorator.route("/{env}/dummy", authorize=True)
+            def test_react_route(env: str):
+                return create_test_route_response(env)
+            response = test_react_route(env=ALLOWED_ENV)
+            assert_authorized_response(response, ALLOWED_ENV)
 
 
 def test_react_authentication_decorator_unauthorized():
-    request = create_test_request(create_test_authtoken_good())
-    app = MockChaliceApp(request)
-    with mock.patch.object(react_route_utils, "app", app):
-        @react_route_utils.route("/{env}/dummy", authorize=True)
-        def test_react_route(env: str):
-            return create_test_route_response(env)
-        response = test_react_route(env=DISALLOWED_ENV)  # Note disallowed env
-        assert_unauthorized_response(response)
+    with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
+        request = create_test_request(create_test_authtoken_good())
+        app = MockChaliceApp(request)
+        with mock.patch.object(react_route_decorator, "app", app):
+            @react_route_decorator.route("/{env}/dummy", authorize=True)
+            def test_react_route(env: str):
+                return create_test_route_response(env)
+            response = test_react_route(env=DISALLOWED_ENV)  # Note disallowed env
+            assert_unauthorized_response(response)
 
 
 def test_react_authentication_decorator_unauthenticated_expired():
-    request = create_test_request(create_test_authtoken_expired())
-    app = MockChaliceApp(request)
-    with mock.patch.object(react_route_utils, "app", app):
-        @react_route_utils.route("/{env}/dummy", authorize=True)
-        def test_react_route(enviroenv: str):
-            return create_test_route_response(env)
-        response = test_react_route(env=ALLOWED_ENV)
-        assert_unauthenticated_response(response)
+    with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
+        request = create_test_request(create_test_authtoken_expired())
+        app = MockChaliceApp(request)
+        with mock.patch.object(react_route_decorator, "app", app):
+            @react_route_decorator.route("/{env}/dummy", authorize=True)
+            def test_react_route(enviroenv: str):
+                return create_test_route_response(env)
+            response = test_react_route(env=ALLOWED_ENV)
+            assert_unauthenticated_response(response)
 
 
 def test_react_authentication_decorator_unauthenticated_invalid_auth0_secret():
-    request = create_test_request(create_test_authtoken_invalid_auth0_secret())
-    app = MockChaliceApp(request)
-    with mock.patch.object(react_route_utils, "app", app):
-        @react_routes.route("/{env}/dummy", authorize=True)
-        def test_react_route(env: str):
-            return create_test_route_response(env)
-        response = test_react_route(env=ALLOWED_ENV)
-        assert_unauthenticated_response(response)
+    with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
+        request = create_test_request(create_test_authtoken_invalid_auth0_secret())
+        app = MockChaliceApp(request)
+        with mock.patch.object(react_route_decorator, "app", app):
+            @react_routes.route("/{env}/dummy", authorize=True)
+            def test_react_route(env: str):
+                return create_test_route_response(env)
+            response = test_react_route(env=ALLOWED_ENV)
+            assert_unauthenticated_response(response)
 
 
 def test_react_authentication_decorator_unauthenticated_munged():
-    request = create_test_request(create_test_authtoken_munged())
-    app = MockChaliceApp(request)
-    with mock.patch.object(react_route_utils, "app", app):
-        @react_routes.route("/{env}/dummy", authorize=True)
-        def test_react_route(env: str):
-            return create_test_route_response(env)
-        response = test_react_route(env=ALLOWED_ENV)
-        assert_unauthenticated_response(response)
+    with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
+        request = create_test_request(create_test_authtoken_munged())
+        app = MockChaliceApp(request)
+        with mock.patch.object(react_route_decorator, "app", app):
+            @react_routes.route("/{env}/dummy", authorize=True)
+            def test_react_route(env: str):
+                return create_test_route_response(env)
+            response = test_react_route(env=ALLOWED_ENV)
+            assert_unauthenticated_response(response)
