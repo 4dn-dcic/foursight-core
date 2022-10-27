@@ -87,10 +87,10 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
 
     function changesExist() {
         for (const input of inputs) {
-            const originalValue = input.value?.toString();
+            const originalValue = valueOf(input);
             const element = document.getElementById(input.name);
             const currentValue = element.value?.toString();
-            if (originalValue !== currentValue) {
+            if (originalValue?.toString() != currentValue?.toString()) {
                 return true;
             }
         }
@@ -100,7 +100,7 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
     function resetInputValuesToOriginal() {
         for (const input of inputs) {
             const element = document.getElementById(input.name);
-            element.value = input.value;
+            element.value = valueOf(input);
         }
     }
 
@@ -118,6 +118,18 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
         return values;
     }
 
+    function valueOf(input) {
+        if (input.type === "boolean") {
+            return input.value ? true : false;
+        }
+        else if ((input.value === null) || (input.value === undefined)) {
+            return "";
+        }
+        else {
+            return input.value.toString();
+        }
+    }
+
     return <>
         <div className="box">
             <form onSubmit={handleSubmit}>
@@ -129,16 +141,16 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
                         </td>
                         <td style={{paddingTop: "0.6em"}}>
                             { input.type === "boolean" ? <>
-                                <select id={input.name} defaultValue={input.value} onChange={handleChange} disabled={input.readonly}>
+                                <select id={input.name} defaultValue={valueOf(input)} onChange={handleChange} disabled={input.readonly}>
                                     <option value={false}>False</option>
                                     <option value={true}>True</option>
                                 </select>
                             </>:<>
                                 { input.readonly ?
-                                    <input className="input" placeholder={input.placeholder || input.label} id={input.name} defaultValue={input.value} readOnly />
+                                    <input className="input" placeholder={input.placeholder || input.label} id={input.name} defaultValue={valueOf(input)} readOnly />
                                 : input.focus ?
-                                    <input className="input" placeholder={input.placeholder || input.label} id={input.name} defaultValue={input.value} onChange={handleChange} autoFocus />
-                                : <input className="input" placeholder={input.placeholder || input.label} id={input.name} defaultValue={input.value} onChange={handleChange} />
+                                    <input className="input" placeholder={input.placeholder || input.label} id={input.name} defaultValue={valueOf(input)} onChange={handleChange} autoFocus />
+                                : <input className="input" placeholder={input.placeholder || input.label} id={input.name} defaultValue={valueOf(input)} onChange={handleChange} />
                                 }
                             </>}
                         </td>
