@@ -5,7 +5,7 @@ import Char from '../utils/Char';
 // Generic box to edit (create, update, delete) a list of plain input fields representing some data record.
 // If the onCreate argument is specified then assume this is a create.
 //
-const EditBox = ({inputs, title, loading, onCreate, onUpdate, onDelete, onCancel, onRefresh }) => {
+const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCancel, onRefresh }) => {
 
     const [ updating, setUpdating ] = useState(false);
     const [ changing, setChanging ] = useState(false);

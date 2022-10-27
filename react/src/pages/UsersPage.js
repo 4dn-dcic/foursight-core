@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { RingSpinner } from '../Spinners';
 import { useFetch } from '../utils/Fetch';
 import Char from '../utils/Char';
@@ -7,7 +8,12 @@ import Server from '../utils/Server';
 
 const UsersPage = () => {
 
-    const response = useFetch(Server.Url("/users"));
+    const [ args, setArgs ] = useSearchParams();
+    const [ limit, setLimit ] = useState(parseInt(args.get("limit")) || 25);
+    const [ offset, setOffset ] = useState(parseInt(args.get("offset")) || 0);
+    const [ sort, setSort ] = useState(args.get("sort") || "timestamp.desc")
+
+    const response = useFetch(Server.Url(`/users?limit=${limit}`));
 
     if (response.error) return <>Cannot load users from Foursight: {response.error}</>;
     if (response.loading) {
@@ -20,8 +26,11 @@ const UsersPage = () => {
     return <>
         <div className="container">
             <div>
-                <b>Users</b>
-                <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>{Char.Refresh}&nbsp;</b>
+                &nbsp;<b>Users</b>
+                <div style={{float:"right"}}>
+                <Link to={Client.Path("/users/create")} style={{fontSize:"small",paddingRight:"0.2em"}}>New User</Link>&nbsp;|&nbsp;
+                <b className="tool-tip" data-text="Click to refresh." style={{cursor:"pointer"}} onClick={response.refresh}>{Char.Refresh}&nbsp;</b>
+                </div>
             </div>
             <div className="info boxstyle" style={{marginTop:"4pt"}}>
                 <table style={{width:"100%"}}>

@@ -9,11 +9,10 @@ import UserDefs from './UserDefs';
 const UserCreatePage = () => {
     
     const user = useFetch(Server.Url("/users"), { method: "POST", nofetch: true });
-    const navigate = useNavigate();
     const [ inputs ] = useState(UserDefs.Inputs());
+    const navigate = useNavigate();
 
     function onCreate(values) {
-        console.log('*** oncreate')
         if (values.admin) {
             delete values["admin"]
             values = {...values, "groups": [ "admin" ] }
@@ -26,9 +25,7 @@ const UserCreatePage = () => {
             url: Server.Url(`/users`),
             method: "POST",
             payload: values,
-            onSuccess: (response) => {
-                navigate(Client.Path(`/users/edit/${response.data?.uuid}`));
-            }
+            onSuccess: (response) => navigate(Client.Path(`/users/edit/${response.data?.uuid}`))
         });
     }
 

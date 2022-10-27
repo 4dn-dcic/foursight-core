@@ -10,9 +10,9 @@ import UserDefs from './UserDefs';
 const UserEditPage = () => {
     
     const { uuid } = useParams();
+    const [ inputs, setInputs ] = useState(UserDefs.Inputs());
     const user = useFetch(Server.Url(`/users/${uuid}`), { onData: updateUserData });
     const navigate = useNavigate();
-    const [ inputs, setInputs ] = useState(UserDefs.Inputs());
 
     function updateUserData(data) {
         setInputs(inputs => {
@@ -50,9 +50,7 @@ const UserEditPage = () => {
         user.refresh({
             url: Server.Url(`/users/${uuid}`),
             method: "DELETE",
-            onSuccess: (response) => {
-                navigate(Client.Path(`/users`));
-            }
+            onSuccess: () => navigate(Client.Path(`/users`))
         });
     }
 

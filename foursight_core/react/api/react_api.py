@@ -222,17 +222,26 @@ class ReactApi(ReactApiBase, ReactRoutes):
         }
         return self.create_success_response(body)
 
-    def reactapi_users(self, request: dict, env: str) -> Response:
+    def reactapi_users(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/users
         Returns info on all users. TODO: No paging supported yet!
         """
+        offset = int(args.get("offset", "0")) if args else 0
+        if offset < 0:
+            offset = 0
+        limit = int(args.get("limit", "50")) if args else 25
+        if limit < 0:
+            limit = 0
+        sort = args.get("sort", "timestamp.desc") if args else "timestamp.desc"
+        sort = urllib.parse.unquote(sort)
+
         users = []
         # TODO: Support paging.
         # TODO: Consider adding ability to search for both normal users and
         #       admin/foursight users (who would have access to foursight);
         #       and more advanced, the ability to grant foursight access.
-        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(env), add_on='frame=object&datastore=database&limit=10000')
+        user_records = ff_utils.get_metadata("users/", ff_env=full_env_name(env), add_on=f"frame=object&datastore=database&limit={limit}")
         for user_record in user_records["@graph"]:
             last_modified = user_record.get("last_modified")
             if last_modified:
@@ -298,7 +307,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         uuid = created_user.get("uuid")
         if not uuid:
             return self.create_error_response(json.dumps(response))
-        return self.create_success_response({"status": "User created.", "uuid": uuid})
+        return self.create_response(201, created_user)
 
     def reactapi_patch_user(self, request: dict, env: str, uuid: str, user: dict) -> Response:
         """
@@ -316,7 +325,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if not graph or not isinstance(graph, list) or len(graph) != 1:
             return self.create_error_response(json.dumps(response))
         updated_user = graph[0]
-        xyzzy = ff_utils.get_metadata('users/' + uuid, ff_env=full_env_name(env), add_on='frame=object&datastore=database')
         return self.create_success_response(updated_user)
 
     def reactapi_delete_user(self, request: dict, env: str, uuid: str) -> Response:
@@ -392,14 +400,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns a (paged) summary (list) of check results for the given check (name).
         """
         offset = int(args.get("offset", "0")) if args else 0
-        limit = int(args.get("limit", "25")) if args else 25
-        sort = args.get("sort", "timestamp.desc") if args else "timestamp.desc"
-        sort = urllib.parse.unquote(sort)
-
         if offset < 0:
             offset = 0
+        limit = int(args.get("limit", "25")) if args else 25
         if limit < 0:
             limit = 0
+        sort = args.get("sort", "timestamp.desc") if args else "timestamp.desc"
+        sort = urllib.parse.unquote(sort)
 
         check_record = self._checks.get_check(env, check)
         connection = app.core.init_connection(env)

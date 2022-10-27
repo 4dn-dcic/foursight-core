@@ -97,7 +97,9 @@ class ReactRoutes:
         distinguish between which method is used programmatically as we do here.
         """
         if app.current_request.method == "GET":
-            return app.core.reactapi_users(app.current_request.to_dict(), env)
+            request = app.current_request.to_dict()
+            args = request.get("query_params", {})
+            return app.core.reactapi_users(request, env, args)
         elif app.current_request.method == "POST":
             user = get_request_body(app.current_request)
             return app.core.reactapi_post_user(app.current_request.to_dict(), env, user=user)
