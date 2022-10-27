@@ -10,6 +10,7 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
     const [ updating, setUpdating ] = useState(false);
     const [ changing, setChanging ] = useState(false);
     const [ deleting, setDeleting ] = useState(false);
+    const [ inputsRequiredStatus, setInputsRequiredStatus ] = useState({});
 
     useEffect(() => {
         resetInputValuesToOriginal();
@@ -61,16 +62,19 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
         }
     }
 
+    function setFocus() {
+        for (const input of inputs) {
+            const element = document.getElementById(input.name);
+            if (input.focus) {
+                element.focus();
+            }
+        }
+    }
+
     function handleRefresh() {
         if (onCreate) {
-            for (const input of inputs) {
-                const element = document.getElementById(input.name);
-                element.value = null;
-                if (input.focus) {
-                    element.focus();
-                }
-            }
-            document.getElementById("create").disabled = true;
+            resetInputValuesToOriginal();
+            setFocus();
         }
         else {
             setUpdating(false);
@@ -78,15 +82,39 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
             if (!loading && onRefresh) {
                 onRefresh();
             }
+            setFocus();
         }
     }
 
     function handleChange(e) {
+        const input = getInputByName(e.target.id);
+        if (input.required) {
+            const currentValue = e.target.value?.toString();
+            inputsRequiredStatus[input.name] = (currentValue?.toString()?.length > 0);
+            setInputsRequiredStatus(current => ({...inputsRequiredStatus}));
+        }
+        if (input.type === "email") {
+            const currentValue = e.target.value?.toString();
+            inputsRequiredStatus[input.name] = isValidEmail(currentValue);
+            setInputsRequiredStatus(current => ({...inputsRequiredStatus}));
+        }
         setChanging(changesExist());
+    }
+
+    function getInputByName(name) {
+        for (const input of inputs) {
+            if (input.name == name) {
+                return input;
+            }
+        }
+        return false;
     }
 
     function changesExist() {
         for (const input of inputs) {
+            if (input.readonly) {
+                continue;
+            }
             const originalValue = valueOf(input);
             const element = document.getElementById(input.name);
             const currentValue = element.value?.toString();
@@ -102,6 +130,7 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
             const element = document.getElementById(input.name);
             element.value = valueOf(input);
         }
+        setCurrentInputsRequiredStatus();
     }
 
     function gatherCurrentInputValues() {
@@ -130,6 +159,37 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
         }
     }
 
+    function isValidEmail(email) {
+        const valid = /\S+@\S+\.\S+/.test(email);
+        return valid;
+    }
+
+    function setCurrentInputsRequiredStatus() {
+        const inputsRequiredStatus = {};
+        for (const input of inputs) {
+            if (input.required) {
+                inputsRequiredStatus[input.name] = document.getElementById(input.name)?.value?.toString()?.length > 0;
+            }
+            if (input.type === "email") {
+                inputsRequiredStatus[input.name] = isValidEmail(document.getElementById(input.name)?.value?.toString());
+            }
+        }
+        setInputsRequiredStatus(inputsRequiredStatus);
+    }
+
+    function inputRequiredIndicatorColor(input) {
+        return inputsRequiredStatus[input.name] ? "green" : "red";
+    }
+
+    function allowSubmit() {
+        for (const inputRequiredStatusKey of Object.keys(inputsRequiredStatus)) {
+            if (!inputsRequiredStatus[inputRequiredStatusKey]) {
+                return false;
+            }
+        }
+        return changing;
+    }
+
     return <>
         <div className="box">
             <form onSubmit={handleSubmit}>
@@ -139,20 +199,25 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
                         <td align={input.label_align || 'right'} style={{paddingTop: "0.6em", paddingRight:"0.4em", whiteSpace:"nowrap"}}>
                             {input.label}:
                         </td>
-                        <td style={{paddingTop: "0.6em"}}>
+                        <td style={{paddingTop: "0.6em",whiteSpace:"nowrap"}}>
                             { input.type === "boolean" ? <>
-                                <select id={input.name} defaultValue={valueOf(input)} onChange={handleChange} disabled={input.readonly}>
+                                <select id={input.name} defaultValue={valueOf(input)} onChange={handleChange} disabled={input.readonly || deleting}>
                                     <option value={false}>False</option>
                                     <option value={true}>True</option>
                                 </select>
                             </>:<>
-                                { input.readonly ?
-                                    <input className="input" placeholder={input.placeholder || input.label} id={input.name} defaultValue={valueOf(input)} readOnly />
-                                : input.focus ?
-                                    <input className="input" placeholder={input.placeholder || input.label} id={input.name} defaultValue={valueOf(input)} onChange={handleChange} autoFocus />
-                                : <input className="input" placeholder={input.placeholder || input.label} id={input.name} defaultValue={valueOf(input)} onChange={handleChange} />
-                                }
+                                <input
+                                    className="input icon-rtl"
+                                    placeholder={input.placeholder || input.label}
+                                    id={input.name}
+                                    defaultValue={valueOf(input)}
+                                    onChange={handleChange}
+                                    readOnly={input.readonly || deleting ? true : false}
+                                    autoFocus={input.focus ? true : false} />
                             </>}
+                            { input.required &&
+                                <small style={{fontWeight:"bold",paddingLeft:"0.6em",color:inputRequiredIndicatorColor(input)}}>{Char.Check}</small>
+                            }
                         </td>
                     </tr>
                 )}
@@ -175,12 +240,12 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
                             </>:<>
                                 <button className="button cancel" type="button" onClick={handleCancel}>Cancel</button><>&nbsp;</>
                                 { onCreate ? <>
-                                    <button className="button tool-tip" data-text={changing ? "Click to create." : "Nothing to create."} id="create" disabled={!changing}>Create</button>
+                                    <button className="button tool-tip" data-text={allowSubmit() ? "Click to create." : "Nothing to create."} id="create" disabled={!allowSubmit()}>Create</button>
                                 </>:<>
                                     { onDelete && <>
                                         <button className="button delete" type="button" onClick={handleDelete}>Delete</button><>&nbsp;</>
                                     </>}
-                                    <button className="button tool-tip" data-text={changing ? "Click to save changes." : "No changes to save."} id="update" disabled={!changing}>Update</button>
+                                    <button className="button tool-tip" data-text={allowSubmit() ? "Click to save changes." : "No changes to save."} id="update" disabled={!allowSubmit()}>Update</button>
                                 </>}
                             </>}
                         </td>
