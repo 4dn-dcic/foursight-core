@@ -11,7 +11,16 @@ const UserEditPage = () => {
     
     const { uuid } = useParams();
     const [ inputs, setInputs ] = useState(UserDefs.Inputs());
-    const user = useFetch(Server.Url(`/users/${uuid}`), { onData: updateUserData });
+    const [ notFound, setNotFound ] = useState(false);
+    const user = useFetch({
+        url: Server.Url(`/users/${uuid}`),
+        onData: updateUserData,
+        onError: (response) => {
+            if (response.status == 404) {
+                setNotFound(true);
+            }
+        }
+    });
     const navigate = useNavigate();
 
     function updateUserData(data) {
@@ -68,14 +77,21 @@ const UserEditPage = () => {
                 <b style={{paddingLeft:"0.2em",float:"left"}}>Edit User</b>
                 <Link to={Client.Path("/users/create")} style={{fontSize:"small",paddingRight:"0.2em",float:"right"}}>New User</Link>
             </div>
-            <EditBox
-                title={"Edit User"}
-                inputs={inputs}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-                onCancel={onCancel}
-                onRefresh={onRefresh}
-                loading={user.loading} />
+            { notFound ? <>
+                <div className="box">
+                    The specified user was not found: {uuid} <p />
+                    <button className="button cancel" onClick={onCancel}>Cancel</button>
+                </div>
+            </>:<>
+                <EditBox
+                    title={"Edit User"}
+                    inputs={inputs}
+                    onUpdate={onUpdate}
+                    onDelete={onDelete}
+                    onCancel={onCancel}
+                    onRefresh={onRefresh}
+                    loading={user.loading} />
+            </>}
         </center>
     </>
 }

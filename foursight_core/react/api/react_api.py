@@ -275,6 +275,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         users = []
         items = uuid.split(",")
+        not_found_count = 0
+        other_error_count = 0
         for item in items:
             try:
                 # Note these call works for both email address or user UUID.
@@ -282,8 +284,17 @@ class ReactApi(ReactApiBase, ReactRoutes):
                                              ff_env=full_env_name(env), add_on='frame=object&datastore=database')
                 users.append(user)
             except Exception as e:
+                if "Not Found" in str(e):
+                    not_found_count += 1
+                else:
+                    other_error_count += 1
                 users.append({"error": str(e)})
-        return self.create_success_response(users[0] if len(items) == 1 else users)
+        if other_error_count > 0:
+            return self.create_response(500, users[0] if len(items) == 1 else users)
+        elif not_found_count > 0:
+            return self.create_response(404, users[0] if len(items) == 1 else users)
+        else:
+            return self.create_success_response(users[0] if len(items) == 1 else users)
 
     def reactapi_post_user(self, request: dict, env: str, user: dict) -> Response:
         """

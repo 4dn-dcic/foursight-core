@@ -419,6 +419,10 @@
     background: yellow;
     color: red;
 }
+.select {
+    background: var(--box-bg-lighten);
+    border-radius: 3px;
+}
 
 /* This gets rid of extra vertical space introduced normally, for some reason, on forms */
 form {

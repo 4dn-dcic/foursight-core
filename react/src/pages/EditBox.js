@@ -201,7 +201,7 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
                         </td>
                         <td style={{paddingTop: "0.6em",whiteSpace:"nowrap"}}>
                             { input.type === "boolean" ? <>
-                                <select id={input.name} defaultValue={valueOf(input)} onChange={handleChange} disabled={input.readonly || deleting}>
+                                <select className="select" id={input.name} defaultValue={valueOf(input)} onChange={handleChange} disabled={input.readonly || deleting}>
                                     <option value={false}>False</option>
                                     <option value={true}>True</option>
                                 </select>
