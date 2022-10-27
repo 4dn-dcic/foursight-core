@@ -62,7 +62,7 @@ class TestCheckRunner:
                 # allow existing checks to terminate via long polling
                 if found_clear:
                     break
-                time.sleep(6)
+                time.sleep(8)
                 found_clear = True
             elif invis_messages > 0:
                 # if orphaned messages are in the queue, eat them up
