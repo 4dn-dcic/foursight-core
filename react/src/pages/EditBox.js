@@ -224,7 +224,7 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
                 <tr>
                     { deleting ? <>
                         <td style={{colSpan:"2",paddingTop:"0.8em"}} colSpan="2">
-                            <i><b style={{color:"darkred"}}>Are you sure you wnat to delete this item?</b></i>
+                            <i><b style={{color:"darkred"}}>Are you sure you want to delete this item?</b></i>
                             <div style={{float:"right"}}>
                             <button className="button cancel" type="button" onClick={handleDeleteCancel}>Cancel</button><>&nbsp;</>
                             <button className="button delete" type="button" onClick={handleDeleteConfirm}>Delete</button>
