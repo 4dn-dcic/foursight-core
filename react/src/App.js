@@ -32,7 +32,7 @@ function setFavicon(header) {
     if (faviconElement) {
         if (Env.IsFoursightFourfront(header)) {
             faviconElement.href = Image.FoursightFourfrontFavicon();
-            Styles.SetFoursightFourfrontStyles();
+            Styles.SetFoursightFourfront();
         }
         else {
             faviconElement.href = Image.FoursightCgapFavicon();

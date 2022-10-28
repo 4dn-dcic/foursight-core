@@ -5,8 +5,6 @@
 // Starting to experiment with setting styles dynamically based on Fourfront vs. CGAP styles.
 
 const styles                          = getComputedStyle(document.documentElement)
-console.log('xyzzy..............................')
-console.log(styles)
 // TODO
 // For some reason reading these values, when NOT running in cross-origin local mode (UI on 3000 and API on 8000),
 // get garbled from the getPropertyValue calls below. Hardcode them for now ....
@@ -22,9 +20,6 @@ const foursightFourfrontBoxColor      = "#09430C";
 const foursightFourfrontBoxBackground = "#DDFFEE";
 const foursightCgapBoxColor           = "#000069";
 const foursightCgapBoxBackground      = "#DDEEFF";
-
-console.log(`[${foursightCgapBoxColor}]`);
-console.log(`[${foursightCgapBoxBackground}]`);
 
 function SetFoursightFourfrontStyles() {
     document.documentElement.style.setProperty("--box-fg", foursightFourfrontBoxColor);
@@ -46,9 +41,6 @@ function SetFoursightCgapStyles() {
 // https://stackoverflow.com/questions/13375039/javascript-calculate-darker-colour
 //
 function oldLightenDarkenColor(col, amt) {
-    console.log('*** LightenDarkenColor ENTER')
-    console.log(col)
-    console.log(amt)
     col = col.trim()
     var usePound = false;
     if (col[0] === "#") {
@@ -66,19 +58,12 @@ function oldLightenDarkenColor(col, amt) {
     if (g > 255) g = 255;
     else if (g < 0) g = 0;
     col = (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
-    console.log('*** LightenDarkenColor RETURN')
-    console.log(col)
     return col;
 }
 function LightenDarkenColor(hexColor, magnitude) {
-    console.log('*** LightenDarkenColorNEW ENTER')
     hexColor = hexColor.trim()
-    console.log(hexColor)
-    console.log(magnitude)
     hexColor = hexColor.replace(`#`, ``);
-    console.log(hexColor.length)
     if (hexColor.length === 6) {
-            console.log('xxxxxxxxxxxxxxxxxxxxxxxxxx')
         const decimalColor = parseInt(hexColor, 16);
         let r = (decimalColor >> 16) + magnitude;
         r > 255 && (r = 255);
@@ -89,8 +74,6 @@ function LightenDarkenColor(hexColor, magnitude) {
         let b = ((decimalColor >> 8) & 0x00ff) + magnitude;
         b > 255 && (b = 255);
         b < 0 && (b = 0);
-        console.log('*** LightenDarkenColorNEW RETURN')
-        console.log(hexColor)
         hexColor = `#${(g | (b << 8) | (r << 16)).toString(16)}`;
         return hexColor;
     } else {
