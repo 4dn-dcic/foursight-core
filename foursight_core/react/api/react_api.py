@@ -177,7 +177,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "credentials": self._auth.get_aws_credentials(env if env else default_env),
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified(),
-                "lambda": lambda_function_info
+                "lambda": lambda_function_info,
+                "check_setup_dir": app.core.check_setup_dir,
+                "check_setup_dir_fallback": app.core.check_setup_dir_fallback,
+                "check_setup_file": app.core.check_handler.CHECK_SETUP_FILE
             },
             "versions": {
                 "foursight": app.core.get_app_version(),

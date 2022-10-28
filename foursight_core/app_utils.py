@@ -90,6 +90,7 @@ class AppUtilsCore(ReactApi, Routes):
 
     # repeat the same line to use __file__ relative to the inherited class
     check_setup_dir = dirname(__file__)
+    check_setup_dir_fallback = dirname(__file__)
 
     # optionally change this one
     html_main_title = 'Foursight'
@@ -106,7 +107,7 @@ class AppUtilsCore(ReactApi, Routes):
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
         self.sqs = SQS(self.prefix)
-        self.check_handler = CheckHandler(self.prefix, self.package_name, self.check_setup_dir)
+        self.check_handler = CheckHandler(self.prefix, self.package_name, self.check_setup_dir, self.check_setup_dir_fallback)
         self.CheckResult = self.check_handler.CheckResult
         self.ActionResult = self.check_handler.ActionResult
         self.jin_env = jinja2.Environment(

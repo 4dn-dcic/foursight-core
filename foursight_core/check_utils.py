@@ -20,7 +20,8 @@ class CheckHandler(object):
     Class CheckHandler is a collection of utils related to checks
     """
     def __init__(self, foursight_prefix, check_package_name='foursight_core',
-                 check_setup_dir=os.path.dirname(__file__)):
+                 check_setup_dir=os.path.dirname(__file__),
+                 check_setup_dir_fallback=os.path.dirname(__file__)):
         self.prefix = foursight_prefix
         self.check_package_name = check_package_name
         self.decorators = Decorators(foursight_prefix)
@@ -34,10 +35,17 @@ class CheckHandler(object):
         # NOTE: previously, we globbed for all possible paths - no reason to do this IMO, just check
         # that the passed path exists - Will 5/26/21
         setup_path = os.path.join(check_setup_dir, 'check_setup.json')
-        if not os.path.exists(setup_path):
-            raise BadCheckSetup('Did not locate the specified check_setup: %s, looking in: %s' %
-                                (setup_path, os.listdir(check_setup_dir)))
+        # 2022-10-28: Changes to look in check_setup_dir first, which may be overridden (to the vendor
+        # directory) in 4dn-cloud-infra, and if no (non-empty) check_setup.json exists there, then use
+        # the check_setup_dir_fallback which would refer the foursight-cgap or foursight chalicelib_cgap
+        # or chalicelib_fourfront directories.
+        if not (os.path.exists(setup_path) and os.stat(setup_path).st_size > 0):
+            setup_path = os.path.join(check_setup_dir_fallback, 'check_setup.json')
+            if not (os.path.exists(setup_path) and os.stat(setup_path).st_size > 0):
+                raise BadCheckSetup('Did not locate the specified check_setup: %s, looking in: %s' %
+                                    (setup_path, os.listdir(check_setup_dir)))
         logger.debug(f"foursight_core/CheckHandler: Loading check_setup.json file: {setup_path}")
+        self.CHECK_SETUP_FILE = setup_path # for display/troubleshooting
         with open(setup_path, 'r') as jfile:
             self.CHECK_SETUP = json.load(jfile)
         logger.debug(f"foursight_core/CheckHandler: Loaded check_setup.json file: {setup_path} ...")
