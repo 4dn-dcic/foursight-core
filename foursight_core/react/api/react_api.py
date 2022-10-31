@@ -212,6 +212,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             },
             # TODD: Move these out to another API.
             "checks": {
+                "file": app.core.check_handler.CHECK_SETUP_FILE,
                 "running": 0,
                 "queued": 0
             },

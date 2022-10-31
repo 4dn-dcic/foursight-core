@@ -37,6 +37,7 @@ const ChecksPage = (props) => {
     const [ readOnlyMode ] = useReadOnlyMode();
     const historyList = useFetch({ initial: [] });
     const groupList = useFetch({ initial: [] });
+    const info = useFetch(Server.Url("/info")); // only to get the raw checks file path for info/display
         
     // TODO IN PROGRESS: MOVING TO NEW useFetch HOOK.
 
@@ -1140,7 +1141,7 @@ const ChecksPage = (props) => {
 
     const ChecksRawContent = () => {
         return isShowingChecksRaw() && !checksRawHide && <>
-            <b>Raw Checks File</b>
+            <b className="tool-tip" data-text={info.get("checks.file")}>Raw Checks File</b>
             <div style={{marginTop:"3pt"}}>
             <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderRadius:"4pt"}}>
             { checksRaw.loading ? <>
