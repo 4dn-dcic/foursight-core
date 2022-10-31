@@ -1,4 +1,5 @@
 import boto3
+import copy
 import cron_descriptor
 import logging
 import os
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 class Checks:
 
     def __init__(self, check_setup, envs: Envs):
-        self._check_setup = check_setup
+        self._check_setup = copy.deepcopy(check_setup)
         self._envs = envs
 
     _cached_checks = None

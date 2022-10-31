@@ -21,7 +21,8 @@ class CheckHandler(object):
     """
     def __init__(self, foursight_prefix, check_package_name='foursight_core',
                  check_setup_dir=os.path.dirname(__file__),
-                 check_setup_dir_fallback=os.path.dirname(__file__)):
+                 check_setup_dir_fallback=os.path.dirname(__file__),
+                 env=None):
         self.prefix = foursight_prefix
         self.check_package_name = check_package_name
         self.decorators = Decorators(foursight_prefix)
@@ -53,6 +54,7 @@ class CheckHandler(object):
         # Validate and finalize CHECK_SETUP
         logger.debug(f"foursight_core/CheckHandler: Validating check_setup.json file: {setup_path}")
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
+        self.CHECK_SETUP = self.expand_check_setup_env_name_markers(self.CHECK_SETUP, env)
         logger.debug(f"foursight_core/CheckHandler: Done validating check_setup.json file: {setup_path}")
 
     def get_module_names(self):
@@ -96,6 +98,17 @@ class CheckHandler(object):
                 continue
             checks_in_schedule.append(check_name)
         return checks_in_schedule
+
+    def expand_check_setup_env_name_markers(self, check_setup: dict, env: str) -> dict:
+        """
+        Experimental/new function to do what 4dn-cloud-infr/resolve-foursight-checks is doing
+        in attempt to eliminate this step.
+        """
+        if env:
+            from dcicutils.misc_utils import json_leaf_subst
+            ENV_NAME_MARKER = "<env-name>"
+            check_setup = json_leaf_subst(check_setup, {ENV_NAME_MARKER: env})
+        return check_setup
 
     def validate_check_setup(self, check_setup):
         """
