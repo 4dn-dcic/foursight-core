@@ -107,7 +107,8 @@ class AppUtilsCore(ReactApi, Routes):
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
         self.sqs = SQS(self.prefix)
-        self.check_handler = CheckHandler(self.prefix, self.package_name, self.check_setup_dir, self.check_setup_dir_fallback)
+        self.check_handler = CheckHandler(self.prefix, self.package_name, self.check_setup_dir,
+                                          self.check_setup_dir_fallback, self.get_default_env())
         self.CheckResult = self.check_handler.CheckResult
         self.ActionResult = self.check_handler.ActionResult
         self.jin_env = jinja2.Environment(
