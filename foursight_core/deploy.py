@@ -92,7 +92,7 @@ class Deploy(object):
     def build_config(cls, stage, identity=None, stack_name=None,
                      trial_creds=None, trial_global_env_bucket=False, global_env_bucket=None,
                      security_group_ids=None, subnet_ids=None, check_runner=None,
-                     lambda_timeout=DEFAULT_LAMBDA_TIMEOUT):
+                     lambda_timeout=DEFAULT_LAMBDA_TIMEOUT, is_foursight_fourfront=False):
         """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
         # dmichaels/2022-07-22/C4-826:
         # Removed value from the Foursight CloudFormation template; get from GAC/etc at runtime.
@@ -183,9 +183,15 @@ class Deploy(object):
         with open(filename, 'w') as config_file:
             config_file.write(json.dumps(cls.CONFIG_BASE))
         PRINT(''.join(['Done writing: ', filename]))
-        # export poetry into requirements
-        subprocess_call(
-            ['poetry', 'export', '-f', 'requirements.txt', '--without-hashes', '-o', 'requirements.txt'], verbose=True)
+        # Export poetry into requirements.
+        # Note that depending on is_foursight_fourfront we include either foursight_fourfront or foursight_cgap;
+        # these names are poetry group names defined in 4dn-cloud-infra/pyproject.toml. dmichaels/2022-11-01.
+        if is_foursight_fourfront:
+            subprocess_call(
+                ['poetry', 'export', '-f', 'requirements.txt', '--without-hashes', '--with', 'foursight_fourfront', '-o', 'requirements.txt'], verbose=True)
+        else:
+            subprocess_call(
+                ['poetry', 'export', '-f', 'requirements.txt', '--without-hashes', '--with', 'foursight_cgap', '-o', 'requirements.txt'], verbose=True)
 
     @classmethod
     def build_config_and_deploy(cls, stage):
@@ -206,6 +212,11 @@ class Deploy(object):
             environment variables, a list of security group ids, and a list of subnet ids. Finally, packages as a
             Cloudformation template."""
 
+        # Determine if we're packaging Foursight-CGAP or Foursight-Fourfront, based on
+        # the provision stack name setup in 4dn-cloud-infra/stack.py. This is used to
+        # conditionally include the appropriate library (foursight-cgap or foursight)
+        # in the Chalice package. dmichaels/2022-11-01.
+        is_foursight_fourfront = args.stack in ["foursight-development", "foursight-production"]
         # For compatibility during transition, we allow these argument to be passed in lieu of args.
         if merge_template is None:
             merge_template = args.merge_template
@@ -223,7 +234,7 @@ class Deploy(object):
                 cls.build_config(stage, identity=identity, stack_name=stack_name, trial_creds=trial_creds,
                                  trial_global_env_bucket=True,
                                  global_env_bucket=global_env_bucket, lambda_timeout=lambda_timeout,
-                                 security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner)
+                                 security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner, is_foursight_fourfront=is_foursight_fourfront)
             else:
                 raise Exception('Build config requires trial_creds, sg id, and subnet ids to run in trial account')
         else:
