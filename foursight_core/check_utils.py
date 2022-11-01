@@ -5,6 +5,7 @@ import json
 import logging
 from dcicutils.env_base import EnvBase
 from dcicutils.env_utils import infer_foursight_from_env
+from dcicutils.misc_utils import json_leaf_subst
 from .check_schema import CheckSchema
 from .exceptions import BadCheckSetup
 from .environment import Environment
@@ -54,7 +55,7 @@ class CheckHandler(object):
         # Validate and finalize CHECK_SETUP
         logger.debug(f"foursight_core/CheckHandler: Validating check_setup.json file: {setup_path}")
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
-        self.CHECK_SETUP = self.expand_check_setup_env_name_markers(self.CHECK_SETUP, env)
+        self.CHECK_SETUP = self.expand_check_setup(self.CHECK_SETUP, env)
         logger.debug(f"foursight_core/CheckHandler: Done validating check_setup.json file: {setup_path}")
 
     def get_module_names(self):
@@ -99,16 +100,17 @@ class CheckHandler(object):
             checks_in_schedule.append(check_name)
         return checks_in_schedule
 
-    def expand_check_setup_env_name_markers(self, check_setup: dict, env: str) -> dict:
+    @staticmethod
+    def expand_check_setup(check_setup_json: dict, env: str) -> dict:
         """
-        Experimental/new function to do what 4dn-cloud-infr/resolve-foursight-checks is doing
-        in attempt to eliminate this step.
+        Expand/replace instance of <env-name> in the given dictionary with the given env name.
+        Does this replacment in-place, i.e. to the given dictionary; and also returns this value.
+        This does what 4dn-cloud-infra/resolve-foursight-checks was doing; and that now uses this.
         """
         if env:
-            from dcicutils.misc_utils import json_leaf_subst
             ENV_NAME_MARKER = "<env-name>"
-            check_setup = json_leaf_subst(check_setup, {ENV_NAME_MARKER: env})
-        return check_setup
+            check_setup_json = json_leaf_subst(check_setup_json, {ENV_NAME_MARKER: env})
+        return check_setup_json
 
     def validate_check_setup(self, check_setup):
         """
