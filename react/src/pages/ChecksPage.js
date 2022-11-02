@@ -1223,7 +1223,7 @@ const ChecksPage = (props) => {
                     </small>}
                     <b style={{float:"right",paddingBottom:"4pt",cursor:"pointer"}} onClick={hideRecentRuns}>{Char.X}</b>
                     <table style={{width:"100%"}} border="0">
-                        <TableHead columns={columns} xtate={{key:"timestamp", order:-1}} list={recentRuns.data} update={() => recentRuns.update()} style={{color:"darkgreen",fontWeight:"bold"}} lines={true} />
+                        <TableHead columns={columns} state={{key:"timestamp", order:-1}} list={recentRuns.data} update={() => recentRuns.update()} style={{color:"darkgreen",fontWeight:"bold"}} lines={true} />
                         <tbody>
                             { recentRuns.map((run, index) => <React.Fragment key={index}>
                                 <tr key={index} style={{verticalAlign:"top"}}>
