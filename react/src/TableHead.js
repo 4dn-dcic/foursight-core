@@ -42,7 +42,17 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
     function keysEqual(a, b) {
         return (Type.IsFunction(a) && Type.IsFunction(b)) ? a.name === b.name : a === b;
     }
-    if (!list.__sort) list.__sort = state || { key: null, order: 0 };
+    if (!list.__sort) {
+        if (state) {
+            list.__sort = state;
+            const sortKey = Type.IsFunction(list.__sort.key) ? list.__sort.key(null) : list.__sort.key;
+            const sortOrder = list.__sort.order > 0 ? "asc" : "desc";
+            update(sortKey, sortOrder);
+        }
+        else {
+            list.__sort = { key: null, order: 0 };
+        }
+    }
     return <thead>
         { lines && <><tr><td style={{height:"1px",background:style?.color ? style.color : "gray"}} colSpan="9"></td></tr>
                      <tr><td style={{paddingBottom:"2pt"}}></td></tr></>}

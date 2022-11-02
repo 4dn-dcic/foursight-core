@@ -82,3 +82,7 @@ export const StandardSpinner = ({condition, color = "darkblue", size = 100, labe
         <td style={{paddingTop:"6px"}} nowrap="1"> <BarSpinner loading={condition} size={size} color={color} /></td>
     </tr></tbody></table>
 }
+
+export const PuffSpinnerInline = ({loading, color, size}) => {
+    return <PuffLoader color={color} loading={loading} cssOverride={{display:"inline-block",margin:"-2px"}} size={size} />
+}

@@ -416,13 +416,18 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Does this by looping through each check and getting the 10 most recent results from each
         and then globally sorting (in descending order) each of those results by check run timestamp.
         """
+        MAX_RESULTS_PER_CHECK = 10
+        limit = int(args.get("limit", "25")) if args else 25
+        if limit < 1:
+            limit = 1
         results = []
         connection = app.core.init_connection(env)
         checks = self._checks._get_checks(env)
         for check_name in checks:
             group_name = checks[check_name]["group"]
             check_title = checks[check_name]["title"]
-            recent_history, _ = app.core.get_foursight_history(connection, check_name, 0, 10, "timestamp.desc")
+            recent_history, _ = app.core.get_foursight_history(connection, check_name,
+                                                               0, MAX_RESULTS_PER_CHECK, "timestamp.desc")
             for result in recent_history:
                 uuid = None
                 duration = None
@@ -439,7 +444,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 #    true
                 # ]
                 #
-                # TODO: DO this same kind of sorting out of data below in
+                # TODO: Do this same kind of sorting out of data below in
                 #       reactapi_checks_history so the UI doesn't have to do it.
                 #
                 status = result[0]
@@ -463,6 +468,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                         "timestamp": timestamp
                     })
         results.sort(key=lambda item: item["timestamp"], reverse=True)
+        results = results[:limit]
         return self.create_success_response(results)
 
     def reactapi_checks_history(self, request: dict, env: str, check: str, args: Optional[dict] = None) -> Response:

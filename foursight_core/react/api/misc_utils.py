@@ -20,6 +20,10 @@ def get_request_domain(request: dict) -> str:
     return request.get("headers", {}).get("host")
 
 
+def get_request_args(request: dict) -> dict:
+    return request.get("query_params", {})
+
+
 def get_request_arg(request: dict, name: str) -> Optional[str]:
     """
     Returns the value of the given URL query parameter name for the given request;
@@ -27,8 +31,7 @@ def get_request_arg(request: dict, name: str) -> Optional[str]:
     string is returned, e.g. for http://localhost:8000/callback?react if "react"
     is queried then returns an empty string, and not None.
     """
-    query_params = request.get("query_params")
-    return query_params.get(name, None) if query_params else None
+    return get_request_args(request).get(name, None)
 
 
 def get_request_body(request: Request) -> dict:

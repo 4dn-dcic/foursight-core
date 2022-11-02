@@ -2,7 +2,7 @@ from chalice import Response
 from dcicutils.misc_utils import ignored
 import json
 from ...app import app
-from .misc_utils import get_request_body
+from .misc_utils import get_request_arg, get_request_args, get_request_body
 from .react_route_decorator import route
 
 
@@ -98,8 +98,7 @@ class ReactRoutes:
         """
         if app.current_request.method == "GET":
             request = app.current_request.to_dict()
-            args = request.get("query_params", {})
-            return app.core.reactapi_users(request, env, args)
+            return app.core.reactapi_users(request, env, get_request_args(request))
         elif app.current_request.method == "POST":
             user = get_request_body(app.current_request)
             return app.core.reactapi_post_user(app.current_request.to_dict(), env, user=user)
@@ -160,8 +159,7 @@ class ReactRoutes:
         Returns detailed info on the run histories of the given check (paged).
         """
         request = app.current_request.to_dict()
-        args = request.get("query_params")
-        return app.core.reactapi_checks_history(request, env, check=check, args=args)
+        return app.core.reactapi_checks_history(request, env, check=check, args=get_request_args(request))
 
     @staticmethod
     @route("/{env}/checks/history/recent", authorize=True)
@@ -170,7 +168,7 @@ class ReactRoutes:
         Returns all recent check run history.
         """
         request = app.current_request.to_dict()
-        return app.core.reactapi_checks_history_recent(request, env)
+        return app.core.reactapi_checks_history_recent(request, env, args=get_request_args(request))
 
     @staticmethod
     @route("/{env}/checks/{check}/run", authorize=True)
@@ -179,9 +177,7 @@ class ReactRoutes:
         Kicks off a run of the given check.
         """
         request = app.current_request.to_dict()
-        args = request.get("query_params", {})
-        args = args.get("args")
-        return app.core.reactapi_checks_run(request, env, check=check, args=args)
+        return app.core.reactapi_checks_run(request, env, check=check, args=get_request_arg(request, "args"))
 
     @staticmethod
     @route("/{env}/checks-status", authorize=True)

@@ -45,7 +45,7 @@ function FormatDuration(startDate, endDate = new Date(), verbose = false, fallba
     const ms          = endDate >= startDate ? (endDate - startDate) : (startDate - endDate);
     const days        = Math.floor  (ms / msPerDay);
     const hours       = Math.floor ((ms % msPerDay) / msPerHour);
-    const minutes     = Math.round(((ms % msPerDay) % msPerHour)   / msPerMinute);
+    const minutes     = Math.floor(((ms % msPerDay) % msPerHour)   / msPerMinute);
     const seconds     = Math.round(((ms % msPerDay) % msPerMinute) / msPerSecond);
     const negative    = endDate < startDate;
     if (days === 0 && hours === 0 && minutes === 0 && seconds === 0) {

@@ -11,6 +11,7 @@ import { useFetch, useFetching, useFetched } from '../utils/Fetch';
 import uuid from 'react-uuid';
 import XyzzyComponent from './XyzzyComponent';
 import Type from '../utils/Type';
+import Time from '../utils/Time';
 
 /*
 const XyzzyComponent = () => {
@@ -29,6 +30,10 @@ const TestSub = () => {
 }
 
 const TestPage = () => {
+
+    let t1 = "2022-11-02 08:06:56 EDT"
+    let t2 = "2022-11-02 08:06:13 EDT"
+    console.log(Time.FormatDuration(t1, t2, true))
 
     function copyNonElementArrayElements(fromArray, toArray) {
         if (!Array.isArray(fromArray) || !Array.isArray(toArray)) {
