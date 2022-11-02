@@ -10,6 +10,7 @@ import Cookie from '../utils/Cookie';
 import { useFetch, useFetching, useFetched } from '../utils/Fetch';
 import uuid from 'react-uuid';
 import XyzzyComponent from './XyzzyComponent';
+import Type from '../utils/Type';
 
 /*
 const XyzzyComponent = () => {
@@ -28,7 +29,52 @@ const TestSub = () => {
 }
 
 const TestPage = () => {
-    
+
+    function copyNonElementArrayElements(fromArray, toArray) {
+        if (!Array.isArray(fromArray) || !Array.isArray(toArray)) {
+            return;
+        }
+        const numberOfNonArrayElements = Object.keys(fromArray).length - fromArray.length;
+        if (numberOfNonArrayElements <= 0) {
+            return;
+        }
+        for (let i = 0 ; i < numberOfNonArrayElements ; i++) {
+            let nonArrayElementName = Object.keys(fromArray)[fromArray.length - i];
+            let nonArrayElementValue = fromArray[nonArrayElementName];
+            toArray[nonArrayElementName] = nonArrayElementValue;
+        }
+    }
+
+    let xyzzy = [ "abc", "def", "ghi" ];
+    xyzzy.__sort = { key: "timestamp", order: -1 };
+        xyzzy.push("xyzzy")
+    console.log('XYZZY')
+    console.log(xyzzy)
+    console.log(xyzzy.length)
+    let xyzzy2 = [...xyzzy]
+    console.log(xyzzy2)
+    console.log(Object.keys(xyzzy))
+    console.log(Object.keys(xyzzy).length)
+    const numberOfNonArrayElements = Object.keys(xyzzy).length > xyzzy.length;
+    if (numberOfNonArrayElements > 0) {
+            console.log('array has extra non-array elements!')
+        console.log(Object.keys(xyzzy).length - xyzzy.length);
+        console.log(Object.keys(xyzzy)[4])
+        for (let i = 0 ; i < numberOfNonArrayElements ; i++) {
+            let nonArrayElementName = Object.keys(xyzzy)[xyzzy.length - i];
+            let nonArrayElementValue = xyzzy[nonArrayElementName]
+            console.log( 'xxxxxxxxxxxxxxxxx')
+            console.log(nonArrayElementName)
+            console.log(nonArrayElementValue)
+            xyzzy2[nonArrayElementName] = nonArrayElementValue
+        }
+    }
+
+    let xyzzy3 = [...xyzzy];
+    console.log('finalxyzzy3')
+    Type.CopyArrayProperties(xyzzy, xyzzy3)
+    console.log(xyzzy3)
+    console.log(xyzzy)
  // const info = useFetch(Server.Url("/checks"));
     const someFetchResponse = useFetch({
         url: Server.Url("/header"),

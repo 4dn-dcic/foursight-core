@@ -409,6 +409,62 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 })
         return self.create_success_response(body)
 
+    def reactapi_checks_history_recent(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/checks/history/recent.
+        Returns the most results among all defined checks for the given environment.
+        Does this by looping through each check and getting the 10 most recent results from each
+        and then globally sorting (in descending order) each of those results by check run timestamp.
+        """
+        results = []
+        connection = app.core.init_connection(env)
+        checks = self._checks._get_checks(env)
+        for check_name in checks:
+            group_name = checks[check_name]["group"]
+            check_title = checks[check_name]["title"]
+            recent_history, _ = app.core.get_foursight_history(connection, check_name, 0, 10, "timestamp.desc")
+            for result in recent_history:
+                uuid = None
+                duration = None
+                #
+                # Oddly each result in the history list is an array like this:
+                #
+                # [ "PASS",
+                #   "DB and ES item counts are equal",
+                #   { "primary": true,
+                #     "uuid": "2022-09-22T18:00:12.335344",
+                #     "runtime_seconds": 12.3,
+                #     "queue_action": "Not queued"
+                #    },
+                #    true
+                # ]
+                #
+                # TODO: DO this same kind of sorting out of data below in
+                #       reactapi_checks_history so the UI doesn't have to do it.
+                #
+                status = result[0]
+                for item in result:
+                    if isinstance(item, dict):
+                        uuid = item.get("uuid")
+                        duration = item.get("runtime_seconds")
+                        state = item.get("queue_action")
+                        break
+                if uuid:
+                    timestamp = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
+                    timestamp = convert_utc_datetime_to_useastern_datetime_string(timestamp)
+                    results.append({
+                        "check": check_name,
+                        "title": check_title,
+                        "group": group_name,
+                        "status": status,
+                        "state": state,
+                        "uuid": uuid,
+                        "duration": duration,
+                        "timestamp": timestamp
+                    })
+        results.sort(key=lambda item: item["timestamp"], reverse=True)
+        return self.create_success_response(results)
+
     def reactapi_checks_history(self, request: dict, env: str, check: str, args: Optional[dict] = None) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/checks/check/history

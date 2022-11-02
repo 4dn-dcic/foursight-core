@@ -228,9 +228,9 @@ class Deploy(object):
             trial = args.trial
 
         if trial:
-            if trial_creds and security_ids and subnet_ids and check_runner:
             # Note we no longer need check_runner (previously checked here) as it is determined
-            # dynamically at runtime (in identity.set_check_runner_lambda_environment_variable).
+            # dynamically at runtime (in identity.set_check_runner_lambda_environment_variable);
+            # should have been removed before. dmichaels/2022-11-01.
             if trial_creds and security_ids and subnet_ids:
                 # dmichaels/2022-07-22/C4-826:
                 # Added identity arg for the Foursight CloudFormation template.

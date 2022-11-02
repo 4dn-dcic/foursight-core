@@ -105,6 +105,39 @@ function ToDateTime(value) {
     return null;
 }
 
+function FormatDate(value, verbose = false) {
+    if (!(value = ToDateTime(value))) return "";
+    if (verbose) {
+        return value.toLocaleDateString('en-us', { weekday:"long",
+                                                   year:"numeric",
+                                                   month:"long",
+                                                   day:"numeric" });
+    }
+    const tz = new Date().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
+    return value.getFullYear() + "-" +
+           ("0" + (value.getMonth() + 1)).slice(-2) + "-" +
+           ("0" + value.getDate()).slice(-2);
+}
+
+function FormatTime(value, verbose = false) {
+    if (!(value = ToDateTime(value))) return "";
+    if (verbose) {
+        return value.toLocaleDateString('en-us', { weekday:"long",
+                                                   year:"numeric",
+                                                   month:"long",
+                                                   day:"numeric",
+                                                   hour12: true,
+                                                   hour: "numeric",
+                                                   minute: "2-digit",
+                                                   second: "numeric",
+                                                   timeZoneName: "short"}).replace(" at ", " | ");
+    }
+    const tz = new Date().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
+    return ("0" + value.getHours()).slice(-2) + ":" +
+           ("0" + value.getMinutes()).slice(-2) + ":" +
+           ("0" + value.getSeconds()).slice(-2) + " " + tz;
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
@@ -112,6 +145,8 @@ function ToDateTime(value) {
 const exports = {
     FormatDuration: FormatDuration,
     FormatDateTime: FormatDateTime,
+    FormatDate:     FormatDate,
+    FormatTime:     FormatTime,
     ToDateTime:     ToDateTime,
     Now:            () => new Date()
 }; export default exports;

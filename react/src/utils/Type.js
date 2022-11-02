@@ -58,21 +58,44 @@ function FirstOfType(values, ofType) {
     return null;
 }
 
+// Copies any properties from the given fromArray to the given toArray, in-place.
+// Originally written for the _update function Fetch.js when updating an array state,
+// where we do it like [...fromArray] which will not pick up any properties of the
+// fromArray, e.g. "hidden" properties like the "__sort" property we use in TableHead.js.
+// Returns the toArray for convenience (but as said properties are copied into it in-place).
+//
+function CopyArrayProperties(fromArray, toArray) {
+    if (!Array.isArray(toArray)) {
+        return undefined;
+    }
+    if (Array.isArray(fromArray)) {
+        const nproperties = Object.keys(fromArray).length - fromArray.length;
+        if (nproperties > 0) {
+            for (let i = 0 ; i < nproperties ; i++) {
+                const name = Object.keys(fromArray)[fromArray.length - i];
+                toArray[name] = fromArray[name];
+            }
+        }
+    }
+    return toArray;
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
-    First:            FirstOfType,
-    IsArray:          IsArray,
-    IsBoolean:        IsBoolean,
-    IsDateTime:       IsDateTime,
-    IsFunction:       IsFunction,
-    IsInteger:        IsInteger,
-    IsNonEmptyArray:  IsNonEmptyArray,
-    IsNonEmptyObject: IsNonEmptyObject,
-    IsNull:           IsNull,
-    IsNumber:         IsNumber,
-    IsObject:         IsObject,
-    IsString:         IsString
+    CopyArrayProperties: CopyArrayProperties,
+    First:               FirstOfType,
+    IsArray:             IsArray,
+    IsBoolean:           IsBoolean,
+    IsDateTime:          IsDateTime,
+    IsFunction:          IsFunction,
+    IsInteger:           IsInteger,
+    IsNonEmptyArray:     IsNonEmptyArray,
+    IsNonEmptyObject:    IsNonEmptyObject,
+    IsNull:              IsNull,
+    IsNumber:            IsNumber,
+    IsObject:            IsObject,
+    IsString:            IsString
 }; export default exports;

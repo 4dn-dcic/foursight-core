@@ -164,6 +164,15 @@ class ReactRoutes:
         return app.core.reactapi_checks_history(request, env, check=check, args=args)
 
     @staticmethod
+    @route("/{env}/checks/history/recent", authorize=True)
+    def reactapi_route_checks_history(env: str) -> Response:
+        """
+        Returns all recent check run history.
+        """
+        request = app.current_request.to_dict()
+        return app.core.reactapi_checks_history_recent(request, env)
+
+    @staticmethod
     @route("/{env}/checks/{check}/run", authorize=True)
     def reactapi_route_checks_run(env: str, check: str) -> Response:
         """

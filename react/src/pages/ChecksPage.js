@@ -18,6 +18,7 @@ import TableHead from '../TableHead';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
+import LiveTime from '../LiveTime';
 
 const ChecksPage = (props) => {
 
@@ -383,13 +384,9 @@ const ChecksPage = (props) => {
 
 
     function runCheck(check) {
-        console.log("RUNNING CHECK:")
         const args = check.kwargs;
         const argsString = Json.Str(args);
         const argsEncoded = btoa(argsString);
-        console.log(args);
-        console.log(argsString);
-        console.log(argsEncoded);
         hideCheckRunningBox(check);
         noteChangedCheckBox();
         check.queueingCheckRun = true;
@@ -1133,15 +1130,13 @@ const ChecksPage = (props) => {
 
     const ChecksRaw = () => {
         return <>
-            <div className="boxstyle check-pass padding-small cursor-hand" style={{fontWeight:isShowingChecksRaw() ? "bold" : "normal"}}>
-                <span onClick={() => toggleChecksRaw()}>Raw Checks File</span>
-            </div>
+           <span style={{fontWeight:isShowingChecksRaw() ? "bold" : "normal"}} onClick={() => toggleChecksRaw()}>View Raw Checks</span> <br />
         </>
     }
 
     const ChecksRawContent = () => {
         return isShowingChecksRaw() && !checksRawHide && <>
-            <b className="tool-tip" data-text={info.get("checks.file")}>Raw Checks File</b>
+            <b className="tool-tip" data-text={info.get("checks.file")}>Raw Checks</b>
             <div style={{marginTop:"3pt"}}>
             <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderRadius:"4pt"}}>
             { checksRaw.loading ? <>
@@ -1158,6 +1153,105 @@ const ChecksPage = (props) => {
             </div>
         </>
     }
+
+    // Need to start figuring out how to factor out all of this stuff into sub-components.
+    // Global most recent checks history.
+
+    const recentRuns = useFetch(Server.Url("/checks/history/recent", environ), { nofetch: true });
+    const [ recentRunsShow, setRecentRunsShow] = useState(false);
+
+    function isShowingRecentRuns() {
+        return !recentRuns.empty;
+    }
+
+    function showRecentRuns() {
+        setRecentRunsShow(true);
+        recentRuns.refresh();
+    }
+
+    function hideRecentRuns() {
+        recentRuns.set(null);
+        setRecentRunsShow(false);
+    }
+
+    function toggleRecentRuns() {
+        if (isShowingRecentRuns()) {
+            hideRecentRuns();
+        }
+        else {
+            showRecentRuns();
+        }
+    }
+
+    function findGroup(groupName) {
+        return checks.data?.find(item => item.group == groupName);
+    }
+
+    function findCheck(checkName, groupName) {
+        const group = findGroup(groupName)
+        return group?.checks?.find(item => item.name == checkName);
+    }
+
+    const RecentRunsControl = () => {
+        return <>
+            <span style={{fontWeight:isShowingRecentRuns() ? "bold" : "normal"}} onClick={() => toggleRecentRuns()}>View Recent Runs</span> <br />
+        </>
+    }
+
+    const RecentRunsView = () => {
+        const columns = [
+            { label: "Timestamp", key: "timestamp" },
+            { label: "Check", key: "check" },
+            { label: "Status", key: "status" },
+            { label: "Duration", key: "duration", align: "right" },
+            { label: "State", key: "state" }
+        ];
+        return recentRunsShow && <>
+            <b>Recent Runs</b>
+            <div className="boxstyle check-pass" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"2pt"}}>
+                { recentRuns.loading ? <>
+                    <StandardSpinner loading={recentRuns.loading} label={"Loading recent runs"} size={60} color={"black"} />
+                </>:<>
+                    { !recentRuns.empty && <small>
+                        <b>Most Recent</b>: <LiveTime.FormatDuration start={recentRuns?.data[0]?.timestamp} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />
+                        &nbsp;&nbsp;&nbsp;<span className="tool-tip" data-text="Click to refresh." style={{cursor:"pointer"}} onClick={() => recentRuns.refresh()}>{Char.Refresh}</span>
+                    </small>}
+                    <b style={{float:"right",paddingBottom:"4pt",cursor:"pointer"}} onClick={hideRecentRuns}>{Char.X}</b>
+                    <table style={{width:"100%"}} border="0">
+                        <TableHead columns={columns} list={recentRuns.data} update={() => recentRuns.update()} style={{color:"darkgreen",fontWeight:"bold"}} lines={true} />
+                        <tbody>
+                            { recentRuns.map((run, index) => <React.Fragment key={index}>
+                                <tr key={index} style={{verticalAlign:"top"}}>
+                                    <td>
+                                        {Time.FormatDate(run.timestamp)} <br />
+                                        <small>{Time.FormatTime(run.timestamp)}</small>
+                                    &nbsp;</td>
+                                    <td>
+                                        <span style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(run.check, run.group))}>{run.title}</span> <br />
+                                        <small style={{cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(run.group))}>{run.group}</small>
+                                    &nbsp;</td>
+                                    <td>
+                                        {run.status}
+                                    &nbsp;</td>
+                                    <td>
+                                        {run.duration}
+                                    &nbsp;</td>
+                                    <td>
+                                        {run.state}
+                                    &nbsp;</td>
+                                </tr>
+                                <tr><td style={{paddingTop:"2px"}}></td></tr>
+                                <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
+                                <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                            </React.Fragment>)}
+                        </tbody>
+                    </table>
+                </>}
+            </div>
+        </>
+    }
+
+    //
 
     const ChecksStatus = () => {
         return <>
@@ -1193,7 +1287,11 @@ const ChecksPage = (props) => {
                 <tr>
                     <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>
                         <ChecksGroupBox />
-                        <ChecksRaw />
+                        <div className="boxstyle check-pass padding-small cursor-hand">
+                            <RecentRunsControl />
+                            <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
+                            <ChecksRaw />
+                        </div>
                         <ChecksStatus />
                         <LambdasBox />
                     </td>
@@ -1201,8 +1299,9 @@ const ChecksPage = (props) => {
                         <ChecksRawContent />
                         <SelectedGroupsPanel />
                     </td>
-                    <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>
+                    <td style={{paddingLeft:groupList?.length > 0 ? "10pt" : "0",verticalAlign:"top"}}>
                         <ResultsHistoryPanel />
+                        <RecentRunsView />
                     </td>
                 </tr>
             </tbody></table>

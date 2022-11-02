@@ -688,7 +688,7 @@ function _update(setData, newData, currentData) {
         setData({...newData});
     }
     else if (Type.IsArray(newData)) {
-        setData([...newData]);
+        setData(Type.CopyArrayProperties(newData, [...newData])); // setData([...newData]);
     }
     else if (Type.IsFunction(newData)) {
         setData(newData());
