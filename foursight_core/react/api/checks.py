@@ -1,4 +1,5 @@
 import boto3
+from chalice import Cron
 import copy
 import cron_descriptor
 import logging
@@ -139,6 +140,30 @@ class Checks:
         Annotates and returns the given AWS lambdas list with
         the (cron) schedules from the given associated AWS stack template.
         """
+        def is_cron_schedule_never(cron: str) -> bool:
+            try:
+                cron_split = cron.split(' ')
+                cron = Cron(*cron_split)
+                # Just check the most obvious things.
+                # We are known to only use Feb 31 to indicate Never.
+                if cron.month.isnumeric():
+                    month = int(cron.month)
+                    if month < 1 or month > 12:
+                        return True
+                else:
+                    month = None
+                if cron.day_of_month.isnumeric():
+                    day_of_month = int(cron.day_of_month)
+                    if day_of_month < 1 or day_of_month > 31:
+                        return True
+                    if month == 2 and day_of_month > 29:
+                        return True
+                    if month in [4, 6, 9, 11] and day_of_month > 30:
+                        return True
+            except:
+                pass
+            return False
+
         stack_template = stack_template["TemplateBody"]["Resources"]
         for resource_key in stack_template:
             resource_type = stack_template[resource_key]["Type"]
@@ -162,9 +187,12 @@ class Checks:
                                     if la["lambda_name"] == event_target_function_name:
                                         event_schedule = str(event_schedule).replace("cron(", "").replace(")", "")
                                         la["lambda_schedule"] = str(event_schedule)
-                                        cron_description = cron_descriptor.get_description(str(event_schedule))
-                                        if cron_description.startswith("At "):
-                                            cron_description = cron_description[3:]
+                                        if is_cron_schedule_never(event_schedule):
+                                            cron_description = "Never"
+                                        else:
+                                            cron_description = cron_descriptor.get_description(str(event_schedule))
+                                            if cron_description.startswith("At "):
+                                                cron_description = cron_description[3:]
                                         la["lambda_schedule_description"] = cron_description
         return lambdas
 
