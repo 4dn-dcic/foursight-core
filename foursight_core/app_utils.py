@@ -63,6 +63,8 @@ class AppUtilsCore(ReactApi, Routes):
     so that a class named AppUtils is easier to define in libraries that import foursight-core.
     """
 
+    CHECK_SETUP_FILE_NAME = "check_setup.json"
+
     # Define in subclass.
     APP_PACKAGE_NAME = None
 
@@ -1879,7 +1881,6 @@ class AppUtilsCore(ReactApi, Routes):
           then the directoriy specified by this value.
         - The given base directory.
         """
-        CHECK_SETUP_FILE_NAME = "check_setup.json"
 
         def is_non_empty_json_file(file: str) -> bool:
             """
@@ -1902,17 +1903,17 @@ class AppUtilsCore(ReactApi, Routes):
         check_setup_file = None
         if os.environ.get("CHALICE_LOCAL") == "1":
             check_setup_dir = os.path.normpath(os.path.join(base_dir, "../chalicelib_local"))
-            check_setup_file = os.path.join(check_setup_dir, CHECK_SETUP_FILE_NAME)
+            check_setup_file = os.path.join(check_setup_dir, AppUtilsCore.CHECK_SETUP_FILE_NAME)
             if not is_non_empty_json_file(check_setup_file):
                 check_setup_file = None
         if not check_setup_file:
             check_setup_dir = os.environ.get("FOURSIGHT_CHECK_SETUP_DIR", "")
-            check_setup_file = os.path.join(check_setup_dir, CHECK_SETUP_FILE_NAME)
+            check_setup_file = os.path.join(check_setup_dir, AppUtilsCore.CHECK_SETUP_FILE_NAME)
             if not is_non_empty_json_file(check_setup_file):
                 check_setup_file = None
         if not check_setup_file:
             check_setup_dir = base_dir
-            check_setup_file = os.path.join(check_setup_dir, CHECK_SETUP_FILE_NAME)
+            check_setup_file = os.path.join(check_setup_dir, AppUtilsCore.CHECK_SETUP_FILE_NAME)
             if not is_non_empty_json_file(check_setup_file):
                 check_setup_file = None
         return check_setup_file
