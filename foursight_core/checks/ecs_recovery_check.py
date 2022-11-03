@@ -12,6 +12,9 @@ def rollback_application_version(connection, **kwargs):
         rolled back. In our setup, rolling back means moving the image tag back
         to the previous version. If that version fails to deploy, this check will
         run again, continuing the rollback mechanism until a stable version is found.
+
+        Note that this check assumes it is run on a 15 minute schedule - it will not function
+        correctly otherwise!
     """
     check = CheckResult(connection, 'rollback_application_version')
     env = kwargs.get('env_name')
@@ -40,8 +43,15 @@ def rollback_application_version(connection, **kwargs):
         if deploy_is_active:
             last_result = check.get_primary_result()
             prior_result = check.get_closest_result(diff_mins=30)
-            # 2 prior warns indicate deployment failure
-            if last_result.status == 'WARN' and prior_result.status == 'WARN':
+            # set to warn if either of previous results don't exist
+            if not last_result or not prior_result:
+                check.status = 'WARN'
+                check.summary = f'Detected that deployment is still running - after 3 consecutive checks, image will' \
+                                f' be rolled back on cluster {matching_cluster}'
+                check.brief_output = check.full_output = check.summary
+                return check
+            # 2 consecutive prior warns indicate deployment failure
+            elif last_result.status == 'WARN' and prior_result.status == 'WARN':
                 with ecr_command_context(account_number=account_number, ecs_repository=ecr_repo):
                     ecr = ECRCommandContext(account_number, ecs_repository=ecr_repo)
                     images = ecr.get_images_descriptions()
