@@ -1,4 +1,5 @@
 from chalice import Response
+import io
 import jinja2
 import json
 import os
@@ -89,8 +90,9 @@ class AppUtilsCore(ReactApi, Routes):
     package_name = 'foursight_core'
 
     # repeat the same line to use __file__ relative to the inherited class
-    check_setup_dir = dirname(__file__)
-    check_setup_dir_fallback = dirname(__file__)
+    # This should be set by the chalicelib_cgap or chalicelib_fourfront AppUtils
+    # derived from this class, in the app_utils.py there (via local_check_setup_file).
+    check_setup_file = None
 
     # optionally change this one
     html_main_title = 'Foursight'
@@ -107,8 +109,7 @@ class AppUtilsCore(ReactApi, Routes):
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
         self.sqs = SQS(self.prefix)
-        self.check_handler = CheckHandler(self.prefix, self.package_name, self.check_setup_dir,
-                                          self.check_setup_dir_fallback, self.get_default_env())
+        self.check_handler = CheckHandler(self.prefix, self.package_name, self.check_setup_file, self.get_default_env())
         self.CheckResult = self.check_handler.CheckResult
         self.ActionResult = self.check_handler.ActionResult
         self.jin_env = jinja2.Environment(
@@ -1864,6 +1865,57 @@ class AppUtilsCore(ReactApi, Routes):
         complete = s3_connection.list_all_keys_w_prefix(run_prefix)
         # eliminate duplicates
         return set(complete)
+
+    @staticmethod
+    def locate_check_setup_file(base_dir: str) -> str:
+        """
+        Return full path to the check_setup.json file, considering the given base directory which is
+        supposed to be the full path of either the chalicelib_cgap or chalicelib_fourfront directory.
+        Looks for the first non-empty check_setup.json file in this directory order:
+
+        - If the CHALICE_LOCAL environment variable is set to "1", then the
+          chalicelib_local directory parallel to the given base directory.
+        - If the FOURSIGHT_CHECK_SETUP_DIR environment variable is set,
+          then the directoriy specified by this value.
+        - The given base directory.
+        """
+        CHECK_SETUP_FILE_NAME = "check_setup.json"
+
+        def is_non_empty_json_file(file: str) -> bool:
+            """
+            Returns true iff the given file is a JSON file which is non-empty.
+            Where non-empty means the file exists, is of non-zero length, and
+            contains a non-empty JSON object or array.
+            """
+            try:
+                if os.path.exists(file):
+                    if os.stat(file).st_size > 0:
+                        with io.open(file, "r") as f:
+                            content = json.load(f)
+                            return (isinstance(content, list) or isinstance(content, dict)) and len(content) > 0
+            except:
+                pass
+            return False
+
+        if not base_dir:
+            base_dir = os.path.dirname(__file__)
+        check_setup_file = None
+        if os.environ.get("CHALICE_LOCAL") == "1":
+            check_setup_dir = os.path.normpath(os.path.join(base_dir, "../chalicelib_local"))
+            check_setup_file = os.path.join(check_setup_dir, CHECK_SETUP_FILE_NAME)
+            if not is_non_empty_json_file(check_setup_file):
+                check_setup_file = None
+        if not check_setup_file:
+            check_setup_dir = os.environ.get("FOURSIGHT_CHECK_SETUP_DIR", "")
+            check_setup_file = os.path.join(check_setup_dir, CHECK_SETUP_FILE_NAME)
+            if not is_non_empty_json_file(check_setup_file):
+                check_setup_file = None
+        if not check_setup_file:
+            check_setup_dir = base_dir
+            check_setup_file = os.path.join(check_setup_dir, CHECK_SETUP_FILE_NAME)
+            if not is_non_empty_json_file(check_setup_file):
+                check_setup_file = None
+        return check_setup_file
 
     _singleton = None
     @staticmethod

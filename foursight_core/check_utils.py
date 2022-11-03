@@ -20,10 +20,7 @@ class CheckHandler(object):
     """
     Class CheckHandler is a collection of utils related to checks
     """
-    def __init__(self, foursight_prefix, check_package_name='foursight_core',
-                 check_setup_dir=os.path.dirname(__file__),
-                 check_setup_dir_fallback=os.path.dirname(__file__),
-                 env=None):
+    def __init__(self, foursight_prefix, check_package_name='foursight_core', check_setup_file=None, env=None):
         self.prefix = foursight_prefix
         self.check_package_name = check_package_name
         self.decorators = Decorators(foursight_prefix)
@@ -36,27 +33,22 @@ class CheckHandler(object):
         # read in the check_setup.json and parse it
         # NOTE: previously, we globbed for all possible paths - no reason to do this IMO, just check
         # that the passed path exists - Will 5/26/21
-        setup_path = os.path.join(check_setup_dir, 'check_setup.json')
-        # 2022-10-28: Changes to look in check_setup_dir first, which may be overridden (to the vendor
-        # directory) in 4dn-cloud-infra, and if no (non-empty) check_setup.json exists there, then use
-        # the check_setup_dir_fallback which would refer the foursight-cgap or foursight chalicelib_cgap
-        # or chalicelib_fourfront directories.
-        if not (os.path.exists(setup_path) and os.stat(setup_path).st_size > 0):
-            setup_path = os.path.join(check_setup_dir_fallback, 'check_setup.json')
-            if not (os.path.exists(setup_path) and os.stat(setup_path).st_size > 0):
-                raise BadCheckSetup('Did not locate the specified check_setup: %s, looking in: %s' %
-                                    (setup_path, os.listdir(check_setup_dir)))
-        logger.debug(f"foursight_core/CheckHandler: Loading check_setup.json file: {setup_path}")
-        self.CHECK_SETUP_FILE = setup_path # for display/troubleshooting
-        with open(setup_path, 'r') as jfile:
+
+        # The check_setup_file is now pass in. It is supposed to ultimately come from chalicelib_cgap or
+        # chalicelib_fourfront via the AppUtils there (derived from AppUtilsCore here in foursight-core),
+        # which calls back to the locate_check_setup_file function AppUtilsCore here in foursight-core).
+        if not os.path.exists(check_setup_file):
+            raise BadCheckSetup(f"Did not locate the specified check setup file: {check_setup_file}")
+        self.CHECK_SETUP_FILE = check_setup_file # for display/troubleshooting
+        with open(check_setup_file, 'r') as jfile:
             self.CHECK_SETUP = json.load(jfile)
-        logger.debug(f"foursight_core/CheckHandler: Loaded check_setup.json file: {setup_path} ...")
+        logger.debug(f"foursight_core/CheckHandler: Loaded check_setup.json file: {check_setup_file} ...")
         logger.debug(self.CHECK_SETUP)
         # Validate and finalize CHECK_SETUP
-        logger.debug(f"foursight_core/CheckHandler: Validating check_setup.json file: {setup_path}")
+        logger.debug(f"foursight_core/CheckHandler: Validating check_setup.json file: {check_setup_file}")
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
         self.CHECK_SETUP = self.expand_check_setup(self.CHECK_SETUP, env)
-        logger.debug(f"foursight_core/CheckHandler: Done validating check_setup.json file: {setup_path}")
+        logger.debug(f"foursight_core/CheckHandler: Done validating check_setup.json file: {check_setup_file}")
 
     def get_module_names(self):
         check_modules = importlib.import_module('.checks', self.check_package_name)
