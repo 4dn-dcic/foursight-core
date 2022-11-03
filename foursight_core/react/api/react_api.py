@@ -250,6 +250,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
             last_modified = user_record.get("last_modified")
             if last_modified:
                 last_modified = last_modified.get("date_modified")
+            # Make sure we send back the email as lower case to avoid any possible issues on lookup later.
+            email = user_record.get("email")
+            email = email.lower() if email else ""
             # TODO
             # roles = []
             # project_roles = user_record.get("project_roles")
@@ -262,7 +265,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             #         "principals_edit": principals_edit
             #     })
             users.append({
-                "email": user_record.get("email"),
+                "email": email,
                 "first_name": user_record.get("first_name"),
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
@@ -284,6 +287,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         for item in items:
             try:
                 # Note these call works for both email address or user UUID.
+                # Note we must lower case the email to find the user. This is because all emails
+                # in the database are lowercased; it causes issues with OAuth if we don't do this.
                 user = ff_utils.get_metadata('users/' + item.lower(),
                                              ff_env=full_env_name(env), add_on='frame=object&datastore=database')
                 users.append(user)

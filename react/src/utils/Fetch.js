@@ -146,8 +146,6 @@ const MAX_SAVE = 25;
 //
 // OTHER COMMENTS
 //
-// - Currently just for HTTP GET. Will add support for other verbs as/when necessary.
-//
 // - Looking back over this, at 700+ lines (though many comments), it does look rather complex.
 //   But the goal was to make the USAGE simple; to fetch, update, manipulate data with as little
 //   detailed logic and friction as possible; and to globally track outstanding fetching, e.g.
@@ -158,7 +156,14 @@ const MAX_SAVE = 25;
 //
 //   USAGE EXAMPLES
 //
-//   TODO
+//   import { useFetch } from 'utils/Fetch.js';
+//   yourInfoToFetch = useFetch(yourServerUrl); 
+//   if (yourInfoToFetch.loading) {
+//       showLoadingSpinnerOrWhatnotForYourInfo();
+//   }
+//   else {
+//       renderUiForYourInfo(yourInfoToFetch.data);
+//   }
 
 export const useFetch = (url, args) => {
 
@@ -632,8 +637,6 @@ const _doFetch = (args, current = undefined) => {
     args.setStatus(0);
     args.setTimeout(false);
     args.setError(null);
-
-    // Expand to handle other verb later (e.g. PUT, POST).
 
     const fetch = {
         url: args.url,

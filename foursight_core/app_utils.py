@@ -309,11 +309,16 @@ class AppUtilsCore(ReactApi, Routes):
         # grant admin if dev_auth equals secret value
         if dev_auth and dev_auth == os.environ.get('DEV_SECRET'):
             return True
-        # if we're on localhost, automatically grant authorization
+        # If we're on localhost, automatically grant authorization
         # this looks bad but isn't because request authentication will
         # still fail if local keys are not configured
+        #
         # if self.is_running_locally(request_dict):
         #     return True
+        #
+        # Commented out above as o longer special treatment for running locally;
+        # previously related to support of a local "faux" login; removed. Should
+        # just delete this entire block including this comment next time around.
         jwt_decoded = self.get_decoded_jwt_token(env, request_dict)
         if jwt_decoded:
             try:
@@ -1880,3 +1885,30 @@ class AppUtils(AppUtilsCore):  # for compatibility with older imports
     import if you're making an AppUtils in some other library.
     """
     pass
+
+# These were previously in foursight/chalicelib_foursight/check_schedules.py
+# and foursight-cgap/chalicelib_cgap/check_schedules.py.
+
+from dcicutils.exceptions import InvalidParameterError
+from .deploy import Deploy
+
+def _compute_valid_deploy_stages():
+    # TODO: Will wants to know why "test" is here. -kmp 17-Aug-2021
+    return list(Deploy.CONFIG_BASE['stages'].keys()) + ['test']
+
+
+class InvalidDeployStage(InvalidParameterError):
+
+    @classmethod
+    def compute_valid_options(cls):
+        return _compute_valid_deploy_stages()
+
+
+def set_stage(stage):
+    if stage not in _compute_valid_deploy_stages():
+        raise InvalidDeployStage(parameter='stage', value=stage)
+    os.environ['chalice_stage'] = stage
+
+
+def set_timeout(timeout):
+    app.core.set_timeout(timeout)

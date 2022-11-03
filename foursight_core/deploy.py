@@ -216,7 +216,8 @@ class Deploy(object):
         # the provision stack name setup in 4dn-cloud-infra/stack.py. This is used to
         # conditionally include the appropriate library (foursight-cgap or foursight)
         # in the Chalice package. dmichaels/2022-11-01.
-        is_foursight_fourfront = args.stack in ["foursight-development", "foursight-production"]
+        _4DN_CLOUD_INFRA_FOURSIGHT_FOURFRONT_PROVISION_TARGETS = ["foursight-development", "foursight-production"]
+        is_foursight_fourfront = args.stack in _4DN_CLOUD_INFRA_FOURSIGHT_FOURFRONT_PROVISION_TARGETS
         # For compatibility during transition, we allow these argument to be passed in lieu of args.
         if merge_template is None:
             merge_template = args.merge_template

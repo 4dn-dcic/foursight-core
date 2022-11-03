@@ -75,14 +75,16 @@ class Envs:
         last_name = None
         for known_env in self._known_envs:
             try:
-                # Must be lower case to find (TODO: find out why exactly).
+                # Note we must lower case the email to find the user. This is because all emails
+                # in the database are lowercased; it causes issues with OAuth if we don't do this.
                 user = ff_utils.get_metadata('users/' + email.lower(),
                                              ff_env=known_env["full_name"], add_on="frame=object&datastore=database")
                 if user:
-                    if not first_name:
-                        first_name = user.get("first_name")
-                    if not last_name:
-                        last_name = user.get("last_name")
+                    # Since this is in a loop, for each env, this setup here will end up getting first/last name
+                    # from the last env in the loop; doesn't really matter, just pick one set; this is just for
+                    # informational/display purposes in the UI.
+                    first_name = user.get("first_name")
+                    last_name = user.get("last_name")
                     if True:
                         # New; 2022-10-25; almost forgot; from app_utils.check_authorization; check groups.
                         groups = user.get("groups")

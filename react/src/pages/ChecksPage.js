@@ -26,21 +26,11 @@ const ChecksPage = (props) => {
     const fetch = useFetchFunction();
 
     let { environ } = useParams();
-    // let [ groupedChecks, setGroupedChecks ] = useState([]);
-//  let [ lambdas, setLambdas ] = useState([]);
-//  let [ loading, setLoading ] = useState(true);
-//  let [ error, setError ] = useState(false);
-//  let [ selectedGroups, setSelectedGroups ] = useState([])
-//  let [ selectedHistories, setSelectedHistories ] = useState([])
-//  let [ checksStatus, setChecksStatus ] = useState({});
-//  let [ checksStatusLoading, setChecksStatusLoading ] = useState(true);
     const [ readOnlyMode ] = useReadOnlyMode();
     const historyList = useFetch({ initial: [] });
     const groupList = useFetch({ initial: [] });
     const info = useFetch(Server.Url("/info")); // only to get the raw checks file path for info/display
         
-    // TODO IN PROGRESS: MOVING TO NEW useFetch HOOK.
-
     const checks = useFetch({
         url: Server.Url("/checks", environ),
         onData: (data) => {
@@ -65,26 +55,6 @@ const ChecksPage = (props) => {
     });
 
     useEffect(() => {
-
-/*
-        Fetch.get(Server.Url(`/checks`, environ),
-                  groupedChecks => {
-                      setGroupedChecks(groupedChecks.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0)));
-                      if (groupedChecks.length > 0) {
-                          //
-                          // Choose some group as default to show.
-                          //
-                          let group = groupedChecks.find(item => item.group.toLowerCase().includes("elasticsearch"));
-                          group = group ? group : groupedChecks[0];
-                          showGroup(group);
-                      }
-                  },
-                  setLoading, setError);
-        Fetch.get(Server.Url(`/lambdas`, environ),
-                  lambdas => {
-                      setLambdas(lambdas.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0)));
-                  });
-*/
 
         refreshChecksStatus();
 
@@ -165,14 +135,6 @@ const ChecksPage = (props) => {
                 return true;
             }
         }
-/*
-        for (let i = 0 ; i < selectedGroups?.length ; i++) {
-            const selectedGroup = selectedGroups[i]
-            if (selectedGroup.group === group.group) {
-                return true;
-            }
-        }
-*/
         return false;
     }
 
@@ -183,35 +145,20 @@ const ChecksPage = (props) => {
                 return i;
             }
         }
-/*
-        for (let i = 0 ; i < selectedGroups.length ; i++) {
-            const selectedGroup = selectedGroups[i]
-            if (selectedGroup.group === group.group) {
-                return i;
-            }
-        }
-*/
         return -1;
     }
 
     function noteChangedSelectedGroups() {
-        // setSelectedGroups(existing => [...existing]);
         groupList.update(); // Experimental
     }
 
     function noteChangedResults() {
-        // setSelectedGroups(existing => [...existing]);
         groupList.update(); // Experimental
     }
 
     function noteChangedCheckBox() {
-        // setSelectedGroups(existing => [...existing]);
         groupList.update(); // Experimental
     }
-
-//  function noteChangedHistories() {
-//      setSelectedHistories(existing => [...existing]);
-//  }
 
     function toggleShowGroup(group, showResults = true) {
         if (isSelectedGroup(group)) {
@@ -225,8 +172,6 @@ const ChecksPage = (props) => {
         if (isSelectedGroup(group)) {
             return;
         }
-        // selectedGroups.unshift(group);
-        // noteChangedResults();
         groupList.prepend(group); // Experimental
         if (showResults) {
             group.checks.map(check => showResultBox(check));
@@ -235,8 +180,6 @@ const ChecksPage = (props) => {
     function hideGroup(group) {
         group.checks.map(check => hideHistory(check));
         const index = findSelectedGroupIndex(group);
-        // selectedGroups.splice(index, 1);
-        // noteChangedResults();
         groupList.remove(index); // Experimental
     }
 
@@ -247,14 +190,6 @@ const ChecksPage = (props) => {
         else {
             groupList.update([...checks.data]);
         }
-/*
-        if (checks.data.length === selectedGroups.length) {
-            setSelectedGroups([checks.data[0]]);
-        }
-        else {
-            setSelectedGroups([...checks.data]);
-        }
-*/
     }
 
     const ChecksGroupBox = ({props}) => {
@@ -301,16 +236,6 @@ const ChecksPage = (props) => {
                 showAllResults(groupList.get(i).checks);
             }
         }
-/*
-        for (let i = 0 ; i < selectedGroups.length ; i++) {
-            if (showingAnyGroupsResults) {
-                hideAllResults(selectedGroups[i].checks);
-            }
-            else {
-                showAllResults(selectedGroups[i].checks);
-            }
-        }
-*/
     }
 
     function isShowingAnyGroupsResults() {
@@ -319,13 +244,6 @@ const ChecksPage = (props) => {
                 return true;
             }
         }
-/*
-        for (let i = 0 ; i < selectedGroups.length ; i++) {
-            if (isShowingAnyResults(selectedGroups[i]?.checks)) {
-                return true;
-            }
-        }
-*/
         return false;
     }
 
@@ -337,15 +255,6 @@ const ChecksPage = (props) => {
                 }
             }
         }
-/*
-        for (let i = 0 ; i < selectedGroups?.length ; i++) {
-            for (let j = 0 ; j < selectedGroups[i]?.checks?.length ; j++) {
-                if (selectedGroups[i].checks[j].showingResultDetails) {
-                    return true;
-                }
-            }
-        }
-*/
         return false;
     }
 
@@ -357,26 +266,15 @@ const ChecksPage = (props) => {
                 }
             }
         }
-/*
-        for (let i = 0 ; i < selectedGroups?.length ; i++) {
-            for (let j = 0 ; j < selectedGroups[i]?.checks?.length ; j++) {
-                if (!selectedGroups[i].checks[j].showingResultDetails) {
-                    return false;
-                }
-            }
-        }
-*/
         return true;
     }
 
     function showAllResultDetails() {
-        // selectedGroups?.map(group => group.checks.map(check => check.showingResultDetails = true));
         groupList.map(group => group.checks.map(check => check.showingResultDetails = true));
         noteChangedResults();
     }
 
     function hideAllResultDetails() {
-        // selectedGroups?.map(group => group.checks.map(check => check.showingResultDetails = false));
         groupList.map(group => group.checks.map(check => check.showingResultDetails = false));
         noteChangedResults();
     }
@@ -411,18 +309,9 @@ const ChecksPage = (props) => {
                 return data.uuid;
             }
         });
-/*
-        Fetch.get(Server.Url(`/checks/${check.name}/run?args=${argsEncoded}`, environ),
-                  response => {
-                      check.queueingCheckRun = false;
-                      check.fetchingResult = false;
-                      check.queuedCheckRun = response.uuid
-                  });
-*/
         check.queuedCheckRun = null;
         showCheckRunningBox(check);
         showHistory(check);
-        // setTimeout(() => { if (!check.fetchingResult) { refreshHistory(check); noteChangedCheckBox(); } }, 10000);
     }
 
     function showCheckRunningBox(check) {
@@ -912,19 +801,6 @@ const ChecksPage = (props) => {
                         return current;
                     }
                 });
-/*
-                fetch({
-                    url: Server.Url(`/checks/${check.name}/history`, environ),
-                    onData: (data) => {
-                        check.history = data;
-                        noteChangedHistories();
-                    }
-                });
-*/
-/*
-                Fetch.get(Server.Url(`/checks/${check.name}/history`, environ),
-                          history => { check.history = history; noteChangedHistories(); });
-*/
             }
         }
     }
@@ -933,8 +809,7 @@ const ChecksPage = (props) => {
         history.__resultShowing = true;
         history.__resultLoading = true;
 //      history.__resultError = false;
-        // noteChangedHistories();
-        historyList.update(); // Experimental
+        historyList.update();
         historyList.refresh({
             url: Server.Url(`/checks/${check.name}/${uuid}`, environ),
             onData: (data, current) => {
@@ -947,14 +822,6 @@ const ChecksPage = (props) => {
                 history.__resultLoading = false;
             }
         });
-/*
-        Fetch.get(Server.Url(`/checks/${check.name}/${uuid}`, environ), response => {
-            if (history.__resultShowing) {
-                history.__result = response;
-                noteChangedHistories();
-            }
-        }, () => { history.__resultLoading = false; noteChangedHistories(); }, () => { history.__resultError = true; } );
-*/
     }
 
     function hideHistoryResult(history) {
@@ -962,8 +829,7 @@ const ChecksPage = (props) => {
         history.__result = null;
         history.__resultLoading = false;
 //      history.__resultError = false;
-        // noteChangedHistories();
-        historyList.update(); // Experimental
+        historyList.update();
     }
 
     function toggleHistoryResult(check, history, uuid) {
@@ -979,8 +845,6 @@ const ChecksPage = (props) => {
         if (check.showingHistory) {
             check.showingHistory = false;
             const index = findResultsHistoryIndex(check);
-            // selectedHistories.splice(index, 1);
-            // noteChangedHistories();
             historyList.remove(index); // Experimental
         }
     }
@@ -992,14 +856,6 @@ const ChecksPage = (props) => {
                 return i;
             }
         }
-/*
-        for (let i = 0 ; i < selectedHistories.length ; i++) {
-            const selectedHistory = selectedHistories[i]
-            if (selectedHistory.name === check.name) {
-                return i;
-            }
-        }
-*/
         return -1;
     }
 
@@ -1068,22 +924,6 @@ const ChecksPage = (props) => {
                     return current;
                 }
             });
-/*
-            fetch({
-                url: Server.Url(`/checks/${check.name}`, environ),
-                onData: (data) => {
-                    check.results = data;
-                    check.fetchingResult = false;
-                    noteChangedResults();
-                    return data;
-                }
-            });
-*/
-/*
-            Fetch.get(Server.Url(`/checks/${check.name}`, environ),
-                      checkResults => { check.results = checkResults; check.fetchingResult = false; noteChangedResults(); },
-                      null, setError);
-*/
         }
     }
 
