@@ -178,8 +178,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified(),
                 "lambda": lambda_function_info,
-                "check_setup_dir": app.core.check_setup_dir,
-                "check_setup_dir_fallback": app.core.check_setup_dir_fallback,
                 "check_setup_file": app.core.check_handler.CHECK_SETUP_FILE
             },
             "versions": {
