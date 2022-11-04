@@ -12,9 +12,16 @@ DEFAULT_STAGE = os.environ.get("chalice_stage", "dev")
 def schedule(*args, **kwargs):
     """
     Decorator to wrap the Chalice schedule decorator to do any customization.
-    The FIRST argument should either be a Chalice Cron object OR a dictionary
-    indexed by stage name AND within that dictionary, by the name of the
-    function being scheduled; i.e. a dictionary that looks something like:
+    The FIRST argument should either be a Chalice Cron object; OR a dictionary
+    indexed by the name of the function name being scheduled where each value is
+    the Chalice Cron object; OR a dictionary indexed by stage name AND within that
+    dictionary, by the name of the function being scheduled where each value is the
+    Chalice Cron object; i.e. a dictionary that looks something like EITHER of these:
+
+      schedules = {
+        "ten_min_checks":     Cron("0/10", "*", "*", "*", "?", "*"),
+        "fifteen_min_checks": Cron("0/15", "*", "*", "*", "?", "*"),
+      }
 
       schedules = {
         "prod": {
@@ -26,12 +33,12 @@ def schedule(*args, **kwargs):
           }
       }
 
-    The key names there for the Cron objects are ASSUMED be the (exact) names
-    of the function being scheduled. For example:
+    The function key names above for the Cron objects are ASSUMED
+    be the EXACT names of the function being scheduled. For example:
 
       @schedule(schedules, stage=STAGE, disabled_stages=["dev"])
       def ten_min_checks():
-         do_the_schedule_job_work()
+         do_the_scheduled_function_work()
 
     If this scheme is not used, i.e. if passing just a Cron object as the FIRST decorator
     argument, rather than a dictionary as above, then the function name does not matter.
@@ -85,23 +92,28 @@ def schedule(*args, **kwargs):
             if cron_string.endswith(")"):
                 cron_string = cron_string[:-1]
             return cron_string
-        cron_schedule = cron
-        if isinstance(cron_schedule, dict):
-            cron_schedule = cron_schedule.get(stage)
-            if not cron_schedule:
-                raise Exception(f"Cron schedule dictionary has no entry for stage: {stage}")
-            cron_schedule = cron_schedule.get(wrapped_schedule_function.__name__)
-            if not cron_schedule:
-                raise Exception(f"Cron schedule dictionary (stage: {stage}) has no entry for function:"
-                                f" {wrapped_schedule_function.__name__}")
-            if not isinstance(cron_schedule, Cron):
-                raise Exception(f"Cron schedule dictionary (stage: {stage}) has no Cron object for function:"
-                                f" {wrapped_schedule_function.__name__}")
+        using_stage = False
+        if isinstance(cron, dict):
+            cron_object = cron.get(wrapped_schedule_function.__name__)
+            if not isinstance(cron_object, Cron):
+                stage_schedules = cron.get(stage)
+                if not isinstance(stage_schedules, dict):
+                    raise Exception(f"Chalice schedule dictionary stage ({stage}) not found: {wrapped_schedule_function.__name__}")
+                cron_object = stage_schedules.get(wrapped_schedule_function.__name__)
+                if not isinstance(cron_object, Cron):
+                    raise Exception(f"Chalice schedule dictionary has no Cron object for stage ({stage}):"
+                                    f" {wrapped_schedule_function.__name__}")
+                using_stage = True
+        elif not isinstance(cron, Cron):
+            raise Exception(f"Cron schedule argument must be a Chalice Cront object of a dictionary:"
+                            f" {wrapped_schedule_function.__name__}")
         else:
-            cron_schedule = cron
-        PRINT(f"Registering Chalice schedule ({cron_string(cron_schedule)}) for (stage: {stage}) function:"
-              f" {wrapped_schedule_function.__name__}")
-        #app.schedule(cron_schedule, **kwargs)(wrapped_schedule_function)
-        #return wrapped_schedule_function
-        return app.schedule(cron_schedule, **kwargs)(wrapped_schedule_function)
+            cron_object = cron
+        if using_stage:
+            PRINT(f"Registering Chalice schedule ({cron_string(cron_object)}) for (stage: {stage}):"
+                  f" {wrapped_schedule_function.__name__}")
+        else:
+            PRINT(f"Registering Chalice schedule ({cron_string(cron_object)}) for:"
+                  f" {wrapped_schedule_function.__name__}")
+        return app.schedule(cron_object, **kwargs)(wrapped_schedule_function)
     return schedule_registration
