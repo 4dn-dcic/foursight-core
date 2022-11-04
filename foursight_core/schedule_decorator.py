@@ -99,8 +99,9 @@ def schedule(*args, **kwargs):
                                 f" {wrapped_schedule_function.__name__}")
         else:
             cron_schedule = cron
-        PRINT(f"Register Chalice schedule ({cron_string(cron_schedule)}) for (stage: {stage}) function:"
+        PRINT(f"Registering Chalice schedule ({cron_string(cron_schedule)}) for (stage: {stage}) function:"
               f" {wrapped_schedule_function.__name__}")
-        app.schedule(cron_schedule, **kwargs)(wrapped_schedule_function)
-        return wrapped_schedule_function
+        #app.schedule(cron_schedule, **kwargs)(wrapped_schedule_function)
+        #return wrapped_schedule_function
+        return app.schedule(cron_schedule, **kwargs)(wrapped_schedule_function)
     return schedule_registration
