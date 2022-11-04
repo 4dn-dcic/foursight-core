@@ -3,6 +3,7 @@ import jwt as jwtlib
 from dcicutils.misc_utils import get_error_message
 
 JWT_AUDIENCE_PROPERTY_NAME = "aud"
+JWT_SUBJECT_PROPERTY_NAME = "sub"
 
 
 def jwt_encode(value: dict, audience: str, secret: str) -> str:

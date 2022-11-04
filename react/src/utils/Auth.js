@@ -43,15 +43,27 @@ function LoggedInUserName(header) {
     return first_name + " " + last_name;
 }
 
+function LoggedInViaGoogle(header) {
+    const authenticator = header?.auth?.authenticator || Cookie.AuthToken()?.authenticator;
+    return authenticator === "google";
+}
+
+function LoggedInViaGitHub(header) {
+    const authenticator = header?.auth?.authenticator || Cookie.AuthToken()?.authenticator;
+    return authenticator === "github";
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
-    IsLoggedIn:       IsLoggedIn,
-    LoggedInInfo:     LoggedInInfo,
-    LoggedInUser:     LoggedInUser,
-    LoggedInUserName: LoggedInUserName,
-    SessionExpired:   SessionExpired,
-    Token:            Cookie.AuthToken
+    IsLoggedIn:        IsLoggedIn,
+    LoggedInInfo:      LoggedInInfo,
+    LoggedInUser:      LoggedInUser,
+    LoggedInUserName:  LoggedInUserName,
+    LoggedInViaGoogle: LoggedInViaGoogle,
+    LoggedInViaGitHub: LoggedInViaGitHub,
+    SessionExpired:    SessionExpired,
+    Token:             Cookie.AuthToken
 }; export default exports;

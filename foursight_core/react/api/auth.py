@@ -4,7 +4,7 @@ import time
 from typing import Optional
 from .cookie_utils import read_cookie
 from .envs import Envs
-from .jwt_utils import JWT_AUDIENCE_PROPERTY_NAME, jwt_decode, jwt_encode
+from .jwt_utils import JWT_AUDIENCE_PROPERTY_NAME, JWT_SUBJECT_PROPERTY_NAME, jwt_decode, jwt_encode
 from .misc_utils import get_request_domain
 
 logging.basicConfig()
@@ -98,6 +98,16 @@ class Auth:
         """
         jwt_decoded = jwt_decode(jwt, self._auth0_client, self._auth0_secret)
         email = jwt_decoded.get("email")
+        # Just FYI for UI, communicate how the user logged in, i.e. currently via either
+        # Google or GitHub. For the former the "sub" property of the JWT looks something
+        # like "google-oauth2|117300206013007398924", and for the latter "github|105234079".
+        authenticator = jwt_decoded.get(JWT_SUBJECT_PROPERTY_NAME)
+        if authenticator:
+            authenticator = authenticator.casefold()
+            if "google" in authenticator:
+                authenticator = "google"
+            elif "github" in authenticator:
+                authenticator = "github"
         allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email)
         authtoken_decoded = {
             "authenticated": True,
@@ -111,7 +121,8 @@ class Auth:
             "known_envs": self._envs.get_known_envs(),
             "default_env": self._envs.get_default_env(),
             "initial_env": env,
-            "domain": domain
+            "domain": domain,
+            "authenticator": authenticator
         }
         # JWT-sign-encode the authtoken using our Auth0 client ID (aka audience aka "aud") and
         # secret. This *required* audience is added to the JWT before encoding (done in the

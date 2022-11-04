@@ -50,6 +50,15 @@ function GetFoursightFourfrontLogoImage() {
     return "https://data.4dnucleome.org/static/img/favicon-fs.ico";
 }
 
+function GetGitHubLoginLogoImage() {
+    return "https://github.githubassets.com/images/modules/logos_page/Octocat.png"
+ // return "https://cdn4.iconfinder.com/data/icons/iconsimple-logotypes/512/github-512.png";
+}
+
+function GetGoogleLoginLogoImage() {
+    return "https://cdn-icons-png.flaticon.com/512/2991/2991148.png";
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
@@ -64,6 +73,8 @@ const exports = {
     FoursightFourfrontFavicon: GetFoursightFourfrontFaviconImage,
     FoursightCgapLogo:         GetFoursightCgapLogoImage,
     FoursightFourfrontLogo:    GetFoursightFourfrontLogoImage,
+    GitHubLoginLogo:           GetGitHubLoginLogoImage,
+    GoogleLoginLogo:           GetGoogleLoginLogoImage,
     PyPi:                      GetPyPiImage,
     Python:                    GetPythonImage,
     Unlock:                    GetUnlockImage

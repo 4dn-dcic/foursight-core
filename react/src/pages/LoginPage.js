@@ -98,7 +98,15 @@ const LoginPage = (props) => {
                     <table style={{color:"inherit"}}><tbody><tr>
                         <td align="top" style={{verticalAlign:"top",whiteSpace:"nowrap",width:"40%"}}>
                             Logged in as:&nbsp;
-                            <Link to={Client.Path("/users/" + Auth.LoggedInUser(header))}><b style={{color:"darkblue"}}>{Auth.LoggedInUser(header)}</b></Link> <br />
+                            <Link to={Client.Path("/users/" + Auth.LoggedInUser(header))}><b style={{color:"darkblue"}}>{Auth.LoggedInUser(header)}</b></Link>
+                            { Auth.LoggedInViaGoogle(header) ? <>
+                                <img title="Via Google" style={{marginLeft:"9px",marginRight:"0",marginBottom:"2px"}} src={Image.GoogleLoginLogo()} height="15" />
+                            </>:<>
+                                { Auth.LoggedInViaGitHub(header) && <>
+                                    <img title="Via GitHub" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
+                                </>}
+                            </>}
+                            <br />
                             <div style={{fontSize:"small",marginTop:"6pt",paddingTop:"5pt",borderTop:"1px solid"}}>
                                 Session started: <LiveTime.FormatDuration start={Auth.Token().authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
                                 <br />
