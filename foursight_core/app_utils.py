@@ -1621,6 +1621,10 @@ class AppUtilsCore(ReactApi, Routes):
         Returns:
             dict: runner input of queued messages, used for testing
         """
+        print(f"XYZZY: queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
+        print(sched_environ)
+        print(schedule_name)
+        print(conditions)
         logger.warn(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
         queue = self.sqs.get_sqs_queue()
         logger.warn(f"queue_scheduled_checks: queue={queue}")
