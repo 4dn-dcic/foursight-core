@@ -187,10 +187,10 @@ const Header = (props) => {
                             { Auth.LoggedInUser(header) ? (<>
                                 <Link to={Client.Path("/login")} style={{textDecoration:"none"}}><b style={{color:"darkblue"}} title="Logged in as.">{Auth.LoggedInUser(header)}</b></Link>
                                 { Auth.LoggedInViaGoogle(header) ? <>
-                                    <img style={{marginLeft:"9px",marginRight:"0",marginBottom:"2px"}} src={Image.GoogleLoginLogo()} height="15" />
+                                    <img title="Google Authentication" style={{marginLeft:"9px",marginRight:"0",marginBottom:"2px"}} src={Image.GoogleLoginLogo()} height="15" />
                                 </>:<>
                                     { Auth.LoggedInViaGitHub(header) && <>
-                                        <img style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
+                                        <img title="GitHub Authentication" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
                                     </>}
                                 </>}
                             </>):(<>

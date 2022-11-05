@@ -237,7 +237,7 @@
 
 /* https://blog.logrocket.com/creating-beautiful-tooltips-with-only-css */
 .tool-tip {
-  position:relative; /* making the .tool-tip span a container for the tool-tip text */
+  position: relative; /* making the .tool-tip span a container for the tool-tip text */
 }
 .tool-tip:before {
   content: attr(data-text);

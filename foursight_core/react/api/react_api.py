@@ -227,7 +227,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def reactapi_users(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/users
-        Returns info on all users. TODO: No paging supported yet!
+        Returns a (paged) summary of all users.
         """
         offset = int(args.get("offset", "0")) if args else 0
         if offset < 0:
@@ -235,25 +235,28 @@ class ReactApi(ReactApiBase, ReactRoutes):
         limit = int(args.get("limit", "50")) if args else 25
         if limit < 0:
             limit = 0
-        sort = args.get("sort", "timestamp.desc") if args else "timestamp.desc"
-        sort = urllib.parse.unquote(sort)
+        sort = urllib.parse.unquote(args.get("sort", "email.asc") if args else "email.asc")
+        if sort.endswith(".desc"):
+            sort = "-" + sort[:-5]
+        elif sort.endswith(".asc"):
+            sort = sort[:-4]
 
         users = []
         # TODO: Support paging.
         # TODO: Consider adding ability to search for both normal users and
         #       admin/foursight users (who would have access to foursight);
         #       and more advanced, the ability to grant foursight access.
-        user_records = ff_utils.get_metadata("users/", ff_env=full_env_name(env), add_on=f"frame=object&datastore=database&limit={limit}")
-        for user_record in user_records["@graph"]:
-            last_modified = user_record.get("last_modified")
-            if last_modified:
-                last_modified = last_modified.get("date_modified")
-            # Make sure we send back the email as lower case to avoid any possible issues on lookup later.
-            email = user_record.get("email")
-            email = email.lower() if email else ""
+        add_on = f"frame=object&datastore=database&limit={limit}&from={offset}&sort={sort}"
+        results = ff_utils.get_metadata("users/", ff_env=full_env_name(env), add_on=add_on)
+        total = results["total"]
+        for user in results["@graph"]:
+            updated = user.get("last_modified")
+            if updated:
+                updated = updated.get("date_modified")
+            created = user.get("date_created")
             # TODO
             # roles = []
-            # project_roles = user_record.get("project_roles")
+            # project_roles = user.get("project_roles")
             # if project_roles:
             #     role = role.get("date_modified")
             #     roles.append({
@@ -263,13 +266,28 @@ class ReactApi(ReactApiBase, ReactRoutes):
             #         "principals_edit": principals_edit
             #     })
             users.append({
-                "email": email,
-                "first_name": user_record.get("first_name"),
-                "last_name": user_record.get("last_name"),
-                "uuid": user_record.get("uuid"),
-                "groups": user_record.get("groups"),
-                "modified": convert_utc_datetime_to_useastern_datetime_string(last_modified)})
-        return self.create_success_response(sorted(users, key=lambda key: key["email"]))
+                # Lower case email to avoid any possible issues on lookup later.
+                "email": (user.get("email") or "").lower(),
+                "first_name": user.get("first_name"),
+                "last_name": user.get("last_name"),
+                "uuid": user.get("uuid"),
+                "title": user.get("title"),
+                "groups": user.get("groups"),
+                "project": user.get("project"),
+                "institution": user.get("user_institution"),
+                "updated": convert_utc_datetime_to_useastern_datetime_string(updated),
+                "created": convert_utc_datetime_to_useastern_datetime_string(created)
+            })
+        return self.create_success_response({
+            "paging": {
+                "total": total,
+                "count": len(users),
+                "limit": min(limit, total),
+                "offset": min(offset, total),
+                "more": max(total - offset - limit, 0)
+            },
+            "list": users
+        })
 
     def reactapi_get_user(self, request: dict, env: str, uuid: str) -> Response:
         """

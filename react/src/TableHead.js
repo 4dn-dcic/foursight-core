@@ -1,6 +1,7 @@
 import React from 'react';
 import Uuid from 'react-uuid';
 import Char from './utils/Char';
+import Str from './utils/Str';
 import Type from './utils/Type';
 import { PuffSpinner } from './Spinners';
 
@@ -27,8 +28,8 @@ import { PuffSpinner } from './Spinners';
 // So we stored the sort state in hidden fields within the given list itself.
 // -------------------------------------------------------------------------------------------------
 
-const TableHead = ({columns, list, update, state = null, lines = false, style = {}, spinner = false, loading = false, children}) => {
-    function sort(list, key, direction) {
+const TableHead = ({columns, list, update, sort = null, state = null, lines = false, topline = false, bottomline = false, style = {}, spinner = false, loading = false, children}) => {
+    function _sort(list, key, direction) {
         let comparator = Type.IsFunction(key)
                          ? (direction > 0
                             ? (a,b) => key(a) > key(b) ? 1 : (key(a) < key(b) ? -1 : 0)
@@ -39,24 +40,29 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
         list = list.sort((a,b) => comparator(a, b));
         return list;
     }
-    function keysEqual(a, b) {
+    function _keysEqual(a, b) {
         return (Type.IsFunction(a) && Type.IsFunction(b)) ? a.name === b.name : a === b;
     }
-    if (!list.__sort) {
+    if (!Type.IsNonEmptyObject(state) && Str.HasValue(sort)) {
+        state = {
+            key: sort.replace(".asc", "").replace(".desc", ""),
+            order: sort.endsWith(".desc") ? -1 : 1
+        };
+    }
+    if (list && !list.__sort) {
         if (state) {
             list.__sort = state;
-            const sortKey = Type.IsFunction(list.__sort.key) ? list.__sort.key(null) : list.__sort.key;
-            const sortOrder = list.__sort.order > 0 ? "asc" : "desc";
-            update(sortKey, sortOrder);
         }
         else {
             list.__sort = { key: null, order: 0 };
         }
     }
     return <thead>
-        { lines && <><tr><td style={{height:"1px",background:style?.color ? style.color : "gray"}} colSpan="9"></td></tr>
-                     <tr><td style={{paddingBottom:"2pt"}}></td></tr></>}
-        <tr>{ columns.map(column => {
+        { (lines || topline) && <>
+            <tr><td style={{height:"1px",background:style?.color ? style.color : "gray"}} colSpan="9"></td></tr>
+            <tr><td style={{paddingBottom:"2pt"}}></td></tr>
+        </>}
+        <tr>{ columns?.map(column => {
             return <td key={Uuid()} style={{textAlign:column.align || "normal",whiteSpace:"nowrap"}}>
                 { column.key ? (<>
                     <span style={{...style, cursor: loading ? "not-allowed" : "pointer"}}
@@ -69,13 +75,13 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
                             if (loading) return;
                             list.__sort.key = column.key;
                             list.__sort.order = list.__sort.order ? -list.__sort.order : 1;
-                            sort(list, list.__sort.key, list.__sort.order);
+                            _sort(list, list.__sort.key, list.__sort.order);
                             const sortKey = Type.IsFunction(list.__sort.key) ? list.__sort.key(null) : list.__sort.key;
                             const sortOrder = list.__sort.order > 0 ? "asc" : "desc";
                             update(sortKey, sortOrder);
                         }}>
                         <table cellPadding="0" cellSpacing="0" style={{margin:"0",padding:"0",display:"inline-block"}}><tbody style={{margin:"0",padding:"0"}}><tr style={{margin:"0",padding:"0"}}>
-                        { keysEqual(list.__sort.key, column.key) ? (<>
+                        { list && _keysEqual(list.__sort.key, column.key) ? (<>
                             <td>
                                 <span style={{...style}}>{column.label}</span>
                                 { !loading && <span style={{fontWeight:"normal"}}>&nbsp;{list.__sort.order > 0 ? <>{Char.DownArrow}</> : <>{Char.UpArrow}</>}</span> }
@@ -96,9 +102,11 @@ const TableHead = ({columns, list, update, state = null, lines = false, style = 
                 </>)}
             &nbsp;&nbsp;</td>
         })}</tr>
-        { lines && <><tr><td style={{paddingBottom:"0pt"}}></td></tr>
-                      <tr><td style={{height:"1px",background:style?.color ? style.color : "red"}} colSpan="9"></td></tr>
-                      <tr><td style={{height:"4pt"}} colSpan="6"></td></tr></>}
+        { (lines || bottomline) && <>
+            <tr><td style={{paddingBottom:"0pt"}}></td></tr>
+             <tr><td style={{height:"1px",background:style?.color ? style.color : "red"}} colSpan="9"></td></tr>
+             <tr><td style={{height:"4pt"}} colSpan="6"></td></tr>
+        </>}
         {children}
     </thead>
 }

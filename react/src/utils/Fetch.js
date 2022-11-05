@@ -199,13 +199,6 @@ export const useFetch = (url, args) => {
         error: error,
         set: setData,
         //
-        // Usage of these (setLoading and setError) should be rather unusual and special case,
-        // as the useFetch hook should normally be responsible for managing these states.
-        // But one example is UserEditPage.js.
-        //
-        setLoading: setLoading,
-        setError: setLoading,
-        //
         // The below is for sanity checking args to bound functions.
         //
         __usefetch_response: true
@@ -239,170 +232,7 @@ export const useFetch = (url, args) => {
         _update(setData, data, this && this.__usefetch_response ? this.data : undefined);
     }).bind(response);
 
-    // This block is experimental (perhaps too clever by half):
-    // Specialized, specific data update functions, e.g. to prepend, append, or insert
-    // into array, etc. Simplifies acess to useFetch (return) value, i.e not having to
-    // always dereference via useFetchResult.data. And since we're doing this at all,
-    // might as well introduce some niceties to these functions.
-    {
-        Object.defineProperty(response, "length", { get:
-            (function() {
-                if (!this || !this.__usefetch_response) return;
-                if (Type.IsArray(this.data)) {
-                    return this.data.length;
-                }
-            }).bind(response)
-        });
-
-        Object.defineProperty(response, "null", { get:
-            (function() {
-                if (!this || !this.__usefetch_response) return;
-                return this.data === undefined || this.data === null;
-            }).bind(response)
-        });
-
-        Object.defineProperty(response, "empty", { get:
-            (function() {
-                if (!this || !this.__usefetch_response) return;
-                return this.data === undefined || this.data === null ||
-                       (Type.IsArray(this.data) && this.data.length === 0) ||
-                       (Type.IsObject(this.data) && Object.keys(this.data).length === 0);
-            }).bind(response)
-        });
-
-        response.get = (function(index) {
-            if (!this || !this.__usefetch_response) return;
-            let data = this.data;
-            if (Type.IsArray(data)) {
-                if (Type.IsInteger(index)) {
-                    if (index < 0) index = 0;
-                    if (index >= data.length) index = data.length - 1;
-                    data = data[index];
-                }
-            }
-            else if (Type.IsObject(data)) {
-                if (Str.HasValue(index)) {
-                    const names = index.split(".");
-                    for (const name of names) {
-                        if (!Type.IsObject(data)) {
-                            return null;
-                        }
-                        data = data[name];
-                    }
-                }
-            }
-            return data;
-        }).bind(response);
-
-        response.append = (function(element) {
-            if (!this || !this.__usefetch_response) return;
-            if (Type.IsArray(this.data)) {
-                if (element) {
-                    this.data.push(element);
-                    this.update();
-                }
-            }
-        }).bind(response);
-
-        response.prepend = (function(element) {
-            if (!this || !this.__usefetch_response) return;
-            if (Type.IsArray(this.data)) {
-                if (element) {
-                    //
-                    // For some reason this (unshift, and push above) doesn't require
-                    // updating after, at least for the case I'm seeing (in AwsS3Path);
-                    // but doing a splice (below) I *do* need to update. Understand the
-                    // latter, just not sure why the former works without explicit update.
-                    // https://beta.reactjs.org/learn/updating-arrays-in-state
-                    //
-                    this.data.unshift(element);
-                    this.update();
-                }
-            }
-        }).bind(response);
-
-        response.remove = (function(index) {
-            if (!this || !this.__usefetch_response) return;
-            if (Type.IsArray(this.data)) {
-                if (Type.IsInteger(index)) {
-                    if (index < 0) index = 0;
-                    if (index >= data.length) index = data.length - 1;
-                    this.data.splice(index, 1);
-                    this.update();
-                }
-            }
-        }).bind(response);
-
-        response.filter = (function(f, other) {
-            if (!this || !this.__usefetch_response) return;
-            if (Type.IsArray(this.data)) {
-                if (Type.IsFunction(f)) {
-                    return this.data.filter(f) || [];
-                }
-                return this.data;
-            }
-            else if (Type.IsObject(this.data)) {
-                if (Str.HasValue(f) && Type.IsFunction(other)) {
-                    const name = f; f = other;
-                    const data = this.get(name);
-                    if (Type.IsArray(data)) {
-                        return data.filter(f) || [];
-                    }
-                    return data;
-                }
-                return this.data;
-            }
-        }).bind(response);
-
-        response.map = (function(f, other) {
-            if (!this || !this.__usefetch_response) return;
-            if (Type.IsArray(this.data)) {
-                if (Type.IsFunction(f)) {
-                    return this.data.map(f) || [];
-                }
-                return this.data;
-            }
-            else if (Type.IsObject(this.data)) {
-                if (Str.HasValue(f) && Type.IsFunction(other)) {
-                    const name = f; f = other;
-                    const data = this.get(name);
-                    if (Type.IsArray(data)) {
-                        return data.map(f) || [];
-                    }
-                    return data;
-                }
-                return this.data;
-            }
-        }).bind(response);
-
-        response.forEach = (function(f, other) {
-            if (!this || !this.__usefetch_response) return;
-            if (Type.IsArray(this.data)) {
-                if (Type.IsFunction(f)) {
-                    this.data.forEach(f);
-                }
-            }
-            else if (Type.IsObject(this.data)) {
-                if (Str.HasValue(f) && Type.IsFunction(other)) {
-                    const name = f; f = other;
-                    const data = this.get(name);
-                    if (Type.IsArray(data)) {
-                        data.forEach(f);
-                    }
-                }
-            }
-        }).bind(response);
-
-        response.json = (function(formatted = false) {
-            if (!this || !this.__usefetch_response) return;
-            return Type.IsBoolean(formatted) && formatted ? Json.Format(this.data) : Json.Str(this.data);
-        }).bind(response);
-
-        response.yaml = (function() {
-            if (!this || !this.__usefetch_response) return;
-            return Yaml.Format(this.data);
-        }).bind(response);
-    }
+    _defineResponseConvenienceFunctions(response);
 
     return response;
 }
@@ -521,13 +351,13 @@ const _useFetched = () => {
 // argument is ONLY set when called via the refresh function returned by the useFetch
 // hook; it is the previous (current, at this point) fetched data.
 //
-const _doFetch = (args, current = undefined) => {
+function _doFetch(args, current = undefined) {
 
     if (args.nofetch || !Str.HasValue(args.url)) {
         return;
     }
 
-    function handleResponse(response, id) {
+    function _handleResponse(response, id) {
         const status = response.status;
         Debug.Info(`FETCH RESPONSE: ${args.method} ${args.url} -> HTTP ${status}`, response.data);
         //
@@ -550,14 +380,19 @@ const _doFetch = (args, current = undefined) => {
         //
         args.setData(data);
         args.setStatus(status);
+        args.setError(null);
         args.setLoading(false);
         noteFetchEnd(id, data);
-        const onArg = { data: data, loading: false, status: status, timeout: false, error: null };
-        args.onSuccess(onArg);
-        args.onDone(onArg);
+        const responseArg = { data: data, loading: false, status: status, timeout: false, error: null };
+        _defineResponseConvenienceFunctions(responseArg);
+        args.onSuccess(responseArg);
+        args.onDone(responseArg);
+        // const onArg = { data: data, loading: false, status: status, timeout: false, error: null };
+        // args.onSuccess(onArg);
+        // args.onDone(onArg);
     }
 
-    function handleError(error, id) {
+    function _handleError(error, id) {
         let status = error.response?.status || 0;
         args.setData(null);
         args.setStatus(status);
@@ -616,9 +451,13 @@ const _doFetch = (args, current = undefined) => {
             args.setError(`Unknown HTTP error (code: ${error.code}).`);
         }
         noteFetchEnd(id);
-        const onArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
-        args.onError(onArg);
-        args.onDone(onArg);
+        const responseArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
+        _defineResponseConvenienceFunctions(responseArg);
+        args.onError(responseArg);
+        args.onDone(responseArg);
+        // const onArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
+        // args.onError(onArg);
+        // args.onDone(onArg);
     }
 
     function noteFetchBegin(fetch) {
@@ -655,15 +494,15 @@ const _doFetch = (args, current = undefined) => {
     axios(fetch)
         .then(response => {
             if (args.delay > 0) {
-                window.setTimeout(() => handleResponse(response, id), args.delay);
+                window.setTimeout(() => _handleResponse(response, id), args.delay);
             }
             else {
-                handleResponse(response, id);
+                _handleResponse(response, id);
             }
         })
         .catch(error => {
             Debug.Info(`FETCH EXCEPTION: ${args.method} ${args.url}`, error);
-            handleError(error, id);
+            _handleError(error, id);
         });
 }
 
@@ -738,4 +577,174 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
         delete args.nofetch;
     }
     return args;
+}
+
+
+// This functionality is experimental (perhaps too clever by half):
+// Specialized, specific data update functions, e.g. to prepend, append, or insert
+// into array, etc. Simplifies acess to useFetch (return) value, i.e not having to
+// always dereference via useFetchResult.data. And since we're doing this at all,
+// might as well introduce some niceties to these functions.
+//
+function _defineResponseConvenienceFunctions(response) {
+
+    response.__response = true;
+
+    Object.defineProperty(response, "length", { get:
+        (function() {
+            if (!this || !this.__response) return;
+            if (Type.IsArray(this.data)) {
+                return this.data.length;
+            }
+        }).bind(response)
+    });
+
+    Object.defineProperty(response, "null", { get:
+        (function() {
+            if (!this || !this.__response) return;
+            return this.data === undefined || this.data === null;
+        }).bind(response)
+    });
+
+    Object.defineProperty(response, "empty", { get:
+        (function() {
+            if (!this || !this.__response) return;
+            return this.data === undefined || this.data === null ||
+                   (Type.IsArray(this.data) && this.data.length === 0) ||
+                   (Type.IsObject(this.data) && Object.keys(this.data).length === 0);
+        }).bind(response)
+    });
+
+    response.get = (function(index) {
+        if (!this || !this.__response) return;
+        let data = this.data;
+        if (Type.IsArray(data)) {
+            if (Type.IsInteger(index)) {
+                if (index < 0) index = 0;
+                if (index >= data.length) index = data.length - 1;
+                data = data[index];
+            }
+        }
+        else if (Type.IsObject(data)) {
+            if (Str.HasValue(index)) {
+                const names = index.split(".");
+                for (const name of names) {
+                    if (!Type.IsObject(data)) {
+                        return null;
+                    }
+                    data = data[name];
+                }
+            }
+        }
+        return data;
+    }).bind(response);
+
+    response.append = (function(element) {
+        if (!this || !this.__response) return;
+        if (Type.IsArray(this.data)) {
+            if (element) {
+                this.data.push(element);
+                this.update();
+            }
+        }
+    }).bind(response);
+
+    response.prepend = (function(element) {
+        if (!this || !this.__response) return;
+        if (Type.IsArray(this.data)) {
+            if (element) {
+                //
+                // For some reason this (unshift, and push above) doesn't require
+                // updating after, at least for the case I'm seeing (in AwsS3Path);
+                // but doing a splice (below) I *do* need to update. Understand the
+                // latter, just not sure why the former works without explicit update.
+                // https://beta.reactjs.org/learn/updating-arrays-in-state
+                //
+                this.data.unshift(element);
+                this.update();
+            }
+        }
+    }).bind(response);
+
+    response.remove = (function(index) {
+        if (!this || !this.__response) return;
+        if (Type.IsArray(this.data)) {
+            if (Type.IsInteger(index)) {
+                if (index < 0) index = 0;
+                if (index >= this.data.length) index = this.data.length - 1;
+                this.data.splice(index, 1);
+                this.update();
+            }
+        }
+    }).bind(response);
+
+    response.filter = (function(f, other) {
+        if (!this || !this.__response) return;
+        if (Type.IsArray(this.data)) {
+            if (Type.IsFunction(f)) {
+                return this.data.filter(f) || [];
+            }
+            return this.data;
+        }
+        else if (Type.IsObject(this.data)) {
+            if (Str.HasValue(f) && Type.IsFunction(other)) {
+                const name = f; f = other;
+                const data = this.get(name);
+                if (Type.IsArray(data)) {
+                    return data.filter(f) || [];
+                }
+                return data;
+            }
+            return this.data;
+        }
+    }).bind(response);
+
+    response.map = (function(f, other) {
+        if (!this || !this.__response) return;
+        if (Type.IsArray(this.data)) {
+            if (Type.IsFunction(f)) {
+                return this.data.map(f) || [];
+            }
+            return this.data;
+        }
+        else if (Type.IsObject(this.data)) {
+            if (Str.HasValue(f) && Type.IsFunction(other)) {
+                const name = f; f = other;
+                const data = this.get(name);
+                if (Type.IsArray(data)) {
+                    return data.map(f) || [];
+                }
+                return data;
+            }
+            return this.data;
+        }
+    }).bind(response);
+
+    response.forEach = (function(f, other) {
+        if (!this || !this.__response) return;
+        if (Type.IsArray(this.data)) {
+            if (Type.IsFunction(f)) {
+                this.data.forEach(f);
+            }
+        }
+        else if (Type.IsObject(this.data)) {
+            if (Str.HasValue(f) && Type.IsFunction(other)) {
+                const name = f; f = other;
+                const data = this.get(name);
+                if (Type.IsArray(data)) {
+                    data.forEach(f);
+                }
+            }
+        }
+    }).bind(response);
+
+    response.json = (function(formatted = false) {
+        if (!this || !this.__response) return;
+        return Type.IsBoolean(formatted) && formatted ? Json.Format(this.data) : Json.Str(this.data);
+    }).bind(response);
+
+    response.yaml = (function() {
+        if (!this || !this.__response) return;
+        return Yaml.Format(this.data);
+    }).bind(response);
 }

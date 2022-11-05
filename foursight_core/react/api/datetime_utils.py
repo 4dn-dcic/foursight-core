@@ -1,11 +1,12 @@
 import datetime
 import pytz
+from typing import Union
 
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)  # I.e.: 1970-01-01 00:00:00 UTC
 
 
-def convert_utc_datetime_to_useastern_datetime_string(t: datetime.datetime) -> str:
+def convert_utc_datetime_to_useastern_datetime_string(t: Union[datetime.datetime, str]) -> str:
     """
     Converts the given UTC datetime object or string into a US/Eastern datetime string
     and returns its value in a form that looks like 2022-08-22 13:25:34 EDT.
@@ -18,6 +19,11 @@ def convert_utc_datetime_to_useastern_datetime_string(t: datetime.datetime) -> s
     """
     try:
         if isinstance(t, str):
+            # Can sometimes get dates (from userr database) which
+            # look like this: 2019-06-20T00:00:00.0000000+00:00
+            # with 7-digits for ms which does not parse (up to 6).
+            if ".0000000" in t:
+                t = t.replace(".0000000", ".000000")
             t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
         t = t.replace(tzinfo=pytz.UTC).astimezone(pytz.timezone("US/Eastern"))
         return t.strftime("%Y-%m-%d %H:%M:%S %Z")
