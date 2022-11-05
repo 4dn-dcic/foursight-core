@@ -11,6 +11,7 @@ import Str from '../utils/Str';
 import TableHead from '../TableHead';
 import PagedTableComponent from '../PagedTableComponent';
 import Time from '../utils/Time';
+import Type from '../utils/Type';
 
 const UsersPage = () => {
 
@@ -19,6 +20,10 @@ const UsersPage = () => {
     const users = useFetch();
 
     function update(limit, offset, sort, onDone) {
+        if (!Type.IsInteger(limit)) limit = parseInt(args.get("limit")) || 20;
+        if (!Type.IsInteger(offset)) offset = parseInt(args.get("offset")) || 0;
+        if (!Type.IsInteger(sort)) sort = args.get("sort") || "email.asc";
+        if (!Type.IsFunction(onDone)) onDone = () => {}
         users.refresh({
             url: Server.Url(`/users/?limit=${limit}&offset=${offset}&sort=${sort}`, environ),
             onDone: (response) => onDone(response)
@@ -41,6 +46,14 @@ const UsersPage = () => {
 
     return <>
         <div className="container">
+           <div>
+                &nbsp;<b>Users</b>
+                <div style={{float:"right"}}>
+                    <Link to={Client.Path("/users/create")} style={{fontSize:"small",paddingRight:"0.2em"}}>New User</Link>&nbsp;|&nbsp;
+                    <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={update}>{Char.Refresh}&nbsp;</b>
+                </div>
+                <div style={{height:"2px",background:"darkblue",marginTop:"2pt",marginBottom:"6pt"}}></div>
+            </div>
             <PagedTableComponent
                 columns={columns}
                 data={users}

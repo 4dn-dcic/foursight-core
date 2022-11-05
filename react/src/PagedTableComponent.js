@@ -14,7 +14,7 @@ import Time from './utils/Time';
 const PagedTableComponent = ({columns, data, update, initialSort, children}) => {
 
     const [ args, setArgs ] = useSearchParams();
-    const [ limit, setLimit ] = useState(parseInt(args.get("limit")) || 5);
+    const [ limit, setLimit ] = useState(parseInt(args.get("limit")) || 20);
     const [ offset, setOffset ] = useState(parseInt(args.get("offset")) || 0);
     const [ sort, setSort ] = useState(args.get("sort") || initialSort)
     const [ pageNumber, setPageNumber ] = useState();
@@ -51,47 +51,45 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
     }
 
     return <>
-        <div className="container">
-            <table style={{width:"100%"}} border="0"><tbody><tr><td style={{width:"90%"}}>
-                <PaginationControl
-                    pages={pageCount}
-                    page={pageNumber}
-                    onChange={onPageNumber}
-                    loading={data?.loading}
-                    spinner={true} />
-                </td><td style={{align:"right",fontSize:"small",fontWeight:"bold",whiteSpace:"nowrap"}}>
-                      Page Size:&nbsp;
-                      <span style={{cursor:data?.loading ? "not-allowed" : "",width:"fit-content"}}>
-                      <span style={{pointerEvents:data?.loading ? "none" : "",width:"fit-content"}}>
-                      <select style={{border:"0",marginRight:"2pt"}} defaultValue={limit} onChange={onPageSize}>
-                          <option>5</option>
-                          <option>10</option>
-                          <option>25</option>
-                          <option>50</option>
-                          <option>75</option>
-                          <option>100</option>
-                          <option>200</option>
-                      </select>
-                      </span></span>&nbsp;
-                      <span>Showing {offset + 1} ... {offset + limit}&nbsp;|&nbsp;</span>
-                      <span>More: {data?.get("paging.more")}&nbsp;|&nbsp;</span>
-                      <span>Total: {data?.get("paging.total")}&nbsp;</span>
-                </td></tr></tbody></table>
-                <div className="info boxstyle" style={{marginTop:"4pt",paddingTop:"8pt"}}>
-                <table style={{width:"100%"}}>
-                    <TableHead
-                        columns={columns}
-                        sort={sort}
-                        list={data?.get("list")}
-                        update={onSort}
-                        bottomline={true}
-                        style={{color:"darkblue",fontWeight:"bold"}}
-                        loading={data?.loading} />
-                    <tbody>
-                        {children}
-                    </tbody>
-                </table>
-            </div>
+        <table style={{width:"100%"}} border="0"><tbody><tr><td style={{width:"90%"}}>
+            <PaginationControl
+                pages={pageCount}
+                page={pageNumber}
+                onChange={onPageNumber}
+                loading={data?.loading}
+                spinner={true} />
+            </td><td style={{align:"right",fontSize:"9pt",fontWeight:"bold",color:"darkblue",whiteSpace:"nowrap"}}>
+                  Page Size:&nbsp;
+                  <span style={{cursor:data?.loading ? "not-allowed" : "",width:"fit-content"}}>
+                  <span style={{pointerEvents:data?.loading ? "none" : "",width:"fit-content"}}>
+                  <select style={{border:"0",marginRight:"2pt"}} defaultValue={limit} onChange={onPageSize}>
+                      <option>5</option>
+                      <option>10</option>
+                      <option>25</option>
+                      <option>50</option>
+                      <option>75</option>
+                      <option>100</option>
+                      <option>200</option>
+                  </select>
+                  </span></span>&nbsp;
+                  <span>Showing {offset + 1} ... {offset + limit}&nbsp;|&nbsp;</span>
+                  <span>More: {data?.get("paging.more")}&nbsp;|&nbsp;</span>
+                  <span>Total: {data?.get("paging.total")}&nbsp;</span>
+            </td></tr></tbody></table>
+            <div className="info boxstyle" style={{marginTop:"4pt",paddingTop:"8pt"}}>
+            <table style={{width:"100%"}}>
+                <TableHead
+                    columns={columns}
+                    sort={sort}
+                    list={data?.get("list")}
+                    update={onSort}
+                    bottomline={true}
+                    style={{color:"darkblue",fontWeight:"bold"}}
+                    loading={data?.loading} />
+                <tbody>
+                    {children}
+                </tbody>
+            </table>
         </div>
     </>
 };
