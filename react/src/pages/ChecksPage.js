@@ -1197,8 +1197,8 @@ const ChecksPage = (props) => {
                     <tr style={{fontSize:"small"}}>
                         <td style={tdLabelStyle}>Code:</td>
                         <td style={tdContentStyle} className="tool-tip" data-text="S3 Code Location">
-                            {lambda.lambda_code_s3_bucket_key} <br />
-                            <small>{lambda.lambda_code_s3_bucket}</small>
+                            <a href={`https://s3.console.aws.amazon.com/s3/object/${lambda.lambda_code_s3_bucket}?region=us-east-1&prefix=${lambda.lambda_code_s3_bucket_key}`} target="_blank">{lambda.lambda_code_s3_bucket_key}</a> <br />
+                            <small><a href={`https://s3.console.aws.amazon.com/s3/buckets/${lambda.lambda_code_s3_bucket}?region=us-east-1&tab=objects`} target="_blank">{lambda.lambda_code_s3_bucket}</a></small>
                         </td>
                     </tr>
                     <tr>
@@ -1213,14 +1213,14 @@ const ChecksPage = (props) => {
                             <td style={tdLabelStyle}>Checks:</td>
                             <td style={tdContentStyle}>
                                 <table border="0"><tbody>
-                                    { lambda.lambda_checks?.map((lambda_check) => <>
-                                        <tr>
+                                    { lambda.lambda_checks?.map((lambda_check) =>
+                                        <tr key={lambda_check.check_name}>
                                             <td style={{...tdContentStyle,color:"darkgreen"}} className="tool-tip" data-text={lambda_check.check_name}>
                                                 <b style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(lambda_check.check_name, lambda_check.check_group))}>{lambda_check.check_title}</b> <br />
                                                 <i style={{cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(lambda_check.check_group))}>{lambda_check.check_group}</i>
                                             </td>
                                         </tr>
-                                    </>)}
+                                    )}
                                 </tbody></table>
                             </td>
                         </tr>
