@@ -59,11 +59,16 @@ function GetGoogleLoginLogoImage() {
     return "https://cdn-icons-png.flaticon.com/512/2991/2991148.png";
 }
 
+function GetClearCacheImage() {
+    return "https://static.thenounproject.com/png/2495429-200.png";
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
+    ClearCache:                GetClearCacheImage,
     Clipboard:                 GetClipboardImage,
     GitHub:                    GetGitHubImage,
     Lock:                      GetLockImage,

@@ -6,7 +6,7 @@ from dcicutils.diff_utils import DiffManager
 from dcicutils.env_utils import short_env_name
 from dcicutils.misc_utils import override_environ, get_error_message
 from dcicutils.obfuscation_utils import obfuscate_dict
-from dcicutils.secrets_utils import get_identity_secrets
+from dcicutils.secrets_utils import get_identity_name, get_identity_secrets
 from .misc_utils import sort_dictionary_by_case_insensitive_keys
 
 logging.basicConfig()
@@ -50,6 +50,14 @@ class Gac:
             return " OR ".join(matching_gac_names)
 
     @staticmethod
+    @memoize(100)
+    def get_gac_info():
+        return {
+            "name": get_identity_name(),
+            "values": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(get_identity_secrets())),
+        }
+
+    @staticmethod
     def compare_gacs(env_name_a: str, env_name_b: str) -> dict:
         gac_name_a = Gac.get_gac_name(env_name_a)
         gac_name_b = Gac.get_gac_name(env_name_b)
@@ -68,3 +76,4 @@ class Gac:
     @staticmethod
     def cache_clear() -> list:
         Gac.get_gac_name.cache_clear()
+        Gac.get_gac_info.cache_clear()

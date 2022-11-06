@@ -123,8 +123,8 @@ class AppUtilsCore(ReactApi, Routes):
         # self.user_record = None
         # self.user_record_error = None
         # self.user_record_error_email = None
-        self.lambda_last_modified = None
-        self.cached_portal_url = {}
+        self._cached_lambda_last_modified = None
+        self._cached_portal_url = {}
         super(AppUtilsCore, self).__init__()
 
     @classmethod
@@ -257,18 +257,18 @@ class AppUtilsCore(ReactApi, Routes):
             user_record["exception"] = exception
 
     def get_portal_url(self, env_name: str) -> str:
-        cached_portal_url = self.cached_portal_url.get(env_name)
-        if not cached_portal_url:
+        portal_url = self._cached_portal_url.get(env_name)
+        if not portal_url:
             try:
                 environment_and_bucket_info = \
                     self.environment.get_environment_and_bucket_info(env_name, self.stage.get_stage())
                 portal_url = environment_and_bucket_info.get("fourfront")
-                self.cached_portal_url[env_name] = portal_url
+                self._cached_portal_url[env_name] = portal_url
             except Exception as e:
                 message = f"Error getting portal URL: {get_error_message(e)}"
                 logger.error(message)
                 raise Exception(message)
-        return self.cached_portal_url[env_name]
+        return self._cached_portal_url[env_name]
 
     def get_auth0_client_id(self, env_name: str) -> str:
         auth0_client_id = os.environ.get("CLIENT_ID")
@@ -711,6 +711,8 @@ class AppUtilsCore(ReactApi, Routes):
                 logger.warn(f"Reloading lambda: {lambda_name}")
                 boto_lambda.update_function_configuration(FunctionName=lambda_name, Description=lambda_description)
                 logger.warn(f"Reloaded lambda: {lambda_name}")
+                self._cached_lambda_last_modified = None
+                return True
         except Exception as e:
             logger.warn(f"Error reloading lambda ({lambda_name}): {e}")
         return False
@@ -721,14 +723,14 @@ class AppUtilsCore(ReactApi, Routes):
         See comments in reload_lambda on this.
         """
         lambda_current = False
-        if not lambda_name or lambda_name.lower() == "current":
+        if not lambda_name or lambda_name.lower() == "current" or lambda_name.lower() == "current":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
             if not lambda_name:
                 return None
             lambda_current = True
         if lambda_current:
-            if self.lambda_last_modified:
-                return self.lambda_last_modified
+            if self._cached_lambda_last_modified:
+                return self._cached_lambda_last_modified
         try:
             boto_lambda = boto3.client("lambda")
             lambda_info = boto_lambda.get_function(FunctionName=lambda_name)
@@ -742,7 +744,7 @@ class AppUtilsCore(ReactApi, Routes):
                     lambda_last_modified = lambda_info["Configuration"]["LastModified"]
                     lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified)
                 if lambda_current:
-                    self.lambda_last_modified = lambda_last_modified
+                    self._cached_lambda_last_modified = lambda_last_modified
                 return lambda_last_modified
         except Exception as e:
             logger.warn(f"Error getting lambda ({lambda_name}) last modified time: {e}")
@@ -1929,6 +1931,10 @@ class AppUtilsCore(ReactApi, Routes):
         if not AppUtilsCore._singleton:
             AppUtilsCore._singleton = cls() if cls else AppUtilsCore()
         return AppUtilsCore._singleton
+
+    def cache_clear(self) -> None:
+        self._cached_lambda_last_modified = None
+        self._cached_portal_url = {}
 
 
 class AppUtils(AppUtilsCore):  # for compatibility with older imports

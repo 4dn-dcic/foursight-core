@@ -257,6 +257,7 @@ class ReactRoutes:
         """
         For troubleshooting only. Clear any/all internal caches.
         """
+        print('xyzzy/__clearcache__')
         return app.core.reactapi_clear_cache(app.current_request.to_dict())
 
     # ----------------------------------------------------------------------------------------------

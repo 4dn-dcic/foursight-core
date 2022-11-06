@@ -1,6 +1,7 @@
 from chalice import Response, __version__ as chalice_version
 import copy
 import datetime
+from functools import lru_cache
 import json
 import os
 import pkg_resources
@@ -13,7 +14,6 @@ from itertools import chain
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils import ff_utils
 from dcicutils.obfuscation_utils import obfuscate_dict
-from dcicutils.secrets_utils import get_identity_name, get_identity_secrets
 from ...app import app
 from ...decorators import Decorators
 from .aws_s3 import AwsS3
@@ -39,6 +39,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._react_ui = ReactUi(self)
         self._checks = Checks(app.core.check_handler.CHECK_SETUP, self._envs)
         self._cached_header = {}
+        self._cached_sqs_queue_url = None
+
+    def get_sqs_queue_url(self):
+        if not self._cached_sqs_queue_url:
+            self._cached_sqs_queue_url = app.core.sqs.get_sqs_queue().url
+        return self._cached_sqs_queue_url
 
     def react_serve_static_file(self, env: str, paths: list) -> Response:
         """
@@ -135,6 +141,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
         }
         return response
 
+    @lru_cache(1)
+    def _get_env_and_bucket_info(env: str, stage_name: str) -> dict:
+        return sort_dictionary_by_case_insensitive_keys(
+            obfuscate_dict(app.core.environment.get_environment_and_bucket_info(env, stage_name)))
+
     def reactapi_info(self, request: dict, env: str) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/info
@@ -148,8 +159,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             env_unknown = False
         if not env_unknown:
             try:
-                environment_and_bucket_info = sort_dictionary_by_case_insensitive_keys(
-                    obfuscate_dict(app.core.environment.get_environment_and_bucket_info(env, stage_name))),
+                environment_and_bucket_info = self._get_env_and_bucket_info(env, stage_name)
                 portal_url = app.core.get_portal_url(env)
             except Exception as e:
                 environment_and_bucket_info = None
@@ -192,10 +202,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "portal": portal_url,
                 "es": app.core.host,
                 "rds": os.environ["RDS_HOSTNAME"],
-                # TODO: cache this (slow).
-                "sqs": app.core.sqs.get_sqs_queue().url,
+                "sqs": self.get_sqs_queue_url(),
             },
-            # TODO: cache this (slow).
             "buckets": {
                 "env": app.core.environment.get_env_bucket_name(),
                 "foursight": get_foursight_bucket(envname=env if env else default_env, stage=stage_name),
@@ -208,18 +216,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "endpoint": request.get("path"),
                 "loaded": app.core.get_load_time()
             },
-            # TODD: Move these out to another API.
             "checks": {
-                "file": app.core.check_handler.CHECK_SETUP_FILE,
-                "running": 0,
-                "queued": 0
+                "file": app.core.check_handler.CHECK_SETUP_FILE
             },
             "known_envs": self._envs.get_known_envs_with_gac_names(),
-            # TODO: cache this (slow).
-            "gac": {
-                "name": get_identity_name(),
-                "values": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(get_identity_secrets())),
-             },
+            "gac": Gac.get_gac_info(),
             "environ": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(dict(os.environ)))
         }
         return self.create_success_response(body)
@@ -625,12 +626,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /__clearcache___
         Not yet implemented.
         """
-        self.cache_clear()
-        return self.create_success_response({"status": "Caches cleared."})
-
-    def cache_clear(self) -> None:
+        app.core.cache_clear()
         super().cache_clear()
         self._checks.cache_clear()
         self._react_ui.cache_clear()
         Gac.cache_clear()
         self._cached_header = {}
+        self._cached_sqs_queue_url = None
+        self._get_env_and_bucket_info.cache_clear()
+        return self.create_success_response({"status": "Caches cleared."})
