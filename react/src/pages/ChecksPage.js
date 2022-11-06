@@ -1169,7 +1169,7 @@ const ChecksPage = (props) => {
 
     const LambdaView = ({lambda}) => {
         const tdContentStyle = { paddingRight: "4pt", verticalAlign: "top", fontSize: "small" };
-        const tdLabelStyle = { ...tdContentStyle, paddingRight: "4pt", verticalAlign: "top", textAlign:"right" };
+        const tdLabelStyle = { ...tdContentStyle, width:"5%", whiteSpace: "nowrap", paddingRight: "4pt", verticalAlign: "top", textAlign:"right" };
         return <>
             <div className="boxstyle check-pass" style={{marginTop:"3pt",padding:"6pt"}}>
                 <b>{lambda.lambda_name}</b>
