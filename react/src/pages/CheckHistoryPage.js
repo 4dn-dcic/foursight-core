@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useFetch } from '../utils/Fetch';
 import { StandardSpinner } from '../Spinners';
-import PaginationControl from '../PaginationControl';
+import PaginationComponent from '../PaginationComponent';
 import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
 import Image from '../utils/Image';
@@ -54,18 +54,6 @@ const CheckHistoryPage = (props) => {
                 return data;
             }
         });
-/*
-        const url = Server.Url(`/checks/${check}/history?limit=${limit}&offset=${offset}&sort=${sort}`, environ);
-        Fetch.get(url, response => {
-            response.loading = false;
-            setHistory(response);
-            setLimit(limit);
-            setOffset(offset);
-            setSort(sort);
-            setPages(Math.ceil(response.paging.total / limit));
-            setPage(Math.floor(offset / limit));
-        }, () => { history.loading = false; }, () => { history.error = true; } );
-*/
     }
 
     function onPaginationClick(event) {
@@ -97,15 +85,6 @@ const CheckHistoryPage = (props) => {
                 specificHistory.__resultError = true;
             }
         });
-/*
-        const url = Server.Url(`/checks/${check}/${uuid}`, environ);
-        Fetch.get(url, response => {
-            if (history.__resultShowing) {
-                history.__result = response;
-                setHistory(e => ({...e}));
-            }
-        }, () => { history.__resultLoading = false; setHistory(e => ({...e})); }, () => { history.__resultError = true; } );
-*/
     }
 
     function hideResult(specificHistory) {
@@ -261,7 +240,7 @@ const CheckHistoryPage = (props) => {
                 <td style={{paddingRight:"10pt",paddingBottom:"4pt"}}>
                     <table style={{minWidth:"620pt",width:"100%"}}><tbody><tr>
                     <td style={{width:"90%"}}>
-                        <PaginationControl
+                        <PaginationComponent
                             pages={pages}
                             onChange={onPaginationClick}
                             page={page}

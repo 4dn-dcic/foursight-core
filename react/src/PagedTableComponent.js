@@ -4,46 +4,90 @@ import { RingSpinner } from './Spinners';
 import { useFetch } from './utils/Fetch';
 import Char from './utils/Char';
 import Client from './utils/Client';
-import PaginationControl from './PaginationControl';
+import PaginationComponent from './PaginationComponent';
 import { PuffSpinner, BarSpinner } from './Spinners';
 import Server from './utils/Server';
 import Str from './utils/Str';
 import TableHead from './TableHead';
 import Time from './utils/Time';
+import Type from './utils/Type';
 
 const PagedTableComponent = ({columns, data, update, initialSort, children}) => {
 
     const [ args, setArgs ] = useSearchParams();
-    const [ limit, setLimit ] = useState(parseInt(args.get("limit")) || 20);
-    const [ offset, setOffset ] = useState(parseInt(args.get("offset")) || 0);
-    const [ sort, setSort ] = useState(args.get("sort") || initialSort)
-    const [ pageNumber, setPageNumber ] = useState();
-    const [ pageCount, setPageCount ] = useState();
+    const [ limit, setLimit ] = useState(defaultLimit());
+    const [ offset, setOffset ] = useState(defaultOffset());
+    const [ sort, setSort ] = useState(initialSort);
+    const [ total, setTotal ] = useState(0);
+    const [ more, setMore ] = useState(0);
+    const [ pageOffset, setPageOffset ] = useState(calculatePageOffset(offset, limit));
+    const [ pageCount, setPageCount ] = useState(total, limit);
 
     useEffect(() => {
-        updateData();
+        updateData(limit, offset, sort);
     }, [limit, offset, sort]);
 
 
-    function updateData() {
+    function defaultLimit() {
+        return parseInt(args.get("limit")) || 25;
+    }
+
+    function defaultOffset() {
+        return parseInt(args.get("offset")) || 0;
+    }
+
+    function defaultSort() {
+        return args.get("sort") || "";
+    }
+
+    function calculatePageOffset(offset, limit) {
+        return Math.ceil(offset / limit);
+    }
+
+    function calculatePageCount(total, limit) {
+        return Math.ceil(total / limit);
+    }
+
+    function updateData(limit, offset, sort) {
+        if (!Type.IsInteger(limit))  limit  = defaultLimit();
+        if (!Type.IsInteger(offset)) offset = defaultOffset();
+        if (!Str.HasValue(sort))     sort   = defaultSort();
 		setArgs({...args, "limit": limit, "offset": offset, "sort": sort });
         function onDone(response) {
             const total = parseInt(response.get("paging.total"));
+            const more = parseInt(response.get("paging.more"));
             if (limit > total) {
                 setOffset(0);
             }
-            setPageCount(Math.ceil(total / limit));
-            setPageNumber(Math.floor(offset / limit));
+            setTotal(total);
+            setMore(more);
+            setPageCount(calculatePageCount(total, limit));
+            setPageOffset(calculatePageOffset(offset, limit));
         }
         update(limit, offset, sort, onDone);
     }
 
     function onPageSize(event) {
-        setLimit(parseInt(event.target.value));
+        //
+        // If the page size changes got back to the first page.
+        // Seem to have to reload the entire page to get the PaginationComponent page offset to update;
+        // the underlying react-paginate component does not update its (internal) page offset component
+        // unless it is done directly using its own UI state.
+        //
+        const limit = parseInt(event.target.value);
+        if (offset > 0) {
+		    setArgs({...args, "limit": limit, "offset": 0 });
+            window.location.reload();
+        }
+        else {
+            setLimit(limit);
+        }
     }
 
-    function onPageNumber(event) {
-        setOffset(event.selected * limit % parseInt(data?.get("paging.total")));
+    function onPageOffset(event) {
+        const pageOffset = event.selected;
+        const offset = pageOffset * limit;
+        setOffset(offset);
     }
 
     function onSort(key, order) {
@@ -52,10 +96,10 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
 
     return <>
         <table style={{width:"100%"}} border="0"><tbody><tr><td style={{width:"90%"}}>
-            <PaginationControl
+            <PaginationComponent
                 pages={pageCount}
-                page={pageNumber}
-                onChange={onPageNumber}
+                page={pageOffset}
+                onChange={onPageOffset}
                 loading={data?.loading}
                 spinner={true} />
             </td><td style={{align:"right",fontSize:"9pt",fontWeight:"bold",color:"darkblue",whiteSpace:"nowrap"}}>
@@ -73,8 +117,8 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
                   </select>
                   </span></span>&nbsp;
                   <span>Showing {offset + 1} ... {offset + limit}&nbsp;|&nbsp;</span>
-                  <span>More: {data?.get("paging.more")}&nbsp;|&nbsp;</span>
-                  <span>Total: {data?.get("paging.total")}&nbsp;</span>
+                  <span>More: {more}&nbsp;|&nbsp;</span>
+                  <span>Total: {total}&nbsp;</span>
             </td></tr></tbody></table>
             <div className="info boxstyle" style={{marginTop:"4pt",paddingTop:"8pt"}}>
             <table style={{width:"100%"}}>

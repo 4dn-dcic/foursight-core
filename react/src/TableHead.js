@@ -44,10 +44,13 @@ const TableHead = ({columns, list, update, sort = null, state = null, lines = fa
         return (Type.IsFunction(a) && Type.IsFunction(b)) ? a.name === b.name : a === b;
     }
     if (!Type.IsNonEmptyObject(state) && Str.HasValue(sort)) {
+            console.log('tablehead/sort')
+            console.log(sort)
         state = {
             key: sort.replace(".asc", "").replace(".desc", ""),
             order: sort.endsWith(".desc") ? -1 : 1
         };
+            console.log(state)
     }
     if (list && !list.__sort) {
         if (state) {

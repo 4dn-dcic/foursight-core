@@ -4,7 +4,6 @@ import { RingSpinner } from '../Spinners';
 import { useFetch } from '../utils/Fetch';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
-import PaginationControl from '../PaginationControl';
 import { PuffSpinner, BarSpinner } from '../Spinners';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
@@ -20,9 +19,9 @@ const UsersPage = () => {
     const users = useFetch();
 
     function update(limit, offset, sort, onDone) {
-        if (!Type.IsInteger(limit)) limit = parseInt(args.get("limit")) || 20;
+        if (!Type.IsInteger(limit)) limit = parseInt(args.get("limit")) || 25;
         if (!Type.IsInteger(offset)) offset = parseInt(args.get("offset")) || 0;
-        if (!Type.IsInteger(sort)) sort = args.get("sort") || "email.asc";
+        if (!Str.HasValue(sort)) sort = args.get("sort") || "email.asc";
         if (!Type.IsFunction(onDone)) onDone = () => {}
         users.refresh({
             url: Server.Url(`/users/?limit=${limit}&offset=${offset}&sort=${sort}`, environ),
@@ -37,9 +36,9 @@ const UsersPage = () => {
         { label: "User", key: "email" },
         { label: "Groups", key: "groups" },
         { label: "Project", key: "project" },
-        { label: "Institution", key: "institution" },
-        { label: "Updated" },
-        { label: "Created" }
+        { label: "Institution", key: "user_institution" },
+        { label: "Updated", key: "data_modified" }, // DOES NOT WORK (nested in last_modified)
+        { label: "Created", key: "date_created" }
     ];
 
     const tdStyle = { verticalAlign: "top", paddingRight: "1pt", paddingTop: "4pt", paddingBottom: "8pt" };
