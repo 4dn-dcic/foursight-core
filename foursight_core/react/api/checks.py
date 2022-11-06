@@ -243,13 +243,19 @@ class Checks:
             check_item_schedule = check_item.get("schedule")
             if check_item_schedule:
                 for check_item_schedule_name in check_item_schedule.keys():
-                    for la in lambdas:
-                        if (la["lambda_handler"] == check_item_schedule_name
-                                or la["lambda_handler"] == "app." + check_item_schedule_name):
-                            if not la.get("lambda_checks"):
-                                la["lambda_checks"] = [check_item_schedule_name]
-                            elif check_item_schedule_name not in la["lambda_checks"]:
-                                la["lambda_checks"].append(check_item_schedule_name)
+                    for lambda_item in lambdas:
+                        if (lambda_item["lambda_handler"] == check_item_schedule_name
+                                or lambda_item["lambda_handler"] == "app." + check_item_schedule_name):
+                            if not lambda_item.get("lambda_checks"):
+                                lambda_item["lambda_checks"] = []
+                            lambda_item["lambda_checks"].append({
+                                "check_title": check_item.get("title"),
+                                "check_name": check_name,
+                                "check_group": check_item.get("group")
+                            })
+        for lambda_item in lambdas:
+            if lambda_item.get("lambda_checks"):
+                lambda_item["lambda_checks"].sort(key=lambda item: f"{item['check_group']}.{item['check_name']}")
         return lambdas
 
     def get_annotated_lambdas(self) -> dict:

@@ -210,22 +210,6 @@ const ChecksPage = (props) => {
         </div>
     }
 
-    const LambdasBox = ({props}) => {
-        return <div>
-            <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;Lambdas</div>
-            <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                { lambdas.map((datum, index) =>
-                    <div key={datum.lambda_name} title={datum.lambda_function_name}>
-                        {datum.lambda_name}
-                        { index < lambdas.length - 1 &&
-                            <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
-                        }
-                    </div>
-                )}
-            </div>
-        </div>
-    }
-
     function onClickSelectedGroupsTitle(checks) {
         const showingAnyGroupsResults = isShowingAnyGroupsResults();
         for (let i = 0 ; i < groupList.length ; i++) {
@@ -1128,6 +1112,124 @@ const ChecksPage = (props) => {
         </>
     }
 
+    function toggleLambdaView(lambda) {
+        if (isShowingLambdaView(lambda)) {
+            hideLambdaView(lambda);
+        }
+        else {
+            showLambdaView(lambda);
+        }
+    }
+
+    function isShowingLambdaView(lambda) {
+        return lambda.__showing;
+    }
+
+    function isShowingLambdaPanel() {
+        return lambdas?.filter((lambda) => isShowingLambdaView(lambda))?.length > 0;
+    }
+
+    function showLambdaView(lambda) {
+        lambda.__showing = true;
+        lambdas.update();
+    }
+
+    function hideLambdaView(lambda) {
+        lambda.__showing = false;
+        lambdas.update();
+    }
+
+    const LambdasPanel = ({props}) => {
+        return <div>
+            <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;Lambdas</div>
+            <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+                { lambdas.map((lambda, index) =>
+                    <div key={lambda.lambda_name} title={lambda.lambda_function_name}>
+                        <span onClick={() => toggleLambdaView(lambda)} style={{cursor:"pointer",fontWeight:isShowingLambdaView(lambda) ? "bold" : "default"}}>{lambda.lambda_name}</span>
+                        { index < lambdas.length - 1 &&
+                            <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
+                        }
+                    </div>
+                )}
+            </div>
+        </div>
+    }
+
+    const LambdasView = () => {
+        const lambdasShowing = lambdas?.filter((lambda) => isShowingLambdaView(lambda));
+        if (Type.IsNonEmptyArray(lambdasShowing)) {
+            return <>
+                &nbsp;<b>Lambdas</b>
+                { lambdasShowing?.map(lambda =>
+                     <LambdaView key={lambda.lambda_name} lambda={lambda} />
+                )}
+            </>
+        }
+    }
+
+    const LambdaView = ({lambda}) => {
+        const tdContentStyle = { paddingRight: "4pt", verticalAlign: "top", fontSize: "small" };
+        const tdLabelStyle = { ...tdContentStyle, paddingRight: "4pt", verticalAlign: "top", textAlign:"right" };
+        return <>
+            <div className="boxstyle check-pass" style={{marginTop:"3pt",padding:"6pt"}}>
+                <b>{lambda.lambda_name}</b>
+                <b style={{float:"right",cursor:"pointer"}} onClick={() => hideLambdaView(lambda)}>{Char.X}</b>
+                <table style={{width:"100%"}}><tbody>
+                    <tr><td colSpan="2" style={{height:"4pt"}}></td></tr>
+                    <tr><td colSpan="2" style={{height:"1px",background:"gray"}}></td></tr>
+                    <tr><td colSpan="2" style={{height:"4pt"}}></td></tr>
+                    { (lambda.lambda_schedule) &&  <>
+                        <tr>
+                            <td className="tool-tip" data-text={lambda.lambda_schedule}style={tdLabelStyle}>Schedule:</td>
+                            <td style={tdContentStyle}><i>{lambda.lambda_schedule_description}</i></td>
+                        </tr>
+                        <tr><td colSpan="2" style={{height:"4pt"}}></td></tr>
+                        <tr><td colSpan="2" style={{height:"1px",background:"gray"}}></td></tr>
+                        <tr><td colSpan="2" style={{height:"4pt"}}></td></tr>
+                    </>}
+                    <tr>
+                        <td style={tdLabelStyle}>Handler:</td>
+                        <td style={tdContentStyle} className="tool-tip" data-text={lambda.lambda_function_arn}>
+                            {lambda.lambda_handler} <br />
+                            <small>{lambda.lambda_function_name}</small>
+                        </td>
+                    </tr>
+                    <tr style={{fontSize:"small"}}>
+                        <td style={tdLabelStyle}>Code:</td>
+                        <td style={tdContentStyle} className="tool-tip" data-text="S3 Code Location">
+                            {lambda.lambda_code_s3_bucket_key} <br />
+                            <small>{lambda.lambda_code_s3_bucket}</small>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style={tdLabelStyle}>Code Size:</td>
+                        <td style={tdContentStyle}>{lambda.lambda_code_size}</td>
+                    </tr>
+                    { (lambda?.lambda_checks && lambda?.lambda_checks?.length > 0) && <>
+                        <tr><td colSpan="2" style={{height:"4pt"}}></td></tr>
+                        <tr><td colSpan="2" style={{height:"1px",background:"gray"}}></td></tr>
+                        <tr><td colSpan="2" style={{height:"4pt"}}></td></tr>
+                        <tr>
+                            <td style={tdLabelStyle}>Checks:</td>
+                            <td style={tdContentStyle}>
+                                <table border="0"><tbody>
+                                    { lambda.lambda_checks?.map((lambda_check) => <>
+                                        <tr>
+                                            <td style={{...tdContentStyle,color:"darkgreen"}} className="tool-tip" data-text={lambda_check.check_name}>
+                                                <b style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(lambda_check.check_name, lambda_check.check_group))}>{lambda_check.check_title}</b> <br />
+                                                <i style={{cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(lambda_check.check_group))}>{lambda_check.check_group}</i>
+                                            </td>
+                                        </tr>
+                                    </>)}
+                                </tbody></table>
+                            </td>
+                        </tr>
+                    </>}
+                </tbody></table>
+            </div>
+        </>
+    }
+
     if (checks.error) return <>Cannot load checks from Foursight: {checks.error}</>;
     if (checks.loading) {
         return <>
@@ -1148,13 +1250,14 @@ const ChecksPage = (props) => {
                             <ChecksRawControl />
                         </div>
                         <ChecksStatus />
-                        <LambdasBox />
+                        <LambdasPanel />
                     </td>
                     <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>
                         <ChecksRawView />
                         <SelectedGroupsPanel />
                     </td>
-                    <td style={{paddingLeft:groupList?.length > 0 ? "10pt" : "0",verticalAlign:"top"}}>
+                    <td style={{paddingLeft: (groupList?.length > 0 || isShowingChecksRaw()) ? "10pt" : "0",verticalAlign:"top"}}>
+                        <LambdasView />
                         <RecentRunsView />
                         <ResultsHistoryPanel />
                     </td>
