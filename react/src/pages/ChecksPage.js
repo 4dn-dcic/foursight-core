@@ -1230,7 +1230,7 @@ const ChecksPage = (props) => {
                                     { lambda.lambda_checks?.map((lambda_check) =>
                                         <tr key={lambda_check.check_name}>
                                             <td style={{...tdContentStyle}} className="tool-tip" data-text={lambda_check.check_name}>
-                                                { (false&&getCheck(lambda_check.check_name, lambda_check.check_group)) ? <>
+                                                { (getCheck(lambda_check.check_name, lambda_check.check_group)) ? <>
                                                     <b style={{color:"darkgreen",cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(lambda_check.check_name, lambda_check.check_group))}>{lambda_check.check_title}</b> <br />
                                                     <i style={{color:"darkgreen",cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(lambda_check.check_group))}>{lambda_check.check_group}</i>
                                                 </>:<>
