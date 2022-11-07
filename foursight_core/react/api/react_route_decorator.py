@@ -47,7 +47,7 @@ def route_default() -> Response:
 def route(*args, **kwargs):
     """
     Decorator to wrap the Chalice route decorator to do authentication and authorization
-    checking; tweaks the envpoing path appropriately (for API and static files); sets up
+    checking; tweaks the endpoint path appropriately (for API and static files); sets up
     CORS if necessary (for local development); and handles exceptions. Usage looks like:
 
       @route("/{env}/info", authorize=True)
