@@ -40,7 +40,7 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
-def route_default() -> Response:
+def route_root() -> Response:
     return app.core.create_redirect_response(f"{ROUTE_PREFIX_EXPLICIT}{REACT_UI_PATH_COMPONENT}")
 
 
@@ -56,29 +56,29 @@ def route(*args, **kwargs):
 
     Note that functions decorated with this are (if class members) implicitly STATIC methods.
     """
-    if not isinstance(args, Tuple) or len(args) == 0:
-        raise Exception("No arguments found for route configuration!")
-
-    # Special handling for "default" route, i.e. / (just slash). Default behavior,
+    # Special handling for "root" route, i.e. / (just slash). Default behavior,
     # if NO function specified for the @route, which actually IS allowed, is to
-    # redirect to the main UI route via route_default function above; if a function
+    # redirect to the main UI route via route_root function above; if a function
     # IS specified for the @route then use that. Only complication is for the chalice
     # local case where /api is NOT the AWS lambda enforced base route and in which case
     # we support it explicitly for closer compatibility with the normally deployed case.
-    if "default" in kwargs:
-        if kwargs["default"] == True:
-            # Registration for default routes, i.e. / (and /api for chalice local).
-            def default_route_registration(wrapped_route_function):
+    if "root" in kwargs:
+        if kwargs["root"] == True:
+            # Registration for root routes, i.e. / (and /api for chalice local).
+            def root_route_registration(wrapped_route_function):
                 if not callable(wrapped_route_function):
-                    wrapped_route_function = route_default
-                print(f"Registering default endpoint: GET {ROUTE_EMPTY_PREFIX} -> {wrapped_route_function.__name__}")
+                    wrapped_route_function = route_root
+                print(f"Registering endpoint: GET {ROUTE_EMPTY_PREFIX} -> {wrapped_route_function.__name__}")
                 app.route(ROUTE_EMPTY_PREFIX, methods=["GET"])(wrapped_route_function)
                 if ROUTE_EMPTY_PREFIX != "/":
                     # This is true only for the chalice local case.
-                    print(f"Registering default endpoint: GET / -> {wrapped_route_function.__name__}")
+                    print(f"Registering endpoint: GET / -> {wrapped_route_function.__name__}")
                     app.route("/", methods=["GET"])(wrapped_route_function)
-            return default_route_registration
-        del kwargs["default"]
+            return root_route_registration
+        del kwargs["root"]
+
+    if not isinstance(args, Tuple) or len(args) == 0:
+        raise Exception("No arguments found for route configuration!")
 
     path = args[0]
 
