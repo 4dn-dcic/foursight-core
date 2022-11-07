@@ -1139,6 +1139,20 @@ const ChecksPage = (props) => {
         lambdas.update();
     }
 
+    // Since the /lambdas API doesn't filter by env name like the /checks
+    // API does (perhaps it should, perhaps not), we need to check if the
+    // check and its group associated with the lambda is actually in the
+    // set of checks supported for the selected env.
+
+    function getCheckGroup(groupName) {
+        return checks?.data?.find(check => check.group === groupName);
+    }
+
+    function getCheck(checkName, groupName) {
+        const checkGroup = getCheckGroup(groupName);  
+        return checkGroup && checkGroup?.checks?.find(check => check.name === checkName);
+    }
+
     const LambdasPanel = ({props}) => {
         return <div>
             <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;Lambdas</div>
@@ -1215,9 +1229,14 @@ const ChecksPage = (props) => {
                                 <table border="0"><tbody>
                                     { lambda.lambda_checks?.map((lambda_check) =>
                                         <tr key={lambda_check.check_name}>
-                                            <td style={{...tdContentStyle,color:"darkgreen"}} className="tool-tip" data-text={lambda_check.check_name}>
-                                                <b style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(lambda_check.check_name, lambda_check.check_group))}>{lambda_check.check_title}</b> <br />
-                                                <i style={{cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(lambda_check.check_group))}>{lambda_check.check_group}</i>
+                                            <td style={{...tdContentStyle}} className="tool-tip" data-text={lambda_check.check_name}>
+                                                { (false&&getCheck(lambda_check.check_name, lambda_check.check_group)) ? <>
+                                                    <b style={{color:"darkgreen",cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(lambda_check.check_name, lambda_check.check_group))}>{lambda_check.check_title}</b> <br />
+                                                    <i style={{color:"darkgreen",cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(lambda_check.check_group))}>{lambda_check.check_group}</i>
+                                                </>:<>
+                                                    <b style={{color:"#444444"}}>{lambda_check.check_title}</b> <br />
+                                                    <i style={{color:"#444444"}}>{lambda_check.check_group}</i>
+                                                </>}
                                             </td>
                                         </tr>
                                     )}
