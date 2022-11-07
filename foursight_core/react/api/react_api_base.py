@@ -96,10 +96,13 @@ class ReactApiBase:
         Returns True iff the given Auth0 authentication/login callback request, i.e. from
         the /callback route which is defined in the main routes.py for both React and non-React
         Auth0 authentication/login, is for a React authentication/login. This is communicated
-        via "react" URL parameter in the callback URL, which is setup on the React UI side;
-        note this was PREVIOUSLY done there via a "react" string in Auth0 "scope", but changed
-        so we can get the Auth0 config (e.g. domain) for the POST to Auth0 using our Auth0Config.
-        See: react/src/pages/LoginPage/createAuth0Lock.
+        via a "react" URL parameter in the callback URL, which is setup on the React UI side.
+
+        This was PREVIOUSLY done there via a "react" string in Auth0 "scope" and gotten from the Auth0
+        POST result, but changed so we can get the domain for the Auth0 POST URL from our Auth0Config.
+
+        See: react/src/pages/LoginPage.js/createAuth0Lock
+        See: foursight_core/src/react/api/auth0_config.py/get_callback_url
         """
         return get_request_arg(request, "react") is not None
 
@@ -167,6 +170,7 @@ class ReactApiBase:
         redirect_url = read_cookie(request, "reactredir")
         if not redirect_url:
             if is_running_locally(request):
+                # TODO: Allow https for localhost development.
                 scheme = "http"
                 # Using ROUTE_PREFIX here instead of context because may be just "/" for the local
                 # deploy case because we get here via the /callback endpoint (during authentication).

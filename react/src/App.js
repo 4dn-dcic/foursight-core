@@ -82,8 +82,11 @@ const App = () => {
             <Header />
             <div style={{margin:"20px"}}>
                 <Routes>
+                    <Route path="/api" element={
+                        <Navigate to={`/api/react/${Env.Default()}/env`} />
+                    } />
                     <Route path="/api/react" element={
-                        <Navigate to={"/api/react/env"} />
+                        <Navigate to={`/api/react/${Env.Default()}/env`} />
                     } />
                     <Route path="/api/react/:environ/env" element={
                         <EnvPage />

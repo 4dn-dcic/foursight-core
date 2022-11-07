@@ -2,7 +2,7 @@ from chalice import Response
 from dcicutils.misc_utils import ignored
 from ...app import app
 from .misc_utils import get_request_arg, get_request_args, get_request_body
-from .react_route_decorator import route
+from .react_route_decorator import route, route_default
 
 class ReactRoutes:
 
@@ -239,6 +239,10 @@ class ReactRoutes:
 
     # TODO: See if there is a better way to deal with variadic paths.
     # TODO: Maybe end up serving these from S3, for more security, and smaller Chalice package size.
+
+    @route("/", default=True)
+    def reactui_route_default() -> Response:
+        return route_default()
 
     @route("/", static=True, authorize=False)
     def reactui_route_static_file_noenv() -> Response:

@@ -29,7 +29,10 @@ function KnownEnvRequired({ children }) {
     //
     if (header.loading) return children;
     if (!Env.IsKnown(Env.Current(), header) ) {
-        return <Navigate to={Client.Path("/env")} replace />
+            console.log('KnownEnvRequired')
+            console.log(Env.Current())
+            console.log(Env.Default())
+        return <Navigate to={Client.Path("/env", Env.Default())} replace />
     }
     else {
         return children;

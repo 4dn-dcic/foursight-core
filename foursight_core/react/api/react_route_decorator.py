@@ -8,10 +8,11 @@ import logging
 from typing import Optional, Tuple
 from dcicutils.misc_utils import get_error_message
 from ...app import app
-from ...route_prefixes import ROUTE_CHALICE_LOCAL, ROUTE_PREFIX
+from ...route_prefixes import ROUTE_CHALICE_LOCAL, ROUTE_PREFIX, ROUTE_EMPTY_PREFIX
 
 REACT_API_PATH_COMPONENT = "reactapi"
 REACT_UI_PATH_COMPONENT = "react"
+ROUTE_PREFIX = ROUTE_PREFIX + ("/" if not ROUTE_PREFIX.endswith("/") else "")
 
 # CORS is need ONLY for local DEVELOPMENT, i.e. when using chalice local!
 # Set CORS to True if CHALICE_LOCAL; not needed if running React from Foursight
@@ -39,49 +40,75 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
+def route_default() -> Response:
+    return app.core.create_redirect_response(f"{ROUTE_PREFIX}{REACT_UI_PATH_COMPONENT}")
+
+
 def route(*args, **kwargs):
     """
     Decorator to wrap the Chalice route decorator to do authentication and authorization
     checking; tweaks the envpoing path appropriately (for API and static files); sets up
-    CORS if necessary (for local development); and handles exceptions. Usage looks like this:
+    CORS if necessary (for local development); and handles exceptions. Usage looks like:
 
       @route("/{env}/info", authorize=True)
       def reactapi_route_info(env: str) -> Response:
-          return do_route_processing_and_return_response()
+          return do_route_processing_and_return_response(env)
 
     Note that functions decorated with this are (if class members) implicitly STATIC methods.
     """
     if not isinstance(args, Tuple) or len(args) == 0:
         raise Exception("No arguments found for route configuration!")
 
+    # Special handling for "default" route, i.e. / (just slash). Default behavior,
+    # if NO function specified for the @route, which actually IS allowed, is to
+    # redirect to the main UI route via route_default function above; if a function
+    # IS specified for the @route then use that. Only complication is for the chalice
+    # local case where /api is NOT the AWS lambda enforced base route and in which case
+    # we support it explicitly for closer compatibility with the normally deployed case.
+    if "default" in kwargs:
+        if kwargs["default"] == True:
+            # Registration for default routes, i.e. / (and /api for chalice local).
+            def default_route_registration(wrapped_route_function):
+                if not callable(wrapped_route_function):
+                    wrapped_route_function = route_default
+                app.route(ROUTE_EMPTY_PREFIX, methods=["GET"])(wrapped_route_function)
+                if ROUTE_EMPTY_PREFIX != "/":
+                    # This is true only for the chalice local case.
+                    app.route("/", methods=["GET"])(wrapped_route_function)
+            return default_route_registration
+        del kwargs["default"]
+
     path = args[0]
-    route_prefix = ROUTE_PREFIX + ("/" if not ROUTE_PREFIX.endswith("/") else "")
+
+    # This "static" is for serving static files which live in their own specific directory.
     if "static" in kwargs:
-        # This is for serving static files which live in a different/specific directory.
-        route_prefix = route_prefix + REACT_UI_PATH_COMPONENT
+        if kwargs["static"] == True:
+            path = ROUTE_PREFIX + REACT_UI_PATH_COMPONENT + path
         del kwargs["static"]
     else:
-        route_prefix = route_prefix + REACT_API_PATH_COMPONENT
-    path = route_prefix + path
+        path = ROUTE_PREFIX + REACT_API_PATH_COMPONENT + path
+
     if path.endswith("/"):
         path = path[:-1]
+    if not path.startswith("/"):
+        path = "/" + path
 
+    # This "authorize" is to specify whether or not the route required authorization.
+    # Note we DEFAULT to AUTHORIZE for the route! The only way to turn it off is to
+    # explicitly pass authorize=False to the route decorator.
     if "authorize" in kwargs:
-        authorize = kwargs["authorize"]
-        authorize = isinstance(authorize, bool) and authorize
+        authorize = kwargs["authorize"] == True
         del kwargs["authorize"]
     else:
-        # Note we DEFAULT to AUTHORIZE for the route!
-        # Only way to turn it off is to explicitly pass authorize=False to the route decorator.
         authorize = True
 
+    # As a convenience we allow "method" or "methods" to specify the HTTP verb(s).
+    # If no method(s) given then default to GET.
     if "methods" not in kwargs:
         if "method" in kwargs:
-            # Allow singular method kwarg in addition to Chalice methods kwarg.
             kwargs["methods"] = [kwargs["method"]]
             del kwargs["method"]
         else:
-            # If no methods given then default to GET.
             kwargs["methods"] = ["GET"]
     elif "method" in kwargs:
         del kwargs["method"]
@@ -112,7 +139,9 @@ def route(*args, **kwargs):
             # Only used for (cross-origin) localhost development (e.g. UI on 3000 and API on 8000).
             kwargs["cors"] = _CORS
         # This is the call that actually registers the Chalice route/endpoint.
-        return app.route(path, **kwargs)(route_function)
+        print(f"Registering endpoint: {' '.join(kwargs['methods'])} {path} -> {wrapped_route_function.__name__}")
+        #return app.route(path, **kwargs)(route_function)
+        app.route(path, **kwargs)(route_function)
     return route_registration
 
 

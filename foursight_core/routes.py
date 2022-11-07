@@ -26,28 +26,28 @@ class Routes:
         # Note that we login to the default environment.
         return app.core.auth0_callback(request, app.core.get_default_env())
 
-    if ROUTE_PREFIX != ROUTE_EMPTY_PREFIX:
-        @staticmethod
-        @app.route("/", methods=['GET'])
-        def index_chalice_local():
-            """
-            Redirect with 302 to view page of DEFAULT_ENV
-            Non-protected route
-            """
-            redirect_path = ROUTE_PREFIX + 'view/' + app.core.get_default_env()
-            resp_headers = {'Location': redirect_path}
-            return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
+#   if ROUTE_PREFIX != ROUTE_EMPTY_PREFIX:
+#       @staticmethod
+#       @app.route("/", methods=['GET'])
+#       def index_chalice_local():
+#           """
+#           Redirect with 302 to view page of DEFAULT_ENV
+#           Non-protected route
+#           """
+#           redirect_path = ROUTE_PREFIX + 'view/' + app.core.get_default_env()
+#           resp_headers = {'Location': redirect_path}
+#           return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
-    @staticmethod
-    @app.route(ROUTE_EMPTY_PREFIX, methods=['GET'])
-    def index():
-        """
-        Redirect with 302 to view page of DEFAULT_ENV
-        Non-protected route
-        """
-        redirect_path = ROUTE_PREFIX_EXPLICIT + 'view/' + app.core.get_default_env()
-        headers = {'Location': redirect_path}
-        return Response(status_code=302, body=json.dumps(headers), headers=headers)
+#   @staticmethod
+#   @app.route(ROUTE_EMPTY_PREFIX, methods=['GET'])
+#   def index():
+#       """
+#       Redirect with 302 to view page of DEFAULT_ENV
+#       Non-protected route
+#       """
+#       redirect_path = ROUTE_PREFIX_EXPLICIT + 'view/' + app.core.get_default_env()
+#       headers = {'Location': redirect_path}
+#       return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
     @staticmethod
     @app.route(ROUTE_PREFIX + "view", methods=['GET'])
