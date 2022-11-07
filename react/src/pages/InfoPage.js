@@ -162,9 +162,7 @@ const InfoPage = () => {
         </InfoBox>
         <InfoBox title="Environment & Bucket Names">
             <pre className="info" style={{border:"0",margin:"0",padding:"8",paddingBottom:"8",marginTop:"0"}}>
-                { info.map("buckets.info", bucket_info => {
-                    return <span key={Uuid()}>{Yaml.Format(bucket_info)}{info.get("buckets.info")?.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
-                })}
+                <span key={Uuid()}>{Yaml.Format(info.get("buckets.info"))}{info.get("buckets.info")?.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
             </pre>
         </InfoBox>
         <InfoBox title="Ecosystem">

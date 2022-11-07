@@ -142,7 +142,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return response
 
     @lru_cache(1)
-    def _get_env_and_bucket_info(env: str, stage_name: str) -> dict:
+    def _get_env_and_bucket_info(self, env: str, stage_name: str) -> dict:
         return sort_dictionary_by_case_insensitive_keys(
             obfuscate_dict(app.core.environment.get_environment_and_bucket_info(env, stage_name)))
 
