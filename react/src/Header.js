@@ -136,7 +136,7 @@ const Header = (props) => {
                     { (Auth.IsLoggedIn(header)) ? (<span>
                             &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</span>
                     </span>):(<span>
-                        &nbsp;|&nbsp; <NavLink to={Client.Path("/login?auth")} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
+                        &nbsp;|&nbsp; <NavLink to={Client.Path("/login?auth", Env.Current(header))} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
                     </span>)}
                 </td>
             </tr>
@@ -199,14 +199,14 @@ const Header = (props) => {
                                 </span>
                             </>)}
                         </>):(<>
-                            <Link to={Client.Path("/login")} style={{textDecoration:"none"}}><b style={{color:"darkblue"}}>NOT LOGGED IN</b></Link>
+                            <Link to={Client.Path("/login", Env.Current(header))} style={{textDecoration:"none"}}><b style={{color:"darkblue"}}>NOT LOGGED IN</b></Link>
                         </>)}
                     </td>
                 </tr>
                 <tr>
                     <td style={{background:"lightyellow",color:"darkred",padding:"3pt"}} colSpan="1">
-                        <i style={{fontSize:"small"}}>This is an <b>experimental</b> version of Foursight <b>React</b>.
-                        For the real Foursight click <a href={Env.LegacyFoursightLink(header)} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
+                        <i style={{fontSize:"small"}}>This is the <b>new</b> Foursight <b>React</b>.
+                        For the <b>legacy</b> Foursight click <a href={Env.LegacyFoursightLink(header)} style={{color:"inherit"}}><b><u>here</u></b></a>.</i>
                     </td>
                     <td style={{background:"lightyellow"}}>
                         {/* <BarSpinner loading={header.contentLoading} color="darkred" size="160"/> */}

@@ -8,7 +8,7 @@ import logging
 from typing import Optional, Tuple
 from dcicutils.misc_utils import get_error_message
 from ...app import app
-from ...route_prefixes import ROUTE_CHALICE_LOCAL, ROUTE_PREFIX, ROUTE_EMPTY_PREFIX
+from ...route_prefixes import ROUTE_CHALICE_LOCAL, ROUTE_PREFIX, ROUTE_EMPTY_PREFIX, ROUTE_PREFIX_EXPLICIT
 
 REACT_API_PATH_COMPONENT = "reactapi"
 REACT_UI_PATH_COMPONENT = "react"
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 def route_default() -> Response:
-    return app.core.create_redirect_response(f"{ROUTE_PREFIX}{REACT_UI_PATH_COMPONENT}")
+    return app.core.create_redirect_response(f"{ROUTE_PREFIX_EXPLICIT}{REACT_UI_PATH_COMPONENT}")
 
 
 def route(*args, **kwargs):
@@ -71,9 +71,11 @@ def route(*args, **kwargs):
             def default_route_registration(wrapped_route_function):
                 if not callable(wrapped_route_function):
                     wrapped_route_function = route_default
+                print(f"Registering default endpoint: GET {ROUTE_EMPTY_PREFIX} -> {wrapped_route_function.__name__}")
                 app.route(ROUTE_EMPTY_PREFIX, methods=["GET"])(wrapped_route_function)
                 if ROUTE_EMPTY_PREFIX != "/":
                     # This is true only for the chalice local case.
+                    print(f"Registering default endpoint: GET / -> {wrapped_route_function.__name__}")
                     app.route("/", methods=["GET"])(wrapped_route_function)
             return default_route_registration
         del kwargs["default"]
@@ -138,9 +140,8 @@ def route(*args, **kwargs):
         if _CORS:
             # Only used for (cross-origin) localhost development (e.g. UI on 3000 and API on 8000).
             kwargs["cors"] = _CORS
-        # This is the call that actually registers the Chalice route/endpoint.
         print(f"Registering endpoint: {' '.join(kwargs['methods'])} {path} -> {wrapped_route_function.__name__}")
-        #return app.route(path, **kwargs)(route_function)
+        # This is the call that actually registers the Chalice route/endpoint.
         app.route(path, **kwargs)(route_function)
     return route_registration
 
