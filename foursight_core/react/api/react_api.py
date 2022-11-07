@@ -574,6 +574,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/lambdas
         Returns a summary (list) of all defined AWS lambdas for the current AWS environment.
         """
+        # TODO: Filter out checks of lambas not in the env.
         return self.create_success_response(self._checks.get_annotated_lambdas())
 
     def reactapi_gac_compare(self, request: dict, env: str, env_compare: str) -> Response:

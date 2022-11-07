@@ -607,7 +607,7 @@ const ChecksPage = (props) => {
             { check.results && <small style={{color:check.results?.status?.toUpperCase() === "PASS" ? "darkgreen" : "red",cursor:"pointer"}} onClick={() => { check.showingResultDetails = !check.showingResultDetails ; noteChangedResults(); }}>
                 { Object.keys(check.results).length > 0 ? (<>
                     { !check.showingCheckRunningBox && <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div> }
-                    <span>Latest Results: {check.results?.timestamp}</span>
+                    <span className="tool-tip" data-text={Time.FormatDuration(check.results?.timestamp, new Date(), true, null, null, "ago")}>Latest Results: {check.results?.timestamp}</span>
                         { check.showingResultDetails ? (
                             <b className={"tool-tip"} data-text={"Click to hide result details."}>&nbsp;{Char.DownArrow}</b>
                         ):(
