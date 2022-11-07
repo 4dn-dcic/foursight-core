@@ -1,4 +1,3 @@
-#from chalice import Request
 from chalice.app import Request
 import json
 from typing import Optional

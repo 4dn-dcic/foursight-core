@@ -1,10 +1,8 @@
 from chalice import Response
 from dcicutils.misc_utils import ignored
-import json
 from ...app import app
 from .misc_utils import get_request_arg, get_request_args, get_request_body
 from .react_route_decorator import route
-
 
 class ReactRoutes:
 
@@ -15,7 +13,6 @@ class ReactRoutes:
     # Foursight React API routes UNPROTECTED by authorization/authentication.
     # ----------------------------------------------------------------------------------------------
 
-    @staticmethod
     @route("/{env}/auth0_config", authorize=False)
     def reactapi_route_auth0_config(env) -> Response:
         ignored(env)
@@ -25,16 +22,14 @@ class ReactRoutes:
         """
         return app.core.reactapi_auth0_config(app.current_request.to_dict())
 
-    @staticmethod
     @route("/auth0_config", authorize=False)
     def reactapi_route_auth0_config_noenv() -> Response:
         """
         Note that this in an UNPROTECTED route.
         No-env version of above /{env}/auth0_config route.
         """
-        return app.core.reactapi_auth0_config(app.current_request.to_dict(), app.core.get_default_env())
+        return app.core.reactapi_auth0_config(app.current_request.to_dict())
 
-    @staticmethod
     @route("/{env}/logout", authorize=False)
     def reactapi_route_logout(env: str) -> Response:
         """
@@ -45,7 +40,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_logout(app.current_request.to_dict(), env)
 
-    @staticmethod
     @route("/logout", authorize=False)
     def reactapi_route_logout_noenv() -> Response:
         """
@@ -54,7 +48,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_logout(app.current_request.to_dict(), app.core.get_default_env())
 
-    @staticmethod
     @route("/{env}/header", authorize=False)
     def reactapi_route_header(env: str) -> Response:
         """
@@ -63,7 +56,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_header(app.current_request.to_dict(), env)
 
-    @staticmethod
     @route("/header", authorize=False)
     def reactapi_route_header_noenv() -> Response:
         """
@@ -76,7 +68,6 @@ class ReactRoutes:
     # Foursight React API routes PROTECTED by authorization/authentication.
     # ----------------------------------------------------------------------------------------------
 
-    @staticmethod
     @route("/{env}/info", authorize=True)
     def reactapi_route_info(env: str) -> Response:
         """
@@ -84,7 +75,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_info(app.current_request.to_dict(), env)
 
-    @staticmethod
     @route("/{env}/users", methods=["GET", "POST"], authorize=True)
     def reactapi_route_users_get_or_post(env: str) -> Response:
         """
@@ -105,7 +95,6 @@ class ReactRoutes:
         else:
             return app.core.create_forbidden_response()
 
-    @staticmethod
     @route("/{env}/users/{uuid}", methods=["GET", "PATCH", "DELETE"], authorize=True)
     def reactapi_route_user_get_or_patch_or_delete(env: str, uuid: str) -> Response:
         """
@@ -128,7 +117,6 @@ class ReactRoutes:
         else:
             return app.core.create_forbidden_response()
 
-    @staticmethod
     @route("/{env}/checks", authorize=True)
     def reactapi_route_checks(env: str) -> Response:
         """
@@ -136,7 +124,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_checks(app.current_request.to_dict(), env)
 
-    @staticmethod
     @route("/{env}/checks/{check}", authorize=True)
     def reactapi_route_check_results(env: str, check: str) -> Response:
         """
@@ -144,7 +131,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_check_results(app.current_request.to_dict(), env, check=check)
 
-    @staticmethod
     @route("/{env}/checks/{check}/{uuid}", authorize=True)
     def reactapi_route_check_result(env: str, check: str, uuid: str) -> Response:
         """
@@ -152,7 +138,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_check_result(app.current_request.to_dict(), env, check=check, uuid=uuid)
 
-    @staticmethod
     @route("/{env}/checks/{check}/history", authorize=True)
     def reactapi_route_checks_history(env: str, check: str) -> Response:
         """
@@ -161,7 +146,6 @@ class ReactRoutes:
         request = app.current_request.to_dict()
         return app.core.reactapi_checks_history(request, env, check=check, args=get_request_args(request))
 
-    @staticmethod
     @route("/{env}/checks/history/recent", authorize=True)
     def reactapi_route_checks_history(env: str) -> Response:
         """
@@ -170,7 +154,6 @@ class ReactRoutes:
         request = app.current_request.to_dict()
         return app.core.reactapi_checks_history_recent(request, env, args=get_request_args(request))
 
-    @staticmethod
     @route("/{env}/checks/{check}/run", authorize=True)
     def reactapi_route_checks_run(env: str, check: str) -> Response:
         """
@@ -179,7 +162,6 @@ class ReactRoutes:
         request = app.current_request.to_dict()
         return app.core.reactapi_checks_run(request, env, check=check, args=get_request_arg(request, "args"))
 
-    @staticmethod
     @route("/{env}/checks-status", authorize=True)
     def reactapi_route_checks_status(env: str) -> Response:
         """
@@ -187,7 +169,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_checks_status(app.current_request.to_dict(), env)
 
-    @staticmethod
     @route("/{env}/checks-raw", authorize=True)
     def reactapi_route_checks_raw(env: str) -> Response:
         """
@@ -195,7 +176,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_checks_raw(app.current_request.to_dict(), env)
 
-    @staticmethod
     @route("/{env}/checks-registry", authorize=True)
     def reactapi_route_checks_registry(env: str) -> Response:
         """
@@ -203,7 +183,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_checks_registry(app.current_request.to_dict(), env)
 
-    @staticmethod
     @route("/{env}/lambdas", authorize=True)
     def reactapi_route_lambdas(env: str) -> Response:
         """
@@ -211,7 +190,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_lambdas(app.current_request.to_dict(), env)
 
-    @staticmethod
     @route("/{env}/gac/{env_compare}", authorize=True)
     def reactapi_route_gac_compare(env: str, env_compare: str) -> Response:
         """
@@ -219,7 +197,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_gac_compare(app.current_request.to_dict(), env, env_compare=env_compare)
 
-    @staticmethod
     @route("/{env}/aws/s3/buckets", authorize=True)
     def reactapi_route_aws_s3_buckets(env: str) -> Response:
         """
@@ -227,7 +204,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_aws_s3_buckets(app.current_request.to_dict(), env)
 
-    @staticmethod
     @route("/{env}/aws/s3/buckets/{bucket}", authorize=True)
     def reactapi_route_aws_s3_buckets_keys(env: str, bucket: str) -> Response:
         """
@@ -235,7 +211,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_aws_s3_buckets_keys(app.current_request.to_dict(), env, bucket=bucket)
 
-    @staticmethod
     @route("/{env}/aws/s3/buckets/{bucket}/{key}", authorize=True)
     def reactapi_route_aws_s3_buckets_key_contents(env: str, bucket: str, key: str) -> Response:
         """
@@ -243,7 +218,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_aws_s3_buckets_key_contents(app.current_request.to_dict(), env, bucket=bucket, key=key)
 
-    @staticmethod
     @route("/__reloadlambda__", authorize=True)
     def reactapi_route_reload_lambda() -> Response:
         """
@@ -251,54 +225,45 @@ class ReactRoutes:
         """
         return app.core.reactapi_reload_lambda(app.current_request.to_dict())
 
-    @staticmethod
     @route("/__clearcache__", authorize=True)
     def reactapi_route_clear_cache() -> Response:
         """
         For troubleshooting only. Clear any/all internal caches.
         """
-        print('xyzzy/__clearcache__')
         return app.core.reactapi_clear_cache(app.current_request.to_dict())
 
     # ----------------------------------------------------------------------------------------------
-    # Foursight React UI (static file) routes.
+    # Foursight React UI (static file) routes, serving the HTML/CSS/JavaScript/React files.
     # Note that ALL of these are UNPROTECTED routes.
     # ----------------------------------------------------------------------------------------------
 
     # TODO: See if there is a better way to deal with variadic paths.
     # TODO: Maybe end up serving these from S3, for more security, and smaller Chalice package size.
 
-    @staticmethod
     @route("/", static=True, authorize=False)
     def reactui_route_static_file_noenv() -> Response:
         return app.core.react_serve_static_file(app.core.get_default_env(), [])
 
-    @staticmethod
     @route("/{env}", static=True, authorize=False)
     def reactui_route_0(env) -> Response:
         return app.core.react_serve_static_file(env, [])
 
-    @staticmethod
     @route("/{env}/{path1}", static=True, authorize=False)
     def reactui_route_1(env, path1) -> Response:
         return app.core.react_serve_static_file(env, [path1])
 
-    @staticmethod
     @route("/{env}/{path1}/{path2}", static=True, authorize=False)
     def reactui_route_2(env, path1, path2) -> Response:
         return app.core.react_serve_static_file(env, [path1, path2])
 
-    @staticmethod
     @route("/{env}/{path1}/{path2}/{path3}", static=True, authorize=False)
     def reactui_route_3(env, path1, path2, path3) -> Response:
         return app.core.react_serve_static_file(env, [path1, path2, path3])
 
-    @staticmethod
     @route("/{env}/{path1}/{path2}/{path3}/{path4}", static=True, authorize=False)
     def reactui_route_4(env, path1, path2, path3, path4) -> Response:
         return app.core.react_serve_static_file(env, [path1, path2, path3, path4])
 
-    @staticmethod
     @route("/{env}/{path1}/{path2}/{path3}/{path4}/{path5}", static=True, authorize=False)
     def reactui_route_5(env, path1, path2, path3, path4, path5) -> Response:
         return app.core.react_serve_static_file(env, [path1, path2, path3, path4, path5])

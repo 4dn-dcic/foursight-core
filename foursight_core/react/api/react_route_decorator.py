@@ -41,9 +41,15 @@ logger = logging.getLogger(__name__)
 
 def route(*args, **kwargs):
     """
-    Decorator to wrap the Chalice route decorator to do our authentication and
-    authorization checking; also tweaks the path appropriately; sets up CORS
-    if necessary (only for local development); and handles exceptions.
+    Decorator to wrap the Chalice route decorator to do authentication and authorization
+    checking; tweaks the envpoing path appropriately (for API and static files); sets up
+    CORS if necessary (for local development); and handles exceptions. Usage looks like this:
+
+      @route("/{env}/info", authorize=True)
+      def reactapi_route_info(env: str) -> Response:
+          return do_route_processing_and_return_response()
+
+    Note that functions decorated with this are (if class members) implicitly STATIC methods.
     """
     if not isinstance(args, Tuple) or len(args) == 0:
         raise Exception("No arguments found for route configuration!")
@@ -65,7 +71,7 @@ def route(*args, **kwargs):
         authorize = isinstance(authorize, bool) and authorize
         del kwargs["authorize"]
     else:
-        # Note we DEFAULT to AUTHORIZE!
+        # Note we DEFAULT to AUTHORIZE for the route!
         # Only way to turn it off is to explicitly pass authorize=False to the route decorator.
         authorize = True
 
@@ -86,16 +92,17 @@ def route(*args, **kwargs):
         """
         def route_function(*args, **kwargs):
             """
-            This is the function called on each route/endpoint (API) call.
+            This is the function called on each actual route/endpoint (API) call.
             """
             try:
                 if authorize:
-                    # Note that we access the "env" argument in kwargs as the environment name in the
-                    # endpoint path; it does not HAVE to be present in the endpoint path, but if it
-                    # is then it MUST be "env", otherwise we won't properly do per-env authorization.
+                    # Note that the "env" argument in the kwargs is the environment name from the endpoint
+                    # path; this does NOT have to be present in the endpoint path, BUT if it IS then it
+                    # MUST be exactly named "env", otherwise we won't properly do per-env authorization.
                     unauthorized_response = _authorize(app.current_request.to_dict(), kwargs.get("env"))
                     if unauthorized_response:
                         return unauthorized_response
+                # Here we are authenticated and authorized and so we call the actual route function.
                 return wrapped_route_function(*args, **kwargs)
             except Exception as e:
                 # Common endpoint exception handling here.
@@ -105,15 +112,15 @@ def route(*args, **kwargs):
             # Only used for (cross-origin) localhost development (e.g. UI on 3000 and API on 8000).
             kwargs["cors"] = _CORS
         # This is the call that actually registers the Chalice route/endpoint.
-        app.route(path, **kwargs)(route_function)
-        return route_function
+        return app.route(path, **kwargs)(route_function)
     return route_registration
 
 
 def _authorize(request: dict, env: Optional[str]) -> Optional[Response]:
     """
-    If the given request is unauthorized (or unauthenticated) then return
-    an appropriate unauthorized (or unauthenticated) response, otherwise None.
+    If the given request is UNAUTHORIZED (or UNAUTHENTICATED) then returns
+    an appropriate unauthorized (or unauthenticated) response, otherwise None;
+    i.e. a return of None means all is well, fully authenticated and authorized.
     """
     authorize_response = app.core.react_authorize(request, env)
     if not authorize_response or not authorize_response["authorized"]:
