@@ -6,7 +6,7 @@
 from chalice import CORSConfig, Response
 import logging
 from typing import Optional, Tuple
-from dcicutils.misc_utils import get_error_message
+from dcicutils.misc_utils import get_error_message, PRINT
 from ...app import app
 from ...route_prefixes import ROUTE_CHALICE_LOCAL, ROUTE_PREFIX, ROUTE_EMPTY_PREFIX, ROUTE_PREFIX_EXPLICIT
 
@@ -67,10 +67,10 @@ def route(*args, **kwargs):
             def root_route_registration(wrapped_route_function):
                 if not callable(wrapped_route_function):
                     wrapped_route_function = route_root
-                print(f"Registering endpoint: GET {ROUTE_EMPTY_PREFIX} -> {wrapped_route_function.__name__}")
+                PRINT(f"Registering endpoint: GET {ROUTE_EMPTY_PREFIX} -> {wrapped_route_function.__name__}")
                 if ROUTE_EMPTY_PREFIX != "/":
                     # This is true only for the chalice local case.
-                    print(f"Registering endpoint: GET / -> {wrapped_route_function.__name__}")
+                    PRINT(f"Registering endpoint: GET / -> {wrapped_route_function.__name__}")
                     app.route("/", methods=["GET"])(wrapped_route_function)
                 return app.route(ROUTE_EMPTY_PREFIX, methods=["GET"])(wrapped_route_function)
             return root_route_registration
@@ -139,7 +139,7 @@ def route(*args, **kwargs):
         if _CORS:
             # Only used for (cross-origin) localhost development (e.g. UI on 3000 and API on 8000).
             kwargs["cors"] = _CORS
-        print(f"Registering endpoint: {' '.join(kwargs['methods'])} {path} -> {wrapped_route_function.__name__}")
+        PRINT(f"Registering endpoint: {' '.join(kwargs['methods'])} {path} -> {wrapped_route_function.__name__}")
         # This is the call that actually registers the Chalice route/endpoint.
         return app.route(path, **kwargs)(route_function)
     return route_registration

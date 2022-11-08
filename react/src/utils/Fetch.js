@@ -699,6 +699,27 @@ function _defineResponseConvenienceFunctions(response) {
         }
     }).bind(response);
 
+    response.find = (function(f, other) {
+        if (!this || !this.__response) return;
+        if (Type.IsArray(this.data)) {
+            if (Type.IsFunction(f)) {
+                return this.data.find(f) || [];
+            }
+            return this.data;
+        }
+        else if (Type.IsObject(this.data)) {
+            if (Str.HasValue(f) && Type.IsFunction(other)) {
+                const name = f; f = other;
+                const data = this.get(name);
+                if (Type.IsArray(data)) {
+                    return data.find(f) || [];
+                }
+                return data;
+            }
+            return this.data;
+        }
+    }).bind(response);
+
     response.map = (function(f, other) {
         if (!this || !this.__response) return;
         if (Type.IsArray(this.data)) {

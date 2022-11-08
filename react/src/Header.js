@@ -136,7 +136,7 @@ const Header = (props) => {
                     { (Auth.IsLoggedIn(header)) ? (<span>
                             &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</span>
                     </span>):(<span>
-                        &nbsp;|&nbsp; <NavLink to={Client.Path("/login?auth", Env.Current(header))} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</NavLink>
+                        &nbsp;|&nbsp; <Link to={Client.Path("/login?auth", Env.Current(header))} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</Link>
                     </span>)}
                 </td>
             </tr>

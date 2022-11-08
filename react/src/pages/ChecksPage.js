@@ -129,7 +129,7 @@ const ChecksPage = (props) => {
     }
 
     function isSelectedGroup(group) {
-        for (let i = 0 ; i < groupList.length ; i++) { // Experimental
+        for (let i = 0 ; i < groupList.length ; i++) {
             const selectedGroup = groupList.get(i);
             if (selectedGroup.group === group.group) {
                 return true;
@@ -149,15 +149,15 @@ const ChecksPage = (props) => {
     }
 
     function noteChangedSelectedGroups() {
-        groupList.update(); // Experimental
+        groupList.update();
     }
 
     function noteChangedResults() {
-        groupList.update(); // Experimental
+        groupList.update();
     }
 
     function noteChangedCheckBox() {
-        groupList.update(); // Experimental
+        groupList.update();
     }
 
     function toggleShowGroup(group, showResults = true) {
@@ -172,7 +172,7 @@ const ChecksPage = (props) => {
         if (isSelectedGroup(group)) {
             return;
         }
-        groupList.prepend(group); // Experimental
+        groupList.prepend(group);
         if (showResults) {
             group.checks.map(check => showResultBox(check));
         }
@@ -180,11 +180,11 @@ const ChecksPage = (props) => {
     function hideGroup(group) {
         group.checks.map(check => hideHistory(check));
         const index = findSelectedGroupIndex(group);
-        groupList.remove(index); // Experimental
+        groupList.remove(index);
     }
 
     function onGroupSelectAll(group) {
-        if (checks.length === groupList.length) { // Experimental
+        if (checks.length === groupList.length) {
             groupList.update([]);
         }
         else {
@@ -744,7 +744,7 @@ const ChecksPage = (props) => {
 
     const ResultsHistoryPanel = () => {
         // let histories = selectedHistories?.filter((check) => check.showingHistory);
-        let histories = historyList.filter((check) => check.showingHistory); // Experimental
+        let histories = historyList.filter((check) => check.showingHistory);
         if (histories.length <= 0) {
             return <span />
         }
@@ -776,9 +776,9 @@ const ChecksPage = (props) => {
             check.showingHistory = true;
             // selectedHistories.unshift(check);
             // noteChangedHistories();
-            historyList.prepend(check); // Experimental
+            historyList.prepend(check);
             if (!check.history) {
-                historyList.refresh({ // Experimental
+                historyList.refresh({
                     url: Server.Url(`/checks/${check.name}/history`, environ),
                     onData: (data, current) => {
                         check.history = data;
@@ -829,7 +829,7 @@ const ChecksPage = (props) => {
         if (check.showingHistory) {
             check.showingHistory = false;
             const index = findResultsHistoryIndex(check);
-            historyList.remove(index); // Experimental
+            historyList.remove(index);
         }
     }
 
@@ -900,7 +900,7 @@ const ChecksPage = (props) => {
         if (!check.results) {
             // Fetch the latest results for this check.
             check.fetchingResult = true;
-            groupList.refresh({ // Experimental
+            groupList.refresh({
                 url: Server.Url(`/checks/${check.name}`, environ),
                 onData: (data, current) => {
                     check.results = data;
@@ -1005,7 +1005,7 @@ const ChecksPage = (props) => {
     }
 
     function findGroup(groupName) {
-        return checks.data?.find(item => item.group == groupName);
+        return checks?.find(item => item.group == groupName);
     }
 
     function findCheck(checkName, groupName) {
@@ -1145,7 +1145,7 @@ const ChecksPage = (props) => {
     // set of checks supported for the selected env.
 
     function getCheckGroup(groupName) {
-        return checks?.data?.find(check => check.group === groupName);
+        return checks?.find(check => check.group === groupName);
     }
 
     function getCheck(checkName, groupName) {

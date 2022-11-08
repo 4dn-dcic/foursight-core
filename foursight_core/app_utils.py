@@ -1897,7 +1897,7 @@ class AppUtilsCore(ReactApi, Routes):
                         with io.open(file, "r") as f:
                             content = json.load(f)
                             return (isinstance(content, list) or isinstance(content, dict)) and len(content) > 0
-            except:
+            except Exception as e:
                 pass
             return False
 
