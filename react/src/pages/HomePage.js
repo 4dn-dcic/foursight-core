@@ -31,25 +31,25 @@ const HomePage = (props) => {
                     <tr>
                         <td style={{...tdStyle,width:"1%"}}>{Char.Dot}</td>
                         <td style={tdStyle}>
-                            To view Foursight <b><Link to={Client.Path("/checks")} style={{color:"inherit"}}>checks</Link></b> info click <b><Link to={Client.Path("/checks")}>here</Link></b>.
+                            To view Foursight <b><Link to={Client.Path("/checks")} style={{color:"inherit"}}>checks</Link></b> click <b><Link to={Client.Path("/checks")}>here</Link></b>.
                         </td>
                     </tr>
                     <tr>
                         <td style={tdStyle}>{Char.Dot}</td>
                         <td style={tdStyle}>
-                            To view Foursight <b><Link to={Client.Path("/env")} style={{color:"inherit"}}>environment(s)</Link></b> info click <b><Link to={Client.Path("/env")}>here</Link></b>.
+                            To view Foursight <b><Link to={Client.Path("/env")} style={{color:"inherit"}}>environment(s)</Link></b> click <b><Link to={Client.Path("/env")}>here</Link></b>.
                         </td>
                     </tr>
                     <tr>
                         <td style={tdStyle}>{Char.Dot}</td>
                         <td style={tdStyle}>
-                            To view <b><Link to={Client.Path("/info")} style={{color:"inherit"}}>general</Link></b> info click <b><Link to={Client.Path("/info")}>here</Link></b>.
+                            To view Foursight <b><Link to={Client.Path("/info")} style={{color:"inherit"}}>general info</Link></b> click <b><Link to={Client.Path("/info")}>here</Link></b>.
                         </td>
                     </tr>
                     <tr>
                         <td style={tdStyle}>{Char.Dot}</td>
                         <td style={tdStyle}>
-                            To view <b><Link to={Client.Path("/users")} style={{color:"inherit"}}>users</Link></b> info click <b><Link to={Client.Path("/users")}>here</Link></b>.
+                            To view Foursight <b><Link to={Client.Path("/users")} style={{color:"inherit"}}>users</Link></b> click <b><Link to={Client.Path("/users")}>here</Link></b>.
                         </td>
                     </tr>
                     <tr>
@@ -74,8 +74,8 @@ const HomePage = (props) => {
                     </>}
                 </>}
                 <br />
-                To <b onClick={Logout}><Link style={{color:"inherit"}}>logout</Link></b> click <b onClick={Logout}><Link>here</Link></b>. <br />
-                To view <b><Link to={Client.Path("/login")} style={{color:"inherit"}}>login</Link></b> info click <b><Link to={Client.Path("/login")}>here</Link></b>.
+                To view <b><Link to={Client.Path("/login")} style={{color:"inherit"}}>login</Link></b> info click <b><Link to={Client.Path("/login")}>here</Link></b>. <br />
+                To <b onClick={Logout}><Link style={{color:"inherit"}}>logout</Link></b> click <b onClick={Logout}><Link>here</Link></b>.
             </div>
         </div>
     </>
