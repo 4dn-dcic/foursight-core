@@ -160,7 +160,7 @@ class Checks:
                         return True
                     if month in [4, 6, 9, 11] and day_of_month > 30:
                         return True
-            except Exception as e:
+            except Exception:
                 pass
             return False
 

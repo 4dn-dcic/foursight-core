@@ -27,7 +27,7 @@ def convert_utc_datetime_to_useastern_datetime_string(t: Union[datetime.datetime
             t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
         t = t.replace(tzinfo=pytz.UTC).astimezone(pytz.timezone("US/Eastern"))
         return t.strftime("%Y-%m-%d %H:%M:%S %Z")
-    except Exception as e:
+    except Exception:
         return "datetime-utc-parse-error"
 
 
@@ -45,7 +45,7 @@ def convert_time_t_to_useastern_datetime_string(time_t: int) -> str:
             return ""
         t = datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
         return convert_utc_datetime_to_useastern_datetime_string(t)
-    except Exception as e:
+    except Exception:
         return "datetime-parse-error"
 
 def convert_time_t_to_datetime(time_t: int) -> datetime.datetime:
