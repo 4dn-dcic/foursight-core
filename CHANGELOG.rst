@@ -8,8 +8,13 @@ Change Log
 
 2.1.0
 =====
-* In progress ...
-  * React-ifying Foursight (experiment).
+* React-ifying Foursight.
+  * Many changes.
+  * React UI code in react directory.
+  * React API code in foursight_core/react directory.
+  * Moved all foursight-cgap and foursight Chalice routes to here.
+  * Old Foursight still works side-by-side with React version.
+
 
 
 2.0.2
