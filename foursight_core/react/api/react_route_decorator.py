@@ -56,11 +56,10 @@ def route(*args, **kwargs):
 
     Note that functions decorated with this are (if class members) implicitly STATIC methods.
     """
-    # Special handling for "root" route, i.e. / (just slash). Default behavior,
-    # if NO function specified for the @route, which actually IS allowed, is to
-    # redirect to the main UI route via route_root function above; if a function
-    # IS specified for the @route then use that. Only complication is for the chalice
-    # local case where /api is NOT the AWS lambda enforced base route and in which case
+    # Special handling for "root" route, i.e. / (just slash). If NO function specified for the
+    # @route (which actually IS allowed) redirect to the main UI route via route_root function
+    # above; if a function IS specified for the @route then use that. Complication is for the
+    # chalice local case where /api is NOT the AWS lambda enforced base route in which case
     # we support it explicitly for closer compatibility with the normally deployed case.
     if "root" in kwargs:
         if kwargs["root"] == True:
@@ -69,11 +68,11 @@ def route(*args, **kwargs):
                 if not callable(wrapped_route_function):
                     wrapped_route_function = route_root
                 print(f"Registering endpoint: GET {ROUTE_EMPTY_PREFIX} -> {wrapped_route_function.__name__}")
-                app.route(ROUTE_EMPTY_PREFIX, methods=["GET"])(wrapped_route_function)
                 if ROUTE_EMPTY_PREFIX != "/":
                     # This is true only for the chalice local case.
                     print(f"Registering endpoint: GET / -> {wrapped_route_function.__name__}")
                     app.route("/", methods=["GET"])(wrapped_route_function)
+                return app.route(ROUTE_EMPTY_PREFIX, methods=["GET"])(wrapped_route_function)
             return root_route_registration
         del kwargs["root"]
 
@@ -142,7 +141,7 @@ def route(*args, **kwargs):
             kwargs["cors"] = _CORS
         print(f"Registering endpoint: {' '.join(kwargs['methods'])} {path} -> {wrapped_route_function.__name__}")
         # This is the call that actually registers the Chalice route/endpoint.
-        app.route(path, **kwargs)(route_function)
+        return app.route(path, **kwargs)(route_function)
     return route_registration
 
 
