@@ -1,4 +1,5 @@
 from chalice import Response
+import io
 import jinja2
 import json
 import os
@@ -41,17 +42,28 @@ from .check_utils import CheckHandler
 from .sqs_utils import SQS
 from .stage import Stage
 from .environment import Environment
+from .app import app
+from .react.api.react_api import ReactApi
+from .routes import Routes
 
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
-class AppUtilsCore:
+# The ReactApi is included in here to for the React version, which runs side-by-side
+# with the regular version. This and a React check/call in auth0_callback are the only real
+# changes here for the React version; all React specific code is in the react sub-directory.
+# Also, not directly related to React but done in conjunction with it, we moved all of the
+# Chalice route definitions from foursight-cgap and foursight into foursight-core here,
+# specifically, into routes.py and (for React routes) react/api/react_routes.py.
+class AppUtilsCore(ReactApi, Routes):
     """
     This class contains all the functionality needed to implement AppUtils, but is not AppUtils itself,
     so that a class named AppUtils is easier to define in libraries that import foursight-core.
     """
+
+    CHECK_SETUP_FILE_NAME = "check_setup.json"
 
     # Define in subclass.
     APP_PACKAGE_NAME = None
@@ -80,7 +92,9 @@ class AppUtilsCore:
     package_name = 'foursight_core'
 
     # repeat the same line to use __file__ relative to the inherited class
-    check_setup_dir = dirname(__file__)
+    # This should be set by the chalicelib_cgap or chalicelib_fourfront AppUtils
+    # derived from this class, in the app_utils.py there (via local_check_setup_file).
+    check_setup_file = None
 
     # optionally change this one
     html_main_title = 'Foursight'
@@ -90,11 +104,14 @@ class AppUtilsCore:
     LAMBDA_MAX_BODY_SIZE = 5500000  # 6Mb is the "real" threshold
 
     def __init__(self):
+        # Tuck a reference to this (singleton) instance into
+        # a "core" field for convenient access by the routing code.
+        app.core = self
         self.init_load_time = self.get_load_time()
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
         self.sqs = SQS(self.prefix)
-        self.check_handler = CheckHandler(self.prefix, self.package_name, self.check_setup_dir)
+        self.check_handler = CheckHandler(self.prefix, self.package_name, self.check_setup_file, self.get_default_env())
         self.CheckResult = self.check_handler.CheckResult
         self.ActionResult = self.check_handler.ActionResult
         self.jin_env = jinja2.Environment(
@@ -106,8 +123,13 @@ class AppUtilsCore:
         # self.user_record = None
         # self.user_record_error = None
         # self.user_record_error_email = None
-        self.lambda_last_modified = None
-        self.cached_portal_url = {}
+        self._cached_lambda_last_modified = None
+        self._cached_portal_url = {}
+        super(AppUtilsCore, self).__init__()
+
+    @classmethod
+    def get_default_env(cls) -> str:
+        return os.environ.get("ENV_NAME", cls.DEFAULT_ENV)
 
     @staticmethod
     def note_non_fatal_error_for_ui_info(error_object, calling_function):
@@ -214,7 +236,8 @@ class AppUtilsCore:
                 "expiration_time": expiration_time,
                 "jwt": jwt_decoded}
 
-    # THis is quite a hack, this whole user_records thing. Will straighten out eventually (perhaps with React version someday).
+    # This is a bit of a hack, this whole user_records thing.
+    # Will eventually be supplanted by and corrected in the React version.
     def get_user_record(self, environ: str, request_dict: dict) -> dict:
         user_info = self.get_logged_in_user_info(environ, request_dict)
         if not user_info:
@@ -234,17 +257,18 @@ class AppUtilsCore:
             user_record["exception"] = exception
 
     def get_portal_url(self, env_name: str) -> str:
-        cached_portal_url = self.cached_portal_url.get(env_name)
-        if not cached_portal_url:
+        portal_url = self._cached_portal_url.get(env_name)
+        if not portal_url:
             try:
                 environment_and_bucket_info = \
                     self.environment.get_environment_and_bucket_info(env_name, self.stage.get_stage())
                 portal_url = environment_and_bucket_info.get("fourfront")
-                self.cached_portal_url[env_name] = portal_url
+                self._cached_portal_url[env_name] = portal_url
             except Exception as e:
-                logger.error(f"Error determining portal URL: {e}")
-                raise e
-        return self.cached_portal_url[env_name]
+                message = f"Error getting portal URL: {get_error_message(e)}"
+                logger.error(message)
+                raise Exception(message)
+        return self._cached_portal_url[env_name]
 
     def get_auth0_client_id(self, env_name: str) -> str:
         auth0_client_id = os.environ.get("CLIENT_ID")
@@ -288,11 +312,16 @@ class AppUtilsCore:
         # grant admin if dev_auth equals secret value
         if dev_auth and dev_auth == os.environ.get('DEV_SECRET'):
             return True
-        # if we're on localhost, automatically grant authorization
+        # If we're on localhost, automatically grant authorization
         # this looks bad but isn't because request authentication will
         # still fail if local keys are not configured
-        if self.is_running_locally(request_dict):
-            return True
+        #
+        # if self.is_running_locally(request_dict):
+        #     return True
+        #
+        # Commented out above as o longer special treatment for running locally;
+        # previously related to support of a local "faux" login; removed. Should
+        # just delete this entire block including this comment next time around.
         jwt_decoded = self.get_decoded_jwt_token(env, request_dict)
         if jwt_decoded:
             try:
@@ -340,6 +369,8 @@ class AppUtilsCore:
 
     def auth0_callback(self, request, env):
         req_dict = request.to_dict()
+        if self.is_react_authentication_callback(req_dict):
+            return self.react_authentication_callback(req_dict, env)
         domain, context = self.get_domain_and_context(req_dict)
         # extract redir cookie
         cookies = req_dict.get('headers', {}).get('cookie')
@@ -369,20 +400,29 @@ class AppUtilsCore:
         auth0_secret = self.get_auth0_secret(env)
         if not (domain and auth0_code and auth0_client and auth0_secret):
             return Response(status_code=301, body=json.dumps(resp_headers), headers=resp_headers)
+        if self.is_running_locally(req_dict):
+            redir_url = f"http://{domain}/callback/"
+        else:
+            redir_url = f"https://{domain}{context if context else '/'}callback/"
         payload = {
             'grant_type': 'authorization_code',
             'client_id': auth0_client,
             'client_secret': auth0_secret,
             'code': auth0_code,
-            'redirect_uri': ''.join(['https://', domain, context, 'callback/'])
+            'redirect_uri': redir_url
         }
         json_payload = json.dumps(payload)
         headers = {'content-type': "application/json"}
         res = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
         id_token = res.json().get('id_token', None)
         if id_token:
-            cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
             expires_in = res.json().get('expires_in', None)
+            if domain and not self.is_running_locally(req_dict):
+                cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
+            else:
+                # N.B. When running on localhost cookies cannot be set unless we leave off the domain entirely.
+                # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
+                cookie_str = ''.join(['jwtToken=', id_token, '; Path=/;'])
             if expires_in:
                 expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
                 cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
@@ -412,9 +452,10 @@ class AppUtilsCore:
             auth0_client_id = self.get_auth0_client_id(env_name)
             auth0_secret = self.get_auth0_secret(env_name)
             # leeway accounts for clock drift between us and auth0
-            return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30)
-        except:
+            return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30, options={"verify_signature": True}, algorithms=["HS256"])
+        except Exception as e:
             logger.warn(f"foursight_core: Exception decoding JWT token: {jwt_token}")
+            print(e)
             return None
 
     @classmethod
@@ -520,10 +561,11 @@ class AppUtilsCore:
             return cls.TRIM_ERR_OUTPUT
         return output
 
-    def sort_dictionary_by_lowercase_keys(self, dictionary: dict) -> dict:
+    def sort_dictionary_by_case_insensitive_keys(self, dictionary: dict) -> dict:
         """
-        Returns the given dictionary sorted by key values (yes, dictionaries are ordered as of Python 3.7).
-        If the given value is not a dictionary it will be coerced to one.
+        Returns the given dictionary sorted by (case-insensitive) key values; yes,
+        dictionaries are ordered as of Python 3.7. If the given value is not a
+        dictionary it will be coerced to one.
         :param dictionary: Dictionary to sort.
         :return: Given dictionary sorted by key value.
         """
@@ -644,7 +686,7 @@ class AppUtilsCore:
         to get the last modified time of the lambda needs to look first at this tag and take that
         if it exists before looking at the real last modified time.
         """
-        if not lambda_name or lambda_name.lower() == "current":
+        if not lambda_name or lambda_name.lower() == "current" or lambda_name.lower() == "default":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
             if not lambda_name:
                 return False
@@ -669,6 +711,8 @@ class AppUtilsCore:
                 logger.warn(f"Reloading lambda: {lambda_name}")
                 boto_lambda.update_function_configuration(FunctionName=lambda_name, Description=lambda_description)
                 logger.warn(f"Reloaded lambda: {lambda_name}")
+                self._cached_lambda_last_modified = None
+                return True
         except Exception as e:
             logger.warn(f"Error reloading lambda ({lambda_name}): {e}")
         return False
@@ -679,14 +723,14 @@ class AppUtilsCore:
         See comments in reload_lambda on this.
         """
         lambda_current = False
-        if not lambda_name or lambda_name.lower() == "current":
+        if not lambda_name or lambda_name.lower() == "current" or lambda_name.lower() == "current":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
             if not lambda_name:
                 return None
             lambda_current = True
         if lambda_current:
-            if self.lambda_last_modified:
-                return self.lambda_last_modified
+            if self._cached_lambda_last_modified:
+                return self._cached_lambda_last_modified
         try:
             boto_lambda = boto3.client("lambda")
             lambda_info = boto_lambda.get_function(FunctionName=lambda_name)
@@ -700,7 +744,7 @@ class AppUtilsCore:
                     lambda_last_modified = lambda_info["Configuration"]["LastModified"]
                     lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified)
                 if lambda_current:
-                    self.lambda_last_modified = lambda_last_modified
+                    self._cached_lambda_last_modified = lambda_last_modified
                 return lambda_last_modified
         except Exception as e:
             logger.warn(f"Error getting lambda ({lambda_name}) last modified time: {e}")
@@ -774,11 +818,11 @@ class AppUtilsCore:
         unique_environment_names = self.environment.list_unique_environment_names()
         unique_annotated_environment_names = [
             {"name": env,
-             "short": short_env_name(env),
-             "full": full_env_name(env),
-             "public": public_env_name(env) if public_env_name(env) else short_env_name(env),
-             "foursight": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
-        return sorted(unique_annotated_environment_names, key=lambda key: key["full"])
+             "short_name": short_env_name(env),
+             "full_name": full_env_name(env),
+             "public_name": public_env_name(env) if public_env_name(env) else short_env_name(env),
+             "foursight_name": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
+        return sorted(unique_annotated_environment_names, key=lambda key: key["public_name"])
 
     def view_foursight(self, request, environ, is_admin=False, domain="", context="/"):
         """
@@ -904,10 +948,10 @@ class AppUtilsCore:
             "Foursight Bucket Prefix:": get_foursight_bucket_prefix()
         }
         gac_name = get_identity_name()
-        gac_values = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(get_identity_secrets()))
-        environment_and_bucket_info = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(
+        gac_values = self.sort_dictionary_by_case_insensitive_keys(obfuscate_dict(get_identity_secrets()))
+        environment_and_bucket_info = self.sort_dictionary_by_case_insensitive_keys(obfuscate_dict(
                                         self.environment.get_environment_and_bucket_info(environ, stage_name)))
-        declared_data = self.sort_dictionary_by_lowercase_keys(EnvUtils.declared_data())
+        declared_data = self.sort_dictionary_by_case_insensitive_keys(EnvUtils.declared_data())
         dcicutils_version = pkg_resources.get_distribution('dcicutils').version
         foursight_core_version = pkg_resources.get_distribution('foursight-core').version
         versions = {
@@ -927,7 +971,7 @@ class AppUtilsCore:
         }
         aws_credentials = self.get_obfuscated_credentials_info(environ)
         aws_account_number = aws_credentials.get("AWS Account Number:")
-        os_environ = self.sort_dictionary_by_lowercase_keys(obfuscate_dict(dict(os.environ)))
+        os_environ = self.sort_dictionary_by_case_insensitive_keys(obfuscate_dict(dict(os.environ)))
         request_dict = request.to_dict()
 
         html_resp.body = template.render(
@@ -1273,7 +1317,7 @@ class AppUtilsCore:
             connection = None
         if connection:
             # server = connection.ff_server
-            history = self.get_foursight_history(connection, check, start, limit)
+            history, total = self.get_foursight_history(connection, check, start, limit)
             history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
         else:
             history, history_kwargs = [], []
@@ -1324,7 +1368,7 @@ class AppUtilsCore:
         html_resp.status_code = 200
         return self.process_response(html_resp)
 
-    def get_foursight_history(self, connection, check, start, limit):
+    def get_foursight_history(self, connection, check, start, limit, sort = None) -> [list, int]:
         """
         Get a brief form of the historical results for a check, including
         UUID, status, kwargs. Limit the number of results recieved to 500, unless
@@ -1337,8 +1381,9 @@ class AppUtilsCore:
         limit = 500 if limit > 500 else limit
         result_obj = self.check_handler.init_check_or_action_res(connection, check)
         if not result_obj:
-            return []
-        return result_obj.get_result_history(start, limit)
+            return [], 0
+        result, total = result_obj.get_result_history(start, limit, sort)
+        return result, total
 
     def run_get_check(self, environ, check, uuid=None):
         """
@@ -1423,59 +1468,63 @@ class AppUtilsCore:
         response.status_code = 200
         return self.process_response(response)
 
-    def run_put_environment(self, environ, env_data):
-        """
-        Abstraction of the functionality of put_environment without the current_request
-        to allow for testing.
-        """
-        proc_environ = environ.split('-')[-1] if environ.startswith('fourfront-') else environ
-        if isinstance(env_data, dict) and {'fourfront', 'es'} <= set(env_data):
-            ff_address = env_data['fourfront'] if env_data['fourfront'].endswith('/') else env_data['fourfront'] + '/'
-            es_address = env_data['es'] if env_data['es'].endswith('/') else env_data['es'] + '/'
-            ff_env = env_data['ff_env'] if 'ff_env' in env_data else ''.join(['fourfront-', proc_environ])
-            env_entry = {
-                'fourfront': ff_address,
-                'es': es_address,
-                'ff_env': ff_env
-            }
-            s3_connection = S3Connection(self.prefix + '-envs')
-            s3_connection.put_object(proc_environ, json.dumps(env_entry))
-            stage = self.stage.get_stage()
-            s3_bucket = ''.join([self.prefix + '-', stage, '-', proc_environ])
-            bucket_res = s3_connection.create_bucket(s3_bucket)
-            if not bucket_res:
-                response = Response(
-                    body={
-                        'status': 'error',
-                        'description': f'Could not create bucket: {s3_bucket}',
-                        'environment': proc_environ
-                    },
-                    status_code=500
-                )
-            else:
-                # if not testing, queue checks with 'put_env' condition for the new env
-                if 'test' not in self.stage.get_queue_name():
-                    for sched in self.check_handler.get_schedule_names():
-                        self.queue_scheduled_checks(environ, sched, conditions=['put_env'])
-                response = Response(
-                    body={
-                        'status': 'success',
-                        'description': ' '.join(['Succesfully made:', proc_environ]),
-                        'environment': proc_environ
-                    },
-                    status_code=200
-                )
-        else:
-            response = Response(
-                body={
-                    'status': 'error',
-                    'description': 'Environment creation failed',
-                    'body': env_data,
-                    'environment': proc_environ
-                },
-                status_code=400
-            )
-        return self.process_response(response)
+# Commented out based on feedback PR-33 from Will ...
+# As it is incompatible with EnvUtils at this time.
+# Can create a ticket to make it compatible in the future.
+#
+#   def run_put_environment(self, environ, env_data):
+#       """
+#       Abstraction of the functionality of put_environment without the current_request
+#       to allow for testing.
+#       """
+#       proc_environ = environ.split('-')[-1] if environ.startswith('fourfront-') else environ
+#       if isinstance(env_data, dict) and {'fourfront', 'es'} <= set(env_data):
+#           ff_address = env_data['fourfront'] if env_data['fourfront'].endswith('/') else env_data['fourfront'] + '/'
+#           es_address = env_data['es'] if env_data['es'].endswith('/') else env_data['es'] + '/'
+#           ff_env = env_data['ff_env'] if 'ff_env' in env_data else ''.join(['fourfront-', proc_environ])
+#           env_entry = {
+#               'fourfront': ff_address,
+#               'es': es_address,
+#               'ff_env': ff_env
+#           }
+#           s3_connection = S3Connection(self.prefix + '-envs')
+#           s3_connection.put_object(proc_environ, json.dumps(env_entry))
+#           stage = self.stage.get_stage()
+#           s3_bucket = ''.join([self.prefix + '-', stage, '-', proc_environ])
+#           bucket_res = s3_connection.create_bucket(s3_bucket)
+#           if not bucket_res:
+#               response = Response(
+#                   body={
+#                       'status': 'error',
+#                       'description': f'Could not create bucket: {s3_bucket}',
+#                       'environment': proc_environ
+#                   },
+#                   status_code=500
+#               )
+#           else:
+#               # if not testing, queue checks with 'put_env' condition for the new env
+#               if 'test' not in self.stage.get_queue_name():
+#                   for sched in self.check_handler.get_schedule_names():
+#                       self.queue_scheduled_checks(environ, sched, conditions=['put_env'])
+#               response = Response(
+#                   body={
+#                       'status': 'success',
+#                       'description': ' '.join(['Succesfully made:', proc_environ]),
+#                       'environment': proc_environ
+#                   },
+#                   status_code=200
+#               )
+#       else:
+#           response = Response(
+#               body={
+#                   'status': 'error',
+#                   'description': 'Environment creation failed',
+#                   'body': env_data,
+#                   'environment': proc_environ
+#               },
+#               status_code=400
+#           )
+#       return self.process_response(response)
 
     def run_get_environment(self, environ):
         """
@@ -1504,47 +1553,51 @@ class AppUtilsCore:
             )
         return self.process_response(response)
 
-    @classmethod
-    def run_delete_environment(cls, environ, bucket=None):
-        """
-        Removes the environ entry from the Foursight envs bucket. This effectively de-schedules all checks
-        but does not remove any data.
-        """
-        if not bucket:
-            bucket = cls.prefix + '-envs'
-        s3_connection = S3Connection(bucket)
-        s3_resp = s3_connection.delete_keys([environ])
-        keys_deleted = s3_resp['Deleted']
-        if not keys_deleted:
-            response = Response(
-                body={
-                    'status': 'error',
-                    'description': 'Unable to comply with request',
-                    'environment': environ
-                },
-                status_code=400
-            )
-        else:
-            our_key = keys_deleted[0]  # since we only passed one key to be deleted, response will be a length 1 list
-            if our_key['Key'] != environ:
-                response = Response(
-                    body={
-                        'status': 'error',
-                        'description': 'An error occurred during environment deletion, please check S3 directly',
-                        'environment': environ
-                    },
-                    status_code=400
-                )
-            else:  # we were successful
-                response = Response(
-                    body={
-                        'status': 'success',
-                        'details': f'Successfully deleted environment {environ}',
-                        'environment': environ
-                    },
-                    status_code=200
-                )
-        return cls.process_response(response)
+# Commented out based on feedback PR-33 from Will ...
+# As it is incompatible with EnvUtils at this time.
+# Can create a ticket to make it compatible in the future.
+#
+#   @classmethod
+#   def run_delete_environment(cls, environ, bucket=None):
+#       """
+#       Removes the environ entry from the Foursight envs bucket. This effectively de-schedules all checks
+#       but does not remove any data.
+#       """
+#       if not bucket:
+#           bucket = cls.prefix + '-envs'
+#       s3_connection = S3Connection(bucket)
+#       s3_resp = s3_connection.delete_keys([environ])
+#       keys_deleted = s3_resp['Deleted']
+#       if not keys_deleted:
+#           response = Response(
+#               body={
+#                   'status': 'error',
+#                   'description': 'Unable to comply with request',
+#                   'environment': environ
+#               },
+#               status_code=400
+#           )
+#       else:
+#           our_key = keys_deleted[0]  # since we only passed one key to be deleted, response will be a length 1 list
+#           if our_key['Key'] != environ:
+#               response = Response(
+#                   body={
+#                       'status': 'error',
+#                       'description': 'An error occurred during environment deletion, please check S3 directly',
+#                       'environment': environ
+#                   },
+#                   status_code=400
+#               )
+#           else:  # we were successful
+#               response = Response(
+#                   body={
+#                       'status': 'success',
+#                       'details': f'Successfully deleted environment {environ}',
+#                       'environment': environ
+#                   },
+#                   status_code=200
+#               )
+#       return cls.process_response(response)
 
     # ===== QUEUE / CHECK RUNNER FUNCTIONS =====
 
@@ -1570,6 +1623,7 @@ class AppUtilsCore:
         Returns:
             dict: runner input of queued messages, used for testing
         """
+        print(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
         logger.warn(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
         queue = self.sqs.get_sqs_queue()
         logger.warn(f"queue_scheduled_checks: queue={queue}")
@@ -1817,6 +1871,71 @@ class AppUtilsCore:
         # eliminate duplicates
         return set(complete)
 
+    @staticmethod
+    def locate_check_setup_file(base_dir: str) -> str:
+        """
+        Return full path to the check_setup.json file, considering the given base directory which is
+        supposed to be the full path of either the chalicelib_cgap or chalicelib_fourfront directory.
+        Looks for the first non-empty check_setup.json file in this directory order:
+
+        - If the CHALICE_LOCAL environment variable is set to "1", then the
+          chalicelib_local directory parallel to the given base directory.
+        - If the FOURSIGHT_CHECK_SETUP_DIR environment variable is set,
+          then the directoriy specified by this value.
+        - The given base directory.
+        """
+
+        def is_non_empty_json_file(file: str) -> bool:
+            """
+            Returns true iff the given file is a JSON file which is non-empty.
+            Where non-empty means the file exists, is of non-zero length, and
+            contains a non-empty JSON object or array.
+            """
+            try:
+                if os.path.exists(file):
+                    if os.stat(file).st_size > 0:
+                        with io.open(file, "r") as f:
+                            content = json.load(f)
+                            return (isinstance(content, list) or isinstance(content, dict)) and len(content) > 0
+            except Exception:
+                pass
+            return False
+
+        if not base_dir:
+            base_dir = os.path.dirname(__file__)
+        check_setup_file = None
+        if os.environ.get("CHALICE_LOCAL") == "1":
+            check_setup_dir = os.path.normpath(os.path.join(base_dir, "../chalicelib_local"))
+            check_setup_file = os.path.join(check_setup_dir, AppUtilsCore.CHECK_SETUP_FILE_NAME)
+            if not is_non_empty_json_file(check_setup_file):
+                check_setup_file = None
+        if not check_setup_file:
+            check_setup_dir = os.environ.get("FOURSIGHT_CHECK_SETUP_DIR", "")
+            check_setup_file = os.path.join(check_setup_dir, AppUtilsCore.CHECK_SETUP_FILE_NAME)
+            if not is_non_empty_json_file(check_setup_file):
+                check_setup_file = None
+        if not check_setup_file:
+            check_setup_dir = base_dir
+            check_setup_file = os.path.join(check_setup_dir, AppUtilsCore.CHECK_SETUP_FILE_NAME)
+            if not is_non_empty_json_file(check_setup_file):
+                check_setup_file = None
+        return check_setup_file
+
+    _singleton = None
+    @staticmethod
+    def singleton(cls = None):
+        # A little wonky having a singleton with an argument but this is sort of the way it
+        # was in 4dn-cloud-infra/app-{cgap,fourfront}.py; and we know the only place we create
+        # this is from there and also from foursight-cgap/chalicelib/app.py and foursight/app.py
+        # with the appropriate locally derived (from this AppUtilsCore) AppUtils.
+        if not AppUtilsCore._singleton:
+            AppUtilsCore._singleton = cls() if cls else AppUtilsCore()
+        return AppUtilsCore._singleton
+
+    def cache_clear(self) -> None:
+        self._cached_lambda_last_modified = None
+        self._cached_portal_url = {}
+
 
 class AppUtils(AppUtilsCore):  # for compatibility with older imports
     """
@@ -1826,3 +1945,30 @@ class AppUtils(AppUtilsCore):  # for compatibility with older imports
     import if you're making an AppUtils in some other library.
     """
     pass
+
+# These were previously in foursight/chalicelib_foursight/check_schedules.py
+# and foursight-cgap/chalicelib_cgap/check_schedules.py.
+
+from dcicutils.exceptions import InvalidParameterError
+from .deploy import Deploy
+
+def _compute_valid_deploy_stages():
+    # TODO: Will wants to know why "test" is here. -kmp 17-Aug-2021
+    return list(Deploy.CONFIG_BASE['stages'].keys()) + ['test']
+
+
+class InvalidDeployStage(InvalidParameterError):
+
+    @classmethod
+    def compute_valid_options(cls):
+        return _compute_valid_deploy_stages()
+
+
+def set_stage(stage):
+    if stage not in _compute_valid_deploy_stages():
+        raise InvalidDeployStage(parameter='stage', value=stage)
+    os.environ['chalice_stage'] = stage
+
+
+def set_timeout(timeout):
+    app.core.set_timeout(timeout)

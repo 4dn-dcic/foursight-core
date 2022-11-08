@@ -206,9 +206,9 @@
                 </td>
                 <td width="33%" style="padding-right:10pt;white-space:nowrap;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" align="right">
                     <span>{{load_time}}</span>
-                    {% if not is_running_locally and is_admin %}
+                    {% if is_admin %}
                         &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
-                    {% elif not is_running_locally and not is_admin %}
+                    {% elif not is_admin %}
                         &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;font-weight:bold;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" title="Not logged in. Click to login." onclick="create_redir_cookie(); lock.show();">LOGIN</span>
                     {% endif %}
                 </td>
@@ -237,7 +237,7 @@
                         &nbsp;|&nbsp; <a target="_blank" title="Open AWS Console for this account ({{aws_account_number}}) in another tab." style="text-decoration:none;" href="https://{{aws_account_number}}.signin.aws.amazon.com/console/">AWS  <span class="fa fa-external-link" style="position:relative;bottom:-1px;font-size:14px;"></span></a>
                 </td>
                 <td width="2%" align="center" style="white-space:nowrap;">
-                        <a target="_blank" href="https://pypi.org/project/foursight-cgap/{{version}}/"><b title="Version of: {{package}}" style="text-decoration:none;color:#263A48;">{{version}}</b></a>
+                        <a target="_blank" href="https://pypi.org/project/{{package}}/{{version}}/"><b title="Version of: {{package}}" style="text-decoration:none;color:#263A48;">{{version}}</b></a>
                 </td>
                 <td width="49%" style="padding-right:10pt;padding-top:2pt;padding-bottom:1pt;white-space:nowrap;" align="right" nowrap="1">
                     {% if environments|length > 0 %}
@@ -245,10 +245,10 @@
                             <b class="dropdown-button" onclick="this.nextSibling.display = 'block';" onmouseover="this.style.display = 'block';" style="color:#143c53" title="Environment: {{env}} ({{env_short}})">{{env}}</b>
                             <span class="dropdown-content">
                                 {% for environment in environments %}
-                                    {% if environment["name"].upper() == env.upper() or environment["public"].upper() == env.upper() or environment["full"].upper() == env.upper() or environment["short"].upper() == env.upper() or environment["foursight"].upper() == env.upper() %}
-                                        <span>{{environment["public"]}}&nbsp;&nbsp;&#x2713;</span>
+                                    {% if environment["name"].upper() == env.upper() or environment["public_name"].upper() == env.upper() or environment["full_name"].upper() == env.upper() or environment["short_name"].upper() == env.upper() or environment["foursight_name"].upper() == env.upper() %}
+                                        <span>{{environment["public_name"]}}&nbsp;&nbsp;&#x2713;</span>
                                     {% else %}
-                                        <a href="{{request.context.path.replace('/' + env, '/' + environment['public'])}}" onclick="this.style.color = 'yellow'; this.style.backgroundColor = '#143c53'; this.style.fontWeight = 'bold';">{{environment["public"]}}</a>
+                                        <a href="{{request.context.path.replace('/' + env, '/' + environment['public_name'])}}" onclick="this.style.color = 'yellow'; this.style.backgroundColor = '#143c53'; this.style.fontWeight = 'bold';">{{environment["public_name"]}}</a>
                                     {% endif %}
                                 {% endfor %}     
                             </span>
@@ -277,17 +277,25 @@
                     {% endif %}
                 </td>
             </tr>
-            {% if running_checks != '0' or queued_checks != '0' %}
-                <table width="100%">
-                    <tr style="background:#F9E79F;">
-                        <td style="padding-right:8pt;padding-top:2pt;padding-bottom:2pt;white-space:nowrap;" align="right">
+            <table width="100%">
+                <tr style="background:#F9E79F;">
+                    <td style="padding-left:8pt;padding-top:2pt;padding-bottom:2pt;white-space:nowrap;color:darkred;" ><i>
+                        This is the <b>legacy</b> Foursight. For the <b>new</b> Foursight <b>React</b> click <a href="{{context + 'react/' + env + '/home'}}" style="color:darkred;"><b><u>here</u></b></>.
+                    </i></td>
+                    <td style="padding-right:8pt;padding-top:2pt;padding-bottom:2pt;white-space:nowrap;" align="right">
+                        {% if running_checks != '0' or queued_checks != '0' %}
                             running: <b>{{running_checks}}</b> &nbsp;|&nbsp;
                             queued: <b>{{queued_checks}}</b>
-                        </td>
-                    </tr>
-                </table>
-            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
         </table>
+        <!--
+        <div style="float:right;font-size:small;margin-right:6pt;margin-top:4pt;padding-left:5pt;padding-right:5pt;padding-top:2pt;padding-bottom:2pt;border:1px solid darkred;border-radius:4pt;color:darkred;background:lightyellow;">
+            <a style="color:darkred" href="{{context + 'react/' + env + '/home'}}"><b>Foursight React</b></a>
+        </div>
+        -->
     </div>
     {% if not is_admin %}
         <div class="container">
@@ -332,9 +340,14 @@
         // which returns: { "title": "Auth0 Config", "auth0Client": "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB" }
         // where that base URL is for the portal.
         // var lock = new Auth0Lock('DPxEwsZRnKDpk0VfVAxrStRKukN14ILB', 'hms-dbmi.auth0.com', {
+        var redirectUrl = 'https://' + domain + context + 'callback/';
+        {% if is_running_locally %}
+            redirectUrl = redirectUrl.replace("/api", "")
+            redirectUrl = redirectUrl.replace("https://", "http://")
+        {% endif %}
         var lock = new Auth0Lock('{{auth0_client_id}}', 'hms-dbmi.auth0.com', {
             auth: {
-                redirectUrl: 'https://' + domain + context + 'callback/',
+                redirectUrl: redirectUrl,
                 responseType: 'code',
                 sso: false,
                 params: {scope: 'openid email', prompt: 'select_account'}

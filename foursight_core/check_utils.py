@@ -5,6 +5,7 @@ import json
 import logging
 from dcicutils.env_base import EnvBase
 from dcicutils.env_utils import infer_foursight_from_env
+from dcicutils.misc_utils import json_leaf_subst
 from .check_schema import CheckSchema
 from .exceptions import BadCheckSetup
 from .environment import Environment
@@ -19,8 +20,7 @@ class CheckHandler(object):
     """
     Class CheckHandler is a collection of utils related to checks
     """
-    def __init__(self, foursight_prefix, check_package_name='foursight_core',
-                 check_setup_dir=os.path.dirname(__file__)):
+    def __init__(self, foursight_prefix, check_package_name='foursight_core', check_setup_file=None, env=None):
         self.prefix = foursight_prefix
         self.check_package_name = check_package_name
         self.decorators = Decorators(foursight_prefix)
@@ -33,19 +33,22 @@ class CheckHandler(object):
         # read in the check_setup.json and parse it
         # NOTE: previously, we globbed for all possible paths - no reason to do this IMO, just check
         # that the passed path exists - Will 5/26/21
-        setup_path = os.path.join(check_setup_dir, 'check_setup.json')
-        if not os.path.exists(setup_path):
-            raise BadCheckSetup('Did not locate the specified check_setup: %s, looking in: %s' %
-                                (setup_path, os.listdir(check_setup_dir)))
-        logger.debug(f"foursight_core/CheckHandler: Loading check_setup.json file: {setup_path}")
-        with open(setup_path, 'r') as jfile:
+
+        # The check_setup_file is now pass in. It is supposed to ultimately come from chalicelib_cgap or
+        # chalicelib_fourfront via the AppUtils there (derived from AppUtilsCore here in foursight-core),
+        # which calls back to the locate_check_setup_file function AppUtilsCore here in foursight-core).
+        if not os.path.exists(check_setup_file):
+            raise BadCheckSetup(f"Did not locate the specified check setup file: {check_setup_file}")
+        self.CHECK_SETUP_FILE = check_setup_file # for display/troubleshooting
+        with open(check_setup_file, 'r') as jfile:
             self.CHECK_SETUP = json.load(jfile)
-        logger.debug(f"foursight_core/CheckHandler: Loaded check_setup.json file: {setup_path} ...")
+        logger.debug(f"foursight_core/CheckHandler: Loaded check_setup.json file: {check_setup_file} ...")
         logger.debug(self.CHECK_SETUP)
         # Validate and finalize CHECK_SETUP
-        logger.debug(f"foursight_core/CheckHandler: Validating check_setup.json file: {setup_path}")
+        logger.debug(f"foursight_core/CheckHandler: Validating check_setup.json file: {check_setup_file}")
         self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
-        logger.debug(f"foursight_core/CheckHandler: Done validating check_setup.json file: {setup_path}")
+        self.CHECK_SETUP = self.expand_check_setup(self.CHECK_SETUP, env)
+        logger.debug(f"foursight_core/CheckHandler: Done validating check_setup.json file: {check_setup_file}")
 
     def get_module_names(self):
         check_modules = importlib.import_module('.checks', self.check_package_name)
@@ -88,6 +91,18 @@ class CheckHandler(object):
                 continue
             checks_in_schedule.append(check_name)
         return checks_in_schedule
+
+    @staticmethod
+    def expand_check_setup(check_setup_json: dict, env: str) -> dict:
+        """
+        Expand/replace instance of <env-name> in the given dictionary with the given env name.
+        Does this replacment in-place, i.e. to the given dictionary; and also returns this value.
+        This does what 4dn-cloud-infra/resolve-foursight-checks was doing; and that now uses this.
+        """
+        if env:
+            ENV_NAME_MARKER = "<env-name>"
+            check_setup_json = json_leaf_subst(check_setup_json, {ENV_NAME_MARKER: env})
+        return check_setup_json
 
     def validate_check_setup(self, check_setup):
         """
