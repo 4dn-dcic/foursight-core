@@ -21,7 +21,6 @@ import NotFoundPage from './pages/NotFoundPage';
 import Page from './Page';
 import RedirectPage from './pages/RedirectPage';
 import Styles from './Styles';
-import TestPage from './pages/TestPage';
 import UserPage from './pages/UserPage';
 import UserCreatePage from './pages/UserCreatePage';
 import UserEditPage from './pages/UserEditPage';
@@ -149,9 +148,6 @@ const App = () => {
                         <Page.AuthorizationRequired>
                             <AwsS3Page />
                         </Page.AuthorizationRequired>
-                    }/>
-                    <Route path="/api/react/:environ/test" element={
-                        <TestPage />
                     }/>
                     <Route path="/api/react/:environ/forbidden" element={
                         <ForbiddenPage />
