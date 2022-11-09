@@ -85,6 +85,7 @@ class TestAppUtils:
         auth = app_utils.check_authorization({})
         assert not auth
 
+    @pytest.mark.skip  # localhost authentication disabled
     @pytest.mark.integratedx
     def test_check_jwt_authorization(self, app_utils_obj_conn):
         """ Tests same functionality as above except with a valid jwt

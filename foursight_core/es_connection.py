@@ -144,7 +144,7 @@ class ESConnection(AbstractConnection):
         Returns a tuple with search results as a list and the total count as an integer.
         """
         if not self.index:
-            return []
+            return [], 0
         err_msg = None
         try:
             res = search.execute().to_dict()
@@ -164,7 +164,7 @@ class ESConnection(AbstractConnection):
         total = res['hits']['total']
         return [obj[key] for obj in res['hits']['hits']] if len(res['hits']['hits']) > 0 else [], total  # noQA
 
-    def get_result_history(self, prefix, start, limit, sort = "timestamp.desc") -> [list, int]:
+    def get_result_history(self, prefix, start, limit, sort="timestamp.desc") -> [list, int]:
         """
         ES handle to implement the get_result_history functionality of RunResult
         """

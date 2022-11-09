@@ -243,7 +243,7 @@ class RunResult(object):
                 return self.filename_to_datetime(filename), total
 
             if after_date is not None:
-                history = list(filter(lambda k: wrapper(k) >= after_date, history))
+                history = list(filter(lambda k: wrapper(k)[0] >= after_date, history))
         else:
             all_keys = self.connections['s3'].list_all_keys_w_prefix(self.name, records_only=True)
             total = len(all_keys)

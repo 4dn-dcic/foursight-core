@@ -11,8 +11,7 @@ from unittest import mock
 
 FF_GLOBAL_ENV_BUCKET = 'foursight-prod-envs'
 LEGACY_PREFIX = "foursight-"
-LEGACY_ENVS = ['fourfront-mastertest', 'fourfront-hotseat', 'fourfront-production-blue', 'fourfront-production-green']
-PUBLIC_ENV_NAMES = ['mastertest', 'hotseat', 'data', 'staging']
+PUBLIC_ENV_NAMES = ['mastertest', 'hotseat', 'data', 'staging', 'webdev']
 
 CONFIG_KEYS = ['ff_env', 'es', 'fourfront']
 
@@ -69,9 +68,6 @@ def check_environment_names(envs, *, with_all):
     for env in envs:
         assert not env.endswith(".ecosystem")
 
-    for env in LEGACY_ENVS:
-        assert env in full_envs
-
     if with_all:
         assert 'all' in envs
 
@@ -92,7 +88,7 @@ def test_get_environment_info_from_s3():
 
     with EnvBase.global_env_bucket_named(FF_GLOBAL_ENV_BUCKET):
 
-        for test_env in LEGACY_ENVS + PUBLIC_ENV_NAMES:
+        for test_env in PUBLIC_ENV_NAMES:
             full_test_env = full_env_name(test_env)
             config = Environment.get_environment_info_from_s3(test_env)
 

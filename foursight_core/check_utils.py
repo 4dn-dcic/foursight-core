@@ -6,10 +6,10 @@ import logging
 from dcicutils.env_base import EnvBase
 from dcicutils.env_utils import infer_foursight_from_env
 from dcicutils.misc_utils import json_leaf_subst
-from .check_schema import CheckSchema
-from .exceptions import BadCheckSetup
-from .environment import Environment
-from .decorators import Decorators
+from foursight_core.check_schema import CheckSchema
+from foursight_core.exceptions import BadCheckSetup
+from foursight_core.environment import Environment
+from foursight_core.decorators import Decorators
 
 
 logging.basicConfig()

@@ -29,6 +29,87 @@ def datastore_status(connection, **kwargs):
         return check
 
 
+@check_function
+def ecs_task_listing(connection, **kwargs):
+    """ Returns information on the available task definitions for launch """
+    check = CheckResult(connection, 'ecs_task_listing')
+    ecs_client = ecs_utils.ECSUtils()
+    try:
+        available_tasks = ecs_client.list_ecs_tasks()
+    except Exception as e:
+        check.status = 'FAIL'
+        check.summary = f'Could not resolve available ECS tasks: {str(e)}'
+        return check
+    else:
+        check.status = 'PASS'
+        check.summary = 'See full output for list of tasks'
+        check.full_output = {
+            'taskDefinitionArns': available_tasks
+        }
+        return check
+
+
+@check_function(cluster_name=None, task_name=None, subnet=None, security_group=None)
+def invoke_ecs_task(connection, **kwargs):
+    """ Invokes an ECS task - intended for use with the deployment action """
+    check = CheckResult(connection, 'invoke_ecs_task')
+    cluster_name = kwargs.get('cluster_name')
+    task_name = kwargs.get('task_name')
+    subnet = kwargs.get('subnet')
+    security_group = kwargs.get('security_group')
+    if not (cluster_name and task_name and subnet and security_group):
+        check.status = 'FAIL'
+        check.summary = 'Did not pass all required parameters: cluster_name, task_name, subnet and security_group'
+        return check
+    else:
+        try:
+            ecs_client = ecs_utils.ECSUtils()
+            resp = ecs_client.run_ecs_task(cluster_name=cluster_name,
+                                           task_name=task_name, subnet=subnet,
+                                           security_group=security_group)
+        except Exception as e:
+            check.status = 'FAIL'
+            check.summary = f'Got an error trying to run_task: {str(e)}'
+            return check
+        else:
+            check.status = 'PASS'
+            check.summary = f'Successfully invoked task {task_name} on cluster {cluster_name}' \
+                            f' in subnet {subnet} with security group {security_group}'
+            check.full_output = {
+                'response': resp
+            }
+            return check
+
+
+@check_function(cluster_name=None, service_name=None, parallelization=None)
+def scale_ecs_service(connection, **kwargs):
+    """ Adjusts the service parallelization of a particular ECS service """
+    check = CheckResult(connection, 'scale_ecs_service')
+    cluster_name = kwargs.get('cluster_name')
+    service_name = kwargs.get('service_name')
+    parallelization = kwargs.get('parallelization')
+    if not (cluster_name and service_name and parallelization):
+        check.status = 'FAIL'
+        check.summary = 'Did not pass required arguments: cluster_name, service_name and parallelization'
+        return check
+    else:
+        try:
+            client = boto3.client('ecs', region=ecs_utils.COMMON_REGION)  # TODO: move to utils
+            resp = client.update_service(cluster=cluster_name, service=service_name,
+                                         desiredCount=parallelization)
+        except Exception as e:
+            check.status = 'FAIL'
+            check.summary = f'Got an error back from ECS: {str(e)}'
+            return check
+        else:
+            check.status = 'PASS'
+            check.summary = f'Successfully adjusted service {service_name} to run with desiredCount={parallelization}'
+            check.full_output = {
+                'response': resp
+            }
+            return check
+
+
 @check_function(db_instance_class='db.t3.xlarge', rds_name=None, allocated_storage=None)
 def scale_rds(connection, **kwargs):
     """ Adjusts the cluster size of the RDS instance """

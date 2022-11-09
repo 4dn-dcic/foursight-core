@@ -116,9 +116,9 @@ class TestESConnection:
         assert es.put_object(self.uuid(check4), check4)
         assert es.refresh_index()
         assert es.get_size() == 4
-        res = es.get_result_history('page_children_routes', 0, 25)
+        res = es.get_result_history('page_children_routes', 0, 25, sort=None)[0]
         assert len(res) == 3
-        res = es.get_result_history('check_status_mismatch', 0, 25)
+        res = es.get_result_history('check_status_mismatch', 0, 25, sort=None)[0]
         assert len(res) == 1
         es.delete_index(self.index)
 

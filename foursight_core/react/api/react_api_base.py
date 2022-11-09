@@ -28,8 +28,12 @@ class ReactApiBase:
     def __init__(self):
         super(ReactApiBase, self).__init__()
         self._envs = Envs(app.core.get_unique_annotated_environment_names())
-        self._auth0_config = Auth0Config(app.core.get_portal_url(self._envs.get_default_env()))
+        self._auth0_config = self.resolve_auth0_config()
         self._auth = Auth(self._auth0_config.get_client(), self._auth0_config.get_secret(), self._envs)
+
+    def resolve_auth0_config(self):
+        """ For mocking, this calls into EnvUtils which gives us trouble in unit testing """
+        return Auth0Config(app.core.get_portal_url(self._envs.get_default_env()))
 
     @staticmethod
     def create_response(http_status: int = 200,

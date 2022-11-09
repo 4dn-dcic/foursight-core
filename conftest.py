@@ -4,12 +4,14 @@ import app
 import boto3
 from dcicutils.env_utils import EnvUtils
 from dcicutils.env_manager import EnvManager
-from dcicutils.misc_utils import override_environ, ignored
+from dcicutils.misc_utils import ignored
 from dcicutils.env_base import EnvBase
 from foursight_core.app_utils import AppUtils
 from foursight_core.sqs_utils import SQS
 from foursight_core.environment import Environment
 from foursight_core.decorators import Decorators
+from foursight_core.react.api.auth0_config import Auth0Config
+from foursight_core.react.api.react_api_base import ReactApiBase
 
 
 GLOBAL_ENV_BUCKET = 'GLOBAL_ENV_BUCKET'
@@ -74,12 +76,18 @@ check_function = deco.check_function
 action_function = deco.action_function
 
 
+class SimulatedAuth0Config(Auth0Config):
+    pass
+
+
 class SimulatedAppUtils(AppUtils):
     """ Overrides metadata such that we can bring up a simulated AppUtils object
         without backing data in the cloud
     """
     prefix = FOURSIGHT_PREFIX
     host = ES_HOST  # we need a live ES
+    DEFAULT_ENV = DEV_ENV  # subclass is intended to set this
+    check_setup_file = 'foursight_core/check_setup.json'  # use dummy file
 
     def init_environments(self, env='all', envs=None):
         """ Overrides this method to mock out the call to s3 to get valid
@@ -119,15 +127,17 @@ def app_utils_obj_conn(global_env_bucket):  # noQA pytest fixture
             * queue_check to
     """
     ignored(global_env_bucket)
-    with mock.patch.object(EnvUtils, 'FOURSIGHT_BUCKET_PREFIX', FOURSIGHT_PREFIX):
-        apputils = SimulatedAppUtils()
-        with mock.patch.object(EnvUtils, '_get_config_object_from_s3',
-                               return_value=SIMULATED_ENV_CONFIG['main.ecosystem']):
-            with mock.patch.object(EnvManager, 'fetch_health_page_json',
-                                   return_value=SIMULATED_ENV_HEALTH_PAGE):
-                with mock.patch.object(Environment, 'get_environment_and_bucket_info',
-                                       return_value=SIMULATED_ENV_CONFIG['simulated']):
-                    conn = apputils.init_connection(DEV_ENV)
-                    with EnvUtils.temporary_state():
-                        yield apputils, conn
+    with mock.patch.object(ReactApiBase, 'resolve_auth0_config',
+                           return_value=SimulatedAuth0Config('https://dummy-url')):
+        with mock.patch.object(EnvUtils, 'FOURSIGHT_BUCKET_PREFIX', FOURSIGHT_PREFIX):
+            apputils = SimulatedAppUtils()
+            with mock.patch.object(EnvUtils, '_get_config_object_from_s3',
+                                   return_value=SIMULATED_ENV_CONFIG['main.ecosystem']):
+                with mock.patch.object(EnvManager, 'fetch_health_page_json',
+                                       return_value=SIMULATED_ENV_HEALTH_PAGE):
+                    with mock.patch.object(Environment, 'get_environment_and_bucket_info',
+                                           return_value=SIMULATED_ENV_CONFIG['simulated']):
+                        conn = apputils.init_connection(DEV_ENV)
+                        with EnvUtils.temporary_state():
+                            yield apputils, conn
     return
