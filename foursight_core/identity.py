@@ -18,6 +18,7 @@
 
 import logging
 import os
+from typing import Optional
 from dcicutils.cloudformation_utils import AbstractOrchestrationManager
 from dcicutils.secrets_utils import (
     apply_identity,
@@ -60,7 +61,7 @@ def find_lambda_names(stack_name: str, lambda_name_pattern: str) -> list:
     return response
 
 
-def find_check_runner_lambda_name(stack_name: str) -> str:
+def find_check_runner_lambda_name(stack_name: str) -> Optional[str]:
     """
     Returns name of the CheckRunner lambda function for the given stack name.
     Raises exception if not found or if a unique name is not found.
@@ -124,8 +125,12 @@ def apply_identity_environment_variables() -> None:
 
 
 def set_check_runner_lambda_environment_variable(stack_name) -> None:
-    os.environ["CHECK_RUNNER"] = find_check_runner_lambda_name(stack_name)
-    logger.info(f"Foursight CHECK_RUNNER environment variable value is: {os.environ['CHECK_RUNNER']}")
+    check_runner_lambda_name = find_check_runner_lambda_name(stack_name)
+    if check_runner_lambda_name:
+        os.environ["CHECK_RUNNER"] = check_runner_lambda_name
+        logger.info(f"Foursight CHECK_RUNNER environment variable value is: {os.environ.get('CHECK_RUNNER')}")
+    else:
+        logger.warn(f"Foursight CHECK_RUNNER environment variable is not set.")
 
 
 def set_elasticsearch_host_environment_variable() -> None:

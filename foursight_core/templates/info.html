@@ -37,7 +37,11 @@
                         {% elif key == main_title + ":" %}
                             <b style="cursor:copy;display:inline-block;width:77pt;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</b> &nbsp;&nbsp;
                             <a target="_blank" href="https://pypi.org/project/{{package}}/{{value}}/"><img src="https://cdn-images-1.medium.com/max/1064/1*8Zh-mzLnVMDsbvXdKsU4lw.png" height="21" /></a> &nbsp;
-                            <a target="_blank" href="https://github.com/dbmi-bgm/{{package}}/releases/tag/v{{value}}"><img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" /></a>
+                            {% if package == "foursight" %}
+                                <a target="_blank" href="https://github.com/4dn-dcic/{{package}}/releases/tag/v{{value}}"><img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" /></a>
+                            {% else %}
+                                <a target="_blank" href="https://github.com/dbmi-bgm/{{package}}/releases/tag/v{{value}}"><img src="https://git-scm.com/images/logos/downloads/Git-Logo-1788C.png" height="15" /></a>
+                            {% endif %}
                         {% elif key == "Portal Server:" %}
                             <span style="cursor:copy;font-family:monospace;" id="{{value}}" onclick="copy_to_clipboard(this.id)">{{value}}</span>
                             &nbsp;<a target="_blank" href="{{value}}"><span class="fa fa-external-link" style="position:relative;bottom:-1px;font-size:14px;"></span></a>

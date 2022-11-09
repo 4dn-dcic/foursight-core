@@ -1,6 +1,7 @@
 import os
 import json
-import time
+from typing import Tuple
+from dcicutils.misc_utils import ignored
 from elasticsearch import (
     # Elasticsearch,
     # TransportError,
@@ -136,10 +137,11 @@ class ESConnection(AbstractConnection):
         resp = self.es.indices.stats(index=self.index, metric='store')
         return resp['_all']['total']['store']['size_in_bytes']
 
-    def search(self, search, key='_source'):
+    def search(self, search, key='_source') -> Tuple[list, int]:
         """
         Inner function that passes doc as a search parameter to ES. Based on the
-        execute_search method in Fourfront
+        execute_search method in Fourfront.
+        Returns a tuple with search results as a list and the total count as an integer.
         """
         if not self.index:
             return []
@@ -159,17 +161,32 @@ class ESConnection(AbstractConnection):
         if err_msg:
             raise ElasticsearchException(message=err_msg)
         # In next line, PyCharm's linter wrongly worries that 'res' might not be reliably set above. -kmp 6-Jun-2022
-        return [obj[key] for obj in res['hits']['hits']] if len(res['hits']['hits']) > 0 else []  # noQA
+        total = res['hits']['total']
+        return [obj[key] for obj in res['hits']['hits']] if len(res['hits']['hits']) > 0 else [], total  # noQA
 
-    def get_result_history(self, prefix, start, limit):
+    def get_result_history(self, prefix, start, limit, sort = "timestamp.desc") -> [list, int]:
         """
         ES handle to implement the get_result_history functionality of RunResult
         """
+        sort_field = "uuid"
+        sort_order = "desc"
+        if sort:
+            if sort.endswith(".desc"):
+                sort_order = "desc"
+                sort_field = sort[:-5]
+            elif sort.endswith(".asc"):
+                sort_order = "asc"
+                sort_field = sort[:-4]
+            else:
+                sort_order = "asc"
+                sort_field = sort
+            if sort_field == "timestamp":
+                sort_field = "uuid"
         doc = {
             'from': start,
             'size': limit,
             'sort': {
-                'uuid': {'order': 'desc'}
+                sort_field: {'order': sort_order}
             },
             'query': {
                 'bool': {
@@ -186,7 +203,8 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        return self.search(search)
+        result, total = self.search(search)
+        return result, total
 
     def get_main_page_checks(self, checks=None, primary=True):
         """
@@ -220,7 +238,8 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        raw_result = self.search(search)
+        raw_result, total = self.search(search)
+        ignored(total)
         if checks is not None:
             # figure out which checks we didn't find, add a placeholder check so
             # that check is still rendered on the UI
@@ -249,7 +268,9 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        return self.search(search, key='_id')
+        result, total = self.search(search, key='_id')
+        ignored(total)
+        return result
 
     def list_all_keys_w_prefix(self, prefix):
         """
@@ -273,7 +294,9 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        return self.search(search, key='_id')
+        result, total = self.search(search, key='_id')
+        ignored(total)
+        return result
 
     def get_all_objects(self):
         """
@@ -293,7 +316,9 @@ class ESConnection(AbstractConnection):
         }
         search = Search(using=self.es, index=self.index)
         search.update_from_dict(doc)
-        return self.search(search)
+        result, total = self.search(search)
+        ignored(total)
+        return result
 
     def delete_keys(self, key_list):
         """

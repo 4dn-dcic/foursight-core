@@ -8,7 +8,7 @@ lint:
 	@flake8 foursight_core || echo "'flake8 foursight_core' failed."
 	@flake8 tests || echo "'flake8 tests' failed."
 
-build:  # builds
+build:  react
 	make configure
 	poetry install
 
@@ -26,6 +26,14 @@ publish:
 
 publish-for-ga:
 	scripts/publish --noconfirm
+
+.PHONY: react
+
+react:
+	scripts/react_build.sh
+
+react-run-local:
+	cd react ; npm start
 
 info:
 	@: $(info Here are some 'make' options:)

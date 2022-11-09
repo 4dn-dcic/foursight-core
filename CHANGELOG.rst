@@ -14,9 +14,22 @@ Change Log
 * Add some common checks applicable everywhere
     * Access Key Expiration Detection
     * ECS Deployment Recovery Mechanism
-    * ES Snapshot Recovery Mechanism
+    * ES Snapshot Recovery Mechanism (not that usable)
+    * Datastore status check
+    * Scaling checks for RDS, ES
 * Reintroduce tests for a large chunk of core functionality
     * Split tests into "not integrated" and "integrated" runs as mock fixtures seem to "infect" other tests that do not use them
+
+
+2.1.0
+=====
+* React-ifying Foursight.
+  * Many changes.
+  * React UI code in react directory.
+  * React API code in foursight_core/react directory.
+  * Moved all foursight-cgap and foursight Chalice routes to here.
+  * Old Foursight still works side-by-side with React version.
+
 
 2.0.2
 =====

@@ -13,8 +13,20 @@ from foursight_core.run_result import (
 from foursight_core.exceptions import BadCheckOrAction
 from foursight_core.sqs_utils import SQS
 
+# dmichaels/2022-09-20: Foursight React related addition.
+# Added this to get a handle on the check function kwargs defined via the check_function
+# decorator on the checks. Currently the Foursight UI seems to display these only by
+# virtue of them having been in a result set of an actual check run. But we would
+# like to get and present these without having to get the check history;
+# and without the check having to been run.
+# _decorator_registry = []
+_decorator_registry = {}
 
 class Decorators(object):
+
+    @staticmethod
+    def get_registry():
+        return _decorator_registry
 
     CHECK_DECO = 'check_function'
     ACTION_DECO = 'action_function'
@@ -60,6 +72,13 @@ class Decorators(object):
         ignored(default_args)
 
         def check_deco(func):
+            decorator_registry_record = {
+              # "function": func.__name__,
+                "args": default_args,
+                "kwargs": default_kwargs,
+            }
+          # _decorator_registry.append(decorator_registry_record)
+            _decorator_registry[func.__name__] = decorator_registry_record
             @wraps(func)
             def wrapper(*args, **kwargs):
                 start_time = time.time()
