@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import os
 from foursight_core.react.api import envs as react_envs
 from foursight_core.react.api.envs import Envs
