@@ -94,7 +94,7 @@ class CheckHandler(object):
         for mod_package, mods in self.get_module_names().items():
             for mod_name in mods:
                 collected_checks = self._extract_module_and_functions(mod_package, mod_name, self.CHECK_DECO,
-                                                                   specific_check)
+                                                                      specific_check)
                 if specific_check and isinstance(collected_checks, str):
                     return collected_checks  # we are looking for a specific one and should return
                 else:

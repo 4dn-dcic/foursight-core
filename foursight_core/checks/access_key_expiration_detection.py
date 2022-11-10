@@ -6,7 +6,7 @@ from dcicutils import s3_utils
 from dcicutils.ff_utils import get_metadata, search_metadata, patch_metadata, post_metadata
 
 
-@check_function
+@check_function()
 def access_key_status(connection, **kwargs):
     """ Checks the creation date of the admin access keys and if expiration is soon
         emit warning and error eventually as it gets closer. Once these keys expire
@@ -46,7 +46,7 @@ def access_key_status(connection, **kwargs):
         return check
 
 
-@action_function
+@action_function()
 def refresh_access_keys(connection, **kwargs):
     """ Triggers a refresh of the 3 admin keys, previously run through the portal """
     action = ActionResult(connection, 'refresh_access_keys')

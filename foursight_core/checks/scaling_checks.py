@@ -6,7 +6,7 @@ import boto3
 from dcicutils import es_utils, ecs_utils
 
 
-@check_function
+@check_function()
 def datastore_status(connection, **kwargs):
     """ Check that returns the valid names of RDS and ES clusters for convenience """
     check = CheckResult(connection, 'datastore_status')
@@ -29,7 +29,7 @@ def datastore_status(connection, **kwargs):
         return check
 
 
-@check_function
+@check_function()
 def ecs_task_listing(connection, **kwargs):
     """ Returns information on the available task definitions for launch """
     check = CheckResult(connection, 'ecs_task_listing')
