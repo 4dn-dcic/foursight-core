@@ -581,10 +581,10 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
 
 
 // This functionality is experimental (perhaps too clever by half):
-// Specialized, specific data update functions, e.g. to prepend, append, or insert
-// into array, etc. Simplifies acess to useFetch (return) value, i.e not having to
-// always dereference via useFetchResult.data. And since we're doing this at all,
-// might as well introduce some niceties to these functions.
+// Specialized, specific data update functions, e.g. to prepend, append,
+// or insert into array, etc. Simplifies access to useFetch (return) value,
+// i.e not having to always dereference via useFetchResult.data. And since
+// we're doing this at all, introduce some other functions as niceties.
 //
 function _defineResponseConvenienceFunctions(response) {
 

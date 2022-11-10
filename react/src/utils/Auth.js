@@ -53,12 +53,17 @@ function LoggedInViaGitHub(header) {
     return authenticator === "github";
 }
 
+function LoggedInAt() {
+    return Cookie.AuthToken()?.authenticated_at;
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
     IsLoggedIn:        IsLoggedIn,
+    LoggedInAt:        LoggedInAt,
     LoggedInInfo:      LoggedInInfo,
     LoggedInUser:      LoggedInUser,
     LoggedInUserName:  LoggedInUserName,

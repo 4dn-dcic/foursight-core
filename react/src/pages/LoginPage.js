@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useContext, useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import HeaderData from '../HeaderData';
 import Auth0Lock from 'auth0-lock';
 import Auth from '../utils/Auth';
@@ -18,6 +18,7 @@ import Logout from '../utils/Logout';
 import Server from '../utils/Server';
 import Yaml from '../utils/Yaml';
 import Page from '../Page';
+import { LoggedInUser, Link } from '../Components';
 
 const LoginPage = (props) => {
 
@@ -83,79 +84,71 @@ const LoginPage = (props) => {
 
     if ((header.loading || auth0Config.loading) && !header.error) return <>Loading ...</>
     if (header.error) return <>Cannot load Foursight.</>
+
+    const InfoPanel = () => {
+        return <>
+            { Env.Current() && <>
+                Current environment: <Link to="/env" env={Env.PreferredName(Env.Current(), header)}>{Env.PreferredName(Env.Current(), header)}</Link> <br />
+            </>}
+            { header?.auth?.initial_env && <>
+                Initial environment: <Link to="/env" env={Env.PreferredName(header.auth.initial_env, header)} bold={false}>{Env.PreferredName(header.auth.initial_env, header)}</Link> <br />
+            </>}
+            { Env.KnownEnvs(header) && <>
+                Available environments:
+                {Env.KnownEnvs(header).map((env, index) => {
+                    return <span key={index}>
+                        {index > 0 && <>,</>}
+                        &nbsp;{Env.PreferredName(env, header)}
+                    </span>
+                })} <br />
+            </>}
+            { header?.auth?.domain && <>
+                Domain: {header.auth.domain} <br />
+            </>}
+            {(header?.app?.credentials?.aws_account_number) && <>
+                AWS Account: <b>{header?.app?.credentials?.aws_account_number}</b>
+                {(header?.app?.credentials?.aws_account_name) && <>
+                    &nbsp;({header?.app?.credentials?.aws_account_name})
+                </>}
+                <br />
+            </>}
+        </>
+    }
+
     return <>
         { Auth.IsLoggedIn(header) ? (<React.Fragment>
             <div className="container" style={{width:"60%"}}>
-                {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt",color:"darkblue"}}>Hello, {Auth.LoggedInUserName(header)} ...</b>}
-                <div style={{float:"right",marginRight:"8pt",color:"darkblue",fontSize:"small",cursor:"pointer"}}>
+                {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt"}}>Hello, {Auth.LoggedInUserName(header)}</b>} ...
+                <div style={{float:"right",marginRight:"8pt",fontSize:"small",cursor:"pointer"}}>
                     { showingAuthToken ? <>
                         <span onClick={() => setShowAuthToken(false)}>Auth {Char.DownArrow}</span>
                     </>:<>
                         <span onClick={() => setShowAuthToken(true)}>Auth {Char.UpArrow}</span>
                     </>}
                 </div>
-                <div className="boxstyle info" style={{marginLeft:"0pt",padding:"10pt",color:"darkblue"}}>
+                <div className="box" style={{padding:"10pt"}}>
                     <table style={{color:"inherit"}}><tbody><tr>
-                        <td align="top" style={{verticalAlign:"top",whiteSpace:"nowrap",width:"40%"}}>
+                        <td align="top" style={{paddingRight:"14pt",verticalAlign:"top",whiteSpace:"nowrap",width:"40%"}}>
                             Logged in as:&nbsp;
-                            <Link to={Client.Path("/users/" + Auth.LoggedInUser(header))}><b style={{color:"darkblue"}}>{Auth.LoggedInUser(header)}</b></Link>
-                            { Auth.LoggedInViaGoogle(header) ? <>
-                                <span className="tool-tip" data-text="Google Authentication">
-                                    <img title="Via Google" style={{marginLeft:"9px",marginRight:"0",marginBottom:"2px"}} src={Image.GoogleLoginLogo()} height="15" />
-                                </span>
-                            </>:<>
-                                { Auth.LoggedInViaGitHub(header) && <>
-                                    <span className="tool-tip" data-text="GitHub Authentication">
-                                        <img title="Via GitHub" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
-                                    </span>
-                                </>}
-                            </>}
-                            <br />
+                            <LoggedInUser link="user" />
                             <div style={{fontSize:"small",marginTop:"6pt",paddingTop:"5pt",borderTop:"1px solid"}}>
                                 Session started: <LiveTime.FormatDuration start={Auth.Token().authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
                                 <br />
                                 Session expires: <LiveTime.FormatDuration end={Auth.Token().authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
                                 <br />
-                                Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}}
-                                    onClick={()=> Logout()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</span>.
+                                Click <span style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}}
+                                    onClick={()=> Logout()}>here</span> to <span style={{cursor:"pointer"}} onClick={()=> Logout()}>logout</span>.
                             </div>
                         </td>
-                        <td style={{minWidth:"8pt"}}>&nbsp;</td>
-                        <td style={{background:"darkblue",minWidth:"2px",maxWidth:"2px"}}></td>
-                        <td style={{minWidth:"8pt"}}>&nbsp;</td>
-                        <td style={{width:"60%",textAlign:"top",verticalAlign:"top"}}><small style={{marginTop:"20pt"}}>
-                            { Env.Current() && <>
-                                Current environment: <Link to={Client.Path("/env", Env.PreferredName(Env.Current(), header))} style={{color:"inherit"}}><b>{Env.PreferredName(Env.Current(), header)}</b></Link> <br />
-                            </>}
-                            { header?.auth?.initial_env && <>
-                                Initial environment: <Link to={Client.Path("/env", Env.PreferredName(header.auth.initial_env, header))} style={{color:"inherit"}}>{Env.PreferredName(header.auth.initial_env, header)}</Link> <br />
-                            </>}
-                            { Env.KnownEnvs(header) && <>
-                                Available environments:
-                                {Env.KnownEnvs(header).map((env, index) => {
-                                    return <span key={index}>
-                                        {index > 0 && <>,</>}
-                                        &nbsp;{Env.PreferredName(env, header)}
-                                    </span>
-                                })} <br />
-                            </>}
-                            { header?.auth?.domain && <>
-                                Domain: {header.auth.domain} <br />
-                            </>}
-                            {(header?.app?.credentials?.aws_account_number) && <>
-                                AWS Account: {header?.app?.credentials?.aws_account_number}
-                                {(header?.app?.credentials?.aws_account_name) && <>
-                                    &nbsp;({header?.app?.credentials?.aws_account_name})
-                                </>}
-                                <br />
-                            </>}
+                        <td style={{paddingLeft:"12pt",borderLeft:"2px solid",width:"60%",textAlign:"top",verticalAlign:"top"}}><small style={{marginTop:"20pt"}}>
+                            <InfoPanel />
                         </small></td>
                     </tr></tbody></table>
                 </div>
                 { !Env.IsAllowed(Env.Current(), header) && <>
                     <div className="boxstyle check-warn" style={{marginTop:"2pt",padding:"9pt",color:"darkred"}}>
                         Note that though you are logged in, you do not have permission to access the currently selected environment: <b style={{color:"red"}}>{Env.Current()}</b> <br />
-                        <small>Click <Link to={Client.Path("/env")} style={{color:"darkred"}}><b><u>here</u></b></Link> to go the the <Link to={Client.Path("/env")} style={{color:"darkred"}}><b>Environments Page</b></Link> to select another environment.</small>
+                        <small>Click <Link to="/env"><u>here</u></Link> to go the the <Link to="/env">Environments Page</Link> to select another environment.</small>
                     </div>
                 </>}
                 { showingAuthToken && <>

@@ -29,7 +29,7 @@ const UserPage = (props) => {
                         <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>{Char.Refresh}&nbsp;</b>
                         <span style={{fontWeight:"normal",float:"right"}}><Link to={Client.Path(`/users/edit/${user.uuid}`)} style={{fontWeight:"normal"}}>Edit</Link> |&nbsp;</span>
                     </div>
-                    <pre className="info">
+                    <pre className="box">
                         {Yaml.Format(user)}
                     </pre>
                 </div>

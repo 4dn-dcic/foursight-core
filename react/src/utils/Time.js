@@ -74,6 +74,10 @@ function FormatDuration(startDate, endDate = new Date(), verbose = false, fallba
            + (suffix ? " " + suffix : "");
 }
 
+function Ago(date, verbose = true) {
+    return FormatDuration(date, new Date(), verbose, null, null, "ago");
+}
+
 // Converts the give value to a JavaScript Date object.
 //
 function ToDateTime(value) {
@@ -143,6 +147,7 @@ function FormatTime(value, verbose = false) {
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
+    Ago:            Ago,
     FormatDuration: FormatDuration,
     FormatDateTime: FormatDateTime,
     FormatDate:     FormatDate,

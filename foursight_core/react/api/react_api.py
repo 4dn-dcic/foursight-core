@@ -126,7 +126,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "local": is_running_locally(request),
                 "credentials": {
                     "aws_account_number": aws_credentials["aws_account_number"],
-                    "aws_account_name": aws_credentials["aws_account_name"]
+                    "aws_account_name": aws_credentials.get("aws_account_name")
                 },
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified()
@@ -187,8 +187,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "credentials": self._auth.get_aws_credentials(env if env else default_env),
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified(),
-                "lambda": lambda_function_info,
-                "check_setup_file": app.core.check_handler.CHECK_SETUP_FILE
+                "lambda": lambda_function_info
             },
             "versions": {
                 "foursight": app.core.get_app_version(),
@@ -243,7 +242,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
             sort = sort[:-4]
 
         users = []
-        # TODO: Support paging.
         # TODO: Consider adding ability to search for both normal users and
         #       admin/foursight users (who would have access to foursight);
         #       and more advanced, the ability to grant foursight access.
@@ -255,17 +253,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
             if updated:
                 updated = updated.get("date_modified")
             created = user.get("date_created")
-            # TODO
-            # roles = []
-            # project_roles = user.get("project_roles")
-            # if project_roles:
-            #     role = role.get("date_modified")
-            #     roles.append({
-            #         "groups": groups,
-            #         "project_roles": project_roles,
-            #         "principals_view": principals_view,
-            #         "principals_edit": principals_edit
-            #     })
             users.append({
                 # Lower case email to avoid any possible issues on lookup later.
                 "email": (user.get("email") or "").lower(),

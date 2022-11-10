@@ -191,7 +191,7 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
     }
 
     return <>
-        <div className="box">
+        <div className="box cell thickborder">
             <form onSubmit={handleSubmit}>
                 <table><tbody>
                 { inputs?.map((input, index) =>

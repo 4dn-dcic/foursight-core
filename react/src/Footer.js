@@ -2,15 +2,18 @@ import { useContext } from 'react';
 import HeaderData from './HeaderData';
 import Env from './utils/Env';
 import Image from './utils/Image';
+import { useFetching } from './utils/Fetch';
 
 const Footer = (props) => {
 
     const [ header ] = useContext(HeaderData);
+    const [ fetching ] = useFetching();
 
     // TODO
     // Get the URLs CGAP/4DN URLs below directly from the Portal.
 
     if (header.loading) return null;
+    if (fetching.length > 0) return null;
     return <>
         <br />
         <table width="100%"><tbody>

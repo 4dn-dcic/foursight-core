@@ -454,8 +454,7 @@ class AppUtilsCore(ReactApi, Routes):
             # leeway accounts for clock drift between us and auth0
             return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30, options={"verify_signature": True}, algorithms=["HS256"])
         except Exception as e:
-            logger.warn(f"foursight_core: Exception decoding JWT token: {jwt_token}")
-            print(e)
+            logger.warn(f"foursight_core: Exception decoding JWT token ({jwt_token}): {get_error_message(e)}")
             return None
 
     @classmethod
