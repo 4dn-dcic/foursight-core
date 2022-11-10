@@ -3,8 +3,8 @@ import time
 from dateutil import tz
 from abc import abstractmethod
 import json
-from s3_connection import S3Connection
-from exceptions import (
+from foursight_core.s3_connection import S3Connection
+from foursight_core.exceptions import (
   BadCheckOrAction,
   MissingFoursightPrefixException
 )
