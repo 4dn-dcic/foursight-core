@@ -675,8 +675,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 return None
             response["foursight"]["url"] = get_foursight_base_url(foursight_url)
             response["foursight"]["header_url"] = response["foursight"]["url"] + "/reactapi/header"
-            print('xyzzy1')
-            print(response["foursight"]["header_url"])
             foursight_header_response = requests.get(response["foursight"]["header_url"])
             if foursight_header_response.status_code != 200:
                 response["foursight"]["error"] = f"Cannot fetch Foursight header URL.",
@@ -715,8 +713,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 return None
             response["portal"]["url"] = get_portal_base_url(portal_url)
             response["portal"]["health_url"] = response["portal"]["url"] + "/health?format=json"
-            print('xyzzy2')
-            print(response["portal"]["health_url"])
             portal_health_response = requests.get(response["portal"]["health_url"])
             if portal_health_response.status_code != 200:
                 response["portal"]["error"] = "Cannot fetch Portal health URL."
