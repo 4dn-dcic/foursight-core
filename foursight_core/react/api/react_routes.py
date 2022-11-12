@@ -64,6 +64,22 @@ class ReactRoutes:
         """
         return app.core.reactapi_header(app.current_request.to_dict(), app.core.get_default_env())
 
+    @route("/accounts", authorize=False)  # TODO: PROTECTED OR NOT?
+    def reactapi_route_accounts() -> Response:
+        """
+        Note that this in an UNPROTECTED route.
+        Returns info on all/other known accounts/environments.
+        """
+        return app.core.reactapi_accounts(app.current_request.to_dict())
+
+    @route("/accounts/{name}", authorize=False)  # TODO: PROTECTED OR NOT?
+    def reactapi_route_account(name: str) -> Response:
+        """
+        Note that this in an UNPROTECTED route.
+        Returns info on all/other known accounts/environments.
+        """
+        return app.core.reactapi_account(app.current_request.to_dict(), name)
+
     # ----------------------------------------------------------------------------------------------
     # Foursight React API routes PROTECTED by authorization/authentication.
     # ----------------------------------------------------------------------------------------------
@@ -231,6 +247,13 @@ class ReactRoutes:
         For troubleshooting only. Clear any/all internal caches.
         """
         return app.core.reactapi_clear_cache(app.current_request.to_dict())
+
+    @route("/__testsize__/{n}", authorize=True)
+    def reactapi_route_testsize(n: int) -> Response:
+        """
+        For troubleshooting only. Test response size capabilities of AWS Lamdas. 
+        """
+        return app.core.reactapi_testsize(n)
 
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes, serving the HTML/CSS/JavaScript/React files.

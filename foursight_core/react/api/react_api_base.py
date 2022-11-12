@@ -86,10 +86,14 @@ class ReactApiBase:
         return ReactApiBase.create_response(http_status=403, body={"status": "Forbidden."})
 
     @staticmethod
-    def create_error_response(message: Union[str, Exception]) -> Response:
+    def create_error_response(message: Union[dict, str, Exception]) -> Response:
         if isinstance(message, Exception):
             message = get_error_message(message)
-        return ReactApiBase.create_response(http_status=500, body={"error": message})
+        if isinstance(message, str):
+            body = { "error": message }
+        else:
+            body = message
+        return ReactApiBase.create_response(http_status=500, body=body)
 
     def is_react_authentication_callback(self, request: dict) -> bool:
         """

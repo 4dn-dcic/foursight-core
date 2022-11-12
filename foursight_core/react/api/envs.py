@@ -49,7 +49,8 @@ class Envs:
 
     @memoize(100)
     def find_known_env(self, env: str) -> Optional[dict]:
-        return find_association(self._known_envs, foursight_name=foursight_env_name(env))
+        known_envs = self.get_known_envs_with_gac_names()
+        return find_association(known_envs, foursight_name=foursight_env_name(env))
 
     def is_allowed_env(self, env: str, allowed_envs: list) -> bool:
         if not env or not allowed_envs:

@@ -14,7 +14,31 @@ const HomePage = (props) => {
     const [ header ] = useContext(HeaderData);
     const versionsToolTip = (Env.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + ": " + header?.versions?.foursight_core + " / foursight-core: " + header?.versions?.foursight + " / dcicutils: " + header?.versions?.dcicutils;
 
+
+    const XyzzyComponent = () => {
+        const AbcCom = () => {
+            return <div className="box">
+                AbcCom
+            </div>
+        }
+        const DefCom = () => {
+            return <div className="box">
+                DefCom
+            </div>
+        }
+        const list = [
+            <AbcCom />,
+            <DefCom />
+        ];
+        return <div className="box lighten">
+            { list.map(item => 
+                    {return item}
+            )}
+        </div>
+    }
+
     return <>
+        <XyzzyComponent />
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
                 <b>Welcome to Foursight</b> ({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})

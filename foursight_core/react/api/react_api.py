@@ -2,10 +2,12 @@ from chalice import Response, __version__ as chalice_version
 import copy
 import datetime
 from functools import lru_cache
+import io
 import json
 import os
 import pkg_resources
 import platform
+import requests
 import socket
 import time
 from typing import Optional
@@ -19,10 +21,11 @@ from ...decorators import Decorators
 from .aws_s3 import AwsS3
 from .checks import Checks
 from .cookie_utils import create_delete_cookie_string
-from .datetime_utils import convert_utc_datetime_to_useastern_datetime_string
+from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
 from .encoding_utils import base64_decode_to_json
 from .gac import Gac
 from .misc_utils import (
+    get_base_url,
     is_running_locally,
     sort_dictionary_by_case_insensitive_keys
 )
@@ -40,6 +43,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._checks = Checks(app.core.check_handler.CHECK_SETUP, self._envs)
         self._cached_header = {}
         self._cached_sqs_queue_url = None
+        self._cached_accounts = None
 
     def get_sqs_queue_url(self):
         if not self._cached_sqs_queue_url:
@@ -95,8 +99,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         data["auth"] = auth
         # 2022-10-18
         # No longer sharing known-envs widely; send only if authenticated;
-        # if not authenticated then act as-if the default-env is the only known-env,
-        # and in this case also include (as an FYI for the UI) the real number of known-envs.
+        # if not authenticated then act as-if the default-env is the only known-env;
+        # in this case also include (as an FYI for the UI) the real number of known-envs.
         if auth["authenticated"]:
             data["auth"]["known_envs"] = self._envs.get_known_envs_with_gac_names()
         else:
@@ -138,6 +142,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "python": platform.python_version(),
                 "chalice": chalice_version
             },
+            "portal": {
+                "url": app.core.get_portal_url(env if env else default_env),
+                "health_url": get_base_url(app.core.get_portal_url(env if env else default_env)) + "/health?format=json"
+            },
+            "s3": {
+                "bucket_org": os.environ.get("ENCODED_S3_BUCKET_ORG", os.environ.get("S3_BUCKET_ORG")),
+                "global_env_bucket": os.environ.get("GLOBAL_ENV_BUCKET", os.environ.get("GLOBAL_BUCKET_ENV"))
+            }
         }
         return response
 
@@ -410,7 +422,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                         'description': 'Check has not yet run'
                     }
                 title = app.core.check_handler.get_check_title_from_setup(check)
-                processed_result = app.core.process_view_result(connection, data, is_admin=True)
+                processed_result = app.core.process_view_result(connection, data, is_admin=True, skip_output_size_check=True)
                 body.append({
                     'status': 'success',
                     'env': env,
@@ -600,6 +612,122 @@ class ReactApi(ReactApiBase, ReactRoutes):
         key = urllib.parse.unquote(key)
         return self.create_success_response(AwsS3.get_bucket_key_contents(bucket, key))
 
+    def get_accounts_file(self) -> dict:
+        ACCOUNTS_JSON_FILE = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../accounts.json"))
+        return ACCOUNTS_JSON_FILE
+
+    def get_accounts(self) -> dict:
+        if not self._cached_accounts:
+            with io.open(self.get_accounts_file(), "r") as accounts_json_f:
+                accounts_json = json.load(accounts_json_f)
+                for account in accounts_json:
+                    account_name = account.get("name")
+                    if account_name:
+                        account_stage = account.get("stage")
+                        if account_stage:
+                            account["id"] = account_name + ":" + account_stage
+                        else:
+                            account["id"] = account_name
+                self._cached_accounts = accounts_json
+        return self._cached_accounts
+
+    def reactapi_accounts(self, request: dict) -> Response:
+        accounts = self.get_accounts()
+        return self.create_success_response(accounts) if accounts else self.create_error_response(None)
+
+    def reactapi_account(self, request: dict, name: str) -> Response:
+
+        def is_account_name_match(account: dict, name: str) -> bool:
+            account_name = account.get("name")
+            if account_name == name:
+                return True
+            account_name = account_name + ":" + account.get("stage")
+            if account_name == name:
+                return True
+            return False
+
+        try:
+            response = {}
+            accounts = self.get_accounts()
+            account = [account for account in accounts if is_account_name_match(account, name)] if accounts else None
+            account = account[0] if account and len(account) == 1 else None
+            if not account:
+                return self.create_response(404, {
+                    "name": name,
+                    "error": "Cannot find account.",
+                    "accounts_file": self.get_accounts_file()
+                })
+
+            foursight_url = get_base_url(account.get("foursight_url")) + "/api"
+            foursight_header_url = foursight_url + "/reactapi/header"
+            foursight_header_response = requests.get(foursight_header_url)
+            if foursight_header_response.status_code != 200:
+                return self.create_error_response({
+                    "name": name,
+                    "error": f"Cannot fetch Foursight header URL",
+                    "foursight_header_url": foursight_header_url,
+                    "foursight_header_status": foursight_header_response.status_code,
+                    "accounts_file": self.get_accounts_file()
+                })
+
+            response["name"] = account.get("name")
+            response["stage"] = account.get("stage")
+            response["id"] = account.get("name") + (":" + account.get("stage") if account.get("stage") else "")
+
+            foursight_header_json = foursight_header_response.json()
+            response["foursight"] = {}
+            response["foursight"]["url"] = foursight_url
+            response["foursight"]["header_url"] = foursight_header_url
+            response["foursight"]["versions"] = foursight_header_json["versions"]
+            foursight_app = foursight_header_json.get("app")
+            if foursight_app:
+                response["foursight"]["package"] = foursight_app["package"]
+                response["foursight"]["stage"] = foursight_app["stage"]
+                response["foursight"]["deployed"] = foursight_app["deployed"]
+            response["foursight"]["default_env"] = foursight_header_json["auth"]["known_envs"][0]
+            response["foursight"]["env_count"] = foursight_header_json["auth"]["known_envs_actual_count"]
+            response["foursight"]["identity"] = foursight_header_json["auth"]["known_envs"][0].get("gac_name")
+            foursight_header_json_s3 = foursight_header_json.get("s3")
+            if foursight_header_json_s3:
+                response["foursight"]["s3"] = {}
+                response["foursight"]["s3"]["bucket_org"] = foursight_header_json_s3.get("bucket_org")
+                response["foursight"]["s3"]["global_env_bucket"] = foursight_header_json_s3.get("global_env_bucket")
+            if foursight_app:
+                response["foursight"]["aws_account_number"] = foursight_app["credentials"]["aws_account_number"]
+                response["foursight"]["aws_account_name"] = foursight_app["credentials"]["aws_account_name"]
+            response["foursight"]["auth0_client"] = foursight_header_json["auth"]["aud"]
+
+            foursight_header_json_portal = foursight_header_json.get("portal")
+            portal_url = foursight_header_json_portal.get("url") if foursight_header_json_portal else None
+            if not portal_url:
+                portal_url = account.get("portal_url")
+            response["portal"] = {}
+            if portal_url:
+                portal_url = get_base_url(portal_url)
+                portal_health_url = portal_url + "/health?format=json"
+                portal_health_json = requests.get(portal_health_url).json()
+                response["portal"]["url"] = portal_url
+                response["portal"]["health_url"] = portal_health_url
+                response["portal"]["foursight_url"] = portal_health_json.get("foursight")
+                response["portal"]["versions"] = { "portal": portal_health_json.get("project_version"),
+                                                   "snovault": portal_health_json.get("snovault_version"),
+                                                   "dcicutils": portal_health_json.get("utils_version") }
+                portal_uptime = portal_health_json.get("uptime")
+                portal_started = convert_uptime_to_datetime(portal_uptime)
+                response["portal"]["started"] = convert_utc_datetime_to_useastern_datetime_string(portal_started)
+                response["portal"]["identity"] = portal_health_json.get("identity")
+            if get_base_url(response["portal"].get("foursight_url")) != get_base_url(response["foursight"].get("url")):
+                response["warnings"] = {}
+                response["warnings"]["foursight_url_mismatch"] = True
+            if response["portal"].get("identity") != response["foursight"].get("identity"):
+                if not response.get("warnings"):
+                    response["warnings"] = {}
+                response["warnings"]["identity_mismatch"] = True
+            response["accounts_file"] = self.get_accounts_file()
+            return self.create_success_response(response)
+        except Exception as e:
+            return self.create_error_response(e)
+
     def reactapi_reload_lambda(self, request: dict) -> Response:
         """
         Called from react_routes for endpoint: GET /__reloadlambda__
@@ -623,3 +751,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._cached_sqs_queue_url = None
         self._get_env_and_bucket_info.cache_clear()
         return self.create_success_response({"status": "Caches cleared."})
+
+    def reactapi_testsize(self, n: int) -> Response:
+        n = int(n) - 8 # { "N": "" }
+        s = "".join(["X" for _ in range(n)])
+        body = { "N": s }
+        return app.core.create_success_response(body)

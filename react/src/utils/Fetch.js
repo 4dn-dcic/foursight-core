@@ -394,7 +394,7 @@ function _doFetch(args, current = undefined) {
 
     function _handleError(error, id) {
         let status = error.response?.status || 0;
-        args.setData(null);
+        args.setData(error?.response?.data);
         args.setStatus(status);
         args.setError(error.message);
         args.setLoading(false);

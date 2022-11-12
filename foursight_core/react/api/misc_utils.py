@@ -1,6 +1,7 @@
 from chalice.app import Request
 import json
 from typing import Optional
+from urllib.parse import urlparse
 
 def sort_dictionary_by_case_insensitive_keys(dictionary: dict) -> dict:
     """
@@ -35,6 +36,14 @@ def get_request_arg(request: dict, name: str) -> Optional[str]:
 
 def get_request_body(request: Request) -> dict:
     return json.loads(request.raw_body.decode())
+
+
+def get_base_url(url: str) -> str:
+    try:
+        url = urlparse(url)
+        return url.scheme + "://" + url.netloc
+    except Exception:
+        return ""
 
 
 def is_running_locally(request: dict) -> bool:
