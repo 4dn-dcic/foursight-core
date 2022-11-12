@@ -38,7 +38,6 @@ const HomePage = (props) => {
     }
 
     return <>
-        <XyzzyComponent />
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
                 <b>Welcome to Foursight</b> ({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})
