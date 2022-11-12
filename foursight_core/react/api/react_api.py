@@ -612,14 +612,27 @@ class ReactApi(ReactApiBase, ReactRoutes):
         key = urllib.parse.unquote(key)
         return self.create_success_response(AwsS3.get_bucket_key_contents(bucket, key))
 
+    # ----------------------------------------------------------------------------------------------
+    # EXPERIMENTAL
+    # ----------------------------------------------------------------------------------------------
+    # Accounts page, driven by accounts.json file, to list all AWS environments and info.
+    # For now we manually encrypt the accounts.json file and decrypt on read here, so that
+    # we don't expose (in GitHub or PyPi) the accounts.json, with internal URLs, in plaintext.
+    # We use the ENCODED_AUTH0_SECRET in the GAC as the encryption password.
+    # ----------------------------------------------------------------------------------------------
+
     def get_accounts_file(self) -> dict:
         ACCOUNTS_JSON_FILE = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../accounts.json"))
         return ACCOUNTS_JSON_FILE
 
     def get_accounts(self) -> dict:
         if not self._cached_accounts:
+            from foursight_core.react.api.encryption import Encryption
+            encryption = Encryption()
             with io.open(self.get_accounts_file(), "r") as accounts_json_f:
-                accounts_json = json.load(accounts_json_f)
+                accounts_json_content_encrypted = accounts_json_f.read()
+                accounts_json_content = encryption.decrypt(accounts_json_content_encrypted)
+                accounts_json = json.loads(accounts_json_content)
                 for account in accounts_json:
                     account_name = account.get("name")
                     if account_name:
@@ -727,6 +740,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
             return self.create_success_response(response)
         except Exception as e:
             return self.create_error_response(e)
+
+    # ----------------------------------------------------------------------------------------------
+    # END OF EXPERIMENTAL
+    # ----------------------------------------------------------------------------------------------
 
     def reactapi_reload_lambda(self, request: dict) -> Response:
         """
