@@ -631,7 +631,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
             encryption = Encryption()
             with io.open(self.get_accounts_file(), "r") as accounts_json_f:
                 accounts_json_content_encrypted = accounts_json_f.read()
-                accounts_json_content = encryption.decrypt(accounts_json_content_encrypted)
+                if accounts_json_content_encrypted.startswith("["):
+                    # Check for not encrypted (lamely) for local testing.
+                    accounts_json_content = accounts_json_content_encrypted
+                else:
+                    accounts_json_content = encryption.decrypt(accounts_json_content_encrypted)
                 accounts_json = json.loads(accounts_json_content)
                 for account in accounts_json:
                     account_name = account.get("name")
@@ -659,38 +663,26 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 return True
             return False
 
-        try:
-            response = {}
-            accounts = self.get_accounts()
-            account = [account for account in accounts if is_account_name_match(account, name)] if accounts else None
-            account = account[0] if account and len(account) == 1 else None
-            if not account:
-                return self.create_response(404, {
-                    "name": name,
-                    "error": "Cannot find account.",
-                    "accounts_file": self.get_accounts_file()
-                })
+        def get_foursight_base_url(foursight_url: str) -> Optional[str]:
+            return get_base_url(foursight_url) + "/api" if foursight_url else None
 
-            foursight_url = get_base_url(account.get("foursight_url")) + "/api"
-            foursight_header_url = foursight_url + "/reactapi/header"
-            foursight_header_response = requests.get(foursight_header_url)
-            if foursight_header_response.status_code != 200:
-                return self.create_error_response({
-                    "name": name,
-                    "error": f"Cannot fetch Foursight header URL",
-                    "foursight_header_url": foursight_header_url,
-                    "foursight_header_status": foursight_header_response.status_code,
-                    "accounts_file": self.get_accounts_file()
-                })
+        def get_portal_base_url(portal_url: str) -> Optional[str]:
+            return get_base_url(portal_url) if portal_url else None
 
-            response["name"] = account.get("name")
-            response["stage"] = account.get("stage")
-            response["id"] = account.get("name") + (":" + account.get("stage") if account.get("stage") else "")
-
-            foursight_header_json = foursight_header_response.json()
+        def get_foursight_info(foursight_url: str, response: dict) -> Optional[str]:
             response["foursight"] = {}
-            response["foursight"]["url"] = foursight_url
-            response["foursight"]["header_url"] = foursight_header_url
+            if not foursight_url:
+                return None
+            response["foursight"]["url"] = get_foursight_base_url(foursight_url)
+            response["foursight"]["header_url"] = response["foursight"]["url"] + "/reactapi/header"
+            print('xyzzy1')
+            print(response["foursight"]["header_url"])
+            foursight_header_response = requests.get(response["foursight"]["header_url"])
+            if foursight_header_response.status_code != 200:
+                response["foursight"]["error"] = f"Cannot fetch Foursight header URL.",
+                response["foursight"]["header_url_status"] = foursight_header_response.status_code
+                return None
+            foursight_header_json = foursight_header_response.json()
             response["foursight"]["versions"] = foursight_header_json["versions"]
             foursight_app = foursight_header_json.get("app")
             if foursight_app:
@@ -709,37 +701,81 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 response["foursight"]["aws_account_number"] = foursight_app["credentials"]["aws_account_number"]
                 response["foursight"]["aws_account_name"] = foursight_app["credentials"]["aws_account_name"]
             response["foursight"]["auth0_client"] = foursight_header_json["auth"]["aud"]
-
             foursight_header_json_portal = foursight_header_json.get("portal")
-            portal_url = foursight_header_json_portal.get("url") if foursight_header_json_portal else None
-            if not portal_url:
-                portal_url = account.get("portal_url")
+            if not foursight_header_json_portal:
+                response["foursight"]["portal_url"] = None
+                return None
+            portal_url = get_portal_base_url(foursight_header_json_portal.get("url"))
+            response["foursight"]["portal_url"] = portal_url
+            return portal_url
+
+        def get_portal_info(portal_url: str, response: dict) -> Optional[str]:
             response["portal"] = {}
-            if portal_url:
-                portal_url = get_base_url(portal_url)
-                portal_health_url = portal_url + "/health?format=json"
-                portal_health_json = requests.get(portal_health_url).json()
-                response["portal"]["url"] = portal_url
-                response["portal"]["health_url"] = portal_health_url
-                response["portal"]["foursight_url"] = portal_health_json.get("foursight")
-                response["portal"]["versions"] = { "portal": portal_health_json.get("project_version"),
-                                                   "snovault": portal_health_json.get("snovault_version"),
-                                                   "dcicutils": portal_health_json.get("utils_version") }
-                portal_uptime = portal_health_json.get("uptime")
-                portal_started = convert_uptime_to_datetime(portal_uptime)
-                response["portal"]["started"] = convert_utc_datetime_to_useastern_datetime_string(portal_started)
-                response["portal"]["identity"] = portal_health_json.get("identity")
-            if get_base_url(response["portal"].get("foursight_url")) != get_base_url(response["foursight"].get("url")):
-                response["warnings"] = {}
-                response["warnings"]["foursight_url_mismatch"] = True
-            if response["portal"].get("identity") != response["foursight"].get("identity"):
-                if not response.get("warnings"):
-                    response["warnings"] = {}
-                response["warnings"]["identity_mismatch"] = True
-            response["accounts_file"] = self.get_accounts_file()
+            if not portal_url:
+                return None
+            response["portal"]["url"] = get_portal_base_url(portal_url)
+            response["portal"]["health_url"] = response["portal"]["url"] + "/health?format=json"
+            print('xyzzy2')
+            print(response["portal"]["health_url"])
+            portal_health_response = requests.get(response["portal"]["health_url"])
+            if portal_health_response.status_code != 200:
+                response["portal"]["error"] = "Cannot fetch Portal health URL."
+                response["portal"]["health_url_status"] = portal_health_response.status_code
+                return None
+            portal_health_json = portal_health_response.json()
+            response["portal"]["versions"] = { "portal": portal_health_json.get("project_version"),
+                                               "snovault": portal_health_json.get("snovault_version"),
+                                               "dcicutils": portal_health_json.get("utils_version") }
+            portal_uptime = portal_health_json.get("uptime")
+            portal_started = convert_uptime_to_datetime(portal_uptime)
+            response["portal"]["started"] = convert_utc_datetime_to_useastern_datetime_string(portal_started)
+            response["portal"]["identity"] = portal_health_json.get("identity")
+            response["portal"]["health"] = portal_health_json
+            foursight_url = get_foursight_base_url(portal_health_json.get("foursight"))
+            response["portal"]["foursight_url"] = foursight_url
+            return foursight_url
+
+        response = { "accounts_file": self.get_accounts_file() }
+        accounts = self.get_accounts()
+        account = [account for account in accounts if is_account_name_match(account, name)] if accounts else None
+        if not account or len(account) > 1:
+            response["name"] = name
+            response["error"] = f"Cannot find {' unique' if len(account) > 1 else ''} account."
             return self.create_success_response(response)
-        except Exception as e:
-            return self.create_error_response(e)
+        else:
+            account = account[0]
+
+        response["name"] = account.get("name")
+        response["stage"] = account.get("stage")
+        response["id"] = account.get("name") + (":" + account.get("stage") if account.get("stage") else "")
+
+        account_foursight_url = account.get("foursight_url")
+        account_portal_url = account.get("portal_url")
+
+        if account_foursight_url:
+            portal_url = get_foursight_info(account_foursight_url, response)
+            get_portal_info(portal_url, response)
+        elif account_portal_url:
+            foursight_url = get_portal_info(account_portal_url, response)
+            get_foursight_info(foursight_url, response)
+        else:
+            response["error"] = "Neither foursight nor portal URLs found in account info."
+            return self.create_success_response(response)
+
+        if response["portal"].get("foursight_url") != response["foursight"].get("url"):
+            if not response.get("warnings"):
+                response["warnings"] = []
+            response["warnings"].append("Foursight URL mismatch")
+        if response["portal"].get("url") != response["foursight"].get("portal_url"):
+            if not response.get("warnings"):
+                response["warnings"] = []
+            response["warnings"].append("Portal URL mismatch.")
+        if response["portal"].get("identity") != response["foursight"].get("identity"):
+            if not response.get("warnings"):
+                response["warnings"] = []
+            response["warnings"].append("Identity mismatch.")
+
+        return self.create_success_response(response)
 
     # ----------------------------------------------------------------------------------------------
     # END OF EXPERIMENTAL
