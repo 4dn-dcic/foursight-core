@@ -64,7 +64,7 @@ class ReactRoutes:
         """
         return app.core.reactapi_header(app.current_request.to_dict(), app.core.get_default_env())
 
-    @route("/accounts", authorize=False)  # TODO: PROTECTED OR NOT?
+    @route("/accounts", authorize=True)
     def reactapi_route_accounts() -> Response:
         """
         Note that this in an UNPROTECTED route.
@@ -72,7 +72,7 @@ class ReactRoutes:
         """
         return app.core.reactapi_accounts(app.current_request.to_dict())
 
-    @route("/accounts/{name}", authorize=False)  # TODO: PROTECTED OR NOT?
+    @route("/accounts/{name}", authorize=True)
     def reactapi_route_account(name: str) -> Response:
         """
         Note that this in an UNPROTECTED route.

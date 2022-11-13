@@ -1,8 +1,9 @@
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import HeaderData from '../HeaderData';
 import Page from '../Page';
+import { BarSpinner } from '../Spinners';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
 import { HorizontalLine } from '../Components';
@@ -10,6 +11,7 @@ import Char from '../utils/Char';
 import Env from '../utils/Env';
 import { useFetch, useFetchFunction } from '../utils/Fetch';
 import Server from '../utils/Server';
+import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 
@@ -136,7 +138,7 @@ const AccountInfoRight = ({ info }) => {
             </td>
             <td>
                 { info.get("foursight.deployed") ? <>
-                    <b>{info.get("foursight.deployed")}</b>
+                    <b className="tool-tip" data-text={Time.Ago(info.get("foursight.deployed"))}>{info.get("foursight.deployed")}</b>
                 </>:<>
                     <b>{Char.EmptySet}</b>
                 </>}
@@ -148,7 +150,7 @@ const AccountInfoRight = ({ info }) => {
             </td>
             <td>
                 { info.get("portal.started") ? <>
-                    <b>{info.get("portal.started")}</b>
+                    <b className="tool-tip" data-text={Time.Ago(info.get("portal.started"))}>{info.get("portal.started")}</b>
                 </>:<>
                     <b>{Char.EmptySet}</b>
                 </>}
@@ -259,19 +261,43 @@ const AccountInfoRight = ({ info }) => {
     </tbody></table>
 }
 
-const AccountInfo = ({ account }) => {
-    const info = useFetch(Server.Url(`/accounts/${account.id}`, false), { nofetch: false });
+const AccountInfo = ({ account, header, refresh, setRefresh }) => {
+
+    const info = useFetch(Server.Url(`/accounts/${account.id}`, false), { nofetch: true });
+
+    useEffect(() => {
+        info.refresh();
+        setRefresh(false);
+    }, [ refresh ]);
+
+    function refreshData() {
+        info.refresh();
+    }
+
+    function isThisAccount() {
+        return header?.app?.credentials?.aws_account_number === info?.data?.foursight?.aws_account_number;
+    }
+
     return <>
-        <div className="box lighten">
-            <b>{info.data?.name}</b>
+        <div className={isThisAccount() ? "box" : "box lighten"}>
+            {isThisAccount() ? <>
+                <b className="tool-tip" data-text="This is your current account.">{info.data?.name || account.name}</b>
+            </>:<>
+                <b>{info.data?.name || account.name}</b>
+            </>}
             { info.get("foursight.stage") && <>
                 &nbsp;- <span className="tool-tip" data-text={`Stage: ${info.get("foursight.stage")}`}>{info.get("foursight.stage")}</span>
             </>}
-            <div style={{float:"right"}}>
-                { info.data?.__showraw ? <>
-                    <span className="tool-tip" data-text="Click to hide raw results." onClick={() => { info.data.__showraw = false; info.update(); }} style={{cursor:"pointer"}}>{Char.DownArrow}</span>
+            <div style={{float:"right",marginTop:"-2pt"}}>
+                { info.loading ? <>
+                    <div style={{paddingTop:"7pt",paddingRight:"2pt"}}><BarSpinner /></div>
                 </>:<>
-                    <span className="tool-tip" data-text="Click to show raw results." onClick={() => {info.data.__showraw = true;info.update(); }} style={{cursor:"pointer"}}>{Char.UpArrow}</span>
+                    { info.data?.__showraw ? <>
+                        <span className="tool-tip" data-text="Click to hide raw results." onClick={() => { info.data.__showraw = false; info.update(); }} style={{cursor:"pointer"}}>{Char.DownArrow}</span>
+                    </>:<>
+                        <span className="tool-tip" data-text="Click to show raw results." onClick={() => {info.data.__showraw = true;info.update(); }} style={{cursor:"pointer"}}>{Char.UpArrow}</span>
+                    </>}
+                    <span onClick={refreshData} style={{cursor:"pointer"}}>&nbsp;&nbsp;{Char.Refresh}</span>
                 </>}
             </div>
             <div style={{marginTop:"3pt",marginBottom:"4pt",border:"1px",borderTop:"dotted"}}></div>
@@ -297,12 +323,26 @@ const AccountInfo = ({ account }) => {
     </>
 }
 
-const AccountsComponent = () => {
+const AccountsComponent = ({ header }) => {
+
     const accounts = useFetch(Server.Url("/accounts", false));
+    const [ refresh, setRefresh ] = useState(false);
+
+    function refreshAll() {
+        accounts.refresh();
+        for (const account in accounts) {
+            setRefresh(true);
+        }
+    }
+
     return <>
-        { accounts?.map(account => <>
-            <div style={{height:"8pt"}} />
-            <AccountInfo account={account} />
+        <b>Known Accounts</b>
+        <span style={{marginRight:"12pt",cursor:"pointer"}} onClick={refreshAll}>
+            &nbsp;&nbsp;{Char.Refresh}
+        </span>
+        { accounts?.map((account, index) => <>
+            { index > 0 && <div style={{height:"8pt"}} /> }
+            <AccountInfo account={account} header={header} refresh={refresh} setRefresh={setRefresh}/>
         </>)}
     </>
 }

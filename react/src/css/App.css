@@ -368,6 +368,10 @@
 .box.lighten {
     background: var(--box-bg-lighten);
 }
+.box.warning {
+    background-color: #FCF8E3;
+    color: #8A6D3B;
+}
 
 .bg {
     background: var(--box-bg);

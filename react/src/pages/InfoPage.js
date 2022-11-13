@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import { StandardSpinner } from '../Spinners';
 import HeaderData from '../HeaderData';
+import AccountsComponent from './AccountsComponent';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
@@ -23,6 +24,7 @@ const InfoPage = () => {
     const [ header ] = useContext(HeaderData);
     const info = useFetch(Server.Url("/info"));
     const [ showingAuthToken, setShowAuthToken ] = useState(false);
+    const [ showingAccounts, setShowingAccounts ] = useState(false);
     const [ reloadingApp, setReloadingApp ] = useState(false);
     const fetch = useFetchFunction();
 
@@ -35,16 +37,24 @@ const InfoPage = () => {
         fetch(Server.Url("/__clearcache__", false));
     }
 
-    const InfoBox = ({title, children}) => {
+    const InfoBox = ({title, show = true, children}) => {
+        const [ showing, setShowing ] = useState(show);
         return <>
             <div className="container">
-                <b>{title}</b>
-                { title === "Versions" && <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={info.refresh}>{Char.Refresh}&nbsp;</b> }
-                <ul className="top-level-list">
-                    <div className="info boxstyle" style={{paddingLeft:"8pt",paddingTop:"6pt",paddingBottom:"8pt"}}>
-                        {children}
+                { showing ? <>
+                    <b onClick={() => setShowing(false)} style={{cursor:"pointer"}}>{title}</b> &nbsp;<span onClick={() => setShowing(false)} style={{cursor:"pointer"}}>{Char.DownArrow}</span>
+                    { title === "Versions" && <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={info.refresh}>{Char.Refresh}&nbsp;</b> }
+                    <ul className="top-level-list">
+                        <div className="box" style={{paddingLeft:"8pt",paddingTop:"6pt",paddingBottom:"8pt"}}>
+                            {children}
+                        </div>
+                    </ul>
+                </>:<>
+                    <b onClick={() => setShowing(true)} style={{cursor:"pointer"}}>{title}</b> &nbsp;<span onClick={() => setShowing(true)} style={{cursor:"pointer"}}>{Char.UpArrow}</span>
+                    <div className="box">
+                        Click <span onClick={() => setShowing(true)} style={{cursor:"pointer"}}><b>here</b></span> to <span onClick={() => setShowing(true)} style={{cursor:"pointer"}}>show</span>.
                     </div>
-                </ul>
+                </>}
             </div>
         </>
     }
@@ -160,16 +170,16 @@ const InfoPage = () => {
             <InfoRow name={"Foursight Bucket Prefix"} value={info.get("buckets.foursight_prefix")} monospace={true} copy={true} size="3" />
         </InfoBox>
         <InfoBox title="Environment & Bucket Names">
-            <pre className="info" style={{border:"0",margin:"0",padding:"8",paddingBottom:"8",marginTop:"0"}}>
+            <pre className="box" style={{border:"0",margin:"0",padding:"8",paddingBottom:"8",marginTop:"0"}}>
                 <span key={Uuid()}>{Yaml.Format(info.get("buckets.info"))}{info.get("buckets.info")?.length > 1 ? <div style={{height:"1px",marginTop:"6px",marginBottom:"6px",background:"black"}}/> : <span/>}</span>
             </pre>
         </InfoBox>
-        <InfoBox title="Ecosystem">
-            <pre className="info" style={{border:"0",margin:"0",paddingTop:"8",paddingBottom:"8",marginTop:"0"}}>
+        <InfoBox title="Ecosystem" show={false}>
+            <pre className="box" style={{border:"0",margin:"0",paddingTop:"8",paddingBottom:"8",marginTop:"0"}}>
                 {Yaml.Format(info.get("buckets.ecosystem"))}
             </pre>
         </InfoBox>
-        <InfoBox title="Authentication/Authorization Info">
+        <InfoBox title="Authentication/Authorization Info" show={false}>
             <InfoRow name={"Email"} value={Auth.Token()?.user} monospace={true} copy={true} check={Auth.Token()?.user_verified} link={Client.Path("/users/" + Auth.LoggedInUser(header), true)} size="2" />
             <InfoRow name={"First Name"} value={Auth.Token()?.first_name} monospace={true} copy={true} size="2" />
             <InfoRow name={"Last Name"} value={Auth.Token()?.last_name} monospace={true} copy={true} size="2" />
@@ -179,8 +189,8 @@ const InfoPage = () => {
             <InfoRow name={"Expires At"} monospace={true} copy={true} size="2" value={<LiveTime.FormatDuration end={Auth.Token()?.authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} prefix="datetime"/>} />
             <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
                 { showingAuthToken ? (<>
-                    <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"darkblue"}}><b><u>AuthToken</u>&nbsp;{Char.DownArrow}</b></small>
-                    <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>
+                    <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"inherit"}}><b><u>AuthToken</u>&nbsp;{Char.DownArrow}</b></small>
+                    <pre style={{filter:"brightness(1.05)",background:"inherit",color:"inherit",fontWeight:"bold",marginTop:"6pt"}}>
                         <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{Json.Str(Auth.Token())}</span>
                         <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken")} style={{float:"right",height:"20px",cursor:"copy"}} />
                         {Yaml.Format(Auth.Token())}
@@ -197,7 +207,7 @@ const InfoPage = () => {
             </InfoBox>
         </>}
         { info.get("app.lambda") &&
-            <InfoBox title="Lambda">
+            <InfoBox title="Lambda" show={false}>
                 <InfoRow name={"Name"} value={info.get("app.lambda.lambda_name")} monospace={true} size="2" />
                 <InfoRow name={"Function"} value={info.get("app.lambda.lambda_function_name")} monospace={true} size="2" />
                 <InfoRow name={"ARN"} value={info.get("app.lambda.lambda_function_arn")} monospace={true} size="2" />
@@ -227,20 +237,30 @@ const InfoPage = () => {
             <InfoRow name={"Client (React UI)"} value={Client.BaseUrl()} monospace={true} size="2" />
             <InfoRow name={"Server (React API)"} value={Server.BaseUrl()} monospace={true} size="2" />
         </InfoBox>
-        <InfoBox title={`GAC: ${info.get("gac.name")}`}>
+        <InfoBox title={`GAC: ${info.get("gac.name")}`} show={false}>
             { info.get("gac.values") ? (<span>
                 { Object.keys(info.get("gac.values")).map((key) => {
                     return <InfoRow key={key} name={key} value={info.get("gac.values")[key]} monospace={true} copy={true} />
                 })}
             </span>):(<span/>)}
         </InfoBox>
-        <InfoBox title="Environment Variables">
+        <InfoBox title="Environment Variables" show={false}>
             { info.get("environ") ? (<span>
                 { Object.keys(info.get("environ")).map((key) => {
                     return <InfoRow key={key} name={key} value={info.get("environ")[key]} monospace={true} copy={true} />
                 })}
             </span>):(<span/>)}
         </InfoBox>
+        <div className="container" style={{marginTop:"4pt"}}>
+            { showingAccounts ? <>
+                <AccountsComponent />
+            </>:<>
+                <b onClick={() => setShowingAccounts(true)} style={{cursor:"pointer"}}>Show Accounts</b>
+                <div className="box">
+                    Click <b onClick={() => setShowingAccounts(true)} style={{cursor:"pointer"}}>here</b> to <span onClick={() => setShowingAccounts(true)} style={{cursor:"pointer"}}>show</span>.
+                </div>
+            </>}
+        </div>
     </div>
 };
 

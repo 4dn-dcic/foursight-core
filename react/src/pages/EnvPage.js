@@ -10,6 +10,7 @@ import Env from '../utils/Env';
 import { useFetch, useFetchFunction } from '../utils/Fetch';
 import Server from '../utils/Server';
 import Type from '../utils/Type';
+import { HorizontalLine } from '../Components';
 import AccountsComponent from './AccountsComponent';
 
 const EnvPage = (props) => {
@@ -62,8 +63,7 @@ const EnvPage = (props) => {
 
     // TODO: clean up this styles stuff.
 
-    const boxClass = IsKnownCurrentEnv() && Env.IsAllowed(Env.Current(), header) ? ("boxstyle info") : "boxstyle check-warn";
-    const boxTextColor = IsKnownCurrentEnv() && Env.IsAllowed(Env.Current(), header) ? "darkblue" : "#6F4E37";
+    const boxClass = IsKnownCurrentEnv() && Env.IsAllowed(Env.Current(), header) ? "box" : "box warning";
 
     function envNameTextStyles(env) {
         return {
@@ -75,19 +75,19 @@ const EnvPage = (props) => {
 
     if (header.error) return <>Cannot load Foursight</>;
     if (header.loading) return <>Loading ...</>;
-    return <div className="container">
-                <AccountsComponent />
+    return <div>
+        <div className="container">
         { !Auth.IsLoggedIn(header) && IsKnownCurrentEnv() ? (
-            <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>
+            <div className="boxstyle check-warn" style={{margin:"0pt",padding:"10pt",color:"#6F4E37"}}>
                 <Link to={Client.Path("/login")} style={{color:"inherit"}}><b>Not Logged In</b></Link> <br />
                 <small>
                     Click <Link to={Client.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b><u>here</u></b></Link> to go to the <Link to={Client.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
                 </small>
                 </div>
         ):(<span/>)}
-        <b>&nbsp;Environment</b>
+        <b>Environment</b>
         { !IsKnownCurrentEnv() ? (<>
-            <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
+            <div className="box warning" style={{marginBottom:"8pt",padding:"10pt"}}>
                 { (Env.Current() && Env.Current() !== 'env') ? (<>
                     Unknown environment: <b style={{color:"darkred"}}>{Env.Current()}</b>
                 </>):(<>
@@ -101,13 +101,13 @@ const EnvPage = (props) => {
                 </small>
             </div>
         </>):(<>
-        <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
-            Current environment: <b style={{color:boxTextColor}}>{Env.PreferredName(Env.Current(), header)}</b>
-            { (Auth.IsLoggedIn(header) && !Env.IsAllowed(Env.Current(), header)) && <span style={{color:"red"}}>&nbsp;{Char.RightArrow} You do not have permission for this environment.</span> }
+        <div className={boxClass} style={{marginBottom:"8pt",padding:"10pt"}}>
+            Current environment: <b>{Env.PreferredName(Env.Current(), header)}</b>
+            { (Auth.IsLoggedIn(header) && !Env.IsAllowed(Env.Current(), header)) && <span style={{color:"red"}}>&nbsp;{Char.RightArrow} You do not have permission for this environment {Char.Warning}</span> }
         </div>
         </>)}
-        <b>&nbsp;Available Environments</b> { header.auth?.known_envs_actual_count > Env.KnownEnvs(header)?.length && <small>&nbsp;({header.auth.known_envs_actual_count})</small> }
-        <div className={boxClass} style={{margin:"4pt",padding:"10pt",color:boxTextColor}}>
+        <b>Available Environments</b> { header.auth?.known_envs_actual_count > Env.KnownEnvs(header)?.length && <small>&nbsp;({header.auth.known_envs_actual_count})</small> }
+        <div className={boxClass} style={{margin:"0pt",padding:"10pt"}}>
             <table style={{color:"inherit"}}><thead></thead><tbody>
                 {Env.KnownEnvs(header).map((env, envIndex) =>
                     <tr key={Uuid()}>
@@ -123,7 +123,7 @@ const EnvPage = (props) => {
                                 <span className={"tool-tip"} data-text={"This is a restricted environment!"} style={{color:"red"}}>
                                     <Link to={Client.Path("/env", Env.PreferredName(env, header))} onClick={() => updateHeader(Env.PreferredName(env, header))} style={{color:"inherit",textDecoration:IsCurrentEnv(env) ? "underline" : "normal"}}><b>{Env.PreferredName(env, header)}</b></Link>
                                     { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;{Char.Star}</b> }
-                                    &nbsp;{Char.RightArrow} You do not have permission for this environment.
+                                    &nbsp;{Char.RightArrow} You do not have permission for this environment {Char.Warning}
                                 </span>
                             </>):(<>
                                 { IsCurrentEnv(env) ? (<>
@@ -151,16 +151,21 @@ const EnvPage = (props) => {
                                             <option key={Uuid()}>{Env.PreferredName(env, header)}</option>
                                         )}
                                     </select>
+                                    <br />
                                 </>}
                             </>}
-                            { (envIndex < Env.KnownEnvs(header).length - 1) ? (<span>
-                                <br /><br />
-                            </span>):(<span/>)}
+                            <br />
                         </td>
                     </tr>
                 )}
             </tbody></table>
         </div>
+        { Auth.IsLoggedIn(header) &&
+            <div style={{marginTop:"8pt"}}>
+                <AccountsComponent header={header} />
+            </div>
+        }
+    </div>
     </div>
 };
 
