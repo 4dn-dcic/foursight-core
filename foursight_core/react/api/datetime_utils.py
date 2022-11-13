@@ -93,25 +93,35 @@ def convert_uptime_to_datetime(uptime: str, relative_to: datetime = None) -> Opt
         If the given uptime is not parsable then returns None, otherwise returns the consituent
         components as a tuple containing in (left-right) order: days, hours, minutes, seconds.
         """
-        r = re.compile("([0-9]+[ ]+weeks?,[ ]*)?([0-9]+)[ ]+days?,[ ]*([0-9]+)[ ]+hours?,[ ]*([0-9]+)[ ]+minutes?,[ ]*([0-9]*\.?[0-9]*)[ ]+seconds?$")
+        r = re.compile("([0-9]+)[ ]+weeks?,[ ]*([0-9]+)[ ]+days?,[ ]*([0-9]+)[ ]+hours?,[ ]*([0-9]+)[ ]+minutes?,[ ]*([0-9]*\.?[0-9]*)[ ]+seconds?$")
         match = r.match(uptime)
         if not match:
-            return None
-        groups = match.groups()
-        if not groups or len(groups) != 5:
-            return None
-        weeks = groups[0]
-        days = int(groups[1])
-        hours = int(groups[2])
-        minutes = int(groups[3])
-        seconds = float(groups[4])
-        if weeks:
-            r = re.compile("([0-9]+)[ ]+weeks?")
-            match = r.match(weeks)
-            if match:
+            r = re.compile("([0-9]+)[ ]+days?,[ ]*([0-9]+)[ ]+hours?,[ ]*([0-9]+)[ ]+minutes?,[ ]*([0-9]*\.?[0-9]*)[ ]+seconds?$")
+            match = r.match(uptime)
+            if not match:
+                r = re.compile("([0-9]+)[ ]+hours?,[ ]*([0-9]+)[ ]+minutes?,[ ]*([0-9]*\.?[0-9]*)[ ]+seconds?$")
+                match = r.match(uptime)
+                if not match:
+                    return None
                 groups = match.groups()
-                if groups and len(groups) == 1:
-                    days += int(groups[0]) * 7
+                weeks = 0
+                days = 0
+                hours = int(groups[0])
+                minutes = int(groups[1])
+                seconds = float(groups[2])
+            else:
+                groups = match.groups()
+                weeks = 0
+                days = int(groups[0])
+                hours = int(groups[1])
+                minutes = int(groups[2])
+                seconds = float(groups[3])
+        else:
+            groups = match.groups()
+            days = int(groups[1]) + (int(groups[0]) * 7)
+            hours = int(groups[2])
+            minutes = int(groups[3])
+            seconds = float(groups[4])
         return days, hours, minutes, seconds
     if not uptime:
         return None
@@ -122,5 +132,5 @@ def convert_uptime_to_datetime(uptime: str, relative_to: datetime = None) -> Opt
         days, hours, minutes, seconds = uptime
         now = datetime.datetime.now()
         return now + datetime.timedelta(days=-days, hours=-hours, minutes=-minutes, seconds=-seconds)
-    except Exception:
+    except Exception as e:
         return None

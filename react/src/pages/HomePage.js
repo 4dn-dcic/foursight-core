@@ -14,29 +14,6 @@ const HomePage = (props) => {
     const [ header ] = useContext(HeaderData);
     const versionsToolTip = (Env.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + ": " + header?.versions?.foursight_core + " / foursight-core: " + header?.versions?.foursight + " / dcicutils: " + header?.versions?.dcicutils;
 
-
-    const XyzzyComponent = () => {
-        const AbcCom = () => {
-            return <div className="box">
-                AbcCom
-            </div>
-        }
-        const DefCom = () => {
-            return <div className="box">
-                DefCom
-            </div>
-        }
-        const list = [
-            <AbcCom />,
-            <DefCom />
-        ];
-        return <div className="box lighten">
-            { list.map(item => 
-                    {return item}
-            )}
-        </div>
-    }
-
     return <>
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
@@ -55,6 +32,7 @@ const HomePage = (props) => {
                     <li> To view Foursight <b><Link to="/info">general</Link></b> info click <b><Link to="/info"><u>here</u></Link></b>.  </li>
                     <li> To view Foursight <b><Link to="/users">users</Link></b> click <b><Link to="/users"><u>here</u></Link></b>.  </li>
                     <li> To view <b><Link to="/aws/s3">AWS S3</Link></b> info click <b><Link to="/aws/s3"><u>here</u></Link></b>.  </li>
+                    <li> To view other <b><Link to="/accounts">accounts</Link></b> info click <b><Link to="/accounts"><u>here</u></Link></b>.  </li>
                 </ul>
             </div>
             <div className="box lighten thickborder" style={{margin:"20pt",padding:"10pt",marginTop:"-10pt"}}>

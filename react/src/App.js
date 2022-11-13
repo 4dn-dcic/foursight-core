@@ -6,6 +6,7 @@ import { useFetchFunction } from './utils/Fetch';
 import Image from './utils/Image';
 import Server from './utils/Server';
 
+import AccountsPage from './pages/AccountsPage';
 import AwsS3Page from './pages/aws/AwsS3Page';
 import ChecksPage from './pages/ChecksPage';
 import CheckHistoryPage from './pages/CheckHistoryPage';
@@ -86,6 +87,9 @@ const App = () => {
                     } />
                     <Route path="/api/react" element={
                         <Navigate to={`/api/react/${Env.Default()}/env`} />
+                    } />
+                    <Route path="/api/react/:environ/accounts" element={
+                        <AccountsPage />
                     } />
                     <Route path="/api/react/:environ/env" element={
                         <EnvPage />

@@ -721,11 +721,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
             portal_health_json = portal_health_response.json()
             response["portal"]["versions"] = { "portal": portal_health_json.get("project_version"),
                                                "snovault": portal_health_json.get("snovault_version"),
-                                               "dcicutils": portal_health_json.get("utils_version") }
+                                               "dcicutils": portal_health_json.get("utils_version"),
+                                               "python": portal_health_json.get("python_version") }
             portal_uptime = portal_health_json.get("uptime")
             portal_started = convert_uptime_to_datetime(portal_uptime)
             response["portal"]["started"] = convert_utc_datetime_to_useastern_datetime_string(portal_started)
             response["portal"]["identity"] = portal_health_json.get("identity")
+            response["portal"]["elasticsearch"] = portal_health_json.get("elasticsearch")
+            response["portal"]["database"] = portal_health_json.get("database")
             response["portal"]["health"] = portal_health_json
             foursight_url = get_foursight_base_url(portal_health_json.get("foursight"))
             response["portal"]["foursight_url"] = foursight_url

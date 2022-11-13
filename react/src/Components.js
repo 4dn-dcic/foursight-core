@@ -10,8 +10,10 @@ export const Link = ({to, env = true, tip = null, bold = true, children}) => {
                : <ReactLink to={Client.Path(to, env ? env : null)} style={{color:"inherit",fontWeight:bold ? "bold" : "inherit"}}>{children}</ReactLink>
 }
 
-export const HorizontalLine = ({top = "0", bottom = "0"}) => {
-    return <div className="fgbg" style={{height:"1px",marginTop:top,marginBottom:bottom}}></div>
+export const HorizontalLine = ({top = "0", bottom = "0", thick = false, color = null }) => {
+    return color ? 
+           <div style={{background:color,height:thick ? "2px" : "1px",marginTop:top,marginBottom:bottom}}></div> :
+           <div className="fgbg" style={{height:thick ? "2px" : "1px",marginTop:top,marginBottom:bottom}}></div>
 }
 
 export const LoggedInUser = ({ link = undefined}) => {

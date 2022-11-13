@@ -76,6 +76,7 @@ const EnvPage = (props) => {
     if (header.error) return <>Cannot load Foursight</>;
     if (header.loading) return <>Loading ...</>;
     return <div className="container">
+                <AccountsComponent />
         { !Auth.IsLoggedIn(header) && IsKnownCurrentEnv() ? (
             <div className="boxstyle check-warn" style={{margin:"4pt",padding:"10pt",color:"#6F4E37"}}>
                 <Link to={Client.Path("/login")} style={{color:"inherit"}}><b>Not Logged In</b></Link> <br />
