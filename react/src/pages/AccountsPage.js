@@ -14,8 +14,10 @@ import AccountsComponent from './AccountsComponent';
 
 const AccountsPage = (props) => {
 
+    const [ header ] = useContext(HeaderData);
+
     return <div className="container">
-        <AccountsComponent />
+        <AccountsComponent header={header} />
     </div>
 };
 

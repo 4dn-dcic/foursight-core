@@ -117,7 +117,7 @@ const LoginPage = (props) => {
 
     return <>
         { Auth.IsLoggedIn(header) ? (<React.Fragment>
-            <div className="container" style={{width:"60%"}}>
+            <div className="container" style={{width:"75%"}}>
                 {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt"}}>Hello, {Auth.LoggedInUserName(header)}</b>} ...
                 <div style={{float:"right",marginRight:"8pt",fontSize:"small",cursor:"pointer"}}>
                     <Link to="/accounts">Accounts</Link>&nbsp;|&nbsp;

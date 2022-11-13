@@ -274,13 +274,18 @@ const AccountInfo = ({ account, header, refresh, setRefresh }) => {
         info.refresh();
     }
 
-    function isThisAccount() {
-        return header?.app?.credentials?.aws_account_number === info?.data?.foursight?.aws_account_number;
+    function isCurrentAccount(info) {
+        if (!Type.IsNull(header?.app?.credentials?.aws_account_number) &&
+            !Type.IsNull(info?.data?.foursight?.aws_account_number) &&
+            (header?.app?.credentials?.aws_account_number === info?.data?.foursight?.aws_account_number)) {
+                return true;
+        }
+        return false;
     }
 
     return <>
-        <div className={isThisAccount() ? "box" : "box lighten"}>
-            {isThisAccount() ? <>
+        <div className={isCurrentAccount(info) ? "box" : "box lighten"}>
+            {isCurrentAccount(info) ? <>
                 <b className="tool-tip" data-text="This is your current account.">{info.data?.name || account.name}</b>
             </>:<>
                 <b>{info.data?.name || account.name}</b>
@@ -304,12 +309,12 @@ const AccountInfo = ({ account, header, refresh, setRefresh }) => {
             <table><tbody>
                 <tr>
                     <td style={{width:"70%"}}>
-                        <AccountInfoLeft info={info} />
+                        <AccountInfoLeft info={info} header={header} />
                     </td>
                     <td style={{paddingLeft:"10pt",width:"12pt"}} />
                     <td style={{marginLeft:"12pt",borderLeft:"1px solid"}} />
                     <td style={{width:"30%",paddingLeft:"12pt",textAlign:"top",verticalAlign:"top"}}>
-                        <AccountInfoRight info={info} />
+                        <AccountInfoRight info={info} header={header} />
                     </td>
                 </tr>
             </tbody></table>

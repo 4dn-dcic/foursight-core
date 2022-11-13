@@ -39,7 +39,7 @@ const HomePage = (props) => {
             <div className="box lighten thickborder" style={{margin:"20pt",padding:"10pt",marginTop:"-10pt"}}>
                 You are logged in as: <LoggedInUser />
                 <br />
-                To view <b><Link to="/login">login</Link></b> info click <b><Link to="/login"><u>here</u></Link></b>. <br />
+                To view your <b><Link to="/login">session</Link></b> info click <b><Link to="/login"><u>here</u></Link></b>. <br />
                 To <b onClick={Logout}><Link>logout</Link></b> click <b onClick={Logout}><Link><u>here</u></Link></b>.
             </div>
             <div className="box" style={{margin:"20pt",padding:"10pt",marginTop:"-10pt"}}>
