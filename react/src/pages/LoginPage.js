@@ -217,7 +217,7 @@ const LoginPage = (props) => {
                         </pre>
                     </div>
                 }
-                <div className="box warning" style={{marginLeft:"90pt",marginRight:"90pt",color:"darkred",fontSize:"small"}}>
+                <div className="box warning" style={{marginLeft:"90pt",marginRight:"90pt",marginTop:"8pt",color:"darkred",fontSize:"small"}}>
                     <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkred"}}><b>Auth</b> from API</span>
                     <pre className="box" style={{filter:"brightness(1.1)",background:"inherit",color:"darkred",fontWeight:"bold",marginTop:"6pt"}}>
                         <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{Json.Str(header?.auth)}</span>

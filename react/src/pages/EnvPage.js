@@ -78,7 +78,7 @@ const EnvPage = (props) => {
     return <div>
         <div className="container">
         { !Auth.IsLoggedIn(header) && IsKnownCurrentEnv() ? (
-            <div className="boxstyle check-warn" style={{margin:"0pt",padding:"10pt",color:"#6F4E37"}}>
+            <div className="boxstyle check-warn" style={{margin:"0pt",padding:"10pt",marginBottom:"8pt",color:"#6F4E37"}}>
                 <Link to={Client.Path("/login")} style={{color:"inherit"}}><b>Not Logged In</b></Link> <br />
                 <small>
                     Click <Link to={Client.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b><u>here</u></b></Link> to go to the <Link to={Client.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
@@ -153,8 +153,8 @@ const EnvPage = (props) => {
                                     </select>
                                     <br />
                                 </>}
+                                { envIndex < Env.KnownEnvs(header).length - 1 && <br /> }
                             </>}
-                            <br />
                         </td>
                     </tr>
                 )}

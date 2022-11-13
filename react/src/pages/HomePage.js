@@ -1,4 +1,5 @@
 import { useContext } from 'react';
+import AccountsComponent from './AccountsComponent';
 import Auth from '../utils/Auth';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
@@ -40,6 +41,9 @@ const HomePage = (props) => {
                 <br />
                 To view <b><Link to="/login">login</Link></b> info click <b><Link to="/login"><u>here</u></Link></b>. <br />
                 To <b onClick={Logout}><Link>logout</Link></b> click <b onClick={Logout}><Link><u>here</u></Link></b>.
+            </div>
+            <div className="box" style={{margin:"20pt",padding:"10pt",marginTop:"-10pt"}}>
+                Click <Link to="/accounts">here</Link> to view other <Link to="/accounts" bold={false}>known accounts</Link>.
             </div>
         </div>
     </>
