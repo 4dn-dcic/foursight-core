@@ -89,7 +89,9 @@ const App = () => {
                         <Navigate to={`/api/react/${Env.Default()}/env`} />
                     } />
                     <Route path="/api/react/:environ/accounts" element={
-                        <AccountsPage />
+                        <Page.AuthorizationRequired>
+                            <AccountsPage />
+                        </Page.AuthorizationRequired>
                     } />
                     <Route path="/api/react/:environ/env" element={
                         <EnvPage />
