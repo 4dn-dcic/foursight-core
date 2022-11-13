@@ -1,7 +1,6 @@
 import datetime
 import pytz
-import re
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)  # I.e.: 1970-01-01 00:00:00 UTC
@@ -81,56 +80,40 @@ def convert_uptime_to_datetime(uptime: str, relative_to: datetime = None) -> Opt
 
       1 week, 2 days, 3 hours, 4 minutes, 5.67 seconds
 
-    Where the week part is optional. If the given uptime is not parsable then returns None,
-    otherwise returns the datetime corresponding to this uptime, relative to now by
-    default or if the relative_to datetime argument is then relative to that.
+    If the given uptime is not parsable then returns None, otherwise returns the datetime corresponding
+    to this uptime, relative to now, by default, or to the relative_to datetime argument if given.
     """
-    def parse_uptime(uptime: str) -> Optional[Tuple]:
-        """
-        Parses the given duration string which (happens to be) from the Portal health endpoint
-        and returns its constituent components, i.e. days, hours, minutes, seconds, as a tuple.
-        See above for assumed format  of the given uptime string.
-        If the given uptime is not parsable then returns None, otherwise returns the consituent
-        components as a tuple containing in (left-right) order: days, hours, minutes, seconds.
-        """
-        r = re.compile("([0-9]+)[ ]+weeks?,[ ]*([0-9]+)[ ]+days?,[ ]*([0-9]+)[ ]+hours?,[ ]*([0-9]+)[ ]+minutes?,[ ]*([0-9]*\.?[0-9]*)[ ]+seconds?$")
-        match = r.match(uptime)
-        if not match:
-            r = re.compile("([0-9]+)[ ]+days?,[ ]*([0-9]+)[ ]+hours?,[ ]*([0-9]+)[ ]+minutes?,[ ]*([0-9]*\.?[0-9]*)[ ]+seconds?$")
-            match = r.match(uptime)
-            if not match:
-                r = re.compile("([0-9]+)[ ]+hours?,[ ]*([0-9]+)[ ]+minutes?,[ ]*([0-9]*\.?[0-9]*)[ ]+seconds?$")
-                match = r.match(uptime)
-                if not match:
-                    return None
-                groups = match.groups()
-                weeks = 0
-                days = 0
-                hours = int(groups[0])
-                minutes = int(groups[1])
-                seconds = float(groups[2])
-            else:
-                groups = match.groups()
-                weeks = 0
-                days = int(groups[0])
-                hours = int(groups[1])
-                minutes = int(groups[2])
-                seconds = float(groups[3])
-        else:
-            groups = match.groups()
-            days = int(groups[1]) + (int(groups[0]) * 7)
-            hours = int(groups[2])
-            minutes = int(groups[3])
-            seconds = float(groups[4])
-        return days, hours, minutes, seconds
+    def normalize_spaces(value: str) -> str:
+        return " ".join(value.split())
+
     if not uptime:
         return None
     try:
-        uptime = parse_uptime(uptime)
-        if not uptime:
-            return None
-        days, hours, minutes, seconds = uptime
+        minutes_per_hour = 60
+        minutes_per_day = minutes_per_hour * 24
+        minutes_per_week = minutes_per_day * 7
+        minutes = 0
+        seconds = 0
+        uptime = normalize_spaces(uptime)
+        for item in uptime.split(","):
+            item = item.strip()
+            if item:
+                item = item.split(" ")
+                if len(item) == 2:
+                    unit = item[1].lower()
+                    value = float(item[0])
+                    if unit.startswith("week"):
+                        minutes += minutes_per_week * value
+                    elif unit.startswith("day"):
+                        minutes += minutes_per_day * value
+                    elif unit.startswith("hour"):
+                        minutes += minutes_per_hour * value
+                    elif unit.startswith("minute"):
+                        minutes += value
+                    elif unit.startswith("second"):
+                        seconds += value
         now = datetime.datetime.now()
-        return now + datetime.timedelta(days=-days, hours=-hours, minutes=-minutes, seconds=-seconds)
-    except Exception as e:
-        return None
+        return now + datetime.timedelta(minutes=-minutes, seconds=-seconds)
+    except Exception:
+        pass
+    return None
