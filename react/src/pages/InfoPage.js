@@ -251,16 +251,18 @@ const InfoPage = () => {
                 })}
             </span>):(<span/>)}
         </InfoBox>
-        <div className="container" style={{marginTop:"4pt"}}>
-            { showingAccounts ? <>
-                <AccountsComponent />
-            </>:<>
-                <b onClick={() => setShowingAccounts(true)} style={{cursor:"pointer"}}>Show Accounts</b>
-                <div className="box">
-                    Click <b onClick={() => setShowingAccounts(true)} style={{cursor:"pointer"}}>here</b> to <span onClick={() => setShowingAccounts(true)} style={{cursor:"pointer"}}>show</span>.
-                </div>
-            </>}
-        </div>
+        { header.app?.accounts &&
+            <div className="container" style={{marginTop:"4pt"}}>
+                { showingAccounts ? <>
+                    <AccountsComponent />
+                </>:<>
+                    <b onClick={() => setShowingAccounts(true)} style={{cursor:"pointer"}}>Show Accounts</b>
+                    <div className="box">
+                        Click <b onClick={() => setShowingAccounts(true)} style={{cursor:"pointer"}}>here</b> to <span onClick={() => setShowingAccounts(true)} style={{cursor:"pointer"}}>show</span>.
+                    </div>
+                </>}
+            </div>
+        }
     </div>
 };
 

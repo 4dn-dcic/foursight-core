@@ -117,10 +117,12 @@ const LoginPage = (props) => {
 
     return <>
         { Auth.IsLoggedIn(header) ? (<React.Fragment>
-            <div className="container" style={{width:"75%"}}>
+            <div className="container" style={{width:"800pt"}}>
                 {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt"}}>Hello, {Auth.LoggedInUserName(header)}</b>} ...
                 <div style={{float:"right",marginRight:"8pt",fontSize:"small",cursor:"pointer"}}>
-                    <Link to="/accounts">Accounts</Link>&nbsp;|&nbsp;
+                    { header.accounts && <>
+                        <Link to="/accounts">Accounts</Link>&nbsp;|&nbsp;
+                    </>}
                     <Link to="/env">Environments</Link>&nbsp;|&nbsp;
                     { showingAuthToken ? <>
                         <span onClick={() => setShowAuthToken(false)}><b>Auth</b> {Char.DownArrow}</span>
@@ -194,9 +196,9 @@ const LoginPage = (props) => {
                 {(header?.app?.credentials?.aws_account_number) && <>
                     <br />
                     <small>
-                        AWS Account: {header?.app?.credentials?.aws_account_number}
+                        AWS Account Number: {header?.app?.credentials?.aws_account_number}
                         {(header?.app?.credentials?.aws_account_name) && <>
-                            &nbsp;({header?.app?.credentials?.aws_account_name})
+                            &nbsp;(<b className="tool-tip" data-text={`AWS Account Alias: ${header?.app?.credentials?.aws_account_name}`}>{header?.app?.credentials?.aws_account_name}</b>)
                         </>}
                     </small>
                 </>}

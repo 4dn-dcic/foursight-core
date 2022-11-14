@@ -130,10 +130,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "local": is_running_locally(request),
                 "credentials": {
                     "aws_account_number": aws_credentials["aws_account_number"],
-                    "aws_account_name": aws_credentials.get("aws_account_name")
+                    "aws_account_name": aws_credentials.get("aws_account_name"),
+                    "re_captcha_key": os.environ.get("reCaptchaKey", None)
                 },
                 "launched": app.core.init_load_time,
-                "deployed": app.core.get_lambda_last_modified()
+                "deployed": app.core.get_lambda_last_modified(),
+                "accounts": self.get_accounts_file()
             },
             "versions": {
                 "foursight": app.core.get_app_version(),
@@ -144,7 +146,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             },
             "portal": {
                 "url": app.core.get_portal_url(env if env else default_env),
-                "health_url": get_base_url(app.core.get_portal_url(env if env else default_env)) + "/health?format=json"
+                "health_url": get_base_url(app.core.get_portal_url(env if env else default_env)) + "/health?format=json",
+                "health_ui_url": get_base_url(app.core.get_portal_url(env if env else default_env)) + "/health"
             },
             "s3": {
                 "bucket_org": os.environ.get("ENCODED_S3_BUCKET_ORG", os.environ.get("S3_BUCKET_ORG", None)),
@@ -614,7 +617,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(AwsS3.get_bucket_key_contents(bucket, key))
 
     # ----------------------------------------------------------------------------------------------
-    # EXPERIMENTAL
+    # EXPERIMENTAL - /accounts page
     # ----------------------------------------------------------------------------------------------
     # Accounts page, driven by accounts.json file, to list all AWS environments and info.
     # For now we manually encrypt the accounts.json file and decrypt on read here, so that
@@ -623,10 +626,26 @@ class ReactApi(ReactApiBase, ReactRoutes):
     # ----------------------------------------------------------------------------------------------
 
     def get_accounts_file(self) -> dict:
-        ACCOUNTS_JSON_FILE = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../accounts.json"))
-        return ACCOUNTS_JSON_FILE
 
-    def get_accounts(self) -> dict:
+        DIR = os.path.dirname(__file__)
+        ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, "../../accounts.json"))
+        CGAP_ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, "../../../chalicelib_cgap/accounts.json"))
+        FOURFRONT_ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, "../../../chalicelib_fourfront/accounts.json"))
+
+        if app.core.APP_PACKAGE_NAME == "foursight-cgap":
+            if os.path.exists(CGAP_ACCOUNTS_FILE):
+                return CGAP_ACCOUNTS_FILE
+        elif app.core.APP_PACKAGE_NAME == "foursight":
+            if os.path.exists(FOURFRONT_ACCOUNTS_FILE):
+                return FOURFRONT_ACCOUNTS_FILE
+        if os.path.exists(ACCOUNTS_FILE):
+            return ACCOUNTS_FILE
+        return None
+
+    def get_accounts(self) -> Optional[dict]:
+        accounts_file = self.get_accounts_file()
+        if not accounts_file:
+            return None
         if not self._cached_accounts:
             from foursight_core.react.api.encryption import Encryption
             encryption = Encryption()
@@ -651,7 +670,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_accounts(self, request: dict) -> Response:
         accounts = self.get_accounts()
-        return self.create_success_response(accounts) if accounts else self.create_error_response(None)
+        return self.create_success_response(accounts)
 
     def reactapi_account(self, request: dict, name: str) -> Response:
 
@@ -698,8 +717,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 response["foursight"]["s3"]["global_env_bucket"] = foursight_header_json_s3.get("global_env_bucket")
                 response["foursight"]["s3"]["encrypt_key_id"] = foursight_header_json_s3.get("encrypt_key_id")
             if foursight_app:
-                response["foursight"]["aws_account_number"] = foursight_app["credentials"]["aws_account_number"]
-                response["foursight"]["aws_account_name"] = foursight_app["credentials"]["aws_account_name"]
+                response["foursight"]["aws_account_number"] = foursight_app["credentials"].get("aws_account_number")
+                response["foursight"]["aws_account_name"] = foursight_app["credentials"].get("aws_account_name")
+                response["foursight"]["re_captcha_key"] = foursight_app["credentials"].get("re_captcha_key")
             response["foursight"]["auth0_client"] = foursight_header_json["auth"]["aud"]
             foursight_header_json_portal = foursight_header_json.get("portal")
             if not foursight_header_json_portal:
@@ -715,6 +735,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 return None
             response["portal"]["url"] = get_portal_base_url(portal_url)
             response["portal"]["health_url"] = response["portal"]["url"] + "/health?format=json"
+            response["portal"]["health_ui_url"] = response["portal"]["url"] + "/health"
             portal_health_response = requests.get(response["portal"]["health_url"])
             if portal_health_response.status_code != 200:
                 response["portal"]["error"] = "Cannot fetch Portal health URL."
@@ -738,6 +759,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
         response = { "accounts_file": self.get_accounts_file() }
         accounts = self.get_accounts()
+        if not accounts:
+            return self.create_success_response({ "status": "No accounts file support." })
         account = [account for account in accounts if is_account_name_match(account, name)] if accounts else None
         if not account or len(account) > 1:
             response["name"] = name
@@ -779,7 +802,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(response)
 
     # ----------------------------------------------------------------------------------------------
-    # END OF EXPERIMENTAL
+    # END OF EXPERIMENTAL - /accounts page
     # ----------------------------------------------------------------------------------------------
 
     def reactapi_reload_lambda(self, request: dict) -> Response:

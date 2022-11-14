@@ -23,7 +23,7 @@ class Encryption:
         self.encryption_password = encryption_password
         if self.encryption_password:
             if len(self.encryption_password) < 24:
-                self.encryption_password = self.encryption_password.ljust(24, 'x')
+                self.encryption_password = self.encryption_password.ljust(24, '_')
             elif len(encryption_password) > 24:
                 self.encryption_password = self.encryption_password[0:24]
 

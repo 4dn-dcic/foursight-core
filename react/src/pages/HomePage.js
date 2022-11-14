@@ -42,9 +42,11 @@ const HomePage = (props) => {
                 To view your <b><Link to="/login">session</Link></b> info click <b><Link to="/login"><u>here</u></Link></b>. <br />
                 To <b onClick={Logout}><Link>logout</Link></b> click <b onClick={Logout}><Link><u>here</u></Link></b>.
             </div>
-            <div className="box" style={{margin:"20pt",padding:"10pt",marginTop:"-10pt"}}>
-                Click <Link to="/accounts">here</Link> to view other <Link to="/accounts" bold={false}>known accounts</Link>.
-            </div>
+            { header.app?.accounts && <>
+                <div className="box" style={{margin:"20pt",padding:"10pt",marginTop:"-10pt"}}>
+                    Click <Link to="/accounts">here</Link> to view other <Link to="/accounts" bold={false}>known accounts</Link>.
+                </div>
+            </>}
         </div>
     </>
 };

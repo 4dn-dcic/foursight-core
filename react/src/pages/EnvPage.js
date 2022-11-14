@@ -11,7 +11,6 @@ import { useFetch, useFetchFunction } from '../utils/Fetch';
 import Server from '../utils/Server';
 import Type from '../utils/Type';
 import { HorizontalLine } from '../Components';
-import AccountsComponent from './AccountsComponent';
 
 const EnvPage = (props) => {
 
@@ -162,7 +161,7 @@ const EnvPage = (props) => {
         </div>
         { Auth.IsLoggedIn(header) &&
             <div style={{marginTop:"8pt"}}>
-                <AccountsComponent header={header} />
+                {/* <AccountsComponent header={header} /> */}
             </div>
         }
     </div>

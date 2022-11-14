@@ -6,12 +6,14 @@ import EditBox from './EditBox';
 import Server from '../utils/Server';
 import Time from '../utils/Time';
 import UserDefs from './UserDefs';
+import { useReadOnlyMode } from '../ReadOnlyMode';
 
 const UserEditPage = () => {
     
     const { uuid } = useParams();
     const [ inputs, setInputs ] = useState(UserDefs.Inputs());
     const [ notFound, setNotFound ] = useState(false);
+    const [ readOnlyMode ] = useReadOnlyMode();
     const user = useFetch({
         url: Server.Url(`/users/${uuid}`),
         onData: updateUserData,
@@ -90,7 +92,8 @@ const UserEditPage = () => {
                     onDelete={onDelete}
                     onCancel={onCancel}
                     onRefresh={onRefresh}
-                    loading={user.loading} />
+                    loading={user.loading}
+                    readonly={readOnlyMode} />
             </>}
         </center>
     </>

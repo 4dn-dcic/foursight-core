@@ -5,7 +5,7 @@ import Char from '../utils/Char';
 // Generic box to edit (create, update, delete) a list of plain input fields representing some data record.
 // If the onCreate argument is specified then assume this is a create.
 //
-const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCancel, onRefresh }) => {
+const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCancel, onRefresh, readonly = false }) => {
 
     const [ updating, setUpdating ] = useState(false);
     const [ changing, setChanging ] = useState(false);
@@ -238,14 +238,20 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
                             { loading ? <>
                                 <div style={{marginTop:"0.45em"}}> <StandardSpinner condition={loading} label={updating ? "Updating" : "Loading"}/> </div>
                             </>:<>
-                                <button className="button cancel" type="button" onClick={handleCancel}>Cancel</button><>&nbsp;</>
-                                { onCreate ? <>
-                                    <button className="button tool-tip" data-text={allowSubmit() ? "Click to create." : "Nothing to create."} id="create" disabled={!allowSubmit()}>Create</button>
+                                { (readonly) ? <>
+                                   <div className="box thickborder" style={{width:"fit-content",marginRight:"10pt",fontSize:"small"}}>
+                                        <b>Read Only Mode</b>
+                                   </div>
                                 </>:<>
-                                    { onDelete && <>
-                                        <button className="button delete" type="button" onClick={handleDelete}>Delete</button><>&nbsp;</>
+                                    <button className="button cancel" type="button" onClick={handleCancel}>Cancel</button><>&nbsp;</>
+                                    { onCreate ? <>
+                                        <button className="button tool-tip" data-text={allowSubmit() ? "Click to create." : "Nothing to create."} id="create" disabled={!allowSubmit()}>Create</button>
+                                    </>:<>
+                                        { onDelete && <>
+                                            <button className="button delete" type="button" onClick={handleDelete}>Delete</button><>&nbsp;</>
+                                        </>}
+                                        <button className="button tool-tip" data-text={allowSubmit() ? "Click to save changes." : "No changes to save."} id="update" disabled={!allowSubmit()}>Update</button>
                                     </>}
-                                    <button className="button tool-tip" data-text={allowSubmit() ? "Click to save changes." : "No changes to save."} id="update" disabled={!allowSubmit()}>Update</button>
                                 </>}
                             </>}
                         </td>
