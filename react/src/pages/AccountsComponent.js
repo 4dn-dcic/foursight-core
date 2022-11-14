@@ -19,7 +19,15 @@ const AccountInfoLeft = ({ info }) => {
     return <table style={{width:"100%"}}><tbody style={{whiteSpace:"nowrap"}}>
         <tr>
             <td style={{paddingRight:"10pt",width:"10%"}}>
-                Foursight:
+                { info.get("foursight.package") === "foursight-cgap" ? <>
+                    Foursight-CGAP:
+                </>:<>
+                    { info.get("foursight.package") === "foursight" ? <>
+                        Foursight-Fourfront:
+                    </>:<>
+                        Foursight:
+                    </>}
+                </>}
             </td>
             <td>
                 <a style={{color:"inherit"}} href={info.get("foursight.url")} target="_blank">{info.get("foursight.url")}</a>
@@ -40,6 +48,9 @@ const AccountInfoLeft = ({ info }) => {
                     <a style={{color:"inherit"}} href={info.get("portal.url")} target="_blank">
                         <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span>
                     </a>
+                    &nbsp;|&nbsp;
+                    <a style={{color:"inherit"}} href={info.get("portal.health_url")} target="_blank">Health</a>&nbsp;
+                    <a style={{color:"inherit"}} href={info.get("portal.health_url")} target="_blank"><span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span></a>
                 </>:<> {Char.EmptySet} </>}
             </td>
         </tr>
@@ -87,6 +98,16 @@ const AccountInfoLeft = ({ info }) => {
                         &nbsp;(<span className="tool-tip" data-text={`S3 Bucket Org: ${info.get("foursight.s3.bucket_org")}`}>{info.get("foursight.s3.bucket_org")}</span>)
                     </>}
                 </>:<> {Char.EmptySet} </>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{paddingRight:"10pt"}}>
+                Bucket Encryption:
+            </td>
+            <td>
+                { info.get("foursight.s3.encrypt_key_id") ? <>
+                    Yes - <span className="tool-tip" data-text="S3 Encryption Key ID.">{info.get("foursight.s3.encrypt_key_id")}</span>
+                </>:<> No </>}
             </td>
         </tr>
         <tr>
@@ -164,20 +185,36 @@ const AccountInfoRight = ({ info }) => {
                 foursight-core:
             </td>
             <td>
-                <b>{info.get("foursight.versions.foursight_core")}</b>
+                {info.get("foursight.versions.foursight_core") ? <>
+                    <b>{info.get("foursight.versions.foursight_core")}</b>
+                </>:<>
+                    <b>{Char.EmptySet}</b>
+                </>}
             </td>
         </tr>
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                { info.get("foursight.package") === "foursight" ? <>
-                    foursight:
-                </>:<>
+                { info.get("foursight.package") === "foursight-cgap" ? <>
                     foursight-cgap:
+                </>:<>
+                    foursight:
                 </>}
             </td>
             <td>
                 {info.get("foursight.versions.foursight") ? <>
                     <b>{info.get("foursight.versions.foursight")}</b>
+                </>:<>
+                    <b>{Char.EmptySet}</b>
+                </>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                chalice:
+            </td>
+            <td>
+                {info.get("foursight.versions.chalice") ? <>
+                    <b>{info.get("foursight.versions.chalice")}</b>
                 </>:<>
                     <b>{Char.EmptySet}</b>
                 </>}

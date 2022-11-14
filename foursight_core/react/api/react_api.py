@@ -147,8 +147,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "health_url": get_base_url(app.core.get_portal_url(env if env else default_env)) + "/health?format=json"
             },
             "s3": {
-                "bucket_org": os.environ.get("ENCODED_S3_BUCKET_ORG", os.environ.get("S3_BUCKET_ORG")),
-                "global_env_bucket": os.environ.get("GLOBAL_ENV_BUCKET", os.environ.get("GLOBAL_BUCKET_ENV"))
+                "bucket_org": os.environ.get("ENCODED_S3_BUCKET_ORG", os.environ.get("S3_BUCKET_ORG", None)),
+                "global_env_bucket": os.environ.get("GLOBAL_ENV_BUCKET", os.environ.get("GLOBAL_BUCKET_ENV", None)),
+                "encrypt_key_id": os.environ.get("S3_ENCRYPT_KEY_ID", None)
             }
         }
         return response
@@ -695,6 +696,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 response["foursight"]["s3"] = {}
                 response["foursight"]["s3"]["bucket_org"] = foursight_header_json_s3.get("bucket_org")
                 response["foursight"]["s3"]["global_env_bucket"] = foursight_header_json_s3.get("global_env_bucket")
+                response["foursight"]["s3"]["encrypt_key_id"] = foursight_header_json_s3.get("encrypt_key_id")
             if foursight_app:
                 response["foursight"]["aws_account_number"] = foursight_app["credentials"]["aws_account_number"]
                 response["foursight"]["aws_account_name"] = foursight_app["credentials"]["aws_account_name"]
