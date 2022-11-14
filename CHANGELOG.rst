@@ -6,6 +6,21 @@ foursight-core
 Change Log
 ----------
 
+2.1.1
+=====
+* Changes related to a new experimental /accounts page in Foursight which can show summary
+  Foursight and Portal info from other AWS accounts. To take advantage of it there is an
+  accounts.json file in the chalicelib_cgap or chalicelib_fourfront directory, for
+  Foursight-CGAP and foursight-Fourfront, respectively, which contains a simple list
+  of Foursight URLs for other AWS accounts. If this file is not present no harm.
+  This file has been manually encrypted, since it contains internal URLs, using
+  the ENCODED_AUTH0_SECRET value in the Global Application Configuration (GAC)
+  in the AWS Secrets Manager. There are convenience poetry scripts, to encrypt
+  and/or decrypt this file locally: encrypt-accounts-file, decrypt-accounts-file.
+  Change to both the API and UI have been made for this.
+* Miscellaneous UI cleanup; very gradually more componentization and better CSS.
+
+
 2.1.0
 =====
 * React-ifying Foursight.
