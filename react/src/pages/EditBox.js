@@ -103,7 +103,7 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
 
     function getInputByName(name) {
         for (const input of inputs) {
-            if (input.name == name) {
+            if (input.name === name) {
                 return input;
             }
         }
@@ -118,7 +118,7 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
             const originalValue = valueOf(input);
             const element = document.getElementById(input.name);
             const currentValue = element.value?.toString();
-            if (originalValue?.toString() != currentValue?.toString()) {
+            if (originalValue?.toString() !== currentValue?.toString()) {
                 return true;
             }
         }
@@ -239,9 +239,8 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
                                 <div style={{marginTop:"0.45em"}}> <StandardSpinner condition={loading} label={updating ? "Updating" : "Loading"}/> </div>
                             </>:<>
                                 { (readonly) ? <>
-                                   <div className="box thickborder" style={{width:"fit-content",marginRight:"10pt",fontSize:"small"}}>
-                                        <b>Read Only Mode</b>
-                                   </div>
+                                   <button className="button cancel" type="button" onClick={handleCancel}>Cancel</button><>&nbsp;</>
+                                   <button className="button cancel" type="button"><b>Read Only Mode</b></button><>&nbsp;</>
                                 </>:<>
                                     <button className="button cancel" type="button" onClick={handleCancel}>Cancel</button><>&nbsp;</>
                                     { onCreate ? <>

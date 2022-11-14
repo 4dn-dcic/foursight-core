@@ -133,10 +133,13 @@ const Header = (props) => {
                 </td>
                 <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
                     <small><LiveTime.FormatDateTime verbose={true} /></small>
+                    { (header.app?.credentials?.aws_account_name) && <>
+                        &nbsp;|&nbsp;<Link to={Client.Path("/login")} style={{textDecoration:"none",color:"inherit"}}><b title={`AWS Account Number: ${header.app?.credentials?.aws_account_number}`}>{header.app?.credentials?.aws_account_name}</b></Link>
+                    </>}
                     { (Auth.IsLoggedIn(header)) ? (<span>
-                            &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</span>
+                        &nbsp;|&nbsp;<span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</span>
                     </span>):(<span>
-                        &nbsp;|&nbsp; <Link to={Client.Path("/login?auth", Env.Current(header))} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</Link>
+                        &nbsp;|&nbsp;<Link to={Client.Path("/login?auth", Env.Current(header))} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</Link>
                     </span>)}
                 </td>
             </tr>
@@ -189,10 +192,10 @@ const Header = (props) => {
                             { Auth.LoggedInUser(header) ? (<>
                                 <Link to={Client.Path("/login")} style={{textDecoration:"none"}}><b style={{color:"darkblue"}} title="Logged in as.">{Auth.LoggedInUser(header)}</b></Link>
                                 { Auth.LoggedInViaGoogle(header) ? <>
-                                    <img title="Google Authentication" style={{marginLeft:"9px",marginRight:"0",marginBottom:"2px"}} src={Image.GoogleLoginLogo()} height="15" />
+                                    <img alt="google" title="Google Authentication" style={{marginLeft:"9px",marginRight:"0",marginBottom:"2px"}} src={Image.GoogleLoginLogo()} height="15" />
                                 </>:<>
                                     { Auth.LoggedInViaGitHub(header) && <>
-                                        <img title="GitHub Authentication" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
+                                        <img alt="github" title="GitHub Authentication" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
                                     </>}
                                 </>}
                             </>):(<>

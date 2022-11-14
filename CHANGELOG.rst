@@ -18,6 +18,7 @@ Change Log
   in the AWS Secrets Manager. There are convenience poetry scripts, to encrypt
   and/or decrypt this file locally: encrypt-accounts-file, decrypt-accounts-file.
   Change to both the API and UI have been made for this.
+* Fix for C4-949: Show full_output as JSON (YAML actually) correctly in check run outputs.
 * Miscellaneous UI cleanup; very gradually more componentization and better CSS.
 
 

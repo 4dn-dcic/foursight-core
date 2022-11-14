@@ -1,15 +1,7 @@
-import { useContext, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import Uuid from 'react-uuid';
-import HeaderData from '../HeaderData';
-import Page from '../Page';
+import React, { useEffect, useState } from 'react';
 import { BarSpinner } from '../Spinners';
-import Auth from '../utils/Auth';
-import Client from '../utils/Client';
-import { HorizontalLine } from '../Components';
 import Char from '../utils/Char';
-import Env from '../utils/Env';
-import { useFetch, useFetchFunction } from '../utils/Fetch';
+import { useFetch } from '../utils/Fetch';
 import Server from '../utils/Server';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
@@ -30,9 +22,9 @@ const AccountInfoLeft = ({ info }) => {
                 </>}
             </td>
             <td>
-                <a style={{color:"inherit"}} href={info.get("foursight.url")} target="_blank">{info.get("foursight.url")}</a>
+                <a style={{color:"inherit"}} href={info.get("foursight.url")} rel="noreferrer" target="_blank">{info.get("foursight.url")}</a>
                 &nbsp;
-                <a style={{color:"inherit"}} href={info.get("foursight.url")} target="_blank">
+                <a style={{color:"inherit"}} href={info.get("foursight.url")} rel="noreferrer" target="_blank">
                     <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span>
                 </a>
             </td>
@@ -43,17 +35,17 @@ const AccountInfoLeft = ({ info }) => {
             </td>
             <td>
                 { info.get("portal.url") ? <>
-                    <a style={{color:"inherit"}} href={info.get("portal.url")} target="_blank">{info.get("portal.url")}</a>
+                    <a style={{color:"inherit"}} href={info.get("portal.url")} rel="noreferrer" target="_blank">{info.get("portal.url")}</a>
                     &nbsp;
-                    <a style={{color:"inherit"}} href={info.get("portal.url")} target="_blank">
+                    <a style={{color:"inherit"}} href={info.get("portal.url")} rel="noreferrer" target="_blank">
                         <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span>
                     </a>
                     &nbsp;|&nbsp;
-                    <a style={{color:"inherit"}} href={info.get("portal.health_ui_url")} target="_blank">Health</a>&nbsp;
-                    <a style={{color:"inherit"}} href={info.get("portal.health_ui_url")} target="_blank"><span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span></a>
+                    <a style={{color:"inherit"}} href={info.get("portal.health_ui_url")} rel="noreferrer" target="_blank">Health</a>&nbsp;
+                    <a style={{color:"inherit"}} href={info.get("portal.health_ui_url")} rel="noreferrer" target="_blank"><span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span></a>
                         &nbsp;
                         <small>
-                            (<a style={{color:"inherit"}} href={info.get("portal.health_url")} target="_blank">JSON</a>)&nbsp;
+                            (<a style={{color:"inherit"}} href={info.get("portal.health_url")} rel="noreferrer" target="_blank">JSON</a>)&nbsp;
                         </small>
                 </>:<> {Char.EmptySet} </>}
             </td>
@@ -404,9 +396,7 @@ const AccountsComponent = ({ header }) => {
 
     function refreshAll() {
         accounts.refresh();
-        for (const account in accounts) {
-            setRefresh(true);
-        }
+        setRefresh(true);
     }
 
     return <>
@@ -415,10 +405,10 @@ const AccountsComponent = ({ header }) => {
             <span style={{marginRight:"12pt",cursor:"pointer"}} onClick={refreshAll}>
                 &nbsp;&nbsp;{Char.Refresh}
             </span>
-            { accounts?.map((account, index) => <>
+            { accounts?.map((account, index) => <React.Fragment key={index}>
                 { index > 0 && <div style={{height:"8pt"}} /> }
                 <AccountInfo account={account} header={header} refresh={refresh} setRefresh={setRefresh}/>
-            </>)}
+            </React.Fragment>)}
         </>:<>
             <div className="box">
                 Not supported.

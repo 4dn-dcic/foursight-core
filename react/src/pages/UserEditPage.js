@@ -18,7 +18,7 @@ const UserEditPage = () => {
         url: Server.Url(`/users/${uuid}`),
         onData: updateUserData,
         onError: (response) => {
-            if (response.status == 404) {
+            if (response.status === 404) {
                 setNotFound(true);
             }
         }

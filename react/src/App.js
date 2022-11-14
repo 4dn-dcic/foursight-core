@@ -60,21 +60,6 @@ const App = () => {
                 }
             }
         });
-/*
-        const url = Server.Url("/header");
-        Fetch.get(
-            url,
-            data => {
-                data.loading = false;
-                data.update = (value) => setHeader(value); // TODO: Experimental - See EnvPage (updating header on fly).
-                setHeader(data);
-                setFavicon(data);
-            },
-            loading => {},
-            error => {
-                setHeader(header => ({...header, ...{error:true}}));
-            })
-*/
     }, []);
 
     return <Router>

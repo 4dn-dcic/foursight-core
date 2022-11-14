@@ -117,7 +117,6 @@ function FormatDate(value, verbose = false) {
                                                    month:"long",
                                                    day:"numeric" });
     }
-    const tz = new Date().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
     return value.getFullYear() + "-" +
            ("0" + (value.getMonth() + 1)).slice(-2) + "-" +
            ("0" + value.getDate()).slice(-2);

@@ -106,9 +106,9 @@ const LoginPage = (props) => {
                 Domain: {header.auth.domain} <br />
             </>}
             {(header?.app?.credentials?.aws_account_number) && <>
-                AWS Account: <b>{header?.app?.credentials?.aws_account_number}</b>
+                AWS Account Number: <b>{header?.app?.credentials?.aws_account_number}</b>
                 {(header?.app?.credentials?.aws_account_name) && <>
-                    &nbsp;({header?.app?.credentials?.aws_account_name})
+                    &nbsp;(<span className="tool-tip" data-text={`AWS Account Alias: ${header?.app?.credentials?.aws_account_name}`}>{header?.app?.credentials?.aws_account_name}</span>)
                 </>}
                 <br />
             </>}
@@ -120,7 +120,7 @@ const LoginPage = (props) => {
             <div className="container" style={{width:"800pt"}}>
                 {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt"}}>Hello, {Auth.LoggedInUserName(header)}</b>} ...
                 <div style={{float:"right",marginRight:"8pt",fontSize:"small",cursor:"pointer"}}>
-                    { header.accounts && <>
+                    { header.app?.accounts && <>
                         <Link to="/accounts">Accounts</Link>&nbsp;|&nbsp;
                     </>}
                     <Link to="/env">Environments</Link>&nbsp;|&nbsp;

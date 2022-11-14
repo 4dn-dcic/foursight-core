@@ -1214,7 +1214,7 @@ class AppUtilsCore(ReactApi, Routes):
         ts_local = ts_utc.astimezone(tz.gettz('America/New_York'))
         return ''.join([str(ts_local.date()), ' ', str(ts_local.time()), ' ', str(ts_local.tzname())])
 
-    def process_view_result(self, connection, res, is_admin, skip_output_size_check=False):
+    def process_view_result(self, connection, res, is_admin, dont_stringify=False):
         """
         Do some processing on the content of one check result (res arg, a dict)
         Processes timestamp string, trims output fields, and adds action info.
@@ -1246,21 +1246,11 @@ class AppUtilsCore(ReactApi, Routes):
         ts_local = ts_utc.astimezone(tz.gettz('America/New_York'))
         proc_ts = ''.join([str(ts_local.date()), ' at ', str(ts_local.time())])
         res['local_time'] = proc_ts
-        print('xyzzy/process_view_result')
-        print(res)
-        if not skip_output_size_check:
+        if not dont_stringify:
             if res.get('brief_output'):
-                print('xyzzy/process_view_result/brief')
-                print(res['brief_output'])
                 res['brief_output'] = json.dumps(self.trim_output(res['brief_output']), indent=2)
-                print('xyzzy/process_view_result/brief/after')
-                print(res['brief_output'])
             if res.get('full_output'):
-                print('xyzzy/process_view_result/full')
-                print(res['full_output'])
                 res['full_output'] = json.dumps(self.trim_output(res['full_output']), indent=2)
-                print('xyzzy/process_view_result/full/after')
-                print(res['full_output'])
         # only return admin_output if an admin is logged in
         if res.get('admin_output') and is_admin:
             res['admin_output'] = json.dumps(self.trim_output(res['admin_output']), indent=2)

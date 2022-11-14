@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import ReactPaginate from 'react-paginate';
 import { ScaleSpinner } from './Spinners';
 

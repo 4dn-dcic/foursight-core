@@ -667,10 +667,10 @@ const ChecksPage = (props) => {
         return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
             <div title={check.name}>
                 <b className="tool-tip" data-text={`Group: ${check.group}. Check: ${check.name}. Click for full history.`}>
-                    <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"darkgreen"}} target="_blank">{check.title}</Link>
+                    <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"darkgreen"}} rel="noreferrer" target="_blank">{check.title}</Link>
                 </b>&nbsp;
                 { check.history && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",color:"darkred",fontWeight:"bold"}} onClick={() => {refreshHistory(check)}}>{Char.Refresh}&nbsp;&nbsp;</span></span> }
-                <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"4px",height:"17"}} /></Link>
+                <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"4px",height:"17"}} /></Link>
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check)})}><b>{Char.X}</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
@@ -1005,12 +1005,12 @@ const ChecksPage = (props) => {
     }
 
     function findGroup(groupName) {
-        return checks?.find(item => item.group == groupName);
+        return checks?.find(item => item.group === groupName);
     }
 
     function findCheck(checkName, groupName) {
         const group = findGroup(groupName)
-        return group?.checks?.find(item => item.name == checkName);
+        return group?.checks?.find(item => item.name === checkName);
     }
 
     const RecentRunsControl = () => {
@@ -1037,7 +1037,7 @@ const ChecksPage = (props) => {
                 </>:<>
                     { !recentRuns.empty && <small>
                         {/* TODO: Get this info from TableHead */}
-                        { (recentRuns.data?.__sort?.key == "timestamp" && recentRuns.data?.__sort?.order == -1) ? <>
+                        { (recentRuns.data?.__sort?.key === "timestamp" && recentRuns.data?.__sort?.order === -1) ? <>
                             <b>Most Recent</b>:&nbsp;
                         </>:<>
                             <b>Top</b>:&nbsp;
@@ -1063,7 +1063,7 @@ const ChecksPage = (props) => {
                                     <td style={{width:"30%"}}>
                                         <span style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(run.check, run.group))}>{run.title}</span> <br />
                                         <i><small style={{cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(run.group))}>{run.group}</small></i>&nbsp;
-                                        <Link to={Client.Path(`/checks/${run.check}/history`)} className={"tool-tip"} data-text={"Click for full history."} target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"4px",height:"17"}} /></Link>
+                                        <Link to={Client.Path(`/checks/${run.check}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"4px",height:"17"}} /></Link>
                                     &nbsp;&nbsp;</td>
                                     <td>
                                         {run.status === "PASS" ? (<>
@@ -1123,10 +1123,6 @@ const ChecksPage = (props) => {
 
     function isShowingLambdaView(lambda) {
         return lambda.__showing;
-    }
-
-    function isShowingLambdaPanel() {
-        return lambdas?.filter((lambda) => isShowingLambdaView(lambda))?.length > 0;
     }
 
     function showLambdaView(lambda) {
@@ -1211,8 +1207,8 @@ const ChecksPage = (props) => {
                     <tr style={{fontSize:"small"}}>
                         <td style={tdLabelStyle}>Code:</td>
                         <td style={tdContentStyle} className="tool-tip" data-text="S3 Code Location">
-                            <a href={`https://s3.console.aws.amazon.com/s3/object/${lambda.lambda_code_s3_bucket}?region=us-east-1&prefix=${lambda.lambda_code_s3_bucket_key}`} target="_blank">{lambda.lambda_code_s3_bucket_key}</a> <br />
-                            <small><a href={`https://s3.console.aws.amazon.com/s3/buckets/${lambda.lambda_code_s3_bucket}?region=us-east-1&tab=objects`} target="_blank">{lambda.lambda_code_s3_bucket}</a></small>
+                            <a href={`https://s3.console.aws.amazon.com/s3/object/${lambda.lambda_code_s3_bucket}?region=us-east-1&prefix=${lambda.lambda_code_s3_bucket_key}`} rel="noreferrer" target="_blank">{lambda.lambda_code_s3_bucket_key}</a> <br />
+                            <small><a href={`https://s3.console.aws.amazon.com/s3/buckets/${lambda.lambda_code_s3_bucket}?region=us-east-1&tab=objects`} rel="noreferrer" target="_blank">{lambda.lambda_code_s3_bucket}</a></small>
                         </td>
                     </tr>
                     <tr>

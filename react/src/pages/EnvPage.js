@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react';
+import { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import HeaderData from '../HeaderData';
@@ -10,7 +10,6 @@ import Env from '../utils/Env';
 import { useFetch, useFetchFunction } from '../utils/Fetch';
 import Server from '../utils/Server';
 import Type from '../utils/Type';
-import { HorizontalLine } from '../Components';
 
 const EnvPage = (props) => {
 

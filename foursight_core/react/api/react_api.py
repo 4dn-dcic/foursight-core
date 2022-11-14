@@ -426,7 +426,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                         'description': 'Check has not yet run'
                     }
                 title = app.core.check_handler.get_check_title_from_setup(check)
-                processed_result = app.core.process_view_result(connection, data, is_admin=True, skip_output_size_check=True)
+                processed_result = app.core.process_view_result(connection, data, is_admin=True, dont_stringify=True)
                 body.append({
                     'status': 'success',
                     'env': env,

@@ -1,13 +1,7 @@
 import { useContext } from 'react';
-import AccountsComponent from './AccountsComponent';
-import Auth from '../utils/Auth';
-import Char from '../utils/Char';
-import Client from '../utils/Client';
 import Env from '../utils/Env';
 import HeaderData from '../HeaderData';
-import Image from '../utils/Image';
 import Logout from '../utils/Logout';
-import Time from '../utils/Time';
 import { HorizontalLine, Link, LoggedInUser } from '../Components';
 
 const HomePage = (props) => {
