@@ -73,3 +73,9 @@ class FSConnection(object):
         for conn in self.connections.values():
             if conn is not None:
                 conn.put_object(key, value)
+
+    def test_es_connection(self):
+        """ Pings ES to ensure we can connect to it, useful in some failure scenarios """
+        if self.connections['es']:
+            return self.connections['es'].test_connection()
+        return False

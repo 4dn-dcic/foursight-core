@@ -131,7 +131,7 @@ def scale_rds(connection, **kwargs):
     if allocated_storage:
         modify_kwargs['AllocatedStorage'] = int(allocated_storage)
     try:
-        client.modify_db_instasnce(
+        client.modify_db_instance(
             **modify_kwargs
         )
     except Exception as e:
@@ -149,7 +149,7 @@ def scale_rds(connection, **kwargs):
                 data_node_type='c5.xlarge.elasticsearch', data_node_count=3)
 def scale_elasticsearch(connection, **kwargs):
     """ Scales ElasticSearch """
-    check = CheckResult(connection, 'scale_down_elasticsearch_production')
+    check = CheckResult(connection, 'scale_elasticsearch')
     es_client = es_utils.ElasticSearchServiceClient()
     es_domain = kwargs.get('es_domain')
     if not es_domain:

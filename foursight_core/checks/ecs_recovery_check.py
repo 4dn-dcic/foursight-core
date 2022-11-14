@@ -14,7 +14,7 @@ def rollback_application_version(connection, **kwargs):
         run again, continuing the rollback mechanism until a stable version is found.
 
         Note that this check assumes it is run on a 15 minute schedule - it will not function
-        correctly otherwise!
+        correctly otherwise! It also will ignore deployments that occur while counts are uneven.
     """
     check = CheckResult(connection, 'rollback_application_version')
     env = kwargs.get('env_name') or connection.ff_env
@@ -39,8 +39,8 @@ def rollback_application_version(connection, **kwargs):
         matching_cluster = matching_cluster[0]
         services = ecs_utils.list_ecs_services(cluster_name=matching_cluster)
         deploy_is_active = ecs_utils.service_has_active_deployment(cluster_name=matching_cluster, services=services)
-        # check previous run
-        if deploy_is_active:
+        # check previous run, checking that ES is reachable
+        if deploy_is_active and (connection.test_es_connection()):
             last_result = check.get_primary_result()
             prior_result = check.get_closest_result(diff_mins=30)
             # set to warn if either of previous results don't exist
@@ -73,6 +73,6 @@ def rollback_application_version(connection, **kwargs):
                 return check
         else:
             check.status = 'PASS'
-            check.summary = 'No active deployment detected - all good!'
+            check.summary = 'No active deployment detected (or counts are uneven) - all good!'
             check.brief_output = check.full_output = check.summary
             return check
