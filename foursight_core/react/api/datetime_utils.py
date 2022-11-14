@@ -82,6 +82,7 @@ def convert_uptime_to_datetime(uptime: str, relative_to: datetime = None) -> Opt
 
     If the given uptime is not parsable then returns None, otherwise returns the datetime corresponding
     to this uptime, relative to now, by default, or to the relative_to datetime argument if given.
+    We THINK it's right to interpret the given uptime relative to UTC (TODO).
     """
     def normalize_spaces(value: str) -> str:
         return " ".join(value.split())
@@ -112,7 +113,7 @@ def convert_uptime_to_datetime(uptime: str, relative_to: datetime = None) -> Opt
                         minutes += value
                     elif unit.startswith("second"):
                         seconds += value
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.timezone.utc)
         return now + datetime.timedelta(minutes=-minutes, seconds=-seconds)
     except Exception:
         pass

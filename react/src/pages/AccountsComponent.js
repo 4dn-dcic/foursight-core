@@ -273,6 +273,18 @@ const AccountInfoRight = ({ info }) => {
         </tr>
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                portal-project:
+            </td>
+            <td>
+                {info.get("portal.health.project_version") ? <>
+                    <b>{info.get("portal.health.project_version")}</b>
+                </>:<>
+                    <b>{Char.EmptySet}</b>
+                </>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
                 portal-dcicutils:
             </td>
             <td>
@@ -327,8 +339,12 @@ const AccountInfo = ({ account, header, refresh, setRefresh }) => {
             </>:<>
                 <b>{info.data?.name || account.name}</b>
             </>}
-            { info.get("foursight.stage") && <>
-                &nbsp;- <span className="tool-tip" data-text={`Stage: ${info.get("foursight.stage")}`}>{info.get("foursight.stage")}</span>
+            { info.get("foursight.stage") ? <>
+                &nbsp;&nbsp;&mdash;&nbsp;&nbsp;<span className="tool-tip" data-text={`Stage: ${info.get("foursight.stage")}`}>{info.get("foursight.stage")}</span>
+            </>:<>
+                { account.stage && <>
+                    &nbsp;&nbsp;&mdash;&nbsp;&nbsp;<span className="tool-tip" data-text={`Stage: ${account.stage}`}>{account.stage}</span>
+                </>}
             </>}
             <div style={{float:"right",marginTop:"-2pt"}}>
                 { info.loading ? <>
