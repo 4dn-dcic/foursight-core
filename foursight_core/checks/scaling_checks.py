@@ -141,7 +141,7 @@ def scale_rds(connection, **kwargs):
     else:
         check.status = 'PASS'
         check.summary = f'Successfully resized DB {rds_name} to {db_instance_class}' \
-                        f' with EBS {allocated_storage}'
+                        f' with EBS {allocated_storage} (scheduled for next maintenance window)'
         return check
 
 
@@ -156,8 +156,8 @@ def scale_elasticsearch(connection, **kwargs):
         check.status = 'FAIL'
         check.summary = 'Must pass an ES domain name - see datastore status check'
         return check
-    master_node_type, master_node_count = kwargs.get('master_node_type'), kwargs.get('master_node_count')
-    data_node_type, data_node_count = kwargs.get('data_node_type'), kwargs.get('data_node_count')
+    master_node_type, master_node_count = kwargs.get('master_node_type'), int(kwargs.get('master_node_count'))
+    data_node_type, data_node_count = kwargs.get('data_node_type'), int(kwargs.get('data_node_count'))
     node_count = master_node_count + data_node_count
     if not (node_count % 2):  # even node count
         check.status = 'FAIL'
