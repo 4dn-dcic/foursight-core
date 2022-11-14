@@ -13,8 +13,8 @@ def datastore_status(connection, **kwargs):
     db_client = boto3.client('rds', region_name=ecs_utils.COMMON_REGION)
     es_client = boto3.client('es', region_name=ecs_utils.COMMON_REGION)
     try:
-        databases = db_client.describe_db_instances()
-        es_clusters = es_client.list_domain_names()
+        databases = db_client.describe_db_instances()['DBInstances']
+        es_clusters = es_client.list_domain_names()['DomainNames']
     except Exception as e:
         check.status = 'FAIL'
         check.summary = f'Could not resolve RDS or ES clusters: {str(e)}'

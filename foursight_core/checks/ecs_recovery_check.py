@@ -17,7 +17,7 @@ def rollback_application_version(connection, **kwargs):
         correctly otherwise!
     """
     check = CheckResult(connection, 'rollback_application_version')
-    env = kwargs.get('env_name')
+    env = kwargs.get('env_name') or connection.ff_env
     ecr_repo = kwargs.get('ecr_repo', 'main')  # typically main
     image_tag = kwargs.get('image_tag', 'latest')  # typically 'latest' but could be blue/green
     account_number = kwargs.get('account_number', DEFAULT_ACCOUNT_NUMBER)  # os.environ.get('ACCOUNT_NUMBER')

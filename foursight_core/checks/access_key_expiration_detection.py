@@ -16,10 +16,10 @@ def access_key_status(connection, **kwargs):
     check.action = 'refresh_access_keys'
     check.allow_action = True  # always allow refresh
     fs_user_email, fs_user_kp = 'foursight.app@gmail.com', 'access_key_foursight'
-    user_props = get_metadata(f'/users/{fs_user_email}?datastore=database')
+    user_props = get_metadata(f'/users/{fs_user_email}?datastore=database', key=connection.ff_keys)
     user_uuid = user_props['uuid']
     access_keys = search_metadata(f'/search/?type=AccessKey&description={fs_user_kp}&user.uuid={user_uuid}'
-                                  f'&sort=-date_created')
+                                  f'&sort=-date_created', key=connection.ff_keys)
     most_recent_key = access_keys[0]  # should always be present if deploy has run
     # date format: 2022-07-05T01:01:43.498347+00:00 (isoformat)
     most_recent_key_creation_date = datetime.fromisoformat(most_recent_key['date_created'])
@@ -58,17 +58,17 @@ def refresh_access_keys(connection, **kwargs):
         'successfully_generated': []
     }
     for email, kp_name in admin_keys:
-        user = get_metadata(f'/users/{email}?datastore=database')
+        user = get_metadata(f'/users/{email}?datastore=database', key=connection.ff_keys)
         user_uuid = user['uuid']
         access_keys = search_metadata(f'/search/?type=AccessKey&description={kp_name}&user.uuid={user_uuid}'
-                                      f'&sort=-date_created')
+                                      f'&sort=-date_created', key=connection.ff_keys)
         for access_key in access_keys:
             if access_key['status'] != 'deleted':
-                patch_metadata(patch_item={'status': 'deleted'}, obj_id=access_key['uuid'])
+                patch_metadata(patch_item={'status': 'deleted'}, obj_id=access_key['uuid'], key=connection.ff_keys)
 
         # generate new key
         access_key_req = {'user': user_uuid, 'description': kp_name}
-        access_key_res = post_metadata('/access_key', access_key_req)
+        access_key_res = post_metadata('/access_key', access_key_req, key=connection.ff_keys)
         s3_obj = {'secret': access_key_res['secret_access_key'],
                   'key': access_key_res['access_key_id'],
                   'server': s3.url}
