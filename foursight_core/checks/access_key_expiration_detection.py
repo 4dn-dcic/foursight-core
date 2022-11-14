@@ -26,7 +26,7 @@ def access_key_status(connection, **kwargs):
     expiration_date = most_recent_key_creation_date + timedelta(days=90)
     one_week_to_expiration = expiration_date - timedelta(days=7)
     three_weeks_to_expiration = expiration_date - timedelta(days=21)
-    now = datetime.now()
+    now = datetime.utcnow()
     if now > one_week_to_expiration:
         check.status = 'FAIL'
         check.summary = (f'Application access keys will expire in less than 7 days! Please run'
