@@ -64,9 +64,22 @@ def invoke_ecs_task(connection, **kwargs):
     else:
         try:
             ecs_client = ecs_utils.ECSUtils()
-            resp = ecs_client.run_ecs_task(cluster_name=cluster_name,
-                                           task_name=task_name, subnet=subnet,
-                                           security_group=security_group)
+            # TODO: fix in utils
+            resp = ecs_client.client.run_task(
+                cluster=cluster_name,
+                count=1,
+                taskDefinition=task_name,
+                launchType='FARGATE',  # needs this param
+                networkConfiguration={
+                    'awsvpcConfiguration': {
+                        'subnets': [
+                            subnet
+                        ],
+                        'securityGroups': [
+                            security_group
+                        ]
+                    }
+                })
         except Exception as e:
             check.status = 'FAIL'
             check.summary = f'Got an error trying to run_task: {str(e)}'
