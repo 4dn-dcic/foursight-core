@@ -310,10 +310,22 @@ const ChecksPage = (props) => {
 
     // The (yellow) check running box.
     const CheckRunningBox = ({check}) => {
+        const [ showUuid, setShowUuid ] = useState(false);
         return !check.showingCheckRunningBox ? <span /> : <div>
             <div className="boxstyle check-pass" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                 { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}></span> }
-                {  check.queuedCheckRun && <small><b>Queued check run {Time.FormatDateTime(Time.Now())} {Char.RightArrow} <u>{check.queuedCheckRun}</u></b></small> }
+                {  check.queuedCheckRun &&
+                    <small><b>
+                        Queued check run:&nbsp;
+                        <span onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(Time.Now())}</span>
+                        &nbsp;{Char.RightArrow}&nbsp;
+                        { showUuid ? <>
+                            <span className="tool-tip" data-text={`UUID: ${check.queuedCheckRun}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{check.queuedCheckRun}</span>
+                        </>:<>
+                            <span className="tool-tip" data-text={`UUID: ${check.queuedCheckRun}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>OK</span>
+                        </>}
+                    </b></small>
+                }
                 { !check.queuedCheckRun && <StandardSpinner condition={check.queueingCheckRun} label={" Queueing check run"} color={"darkgreen"} /> }
             </div>
         </div>
