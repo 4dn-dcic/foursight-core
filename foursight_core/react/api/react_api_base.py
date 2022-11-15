@@ -36,7 +36,7 @@ class ReactApiBase:
                         body: Union[dict, list] = None,
                         headers: dict = None,
                         content_type: str = JSON_CONTENT_TYPE) -> Response:
-        if not body:
+        if body is None:
             body = {}
         if not headers:
             headers = ReactApiBase.STANDARD_HEADERS
@@ -48,7 +48,7 @@ class ReactApiBase:
 
     @staticmethod
     def create_success_response(body: Union[dict, list] = None, content_type: str = JSON_CONTENT_TYPE) -> Response:
-        if not body:
+        if body is None:
             body = {}
         return ReactApiBase.create_response(http_status=200, body=body, content_type=content_type)
 

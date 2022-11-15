@@ -626,27 +626,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
     # ----------------------------------------------------------------------------------------------
 
     def get_accounts_file(self) -> dict:
-        # IN PROGRESS
-
-        FILE = "accounts.json"
-        DIR = os.path.dirname(__file__)
-        ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, f"../../{FILE}"))
-        CGAP_ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, f"../../../chalicelib_cgap/{FILE}"))
-        FOURFRONT_ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, f"../../../chalicelib_fourfront/{FILE}"))
-        LOCAL_ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, f"../../../chalicelib_local/{FILE}"))
-
-        if os.environ.get("CHALICE_LOCAL") == "1":
-            if os.path.exists(LOCAL_ACCOUNTS_FILE):
-                return LOCAL_ACCOUNTS_FILE
-        if app.core.APP_PACKAGE_NAME == "foursight-cgap":
-            if os.path.exists(CGAP_ACCOUNTS_FILE):
-                return CGAP_ACCOUNTS_FILE
-        elif app.core.APP_PACKAGE_NAME == "foursight":
-            if os.path.exists(FOURFRONT_ACCOUNTS_FILE):
-                return FOURFRONT_ACCOUNTS_FILE
-        if os.path.exists(ACCOUNTS_FILE):
-            return ACCOUNTS_FILE
-        return None
+        return app.core.accounts_file
 
     def get_accounts(self) -> Optional[dict]:
         accounts_file = self.get_accounts_file()
@@ -726,6 +706,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 response["foursight"]["aws_account_number"] = foursight_app["credentials"].get("aws_account_number")
                 response["foursight"]["aws_account_name"] = foursight_app["credentials"].get("aws_account_name")
                 response["foursight"]["re_captcha_key"] = foursight_app["credentials"].get("re_captcha_key")
+                if response["foursight"]["re_captcha_key"] and "enter value" in response["foursight"]["re_captcha_key"].lower():
+                    response["foursight"]["re_captcha_key"] = None
             response["foursight"]["auth0_client"] = foursight_header_json["auth"]["aud"]
             foursight_header_json_portal = foursight_header_json.get("portal")
             if not foursight_header_json_portal:

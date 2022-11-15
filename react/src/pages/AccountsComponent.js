@@ -77,7 +77,7 @@ const AccountInfoLeft = ({ info }) => {
             <td style={{paddingRight:"10pt"}}>
                 Identity:
             </td>
-            <td>
+            <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>
                 { info.get("foursight.identity") ? <>
                     {info.get("foursight.identity")}
                 </>:<> {Char.EmptySet} </>}
