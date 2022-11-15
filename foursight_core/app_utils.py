@@ -64,6 +64,7 @@ class AppUtilsCore(ReactApi, Routes):
     """
 
     CHECK_SETUP_FILE_NAME = "check_setup.json"
+    ACCOUNTS_FILE_NAME = "accounts.json"
 
     # Define in subclass.
     APP_PACKAGE_NAME = None
@@ -1874,16 +1875,30 @@ class AppUtilsCore(ReactApi, Routes):
 
     @staticmethod
     def locate_check_setup_file(base_dir: str) -> str:
+        return AppUtilsCore._locate_config_file(base_dir, AppUtilsCore.CHECK_SETUP_FILE_NAME)
+
+    @staticmethod
+    def locate_accounts_file(base_dir: str) -> str:
+        # IN PROGRESS
+        return AppUtilsCore._locate_config_file(base_dir, AppUtilsCore.ACCOUNTS_FILE_NAME)
+
+    @staticmethod
+    def _locate_config_file(base_dir: str, file_name: str) -> str:
         """
         Return full path to the check_setup.json file, considering the given base directory which is
         supposed to be the full path of either the chalicelib_cgap or chalicelib_fourfront directory.
         Looks for the first non-empty check_setup.json file in this directory order:
 
-        - If the CHALICE_LOCAL environment variable is set to "1", then the
-          chalicelib_local directory parallel to the given base directory.
-        - If the FOURSIGHT_CHECK_SETUP_DIR environment variable is set,
-          then the directoriy specified by this value.
+        - If the CHALICE_LOCAL environment variable is set to "1", then the chalicelib_local
+          directory *parallel* to the given base directory (i.e. base_dir/../chalicelib_local)
+        - If the FOURSIGHT_CHECK_SETUP_DIR environment variable is set, then the directory
+          specified by this value. This is set in the 4dn-cloud-infra repo app.py file.
         - The given base directory.
+        - The base directory of this (foursight_core/app_utils.py) here module. TODO.
+
+        Note that in fact the given base directory is either the foursight-cgap or foursight repo
+        directory (depending on Foursight-CGAP or Foursight-Fourfront), by virtue of the app_utils.py
+        there (in chalicelib_cgap or chalicelib_fourfront) calling this function with its base directory.
         """
 
         def is_non_empty_json_file(file: str) -> bool:
@@ -1895,32 +1910,36 @@ class AppUtilsCore(ReactApi, Routes):
             try:
                 if os.path.exists(file):
                     if os.stat(file).st_size > 0:
-                        with io.open(file, "r") as f:
-                            content = json.load(f)
-                            return (isinstance(content, list) or isinstance(content, dict)) and len(content) > 0
+                        return True
             except Exception:
                 pass
             return False
 
         if not base_dir:
             base_dir = os.path.dirname(__file__)
-        check_setup_file = None
+        config_file = None
         if os.environ.get("CHALICE_LOCAL") == "1":
-            check_setup_dir = os.path.normpath(os.path.join(base_dir, "../chalicelib_local"))
-            check_setup_file = os.path.join(check_setup_dir, AppUtilsCore.CHECK_SETUP_FILE_NAME)
-            if not is_non_empty_json_file(check_setup_file):
-                check_setup_file = None
-        if not check_setup_file:
-            check_setup_dir = os.environ.get("FOURSIGHT_CHECK_SETUP_DIR", "")
-            check_setup_file = os.path.join(check_setup_dir, AppUtilsCore.CHECK_SETUP_FILE_NAME)
-            if not is_non_empty_json_file(check_setup_file):
-                check_setup_file = None
-        if not check_setup_file:
-            check_setup_dir = base_dir
-            check_setup_file = os.path.join(check_setup_dir, AppUtilsCore.CHECK_SETUP_FILE_NAME)
-            if not is_non_empty_json_file(check_setup_file):
-                check_setup_file = None
-        return check_setup_file
+            config_dir = os.path.normpath(os.path.join(base_dir, "../chalicelib_local"))
+            config_file = os.path.join(config_dir, file_name)
+            if not is_non_empty_json_file(config_file):
+                config_file = None
+        if not config_file:
+            config_dir = os.environ.get("FOURSIGHT_CHECK_SETUP_DIR", "")
+            config_file = os.path.join(config_dir, file_name)
+            if not is_non_empty_json_file(config_file):
+                config_file = None
+        if not config_file:
+            config_dir = base_dir
+            config_file = os.path.join(config_dir, file_name)
+            if not is_non_empty_json_file(config_file):
+                config_file = None
+        if not config_file:
+            this_base_dir = os.path.dirname(__file__)
+            if this_base_dir != base_dir:
+                config_file = os.path.join(config_dir, file_name)
+                if not is_non_empty_json_file(config_file):
+                    config_file = None
+        return config_file
 
     _singleton = None
     @staticmethod

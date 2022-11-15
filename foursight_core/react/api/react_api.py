@@ -626,12 +626,18 @@ class ReactApi(ReactApiBase, ReactRoutes):
     # ----------------------------------------------------------------------------------------------
 
     def get_accounts_file(self) -> dict:
+        # IN PROGRESS
 
+        FILE = "accounts.json"
         DIR = os.path.dirname(__file__)
-        ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, "../../accounts.json"))
-        CGAP_ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, "../../../chalicelib_cgap/accounts.json"))
-        FOURFRONT_ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, "../../../chalicelib_fourfront/accounts.json"))
+        ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, f"../../{FILE}"))
+        CGAP_ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, f"../../../chalicelib_cgap/{FILE}"))
+        FOURFRONT_ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, f"../../../chalicelib_fourfront/{FILE}"))
+        LOCAL_ACCOUNTS_FILE = os.path.normpath(os.path.join(DIR, f"../../../chalicelib_local/{FILE}"))
 
+        if os.environ.get("CHALICE_LOCAL") == "1":
+            if os.path.exists(LOCAL_ACCOUNTS_FILE):
+                return LOCAL_ACCOUNTS_FILE
         if app.core.APP_PACKAGE_NAME == "foursight-cgap":
             if os.path.exists(CGAP_ACCOUNTS_FILE):
                 return CGAP_ACCOUNTS_FILE
