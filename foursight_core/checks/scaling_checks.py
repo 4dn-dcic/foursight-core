@@ -107,7 +107,7 @@ def scale_ecs_service(connection, **kwargs):
         return check
     else:
         try:
-            client = boto3.client('ecs', region=ecs_utils.COMMON_REGION)  # TODO: move to utils
+            client = boto3.client('ecs', region_name=ecs_utils.COMMON_REGION)  # TODO: move to utils
             resp = client.update_service(cluster=cluster_name, service=service_name,
                                          desiredCount=parallelization)
         except Exception as e:
