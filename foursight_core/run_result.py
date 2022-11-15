@@ -30,7 +30,8 @@ class RunResult(object):
         self.extension = ".json"
         self.kwargs = {}
 
-    def dumps_json(self, d):
+    @staticmethod
+    def dumps_json(d):
         """ Dumps JSON in a central method, so we can clear issues like datetime serialization by passing
             the default parameter globally
         """
