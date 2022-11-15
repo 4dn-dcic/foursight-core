@@ -1,13 +1,18 @@
 import datetime
 import time
+import logging
 from dateutil import tz
 from abc import abstractmethod
 import json
-from foursight_core.s3_connection import S3Connection
+# from foursight_core.s3_connection import S3Connection
 from foursight_core.exceptions import (
   BadCheckOrAction,
   MissingFoursightPrefixException
 )
+
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 
 class RunResult(object):
@@ -24,6 +29,12 @@ class RunResult(object):
         self.name = name
         self.extension = ".json"
         self.kwargs = {}
+
+    def dumps_json(self, d):
+        """ Dumps JSON in a central method, so we can clear issues like datetime serialization by passing
+            the default parameter globally
+        """
+        return json.dumps(d, default=str)
 
     def set_prefix(self, foursight_prefix):
         self.prefix = foursight_prefix
@@ -161,14 +172,19 @@ class RunResult(object):
         Add a record of the completed check to the runs bucket with name
         equal to the dependency id. The object itself is only the status of the run.
         Returns True on success, False otherwise
+
+        NOTE: This functionality is sort of useless I'd say - we don't create a special bucket
+        for it anyway, so I am disabling it and replacing the run info with log statement that will
+        propagate in the check runner - so you can always search for record_run_info to find these. - Will Nov 15 2022
         """
         run_id = self.kwargs['_run_info']['run_id']
         if not hasattr(self, 'prefix'):
             raise MissingFoursightPrefixException("foursight prefix must be defined using set_prefix")
-        s3_connection = S3Connection(self.prefix + '-runs')
+        # s3_connection = S3Connection(self.prefix + '-runs')
         record_key = '/'.join([run_id, self.name])
-        resp = s3_connection.put_object(record_key, json.dumps(self.status))
-        return resp is not None
+        # resp = s3_connection.put_object(record_key, json.dumps(self.status))
+        logger.error(f'Skipping record_run_info call to s3: {record_key} -> {run_id}')
+        return True  # always returning True now
 
     def delete_results(self, prior_date=None, primary=True, custom_filter=None, timeout=None, es_only=False):
         """
@@ -285,16 +301,16 @@ class RunResult(object):
 
         # store the timestamped result
         formatted['id_alias'] = time_key
-        self.put_object(time_key, json.dumps(formatted))
+        self.put_object(time_key, self.dumps_json(formatted))
 
         # put result as 'latest' key
         formatted['id_alias'] = latest_key
-        self.put_object(latest_key, json.dumps(formatted))
+        self.put_object(latest_key, self.dumps_json(formatted))
 
         # if primary, store as the primary result
         if primary:
             formatted['id_alias'] = primary_key
-            self.put_object(primary_key, json.dumps(formatted))
+            self.put_object(primary_key, self.dumps_json(formatted))
         # return stored data in case we're interested
         return formatted
 
