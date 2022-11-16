@@ -100,7 +100,7 @@ def scale_ecs_service(connection, **kwargs):
     check = CheckResult(connection, 'scale_ecs_service')
     cluster_name = kwargs.get('cluster_name')
     service_name = kwargs.get('service_name')
-    parallelization = kwargs.get('parallelization')
+    parallelization = int(kwargs.get('parallelization'))
     if not (cluster_name and service_name and parallelization):
         check.status = 'FAIL'
         check.summary = 'Did not pass required arguments: cluster_name, service_name and parallelization'
