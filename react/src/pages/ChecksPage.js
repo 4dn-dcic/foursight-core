@@ -417,9 +417,9 @@ const ChecksPage = (props) => {
                     <span style={{cursor:"pointer"}} onClick={() => onClickSelectedGroupsTitle()}>
                         <b>Check Details</b>
                         { isShowingAnyGroupsResults() ? (<>
-                            &nbsp;{Char.DownArrow}
+                            &nbsp;<small>{Char.DownArrowFat}</small>
                         </>):(<>
-                            &nbsp;{Char.UpArrow}
+                            &nbsp;<small>{Char.UpArrowFat}</small>
                         </>)}
                     </span>
                     <span style={{float:"right",fontSize:"x-small",marginTop:"6px",color:Styles.GetForegroundColor()}}>
@@ -450,7 +450,7 @@ const ChecksPage = (props) => {
         return <div style={style}>
             <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"300pt"}}>
                 <div>
-                    <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks)}><b>{group?.group}</b> {isShowingAnyResults(group?.checks) ? (<span>{Char.DownArrow}</span>) : (<span>{Char.UpArrow}</span>)}</span>
+                    <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks)}><b>{group?.group}</b> {isShowingAnyResults(group?.checks) ? (<small>{Char.DownArrowFat}</small>) : (<small>{Char.UpArrowFat}</small>)}</span>
                     <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideGroup(group)})}><b>{Char.X}</b></span>
                 </div>
                 <div style={{marginTop:"6pt"}} />
@@ -540,7 +540,7 @@ const ChecksPage = (props) => {
                     <tr style={{height:"3pt"}}><td></td></tr>
                     <tr>
                         <td style={{verticalAlign:"top",width:"1%","cursor":"pointer"}} onClick={() => {toggleCheckResultsBox(check)}}>
-                            <b>{ isShowingSelectedCheckResultsBox(check) ? <span>{Char.DownArrow}</span> : <span>{Char.RightArrow}</span> }&nbsp;</b>
+                            <b>{ isShowingSelectedCheckResultsBox(check) ? <small>{Char.DownArrowHollow}</small> : <small>{Char.RightArrowHollow}</small> }&nbsp;</b>
                         </td>
                         <td style={{veriticalAlign:"top",maxWidth:"600pt",width:"100%"}} title={check.name}>
                             { (!check.configuringCheckRun) ? <>
