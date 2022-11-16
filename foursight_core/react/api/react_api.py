@@ -663,7 +663,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
     # We use the ENCODED_AUTH0_SECRET in the GAC as the encryption password.
     # ----------------------------------------------------------------------------------------------
 
-    def get_accounts_file(self) -> str:
+    @staticmethod
+    def get_accounts_file() -> str:
         return app.core.accounts_file
 
     def get_accounts(self) -> Optional[dict]:
