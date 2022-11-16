@@ -18,6 +18,8 @@ Change Log
   in the AWS Secrets Manager. There are convenience poetry scripts, to encrypt
   and/or decrypt this file locally: encrypt-accounts-file, decrypt-accounts-file.
   Change to both the API and UI have been made for this.
+* Moved lookup of check_setup.json (and accounts.json) to here, from
+  foursight-cgap/chalicelib_cap/app_utils.py and foursight/chalicelib_cap/app_utils.py.
 * Fix for C4-949: Show full_output as JSON (YAML actually) correctly in check run outputs.
 * Disable user edit in readonly mode.
 * Miscellaneous UI cleanup; very gradually more componentization and better CSS.
