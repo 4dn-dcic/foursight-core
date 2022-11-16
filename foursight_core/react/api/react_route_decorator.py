@@ -62,7 +62,7 @@ def route(*args, **kwargs):
     # chalice local case where /api is NOT the AWS lambda enforced base route in which case
     # we support it explicitly for closer compatibility with the normally deployed case.
     if "root" in kwargs:
-        if kwargs["root"] == True:
+        if kwargs["root"] is True:
             # Registration for root routes, i.e. / (and /api for chalice local).
             def root_route_registration(wrapped_route_function):
                 if not callable(wrapped_route_function):
@@ -83,7 +83,7 @@ def route(*args, **kwargs):
 
     # This "static" is for serving static files which live in their own specific directory.
     if "static" in kwargs:
-        if kwargs["static"] == True:
+        if kwargs["static"] is True:
             path = ROUTE_PREFIX + REACT_UI_PATH_COMPONENT + path
         del kwargs["static"]
     else:
@@ -98,7 +98,7 @@ def route(*args, **kwargs):
     # Note we DEFAULT to AUTHORIZE for the route! The only way to turn it off is to
     # explicitly pass authorize=False to the route decorator.
     if "authorize" in kwargs:
-        authorize = kwargs["authorize"] == True
+        authorize = kwargs["authorize"] is True
         del kwargs["authorize"]
     else:
         authorize = True

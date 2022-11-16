@@ -13,7 +13,7 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
-# The main purpose of this is to get the GAC name and to support comparison of two GACs. 
+# The main purpose of this is to get the GAC name and to support comparison of two GACs.
 class Gac:
 
     @staticmethod
@@ -74,6 +74,6 @@ class Gac:
         }
 
     @staticmethod
-    def cache_clear() -> list:
+    def cache_clear() -> None:
         Gac.get_gac_name.cache_clear()
         Gac.get_gac_info.cache_clear()

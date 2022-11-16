@@ -4,7 +4,7 @@ import logging
 import os
 from typing import Optional, Tuple
 from dcicutils import ff_utils
-from dcicutils.env_utils import foursight_env_name, full_env_name, public_env_name, short_env_name
+from dcicutils.env_utils import foursight_env_name
 from dcicutils.misc_utils import find_association
 from .gac import Gac
 

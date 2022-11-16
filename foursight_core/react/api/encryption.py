@@ -2,15 +2,17 @@
 # --------------------------------------------------------------------------------------------------
 # N.B. RESURRECTING this (used before we went to JWT-signed authtoken) to TEMPORARILY for
 # the accounts page functionality where we have an account.json file, and want to check it
-# in for availability, but don't want it it be plaintext as it has URLs internal to Harvard.
+# in for availability, but don't want it be plaintext as it has URLs internal to Harvard.
 # If this goes beyond the experimental phase will need to sort this out. dmichaels/2022-11-12.
 # --------------------------------------------------------------------------------------------------
 
 import base64
+import json
 import os
 from pyDes import triple_des
 import uuid
 from typing import Union
+
 
 # TODO:
 # Note that triple_des not secure really.
@@ -50,9 +52,9 @@ class Encryption:
                     # not be able to decrypt any authTokens existing out
                     # there, meaning users will have to login again.
                     #
-                    encryption_password = str(uuid.uuid4()).replace('-','')
+                    encryption_password = str(uuid.uuid4()).replace('-', '')
             if not encryption_password:
-                encryption_password = str(uuid.uuid4()).replace('-','')[0:24]
+                encryption_password = str(uuid.uuid4()).replace('-', '')[0:24]
             elif len(encryption_password) < 24:
                 encryption_password = encryption_password.ljust(24, 'x')
             elif len(encryption_password) > 24:
@@ -98,13 +100,15 @@ class Encryption:
         else:
             raise ValueError("Invalid argument to _base64_encode_to_bytes; must be string or bytes.")
 
-    def _string_to_bytes(self, value: str) -> bytes:
+    @staticmethod
+    def _string_to_bytes(value: str) -> bytes:
         if isinstance(value, str):
             return value.encode("utf-8")
         else:
             raise ValueError("Invalid argument to _string_to_bytes; must be string.")
 
-    def _bytes_to_string(self, value: bytes) -> str:
+    @staticmethod
+    def _bytes_to_string(value: bytes) -> str:
         if isinstance(value, bytes):
             return value.decode("utf-8") if isinstance(value, bytes) else ""
         else:

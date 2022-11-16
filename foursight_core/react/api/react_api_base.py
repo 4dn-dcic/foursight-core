@@ -87,14 +87,6 @@ class ReactApiBase:
 
     @staticmethod
     def create_error_response(message: Union[dict, str, Exception]) -> Response:
-#       if isinstance(message, Exception):
-#           message = get_error_message(message)
-#       if isinstance(message, str):
-#           body = { "error": message }
-#       else:
-#           body = message
-#       return ReactApiBase.create_response(http_status=500, body=body)
-
         if isinstance(message, Exception):
             # Treat an Exception object like the error message string associated with that Exception.
             body = {"error": get_error_message(message)}
@@ -105,7 +97,6 @@ class ReactApiBase:
         else:
             raise ValueError(f"The message argument must be a dict, str, or Exception: {message!r}")
         return ReactApiBase.create_response(http_status=500, body=body)
-
 
     def is_react_authentication_callback(self, request: dict) -> bool:
         """

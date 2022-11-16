@@ -2,12 +2,13 @@
 
 from chalice import Cron
 import os
-from typing import Callable, Tuple
+from typing import Tuple
 from dcicutils.misc_utils import PRINT
 from .app import app  # Chalice object
 
 SCHEDULE_FOR_NEVER = Cron("0", "0", "31", "2", "?", "*")
 DEFAULT_STAGE = os.environ.get("chalice_stage", "dev")
+
 
 def schedule(*args, **kwargs):
     """

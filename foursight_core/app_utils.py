@@ -1,5 +1,4 @@
 from chalice import Response
-import io
 import inspect
 import jinja2
 import json
@@ -32,11 +31,13 @@ from dcicutils.env_utils import (
     public_env_name,
     short_env_name,
 )
+from dcicutils.exceptions import InvalidParameterError
 from dcicutils.lang_utils import disjoined_list
-from dcicutils.misc_utils import get_error_message, PRINT
+from dcicutils.misc_utils import get_error_message, ignored, PRINT
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from typing import Optional
+from .deploy import Deploy
 from .s3_connection import S3Connection
 from .fs_connection import FSConnection
 from .check_utils import CheckHandler
@@ -135,9 +136,9 @@ class AppUtilsCore(ReactApi, Routes):
     def note_non_fatal_error_for_ui_info(error_object, calling_function):
         if isinstance(calling_function, types.FunctionType):
             calling_function = calling_function.__name__
-        logger.warn(f"Non-fatal error in function ({calling_function})."
-                    f" Missing information via this function used only for Foursight UI display."
-                    f" Underlying error: {get_error_message(error_object)}")
+        logger.warning(f"Non-fatal error in function ({calling_function})."
+                       f" Missing information via this function used only for Foursight UI display."
+                       f" Underlying error: {get_error_message(error_object)}")
 
     @classmethod
     def set_timeout(cls, timeout):
@@ -197,7 +198,7 @@ class AppUtilsCore(ReactApi, Routes):
     def is_running_locally(self, request_dict) -> bool:
         return request_dict.get('context', {}).get('identity', {}).get('sourceIp', '') == "127.0.0.1"
 
-    def get_logged_in_user_info(self, environ: str, request_dict: dict) -> str:
+    def get_logged_in_user_info(self, environ: str, request_dict: dict) -> dict:
         email_address = ""
         email_verified = ""
         first_name = ""
@@ -238,14 +239,14 @@ class AppUtilsCore(ReactApi, Routes):
 
     # This is a bit of a hack, this whole user_records thing.
     # Will eventually be supplanted by and corrected in the React version.
-    def get_user_record(self, environ: str, request_dict: dict) -> dict:
+    def get_user_record(self, environ: str, request_dict: dict) -> Optional[dict]:
         user_info = self.get_logged_in_user_info(environ, request_dict)
         if not user_info:
             return None
         user_record = self.user_records.get(user_info['email_address'])
         return user_record
 
-    def set_user_record(self, email: str, record: dict, error: str, exception: str):
+    def set_user_record(self, email: Optional[str], record: Optional[dict], error: Optional[str], exception: Optional[str]):
         if not email:
             return
         user_record = self.user_records.get(email)
@@ -256,7 +257,7 @@ class AppUtilsCore(ReactApi, Routes):
             user_record["error"] = error
             user_record["exception"] = exception
 
-    def get_portal_url(self, env_name: str) -> str:
+    def get_portal_url(self, env_name: str) -> Optional[str]:
         portal_url = self._cached_portal_url.get(env_name)
         if not portal_url:
             try:
@@ -282,7 +283,7 @@ class AppUtilsCore(ReactApi, Routes):
         return auth0_client_id
 
     def get_auth0_client_id_from_portal(self, env_name: str) -> str:
-        logger.warn(f"Fetching Auth0 client ID from portal.")
+        logger.warning(f"Fetching Auth0 client ID from portal.")
         portal_url = self.get_portal_url(env_name)
         auth0_config_url = portal_url + "/auth0_config?format=json"
         if not self.auth0_client_id:
@@ -293,10 +294,11 @@ class AppUtilsCore(ReactApi, Routes):
                 # TODO: Fallback behavior to old hardcoded value (previously in templates/header.html).
                 self.auth0_client_id = "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB"
                 logger.error(f"Error fetching Auth0 client ID from portal ({auth0_config_url}); using default value: {e}")
-        logger.warn(f"Done fetching Auth0 client ID from portal ({auth0_config_url}): {self.auth0_client_id}")
+        logger.warning(f"Done fetching Auth0 client ID from portal ({auth0_config_url}): {self.auth0_client_id}")
         return self.auth0_client_id
 
     def get_auth0_secret(self, env_name: str) -> str:
+        ignored(env_name)
         return os.environ.get("CLIENT_SECRET")
 
     def check_authorization(self, request_dict, env=None):
@@ -332,13 +334,13 @@ class AppUtilsCore(ReactApi, Routes):
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
                                                      ff_env=env_info['ff_env'],
                                                      add_on='frame=object&datastore=database')
-                    logger.warn("foursight_core.check_authorization: env_info ...")
-                    logger.warn(env_info)
-                    logger.warn("foursight_core.check_authorization: user_res ...")
-                    logger.warn(user_res)
+                    logger.warning("foursight_core.check_authorization: env_info ...")
+                    logger.warning(env_info)
+                    logger.warning("foursight_core.check_authorization: user_res ...")
+                    logger.warning(user_res)
                     groups = user_res.get('groups')
                     if not groups:
-                        logger.warn("foursight_core.check_authorization: No 'groups' element for user record! Returning False.")
+                        logger.warning("foursight_core.check_authorization: No 'groups' element for user record! Returning False.")
                         self.set_user_record(email=jwt_decoded.get('email'), record=None, error="nogroups", exception=None)
                         # self.user_record = None
                         # self.user_record_error = "nogroups"
@@ -356,7 +358,7 @@ class AppUtilsCore(ReactApi, Routes):
                     # self.user_record = user_res
                     # self.user_record_error = None
                     # self.user_record_error_email = None
-                logger.warn("foursight_core.check_authorization: Returning True")
+                logger.warning("foursight_core.check_authorization: Returning True")
                 return True
             except Exception as e:
                 logger.error("foursight_core.check_authorization: Exception on check_authorization")
@@ -445,7 +447,7 @@ class AppUtilsCore(ReactApi, Routes):
         token = cookie_dict.get('jwtToken', None)
         return token
 
-    def get_decoded_jwt_token(self, env_name: str, request_dict) -> dict:
+    def get_decoded_jwt_token(self, env_name: str, request_dict) -> Optional[dict]:
         try:
             jwt_token = self.get_jwt_token(request_dict)
             if not jwt_token:
@@ -455,7 +457,7 @@ class AppUtilsCore(ReactApi, Routes):
             # leeway accounts for clock drift between us and auth0
             return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30, options={"verify_signature": True}, algorithms=["HS256"])
         except Exception as e:
-            logger.warn(f"foursight_core: Exception decoding JWT token ({jwt_token}): {get_error_message(e)}")
+            logger.warning(f"foursight_core: Exception decoding JWT token ({jwt_token}): {get_error_message(e)}")
             return None
 
     @classmethod
@@ -573,7 +575,7 @@ class AppUtilsCore(ReactApi, Routes):
             return {}
         return {key: dictionary[key] for key in sorted(dictionary.keys(), key=lambda key: key.lower())}
 
-    def get_aws_account_number(self) -> dict:
+    def get_aws_account_number(self) -> Optional[dict]:
         try:
             caller_identity = boto3.client("sts").get_caller_identity()
             return caller_identity["Account"]
@@ -642,37 +644,37 @@ class AppUtilsCore(ReactApi, Routes):
             return ""
 
     def ping_elasticsearch(self, env_name: str) -> bool:
-        logger.warn(f"foursight_core: Pinging ElasticSearch: {self.host}")
+        logger.warning(f"foursight_core: Pinging ElasticSearch: {self.host}")
         try:
             response = self.init_connection(env_name).connections["es"].test_connection()
-            logger.warn(f"foursight_core: Done pinging ElasticSearch: {self.host}")
+            logger.warning(f"foursight_core: Done pinging ElasticSearch: {self.host}")
             return response
         except Exception as e:
-            logger.warn(f"Exception pinging ElasticSearch ({self.host}): {e}")
+            logger.warning(f"Exception pinging ElasticSearch ({self.host}): {e}")
             return False
 
     def ping_portal(self, env_name: str) -> bool:
         portal_url = ""
         try:
             portal_url = self.get_portal_url(env_name)
-            logger.warn(f"foursight_core: Pinging portal: {portal_url}")
+            logger.warning(f"foursight_core: Pinging portal: {portal_url}")
             response = requests.get(portal_url + "/health?format=json", timeout=4)
-            logger.warn(f"foursight_core: Done pinging portal: {portal_url}")
+            logger.warning(f"foursight_core: Done pinging portal: {portal_url}")
             return (response.status_code == 200)
         except Exception as e:
-            logger.warn(f"foursight_core: Exception pinging portal ({portal_url}): {e}")
+            logger.warning(f"foursight_core: Exception pinging portal ({portal_url}): {e}")
             return False
 
     def ping_sqs(self) -> bool:
         sqs_url = ""
         try:
             sqs_url = self.sqs.get_sqs_queue().url
-            logger.warn(f"foursight_core: Pinging SQS: {sqs_url}")
+            logger.warning(f"foursight_core: Pinging SQS: {sqs_url}")
             sqs_attributes = self.sqs.get_sqs_attributes(sqs_url)
-            logger.warn(f"foursight_core: Done pinging SQS: {sqs_url}")
+            logger.warning(f"foursight_core: Done pinging SQS: {sqs_url}")
             return (sqs_attributes is not None)
         except Exception as e:
-            logger.warn(f"Exception pinging SQS ({sqs_url}): {e}")
+            logger.warning(f"Exception pinging SQS ({sqs_url}): {e}")
             return False
 
     def reload_lambda(self, lambda_name: str = None) -> bool:
@@ -708,16 +710,16 @@ class AppUtilsCore(ReactApi, Routes):
                         lambda_description = lambda_description[:-1]
                     else:
                         lambda_description = lambda_description + "."
-                logger.warn(f"Reloading lambda: {lambda_name}")
+                logger.warning(f"Reloading lambda: {lambda_name}")
                 boto_lambda.update_function_configuration(FunctionName=lambda_name, Description=lambda_description)
-                logger.warn(f"Reloaded lambda: {lambda_name}")
+                logger.warning(f"Reloaded lambda: {lambda_name}")
                 self._cached_lambda_last_modified = None
                 return True
         except Exception as e:
-            logger.warn(f"Error reloading lambda ({lambda_name}): {e}")
+            logger.warning(f"Error reloading lambda ({lambda_name}): {e}")
         return False
 
-    def get_lambda_last_modified(self, lambda_name: str = None) -> str:
+    def get_lambda_last_modified(self, lambda_name: str = None) -> Optional[str]:
         """
         Returns the last modified time for the given lambda name.
         See comments in reload_lambda on this.
@@ -747,7 +749,7 @@ class AppUtilsCore(ReactApi, Routes):
                     self._cached_lambda_last_modified = lambda_last_modified
                 return lambda_last_modified
         except Exception as e:
-            logger.warn(f"Error getting lambda ({lambda_name}) last modified time: {e}")
+            logger.warning(f"Error getting lambda ({lambda_name}) last modified time: {e}")
         return None
 
     # ===== ROUTE RUNNING FUNCTIONS =====
@@ -1369,7 +1371,7 @@ class AppUtilsCore(ReactApi, Routes):
         html_resp.status_code = 200
         return self.process_response(html_resp)
 
-    def get_foursight_history(self, connection, check, start, limit, sort = None) -> [list, int]:
+    def get_foursight_history(self, connection, check, start, limit, sort=None) -> [list, int]:
         """
         Get a brief form of the historical results for a check, including
         UUID, status, kwargs. Limit the number of results recieved to 500, unless
@@ -1625,19 +1627,19 @@ class AppUtilsCore(ReactApi, Routes):
             dict: runner input of queued messages, used for testing
         """
         print(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
-        logger.warn(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
+        logger.warning(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
         queue = self.sqs.get_sqs_queue()
-        logger.warn(f"queue_scheduled_checks: queue={queue}")
+        logger.warning(f"queue_scheduled_checks: queue={queue}")
         if schedule_name is not None:
-            logger.warn(f"queue_scheduled_checks: have schedule_name")
-            logger.warn(f"queue_scheduled_checks: environment.is_valid_environment_name(sched_environ, or_all=True)={self.environment.is_valid_environment_name(sched_environ, or_all=True)}")
+            logger.warning(f"queue_scheduled_checks: have schedule_name")
+            logger.warning(f"queue_scheduled_checks: environment.is_valid_environment_name(sched_environ, or_all=True)={self.environment.is_valid_environment_name(sched_environ, or_all=True)}")
             if not self.environment.is_valid_environment_name(sched_environ, or_all=True):
                 PRINT(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
                 return
             sched_environs = self.environment.get_selected_environment_names(sched_environ)
-            logger.warn(f"queue_scheduled_checks: sched_environs={sched_environs}")
+            logger.warning(f"queue_scheduled_checks: sched_environs={sched_environs}")
             check_schedule = self.check_handler.get_check_schedule(schedule_name, conditions)
-            logger.warn(f"queue_scheduled_checks: sched_environs={check_schedule}")
+            logger.warning(f"queue_scheduled_checks: sched_environs={check_schedule}")
             if not check_schedule:
                 PRINT(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
                 return
@@ -1645,16 +1647,16 @@ class AppUtilsCore(ReactApi, Routes):
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
                 check_vals.extend(self.get_env_schedule(check_schedule, environ))
-                logger.warn(f"queue_scheduled_checks: calling send_sqs_messages({environ}) ... check_values:")
-                logger.warn(check_vals)
+                logger.warning(f"queue_scheduled_checks: calling send_sqs_messages({environ}) ... check_values:")
+                logger.warning(check_vals)
                 self.sqs.send_sqs_messages(queue, environ, check_vals)
-                logger.warn(f"queue_scheduled_checks: after calling send_sqs_messages({environ})")
+                logger.warning(f"queue_scheduled_checks: after calling send_sqs_messages({environ})")
         runner_input = {'sqs_url': queue.url}
         for n in range(4):  # number of parallel runners to kick off
-            logger.warn(f"queue_scheduled_checks: calling invoke_check_runner({runner_input})")
+            logger.warning(f"queue_scheduled_checks: calling invoke_check_runner({runner_input})")
             self.sqs.invoke_check_runner(runner_input)
-            logger.warn(f"queue_scheduled_checks: after calling invoke_check_runner({runner_input})")
-        logger.warn(f"queue_scheduled_checks: returning({runner_input})")
+            logger.warning(f"queue_scheduled_checks: after calling invoke_check_runner({runner_input})")
+        logger.warning(f"queue_scheduled_checks: returning({runner_input})")
         return runner_input  # for testing purposes
 
     @classmethod
@@ -1904,8 +1906,7 @@ class AppUtilsCore(ReactApi, Routes):
         def _get_chalicelib_dir():
             try:
                 chalicelib_package = __import__(self.package_name)
-                chalicelib_dir = os.path.dirname(inspect.getfile(chalicelib_package))
-                return chalicelib_dir
+                return os.path.dirname(inspect.getfile(chalicelib_package))
             except Exception as e:
                 logger.error(f"Cannot determine chalicelib directory: {get_error_message(e)}")
                 return ""
@@ -1952,8 +1953,9 @@ class AppUtilsCore(ReactApi, Routes):
         return config_file
 
     _singleton = None
+
     @staticmethod
-    def singleton(cls = None):
+    def singleton(cls=None):
         # A little wonky having a singleton with an argument but this is sort of the way it
         # was in 4dn-cloud-infra/app-{cgap,fourfront}.py; and we know the only place we create
         # this is from there and also from foursight-cgap/chalicelib/app.py and foursight/app.py
@@ -1976,12 +1978,9 @@ class AppUtils(AppUtilsCore):  # for compatibility with older imports
     """
     pass
 
+
 # These were previously in foursight/chalicelib_foursight/check_schedules.py
 # and foursight-cgap/chalicelib_cgap/check_schedules.py.
-
-from dcicutils.exceptions import InvalidParameterError
-from .deploy import Deploy
-
 def _compute_valid_deploy_stages():
     # TODO: Will wants to know why "test" is here. -kmp 17-Aug-2021
     return list(Deploy.CONFIG_BASE['stages'].keys()) + ['test']

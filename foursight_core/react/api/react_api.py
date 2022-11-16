@@ -15,6 +15,7 @@ import urllib.parse
 from itertools import chain
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils import ff_utils
+from dcicutils.misc_utils import ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from ...app import app
 from ...decorators import Decorators
@@ -164,7 +165,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             obfuscate_dict(app.core.environment.get_environment_and_bucket_info(env, stage_name)))
 
     @lru_cache(50)
-    def get_check_result_bucket_name(self, env: str) -> str:
+    def _get_check_result_bucket_name(self, env: str) -> Optional[str]:
         envs = app.core.init_environments(env=env)
         if not envs:
             return None
@@ -186,7 +187,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             try:
                 environment_and_bucket_info = self._get_env_and_bucket_info(env, stage_name)
                 portal_url = app.core.get_portal_url(env)
-            except Exception as e:
+            except Exception:
                 environment_and_bucket_info = None
                 portal_url = None
         else:
@@ -242,7 +243,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             },
             "checks": {
                 "file": app.core.check_handler.CHECK_SETUP_FILE,
-                "bucket": self.get_check_result_bucket_name(env if env else default_env)
+                "bucket": self._get_check_result_bucket_name(env if env else default_env)
             },
             "known_envs": self._envs.get_known_envs_with_gac_names(),
             "gac": Gac.get_gac_info(),
@@ -255,6 +256,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/users
         Returns a (paged) summary of all users.
         """
+        ignored(request)
         offset = int(args.get("offset", "0")) if args else 0
         if offset < 0:
             offset = 0
@@ -310,6 +312,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         be an email address; and can also be a comma-separated list of these;
         if just one requested then return a single object, otherwise return an array.
         """
+        ignored(request)
         users = []
         items = uuid.split(",")
         not_found_count = 0
@@ -343,6 +346,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         {email': 'japrufrock@hms.harvard.edu', 'first_name': 'J. Alfred', 'last_name': 'Prufrock'}
         Returns the same response as GET /{env}/users/{uuid} (i.e. reactpi_get_user).
         """
+        ignored(request)
         response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env))
         #
         # Response looks like:
@@ -365,6 +369,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Updates the user identified by the given uuid with the given data.
         Returns the same response as GET /{env}/users/{uuid} (i.e. reactpi_get_user).
         """
+        ignored(request)
         # Note that there may easily be a delay after update until the record is actually updated.
         # TODO: Find out precisely why this is so, and if and how to specially handle it on the client side.
         response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env))
@@ -382,8 +387,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: DELETE /{env}/users/delete/{uuid}
         Deletes the user identified by the given uuid.
         """
-        response = ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
-        response = ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
+        ignored(request)
+        _ = ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
+        _ = ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
 
     def reactapi_checks(self, request: dict, env: str) -> Response:
@@ -391,6 +397,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/checks
         Returns a summary (list) of all defined checks.
         """
+        ignored(request)
         return self.create_success_response(self._checks.get_checks_grouped(env))
 
     def reactapi_check_results(self, request: dict, env: str, check: str) -> Response:
@@ -398,6 +405,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/checks/{check}
         Returns the latest result from the given check (name).
         """
+        ignored(request)
         connection = app.core.init_connection(env)
         check_results = app.core.CheckResult(connection, check)
         if not check_results:
@@ -417,10 +425,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns the check result for the given check (name) and uuid.
         Analogous legacy function is app_utils.view_foursight_check.
         """
+        ignored(request)
         body = []
         try:
             connection = app.core.init_connection(env)
-        except Exception as e:
+        except Exception:
             connection = None
         if connection:
             check_result = app.core.CheckResult(connection, check)
@@ -451,21 +460,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Does this by looping through each check and getting the 10 most recent results from each
         and then globally sorting (in descending order) each of those results by check run timestamp.
         """
-        MAX_RESULTS_PER_CHECK = 10
+        ignored(request)
+        max_results_per_check = 10
         limit = int(args.get("limit", "25")) if args else 25
         if limit < 1:
             limit = 1
         results = []
         connection = app.core.init_connection(env)
-        checks = self._checks._get_checks(env)
+        checks = self._checks.get_checks(env)
         for check_name in checks:
             group_name = checks[check_name]["group"]
             check_title = checks[check_name]["title"]
             recent_history, _ = app.core.get_foursight_history(connection, check_name,
-                                                               0, MAX_RESULTS_PER_CHECK, "timestamp.desc")
+                                                               0, max_results_per_check, "timestamp.desc")
             for result in recent_history:
                 uuid = None
                 duration = None
+                state = None
                 #
                 # Oddly each result in the history list is an array like this:
                 #
@@ -511,6 +522,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/checks/check/history
         Returns a (paged) summary (list) of check results for the given check (name).
         """
+        ignored(request)
         offset = int(args.get("offset", "0")) if args else 0
         if offset < 0:
             offset = 0
@@ -524,7 +536,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         connection = app.core.init_connection(env)
         history, total = app.core.get_foursight_history(connection, check, offset, limit, sort)
         history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
-        queue_attr = app.core.sqs.get_sqs_attributes(app.core.sqs.get_sqs_queue().url)
+        # queue_attr = app.core.sqs.get_sqs_attributes(app.core.sqs.get_sqs_queue().url)
         for item in history:
             for subitem in item:
                 if isinstance(subitem, dict):
@@ -553,6 +565,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/checks/{check}/run
         Kicks off a run for the given check (name).
         """
+        ignored(request)
         args = base64_decode_to_json(args)
         queued_uuid = app.core.queue_check(env, check, args)
         return self.create_success_response({"check": check, "env": env, "uuid": queued_uuid})
@@ -562,6 +575,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/checks-status
         Returns the status of any/all currently running or queued checks.
         """
+        ignored(request)
+        ignored(env)
         checks_queue = app.core.sqs.get_sqs_attributes(app.core.sqs.get_sqs_queue().url)
         checks_running = checks_queue.get('ApproximateNumberOfMessagesNotVisible')
         checks_queued = checks_queue.get('ApproximateNumberOfMessages')
@@ -572,6 +587,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/checks-raw
         Returns the content of the raw/original check_setup.json file.
         """
+        ignored(request)
+        ignored(env)
         return self.create_success_response(self._checks.get_checks_raw())
 
     def reactapi_checks_registry(self, request: dict, env: str) -> Response:
@@ -580,6 +597,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns the content of the checks registry collected for the check_function
         decorator in decorators.py.
         """
+        ignored(request)
+        ignored(env)
         return self.create_success_response(Decorators.get_registry())
 
     def reactapi_lambdas(self, request: dict, env: str) -> Response:
@@ -587,6 +606,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/lambdas
         Returns a summary (list) of all defined AWS lambdas for the current AWS environment.
         """
+        ignored(request)
+        ignored(env)
         # TODO: Filter out checks of lambas not in the env.
         return self.create_success_response(self._checks.get_annotated_lambdas())
 
@@ -595,6 +616,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/gac/{environ_compare}
         Returns differences between two GACs (global application configurations).
         """
+        ignored(request)
+        ignored(env)
         return self.create_success_response(Gac.compare_gacs(env, env_compare))
 
     def reactapi_aws_s3_buckets(self, request: dict, env: str) -> Response:
@@ -602,6 +625,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/s3/buckets
         Return a list of all AWS S3 bucket names for the current AWS environment.
         """
+        ignored(request)
+        ignored(env)
         return self.create_success_response(AwsS3.get_buckets())
 
     def reactapi_aws_s3_buckets_keys(self, request: dict, env: str, bucket: str) -> Response:
@@ -610,6 +635,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Return a list of all AWS S3 bucket key names in the given bucket
         for the current AWS environment.
         """
+        ignored(request)
+        ignored(env)
         return self.create_success_response(AwsS3.get_bucket_keys(bucket))
 
     def reactapi_aws_s3_buckets_key_contents(self, request: dict, env: str, bucket: str, key: str) -> Response:
@@ -617,6 +644,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/s3/buckets/{bucket}/{key}
         Return the contents of the AWS S3 bucket key in the given bucket for the current AWS environment.
         """
+        ignored(env)
         if True:
             #
             # TODO!!!
@@ -635,7 +663,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
     # We use the ENCODED_AUTH0_SECRET in the GAC as the encryption password.
     # ----------------------------------------------------------------------------------------------
 
-    def get_accounts_file(self) -> dict:
+    def get_accounts_file(self) -> str:
         return app.core.accounts_file
 
     def get_accounts(self) -> Optional[dict]:
@@ -665,6 +693,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self._cached_accounts
 
     def reactapi_accounts(self, request: dict) -> Response:
+        ignored(request)
         accounts = self.get_accounts()
         return self.create_success_response(accounts)
 
@@ -740,10 +769,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 response["portal"]["health_url_status"] = portal_health_response.status_code
                 return None
             portal_health_json = portal_health_response.json()
-            response["portal"]["versions"] = { "portal": portal_health_json.get("project_version"),
-                                               "snovault": portal_health_json.get("snovault_version"),
-                                               "dcicutils": portal_health_json.get("utils_version"),
-                                               "python": portal_health_json.get("python_version") }
+            response["portal"]["versions"] = {
+                "portal": portal_health_json.get("project_version"),
+                "snovault": portal_health_json.get("snovault_version"),
+                "dcicutils": portal_health_json.get("utils_version"),
+                "python": portal_health_json.get("python_version")
+            }
             portal_uptime = portal_health_json.get("uptime")
             portal_started = convert_uptime_to_datetime(portal_uptime)
             response["portal"]["started"] = convert_utc_datetime_to_useastern_datetime_string(portal_started)
@@ -755,10 +786,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
             response["portal"]["foursight_url"] = foursight_url
             return foursight_url
 
-        response = { "accounts_file": self.get_accounts_file() }
+        ignored(request)
+        response = {"accounts_file": self.get_accounts_file()}
         accounts = self.get_accounts()
         if not accounts:
-            return self.create_success_response({ "status": "No accounts file support." })
+            return self.create_success_response({"status": "No accounts file support."})
         account = [account for account in accounts if is_account_name_match(account, name)] if accounts else None
         if not account or len(account) > 1:
             response["name"] = name
@@ -808,6 +840,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /__reloadlambda__
         Kicks off a reload of the given lambda name. For troubleshooting only.
         """
+        ignored(request)
         app.core.reload_lambda()
         time.sleep(3)
         return self.create_success_response({"status": "Lambda reloaded."})
@@ -817,6 +850,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /__clearcache___
         Not yet implemented.
         """
+        ignored(request)
         app.core.cache_clear()
         super().cache_clear()
         self._checks.cache_clear()
@@ -829,7 +863,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response({"status": "Caches cleared."})
 
     def reactapi_testsize(self, n: int) -> Response:
-        n = int(n) - 8 # { "N": "" }
+        n = int(n) - 8  # { "N": "" }
         s = "".join(["X" for _ in range(n)])
-        body = { "N": s }
+        body = {"N": s}
         return app.core.create_success_response(body)

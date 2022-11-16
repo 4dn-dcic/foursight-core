@@ -3,6 +3,7 @@ import json
 from typing import Optional
 from urllib.parse import urlparse
 
+
 def sort_dictionary_by_case_insensitive_keys(dictionary: dict) -> dict:
     """
     Returns the given dictionary sorted by (case-insenstivie) key values; yes,

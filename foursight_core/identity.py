@@ -72,12 +72,12 @@ def find_check_runner_lambda_name(stack_name: str) -> Optional[str]:
     check_runner_lambda_name_pattern = "-CheckRunner-"
     check_runner_lambda_names = find_lambda_names(stack_name, check_runner_lambda_name_pattern)
     if not check_runner_lambda_names:
-        logger.warn(f"Foursight CheckRunner lambda (containing: {check_runner_lambda_name_pattern})"
-                    f" not found for stack: {stack_name}")
+        logger.warning(f"Foursight CheckRunner lambda (containing: {check_runner_lambda_name_pattern})"
+                       f" not found for stack: {stack_name}")
         return None
     elif len(check_runner_lambda_names) != 1:
-        logger.warn(f"Unique Foursight CheckRunner lambda (containing: {check_runner_lambda_name_pattern})"
-                    f" not found (matches: {len(check_runner_lambda_names)}) for stack: {stack_name}")
+        logger.warning(f"Unique Foursight CheckRunner lambda (containing: {check_runner_lambda_name_pattern})"
+                       f" not found (matches: {len(check_runner_lambda_names)}) for stack: {stack_name}")
         return None
     return check_runner_lambda_names[0]
 
@@ -130,7 +130,7 @@ def set_check_runner_lambda_environment_variable(stack_name) -> None:
         os.environ["CHECK_RUNNER"] = check_runner_lambda_name
         logger.info(f"Foursight CHECK_RUNNER environment variable value is: {os.environ.get('CHECK_RUNNER')}")
     else:
-        logger.warn(f"Foursight CHECK_RUNNER environment variable is not set.")
+        logger.warning(f"Foursight CHECK_RUNNER environment variable is not set.")
 
 
 def set_elasticsearch_host_environment_variable() -> None:

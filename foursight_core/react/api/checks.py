@@ -27,7 +27,7 @@ class Checks:
         """
         return self._check_setup
 
-    def _get_checks(self, env: str) -> dict:
+    def get_checks(self, env: str) -> dict:
         """
         Returns a dictionary containing all checks, annotated with various info,
         e.g. the (cron) schedule from the associated lambdas, and check kwargs,
@@ -47,10 +47,10 @@ class Checks:
 
     def get_checks_grouped(self, env: str) -> list:
         """
-        Like _get_checks but returns the checks grouped by their group names.
+        Like get_checks but returns the checks grouped by their group names.
         """
         checks_groups = []
-        checks = self._get_checks(env)
+        checks = self.get_checks(env)
         for check_name in checks:
             check_item = checks[check_name]
             check_item_group = check_item["group"]
@@ -69,7 +69,7 @@ class Checks:
         """
         Returns the check for the given check name; filtered by the given env name.
         """
-        checks = self._get_checks(env)
+        checks = self.get_checks(env)
         for check_key in checks.keys():
             if check_key == check:
                 return checks[check_key]
@@ -203,7 +203,7 @@ class Checks:
         e.g. the function name and ARN, code size, role, and description.
         """
         boto_lambda = boto3.client("lambda")
-      # lambda_functions = boto_lambda.list_functions()["Functions"]
+        # lambda_functions = boto_lambda.list_functions()["Functions"]
         lambda_functions = Checks._get_all_lambda_functions()
         for lambda_function in lambda_functions:
             lambda_function_handler = lambda_function["Handler"]
