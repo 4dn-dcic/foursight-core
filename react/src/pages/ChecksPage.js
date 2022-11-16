@@ -313,19 +313,20 @@ const ChecksPage = (props) => {
     const CheckRunningBox = ({check}) => {
         const [ showUuid, setShowUuid ] = useState(false);
         return !check.showingCheckRunningBox ? <span /> : <div>
-            <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+            <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} xonClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                 { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}></span> }
                 {  check.queuedCheckRun &&
                     <small><b>
-                        Queued check run:&nbsp;
-                        <span onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.queuedCheckRun)}</span>
+                        <span className="tool-tip" data-text="Click to view UUID for this run." onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued check run</span>:&nbsp;
+                        <span onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.queuedCheckRun + "+00:00")}</span>
                         &nbsp;{Char.RightArrow}&nbsp;
+                                
                         { showUuid ? <>
-                            <span className="tool-tip" data-text={`UUID: ${check.queuedCheckRun}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{check.queuedCheckRun}</span>
+                            <a className="tool-tip" data-text="Click to view in AWS S3." target="_blank" onClick={(e) => {}} href={`https://s3.console.aws.amazon.com/s3/object/${info.get("checks.bucket")}?region=us-east-1&prefix=${check.name}/${check.queuedCheckRun}.json`} style={{color:"inherit"}}><u>{check.queuedCheckRun}</u></a>
                         </>:<>
                             <span className="tool-tip" data-text={`UUID: ${check.queuedCheckRun}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>OK</span>
                         </>}
-                        <div style={{float:"right",marginTop:"-1pt",cursor:"pointer"}} onClick={() => {hideCheckRunningBox(check); }}>{Char.X}</div>
+                        <div style={{float:"right",marginTop:"-0pt",cursor:"pointer"}} onClick={() => {hideCheckRunningBox(check); }}>&nbsp;{Char.X}</div>
                     </b></small>
                 }
                 { !check.queuedCheckRun && <div style={{marginTop:"-2pt"}}><StandardSpinner condition={check.queueingCheckRun} label={" Queueing check run"} color={"darkred"} /></div> }
@@ -680,7 +681,7 @@ const ChecksPage = (props) => {
             { label: "State", key: extractState }
         ];
 
-        return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+        return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt"}}>
             <div title={check.name}>
                 <b className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}. Group: ${check.group}. Click for full history.`}>
                     <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">{check.title}</Link>
@@ -1052,7 +1053,7 @@ const ChecksPage = (props) => {
         ];
         return recentRunsShow && <>
             <b>Recent Runs</b>
-            <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"2pt"}}>
+            <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"2pt",marginBottom:"8pt"}}>
                 { recentRuns.loading ? <>
                     <StandardSpinner loading={recentRuns.loading} label={"Loading recent runs"} size={60} color={Styles.GetForegroundColor()} />
                 </>:<>

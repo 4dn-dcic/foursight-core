@@ -44,6 +44,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._cached_header = {}
         self._cached_sqs_queue_url = None
         self._cached_accounts = None
+        self._cached_accounts = None
 
     def get_sqs_queue_url(self):
         if not self._cached_sqs_queue_url:
@@ -157,10 +158,18 @@ class ReactApi(ReactApiBase, ReactRoutes):
         }
         return response
 
-    @lru_cache(1)
+    @lru_cache(50)
     def _get_env_and_bucket_info(self, env: str, stage_name: str) -> dict:
         return sort_dictionary_by_case_insensitive_keys(
             obfuscate_dict(app.core.environment.get_environment_and_bucket_info(env, stage_name)))
+
+    @lru_cache(50)
+    def get_check_result_bucket_name(self, env: str) -> str:
+        envs = app.core.init_environments(env=env)
+        if not envs:
+            return None
+        env = envs.get(env)
+        return env.get("bucket") if env else None
 
     def reactapi_info(self, request: dict, env: str) -> Response:
         """
@@ -232,7 +241,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "loaded": app.core.get_load_time()
             },
             "checks": {
-                "file": app.core.check_handler.CHECK_SETUP_FILE
+                "file": app.core.check_handler.CHECK_SETUP_FILE,
+                "bucket": self.get_check_result_bucket_name(env if env else default_env)
             },
             "known_envs": self._envs.get_known_envs_with_gac_names(),
             "gac": Gac.get_gac_info(),
@@ -815,6 +825,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._cached_header = {}
         self._cached_sqs_queue_url = None
         self._get_env_and_bucket_info.cache_clear()
+        self._get_check_result_bucket_name.cache_clear()
         return self.create_success_response({"status": "Caches cleared."})
 
     def reactapi_testsize(self, n: int) -> Response:
