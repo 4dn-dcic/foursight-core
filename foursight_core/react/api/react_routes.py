@@ -64,22 +64,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_header(app.current_request.to_dict(), app.core.get_default_env())
 
-    @route("/accounts", authorize=True)
-    def reactapi_route_accounts() -> Response:
-        """
-        Note that this in an UNPROTECTED route.
-        Returns info on all/other known accounts/environments.
-        """
-        return app.core.reactapi_accounts(app.current_request.to_dict())
-
-    @route("/accounts/{name}", authorize=True)
-    def reactapi_route_account(name: str) -> Response:
-        """
-        Note that this in an UNPROTECTED route.
-        Returns info on all/other known accounts/environments.
-        """
-        return app.core.reactapi_account(app.current_request.to_dict(), name)
-
     # ----------------------------------------------------------------------------------------------
     # Foursight React API routes PROTECTED by authorization/authentication.
     # ----------------------------------------------------------------------------------------------
@@ -233,6 +217,20 @@ class ReactRoutes:
         Return the content of the given AWS S3 bucket key in the given bucket for the current AWS environment.
         """
         return app.core.reactapi_aws_s3_buckets_key_contents(app.current_request.to_dict(), env, bucket=bucket, key=key)
+
+    @route("/accounts", authorize=True)
+    def reactapi_route_accounts() -> Response:
+        """
+        Returns info on known accounts/environments as defined in an accounts.json file if present.
+        """
+        return app.core.reactapi_accounts(app.current_request.to_dict())
+
+    @route("/accounts/{name}", authorize=True)
+    def reactapi_route_account(name: str) -> Response:
+        """
+        Returns info on known accounts/environments as defined in an accounts.json file if present..
+        """
+        return app.core.reactapi_account(app.current_request.to_dict(), name)
 
     @route("/__reloadlambda__", authorize=True)
     def reactapi_route_reload_lambda() -> Response:
