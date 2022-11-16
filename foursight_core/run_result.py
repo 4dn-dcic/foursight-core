@@ -73,8 +73,6 @@ class RunResult(object):
         Returns result if it can be found by its uuid, otherwise None.
         """
         result_key = ''.join([self.name, '/', uuid, self.extension])
-        print('xyzzy/get_result_by_uuid')
-        print(result_key)
         return self.get_object(result_key)
 
     def get_all_results(self):
