@@ -9,6 +9,10 @@
 
 import Str from './Str';
 
+function now() {
+    return new Date();
+}
+
 // Returns a formatted date/time string based on the given date/time value (local timezone).
 //
 function FormatDateTime(value, verbose = false, timezone = true) {
@@ -27,7 +31,7 @@ function FormatDateTime(value, verbose = false, timezone = true) {
         }
         return value.toLocaleDateString('en-us', format).replace(" at ", " | ");
     }
-    const tz = new Date().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
+    const tz = now().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
     return value.getFullYear() + "-" +
            ("0" + (value.getMonth() + 1)).slice(-2) + "-" +
            ("0" + value.getDate()).slice(-2) + " " +
@@ -38,7 +42,7 @@ function FormatDateTime(value, verbose = false, timezone = true) {
 
 // Returns the duration between the given to date/time values.
 //
-function FormatDuration(startDate, endDate = new Date(), verbose = false, fallback = "", prefix = "", suffix = "") {
+function FormatDuration(startDate, endDate = now(), verbose = false, fallback = "", prefix = "", suffix = "") {
     if (!((startDate = ToDateTime(startDate)) instanceof Date)) return "";
     if (!((endDate   = ToDateTime(endDate))   instanceof Date)) return "";
     const msPerDay    = 86400000;
@@ -78,7 +82,7 @@ function FormatDuration(startDate, endDate = new Date(), verbose = false, fallba
 }
 
 function Ago(date, verbose = true) {
-    return FormatDuration(date, new Date(), verbose, null, null, "ago");
+    return FormatDuration(date, now(), verbose, null, null, "ago");
 }
 
 // Converts the give value to a JavaScript Date object.
@@ -138,7 +142,7 @@ function FormatTime(value, verbose = false) {
                                                    second: "numeric",
                                                    timeZoneName: "short"}).replace(" at ", " | ");
     }
-    const tz = new Date().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
+    const tz = now().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
     return ("0" + value.getHours()).slice(-2) + ":" +
            ("0" + value.getMinutes()).slice(-2) + ":" +
            ("0" + value.getSeconds()).slice(-2) + " " + tz;
@@ -155,5 +159,5 @@ const exports = {
     FormatDate:     FormatDate,
     FormatTime:     FormatTime,
     ToDateTime:     ToDateTime,
-    Now:            () => new Date()
+    Now:            () => now()
 }; export default exports;

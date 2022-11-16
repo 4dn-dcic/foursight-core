@@ -47,7 +47,7 @@ const AccountInfoLeft = ({ info }) => {
                         <small>
                             (<a style={{color:"inherit"}} href={info.get("portal.health_url")} rel="noreferrer" target="_blank">JSON</a>)&nbsp;
                         </small>
-                </>:<> {Char.EmptySet} </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr style={{fontSize:"small"}}>
@@ -57,7 +57,7 @@ const AccountInfoLeft = ({ info }) => {
             <td>
                 { info.get("portal.elasticsearch") ? <>
                     {info.get("portal.elasticsearch")}
-                </>:<> {Char.EmptySet} </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr style={{fontSize:"small"}}>
@@ -67,7 +67,7 @@ const AccountInfoLeft = ({ info }) => {
             <td>
                 { info.get("portal.health.database") ? <>
                     {info.get("portal.health.database")}
-                </>:<> {Char.EmptySet} </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -80,7 +80,7 @@ const AccountInfoLeft = ({ info }) => {
             <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>
                 { info.get("foursight.identity") ? <>
                     {info.get("foursight.identity")}
-                </>:<> {Char.EmptySet} </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr>
@@ -93,7 +93,7 @@ const AccountInfoLeft = ({ info }) => {
                     { info.get("foursight.s3.bucket_org") && <>
                         &nbsp;(<span className="tool-tip" data-text={`S3 Bucket Org: ${info.get("foursight.s3.bucket_org")}`}>{info.get("foursight.s3.bucket_org")}</span>)
                     </>}
-                </>:<> {Char.EmptySet} </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr>
@@ -116,7 +116,7 @@ const AccountInfoLeft = ({ info }) => {
                     { info.get("foursight.env_count") > 1 &&
                         <span>&nbsp;({info.get("foursight.env_count")} total)</span>
                     }
-                </>:<> {Char.EmptySet} </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr>
@@ -129,7 +129,7 @@ const AccountInfoLeft = ({ info }) => {
                     { info.get("foursight.aws_account_name") && <>
                         &nbsp;(<span className="tool-tip" data-text={`AWS Account Alias: ${info.get("foursight.aws_account_name")}`}>{info.get("foursight.aws_account_name")}</span>)
                     </>}
-                </>:<> {Char.EmptySet} </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr style={{fontSize:"small"}}>
@@ -141,7 +141,7 @@ const AccountInfoLeft = ({ info }) => {
                     { info.get("foursight.auth0_client") && <>
                         {info.get("foursight.auth0_client")}
                     </>}
-                </>:<> {Char.EmptySet} </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr style={{fontSize:"small"}}>
@@ -168,9 +168,7 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 { info.get("foursight.deployed") ? <>
                     <b className="tool-tip" data-text={Time.Ago(info.get("foursight.deployed"))}>{info.get("foursight.deployed")}</b>
-                </>:<>
-                        {Char.EmptySet}
-                </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr>
@@ -180,9 +178,7 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 { info.get("portal.started") ? <>
                     <b className="tool-tip" data-text={Time.Ago(info.get("portal.started"))}>{info.get("portal.started")}</b>
-                </>:<>
-                        {Char.EmptySet}
-                </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -195,9 +191,7 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("foursight.versions.foursight_core") ? <>
                     <b>{info.get("foursight.versions.foursight_core")}</b>
-                </>:<>
-                        {Char.EmptySet}
-                </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr>
@@ -211,9 +205,7 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("foursight.versions.foursight") ? <>
                     <b>{info.get("foursight.versions.foursight")}</b>
-                </>:<>
-                        {Char.EmptySet}
-                </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr>
@@ -223,9 +215,7 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("foursight.versions.chalice") ? <>
                     <b>{info.get("foursight.versions.chalice")}</b>
-                </>:<>
-                        {Char.EmptySet}
-                </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr>
@@ -235,9 +225,7 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("foursight.versions.dcicutils") ? <>
                     <b>{info.get("foursight.versions.dcicutils")}</b>
-                </>:<>
-                        {Char.EmptySet}
-                </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr>
@@ -247,9 +235,7 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("foursight.versions.python") ? <>
                     <b>{info.get("foursight.versions.python")}</b>
-                </>:<>
-                        {Char.EmptySet}
-                </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -262,9 +248,7 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("portal.versions.portal") ? <>
                     <b>{info.get("portal.versions.portal")}</b>
-                </>:<>
-                        {Char.EmptySet}
-                </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr>
@@ -274,9 +258,7 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("portal.versions.snovault") ? <>
                     <b>{info.get("portal.versions.snovault")}</b>
-                </>:<>
-                        {Char.EmptySet}
-                </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr>
@@ -286,9 +268,7 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("portal.health.project_version") ? <>
                     <b>{info.get("portal.health.project_version")}</b>
-                </>:<>
-                        {Char.EmptySet}
-                </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr>
@@ -298,9 +278,7 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("portal.versions.dcicutils") ? <>
                     <b>{info.get("portal.versions.dcicutils")}</b>
-                </>:<>
-                        {Char.EmptySet}
-                </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr>
@@ -310,9 +288,7 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("portal.health.python_version") ? <>
                     <b>{info.get("portal.health.python_version")}</b>
-                </>:<>
-                        {Char.EmptySet}
-                </>}
+                </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
     </tbody></table>

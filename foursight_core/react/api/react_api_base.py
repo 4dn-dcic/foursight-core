@@ -33,7 +33,7 @@ class ReactApiBase:
 
     @staticmethod
     def create_response(http_status: int = 200,
-                        body: Union[dict, list] = None,
+                        body: Optional[Union[dict, list]] = None,
                         headers: dict = None,
                         content_type: str = JSON_CONTENT_TYPE) -> Response:
         if body is None:
@@ -47,7 +47,7 @@ class ReactApiBase:
         return Response(status_code=http_status, body=body, headers=headers)
 
     @staticmethod
-    def create_success_response(body: Union[dict, list] = None, content_type: str = JSON_CONTENT_TYPE) -> Response:
+    def create_success_response(body: Optional[Union[dict, list]] = None, content_type: str = JSON_CONTENT_TYPE) -> Response:
         if body is None:
             body = {}
         return ReactApiBase.create_response(http_status=200, body=body, content_type=content_type)
@@ -87,13 +87,25 @@ class ReactApiBase:
 
     @staticmethod
     def create_error_response(message: Union[dict, str, Exception]) -> Response:
+#       if isinstance(message, Exception):
+#           message = get_error_message(message)
+#       if isinstance(message, str):
+#           body = { "error": message }
+#       else:
+#           body = message
+#       return ReactApiBase.create_response(http_status=500, body=body)
+
         if isinstance(message, Exception):
-            message = get_error_message(message)
-        if isinstance(message, str):
-            body = { "error": message }
-        else:
+            # Treat an Exception object like the error message string associated with that Exception.
+            body = {"error": get_error_message(message)}
+        elif isinstance(message, str):
+            body = {"error": message}
+        elif isinstance(message, dict):
             body = message
+        else:
+            raise ValueError(f"The message argument must be a dict, str, or Exception: {message!r}")
         return ReactApiBase.create_response(http_status=500, body=body)
+
 
     def is_react_authentication_callback(self, request: dict) -> bool:
         """

@@ -39,9 +39,16 @@ def get_request_body(request: Request) -> dict:
 
 
 def get_base_url(url: str) -> str:
+    """
+    Returns the base (root) URL if the given URL, i.e. with just the scheme/protocol (e.g.
+    http:// or https://), and the the domain, and port if any. Any credentials (username,
+    password) in the URL (e.g. http:) will NOT be included. For example, given this:
+    https://username:password@example.com/api/react/cgap-supertest/home?arg=12345678
+    this function returns this: https://example.com
+    """
     try:
         url = urlparse(url)
-        return url.scheme + "://" + url.netloc
+        return url.scheme + "://" + url.hostname + (":" + str(url.port) if url.port else "")
     except Exception:
         return ""
 
