@@ -1626,7 +1626,7 @@ class AppUtilsCore(ReactApi, Routes):
         Returns:
             dict: runner input of queued messages, used for testing
         """
-        logger.warn(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
+        logger.warning(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
         queue = self.sqs.get_sqs_queue()
         logger.warning(f"queue_scheduled_checks: queue={queue}")
         if schedule_name is not None:

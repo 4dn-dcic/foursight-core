@@ -241,7 +241,7 @@ class RunResult(object):
 
         return num_deleted_s3, num_deleted_es
 
-    def get_result_history(self, start, limit, sort, after_date=None) -> [list, int]:
+    def get_result_history(self, start, limit, sort='timestamp.desc', after_date=None) -> [list, int]:
         """
         Used to get the uuid, status, and kwargs for a specific check.
         Results are ordered by uuid (timestamped) and sliced from start to limit.

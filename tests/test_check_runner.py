@@ -37,6 +37,8 @@ def captured_output():
 
 class TestCheckRunner:
     environ = DEV_ENV
+    LONG_SLEEP_TIME = 8  # mostly arbitrary but long enough to succeed fairly consistently
+    SHORT_SLEEP_TIME = 2  # also arbitrary but shorter
     # NOTE: this interaction is broken and needs to be refactored.
     # The integrated dev stage runner will not poll the test stage queues! - Will Feb 23 2022
     # set_stage('test')
@@ -62,7 +64,7 @@ class TestCheckRunner:
                 # allow existing checks to terminate via long polling
                 if found_clear:
                     break
-                time.sleep(8)
+                time.sleep(self.LONG_SLEEP_TIME)
                 found_clear = True
             elif invis_messages > 0:
                 # if orphaned messages are in the queue, eat them up
@@ -70,13 +72,13 @@ class TestCheckRunner:
                 app_utils_obj.run_check_runner({'sqs_url': self.queue.url}, propogate=False)
                 tries += 1
                 found_clear = False
-                time.sleep(2)
+                time.sleep(self.SHORT_SLEEP_TIME)
             else:
                 # wait less time to see if processing is finished
                 print(f"{invis_messages} visible messages at in the queue")
                 tries += 1
                 found_clear = False
-                time.sleep(2)
+                time.sleep(self.SHORT_SLEEP_TIME)
         return found_clear
 
     def test_queue_basics(self):
@@ -112,7 +114,7 @@ class TestCheckRunner:
         while tries < 10 and not test_success:
             tries += 1
             run_uuid = app_utils_obj.send_single_to_queue(self.environ, to_send, None, invoke_runner=False)
-            time.sleep(1)
+            time.sleep(self.SHORT_SLEEP_TIME)
             with captured_output() as (out, err):
                 # invoke runner manually (without a lambda)
                 res = app_utils_obj.run_check_runner({'sqs_url': self.queue.url}, propogate=False)
@@ -158,7 +160,7 @@ class TestCheckRunner:
         tries = 0
         while (not check_done or not action_done) and tries < 20:
             tries += 1
-            time.sleep(1)
+            time.sleep(self.SHORT_SLEEP_TIME)
             print("try %d" % tries)
             app_utils_obj.run_check_runner({'sqs_url': self.queue.url}, propogate=False)
             if not check_done:
@@ -196,7 +198,7 @@ class TestCheckRunner:
             tries += 1
             to_send = ['test_checks/add_random_test_nums', act_kwargs, []]
             app_utils_obj.send_single_to_queue(self.environ, to_send, None, invoke_runner=False)
-            time.sleep(1)
+            time.sleep(self.SHORT_SLEEP_TIME)
             with captured_output() as (out, err):
                 # invoke runner manually (without a lambda) and do not propogate
                 runner_res = app_utils_obj.run_check_runner({'sqs_url': self.queue.url},
@@ -270,7 +272,7 @@ class TestCheckRunner:
         tries = 0
         while True:
             app_utils_obj.run_check_runner({'sqs_url': self.queue.url}, propogate=False)
-            time.sleep(1)
+            time.sleep(self.SHORT_SLEEP_TIME)
             latest_check_res = check.get_latest_result()
             if latest_check_res and latest_check_res['uuid'] >= run_uuid:
                 break
@@ -298,7 +300,7 @@ class TestCheckRunner:
         tries = 0
         while True:
             app_utils_obj.run_check_runner({'sqs_url': self.queue.url}, propogate=False)
-            time.sleep(1)
+            time.sleep(self.SHORT_SLEEP_TIME)
             latest_act_res = action.get_latest_result()
             if latest_act_res and latest_act_res['uuid'] >= run_uuid:
                 break
