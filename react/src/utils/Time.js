@@ -11,18 +11,21 @@ import Str from './Str';
 
 // Returns a formatted date/time string based on the given date/time value (local timezone).
 //
-function FormatDateTime(value, verbose = false) {
+function FormatDateTime(value, verbose = false, timezone = true) {
     if (!(value = ToDateTime(value))) return "";
     if (verbose) {
-        return value.toLocaleDateString('en-us', { weekday:"long",
-                                                   year:"numeric",
-                                                   month:"long",
-                                                   day:"numeric",
-                                                   hour12: true,
-                                                   hour: "numeric",
-                                                   minute: "2-digit",
-                                                   second: "numeric",
-                                                   timeZoneName: "short"}).replace(" at ", " | ");
+        let format = { weekday:"long",
+                       year:"numeric",
+                       month:"long",
+                       day:"numeric",
+                       hour12: true,
+                       hour: "numeric",
+                       minute: "2-digit",
+                       second: "numeric" };
+        if (timezone) {
+            format = { ...format, timeZoneName: "short" };
+        }
+        return value.toLocaleDateString('en-us', format).replace(" at ", " | ");
     }
     const tz = new Date().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
     return value.getFullYear() + "-" +

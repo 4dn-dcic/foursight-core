@@ -7,13 +7,13 @@ import Time from './utils/Time';
 
 const _CURRENT_TIME_INTERVAL_MS = 1100;
 
-const FormatDateTime = ({verbose = false}) => {
+const FormatDateTime = ({verbose = false, timezone = true}) => {
     const [ now, setNow ] = useState(new Date());
     useEffect(() => {
         const intervalId = setInterval(() => setNow(new Date()), _CURRENT_TIME_INTERVAL_MS);
         return () => clearInterval(intervalId);
     }, []);
-    return <>{Time.FormatDateTime(now, verbose)}</>
+    return <>{Time.FormatDateTime(now, verbose, timezone)}</>
 }
 
 const FormatDuration = ({start = null, end = null, verbose = false, fallback = "", prefix = "", suffix = "", tooltip = false}) => {

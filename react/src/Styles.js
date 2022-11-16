@@ -58,6 +58,14 @@ function LightenDarkenColor(hexColor, magnitude) {
     }
 };
 
+function GetForegroundColor() {
+    return document.documentElement.style.getPropertyValue("--box-fg");
+}
+
+function GetBackgroundColor() {
+    return document.documentElement.style.getPropertyValue("--box-bg");
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
@@ -65,5 +73,7 @@ function LightenDarkenColor(hexColor, magnitude) {
 const Exports = {
     SetFoursightFourfront: SetFoursightFourfrontStyles, 
     SetFoursightCgap: SetFoursightCgapStyles,
+    GetForegroundColor: GetForegroundColor,
+    GetBackgroundColor: GetBackgroundColor
 };
 export default Exports;

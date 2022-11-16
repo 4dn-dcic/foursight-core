@@ -174,33 +174,32 @@
 }
 
 .check-run-button {
-   border: 1px solid lightgreen;
+   border: 1px solid var(--box-fg-darken);
    border-radius: 12px;
    padding-left: 8pt;
    padding-top: 2pt;
    padding-bottom: 3pt;
    padding-right: 12pt;
-   background: #4F7942;
+   background: var(--box-fg);
    color: #FFFFFF;
    cursor: pointer;
    user-select: none;
 }
 .check-run-button:hover {
     color: yellow;
-    background: darkgreen;
+    background: var(--box-fg);
 }
 .check-run-button:active {
-    color: red;
+    color: darkred !important;
     background: yellow;
 }
 .check-run-wait-button {
-   border: 1px solid lightgreen;
    border-radius: 12px;
    padding-left: 8pt;
    padding-top: 2pt;
    padding-bottom: 3pt;
    padding-right: 12pt;
-   background: #4F7942;
+   background: var(--box-fg);
    color: yellow;
    cursor: not-allowed;
    user-select: none;

@@ -51,9 +51,10 @@ const Header = (props) => {
             <NavLink to={Client.Path("/checks")} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
             <NavLink to={Client.Path("/users")} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
             <NavLink to={Client.Path("/aws/s3")} style={({isActive}) => style(isActive)}>S3</NavLink>&nbsp;|&nbsp;
+            {/* TODO: portal link does not change appropriately e.g. for 4dn-dcic when choosing from data to mastertest in dropdown */}
             <a target="_blank" rel="noreferrer" title="Open portal in another tab."
                 style={{textDecoration:"none",color:"darkgreen"}}
-                href={Client.PortalLink(header)}>
+                href={header?.portal?.url}>
                 PORTAL <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
             </a>&nbsp;|&nbsp;
             <a target="_blank" rel="noreferrer" title="Open AWS Console for this account ({header.app?.credentials.aws_account_number}) in another tab."
@@ -97,7 +98,7 @@ const Header = (props) => {
             <div style={{width:"100%",background:titleBackgroundColor}}>
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr title={"App Deployed:" + header.app?.deployed + " | App Launched: " + header.app?.launched + " | Page Loaded: " + header.page?.loaded}>
-                <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
+                <td width="38%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={Client.PortalLink(header)} target="_blank" rel="noreferrer">
                         { Env.IsFoursightFourfront(header) ? (<span>
                             <img alt="foursight" style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={Image.FoursightFourfrontLogo()} height="32" width="44" />
@@ -106,7 +107,7 @@ const Header = (props) => {
                         </span>)}
                     </a>
                 </td>
-                <td width="34%" align="center" style={{whiteSpace:"nowrap"}}>
+                <td width="24%" align="center" style={{whiteSpace:"nowrap"}}>
                     <div style={{fontSize:"20pt",color:"white",cursor:"pointer"}} onClick={() => navigate(Client.Path("/login"))}>
                         { header.app?.stage === 'dev' ? (<>
                             { header.app?.local ? (<>
@@ -131,10 +132,10 @@ const Header = (props) => {
                         </>)}
                     </div>
                 </td>
-                <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
-                    <small><LiveTime.FormatDateTime verbose={true} /></small>
+                <td width="38%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
+                    <small><LiveTime.FormatDateTime verbose={true} timezone={false} /></small>
                     { (header.app?.credentials?.aws_account_name) && <>
-                        &nbsp;|&nbsp;<Link to={Client.Path("/login")} style={{textDecoration:"none",color:"inherit"}}><b title={`AWS Account Number: ${header.app?.credentials?.aws_account_number}`}>{header.app?.credentials?.aws_account_name}</b></Link>
+                        &nbsp;|&nbsp;<Link to={Client.Path("/login")} style={{textDecoration:"none",color:"inherit"}}><b title={`AWS Account Number: ${header.app?.credentials?.aws_account_number}`}>{header.app?.credentials?.aws_account_name?.replace(/^cgap-/, "")}</b></Link>
                     </>}
                     { (Auth.IsLoggedIn(header)) ? (<span>
                         &nbsp;|&nbsp;<span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</span>
