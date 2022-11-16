@@ -22,6 +22,7 @@ Change Log
   foursight-cgap/chalicelib_cap/app_utils.py and foursight/chalicelib_cap/app_utils.py.
 * Fix for C4-949: Show full_output as JSON (YAML actually) correctly in check run outputs.
 * Disable user edit in readonly mode.
+* Show indication in UI of how user logged in (i.e. Google or GitHub authentication).
 * Miscellaneous UI cleanup; very gradually more componentization and better CSS.
 
 
