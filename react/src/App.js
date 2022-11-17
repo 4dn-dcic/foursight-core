@@ -27,7 +27,7 @@ import UserCreatePage from './pages/UserCreatePage';
 import UserEditPage from './pages/UserEditPage';
 import UsersPage from './pages/UsersPage';
 
-function setFavicon(header) {
+function setGlobalStyles(header) {
     const faviconElement = document.getElementById("favicon");
     if (faviconElement) {
         if (Env.IsFoursightFourfront(header)) {
@@ -52,7 +52,7 @@ const App = () => {
             onData: (data) => {
                 data.loading = false;
                 setHeader(data);
-                setFavicon(data);
+                setGlobalStyles(data);
             },
             onDone: (response) => {
                 if (response.error) {
