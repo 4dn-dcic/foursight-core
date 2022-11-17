@@ -31,7 +31,7 @@ const UserPage = (props) => {
             </div>
             {response.length > 0 && response.map(user => (
                 <div key={user.uuid}>
-                    <div className="box" style={{fontWeight:"bold",marginBottom:"6px"}}>
+                    <div className="box lighten" style={{fontWeight:"bold",marginBottom:"6px"}}>
                         {user.email} <small style={{fontWeight:"normal"}}>({user.uuid})</small>
                         <span style={{float:"right"}}><Link to={`/users/edit/${user.uuid}`} bold={false}><u>Edit</u></Link>&nbsp;&nbsp;</span>
                     </div>
