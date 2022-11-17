@@ -13,7 +13,6 @@ const Footer = (props) => {
     // Get the URLs CGAP/4DN URLs below directly from the Portal.
 
     if (header.loading) return null;
-    if (fetching.length > 0) return null;
     return <>
         <br />
         <table width="100%"><tbody>
