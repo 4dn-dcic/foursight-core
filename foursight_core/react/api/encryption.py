@@ -12,6 +12,7 @@ import os
 from pyDes import triple_des
 import uuid
 from typing import Union
+from .encoding_utils import base64_decode_to_bytes, base64_encode_to_bytes, bytes_to_string
 
 
 # TODO:
@@ -69,7 +70,7 @@ class Encryption:
             password = self.get_encryption_password()
             encryption = triple_des(password)
             encrypted_value_bytes = encryption.encrypt(plaintext_value, padmode=2)
-            return self._bytes_to_string(self._base64_encode_to_bytes(encrypted_value_bytes))
+            return bytes_to_string(base64_encode_to_bytes(encrypted_value_bytes))
         except Exception as e:
             raise Exception(f"Encryption error: {str(e)}")
 
@@ -77,39 +78,9 @@ class Encryption:
         try:
             password = self.get_encryption_password()
             encryption = triple_des(password)
-            decoded_encrypted_value_bytes = self._base64_decode_to_bytes(encrypted_value)
+            decoded_encrypted_value_bytes = base64_decode_to_bytes(encrypted_value)
             decrypted_value_bytes = encryption.decrypt(decoded_encrypted_value_bytes, padmode=2)
-            decrypted_value = self._bytes_to_string(decrypted_value_bytes)
+            decrypted_value = bytes_to_string(decrypted_value_bytes)
             return decrypted_value
         except Exception as e:
             raise Exception(f"Decryption error: {str(e)}")
-
-    def _base64_decode_to_bytes(self, string_or_bytes: Union[str, bytes]) -> bytes:
-        if isinstance(string_or_bytes, str):
-            return base64.b64decode(self._string_to_bytes(string_or_bytes))
-        elif isinstance(string_or_bytes, bytes):
-            return base64.b64decode(string_or_bytes)
-        else:
-            raise ValueError("Invalid argument to _base64_decode_to_bytes; must be string or bytes.")
-
-    def _base64_encode_to_bytes(self, string_or_bytes: Union[str, bytes]) -> bytes:
-        if isinstance(string_or_bytes, str):
-            return base64.b64encode(self._string_to_bytes(string_or_bytes))
-        elif isinstance(string_or_bytes, bytes):
-            return base64.b64encode(string_or_bytes)
-        else:
-            raise ValueError("Invalid argument to _base64_encode_to_bytes; must be string or bytes.")
-
-    @staticmethod
-    def _string_to_bytes(value: str) -> bytes:
-        if isinstance(value, str):
-            return value.encode("utf-8")
-        else:
-            raise ValueError("Invalid argument to _string_to_bytes; must be string.")
-
-    @staticmethod
-    def _bytes_to_string(value: bytes) -> str:
-        if isinstance(value, bytes):
-            return value.decode("utf-8") if isinstance(value, bytes) else ""
-        else:
-            raise ValueError("Invalid argument to _bytes_to_string; must be bytes.")
