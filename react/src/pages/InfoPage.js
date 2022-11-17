@@ -59,7 +59,11 @@ const InfoPage = () => {
         </>
     }
 
-    const InfoRow = ({name, value, monospace = false, copy = true, size = "4", pypi = null, github = null, python = false, chalice = null, check = false, link = null, optional = false}) => {
+    const InfoRow = ({name, value, monospace = false, copy = true, size = "4", pypi = null, github = null, elasticsearch = false, python = false, chalice = null, check = false, link = null, optional = false}) => {
+        function removeMinorVersion(version) {
+            let components = version?.split(".")
+            return (components?.length >= 2) ? components[0] + "." + components[1] : version;
+        }
         let nameStyle = {
             fontSize: "11pt",
             fontFamily: "inherit",
@@ -93,6 +97,11 @@ const InfoPage = () => {
             <a target="_blank" rel="noreferrer" href={"https://github.com/" + github + "/" + (name === "dcicutils" ? "utils" : name) + "/releases/tag/" + (name !== "chalice" ? "v" : "")  + value}>
                 <img alt="github" src={Image.GitHub()} height="15" />
             </a>&nbsp;</span> : <span/>
+        const elasticsearchElement = elasticsearch ?
+            <span>
+            <a target="_blank" rel="noreferrer" href={`https://www.elastic.co/guide/en/elasticsearch/reference/${removeMinorVersion(value)}/release-notes-${value}.html`} style={{marginLeft:"-2px"}}>
+                <img alt="github" src={"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Elasticsearch_logo.svg/1280px-Elasticsearch_logo.svg.png"} height="18" />
+            </a>&nbsp;</span> : <span/>
         const pythonElement = python ?
             <span>
                 <a target="_blank" rel="noreferrer" href={"https://docs.python.org/release/" + value + "/"}>
@@ -115,6 +124,7 @@ const InfoPage = () => {
                         <div id={name} className="col-sm-8" style={valueStyle} align="left" {...valueOnClick}>
                             {pypiElement}
                             {githubElement}
+                            {elasticsearchElement}
                             {pythonElement}
                             {chaliceElement}
                             { link && value ? (<span>
@@ -142,6 +152,9 @@ const InfoPage = () => {
             <InfoRow name={"dcicutils"} value={header.versions?.dcicutils} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"chalice"} value={header.versions?.chalice} monospace={true} copy={true} chalice={true} size="2" pypi={true} github={"aws"} />
             <InfoRow name={"python"} value={header.versions?.python} monospace={true} copy={true} python={true} size="2" />
+            <InfoRow name={"elasticsearch-server"} value={header.versions?.elasticsearch_server || info.data?.versions?.elasticsearch_server} monospace={true} copy={true} size="2" elasticsearch={true} />
+            <InfoRow name={"elasticsearch"} value={header.versions?.elasticsearch} monospace={true} copy={true} size="2" pypi={true} />
+            <InfoRow name={"elasticsearch-dsl"} value={header.versions?.elasticsearch_dsl} monospace={true} copy={true} size="2" pypi={true} />
         </InfoBox>
         <InfoBox title="Credentials Info">
             <InfoRow name={"AWS Account Number"} value={info.get("app.credentials.aws_account_number")} monospace={true} copy={true} size="2" />

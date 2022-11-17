@@ -45,12 +45,43 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._cached_header = {}
         self._cached_sqs_queue_url = None
         self._cached_accounts = None
-        self._cached_accounts = None
+        self._cached_elasticsearch_server_version = None
 
     def get_sqs_queue_url(self):
         if not self._cached_sqs_queue_url:
             self._cached_sqs_queue_url = app.core.sqs.get_sqs_queue().url
         return self._cached_sqs_queue_url
+
+    def _get_versions_object(self) -> dict:
+        try:
+            elasticsearch_version = pkg_resources.get_distribution('elasticsearch').version
+            elasticsearch_dsl_version = pkg_resources.get_distribution('elasticsearch-dsl').version
+        except Exception:
+            elasticsearch_version = None
+            elasticsearch_dsl_version = None
+        return {
+                "foursight": app.core.get_app_version(),
+                "foursight_core": pkg_resources.get_distribution('foursight-core').version,
+                "dcicutils": pkg_resources.get_distribution('dcicutils').version,
+                "python": platform.python_version(),
+                "chalice": chalice_version,
+                "elasticsearch_server": self._get_elasticsearch_server_version(),
+                "elasticsearch": elasticsearch_version,
+                "elasticsearch_dsl": elasticsearch_dsl_version
+            }
+
+    def _get_elasticsearch_server_version(self) -> Optional[str]:
+        if not self._cached_elasticsearch_server_version:
+            try:
+                elasticsearch_url = get_base_url(app.core.host)
+                timeout_seconds = 7.0
+                elasticsearch_response = requests.get(elasticsearch_url, timeout=timeout_seconds)
+                elasticsearch_response_json = elasticsearch_response.json()
+                elasticsearch_server_version = elasticsearch_response_json["version"]["number"]
+                self._cached_elasticsearch_server_version = elasticsearch_server_version
+            except Exception as e:
+                return None
+        return self._cached_elasticsearch_server_version
 
     def react_serve_static_file(self, env: str, paths: list) -> Response:
         """
@@ -140,13 +171,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "deployed": app.core.get_lambda_last_modified(),
                 "accounts": self.get_accounts_file()
             },
-            "versions": {
-                "foursight": app.core.get_app_version(),
-                "foursight_core": pkg_resources.get_distribution('foursight-core').version,
-                "dcicutils": pkg_resources.get_distribution('dcicutils').version,
-                "python": platform.python_version(),
-                "chalice": chalice_version
-            },
+            "versions": self._get_versions_object(),
             "portal": {
                 "url": app.core.get_portal_url(env if env else default_env),
                 "health_url": portal_url + "/health?format=json",
@@ -216,13 +241,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "deployed": app.core.get_lambda_last_modified(),
                 "lambda": lambda_function_info
             },
-            "versions": {
-                "foursight": app.core.get_app_version(),
-                "foursight_core": pkg_resources.get_distribution('foursight-core').version,
-                "dcicutils": pkg_resources.get_distribution('dcicutils').version,
-                "python": platform.python_version(),
-                "chalice": chalice_version
-            },
+            "versions": self._get_versions_object(),
             "server": {
                 "foursight": socket.gethostname(),
                 "portal": portal_url,
@@ -454,7 +473,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                         'description': 'Check has not yet run'
                     }
                 title = app.core.check_handler.get_check_title_from_setup(check)
-                processed_result = app.core.process_view_result(connection, data, is_admin=True, dont_stringify=True)
+                processed_result = app.core.process_view_result(connection, data, is_admin=True, stringify=False)
                 body.append({
                     'status': 'success',
                     'env': env,
@@ -869,6 +888,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Gac.cache_clear()
         self._cached_header = {}
         self._cached_sqs_queue_url = None
+        self._cached_elasticsearch_server_version = None
+        self._cached_accounts = None
         self._get_env_and_bucket_info.cache_clear()
         self._get_check_result_bucket_name.cache_clear()
         return self.create_success_response({"status": "Caches cleared."})

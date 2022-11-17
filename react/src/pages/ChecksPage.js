@@ -313,7 +313,8 @@ const ChecksPage = (props) => {
     const CheckRunningBox = ({check}) => {
         const [ showUuid, setShowUuid ] = useState(false);
         return !check.showingCheckRunningBox ? <span /> : <div>
-            <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} xonClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+            {/* <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}> */}
+            <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}}>
                 { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}></span> }
                 {  check.queuedCheckRun &&
                     <small><b>

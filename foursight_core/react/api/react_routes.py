@@ -148,7 +148,7 @@ class ReactRoutes:
         return app.core.reactapi_checks_history(request, env, check=check, args=get_request_args(request))
 
     @route("/{env}/checks/history/recent", authorize=True)
-    def reactapi_route_checks_history(env: str) -> Response:  # noqa
+    def reactapi_route_checks_history_recent(env: str) -> Response:  # noqa
         """
         Returns all recent check run history.
         """

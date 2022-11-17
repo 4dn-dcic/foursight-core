@@ -45,6 +45,7 @@ from .fs_connection import FSConnection
 from .s3_connection import S3Connection
 from .react.api.react_api import ReactApi
 from .routes import Routes
+from .route_prefixes import ROUTE_CHALICE_LOCAL
 from .sqs_utils import SQS
 from .stage import Stage
 
@@ -251,13 +252,17 @@ class AppUtilsCore(ReactApi, Routes):
     def set_user_record(self, email: Optional[str], record: Optional[dict], error: Optional[str], exception: Optional[str]):
         if not email:
             return
-        user_record = self.user_records.get(email)
-        if not user_record:
-            self.user_records[email] = {"email": email, "record": record, "error": error, "exception": exception}
-        else:
-            user_record["record"] = record
-            user_record["error"] = error
-            user_record["exception"] = exception
+        # user_record = self.user_records.get(email)
+        # if not user_record:
+        #     self.user_records[email] = {"email": email, "record": record, "error": error, "exception": exception}
+        # else:
+        #     user_record["record"] = record
+        #     user_record["error"] = error
+        #     user_record["exception"] = exception
+        self.user_records[email] = user_record = self.user_records.get(email) or {"email": email}
+        user_record["record"] = record
+        user_record["error"] = error
+        user_record["exception"] = exception
 
     def get_portal_url(self, env_name: str) -> Optional[str]:
         portal_url = self._cached_portal_url.get(env_name)
@@ -284,20 +289,20 @@ class AppUtilsCore(ReactApi, Routes):
             auth0_client_id = self.get_auth0_client_id_from_portal(env_name)
         return auth0_client_id
 
-    def get_auth0_client_id_from_portal(self, env_name: str) -> str:
+    def get_auth0_client_id_from_portal(self, env_name: str) -> Optional[str]:
         logger.warning(f"Fetching Auth0 client ID from portal.")
         portal_url = self.get_portal_url(env_name)
         auth0_config_url = portal_url + "/auth0_config?format=json"
+        auth0_client_id_fallback = "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB"
         if not self.auth0_client_id:
             try:
                 response = requests.get(auth0_config_url).json()
-                self.auth0_client_id = response.get("auth0Client")
+                self.auth0_client_id = response.get("auth0Client", auth0_client_id_fallback)
             except Exception as e:
                 # TODO: Fallback behavior to old hardcoded value (previously in templates/header.html).
-                self.auth0_client_id = "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB"
                 logger.error(f"Error fetching Auth0 client ID from portal ({auth0_config_url}); using default value: {e}")
         logger.warning(f"Done fetching Auth0 client ID from portal ({auth0_config_url}): {self.auth0_client_id}")
-        return self.auth0_client_id
+        return self.auth0_client_id or auth0_client_id_fallback
 
     def get_auth0_secret(self, env_name: str) -> str:
         ignored(env_name)
@@ -1219,7 +1224,7 @@ class AppUtilsCore(ReactApi, Routes):
         ts_local = ts_utc.astimezone(tz.gettz('America/New_York'))
         return ''.join([str(ts_local.date()), ' ', str(ts_local.time()), ' ', str(ts_local.tzname())])
 
-    def process_view_result(self, connection, res, is_admin, dont_stringify=False):
+    def process_view_result(self, connection, res, is_admin, stringify=True):
         """
         Do some processing on the content of one check result (res arg, a dict)
         Processes timestamp string, trims output fields, and adds action info.
@@ -1251,7 +1256,7 @@ class AppUtilsCore(ReactApi, Routes):
         ts_local = ts_utc.astimezone(tz.gettz('America/New_York'))
         proc_ts = ''.join([str(ts_local.date()), ' at ', str(ts_local.time())])
         res['local_time'] = proc_ts
-        if not dont_stringify:
+        if stringify:
             if res.get('brief_output'):
                 res['brief_output'] = json.dumps(self.trim_output(res['brief_output']), indent=2)
             if res.get('full_output'):
@@ -1934,7 +1939,7 @@ class AppUtilsCore(ReactApi, Routes):
 
         config_file = None
         chalicelib_dir = None
-        if os.environ.get("CHALICE_LOCAL") == "1":
+        if ROUTE_CHALICE_LOCAL:
             if not chalicelib_dir:
                 chalicelib_dir = _get_chalicelib_dir()
             config_dir = os.path.normpath(os.path.join(chalicelib_dir, "../chalicelib_local"))

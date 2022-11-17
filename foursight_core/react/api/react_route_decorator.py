@@ -134,7 +134,7 @@ def route(*args, **kwargs):
                 return wrapped_route_function(*args, **kwargs)
             except Exception as e:
                 # Common endpoint exception handling here.
-                logger.error(f"Exception in route: {get_error_message(e)}")
+                logger.error(f"Exception in route ({wrapped_route_function.__name__}): {get_error_message(e)}")
                 return app.core.create_error_response(e)
         if _CORS:
             # Only used for (cross-origin) localhost development (e.g. UI on 3000 and API on 8000).

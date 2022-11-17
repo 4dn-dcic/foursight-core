@@ -97,6 +97,7 @@ const Header = (props) => {
             </div>
         ):(<React.Fragment>
             <div style={{width:"100%",background:titleBackgroundColor}}>
+            {/* TODO: Refactor to center the title in the main header more reliably no matter how long the left and right parts are */}
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr title={"App Deployed:" + header.app?.deployed + " | App Launched: " + header.app?.launched + " | Page Loaded: " + header.page?.loaded}>
                 <td width="38%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>

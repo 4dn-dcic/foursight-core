@@ -58,6 +58,9 @@ const AccountInfoLeft = ({ info }) => {
                 { info.get("portal.elasticsearch") ? <>
                     {info.get("portal.elasticsearch")}
                 </>:<>{Char.EmptySet}</>}
+                {info.data?.foursight?.versions?.elasticsearch_server && <>
+                    &nbsp;(<b>{info.data?.foursight?.versions?.elasticsearch_server}</b>)
+                </>}
             </td>
         </tr>
         <tr style={{fontSize:"small"}}>
@@ -73,7 +76,7 @@ const AccountInfoLeft = ({ info }) => {
         <tr><td style={{paddingTop:"4pt"}} /></tr>
         <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
-        <tr>
+        <tr style={{fontSize:"small"}}>
             <td style={{paddingRight:"10pt"}}>
                 Identity:
             </td>
@@ -83,7 +86,7 @@ const AccountInfoLeft = ({ info }) => {
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
-        <tr>
+        <tr style={{fontSize:"small"}}>
             <td style={{paddingRight:"10pt"}}>
                 Global Env Bucket:
             </td>
@@ -96,7 +99,7 @@ const AccountInfoLeft = ({ info }) => {
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
-        <tr>
+        <tr style={{fontSize:"small"}}>
             <td style={{paddingRight:"10pt"}}>
                 Bucket Encryption Key ID:
             </td>
@@ -106,20 +109,10 @@ const AccountInfoLeft = ({ info }) => {
                 </>:<> &ndash; </>}
             </td>
         </tr>
-        <tr>
-            <td style={{paddingRight:"10pt"}}>
-                Default Env:
-            </td>
-            <td>
-                { info.get("foursight.default_env.name") ? <>
-                    {info.get("foursight.default_env.name")}
-                    { info.get("foursight.env_count") > 1 &&
-                        <span>&nbsp;({info.get("foursight.env_count")} total)</span>
-                    }
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
+        <tr><td style={{paddingTop:"4pt"}} /></tr>
+        <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
+        <tr><td style={{paddingTop:"4pt"}} /></tr>
+        <tr style={{fontSize:"small"}}>
             <td style={{paddingRight:"10pt"}}>
                 AWS Account:
             </td>
@@ -129,6 +122,19 @@ const AccountInfoLeft = ({ info }) => {
                     { info.get("foursight.aws_account_name") && <>
                         &nbsp;(<span className="tool-tip" data-text={`AWS Account Alias: ${info.get("foursight.aws_account_name")}`}>{info.get("foursight.aws_account_name")}</span>)
                     </>}
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr style={{fontSize:"small"}}>
+            <td style={{paddingRight:"10pt"}}>
+                Default Environment:
+            </td>
+            <td>
+                { info.get("foursight.default_env.name") ? <>
+                    {info.get("foursight.default_env.name")}
+                    { info.get("foursight.env_count") > 1 &&
+                        <span>&nbsp;({info.get("foursight.env_count")} total)</span>
+                    }
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -156,12 +162,10 @@ const AccountInfoLeft = ({ info }) => {
                 </>:<> &ndash; </>}
             </td>
         </tr>
-    </tbody></table>
-}
-
-const AccountInfoRight = ({ info }) => {
-    return <table style={{width:"100%",margin:"0",padding:"0"}}><tbody style={{fontSize:"small",verticalAlign:"top",whiteSpace:"nowrap"}}>
-        <tr>
+        <tr><td style={{paddingTop:"4pt"}} /></tr>
+        <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
+        <tr><td style={{paddingTop:"4pt"}} /></tr>
+        <tr style={{fontSize:"small"}}>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt",width:"10%"}}>
                 Foursight Deployed:
             </td>
@@ -171,7 +175,7 @@ const AccountInfoRight = ({ info }) => {
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
-        <tr>
+        <tr style={{fontSize:"small"}}>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
                 Portal Deployed:
             </td>
@@ -181,9 +185,11 @@ const AccountInfoRight = ({ info }) => {
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
-        <tr><td style={{paddingTop:"4pt"}} /></tr>
-        <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
-        <tr><td style={{paddingTop:"4pt"}} /></tr>
+    </tbody></table>
+}
+
+const AccountInfoRight = ({ info }) => {
+    return <table style={{width:"100%",margin:"0",padding:"0"}}><tbody style={{fontSize:"small",verticalAlign:"top",whiteSpace:"nowrap"}}>
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
                 foursight-core:
@@ -291,6 +297,39 @@ const AccountInfoRight = ({ info }) => {
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
+        <tr><td style={{paddingTop:"4pt"}} /></tr>
+        <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
+        <tr><td style={{paddingTop:"4pt"}} /></tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                elasticsearch-server:
+            </td>
+            <td>
+                {info.get("foursight.versions.elasticsearch_server") ? <>
+                    <b>{info.get("foursight.versions.elasticsearch_server")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                elasticsearch:
+            </td>
+            <td>
+                {info.get("foursight.versions.elasticsearch") ? <>
+                    <b>{info.get("foursight.versions.elasticsearch")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                elasticsearch-dsl:
+            </td>
+            <td>
+                {info.get("foursight.versions.elasticsearch_dsl") ? <>
+                    <b>{info.get("foursight.versions.elasticsearch_dsl")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
     </tbody></table>
 }
 
@@ -344,7 +383,7 @@ const AccountInfo = ({ account, header, refresh, setRefresh }) => {
             </div>
             <div style={{marginTop:"3pt",marginBottom:"4pt",border:"1px",borderTop:"dotted"}}></div>
             <table><tbody>
-                <tr>
+                <tr style={{verticalAlign:"top"}}>
                     <td style={{width:"70%"}}>
                         <AccountInfoLeft info={info} header={header} />
                     </td>
