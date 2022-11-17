@@ -605,7 +605,7 @@ const ChecksPage = (props) => {
     }
 
     const ResultDetailsBox = ({check, style}) => {
-        return <pre className={check.results?.status?.toUpperCase() === "PASS" ? "box" : "box warning"} style={{filter:"brightness(1.08)",borderWidth:"2",wordWrap: "break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
+        return <pre className="box lighten" style={{color:check.results?.status?.toUpperCase() === "PASS" ? "inherit" : "darkred",wordWrap:"break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
             <div style={{float:"right",marginTop:"-10px"}}>
             <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{Json.Str(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
             <img alt="copy" onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
@@ -734,7 +734,7 @@ const ChecksPage = (props) => {
                         { (history.__resultShowing) &&
                             <tr>
                                 <td colSpan="9">
-                                    <pre style={{background:"#DFF0D8",filter:"brightness(1.2)",borderColor:"inherit",borderWidth:"1",wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"600pt"}}>
+                                    <pre className="box lighten" style={{wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"600pt"}}>
                                         { history.__resultLoading ? <>
                                             <StandardSpinner condition={history.__resultLoading} color={Styles.GetForegroundColor()} label="Loading result"/>
                                         </>:<>
@@ -979,9 +979,9 @@ const ChecksPage = (props) => {
 
     const ChecksRawView = () => {
         return isShowingChecksRaw() && !checksRawHide && <>
-            <b className="tool-tip" data-text={info.get("checks.file")}>Raw Checks</b>
+            <b className="tool-tip" data-text={info.get("checks.file")}>Raw Checks</b> {Char.RightArrow} <span style={{fontSize:"9pt"}}>{info.get("checks.file")}</span>
             <div style={{marginTop:"3pt"}}>
-            <pre className="box" style={{filter:"brightness(1.08)",borderRadius:"4pt"}}>
+            <pre className="box lighten">
             { checksRaw.loading ? <>
                 <StandardSpinner loading={checksRaw.loading} label={"Loading raw checks file"} size={60} color={"black"} />
             </>:<>

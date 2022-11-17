@@ -121,6 +121,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         stage_name = app.core.stage.get_stage()
         default_env = self._envs.get_default_env()
         aws_credentials = self._auth.get_aws_credentials(env if env else default_env)
+        portal_url = get_base_url(app.core.get_portal_url(env if env else default_env))
         response = {
             "app": {
                 "title": app.core.html_main_title,
@@ -148,8 +149,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             },
             "portal": {
                 "url": app.core.get_portal_url(env if env else default_env),
-                "health_url": get_base_url(app.core.get_portal_url(env if env else default_env)) + "/health?format=json",
-                "health_ui_url": get_base_url(app.core.get_portal_url(env if env else default_env)) + "/health"
+                "health_url": portal_url + "/health?format=json",
+                "health_ui_url": portal_url + "/health"
             },
             "s3": {
                 "bucket_org": os.environ.get("ENCODED_S3_BUCKET_ORG", os.environ.get("S3_BUCKET_ORG", None)),
@@ -350,7 +351,15 @@ class ReactApi(ReactApiBase, ReactRoutes):
         response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env))
         #
         # Response looks like:
-        # {'status': 'success', '@type': ['result'], '@graph': [{'date_created': '2022-10-22T18:39:16.973680+00:00', 'submitted_by': '/users/b5f738b6-455a-42e5-bc1c-77fbfd9b15d2/', 'schema_version': '1', 'status': 'current', 'email': 'test_user@hms.harvard.edu', 'first_name': 'J. Alfred', 'last_name': 'Prufrock', 'timezone': 'US/Eastern', 'last_modified': {'modified_by': '/users/b5f738b6-455a-42e5-bc1c-77fbfd9b15d2/', 'date_modified': '2022-10-22T18:39:16.975477+00:00'}, '@id': '/users/03cb92c4-b086-47e5-a875-42a01dc63581/', '@type': ['User', 'Item'], 'uuid': '03cb92c4-b086-47e5-a875-42a01dc63581', 'principals_allowed': {'view': ['group.admin', 'remoteuser.EMBED', 'remoteuser.INDEXER', 'userid.03cb92c4-b086-47e5-a875-42a01dc63581'], 'edit': ['group.admin']}, 'display_title': 'J. Alfred Prufrock', 'title': 'J. Alfred Prufrock', 'contact_email': 'test_user@hms.harvard.edu'}]}
+        # {'status': 'success', '@type': ['result'], '@graph': [{'date_created': '2022-10-22T18:39:16.973680+00:00',
+        # 'submitted_by': '/users/b5f738b6-455a-42e5-bc1c-77fbfd9b15d2/', 'schema_version': '1', 'status': 'current',
+        # 'email': 'test_user@hms.harvard.edu', 'first_name': 'J. Alfred', 'last_name': 'Prufrock',
+        # 'timezone': 'US/Eastern', 'last_modified': {'modified_by': '/users/b5f738b6-455a-42e5-bc1c-77fbfd9b15d2/',
+        # 'date_modified': '2022-10-22T18:39:16.975477+00:00'}, '@id': '/users/03cb92c4-b086-47e5-a875-42a01dc63581/',
+        # '@type': ['User', 'Item'], 'uuid': '03cb92c4-b086-47e5-a875-42a01dc63581', 'principals_allowed':
+        # {'view': ['group.admin', 'remoteuser.EMBED', 'remoteuser.INDEXER', 'userid.03cb92c4-b086-47e5-a875-42a01dc6'],
+        # 'edit': ['group.admin']}, 'display_title': 'J. Alfred Prufrock', 'title': 'J. Alfred Prufrock',
+        # 'contact_email': 'test_user@hms.harvard.edu'}]}
         status = response.get("status")
         if status != "success":
             return self.create_error_response(json.dumps(response))
@@ -513,7 +522,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                         "duration": duration,
                         "timestamp": timestamp
                     })
-        results.sort(key=lambda item: item["timestamp"], reverse=True)
+        results.sort(key=lambda value: value["timestamp"], reverse=True)
         results = results[:limit]
         return self.create_success_response(results)
 
@@ -645,14 +654,15 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Return the contents of the AWS S3 bucket key in the given bucket for the current AWS environment.
         """
         ignored(env)
-        if True:
-            #
-            # TODO!!!
-            # Disabling this feature for now until we can discuss/resolve security concerns.
-            #
-            return self.create_not_implemented_response(request)
-        key = urllib.parse.unquote(key)
-        return self.create_success_response(AwsS3.get_bucket_key_contents(bucket, key))
+        ignored(bucket)
+        ignored(key)
+        #
+        # TODO!!!
+        # Disabling this feature for now until we can discuss/resolve security concerns.
+        # key = urllib.parse.unquote(key)
+        # return self.create_success_response(AwsS3.get_bucket_key_contents(bucket, key))
+        #
+        return self.create_not_implemented_response(request)
 
     # ----------------------------------------------------------------------------------------------
     # EXPERIMENTAL - /accounts page
@@ -746,7 +756,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 response["foursight"]["aws_account_number"] = foursight_app["credentials"].get("aws_account_number")
                 response["foursight"]["aws_account_name"] = foursight_app["credentials"].get("aws_account_name")
                 response["foursight"]["re_captcha_key"] = foursight_app["credentials"].get("re_captcha_key")
-                if response["foursight"]["re_captcha_key"] and "enter value" in response["foursight"]["re_captcha_key"].lower():
+                if response["foursight"]["re_captcha_key"] and "ENTER VALUE" in response["foursight"]["re_captcha_key"]:
                     response["foursight"]["re_captcha_key"] = None
             response["foursight"]["auth0_client"] = foursight_header_json["auth"]["aud"]
             foursight_header_json_portal = foursight_header_json.get("portal")
@@ -863,7 +873,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._get_check_result_bucket_name.cache_clear()
         return self.create_success_response({"status": "Caches cleared."})
 
-    def reactapi_testsize(self, n: int) -> Response:
+    @staticmethod
+    def reactapi_testsize(n: int) -> Response:
         n = int(n) - 8  # { "N": "" }
         s = "".join(["X" for _ in range(n)])
         body = {"N": s}

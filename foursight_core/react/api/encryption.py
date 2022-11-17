@@ -6,12 +6,10 @@
 # If this goes beyond the experimental phase will need to sort this out. dmichaels/2022-11-12.
 # --------------------------------------------------------------------------------------------------
 
-import base64
 import json
 import os
 from pyDes import triple_des
 import uuid
-from typing import Union
 from .encoding_utils import base64_decode_to_bytes, base64_encode_to_bytes, bytes_to_string
 
 

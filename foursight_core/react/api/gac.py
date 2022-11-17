@@ -1,6 +1,5 @@
 import re
 import boto3
-import os
 from functools import lru_cache
 import logging
 from dcicutils.diff_utils import DiffManager
@@ -29,7 +28,8 @@ class Gac:
     @staticmethod
     def get_gac_names() -> list:
         secrets_names = Gac.get_secrets_names()
-        return [secret_name for secret_name in secrets_names if re.match('.*App(lication)?Config(uration)?.*', secret_name, re.IGNORECASE)]
+        pattern = ".*App(lication)?Config(uration)?.*"
+        return [secret_name for secret_name in secrets_names if re.match(pattern, secret_name, re.IGNORECASE)]
 
     @staticmethod
     @lru_cache(100)

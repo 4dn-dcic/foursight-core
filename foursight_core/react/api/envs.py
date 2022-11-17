@@ -40,7 +40,8 @@ class Envs:
             known_env["gac_name"] = Gac.get_gac_name(known_env["full_name"])
         return known_envs
 
-    def get_default_env(self) -> str:
+    @staticmethod
+    def get_default_env() -> str:
         return os.environ.get("ENV_NAME", Envs._DEFAULT_ENV_PLACHOLDER)
 
     @lru_cache(100)
@@ -86,12 +87,9 @@ class Envs:
                     # informational/display purposes in the UI.
                     first_name = user.get("first_name")
                     last_name = user.get("last_name")
-                    if True:
-                        # New; 2022-10-25; almost forgot; from app_utils.check_authorization; check groups.
-                        groups = user.get("groups")
-                        if groups and "admin" in groups or "foursight" in groups:
-                            allowed_envs.append(known_env["full_name"])
-                    else:
+                    # New; 2022-10-25; almost forgot; from app_utils.check_authorization; check groups.
+                    groups = user.get("groups")
+                    if groups and "admin" in groups or "foursight" in groups:
                         allowed_envs.append(known_env["full_name"])
             except Exception as e:
                 logger.warning(f"Exception getting allowed envs for {email}: {e}")

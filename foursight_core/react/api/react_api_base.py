@@ -47,9 +47,11 @@ class ReactApiBase:
         return Response(status_code=http_status, body=body, headers=headers)
 
     @staticmethod
-    def create_success_response(body: Optional[Union[dict, list]] = None, content_type: str = JSON_CONTENT_TYPE) -> Response:
+    def create_success_response(body: Optional[Union[dict, list]] = None, content_type: str = None) -> Response:
         if body is None:
             body = {}
+        if not content_type:
+            content_type = ReactApiBase.JSON_CONTENT_TYPE
         return ReactApiBase.create_response(http_status=200, body=body, content_type=content_type)
 
     @staticmethod
@@ -98,7 +100,8 @@ class ReactApiBase:
             raise ValueError(f"The message argument must be a dict, str, or Exception: {message!r}")
         return ReactApiBase.create_response(http_status=500, body=body)
 
-    def is_react_authentication_callback(self, request: dict) -> bool:
+    @staticmethod
+    def is_react_authentication_callback(request: dict) -> bool:
         """
         Returns True iff the given Auth0 authentication/login callback request, i.e. from
         the /callback route which is defined in the main routes.py for both React and non-React
@@ -106,7 +109,7 @@ class ReactApiBase:
         via a "react" URL parameter in the callback URL, which is setup on the React UI side.
 
         This was PREVIOUSLY done there via a "react" string in Auth0 "scope" and gotten from the Auth0
-        POST result, but changed so we can get the domain for the Auth0 POST URL from our Auth0Config.
+        POST result, but changed so that we can get the domain for the Auth0 POST URL from our Auth0Config.
 
         See: react/src/pages/LoginPage.js/createAuth0Lock
         See: foursight_core/src/react/api/auth0_config.py/get_callback_url

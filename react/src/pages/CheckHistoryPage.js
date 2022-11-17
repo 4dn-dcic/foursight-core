@@ -10,6 +10,7 @@ import Image from '../utils/Image';
 import Json from '../utils/Json';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
+import Styles from '../Styles';
 import TableHead from '../TableHead';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
@@ -199,9 +200,9 @@ const CheckHistoryPage = (props) => {
                                     <td></td>
                                     <td></td>
                                     <td colSpan="9">
-                                        <pre style={{background:"#D6EAF8",filter:"brightness(1.1)",borderColor:"darkblue",borderWidth:"1",wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"600pt"}}>
+                                        <pre className="box lighten" style={{borderWidth:"1",wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"600pt"}}>
                                             { history.__resultLoading ? <>
-                                                <StandardSpinner condition={history.__resultLoading} color={"darkblue"} label="Loading result"/>
+                                                <StandardSpinner condition={history.__resultLoading} color={Styles.GetForegroundColor()} label="Loading result"/>
                                             </>:<>
                                                 <div style={{float:"right",marginTop:"-0px"}}>
                                                     <span style={{fontSize:"0",opacity:"0"}} id={check}>{Json.Str(history.__result[0])}</span>
@@ -302,9 +303,8 @@ const CheckHistoryPage = (props) => {
                             </tr>
                         </tbody></table>
                     </div>
+                    <b style={{color:"inherit"}}>TODO</b>
                     <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                        <b style={{color:"inherit"}}>TODO</b>
-                        <br />
                         <small>
                         - Dropdown to pick other checks. <br />
                         - Allow check to be run here.<br />

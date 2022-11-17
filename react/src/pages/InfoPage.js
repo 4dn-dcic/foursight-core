@@ -236,6 +236,7 @@ const InfoPage = () => {
             <InfoRow name={"Endpoint"} value={info.get("page.endpoint")} monospace={true} size="2" />
             <InfoRow name={"Client (React UI)"} value={Client.BaseUrl()} monospace={true} size="2" />
             <InfoRow name={"Server (React API)"} value={Server.BaseUrl()} monospace={true} size="2" />
+            <InfoRow name={"Checks File"} value={info.data?.checks?.file} monospace={true} size="2" />
             <InfoRow name={"Accounts File"} value={header.app?.accounts} monospace={true} size="2" />
         </InfoBox>
         <InfoBox title={`GAC: ${info.get("gac.name")}`} show={false}>
