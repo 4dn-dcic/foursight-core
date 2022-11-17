@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 from foursight_core.react.api.jwt_utils import jwt_decode
 from foursight_core.react.api import envs
 from foursight_core.react.api import gac

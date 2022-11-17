@@ -2,7 +2,6 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { Link } from '../Components';
 import { useFetch } from '../utils/Fetch';
 import Char from '../utils/Char';
-import Client from '../utils/Client';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
 import PagedTableComponent from '../PagedTableComponent';

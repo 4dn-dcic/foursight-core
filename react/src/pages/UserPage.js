@@ -3,7 +3,6 @@ import { Link } from '../Components';
 import { RingSpinner } from '../Spinners';
 import { useFetch } from '../utils/Fetch';
 import Char from '../utils/Char';
-import Client from '../utils/Client';
 import Server from '../utils/Server';
 import Styles from '../Styles';
 import Type from '../utils/Type';

@@ -7,19 +7,23 @@ import { HorizontalLine, Link, LoggedInUser } from '../Components';
 const HomePage = (props) => {
 
     const [ header ] = useContext(HeaderData);
-    const versionsToolTip = (Env.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + ": " + header?.versions?.foursight_core + " / foursight-core: " + header?.versions?.foursight + " / dcicutils: " + header?.versions?.dcicutils;
+    const versionsToolTip = `Deployed: ${header?.app?.deployed} / `
+                          + (Env.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + ": "
+                          + header?.versions?.foursight_core + " / foursight-core: "
+                          + header?.versions?.foursight + " / dcicutils: " + header?.versions?.dcicutils;
 
     return <>
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
-                <b>Welcome to Foursight</b> ({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})
-                <div style={{float:"right",fontSize:"x-small",textAlign:"right"}}>
-                    Foursight Version: <b className="tool-tip" data-text={versionsToolTip}>{header?.versions?.foursight}&nbsp;</b> <br />
+                <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})</span></b>
+                <div style={{float:"right",fontSize:"x-small",textAlign:"right",marginTop:"-3pt",marginRight:"2pt"}}>
+                    Foursight Version: <b className="tool-tip" data-text={versionsToolTip}>{header?.versions?.foursight}</b> <br />
                     { header?.app?.credentials?.aws_account_name ? <>
                         <span className="tool-tip" data-text={"AWS Account Number: " + header?.app?.credentials?.aws_account_number}>AWS Account: <b>{header?.app?.credentials?.aws_account_name}</b></span> <br />
                     </>:<>
                         <span>AWS Account: <b>{header?.app?.credentials?.aws_account_number}</b></span> <br />
                     </>}
+                    Foursight Stage: <b>{header?.app?.stage}</b> <br />
                 </div>
                 <HorizontalLine top="10pt" bottom="4pt" />
                 This is the <b>new</b> React version of Foursight. To use the previous version click <b><a href={Env.LegacyFoursightLink(header)} style={{color:"inherit"}}><u>here</u></a></b>.

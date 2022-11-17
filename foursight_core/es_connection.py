@@ -1,8 +1,6 @@
 import os
 import json
-import time
 from typing import Tuple
-from .abstract_connection import AbstractConnection
 from dcicutils.misc_utils import ignored
 from elasticsearch import (
     # Elasticsearch,
@@ -12,7 +10,8 @@ from elasticsearch import (
     )
 from elasticsearch_dsl import Search
 from dcicutils import es_utils
-from .check_schema import CheckSchema
+from foursight_core.abstract_connection import AbstractConnection
+from foursight_core.check_schema import CheckSchema
 
 
 class ElasticsearchException(Exception):
@@ -38,14 +37,13 @@ class ESConnection(AbstractConnection):
 
     ES_SEARCH_SIZE = 10000
 
-    def __init__(self, index=None, doc_type='result', host=None):
+    def __init__(self, index=None, host=None):
         if not host:
             raise ElasticsearchException("ESConnection error: Host must be specified")
         self.es = es_utils.create_es_client(host, use_aws_url=True)
         self.index = index
         if index and not self.index_exists(index):
             self.create_index(index)
-        self.doc_type = doc_type
 
     def index_exists(self, name):
         """
@@ -59,12 +57,7 @@ class ESConnection(AbstractConnection):
         """
         try:
             mapping = self.load_mapping()
-            self.es.indices.create(index=name, body={
-                "settings": {
-                    "index.mapper.dynamic": False
-                },
-                "mappings": mapping.get('mappings')
-            }, ignore=400)
+            self.es.indices.create(index=name, body=mapping, ignore=400)
             return True
         except Exception as e:
             raise ElasticsearchException(str(e))
@@ -95,10 +88,9 @@ class ESConnection(AbstractConnection):
 
     def refresh_index(self):
         """
-        Refreshes the index, then waits 3 seconds
+        Refreshes the index (wait removed, no need for it)
         """
-        self.es.indices.refresh(index=self.index)
-        time.sleep(3)
+        return self.es.indices.refresh(index=self.index)
 
     def put_object(self, key, value):
         """
@@ -107,7 +99,7 @@ class ESConnection(AbstractConnection):
         if not self.index:
             return False
         try:
-            res = self.es.index(index=self.index, id=key, doc_type=self.doc_type, body=value)
+            res = self.es.index(index=self.index, id=key, body=value)
             return res['result'] == 'created'
         except Exception as e:
             print('Failed to add object id: %s with error: %s and body %s' % (key, str(e), value))
@@ -121,7 +113,7 @@ class ESConnection(AbstractConnection):
         if not self.index:
             return None
         try:
-            return self.es.get(index=self.index, doc_type=self.doc_type, id=key)['_source']
+            return self.es.get(index=self.index, id=key)['_source']
         except Exception:
             return None
 
@@ -131,8 +123,9 @@ class ESConnection(AbstractConnection):
         failure.
         """
         try:
-            return self.es.count(self.index).get('count')
-        except Exception:
+            return self.es.count(index=self.index).get('count')
+        except Exception as e:
+            print(f'Failed to execute count: {e}')
             return 0
 
     def get_size_bytes(self):
@@ -151,7 +144,7 @@ class ESConnection(AbstractConnection):
         Returns a tuple with search results as a list and the total count as an integer.
         """
         if not self.index:
-            return []
+            return [], 0
         err_msg = None
         try:
             res = search.execute().to_dict()
@@ -168,10 +161,11 @@ class ESConnection(AbstractConnection):
         if err_msg:
             raise ElasticsearchException(message=err_msg)
         # In next line, PyCharm's linter wrongly worries that 'res' might not be reliably set above. -kmp 6-Jun-2022
-        total = res['hits']['total']
-        return [obj[key] for obj in res['hits']['hits']] if len(res['hits']['hits']) > 0 else [], total  # noQA
+        else:
+            total = res['hits']['total']['value']  # noQA (see above)
+            return [obj[key] for obj in res['hits']['hits']] if len(res['hits']['hits']) > 0 else [], total  # noQA
 
-    def get_result_history(self, prefix, start, limit, sort = "timestamp.desc") -> [list, int]:
+    def get_result_history(self, prefix, start, limit, sort="timestamp.desc") -> [list, int]:
         """
         ES handle to implement the get_result_history functionality of RunResult
         """

@@ -1,14 +1,12 @@
 import logging
 
-from .s3_connection import S3Connection
 from dcicutils.common import EnvName, ChaliceStage
 from dcicutils.env_manager import EnvManager
-from dcicutils.env_utils import (
-    get_foursight_bucket, get_foursight_bucket_prefix, full_env_name, infer_foursight_from_env,
-)
 from dcicutils.misc_utils import full_class_name
 from dcicutils.s3_utils import s3Utils
 from typing import Optional, List
+from foursight_core.s3_connection import S3Connection
+from dcicutils.env_utils import get_foursight_bucket, get_foursight_bucket_prefix, full_env_name, infer_foursight_from_env
 
 
 logging.basicConfig()
@@ -106,7 +104,6 @@ class Environment(object):
         :param strict: if True, restricts valid names to exactly the set of foursight names.
                        Otherwise allows all declared names.
         """
-
         if or_all and env == 'all':
             return True
         valid_envs = self.list_unique_environment_names() if strict else self.list_environment_names()
@@ -114,7 +111,6 @@ class Environment(object):
 
     @classmethod
     def get_environment_info_from_s3(cls, env_name: EnvName) -> dict:
-
         return s3Utils.get_synthetic_env_config(env_name)
 
     def get_environment_and_bucket_info(self, env_name: EnvName, stage: ChaliceStage) -> dict:

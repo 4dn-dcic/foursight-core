@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 import uuid
 from foursight_core.react.api.jwt_utils import jwt_decode, jwt_encode

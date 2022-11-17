@@ -1,5 +1,3 @@
-# TODO: Move this to foursight_core when done developing.
-
 from chalice import Cron
 import os
 from typing import Tuple

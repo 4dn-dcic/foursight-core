@@ -1,6 +1,7 @@
-from .s3_connection import S3Connection
-from .es_connection import ESConnection
+from foursight_core.s3_connection import S3Connection
+from foursight_core.es_connection import ESConnection
 from dcicutils.s3_utils import s3Utils
+from dcicutils.env_utils import full_env_name, is_stg_or_prd_env
 
 
 class FSConnection(object):
@@ -25,7 +26,10 @@ class FSConnection(object):
     """
     def __init__(self, fs_environ, fs_environ_info, test=False, use_es=True, host=None):
         # FOURSIGHT information
-        self.fs_env = fs_environ
+        # With the new EnvUtils, FS schedules conform to the full env name,
+        # so expand to full_env_name if we are rendering a (legacy) short name
+        # ie: webdev --> fourfront-webdev - Will July 22 2022
+        self.fs_env = full_env_name(fs_environ) if not is_stg_or_prd_env(fs_environ) else fs_environ
         es = ESConnection(index=fs_environ_info.get('bucket'), host=host) if use_es else None
         self.connections = {
             's3': S3Connection(fs_environ_info.get('bucket')),
@@ -35,6 +39,7 @@ class FSConnection(object):
         self.ff_server = fs_environ_info['fourfront']
         self.ff_env = fs_environ_info['ff_env']
         self.ff_es = fs_environ_info['es']
+        self.ff_bucket = fs_environ_info['bucket']
         if not test:
             self.ff_s3 = s3Utils(env=self.ff_env)
             try:  # TODO: make this configurable from env variables?
@@ -68,3 +73,9 @@ class FSConnection(object):
         for conn in self.connections.values():
             if conn is not None:
                 conn.put_object(key, value)
+
+    def test_es_connection(self):
+        """ Pings ES to ensure we can connect to it, useful in some failure scenarios """
+        if self.connections['es']:
+            return self.connections['es'].test_connection()
+        return False

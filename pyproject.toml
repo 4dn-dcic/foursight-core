@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "foursight-core"
-version = "2.1.0.2b17"
+version = "2.1.0.2b18"
 description = "Serverless Chalice Application for Monitoring"
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
@@ -12,7 +12,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.7,<3.9"
-dcicutils = "^4.0.2"
+dcicutils = "^6.0.0"
 click = "^7.1.2"
 cron-descriptor = "^1.2.31"
 pyDes = "^2.0.1"
@@ -23,8 +23,8 @@ google = "^3.0.0"
 google-auth-oauthlib = "^0.7.0"
 google-api-python-client = "^1.12.5"
 geocoder = "1.38.1"
-elasticsearch = "^6.8.1"
-elasticsearch-dsl = "^6.4.0"
+elasticsearch = "7.13.4"
+elasticsearch-dsl = "^7.0.0"
 gitpython = "^3.1.2"
 pytz = "^2020.1"
 

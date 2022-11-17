@@ -1,15 +1,18 @@
+import ast
+import boto3
 from chalice import Response
+import copy
+import datetime
+from dateutil import tz
+from http.cookies import SimpleCookie
 import inspect
+from itertools import chain
 import jinja2
 import json
+import jwt
+import logging
 import os
 from os.path import dirname
-import jwt
-import boto3
-import datetime
-import ast
-import copy
-from http.cookies import SimpleCookie
 import pkg_resources
 import platform
 import pytz
@@ -18,35 +21,32 @@ import socket
 import sys
 import time
 import types
-import logging
-from itertools import chain
-from dateutil import tz
-from dcicutils import ff_utils
+from typing import Optional
 from dcicutils.env_utils import (
     EnvUtils,
     full_env_name,
     get_foursight_bucket,
     get_foursight_bucket_prefix,
     infer_foursight_from_env,
-    public_env_name,
     short_env_name,
+    public_env_name
 )
+from dcicutils import ff_utils
 from dcicutils.exceptions import InvalidParameterError
 from dcicutils.lang_utils import disjoined_list
 from dcicutils.misc_utils import get_error_message, ignored, PRINT
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
-from typing import Optional
-from .deploy import Deploy
-from .s3_connection import S3Connection
-from .fs_connection import FSConnection
-from .check_utils import CheckHandler
-from .sqs_utils import SQS
-from .stage import Stage
-from .environment import Environment
 from .app import app
+from .check_utils import CheckHandler
+from .deploy import Deploy
+from .environment import Environment
+from .fs_connection import FSConnection
+from .s3_connection import S3Connection
 from .react.api.react_api import ReactApi
 from .routes import Routes
+from .sqs_utils import SQS
+from .stage import Stage
 
 
 logging.basicConfig()
@@ -72,9 +72,11 @@ class AppUtilsCore(ReactApi, Routes):
     APP_PACKAGE_NAME = None
 
     def get_app_version(self):
-        return pkg_resources.get_distribution(self.APP_PACKAGE_NAME).version
+        try:
+            return pkg_resources.get_distribution(self.APP_PACKAGE_NAME).version
+        except Exception:  # does not work in unit tests
+            return 'Error detecting version'
 
-    # dmichaels/2022-07-20/C4-826: Apply identity globally.
     # NOTE (2022-08-24): No longer call from the top-level here (not polite);
     # rather call from (AppUtils) sub-classes in foursight-cgap and foursight.
     # apply_identity_globally()
@@ -319,6 +321,7 @@ class AppUtilsCore(ReactApi, Routes):
         # this looks bad but isn't because request authentication will
         # still fail if local keys are not configured
         #
+        # Note: because this is disabled, unit testing on this method is as well - Will Nov 9 2022
         # if self.is_running_locally(request_dict):
         #     return True
         #
@@ -1626,7 +1629,6 @@ class AppUtilsCore(ReactApi, Routes):
         Returns:
             dict: runner input of queued messages, used for testing
         """
-        print(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
         logger.warning(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
         queue = self.sqs.get_sqs_queue()
         logger.warning(f"queue_scheduled_checks: queue={queue}")
@@ -1643,7 +1645,11 @@ class AppUtilsCore(ReactApi, Routes):
             if not check_schedule:
                 PRINT(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
                 return
+            if not sched_environs:
+                print(f'-RUN-> No scheduled environs detected! {sched_environs}, {check_schedule}')
+                return
             for environ in sched_environs:
+                print(f'-RUN-> Sending messages for {environ}')
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
                 check_vals.extend(self.get_env_schedule(check_schedule, environ))
@@ -1806,7 +1812,7 @@ class AppUtilsCore(ReactApi, Routes):
         # find information from s3 about completed checks in this run
         # actual id stored in s3 has key: <run_uuid>/<run_name>
         if run_deps and isinstance(run_deps, list):
-            already_run = self.collect_run_info(run_uuid)
+            already_run = self.collect_run_info(run_uuid, run_env)
             deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
             finished_dependencies = set(deps_w_uuid).issubset(already_run)
             if not finished_dependencies:
@@ -1864,11 +1870,12 @@ class AppUtilsCore(ReactApi, Routes):
             return None
 
     @classmethod
-    def collect_run_info(cls, run_uuid):
+    def collect_run_info(cls, run_uuid, env):
         """
         Returns a set of run checks under this run uuid
         """
-        s3_connection = S3Connection(cls.prefix + '-runs')
+        bucket = get_foursight_bucket(envname=env, stage=Stage(cls.prefix).get_stage())
+        s3_connection = S3Connection(bucket)
         run_prefix = ''.join([run_uuid, '/'])
         complete = s3_connection.list_all_keys_w_prefix(run_prefix)
         # eliminate duplicates
