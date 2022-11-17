@@ -77,7 +77,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 es_info = connection.es_info()
                 elasticsearch_server_version = es_info["version"]["number"]
                 self._cached_elasticsearch_server_version = elasticsearch_server_version
-            except Exception as e:
+            except Exception:
                 pass
         return self._cached_elasticsearch_server_version
 
