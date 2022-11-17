@@ -1,6 +1,8 @@
 // NOT YET IN IN WIDE USE
 // Starting to experiment with setting styles dynamically based on Fourfront vs. CGAP styles.
 
+import Image from './utils/Image';
+
 // TODO
 // const styles = getComputedStyle(document.documentElement)
 // For some reason reading these values, when NOT running in cross-origin local mode (UI on 3000 and API on 8000),
@@ -23,6 +25,10 @@ function SetFoursightFourfrontStyles() {
     document.documentElement.style.setProperty("--box-bg", foursightFourfrontBoxBackground);
     document.documentElement.style.setProperty("--box-bg-lighten", LightenDarkenColor(foursightFourfrontBoxBackground, 20));
     document.documentElement.style.setProperty("--box-bg-darken", LightenDarkenColor(foursightFourfrontBoxBackground, -20));
+    let faviconElement = document.getElementById("favicon");
+    if (faviconElement) {
+        faviconElement.href = Image.FoursightFourfrontFavicon();
+    }
 }
 
 function SetFoursightCgapStyles() {
@@ -30,6 +36,10 @@ function SetFoursightCgapStyles() {
     document.documentElement.style.setProperty("--box-bg", foursightCgapBoxBackground);
     document.documentElement.style.setProperty("--box-bg-lighten", LightenDarkenColor(foursightCgapBoxBackground, 20));
     document.documentElement.style.setProperty("--box-bg-darken", LightenDarkenColor(foursightCgapBoxBackground, -20));
+    let faviconElement = document.getElementById("favicon");
+    if (faviconElement) {
+        faviconElement.href = Image.FoursightCgapFavicon();
+    }
 }
 
 // Adapted from:

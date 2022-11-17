@@ -3,7 +3,6 @@ import { Navigate, BrowserRouter as Router, Routes, Route } from 'react-router-d
 import HeaderData from './HeaderData';
 import Env from './utils/Env';
 import { useFetchFunction } from './utils/Fetch';
-import Image from './utils/Image';
 import Server from './utils/Server';
 
 import AccountsPage from './pages/AccountsPage';
@@ -28,16 +27,11 @@ import UserEditPage from './pages/UserEditPage';
 import UsersPage from './pages/UsersPage';
 
 function setGlobalStyles(header) {
-    const faviconElement = document.getElementById("favicon");
-    if (faviconElement) {
-        if (Env.IsFoursightFourfront(header)) {
-            faviconElement.href = Image.FoursightFourfrontFavicon();
-            Styles.SetFoursightFourfront();
-        }
-        else {
-            faviconElement.href = Image.FoursightCgapFavicon();
-            Styles.SetFoursightCgap();
-        }
+    if (Env.IsFoursightFourfront(header)) {
+        Styles.SetFoursightFourfront();
+    }
+    else {
+        Styles.SetFoursightCgap();
     }
 }
 
