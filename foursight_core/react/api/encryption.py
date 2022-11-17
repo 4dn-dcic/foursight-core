@@ -1,7 +1,7 @@
 # Encryption utility class.
 # --------------------------------------------------------------------------------------------------
-# N.B. RESURRECTING this (used before we went to JWT-signed authtoken) to TEMPORARILY for
-# the accounts page functionality where we have an account.json file, and want to check it
+# N.B. RESURRECTING this (used before we went to JWT-signed authtoken) perhaps TEMPORARILY for
+# the /accounts page functionality, where we have an account.json file, and want to check it
 # in for availability, but don't want it be plaintext as it has URLs internal to Harvard.
 # If this goes beyond the experimental phase will need to sort this out. dmichaels/2022-11-12.
 # --------------------------------------------------------------------------------------------------
@@ -9,76 +9,65 @@
 import json
 import os
 from pyDes import triple_des
-import uuid
+from typing import Optional, Union
 from .encoding_utils import base64_decode_to_bytes, base64_encode_to_bytes, bytes_to_string
 
 
-# TODO:
-# Note that triple_des not secure really.
-# Try (from Will): https://github.com/wbond/oscrypto (AES 256)
-# Note however that we are NO LONGER USING THIS as we're using a
-# JWT-signed-encodde authtoken rather than server-side encrypted.
+# Encryption utility class, to encrypt/decrypt with given password.
+# If no password given then we use the value of CLIENT_SECRET environment
+# variable which should be ENCODED_AUTH0_SECRET from the GAC.
+#
+# We are using pyDes for this, which is pure Python to avoid portability issues,
+# and is SUPER slow, but OK for now for our purposes of just decrypting the authToken
+# on each protected API call. I.e. it takes nearly 100ms to decrypt 500 characters!
+#
+# TODO
+# From Will: Note that triple_des is not all that secure really.
+# Try maybe this: https://github.com/wbond/oscrypto (AES 256)
 class Encryption:
 
-    def __init__(self, encryption_password: str = None):
-        self.encryption_password = encryption_password
-        if self.encryption_password:
-            if len(self.encryption_password) < 24:
-                self.encryption_password = self.encryption_password.ljust(24, '_')
-            elif len(encryption_password) > 24:
-                self.encryption_password = self.encryption_password[0:24]
+    def __init__(self, password: Optional[str] = None) -> None:
+        """
+        Initializes this Encryption object with the given (optional) password.
+        If no password this will use the value of CLIENT_SECRET environment
+        variable which should be ENCODED_AUTH0_SECRET from the GAC.
+        """
+        if not password:
+            password = os.environ.get("CLIENT_SECRET", None)
+            if not password:
+                password = os.environ.get("ENCODED_AUTH0_SECRET", None)
+                if not password:
+                    raise Exception(f"Encryption error: No password found for the Encryption class.")
+        # Encryption password must be of length 8, 16, or 24.
+        if len(password) < 24:
+            password = password.ljust(24, '_')
+        elif len(password) > 24:
+            password = password[0:24]
+        self._encryptor = triple_des(password)
 
-    # We use encryption for the React 'authToken' cookie, which is a JSON object containing
-    # the JWT token in the 'jwtToken' field and a 'authEnvs' field which is the Base-64
-    # encoded JSON list of names of allowed environments for the authenticated user.
-    # The authToken JSON is encrypted and cookied at login/authorization;
-    # and it is decrypted and checked on each protected API call.
-    #
-    # We are using pyDes for this, which is pure Python to avoid portability issues,
-    # and is SUPER slow, but OK for now for our purposes of just decrypting the authToken
-    # on each protected API call. I.e. it takes nearly 100ms to decrypt 500 characters!
-
-    def get_encryption_password(self) -> str:
-        if not self.encryption_password:
-            encryption_password = os.environ.get("CLIENT_SECRET", os.environ.get("ENCODED_AUTH0_SECRET"))
-            if not encryption_password:
-                encryption_password = os.environ.get("S3_AWS_SECRET_ACCESS_KEY")
-                if not encryption_password:
-                    #
-                    # If we cannot find a password to use from the GAC we will
-                    # use a random one (a UUID) which just means that when
-                    # this server restarts (or this app reloads) it will
-                    # not be able to decrypt any authTokens existing out
-                    # there, meaning users will have to login again.
-                    #
-                    encryption_password = str(uuid.uuid4()).replace('-', '')
-            if not encryption_password:
-                encryption_password = str(uuid.uuid4()).replace('-', '')[0:24]
-            elif len(encryption_password) < 24:
-                encryption_password = encryption_password.ljust(24, 'x')
-            elif len(encryption_password) > 24:
-                encryption_password = encryption_password[0:24]
-            self.encryption_password = encryption_password
-        return self.encryption_password
-
-    def encrypt(self, plaintext_value: str) -> str:
+    def encrypt(self, plaintext_value: Union[str, dict, list]) -> str:
+        """
+        Encrypts the given plaintext value using the password specified
+        at class construction time, and returns the encrypted value as a string.
+        The given value may be a string, a dictionary, or a list; if either of
+        the latter two then first stringizes that value using json.dumps.
+        Raises an Exception on error.
+        """
         try:
             if isinstance(plaintext_value, dict) or isinstance(plaintext_value, list):
                 plaintext_value = json.dumps(plaintext_value)
-            password = self.get_encryption_password()
-            encryption = triple_des(password)
-            encrypted_value_bytes = encryption.encrypt(plaintext_value, padmode=2)
-            return bytes_to_string(base64_encode_to_bytes(encrypted_value_bytes))
+            return bytes_to_string(base64_encode_to_bytes(self._encryptor.encrypt(plaintext_value, padmode=2)))
         except Exception as e:
             raise Exception(f"Encryption error: {str(e)}")
 
     def decrypt(self, encrypted_value: str) -> str:
+        """
+        Decrypts the given encrypted string value (assumed to have been returned be
+        the above encrypt method) using the password specified at class construction
+        time, and returns the decrypted value as a string.
+        Raises an Exception on error.
+        """
         try:
-            password = self.get_encryption_password()
-            encryption = triple_des(password)
-            decoded_encrypted_value_bytes = base64_decode_to_bytes(encrypted_value)
-            decrypted_value_bytes = encryption.decrypt(decoded_encrypted_value_bytes, padmode=2)
-            decrypted_value = bytes_to_string(decrypted_value_bytes)
-            return decrypted_value
+            return bytes_to_string(self._encryptor.decrypt(base64_decode_to_bytes(encrypted_value), padmode=2))
         except Exception as e:
             raise Exception(f"Decryption error: {str(e)}")

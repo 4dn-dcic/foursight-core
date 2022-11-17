@@ -49,7 +49,11 @@ def get_base_url(url: str) -> str:
     """
     try:
         url = urlparse(url)
-        return url.scheme + "://" + url.hostname + (":" + str(url.port) if url.port else "")
+        scheme = url.scheme
+        hostname = url.hostname
+        port = url.port
+        port = '' if (port == 80 and scheme == 'http') or (port == 443 and scheme == 'https') else port
+        return scheme + "://" + hostname + (":" + str(port) if port else "")
     except Exception:
         return ""
 

@@ -377,9 +377,12 @@ const AccountsComponent = ({ header }) => {
 
     return <>
         <b>Known Accounts</b>
+        { header?.app?.accounts && <>
+             <small>&nbsp;&nbsp;&ndash;&nbsp;&nbsp;{header?.app?.accounts}</small>
+        </>}
         { accounts.length > 0 ? <>
-            <span style={{marginRight:"12pt",cursor:"pointer"}} onClick={refreshAll}>
-                &nbsp;&nbsp;{Char.Refresh}
+            <span style={{float:"right",marginRight:"10pt",cursor:"pointer"}} onClick={refreshAll}>
+                &nbsp;{Char.Refresh}
             </span>
             { accounts?.map((account, index) => <React.Fragment key={index}>
                 { index > 0 && <div style={{height:"8pt"}} /> }

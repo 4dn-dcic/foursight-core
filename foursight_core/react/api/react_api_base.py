@@ -37,6 +37,7 @@ class ReactApiBase:
                         headers: dict = None,
                         content_type: str = JSON_CONTENT_TYPE) -> Response:
         if body is None:
+            # Check specifically for None as given body could be empty LIST which we want to keep.
             body = {}
         if not headers:
             headers = ReactApiBase.STANDARD_HEADERS
@@ -49,6 +50,7 @@ class ReactApiBase:
     @staticmethod
     def create_success_response(body: Optional[Union[dict, list]] = None, content_type: str = None) -> Response:
         if body is None:
+            # Check specifically for None as given body could be empty LIST which we want to keep.
             body = {}
         if not content_type:
             content_type = ReactApiBase.JSON_CONTENT_TYPE
@@ -57,6 +59,7 @@ class ReactApiBase:
     @staticmethod
     def create_redirect_response(location: str, body: dict = None, headers: dict = None) -> Response:
         if not body:
+            # Check specifically for None as given body could be empty LIST which we want to keep.
             body = {}
         if not headers:
             if not location:
