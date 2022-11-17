@@ -16,10 +16,10 @@ update:
 	poetry update
 
 test:
-	pytest -vv --cov foursight_core
+	pytest -vv -m "not integrated" && pytest -vv -m "integrated"
 
 test-for-ga:
-	poetry run pytest --cov foursight_core -vv -m "not integratedx"
+	make test
 
 publish:
 	scripts/publish

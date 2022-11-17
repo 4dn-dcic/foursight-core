@@ -1,10 +1,9 @@
-from .abstract_connection import AbstractConnection
 import os
 import json
 import boto3
 import datetime
 import logging
-
+from foursight_core.abstract_connection import AbstractConnection
 from dcicutils.misc_utils import full_class_name
 
 

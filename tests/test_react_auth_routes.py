@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 from foursight_core.react.api import envs
 from foursight_core.react.api import react_route_decorator
 from foursight_core.react.api.react_api import ReactApi
