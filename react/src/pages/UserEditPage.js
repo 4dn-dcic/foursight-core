@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Link } from '../Components';
 import { useFetch } from '../utils/Fetch';
 import Client from '../utils/Client';
 import EditBox from './EditBox';
@@ -76,8 +77,8 @@ const UserEditPage = () => {
     return <>
         <center>
             <div style={{display:"table-row"}}>
-                <b style={{paddingLeft:"0.2em",float:"left"}}>Edit User</b>
-                <Link to={Client.Path("/users/create")} style={{fontSize:"small",paddingRight:"0.2em",float:"right"}}>New User</Link>
+                <b style={{float:"left"}}>Edit User</b>
+                <div style={{float:"right",marginTop:"4pt",marginRight:"4pt",fontSize:"small"}}><Link to={"/users/create"} bold={false}>New User</Link></div>
             </div>
             { notFound ? <>
                 <div className="box">

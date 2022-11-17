@@ -8,8 +8,9 @@ import Char from '../../utils/Char';
 import Image from '../../utils/Image';
 import Json from '../../utils/Json';
 import Server from '../../utils/Server';
-import Yaml from '../../utils/Yaml';
+import Styles from '../../Styles';
 import TableHead from '../../TableHead';
+import Yaml from '../../utils/Yaml';
 
 const SHOW_BUCKET_KEY_CONTENT_MAX_SIZE_BYTES = 50000;
 
@@ -177,14 +178,14 @@ const AwsS3Page = (props) => {
 
     const BucketsBox = () => {
         return <div>
-            <div style={{float:"left",fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;S3 Buckets</div>&nbsp;&nbsp;
+            <div style={{float:"left",fontWeight:"bold",paddingBottom:"3pt"}}>S3 Buckets</div>&nbsp;&nbsp;
             <input placeholder="Search ..." type="text" autoFocus style={{outline:"none",paddingLeft:"2pt",border:"1px solid gray",borderRadius:"3pt",position:"relative",bottom:"1pt",fontSize:"small",marginBottom:"3pt"}} defaultValue={bucketListFilter} onChange={onBucketListSearch} />
-            <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+            <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
                 { getBucketList().map((bucket, i) => {
                     return <div key={i}>
                         <span style={{cursor:"pointer",fontWeight:isShowingBucketKeysBox(bucket) ? "bold" : "normal"}} onClick={() => toggleBucketKeysBox(bucket)}>{bucket}</span>
                         { i < getBucketList().length - 1 &&
-                            <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkblue"}} />
+                            <div className="bg" style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:Styles.GetForegroundColor()}} />
                         }
                     </div>
                 })}
@@ -194,7 +195,7 @@ const AwsS3Page = (props) => {
 
     const BucketKeysPanel = () => {
         return isShowingAnyBucketKeys() && <div>
-            <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;S3 Bucket Keys</div>
+            <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>S3 Bucket Keys</div>
             {/* Experimental */}
             { bucketKeysList.map((bucketKeys, i) => {
                 return <BucketKeysBox key={i} bucketKeys={bucketKeys} style={{paddingTop:"3pt"}}/>
@@ -216,17 +217,17 @@ const AwsS3Page = (props) => {
         ];
 
         return <>
-            <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt",minWidth:"240pt"}}>
+            <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt",minWidth:"240pt"}}>
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideBucketKeysBox(bucketKeys.bucket)})}><b>&nbsp;&nbsp;{Char.X}</b></span>
                 <b>{bucketKeys.bucket}</b>
                 <p />
-                { <Spinner condition={bucketKeys.loading} label={"Fetching bucket keys"} color={"darkblue"} /> }
+                { <Spinner condition={bucketKeys.loading} label={"Fetching bucket keys"} color={Styles.GetForegroundColor()} /> }
                 { bucketKeys.keys?.length > 0 ? (<>
-                    <div style={{height:"1px",background:"darkblue",marginBottom:"1pt"}}></div>
+                    <div style={{height:"1px",background:Styles.GetForegroundColor(),marginBottom:"1pt"}}></div>
                     <table width="100%">
-                        <TableHead columns={columns} list={bucketKeys.keys} update={() => bucketKeysList.update()} style={{color:"darkblue",fontWeight:"bold"}}>
+                        <TableHead columns={columns} list={bucketKeys.keys} update={() => bucketKeysList.update()} style={{color:"inherit",fontWeight:"bold"}}>
                             <tr><td style={{paddingTop:"1pt"}}></td></tr>
-                            <tr><td style={{height:"1px",background:"darkblue"}} colSpan="3"></td></tr>
+                            <tr><td style={{height:"1px",background:Styles.GetForegroundColor()}} colSpan="3"></td></tr>
                             <tr><td style={{paddingTop:"4pt"}}></td></tr>
                         </TableHead>
                         <tbody>
@@ -235,7 +236,7 @@ const AwsS3Page = (props) => {
                             <td>
                                 { mayLookAtKeyContent(bucketKeys.bucket, bucketKey.key, bucketKey.size) ? (<>
                                     <span style={{cursor:"pointer",
-                                                  color:"darkblue",
+                                                  color:"inherit",
                                                   fontWeight:isShowingBucketKeyContentBox(bucketKeys.bucket, bucketKey.key) ? "bold" : "normal"}}
                                                   onClick={() => toggleBucketKeyContentBox(bucketKeys.bucket, bucketKey.key)}>
                                         {bucketKey.key}
@@ -256,7 +257,7 @@ const AwsS3Page = (props) => {
                             </tr>
                             { i < bucketKeys.keys.length - 1 && <> 
                                 <tr><td style={{paddingTop:"4pt"}}></td></tr>
-                                <tr><td style={{height:"1px",background:"lightblue"}} colSpan="3"></td></tr>
+                                <tr><td style={{height:"1px",background:Styles.GetForegroundColor()}} colSpan="3"></td></tr>
                                 <tr><td style={{paddingTop:"1pt"}}></td></tr>
                             </>}
                         </React.Fragment>})}
@@ -285,12 +286,12 @@ const AwsS3Page = (props) => {
 
     const BucketKeyContentBox = ({bucketKeyContent}) => {
         return <>
-            <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt",minWidth:"300pt"}}>
+            <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt",minWidth:"300pt"}}>
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideBucketKeyContentBox(bucketKeyContent.bucket, bucketKeyContent.key)})}><b>&nbsp;&nbsp;{Char.X}</b></span>
                 Bucket: <b>{bucketKeyContent.bucket}</b> <br />
                 Key: <b>{bucketKeyContent.key}</b>
                 <p />
-                { <Spinner condition={bucketKeyContent.loading} label={"Fetching bucket key content"} color={"darkblue"} /> }
+                { <Spinner condition={bucketKeyContent.loading} label={"Fetching bucket key content"} color={Styles.GetForegroundColor()} /> }
                 { bucketKeyContent.content && <pre style={{marginTop:"6pt",marginBottom:"0pt",background:"inherit",borderRadius:"8pt",filter:"brightness(1.1)",maxWidth:"800pt"}}>
                     <span style={{fontSize:"0",opacity:"0"}} id={bucketKeyContent.key}>{Json.Str(bucketKeyContent.content)}</span>
                     <img alt="copy" onClick={() => Clipboard.Copy(bucketKeyContent.key)} style={{cursor:"copy",float:"right",fontFamily:"monospace"}} src={Image.Clipboard()} height="19" />
@@ -300,7 +301,7 @@ const AwsS3Page = (props) => {
         </>
     }
 
-    const Spinner = ({condition, color = "darkblue", size = 100, label = "Loading"}) => {
+    const Spinner = ({condition, color = Styles.GetForegroundColor(), size = 100, label = "Loading"}) => {
         return condition && <table><tbody><tr>
             {label && <td nowrap="1"><small style={{color:color}}><b><i>{label}</i></b></small>&nbsp;&nbsp;</td>}
             <td style={{paddingTop:"5px"}} nowrap="1"> <BarSpinner loading={condition} size={size} color={color} /></td>

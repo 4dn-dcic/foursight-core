@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import PaginationComponent from './PaginationComponent';
 import Str from './utils/Str';
 import TableHead from './TableHead';
+import Styles from './Styles';
 import Type from './utils/Type';
 
 const PagedTableComponent = ({columns, data, update, initialSort, children}) => {
@@ -95,7 +96,7 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
                 onChange={onPageOffset}
                 loading={data?.loading}
                 spinner={true} />
-            </td><td style={{align:"right",fontSize:"9pt",fontWeight:"bold",color:"darkblue",whiteSpace:"nowrap"}}>
+            </td><td style={{align:"right",paddingTop:"6pt",fontSize:"9pt",fontWeight:"bold",color:Styles.GetForegroundColor(),whiteSpace:"nowrap"}}>
                   Page Size:&nbsp;
                   <span style={{cursor:data?.loading ? "not-allowed" : "",width:"fit-content"}}>
                   <span style={{pointerEvents:data?.loading ? "none" : "",width:"fit-content"}}>
@@ -113,7 +114,7 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
                   <span>More: {more}&nbsp;|&nbsp;</span>
                   <span>Total: {total}&nbsp;</span>
             </td></tr></tbody></table>
-            <div className="info boxstyle" style={{marginTop:"4pt",paddingTop:"8pt"}}>
+            <div className="box" style={{marginTop:"4pt",paddingTop:"8pt"}}>
             <table style={{width:"100%"}}>
                 <TableHead
                     columns={columns}
@@ -121,7 +122,7 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
                     list={data?.get("list")}
                     update={onSort}
                     bottomline={true}
-                    style={{color:"darkblue",fontWeight:"bold"}}
+                    style={{color:Styles.GetForegroundColor(),fontWeight:"bold"}}
                     loading={data?.loading} />
                 <tbody>
                     {children}

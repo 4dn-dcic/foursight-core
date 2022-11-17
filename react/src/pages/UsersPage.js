@@ -1,10 +1,12 @@
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { Link } from '../Components';
 import { useFetch } from '../utils/Fetch';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
 import PagedTableComponent from '../PagedTableComponent';
+import Styles from '../Styles';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
 
@@ -40,14 +42,14 @@ const UsersPage = () => {
     const tdStyle = { verticalAlign: "top", paddingRight: "1pt", paddingTop: "4pt", paddingBottom: "8pt" };
 
     return <>
-        <div className="container">
+        <div className="container fg">
            <div>
                 &nbsp;<b>Users</b>
                 <div style={{float:"right"}}>
-                    <Link to={Client.Path("/users/create")} style={{fontSize:"small",paddingRight:"0.2em"}}>New User</Link>&nbsp;|&nbsp;
+                    <Link to={"/users/create"} bold={false}><small>Create User</small></Link>&nbsp;|&nbsp;
                     <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={update}>{Char.Refresh}&nbsp;</b>
                 </div>
-                <div style={{height:"2px",background:"darkblue",marginTop:"2pt",marginBottom:"6pt"}}></div>
+                <div style={{height:"1px",background:Styles.GetForegroundColor(),marginTop:"2pt",marginBottom:"4pt"}}></div>
             </div>
             <PagedTableComponent
                 columns={columns}
@@ -55,7 +57,7 @@ const UsersPage = () => {
                 update={update}
                 initialSort={"email.asc"}>
                     {users.map("list", (user, index) => (
-                        <tr key={user.uuid} style={{verticalAlign:"top",borderBottom:"1px solid gray"}}>
+                        <tr key={user.uuid} style={{verticalAlign:"top",borderBottom:index < users?.data?.list?.length - 1 ? "1px solid gray" : "0"}}>
                             <td style={{...tdStyle, fontSize:"small"}}>
                                 {parseInt(args.get("offset")) + index + 1}.
                             </td>
@@ -65,7 +67,7 @@ const UsersPage = () => {
                                     <small>&nbsp;({user.title})</small>
                                 </>}
                                 <br />
-                                <Link to={Client.Path("/users/" + user.email)}><b>{user.email}</b></Link> <br />
+                                <Link to={"/users/" + user.email}><b>{user.email}</b></Link> <br />
                                 <small id="{user.uuid}" style={{cursor:"copy"}}>{user.uuid}</small>
                             </td>
                             <td style={tdStyle}>
@@ -86,7 +88,7 @@ const UsersPage = () => {
                                 <small>{Time.FormatTime(user.created)}</small>
                             </td>
                             <td style={tdStyle}>
-                                <Link to={Client.Path(`/users/edit/${user.uuid}`)}>Edit</Link>
+                                <Link to={`/users/edit/${user.uuid}`}>Edit</Link>
                             </td>
                         </tr>
                     ))}

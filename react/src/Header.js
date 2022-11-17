@@ -11,6 +11,7 @@ import LiveTime from './LiveTime';
 import Env from './utils/Env';
 import Image from './utils/Image';
 import Logout from './utils/Logout';
+import Styles from './Styles';
 import { ReadOnlyModeDisplay } from './ReadOnlyMode';
 import { useFetching } from './utils/Fetch';
 // import JustLoggedIn from './JustLoggedIn';
@@ -41,7 +42,7 @@ const Header = (props) => {
                 return { textDecoration: "none", color: "black", fontWeight: "bold" }
             }
             else {
-                return { textDecoration: "none", color: "blue", fontWeight: "normal" }
+                return { textDecoration: "none", color: Styles.GetForegroundColor(), fontWeight: "normal" }
             }
         }
         return <span>

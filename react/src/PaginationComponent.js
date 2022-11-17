@@ -1,5 +1,6 @@
 import ReactPaginate from 'react-paginate';
 import { ScaleSpinner } from './Spinners';
+import Styles from './Styles';
 
 export const PaginationComponent = ({ pages, page, onChange, loading, spinner }) => {
     //
@@ -20,7 +21,7 @@ export const PaginationComponent = ({ pages, page, onChange, loading, spinner })
                     previousLabel="PREV"
                     pageClassName="pagination"
                     pageLinkClassName="page-link"
-                    previousClassName="color:red"
+                    previousClassName="page-link"
                     previousLinkClassName="page-link"
                     nextClassName="page-item"
                     nextLinkClassName=" page-link"
@@ -35,7 +36,7 @@ export const PaginationComponent = ({ pages, page, onChange, loading, spinner })
        </td>
        { spinner &&
            <td style={{whiteSpace:"nowrap",paddingLeft:"6pt",paddingBottom:"2pt"}}>
-                { loading && <ScaleSpinner label="" condition={true||loading} width="3px" height="20px" color="darkblue" /> }
+                { loading && <ScaleSpinner label="" condition={true||loading} width="3px" height="20px" color={Styles.GetForegroundColor()} /> }
            </td>
        }
    </tr></tbody></table>

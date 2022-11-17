@@ -136,21 +136,21 @@ const CheckHistoryPage = (props) => {
             { label: "State" }
         ];
 
-        return <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+        return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
 
             <div title={check}>
                 <b>Check: {check}</b>&nbsp;
             </div>
             <div style={{marginBottom:"6pt"}}/>
                 { history.get("list")?.length > 0 ? (<>
-                    <table style={{width:"100%"}}>
+                    <table style={{width:"100%"}} className="fg">
                         <TableHead
                             columns={columns}
                             list={history.get("list")}
                             state={{key: extractTimestamp, order: sort.endsWith(".desc") ? -1 : 1}}
                             update={(key, order) => {onSort(key, order);}}
                             lines={true}
-                            style={{color:"darkblue",fontWeight:"bold"}}
+                            style={{fontWeight:"bold"}}
                             loading={history.loading} />
                     <tbody>
                     {history.map("list", (history, index) =>
@@ -163,7 +163,7 @@ const CheckHistoryPage = (props) => {
                             <tr>
                             <td style={{verticalAlign:"top"}}>
                                 {extractStatus(history) === "PASS" ? (<>
-                                    <span style={{color:"darkblue"}}>{Char.Check}</span>
+                                    <span>{Char.Check}</span>
                                 </>):(<>
                                     <span style={{color:"darkred"}}>{Char.X}</span>
                                 </>)}
@@ -181,7 +181,7 @@ const CheckHistoryPage = (props) => {
                             &nbsp;&nbsp;</td>
                             <td style={{verticalAlign:"top",whiteSpace:"break-spaces"}}>
                                 {extractStatus(history) === "PASS" ? (<>
-                                    <b style={{color:"darkblue"}}>OK</b>
+                                    <b>OK</b>
                                 </>):(<>
                                     <b style={{color:"darkred"}}>ERROR</b>
                                 </>)}
@@ -248,7 +248,7 @@ const CheckHistoryPage = (props) => {
                             loading={history.loading} />
                     </td>
                     <td style={{width:"10%",whiteSpace:"nowrap",verticalAlign:"bottom",align:"right"}}>
-                        <div style={{fontSize:"small",fontWeight:"bold",color:"darkblue"}}>
+                        <div className="fg" style={{fontSize:"small",fontWeight:"bold"}}>
                             Page Size:&nbsp;
                             <span style={{cursor:history.loading ? "not-allowed" : "",width:"fit-content"}}>
                             <span style={{pointerEvents:history.loading ? "none" : "",width:"fit-content"}}>
@@ -267,14 +267,14 @@ const CheckHistoryPage = (props) => {
                     </td>
                     </tr></tbody></table>
                 </td>
-                <td><b>Check History</b></td>
+                <td style={{verticalAlign:"bottom",paddingBottom:"2pt"}}><b>Check History</b></td>
             </tr>
             <tr>
                 <td style={{verticalAlign:"top",paddingRight:"10pt"}}>
                     <HistoryList history={history} />
                 </td>
                 <td style={{verticalAlign:"top"}}>
-                    <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+                    <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
                         <table><tbody>
                             <tr>
                                 <td style={{paddingRight:"8pt"}}><b>Check</b>:</td>
@@ -302,11 +302,13 @@ const CheckHistoryPage = (props) => {
                             </tr>
                         </tbody></table>
                     </div>
-                    <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                        <b style={{color:"darkred"}}>TODO</b>
-                        <p />
-                        - Have dropdown to pick other checks (maybe by group). <br />
+                    <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+                        <b style={{color:"inherit"}}>TODO</b>
+                        <br />
+                        <small>
+                        - Dropdown to pick other checks. <br />
                         - Allow check to be run here.<br />
+                        </small>
                     </div>
                 </td>
             </tr>

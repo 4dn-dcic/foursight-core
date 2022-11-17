@@ -330,11 +330,6 @@
    font-family: 'Sansation Bold', 'Arial';
 }
 
-/* This was the only way found to get rid of margin around react-paginate control. */
-.pagination-control * {
-    margin: 0;
-}
-
 /* New */
 
 :root {
@@ -463,4 +458,26 @@ ul {
 /* This gets rid of extra vertical space introduced normally, for some reason, on forms */
 form {
     display:inline;
+}
+
+
+/* This was the only way found to get rid of margin around react-paginate control. */
+.pagination-control * {
+    margin: 0;
+}
+.page-item .page-link {
+  color: var(--box-fg);
+  background: var(--box-bg-lighten);
+}
+.pagination-control .page-link {
+  color: var(--box-fg);
+  background: var(--box-bg-lighten);
+}
+.pagination-control .page-item {
+  color: var(--box-fg);
+  background: var(--box-bg-lighten);
+}
+.page-item.active .page-link {
+  color: var(--box-bg);
+  background: var(--box-fg);
 }
