@@ -1,5 +1,5 @@
 import copy
-from functools import lru_cache as memoize
+from functools import lru_cache
 import logging
 import os
 from typing import Optional, Tuple
@@ -33,7 +33,7 @@ class Envs:
     def get_known_envs_count(self) -> int:
         return len(self._known_envs)
 
-    @memoize(100)
+    @lru_cache(100)
     def get_known_envs_with_gac_names(self) -> list:
         known_envs = copy.deepcopy(self._known_envs)
         for known_env in known_envs:
@@ -43,11 +43,11 @@ class Envs:
     def get_default_env(self) -> str:
         return os.environ.get("ENV_NAME", Envs._DEFAULT_ENV_PLACHOLDER)
 
-    @memoize(100)
+    @lru_cache(100)
     def is_known_env(self, env: str) -> bool:
         return self.find_known_env(env) is not None
 
-    @memoize(100)
+    @lru_cache(100)
     def find_known_env(self, env: str) -> Optional[dict]:
         known_envs = self.get_known_envs_with_gac_names()
         return find_association(known_envs, foursight_name=foursight_env_name(env))
@@ -60,7 +60,7 @@ class Envs:
                 return True
         return False
 
-    @memoize(100)
+    @lru_cache(100)
     def is_same_env(self, env_a: str, env_b: str) -> bool:
         return foursight_env_name(env_a) == foursight_env_name(env_b)
 

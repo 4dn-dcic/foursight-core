@@ -130,3 +130,13 @@ def mock_foursight_env_name(env):
         return "env-c-foursight-name"
     else:
         return env
+
+def mock_short_env_name(env):
+    if env.startswith("env-a"):
+        return "env-a-short-name"
+    elif env.startswith("env-b"):
+        return "env-b-short-name"
+    elif env.startswith("env-c"):
+        return "env-c-short-name"
+    else:
+        return env

@@ -1,6 +1,7 @@
 import re
 import boto3
-from functools import lru_cache as memoize
+import os
+from functools import lru_cache
 import logging
 from dcicutils.diff_utils import DiffManager
 from dcicutils.env_utils import short_env_name
@@ -31,7 +32,7 @@ class Gac:
         return [secret_name for secret_name in secrets_names if re.match('.*App(lication)?Config(uration)?.*', secret_name, re.IGNORECASE)]
 
     @staticmethod
-    @memoize(100)
+    @lru_cache(100)
     def get_gac_name(env_name: str) -> str:
         gac_names = Gac.get_gac_names()
         env_name_short = short_env_name(env_name)
@@ -50,7 +51,7 @@ class Gac:
             return " OR ".join(matching_gac_names)
 
     @staticmethod
-    @memoize(100)
+    @lru_cache(100)
     def get_gac_info():
         return {
             "name": get_identity_name(),

@@ -8,6 +8,13 @@ from test_react_auth_defs import KNOWN_ENVS, KNOWN_ENV_A, KNOWN_ENV_B, KNOWN_ENV
 
 def test_envs():
 
+    def find_known_env(env: str, envs: list) -> dict:
+        known_env = envs.find_known_env(env)
+        # Not testing the GAC name here.
+        if "gac_name" in known_env:
+            del known_env["gac_name"]
+        return known_env
+
     with mock.patch.object(react_envs, "foursight_env_name", mock_foursight_env_name):
 
         envs = Envs(KNOWN_ENVS)
@@ -24,20 +31,38 @@ def test_envs():
         os.environ["ENV_NAME"] = "xyzzy"
         assert envs.get_default_env() == "xyzzy"
 
-        assert envs.find_known_env(KNOWN_ENV_A["name"]) == KNOWN_ENV_A
-        assert envs.find_known_env(KNOWN_ENV_A["full_name"]) == KNOWN_ENV_A
-        assert envs.find_known_env(KNOWN_ENV_A["short_name"]) == KNOWN_ENV_A
-        assert envs.find_known_env(KNOWN_ENV_A["public_name"]) == KNOWN_ENV_A
-        assert envs.find_known_env(KNOWN_ENV_A["foursight_name"]) == KNOWN_ENV_A
+        assert find_known_env(KNOWN_ENV_A["name"], envs) == KNOWN_ENV_A
+        assert find_known_env(KNOWN_ENV_A["full_name"], envs) == KNOWN_ENV_A
+        assert find_known_env(KNOWN_ENV_A["short_name"], envs) == KNOWN_ENV_A
+        assert find_known_env(KNOWN_ENV_A["public_name"], envs) == KNOWN_ENV_A
+        assert find_known_env(KNOWN_ENV_A["foursight_name"], envs) == KNOWN_ENV_A
 
-        assert envs.find_known_env(KNOWN_ENV_B["name"]) == KNOWN_ENV_B
-        assert envs.find_known_env(KNOWN_ENV_B["full_name"]) == KNOWN_ENV_B
-        assert envs.find_known_env(KNOWN_ENV_B["short_name"]) == KNOWN_ENV_B
-        assert envs.find_known_env(KNOWN_ENV_B["public_name"]) == KNOWN_ENV_B
-        assert envs.find_known_env(KNOWN_ENV_B["foursight_name"]) == KNOWN_ENV_B
+        assert find_known_env(KNOWN_ENV_B["name"], envs) == KNOWN_ENV_B
+        assert find_known_env(KNOWN_ENV_B["full_name"], envs) == KNOWN_ENV_B
+        assert find_known_env(KNOWN_ENV_B["short_name"], envs) == KNOWN_ENV_B
+        assert find_known_env(KNOWN_ENV_B["public_name"], envs) == KNOWN_ENV_B
+        assert find_known_env(KNOWN_ENV_B["foursight_name"], envs) == KNOWN_ENV_B
 
-        assert envs.find_known_env(KNOWN_ENV_C["name"]) == KNOWN_ENV_C
-        assert envs.find_known_env(KNOWN_ENV_C["full_name"]) == KNOWN_ENV_C
-        assert envs.find_known_env(KNOWN_ENV_C["short_name"]) == KNOWN_ENV_C
-        assert envs.find_known_env(KNOWN_ENV_C["public_name"]) == KNOWN_ENV_C
-        assert envs.find_known_env(KNOWN_ENV_C["foursight_name"]) == KNOWN_ENV_C
+        assert find_known_env(KNOWN_ENV_C["name"], envs) == KNOWN_ENV_C
+        assert find_known_env(KNOWN_ENV_C["full_name"], envs) == KNOWN_ENV_C
+        assert find_known_env(KNOWN_ENV_C["short_name"], envs) == KNOWN_ENV_C
+        assert find_known_env(KNOWN_ENV_C["public_name"], envs) == KNOWN_ENV_C
+        assert find_known_env(KNOWN_ENV_C["foursight_name"], envs) == KNOWN_ENV_C
+
+#       assert envs.find_known_env(KNOWN_ENV_A["name"]) == KNOWN_ENV_A
+#       assert envs.find_known_env(KNOWN_ENV_A["full_name"]) == KNOWN_ENV_A
+#       assert envs.find_known_env(KNOWN_ENV_A["short_name"]) == KNOWN_ENV_A
+#       assert envs.find_known_env(KNOWN_ENV_A["public_name"]) == KNOWN_ENV_A
+#       assert envs.find_known_env(KNOWN_ENV_A["foursight_name"]) == KNOWN_ENV_A
+
+#       assert envs.find_known_env(KNOWN_ENV_B["name"]) == KNOWN_ENV_B
+#       assert envs.find_known_env(KNOWN_ENV_B["full_name"]) == KNOWN_ENV_B
+#       assert envs.find_known_env(KNOWN_ENV_B["short_name"]) == KNOWN_ENV_B
+#       assert envs.find_known_env(KNOWN_ENV_B["public_name"]) == KNOWN_ENV_B
+#       assert envs.find_known_env(KNOWN_ENV_B["foursight_name"]) == KNOWN_ENV_B
+
+#       assert envs.find_known_env(KNOWN_ENV_C["name"]) == KNOWN_ENV_C
+#       assert envs.find_known_env(KNOWN_ENV_C["full_name"]) == KNOWN_ENV_C
+#       assert envs.find_known_env(KNOWN_ENV_C["short_name"]) == KNOWN_ENV_C
+#       assert envs.find_known_env(KNOWN_ENV_C["public_name"]) == KNOWN_ENV_C
+#       assert envs.find_known_env(KNOWN_ENV_C["foursight_name"]) == KNOWN_ENV_C
