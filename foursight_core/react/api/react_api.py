@@ -73,14 +73,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def _get_elasticsearch_server_version(self) -> Optional[str]:
         if not self._cached_elasticsearch_server_version:
             try:
-                elasticsearch_url = get_base_url(app.core.host)
-                timeout_seconds = 7.0
-                elasticsearch_response = requests.get(elasticsearch_url, timeout=timeout_seconds)
-                elasticsearch_response_json = elasticsearch_response.json()
-                elasticsearch_server_version = elasticsearch_response_json["version"]["number"]
+                connection = app.core.init_connection(self._envs.get_default_env())
+                es_info = connection.es_info()
+                elasticsearch_server_version = es_info["version"]["number"]
                 self._cached_elasticsearch_server_version = elasticsearch_server_version
             except Exception as e:
-                return None
+                pass
         return self._cached_elasticsearch_server_version
 
     def react_serve_static_file(self, env: str, paths: list) -> Response:

@@ -79,3 +79,8 @@ class FSConnection(object):
         if self.connections['es']:
             return self.connections['es'].test_connection()
         return False
+
+    def es_info(self):
+        """ Returns basic info about the Elasticsearch server. """
+        if self.connections['es']:
+            return self.connections['es'].info()

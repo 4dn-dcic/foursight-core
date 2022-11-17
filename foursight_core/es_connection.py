@@ -346,3 +346,9 @@ class ESConnection(AbstractConnection):
         Hits health route on es to verify that it is up
         """
         return self.es.ping()
+
+    def info(self):
+        """
+        Returns basic info about the Elasticsearch server. 
+        """
+        return self.es.info()
