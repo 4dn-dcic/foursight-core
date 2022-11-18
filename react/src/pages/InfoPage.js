@@ -236,7 +236,7 @@ const InfoPage = () => {
             </>:<>
                 <b onClick={() => initiateAppReload()}data-text={"Click here to reload the Foursight app."} className={"tool-tip"} style={{float:"right",cursor:"pointer"}}>{Char.Refresh}</b>
             </>}
-            <div className="tool-tip" data-text="Click to clear any caches." style={{float:"right",marginTop:"-1px",marginRight:"4pt",cursor:"pointer"}}>&nbsp;&nbsp;<img alt="clearcache" src={Image.ClearCache()} height="19" onClick={clearCache}/></div>
+            <div className="tool-tip" data-text="Click to clear any caches." style={{float:"right",marginTop:"-1px",marginRight:"4pt",cursor:"pointer"}}>&nbsp;&nbsp;<img alt="Clear Cache" src={Image.ClearCache()} height="19" onClick={clearCache}/></div>
             <InfoRow name={"App Deployed At"} value={Server.IsLocal() ? "running locally" + (Context.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + Time.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
             <InfoRow name={"App Launched At"} value={header.app?.launched + Time.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Page Loaded At"} value={info.get("page.loaded") + Time.FormatDuration(info.get("page.loaded"), new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />

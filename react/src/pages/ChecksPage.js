@@ -1052,9 +1052,17 @@ const ChecksPage = (props) => {
             { label: "Duration", key: "duration", align: "right" },
             { label: "State", key: "state" }
         ];
+        if (recentRuns.length == 0) {
+            return <>
+                <b>Recent Runs</b>
+                <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"3pt",marginBottom:"8pt"}}>
+                    No recent check runs found.
+                </div>
+            </>
+        }
         return recentRunsShow && <>
             <b>Recent Runs</b>
-            <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"2pt",marginBottom:"8pt"}}>
+            <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"3pt",marginBottom:"8pt"}}>
                 { recentRuns.loading ? <>
                     <StandardSpinner loading={recentRuns.loading} label={"Loading recent runs"} size={60} color={Styles.GetForegroundColor()} />
                 </>:<>
@@ -1081,6 +1089,7 @@ const ChecksPage = (props) => {
                                 </React.Fragment>}
                                 <tr key={index} style={{verticalAlign:"top"}}>
                                     <td>
+                                    fooo
                                         { run.status === "PASS" ?
                                             <span style={{color:Styles.GetForegroundColor()}}>{Char.Check}</span>
                                         :   <span style={{color:"darkred"}}>{Char.X}</span> }
@@ -1124,7 +1133,7 @@ const ChecksPage = (props) => {
 
     const ChecksStatus = () => {
         return <>
-            <table><tbody><tr><td style={{whiteSpace:"nowrap",paddingBottom:"3pt"}}>
+            <table><tbody className="tool-tip" data-text="Click to refresh current check run status."><tr><td style={{whiteSpace:"nowrap",paddingBottom:"3pt"}}>
             <b style={{cursor:"pointer",marginBottom:"10pt"}} onClick={() => refreshChecksStatus()}>Checks Status</b>
             &nbsp;&nbsp;
             </td><td>
@@ -1210,6 +1219,13 @@ const ChecksPage = (props) => {
     const LambdaView = ({lambda}) => {
         const tdContentStyle = { paddingRight: "4pt", verticalAlign: "top", fontSize: "small" };
         const tdLabelStyle = { ...tdContentStyle, width:"5%", whiteSpace: "nowrap", paddingRight: "4pt", verticalAlign: "top", textAlign:"right" };
+
+        function niceBytes(bytes, decimals = 2) {
+            const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+            let i = 0; for (i; bytes > 1024; i++) bytes /= 1024;
+            return parseFloat(bytes.toFixed(decimals)) + ' ' + units[i];
+        }
+
         return <>
             <div className="box" style={{marginTop:"3pt",padding:"6pt",marginBottom:"6pt"}}>
                 <b>{lambda.lambda_name}</b>
@@ -1243,7 +1259,7 @@ const ChecksPage = (props) => {
                     </tr>
                     <tr>
                         <td style={tdLabelStyle}>Code Size:</td>
-                        <td style={tdContentStyle}>{lambda.lambda_code_size}</td>
+                        <td style={tdContentStyle}><span className="tool-tip" data-text={lambda.lambda_code_size} >{niceBytes(lambda.lambda_code_size)}</span></td>
                     </tr>
                     { (lambda?.lambda_checks && lambda?.lambda_checks?.length > 0) && <>
                         <tr><td colSpan="2" style={{height:"4pt"}}></td></tr>
