@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { BarSpinner } from '../Spinners';
 import Char from '../utils/Char';
 import { useFetch } from '../utils/Fetch';
@@ -335,7 +336,7 @@ const AccountInfoRight = ({ info }) => {
 
 const AccountInfo = ({ account, header, refresh, setRefresh }) => {
 
-    const info = useFetch(Server.Url(`/accounts/${account.id}`, false), { nofetch: true });
+    const info = useFetch(Server.Url(`/accounts/${account.id}`), { nofetch: true });
 
     useEffect(() => {
         info.refresh();
@@ -406,7 +407,7 @@ const AccountInfo = ({ account, header, refresh, setRefresh }) => {
 
 const AccountsComponent = ({ header }) => {
 
-    const accounts = useFetch(Server.Url("/accounts", false));
+    const accounts = useFetch(Server.Url("/accounts"));
     const [ refresh, setRefresh ] = useState(false);
 
     function refreshAll() {

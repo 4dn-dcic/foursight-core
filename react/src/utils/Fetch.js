@@ -453,7 +453,10 @@ function _doFetch(args, current = undefined) {
         noteFetchEnd(id);
         const responseArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
         _defineResponseConvenienceFunctions(responseArg);
-        args.onError(responseArg);
+        const data = args.onError(responseArg);
+        if (data !== undefined) {
+            args.setData(data)
+        }
         args.onDone(responseArg);
         // const onArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
         // args.onError(onArg);

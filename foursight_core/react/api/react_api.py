@@ -720,12 +720,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 self._cached_accounts = accounts_json
         return self._cached_accounts
 
-    def reactapi_accounts(self, request: dict) -> Response:
+    def reactapi_accounts(self, request: dict, env: str) -> Response:
         ignored(request)
         accounts = self.get_accounts()
         return self.create_success_response(accounts)
 
-    def reactapi_account(self, request: dict, name: str) -> Response:
+    def reactapi_account(self, request: dict, env: str, name: str) -> Response:
 
         def is_account_name_match(account: dict, name: str) -> bool:
             account_name = account.get("name")
@@ -747,7 +747,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             if not foursight_url:
                 return None
             response["foursight"]["url"] = get_foursight_base_url(foursight_url)
-            response["foursight"]["header_url"] = response["foursight"]["url"] + "/reactapi/header"
+            response["foursight"]["header_url"] = response["foursight"]["url"] + f"/reactapi/{env}/header"
             foursight_header_response = requests.get(response["foursight"]["header_url"])
             if foursight_header_response.status_code != 200:
                 response["foursight"]["error"] = f"Cannot fetch Foursight header URL.",

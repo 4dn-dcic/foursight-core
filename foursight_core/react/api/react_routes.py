@@ -219,19 +219,19 @@ class ReactRoutes:
         """
         return app.core.reactapi_aws_s3_buckets_key_contents(app.current_request.to_dict(), env, bucket=bucket, key=key)
 
-    @route("/accounts", authorize=True)
-    def reactapi_route_accounts() -> Response:  # noqa
+    @route("/{env}/accounts", authorize=True)
+    def reactapi_route_accounts(env: str) -> Response:  # noqa
         """
         Returns info on known accounts/environments as defined in an accounts.json file if present.
         """
-        return app.core.reactapi_accounts(app.current_request.to_dict())
+        return app.core.reactapi_accounts(app.current_request.to_dict(), env)
 
-    @route("/accounts/{name}", authorize=True)
-    def reactapi_route_account(name: str) -> Response:  # noqa
+    @route("/{env}/accounts/{name}", authorize=True)
+    def reactapi_route_account(env: str, name: str) -> Response:  # noqa
         """
         Returns info on known accounts/environments as defined in an accounts.json file if present..
         """
-        return app.core.reactapi_account(app.current_request.to_dict(), name)
+        return app.core.reactapi_account(app.current_request.to_dict(), env, name)
 
     @route("/__reloadlambda__", authorize=True)
     def reactapi_route_reload_lambda() -> Response:  # noqa

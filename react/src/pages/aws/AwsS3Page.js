@@ -140,6 +140,9 @@ const AwsS3Page = (props) => {
                 contentData.content = data;
                 contentData.loading = false;
                 return current;
+            },
+            onError: (data, current) => {
+                return [ "dummy" ];
             }
         });
     }
@@ -288,9 +291,14 @@ const AwsS3Page = (props) => {
         return <>
             <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt",minWidth:"300pt"}}>
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideBucketKeyContentBox(bucketKeyContent.bucket, bucketKeyContent.key)})}><b>&nbsp;&nbsp;{Char.X}</b></span>
-                Bucket: <b>{bucketKeyContent.bucket}</b> <br />
-                Key: <b>{bucketKeyContent.key}</b>
-                <p />
+                { (typeof(bucketKeyContent) === "string" && bucketKeyContent === "dummy") ? <>
+                    <b>Not implemented</b>. <br />
+                    <small>Pending security review.</small>
+                </>:<>
+                    Bucket: <b>{bucketKeyContent.bucket}</b> <br />
+                    Key: <b>{bucketKeyContent.key}</b>
+                    <p />
+                </>}
                 { <Spinner condition={bucketKeyContent.loading} label={"Fetching bucket key content"} color={Styles.GetForegroundColor()} /> }
                 { bucketKeyContent.content && <pre style={{marginTop:"6pt",marginBottom:"0pt",background:"inherit",borderRadius:"8pt",filter:"brightness(1.1)",maxWidth:"800pt"}}>
                     <span style={{fontSize:"0",opacity:"0"}} id={bucketKeyContent.key}>{Json.Str(bucketKeyContent.content)}</span>
