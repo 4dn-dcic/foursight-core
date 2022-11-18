@@ -14,7 +14,7 @@ class Routes:
     # ----------------------------------------------------------------------------------------------
 
     @staticmethod
-    @app.route((ROUTE_PREFIX if not ROUTE_CHALICE_LOCAL else "/") + 'callback')
+    @app.route((ROUTE_PREFIX if not CHALICE_LOCAL else "/") + 'callback')
     def route_auth0_callback():
         """
         Special callback route, only to be used as a callback from auth0

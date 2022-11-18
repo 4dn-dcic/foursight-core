@@ -366,6 +366,11 @@
     background-color: #FCF8E3;
     color: #8A6D3B;
 }
+.box.error {
+    background-color: #FFEEEB;
+    color: darkred;
+    border-color: darkred;
+}
 
 .bg {
     background: var(--box-bg);

@@ -45,7 +45,7 @@ from .fs_connection import FSConnection
 from .s3_connection import S3Connection
 from .react.api.react_api import ReactApi
 from .routes import Routes
-from .route_prefixes import ROUTE_CHALICE_LOCAL
+from .route_prefixes import CHALICE_LOCAL
 from .sqs_utils import SQS
 from .stage import Stage
 
@@ -114,10 +114,10 @@ class AppUtilsCore(ReactApi, Routes):
         self.stage = Stage(self.prefix)
         self.sqs = SQS(self.prefix)
         self.check_setup_file = self._locate_check_setup_file()
-        PRINT(f"Using check_setup file: {self.check_setup_file}")
+        logger.info(f"Using check_setup file: {self.check_setup_file}")
         self.accounts_file = self._locate_accounts_file()
         if self.accounts_file:
-            PRINT(f"Using accounts file: {self.accounts_file}")
+            logger.info(f"Using accounts file: {self.accounts_file}")
         self.check_handler = CheckHandler(self.prefix, self.package_name, self.check_setup_file, self.get_default_env())
         self.CheckResult = self.check_handler.CheckResult
         self.ActionResult = self.check_handler.ActionResult
@@ -252,16 +252,14 @@ class AppUtilsCore(ReactApi, Routes):
         user_record = self.user_records.get(user_info['email_address'])
         return user_record
 
-    def set_user_record(self, email: Optional[str], record: Optional[dict], error: Optional[str], exception: Optional[str]):
+    def set_user_record(self, email: str, record: Optional[dict], error: Optional[str], exception: Optional[str]):
+        """
+        Adds the given user by email to the user_records class member list or updates if already there,
+        with the given record detail dictionary and/or error and/or exception strings.
+        The given email should be non-empty; returns with no action if so.
+        """
         if not email:
             return
-        # user_record = self.user_records.get(email)
-        # if not user_record:
-        #     self.user_records[email] = {"email": email, "record": record, "error": error, "exception": exception}
-        # else:
-        #     user_record["record"] = record
-        #     user_record["error"] = error
-        #     user_record["exception"] = exception
         self.user_records[email] = user_record = self.user_records.get(email) or {"email": email}
         user_record["record"] = record
         user_record["error"] = error
@@ -1942,7 +1940,7 @@ class AppUtilsCore(ReactApi, Routes):
 
         config_file = None
         chalicelib_dir = None
-        if ROUTE_CHALICE_LOCAL:
+        if CHALICE_LOCAL:
             if not chalicelib_dir:
                 chalicelib_dir = _get_chalicelib_dir()
             config_dir = os.path.normpath(os.path.join(chalicelib_dir, "../chalicelib_local"))
@@ -1970,13 +1968,13 @@ class AppUtilsCore(ReactApi, Routes):
     _singleton = None
 
     @staticmethod
-    def singleton(cls=None):
+    def singleton(specific_class=None):
         # A little wonky having a singleton with an argument but this is sort of the way it
         # was in 4dn-cloud-infra/app-{cgap,fourfront}.py; and we know the only place we create
         # this is from there and also from foursight-cgap/chalicelib/app.py and foursight/app.py
         # with the appropriate locally derived (from this AppUtilsCore) AppUtils.
         if not AppUtilsCore._singleton:
-            AppUtilsCore._singleton = cls() if cls else AppUtilsCore()
+            AppUtilsCore._singleton = specific_class() if specific_class else AppUtilsCore()
         return AppUtilsCore._singleton
 
     def cache_clear(self) -> None:

@@ -412,6 +412,14 @@ const ChecksPage = (props) => {
     }
 
     const SelectedGroupsPanel = ({props}) => {
+        if (groupList.error) {
+            return <>
+               <div className="box error thickborder" style={{marginTop:"18pt"}}>
+                    Error loading checks.
+                    <small><br />{groupList.error}</small>
+               </div>
+            </>
+        }
         return <div>
             { groupList.length > 0 /* selectedGroups.length > 0 */ ? (<>
                 <div style={{paddingBottom:"3pt"}}>
@@ -694,7 +702,7 @@ const ChecksPage = (props) => {
             <div style={{marginBottom:"6pt"}}/>
             { check.showingHistory && (<>
                 { check.history?.list?.length > 0 ? (<>
-                    <table style={{width:"100%"}} border="0">
+                    <table style={{width:"100%"}}>
                         <TableHead columns={columns} list={check.history.list} update={(e) => historyList.update()} style={{color:Styles.GetForegroundColor(),fontWeight:"bold"}} lines={true} />
                     <tbody>
                     {check.history.list.map((history, index) => <React.Fragment key={index}>
@@ -734,8 +742,8 @@ const ChecksPage = (props) => {
                         </React.Fragment>
                         { (history.__resultShowing) &&
                             <tr>
-                                <td colSpan="9">
-                                    <pre className="box lighten" style={{wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"600pt"}}>
+                                <td colSpan="6">
+                                    <pre className="box lighten" style={{wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"680pt"}}>
                                         { history.__resultLoading ? <>
                                             <StandardSpinner condition={history.__resultLoading} color={Styles.GetForegroundColor()} label="Loading result"/>
                                         </>:<>
@@ -1052,6 +1060,14 @@ const ChecksPage = (props) => {
             { label: "Duration", key: "duration", align: "right" },
             { label: "State", key: "state" }
         ];
+        if (recentRuns.error) {
+            return <>
+               <div className="box error thickborder" style={{marginTop:"18pt"}}>
+                    Error loading recent runs.
+                    <small><br />{recentRuns.error}</small>
+               </div>
+            </>
+        }
         if (recentRuns.length == 0) {
             return <>
                 <b>Recent Runs</b>
@@ -1320,7 +1336,7 @@ const ChecksPage = (props) => {
                         <ChecksRawView />
                         <SelectedGroupsPanel />
                     </td>
-                    <td style={{paddingLeft: (groupList?.length > 0 || isShowingChecksRaw()) ? "10pt" : "0",verticalAlign:"top"}}>
+                    <td style={{paddingLeft: (groupList?.length > 0 || groupList.error || isShowingChecksRaw()) ? "10pt" : "0",verticalAlign:"top"}}>
                         <LambdasView />
                         <RecentRunsView />
                         <ResultsHistoryPanel />

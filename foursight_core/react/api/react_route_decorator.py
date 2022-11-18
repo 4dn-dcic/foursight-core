@@ -8,7 +8,7 @@ import logging
 from typing import Optional, Tuple
 from dcicutils.misc_utils import get_error_message, PRINT
 from ...app import app
-from ...route_prefixes import ROUTE_CHALICE_LOCAL, ROUTE_PREFIX, ROUTE_EMPTY_PREFIX, ROUTE_PREFIX_EXPLICIT
+from ...route_prefixes import CHALICE_LOCAL, ROUTE_PREFIX, ROUTE_EMPTY_PREFIX, ROUTE_PREFIX_EXPLICIT
 
 REACT_API_PATH_COMPONENT = "reactapi"
 REACT_UI_PATH_COMPONENT = "react"
@@ -19,7 +19,7 @@ ROUTE_PREFIX = ROUTE_PREFIX + ("/" if not ROUTE_PREFIX.endswith("/") else "")
 # directly, on the same port (e.g. 8000), but useful if/when running React on a
 # separate port (e.g. 3000) via npm start in foursight-core/react to facilitate
 # easy/quick development/changes directly to React UI code.
-if ROUTE_CHALICE_LOCAL:
+if CHALICE_LOCAL:
     # Very specific/tricky requirements for running Foursight React UI/API in CORS
     # mode (i.e. UI on localhost:3000 and API on localhost:8000). The allow_origin
     # must be exact (i.e. no "*" allowed), and the allow_credentials must be True.
