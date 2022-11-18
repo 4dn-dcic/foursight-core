@@ -67,10 +67,10 @@ def route(*args, **kwargs):
             def root_route_registration(wrapped_route_function):
                 if not callable(wrapped_route_function):
                     wrapped_route_function = route_root
-                PRINT(f"Registering endpoint: GET {ROUTE_EMPTY_PREFIX} -> {wrapped_route_function.__name__}")
+                PRINT(f"Registering Chalice endpoint: GET {ROUTE_EMPTY_PREFIX} -> {wrapped_route_function.__name__}")
                 if ROUTE_EMPTY_PREFIX != "/":
                     # This is true only for the chalice local case.
-                    PRINT(f"Registering endpoint: GET / -> {wrapped_route_function.__name__}")
+                    PRINT(f"Registering Chalice endpoint: GET / -> {wrapped_route_function.__name__}")
                     app.route("/", methods=["GET"])(wrapped_route_function)
                 return app.route(ROUTE_EMPTY_PREFIX, methods=["GET"])(wrapped_route_function)
             return root_route_registration

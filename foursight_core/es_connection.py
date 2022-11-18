@@ -162,12 +162,16 @@ class ESConnection(AbstractConnection):
             raise ElasticsearchException(message=err_msg)
         # In next line, PyCharm's linter wrongly worries that 'res' might not be reliably set above. -kmp 6-Jun-2022
         else:
-            total = res['hits']['total']  # noQA (see above)
-            # As of ES7 we have result.hits.total.value rather than result.hits.total.
-            # total = res['hits']['total']['value']  # noQA (see above)
-            if not isinstance(total, int):
-                total = total['value']
+            total = self.get_hits_total(res)
             return [obj[key] for obj in res['hits']['hits']] if len(res['hits']['hits']) > 0 else [], total  # noQA
+
+    @staticmethod
+    def get_hits_total(result: dict) -> int:
+        total = result["hits"]["total"]
+        # As of ES7 we have result.hits.total.value rather than result.hits.total.
+        if not isinstance(total, int):
+            total = total["value"]
+        return total
 
     def get_result_history(self, prefix, start, limit, sort="timestamp.desc") -> [list, int]:
         """

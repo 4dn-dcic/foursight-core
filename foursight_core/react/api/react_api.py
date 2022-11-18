@@ -1,7 +1,6 @@
 from chalice import Response, __version__ as chalice_version
 import copy
 import datetime
-from functools import lru_cache
 import io
 import json
 import os
@@ -28,6 +27,7 @@ from .gac import Gac
 from .misc_utils import (
     get_base_url,
     is_running_locally,
+    memoize,
     sort_dictionary_by_case_insensitive_keys
 )
 from .react_routes import ReactRoutes
@@ -183,12 +183,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         }
         return response
 
-    @lru_cache(50)
+    @memoize
     def _get_env_and_bucket_info(self, env: str, stage_name: str) -> dict:
         return sort_dictionary_by_case_insensitive_keys(
             obfuscate_dict(app.core.environment.get_environment_and_bucket_info(env, stage_name)))
 
-    @lru_cache(50)
+    @memoize
     def _get_check_result_bucket_name(self, env: str) -> Optional[str]:
         envs = app.core.init_environments(env=env)
         if not envs:
@@ -742,12 +742,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
         def get_portal_base_url(portal_url: str) -> Optional[str]:
             return get_base_url(portal_url) if portal_url else None
 
+        def is_this_server(url: str) -> bool:
+            try:
+                url_origin = urllib.parse.urlparse(url).netloc
+                this_origin = request.get('headers', {}).get('host')
+                return url_origin == this_origin
+            except Exception:
+                return False
+
         def get_foursight_info(foursight_url: str, response: dict) -> Optional[str]:
             response["foursight"] = {}
             if not foursight_url:
                 return None
             response["foursight"]["url"] = get_foursight_base_url(foursight_url)
-            response["foursight"]["header_url"] = response["foursight"]["url"] + f"/reactapi/{env}/header"
+            if is_this_server(response["foursight"]["url"]):
+                response["foursight"]["header_url"] = response["foursight"]["url"] + f"/reactapi/{env}/header"
+            else:
+                response["foursight"]["header_url"] = response["foursight"]["url"] + f"/reactapi/header"
             foursight_header_response = requests.get(response["foursight"]["header_url"])
             if foursight_header_response.status_code != 200:
                 response["foursight"]["error"] = f"Cannot fetch Foursight header URL.",

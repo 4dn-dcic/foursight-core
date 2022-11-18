@@ -642,7 +642,7 @@ const ChecksPage = (props) => {
                 <ResultDetailsBox check={check} />
             </>:<>
                 { !check.results && <div style={{height:"1px",marginTop:"8px",marginBottom:"2px",background:"gray"}}></div> }
-                { !check.results && <StandardSpinner condition={!check.results} color={Styles.GetForegroundColor()} label={"Loading results"} /> }
+                { !check.results && <StandardSpinner condition={!check.results} color={Styles.GetForegroundColor()} label={"Loading latest result"} /> }
             </>}
         </div>
     }
@@ -1089,7 +1089,6 @@ const ChecksPage = (props) => {
                                 </React.Fragment>}
                                 <tr key={index} style={{verticalAlign:"top"}}>
                                     <td>
-                                    fooo
                                         { run.status === "PASS" ?
                                             <span style={{color:Styles.GetForegroundColor()}}>{Char.Check}</span>
                                         :   <span style={{color:"darkred"}}>{Char.X}</span> }
@@ -1220,12 +1219,6 @@ const ChecksPage = (props) => {
         const tdContentStyle = { paddingRight: "4pt", verticalAlign: "top", fontSize: "small" };
         const tdLabelStyle = { ...tdContentStyle, width:"5%", whiteSpace: "nowrap", paddingRight: "4pt", verticalAlign: "top", textAlign:"right" };
 
-        function niceBytes(bytes, decimals = 2) {
-            const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-            let i = 0; for (i; bytes > 1024; i++) bytes /= 1024;
-            return parseFloat(bytes.toFixed(decimals)) + ' ' + units[i];
-        }
-
         return <>
             <div className="box" style={{marginTop:"3pt",padding:"6pt",marginBottom:"6pt"}}>
                 <b>{lambda.lambda_name}</b>
@@ -1250,6 +1243,16 @@ const ChecksPage = (props) => {
                             <small>{lambda.lambda_function_name}</small>
                         </td>
                     </tr>
+                    <tr>
+                        <td style={tdLabelStyle}><small>Role:</small></td>
+                        <td className="tool-tip" data-text={lambda.lambda_role} style={tdContentStyle}>
+                            <small>{lambda.lambda_role?.replace(/.*\//,'')}</small>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style={tdLabelStyle}>Updated:</td>
+                        <td style={tdContentStyle}><span className="tool-tip" data-text={Time.Ago(lambda.lambda_modified)} >{Time.FormatDateTime(lambda.lambda_modified)}</span></td>
+                    </tr>
                     <tr style={{fontSize:"small"}}>
                         <td style={tdLabelStyle}>Code:</td>
                         <td style={tdContentStyle} className="tool-tip" data-text="S3 Code Location">
@@ -1259,7 +1262,7 @@ const ChecksPage = (props) => {
                     </tr>
                     <tr>
                         <td style={tdLabelStyle}>Code Size:</td>
-                        <td style={tdContentStyle}><span className="tool-tip" data-text={lambda.lambda_code_size} >{niceBytes(lambda.lambda_code_size)}</span></td>
+                        <td style={tdContentStyle}><span className="tool-tip" data-text={lambda.lambda_code_size} >{Str.FormatBytes(lambda.lambda_code_size)}</span></td>
                     </tr>
                     { (lambda?.lambda_checks && lambda?.lambda_checks?.length > 0) && <>
                         <tr><td colSpan="2" style={{height:"4pt"}}></td></tr>

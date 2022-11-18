@@ -1,8 +1,10 @@
 from chalice.app import Request
+from functools import lru_cache
 import json
 from typing import Optional
 from urllib.parse import urlparse
 
+memoize = lru_cache(100)
 
 def sort_dictionary_by_case_insensitive_keys(dictionary: dict) -> dict:
     """

@@ -1,5 +1,4 @@
 import copy
-from functools import lru_cache
 import logging
 import os
 from typing import Optional, Tuple
@@ -7,6 +6,7 @@ from dcicutils import ff_utils
 from dcicutils.env_utils import foursight_env_name
 from dcicutils.misc_utils import find_association
 from .gac import Gac
+from .misc_utils import memoize
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class Envs:
     def get_known_envs_count(self) -> int:
         return len(self._known_envs)
 
-    @lru_cache(100)
+    @memoize
     def get_known_envs_with_gac_names(self) -> list:
         known_envs = copy.deepcopy(self._known_envs)
         for known_env in known_envs:
@@ -44,11 +44,11 @@ class Envs:
     def get_default_env() -> str:
         return os.environ.get("ENV_NAME", Envs._DEFAULT_ENV_PLACHOLDER)
 
-    @lru_cache(100)
+    @memoize
     def is_known_env(self, env: str) -> bool:
         return self.find_known_env(env) is not None
 
-    @lru_cache(100)
+    @memoize
     def find_known_env(self, env: str) -> Optional[dict]:
         known_envs = self.get_known_envs_with_gac_names()
         return find_association(known_envs, foursight_name=foursight_env_name(env))
@@ -61,7 +61,7 @@ class Envs:
                 return True
         return False
 
-    @lru_cache(100)
+    @memoize
     def is_same_env(self, env_a: str, env_b: str) -> bool:
         return foursight_env_name(env_a) == foursight_env_name(env_b)
 
@@ -81,19 +81,25 @@ class Envs:
                 # in the database are lowercased; it causes issues with OAuth if we don't do this.
                 user = ff_utils.get_metadata('users/' + email.lower(),
                                              ff_env=known_env["full_name"], add_on="frame=object&datastore=database")
-                if user:
+                if self._is_user_allowed_access(user):
                     # Since this is in a loop, for each env, this setup here will end up getting first/last name
                     # from the last env in the loop; doesn't really matter, just pick one set; this is just for
                     # informational/display purposes in the UI.
                     first_name = user.get("first_name")
                     last_name = user.get("last_name")
-                    # New; 2022-10-25; almost forgot; from app_utils.check_authorization; check groups.
-                    groups = user.get("groups")
-                    if groups and "admin" in groups or "foursight" in groups:
-                        allowed_envs.append(known_env["full_name"])
+                    allowed_envs.append(known_env["full_name"])
             except Exception as e:
                 logger.warning(f"Exception getting allowed envs for {email}: {e}")
         return allowed_envs, first_name, last_name
+
+    @staticmethod
+    def _is_user_allowed_access(user: Optional[dict]) -> bool:
+        return user and Envs._is_user_in_one_or_more_groups(user, [ "admin", "foursight" ])
+
+    @staticmethod
+    def _is_user_in_one_or_more_groups(user: Optional[dict], allowed_groups: list) -> bool:
+        user_groups = user.get("groups") if user else None
+        return user_groups and any(allowed_group in user_groups for allowed_group in allowed_groups or [])
 
     def cache_clear(self) -> None:
         self.get_known_envs_with_gac_names.cache_clear()

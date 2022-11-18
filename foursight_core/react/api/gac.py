@@ -1,13 +1,12 @@
 import re
 import boto3
-from functools import lru_cache
 import logging
 from dcicutils.diff_utils import DiffManager
 from dcicutils.env_utils import short_env_name
 from dcicutils.misc_utils import override_environ, get_error_message
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import get_identity_name, get_identity_secrets
-from .misc_utils import sort_dictionary_by_case_insensitive_keys
+from .misc_utils import memoize, sort_dictionary_by_case_insensitive_keys
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -32,7 +31,7 @@ class Gac:
         return [secret_name for secret_name in secrets_names if re.match(pattern, secret_name, re.IGNORECASE)]
 
     @staticmethod
-    @lru_cache(100)
+    @memoize
     def get_gac_name(env_name: str) -> str:
         gac_names = Gac.get_gac_names()
         env_name_short = short_env_name(env_name)
@@ -51,7 +50,7 @@ class Gac:
             return " OR ".join(matching_gac_names)
 
     @staticmethod
-    @lru_cache(100)
+    @memoize
     def get_gac_info():
         return {
             "name": get_identity_name(),

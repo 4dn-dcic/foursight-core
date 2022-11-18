@@ -22,7 +22,7 @@ from .encoding_utils import base64_decode_to_bytes, base64_encode_to_bytes, byte
 # on each protected API call. I.e. it takes nearly 100ms to decrypt 500 characters!
 #
 # TODO
-# From Will: Note that triple_des is not all that secure really.
+# From Will: Note that triple_des is not really all that secure.
 # Try maybe this: https://github.com/wbond/oscrypto (AES 256)
 class Encryption:
 
