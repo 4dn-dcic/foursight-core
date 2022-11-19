@@ -466,10 +466,12 @@ form {
 }
 
 
+/* PaginationComponent stuff - much trial and error - still not right color clicking directly on page link */
 /* This was the only way found to get rid of margin around react-paginate control. */
 .pagination-control * {
     margin: 0;
 }
+/* This was the only way found to get rid of margin around react-paginate control. */
 .page-item .page-link {
   color: var(--box-fg);
   background: var(--box-bg-lighten);
@@ -482,7 +484,16 @@ form {
   color: var(--box-fg);
   background: var(--box-bg-lighten);
 }
-.page-item.active .page-link {
+.page-item .active .page-link {
   color: var(--box-bg);
   background: var(--box-fg);
+}
+.pagination .active .page-link {
+  color: var(--box-bg);
+  background: var(--box-fg);
+}
+.pagination.active:hover .page-link {
+  color: var(--box-bg);
+  background: var(--box-fg);
+  border-color: var(--box-fg);
 }

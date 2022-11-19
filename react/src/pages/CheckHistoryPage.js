@@ -197,8 +197,6 @@ const CheckHistoryPage = (props) => {
                             </tr>
                             { (history.__resultShowing) &&
                                 <tr>
-                                    <td></td>
-                                    <td></td>
                                     <td colSpan="9">
                                         <pre className="box lighten" style={{borderWidth:"1",wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"600pt"}}>
                                             { history.__resultLoading ? <>
