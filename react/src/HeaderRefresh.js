@@ -4,7 +4,7 @@ import HeaderData from './HeaderData';
 import Server from './utils/Server';
 
 export const useHeaderRefresh = (env) => {
-    const [ header, setHeader ] = useContext(HeaderData);
+    const [ _, setHeader ] = useContext(HeaderData);
     const fetchHeader = useFetchFunction();
     function refresh(env) {
         fetchHeader({
