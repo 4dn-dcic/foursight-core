@@ -334,14 +334,9 @@ const AccountInfoRight = ({ info }) => {
     </tbody></table>
 }
 
-const AccountInfo = ({ account, header, fromS3, refresh, setRefresh }) => {
+const AccountInfo = ({ account, header, fromS3 }) => {
 
-    const info = useFetch(Server.Url(`${fromS3 ? "/accounts_from_s3" : "/accounts"}/${account.id}`), { nofetch: true });
-
-    useEffect(() => {
-        info.refresh();
-        setRefresh(false);
-    }, [ refresh ]);
+    const info = useFetch(Server.Url(`${fromS3 ? "/accounts_from_s3" : "/accounts"}/${account.id}`), { nofetch: false });
 
     function refreshData() {
         info.refresh();
@@ -407,7 +402,6 @@ const AccountInfo = ({ account, header, fromS3, refresh, setRefresh }) => {
 
 const AccountsComponent = ({ header }) => {
 
-    const [ refresh, setRefresh ] = useState(false);
     const [ fromS3, setFromS3 ] = useState(false);
     const accounts = useFetch(Server.Url(fromS3 ? "/accounts_from_s3" : "/accounts"));
 
@@ -416,8 +410,8 @@ const AccountsComponent = ({ header }) => {
     }, [ fromS3 ]);
 
     function refreshAll() {
+        accounts.update(null);
         accounts.refresh(Server.Url(fromS3 ? "/accounts_from_s3" : "/accounts"));
-        setRefresh(true);
     }
 
     function useS3() {
@@ -459,7 +453,7 @@ const AccountsComponent = ({ header }) => {
         { accounts.length > 0 ? <>
             { accounts?.map((account, index) => <React.Fragment key={index}>
                 { index > 0 && <div style={{height:"8pt"}} /> }
-                <AccountInfo account={account} header={header} fromS3={fromS3} refresh={refresh} setRefresh={setRefresh}/>
+                <AccountInfo account={account} header={header} fromS3={fromS3} />
             </React.Fragment>)}
         </>:<>
             <div className="box">

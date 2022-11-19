@@ -514,7 +514,7 @@ function _doFetch(args, current = undefined) {
 // setter function will only update if the reference to the new data is different
 // from the existing/current data, which is often not what we want.
 //
-function _update(setData, newData, currentData) {
+function _update(setData, newData, currentData = undefined) {
     if (!Object.is(newData, currentData)) {
         //
         // If data argument is different, by reference, than the current,
