@@ -708,7 +708,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return f"s3://{bucket}/{key}"
 
     def _get_accounts_from_s3(self) -> Optional[dict]:
-        if not self._cached_accounts_from_s3:
+        # Let's not cache this for now, maybe change mind later, thus the OR True clause below.
+        if True or not self._cached_accounts_from_s3:
             s3_uri = self._get_accounts_file_from_s3()
             if not s3_uri:
                 return None
