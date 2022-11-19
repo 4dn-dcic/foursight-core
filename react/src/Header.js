@@ -2,6 +2,7 @@ import React from 'react';
 import { useContext } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import HeaderData from './HeaderData';
+import { useHeaderRefresh } from './HeaderRefresh';
 import { BarSpinner, StandardSpinner } from './Spinners';
 import Auth from './utils/Auth';
 import Char from './utils/Char';
@@ -23,6 +24,7 @@ import { useFetching } from './utils/Fetch';
 const Header = (props) => {
 
     const [ header ] = useContext(HeaderData);
+    const refreshHeader = useHeaderRefresh();
     //
     // Very odd but this below (navigate) declaration of useNavigate is REQUIRED, even if not
     // used here, in order for the header navigation links (e.g. HOME, INFO) to work properly.
@@ -168,7 +170,7 @@ const Header = (props) => {
                                             // This works "okay" 2022-09-18 but does not refresh/refetch (say) /users page data on select new env
                                             // <Link key={env.public_name} to={Client.Path(null, env.public_name)}>{env.public_name}</Link>
                                             // So doing this funky double redirect to get it to ... TODO: figure out right/React of of doing this
-                                            <Link key={env.full_name} to={{pathname: "/redirect"}} state={{url: !Env.IsKnown(Env.Current(), header) ? Client.Path("/env", Env.PreferredName(Env.Default(header), header)) : Client.Path(null, Env.PreferredName(env, header))}}>{Env.PreferredName(env, header)}</Link>
+                                            <Link onClick={() => refreshHeader(Env.PreferredName(env))} key={env.full_name} to={{pathname: "/redirect"}} state={{url: !Env.IsKnown(Env.Current(), header) ? Client.Path("/env", Env.PreferredName(Env.Default(header), header)) : Client.Path(null, Env.PreferredName(env, header))}}>xxx{Env.PreferredName(env, header)}</Link>
                                         :
                                             <Link key={env.public_name} to={Client.Path("/env", Env.PreferredName(env, header))}>{Env.PreferredName(env, header)}{!Env.IsAllowed(env, header) && Auth.IsLoggedIn(header) && <>&nbsp;&nbsp;{Char.Warning}</>}</Link>
                                 )}
