@@ -59,6 +59,10 @@ function GetGoogleLoginLogoImage() {
     return "https://cdn-icons-png.flaticon.com/512/2991/2991148.png";
 }
 
+function GetElasticsearchLogoImage() {
+    return "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Elasticsearch_logo.svg/1280px-Elasticsearch_logo.svg.png"
+}
+
 function GetClearCacheImage() {
     return "https://static.thenounproject.com/png/2495429-200.png";
 }
@@ -74,6 +78,7 @@ const exports = {
     Lock:                      GetLockImage,
     Harvard:                   GetHarvardImage,
     History:                   GetHistoryImage,
+    ElasticsearchLogo:         GetElasticsearchLogoImage,
     FoursightCgapFavicon:      GetFoursightCgapFaviconImage,
     FoursightFourfrontFavicon: GetFoursightFourfrontFaviconImage,
     FoursightCgapLogo:         GetFoursightCgapLogoImage,

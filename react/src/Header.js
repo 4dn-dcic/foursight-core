@@ -170,7 +170,7 @@ const Header = (props) => {
                                             // This works "okay" 2022-09-18 but does not refresh/refetch (say) /users page data on select new env
                                             // <Link key={env.public_name} to={Client.Path(null, env.public_name)}>{env.public_name}</Link>
                                             // So doing this funky double redirect to get it to ... TODO: figure out right/React of of doing this
-                                            <Link onClick={() => refreshHeader(Env.PreferredName(env))} key={env.full_name} to={{pathname: "/redirect"}} state={{url: !Env.IsKnown(Env.Current(), header) ? Client.Path("/env", Env.PreferredName(Env.Default(header), header)) : Client.Path(null, Env.PreferredName(env, header))}}>xxx{Env.PreferredName(env, header)}</Link>
+                                            <Link onClick={() => refreshHeader(Env.PreferredName(env))} key={env.full_name} to={{pathname: "/redirect"}} state={{url: !Env.IsKnown(Env.Current(), header) ? Client.Path("/env", Env.PreferredName(Env.Default(header), header)) : Client.Path(null, Env.PreferredName(env, header))}}>{Env.PreferredName(env, header)}</Link>
                                         :
                                             <Link key={env.public_name} to={Client.Path("/env", Env.PreferredName(env, header))}>{Env.PreferredName(env, header)}{!Env.IsAllowed(env, header) && Auth.IsLoggedIn(header) && <>&nbsp;&nbsp;{Char.Warning}</>}</Link>
                                 )}

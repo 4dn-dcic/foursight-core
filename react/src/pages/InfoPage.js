@@ -100,7 +100,7 @@ const InfoPage = () => {
         const elasticsearchElement = elasticsearch ?
             <span>
             <a target="_blank" rel="noreferrer" href={`https://www.elastic.co/guide/en/elasticsearch/reference/${removeMinorVersion(value)}/release-notes-${value}.html`} style={{marginLeft:"-2px"}}>
-                <img alt="github" src={"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Elasticsearch_logo.svg/1280px-Elasticsearch_logo.svg.png"} height="18" />
+                <img alt="github" src={Image.ElasticsearchLogo()} height="18" />
             </a>&nbsp;</span> : <span/>
         const pythonElement = python ?
             <span>
