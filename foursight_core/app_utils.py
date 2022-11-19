@@ -1887,13 +1887,13 @@ class AppUtilsCore(ReactApi, Routes):
         # eliminate duplicates
         return set(complete)
 
-    def _locate_check_setup_file(self) -> str:
+    def _locate_check_setup_file(self) -> Optional[str]:
         return self._locate_config_file(AppUtilsCore.CHECK_SETUP_FILE_NAME)
 
-    def _locate_accounts_file(self) -> str:
+    def _locate_accounts_file(self) -> Optional[str]:
         return self._locate_config_file(AppUtilsCore.ACCOUNTS_FILE_NAME)
 
-    def _locate_config_file(self, file_name: str) -> str:
+    def _locate_config_file(self, file_name: str) -> Optional[str]:
         """
         Returns the full path to the given named file (e.g. check_setup.json or accounts.json),
         looking for the first NON-EMPTY file within these directories, in order:
@@ -1949,9 +1949,10 @@ class AppUtilsCore(ReactApi, Routes):
                 config_file = None
         if not config_file:
             env_based_dir = os.environ.get("FOURSIGHT_CHECK_SETUP_DIR", "")
-            config_file = os.path.join(env_based_dir, file_name)
-            if not is_non_empty_file(config_file):
-                config_file = None
+            if env_based_dir:
+                config_file = os.path.join(env_based_dir, file_name)
+                if not is_non_empty_file(config_file):
+                    config_file = None
         if not config_file:
             if not chalicelib_dir:
                 chalicelib_dir = _get_chalicelib_dir()

@@ -59,13 +59,23 @@ class AwsS3:
             size = response['ContentLength']
             return size
         except Exception as e:
-            logger.error(f"Exception getting S3 key content size: {e}")
+            return -1
+
+    @staticmethod
+    def bucket_key_exists(bucket_name: str, bucket_key_name) -> bool:
+        """
+        Returns true iff the given S3 key in the given S3 bucket exists AND is not empty.
+        """
+        try:
+            return AwsS3._get_bucket_key_content_size(bucket_name, bucket_key_name) > 0
+        except Exception as e:
+            return False
 
     @staticmethod
     def get_bucket_key_contents(bucket_name: str, bucket_key_name) -> Optional[list]:
         try:
             size = AwsS3._get_bucket_key_content_size(bucket_name, bucket_key_name)
-            if not AwsS3._may_look_at_key_content(bucket_name, bucket_key_name, size):
+            if size <= 0 or not AwsS3._may_look_at_key_content(bucket_name, bucket_key_name, size):
                 return None
             s3 = boto3.resource("s3")
             s3_object = s3.Object(bucket_name, bucket_key_name)

@@ -22,6 +22,7 @@ from .aws_s3 import AwsS3
 from .checks import Checks
 from .cookie_utils import create_delete_cookie_string
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
+from .encryption import Encryption
 from .encoding_utils import base64_decode_to_json
 from .gac import Gac
 from .misc_utils import (
@@ -45,6 +46,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._cached_header = {}
         self._cached_sqs_queue_url = None
         self._cached_accounts = None
+        self._cached_accounts_from_s3 = None
         self._cached_elasticsearch_server_version = None
 
     def get_sqs_queue_url(self):
@@ -167,7 +169,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 },
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified(),
-                "accounts": self.get_accounts_file()
+                "accounts_file": self._get_accounts_file(),
+                "accounts_file_from_s3": self._get_accounts_file_from_s3()
             },
             "versions": self._get_versions_object(),
             "portal": {
@@ -691,41 +694,70 @@ class ReactApi(ReactApiBase, ReactRoutes):
     # ----------------------------------------------------------------------------------------------
 
     @staticmethod
-    def get_accounts_file() -> str:
+    def _get_accounts_file() -> Optional[str]:
         return app.core.accounts_file
 
-    def get_accounts(self) -> Optional[dict]:
-        accounts_file = self.get_accounts_file()
+    @staticmethod
+    def _get_accounts_file_from_s3() -> Optional[str]:
+        bucket = os.environ.get("GLOBAL_ENV_BUCKET", os.environ.get("GLOBAL_BUCKET_ENV", None))
+        if not bucket:
+            return None
+        key = app.core.ACCOUNTS_FILE_NAME
+        if not AwsS3.bucket_key_exists(bucket, key):
+            return None
+        return f"s3://{bucket}/{key}"
+
+    def _get_accounts_from_s3(self) -> Optional[dict]:
+        if not self._cached_accounts_from_s3:
+            s3_uri = self._get_accounts_file_from_s3()
+            if not s3_uri:
+                return None
+            s3_uri = s3_uri.replace("s3://", "")
+            s3_uri_components = s3_uri.split("/")
+            if len(s3_uri_components) != 2:
+                return None
+            bucket = s3_uri_components[0]
+            key = s3_uri_components[1]
+            accounts_json_content = AwsS3.get_bucket_key_contents(bucket, key)
+            self._cached_accounts_from_s3 = self._read_accounts_json(accounts_json_content)
+        return self._cached_accounts_from_s3
+
+    def _read_accounts_json(self, accounts_json_content) -> dict:
+        if not accounts_json_content.startswith("["):
+            encryption = Encryption()
+            accounts_json_content = encryption.decrypt(accounts_json_content)
+        accounts_json = json.loads(accounts_json_content)
+        for account in accounts_json:
+            account_name = account.get("name")
+            if account_name:
+                account_stage = account.get("stage")
+                if account_stage:
+                    account["id"] = account_name + ":" + account_stage
+                else:
+                    account["id"] = account_name
+        return accounts_json
+
+    def _get_accounts(self) -> Optional[dict]:
+        accounts_file = self._get_accounts_file()
         if not accounts_file:
             return None
         if not self._cached_accounts:
-            from foursight_core.react.api.encryption import Encryption
-            encryption = Encryption()
-            with io.open(self.get_accounts_file(), "r") as accounts_json_f:
-                accounts_json_content_encrypted = accounts_json_f.read()
-                if accounts_json_content_encrypted.startswith("["):
-                    # Check for not encrypted (lamely) for local testing.
-                    accounts_json_content = accounts_json_content_encrypted
-                else:
-                    accounts_json_content = encryption.decrypt(accounts_json_content_encrypted)
-                accounts_json = json.loads(accounts_json_content)
-                for account in accounts_json:
-                    account_name = account.get("name")
-                    if account_name:
-                        account_stage = account.get("stage")
-                        if account_stage:
-                            account["id"] = account_name + ":" + account_stage
-                        else:
-                            account["id"] = account_name
-                self._cached_accounts = accounts_json
+            try:
+                encryption = Encryption()
+                with io.open(self._get_accounts_file(), "r") as accounts_json_f:
+                    accounts_json_content_encrypted = accounts_json_f.read()
+                    accounts_json = self._read_accounts_json(accounts_json_content_encrypted)
+                    self._cached_accounts = accounts_json
+            except Exception:
+                return None
         return self._cached_accounts
 
-    def reactapi_accounts(self, request: dict, env: str) -> Response:
+    def reactapi_accounts(self, request: dict, env: str, from_s3: bool = False) -> Response:
         ignored(request)
-        accounts = self.get_accounts()
+        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3()
         return self.create_success_response(accounts)
 
-    def reactapi_account(self, request: dict, env: str, name: str) -> Response:
+    def reactapi_account(self, request: dict, env: str, name: str, from_s3: bool = False) -> Response:
 
         def is_account_name_match(account: dict, name: str) -> bool:
             account_name = account.get("name")
@@ -826,8 +858,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             return foursight_url
 
         ignored(request)
-        response = {"accounts_file": self.get_accounts_file()}
-        accounts = self.get_accounts()
+        response = {"accounts_file": self._get_accounts_file(), "accounts_file_from_s3": self._get_accounts_file_from_s3()}
+        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3()
         if not accounts:
             return self.create_success_response({"status": "No accounts file support."})
         account = [account for account in accounts if is_account_name_match(account, name)] if accounts else None
@@ -899,6 +931,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._cached_sqs_queue_url = None
         self._cached_elasticsearch_server_version = None
         self._cached_accounts = None
+        self._cached_accounts_from_s3 = None
         self._get_env_and_bucket_info.cache_clear()
         self._get_check_result_bucket_name.cache_clear()
         return self.create_success_response({"status": "Caches cleared."})

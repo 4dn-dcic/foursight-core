@@ -120,7 +120,7 @@ const LoginPage = (props) => {
             <div className="container" style={{width:"800pt"}}>
                 {Auth.LoggedInUserName(header) && <b>Hello, {Auth.LoggedInUserName(header)}</b>} ...
                 <div style={{float:"right",marginRight:"8pt",fontSize:"small",cursor:"pointer"}}>
-                    { header.app?.accounts && <>
+                    { (header.app?.accounts_file || header.app?.accounts_file_from_s3) && <>
                         <Link to="/accounts">Accounts</Link>&nbsp;|&nbsp;
                     </>}
                     <Link to="/env">Environments</Link>&nbsp;|&nbsp;

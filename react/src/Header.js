@@ -173,7 +173,7 @@ const Header = (props) => {
                                             <Link key={env.public_name} to={Client.Path("/env", Env.PreferredName(env, header))}>{Env.PreferredName(env, header)}{!Env.IsAllowed(env, header) && Auth.IsLoggedIn(header) && <>&nbsp;&nbsp;{Char.Warning}</>}</Link>
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
-                                { Auth.IsLoggedIn(header) && header.app?.accounts && <Link id="__accounts__" to={Client.Path("/accounts")}onClick={()=>{document.getElementById("__accounts__").style.fontWeight="normal";}}>Accounts</Link> }
+                                { Auth.IsLoggedIn(header) && (header.app?.accounts_file || header.app?.accounts_file_from_s3) && <Link id="__accounts__" to={Client.Path("/accounts")}onClick={()=>{document.getElementById("__accounts__").style.fontWeight="normal";}}>Accounts</Link> }
                                 <Link id="__envinfo__" to={Client.Path("/env")}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="normal";}}>Environments</Link>
                                 { Auth.IsLoggedIn(header) && <Link id="__session__" to={Client.Path("/login")}onClick={()=>{document.getElementById("__session__").style.fontWeight="normal";}}>Session</Link> }
                             </div>

@@ -229,9 +229,23 @@ class ReactRoutes:
     @route("/{env}/accounts/{name}", authorize=True)
     def reactapi_route_account(env: str, name: str) -> Response:  # noqa
         """
-        Returns info on known accounts/environments as defined in an accounts.json file if present..
+        Returns info on known accounts/environments as defined in an accounts.json file if present.
         """
         return app.core.reactapi_account(app.current_request.to_dict(), env, name)
+
+    @route("/{env}/accounts_from_s3", authorize=True)
+    def reactapi_route_accounts(env: str) -> Response:  # noqa
+        """
+        Returns info on known accounts/environments as defined in an accounts.json file in S3 if present.
+        """
+        return app.core.reactapi_accounts(app.current_request.to_dict(), env, from_s3=True)
+
+    @route("/{env}/accounts_from_s3/{name}", authorize=True)
+    def reactapi_route_account(env: str, name: str) -> Response:  # noqa
+        """
+        Returns info on known accounts/environments as defined in an accounts.json file in S3 if present.
+        """
+        return app.core.reactapi_account(app.current_request.to_dict(), env, name, from_s3=True)
 
     @route("/__reloadlambda__", authorize=True)
     def reactapi_route_reload_lambda() -> Response:  # noqa

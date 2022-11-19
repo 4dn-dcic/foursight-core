@@ -334,9 +334,9 @@ const AccountInfoRight = ({ info }) => {
     </tbody></table>
 }
 
-const AccountInfo = ({ account, header, refresh, setRefresh }) => {
+const AccountInfo = ({ account, header, fromS3, refresh, setRefresh }) => {
 
-    const info = useFetch(Server.Url(`/accounts/${account.id}`), { nofetch: true });
+    const info = useFetch(Server.Url(`${fromS3 ? "/accounts_from_s3" : "/accounts"}/${account.id}`), { nofetch: true });
 
     useEffect(() => {
         info.refresh();
@@ -407,30 +407,63 @@ const AccountInfo = ({ account, header, refresh, setRefresh }) => {
 
 const AccountsComponent = ({ header }) => {
 
-    const accounts = useFetch(Server.Url("/accounts"));
     const [ refresh, setRefresh ] = useState(false);
+    const [ fromS3, setFromS3 ] = useState(false);
+    const accounts = useFetch(Server.Url(fromS3 ? "/accounts_from_s3" : "/accounts"));
+
+    useEffect(() => {
+        refreshAll(fromS3);
+    }, [ fromS3 ]);
 
     function refreshAll() {
-        accounts.refresh();
+        accounts.refresh(Server.Url(fromS3 ? "/accounts_from_s3" : "/accounts"));
         setRefresh(true);
+    }
+
+    function useS3() {
+        setFromS3(true);
+    }
+
+    function useFile() {
+        setFromS3(false);
     }
 
     return <>
         <b>Known Accounts</b>
-        { header?.app?.accounts && <>
-             <small>&nbsp;&nbsp;&ndash;&nbsp;&nbsp;{header?.app?.accounts}</small>
+        { (header?.app?.accounts_file || header?.app?.accounts_file_from_s3) && <>
+             <small>&nbsp;&nbsp;&ndash;&nbsp;&nbsp;{(fromS3 && header?.app?.accounts_file_from_s3) ? header?.app?.accounts_file_from_s3 : header?.app?.accounts_file}</small>
         </>}
+        <small style={{float:"right",marginRight:"10pt"}}>
+            { header?.app?.accounts_file ? <>
+                { fromS3 ? <>
+                    <span className="tool-tip" data-text={header.app?.accounts_file} style={{cursor:"pointer"}} onClick={useFile}>File</span>
+                </>:<>
+                    <b>File</b>
+                </>}
+            </>:<>
+                <span style={{color:"gray"}}>File</span>
+            </>}
+            &nbsp;|&nbsp;
+            { header?.app?.accounts_file_from_s3 ? <>
+                { fromS3 ? <>
+                    <b>S3</b>
+                </>:<>
+                    <span className="tool-tip" data-text={header.app?.accounts_file_from_s3} style={{cursor:"pointer"}} onClick={useS3}>S3</span>
+                </>}
+            </>:<>
+                <span style={{color:"#777777"}}>S3</span>
+            </>}
+            &nbsp;|&nbsp;
+            <span style={{cursor:"pointer"}} onClick={refreshAll}>{Char.Refresh}</span>
+        </small>
         { accounts.length > 0 ? <>
-            <span style={{float:"right",marginRight:"10pt",cursor:"pointer"}} onClick={refreshAll}>
-                &nbsp;{Char.Refresh}
-            </span>
             { accounts?.map((account, index) => <React.Fragment key={index}>
                 { index > 0 && <div style={{height:"8pt"}} /> }
-                <AccountInfo account={account} header={header} refresh={refresh} setRefresh={setRefresh}/>
+                <AccountInfo account={account} header={header} fromS3={fromS3} refresh={refresh} setRefresh={setRefresh}/>
             </React.Fragment>)}
         </>:<>
             <div className="box">
-                Not supported.
+                No accounts info found.
             </div>
         </>}
     </>

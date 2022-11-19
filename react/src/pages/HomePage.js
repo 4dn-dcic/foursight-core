@@ -35,7 +35,7 @@ const HomePage = (props) => {
                     <li> To view Foursight <b><Link to="/info">general</Link></b> info click <b><Link to="/info"><u>here</u></Link></b>.  </li>
                     <li> To view Foursight <b><Link to="/users">users</Link></b> click <b><Link to="/users"><u>here</u></Link></b>.  </li>
                     <li> To view <b><Link to="/aws/s3">AWS S3</Link></b> info click <b><Link to="/aws/s3"><u>here</u></Link></b>.  </li>
-                    { header.app?.accounts &&
+                    { (header.app?.accounts_file || header.app?.accounts_file_from_s3) &&
                         <li> To view other <b><Link to="/accounts">accounts</Link></b> info click <b><Link to="/accounts"><u>here</u></Link></b>.  </li>
                     }
                 </ul>
@@ -46,7 +46,7 @@ const HomePage = (props) => {
                 To view your <b><Link to="/login">session</Link></b> info click <b><Link to="/login"><u>here</u></Link></b>. <br />
                 To <b onClick={Logout}><Link>logout</Link></b> click <b onClick={Logout}><Link><u>here</u></Link></b>.
             </div>
-            { header.app?.accounts && <>
+            { (header.app?.accounts_file || header.app?.accounts_file_from_s3) && <>
                 <div className="box" style={{margin:"20pt",padding:"10pt",marginTop:"-10pt"}}>
                     Click <Link to="/accounts">here</Link> to view other <Link to="/accounts" bold={false}>known accounts</Link>.
                 </div>
