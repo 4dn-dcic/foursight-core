@@ -28,7 +28,7 @@ import { PuffSpinner } from './Spinners';
 // So we stored the sort state in hidden fields within the given list itself.
 // -------------------------------------------------------------------------------------------------
 
-const TableHead = ({columns, list, update, sort = null, state = null, lines = false, topline = false, bottomline = false, style = {}, spinner = false, loading = false, children}) => {
+const TableHead = ({columns, list, update, refresh, sort = null, state = null, lines = false, topline = false, bottomline = false, style = {}, spinner = false, loading = false, children}) => {
     function _sort(list, key, direction) {
         let comparator = Type.IsFunction(key)
                          ? (direction > 0
@@ -101,7 +101,11 @@ const TableHead = ({columns, list, update, sort = null, state = null, lines = fa
                         </tr></tbody></table>
                     </span>
                 </>):(<>
-                    <div style={{...style,display:"inline-block",position:"relative",top:"-1pt",cursor:"not-allowed"}}>{column.label}</div>
+                    { column.label === "__refresh" ? <>
+                        <b style={{cursor:"pointer"}} onClick={() => Type.IsFunction(refresh) && refresh()}>{Char.Refresh}</b>
+                    </>:<>
+                        <div style={{...style,display:"inline-block",position:"relative",top:"-1pt",cursor:"not-allowed"}}>{column.label}</div>
+                    </>}
                 </>)}
             &nbsp;&nbsp;</td>
         })}</tr>

@@ -303,9 +303,17 @@ class Checks:
             for check_decorator_function_name in checks_decorators:
                 check_decorator = checks_decorators[check_decorator_function_name]
                 if check_name == check_decorator_function_name:
+                    check_item["registered_file"] = check_decorator.get("file")
+                    check_item["registered_line"] = check_decorator.get("line")
+                    check_item["registered_module"] = check_decorator.get("module")
+                    check_item["registered_package"] = check_decorator.get("package")
+                    check_item["registered_github_url"] = check_decorator.get("github_url")
                     check_decorator_kwargs = check_decorator.get("kwargs")
                     if check_decorator_kwargs:
                         check_item["registered_kwargs"] = check_decorator_kwargs
+                    check_decorator_args = check_decorator.get("args")
+                    if check_decorator_args:
+                        check_item["registered_args"] = check_decorator_args
 
     @staticmethod
     def _get_all_lambda_functions(lambda_filter: Optional[Callable] = None) -> list:

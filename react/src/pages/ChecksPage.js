@@ -526,18 +526,18 @@ const ChecksPage = (props) => {
 
     const RefreshResultButton = ({check, style}) => {
         return <span>
-            <span style={{...style, cursor:!check.fetchingResult ? "pointer" : "not-allowed",color:"darkred",fontSize:"12pt"}} onClick={() => !check.fetchingResult && refreshResults(check)}>
+            <span style={{...style, cursor:!check.fetchingResult ? "pointer" : "not-allowed",color:"inherit",fontSize:"10pt"}} onClick={(e) => { !check.fetchingResult && refreshResults(check); e.stopPropagation(); e.preventDefault(); }}>
                 <b data-text={check.results ? "Click here to fetch the latest results." : "Fetching the latest results."} className={"tool-tip"}>{Char.Refresh}</b>
             </span>
         </span>
     }
 
     const ToggleHistoryButton = ({check, style}) => {
-        return <span style={{...style, xpaddingTop:"10px",cursor:"pointer"}} onClick={() => onClickShowHistory(check)}>
+        return <span style={{...style, cursor:"pointer"}} onClick={() => onClickShowHistory(check)}>
             <span data-text={"Click here to " + (check.showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
-                <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"4px",height:"17"}} />
+                <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"1px",height:"18"}} />
             </span>
-            { check.showingHistory ? <span style={{xpaddingTop:"10px"}}>{Char.RightArrow}</span> : <></> }
+            { check.showingHistory ? <span>{Char.RightArrow}</span> : <></> }
         </span>
     }
 
@@ -581,9 +581,12 @@ const ChecksPage = (props) => {
                                     </div>
                                 </>}
                             </>}
-                            <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}.`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check);}}>{check.title}</u>
-                            <RefreshResultButton check={check} style={{marginLeft:"10pt"}} />
-                            <ToggleHistoryButton check={check} style={{marginLeft:"4pt"}} />
+                            <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}. File: ${check.file}`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check);}}>{check.title}</u>
+                            { check.registered_github_url && <>
+                                <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"6pt",marginRight:"6pt"}} target="_blank" href={check.registered_github_url}><img src={Image.GitHubLoginLogo()} height="18"/></a>
+                            </>}
+                            <ToggleHistoryButton check={check} />
+                            {/* <RefreshResultButton check={check} style={{marginLeft:"10pt"}} /> */}
                             {/* TODO: As far as I can tell there is only every one element here under the schedule element */}
                             { Object.keys(check?.schedule).map((key, index) =>
                                 <div key={key}>
@@ -636,12 +639,13 @@ const ChecksPage = (props) => {
                         ):(
                             <b className={"tool-tip"} data-text={"Click to show result details."}>&nbsp;{Char.UpArrow}</b>
                         )}
+                    <RefreshResultButton check={check} style={{marginLeft:"4pt"}} />
                     <br />
                     <span style={{color:check.results?.status?.toUpperCase() === "PASS" ? "inherit" : "red"}}><span className={"tool-tip"} data-text={"Click to " + (check.showingResultDetails ? "hide" : "show") + " result details."}>Results Summary</span>: {check.results?.summary}</span>&nbsp;&nbsp;
                     { check.results?.status?.toUpperCase() === "PASS" ? (<b style={{fontSize:"12pt",color:"inherit"}}>{Char.Check}</b>) : (<b style={{fontSize:"13pt",color:"red"}}>{Char.X}</b>) }
                 </>):(<>
                     { !check.showingResultDetails && <div style={{height:"1px",marginTop:"8px",marginBottom:"2px",background:"gray"}}></div> }
-                    { !check.showingResultDetails && <span>No recent results.</span> }
+                    { !check.showingResultDetails && <span>No recent results.<RefreshResultButton check={check} style={{marginLeft:"4pt"}} /></span> } 
                 </>)}
             </small> }
             {/* Results details or loading results box */}
@@ -683,7 +687,7 @@ const ChecksPage = (props) => {
         }
 
         const columns = [
-            { label: "" },
+            { label: "__refresh" },
             { label: "Timestamp", key: extractTimestamp },
             { label: "Status", key: extractStatus},
             { label: "Duration", key: extractDuration, align: "right" },
@@ -695,15 +699,17 @@ const ChecksPage = (props) => {
                 <b className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}. Group: ${check.group}. Click for full history.`}>
                     <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">{check.title}</Link>
                 </b>&nbsp;
-                { check.history && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",color:"darkred",fontWeight:"bold"}} onClick={() => {refreshHistory(check)}}>{Char.Refresh}&nbsp;&nbsp;</span></span> }
-                <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"4px",height:"17"}} /></Link>
+                { check.registered_github_url && <>
+                    <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} target="_blank" href={check.registered_github_url}><img src={Image.GitHubLoginLogo()} height="18"/></a>
+                </>}
+                <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"1px",height:"18"}} /></Link>
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check)})}>&nbsp;&nbsp;<b>{Char.X}</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
             { check.showingHistory && (<>
                 { check.history?.list?.length > 0 ? (<>
                     <table style={{width:"100%"}}>
-                        <TableHead columns={columns} list={check.history.list} update={(e) => historyList.update()} style={{color:Styles.GetForegroundColor(),fontWeight:"bold"}} lines={true} />
+                        <TableHead columns={columns} list={check.history.list} refresh={() => refreshHistory(check)} update={(e) => historyList.update()} style={{color:Styles.GetForegroundColor(),fontWeight:"bold"}} lines={true} />
                     <tbody>
                     {check.history.list.map((history, index) => <React.Fragment key={index}>
                         <React.Fragment key={extractUuid(history)}>

@@ -1,8 +1,10 @@
-import traceback
-import signal
-import time
-import sys
+import inspect
+import json
 import os
+import signal
+import sys
+import time
+import traceback
 from dcicutils.misc_utils import ignored
 from functools import wraps
 from foursight_core.check_schema import CheckSchema
@@ -11,6 +13,7 @@ from foursight_core.run_result import (
     ActionResult as ActionResultBase
 )
 from foursight_core.exceptions import BadCheckOrAction
+from foursight_core.react.api.misc_utils import get_github_url
 from foursight_core.sqs_utils import SQS
 
 # dmichaels/2022-09-20: Foursight React related addition.
@@ -72,8 +75,23 @@ class Decorators(object):
         ignored(default_args)
 
         def check_deco(func):
+            func_file = None
+            func_line = None
+            func_module = None
+            func_package = None
+            try:
+                func_module = func.__module__
+                func_file = sys.modules[func_module].__file__
+                _, func_line = inspect.getsourcelines(func)
+                func_package = __import__(func_module).__package__
+            except Exception as e:
+                pass
             decorator_registry_record = {
-              # "function": func.__name__,
+                "file": func_file,
+                "line": func_line,
+                "module": func_module,
+                "package": func_package,
+                "github_url": get_github_url(func_package, func_file, func_line),
                 "args": default_args,
                 "kwargs": default_kwargs,
             }

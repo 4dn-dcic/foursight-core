@@ -146,7 +146,7 @@ const MAX_SAVE = 25;
 //
 // OTHER COMMENTS
 //
-// - Looking back over this, at 700+ lines (though many comments), it does look rather complex.
+// - Looking back over this, at 750+ lines (though many comments), it does look rather complex.
 //   But the goal was to make the USAGE simple; to fetch, update, manipulate data with as little
 //   detailed logic and friction as possible; and to globally track outstanding fetching, e.g.
 //   to facilitate a global fetching spinner, which obviates the need for these on individual
@@ -373,11 +373,6 @@ function _doFetch(args, current = undefined) {
         if (data === undefined) {
             data = response.data;
         }
-        //
-        // TODO
-        // Maybe do _update(args.setData, data, current) here rather than setData.
-        // Normally, data will be a new object so it shouldn't be a problem; but if not ...
-        //
         args.setData(data);
         args.setStatus(status);
         args.setError(null);
@@ -387,9 +382,6 @@ function _doFetch(args, current = undefined) {
         _defineResponseConvenienceFunctions(responseArg);
         args.onSuccess(responseArg);
         args.onDone(responseArg);
-        // const onArg = { data: data, loading: false, status: status, timeout: false, error: null };
-        // args.onSuccess(onArg);
-        // args.onDone(onArg);
     }
 
     function _handleError(error, id) {
@@ -458,9 +450,6 @@ function _doFetch(args, current = undefined) {
             args.setData(data)
         }
         args.onDone(responseArg);
-        // const onArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
-        // args.onError(onArg);
-        // args.onDone(onArg);
     }
 
     function noteFetchBegin(fetch) {

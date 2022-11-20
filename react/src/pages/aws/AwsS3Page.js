@@ -289,7 +289,7 @@ const AwsS3Page = (props) => {
 
     const BucketKeyContentBox = ({bucketKeyContent}) => {
         return <>
-            <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt",minWidth:"300pt"}}>
+            <div className="box error" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt",minWidth:"300pt"}}>
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideBucketKeyContentBox(bucketKeyContent.bucket, bucketKeyContent.key)})}><b>&nbsp;&nbsp;{Char.X}</b></span>
                 { (typeof(bucketKeyContent) === "string" && bucketKeyContent === "dummy") ? <>
                     <b>Not implemented</b>. <br />

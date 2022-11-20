@@ -1,6 +1,8 @@
 from chalice.app import Request
 from functools import lru_cache
 import json
+import os
+import pkg_resources
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -58,6 +60,57 @@ def get_base_url(url: str) -> str:
         return scheme + "://" + hostname + (":" + str(port) if port else "")
     except Exception:
         return ""
+
+
+def get_github_url(package: str, file: Optional[str] = None, line: Optional[int] = None) -> Optional[str]:
+    """
+    Returns the GitHub URL to the given package, with the appropriate/current version.
+    Only these packages are supported: foursight-core, foursight-cgap, foursight, dcicutils
+    If the optional file argument is given then returns the versionsed GitHub URL to that file.
+    This is to provide convenience GitHub links to the foursight (e.g. checks) source code in the UI.
+    TODO: Seems like there should be a better more programmatic way to determine this.
+    """
+    print(f"get_github_url({package},{file})")
+    github_url = "https://github.com"
+    if package == "foursight-core" or package =="foursight_core":
+        package_source = "foursight-core"
+        package_target = "foursight_core"
+        repo_org = "4dn-dcic"
+    elif package == "foursight-cgap" or package == "chalicelib_cgap":
+        package_source = "foursight-cgap"
+        package_target = "chalicelib_cgap"
+        repo_org = "dbmi-bgm"
+    elif package == "foursight" or package == "chalicelib_fourfront":
+        package_source = "foursight"
+        package_target = "chalicelib_fourfront"
+        repo_org = "4dn-dcic"
+    elif package == "dcicutils" or package == "utils":
+        package_source = "utils"
+        package_target = "dcicutils"
+        repo_org = "4dn-dcic"
+    else:
+        print('get_github_url/return')
+        return None
+    try:
+        version = f"v{pkg_resources.get_distribution(package_source).version}"
+    except Exception as e:
+        print('get_github_url/exception')
+        print(e)
+        return None
+    repo_url = f"{github_url}/{repo_org}/{package_source}"
+    if not file:
+        return f"{repo_url}/releases/tag/{version}"
+    if os.path.isabs(file):
+        path = os.path.normpath(file).split(os.sep)
+        for i in range(len(path)):
+            if path[i] == package_target:
+                if i < len(path) - 1:
+                    file = "/".join(path[i + 1:])
+                    break;
+            if file.startswith(os.sep):
+                file = file[len(os.sep):]
+    line = f"#L{line}" if line > 0 else ""
+    return f"{repo_url}/blob/{version}/{package_target}/{file}{line}"
 
 
 def is_running_locally(request: dict) -> bool:
