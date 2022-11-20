@@ -70,7 +70,6 @@ def get_github_url(package: str, file: Optional[str] = None, line: Optional[int]
     This is to provide convenience GitHub links to the foursight (e.g. checks) source code in the UI.
     TODO: Seems like there should be a better more programmatic way to determine this.
     """
-    print(f"get_github_url({package},{file})")
     github_url = "https://github.com"
     if package == "foursight-core" or package =="foursight_core":
         package_source = "foursight-core"
@@ -89,13 +88,10 @@ def get_github_url(package: str, file: Optional[str] = None, line: Optional[int]
         package_target = "dcicutils"
         repo_org = "4dn-dcic"
     else:
-        print('get_github_url/return')
         return None
     try:
         version = f"v{pkg_resources.get_distribution(package_source).version}"
     except Exception as e:
-        print('get_github_url/exception')
-        print(e)
         return None
     repo_url = f"{github_url}/{repo_org}/{package_source}"
     if not file:
