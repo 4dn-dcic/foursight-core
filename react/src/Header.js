@@ -57,7 +57,7 @@ const Header = (props) => {
             {/* TODO: portal link does not change appropriately e.g. for 4dn-dcic when choosing from data to mastertest in dropdown */}
             <a target="_blank" rel="noreferrer" title="Open portal in another tab."
                 style={{textDecoration:"none",color:"darkgreen"}}
-                href={header?.portal?.url}>
+                href={Client.PortalLink(header)}>
                 PORTAL <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
             </a>&nbsp;|&nbsp;
             <a target="_blank" rel="noreferrer" title="Open AWS Console for this account ({header.app?.credentials.aws_account_number}) in another tab."

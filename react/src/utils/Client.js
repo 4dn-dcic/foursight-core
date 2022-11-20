@@ -113,7 +113,10 @@ function GetCurrentLogicalPath() {
 // Get these kinds of URLs CGAP/4DN URLs below directly from the Portal or env bucket.
 //
 function GetPortalLink(header) {
-    if (Env.IsFoursightFourfront(header)) {
+    if (header?.portal?.url) {
+        return header?.portal?.url;
+    }
+    else if (Env.IsFoursightFourfront(header)) {
         return "https://" +  Env.PublicName(Env.Current(), header) + ".4dnucleome.org/";
     }
     else {
