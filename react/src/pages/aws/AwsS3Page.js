@@ -294,7 +294,6 @@ const AwsS3Page = (props) => {
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideBucketKeyContentBox(bucketKeyContent.bucket, bucketKeyContent.key)})}><b>&nbsp;&nbsp;{Char.X}</b></span>
                 { (typeof(bucketKeyContent) === "string" && bucketKeyContent === "dummy") ? <>
                     <b>Not implemented</b>. <br />
-                    <small>Pending security review.</small>
                 </>:<>
                     Bucket: <b>{bucketKeyContent.bucket}</b> <br />
                     Key: <b>{bucketKeyContent.key}</b>
