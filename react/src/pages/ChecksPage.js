@@ -725,7 +725,11 @@ const ChecksPage = (props) => {
                                 {extractStatus(history) === "PASS" ? (<>
                                     <b style={{color:"inherit"}}>OK</b>
                                 </>):(<>
-                                    <b style={{color:"darkred"}}>ERROR</b>
+                                    {extractStatus(history) === "WARN" ? (<>
+                                        <b style={{color:"black"}}>WARNING</b>
+                                    </>):(<>
+                                        <b style={{color:"darkred"}}>ERROR</b>
+                                    </>)}
                                 </>)}
                             &nbsp;&nbsp;</td>
                             <td style={{textAlign:"right"}}>
