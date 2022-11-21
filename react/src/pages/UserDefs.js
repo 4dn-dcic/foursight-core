@@ -24,6 +24,16 @@ const _UserInputs = [
         type: "boolean"
     },
     {
+        name: "project",  // TODO
+        label: "Project",
+        type: "boolean"
+    },
+    {
+        name: "institution",  // TODO
+        label: "Institution",
+        type: "boolean"
+    },
+    {
         name: "created",
         label: "Created",
         readonly: true

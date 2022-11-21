@@ -246,6 +246,7 @@ const CheckHistoryPage = (props) => {
                         <PaginationComponent
                             pages={pages}
                             onChange={onPaginationClick}
+                            refresh={() => updateData(limit, offset, sort)}
                             page={page}
                             spinner={true}
                             loading={history.loading} />

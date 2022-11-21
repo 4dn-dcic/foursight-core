@@ -28,10 +28,10 @@ def convert_utc_datetime_to_useastern_datetime_string(t: Union[datetime.datetime
         t = t.replace(tzinfo=pytz.UTC).astimezone(pytz.timezone("US/Eastern"))
         return t.strftime("%Y-%m-%d %H:%M:%S %Z")
     except Exception:
-        return "datetime-utc-parse-error"
+        return None
 
 
-def convert_time_t_to_useastern_datetime_string(time_t: int) -> str:
+def convert_time_t_to_useastern_datetime_string(time_t: int) -> Optional[str]:
     """
     Converts the given "epoch" time (seconds since 1970-01-01T00:00:00Z)
     integer value to a US/Eastern datetime string and returns its value
@@ -46,7 +46,7 @@ def convert_time_t_to_useastern_datetime_string(time_t: int) -> str:
         t = datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
         return convert_utc_datetime_to_useastern_datetime_string(t)
     except Exception:
-        return "datetime-parse-error"
+        return None
 
 
 def convert_time_t_to_datetime(time_t: int) -> datetime.datetime:

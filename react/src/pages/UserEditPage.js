@@ -78,7 +78,7 @@ const UserEditPage = () => {
         <center>
             <div style={{display:"table-row"}}>
                 <b style={{float:"left"}}>Edit User</b>
-                <div style={{float:"right",marginTop:"4pt",marginRight:"4pt",fontSize:"small"}}><Link to={"/users/create"} bold={false}>New User</Link></div>
+                <div style={{float:"right",marginTop:"4pt",marginRight:"4pt",fontSize:"small"}}><Link to={"/users/create"} bold={false}>Create User</Link></div>
             </div>
             { notFound ? <>
                 <div className="box">

@@ -43,10 +43,17 @@ const UsersPage = () => {
     return <>
         <div className="container fg">
            <div>
-                &nbsp;<b>Users</b>
-                <div style={{float:"right"}}>
-                    <Link to={"/users/create"} bold={false}><small>Create User</small></Link>&nbsp;|&nbsp;
-                    <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={update}>{Char.Refresh}&nbsp;</b>
+                <b>Users</b>
+                <div style={{float:"right",marginTop:"2pt"}}>
+                    <Link to={"/users/create"} bold={false}><small>Create User</small></Link>&nbsp;
+{/*
+                    &nbsp;|&nbsp;
+                    <div className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={update}>
+                        <span className="bg" style={{border:"1px solid black",borderRadius:"4px",padding:"0px 4px 1px 4px",cursor:"pointer"}}>
+                            <b>{Char.Refresh}</b>
+                        </span>
+                    </div>
+*/}
                 </div>
                 <div style={{height:"1px",background:Styles.GetForegroundColor(),marginTop:"2pt",marginBottom:"4pt"}}></div>
             </div>
@@ -79,8 +86,8 @@ const UsersPage = () => {
                                 {user?.institution?.replace("/institutions/","")?.replace("/","") || Char.EmptySet}
                             </td>
                             <td style={tdStyle}>
-                                {Time.FormatDate(user.updated)} <br />
-                                <small>{Time.FormatTime(user.updated)}</small>
+                                {user.updated ? Time.FormatDate(user.updated) : Time.FormatDate(user.created)} <br />
+                                <small>{user.updated ? Time.FormatTime(user.updated) : Time.FormatTime(user.created)}</small>
                             </td>
                             <td style={tdStyle}>
                                 {Time.FormatDate(user.created)} <br />

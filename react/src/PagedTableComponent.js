@@ -94,6 +94,7 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
                 pages={pageCount}
                 page={pageOffset}
                 onChange={onPageOffset}
+                refresh={updateData}
                 loading={data?.loading}
                 spinner={true} />
             </td><td style={{align:"right",paddingTop:"6pt",fontSize:"9pt",fontWeight:"bold",color:Styles.GetForegroundColor(),whiteSpace:"nowrap"}}>

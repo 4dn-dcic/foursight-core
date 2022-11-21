@@ -1059,7 +1059,7 @@ const ChecksPage = (props) => {
 
     const RecentRunsView = () => {
         const columns = [
-            { label: "" },
+            { label: "__refresh" },
             { label: "Timestamp", key: "timestamp" },
             { label: "Check", key: "check" },
             { label: "Status", key: "status" },
@@ -1096,11 +1096,17 @@ const ChecksPage = (props) => {
                             <b>Top</b>:&nbsp;
                         </>}
                         <LiveTime.FormatDuration start={recentRuns?.data[0]?.timestamp} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />
-                        &nbsp;&nbsp;&nbsp;<b className="tool-tip" data-text="Click to refresh." style={{cursor:"pointer"}} onClick={() => recentRuns.refresh()}>{Char.Refresh}</b>
                     </small>}
                     <b style={{float:"right",paddingBottom:"4pt",cursor:"pointer"}} onClick={hideRecentRuns}>{Char.X}</b>
                     <table style={{width:"100%"}} border="0">
-                        <TableHead columns={columns} state={{key:"timestamp", order:-1}} list={recentRuns.data} update={() => recentRuns.update()} style={{fontWeight:"bold"}} lines={true} />
+                        <TableHead
+                            columns={columns}
+                            state={{key:"timestamp", order:-1}}
+                            list={recentRuns.data}
+                            update={() => recentRuns.update()}
+                            refresh={() => recentRuns.refresh()}
+                            style={{fontWeight:"bold"}}
+                            lines={true} />
                         <tbody>
                             { recentRuns.map((run, index) => <React.Fragment key={index}>
                                     

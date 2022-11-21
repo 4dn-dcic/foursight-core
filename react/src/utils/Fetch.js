@@ -440,7 +440,7 @@ function _doFetch(args, current = undefined) {
         }
         else {
             Debug.Info(`FETCH ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
-            args.setError(`Unknown HTTP error (code: ${error.code}).`);
+            args.setError(`HTTP error (${error.code}): ${args.url}`);
         }
         noteFetchEnd(id);
         const responseArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
