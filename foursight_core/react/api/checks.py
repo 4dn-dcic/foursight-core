@@ -16,6 +16,7 @@ class Checks:
 
     def __init__(self, check_setup, envs: Envs):
         self._check_setup = copy.deepcopy(check_setup)
+        self._check_setup_raw = copy.deepcopy(check_setup)
         self._envs = envs
 
     _cached_checks = None
@@ -25,7 +26,7 @@ class Checks:
         """
         Returns a dictionary containing the pristine, original check_setup.json file contents.
         """
-        return self._check_setup
+        return self._check_setup_raw
 
     def get_checks(self, env: str) -> dict:
         """
@@ -35,7 +36,7 @@ class Checks:
         Cached on/after the first call.
         """
         if not Checks._cached_checks:
-            checks = self.get_checks_raw()
+            checks = self._check_setup
             for check_key in checks.keys():
                 checks[check_key]["name"] = check_key
                 checks[check_key]["group"] = checks[check_key]["group"]
@@ -268,7 +269,7 @@ class Checks:
             lambdas = self._get_lambdas_from_template(stack_template)
             lambdas = self._annotate_lambdas_with_schedules_from_template(lambdas, stack_template)
             lambdas = self._annotate_lambdas_with_function_metadata(lambdas)
-            lambdas = self._annotate_lambdas_with_check_setup(lambdas, self.get_checks_raw())
+            lambdas = self._annotate_lambdas_with_check_setup(lambdas, self._check_setup)
             Checks._cached_lambdas = lambdas
         return Checks._cached_lambdas
 
