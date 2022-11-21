@@ -2,6 +2,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { Link } from '../Components';
 import { useFetch } from '../utils/Fetch';
 import Char from '../utils/Char';
+import { FetchErrorBox } from '../Components';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
 import PagedTableComponent from '../PagedTableComponent';
@@ -26,7 +27,7 @@ const UsersPage = () => {
         });
     }
 
-    if (users.error) return <>Cannot load users from Foursight: {users.error}</>;
+    if (users.error) return <FetchErrorBox error={users.error} message="Error loading users from Foursight API" center={true} />
 
     const columns = [
         { label: "" },

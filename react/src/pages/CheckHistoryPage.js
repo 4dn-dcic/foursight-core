@@ -2,6 +2,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useFetch } from '../utils/Fetch';
+import { FetchErrorBox } from '../Components';
 import { StandardSpinner } from '../Spinners';
 import PaginationComponent from '../PaginationComponent';
 import Char from '../utils/Char';
@@ -236,7 +237,7 @@ const CheckHistoryPage = (props) => {
     }
 
 
-    if (history.error) return <>Cannot load data from Foursight: {history.error}</>;
+    if (history.error) return <FetchErrorBox error={history.error} message="Error loading check history from Foursight API" />
     return <>
         <table style={{maxWidth:"1000pt"}}><tbody>
             <tr>

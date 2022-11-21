@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import { Link } from '../Components';
 import { RingSpinner } from '../Spinners';
 import { useFetch } from '../utils/Fetch';
+import { FetchErrorBox } from '../Components';
 import Char from '../utils/Char';
 import Server from '../utils/Server';
 import Styles from '../Styles';
@@ -13,7 +14,7 @@ const UserPage = (props) => {
     const { email } = useParams()
     const response = useFetch(Server.Url(`/users/${email}`), { onData: (data) => Type.IsObject(data) ? [data] : data });
 
-    if (response.error) return <>Cannot load user ({email}) from Foursight: {response.error}</>;
+    if (response.error) return <FetchErrorBox error={response.error} message={`Cannot load user (${email}) from Foursight`} center={true} />
     if (response.loading) {
         return <>
             <div style={{marginTop:"30px"}}>

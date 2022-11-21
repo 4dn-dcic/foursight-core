@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import HeaderData from '../HeaderData';
 import { useHeaderRefresh } from '../HeaderRefresh';
+import { FetchErrorBox } from '../Components';
 import Page from '../Page';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
@@ -68,7 +69,7 @@ const EnvPage = (props) => {
 
     // This page is unprotected.
 
-    if (header.error) return <>Cannot load Foursight</>;
+    if (header.error) return <FetchErrorBox error={header.error} message="Error loading users from Foursight API" />
     if (header.loading) return <>Loading ...</>;
     return <div>
         <div className="container">

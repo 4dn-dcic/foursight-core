@@ -11,6 +11,7 @@ import Char from '../utils/Char';
 import Context from '../utils/Context';
 import Env from '../utils/Env';
 import { useFetch, useFetchFunction } from '../utils/Fetch';
+import { FetchErrorBox } from '../Components';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
 import LiveTime from '../LiveTime';
@@ -144,7 +145,7 @@ const InfoPage = () => {
         </>
     }
 
-    if (info.error) return <>Cannot load data from Foursight API: {info.error}</>;
+    if (info.error) return <FetchErrorBox error={info.error} message="Error loading info from Foursight API" />
     return <div className="container">
         <InfoBox title="Versions">
             <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={Env.IsFoursightFourfront(header) ? "4dn-dcic" : "dbmi-bgm"} size="2" />

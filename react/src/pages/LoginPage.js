@@ -8,6 +8,7 @@ import Auth from '../utils/Auth';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
+import { FetchErrorBox } from '../Components';
 import Cookie from '../utils/Cookie';
 import Env from '../utils/Env';
 import { useFetch } from '../utils/Fetch';
@@ -83,7 +84,7 @@ const LoginPage = (props) => {
     }
 
     if ((header.loading || auth0Config.loading) && !header.error) return <>Loading ...</>
-    if (header.error) return <>Cannot load Foursight.</>
+    if (header.error) return <FetchErrorBox error={header.error} message="Cannot load Foursight" />
 
     const InfoPanel = () => {
         return <>

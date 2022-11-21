@@ -2,7 +2,9 @@ import { Link as ReactLink } from 'react-router-dom';
 import Auth from './utils/Auth';
 import Client from './utils/Client';
 import Image from './utils/Image';
+import Str from './utils/Str';
 import Time from './utils/Time';
+import Type from './utils/Type';
 
 export const Link = ({to, env = true, tip = null, bold = true, children}) => {
     return <ReactLink className={tip ? "tool-tip" : ""} data-text={tip} to={Client.Path(to, env ? env : null)} style={{color:"inherit",fontWeight:bold ? "bold" : "inherit"}}>{children}</ReactLink>
@@ -39,4 +41,30 @@ export const LoggedInUser = ({ link = undefined}) => {
             </>}
         </>}
     </>
+}
+
+export const FetchErrorBox = ({ error, message, center }) => {
+    if (!Str.HasValue(message)) {
+        message = "Error retrieving data from Foursight API"
+    }
+    if (Type.IsString(error)) {
+        error = { message: error };
+    }
+    else if (!Type.IsObject(error)) {
+        error = { message: "Unknown error" }
+    }
+    return <div className={`box error thickborder ${center ? "container" : ""}`} style={{marginTop:"16pt",maxWidth:"700pt", horizontalAlign:"center"}}>
+        <u><b>{message}</b></u>
+        { error?.url && <>
+            <br /><b>URL</b>: {error?.url}
+        </>}
+        { error?.status && <>
+            <br /><b>Status Code</b>: {error?.status}
+        </>}
+        { error?.details && <>
+            <br />
+            <b>Details</b>:&nbsp;
+            <small>{error.details}</small>
+        </>}
+    </div>
 }

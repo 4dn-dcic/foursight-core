@@ -5,6 +5,7 @@ import Uuid from 'react-uuid';
 import { RingSpinner, PuffSpinnerInline, StandardSpinner } from '../Spinners';
 import { useReadOnlyMode } from '../ReadOnlyMode';
 import { useFetch, useFetchFunction } from '../utils/Fetch';
+import { FetchErrorBox } from '../Components';
 import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
@@ -412,14 +413,7 @@ const ChecksPage = (props) => {
     }
 
     const SelectedGroupsPanel = ({props}) => {
-        if (groupList.error) {
-            return <>
-               <div className="box error thickborder" style={{marginTop:"18pt"}}>
-                    Error loading checks.
-                    <small><br />{groupList.error}</small>
-               </div>
-            </>
-        }
+        if (groupList.error) return <FetchErrorBox error={groupList.error} message="Error loading checks from Foursight API" />
         return <div>
             { groupList.length > 0 /* selectedGroups.length > 0 */ ? (<>
                 <div style={{paddingBottom:"3pt"}}>
@@ -1067,12 +1061,7 @@ const ChecksPage = (props) => {
             { label: "State", key: "state" }
         ];
         if (recentRuns.error) {
-            return <>
-               <div className="box error thickborder" style={{marginTop:"18pt"}}>
-                    Error loading recent runs.
-                    <small><br />{recentRuns.error}</small>
-               </div>
-            </>
+            return <FetchErrorBox error={recentRuns.error} message="Error loading recent runs from Foursight API" />
         }
         if (recentRuns.length == 0) {
             return <>
@@ -1322,7 +1311,7 @@ const ChecksPage = (props) => {
         </>
     }
 
-    if (checks.error) return <>Cannot load checks from Foursight: {checks.error}</>;
+    if (checks.error) return <FetchErrorBox error={checks.error} message="Error loading checks from Foursight API" />
     if (checks.loading) {
         return <>
             <div style={{marginTop:"30px"}}>

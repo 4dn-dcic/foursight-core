@@ -3,6 +3,7 @@ import { useContext, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import { useFetch } from '../utils/Fetch';
+import { FetchErrorBox } from '../Components';
 import Char from '../utils/Char';
 import Env from '../utils/Env';
 import HeaderData from '../HeaderData';
@@ -155,7 +156,7 @@ const GacComparePage = (props) => {
         response.refresh({ url: url });
     }
 
-    if (response.error) return <>Cannot load GAC comparison from Foursight: {response.error}</>;
+    if (response.error) return <FetchErrorBox error={response.error} message="Error loading GAC comparison from Foursight API" />
     if (response.loading) return <>Loading content ...</>;
 
     let unique_keys = getUniqueKeys(response.get("gac"), response.get("gac_compare"));

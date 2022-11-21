@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { BarSpinner } from '../../Spinners';
 import Clipboard from '../../utils/Clipboard';
 import { useFetch } from '../../utils/Fetch';
+import { FetchErrorBox } from '../../Components';
 import Char from '../../utils/Char';
 import Image from '../../utils/Image';
 import Json from '../../utils/Json';
@@ -316,7 +317,7 @@ const AwsS3Page = (props) => {
         </tr></tbody></table>
     }
 
-    if (bucketList.error) return <>Cannot load data from Foursight API: {bucketList.error}</>;
+    if (bucketList.error) return <FetchErrorBox error={bucketList.error} message="Error loading AWS S3 info from Foursight API" />
     if (bucketList.loading) return <>Loading ...</>;
     return <>
         <div>
