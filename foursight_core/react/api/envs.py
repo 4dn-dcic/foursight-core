@@ -65,7 +65,7 @@ class Envs:
     def is_same_env(self, env_a: str, env_b: str) -> bool:
         return foursight_env_name(env_a) == foursight_env_name(env_b)
 
-    def get_user_auth_info(self, email: str) -> Tuple[list, list, str]:
+    def get_user_auth_info(self, email: str) -> Tuple[list, str, str]:
         """
         Returns a tuple containing (in left-right order): the list of known environments,
         i.e the list of annotated environment name objects; the list of allowed environment
