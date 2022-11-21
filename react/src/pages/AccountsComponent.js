@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { BarSpinner } from '../Spinners';
 import Char from '../utils/Char';
 import { useFetch } from '../utils/Fetch';

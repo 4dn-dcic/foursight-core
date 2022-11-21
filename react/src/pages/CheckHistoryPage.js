@@ -143,7 +143,7 @@ const CheckHistoryPage = (props) => {
             <div title={check}>
                 <b>Check: {check}</b>&nbsp;
                 { history.get("check.registered_github_url") && <>
-                    <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} target="_blank" href={history.get("check.registered_github_url")}><img src={Image.GitHubLoginLogo()} height="18"/></a>
+                    <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={history.get("check.registered_github_url")}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                 </>}
             </div>
             <div style={{marginBottom:"6pt"}}/>

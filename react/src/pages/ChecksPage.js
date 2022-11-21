@@ -324,7 +324,7 @@ const ChecksPage = (props) => {
                         &nbsp;{Char.RightArrow}&nbsp;
                                 
                         { showUuid ? <>
-                            <a className="tool-tip" data-text="Click to view in AWS S3." target="_blank" onClick={(e) => {}} href={`https://s3.console.aws.amazon.com/s3/object/${info.get("checks.bucket")}?region=us-east-1&prefix=${check.name}/${check.queuedCheckRun}.json`} style={{color:"inherit"}}><u>{check.queuedCheckRun}</u></a>
+                            <a className="tool-tip" data-text="Click to view in AWS S3." rel="noreferrer" target="_blank" onClick={(e) => {}} href={`https://s3.console.aws.amazon.com/s3/object/${info.get("checks.bucket")}?region=us-east-1&prefix=${check.name}/${check.queuedCheckRun}.json`} style={{color:"inherit"}}><u>{check.queuedCheckRun}</u></a>
                         </>:<>
                             <span className="tool-tip" data-text={`UUID: ${check.queuedCheckRun}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>OK</span>
                         </>}
@@ -577,7 +577,7 @@ const ChecksPage = (props) => {
                             </>}
                             <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}. File: ${check.file}`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check);}}>{check.title}</u>
                             { check.registered_github_url && <>
-                                <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"6pt",marginRight:"6pt"}} target="_blank" href={check.registered_github_url}><img src={Image.GitHubLoginLogo()} height="18"/></a>
+                                <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"6pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                             </>}
                             <ToggleHistoryButton check={check} />
                             {/* <RefreshResultButton check={check} style={{marginLeft:"10pt"}} /> */}
@@ -694,7 +694,7 @@ const ChecksPage = (props) => {
                     <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">{check.title}</Link>
                 </b>&nbsp;
                 { check.registered_github_url && <>
-                    <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} target="_blank" href={check.registered_github_url}><img src={Image.GitHubLoginLogo()} height="18"/></a>
+                    <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                 </>}
                 <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"1px",height:"18"}} /></Link>
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check)})}>&nbsp;&nbsp;<b>{Char.X}</b></span>
@@ -1063,7 +1063,7 @@ const ChecksPage = (props) => {
         if (recentRuns.error) {
             return <FetchErrorBox error={recentRuns.error} message="Error loading recent runs from Foursight API" />
         }
-        if (recentRuns.length == 0) {
+        if (recentRuns.length === 0) {
             return <>
                 <b>Recent Runs</b>
                 <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"3pt",marginBottom:"8pt"}}>

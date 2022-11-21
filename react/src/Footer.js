@@ -1,6 +1,5 @@
 import { useContext } from 'react';
 import HeaderData from './HeaderData';
-import Env from './utils/Env';
 import Client from './utils/Client';
 import Image from './utils/Image';
 

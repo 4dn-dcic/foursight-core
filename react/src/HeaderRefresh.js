@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react';
+import { useContext } from 'react';
 import { useFetchFunction } from './utils/Fetch';
 import HeaderData from './HeaderData';
 import Server from './utils/Server';
