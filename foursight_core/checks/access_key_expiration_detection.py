@@ -62,10 +62,6 @@ def refresh_access_keys(connection, **kwargs):
         user_uuid = user['uuid']
         access_keys = search_metadata(f'/search/?type=AccessKey&description={kp_name}&user.uuid={user_uuid}'
                                       f'&sort=-date_created', key=connection.ff_keys)
-        for access_key in access_keys:
-            if access_key['status'] != 'deleted':
-                patch_metadata(patch_item={'status': 'deleted'}, obj_id=access_key['uuid'], key=connection.ff_keys)
-
         # generate new key
         access_key_req = {'user': user_uuid, 'description': kp_name}
         access_key_res = post_metadata('/access_key', access_key_req, key=connection.ff_keys)
@@ -74,6 +70,11 @@ def refresh_access_keys(connection, **kwargs):
                   'server': s3.url}
         s3.s3_put_secret(s3_obj, kp_name)
         full_output['successfully_generated'].append(email)
+        # clear out old keys after generating new one
+        for access_key in access_keys:  # note this search result was computed before the new key was added
+            if access_key['status'] != 'deleted':
+                patch_metadata(patch_item={'status': 'deleted'}, obj_id=access_key['uuid'], key=connection.ff_keys)
+
     action.full_output = full_output
     action.status = 'DONE'
     return action
