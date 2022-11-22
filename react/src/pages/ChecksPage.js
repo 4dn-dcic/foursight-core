@@ -529,7 +529,7 @@ const ChecksPage = (props) => {
     const ToggleHistoryButton = ({check, style}) => {
         return <span style={{...style, cursor:"pointer"}} onClick={() => onClickShowHistory(check)}>
             <span data-text={"Click here to " + (check.showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
-                <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"1px",height:"18"}} />
+                <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"1px",marginRight:"2pt",height:"18"}} />
             </span>
             { check.showingHistory ? <span>{Char.RightArrow}</span> : <></> }
         </span>
