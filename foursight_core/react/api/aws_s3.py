@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 class AwsS3:
 
-    @staticmethod
-    def get_buckets() -> list:
+    @classmethod
+    def get_buckets(cls) -> list:
         results = []
         try:
             s3 = boto3.resource("s3")
@@ -19,8 +19,8 @@ class AwsS3:
             logger.error(f"Exception getting S3 bucket list: {e}")
         return results
 
-    @staticmethod
-    def get_bucket_keys(bucket_name: str) -> list:
+    @classmethod
+    def get_bucket_keys(cls, bucket_name: str) -> list:
         results = []
         try:
             s3 = boto3.client("s3")
@@ -41,9 +41,9 @@ class AwsS3:
 
     SHOW_BUCKET_KEY_CONTENT_MAX_SIZE_BYTES = 50000
 
-    @staticmethod
-    def _may_look_at_key_content(bucket, key, size) -> bool:
-        if size > AwsS3.SHOW_BUCKET_KEY_CONTENT_MAX_SIZE_BYTES:
+    @classmethod
+    def _may_look_at_key_content(cls, bucket, key, size) -> bool:
+        if size > cls.SHOW_BUCKET_KEY_CONTENT_MAX_SIZE_BYTES:
             return False
         if key.endswith(".json"):
             return True
@@ -51,8 +51,8 @@ class AwsS3:
             return True
         return False
 
-    @staticmethod
-    def _get_bucket_key_content_size(bucket_name: str, bucket_key_name) -> int:
+    @classmethod
+    def _get_bucket_key_content_size(cls, bucket_name: str, bucket_key_name) -> int:
         try:
             s3 = boto3.client('s3')
             response = s3.head_object(Bucket=bucket_name, Key=bucket_key_name)
@@ -61,21 +61,21 @@ class AwsS3:
         except Exception as e:
             return -1
 
-    @staticmethod
-    def bucket_key_exists(bucket_name: str, bucket_key_name) -> bool:
+    @classmethod
+    def bucket_key_exists(cls, bucket_name: str, bucket_key_name) -> bool:
         """
         Returns true iff the given S3 key in the given S3 bucket exists AND is not empty.
         """
         try:
-            return AwsS3._get_bucket_key_content_size(bucket_name, bucket_key_name) > 0
+            return cls._get_bucket_key_content_size(bucket_name, bucket_key_name) > 0
         except Exception as e:
             return False
 
-    @staticmethod
-    def get_bucket_key_contents(bucket_name: str, bucket_key_name) -> Optional[list]:
+    @classmethod
+    def get_bucket_key_contents(cls, bucket_name: str, bucket_key_name) -> Optional[list]:
         try:
-            size = AwsS3._get_bucket_key_content_size(bucket_name, bucket_key_name)
-            if size <= 0 or not AwsS3._may_look_at_key_content(bucket_name, bucket_key_name, size):
+            size = cls._get_bucket_key_content_size(bucket_name, bucket_key_name)
+            if size <= 0 or not cls._may_look_at_key_content(bucket_name, bucket_key_name, size):
                 return None
             s3 = boto3.resource("s3")
             s3_object = s3.Object(bucket_name, bucket_key_name)

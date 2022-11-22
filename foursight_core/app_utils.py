@@ -1896,9 +1896,10 @@ class AppUtilsCore(ReactApi, Routes):
     def _locate_config_file(self, file_name: str) -> Optional[str]:
         """
         Returns the full path to the given named file (e.g. check_setup.json or accounts.json),
-        looking for the first NON-EMPTY file within these directories, in order:
+        looking for the first NON-EMPTY file within these directories, in the following order;
+        if not found then returns None.
 
-        - If the CHALICE_LOCAL environment variable is set to "1", then the chalicelib_local
+        - If the CHALICE_LOCAL environment variable is set to "true", then the chalicelib_local
           directory PARALLEL to the appropriate chalicelib package directory, i.e. either
           chalicelib_cgap or chalicelib_fourfront, depending on our class package_name member,
           which is overridden accordingly in foursight-cgap/chalicelib_cgap/app_utils.py
@@ -1917,6 +1918,12 @@ class AppUtilsCore(ReactApi, Routes):
         """
 
         def _get_chalicelib_dir():
+            """
+            Returns the package (file system) directory path name for the package associated
+            with this instance of AppUtilsCore, i.e. associated with self.package_name.
+            This is (should be) set to either chalicelib_cgap or chalicelib_fourfront
+            depending on if we running with foursight-cgap or foursight packages.
+            """
             try:
                 chalicelib_package = __import__(self.package_name)
                 return os.path.dirname(inspect.getfile(chalicelib_package))

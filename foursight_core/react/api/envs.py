@@ -37,7 +37,9 @@ class Envs:
     def get_known_envs_with_gac_names(self) -> list:
         known_envs = copy.deepcopy(self._known_envs)
         for known_env in known_envs:
-            known_env["gac_name"] = Gac.get_gac_name(known_env["full_name"])
+            gac_name = Gac.get_gac_name(known_env["full_name"])
+            if gac_name:
+                known_env["gac_name"] = gac_name
         return known_envs
 
     @staticmethod

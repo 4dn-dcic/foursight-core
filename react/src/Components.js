@@ -1,6 +1,8 @@
 import { Link as ReactLink } from 'react-router-dom';
+import { useState } from 'react';
 import Auth from './utils/Auth';
 import Client from './utils/Client';
+import Char from './utils/Char';
 import Image from './utils/Image';
 import Str from './utils/Str';
 import Time from './utils/Time';
@@ -44,6 +46,7 @@ export const LoggedInUser = ({ link = undefined}) => {
 }
 
 export const FetchErrorBox = ({ error, message, center }) => {
+    const [ showDetails, setShowDetails ] = useState(false)
     if (!Str.HasValue(message)) {
         message = "Error retrieving data from Foursight API"
     }
@@ -53,18 +56,24 @@ export const FetchErrorBox = ({ error, message, center }) => {
     else if (!Type.IsObject(error)) {
         error = { message: "Unknown error" }
     }
-    return <div className={`box error thickborder ${center ? "container" : ""}`} style={{marginTop:"16pt",maxWidth:"700pt", horizontalAlign:"center"}}>
-        <u><b>{message}</b></u>
+    return <div className={`box error thickborder ${center ? "container" : ""}`} style={{marginTop:"17pt",maxWidth:"700pt", horizontalAlign:"center"}}>
+        <b>{message}</b>
+        { error?.details && <>
+            <b onClick={() => setShowDetails(!showDetails)} style={{marginLeft:"6pt",verticalAlign:"top",cursor:"pointer"}}>{showDetails ? Char.DownArrow : Char.UpArrow}</b>
+        </>}
+        <small>
+        <br />
         { error?.url && <>
             <br /><b>URL</b>: {error?.url}
         </>}
         { error?.status && <>
-            <br /><b>Status Code</b>: {error?.status}
+            <br /><b>Status</b>: {error?.status} {error?.code ? ` (${error.code})` : ""}
         </>}
-        { error?.details && <>
+        { showDetails && error?.details && <>
             <br />
             <b>Details</b>:&nbsp;
             <small>{error.details}</small>
         </>}
+        </small>
     </div>
 }

@@ -21,6 +21,7 @@ def decrypt_accounts_file(accounts_file = ACCOUNTS_FILE, password = None):
 
 
 def main(args: list = None):
+    # TODO: Use argsparse library.
     if not args:
         args = sys.argv
     file = ACCOUNTS_FILE

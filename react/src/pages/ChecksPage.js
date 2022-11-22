@@ -596,6 +596,9 @@ const ChecksPage = (props) => {
                                 </div>
                             )}
                             <CheckRunArgsBox check={check} update={() => noteChangedCheckBox()}/>
+                            {/* ACTION BEGIN */}
+                            <RunActionBox check={check} update={() => groupList.update()} />
+                            {/* ACTION END */}
                             <>
                                 { isShowingSelectedCheckResultsBox(check) && (<>
                                     <SelectedCheckResultsBox check={check}/>
@@ -1351,5 +1354,47 @@ const ChecksPage = (props) => {
         </div>
     </>
 };
+
+// This is outside because finally starting to factor out into independent components.
+const RunActionBox = ({ check, update }) => {
+    const [ confirmRun, setConfirmRun ] = useState(false);
+    function onClickRunAction() {
+        if (check.__confirmRunAction) {
+            // 
+            // TODO
+            //
+            check.__confirmRunAction = false;
+        }
+        else {
+            check.__confirmRunAction = true;
+        }
+        update();
+    }
+    function onClickRunActionCancel() {
+        check.__confirmRunAction = false;
+        update();
+    }
+    return <>
+        { check.configuringCheckRun && check.results && check.results.action && <>
+            <div className="box thickborder" style={{background:"lightyellow",fontSize:"small",marginTop:"4pt",paddingTop:"8pt",paddingBottom:"8pt"}}>
+                <div style={{marginTop:"0pt"}}>
+                    <b>Action</b>: <span className="tool-tip" data-text={check.results.action}>{check.results.action_title}</span>
+                        <div style={{float:"right",marginTop:"-2pt"}}>
+                            {check.results.allow_action ? <>
+                                <button className="check-run-button" style={{background:check.__confirmRunAction ? "red" : "inhert"}} onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
+                            </>:<>
+                                <button className="check-run-button" disabled={true}>Disabled</button>
+                            </>}
+                        </div>
+                </div>
+                { check.__confirmRunAction && <>
+                    <div style={{border:"1px solid",marginTop:"8pt",marginBottom:"8pt"}} />
+                    <i><b>Are you sure you want to run this action?</b></i>
+                    <span className="check-action-confirm-button" style={{float:"right",marginTop:"-2pt"}} onClick={onClickRunActionCancel}>&nbsp;<b>Cancel</b></span>
+                </>}
+            </div>
+        </>}
+    </>
+}
 
 export default ChecksPage;

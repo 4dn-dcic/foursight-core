@@ -185,6 +185,21 @@
    cursor: pointer;
    user-select: none;
 }
+.check-action-confirm-button {
+   border: 1px solid red;
+   border-radius: 12px;
+   padding-left: 8pt;
+   padding-top: 2pt;
+   padding-bottom: 3pt;
+   padding-right: 12pt;
+   background: var(--box-bg);
+   color: red;
+   cursor: pointer;
+   user-select: none;
+}
+.check-run-button:disabled {
+    background: gray;
+}
 .check-run-button:hover {
     color: yellow;
     background: var(--box-fg);
@@ -422,7 +437,7 @@ ul {
 }
 
 .button {
-    border: 1px solid green;
+    border: 1px solid var(--box-fg);
     background: var(--box-fg);
     color: var(--box-bg);
     padding: 0.1em 0.4em 0.25em 0.4em;

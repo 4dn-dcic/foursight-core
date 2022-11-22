@@ -335,6 +335,9 @@ const AccountInfoRight = ({ info }) => {
 
 const AccountInfo = ({ account, header, fromS3 }) => {
 
+    // The fromS3 flag means we will call /accounts_from_s3 rather than /accounts, to look in S3 for an accounts.json file,
+    // rather than the default included in the (foursight-cgap/chalicelib_cgap or foursight/chalicelib_fourfront) package.
+
     const info = useFetch(Server.Url(`${fromS3 ? "/accounts_from_s3" : "/accounts"}/${account.id}`), { nofetch: false });
 
     function refreshData() {

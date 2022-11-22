@@ -70,7 +70,7 @@ class ReactUi:
     
     def _is_file_type_whitelisted(file: str) -> bool:
         """
-        To be as restrictive as possible we ONLY allow the above whitelisted files.
+        To be as restrictive as possible we ONLY allow the above whitelisted file types.
         """
         for suffix in _REACT_WHITELISTED_FILE_PATH_SUFFIXES:
             if file.endswith(suffix):

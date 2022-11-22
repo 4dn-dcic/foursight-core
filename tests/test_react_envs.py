@@ -10,9 +10,6 @@ def test_envs():
 
     def find_known_env(env: str, envs: list) -> dict:
         known_env = envs.find_known_env(env)
-        # Not testing the GAC name here.
-        if "gac_name" in known_env:
-            del known_env["gac_name"]
         return known_env
 
     with mock.patch.object(react_envs, "foursight_env_name", mock_foursight_env_name):

@@ -149,6 +149,7 @@ const EnvPage = (props) => {
                                     </select>
                                     <br />
                                 </>}
+                                {/* No break after the last item */}
                                 { envIndex < Env.KnownEnvs(header).length - 1 && <br /> }
                             </>}
                         </td>

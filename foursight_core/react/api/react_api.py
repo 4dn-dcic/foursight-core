@@ -151,8 +151,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
         default_env = self._envs.get_default_env()
-        aws_credentials = self._auth.get_aws_credentials(env if env else default_env)
-        portal_url = get_base_url(app.core.get_portal_url(env if env else default_env))
+        aws_credentials = self._auth.get_aws_credentials(env or default_env)
+        portal_url = get_base_url(app.core.get_portal_url(env or default_env))
         response = {
             "app": {
                 "title": app.core.html_main_title,
@@ -174,7 +174,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             },
             "versions": self._get_versions_object(),
             "portal": {
-                "url": app.core.get_portal_url(env if env else default_env),
+                "url": app.core.get_portal_url(env or default_env),
                 "health_url": portal_url + "/health?format=json",
                 "health_ui_url": portal_url + "/health"
             },
@@ -237,7 +237,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "domain": domain,
                 "context": context,
                 "local": is_running_locally(request),
-                "credentials": self._auth.get_aws_credentials(env if env else default_env),
+                "credentials": self._auth.get_aws_credentials(env or default_env),
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified(),
                 "lambda": lambda_function_info
@@ -252,7 +252,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             },
             "buckets": {
                 "env": app.core.environment.get_env_bucket_name(),
-                "foursight": get_foursight_bucket(envname=env if env else default_env, stage=stage_name),
+                "foursight": get_foursight_bucket(envname=env or default_env, stage=stage_name),
                 "foursight_prefix": get_foursight_bucket_prefix(),
                 "info": environment_and_bucket_info,
                 "ecosystem": sort_dictionary_by_case_insensitive_keys(EnvUtils.declared_data()),
@@ -264,7 +264,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             },
             "checks": {
                 "file": app.core.check_handler.CHECK_SETUP_FILE,
-                "bucket": self._get_check_result_bucket_name(env if env else default_env)
+                "bucket": self._get_check_result_bucket_name(env or default_env)
             },
             "known_envs": self._envs.get_known_envs_with_gac_names(),
             "gac": Gac.get_gac_info(),
@@ -417,8 +417,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Deletes the user identified by the given uuid.
         """
         ignored(request)
-        _ = ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
-        _ = ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
+        ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
+        ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
 
     def reactapi_checks(self, request: dict, env: str) -> Response:
@@ -443,6 +443,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if not check_results:
             return self.create_success_response({})
         uuid = check_results["uuid"]
+        if check_results.get("action"):
+            check_results["action_title"] = " ".join(check_results["action"].split("_")).title()
         check_datetime = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
         check_datetime = convert_utc_datetime_to_useastern_datetime_string(check_datetime)
         check_results["timestamp"] = check_datetime
@@ -695,6 +697,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     @staticmethod
     def _get_accounts_file() -> Optional[str]:
+        """
+        Returns the full path name to the accounts.json file if one was found or None if not.
+        The search for this file happens at startup in AppUtilsCore construction time via its
+        _locate_accounts_file function.
+        """
         return app.core.accounts_file
 
     @staticmethod
@@ -725,6 +732,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def _read_accounts_json(self, accounts_json_content) -> dict:
         if not accounts_json_content.startswith("["):
+            # TODO: This is lame. Just use different file suffixes to distinguish.
             encryption = Encryption()
             accounts_json_content = encryption.decrypt(accounts_json_content)
         accounts_json = json.loads(accounts_json_content)
@@ -800,25 +808,24 @@ class ReactApi(ReactApiBase, ReactRoutes):
             foursight_header_json = foursight_header_response.json()
             response["foursight"]["versions"] = foursight_header_json["versions"]
             foursight_app = foursight_header_json.get("app")
-            if foursight_app:
-                response["foursight"]["package"] = foursight_app["package"]
-                response["foursight"]["stage"] = foursight_app["stage"]
-                response["foursight"]["deployed"] = foursight_app["deployed"]
+            response["foursight"]["package"] = foursight_app.get("package")
+            response["foursight"]["stage"] = foursight_app.get("stage")
+            response["foursight"]["deployed"] = foursight_app.get("deployed")
             response["foursight"]["default_env"] = foursight_header_json["auth"]["known_envs"][0]
             response["foursight"]["env_count"] = foursight_header_json["auth"]["known_envs_actual_count"]
             response["foursight"]["identity"] = foursight_header_json["auth"]["known_envs"][0].get("gac_name")
             foursight_header_json_s3 = foursight_header_json.get("s3")
+            # Older versions of the /header API might not have this s3 element so check.
             if foursight_header_json_s3:
                 response["foursight"]["s3"] = {}
                 response["foursight"]["s3"]["bucket_org"] = foursight_header_json_s3.get("bucket_org")
                 response["foursight"]["s3"]["global_env_bucket"] = foursight_header_json_s3.get("global_env_bucket")
                 response["foursight"]["s3"]["encrypt_key_id"] = foursight_header_json_s3.get("encrypt_key_id")
-            if foursight_app:
-                response["foursight"]["aws_account_number"] = foursight_app["credentials"].get("aws_account_number")
-                response["foursight"]["aws_account_name"] = foursight_app["credentials"].get("aws_account_name")
-                response["foursight"]["re_captcha_key"] = foursight_app["credentials"].get("re_captcha_key")
-                if response["foursight"]["re_captcha_key"] and "ENTER VALUE" in response["foursight"]["re_captcha_key"]:
-                    response["foursight"]["re_captcha_key"] = None
+            response["foursight"]["aws_account_number"] = foursight_app["credentials"].get("aws_account_number")
+            response["foursight"]["aws_account_name"] = foursight_app["credentials"].get("aws_account_name")
+            response["foursight"]["re_captcha_key"] = foursight_app["credentials"].get("re_captcha_key")
+            if response["foursight"]["re_captcha_key"] and "ENTER VALUE" in response["foursight"]["re_captcha_key"]:
+                response["foursight"]["re_captcha_key"] = None
             response["foursight"]["auth0_client"] = foursight_header_json["auth"]["aud"]
             foursight_header_json_portal = foursight_header_json.get("portal")
             if not foursight_header_json_portal:
@@ -866,7 +873,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         account = [account for account in accounts if is_account_name_match(account, name)] if accounts else None
         if not account or len(account) > 1:
             response["name"] = name
-            response["error"] = f"Cannot find {' unique' if len(account) > 1 else ''} account."
+            response["error"] = f"Cannot find {'unique' if len(account) > 1 else ''} account."
             return self.create_success_response(response)
         else:
             account = account[0]
@@ -940,6 +947,5 @@ class ReactApi(ReactApiBase, ReactRoutes):
     @staticmethod
     def reactapi_testsize(n: int) -> Response:
         n = int(n) - 8  # { "N": "" }
-        s = "".join(["X" for _ in range(n)])
-        body = {"N": s}
+        body = {"N": "X" * n}
         return app.core.create_success_response(body)
