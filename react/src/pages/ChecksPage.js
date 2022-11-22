@@ -1364,14 +1364,22 @@ const RunActionBox = ({ check, update }) => {
             // TODO
             //
             check.__confirmRunAction = false;
+            check.__runAction = true;
         }
         else {
             check.__confirmRunAction = true;
+            check.__runAction = false;
         }
         update();
     }
     function onClickRunActionCancel() {
         check.__confirmRunAction = false;
+        check.__runAction = false;
+        update();
+    }
+    function onClickRunActionResultClose() {
+        check.__confirmRunAction = false;
+        check.__runAction = false;
         update();
     }
     return <>
@@ -1391,6 +1399,11 @@ const RunActionBox = ({ check, update }) => {
                     <div style={{border:"1px solid",marginTop:"8pt",marginBottom:"8pt"}} />
                     <i><b>Are you sure you want to run this action?</b></i>
                     <span className="check-action-confirm-button" style={{float:"right",marginTop:"-2pt"}} onClick={onClickRunActionCancel}>&nbsp;<b>Cancel</b></span>
+                </>}
+                { check.__runAction && <>
+                    <div style={{border:"1px solid",marginTop:"8pt",marginBottom:"8pt"}} />
+                    <b style={{float:"right",cursor:"pointer"}} onClick={onClickRunActionResultClose}>{Char.X}&nbsp;</b>
+                    <i><b>Running actions are not yet supported ...</b></i>
                 </>}
             </div>
         </>}
