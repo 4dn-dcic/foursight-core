@@ -194,6 +194,7 @@ class Checks:
                                             cron_description = cron_descriptor.get_description(str(event_schedule))
                                             if cron_description.startswith("At "):
                                                 cron_description = cron_description[3:]
+                                            cron_description = cron_description + " (UTC)"
                                         la["lambda_schedule_description"] = cron_description
         return lambdas
 
