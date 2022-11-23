@@ -1284,7 +1284,10 @@ class AppUtilsCore(ReactApi, Routes):
                     # it most likely means the action is still running
                     if assc_action is not None:
                         res['assc_action_status'] = assc_action['status']
-                        res['assc_action'] = json.dumps(assc_action, indent=4)
+                        if stringify:
+                            res['assc_action'] = json.dumps(assc_action, indent=4)
+                        else:
+                            res['assc_action'] = assc_action
                         # update check summary
                         if res.get('summary'):
                             res['summary'] = 'ACTION %s: %s' % (assc_action['status'], res['summary'])
