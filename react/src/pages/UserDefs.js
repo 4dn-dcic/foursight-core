@@ -23,16 +23,20 @@ const _UserInputs = [
         label: "Administrator",
         type: "boolean"
     },
+/*
+ * TODO ...
+ *
     {
-        name: "project",  // TODO
+        name: "project",
         label: "Project",
         type: "boolean"
     },
     {
-        name: "institution",  // TODO
+        name: "institution",
         label: "Institution",
         type: "boolean"
     },
+*/
     {
         name: "created",
         label: "Created",

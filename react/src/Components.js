@@ -56,7 +56,7 @@ export const FetchErrorBox = ({ error, message, center }) => {
     else if (!Type.IsObject(error)) {
         error = { message: "Unknown error" }
     }
-    return <div className={`box error thickborder ${center ? "container" : ""}`} style={{marginTop:"17pt",maxWidth:"700pt", horizontalAlign:"center"}}>
+    return <div className={`box error thickborder ${center ? "container" : ""}`} style={{marginTop:"18pt",marginBottom:"8pt",maxWidth:"700pt", horizontalAlign:"center"}}>
         <b>{message}</b>
         { error?.details && <>
             <b onClick={() => setShowDetails(!showDetails)} style={{marginLeft:"6pt",verticalAlign:"top",cursor:"pointer"}}>{showDetails ? Char.DownArrow : Char.UpArrow}</b>
