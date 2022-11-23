@@ -53,7 +53,7 @@ def refresh_access_keys(connection, **kwargs):
     admin_keys = [('4dndcic@gmail.com', 'access_key_admin'),
                   ('tibanna.app@gmail.com', 'access_key_tibanna'),
                   ('foursight.app@gmail.com', 'access_key_foursight')]
-    s3 = s3_utils.s3Utils()
+    s3 = s3_utils.s3Utils(env=connection.ff_env)
     full_output = {
         'successfully_generated': []
     }
