@@ -365,6 +365,9 @@
     padding: 0.6em 0.8em;
     vertical-align: middle;
 }
+.box.margin {
+    margin-top: 1.8pt;
+}
 .box.cell {
     display: table-cell;
 }
@@ -376,6 +379,9 @@
 }
 .box.lighten {
     background: var(--box-bg-lighten);
+}
+.box.darken {
+    background: var(--box-bg-darken);
 }
 .box.warning {
     background-color: #FCF8E3;
@@ -511,4 +517,8 @@ form {
   color: var(--box-bg);
   background: var(--box-fg);
   border-color: var(--box-fg);
+}
+
+.pointer {
+    cursor: pointer;
 }

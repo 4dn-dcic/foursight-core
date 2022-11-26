@@ -210,7 +210,7 @@ export const useFetch = (url, args) => {
         // get ["loading"]() { return loading; }
     };
 
-    response.refresh = (function(url, args) {
+    response.refresh = response.fetch = (function(url, args) {
         _doFetch(assembleArgs(url, args, true), this && this.__usefetch_response === true ? this.data : undefined);
     }).bind(response);
 
@@ -479,7 +479,7 @@ function _doFetch(args, current = undefined) {
         withCredentials: "include",
     };
 
-    Debug.Info(`FETCH: ${args.method} ${args.url} (TIMEOUT: ${args.timeout})`);
+    Debug.Info(`FETCH: ${args.method} ${args.url}`);
     Debug.Info(fetch)
 
     // Finally, the actual (Axois based) HTTP fetch happens here.
