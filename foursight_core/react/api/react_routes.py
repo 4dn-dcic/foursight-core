@@ -163,6 +163,14 @@ class ReactRoutes:
         request = app.current_request.to_dict()
         return app.core.reactapi_checks_run(request, env, check=check, args=get_request_arg(request, "args"))
 
+    @route("/{env}/action/{action}/run", authorize=True)
+    def reactapi_route_action_run(env: str, action: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Kicks off a run of the given check.
+        """
+        request = app.current_request.to_dict()
+        return app.core.reactapi_action_run(request, env, action=action, args=get_request_arg(request, "args"))
+
     @route("/{env}/checks-status", authorize=True)
     def reactapi_route_checks_status(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """

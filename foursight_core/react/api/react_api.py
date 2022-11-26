@@ -432,7 +432,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def reactapi_check_results(self, request: dict, env: str, check: str) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/checks/{check}
-        Returns the latest result from the given check (name).
+        Returns the latest result (singular) from the given check (name).
         """
         ignored(request)
         connection = app.core.init_connection(env)
@@ -455,18 +455,26 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/checks/{check}/{uuid}
         Returns the check result for the given check (name) and uuid.
         Analogous legacy function is app_utils.view_foursight_check.
+        TODO: No need to return array.
         """
         ignored(request)
-        body = []
+        body = {}
         try:
             connection = app.core.init_connection(env)
         except Exception:
             connection = None
+        print('xyzzy/reactapi_check_result/a')
         if connection:
+            print('xyzzy/reactapi_check_result/b')
             check_result = app.core.CheckResult(connection, check)
+            print('xyzzy/reactapi_check_result/c')
             if check_result:
+                print('xyzzy/reactapi_check_result/d')
+                print(check_result)
                 data = check_result.get_result_by_uuid(uuid)
                 if data is None:
+                    print('xyzzy/reactapi_check_result/e')
+                    print(data)
                     # the check hasn't run. Return a placeholder view
                     data = {
                         'name': check,
@@ -477,11 +485,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     }
                 title = app.core.check_handler.get_check_title_from_setup(check)
                 processed_result = app.core.process_view_result(connection, data, is_admin=True, stringify=False)
-                body.append({
+                body = {
                     'status': 'success',
                     'env': env,
                     'checks': {title: processed_result}
-                })
+                }
+                print('xyzzy/reactapi_check_result/f')
+                print(body)
         return self.create_success_response(body)
 
     def reactapi_checks_history_recent(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
@@ -594,12 +604,30 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def reactapi_checks_run(self, request: dict, env: str, check: str, args: str) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/checks/{check}/run
+        The args string, if any, is assumed to be a Base64 encoded JSON object.
         Kicks off a run for the given check (name).
         """
         ignored(request)
-        args = base64_decode_to_json(args)
+        args = base64_decode_to_json(args) if args else None
         queued_uuid = app.core.queue_check(env, check, args)
         return self.create_success_response({"check": check, "env": env, "uuid": queued_uuid})
+
+    def reactapi_action_run(self, request: dict, env: str, action: str, args: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/checks/action/{action}/run
+        The args string, if any, is assumed to be a Base64 encoded JSON object.
+        Kicks off a run for the given action (name).
+        """
+        ignored(request)
+        print('xyzzy/reactapi_checks_action_run/a')
+        args = base64_decode_to_json(args) if args else {}
+        print('xyzzy/reactapi_checks_action_run/b')
+        print(action)
+        print(args)
+        queued_uuid = app.core.queue_action(env, action, args)
+        print('xyzzy/reactapi_checks_action_run/c')
+        print(queued_uuid)
+        return self.create_success_response({"action": action, "env": env, "uuid": queued_uuid})
 
     def reactapi_checks_status(self, request: dict, env: str) -> Response:
         """

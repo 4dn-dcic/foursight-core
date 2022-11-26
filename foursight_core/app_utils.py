@@ -1704,7 +1704,15 @@ class AppUtilsCore(ReactApi, Routes):
         Returns:
             str: uuid of the queued check (from send_single_to_queue)
         """
+        print('xyzzy/queue_check/a')
+        print(environ)
+        print(check)
+        print(params)
+        print(deps)
+        print(uuid)
         check_str = self.check_handler.get_check_strings(check)
+        print('xyzzy/queue_check/b')
+        print(check_str)
         if not check_str:
             error_res = {
                 'status': 'error',

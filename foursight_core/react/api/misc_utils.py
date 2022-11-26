@@ -26,7 +26,7 @@ def get_request_domain(request: dict) -> str:
 
 
 def get_request_args(request: dict) -> dict:
-    return request.get("query_params", {})
+    return request.get("query_params") or {}
 
 
 def get_request_arg(request: dict, name: str) -> Optional[str]:
