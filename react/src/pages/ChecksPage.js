@@ -340,7 +340,7 @@ import Styles from '../Styles';
                             <RunActionBox check={check} update={() => groupList.update()} />
                             {/* ACTION END */}
                             <>
-                                { isShowingSelectedCheckResultsBox(check) && (<>
+                                { (true||isShowingSelectedCheckResultsBox(check)) && (<>
                                     <SelectedCheckResultsBox check={check} env={env} groupList={groupList} info={info} />
                                 </>)}
                             </>
@@ -379,22 +379,26 @@ import Styles from '../Styles';
         check.__resultByUuid = useFetch();
 
         useEffect(() => {
-            check.__result.fetch();
+            check.__result.fetch({
+                onData: (data) => {
+                    fetchResultByUuid(check, data.uuid, groupList);
+                }
+            });
         }, [check]);
 
         function onClickResultByUuid(check, groupList) {
             //check.__showingResultDetails = true;
             //noteChangedResults(groupList)
             if (check.__resultByUuid.empty) {
-                fetchResultByUuid(check, groupList);
+                fetchResultByUuid(check, null, groupList);
             }
             setShowResultByUuid(true); 
         }
 
-        function fetchResultByUuid(check, groupList) {
-            if (check.__result.get("uuid")) {
+        function fetchResultByUuid(check, uuid, groupList) {
+            if (check.__result.get("uuid") || uuid) {
                 check.__resultByUuid.refresh({
-                    url: Server.Url(`/checks/${check.name}/${check.__result.get("uuid")}`),
+                    url: Server.Url(`/checks/${check.name}/${check.__result.get("uuid") || uuid}`),
                     onData: () => { noteChangedResults(groupList); }
                 });
             }
@@ -414,7 +418,7 @@ import Styles from '../Styles';
 
         function refreshResults(check, env, groupList) {
             if (showResultByUuid) {
-                fetchResultByUuid(check, groupList);
+                fetchResultByUuid(check, null, groupList);
             }
             else {
                 check.__result.refresh();
@@ -941,7 +945,7 @@ const ChecksPage = (props) => {
 
     const ResultsHistoryPanel = ({ env }) => {
         let histories = historyList.filter((check) => check.__showingHistory);
-        if (histories.length <= 0) {
+        if (!histories || histories.length <= 0) {
             return <span />
         }
         return <div>
@@ -1387,12 +1391,15 @@ const ChecksPage = (props) => {
 
 // This is outside because finally starting to factor out into independent components.
 const RunActionBox = ({ check }) => {
+
     const [ runActionConfirm, setRunActionConfirm ] = useState();
     const [ runAction, setRunAction ] = useState();
-        useEffect(() => {
-            setRunActionConfirm(false);
-            setRunAction(false);
-        }, []);
+
+    useEffect(() => {
+        setRunActionConfirm(false);
+        setRunAction(false);
+    }, []);
+
     function onClickRunAction() {
         if (runActionConfirm) {
             // 
@@ -1406,24 +1413,43 @@ const RunActionBox = ({ check }) => {
             setRunAction(false);
         }
     }
+
     function onClickRunActionCancel() {
         setRunActionConfirm(false);
         setRunAction(false);
     }
+
     function onClickRunActionResultClose() {
         setRunActionConfirm(false);
         setRunAction(false);
     }
+
+    function getAllowAction(check, resultByUuid) {
+        if (!Type.IsArray(resultByUuid?.data) || (resultByUuid.data.length === 0) ||
+            !Type.IsObject(check) || !Str.HasValue(check.title)) {
+            return false;
+        }
+        resultByUuid = resultByUuid.data[0]?.checks;
+        if (!Type.IsObject(resultByUuid)) {
+            return false;
+        }
+        resultByUuid = resultByUuid[check.title];
+        if (!Type.IsObject(resultByUuid)) {
+            return false;
+        }
+        return resultByUuid.allow_action === true;
+    }
+
     return <>
         { check.__configuringCheckRun && check.__result?.get("action") && <>
             <div className="box thickborder" style={{background:"lightyellow",fontSize:"small",marginTop:"4pt",paddingTop:"8pt",paddingBottom:"8pt"}}>
                 <div style={{marginTop:"0pt"}}>
                     <b><u>Action</u></b>: <span className="tool-tip" data-text={check.__result.get("action")}>{check.__result.get("action_title")}</span>
                         <div style={{float:"right",marginTop:"-2pt"}}>
-                            {check.__result.get("allow_action") ? <>
+                            {getAllowAction(check, check.__resultByUuid) ? <>
                                 <button className="check-run-button" style={{background:runActionConfirm ? "red" : "inhert"}} onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
                             </>:<>
-                                <button className="check-run-button" disabled={true}>Disabled</button>
+                                <button className="check-run-button disabled" style={{cursor:"not-allowed"}} disabled={true}>Disabled</button>
                             </>}
                         </div>
                 </div>

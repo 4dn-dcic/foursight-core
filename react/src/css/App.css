@@ -200,6 +200,15 @@
 .check-run-button:disabled {
     background: gray;
 }
+.check-run-button.disabled {
+    background: gray;
+    color: white;
+    cursor:not-allowed;
+}
+.check-run-button.disabled:hover {
+    color: white;
+    background: gray;
+}
 .check-run-button:hover {
     color: yellow;
     background: var(--box-fg);
