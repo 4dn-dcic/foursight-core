@@ -395,7 +395,10 @@ import Styles from '../Styles';
                                 </>}
                             </>}
                             <span style={{whiteSpace:"nowrap"}}>
-                            <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}.}`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check, env, historyList);}}>{check.title}</u>
+                            <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}.}`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check, env, historyList);}}>
+                                {check.title}
+                            </u>
+                            { check.__result.get("action") && <span style={{color:"darkred"}} className="tool-tip" data-text="This check has an associated action.">&nbsp;&#x2756;</span> }
                             { check.registered_github_url && <>
                                 <a className="tool-tip" data-text={`Click here to view the source code for this check: ${check.registered_file}`} style={{marginLeft:"6pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                             </>}
@@ -514,7 +517,7 @@ import Styles from '../Styles';
             </>
         }
         return <div>
-            { (check.__showingResults && !check.__result.loading) && <small style={{color:check.__result.get("status")?.toUpperCase() === "PASS" ? "inherit" : "darkred",cursor:"pointer"}}>
+            { (check.__showingResults) && <small style={{color:check.__result.get("status")?.toUpperCase() === "PASS" ? "inherit" : "darkred",cursor:"pointer"}}>
                 { !check.__result.empty ? (<>
                     { <div style={{height:"1px",marginTop:"8px",marginBottom:"2px",background:"gray"}}></div> }
                     <span onClick={() => onClickResult(check, groupList)}><span className="tool-tip" data-text={Time.FormatDuration(check.__result.get("timestamp"), new Date(), true, null, null, "ago")}>
@@ -883,8 +886,6 @@ const ChecksPage = (props) => {
                 // Choose some group as default to show.
                 //
                 let group = data.find(item => item.group.toLowerCase().includes("clean"));
-                //if (!group) group = data[0];
-                if (!group) group = data[4];
                 group = data[0];
                 showGroup(group, environ, groupList);
             }

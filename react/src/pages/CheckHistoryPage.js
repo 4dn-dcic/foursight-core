@@ -212,7 +212,7 @@ const CheckHistoryPage = (props) => {
                                                     <img alt="copy" onClick={() => Clipboard.Copy(check)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
                                                     <span onClick={() => hideResult(history)} style={{marginLeft:"6pt",marginRight:"2pt",fontSize:"large",fontWeight:"bold",cursor:"pointer"}}>X</span>
                                                 </div>
-                                                {Yaml.Format(history.__result[0])}
+                                                {Yaml.Format(history.__result)}
                                             </>}
                                         </pre>
                                     </td>
