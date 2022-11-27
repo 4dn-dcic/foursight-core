@@ -208,15 +208,16 @@
    user-select: none;
 }
 .check-run-button:disabled {
+    color: white;
     background: gray;
 }
 .check-run-button.disabled {
     background: gray;
-    color: white;
+    color: white !important;
     cursor:not-allowed;
 }
 .check-run-button.disabled:hover {
-    color: white;
+    color: white !important;
     background: gray;
 }
 .check-run-button.disabled:active {
