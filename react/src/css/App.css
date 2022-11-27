@@ -185,6 +185,16 @@
    cursor: pointer;
    user-select: none;
 }
+.check-run-button.red {
+    background: red;
+}
+.check-run-button.red:hover {
+    background: red;
+}
+.check-run-button.red:active {
+    color: red;
+    background: yellow;
+}
 .check-action-confirm-button {
    border: 1px solid red;
    border-radius: 12px;
@@ -206,6 +216,10 @@
     cursor:not-allowed;
 }
 .check-run-button.disabled:hover {
+    color: white;
+    background: gray;
+}
+.check-run-button.disabled:active {
     color: white;
     background: gray;
 }

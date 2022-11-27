@@ -302,6 +302,9 @@ import Styles from '../Styles';
 
     const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
 
+        //const [ runActionAllowed, setRunActionAllowed ] = useState(false);
+        const runActionAllowedState = useState(false);
+
         function toggleCheckResultsBox(check, env, groupList) {
             if (check.__showingResults) {
                 hideResultBox(check, groupList);
@@ -310,10 +313,9 @@ import Styles from '../Styles';
                 showResultBox(check, env, groupList);
             }
         }
-        //useEffect(() => {
-                //console.log(`.......................................:${check.name}`)
-                //check.__showingResults = true;
-        //}, [check]);
+        useEffect(() => {
+            check.__showingResults = true;
+        }, [check]);
 
         return <div>
             <div className="box check-box" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"450pt"}}>
@@ -376,13 +378,14 @@ import Styles from '../Styles';
                             )}
                             <CheckRunArgsBox check={check} env={env} groupList={groupList} historyList={historyList} update={() => noteChangedCheckBox(groupList)}/>
                             {/* ACTION BEGIN */}
-                            <RunActionBox check={check} env={env} groupList={groupList} update={() => groupList.update()} />
+                                <CheckRunningBox check={check} groupList={groupList} info={info} />
+                            <RunActionBox check={check} env={env} groupList={groupList} update={() => groupList.update()} runActionAllowedState={runActionAllowedState} />
                             {/* ACTION END */}
-                            <>
-                                { (true||isShowingSelectedCheckResultsBox(check)) && (<>
-                                    <SelectedCheckResultsBox check={check} env={env} groupList={groupList} info={info} />
-                                </>)}
-                            </>
+{/*
+                            <SelectedCheckResultsBox check={check} env={env} groupList={groupList} info={info} runActionAllowedState={runActionAllowedState} />
+*/}
+                                <ActionRunningBox check={check} groupList={groupList} info={info} />
+                                <ResultBox check={check} env={env} groupList={groupList} runActionAllowedState={runActionAllowedState} />
                         </td>
                     </tr>
                     <tr style={{height:"3pt"}}><td></td></tr>
@@ -401,30 +404,40 @@ import Styles from '../Styles';
         </span>
     }
 
-    const SelectedCheckResultsBox = ({ check, env, groupList, info }) => {
+    const SelectedCheckResultsBox = ({ check, env, groupList, info, runActionAllowedState }) => {
         return <div>
             {/* Check manually queued box */}
             <CheckRunningBox check={check} groupList={groupList} info={info} />
             <ActionRunningBox check={check} groupList={groupList} info={info} />
             {/* Schedule(s) and latest run lines */}
-            <ResultBox check={check} env={env} groupList={groupList} />
+            <ResultBox check={check} env={env} groupList={groupList} runActionAllowedState={runActionAllowedState} />
         </div>
     }
 
-    const ResultBox = ({ check, env, groupList }) => {
+    const ResultBox = ({ check, env, groupList, runActionAllowedState }) => {
 
         const [showResultByUuid, setShowResultByUuid ] = useState(false);
         const [showResultByAction, setShowResultByAction ] = useState(false);
 
         check.__result = useFetch(Server.Url(`/checks/${check.name}`, env), { nofetch: true });
-        check.__resultByUuid = useFetch();
-        check.__resultByAction = useFetch();
+        //check.__result = useFetch();
+        check.__resultByUuid = useFetch('dummy', { nofetch: true });
+        check.__resultByAction = useFetch('dummy', { nofetch: true });
+        //check.__resultByUuid = useFetch();
+        //check.__resultByAction = useFetch();
 
         useEffect(() => {
             check.__result.fetch({
+                // url: Server.Url(`/checks/${check.name}`, env),
+                    /*
                 onData: (data) => {
                     fetchResultByUuid(check, data.uuid, groupList);
                     fetchResultByAction(check, data.action, groupList);
+                }
+                */
+                onDone: (response) => {
+                    fetchResultByUuid(check, response.data?.uuid, groupList);
+                    fetchResultByAction(check, response.data?.action, groupList);
                 }
             });
         }, [check]);
@@ -461,10 +474,29 @@ import Styles from '../Styles';
         }
 
         function fetchResultByUuid(check, uuid, groupList) {
-            if (check.__result.get("uuid") || uuid) {
+            if (uuid || check.__result.get("uuid")) {
+                    console.log(`fetchResultByUuid/enter/${uuid}`);
                 check.__resultByUuid.refresh({
-                    url: Server.Url(`/checks/${check.name}/${check.__result.get("uuid") || uuid}`),
-                    onData: () => { noteChangedResults(groupList); }
+                    url: Server.Url(`/checks/${check.name}/${uuid || check.__result.get("uuid")}`),
+                    onDone: (response) => {
+                        console.log('fetchResultByUuid/onDone');
+                        console.log(response);
+                        console.log(check);
+                        noteChangedResults(groupList);
+                        noteChangedSelectedGroups(groupList);
+                        if (response.data?.checks) {
+                            console.log('fetchResultByUuid/onDone/got-response');
+                            const responseByUuid = response.data.checks[check.title];
+                            if (responseByUuid) {
+                                console.log('fetchResultByUuid/onDone/got-response/2');
+                                if (Type.IsBoolean(responseByUuid.allow_action)) {
+                                    console.log('fetchResultByUuid/onDone/got-response/3');
+                                    console.log(responseByUuid.allow_action ? 'true' : 'false')
+                                    runActionAllowedState[1](responseByUuid.allow_action);
+                                }
+                            }
+                        }
+                    }
                 });
             }
         }
@@ -481,26 +513,18 @@ import Styles from '../Styles';
             if (action) {
                 check.__resultByAction.refresh({
                     url: Server.Url(`/checks/${action}`),
-                    onData: () => { noteChangedResults(groupList); }
+                    onDone: () => { noteChangedResults(groupList); }
                 });
             }
         }
 
         function refreshResults(check, env, groupList) {
-                fetchResultByUuid(check, null, groupList);
-                fetchResultByAction(check, null, groupList);
-                check.__result.refresh();
-                noteChangedResults(groupList);
-                return;
-            if (showResultByUuid) {
-                fetchResultByUuid(check, null, groupList);
-            }
-            else if (showResultByAction) {
-                fetchResultByAction(check, null, groupList);
-            }
-            else {
-                check.__result.refresh();
-            }
+            check.__result.refresh({
+                onData: (data) => {
+                    fetchResultByUuid(check, data?.uuid, groupList);
+                }
+            });
+            fetchResultByAction(check, null, groupList);
         }
 
         const RefreshResultButton = ({ check, env, checkUuid, groupList }) => {
@@ -527,7 +551,7 @@ import Styles from '../Styles';
         }
 
         return <div>
-            { !check.__result.loading && <small style={{color:check.__result.get("status")?.toUpperCase() === "PASS" ? "inherit" : "darkred",cursor:"pointer"}}>
+            { (check.__showingResults && (true || !check.__result.loading)) && <small style={{color:check.__result.get("status")?.toUpperCase() === "PASS" ? "inherit" : "darkred",cursor:"pointer"}}>
                 { !check.__result.empty ? (<>
                     { <div style={{height:"1px",marginTop:"8px",marginBottom:"2px",background:"gray"}}></div> }
                     <span onClick={() => onClickResult(check, groupList)}><span className="tool-tip" data-text={Time.FormatDuration(check.__result.get("timestamp"), new Date(), true, null, null, "ago")}>
@@ -596,19 +620,20 @@ import Styles from '../Styles';
                 </>)}
             </small> }
             {/* Results details or loading result box */}
-            { check.__showingResultDetails ? <>
+            { check.__showingResultDetails && (!check.__result.empty || !check.__resultByUuid.empty || !check.__resultByAction.empty) ? <>
                 <div style={{height:"2pt"}} />
                 <ResultDetailsBox check={check} groupList={groupList} showResultByUuid={showResultByUuid} showResultByAction={showResultByAction} />
             </>:<>
-                { (check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading)  && <>
+                { (check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading) && <>
                     <div style={{height:"1px",marginTop:"8px",marginBottom:"2px",background:"gray"}}></div>
-                    <StandardSpinner condition={check.__result.loading} color={Styles.GetForegroundColor()} label={"Loading latest result"} />
+                    <StandardSpinner condition={check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading} color={Styles.GetForegroundColor()} label={"Loading latest result"} />
                 </>}
             </>}
         </div>
     }
 
     const ResultDetailsBox = ({check, groupList, showResultByUuid, showResultByAction, style}) => {
+        if (!check.__showingResults) return <></>
         if (showResultByUuid) {
             return <pre className="box lighten" style={{wordWrap:"break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
                 <div style={{float:"right",marginTop:"0px"}}>
@@ -616,8 +641,8 @@ import Styles from '../Styles';
                     <img alt="copy" onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
                     &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.__showingResultDetails = false ; noteChangedResults(groupList); }}>X</span>
                 </div>
-                { check.__resultByUuid.loading ? <>
-                    <StandardSpinner condition={check.__resultByUuid?.loading} color={Styles.GetForegroundColor()} label={"Loading latest result"} />
+                { (check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading) ? <>
+                    <StandardSpinner condition={check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading} color={Styles.GetForegroundColor()} label={"Loading latest result "}/>
                 </>:<>{Yaml.Format(check.__resultByUuid.get())}</>}
             </pre>
         }
@@ -628,8 +653,8 @@ import Styles from '../Styles';
                     <img alt="copy" onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
                     &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.__showingResultDetails = false ; noteChangedResults(groupList); }}>X</span>
                 </div>
-                { check.__resultByAction.loading ? <>
-                    <StandardSpinner condition={check.__resultByAction?.loading} color={Styles.GetForegroundColor()} label={"Loading latest result"} />
+                { (check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading) ? <>
+                    <StandardSpinner condition={check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading} color={Styles.GetForegroundColor()} label={"Loading latest result "}/>
                 </>:<>{Yaml.Format(check.__resultByAction.get())}</>}
             </pre>
         }
@@ -640,8 +665,8 @@ import Styles from '../Styles';
             &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(groupList); } }>{check.showingResultDetailsFull ? <span title="Show full result output.">{Char.UpArrow}</span> : <span>{Char.DownArrow}</span>}</span>
             &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.__showingResultDetails = false ; noteChangedResults(groupList); }}>X</span>
             </div>
-            { check.__result.loading ?
-                <StandardSpinner condition={check.__result.loading} color={Styles.GetForegroundColor()} label={"Loading latest result summary"}/>
+            { (check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading) ?
+                <StandardSpinner condition={check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading} color={Styles.GetForegroundColor()} label={"Loading latest result "}/>
             :
                 ( !check.__result.empty ?
                     (Yaml.Format(check.showingResultDetailsFull ? check.__result.get("full_output") : check.__result.get()))
@@ -671,7 +696,7 @@ import Styles from '../Styles';
             </div>
         }
         return <div>
-            <div className={"check-run-button"} style={{...style, cursor:readOnlyMode && check.__configuringCheckRun ? "not-allowed" : "",background:readOnlyMode && check.__configuringCheckRun ? "#888888" : "",color:check.__configuringCheckRun ? "yellow" : ""}}
+            <div className={"check-run-button" + (check.__configuringCheckRun ? "" : "")} style={{...style, cursor:readOnlyMode && check.__configuringCheckRun ? "not-allowed" : "",background:readOnlyMode && check.__configuringCheckRun ? "#888888" : "",color:check.__configuringCheckRun ? "yellow" : ""}}
                 onClick={(e) => {
                     if (check.__configuringCheckRun) {
                         if (!readOnlyMode) {
@@ -689,13 +714,13 @@ import Styles from '../Styles';
                 <span className={"tool-tip"} data-text={readOnlyMode ? "Run disabled because in readonly mode." : "Click to run this check."}>
                     { !readOnlyMode ? <>
                         { check.__configuringCheckRun ? <>
-                            <span style={{fontSize:"small"}}>{Char.RightArrowFat}</span>&nbsp;<span>Run</span>
+                            <span style={{fontSize:"small"}}>{Char.RightArrowFat}</span>&nbsp;<span>Run Check</span>
                         </>:<>
                             <span style={{fontSize:"small"}}></span>&nbsp;<span>Run ...</span>
                         </>}
                     </>:<>
                         { check.__configuringCheckRun ? <>
-                            <span style={{fontSize:"",color:"#DDDDDD",background:"#888888"}}><small>&nbsp;</small>Disabled</span>
+                            <span style={{fontSize:"",color:"white",background:"#888888"}}><small>&nbsp;</small>Run Check Disabled</span>
                         </>:<>
                             <span style={{fontSize:"small"}}></span>&nbsp;<span>Run ...</span>
                         </>}
@@ -1535,11 +1560,12 @@ const ChecksPage = (props) => {
 }
 
 // This is outside because finally starting to factor out into independent components.
-const RunActionBox = ({ check, env, groupList }) => {
+const RunActionBox = ({ check, env, groupList, runActionAllowedState }) => {
 
     const [ header ] = useContext(HeaderData);
-    const [ runActionConfirm, setRunActionConfirm ] = useState();
-    const [ runAction, setRunAction ] = useState();
+    const [ runActionConfirm, setRunActionConfirm ] = useState(false);
+    const [ runAction, setRunAction ] = useState(false);
+    const [ readOnlyMode ] = useReadOnlyMode();
     const fetch = useFetchFunction();
 
     useEffect(() => {
@@ -1555,12 +1581,12 @@ const RunActionBox = ({ check, env, groupList }) => {
             setRunActionConfirm(false);
             setRunAction(true);
             const action = check.__result?.get("action")
-                console.log('xyzzy/run-action/a')
-                console.log(action)
-                console.log(check)
             if (action) {
-                console.log('xyzzy/run-action/b')
                 doRunAction(check, action, env, groupList, fetch);
+                //
+                // Disable Run Action button right after run action.
+                //
+                runActionAllowedState[1](false);
             }
         }
         else {
@@ -1570,6 +1596,7 @@ const RunActionBox = ({ check, env, groupList }) => {
     }
 
     function onClickRunActionCancel() {
+            console.log('onClickRunActionCancel')
         setRunActionConfirm(false);
         setRunAction(false);
     }
@@ -1594,22 +1621,6 @@ const RunActionBox = ({ check, env, groupList }) => {
         return resultByUuid.allow_action === true;
     }
 
-    function OLD_getAllowAction(check, resultByUuid) {
-        if (!Type.IsArray(resultByUuid?.data) || (resultByUuid.data.length === 0) ||
-            !Type.IsObject(check) || !Str.HasValue(check.title)) {
-            return false;
-        }
-        resultByUuid = resultByUuid.data[0]?.checks;
-        if (!Type.IsObject(resultByUuid)) {
-            return false;
-        }
-        resultByUuid = resultByUuid[check.title];
-        if (!Type.IsObject(resultByUuid)) {
-            return false;
-        }
-        return resultByUuid.allow_action === true;
-    }
-
     return <>
         { check.__configuringCheckRun && check.__result?.get("action") && <>
             <div className="box thickborder" style={{background:"lightyellow",fontSize:"small",marginTop:"4pt",paddingTop:"8pt",paddingBottom:"8pt"}}>
@@ -1617,10 +1628,14 @@ const RunActionBox = ({ check, env, groupList }) => {
                     <b><u>Action</u></b>:&nbsp;
                     <span className="tool-tip" style={{color:runActionConfirm ? "red" : "inherit",fontWeight:runActionConfirm ? "bold" : "inherit"}} data-text={check.__result.get("action")}>{check.__result.get("action_title")}</span>
                         <div style={{float:"right",marginTop:"-2pt"}}>
-                            {getAllowAction(check, check.__resultByUuid) ? <>
-                                <button className="check-run-button" style={{background:runActionConfirm ? "red" : "inhert"}} onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
+                            {(runActionAllowedState[0] && !readOnlyMode) ? <>
+                                { runActionConfirm ? <>
+                                    <button className="check-run-button red" onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
+                                </>:<>
+                                    <button className="check-run-button" onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
+                                </>}
                             </>:<>
-                                <button className="check-run-button disabled" style={{cursor:"not-allowed"}} disabled={true}>Disabled</button>
+                                <span className="check-run-button disabled" style={{cursor:"not-allowed"}} disabled={true}>Run Action Disabled</span>
                             </>}
                         </div>
                 </div>
@@ -1629,11 +1644,13 @@ const RunActionBox = ({ check, env, groupList }) => {
                     &nbsp;&nbsp;&nbsp;&nbsp;<b style={{color:"red"}}>{Char.RightArrow}&nbsp;<i>Are you sure you want to run this action?</i></b>
                     <span className="check-action-confirm-button" style={{float:"right",marginTop:"-3pt"}} onClick={onClickRunActionCancel}>&nbsp;<b>Cancel</b></span>
                 </>}
+                {/*
                 { runAction && <>
                     <div style={{borderTop:"1px solid",marginTop:"8pt",marginBottom:"8pt"}} />
                     <b style={{float:"right",cursor:"pointer"}} onClick={onClickRunActionResultClose}>{Char.X}&nbsp;</b>
                     <i><b>Running actions are not yet supported ... Use <a href={Env.LegacyFoursightLink(header)}>legacy</a> site.</b></i>
                 </>}
+                */}
             </div>
         </>}
     </>
