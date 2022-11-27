@@ -13,9 +13,6 @@ const HomePage = (props) => {
                           + header?.versions?.foursight + " / dcicutils: " + header?.versions?.dcicutils;
 
     return <>
-        <div>
-            <b><u>Admin Access Key Status</u></b> &nbsp;&#x2756;
-        </div>
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
                 <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})</span></b>
