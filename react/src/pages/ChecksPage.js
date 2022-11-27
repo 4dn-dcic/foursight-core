@@ -185,20 +185,15 @@ import Styles from '../Styles';
     }
 
     function doRunAction(check, action, env, groupList, fetch) {
-            console.log('xyzzy/do-run-action/a')
         const args = { check_name: check.name, called_by: check.__result?.get("uuid") }
         const argsString = Json.Str(args);
         const argsEncoded = btoa(argsString);
         hideActionRunningBox(check, groupList);
-            console.log('xyzzy/do-run-action/b')
-            console.log(args)
         noteChangedCheckBox(groupList);
         check.__queueingActionRun = true;
-            console.log('xyzzy/do-run-action/c')
         fetch({
             url: Server.Url(`/action/${action}/run?args=${argsEncoded}`, env),
             onData: (data) => {
-                console.log('xyzzy/do-run-action/d')
                 //
                 // The only thing we need/want from this is the UUID identifying the action run.
                 //
@@ -207,7 +202,6 @@ import Styles from '../Styles';
                 return data.uuid;
             }
         });
-                console.log('xyzzy/do-run-action/e')
         check.__queuedActionRun = null;
         showActionRunningBox(check, groupList);
     }
@@ -475,23 +469,15 @@ import Styles from '../Styles';
 
         function fetchResultByUuid(check, uuid, groupList) {
             if (uuid || check.__result.get("uuid")) {
-                    console.log(`fetchResultByUuid/enter/${uuid}`);
                 check.__resultByUuid.refresh({
                     url: Server.Url(`/checks/${check.name}/${uuid || check.__result.get("uuid")}`),
                     onDone: (response) => {
-                        console.log('fetchResultByUuid/onDone');
-                        console.log(response);
-                        console.log(check);
                         noteChangedResults(groupList);
                         noteChangedSelectedGroups(groupList);
                         if (response.data?.checks) {
-                            console.log('fetchResultByUuid/onDone/got-response');
                             const responseByUuid = response.data.checks[check.title];
                             if (responseByUuid) {
-                                console.log('fetchResultByUuid/onDone/got-response/2');
                                 if (Type.IsBoolean(responseByUuid.allow_action)) {
-                                    console.log('fetchResultByUuid/onDone/got-response/3');
-                                    console.log(responseByUuid.allow_action ? 'true' : 'false')
                                     runActionAllowedState[1](responseByUuid.allow_action);
                                 }
                             }
@@ -502,13 +488,6 @@ import Styles from '../Styles';
         }
 
         function fetchResultByAction(check, action, groupList) {
-                console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
-                console.log(check)
-                console.log(action)
-                console.log(check.__result?.data)
-                console.log('yyyyyyyyyyyyyyyyyyyyyyyyyyyy')
-                console.log(check.__result?.data?.action)
-                console.log(check.__result?.get("action"))
             action = check.__result?.get("action") || action;
             if (action) {
                 check.__resultByAction.refresh({
@@ -858,13 +837,9 @@ import Styles from '../Styles';
     // The (yellow) check running box.
     const CheckRunningBox = ({ check, groupList, info }) => {
         const [ showUuid, setShowUuid ] = useState(false);
-        return !check.showingCheckRunningBox ? <span /> : <div>
-            {/* <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}> */}
+        return (!check.showingCheckRunningBox || !check.__configuringCheckRun) ? <span /> : <div>
             <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}}>
-                {/* xyzzy ...
-                { !check.__queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check, groupList);e.stopPropagation(); e.preventDefault(); }}></span> }
-                */}
-                {  check.__queuedCheckRun &&
+                { check.__queuedCheckRun &&
                     <small><b>
                         <span className="tool-tip" data-text="Click to view UUID for this run." onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued check run</span>:&nbsp;
                         <span onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.__queuedCheckRun + "+00:00")}</span>
@@ -886,7 +861,7 @@ import Styles from '../Styles';
     // The (yellow) action running box.
     const ActionRunningBox = ({ check, groupList, info }) => {
         const [ showUuid, setShowUuid ] = useState(false);
-        return !check.__showingActionRunningBox ? <span /> : <div>
+        return (!check.__showingActionRunningBox || !check.__configuringCheckRun) ? <span /> : <div>
             <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",color:"darkred",background:"yellow",filter:"brightness(0.9)"}}>
                 {  check.__queuedActionRun &&
                     <small><b>
@@ -895,7 +870,7 @@ import Styles from '../Styles';
                         &nbsp;{Char.RightArrow}&nbsp;
                                 
                         { showUuid ? <>
-                            <a className="tool-tip" data-text="Click to view in AWS S3." rel="noreferrer" target="_blank" onClick={(e) => {}} href={`https://s3.console.aws.amazon.com/s3/object/${info.get("checks.bucket")}?region=us-east-1&prefix=${check.name}/${check.__queuedActionRun}.json`} style={{color:"inherit"}}><u>{check.__queuedActionRun}</u></a>
+                            <a className="tool-tip" data-text="Click to view in AWS S3." rel="noreferrer" target="_blank" onClick={(e) => {}} href={`https://s3.console.aws.amazon.com/s3/object/${info.get("checks.bucket")}?region=us-east-1&prefix=${check.__result.get("action")}/${check.__queuedActionRun}.json`} style={{color:"inherit"}}><u>{check.__queuedActionRun}</u></a>
                         </>:<>
                             <span className="tool-tip" data-text={`UUID: ${check.__queuedActionRun}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>OK</span>
                         </>}
@@ -1596,7 +1571,6 @@ const RunActionBox = ({ check, env, groupList, runActionAllowedState }) => {
     }
 
     function onClickRunActionCancel() {
-            console.log('onClickRunActionCancel')
         setRunActionConfirm(false);
         setRunAction(false);
     }
