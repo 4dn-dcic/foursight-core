@@ -626,7 +626,7 @@ function _defineResponseConvenienceFunctions(response) {
                     if (!Type.IsObject(data)) {
                         return null;
                     }
-                    data = data[name]; // xyzzy
+                    data = data[name];
                 }
             }
         }
