@@ -391,16 +391,16 @@ import Styles from '../Styles';
                                 </>}
                             </>}
                             <span style={{whiteSpace:"nowrap"}}>
-                            <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}.}`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check, env, historyList);}}>
+                            <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}.`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check, env, historyList);}}>
                                 {check.title}
                             </u>
-                            { check.__result.get("action") && <>
+                            { check.__result.get("action") && <u>
                                 { runActionAllowedState[0] ? <>
                                     <span style={{color:"red"}} className="tool-tip" data-text="This check has an associated (allowed) action.">&nbsp;&#x2756;</span>
                                 </>:<>
                                     <span className="tool-tip" data-text="This check has an associated (disallowed) action.">&nbsp;&#x2756;</span>
                                 </>}
-                            </>}
+                            </u>}
                             { check.registered_github_url && <>
                                 <a className="tool-tip" data-text={`Click here to view the source code for this check: ${check.registered_file}`} style={{marginLeft:"6pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                             </>}

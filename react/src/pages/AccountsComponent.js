@@ -171,7 +171,7 @@ const AccountInfoLeft = ({ info }) => {
             </td>
             <td>
                 { info.get("foursight.deployed") ? <>
-                    <b className="tool-tip" data-text={Time.Ago(info.get("foursight.deployed"))}>{info.get("foursight.deployed")}</b>
+                    <b className="tool-tip" data-text={Time.Ago(info.get("foursight.deployed"))}>{info.get("foursight.deployed")}</b> &ndash; {Time.Ago(info.get("foursight.deployed"))}
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -181,7 +181,7 @@ const AccountInfoLeft = ({ info }) => {
             </td>
             <td>
                 { info.get("portal.started") ? <>
-                    <b className="tool-tip" data-text={Time.Ago(info.get("portal.started"))}>{info.get("portal.started")}</b>
+                    <b className="tool-tip" data-text={Time.Ago(info.get("portal.started"))}>{info.get("portal.started")}</b> &ndash; {Time.Ago(info.get("portal.started"))}
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>

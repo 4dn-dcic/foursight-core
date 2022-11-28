@@ -463,18 +463,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
             connection = app.core.init_connection(env)
         except Exception:
             connection = None
-        print('xyzzy/reactapi_check_result/a')
         if connection:
-            print('xyzzy/reactapi_check_result/b')
             check_result = app.core.CheckResult(connection, check)
-            print('xyzzy/reactapi_check_result/c')
             if check_result:
-                print('xyzzy/reactapi_check_result/d')
-                print(check_result)
                 data = check_result.get_result_by_uuid(uuid)
                 if data is None:
-                    print('xyzzy/reactapi_check_result/e')
-                    print(data)
                     # the check hasn't run. Return a placeholder view
                     data = {
                         'name': check,
@@ -490,8 +483,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     'env': env,
                     'checks': {title: processed_result}
                 }
-                print('xyzzy/reactapi_check_result/f')
-                print(body)
         return self.create_success_response(body)
 
     def reactapi_checks_history_recent(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
@@ -619,14 +610,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Kicks off a run for the given action (name).
         """
         ignored(request)
-        print('xyzzy/reactapi_checks_action_run/a')
         args = base64_decode_to_json(args) if args else {}
-        print('xyzzy/reactapi_checks_action_run/b')
-        print(action)
-        print(args)
         queued_uuid = app.core.queue_action(env, action, args)
-        print('xyzzy/reactapi_checks_action_run/c')
-        print(queued_uuid)
         return self.create_success_response({"action": action, "env": env, "uuid": queued_uuid})
 
     def reactapi_checks_status(self, request: dict, env: str) -> Response:
