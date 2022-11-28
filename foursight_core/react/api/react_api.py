@@ -637,9 +637,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_registry(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks-registry
+        Called from react_routes for endpoint: GET /{env}/checks_registry
         Returns the content of the checks registry collected for the check_function
-        decorator in decorators.py.
+        decorator in decorators.py. For troubleshooting only.
         """
         ignored(request)
         ignored(env)

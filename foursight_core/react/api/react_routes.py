@@ -185,7 +185,7 @@ class ReactRoutes:
         """
         return app.core.reactapi_checks_raw(app.current_request.to_dict(), env)
 
-    @route("/{env}/checks-registry", authorize=True)
+    @route("/{env}/checks_registry", authorize=True)
     def reactapi_route_checks_registry(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns detailed registered checks functions.
