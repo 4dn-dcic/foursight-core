@@ -155,6 +155,7 @@ class Auth0Config:
         # The context (route prefix) for the Auth0 callback is effectively hardcoded at Auth0.
         # but note different for running locally (localhost) and normal server operation.
         context = "/api/" if not is_running_locally(request) else "/"
+        context = "/"
         headers = request.get("headers", {})
         scheme = headers.get("x-forwarded-proto", "http")
         return f"{scheme}://{domain}{context}callback/?react"

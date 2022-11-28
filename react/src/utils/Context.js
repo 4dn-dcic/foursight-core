@@ -18,8 +18,10 @@
 // instances running non-locally.
 //
 
-const _CLIENT_BASE_PATH  = "/api/react";
-const _SERVER_BASE_PATH  = "/api/reactapi";
+// const _CLIENT_BASE_PATH  = "/api/react";
+const _CLIENT_BASE_PATH  = "/react";
+// const _SERVER_BASE_PATH  = "/api/reactapi";
+const _SERVER_BASE_PATH  = "/reactapi";
 const _SERVER_LOCAL_PORT = 8000
 
 // -------------------------------------------------------------------------------------------------

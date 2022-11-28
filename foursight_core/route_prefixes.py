@@ -13,4 +13,5 @@ if CHALICE_LOCAL:
 else:
     ROUTE_PREFIX = "/"
     ROUTE_EMPTY_PREFIX = "/"
-    ROUTE_PREFIX_EXPLICIT = "/api/"
+    #ROUTE_PREFIX_EXPLICIT = "/api/"
+    ROUTE_PREFIX_EXPLICIT = "/"

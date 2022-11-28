@@ -483,7 +483,8 @@ class AppUtilsCore(ReactApi, Routes):
         '/api/' or '/'
         """
         domain = request_dict.get('headers', {}).get('host')
-        context = '/api/' if request_dict.get('context', {}).get('path', '').startswith('/api/') else '/'
+        #context = '/api/' if request_dict.get('context', {}).get('path', '').startswith('/api/') else '/'
+        context = '/' if request_dict.get('context', {}).get('path', '').startswith('/api/') else '/'
         return domain, context
 
     @classmethod
