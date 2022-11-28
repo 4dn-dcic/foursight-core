@@ -45,15 +45,11 @@ import Styles from '../Styles';
     }
 
     function showGroup(group, env, groupList) {
-            console.log('show-group/a')
-            console.log(group)
         if (isSelectedGroup(group, groupList)) {
             return;
         }
         groupList.prepend(group);
         noteChangedSelectedGroups(groupList);
-        //group.checks.map(check => showResultBox(check, env, groupList)); // xyzzy this is suspect
-        //group.checks.map(check => { console.log(`xyzzy/showResultBox(${check.name})`); showResultBox(check, env, groupList); } ); // xyzzy this is suspect
     }
 
     function hideGroup(group, groupList, historyList) {
@@ -398,7 +394,13 @@ import Styles from '../Styles';
                             <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}.}`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check, env, historyList);}}>
                                 {check.title}
                             </u>
-                            { check.__result.get("action") && <span style={{color:"darkred"}} className="tool-tip" data-text="This check has an associated action.">&nbsp;&#x2756;</span> }
+                            { check.__result.get("action") && <>
+                                { runActionAllowedState[0] ? <>
+                                    <span style={{color:"red"}} className="tool-tip" data-text="This check has an associated (allowed) action.">&nbsp;&#x2756;</span>
+                                </>:<>
+                                    <span className="tool-tip" data-text="This check has an associated (disallowed) action.">&nbsp;&#x2756;</span>
+                                </>}
+                            </>}
                             { check.registered_github_url && <>
                                 <a className="tool-tip" data-text={`Click here to view the source code for this check: ${check.registered_file}`} style={{marginLeft:"6pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                             </>}
@@ -660,18 +662,16 @@ import Styles from '../Styles';
             </div>
         }
         return <div>
-            <div className={"check-run-button" + (check.__configuringCheckRun ? "" : "")} style={{...style, cursor:readOnlyMode && check.__configuringCheckRun ? "not-allowed" : "",background:readOnlyMode && check.__configuringCheckRun ? "#888888" : "",color:check.__configuringCheckRun ? "yellow" : ""}}
+            <div className={"check-run-button" + (check.__configuringCheckRun ? "" : "")} style={{...style, marginTop:"1pt", cursor:readOnlyMode && check.__configuringCheckRun ? "not-allowed" : "",background:readOnlyMode && check.__configuringCheckRun ? "#888888" : "",color:check.__configuringCheckRun ? "yellow" : ""}}
                 onClick={(e) => {
                     if (check.__configuringCheckRun) {
                         if (!readOnlyMode) {
                             saveInputKwargs(check);
-                            // showResultBox(check, env, groupList);
                             doRunCheck(check, env, groupList, historyList, fetch);
                         }
                     }
                     else {
                         check.__configuringCheckRun = true;
-                        // showResultBox(check, env, groupList);
                         noteChangedCheckBox(groupList);
                     }
                 }}>
@@ -1584,29 +1584,29 @@ const RunActionBox = ({ check, env, groupList, refreshResults, runActionAllowedS
             <div className="box thickborder" style={{background:"lightyellow",fontSize:"small",marginTop:"4pt",paddingTop:"8pt",paddingBottom:"8pt"}}>
                 <div style={{marginTop:"0pt"}}>
                     <b><u>Action</u></b>:&nbsp;
-                    <span className="tool-tip" style={{color:runActionConfirm ? "red" : "inherit",fontWeight:runActionConfirm ? "bold" : "inherit"}} data-text={check.__result.get("action")}>
+                    <span className="tool-tip" style={{color:runActionConfirm ? "red" : "inherit",fontWeight:runActionConfirm ?  "bold" : "inherit"}} data-text={check.__result.get("action")}>
                         <b>{check.__result.get("action_title")}</b>
                     </span>
-                    { (!readOnlyMode && !runActionAllowedState[0] && !check.__result.loading && !check.__resultByUuid.loading && !check.__resultByAction.loading) && <>&nbsp;<i style={{cursor:"pointer"}} onClick={() => refreshResults(check, env, groupList)}>{Char.RightArrow}&nbsp;Refresh result&nbsp;&nbsp;{Char.Refresh}</i></> }
                     <div style={{float:"right",marginTop:"-2pt"}}>
-                        {(runActionAllowedState[0] && !readOnlyMode) ? <>
+                        {(runActionAllowedState[0] && !readOnlyMode) ?<>
                             { runActionConfirm ? <>
                                 <button className="check-run-button red" onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
                             </>:<>
                                 <button className="check-run-button" onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
                             </>}
                         </>:<>
-                            <div style={{marginTop:"2pt",whiteSpace:"nowrap"}}>
-                                { !readOnlyMode ? <>
-                                    <div>
-                                        <span className="check-run-button disabled" style={{cursor:"not-allowed"}} disabled={true}>Run Action Disabled</span>
-                                    </div>
-                                </>:<>
-                                    <span className="check-run-button disabled" style={{cursor:"not-allowed"}} disabled={true}>Run Action Disabled</span>
-                                </>}
-                            </div>
+                            { !readOnlyMode ? <>
+                                <button className="check-run-button disabled" style={{cursor:"not-allowed"}} disabled={true}>Run Action Disallowed</button>
+                            </>:<>
+                                <button className="check-run-button disabled" style={{cursor:"not-allowed"}} disabled={true}>Run Action Disabled</button>
+                            </>}
                         </>}
                     </div>
+                    { (!readOnlyMode && !runActionAllowedState[0] && !check.__result.loading && !check.__resultByUuid.loading && !check.__resultByAction.loading) && <>
+                        <div className="tool-tip" data-text="Click to refresh result." style={{float:"right",marginRight:"8pt",marginTop:"0pt",cursor:"pointer",color:"black"}} onClick={() => refreshResults(check, env, groupList)}>
+                            <big><b>{Char.Refresh}</b></big>
+                        </div>
+                    </>}
                 </div>
                 { runActionConfirm && <>
                     <div style={{borderTop:"1px solid",marginTop:"8pt",marginBottom:"8pt"}}/>
