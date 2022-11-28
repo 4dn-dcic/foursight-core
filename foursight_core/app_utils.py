@@ -67,7 +67,7 @@ class AppUtilsCore(ReactApi, Routes):
     """
 
     CHECK_SETUP_FILE_NAME = "check_setup.json"
-    ACCOUNTS_FILE_NAME = "accounts.json"
+    ACCOUNTS_FILE_NAME = "accounts.json.encrypted"
 
     # Define in subclass.
     APP_PACKAGE_NAME = None

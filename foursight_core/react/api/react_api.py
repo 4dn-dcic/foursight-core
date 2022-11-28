@@ -759,10 +759,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self._cached_accounts_from_s3
 
     def _read_accounts_json(self, accounts_json_content) -> dict:
-        if not accounts_json_content.startswith("["):
-            # TODO: This is lame. Just use different file suffixes to distinguish.
-            encryption = Encryption()
-            accounts_json_content = encryption.decrypt(accounts_json_content)
+        encryption = Encryption()
+        accounts_json_content = encryption.decrypt(accounts_json_content)
         accounts_json = json.loads(accounts_json_content)
         for account in accounts_json:
             account_name = account.get("name")

@@ -363,7 +363,7 @@ import Styles from '../Styles';
                         </td>
                         <td style={{veriticalAlign:"top",maxWidth:"600pt",width:"100%",whiteSpace:"nowrap"}}>
                             { (!check.__configuringCheckRun) ? <>
-                                <RunButton check={check} env={env} groupList={groupList} historyList={historyList} style={{marginLeft:"30pt",marginTop:"-3pt",float:"right"}} />
+                                <RunButton check={check} env={env} groupList={groupList} historyList={historyList} style={{marginLeft:"410pt",marginTop:"-1pt",float:"right"}} />
                             </>:<>
                                 { (check.__queueingCheckRun) ? <>
                                     <div className={"check-config-wait-button"} style={{float:"right"}}>
@@ -402,7 +402,7 @@ import Styles from '../Styles';
                                 </>}
                             </>}
                             { check.registered_github_url && <>
-                                <a className="tool-tip" data-text={`Click here to view the source code for this check: ${check.registered_file}`} style={{marginLeft:"6pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                                <a className="tool-tip" data-text={`Click here to view the source code for this check: ${check.registered_file}`} style={{marginLeft:"6pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                             </>}
                             </span>
                             <ToggleHistoryButton check={check} env={env} historyList={historyList} />
@@ -662,7 +662,7 @@ import Styles from '../Styles';
             </div>
         }
         return <div>
-            <div className={"check-run-button" + (check.__configuringCheckRun ? "" : "")} style={{...style, marginTop:"1pt", cursor:readOnlyMode && check.__configuringCheckRun ? "not-allowed" : "",background:readOnlyMode && check.__configuringCheckRun ? "#888888" : "",color:check.__configuringCheckRun ? "yellow" : ""}}
+            <div className={"check-run-button" + (check.__configuringCheckRun ? "" : "")} style={{...style, cursor:readOnlyMode && check.__configuringCheckRun ? "not-allowed" : "",background:readOnlyMode && check.__configuringCheckRun ? "#888888" : "",color:check.__configuringCheckRun ? "yellow" : ""}}
                 onClick={(e) => {
                     if (check.__configuringCheckRun) {
                         if (!readOnlyMode) {
@@ -1073,13 +1073,16 @@ const ChecksPage = (props) => {
     }
 
     const ResultsHistoryPanel = ({ env }) => {
+        if (historyList.error) {
+            return <FetchErrorBox error={historyList.error} message="Error loading check history from Foursight API" />
+        }
         let histories = historyList.filter((check) => check.__showingHistory);
         if (!histories || histories.length <= 0) {
             return <span />
         }
         return <div>
             <b style={{marginBottom:"100pt"}}>Recent Results</b>
-            { histories.map((selectedHistory, index) =>
+            { histories?.map((selectedHistory, index) =>
                 <div key={index} style={{marginTop:"3pt"}}>
                     <ResultsHistoryBox check={selectedHistory} env={env} />
                 </div>
