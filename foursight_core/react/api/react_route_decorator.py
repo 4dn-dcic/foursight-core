@@ -141,12 +141,12 @@ def route(*args, **kwargs):
             kwargs["cors"] = _CORS
         PRINT(f"Registering Chalice endpoint: {' '.join(kwargs['methods'])} {path} -> {wrapped_route_function.__name__}")
         # This is the call that actually registers the Chalice route/endpoint.
-        if path.startswith("/api/"):
-            PRINT(f"...and ALSO Chalice endpoint: {' '.join(kwargs['methods'])} {path[4:]} -> {wrapped_route_function.__name__}")
-            app.route(path[4:], **kwargs)(route_function) # xyzzy
-        else:
-            PRINT(f"...and ALSO Chalice endpoint: {' '.join(kwargs['methods'])} {'/api' + path} -> {wrapped_route_function.__name__}")
-            app.route("/api" + path, **kwargs)(route_function) # xyzzy
+#       if path.startswith("/api/"):
+#           PRINT(f"...and ALSO Chalice endpoint: {' '.join(kwargs['methods'])} {path[4:]} -> {wrapped_route_function.__name__}")
+#           app.route(path[4:], **kwargs)(route_function) # xyzzy
+#       else:
+#           PRINT(f"...and ALSO Chalice endpoint: {' '.join(kwargs['methods'])} {'/api' + path} -> {wrapped_route_function.__name__}")
+#           app.route("/api" + path, **kwargs)(route_function) # xyzzy
         return app.route(path, **kwargs)(route_function)
     return route_registration
 
