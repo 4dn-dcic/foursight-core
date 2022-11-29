@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 class Checks:
 
     def __init__(self, check_setup, envs: Envs):
+        self._check_setup_raw = check_setup
         self._check_setup = copy.deepcopy(check_setup)
-        self._check_setup_raw = copy.deepcopy(check_setup)
         self._envs = envs
 
     _cached_checks = None
