@@ -19,7 +19,7 @@ Change Log
   and/or decrypt this file locally: encrypt-accounts-file, decrypt-accounts-file.
   Change to both the API and UI have been made for this.
 * Moved lookup of check_setup.json (and accounts.json) to here, from
-  foursight-cgap/chalicelib_cap/app_utils.py and foursight/chalicelib_cap/app_utils.py.
+  foursight-cgap/chalicelib_cgap/app_utils.py and foursight/chalicelib_cgap/app_utils.py.
 * Fix for C4-949: Show full_output as JSON (YAML actually) correctly in check run outputs.
 * Disable user edit in readonly mode.
 * Show indication in UI of how user logged in (i.e. Google or GitHub authentication).
