@@ -417,8 +417,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Deletes the user identified by the given uuid.
         """
         ignored(request)
-        ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
-        ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env))
+        #
+        # TODO
+        # When ES7 has been fully merged/deployed pass this to these calls: skip_indexing=True
+        #
+        elasticsearch_server_version = self._get_elasticsearch_server_version()
+        kwargs = { "skip_indexing": True } if elasticsearch_server_version >= "7" else {}
+        ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs)
+        ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs)
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
 
     def reactapi_checks(self, request: dict, env: str) -> Response:
@@ -731,10 +737,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self._cached_accounts_from_s3
 
     def _read_accounts_json(self, accounts_json_content) -> dict:
-        if not accounts_json_content.startswith("["):
-            # TODO: This is lame. Just use different file suffixes to distinguish.
-            encryption = Encryption()
-            accounts_json_content = encryption.decrypt(accounts_json_content)
+        encryption = Encryption()
+        accounts_json_content = encryption.decrypt(accounts_json_content)
         accounts_json = json.loads(accounts_json_content)
         for account in accounts_json:
             account_name = account.get("name")

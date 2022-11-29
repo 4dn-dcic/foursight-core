@@ -14,10 +14,10 @@ class Routes:
     # ----------------------------------------------------------------------------------------------
 
     @staticmethod
-    @app.route((ROUTE_PREFIX if not CHALICE_LOCAL else "/") + 'callback')
+    @app.route("/callback")
     def route_auth0_callback():
         """
-        Special callback route, only to be used as a callback from auth0
+        Special callback route, only to be used as a callback from Auth0
         Will return a redirect to view on error/any missing callback info.
         Note this is NOT /api/callback RATHER it is just /callback;
         for both normal and local deployment scenarios.
