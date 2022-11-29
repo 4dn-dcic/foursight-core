@@ -62,10 +62,10 @@ const App = () => {
             <div style={{margin:"20px"}}>
                 <Routes>
                     <Route path="/api" element={
-                        <Navigate to={`/api/react/${Env.Default()}/env`} />
+                        <Navigate to={`/api/react/${Env.PreferredName(Env.Default())}/env`} />
                     } />
                     <Route path="/api/react" element={
-                        <Navigate to={`/api/react/${Env.Default()}/env`} />
+                        <Navigate to={`/api/react/${Env.PreferredName(Env.Default())}/env`} />
                     } />
                     <Route path="/api/react/:environ/accounts" element={
                         <Page.AuthorizationRequired>
