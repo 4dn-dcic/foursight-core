@@ -83,6 +83,59 @@ class ReactUi:
         print(f'xyzzy/serve_static_file: env=<{env}> paths=<{paths}>')
         print(f'xyzzy/serve_static_file/request:')
         print(app.current_request.to_dict())
+
+        if env:
+            paths.insert(0, env)
+
+        file = "/".join(paths)
+        if file.endswith("/main.css"):
+            file = os.path.join(_REACT_BASE_DIR, "static", "css", "main.css")
+            content_type = "application/css"
+            open_mode = "r"
+        elif file.endswith("/main.js"):
+            file = os.path.join(_REACT_BASE_DIR, "static", "js", "main.js")
+            content_type = "text/javascript"
+            open_mode = "r"
+        elif file.endswith("/manifest.json"):
+            file = os.path.join(_REACT_BASE_DIR, "manifest.js")
+            content_type = "application/json"
+            open_mode = "r"
+        elif file.endswith("/asset-manifest.json"):
+            file = os.path.join(_REACT_BASE_DIR, "asset-manifest.js")
+            content_type = "application/json"
+            open_mode = "r"
+        else:
+            file = os.path.join(_REACT_BASE_DIR, "index.html")
+            content_type = "text/html"
+            open_mode = "r"
+
+        print(f'xyzzy/serve_static_file/serving: file=<{file}> content_type=<{content_type}> open_mode=<{open_mode}>')
+        response = ReactUi._cached_static_files.get(file)
+        if not response:
+            print(f'xyzzy/serve_static_file/not-cached: file=<{file}> content_type=<{content_type}> open_mode=<{open_mode}>')
+            response = self._react_api.create_success_response(content_type=content_type)
+            print(f'xyzzy/serve_static_file/response')
+            print(response)
+            try:
+                with io.open(file, open_mode) as f:
+                    print(f'xyzzy/serve_static_file/opened-file: file=<{file}> content_type=<{content_type}> open_mode=<{open_mode}>')
+                    response.body = f.read()
+            except Exception as e:
+                print(f'xyzzy/serve_static_file/exception:')
+                print(e)
+                message = f"Exception serving static React file ({file} | {content_type}): {e}"
+                logger.error(message)
+                return self._react_api.create_error_response(message)
+            print(f'xyzzy/serve_static_file/caching-response')
+            ReactUi._cached_static_files[file] = response = self._react_api.process_response(response)
+        print(f'xyzzy/serve_static_file/return: file=<{file}> content_type=<{content_type}> open_mode=<{open_mode}>')
+        return response
+
+    def serve_static_file_OLD(self, env: str, paths: list) -> Response:
+
+        print(f'xyzzy/serve_static_file: env=<{env}> paths=<{paths}>')
+        print(f'xyzzy/serve_static_file/request:')
+        print(app.current_request.to_dict())
         # TODO WRT the domain name issue: I think env in this case might be 'api' 
         if env == "static":
             print(f'xyzzy/serve_static_file/env-is-static')
