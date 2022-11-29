@@ -25,7 +25,6 @@ import UserPage from './pages/UserPage';
 import UserCreatePage from './pages/UserCreatePage';
 import UserEditPage from './pages/UserEditPage';
 import UsersPage from './pages/UsersPage';
-// import ChecksPageNew from './pages/ChecksPageNew';
 
 function setGlobalStyles(header) {
     if (Env.IsFoursightFourfront(header)) {
@@ -89,13 +88,6 @@ const App = () => {
                             <ChecksPage />
                         </Page.AuthorizationRequired>
                     }/>
-                {/*
-                    <Route path="/api/react/:env/checksnew" element={
-                        <Page.AuthorizationRequired>
-                            <ChecksPageNew />
-                        </Page.AuthorizationRequired>
-                    }/>
-                */}
                     <Route path="/api/react/:environ/checks/:check/history" element={
                         <Page.AuthorizationRequired>
                             <CheckHistoryPage />
