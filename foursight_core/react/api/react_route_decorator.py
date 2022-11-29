@@ -41,7 +41,18 @@ logger = logging.getLogger(__name__)
 
 
 def route_root() -> Response:
-    return app.core.create_redirect_response(f"{ROUTE_PREFIX_EXPLICIT}{REACT_UI_PATH_COMPONENT}")
+    print('xyzzy/route_root/a')
+    #return app.core.create_redirect_response(f"{ROUTE_PREFIX_EXPLICIT}{REACT_UI_PATH_COMPONENT}")
+    request = app.current_request.to_dict()
+    path = request.get("path")
+    print('xyzzy/route_root/b')
+    print(path)
+    if path and path.startswith("/api"):
+        print('xyzzy/route_root/c')
+        return app.core.create_redirect_response(f"/api/{REACT_UI_PATH_COMPONENT}")
+    else:
+        print('xyzzy/route_root/d')
+        return app.core.create_redirect_response(f"/{REACT_UI_PATH_COMPONENT}")
 
 
 def route(*args, **kwargs):
@@ -122,6 +133,8 @@ def route(*args, **kwargs):
             """
             This is the function called on each actual route/endpoint (API) call.
             """
+            print('xyzzy/route_function/a')
+            print(app.current_request.to_dict())
             try:
                 if authorize:
                     # Note that the "env" argument in the kwargs is the environment name from the endpoint

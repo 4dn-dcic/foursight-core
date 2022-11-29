@@ -7,8 +7,11 @@ from dcicutils.misc_utils import environ_bool
 
 CHALICE_LOCAL = environ_bool("CHALICE_LOCAL")
 if CHALICE_LOCAL:
-    ROUTE_PREFIX = "/api/"
-    ROUTE_EMPTY_PREFIX = "/api"
+#   ROUTE_PREFIX = "/api/"
+#   ROUTE_EMPTY_PREFIX = "/api"
+#   ROUTE_PREFIX_EXPLICIT = "/api/"
+    ROUTE_PREFIX = "/"
+    ROUTE_EMPTY_PREFIX = "/"
     ROUTE_PREFIX_EXPLICIT = "/api/"
 else:
     ROUTE_PREFIX = "/"

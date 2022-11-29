@@ -52,7 +52,7 @@ class Routes:
     @staticmethod
     @app.route(ROUTE_PREFIX + "view", methods=['GET'])
     def route_view():
-        redirect_path = ROUTE_PREFIX_EXPLICIT + 'view/' + app.core.get_default_env()
+        redirect_path = ROUTE_PREFIX_EXPLICIT + 'view/' + app.core.get_default_env() # xyzzy/todo
         headers = {"Location": redirect_path}
         return Response(status_code=302, body=json.dumps(headers), headers=headers)
 
