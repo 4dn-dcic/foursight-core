@@ -8,7 +8,10 @@
 cd react
 rm -rf build
 npm install
-PUBLIC_URL=/api/react npm run build
+npm run build
+PUBLIC_URL="react" npm run build
+#PUBLIC_URL=/api/react npm run build
+#PUBLIC_URL=/react npm run build #xyzzy
 cd ..
 
 REACT_BUILD_DIR=react/build

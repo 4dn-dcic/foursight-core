@@ -3,6 +3,7 @@ import io
 import logging
 import os
 from typing import Optional
+from ...app import app  # xyzzy
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -79,14 +80,26 @@ class ReactUi:
 
     def serve_static_file(self, env: str, paths: list) -> Response:
 
+        print(f'xyzzy/serve_static_file: env=<{env}> paths=<{paths}>')
+        print(f'xyzzy/serve_static_file/request:')
+        print(app.current_request.to_dict())
+        # TODO WRT the domain name issue: I think env in this case might be 'api' 
         if env == "static":
+            print(f'xyzzy/serve_static_file/env-is-static')
             # If the env is 'static' then we take this to mean the 'static' subdirectory;
             # this is the directory where the static (js, css, etc) React files reside.
             # Note this means that an environment name may not be the literal string 'static'.
             file = os.path.join(_REACT_BASE_DIR, "static")
+            print(f'xyzzy/serve_static_file/env-is-static/file: file=<{file}>')
+        elif env == "api" and paths and paths[0] == "static":
+            file = os.path.join(_REACT_BASE_DIR, "static")
+            paths = paths[1:]
+            print(f'xyzzy/serve_static_file/env-is-api-followed-by-static/file: file=<{file}> paths=<{paths}>')
         else:
             file = _REACT_BASE_DIR
+            print(f'xyzzy/serve_static_file/env-is-not-static/file: file=<{file}>')
         if not paths:
+            print(f'xyzzy/serve_static_file/no-paths')
             # TODO: Not downloading png (et.al.) right! Works with chalice local!
             # Actually it also works in cgap-supertest:
             # https://810xasmho0.execute-api.us-east-1.amazonaws.com/api/react/logo192.png
@@ -98,8 +111,11 @@ class ReactUi:
                 # to mean a file in the main React directory. Note this means means
                 # the environment name may NOT be a value ending in the above suffixes.
                 paths = [env]
+                print(f'xyzzy/serve_static_file/no-paths/known-suffix: paths=<{paths}>')
+        print(f'xyzzy/serve_static_file/parsing-paths: paths=<{paths}>')
         for path in paths:
             file = os.path.join(file, path)
+        print(f'xyzzy/serve_static_file/continuing/file: file=<{file}>')
 
         file_info = self._get_file_info(file)
         if file_info:
@@ -115,19 +131,29 @@ class ReactUi:
 
         # Restrict to known whitelisted files.
         if not self._is_file_type_whitelisted(file):
+            print(f'xyzzy/serve_static_file/file-not-whitelisted: file=<{file}>')
             return self._react_api.create_forbidden_response()
 
+        print(f'xyzzy/serve_static_file/serving: file=<{file}>')
         response = ReactUi._cached_static_files.get(file)
         if not response:
+            print(f'xyzzy/serve_static_file/not-cached: file=<{file}>')
             response = self._react_api.create_success_response(content_type=content_type)
+            print(f'xyzzy/serve_static_file/response')
+            print(response)
             try:
                 with io.open(file, open_mode) as f:
+                    print(f'xyzzy/serve_static_file/opened-file: file=<{file}>')
                     response.body = f.read()
             except Exception as e:
+                print(f'xyzzy/serve_static_file/exception:')
+                print(e)
                 message = f"Exception serving static React file ({file} | {content_type}): {e}"
                 logger.error(message)
                 return self._react_api.create_error_response(message)
+            print(f'xyzzy/serve_static_file/caching-response')
             ReactUi._cached_static_files[file] = response = self._react_api.process_response(response)
+        print(f'xyzzy/serve_static_file/return-response')
         return response
 
     @staticmethod

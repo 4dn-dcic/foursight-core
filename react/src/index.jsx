@@ -16,7 +16,10 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 // reasons. So we turn it off by default, but can turn it on by manually
 // setting the test_mode_strict_mode cookie.
 
-if (Cookie.Get("test_mode_strict_mode") === "1") {
+if (Cookie.Get("test_mode_hello") === "1") {
+     root.render(<div className="container"><div className="box thickborder">Hello, world!</div></div>);
+}
+else if (Cookie.Get("test_mode_strict_mode") === "1") {
     root.render(
         <React.StrictMode>
             <App />
