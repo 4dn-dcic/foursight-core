@@ -73,16 +73,22 @@ function GetServerOrigin() {
     }
 }
 
+function GetServerRootPath() {
+    return (window.location.pathname === "/api") || window.location.pathname.startsWith("/api/") ? "/api" : "/";
+
 function GetServerBasePath() {
-    //return _SERVER_BASE_PATH;
-    console.log('xyzzy/window.location.pathname');
-    console.log(window.location);
+    return GetServerRootPath() + "reactapi";
+
+/*
     if ((window.location.pathname === "/api") || window.location.pathname.startsWith("/api/")) {
         return "/api/reactapi";
     }
     else {
         return "/reactapi";
     }
+*/
+
+    // return _SERVER_BASE_PATH;
 }
 
 function GetServerBaseUrl() {
@@ -130,6 +136,7 @@ const exports = {
     },
     Server: {
         IsLocal:           IsLocalServer,
+        RootPath:          GetServerRootPath,
         BasePath:          GetServerBasePath,
         BaseUrl:           GetServerBaseUrl,
         Origin:            GetServerOrigin

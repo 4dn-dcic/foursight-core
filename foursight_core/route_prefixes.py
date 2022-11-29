@@ -6,14 +6,15 @@ from dcicutils.misc_utils import environ_bool
 # environment variable is set. Seems to be a known issue: https://github.com/aws/chalice/issues/838
 
 CHALICE_LOCAL = environ_bool("CHALICE_LOCAL")
-if CHALICE_LOCAL:
-#   ROUTE_PREFIX = "/api/"
-#   ROUTE_EMPTY_PREFIX = "/api"
-#   ROUTE_PREFIX_EXPLICIT = "/api/"
-    ROUTE_PREFIX = "/"
-    ROUTE_EMPTY_PREFIX = "/"
-    ROUTE_PREFIX_EXPLICIT = "/api/"
-else:
-    ROUTE_PREFIX = "/"
-    ROUTE_EMPTY_PREFIX = "/"
-    ROUTE_PREFIX_EXPLICIT = "/api/"
+# if CHALICE_LOCAL:
+#    ROUTE_PREFIX = "/api/"
+#    ROUTE_EMPTY_PREFIX = "/api"
+#    ROUTE_PREFIX_EXPLICIT = "/api/"
+# else:
+#     ROUTE_PREFIX = "/"
+#     ROUTE_EMPTY_PREFIX = "/"
+#     ROUTE_PREFIX_EXPLICIT = "/api/"
+
+ROUTE_PREFIX = "/"
+ROUTE_EMPTY_PREFIX = "/"
+ROUTE_PREFIX_EXPLICIT = "/"

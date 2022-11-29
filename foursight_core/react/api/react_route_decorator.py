@@ -47,7 +47,7 @@ def route_root() -> Response:
     path = request.get("path")
     print('xyzzy/route_root/b')
     print(path)
-    if path and path.startswith("/api"):
+    if path and (path == "/api" or path.startswith("/api/")):
         print('xyzzy/route_root/c')
         return app.core.create_redirect_response(f"/api/{REACT_UI_PATH_COMPONENT}")
     else:
@@ -91,10 +91,12 @@ def route(*args, **kwargs):
         raise Exception("No arguments found for route configuration!")
 
     path = args[0]
+    static = False
 
     # This "static" is for serving static files which live in their own specific directory.
     if "static" in kwargs:
         if kwargs["static"] is True:
+            static = True
             path = ROUTE_PREFIX + REACT_UI_PATH_COMPONENT + path
         del kwargs["static"]
     else:
@@ -153,6 +155,10 @@ def route(*args, **kwargs):
             # Only used for (cross-origin) localhost development (e.g. UI on 3000 and API on 8000).
             kwargs["cors"] = _CORS
         PRINT(f"Registering Chalice endpoint: {' '.join(kwargs['methods'])} {path} -> {wrapped_route_function.__name__}")
+        if static and not (path == "/api" or path.startswith("/api/")):
+            path_with_api_prefix = "/api" + path
+            PRINT(f"...and ALSO Chalice endpoint: {' '.join(kwargs['methods'])} {path_with_api_prefix} -> {wrapped_route_function.__name__}")
+            app.route(path_with_api_prefix, **kwargs)(route_function)
         # This is the call that actually registers the Chalice route/endpoint.
         return app.route(path, **kwargs)(route_function)
     return route_registration
