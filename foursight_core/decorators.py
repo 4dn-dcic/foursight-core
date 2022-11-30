@@ -5,7 +5,8 @@ import signal
 import sys
 import time
 import traceback
-from dcicutils.misc_utils import ignored
+from typing import Tuple
+from dcicutils.misc_utils import ignored, get_error_message, PRINT
 from functools import wraps
 from foursight_core.check_schema import CheckSchema
 from foursight_core.run_result import (
@@ -22,7 +23,6 @@ from foursight_core.sqs_utils import SQS
 # virtue of them having been in a result set of an actual check run. But we would
 # like to get and present these without having to get the check history;
 # and without the check having to been run.
-# _decorator_registry = []
 _decorator_registry = {}
 
 class Decorators(object):
@@ -56,9 +56,54 @@ class Decorators(object):
         try:
             timeout = int(timeout)
         except ValueError:
-            print(f'ERROR! Timeout must be an integer. You gave: {timeout}')
+            PRINT(f'ERROR! Timeout must be an integer. You gave: {timeout}')
         else:
             self.CHECK_TIMEOUT = timeout
+
+    def create_registry_check_record(self, func, default_args, default_kwargs) -> None:
+        self.create_registry_record("check", func, default_args, default_kwargs)
+
+    def create_registry_action_record(self, func, default_args, default_kwargs) -> None:
+        self.create_registry_record("action", func, default_args, default_kwargs)
+
+    def create_registry_record(self, kind, func, default_args, default_kwargs) -> None:
+        func_name = None
+        func_file = None
+        func_line = None
+        func_module = None
+        func_package = None
+        try:
+            func_name = func.__name__
+            func_module = func.__module__
+            func_file = sys.modules[func_module].__file__
+            _, func_line = inspect.getsourcelines(func)
+            func_package = __import__(func_module).__package__
+        except Exception as e:
+            PRINT(f"ERROR: Creating {kind} registry record: {get_error_message(e)}")
+        if _decorator_registry.get(func_name):
+            PRINT(f"WARNING: Duplicate {kind} decorator registration (skipping): {func_name}")
+            return
+        print('goo')
+        print(default_args)
+        print(default_kwargs)
+        PRINT(f"Registering {kind}: {func_module}.{func_name}")
+        if (isinstance(default_args, Tuple) and len(default_args) > 0 and
+            isinstance(default_args[0], Tuple) and len(default_args[0]) > 1 and
+            isinstance(default_args[0][1], dict) and default_args[0][1].get("action")):
+            print('xyzzy')
+            associated_action = default_args[0][1].get("action")
+            print(associated_action)
+        _decorator_registry[func_name] = {
+            "kind": kind,
+            "name": func_name,
+            "file": func_file,
+            "line": func_line,
+            "module": func_module,
+            "package": func_package,
+            "github_url": get_github_url(func_package, func_file, func_line),
+            "args": default_args,
+            "kwargs": default_kwargs
+        }
 
     def check_function(self, *default_args, **default_kwargs):
         """
@@ -74,29 +119,16 @@ class Decorators(object):
         """
         ignored(default_args)
 
+        #print('foobar')
+        #print(default_args)
+        #print(default_kwargs)
+        outer_args = default_args
+        outer_kwargs = default_kwargs
         def check_deco(func):
-            func_file = None
-            func_line = None
-            func_module = None
-            func_package = None
-            try:
-                func_module = func.__module__
-                func_file = sys.modules[func_module].__file__
-                _, func_line = inspect.getsourcelines(func)
-                func_package = __import__(func_module).__package__
-            except Exception as e:
-                pass
-            decorator_registry_record = {
-                "file": func_file,
-                "line": func_line,
-                "module": func_module,
-                "package": func_package,
-                "github_url": get_github_url(func_package, func_file, func_line),
-                "args": default_args,
-                "kwargs": default_kwargs,
-            }
-          # _decorator_registry.append(decorator_registry_record)
-            _decorator_registry[func.__name__] = decorator_registry_record
+            #print('xyzzy/args')
+            #print(outer_kwargs)
+            #print(default_kwargs)
+            self.create_registry_check_record(func, default_args, default_kwargs)
             @wraps(func)
             def wrapper(*args, **kwargs):
                 start_time = time.time()
@@ -142,6 +174,7 @@ class Decorators(object):
         ignored(default_args)
 
         def action_deco(func):
+            self.create_registry_action_record(func, default_args, default_kwargs)
             @wraps(func)
             def wrapper(*args, **kwargs):
                 start_time = time.time()

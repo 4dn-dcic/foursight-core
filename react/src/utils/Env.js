@@ -218,8 +218,11 @@ function IsFoursightFourfront(header) {
     else if (Cookie.TestMode.HasFoursightCgap()) {
         return false;
     }
-    else {
+    else if (!header?.loading) {
         return header?.app?.package !== "foursight-cgap";
+    }
+    else {
+        return Cookie.Site() == "foursight-fourfront";
     }
 }
 

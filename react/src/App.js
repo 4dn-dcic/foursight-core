@@ -56,16 +56,24 @@ const App = () => {
         });
     }, []);
 
+    function getDefaultPath() {
+        const env = Env.Default(header);
+        const envPreferred = Env.PreferredName(env, header);
+        const envRedirect = envPreferred || env;
+        const path = envRedirect ? `/api/react/${envRedirect}/env` : "/api/react/env";
+        return path;
+    }
+
     return <Router>
         <HeaderData.Provider value={[header, setHeader]}>
             <Header />
             <div style={{margin:"20px"}}>
                 <Routes>
                     <Route path="/api" element={
-                        <Navigate to={`/api/react/${Env.PreferredName(Env.Default())}/env`} />
+                        <Navigate to={getDefaultPath()} />
                     } />
                     <Route path="/api/react" element={
-                        <Navigate to={`/api/react/${Env.PreferredName(Env.Default())}/env`} />
+                        <Navigate to={getDefaultPath()} />
                     } />
                     <Route path="/api/react/:environ/accounts" element={
                         <Page.AuthorizationRequired>

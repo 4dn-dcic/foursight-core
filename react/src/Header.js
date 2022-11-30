@@ -38,6 +38,15 @@ const Header = (props) => {
     let titleBackgroundColor = Env.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
     let subTitleBackgroundColor = Env.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
 
+    function getTitleBackgroundColorWhileLoading() {
+        if (Auth.IsLoggedIn(header)) {
+            return titleBackgroundColor;
+        }
+        else {
+            return "#444444";
+        }
+    }
+
     function renderNavigationLinks(header) {
         function style(isActive) {
             if (isActive) {
@@ -70,11 +79,19 @@ const Header = (props) => {
     return <>
         { header.loading ? (
             <div style={{width:"100%"}}>
-            <table style={{width:"100%",height:"42px",background:"#444444"}}><tbody>
+            <table style={{width:"100%",height:"42px",background:getTitleBackgroundColorWhileLoading()}}><tbody>
             <tr>
-                <td width="1%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
-                    <div style={{width:"200px"}} />
-                </td>
+                { Auth.IsLoggedIn(header) ? <>
+                    { Env.IsFoursightFourfront(header) ? (<span>
+                        <img alt="foursight" style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={Image.FoursightFourfrontLogo()} height="32" width="44" />
+                    </span>):(<span>
+                        <img alt="foursight" src={Image.FoursightCgapLogo()} width="130" />
+                        </span>)}
+                </>:<>
+                    <td width="1%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
+                        <div style={{width:"200px"}} />
+                    </td>
+                </>}
                 <td width="98%" align="center" style={{fontSize:"16pt",color:"white", nowrap:"1"}}>
                     { header.error ? (<span>
                         <b style={{color:"red"}}>
