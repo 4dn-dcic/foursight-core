@@ -876,6 +876,16 @@ const ChecksPage = (props) => {
     const historyList = useFetch({ initial: [] });
     const groupList = useFetch({ initial: [] });
     const info = useFetch(Server.Url("/info")); // only to get the raw checks file path for info/display
+
+    function findGroupWithFewestChecks(groups) {
+        let group = null;
+        for (let i = 0 ; i < groups?.length ; i++) {
+            if (!group || (groups[i]?.checks?.length < group.checks.length)) {
+                group = groups[i];
+            }
+        }
+        return group;
+    }
         
     const checks = useFetch({
         url: Server.Url("/checks", environ),
@@ -883,11 +893,11 @@ const ChecksPage = (props) => {
             data.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0));
             if (data.length > 0) {
                 //
-                // Choose some group as default to show.
+                // Choose some group as default to show; choose the one with the fewest
+                // checks just to minimize, by default, the number of API request.
+                // Eventually cookie user with selected groups etc.
                 //
-                let group = data.find(item => item.group.toLowerCase().includes("clean"));
-                group = data[0];
-                showGroup(group, environ, groupList);
+                showGroup(findGroupWithFewestChecks(data), environ, groupList);
             }
             return data;
         }
@@ -939,7 +949,7 @@ const ChecksPage = (props) => {
                 { checks.map((datum, index) =>
                     <div key={datum.group}>
                         <span style={{fontWeight:isSelectedGroup(datum, groupList) ? "bold" : "normal",cursor:"pointer"}} onClick={() => toggleShowGroup(datum, environ, groupList, historyList)}>
-                            {datum.group}
+                            {datum.group.replace(/ checks$/i, "")} &nbsp;<small className="tool-tip" data-text={`Checks: ${datum.checks?.length}`}>({datum.checks.length})</small>
                         </span>
                         { index < checks.length - 1 &&
                             <div className="fgbg" style={{marginTop:"3pt",marginBottom:"3pt",height:"1px"}} />
