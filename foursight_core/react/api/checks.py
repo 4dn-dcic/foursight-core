@@ -296,26 +296,43 @@ class Checks:
         Annotates the given checks with kwargs info from the check functions decorators.
         """
         # Decorators.get_registry() is a dictionary keyed by (unique) decorator function
-        # name; the value of each key is an object contain these fields: args, kwargs.
-        checks_decorators = Decorators.get_registry()
-        if not checks_decorators:
+        # name; the value of each key is an object contain teh args, kwargs fields, as well
+        # as other (file, module, asssociated acdtion, etc) metadata for display purposed.
+        checks_registry = Decorators.get_registry()
+        registered_checks = [check for check in checks_registry if checks_registry[check]["kind"] == "check"]
+        if not registered_checks:
             return
         for check_name in checks:
             check_item = checks[check_name]
-            for check_decorator_function_name in checks_decorators:
-                check_decorator = checks_decorators[check_decorator_function_name]
-                if check_name == check_decorator_function_name:
-                    check_item["registered_file"] = check_decorator.get("file")
-                    check_item["registered_line"] = check_decorator.get("line")
-                    check_item["registered_module"] = check_decorator.get("module")
-                    check_item["registered_package"] = check_decorator.get("package")
-                    check_item["registered_github_url"] = check_decorator.get("github_url")
-                    check_decorator_kwargs = check_decorator.get("kwargs")
-                    if check_decorator_kwargs:
-                        check_item["registered_kwargs"] = check_decorator_kwargs
-                    check_decorator_args = check_decorator.get("args")
-                    if check_decorator_args:
-                        check_item["registered_args"] = check_decorator_args
+            for check_function_name in registered_checks:
+                if check_name == check_function_name:
+                    registered_check = checks_registry[check_function_name]
+                    check_item["registered_file"] = registered_check.get("file")
+                    check_item["registered_line"] = registered_check.get("line")
+                    check_item["registered_module"] = registered_check.get("module")
+                    check_item["registered_package"] = registered_check.get("package")
+                    check_item["registered_github_url"] = registered_check.get("github_url")
+                    registered_check_kwargs = registered_check.get("kwargs")
+                    if registered_check_kwargs:
+                        check_item["registered_kwargs"] = registered_check_kwargs
+                    registered_check_args = registered_check.get("args")
+                    if registered_check_args:
+                        check_item["registered_args"] = registered_check_args
+                    # Get any associated action; this is from the (new as of early December 2022)
+                    # action property specified in the @check_function decorator for the check
+                    # function; this is used only for informational purposes in the UI. 
+                    registered_check_action_function_name = registered_check.get("action")
+                    if registered_check_action_function_name:
+                        registered_check_action = checks_registry.get(registered_check_action_function_name)
+                        if registered_check_action and registered_check_action.get("kind") == "action":
+                            check_item["registered_action"] = {
+                                "name": registered_check_action.get("name"),
+                                "file": registered_check_action.get("file"),
+                                "line": registered_check_action.get("line"),
+                                "module": registered_check_action.get("module"),
+                                "package": registered_check_action.get("package"),
+                                "github_url": registered_check_action.get("github_url")
+                            }
 
     @staticmethod
     def _get_all_lambda_functions(lambda_filter: Optional[Callable] = None) -> list:

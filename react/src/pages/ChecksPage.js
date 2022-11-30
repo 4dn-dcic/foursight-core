@@ -275,7 +275,9 @@ import Styles from '../Styles';
         return <div style={style}>
             <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",minWidth:"300pt"}}>
                 <div>
-                    <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks, groupList)}><b>{group?.group}</b> {isShowingAnyResults(group?.checks) ? (<small>{Char.DownArrowFat}</small>) : (<small>{Char.UpArrowFat}</small>)}</span>
+                    <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks, groupList)}>
+                        <b>{group?.group.replace(/ checks$/i, "")} Group</b> {isShowingAnyResults(group?.checks) ? (<small>{Char.DownArrowFat}</small>) : (<small>{Char.UpArrowFat}</small>)}
+                    </span>
                     <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideGroup(group, groupList, historyList)})}><b>{Char.X}</b></span>
                 </div>
                 <div style={{marginTop:"6pt"}} />

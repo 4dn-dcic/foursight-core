@@ -83,17 +83,13 @@ class Decorators(object):
         if _decorator_registry.get(func_name):
             PRINT(f"WARNING: Duplicate {kind} decorator registration (skipping): {func_name}")
             return
-        print('goo')
-        print(default_args)
-        print(default_kwargs)
         PRINT(f"Registering {kind}: {func_module}.{func_name}")
-        if (isinstance(default_args, Tuple) and len(default_args) > 0 and
-            isinstance(default_args[0], Tuple) and len(default_args[0]) > 1 and
-            isinstance(default_args[0][1], dict) and default_args[0][1].get("action")):
-            print('xyzzy')
-            associated_action = default_args[0][1].get("action")
-            print(associated_action)
-        _decorator_registry[func_name] = {
+        if kind == "check" and default_kwargs.get("action"):
+            associated_action = default_kwargs["action"]
+            del default_kwargs["action"]
+        else:
+            associated_action = None
+        registry_record = {
             "kind": kind,
             "name": func_name,
             "file": func_file,
@@ -104,6 +100,9 @@ class Decorators(object):
             "args": default_args,
             "kwargs": default_kwargs
         }
+        if associated_action:
+            registry_record["action"] = associated_action
+        _decorator_registry[func_name] = registry_record
 
     def check_function(self, *default_args, **default_kwargs):
         """
@@ -119,15 +118,9 @@ class Decorators(object):
         """
         ignored(default_args)
 
-        #print('foobar')
-        #print(default_args)
-        #print(default_kwargs)
         outer_args = default_args
         outer_kwargs = default_kwargs
         def check_deco(func):
-            #print('xyzzy/args')
-            #print(outer_kwargs)
-            #print(default_kwargs)
             self.create_registry_check_record(func, default_args, default_kwargs)
             @wraps(func)
             def wrapper(*args, **kwargs):
