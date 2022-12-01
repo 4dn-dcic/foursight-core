@@ -281,7 +281,7 @@ import Styles from '../Styles';
                     <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideGroup(group, groupList, historyList)})}><b>{Char.X}</b></span>
                 </div>
                 <div style={{marginTop:"6pt"}} />
-                { group?.checks?.map((check, index) =>
+                { group?.checks?.sort((a,b) => a.title > b.title ? 1 : (a.title < b.title ? -1 : 0)).map((check, index) =>
                     <div key={index}>
                         { index > 0 && <div style={{marginBottom:"12px"}} /> }
                         <SelectedGroupCheckBox check={check} env={env} groupList={groupList} historyList={historyList} info={info} />
@@ -890,7 +890,7 @@ const ChecksPage = (props) => {
     }
         
     const checks = useFetch({
-        url: Server.Url("/checks", environ),
+        url: Server.Url("/checks_grouped", environ),
         onData: (data) => {
             data.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0));
             if (data.length > 0) {
@@ -923,7 +923,7 @@ const ChecksPage = (props) => {
 
     const checksStatus = useFetch();
     function refreshChecksStatus() {
-        checksStatus.refresh(Server.Url(`/checks-status`, environ));
+        checksStatus.refresh(Server.Url(`/checks_status`, environ));
     }
 
     function toggleShowGroup(group, env, groupList, historyList) {
@@ -1019,7 +1019,9 @@ const ChecksPage = (props) => {
                                 :   <span style={{color:"darkred"}}>{Char.X}</span> }
                             &nbsp;&nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
-                                <span onClick={() => {toggleHistoryResult(check, history, extractUuid(history), historyList); }} style={{cursor:"pointer"}}>{extractTimestamp(history)}</span>
+                                <span className="tool-tip" data-text={Time.Ago(extractTimestamp(history))} onClick={() => {toggleHistoryResult(check, history, extractUuid(history), historyList); }} style={{cursor:"pointer"}}>
+                                    {extractTimestamp(history)}
+                                </span>
                             &nbsp;&nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
                                 {extractStatus(history) === "PASS" ? (<>
@@ -1150,7 +1152,7 @@ const ChecksPage = (props) => {
 
     function showChecksRaw() {
         setChecksRawHide(false);
-        checksRaw.refresh(Server.Url(`/checks-raw`, environ));
+        checksRaw.refresh(Server.Url(`/checks_raw`, environ));
     }
 
     function hideChecksRaw() {
@@ -1182,8 +1184,8 @@ const ChecksPage = (props) => {
                 <StandardSpinner loading={checksRaw.loading} label={"Loading raw checks file"} size={60} color={"black"} />
             </>:<>
                 <div style={{float:"right",marginTop:"-2pt"}}>
-                    <span style={{fontSize:"0",opacity:"0"}} id={"checks-raw"}>{checksRaw.json()}</span>
-                    <img alt="copy" onClick={() => Clipboard.Copy("checks-raw")} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
+                    <span style={{fontSize:"0",opacity:"0"}} id={"checks_raw"}>{checksRaw.json()}</span>
+                    <img alt="copy" onClick={() => Clipboard.Copy("checks_raw")} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
                     &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => hideChecksRaw()}>X</span>
                 </div>
                 {checksRaw.yaml()}

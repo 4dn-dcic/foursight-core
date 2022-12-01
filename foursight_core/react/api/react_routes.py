@@ -119,11 +119,19 @@ class ReactRoutes:
             return app.core.create_forbidden_response()
 
     @route("/{env}/checks", authorize=True)
-    def reactapi_route_checks(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+    def reactapi_route_checks_ungrouped(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Returns detailed info on all defined checks.
+        Returns detailed info on all defined checks, NO grouped by check group.
+        For troubleshooting only.
         """
-        return app.core.reactapi_checks(app.current_request.to_dict(), env)
+        return app.core.reactapi_checks_ungrouped(app.current_request.to_dict(), env)
+
+    @route("/{env}/checks_grouped", authorize=True)
+    def reactapi_route_checks_grouped(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns detailed info on all defined checks, grouped by check group.
+        """
+        return app.core.reactapi_checks_grouped(app.current_request.to_dict(), env)
 
     @route("/{env}/checks/{check}", authorize=True)
     def reactapi_route_check_results(env: str, check: str) -> Response:  # noqa: implicit @staticmethod via @route
@@ -171,14 +179,14 @@ class ReactRoutes:
         request = app.current_request.to_dict()
         return app.core.reactapi_action_run(request, env, action=action, args=get_request_arg(request, "args"))
 
-    @route("/{env}/checks-status", authorize=True)
+    @route("/{env}/checks_status", authorize=True)
     def reactapi_route_checks_status(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns info on currently running/queueued checks.
         """
         return app.core.reactapi_checks_status(app.current_request.to_dict(), env)
 
-    @route("/{env}/checks-raw", authorize=True)
+    @route("/{env}/checks_raw", authorize=True)
     def reactapi_route_checks_raw(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns the contents of the raw check_setup.json file.
@@ -293,6 +301,13 @@ class ReactRoutes:
         For troubleshooting only. Test response size capabilities of AWS Lamdas.
         """
         return app.core.reactapi_testsize(n)
+
+    @route("/{env}/__runinfo__/{uuid}", authorize=True)
+    def reactapi_route_runinfo(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        For troubleshooting only. Temporary local testing. Xyzzy.
+        """
+        return app.core.reactapi_runinfo(env, uuid)
 
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes, serving the HTML/CSS/JavaScript/React files.

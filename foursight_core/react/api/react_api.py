@@ -427,13 +427,22 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs)
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
 
-    def reactapi_checks(self, request: dict, env: str) -> Response:
+    def reactapi_checks_grouped(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks
-        Returns a summary (list) of all defined checks.
+        Called from react_routes for endpoint: GET /{env}/checks_grouped
+        Returns a summary (list) of all defined checks, grouped by check group.
         """
         ignored(request)
         return self.create_success_response(self._checks.get_checks_grouped(env))
+
+    def reactapi_checks_ungrouped(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/checks
+        Returns a summary (list) of all defined checks, NOT grouped by check group.
+        For troubleshooting only.
+        """
+        ignored(request)
+        return self.create_success_response(self._checks.get_checks(env))
 
     def reactapi_check_results(self, request: dict, env: str, check: str) -> Response:
         """
@@ -571,6 +580,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
         sort = urllib.parse.unquote(sort)
 
         check_record = self._checks.get_check(env, check)
+        check_is_really_action = False
+        if not check_record:
+            if not self._checks.is_action(env, check):
+                return self.create_response(404)
+            check_is_really_action = True
+            check_record = check
+
         connection = app.core.init_connection(env)
         history, total = app.core.get_foursight_history(connection, check, offset, limit, sort)
         history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
@@ -584,7 +600,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                         timestamp = convert_utc_datetime_to_useastern_datetime_string(timestamp)
                         subitem["timestamp"] = timestamp
         body = {
-            "check": check_record,
+            "check" if not check_is_really_action else "action": check_record,
             "env": env,
             "history_kwargs": history_kwargs,
             "paging": {
@@ -622,7 +638,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_status(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks-status
+        Called from react_routes for endpoint: GET /{env}/checks_status
         Returns the status of any/all currently running or queued checks.
         """
         ignored(request)
@@ -634,7 +650,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_raw(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks-raw
+        Called from react_routes for endpoint: GET /{env}/checks_raw
         Returns the content of the raw/original check_setup.json file.
         """
         ignored(request)
@@ -649,7 +665,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         ignored(request)
         ignored(env)
-        return self.create_success_response(Decorators.get_registry())
+        return self.create_success_response(self._checks.get_registry())
 
     def reactapi_lambdas(self, request: dict, env: str) -> Response:
         """
@@ -966,3 +982,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         n = int(n) - 8  # { "N": "" }
         body = {"N": "X" * n}
         return app.core.create_success_response(body)
+
+    def reactapi_runinfo(self, env: str, uuid: str) -> Response:
+        print(f'xyzzy/reactapi_runinfo({env},{uuid})')
+        runinfo = app.core.collect_run_info(uuid, env)
+        print(runinfo)
+        return app.core.create_success_response(runinfo)

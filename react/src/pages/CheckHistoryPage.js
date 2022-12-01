@@ -1,18 +1,21 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useFetch } from '../utils/Fetch';
 import { FetchErrorBox } from '../Components';
 import { StandardSpinner } from '../Spinners';
 import PaginationComponent from '../PaginationComponent';
 import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
+import Client from '../utils/Client';
+import Env from '../utils/Env';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
 import Styles from '../Styles';
 import TableHead from '../TableHead';
+import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 
@@ -29,10 +32,12 @@ const CheckHistoryPage = (props) => {
     const [ pages, setPages ] = useState(Math.max(1, page + 1));
 
     const history = useFetch();
+    const checkInfo = useFetch();
+    const actionInfo = useFetch();
 
     useEffect(() => {
         updateData(limit, offset, sort);
-    }, [limit, offset, sort]);
+    }, [limit, offset, sort, check]);
 
     function update(limit, offset, sort) {
         setLimit(limit);
@@ -53,6 +58,34 @@ const CheckHistoryPage = (props) => {
                 }
                 setPages(Math.ceil(data.paging.total / limit));
                 setPage(Math.floor(offset / limit));
+                if (data.check) {
+                    checkInfo.fetch({
+                        url: Server.Url(`/checks_grouped`),
+                        onData: (data) => {
+                            for (const group of data) {
+                                for (const groupCheck of group.checks) {
+                                    if (groupCheck.name == check) {
+                                        return groupCheck;
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                else if (check.action) {
+                    checkInfo.fetch({
+                        url: Server.Url(`/checks_grouped`),
+                        onData: (data) => {
+                            for (const group of data) {
+                                for (const groupCheck of group.checks) {
+                                    if (groupCheck.name == check) {
+                                        return groupCheck;
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
                 return data;
             }
         });
@@ -95,7 +128,6 @@ const CheckHistoryPage = (props) => {
         specificHistory.__resultLoading = false;
         specificHistory.__resultError = false;
         history.update();
-        //setHistory(e => ({...e}));
     }
 
     function toggleResult(check, specificHistory, uuid) {
@@ -141,7 +173,8 @@ const CheckHistoryPage = (props) => {
         return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
 
             <div title={check}>
-                <b>Check: {check}</b>&nbsp;
+                <b className="tool-tip" data-text={check}>Check History</b>: <span>{checkInfo.get("title")}</span>&nbsp;
+
                 { history.get("check.registered_github_url") && <>
                     <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={history.get("check.registered_github_url")}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                 </>}
@@ -178,18 +211,22 @@ const CheckHistoryPage = (props) => {
                                 <small>{offset + index + 1}.</small>
                             &nbsp;</td>
                             <td style={{verticalAlign:"top",whiteSpace:"nowrap"}}>
-                                <span onClick={() => toggleResult(check, history, extractUUID(history))} style={{cursor:"pointer"}}>
+                                <span className="tool-tip" data-text={Time.Ago(extractTimestamp(history))} onClick={() => toggleResult(check, history, extractUUID(history))} style={{cursor:"pointer"}}>
                                     {extractTimestamp(history)}
                                 </span>
                             &nbsp;&nbsp;</td>
                             <td style={{verticalAlign:"top",whiteSpace:"nowrap"}}>
                                 {extractUUID(history)}
                             &nbsp;&nbsp;</td>
-                            <td style={{verticalAlign:"top",whiteSpace:"break-spaces"}}>
+                            <td className="tool-tip" data-text={extractStatus(history)} style={{verticalAlign:"top",whiteSpace:"break-spaces"}}>
                                 {extractStatus(history) === "PASS" ? (<>
                                     <b>OK</b>
                                 </>):(<>
-                                    <b style={{color:"darkred"}}>ERROR</b>
+                                    {extractStatus(history) === "FAIL" ? (<>
+                                        <b style={{color:"darkred"}}>FAILURE</b>
+                                    </>):(<>
+                                        <b style={{color:"darkred"}}>ERROR</b>
+                                    </>)}
                                 </>)}
                                 {/* <br/> <small> {extractSummary(history)} </small> */}
                             &nbsp;&nbsp;</td>
@@ -236,6 +273,30 @@ const CheckHistoryPage = (props) => {
         return Type.IsNonEmptyObject(check?.schedule) ? check.schedule[Object.keys(check.schedule)[0]]?.cron_description : "";
     }
 
+    function getDependenciesFromCheck(checkInfo) {
+        const schedule = checkInfo.get("schedule");
+        if (schedule) {
+            const scheduleValues = Object.values(schedule);
+            if (scheduleValues && scheduleValues.length > 0) {
+                const scheduleFirstElement = scheduleValues[0];
+                if (scheduleFirstElement) {
+                    const scheduleFirstElementEnv = scheduleFirstElement[Env.PreferredName(Env.Current())];
+                    if (scheduleFirstElementEnv && scheduleFirstElementEnv?.dependencies?.length > 0) {
+                        return scheduleFirstElementEnv.dependencies.join(', ');
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    function basename(path) {
+        return path?.split('/')?.reverse()[0];
+    }
+
+    function dirname(path) {
+        return path?.substring(0, path?.lastIndexOf("/"));
+    }
 
     if (history.error) return <FetchErrorBox error={history.error} message="Error loading check history from Foursight API" />
     return <>
@@ -272,7 +333,7 @@ const CheckHistoryPage = (props) => {
                     </td>
                     </tr></tbody></table>
                 </td>
-                <td style={{verticalAlign:"bottom",paddingBottom:"2pt"}}><b>Check History</b></td>
+                <td style={{verticalAlign:"bottom",paddingBottom:"2pt"}}><b>Check</b></td>
             </tr>
             <tr>
                 <td style={{verticalAlign:"top",paddingRight:"10pt"}}>
@@ -280,17 +341,30 @@ const CheckHistoryPage = (props) => {
                 </td>
                 <td style={{verticalAlign:"top"}}>
                     <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
-                        <table><tbody>
+                        <table><tbody style={{fontSize:"small",verticalAlign:"top"}}>
                             <tr>
-                                <td style={{paddingRight:"8pt"}}><b>Check</b>:</td>
-                                <td>{check}</td>
+                                <td style={{paddingRight:"8pt"}}><b>Name</b>:</td>
+                                <td>
+                                    {check}
+                                </td>
+                            </tr>
+                            <tr><td style={{paddingTop:"2px"}}></td></tr>
+                            <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                            <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                            <tr>
+                                <td style={{paddingRight:"8pt"}}><b>Title</b>:</td>
+                                <td>
+                                    {checkInfo.get("title")} <br />
+                                </td>
                             </tr>
                             <tr><td style={{paddingTop:"2px"}}></td></tr>
                             <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                             <tr><td style={{paddingBottom:"2px"}}></td></tr>
                             <tr>
                                 <td style={{paddingRight:"8pt"}}><b>Group</b>:</td>
-                                <td>{history.get("check.group")}</td>
+                                <td>
+                                    {history.get("check.group")}
+                                </td>
                             </tr>
                             <tr><td style={{paddingTop:"2px"}}></td></tr>
                             <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
@@ -305,15 +379,123 @@ const CheckHistoryPage = (props) => {
                                     </span>
                                 </td>
                             </tr>
+                            { getDependenciesFromCheck(checkInfo) && <>
+                                <tr><td style={{paddingTop:"2px"}}></td></tr>
+                                <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                                <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                                <tr>
+                                    <td style={{paddingRight:"8pt"}}><b>Dependencies</b>:</td>
+                                    <td>
+                                        {getDependenciesFromCheck(checkInfo)} <br />
+                                    </td>
+                                </tr>
+                            </>}
+                            <tr><td style={{paddingTop:"2px"}}></td></tr>
+                            <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                            <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                            <tr>
+                                <td><b>Code</b>:</td>
+                                <td>
+                                    {basename(checkInfo.get("registered_file"))} <br />
+                                    <small>{dirname(checkInfo.get("registered_file"))}</small>
+                                </td>
+                            </tr>
+                            <tr><td style={{paddingTop:"2px"}}></td></tr>
+                            <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                            <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                            <tr>
+                                <td><b>Module</b>:</td>
+                                <td>
+                                    {checkInfo.get("registered_module")}
+                                </td>
+                            </tr>
+                            <tr><td style={{paddingTop:"2px"}}></td></tr>
+                            <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                            <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                            <tr>
+                                <td><b>Package</b>:</td>
+                                <td>
+                                    {checkInfo.get("registered_package")}
+                                </td>
+                            </tr>
+                            <tr><td style={{paddingTop:"2px"}}></td></tr>
+                            <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                            <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                            <tr>
+                                <td>
+                                    <b>GitHub</b>:
+                                </td>
+                                <td>
+                                    <a href={checkInfo.get("registered_github_url")} target="_blank">
+                                        {checkInfo.get("registered_github_url")}
+                                    </a>
+                                </td>
+                            </tr>
                         </tbody></table>
                     </div>
-                    <b style={{color:"inherit"}}>TODO</b>
-                    <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                        <small>
-                        - Dropdown to pick other checks. <br />
-                        - Allow check to be run here.<br />
-                        </small>
-                    </div>
+                    { checkInfo.get("registered_action") && <>
+                        <b>Associated Action</b>
+                        <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
+                            <table><tbody style={{fontSize:"small",verticalAlign:"top"}}>
+                                <tr>
+                                    <td style={{paddingRight:"8pt"}}><b>Name</b>:</td>
+                                    <td>
+                                        <Link to={Client.Path(`/checks/${checkInfo.get("registered_action.name")}/history`)}>{checkInfo.get("registered_action.name")}</Link>
+                                    </td>
+                                </tr>
+                                <tr><td style={{paddingTop:"2px"}}></td></tr>
+                                <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                                <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                                <tr>
+                                    <td style={{paddingRight:"8pt"}}><b>Checks</b>:</td>
+                                    <td>
+                                        {checkInfo.get("registered_action.checks").sort().map(check => <>
+                                            <Link to={Client.Path(`/checks/${check}/history`)}>{check}</Link> <br />
+                                        </>)}
+                                    </td>
+                                </tr>
+                                <tr><td style={{paddingTop:"2px"}}></td></tr>
+                                <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                                <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                                <tr>
+                                    <td style={{paddingRight:"8pt"}}><b>Code</b>:</td>
+                                    <td>
+                                        {basename(checkInfo.get("registered_action.file"))} <br />
+                                        <small>{dirname(checkInfo.get("registered_action.file"))}</small>
+                                    </td>
+                                </tr>
+                                <tr><td style={{paddingTop:"2px"}}></td></tr>
+                                <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                                <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                                <tr>
+                                    <td style={{paddingRight:"8pt"}}><b>Module</b>:</td>
+                                    <td>
+                                        {checkInfo.get("registered_action.module")}
+                                    </td>
+                                </tr>
+                                <tr><td style={{paddingTop:"2px"}}></td></tr>
+                                <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                                <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                                <tr>
+                                    <td style={{paddingRight:"8pt"}}><b>Package</b>:</td>
+                                    <td>
+                                        {checkInfo.get("registered_action.package")}
+                                    </td>
+                                </tr>
+                                <tr><td style={{paddingTop:"2px"}}></td></tr>
+                                <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                                <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                                <tr>
+                                    <td style={{paddingRight:"8pt"}}><b>GitHub</b>:</td>
+                                    <td>
+                                        <a href={checkInfo.get("registered_action.github_url")} target="_blank">
+                                            {checkInfo.get("registered_action.github_url")}
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody></table>
+                        </div>
+                    </>}
                 </td>
             </tr>
         </tbody></table>

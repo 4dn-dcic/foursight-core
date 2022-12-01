@@ -21,6 +21,7 @@ class Checks:
 
     _cached_checks = None
     _cached_lambdas = None
+    _cached_registry = None
 
     def get_checks_raw(self) -> dict:
         """
@@ -65,6 +66,14 @@ class Checks:
             if not found:
                 checks_groups.append({"group": check_item_group, "checks": [check_item]})
         return checks_groups
+
+    def is_action(self, env: str, action: str) -> bool:
+        checks = self.get_checks(env)
+        for check in checks.values():
+            if check.get("registered_action"):
+                if check["registered_action"].get("name") == action:
+                    return True
+        return False
 
     def get_check(self, env: str, check: str) -> Optional[dict]:
         """
@@ -290,15 +299,33 @@ class Checks:
                             check_schedule[check_schedule_name]["cron"] = la["lambda_schedule"]
                             check_schedule[check_schedule_name]["cron_description"] = la["lambda_schedule_description"]
 
-    @staticmethod
-    def _annotate_checks_with_kwargs_from_decorators(checks: dict) -> None:
+    def get_registry(self) -> dict:
+        # A check may have at most one associated action;
+        # but the same action# may be associated with more than
+        # one check; setup the latter part of that relationship here.
+        if not self._cached_registry:
+            registry = Decorators.get_registry()
+            registered_checks = [check for check in registry if registry[check]["kind"] == "check"]
+            registered_actions = [check for check in registry if registry[check]["kind"] == "action"]
+            for check_name in registered_checks:
+                check = registry[check_name]
+                associated_action_name = check.get("action")
+                if associated_action_name:
+                    action = registry[associated_action_name]
+                    if not action.get("checks"):
+                        action["checks"] = []
+                    action["checks"].append(check_name)
+            self._cached_registry = registry
+        return self._cached_registry
+
+    def _annotate_checks_with_kwargs_from_decorators(self, checks: dict) -> None:
         """
         Annotates the given checks with kwargs info from the check functions decorators.
         """
         # Decorators.get_registry() is a dictionary keyed by (unique) decorator function
-        # name; the value of each key is an object contain teh args, kwargs fields, as well
-        # as other (file, module, asssociated acdtion, etc) metadata for display purposed.
-        checks_registry = Decorators.get_registry()
+        # name; the value of each key is an object contain the args, kwargs fields, as well
+        # as other (file, module, asssociated action, etc) metadata for display purposes.
+        checks_registry = self.get_registry()
         registered_checks = [check for check in checks_registry if checks_registry[check]["kind"] == "check"]
         if not registered_checks:
             return
@@ -321,17 +348,18 @@ class Checks:
                     # Get any associated action; this is from the (new as of early December 2022)
                     # action property specified in the @check_function decorator for the check
                     # function; this is used only for informational purposes in the UI. 
-                    registered_check_action_function_name = registered_check.get("action")
-                    if registered_check_action_function_name:
-                        registered_check_action = checks_registry.get(registered_check_action_function_name)
-                        if registered_check_action and registered_check_action.get("kind") == "action":
+                    registered_action_function_name = registered_check.get("action")
+                    if registered_action_function_name:
+                        registered_action = checks_registry.get(registered_action_function_name)
+                        if registered_action and registered_action.get("kind") == "action":
                             check_item["registered_action"] = {
-                                "name": registered_check_action.get("name"),
-                                "file": registered_check_action.get("file"),
-                                "line": registered_check_action.get("line"),
-                                "module": registered_check_action.get("module"),
-                                "package": registered_check_action.get("package"),
-                                "github_url": registered_check_action.get("github_url")
+                                "name": registered_action.get("name"),
+                                "file": registered_action.get("file"),
+                                "line": registered_action.get("line"),
+                                "module": registered_action.get("module"),
+                                "package": registered_action.get("package"),
+                                "github_url": registered_action.get("github_url"),
+                                "checks": registered_action.get("checks")
                             }
 
     @staticmethod
@@ -359,3 +387,4 @@ class Checks:
     def cache_clear(self) -> None:
         self._cached_checks = None
         self._cached_lambdas = None
+        self._cached_registry = None

@@ -1806,24 +1806,46 @@ class AppUtilsCore(ReactApi, Routes):
             VisibilityTimeout=300,
             WaitTimeSeconds=10
         )
+        print('xyzzy/run_check_runner/a')
         message = response.get('Messages', [{}])[0]
+        print('xyzzy/run_check_runner/b')
+        print(message)
         body = message.get('Body')
+        print('xyzzy/run_check_runner/c')
+        print(body)
         receipt = message.get('ReceiptHandle')
+        print('xyzzy/run_check_runner/d')
+        print(receipt)
         if not body or not receipt:
             # if no messages recieved in 10 seconds of long polling, terminate
             return None
         check_list = json.loads(body)
+        print('xyzzy/run_check_runner/e')
+        print(check_list)
         if not isinstance(check_list, list) or len(check_list) != 5:
             # if not a valid check str, remove the item from the SQS
             self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
         [run_env, run_uuid, run_name, run_kwargs, run_deps] = check_list
+        print('xyzzy/run_check_runner/f')
+        print(run_env)
+        print(run_uuid)
+        print(run_name)
+        print(run_kwargs)
+        print(run_deps)
         # find information from s3 about completed checks in this run
         # actual id stored in s3 has key: <run_uuid>/<run_name>
         if run_deps and isinstance(run_deps, list):
+            print('xyzzy/run_check_runner/g')
             already_run = self.collect_run_info(run_uuid, run_env)
+            print('xyzzy/run_check_runner/h')
+            print(already_run)
             deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
+            print('xyzzy/run_check_runner/i')
+            print(deps_w_uuid)
             finished_dependencies = set(deps_w_uuid).issubset(already_run)
+            print('xyzzy/run_check_runner/j')
+            print(finished_dependencies)
             if not finished_dependencies:
                 PRINT(f'-RUN-> Not ready for: {run_name}')
         else:
