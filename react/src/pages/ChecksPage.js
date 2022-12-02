@@ -578,11 +578,21 @@ import Styles from '../Styles';
                     &nbsp;|&nbsp;<RefreshResultButton check={check} env={env} groupList={groupList} />
                     <br />
                     <span style={{color:check.__result.get("status")?.toUpperCase() === "PASS" ? "inherit" : "darkred"}} onClick={() => onClickResult(check, groupList)}>
-                        <span className={"tool-tip"} data-text={"Click to " + (check.__showingResultDetails ? "hide" : "show") + " result details."}>Results Summary</span>:&nbsp;
+                        <span className={"tool-tip"} data-text={"Click to " + (check.__showingResultDetails ? "hide" : "show") + " result details."}>Summary</span>:&nbsp;
                         <span style={{whiteSpace:"break-spaces"}}>
                             {check.__result.get("summary")}&nbsp;&nbsp;
                             {check.__result.get("status")?.toUpperCase() === "PASS" ? (<b style={{fontSize:"12pt",color:"inherit"}}>{Char.Check}</b>) : (<b style={{fontSize:"13pt",color:"darkred"}}>{Char.X}</b>)}
                         </span>
+                        { (check.__result.get("description") && check.__result.get("description") != check.__result.get("summary")) && <>
+                            <span style={{whiteSpace:"break-spaces"}}>
+                                <br />Description: {check.__result.get("description")}
+                            </span>
+                        </>}
+                        { (check.__result.get("ff_link")) && <>
+                            &nbsp;<a style={{color:"inherit"}} href={check.__result.get("ff_link")} rel="noreferrer" target="_blank">
+                                <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span>
+                            </a>
+                        </>}
                     </span>
                 </>):(<>
                     { !check.__showingResultDetails && <>

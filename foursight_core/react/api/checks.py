@@ -363,7 +363,23 @@ class Checks:
                             }
 
     @staticmethod
-    def _get_all_lambda_functions(lambda_filter: Optional[Callable] = None) -> list:
+    def _get_all_lambda_functions() -> list:
+        """
+        Returns a list of objects from boto3 (lambda.list_functions) for each lambda
+        function within our stack as defined by _get_stack_name (i.e. from the global
+        STACK_NAME environment variable, and where each lambda also has the STACK_NAME
+        environment variable defined for it).
+        """
+        stack_name = Checks._get_stack_name()
+        def lambda_filter(lambda_function: dict) -> bool:
+            if lambda_function:
+                lambda_function_environment = lambda_function.get("Environment")
+                if lambda_function_environment:
+                    lambda_function_environment_variables = lambda_function_environment.get("Variables")
+                    if lambda_function_environment_variables:
+                        lambda_function_stack_name = lambda_function_environment_variables.get("STACK_NAME")
+                        return lambda_function_stack_name == stack_name
+            return False
         boto_lambda = boto3.client("lambda")
         results = []
         marker = None
@@ -375,10 +391,10 @@ class Checks:
             if not lambda_functions or not lambda_functions.get("Functions"):
                 break
             for lambda_function in lambda_functions["Functions"]:
-                if isinstance(lambda_filter, Callable):
-                    if not lambda_filter(lambda_function):
-                        continue
-                results.append(lambda_function)
+                if lambda_filter(lambda_function):
+                    print('xyzzy/lambda_function/foo')
+                    print(lambda_function)
+                    results.append(lambda_function)
             marker = lambda_functions.get("NextMarker")
             if not marker:
                 break

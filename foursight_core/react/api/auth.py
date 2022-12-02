@@ -161,6 +161,7 @@ class Auth:
                 # "known_envs": self._envs.get_known_envs(),
                 "default_env": self._envs.get_default_env(),
                 "domain": get_request_domain(request),
+                "site": "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront",
                 JWT_AUDIENCE_PROPERTY_NAME: self._auth0_client  # Needed for Auth0Lock login box on client-side.
             }
         response["authenticated"] = is_authenticated

@@ -1664,6 +1664,10 @@ class AppUtilsCore(ReactApi, Routes):
                 check_vals.extend(self.get_env_schedule(check_schedule, environ))
                 logger.warning(f"queue_scheduled_checks: calling send_sqs_messages({environ}) ... check_values:")
                 logger.warning(check_vals)
+                print('xyzzy/queue_scheduled_checks')
+                print(queue)
+                print(environ)
+                print(check_vals)
                 self.sqs.send_sqs_messages(queue, environ, check_vals)
                 logger.warning(f"queue_scheduled_checks: after calling send_sqs_messages({environ})")
         runner_input = {'sqs_url': queue.url}
@@ -1714,6 +1718,10 @@ class AppUtilsCore(ReactApi, Routes):
             }
             raise Exception(str(error_res))
         to_send = [check_str, params or {}, deps or []]
+        print('xyzzy/queue_check')
+        print(environ)
+        print(to_send)
+        print(uuid)
         return self.send_single_to_queue(environ, to_send, uuid)
 
     def queue_action(self, environ, action,
@@ -1810,6 +1818,34 @@ class AppUtilsCore(ReactApi, Routes):
         message = response.get('Messages', [{}])[0]
         print('xyzzy/run_check_runner/b')
         print(message)
+
+        # TODO/2022-12-01: Issue with check not running because not detecting that dependency
+        # has already run; for example with expset_opf_unique_files_in_experiments depending
+        # on expset_opfsets_unique_titles; seems not checking the result in S3 of the depdendency
+        # correctly. This is what seems to be returned here if the check has a dependency, for example:
+        #
+        #   [ "data",
+        #     "2022-12-02T12:00:17.345942",
+        #     "audit_checks/expset_opf_unique_files_in_experiments",
+        #     {"primary": true},
+        #     ["expset_opfsets_unique_titles"]
+        #   ]
+        #
+        # Where the first item (data) is the environment; the second item (2022-12-02T12:00:17.345942)
+        # is the uuid for the dependency (expset_opfsets_unique_titles), which is the fifth item;
+        # the third item (audit_checks/expset_opf_unique_files_in_experiments) is the main check;
+        # the fourth item is the kwargs for the main check; and the fifth item (as mentioned)
+        # is the dependency/ies upon which the main check is dependent. Not YET clear why/how
+        # the uuid is for the dependency and/or what this might look like if multiple dependencies.
+        #
+        # If the check does NOT have a dependency, we see, for example:
+        #
+        #   [ "data",
+        #     "2022-12-02T12:35:34.786686",
+        #     "system_checks/elastic_search_space",
+        #     {"primary": true},
+        #     [] ]
+
         body = message.get('Body')
         print('xyzzy/run_check_runner/c')
         print(body)
@@ -1905,10 +1941,36 @@ class AppUtilsCore(ReactApi, Routes):
         """
         Returns a set of run checks under this run uuid
         """
+        print('xyzzy/collect_run_info/a')
+        print(run_uuid)
+        print(env)
         bucket = get_foursight_bucket(envname=env, stage=Stage(cls.prefix).get_stage())
+        print('xyzzy/collect_run_info/b')
+        print(bucket)
         s3_connection = S3Connection(bucket)
         run_prefix = ''.join([run_uuid, '/'])
+        print('xyzzy/collect_run_info/c')
+        print(run_prefix)
         complete = s3_connection.list_all_keys_w_prefix(run_prefix)
+        #xyzzy-begin
+        if not complete:
+            print('xyzzy/collect_run_info/c2')
+            if run_prefix.endswith("/"):
+                print('xyzzy/collect_run_info/c3')
+                run_prefix = run_prefix[0:len(run_prefix) - 1]
+                print(run_prefix)
+                complete = s3_connection.list_all_keys_w_prefix(run_prefix)
+                print('xyzzy/collect_run_info/c4')
+                print(complete)
+                complete = s3_connection.list_all_keys_w_prefix("item_counts_by_type/2022-12-01T19:05:33.480459")
+                print('xyzzy/collect_run_info/c5')
+                print(complete)
+                complete = s3_connection.list_all_keys_w_prefix("/item_counts_by_type/2022-12-01T19:05:33.480459")
+                print('xyzzy/collect_run_info/c6')
+                print(complete)
+        #xyzzy-end
+        print('xyzzy/collect_run_info/d')
+        print(complete)
         # eliminate duplicates
         return set(complete)
 
