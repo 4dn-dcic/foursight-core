@@ -1952,23 +1952,6 @@ class AppUtilsCore(ReactApi, Routes):
         print('xyzzy/collect_run_info/c')
         print(run_prefix)
         complete = s3_connection.list_all_keys_w_prefix(run_prefix)
-        #xyzzy-begin
-        if not complete:
-            print('xyzzy/collect_run_info/c2')
-            if run_prefix.endswith("/"):
-                print('xyzzy/collect_run_info/c3')
-                run_prefix = run_prefix[0:len(run_prefix) - 1]
-                print(run_prefix)
-                complete = s3_connection.list_all_keys_w_prefix(run_prefix)
-                print('xyzzy/collect_run_info/c4')
-                print(complete)
-                complete = s3_connection.list_all_keys_w_prefix("item_counts_by_type/2022-12-01T19:05:33.480459")
-                print('xyzzy/collect_run_info/c5')
-                print(complete)
-                complete = s3_connection.list_all_keys_w_prefix("/item_counts_by_type/2022-12-01T19:05:33.480459")
-                print('xyzzy/collect_run_info/c6')
-                print(complete)
-        #xyzzy-end
         print('xyzzy/collect_run_info/d')
         print(complete)
         # eliminate duplicates
