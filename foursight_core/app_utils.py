@@ -1638,6 +1638,10 @@ class AppUtilsCore(ReactApi, Routes):
         Returns:
             dict: runner input of queued messages, used for testing
         """
+        print('xyzzy/queue_scheduled_checks/a')
+        print(sched_environ)
+        print(schedule_name)
+        print(conditions)
         logger.warning(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
         queue = self.sqs.get_sqs_queue()
         logger.warning(f"queue_scheduled_checks: queue={queue}")
@@ -1819,10 +1823,10 @@ class AppUtilsCore(ReactApi, Routes):
         print('xyzzy/run_check_runner/b')
         print(message)
 
-        # TODO/2022-12-01: Issue with check not running because not detecting that dependency
-        # has already run; for example with expset_opf_unique_files_in_experiments depending
-        # on expset_opfsets_unique_titles; seems not checking the result in S3 of the depdendency
-        # correctly. This is what seems to be returned here if the check has a dependency, for example:
+        # TODO/2022-12-01/dmichaels: Issue with check not running because not detecting that
+        # dependency # has already run; for example with expset_opf_unique_files_in_experiments
+        # depending on expset_opfsets_unique_titles; seems not checking the result in S3 of the
+        # depdendency correctly. This is what seems to be returned here if the check has a dependency, e.g.:
         #
         #   [ "data",
         #     "2022-12-02T12:00:17.345942",
@@ -1832,11 +1836,12 @@ class AppUtilsCore(ReactApi, Routes):
         #   ]
         #
         # Where the first item (data) is the environment; the second item (2022-12-02T12:00:17.345942)
-        # is the uuid for the dependency (expset_opfsets_unique_titles), which is the fifth item;
+        # is the UUID for the DEPENDENCY (expset_opfsets_unique_titles), which is the fifth item;
         # the third item (audit_checks/expset_opf_unique_files_in_experiments) is the main check;
         # the fourth item is the kwargs for the main check; and the fifth item (as mentioned)
-        # is the dependency/ies upon which the main check is dependent. Not YET clear why/how
-        # the uuid is for the dependency and/or what this might look like if multiple dependencies.
+        # is the dependency/ies upon which the main check is dependent. Not YET clear if/why/how
+        # the UUID is for the dependency (how did this make it into the SQS message) and/or what
+        # this might look like if multiple dependencies.
         #
         # If the check does NOT have a dependency, we see, for example:
         #
@@ -1845,6 +1850,9 @@ class AppUtilsCore(ReactApi, Routes):
         #     "system_checks/elastic_search_space",
         #     {"primary": true},
         #     [] ]
+        #
+        # In this case the second item (2022-12-02T12:35:34.786686) is the UUID for the main check,
+        # which is the third item (system_checks/elastic_search_space).
 
         body = message.get('Body')
         print('xyzzy/run_check_runner/c')
@@ -1873,9 +1881,24 @@ class AppUtilsCore(ReactApi, Routes):
         # actual id stored in s3 has key: <run_uuid>/<run_name>
         if run_deps and isinstance(run_deps, list):
             print('xyzzy/run_check_runner/g')
+
+            # TODO/2022-12-02/dmichaels: This seems wrong; if we search
+            # for an S3 key using just the UUID as the prefix it won't find
+            # find the check run result there because it's in a sub-key, e.g.
+            # item_counts_by_type/2022-12-02T14:05:32.979264.
+            # using the we want to check if the dependencies have run.
+
             already_run = self.collect_run_info(run_uuid, run_env)
             print('xyzzy/run_check_runner/h')
             print(already_run)
+
+            # TODO/2022-12-02/dmichaels: This seems backwards; should be:
+            # deps_w_uuid = ['/'.join([dep, run_uuid]) for dep in run_deps]
+            # I.e. rather than e.g. 2022-12-02T14:05:32.979264/item_counts_by_type
+            # we want item_counts_by_type/2022-12-02T14:05:32.979264
+            # Also this code seems to imply that the UUID for all dependencies
+            # are the same (have not actually seen examples of multiple dependencies).
+
             deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
             print('xyzzy/run_check_runner/i')
             print(deps_w_uuid)

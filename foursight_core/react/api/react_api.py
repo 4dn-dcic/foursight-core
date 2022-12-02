@@ -985,6 +985,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_runinfo(self, env: str, uuid: str) -> Response:
         print(f'xyzzy/reactapi_runinfo({env},{uuid})')
-        runinfo = app.core.collect_run_info(uuid, env)
-        print(runinfo)
-        return app.core.create_success_response(runinfo)
+        app.core.queue_scheduled_checks('all', 'hourly_checks_1_xyzzy')
+        #runinfo = app.core.collect_run_info(uuid, env)
+        #print(runinfo)
+        #return app.core.create_success_response(runinfo)

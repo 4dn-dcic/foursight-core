@@ -282,12 +282,12 @@ const CheckHistoryPage = (props) => {
                 if (scheduleFirstElement) {
                     const scheduleFirstElementEnv = scheduleFirstElement[Env.PreferredName(Env.Current())];
                     if (scheduleFirstElementEnv && scheduleFirstElementEnv?.dependencies?.length > 0) {
-                        return scheduleFirstElementEnv.dependencies.join(', ');
+                        return scheduleFirstElementEnv.dependencies;
                     }
                 }
             }
         }
-        return null;
+        return [];
     }
 
     function basename(path) {
@@ -379,14 +379,16 @@ const CheckHistoryPage = (props) => {
                                     </span>
                                 </td>
                             </tr>
-                            { getDependenciesFromCheck(checkInfo) && <>
+                            { getDependenciesFromCheck(checkInfo).length > 0 && <>
                                 <tr><td style={{paddingTop:"2px"}}></td></tr>
                                 <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                                 <tr><td style={{paddingBottom:"2px"}}></td></tr>
                                 <tr>
                                     <td style={{paddingRight:"8pt"}}><b>Dependencies</b>:</td>
                                     <td>
-                                        {getDependenciesFromCheck(checkInfo)} <br />
+                                        {getDependenciesFromCheck(checkInfo).map(dependency => <>
+                                            <Link to={Client.Path(`/checks/${dependency}/history`)}>{dependency}</Link>
+                                        </>)} <br />
                                     </td>
                                 </tr>
                             </>}
