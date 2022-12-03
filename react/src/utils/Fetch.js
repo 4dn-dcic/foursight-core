@@ -146,7 +146,7 @@ const MAX_SAVE = 25;
 //
 // OTHER COMMENTS
 //
-// - Looking back over this, at 750+ lines (though many comments), it does look rather complex.
+// - Looking back over this, at 800+ lines (though many comments), it does look rather complex.
 //   But the goal was to make the USAGE simple; to fetch, update, manipulate data with as little
 //   detailed logic and friction as possible; and to globally track outstanding fetching, e.g.
 //   to facilitate a global fetching spinner, which obviates the need for these on individual
@@ -487,11 +487,16 @@ function _doFetch(args, current = undefined) {
         const fetchCache = _fetchCache[args.cache];
         if (fetchCache) {
             Debug.Info(`FETCH FOUND CACHED RESPONSE (${args.cache}): ${args.method} ${args.url} -> HTTP ${fetchCache.status}`);
+            args.onData(fetchCache.data, fetchCache.data);
             args.setData(fetchCache.data);
             args.setStatus(fetchCache.status);
             args.setLoading(false);
             args.setTimeout(false);
             args.setError(null);
+            const responseArg = { data: fetchCache.data, loading: false, status: fetchCache.status, timeout: false, error: null };
+            _defineResponseConvenienceFunctions(responseArg);
+            args.onSuccess(responseArg);
+            args.onDone(responseArg);
             return;
         }
     }

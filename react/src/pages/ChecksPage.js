@@ -303,22 +303,26 @@ import Styles from '../Styles';
             fetchResult(check, env, groupList);
         }, []);
 
-        function fetchResult(check, env, groupList, nocache = false) {
+        function fetchResult(check, env, groupList, refresh = false) {
+            if (refresh) {
+                check.__result.uncache();
+            }
             check.__result.fetch({
                 url: Server.Url(`/checks/${check.name}`),
-                nocache: nocache,
                 onData: (data) => {
-                    fetchResultByUuid(check, data?.uuid, groupList, nocache);
-                    fetchResultByAction(check, data?.action, groupList, nocache);
+                    fetchResultByUuid(check, data?.uuid, groupList, refresh);
+                    fetchResultByAction(check, data?.action, groupList, refresh);
                 }
             });
         }
 
-        function fetchResultByUuid(check, uuid, groupList, nocache = false) {
+        function fetchResultByUuid(check, uuid, groupList, refresh = false) {
             if (uuid || check.__result.get("uuid")) {
+                if (refresh) {
+                    check.__resultByUuid.uncache();
+                }
                 check.__resultByUuid.fetch({
                     url: Server.Url(`/checks/${check.name}/${uuid || check.__result.get("uuid")}`),
-                    nocache: nocache,
                     onDone: (response) => {
                         if (response.data?.checks) {
                             const responseByUuid = response.data.checks[check.title];
@@ -333,12 +337,14 @@ import Styles from '../Styles';
             }
         }
 
-        function fetchResultByAction(check, action, groupList, nocache = false) {
+        function fetchResultByAction(check, action, groupList, refresh = false) {
             action = check.__result?.get("action") || action;
             if (action) {
+                if (refresh) {
+                    check.__resultByAction.uncache();
+                }
                 check.__resultByAction.fetch({
-                    url: Server.Url(`/checks/${action}`),
-                    nocache: nocache
+                    url: Server.Url(`/checks/${action}`)
                 });
             }
         }
@@ -1633,7 +1639,7 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
                         </>}
                     </div>
                     { (!readOnlyMode && !runActionAllowedState[0] && !check.__result.loading && !check.__resultByUuid.loading && !check.__resultByAction.loading) && <>
-                        <div className="tool-tip" data-text="Click to refresh result." style={{float:"right",marginRight:"8pt",marginTop:"0pt",cursor:"pointer",color:"black"}} onClick={() => fetchResult(check, env, groupList)}>
+                        <div className="tool-tip" data-text="Click to refresh result." style={{float:"right",marginRight:"8pt",marginTop:"0pt",cursor:"pointer",color:"black"}} onClick={() => fetchResult(check, env, groupList, true)}>
                             <big><b>{Char.Refresh}</b></big>
                         </div>
                     </>}
