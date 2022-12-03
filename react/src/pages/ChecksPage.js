@@ -338,14 +338,14 @@ import Styles from '../Styles';
                 check.__showingResults = true;
                 refreshResults(check, env, groupList);
             }
-        }, [group.__selectedXyzzy, group.__selectedOnceXyzzy]);
+        }, [group.__selectedXyzzy]);
 
         function refreshResults(check, env, groupList) {
             check.__result.fetch({
                 url: Server.Url(`/checks/${check.name}`),
                 onData: (data) => {
-                    //xyzzy fetchResultByUuid(check, data?.uuid, groupList);
-                    //xyzzy fetchResultByAction(check, data?.action, groupList);
+                    fetchResultByUuid(check, data?.uuid, groupList);
+                    fetchResultByAction(check, data?.action, groupList);
                 }
             });
         }

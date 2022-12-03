@@ -187,8 +187,10 @@ export const useFetch = (url, args) => {
                                   fetching, fetched, nonofetch);
     }
 
+    const assembledArgs = assembleArgs();
+
     useEffect(() => {
-        _doFetch(assembleArgs());
+        _doFetch(assembledArgs);
     }, [])
 
     const response = {
@@ -230,6 +232,12 @@ export const useFetch = (url, args) => {
             data = data.data;
         }
         _update(setData, data, this && this.__usefetch_response ? this.data : undefined);
+    }).bind(response);
+
+    response.uncache = (function(url, args) {
+        if (assembledArgs.cache && _fetchCache[assembledArgs.cache]) {
+            delete _fetchCache[assembledArgs.cache];
+        }
     }).bind(response);
 
     _defineResponseConvenienceFunctions(response);
@@ -344,6 +352,8 @@ const _useFetched = () => {
     return { value: fetched, add: add, clear: clear }
 }
 
+let _fetchCache = {};
+
 // Internal _doFetch function to actually do the fetch using the Axios library.
 // Assumes args have been validated and setup properly; must contain (exhaustively):
 // url, setData, onData, onDone, onError, timeout, delay, nologout, noredirect,
@@ -382,6 +392,13 @@ function _doFetch(args, current = undefined) {
         _defineResponseConvenienceFunctions(responseArg);
         args.onSuccess(responseArg);
         args.onDone(responseArg);
+        if (args.cache) {
+            Debug.Info(`FETCH CACHING (${args.cache}): ${args.method} ${args.url} -> HTTP ${status}`);
+            _fetchCache[args.cache] = {
+                data: data,
+                status: status
+            }
+        }
     }
 
     function _handleError(error, id) {
@@ -465,6 +482,19 @@ function _doFetch(args, current = undefined) {
     // Don't think we want to reset the data; leave
     // whatever was there until there is something new.
     // args.setData(null);
+
+    if (args.cache && !args.nocache) {
+        const fetchCache = _fetchCache[args.cache];
+        if (fetchCache) {
+            Debug.Info(`FETCH CACHED (${args.cache}): ${args.method} ${args.url} -> HTTP ${fetchCache.status}`);
+            args.setData(fetchCache.data);
+            args.setStatus(fetchCache.status);
+            args.setLoading(false);
+            args.setTimeout(false);
+            args.setError(null);
+            return;
+        }
+    }
 
     args.setLoading(true);
     args.setStatus(0);
@@ -555,6 +585,8 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
         nologout:   Type.First([ argsOverride?.nologout, args?.nologout, false ], Type.IsBoolean),
         noredirect: Type.First([ argsOverride?.noredirect, args?.noredirect, false ], Type.IsBoolean),
         delay:      Type.First([ argsOverride?.delay, args?.delay, DEFAULT_DELAY() ], Type.IsInteger),
+        cache:      Type.First([ argsOverride?.cache, args?.cache, null ], Str.HasValue),
+        nocache:    Type.First([ argsOverride?.nocache, args?.nocache, null ], Type.IsBoolean),
         onData:     Type.First([ argsOverride?.onData, args?.onData, () => {} ], Type.IsFunction),
         onSuccess:  Type.First([ argsOverride?.onSuccess, args?.onSuccess , () => {}], Type.IsFunction),
         onError:    Type.First([ argsOverride?.onError, args?.onError , () => {}], Type.IsFunction),

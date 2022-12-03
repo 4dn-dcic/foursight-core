@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom/client';
 import { useContext, useEffect, useState, useMemo } from 'react';
 import Env from '../utils/Env';
 import HeaderData from '../HeaderData';
@@ -9,23 +10,26 @@ import Server from '../utils/Server';
 
 const MyBox = (props) => {
 
-    const [ result, setResult ] = useState();
-    const fetch = useFetchFunction();
+    let result = useFetch({cache: "abc"});
 
     useEffect(() => {
-            if (props.fetch)
-            fetch({
-                url: Server.Url("/header"),
-                onDone: (result) => {
-                        console.log('foo')
-                        console.log(result)
-                     setResult(result)
-                }
-            });
-    }, [props.fetch]);
+        result.fetch({
+            url: Server.Url("/header"),
+        });
+    }, []);
+
+    function refresh() {
+        result.fetch({
+            url: Server.Url("/header"),
+            nocache: true
+        });
+    }
 
     return <>
         <div className="box">
+            <b>{props?.check?.name}</b>
+            <span className="pointer" onClick={refresh}>REFRESH</span>
+            <br />
             Hello, world! - {result?.data?.timestamp} - {result?.data?.app?.version}<br />
             {JSON.stringify(result)}
         </div>
@@ -40,13 +44,16 @@ const HomePage = (props) => {
                           + header?.versions?.foursight_core + " / foursight-core: "
                           + header?.versions?.foursight + " / dcicutils: " + header?.versions?.dcicutils;
 
-        const [ displayBox, setDisplayBox ] = useState(false);
-        const [ fetch, setFetch ] = useState(true);
+    const [ displayBox, setDisplayBox ] = useState(false);
+
+    let [ check, setCheck] = useState({ name: "SomeCheck", result: null })
+
+    let xyzzy = <MyBox check={check} />
 
     return <>
                 { displayBox ? <>
-                    <div className="pointer" onClick={() => { setFetch(false); setDisplayBox(false); }}>HIDE</div>
-                    <MyBox fetch={fetch} />
+                    <div className="pointer" onClick={() => setDisplayBox(false)}>HIDE</div>
+                    {xyzzy}
                 </>:<>
                     <div className="pointer" onClick={() => { setDisplayBox(true); }}>SHOW</div>
                 </>}
