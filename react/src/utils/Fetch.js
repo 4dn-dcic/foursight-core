@@ -393,7 +393,7 @@ function _doFetch(args, current = undefined) {
         args.onSuccess(responseArg);
         args.onDone(responseArg);
         if (args.cache) {
-            Debug.Info(`FETCH CACHING (${args.cache}): ${args.method} ${args.url} -> HTTP ${status}`);
+            Debug.Info(`FETCH CACHING RESPONSE (${args.cache}): ${args.method} ${args.url} -> HTTP ${status}`);
             _fetchCache[args.cache] = {
                 data: data,
                 status: status
@@ -486,7 +486,7 @@ function _doFetch(args, current = undefined) {
     if (args.cache && !args.nocache) {
         const fetchCache = _fetchCache[args.cache];
         if (fetchCache) {
-            Debug.Info(`FETCH CACHED (${args.cache}): ${args.method} ${args.url} -> HTTP ${fetchCache.status}`);
+            Debug.Info(`FETCH FOUND CACHED RESPONSE (${args.cache}): ${args.method} ${args.url} -> HTTP ${fetchCache.status}`);
             args.setData(fetchCache.data);
             args.setStatus(fetchCache.status);
             args.setLoading(false);
