@@ -1,8 +1,36 @@
-import { useContext } from 'react';
+import React from 'react';
+import { useContext, useEffect, useState, useMemo } from 'react';
 import Env from '../utils/Env';
 import HeaderData from '../HeaderData';
 import Logout from '../utils/Logout';
 import { HorizontalLine, Link, LoggedInUser } from '../Components';
+import { useFetch, useFetchFunction } from '../utils/Fetch';
+import Server from '../utils/Server';
+
+const MyBox = (props) => {
+
+    const [ result, setResult ] = useState();
+    const fetch = useFetchFunction();
+
+    useEffect(() => {
+            if (props.fetch)
+            fetch({
+                url: Server.Url("/header"),
+                onDone: (result) => {
+                        console.log('foo')
+                        console.log(result)
+                     setResult(result)
+                }
+            });
+    }, [props.fetch]);
+
+    return <>
+        <div className="box">
+            Hello, world! - {result?.data?.timestamp} - {result?.data?.app?.version}<br />
+            {JSON.stringify(result)}
+        </div>
+    </>
+}
 
 const HomePage = (props) => {
 
@@ -12,7 +40,16 @@ const HomePage = (props) => {
                           + header?.versions?.foursight_core + " / foursight-core: "
                           + header?.versions?.foursight + " / dcicutils: " + header?.versions?.dcicutils;
 
+        const [ displayBox, setDisplayBox ] = useState(false);
+        const [ fetch, setFetch ] = useState(true);
+
     return <>
+                { displayBox ? <>
+                    <div className="pointer" onClick={() => { setFetch(false); setDisplayBox(false); }}>HIDE</div>
+                    <MyBox fetch={fetch} />
+                </>:<>
+                    <div className="pointer" onClick={() => { setDisplayBox(true); }}>SHOW</div>
+                </>}
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
                 <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})</span></b>
