@@ -40,7 +40,7 @@ class ReactApiBase:
                         body: Optional[Union[dict, list]] = None,
                         headers: dict = None,
                         content_type: str = JSON_CONTENT_TYPE) -> Response:
-        if body is None:
+        if body is None:  # unsupplied argument
             # Check specifically for None as given body could be empty LIST which we want to keep.
             body = {}
         if not headers:
@@ -53,7 +53,7 @@ class ReactApiBase:
 
     @staticmethod
     def create_success_response(body: Optional[Union[dict, list]] = None, content_type: str = None) -> Response:
-        if body is None:
+        if body is None:  # unsupplied argument
             # Check specifically for None as given body could be empty LIST which we want to keep.
             body = {}
         if not content_type:
