@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BarSpinner } from '../Spinners';
+import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
 import { useFetch } from '../utils/Fetch';
 import Server from '../utils/Server';
@@ -402,9 +403,10 @@ const AccountInfo = ({ account, header, fromS3 }) => {
     </>
 }
 
-const AccountsComponent = ({ header }) => {
+const AccountsComponent = ({ header, s3 }) => {
 
-    const [ fromS3, setFromS3 ] = useState(false);
+    const [ fromS3, setFromS3 ] = useState(s3);
+    const [ args, setArgs ] = useSearchParams();
     const accounts = useFetch(Server.Url(fromS3 ? "/accounts_from_s3" : "/accounts"));
 
     useEffect(() => {
@@ -417,10 +419,13 @@ const AccountsComponent = ({ header }) => {
     }
 
     function useS3() {
+		setArgs({...args, "s3": "true" });
         setFromS3(true);
     }
 
     function useFile() {
+        delete args["s3"]
+		setArgs({...args});
         setFromS3(false);
     }
 

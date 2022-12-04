@@ -68,6 +68,9 @@ class Checks:
         return checks_groups
 
     def is_action(self, env: str, action: str) -> bool:
+        """
+        If the given name is an action (as opposed to a real check) then return True else False.
+        """
         checks = self.get_checks(env)
         for check in checks.values():
             if check.get("registered_action"):
@@ -75,15 +78,38 @@ class Checks:
                     return True
         return False
 
+    def get_action_checks(self, env: str, action: str) -> list:
+        """
+        Returns the list of checks associated with the given action.
+        """
+        action_checks = []
+        checks = self.get_checks(env)
+        for check in checks.values():
+            if check.get("registered_action"):
+                if check["registered_action"].get("name") == action:
+                    action_checks.append(check)
+        return action_checks
+
+    def get_action(self, env: str, action: str) -> Optional[dict]:
+        checks = self.get_checks(env)
+        for check_key in checks.keys():
+            check = checks[check_key]
+            if check.get("registered_action") and check["registered_action"].get("name") == action:
+                action_checks = self.get_action_checks(env, action)
+                return {"type": "action", **check["registered_action"], "checks": action_checks}
+        return None
+
     def get_check(self, env: str, check: str) -> Optional[dict]:
         """
         Returns the check for the given check name; filtered by the given env name.
+        If it turns out the check name is really an action then return its info;
+        there is a 'type' property set to 'check' or 'action indicating which it is.
         """
         checks = self.get_checks(env)
         for check_key in checks.keys():
             if check_key == check:
-                return checks[check_key]
-        return None
+                return {"type": "check", **checks[check_key]}
+        return self.get_action(env, check)
 
     def _filter_checks_by_env(self, checks: dict, env: str) -> dict:
         """
@@ -392,8 +418,6 @@ class Checks:
                 break
             for lambda_function in lambda_functions["Functions"]:
                 if lambda_filter(lambda_function):
-                    print('xyzzy/lambda_function/foo')
-                    print(lambda_function)
                     results.append(lambda_function)
             marker = lambda_functions.get("NextMarker")
             if not marker:

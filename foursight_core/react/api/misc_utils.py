@@ -141,7 +141,6 @@ def get_function_info(func: Union[str, Callable]) -> Optional[Tuple[str, str, st
         _, func_line = inspect.getsourcelines(func)
         func_package = __import__(func_module).__package__
     except Exception as e:
-        print('xyzzy/get_function_info/exception')
-        print(e)
+        pass
     func_github_url = get_github_url(func_package, func_file, func_line)
     return func_name, func_file, func_module, func_package, func_line, func_github_url

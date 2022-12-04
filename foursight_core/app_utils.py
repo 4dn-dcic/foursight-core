@@ -1638,10 +1638,6 @@ class AppUtilsCore(ReactApi, Routes):
         Returns:
             dict: runner input of queued messages, used for testing
         """
-        print('xyzzy/queue_scheduled_checks/a')
-        print(sched_environ)
-        print(schedule_name)
-        print(conditions)
         logger.warning(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
         queue = self.sqs.get_sqs_queue()
         logger.warning(f"queue_scheduled_checks: queue={queue}")
@@ -1659,19 +1655,15 @@ class AppUtilsCore(ReactApi, Routes):
                 PRINT(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
                 return
             if not sched_environs:
-                print(f'-RUN-> No scheduled environs detected! {sched_environs}, {check_schedule}')
+                PRINT(f'-RUN-> No scheduled environs detected! {sched_environs}, {check_schedule}')
                 return
             for environ in sched_environs:
-                print(f'-RUN-> Sending messages for {environ}')
+                PRINT(f'-RUN-> Sending messages for {environ}')
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
                 check_vals.extend(self.get_env_schedule(check_schedule, environ))
                 logger.warning(f"queue_scheduled_checks: calling send_sqs_messages({environ}) ... check_values:")
                 logger.warning(check_vals)
-                print('xyzzy/queue_scheduled_checks')
-                print(queue)
-                print(environ)
-                print(check_vals)
                 self.sqs.send_sqs_messages(queue, environ, check_vals)
                 logger.warning(f"queue_scheduled_checks: after calling send_sqs_messages({environ})")
         runner_input = {'sqs_url': queue.url}
@@ -1722,10 +1714,6 @@ class AppUtilsCore(ReactApi, Routes):
             }
             raise Exception(str(error_res))
         to_send = [check_str, params or {}, deps or []]
-        print('xyzzy/queue_check')
-        print(environ)
-        print(to_send)
-        print(uuid)
         return self.send_single_to_queue(environ, to_send, uuid)
 
     def queue_action(self, environ, action,
@@ -1818,10 +1806,7 @@ class AppUtilsCore(ReactApi, Routes):
             VisibilityTimeout=300,
             WaitTimeSeconds=10
         )
-        print('xyzzy/run_check_runner/a')
         message = response.get('Messages', [{}])[0]
-        print('xyzzy/run_check_runner/b')
-        print(message)
 
         # TODO/2022-12-01/dmichaels: Issue with check not running because not detecting that
         # dependency # has already run; for example with expset_opf_unique_files_in_experiments
@@ -1855,32 +1840,19 @@ class AppUtilsCore(ReactApi, Routes):
         # which is the third item (system_checks/elastic_search_space).
 
         body = message.get('Body')
-        print('xyzzy/run_check_runner/c')
-        print(body)
         receipt = message.get('ReceiptHandle')
-        print('xyzzy/run_check_runner/d')
-        print(receipt)
         if not body or not receipt:
             # if no messages recieved in 10 seconds of long polling, terminate
             return None
         check_list = json.loads(body)
-        print('xyzzy/run_check_runner/e')
-        print(check_list)
         if not isinstance(check_list, list) or len(check_list) != 5:
             # if not a valid check str, remove the item from the SQS
             self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
         [run_env, run_uuid, run_name, run_kwargs, run_deps] = check_list
-        print('xyzzy/run_check_runner/f')
-        print(run_env)
-        print(run_uuid)
-        print(run_name)
-        print(run_kwargs)
-        print(run_deps)
         # find information from s3 about completed checks in this run
         # actual id stored in s3 has key: <run_uuid>/<run_name>
         if run_deps and isinstance(run_deps, list):
-            print('xyzzy/run_check_runner/g')
 
             # TODO/2022-12-02/dmichaels: This seems wrong; if we search
             # for an S3 key using just the UUID as the prefix it won't find
@@ -1889,8 +1861,6 @@ class AppUtilsCore(ReactApi, Routes):
             # using the we want to check if the dependencies have run.
 
             already_run = self.collect_run_info(run_uuid, run_env)
-            print('xyzzy/run_check_runner/h')
-            print(already_run)
 
             # TODO/2022-12-02/dmichaels: This seems backwards; should be:
             # deps_w_uuid = ['/'.join([dep, run_uuid]) for dep in run_deps]
@@ -1900,11 +1870,7 @@ class AppUtilsCore(ReactApi, Routes):
             # are the same (have not actually seen examples of multiple dependencies).
 
             deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
-            print('xyzzy/run_check_runner/i')
-            print(deps_w_uuid)
             finished_dependencies = set(deps_w_uuid).issubset(already_run)
-            print('xyzzy/run_check_runner/j')
-            print(finished_dependencies)
             if not finished_dependencies:
                 PRINT(f'-RUN-> Not ready for: {run_name}')
         else:
@@ -1964,19 +1930,10 @@ class AppUtilsCore(ReactApi, Routes):
         """
         Returns a set of run checks under this run uuid
         """
-        print('xyzzy/collect_run_info/a')
-        print(run_uuid)
-        print(env)
         bucket = get_foursight_bucket(envname=env, stage=Stage(cls.prefix).get_stage())
-        print('xyzzy/collect_run_info/b')
-        print(bucket)
         s3_connection = S3Connection(bucket)
         run_prefix = ''.join([run_uuid, '/'])
-        print('xyzzy/collect_run_info/c')
-        print(run_prefix)
         complete = s3_connection.list_all_keys_w_prefix(run_prefix)
-        print('xyzzy/collect_run_info/d')
-        print(complete)
         # eliminate duplicates
         return set(complete)
 

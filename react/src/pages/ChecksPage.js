@@ -305,7 +305,7 @@ import Styles from '../Styles';
 
         function fetchResult(check, env, groupList, refresh = false) {
             check.__result.fetch({
-                url: Server.Url(`/checks/${check.name}`),
+                url: Server.Url(`/checks/${check.name}/history/latest`),
                 nocache: refresh,
                 onData: (data) => {
                     fetchResultByUuid(check, data?.uuid, groupList, refresh);
@@ -317,7 +317,7 @@ import Styles from '../Styles';
         function fetchResultByUuid(check, uuid, groupList, refresh = false) {
             if (uuid || check.__result.get("uuid")) {
                 check.__resultByUuid.fetch({
-                    url: Server.Url(`/checks/${check.name}/${uuid || check.__result.get("uuid")}`),
+                    url: Server.Url(`/checks/${check.name}/history/${uuid || check.__result.get("uuid")}`),
                     nocache: refresh,
                     onDone: (response) => {
                         if (response.data?.checks) {
@@ -337,7 +337,7 @@ import Styles from '../Styles';
             action = check.__result?.get("action") || action;
             if (action) {
                 check.__resultByAction.fetch({
-                    url: Server.Url(`/checks/${action}`),
+                    url: Server.Url(`/checks/${action}/history/latest`),
                     nocache: refresh
                 });
             }
@@ -406,8 +406,9 @@ import Styles from '../Styles';
                                     <span className="tool-tip" data-text="This check has an associated (disallowed) action.">&nbsp;&#x2756;</span>
                                 </>}
                             </u>}
+                            &nbsp;<Link className="tool-tip" data-text="Click to view check details and history." to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank"><b>&equiv;</b></Link>
                             { check.registered_github_url && <>
-                                <a className="tool-tip" data-text={`Click here to view the source code for this check: ${check.registered_file}`} style={{marginLeft:"6pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                                <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"6pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                             </>}
                             </span>
                             <ToggleHistoryButton check={check} env={env} historyList={historyList} />
@@ -442,7 +443,7 @@ import Styles from '../Styles';
 
     const ToggleHistoryButton = ({ check, env, historyList, style }) => {
         return <span style={{...style, cursor:"pointer"}} onClick={() => onClickShowHistory(check, env, historyList)}>
-            <span data-text={"Click here to " + (check.__showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
+            <span data-text={"Click to " + (check.__showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
                 <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"1px",marginRight:"2pt",height:"18"}} />
             </span>
             { check.__showingHistory ? <span>{Char.RightArrow}</span> : <></> }
@@ -903,7 +904,7 @@ const ChecksPage = (props) => {
     }
         
     const checks = useFetch({
-        url: Server.Url("/checks_grouped", environ),
+        url: Server.Url("/checks/grouped", environ),
         onData: (data) => {
             data.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0));
             if (data.length > 0) {
@@ -1007,7 +1008,7 @@ const ChecksPage = (props) => {
                     <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">{check.title}</Link>
                 </b>&nbsp;
                 { check.registered_github_url && <>
-                    <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                    <a className="tool-tip" data-text="Click to view source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                 </>}
                 <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"1px",height:"18"}} /></Link>
                 <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check, historyList)})}>&nbsp;&nbsp;<b>{Char.X}</b></span>
@@ -1123,7 +1124,7 @@ const ChecksPage = (props) => {
 //      history.__resultError = false;
         historyList.update();
         historyList.refresh({
-            url: Server.Url(`/checks/${check.name}/${uuid}`, environ),
+            url: Server.Url(`/checks/${check.name}/history/${uuid}`, environ),
             onData: (data, current) => {
                 if (history.__resultShowing) {
                     history.__result = data;
@@ -1165,7 +1166,7 @@ const ChecksPage = (props) => {
 
     function showChecksRaw() {
         setChecksRawHide(false);
-        checksRaw.refresh(Server.Url(`/checks_raw`, environ));
+        checksRaw.fetch(Server.Url(`/checks_raw`), { cache: true });
     }
 
     function hideChecksRaw() {
@@ -1211,7 +1212,7 @@ const ChecksPage = (props) => {
     // Need to start figuring out how to factor out all of this stuff into sub-components.
     // Global most recent checks history.
 
-    const recentRuns = useFetch(Server.Url("/checks/history/recent?limit=20", environ), { nofetch: true });
+    const recentRuns = useFetch(Server.Url("/checks/history/recent?limit=20", environ), { nofetch: true, cache: true });
     const [ recentRunsShow, setRecentRunsShow] = useState(false);
 
     function isShowingRecentRuns() {
@@ -1220,7 +1221,7 @@ const ChecksPage = (props) => {
 
     function showRecentRuns() {
         setRecentRunsShow(true);
-        recentRuns.refresh();
+        recentRuns.fetch();
     }
 
     function hideRecentRuns() {

@@ -444,7 +444,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ignored(request)
         return self.create_success_response(self._checks.get_checks(env))
 
-    def reactapi_check_results(self, request: dict, env: str, check: str) -> Response:
+    def reactapi_checks_check(self, request: dict, env: str, check: str) -> Response:
+        return self.create_success_response(self._checks.get_check(env, check))
+
+    def reactapi_checks_history_latest(self, request: dict, env: str, check: str) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/checks/{check}
         Returns the latest result (singular) from the given check (name).
@@ -465,7 +468,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         check_results["timestamp"] = check_datetime
         return self.create_success_response(check_results)
 
-    def reactapi_check_result(self, request: dict, env: str, check: str, uuid: str) -> Response:
+    def reactapi_checks_history_uuid(self, request: dict, env: str, check: str, uuid: str) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/checks/{check}/{uuid}
         Returns the check result for the given check (name) and uuid.
@@ -566,7 +569,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_history(self, request: dict, env: str, check: str, args: Optional[dict] = None) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks/check/history
+        Called from react_routes for endpoint: GET /{env}/checks/{check}/history
         Returns a (paged) summary (list) of check results for the given check (name).
         """
         ignored(request)
@@ -578,14 +581,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
             limit = 0
         sort = args.get("sort", "timestamp.desc") if args else "timestamp.desc"
         sort = urllib.parse.unquote(sort)
-
-        check_record = self._checks.get_check(env, check)
-        check_is_really_action = False
-        if not check_record:
-            if not self._checks.is_action(env, check):
-                return self.create_response(404)
-            check_is_really_action = True
-            check_record = check
 
         connection = app.core.init_connection(env)
         history, total = app.core.get_foursight_history(connection, check, offset, limit, sort)
@@ -600,7 +595,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
                         timestamp = convert_utc_datetime_to_useastern_datetime_string(timestamp)
                         subitem["timestamp"] = timestamp
         body = {
-            "check" if not check_is_really_action else "action": check_record,
             "env": env,
             "history_kwargs": history_kwargs,
             "paging": {
@@ -982,10 +976,3 @@ class ReactApi(ReactApiBase, ReactRoutes):
         n = int(n) - 8  # { "N": "" }
         body = {"N": "X" * n}
         return app.core.create_success_response(body)
-
-    def reactapi_runinfo(self, env: str, uuid: str) -> Response:
-        print(f'xyzzy/reactapi_runinfo({env},{uuid})')
-        app.core.queue_scheduled_checks('all', 'hourly_checks_1_xyzzy')
-        #runinfo = app.core.collect_run_info(uuid, env)
-        #print(runinfo)
-        #return app.core.create_success_response(runinfo)
