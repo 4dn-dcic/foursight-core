@@ -6,6 +6,10 @@ foursight-core
 Change Log
 ----------
 
+3.2.0
+=====
+* Support in React version for running actions and viewing their history.
+
 3.1.0
 =====
 * Changes related to a new experimental /accounts page in Foursight which can show summary
