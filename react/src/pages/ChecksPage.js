@@ -295,20 +295,18 @@ import Styles from '../Styles';
 
         const runActionAllowedState = useState(false);
 
-        check.__result = useFetch({ cache: `result_${check.name}` });
-        check.__resultByUuid = useFetch({ cache: `result_by_uuid_${check.name}` });
-        check.__resultByAction = useFetch({ cache: `result_by_action_${check.name}` });
+        check.__result = useFetch({ cache: true });
+        check.__resultByUuid = useFetch({ cache: true });
+        check.__resultByAction = useFetch({ cache: true });
 
         useEffect(() => {
             fetchResult(check, env, groupList);
         }, []);
 
         function fetchResult(check, env, groupList, refresh = false) {
-            if (refresh) {
-                check.__result.uncache();
-            }
             check.__result.fetch({
                 url: Server.Url(`/checks/${check.name}`),
+                nocache: refresh,
                 onData: (data) => {
                     fetchResultByUuid(check, data?.uuid, groupList, refresh);
                     fetchResultByAction(check, data?.action, groupList, refresh);
@@ -318,11 +316,9 @@ import Styles from '../Styles';
 
         function fetchResultByUuid(check, uuid, groupList, refresh = false) {
             if (uuid || check.__result.get("uuid")) {
-                if (refresh) {
-                    check.__resultByUuid.uncache();
-                }
                 check.__resultByUuid.fetch({
                     url: Server.Url(`/checks/${check.name}/${uuid || check.__result.get("uuid")}`),
+                    nocache: refresh,
                     onDone: (response) => {
                         if (response.data?.checks) {
                             const responseByUuid = response.data.checks[check.title];
@@ -340,11 +336,9 @@ import Styles from '../Styles';
         function fetchResultByAction(check, action, groupList, refresh = false) {
             action = check.__result?.get("action") || action;
             if (action) {
-                if (refresh) {
-                    check.__resultByAction.uncache();
-                }
                 check.__resultByAction.fetch({
-                    url: Server.Url(`/checks/${action}`)
+                    url: Server.Url(`/checks/${action}`),
+                    nocache: refresh
                 });
             }
         }

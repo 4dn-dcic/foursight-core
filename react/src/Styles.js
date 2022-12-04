@@ -84,6 +84,7 @@ const Exports = {
     SetFoursightFourfront: SetFoursightFourfrontStyles, 
     SetFoursightCgap: SetFoursightCgapStyles,
     GetForegroundColor: GetForegroundColor,
-    GetBackgroundColor: GetBackgroundColor
+    GetBackgroundColor: GetBackgroundColor,
+    LightenDarkenColor: LightenDarkenColor
 };
 export default Exports;

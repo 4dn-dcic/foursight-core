@@ -235,8 +235,8 @@ export const useFetch = (url, args) => {
     }).bind(response);
 
     response.uncache = (function(url, args) {
-        if (assembledArgs.cache && _fetchCache[assembledArgs.cache]) {
-            delete _fetchCache[assembledArgs.cache];
+        if (assembledArgs.cache && _fetchCache[url]) {
+            delete _fetchCache[url];
         }
     }).bind(response);
 
@@ -393,8 +393,8 @@ function _doFetch(args, current = undefined) {
         args.onSuccess(responseArg);
         args.onDone(responseArg);
         if (args.cache) {
-            Debug.Info(`FETCH CACHING RESPONSE (${args.cache}): ${args.method} ${args.url} -> HTTP ${status}`);
-            _fetchCache[args.cache] = {
+            Debug.Info(`FETCH CACHING RESPONSE: ${args.method} ${args.url} -> HTTP ${status}`);
+            _fetchCache[args.url] = {
                 data: data,
                 status: status
             }
@@ -484,9 +484,9 @@ function _doFetch(args, current = undefined) {
     // args.setData(null);
 
     if (args.cache && !args.nocache) {
-        const fetchCache = _fetchCache[args.cache];
+        const fetchCache = _fetchCache[args.url];
         if (fetchCache) {
-            Debug.Info(`FETCH FOUND CACHED RESPONSE (${args.cache}): ${args.method} ${args.url} -> HTTP ${fetchCache.status}`);
+            Debug.Info(`FETCH FOUND CACHED RESPONSE: ${args.method} ${args.url} -> HTTP ${fetchCache.status}`);
             args.onData(fetchCache.data, fetchCache.data);
             args.setData(fetchCache.data);
             args.setStatus(fetchCache.status);
@@ -590,7 +590,7 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
         nologout:   Type.First([ argsOverride?.nologout, args?.nologout, false ], Type.IsBoolean),
         noredirect: Type.First([ argsOverride?.noredirect, args?.noredirect, false ], Type.IsBoolean),
         delay:      Type.First([ argsOverride?.delay, args?.delay, DEFAULT_DELAY() ], Type.IsInteger),
-        cache:      Type.First([ argsOverride?.cache, args?.cache, null ], Str.HasValue),
+        cache:      Type.First([ argsOverride?.cache, args?.cache, null ], Type.IsBoolean),
         nocache:    Type.First([ argsOverride?.nocache, args?.nocache, null ], Type.IsBoolean),
         onData:     Type.First([ argsOverride?.onData, args?.onData, () => {} ], Type.IsFunction),
         onSuccess:  Type.First([ argsOverride?.onSuccess, args?.onSuccess , () => {}], Type.IsFunction),
