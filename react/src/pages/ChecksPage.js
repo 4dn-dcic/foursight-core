@@ -5,6 +5,7 @@ import Uuid from 'react-uuid';
 import { RingSpinner, PuffSpinnerInline, StandardSpinner } from '../Spinners';
 import { useReadOnlyMode } from '../ReadOnlyMode';
 import { useFetch, useFetchFunction } from '../utils/Fetch';
+import { FetchErrorBox } from '../Components';
 import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
@@ -18,6 +19,7 @@ import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 import LiveTime from '../LiveTime';
+import Styles from '../Styles';
 
 const ChecksPage = (props) => {
 
@@ -194,15 +196,15 @@ const ChecksPage = (props) => {
 
     const ChecksGroupBox = ({props}) => {
         return <div style={{minWidth:"150pt"}}>
-            <div style={{fontWeight:"bold",paddingBottom:"3pt",cursor:"pointer"}} onClick={() => onGroupSelectAll()}>&nbsp;Check Groups</div>
-            <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+            <div style={{fontWeight:"bold",paddingBottom:"3pt",cursor:"pointer"}} onClick={() => onGroupSelectAll()}>Check Groups</div>
+            <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
                 { checks.map((datum, index) =>
                     <div key={datum.group}>
                         <span style={{fontWeight:isSelectedGroup(datum) ? "bold" : "normal",cursor:"pointer"}} onClick={() => toggleShowGroup(datum)}>
                             {datum.group}
                         </span>
                         { index < checks.length - 1 &&
-                            <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
+                            <div className="fgbg" style={{marginTop:"3pt",marginBottom:"3pt",height:"1px"}} />
                         }
                     </div>
                 )}
@@ -310,11 +312,26 @@ const ChecksPage = (props) => {
 
     // The (yellow) check running box.
     const CheckRunningBox = ({check}) => {
+        const [ showUuid, setShowUuid ] = useState(false);
         return !check.showingCheckRunningBox ? <span /> : <div>
-            <div className="boxstyle check-pass" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+            {/* <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}> */}
+            <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}}>
                 { !check.queueingCheckRun && <span style={{float:"right",cursor:"pointer"}} onClick={(e) => { hideCheckRunningBox(check);e.stopPropagation(); e.preventDefault(); }}></span> }
-                {  check.queuedCheckRun && <small><b>Queued check run {Time.FormatDateTime(Time.Now())} {Char.RightArrow} <u>{check.queuedCheckRun}</u></b></small> }
-                { !check.queuedCheckRun && <StandardSpinner condition={check.queueingCheckRun} label={" Queueing check run"} color={"darkgreen"} /> }
+                {  check.queuedCheckRun &&
+                    <small><b>
+                        <span className="tool-tip" data-text="Click to view UUID for this run." onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued check run</span>:&nbsp;
+                        <span onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.queuedCheckRun + "+00:00")}</span>
+                        &nbsp;{Char.RightArrow}&nbsp;
+                                
+                        { showUuid ? <>
+                            <a className="tool-tip" data-text="Click to view in AWS S3." rel="noreferrer" target="_blank" onClick={(e) => {}} href={`https://s3.console.aws.amazon.com/s3/object/${info.get("checks.bucket")}?region=us-east-1&prefix=${check.name}/${check.queuedCheckRun}.json`} style={{color:"inherit"}}><u>{check.queuedCheckRun}</u></a>
+                        </>:<>
+                            <span className="tool-tip" data-text={`UUID: ${check.queuedCheckRun}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>OK</span>
+                        </>}
+                        <div style={{float:"right",marginTop:"-0pt",cursor:"pointer"}} onClick={() => {hideCheckRunningBox(check); }}>&nbsp;{Char.X}</div>
+                    </b></small>
+                }
+                { !check.queuedCheckRun && <div style={{marginTop:"-2pt"}}><StandardSpinner condition={check.queueingCheckRun} label={" Queueing check run"} color={"darkred"} /></div> }
             </div>
         </div>
     } 
@@ -325,7 +342,7 @@ const ChecksPage = (props) => {
             check.kwargs = getKwargsFromCheck(check);
         }
         return check.configuringCheckRun && <>
-            <div className="boxstyle" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"green",background:"lightyellow"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+            <div className="box thickborder" style={{marginTop:"4pt",padding:"6pt",cursor:"default",background:"lightyellow"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                 { (Type.IsNonEmptyObject(check.kwargs)) ? (<>
                     <div style={{marginTop:"-2pt",float:"right"}}>
                         <RunButton check={check} style={{float:"right"}} />
@@ -396,19 +413,19 @@ const ChecksPage = (props) => {
     }
 
     const SelectedGroupsPanel = ({props}) => {
+        if (groupList.error) return <FetchErrorBox error={groupList.error} message="Error loading checks from Foursight API" />
         return <div>
             { groupList.length > 0 /* selectedGroups.length > 0 */ ? (<>
                 <div style={{paddingBottom:"3pt"}}>
                     <span style={{cursor:"pointer"}} onClick={() => onClickSelectedGroupsTitle()}>
-                        &nbsp;
                         <b>Check Details</b>
                         { isShowingAnyGroupsResults() ? (<>
-                            &nbsp;{Char.DownArrow}
+                            &nbsp;<small>{Char.DownArrowFat}</small>
                         </>):(<>
-                            &nbsp;{Char.UpArrow}
+                            &nbsp;<small>{Char.UpArrowFat}</small>
                         </>)}
                     </span>
-                    <span style={{float:"right",fontSize:"x-small",marginTop:"6px",color:"darkgreen"}}>
+                    <span style={{float:"right",fontSize:"x-small",marginTop:"6px",color:Styles.GetForegroundColor()}}>
                         All Results Details:&nbsp;
                         { isShowingAllResultDetails() ? (<>
                             <span style={{fontWeight:"bold"}}>Show</span>
@@ -434,9 +451,9 @@ const ChecksPage = (props) => {
     const SelectedGroupBox = ({group, style = {}}) => {
 
         return <div style={style}>
-            <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"300pt"}}>
+            <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"300pt"}}>
                 <div>
-                    <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks)}><b>{group?.group}</b> {isShowingAnyResults(group?.checks) ? (<span>{Char.DownArrow}</span>) : (<span>{Char.UpArrow}</span>)}</span>
+                    <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks)}><b>{group?.group}</b> {isShowingAnyResults(group?.checks) ? (<small>{Char.DownArrowFat}</small>) : (<small>{Char.UpArrowFat}</small>)}</span>
                     <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideGroup(group)})}><b>{Char.X}</b></span>
                 </div>
                 <div style={{marginTop:"6pt"}} />
@@ -462,7 +479,7 @@ const ChecksPage = (props) => {
                 <span
                  className={"tool-tip"}
                  data-text={"Wait until " + (check.queueingCheckRun ? "check queueing" : "result fetch") + " completes."}>
-                     <span>Queueing</span>
+                     <i>Queueing</i>
                  </span>
             </div>
         }
@@ -503,30 +520,30 @@ const ChecksPage = (props) => {
 
     const RefreshResultButton = ({check, style}) => {
         return <span>
-            <span style={{...style, cursor:!check.fetchingResult ? "pointer" : "not-allowed",color:"darkred",fontSize:"12pt"}} onClick={() => !check.fetchingResult && refreshResults(check)}>
+            <span style={{...style, cursor:!check.fetchingResult ? "pointer" : "not-allowed",color:"inherit",fontSize:"10pt"}} onClick={(e) => { !check.fetchingResult && refreshResults(check); e.stopPropagation(); e.preventDefault(); }}>
                 <b data-text={check.results ? "Click here to fetch the latest results." : "Fetching the latest results."} className={"tool-tip"}>{Char.Refresh}</b>
             </span>
         </span>
     }
 
     const ToggleHistoryButton = ({check, style}) => {
-        return <span style={{...style, xpaddingTop:"10px",cursor:"pointer"}} onClick={() => onClickShowHistory(check)}>
+        return <span style={{...style, cursor:"pointer"}} onClick={() => onClickShowHistory(check)}>
             <span data-text={"Click here to " + (check.showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
-                <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"4px",height:"17"}} />
+                <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"1px",marginRight:"2pt",height:"18"}} />
             </span>
-            { check.showingHistory ? <span style={{xpaddingTop:"10px"}}>{Char.RightArrow}</span> : <></> }
+            { check.showingHistory ? <span>{Char.RightArrow}</span> : <></> }
         </span>
     }
 
     const SelectedChecksBox = ({check, index}) => {
         return <div>
-            <div className="boxstyle check-box" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"450pt"}}>
+            <div className="box check-box" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"450pt"}}>
             <table style={{width:"100%"}}>
                 <tbody>
                     <tr style={{height:"3pt"}}><td></td></tr>
                     <tr>
                         <td style={{verticalAlign:"top",width:"1%","cursor":"pointer"}} onClick={() => {toggleCheckResultsBox(check)}}>
-                            <b>{ isShowingSelectedCheckResultsBox(check) ? <span>{Char.DownArrow}</span> : <span>{Char.RightArrow}</span> }&nbsp;</b>
+                            <b>{ isShowingSelectedCheckResultsBox(check) ? <small>{Char.DownArrowHollow}</small> : <small>{Char.RightArrowHollow}</small> }&nbsp;</b>
                         </td>
                         <td style={{veriticalAlign:"top",maxWidth:"600pt",width:"100%"}} title={check.name}>
                             { (!check.configuringCheckRun) ? <>
@@ -558,9 +575,12 @@ const ChecksPage = (props) => {
                                     </div>
                                 </>}
                             </>}
-                            <u style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check);/*toggleCheckResultsBox(check)*/}}>{check.title}</u>
-                            <RefreshResultButton check={check} style={{marginLeft:"10pt"}} />
-                            <ToggleHistoryButton check={check} style={{marginLeft:"4pt"}} />
+                            <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}. File: ${check.file}`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check);}}>{check.title}</u>
+                            { check.registered_github_url && <>
+                                <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"6pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                            </>}
+                            <ToggleHistoryButton check={check} />
+                            {/* <RefreshResultButton check={check} style={{marginLeft:"10pt"}} /> */}
                             {/* TODO: As far as I can tell there is only every one element here under the schedule element */}
                             { Object.keys(check?.schedule).map((key, index) =>
                                 <div key={key}>
@@ -576,6 +596,9 @@ const ChecksPage = (props) => {
                                 </div>
                             )}
                             <CheckRunArgsBox check={check} update={() => noteChangedCheckBox()}/>
+                            {/* ACTION BEGIN */}
+                            <RunActionBox check={check} update={() => groupList.update()} />
+                            {/* ACTION END */}
                             <>
                                 { isShowingSelectedCheckResultsBox(check) && (<>
                                     <SelectedCheckResultsBox check={check}/>
@@ -591,40 +614,44 @@ const ChecksPage = (props) => {
     }
 
     const ResultDetailsBox = ({check, style}) => {
-        return <pre className={check.results?.status?.toUpperCase() === "PASS" ? "check-pass" : "check-warn"} style={{filter:"brightness(1.08)",borderColor:"green",borderWidth:"2",wordWrap: "break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
+        return <pre className="box lighten" style={{color:check.results?.status?.toUpperCase() === "PASS" ? "inherit" : "darkred",wordWrap:"break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
             <div style={{float:"right",marginTop:"-10px"}}>
             <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{Json.Str(check.showingResultDetailsFull ? check.results.full_output : check.results)}</span>
             <img alt="copy" onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
             &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(); } }>{check.showingResultDetailsFull ? <span title="Show full results output.">{Char.UpArrow}</span> : <span>{Char.DownArrow}</span>}</span>
             &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.showingResultDetails = false ; noteChangedResults(); }}>X</span>
             </div>
-            {!check.results ? <StandardSpinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> : (Object.keys(check.results).length > 0 ? (Yaml.Format(check.showingResultDetailsFull ? check.results.full_output : check.results)) : "No results.") }
+            {!check.results ? <StandardSpinner condition={!check.results} color={Styles.GetForegroundColor()} label={"Loading results"}/> : (Object.keys(check.results).length > 0 ? (Yaml.Format(check.showingResultDetailsFull ? check.results.full_output : check.results)) : <div style={{marginTop:"1pt"}}>No results.</div>) }
         </pre>
     }
 
     const ResultBox = ({check}) => {
         return <div>
-            { check.results && <small style={{color:check.results?.status?.toUpperCase() === "PASS" ? "darkgreen" : "red",cursor:"pointer"}} onClick={() => { check.showingResultDetails = !check.showingResultDetails ; noteChangedResults(); }}>
+            { check.results && <small style={{color:check.results?.status?.toUpperCase() === "PASS" ? "inherit" : "red",cursor:"pointer"}} onClick={() => { check.showingResultDetails = !check.showingResultDetails ; noteChangedResults(); }}>
                 { Object.keys(check.results).length > 0 ? (<>
-                    { !check.showingCheckRunningBox && <div style={{height:"1px",marginTop:"2px",marginBottom:"2px",background:"gray"}}></div> }
+                    { <div style={{height:"1px",marginTop:"8px",marginBottom:"2px",background:"gray"}}></div> }
                     <span className="tool-tip" data-text={Time.FormatDuration(check.results?.timestamp, new Date(), true, null, null, "ago")}>Latest Results: {check.results?.timestamp}</span>
                         { check.showingResultDetails ? (
                             <b className={"tool-tip"} data-text={"Click to hide result details."}>&nbsp;{Char.DownArrow}</b>
                         ):(
                             <b className={"tool-tip"} data-text={"Click to show result details."}>&nbsp;{Char.UpArrow}</b>
                         )}
+                    <RefreshResultButton check={check} style={{marginLeft:"4pt"}} />
                     <br />
-                    <span style={{color:check.results?.status?.toUpperCase() === "PASS" ? "darkgreen" : "red"}}><span className={"tool-tip"} data-text={"Click to " + (check.showingResultDetails ? "hide" : "show") + " result details."}>Results Summary</span>: {check.results?.summary}</span>&nbsp;&nbsp;
-                    { check.results?.status?.toUpperCase() === "PASS" ? (<b style={{fontSize:"12pt",color:"darkgreen"}}>{Char.Check}</b>) : (<b style={{fontSize:"13pt",color:"red"}}>{Char.X}</b>) }
+                    <span style={{color:check.results?.status?.toUpperCase() === "PASS" ? "inherit" : "red"}}><span className={"tool-tip"} data-text={"Click to " + (check.showingResultDetails ? "hide" : "show") + " result details."}>Results Summary</span>: {check.results?.summary}</span>&nbsp;&nbsp;
+                    { check.results?.status?.toUpperCase() === "PASS" ? (<b style={{fontSize:"12pt",color:"inherit"}}>{Char.Check}</b>) : (<b style={{fontSize:"13pt",color:"red"}}>{Char.X}</b>) }
                 </>):(<>
-                    { !check.showingResultDetails && <span>No recent results.</span> }
+                    { !check.showingResultDetails && <div style={{height:"1px",marginTop:"8px",marginBottom:"2px",background:"gray"}}></div> }
+                    { !check.showingResultDetails && <span>No recent results.<RefreshResultButton check={check} style={{marginLeft:"4pt"}} /></span> } 
                 </>)}
             </small> }
             {/* Results details or loading results box */}
             { check.showingResultDetails ? <>
+                            <div style={{height:"2pt"}} />
                 <ResultDetailsBox check={check} />
             </>:<>
-                { !check.results && <StandardSpinner condition={!check.results} label={"Loading results"} color={"darkgreen"}/> }
+                { !check.results && <div style={{height:"1px",marginTop:"8px",marginBottom:"2px",background:"gray"}}></div> }
+                { !check.results && <StandardSpinner condition={!check.results} color={Styles.GetForegroundColor()} label={"Loading latest result"} /> }
             </>}
         </div>
     }
@@ -657,27 +684,29 @@ const ChecksPage = (props) => {
         }
 
         const columns = [
-            { label: "" },
+            { label: "__refresh" },
             { label: "Timestamp", key: extractTimestamp },
             { label: "Status", key: extractStatus},
             { label: "Duration", key: extractDuration, align: "right" },
             { label: "State", key: extractState }
         ];
 
-        return <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+        return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt"}}>
             <div title={check.name}>
-                <b className="tool-tip" data-text={`Group: ${check.group}. Check: ${check.name}. Click for full history.`}>
-                    <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"darkgreen"}} target="_blank">{check.title}</Link>
+                <b className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}. Group: ${check.group}. Click for full history.`}>
+                    <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">{check.title}</Link>
                 </b>&nbsp;
-                { check.history && <span>&nbsp;&nbsp;<span className={"tool-tip"} data-text={"Click to refresh history."} style={{cursor:"pointer",color:"darkred",fontWeight:"bold"}} onClick={() => {refreshHistory(check)}}>{Char.Refresh}&nbsp;&nbsp;</span></span> }
-                <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"4px",height:"17"}} /></Link>
-                <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check)})}><b>{Char.X}</b></span>
+                { check.registered_github_url && <>
+                    <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                </>}
+                <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"1px",height:"18"}} /></Link>
+                <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check)})}>&nbsp;&nbsp;<b>{Char.X}</b></span>
             </div>
             <div style={{marginBottom:"6pt"}}/>
             { check.showingHistory && (<>
                 { check.history?.list?.length > 0 ? (<>
-                    <table style={{width:"100%"}} border="0">
-                        <TableHead columns={columns} list={check.history.list} update={(e) => historyList.update()} style={{color:"darkgreen",fontWeight:"bold"}} lines={true} />
+                    <table style={{width:"100%"}}>
+                        <TableHead columns={columns} list={check.history.list} refresh={() => refreshHistory(check)} update={(e) => historyList.update()} style={{color:Styles.GetForegroundColor(),fontWeight:"bold"}} lines={true} />
                     <tbody>
                     {check.history.list.map((history, index) => <React.Fragment key={index}>
                         <React.Fragment key={extractUuid(history)}>
@@ -689,7 +718,7 @@ const ChecksPage = (props) => {
                             <tr>
                             <td>
                                 {extractStatus(history) === "PASS" ?
-                                    <span style={{color:"darkgreen"}}>{Char.Check}</span>
+                                    <span style={{color:"inherit"}}>{Char.Check}</span>
                                 :   <span style={{color:"darkred"}}>{Char.X}</span> }
                             &nbsp;&nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
@@ -697,25 +726,33 @@ const ChecksPage = (props) => {
                             &nbsp;&nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
                                 {extractStatus(history) === "PASS" ? (<>
-                                    <b style={{color:"darkgreen"}}>OK</b>
+                                    <b style={{color:"inherit"}}>OK</b>
                                 </>):(<>
-                                    <b style={{color:"darkred"}}>ERROR</b>
+                                    {extractStatus(history) === "WARN" ? (<>
+                                        <b style={{color:"black"}}>WARNING</b>
+                                    </>):(<>
+                                        <b style={{color:"darkred"}}>ERROR</b>
+                                    </>)}
                                 </>)}
                             &nbsp;&nbsp;</td>
                             <td style={{textAlign:"right"}}>
                                 {extractDuration(history)}
                             &nbsp;&nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
-                                {extractState(history)}
+                                { extractStatus(history) === "PASS" && extractState(history) === "Not queued" ? <>
+                                    Done
+                                </>:<>
+                                    {extractState(history)}
+                                </>}
                             &nbsp;&nbsp;</td>
                             </tr>
                         </React.Fragment>
                         { (history.__resultShowing) &&
                             <tr>
-                                <td colSpan="9">
-                                    <pre style={{background:"#DFF0D8",filter:"brightness(1.2)",borderColor:"darkgreen",borderWidth:"1",wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"600pt"}}>
+                                <td colSpan="6">
+                                    <pre className="box lighten" style={{wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"680pt"}}>
                                         { history.__resultLoading ? <>
-                                            <StandardSpinner condition={history.__resultLoading} color={"darkgreen"} label="Loading result"/>
+                                            <StandardSpinner condition={history.__resultLoading} color={Styles.GetForegroundColor()} label="Loading result"/>
                                         </>:<>
                                             <div style={{float:"right",marginTop:"-0px"}}>
                                                 <span style={{fontSize:"0",opacity:"0"}} id={check}>{Json.Str(history.__result[0])}</span>
@@ -733,9 +770,10 @@ const ChecksPage = (props) => {
                     </table>
                 </>):(<>
                     { check.history?.list ? (<>
-                        <span style={{color:"black"}}>No history.</span>
+                        <div style={{color:"black", borderTop:"1px solid"}}>No history.</div>
                     </>):(<>
-                        <StandardSpinner condition={!check.history} color={"darkgreen"} label="Loading history" />
+                        <div style={{color:"black", borderTop:"1px solid"}} />
+                        <StandardSpinner condition={!check.history} color={Styles.GetForegroundColor()} label="Loading history" />
                     </>)}
                 </>)}
             </>)}
@@ -951,15 +989,15 @@ const ChecksPage = (props) => {
 
     const ChecksRawControl = () => {
         return <>
-           <span style={{fontWeight:isShowingChecksRaw() ? "bold" : "normal"}} onClick={() => toggleChecksRaw()}>View Raw Checks</span> <br />
+           &nbsp;<span style={{fontWeight:isShowingChecksRaw() ? "bold" : "normal"}} onClick={() => toggleChecksRaw()}>View Raw Checks</span> <br />
         </>
     }
 
     const ChecksRawView = () => {
         return isShowingChecksRaw() && !checksRawHide && <>
-            <b className="tool-tip" data-text={info.get("checks.file")}>Raw Checks</b>
+            <b className="tool-tip" data-text={info.get("checks.file")}>Raw Checks</b> {Char.RightArrow} <span style={{fontSize:"9pt"}}>{info.get("checks.file")}</span>
             <div style={{marginTop:"3pt"}}>
-            <pre className="check-pass" style={{filter:"brightness(1.08)",borderColor:"green",borderRadius:"4pt"}}>
+            <pre className="box lighten">
             { checksRaw.loading ? <>
                 <StandardSpinner loading={checksRaw.loading} label={"Loading raw checks file"} size={60} color={"black"} />
             </>:<>
@@ -1005,55 +1043,78 @@ const ChecksPage = (props) => {
     }
 
     function findGroup(groupName) {
-        return checks?.find(item => item.group == groupName);
+        return checks?.find(item => item.group === groupName);
     }
 
     function findCheck(checkName, groupName) {
         const group = findGroup(groupName)
-        return group?.checks?.find(item => item.name == checkName);
+        return group?.checks?.find(item => item.name === checkName);
     }
 
     const RecentRunsControl = () => {
         return <>
-            <span style={{fontWeight:isShowingRecentRuns() ? "bold" : "normal"}} onClick={() => toggleRecentRuns()}>View Recent Runs</span>&nbsp;&nbsp;
+            &nbsp;<span style={{fontWeight:isShowingRecentRuns() ? "bold" : "normal"}} onClick={() => toggleRecentRuns()}>View Recent Runs</span>&nbsp;&nbsp;
             { recentRuns.loading && <><PuffSpinnerInline condition={true} size={"16px"}/></> }
         </>
     }
 
     const RecentRunsView = () => {
         const columns = [
-            { label: "" },
+            { label: "__refresh" },
             { label: "Timestamp", key: "timestamp" },
             { label: "Check", key: "check" },
             { label: "Status", key: "status" },
             { label: "Duration", key: "duration", align: "right" },
             { label: "State", key: "state" }
         ];
+        if (recentRuns.error) {
+            return <FetchErrorBox error={recentRuns.error} message="Error loading recent runs from Foursight API" />
+        }
+        if (recentRuns.length === 0) {
+            return <>
+                <b>Recent Runs</b>
+                <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"3pt",marginBottom:"8pt"}}>
+                    No recent check runs found.
+                </div>
+            </>
+        }
         return recentRunsShow && <>
             <b>Recent Runs</b>
-            <div className="boxstyle check-pass" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"2pt"}}>
+            <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"3pt",marginBottom:"8pt"}}>
                 { recentRuns.loading ? <>
-                    <StandardSpinner loading={recentRuns.loading} label={"Loading recent runs"} size={60} color={"black"} />
+                    <StandardSpinner loading={recentRuns.loading} label={"Loading recent runs"} size={60} color={Styles.GetForegroundColor()} />
                 </>:<>
                     { !recentRuns.empty && <small>
                         {/* TODO: Get this info from TableHead */}
-                        { (recentRuns.data?.__sort?.key == "timestamp" && recentRuns.data?.__sort?.order == -1) ? <>
+                        { (recentRuns.data?.__sort?.key === "timestamp" && recentRuns.data?.__sort?.order === -1) ? <>
                             <b>Most Recent</b>:&nbsp;
                         </>:<>
                             <b>Top</b>:&nbsp;
                         </>}
                         <LiveTime.FormatDuration start={recentRuns?.data[0]?.timestamp} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />
-                        &nbsp;&nbsp;&nbsp;<b className="tool-tip" data-text="Click to refresh." style={{cursor:"pointer"}} onClick={() => recentRuns.refresh()}>{Char.Refresh}</b>
                     </small>}
                     <b style={{float:"right",paddingBottom:"4pt",cursor:"pointer"}} onClick={hideRecentRuns}>{Char.X}</b>
                     <table style={{width:"100%"}} border="0">
-                        <TableHead columns={columns} state={{key:"timestamp", order:-1}} list={recentRuns.data} update={() => recentRuns.update()} style={{color:"darkgreen",fontWeight:"bold"}} lines={true} />
+                        <TableHead
+                            columns={columns}
+                            state={{key:"timestamp", order:-1}}
+                            list={recentRuns.data}
+                            update={() => recentRuns.update()}
+                            refresh={() => recentRuns.refresh()}
+                            style={{fontWeight:"bold"}}
+                            lines={true} />
                         <tbody>
                             { recentRuns.map((run, index) => <React.Fragment key={index}>
+                                    
+                                { index > 0 && <React.Fragment>
+                                    <tr><td style={{paddingTop:"2px"}}></td></tr>
+                                    <tr><td style={{height:"1px",background:"gray"}} colSpan="6"></td></tr>
+                                    <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                                </React.Fragment>}
                                 <tr key={index} style={{verticalAlign:"top"}}>
                                     <td>
                                         { run.status === "PASS" ?
-                                            <span style={{color:"darkgreen"}}>{Char.Check}</span>
+                                            <span style={{color:Styles.GetForegroundColor()}}>{Char.Check}</span>
                                         :   <span style={{color:"darkred"}}>{Char.X}</span> }
                                     &nbsp;</td>
                                     <td  style={{width:"10%"}} className="tool-tip" data-text={Time.FormatDuration(run.timestamp, new Date(), true, null, null, "ago")}>
@@ -1063,11 +1124,11 @@ const ChecksPage = (props) => {
                                     <td style={{width:"30%"}}>
                                         <span style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(run.check, run.group))}>{run.title}</span> <br />
                                         <i><small style={{cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(run.group))}>{run.group}</small></i>&nbsp;
-                                        <Link to={Client.Path(`/checks/${run.check}/history`)} className={"tool-tip"} data-text={"Click for full history."} target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"4px",height:"17"}} /></Link>
+                                        <Link to={Client.Path(`/checks/${run.check}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"4px",height:"17"}} /></Link>
                                     &nbsp;&nbsp;</td>
-                                    <td>
+                                    <td>&nbsp;
                                         {run.status === "PASS" ? (<>
-                                            <b style={{color:"darkgreen"}}>OK</b>
+                                            <b style={{color:Styles.GetForegroundColor()}}>OK</b>
                                         </>):(<>
                                             <b style={{color:"darkred"}}>ERROR</b>
                                         </>)}
@@ -1076,12 +1137,13 @@ const ChecksPage = (props) => {
                                         {run.duration}
                                     &nbsp;&nbsp;</td>
                                     <td>
-                                        {run.state}
+                                        { run.status === "PASS" && run.state === "Not queued" ? <>
+                                            Done
+                                        </>:<>
+                                            {run.state}
+                                        </>}
                                     &nbsp;&nbsp;</td>
                                 </tr>
-                                <tr><td style={{paddingTop:"2px"}}></td></tr>
-                                <tr><td style={{height:"1px",background:"gray"}} colSpan="6"></td></tr>
-                                <tr><td style={{paddingBottom:"2px"}}></td></tr>
                             </React.Fragment>)}
                         </tbody>
                     </table>
@@ -1094,19 +1156,19 @@ const ChecksPage = (props) => {
 
     const ChecksStatus = () => {
         return <>
-            <table><tbody><tr><td style={{whiteSpace:"nowrap"}}>
-            &nbsp;<b style={{cursor:"pointer"}} onClick={() => refreshChecksStatus()}>Checks Status</b>
+            <table><tbody className="tool-tip" data-text="Click to refresh current check run status."><tr><td style={{whiteSpace:"nowrap",paddingBottom:"3pt"}}>
+            <b style={{cursor:"pointer",marginBottom:"10pt"}} onClick={() => refreshChecksStatus()}>Checks Status</b>
             &nbsp;&nbsp;
             </td><td>
             { checksStatus.loading ? <>
                 { <StandardSpinner loading={checksStatus.loading} label={""} size={60} color={"black"} /> }
             </>:<>
-                <b style={{cursor:"pointer"}} onClick={() => refreshChecksStatus()}>{Char.Refresh}</b>
+                <b style={{cursor:"pointer",fontSize:"small"}} onClick={() => refreshChecksStatus()}>{Char.Refresh}</b>
             </>}
             </td></tr></tbody></table>
-            <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+            <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
                 Running: {!checksStatus.loading ? checksStatus.get("checks_running") : "..."}
-                <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
+                <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:Styles.GetForegroundColor()}} />
                 Queued: {!checksStatus.loading ? checksStatus.get("checks_queued") : "..."}
            </div>
         </>
@@ -1123,10 +1185,6 @@ const ChecksPage = (props) => {
 
     function isShowingLambdaView(lambda) {
         return lambda.__showing;
-    }
-
-    function isShowingLambdaPanel() {
-        return lambdas?.filter((lambda) => isShowingLambdaView(lambda))?.length > 0;
     }
 
     function showLambdaView(lambda) {
@@ -1155,13 +1213,13 @@ const ChecksPage = (props) => {
 
     const LambdasPanel = ({props}) => {
         return <div>
-            <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>&nbsp;Lambdas</div>
-            <div className="boxstyle check-pass" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+            <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>Lambdas</div>
+            <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
                 { lambdas.map((lambda, index) =>
                     <div key={lambda.lambda_name} title={lambda.lambda_function_name}>
                         <span onClick={() => toggleLambdaView(lambda)} style={{cursor:"pointer",fontWeight:isShowingLambdaView(lambda) ? "bold" : "default"}}>{lambda.lambda_name}</span>
                         { index < lambdas.length - 1 &&
-                            <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
+                            <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:Styles.GetForegroundColor()}} />
                         }
                     </div>
                 )}
@@ -1173,7 +1231,7 @@ const ChecksPage = (props) => {
         const lambdasShowing = lambdas?.filter((lambda) => isShowingLambdaView(lambda));
         if (Type.IsNonEmptyArray(lambdasShowing)) {
             return <>
-                &nbsp;<b>Lambdas</b>
+                <b>Lambdas</b>
                 { lambdasShowing?.map(lambda =>
                      <LambdaView key={lambda.lambda_name} lambda={lambda} />
                 )}
@@ -1184,8 +1242,9 @@ const ChecksPage = (props) => {
     const LambdaView = ({lambda}) => {
         const tdContentStyle = { paddingRight: "4pt", verticalAlign: "top", fontSize: "small" };
         const tdLabelStyle = { ...tdContentStyle, width:"5%", whiteSpace: "nowrap", paddingRight: "4pt", verticalAlign: "top", textAlign:"right" };
+
         return <>
-            <div className="boxstyle check-pass" style={{marginTop:"3pt",padding:"6pt"}}>
+            <div className="box" style={{marginTop:"3pt",padding:"6pt",marginBottom:"6pt"}}>
                 <b>{lambda.lambda_name}</b>
                 <b style={{float:"right",cursor:"pointer"}} onClick={() => hideLambdaView(lambda)}>{Char.X}</b>
                 <table style={{width:"100%"}}><tbody>
@@ -1208,16 +1267,26 @@ const ChecksPage = (props) => {
                             <small>{lambda.lambda_function_name}</small>
                         </td>
                     </tr>
+                    <tr>
+                        <td style={tdLabelStyle}><small>Role:</small></td>
+                        <td className="tool-tip" data-text={lambda.lambda_role} style={tdContentStyle}>
+                            <small>{lambda.lambda_role?.replace(/.*\//,'')}</small>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style={tdLabelStyle}>Updated:</td>
+                        <td style={tdContentStyle}><span className="tool-tip" data-text={Time.Ago(lambda.lambda_modified)} >{Time.FormatDateTime(lambda.lambda_modified)}</span></td>
+                    </tr>
                     <tr style={{fontSize:"small"}}>
                         <td style={tdLabelStyle}>Code:</td>
                         <td style={tdContentStyle} className="tool-tip" data-text="S3 Code Location">
-                            <a href={`https://s3.console.aws.amazon.com/s3/object/${lambda.lambda_code_s3_bucket}?region=us-east-1&prefix=${lambda.lambda_code_s3_bucket_key}`} target="_blank">{lambda.lambda_code_s3_bucket_key}</a> <br />
-                            <small><a href={`https://s3.console.aws.amazon.com/s3/buckets/${lambda.lambda_code_s3_bucket}?region=us-east-1&tab=objects`} target="_blank">{lambda.lambda_code_s3_bucket}</a></small>
+                            <a href={`https://s3.console.aws.amazon.com/s3/object/${lambda.lambda_code_s3_bucket}?region=us-east-1&prefix=${lambda.lambda_code_s3_bucket_key}`} rel="noreferrer" target="_blank">{lambda.lambda_code_s3_bucket_key}</a> <br />
+                            <small><a href={`https://s3.console.aws.amazon.com/s3/buckets/${lambda.lambda_code_s3_bucket}?region=us-east-1&tab=objects`} rel="noreferrer" target="_blank">{lambda.lambda_code_s3_bucket}</a></small>
                         </td>
                     </tr>
                     <tr>
                         <td style={tdLabelStyle}>Code Size:</td>
-                        <td style={tdContentStyle}>{lambda.lambda_code_size}</td>
+                        <td style={tdContentStyle}><span className="tool-tip" data-text={lambda.lambda_code_size} >{Str.FormatBytes(lambda.lambda_code_size)}</span></td>
                     </tr>
                     { (lambda?.lambda_checks && lambda?.lambda_checks?.length > 0) && <>
                         <tr><td colSpan="2" style={{height:"4pt"}}></td></tr>
@@ -1231,8 +1300,8 @@ const ChecksPage = (props) => {
                                         <tr key={lambda_check.check_name}>
                                             <td style={{...tdContentStyle}} className="tool-tip" data-text={lambda_check.check_name}>
                                                 { (getCheck(lambda_check.check_name, lambda_check.check_group)) ? <>
-                                                    <b style={{color:"darkgreen",cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(lambda_check.check_name, lambda_check.check_group))}>{lambda_check.check_title}</b> <br />
-                                                    <i style={{color:"darkgreen",cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(lambda_check.check_group))}>{lambda_check.check_group}</i>
+                                                    <b style={{color:Styles.GetForegroundColor(),cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(lambda_check.check_name, lambda_check.check_group))}>{lambda_check.check_title}</b> <br />
+                                                    <i style={{color:Styles.GetForegroundColor(),cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(lambda_check.check_group))}>{lambda_check.check_group}</i>
                                                 </>:<>
                                                     <b style={{color:"#444444"}}>{lambda_check.check_title}</b> <br />
                                                     <i style={{color:"#444444"}}>{lambda_check.check_group}</i>
@@ -1249,11 +1318,11 @@ const ChecksPage = (props) => {
         </>
     }
 
-    if (checks.error) return <>Cannot load checks from Foursight: {checks.error}</>;
+    if (checks.error) return <FetchErrorBox error={checks.error} message="Error loading checks from Foursight API" />
     if (checks.loading) {
         return <>
             <div style={{marginTop:"30px"}}>
-                <RingSpinner loading={checks.loading} color={'blue'} size={90} />
+                <RingSpinner loading={checks.loading} color={Styles.GetForegroundColor()} size={90} />
             </div>
         </>
     }
@@ -1263,9 +1332,9 @@ const ChecksPage = (props) => {
                 <tr>
                     <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>
                         <ChecksGroupBox />
-                        <div className="boxstyle check-pass padding-small cursor-hand" style={{border:"1px solid darkgreen"}}>
+                        <div className="box thickborder check-pass padding-small cursor-hand" style={{marginBottom:"8pt"}}>
                             <RecentRunsControl />
-                            <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"darkgreen"}} />
+                            <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:Styles.GetForegroundColor()}} />
                             <ChecksRawControl />
                         </div>
                         <ChecksStatus />
@@ -1275,7 +1344,7 @@ const ChecksPage = (props) => {
                         <ChecksRawView />
                         <SelectedGroupsPanel />
                     </td>
-                    <td style={{paddingLeft: (groupList?.length > 0 || isShowingChecksRaw()) ? "10pt" : "0",verticalAlign:"top"}}>
+                    <td style={{paddingLeft: (groupList?.length > 0 || groupList.error || isShowingChecksRaw()) ? "10pt" : "0",verticalAlign:"top"}}>
                         <LambdasView />
                         <RecentRunsView />
                         <ResultsHistoryPanel />
@@ -1285,5 +1354,60 @@ const ChecksPage = (props) => {
         </div>
     </>
 };
+
+// This is outside because finally starting to factor out into independent components.
+const RunActionBox = ({ check, update }) => {
+    const [ confirmRun, setConfirmRun ] = useState(false);
+    function onClickRunAction() {
+        if (check.__confirmRunAction) {
+            // 
+            // TODO
+            //
+            check.__confirmRunAction = false;
+            check.__runAction = true;
+        }
+        else {
+            check.__confirmRunAction = true;
+            check.__runAction = false;
+        }
+        update();
+    }
+    function onClickRunActionCancel() {
+        check.__confirmRunAction = false;
+        check.__runAction = false;
+        update();
+    }
+    function onClickRunActionResultClose() {
+        check.__confirmRunAction = false;
+        check.__runAction = false;
+        update();
+    }
+    return <>
+        { check.configuringCheckRun && check.results && check.results.action && <>
+            <div className="box thickborder" style={{background:"lightyellow",fontSize:"small",marginTop:"4pt",paddingTop:"8pt",paddingBottom:"8pt"}}>
+                <div style={{marginTop:"0pt"}}>
+                    <b>Action</b>: <span className="tool-tip" data-text={check.results.action}>{check.results.action_title}</span>
+                        <div style={{float:"right",marginTop:"-2pt"}}>
+                            {check.results.allow_action ? <>
+                                <button className="check-run-button" style={{background:check.__confirmRunAction ? "red" : "inhert"}} onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
+                            </>:<>
+                                <button className="check-run-button" disabled={true}>Disabled</button>
+                            </>}
+                        </div>
+                </div>
+                { check.__confirmRunAction && <>
+                    <div style={{border:"1px solid",marginTop:"8pt",marginBottom:"8pt"}} />
+                    <i><b>Are you sure you want to run this action?</b></i>
+                    <span className="check-action-confirm-button" style={{float:"right",marginTop:"-2pt"}} onClick={onClickRunActionCancel}>&nbsp;<b>Cancel</b></span>
+                </>}
+                { check.__runAction && <>
+                    <div style={{border:"1px solid",marginTop:"8pt",marginBottom:"8pt"}} />
+                    <b style={{float:"right",cursor:"pointer"}} onClick={onClickRunActionResultClose}>{Char.X}&nbsp;</b>
+                    <i><b>Running actions are not yet supported ...</b></i>
+                </>}
+            </div>
+        </>}
+    </>
+}
 
 export default ChecksPage;

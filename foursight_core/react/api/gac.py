@@ -1,19 +1,18 @@
 import re
 import boto3
-from functools import lru_cache as memoize
 import logging
 from dcicutils.diff_utils import DiffManager
 from dcicutils.env_utils import short_env_name
 from dcicutils.misc_utils import override_environ, get_error_message
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import get_identity_name, get_identity_secrets
-from .misc_utils import sort_dictionary_by_case_insensitive_keys
+from .misc_utils import memoize, sort_dictionary_by_case_insensitive_keys
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
-# The main purpose of this is to get the GAC name and to support comparison of two GACs. 
+# The main purpose of this is to get the GAC name and to support comparison of two GACs.
 class Gac:
 
     @staticmethod
@@ -28,10 +27,11 @@ class Gac:
     @staticmethod
     def get_gac_names() -> list:
         secrets_names = Gac.get_secrets_names()
-        return [secret_name for secret_name in secrets_names if re.match('.*App(lication)?Config(uration)?.*', secret_name, re.IGNORECASE)]
+        pattern = ".*App(lication)?Config(uration)?.*"
+        return [secret_name for secret_name in secrets_names if re.match(pattern, secret_name, re.IGNORECASE)]
 
     @staticmethod
-    @memoize(100)
+    @memoize
     def get_gac_name(env_name: str) -> str:
         gac_names = Gac.get_gac_names()
         env_name_short = short_env_name(env_name)
@@ -50,7 +50,7 @@ class Gac:
             return " OR ".join(matching_gac_names)
 
     @staticmethod
-    @memoize(100)
+    @memoize
     def get_gac_info():
         return {
             "name": get_identity_name(),
@@ -74,6 +74,6 @@ class Gac:
         }
 
     @staticmethod
-    def cache_clear() -> list:
+    def cache_clear() -> None:
         Gac.get_gac_name.cache_clear()
         Gac.get_gac_info.cache_clear()

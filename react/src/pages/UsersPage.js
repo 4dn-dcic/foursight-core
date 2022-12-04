@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { RingSpinner } from '../Spinners';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { Link } from '../Components';
 import { useFetch } from '../utils/Fetch';
 import Char from '../utils/Char';
-import Client from '../utils/Client';
-import { PuffSpinner, BarSpinner } from '../Spinners';
+import { FetchErrorBox } from '../Components';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
-import TableHead from '../TableHead';
 import PagedTableComponent from '../PagedTableComponent';
+import Styles from '../Styles';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
 
@@ -29,7 +27,7 @@ const UsersPage = () => {
         });
     }
 
-    if (users.error) return <>Cannot load users from Foursight: {users.error}</>;
+    if (users.error) return <FetchErrorBox error={users.error} message="Error loading users from Foursight API" center={true} />
 
     const columns = [
         { label: "" },
@@ -44,14 +42,21 @@ const UsersPage = () => {
     const tdStyle = { verticalAlign: "top", paddingRight: "1pt", paddingTop: "4pt", paddingBottom: "8pt" };
 
     return <>
-        <div className="container">
+        <div className="container fg">
            <div>
-                &nbsp;<b>Users</b>
-                <div style={{float:"right"}}>
-                    <Link to={Client.Path("/users/create")} style={{fontSize:"small",paddingRight:"0.2em"}}>New User</Link>&nbsp;|&nbsp;
-                    <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={update}>{Char.Refresh}&nbsp;</b>
+                <b>Users</b>
+                <div style={{float:"right",marginTop:"2pt"}}>
+                    <Link to={"/users/create"} bold={false}><small>Create User</small></Link>&nbsp;
+{/*
+                    &nbsp;|&nbsp;
+                    <div className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={update}>
+                        <span className="bg" style={{border:"1px solid black",borderRadius:"4px",padding:"0px 4px 1px 4px",cursor:"pointer"}}>
+                            <b>{Char.Refresh}</b>
+                        </span>
+                    </div>
+*/}
                 </div>
-                <div style={{height:"2px",background:"darkblue",marginTop:"2pt",marginBottom:"6pt"}}></div>
+                <div style={{height:"1px",background:Styles.GetForegroundColor(),marginTop:"2pt",marginBottom:"4pt"}}></div>
             </div>
             <PagedTableComponent
                 columns={columns}
@@ -59,7 +64,7 @@ const UsersPage = () => {
                 update={update}
                 initialSort={"email.asc"}>
                     {users.map("list", (user, index) => (
-                        <tr key={user.uuid} style={{verticalAlign:"top",borderBottom:"1px solid gray"}}>
+                        <tr key={user.uuid} style={{verticalAlign:"top",borderBottom:index < users?.data?.list?.length - 1 ? "1px solid gray" : "0"}}>
                             <td style={{...tdStyle, fontSize:"small"}}>
                                 {parseInt(args.get("offset")) + index + 1}.
                             </td>
@@ -69,7 +74,7 @@ const UsersPage = () => {
                                     <small>&nbsp;({user.title})</small>
                                 </>}
                                 <br />
-                                <Link to={Client.Path("/users/" + user.email)}><b>{user.email}</b></Link> <br />
+                                <Link to={"/users/" + user.email}><b>{user.email}</b></Link> <br />
                                 <small id="{user.uuid}" style={{cursor:"copy"}}>{user.uuid}</small>
                             </td>
                             <td style={tdStyle}>
@@ -82,15 +87,15 @@ const UsersPage = () => {
                                 {user?.institution?.replace("/institutions/","")?.replace("/","") || Char.EmptySet}
                             </td>
                             <td style={tdStyle}>
-                                {Time.FormatDate(user.updated)} <br />
-                                <small>{Time.FormatTime(user.updated)}</small>
+                                {user.updated ? Time.FormatDate(user.updated) : Time.FormatDate(user.created)} <br />
+                                <small>{user.updated ? Time.FormatTime(user.updated) : Time.FormatTime(user.created)}</small>
                             </td>
                             <td style={tdStyle}>
                                 {Time.FormatDate(user.created)} <br />
                                 <small>{Time.FormatTime(user.created)}</small>
                             </td>
                             <td style={tdStyle}>
-                                <Link to={Client.Path(`/users/edit/${user.uuid}`)}>Edit</Link>
+                                <Link to={`/users/edit/${user.uuid}`}>Edit</Link>
                             </td>
                         </tr>
                     ))}

@@ -137,14 +137,16 @@ class Auth0Config:
     def get_domain(self) -> str:
         return self.get_config_data()["domain"]
 
-    def get_secret(self) -> str:
+    @staticmethod
+    def get_secret() -> str:
         """
         Returns the Auth0 secret.
         Currently we get this environment variables setup from the GAC; see identity.py.
         """
         return os.environ.get("CLIENT_SECRET", os.environ.get("ENCODED_AUTH0_CLIENT"))
 
-    def get_callback_url(self, request: dict) -> str:
+    @staticmethod
+    def get_callback_url(request: dict) -> str:
         """
         Returns the URL for our authentication callback endpoint.
         Note this callback endpoint is (still) defined in the legacy Foursight routes.py.

@@ -2,6 +2,7 @@ import React from 'react';
 import { useContext } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import HeaderData from './HeaderData';
+import { useHeaderRefresh } from './HeaderRefresh';
 import { BarSpinner, StandardSpinner } from './Spinners';
 import Auth from './utils/Auth';
 import Char from './utils/Char';
@@ -11,6 +12,7 @@ import LiveTime from './LiveTime';
 import Env from './utils/Env';
 import Image from './utils/Image';
 import Logout from './utils/Logout';
+import Styles from './Styles';
 import { ReadOnlyModeDisplay } from './ReadOnlyMode';
 import { useFetching } from './utils/Fetch';
 // import JustLoggedIn from './JustLoggedIn';
@@ -22,6 +24,7 @@ import { useFetching } from './utils/Fetch';
 const Header = (props) => {
 
     const [ header ] = useContext(HeaderData);
+    const refreshHeader = useHeaderRefresh();
     //
     // Very odd but this below (navigate) declaration of useNavigate is REQUIRED, even if not
     // used here, in order for the header navigation links (e.g. HOME, INFO) to work properly.
@@ -41,7 +44,7 @@ const Header = (props) => {
                 return { textDecoration: "none", color: "black", fontWeight: "bold" }
             }
             else {
-                return { textDecoration: "none", color: "blue", fontWeight: "normal" }
+                return { textDecoration: "none", color: Styles.GetForegroundColor(), fontWeight: "normal" }
             }
         }
         return <span>
@@ -50,7 +53,7 @@ const Header = (props) => {
             <NavLink to={Client.Path("/info")} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
             <NavLink to={Client.Path("/checks")} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
             <NavLink to={Client.Path("/users")} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
-            <NavLink to={Client.Path("/aws/s3")} style={({isActive}) => style(isActive)}>S3</NavLink>&nbsp;|&nbsp;
+            {/* TODO: portal link does not change appropriately e.g. for 4dn-dcic when choosing from data to mastertest in dropdown */}
             <a target="_blank" rel="noreferrer" title="Open portal in another tab."
                 style={{textDecoration:"none",color:"darkgreen"}}
                 href={Client.PortalLink(header)}>
@@ -95,9 +98,10 @@ const Header = (props) => {
             </div>
         ):(<React.Fragment>
             <div style={{width:"100%",background:titleBackgroundColor}}>
+            {/* TODO: Refactor to center the title in the main header more reliably no matter how long the left and right parts are */}
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
             <tr title={"App Deployed:" + header.app?.deployed + " | App Launched: " + header.app?.launched + " | Page Loaded: " + header.page?.loaded}>
-                <td width="33%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
+                <td width="38%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={Client.PortalLink(header)} target="_blank" rel="noreferrer">
                         { Env.IsFoursightFourfront(header) ? (<span>
                             <img alt="foursight" style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={Image.FoursightFourfrontLogo()} height="32" width="44" />
@@ -106,7 +110,7 @@ const Header = (props) => {
                         </span>)}
                     </a>
                 </td>
-                <td width="34%" align="center" style={{whiteSpace:"nowrap"}}>
+                <td width="24%" align="center" style={{whiteSpace:"nowrap"}}>
                     <div style={{fontSize:"20pt",color:"white",cursor:"pointer"}} onClick={() => navigate(Client.Path("/login"))}>
                         { header.app?.stage === 'dev' ? (<>
                             { header.app?.local ? (<>
@@ -131,12 +135,15 @@ const Header = (props) => {
                         </>)}
                     </div>
                 </td>
-                <td width="33%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
-                    <small><LiveTime.FormatDateTime verbose={true} /></small>
+                <td width="38%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
+                    <small><LiveTime.FormatDateTime verbose={true} timezone={false} /></small>
+                    { (header.app?.credentials?.aws_account_name) && <>
+                        &nbsp;|&nbsp;<Link to={Client.Path("/login")} style={{textDecoration:"none",color:"inherit"}}><b title={`AWS Account Number: ${header.app?.credentials?.aws_account_number}`}>{header.app?.credentials?.aws_account_name?.replace(/^cgap-/, "")}</b></Link>
+                    </>}
                     { (Auth.IsLoggedIn(header)) ? (<span>
-                            &nbsp;|&nbsp; <span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</span>
+                        &nbsp;|&nbsp;<span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</span>
                     </span>):(<span>
-                        &nbsp;|&nbsp; <Link to={Client.Path("/login?auth", Env.Current(header))} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</Link>
+                        &nbsp;|&nbsp;<Link to={Client.Path("/login?auth", Env.Current(header))} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</Link>
                     </span>)}
                 </td>
             </tr>
@@ -162,12 +169,14 @@ const Header = (props) => {
                                             // This works "okay" 2022-09-18 but does not refresh/refetch (say) /users page data on select new env
                                             // <Link key={env.public_name} to={Client.Path(null, env.public_name)}>{env.public_name}</Link>
                                             // So doing this funky double redirect to get it to ... TODO: figure out right/React of of doing this
-                                            <Link key={env.full_name} to={{pathname: "/redirect"}} state={{url: !Env.IsKnown(Env.Current(), header) ? Client.Path("/env", Env.PreferredName(Env.Default(header), header)) : Client.Path(null, Env.PreferredName(env, header))}}>{Env.PreferredName(env, header)}</Link>
+                                            <Link onClick={() => refreshHeader(Env.PreferredName(env))} key={env.full_name} to={{pathname: "/redirect"}} state={{url: !Env.IsKnown(Env.Current(), header) ? Client.Path("/env", Env.PreferredName(Env.Default(header), header)) : Client.Path(null, Env.PreferredName(env, header))}}>{Env.PreferredName(env, header)}</Link>
                                         :
                                             <Link key={env.public_name} to={Client.Path("/env", Env.PreferredName(env, header))}>{Env.PreferredName(env, header)}{!Env.IsAllowed(env, header) && Auth.IsLoggedIn(header) && <>&nbsp;&nbsp;{Char.Warning}</>}</Link>
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
-                                <Link id="__envinfo__" to={Client.Path("/env")}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="bold";}}>Environments</Link>
+                                { Auth.IsLoggedIn(header) && (header.app?.accounts_file || header.app?.accounts_file_from_s3) && <Link id="__accounts__" to={Client.Path("/accounts")}onClick={()=>{document.getElementById("__accounts__").style.fontWeight="normal";}}>Accounts</Link> }
+                                <Link id="__envinfo__" to={Client.Path("/env")}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="normal";}}>Environments</Link>
+                                { Auth.IsLoggedIn(header) && <Link id="__session__" to={Client.Path("/login")}onClick={()=>{document.getElementById("__session__").style.fontWeight="normal";}}>Session</Link> }
                             </div>
                          </span>
                         ):(
@@ -187,10 +196,10 @@ const Header = (props) => {
                             { Auth.LoggedInUser(header) ? (<>
                                 <Link to={Client.Path("/login")} style={{textDecoration:"none"}}><b style={{color:"darkblue"}} title="Logged in as.">{Auth.LoggedInUser(header)}</b></Link>
                                 { Auth.LoggedInViaGoogle(header) ? <>
-                                    <img title="Google Authentication" style={{marginLeft:"9px",marginRight:"0",marginBottom:"2px"}} src={Image.GoogleLoginLogo()} height="15" />
+                                    <img alt="google" title="Google Authentication" style={{marginLeft:"9px",marginRight:"0",marginBottom:"2px"}} src={Image.GoogleLoginLogo()} height="15" />
                                 </>:<>
                                     { Auth.LoggedInViaGitHub(header) && <>
-                                        <img title="GitHub Authentication" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
+                                        <img alt="github" title="GitHub Authentication" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
                                     </>}
                                 </>}
                             </>):(<>

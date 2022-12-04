@@ -67,9 +67,10 @@ class ReactUi:
         return None
 
     @staticmethod
-    def _is_file_whitelisted(file: str) -> bool:
+    
+    def _is_file_type_whitelisted(file: str) -> bool:
         """
-        To be as restrictive as possible we ONLY allow the above whitelistted files.
+        To be as restrictive as possible we ONLY allow the above whitelisted file types.
         """
         for suffix in _REACT_WHITELISTED_FILE_PATH_SUFFIXES:
             if file.endswith(suffix):
@@ -113,7 +114,7 @@ class ReactUi:
         file = os.path.normpath(file)
 
         # Restrict to known whitelisted files.
-        if not self._is_file_whitelisted(file):
+        if not self._is_file_type_whitelisted(file):
             return self._react_api.create_forbidden_response()
 
         response = ReactUi._cached_static_files.get(file)
@@ -129,5 +130,6 @@ class ReactUi:
             ReactUi._cached_static_files[file] = response = self._react_api.process_response(response)
         return response
 
-    def cache_clear(self) -> None:
+    @staticmethod
+    def cache_clear() -> None:
         ReactUi._cached_static_files = {}

@@ -146,7 +146,7 @@ const MAX_SAVE = 25;
 //
 // OTHER COMMENTS
 //
-// - Looking back over this, at 700+ lines (though many comments), it does look rather complex.
+// - Looking back over this, at 750+ lines (though many comments), it does look rather complex.
 //   But the goal was to make the USAGE simple; to fetch, update, manipulate data with as little
 //   detailed logic and friction as possible; and to globally track outstanding fetching, e.g.
 //   to facilitate a global fetching spinner, which obviates the need for these on individual
@@ -373,11 +373,6 @@ function _doFetch(args, current = undefined) {
         if (data === undefined) {
             data = response.data;
         }
-        //
-        // TODO
-        // Maybe do _update(args.setData, data, current) here rather than setData.
-        // Normally, data will be a new object so it shouldn't be a problem; but if not ...
-        //
         args.setData(data);
         args.setStatus(status);
         args.setError(null);
@@ -387,16 +382,15 @@ function _doFetch(args, current = undefined) {
         _defineResponseConvenienceFunctions(responseArg);
         args.onSuccess(responseArg);
         args.onDone(responseArg);
-        // const onArg = { data: data, loading: false, status: status, timeout: false, error: null };
-        // args.onSuccess(onArg);
-        // args.onDone(onArg);
     }
 
     function _handleError(error, id) {
         let status = error.response?.status || 0;
-        args.setData(null);
+        let details = error?.response?.data?.error;
+        args.setData(error?.response?.data);
         args.setStatus(status);
-        args.setError(error.message);
+        // args.setError(error.message);
+        args.setError({ url: args.url, status: status, code: error.code, message: error.message, details: details });
         args.setLoading(false);
         if (status === 401) {
             //
@@ -448,16 +442,16 @@ function _doFetch(args, current = undefined) {
         }
         else {
             Debug.Info(`FETCH ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
-            args.setError(`Unknown HTTP error (code: ${error.code}).`);
+            // args.setError(`HTTP error (${error.code}): ${args.url}`);
         }
         noteFetchEnd(id);
         const responseArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
         _defineResponseConvenienceFunctions(responseArg);
-        args.onError(responseArg);
+        const data = args.onError(responseArg);
+        if (data !== undefined) {
+            args.setData(data)
+        }
         args.onDone(responseArg);
-        // const onArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
-        // args.onError(onArg);
-        // args.onDone(onArg);
     }
 
     function noteFetchBegin(fetch) {
@@ -511,7 +505,7 @@ function _doFetch(args, current = undefined) {
 // setter function will only update if the reference to the new data is different
 // from the existing/current data, which is often not what we want.
 //
-function _update(setData, newData, currentData) {
+function _update(setData, newData, currentData = undefined) {
     if (!Object.is(newData, currentData)) {
         //
         // If data argument is different, by reference, than the current,
@@ -581,10 +575,10 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
 
 
 // This functionality is experimental (perhaps too clever by half):
-// Specialized, specific data update functions, e.g. to prepend, append, or insert
-// into array, etc. Simplifies acess to useFetch (return) value, i.e not having to
-// always dereference via useFetchResult.data. And since we're doing this at all,
-// might as well introduce some niceties to these functions.
+// Specialized, specific data update functions, e.g. to prepend, append,
+// or insert into array, etc. Simplifies access to useFetch (return) value,
+// i.e not having to always dereference via useFetchResult.data. And since
+// we're doing this at all, introduce some other functions as niceties.
 //
 function _defineResponseConvenienceFunctions(response) {
 

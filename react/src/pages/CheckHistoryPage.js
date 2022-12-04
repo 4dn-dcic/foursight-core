@@ -2,6 +2,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useFetch } from '../utils/Fetch';
+import { FetchErrorBox } from '../Components';
 import { StandardSpinner } from '../Spinners';
 import PaginationComponent from '../PaginationComponent';
 import Char from '../utils/Char';
@@ -10,6 +11,7 @@ import Image from '../utils/Image';
 import Json from '../utils/Json';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
+import Styles from '../Styles';
 import TableHead from '../TableHead';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
@@ -127,7 +129,7 @@ const CheckHistoryPage = (props) => {
      // }
 
         let columns = [
-            { label: "" },
+            { label: "__refresh" },
             { label: "" },
             { label: "Timestamp", key: extractTimestamp },
             { label: "UUID", key: extractUUID },
@@ -136,21 +138,25 @@ const CheckHistoryPage = (props) => {
             { label: "State" }
         ];
 
-        return <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+        return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
 
             <div title={check}>
                 <b>Check: {check}</b>&nbsp;
+                { history.get("check.registered_github_url") && <>
+                    <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={history.get("check.registered_github_url")}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                </>}
             </div>
             <div style={{marginBottom:"6pt"}}/>
                 { history.get("list")?.length > 0 ? (<>
-                    <table style={{width:"100%"}}>
+                    <table style={{width:"100%"}} className="fg">
                         <TableHead
                             columns={columns}
                             list={history.get("list")}
                             state={{key: extractTimestamp, order: sort.endsWith(".desc") ? -1 : 1}}
                             update={(key, order) => {onSort(key, order);}}
+                            refresh={() => updateData(limit, offset, sort)}
                             lines={true}
-                            style={{color:"darkblue",fontWeight:"bold"}}
+                            style={{fontWeight:"bold"}}
                             loading={history.loading} />
                     <tbody>
                     {history.map("list", (history, index) =>
@@ -163,7 +169,7 @@ const CheckHistoryPage = (props) => {
                             <tr>
                             <td style={{verticalAlign:"top"}}>
                                 {extractStatus(history) === "PASS" ? (<>
-                                    <span style={{color:"darkblue"}}>{Char.Check}</span>
+                                    <span>{Char.Check}</span>
                                 </>):(<>
                                     <span style={{color:"darkred"}}>{Char.X}</span>
                                 </>)}
@@ -181,7 +187,7 @@ const CheckHistoryPage = (props) => {
                             &nbsp;&nbsp;</td>
                             <td style={{verticalAlign:"top",whiteSpace:"break-spaces"}}>
                                 {extractStatus(history) === "PASS" ? (<>
-                                    <b style={{color:"darkblue"}}>OK</b>
+                                    <b>OK</b>
                                 </>):(<>
                                     <b style={{color:"darkred"}}>ERROR</b>
                                 </>)}
@@ -196,12 +202,10 @@ const CheckHistoryPage = (props) => {
                             </tr>
                             { (history.__resultShowing) &&
                                 <tr>
-                                    <td></td>
-                                    <td></td>
                                     <td colSpan="9">
-                                        <pre style={{background:"#D6EAF8",filter:"brightness(1.1)",borderColor:"darkblue",borderWidth:"1",wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"600pt"}}>
+                                        <pre className="box lighten" style={{borderWidth:"1",wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"600pt"}}>
                                             { history.__resultLoading ? <>
-                                                <StandardSpinner condition={history.__resultLoading} color={"darkblue"} label="Loading result"/>
+                                                <StandardSpinner condition={history.__resultLoading} color={Styles.GetForegroundColor()} label="Loading result"/>
                                             </>:<>
                                                 <div style={{float:"right",marginTop:"-0px"}}>
                                                     <span style={{fontSize:"0",opacity:"0"}} id={check}>{Json.Str(history.__result[0])}</span>
@@ -233,7 +237,7 @@ const CheckHistoryPage = (props) => {
     }
 
 
-    if (history.error) return <>Cannot load data from Foursight: {history.error}</>;
+    if (history.error) return <FetchErrorBox error={history.error} message="Error loading check history from Foursight API" />
     return <>
         <table style={{maxWidth:"1000pt"}}><tbody>
             <tr>
@@ -243,12 +247,13 @@ const CheckHistoryPage = (props) => {
                         <PaginationComponent
                             pages={pages}
                             onChange={onPaginationClick}
+                            refresh={() => updateData(limit, offset, sort)}
                             page={page}
                             spinner={true}
                             loading={history.loading} />
                     </td>
                     <td style={{width:"10%",whiteSpace:"nowrap",verticalAlign:"bottom",align:"right"}}>
-                        <div style={{fontSize:"small",fontWeight:"bold",color:"darkblue"}}>
+                        <div className="fg" style={{fontSize:"small",fontWeight:"bold"}}>
                             Page Size:&nbsp;
                             <span style={{cursor:history.loading ? "not-allowed" : "",width:"fit-content"}}>
                             <span style={{pointerEvents:history.loading ? "none" : "",width:"fit-content"}}>
@@ -267,14 +272,14 @@ const CheckHistoryPage = (props) => {
                     </td>
                     </tr></tbody></table>
                 </td>
-                <td><b>Check History</b></td>
+                <td style={{verticalAlign:"bottom",paddingBottom:"2pt"}}><b>Check History</b></td>
             </tr>
             <tr>
                 <td style={{verticalAlign:"top",paddingRight:"10pt"}}>
                     <HistoryList history={history} />
                 </td>
                 <td style={{verticalAlign:"top"}}>
-                    <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+                    <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
                         <table><tbody>
                             <tr>
                                 <td style={{paddingRight:"8pt"}}><b>Check</b>:</td>
@@ -302,11 +307,12 @@ const CheckHistoryPage = (props) => {
                             </tr>
                         </tbody></table>
                     </div>
-                    <div className="boxstyle info" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-                        <b style={{color:"darkred"}}>TODO</b>
-                        <p />
-                        - Have dropdown to pick other checks (maybe by group). <br />
+                    <b style={{color:"inherit"}}>TODO</b>
+                    <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+                        <small>
+                        - Dropdown to pick other checks. <br />
                         - Allow check to be run here.<br />
+                        </small>
                     </div>
                 </td>
             </tr>

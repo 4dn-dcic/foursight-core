@@ -6,6 +6,27 @@ foursight-core
 Change Log
 ----------
 
+3.1.0
+=====
+* Changes related to a new experimental /accounts page in Foursight which can show summary
+  Foursight and Portal info from other AWS accounts. To take advantage of it there is an
+  accounts.json file in the chalicelib_cgap or chalicelib_fourfront directory, for
+  Foursight-CGAP and foursight-Fourfront, respectively, which contains a simple list
+  of Foursight URLs for other AWS accounts. If this file is not present no harm.
+  This file has been manually encrypted, since it contains internal URLs, using
+  the ENCODED_AUTH0_SECRET value in the Global Application Configuration (GAC)
+  in the AWS Secrets Manager. There are convenience poetry scripts, to encrypt
+  and/or decrypt this file locally: encrypt-accounts-file, decrypt-accounts-file.
+  Change to both the API and UI have been made for this.
+* Moved lookup of check_setup.json (and accounts.json) to here, from
+  foursight-cgap/chalicelib_cgap/app_utils.py and foursight/chalicelib_cgap/app_utils.py.
+* Fix for C4-949: Show full_output as JSON (YAML actually) correctly in check run outputs.
+* Disable user edit in readonly mode.
+* Show indication in UI of how user logged in (i.e. Google or GitHub authentication).
+* PEP8/PyCharm warning cleanup.
+* Miscellaneous UI cleanup; very gradually more componentization and more consistent CSS.
+
+
 3.0.0
 =====
 

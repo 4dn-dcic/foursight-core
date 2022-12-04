@@ -117,11 +117,6 @@
     .no-border {
         border: none;
     }
-    li {
-        list-style-type: none;
-        padding: 0;
-        margin: 0;
-    }
     dl {
         margin-bottom: 0px;
     }
@@ -179,33 +174,47 @@
 }
 
 .check-run-button {
-   border: 1px solid lightgreen;
+   border: 1px solid var(--box-fg-darken);
    border-radius: 12px;
    padding-left: 8pt;
    padding-top: 2pt;
    padding-bottom: 3pt;
    padding-right: 12pt;
-   background: #4F7942;
+   background: var(--box-fg);
    color: #FFFFFF;
    cursor: pointer;
    user-select: none;
 }
-.check-run-button:hover {
-    color: yellow;
-    background: darkgreen;
-}
-.check-run-button:active {
-    color: red;
-    background: yellow;
-}
-.check-run-wait-button {
-   border: 1px solid lightgreen;
+.check-action-confirm-button {
+   border: 1px solid red;
    border-radius: 12px;
    padding-left: 8pt;
    padding-top: 2pt;
    padding-bottom: 3pt;
    padding-right: 12pt;
-   background: #4F7942;
+   background: var(--box-bg);
+   color: red;
+   cursor: pointer;
+   user-select: none;
+}
+.check-run-button:disabled {
+    background: gray;
+}
+.check-run-button:hover {
+    color: yellow;
+    background: var(--box-fg);
+}
+.check-run-button:active {
+    color: darkred !important;
+    background: yellow;
+}
+.check-run-wait-button {
+   border-radius: 12px;
+   padding-left: 8pt;
+   padding-top: 2pt;
+   padding-bottom: 3pt;
+   padding-right: 12pt;
+   background: var(--box-fg);
    color: yellow;
    cursor: not-allowed;
    user-select: none;
@@ -265,18 +274,21 @@
 }
 .tool-tip:hover:before {
   display: block;
+  z-index: 99;
 }
 .tool-tip.left:before {
   left: initial;
   margin: initial;
   right: 100%;
   margin-right: 15px;
+  z-index: 99;
 }
 .tool-tip:after {
+  z-index: 99;
   content: "";
   position: absolute;
   left: 100%;
-  margin-left: -5px;
+  margin-left: -2px;
   top: 50%;
   transform: translateY(-50%);
   border: 10px solid #000;
@@ -333,11 +345,6 @@
    font-family: 'Sansation Bold', 'Arial';
 }
 
-/* This was the only way found to get rid of margin around react-paginate control. */
-.pagination-control * {
-    margin: 0;
-}
-
 /* New */
 
 :root {
@@ -352,12 +359,56 @@
 .box {
     background: var(--box-bg);
     color: var(--box-fg);
-    border-radius: 6px;
-    border: 2px solid var(--box-fg);
-    border-color: var(--box-fg);
-    padding: 0.6em 1.0em;
+    /* border-radius: 6px; */
+    border-radius: 0px 10px 10px 10px;
+    border: 1px solid var(--box-fg);
+    padding: 0.6em 0.8em;
     vertical-align: middle;
+}
+.box.cell {
     display: table-cell;
+}
+.box.noborder {
+    border: 0;
+}
+.box.thickborder {
+    border: 2px solid var(--box-fg);
+}
+.box.lighten {
+    background: var(--box-bg-lighten);
+}
+.box.warning {
+    background-color: #FCF8E3;
+    color: #8A6D3B;
+}
+.box.error {
+    background-color: #FFEEEB;
+    color: darkred;
+    border-color: darkred;
+}
+
+.bg {
+    background: var(--box-bg);
+}
+.fgbg {
+    background: var(--box-fg);
+}
+.fg {
+    color: var(--box-fg);
+}
+
+.td {
+    padding-right: 8pt;
+    padding-bottom: 4pt;
+    vertical-align: top;
+    color: inherit;
+}
+.td.thin {
+    width: 1%;
+}
+
+ul {
+    padding-left: 12pt;
 }
 
 .input {
@@ -386,7 +437,7 @@
 }
 
 .button {
-    border: 1px solid green;
+    border: 1px solid var(--box-fg);
     background: var(--box-fg);
     color: var(--box-bg);
     padding: 0.1em 0.4em 0.25em 0.4em;
@@ -427,4 +478,37 @@
 /* This gets rid of extra vertical space introduced normally, for some reason, on forms */
 form {
     display:inline;
+}
+
+
+/* PaginationComponent stuff - much trial and error - still not right color clicking directly on page link */
+/* This was the only way found to get rid of margin around react-paginate control. */
+.pagination-control * {
+    margin: 0;
+}
+/* This was the only way found to get rid of margin around react-paginate control. */
+.page-item .page-link {
+  color: var(--box-fg);
+  background: var(--box-bg-lighten);
+}
+.pagination-control .page-link {
+  color: var(--box-fg);
+  background: var(--box-bg-lighten);
+}
+.pagination-control .page-item {
+  color: var(--box-fg);
+  background: var(--box-bg-lighten);
+}
+.page-item .active .page-link {
+  color: var(--box-bg);
+  background: var(--box-fg);
+}
+.pagination .active .page-link {
+  color: var(--box-bg);
+  background: var(--box-fg);
+}
+.pagination.active:hover .page-link {
+  color: var(--box-bg);
+  background: var(--box-fg);
+  border-color: var(--box-fg);
 }

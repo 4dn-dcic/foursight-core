@@ -1,15 +1,18 @@
+import ast
+import boto3
 from chalice import Response
-import io
+import copy
+import datetime
+from dateutil import tz
+from http.cookies import SimpleCookie
+import inspect
+from itertools import chain
 import jinja2
 import json
+import jwt
+import logging
 import os
 from os.path import dirname
-import jwt
-import boto3
-import datetime
-import ast
-import copy
-from http.cookies import SimpleCookie
 import pkg_resources
 import platform
 import pytz
@@ -18,10 +21,7 @@ import socket
 import sys
 import time
 import types
-import logging
-from itertools import chain
-from dateutil import tz
-from dcicutils import ff_utils
+from typing import Optional
 from dcicutils.env_utils import (
     EnvUtils,
     full_env_name,
@@ -31,20 +31,23 @@ from dcicutils.env_utils import (
     short_env_name,
     public_env_name
 )
-from typing import Optional
+from dcicutils import ff_utils
+from dcicutils.exceptions import InvalidParameterError
 from dcicutils.lang_utils import disjoined_list
-from dcicutils.misc_utils import get_error_message, PRINT
+from dcicutils.misc_utils import get_error_message, ignored, PRINT
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
-from .s3_connection import S3Connection
-from .fs_connection import FSConnection
-from .check_utils import CheckHandler
-from .sqs_utils import SQS
-from .stage import Stage
-from .environment import Environment
 from .app import app
+from .check_utils import CheckHandler
+from .deploy import Deploy
+from .environment import Environment
+from .fs_connection import FSConnection
+from .s3_connection import S3Connection
 from .react.api.react_api import ReactApi
 from .routes import Routes
+from .route_prefixes import CHALICE_LOCAL
+from .sqs_utils import SQS
+from .stage import Stage
 
 
 logging.basicConfig()
@@ -64,6 +67,7 @@ class AppUtilsCore(ReactApi, Routes):
     """
 
     CHECK_SETUP_FILE_NAME = "check_setup.json"
+    ACCOUNTS_FILE_NAME = "accounts.json.encrypted"
 
     # Define in subclass.
     APP_PACKAGE_NAME = None
@@ -90,13 +94,9 @@ class AppUtilsCore(ReactApi, Routes):
 
     OAUTH_TOKEN_URL = "https://hms-dbmi.auth0.com/oauth/token"
 
-    # replace with e.g. 'chalicelib'
+    # replaced with e.g. 'chalicelib_cgap' or 'chalicelib_fourfront' in
+    # foursight-cgap/chalicelib_cgap/app_utils.py or foursight/chalicelib_fourfront/app_utils.py.
     package_name = 'foursight_core'
-
-    # repeat the same line to use __file__ relative to the inherited class
-    # This should be set by the chalicelib_cgap or chalicelib_fourfront AppUtils
-    # derived from this class, in the app_utils.py there (via local_check_setup_file).
-    check_setup_file = None
 
     # optionally change this one
     html_main_title = 'Foursight'
@@ -113,6 +113,11 @@ class AppUtilsCore(ReactApi, Routes):
         self.environment = Environment(self.prefix)
         self.stage = Stage(self.prefix)
         self.sqs = SQS(self.prefix)
+        self.check_setup_file = self._locate_check_setup_file()
+        logger.info(f"Using check_setup file: {self.check_setup_file}")
+        self.accounts_file = self._locate_accounts_file()
+        if self.accounts_file:
+            logger.info(f"Using accounts file: {self.accounts_file}")
         self.check_handler = CheckHandler(self.prefix, self.package_name, self.check_setup_file, self.get_default_env())
         self.CheckResult = self.check_handler.CheckResult
         self.ActionResult = self.check_handler.ActionResult
@@ -138,8 +143,8 @@ class AppUtilsCore(ReactApi, Routes):
         if isinstance(calling_function, types.FunctionType):
             calling_function = calling_function.__name__
         logger.warning(f"Non-fatal error in function ({calling_function})."
-                    f" Missing information via this function used only for Foursight UI display."
-                    f" Underlying error: {get_error_message(error_object)}")
+                       f" Missing information via this function used only for Foursight UI display."
+                       f" Underlying error: {get_error_message(error_object)}")
 
     @classmethod
     def set_timeout(cls, timeout):
@@ -240,25 +245,27 @@ class AppUtilsCore(ReactApi, Routes):
 
     # This is a bit of a hack, this whole user_records thing.
     # Will eventually be supplanted by and corrected in the React version.
-    def get_user_record(self, environ: str, request_dict: dict) -> dict:
+    def get_user_record(self, environ: str, request_dict: dict) -> Optional[dict]:
         user_info = self.get_logged_in_user_info(environ, request_dict)
         if not user_info:
             return None
         user_record = self.user_records.get(user_info['email_address'])
         return user_record
 
-    def set_user_record(self, email: str, record: dict, error: str, exception: str):
+    def set_user_record(self, email: str, record: Optional[dict], error: Optional[str], exception: Optional[str]):
+        """
+        Adds the given user by email to the user_records class member list or updates if already there,
+        with the given record detail dictionary and/or error and/or exception strings.
+        The given email should be non-empty; returns with no action if so.
+        """
         if not email:
             return
-        user_record = self.user_records.get(email)
-        if not user_record:
-            self.user_records[email] = {"email": email, "record": record, "error": error, "exception": exception}
-        else:
-            user_record["record"] = record
-            user_record["error"] = error
-            user_record["exception"] = exception
+        self.user_records[email] = user_record = self.user_records.get(email) or {"email": email}
+        user_record["record"] = record
+        user_record["error"] = error
+        user_record["exception"] = exception
 
-    def get_portal_url(self, env_name: str) -> str:
+    def get_portal_url(self, env_name: str) -> Optional[str]:
         portal_url = self._cached_portal_url.get(env_name)
         if not portal_url:
             try:
@@ -269,7 +276,8 @@ class AppUtilsCore(ReactApi, Routes):
             except Exception as e:
                 message = f"Error getting portal URL: {get_error_message(e)}"
                 logger.error(message)
-                raise Exception(message)
+                return None
+                # raise Exception(message)
         return self._cached_portal_url[env_name]
 
     def get_auth0_client_id(self, env_name: str) -> str:
@@ -282,22 +290,23 @@ class AppUtilsCore(ReactApi, Routes):
             auth0_client_id = self.get_auth0_client_id_from_portal(env_name)
         return auth0_client_id
 
-    def get_auth0_client_id_from_portal(self, env_name: str) -> str:
+    def get_auth0_client_id_from_portal(self, env_name: str) -> Optional[str]:
         logger.warning(f"Fetching Auth0 client ID from portal.")
         portal_url = self.get_portal_url(env_name)
         auth0_config_url = portal_url + "/auth0_config?format=json"
+        auth0_client_id_fallback = "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB"
         if not self.auth0_client_id:
             try:
                 response = requests.get(auth0_config_url).json()
-                self.auth0_client_id = response.get("auth0Client")
+                self.auth0_client_id = response.get("auth0Client", auth0_client_id_fallback)
             except Exception as e:
                 # TODO: Fallback behavior to old hardcoded value (previously in templates/header.html).
-                self.auth0_client_id = "DPxEwsZRnKDpk0VfVAxrStRKukN14ILB"
                 logger.error(f"Error fetching Auth0 client ID from portal ({auth0_config_url}); using default value: {e}")
         logger.warning(f"Done fetching Auth0 client ID from portal ({auth0_config_url}): {self.auth0_client_id}")
-        return self.auth0_client_id
+        return self.auth0_client_id or auth0_client_id_fallback
 
     def get_auth0_secret(self, env_name: str) -> str:
+        ignored(env_name)
         return os.environ.get("CLIENT_SECRET")
 
     def check_authorization(self, request_dict, env=None):
@@ -447,7 +456,7 @@ class AppUtilsCore(ReactApi, Routes):
         token = cookie_dict.get('jwtToken', None)
         return token
 
-    def get_decoded_jwt_token(self, env_name: str, request_dict) -> dict:
+    def get_decoded_jwt_token(self, env_name: str, request_dict) -> Optional[dict]:
         try:
             jwt_token = self.get_jwt_token(request_dict)
             if not jwt_token:
@@ -457,8 +466,7 @@ class AppUtilsCore(ReactApi, Routes):
             # leeway accounts for clock drift between us and auth0
             return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30, options={"verify_signature": True}, algorithms=["HS256"])
         except Exception as e:
-            logger.warning(f"foursight_core: Exception decoding JWT token: {jwt_token}")
-            print(e)
+            logger.warning(f"foursight_core: Exception decoding JWT token ({jwt_token}): {get_error_message(e)}")
             return None
 
     @classmethod
@@ -576,7 +584,7 @@ class AppUtilsCore(ReactApi, Routes):
             return {}
         return {key: dictionary[key] for key in sorted(dictionary.keys(), key=lambda key: key.lower())}
 
-    def get_aws_account_number(self) -> dict:
+    def get_aws_account_number(self) -> Optional[dict]:
         try:
             caller_identity = boto3.client("sts").get_caller_identity()
             return caller_identity["Account"]
@@ -720,7 +728,7 @@ class AppUtilsCore(ReactApi, Routes):
             logger.warning(f"Error reloading lambda ({lambda_name}): {e}")
         return False
 
-    def get_lambda_last_modified(self, lambda_name: str = None) -> str:
+    def get_lambda_last_modified(self, lambda_name: str = None) -> Optional[str]:
         """
         Returns the last modified time for the given lambda name.
         See comments in reload_lambda on this.
@@ -1217,7 +1225,7 @@ class AppUtilsCore(ReactApi, Routes):
         ts_local = ts_utc.astimezone(tz.gettz('America/New_York'))
         return ''.join([str(ts_local.date()), ' ', str(ts_local.time()), ' ', str(ts_local.tzname())])
 
-    def process_view_result(self, connection, res, is_admin):
+    def process_view_result(self, connection, res, is_admin, stringify=True):
         """
         Do some processing on the content of one check result (res arg, a dict)
         Processes timestamp string, trims output fields, and adds action info.
@@ -1249,10 +1257,11 @@ class AppUtilsCore(ReactApi, Routes):
         ts_local = ts_utc.astimezone(tz.gettz('America/New_York'))
         proc_ts = ''.join([str(ts_local.date()), ' at ', str(ts_local.time())])
         res['local_time'] = proc_ts
-        if res.get('brief_output'):
-            res['brief_output'] = json.dumps(self.trim_output(res['brief_output']), indent=2)
-        if res.get('full_output'):
-            res['full_output'] = json.dumps(self.trim_output(res['full_output']), indent=2)
+        if stringify:
+            if res.get('brief_output'):
+                res['brief_output'] = json.dumps(self.trim_output(res['brief_output']), indent=2)
+            if res.get('full_output'):
+                res['full_output'] = json.dumps(self.trim_output(res['full_output']), indent=2)
         # only return admin_output if an admin is logged in
         if res.get('admin_output') and is_admin:
             res['admin_output'] = json.dumps(self.trim_output(res['admin_output']), indent=2)
@@ -1275,7 +1284,10 @@ class AppUtilsCore(ReactApi, Routes):
                     # it most likely means the action is still running
                     if assc_action is not None:
                         res['assc_action_status'] = assc_action['status']
-                        res['assc_action'] = json.dumps(assc_action, indent=4)
+                        if stringify:
+                            res['assc_action'] = json.dumps(assc_action, indent=4)
+                        else:
+                            res['assc_action'] = assc_action
                         # update check summary
                         if res.get('summary'):
                             res['summary'] = 'ACTION %s: %s' % (assc_action['status'], res['summary'])
@@ -1878,21 +1890,51 @@ class AppUtilsCore(ReactApi, Routes):
         # eliminate duplicates
         return set(complete)
 
-    @staticmethod
-    def locate_check_setup_file(base_dir: str) -> str:
-        """
-        Return full path to the check_setup.json file, considering the given base directory which is
-        supposed to be the full path of either the chalicelib_cgap or chalicelib_fourfront directory.
-        Looks for the first non-empty check_setup.json file in this directory order:
+    def _locate_check_setup_file(self) -> Optional[str]:
+        return self._locate_config_file(AppUtilsCore.CHECK_SETUP_FILE_NAME)
 
-        - If the CHALICE_LOCAL environment variable is set to "1", then the
-          chalicelib_local directory parallel to the given base directory.
-        - If the FOURSIGHT_CHECK_SETUP_DIR environment variable is set,
-          then the directoriy specified by this value.
-        - The given base directory.
+    def _locate_accounts_file(self) -> Optional[str]:
+        return self._locate_config_file(AppUtilsCore.ACCOUNTS_FILE_NAME)
+
+    def _locate_config_file(self, file_name: str) -> Optional[str]:
+        """
+        Returns the full path to the given named file (e.g. check_setup.json or accounts.json),
+        looking for the first NON-EMPTY file within these directories, in the following order;
+        if not found then returns None.
+
+        - If the CHALICE_LOCAL environment variable is set to "true", then the chalicelib_local
+          directory PARALLEL to the appropriate chalicelib package directory, i.e. either
+          chalicelib_cgap or chalicelib_fourfront, depending on our class package_name member,
+          which is overridden accordingly in foursight-cgap/chalicelib_cgap/app_utils.py
+          or foursight/chalicelib_fourfront/app_utils.py.
+
+        - If the FOURSIGHT_CHECK_SETUP_DIR environment variable is set, then the directory
+          specified by this value. This is set in the 4dn-cloud-infra repo app.py file, to the
+          local directory there, which ends up actually being the vendor sub-direcotry there.
+
+        - The appropriate chalicelib package directory, i.e. either chalicelib_cgap or
+          chalicelib_fourfront, depending on our class package_name member, which is
+          overridden accordingly in foursight-cgap/chalicelib_cgap/app_utils.py
+          or foursight/chalicelib_fourfront/app_utils.py.
+
+        - The base directory of this foursight_core package.
         """
 
-        def is_non_empty_json_file(file: str) -> bool:
+        def _get_chalicelib_dir():
+            """
+            Returns the package (file system) directory path name for the package associated
+            with this instance of AppUtilsCore, i.e. associated with self.package_name.
+            This is (should be) set to either chalicelib_cgap or chalicelib_fourfront
+            depending on if we running with foursight-cgap or foursight packages.
+            """
+            try:
+                chalicelib_package = __import__(self.package_name)
+                return os.path.dirname(inspect.getfile(chalicelib_package))
+            except Exception as e:
+                logger.error(f"Cannot determine chalicelib directory: {get_error_message(e)}")
+                return ""
+
+        def is_non_empty_file(file: str) -> bool:
             """
             Returns true iff the given file is a JSON file which is non-empty.
             Where non-empty means the file exists, is of non-zero length, and
@@ -1901,42 +1943,49 @@ class AppUtilsCore(ReactApi, Routes):
             try:
                 if os.path.exists(file):
                     if os.stat(file).st_size > 0:
-                        with io.open(file, "r") as f:
-                            content = json.load(f)
-                            return (isinstance(content, list) or isinstance(content, dict)) and len(content) > 0
+                        return True
             except Exception:
                 pass
             return False
 
-        if not base_dir:
-            base_dir = os.path.dirname(__file__)
-        check_setup_file = None
-        if os.environ.get("CHALICE_LOCAL") == "1":
-            check_setup_dir = os.path.normpath(os.path.join(base_dir, "../chalicelib_local"))
-            check_setup_file = os.path.join(check_setup_dir, AppUtilsCore.CHECK_SETUP_FILE_NAME)
-            if not is_non_empty_json_file(check_setup_file):
-                check_setup_file = None
-        if not check_setup_file:
-            check_setup_dir = os.environ.get("FOURSIGHT_CHECK_SETUP_DIR", "")
-            check_setup_file = os.path.join(check_setup_dir, AppUtilsCore.CHECK_SETUP_FILE_NAME)
-            if not is_non_empty_json_file(check_setup_file):
-                check_setup_file = None
-        if not check_setup_file:
-            check_setup_dir = base_dir
-            check_setup_file = os.path.join(check_setup_dir, AppUtilsCore.CHECK_SETUP_FILE_NAME)
-            if not is_non_empty_json_file(check_setup_file):
-                check_setup_file = None
-        return check_setup_file
+        config_file = None
+        chalicelib_dir = None
+        if CHALICE_LOCAL:
+            if not chalicelib_dir:
+                chalicelib_dir = _get_chalicelib_dir()
+            config_dir = os.path.normpath(os.path.join(chalicelib_dir, "../chalicelib_local"))
+            config_file = os.path.join(config_dir, file_name)
+            if not is_non_empty_file(config_file):
+                config_file = None
+        if not config_file:
+            env_based_dir = os.environ.get("FOURSIGHT_CHECK_SETUP_DIR", "")
+            if env_based_dir:
+                config_file = os.path.join(env_based_dir, file_name)
+                if not is_non_empty_file(config_file):
+                    config_file = None
+        if not config_file:
+            if not chalicelib_dir:
+                chalicelib_dir = _get_chalicelib_dir()
+            config_file = os.path.join(chalicelib_dir, file_name)
+            if not is_non_empty_file(config_file):
+                config_file = None
+        if not config_file:
+            foursight_core_dir = os.path.dirname(__file__)
+            config_file = os.path.join(foursight_core_dir, file_name)
+            if not is_non_empty_file(config_file):
+                config_file = None
+        return config_file
 
     _singleton = None
+
     @staticmethod
-    def singleton(cls = None):
+    def singleton(specific_class=None):
         # A little wonky having a singleton with an argument but this is sort of the way it
         # was in 4dn-cloud-infra/app-{cgap,fourfront}.py; and we know the only place we create
         # this is from there and also from foursight-cgap/chalicelib/app.py and foursight/app.py
         # with the appropriate locally derived (from this AppUtilsCore) AppUtils.
         if not AppUtilsCore._singleton:
-            AppUtilsCore._singleton = cls() if cls else AppUtilsCore()
+            AppUtilsCore._singleton = specific_class() if specific_class else AppUtilsCore()
         return AppUtilsCore._singleton
 
     def cache_clear(self) -> None:
@@ -1953,12 +2002,9 @@ class AppUtils(AppUtilsCore):  # for compatibility with older imports
     """
     pass
 
+
 # These were previously in foursight/chalicelib_foursight/check_schedules.py
 # and foursight-cgap/chalicelib_cgap/check_schedules.py.
-
-from dcicutils.exceptions import InvalidParameterError
-from .deploy import Deploy
-
 def _compute_valid_deploy_stages():
     # TODO: Will wants to know why "test" is here. -kmp 17-Aug-2021
     return list(Deploy.CONFIG_BASE['stages'].keys()) + ['test']

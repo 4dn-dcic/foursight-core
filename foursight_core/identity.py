@@ -73,11 +73,11 @@ def find_check_runner_lambda_name(stack_name: str) -> Optional[str]:
     check_runner_lambda_names = find_lambda_names(stack_name, check_runner_lambda_name_pattern)
     if not check_runner_lambda_names:
         logger.warning(f"Foursight CheckRunner lambda (containing: {check_runner_lambda_name_pattern})"
-                    f" not found for stack: {stack_name}")
+                       f" not found for stack: {stack_name}")
         return None
     elif len(check_runner_lambda_names) != 1:
         logger.warning(f"Unique Foursight CheckRunner lambda (containing: {check_runner_lambda_name_pattern})"
-                    f" not found (matches: {len(check_runner_lambda_names)}) for stack: {stack_name}")
+                       f" not found (matches: {len(check_runner_lambda_names)}) for stack: {stack_name}")
         return None
     return check_runner_lambda_names[0]
 

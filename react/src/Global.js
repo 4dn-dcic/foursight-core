@@ -18,9 +18,7 @@ import { useEffect, useState } from 'react';
 // - YourGlobalUsage.js:
 //   import Global from './Global'; 
 //   import YourGlobal from './YourGlobal'; 
-//   ...
 //   const yourGlobal = Global.Use(YourGlobal);
-//   ...
 //   return <div>
 //     Your global value is: {yourGlobal.value}
 //     Click button update your global value:
@@ -37,9 +35,7 @@ import { useEffect, useState } from 'react';
 // - YourGlobalUsage.js:
 //   import { useGlobal } from './Global'; 
 //   import YourGlobal from './YourGlobal'; 
-//   ...
 //   const [ yourGlobal, setYourGlobal ] = useGlobal(YourGlobal);
-//   ...
 //   return <div>
 //     Your global value is: {yourGlobal}
 //     Click the button to update your global value:

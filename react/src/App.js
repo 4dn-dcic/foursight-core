@@ -3,9 +3,9 @@ import { Navigate, BrowserRouter as Router, Routes, Route } from 'react-router-d
 import HeaderData from './HeaderData';
 import Env from './utils/Env';
 import { useFetchFunction } from './utils/Fetch';
-import Image from './utils/Image';
 import Server from './utils/Server';
 
+import AccountsPage from './pages/AccountsPage';
 import AwsS3Page from './pages/aws/AwsS3Page';
 import ChecksPage from './pages/ChecksPage';
 import CheckHistoryPage from './pages/CheckHistoryPage';
@@ -26,17 +26,12 @@ import UserCreatePage from './pages/UserCreatePage';
 import UserEditPage from './pages/UserEditPage';
 import UsersPage from './pages/UsersPage';
 
-function setFavicon(header) {
-    const faviconElement = document.getElementById("favicon");
-    if (faviconElement) {
-        if (Env.IsFoursightFourfront(header)) {
-            faviconElement.href = Image.FoursightFourfrontFavicon();
-            Styles.SetFoursightFourfront();
-        }
-        else {
-            faviconElement.href = Image.FoursightCgapFavicon();
-            Styles.SetFoursightCgap();
-        }
+function setGlobalStyles(header) {
+    if (Env.IsFoursightFourfront(header)) {
+        Styles.SetFoursightFourfront();
+    }
+    else {
+        Styles.SetFoursightCgap();
     }
 }
 
@@ -51,7 +46,7 @@ const App = () => {
             onData: (data) => {
                 data.loading = false;
                 setHeader(data);
-                setFavicon(data);
+                setGlobalStyles(data);
             },
             onDone: (response) => {
                 if (response.error) {
@@ -59,21 +54,6 @@ const App = () => {
                 }
             }
         });
-/*
-        const url = Server.Url("/header");
-        Fetch.get(
-            url,
-            data => {
-                data.loading = false;
-                data.update = (value) => setHeader(value); // TODO: Experimental - See EnvPage (updating header on fly).
-                setHeader(data);
-                setFavicon(data);
-            },
-            loading => {},
-            error => {
-                setHeader(header => ({...header, ...{error:true}}));
-            })
-*/
     }, []);
 
     return <Router>
@@ -86,6 +66,11 @@ const App = () => {
                     } />
                     <Route path="/api/react" element={
                         <Navigate to={`/api/react/${Env.Default()}/env`} />
+                    } />
+                    <Route path="/api/react/:environ/accounts" element={
+                        <Page.AuthorizationRequired>
+                            <AccountsPage />
+                        </Page.AuthorizationRequired>
                     } />
                     <Route path="/api/react/:environ/env" element={
                         <EnvPage />

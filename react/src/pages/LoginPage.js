@@ -1,13 +1,14 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useContext, useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import HeaderData from '../HeaderData';
 import Auth0Lock from 'auth0-lock';
 import Auth from '../utils/Auth';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
+import { FetchErrorBox } from '../Components';
 import Cookie from '../utils/Cookie';
 import Env from '../utils/Env';
 import { useFetch } from '../utils/Fetch';
@@ -18,6 +19,7 @@ import Logout from '../utils/Logout';
 import Server from '../utils/Server';
 import Yaml from '../utils/Yaml';
 import Page from '../Page';
+import { LoggedInUser, Link } from '../Components';
 
 const LoginPage = (props) => {
 
@@ -82,100 +84,96 @@ const LoginPage = (props) => {
     }
 
     if ((header.loading || auth0Config.loading) && !header.error) return <>Loading ...</>
-    if (header.error) return <>Cannot load Foursight.</>
+    if (header.error) return <FetchErrorBox error={header.error} message="Cannot load Foursight" />
+
+    const InfoPanel = () => {
+        return <>
+            { Env.Current() && <>
+                Current environment: <Link to="/env" env={Env.PreferredName(Env.Current(), header)}>{Env.PreferredName(Env.Current(), header)}</Link> <br />
+            </>}
+            { header?.auth?.initial_env && <>
+                Initial environment: <Link to="/env" env={Env.PreferredName(header.auth.initial_env, header)} bold={false}>{Env.PreferredName(header.auth.initial_env, header)}</Link> <br />
+            </>}
+            { Env.KnownEnvs(header) && <>
+                Available environments:
+                {Env.KnownEnvs(header).map((env, index) => {
+                    return <span key={index}>
+                        {index > 0 && <>,</>}
+                        &nbsp;{Env.PreferredName(env, header)}
+                    </span>
+                })} <br />
+            </>}
+            { header?.auth?.domain && <>
+                Domain: {header.auth.domain} <br />
+            </>}
+            {(header?.app?.credentials?.aws_account_number) && <>
+                AWS Account Number: <b>{header?.app?.credentials?.aws_account_number}</b>
+                {(header?.app?.credentials?.aws_account_name) && <>
+                    &nbsp;(<span className="tool-tip" data-text={`AWS Account Alias: ${header?.app?.credentials?.aws_account_name}`}>{header?.app?.credentials?.aws_account_name}</span>)
+                </>}
+                <br />
+            </>}
+        </>
+    }
+
     return <>
         { Auth.IsLoggedIn(header) ? (<React.Fragment>
-            <div className="container" style={{width:"60%"}}>
-                {Auth.LoggedInUserName(header) && <b style={{marginLeft:"4pt",color:"darkblue"}}>Hello, {Auth.LoggedInUserName(header)} ...</b>}
-                <div style={{float:"right",marginRight:"8pt",color:"darkblue",fontSize:"small",cursor:"pointer"}}>
+            <div className="container" style={{width:"800pt"}}>
+                {Auth.LoggedInUserName(header) && <b>Hello, {Auth.LoggedInUserName(header)}</b>} ...
+                <div style={{float:"right",marginRight:"8pt",fontSize:"small",cursor:"pointer"}}>
+                    { (header.app?.accounts_file || header.app?.accounts_file_from_s3) && <>
+                        <Link to="/accounts">Accounts</Link>&nbsp;|&nbsp;
+                    </>}
+                    <Link to="/env">Environments</Link>&nbsp;|&nbsp;
                     { showingAuthToken ? <>
-                        <span onClick={() => setShowAuthToken(false)}>Auth {Char.DownArrow}</span>
+                        <span onClick={() => setShowAuthToken(false)}><b>Auth</b> {Char.DownArrow}</span>
                     </>:<>
-                        <span onClick={() => setShowAuthToken(true)}>Auth {Char.UpArrow}</span>
+                        <span onClick={() => setShowAuthToken(true)}><b>Auth</b> {Char.UpArrow}</span>
                     </>}
                 </div>
-                <div className="boxstyle info" style={{marginLeft:"0pt",padding:"10pt",color:"darkblue"}}>
+                <div className="box" style={{padding:"10pt"}}>
                     <table style={{color:"inherit"}}><tbody><tr>
-                        <td align="top" style={{verticalAlign:"top",whiteSpace:"nowrap",width:"40%"}}>
+                        <td align="top" style={{paddingRight:"14pt",verticalAlign:"top",whiteSpace:"nowrap",width:"40%"}}>
                             Logged in as:&nbsp;
-                            <Link to={Client.Path("/users/" + Auth.LoggedInUser(header))}><b style={{color:"darkblue"}}>{Auth.LoggedInUser(header)}</b></Link>
-                            { Auth.LoggedInViaGoogle(header) ? <>
-                                <span className="tool-tip" data-text="Google Authentication">
-                                    <img title="Via Google" style={{marginLeft:"9px",marginRight:"0",marginBottom:"2px"}} src={Image.GoogleLoginLogo()} height="15" />
-                                </span>
-                            </>:<>
-                                { Auth.LoggedInViaGitHub(header) && <>
-                                    <span className="tool-tip" data-text="GitHub Authentication">
-                                        <img title="Via GitHub" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
-                                    </span>
-                                </>}
-                            </>}
-                            <br />
+                            <LoggedInUser link="user" />
                             <div style={{fontSize:"small",marginTop:"6pt",paddingTop:"5pt",borderTop:"1px solid"}}>
                                 Session started: <LiveTime.FormatDuration start={Auth.Token().authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
                                 <br />
                                 Session expires: <LiveTime.FormatDuration end={Auth.Token().authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
                                 <br />
-                                Click <span style={{color:"darkblue",textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}}
-                                    onClick={()=> Logout()}>here</span> to <span style={{cursor:"pointer",color:"darkblue"}} onClick={()=> Logout()}>logout</span>.
+                                Click <span style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}}
+                                    onClick={()=> Logout()}>here</span> to <span style={{cursor:"pointer"}} onClick={()=> Logout()}>logout</span>.
                             </div>
                         </td>
-                        <td style={{minWidth:"8pt"}}>&nbsp;</td>
-                        <td style={{background:"darkblue",minWidth:"2px",maxWidth:"2px"}}></td>
-                        <td style={{minWidth:"8pt"}}>&nbsp;</td>
-                        <td style={{width:"60%",textAlign:"top",verticalAlign:"top"}}><small style={{marginTop:"20pt"}}>
-                            { Env.Current() && <>
-                                Current environment: <Link to={Client.Path("/env", Env.PreferredName(Env.Current(), header))} style={{color:"inherit"}}><b>{Env.PreferredName(Env.Current(), header)}</b></Link> <br />
-                            </>}
-                            { header?.auth?.initial_env && <>
-                                Initial environment: <Link to={Client.Path("/env", Env.PreferredName(header.auth.initial_env, header))} style={{color:"inherit"}}>{Env.PreferredName(header.auth.initial_env, header)}</Link> <br />
-                            </>}
-                            { Env.KnownEnvs(header) && <>
-                                Available environments:
-                                {Env.KnownEnvs(header).map((env, index) => {
-                                    return <span key={index}>
-                                        {index > 0 && <>,</>}
-                                        &nbsp;{Env.PreferredName(env, header)}
-                                    </span>
-                                })} <br />
-                            </>}
-                            { header?.auth?.domain && <>
-                                Domain: {header.auth.domain} <br />
-                            </>}
-                            {(header?.app?.credentials?.aws_account_number) && <>
-                                AWS Account: {header?.app?.credentials?.aws_account_number}
-                                {(header?.app?.credentials?.aws_account_name) && <>
-                                    &nbsp;({header?.app?.credentials?.aws_account_name})
-                                </>}
-                                <br />
-                            </>}
+                        <td style={{paddingLeft:"12pt",borderLeft:"2px solid",width:"60%",textAlign:"top",verticalAlign:"top"}}><small style={{marginTop:"20pt"}}>
+                            <InfoPanel />
                         </small></td>
                     </tr></tbody></table>
                 </div>
                 { !Env.IsAllowed(Env.Current(), header) && <>
-                    <div className="boxstyle check-warn" style={{marginTop:"2pt",padding:"9pt",color:"darkred"}}>
+                    <div className="box warning" style={{marginTop:"10pt",padding:"9pt",color:"darkred"}}>
                         Note that though you are logged in, you do not have permission to access the currently selected environment: <b style={{color:"red"}}>{Env.Current()}</b> <br />
-                        <small>Click <Link to={Client.Path("/env")} style={{color:"darkred"}}><b><u>here</u></b></Link> to go the the <Link to={Client.Path("/env")} style={{color:"darkred"}}><b>Environments Page</b></Link> to select another environment.</small>
+                        <small>Click <Link to="/env"><u>here</u></Link> to go the the <Link to="/env">Environments Page</Link> to select another environment.</small>
                     </div>
                 </>}
                 { showingAuthToken && <>
-                    <div className="boxstyle info" style={{paddingLeft:"8pt",color:"darkblue",fontSize:"small"}}>
-                        <span className="tool-tip" data-text={Cookie.AuthTokenRaw()?.length + " bytes"} onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>AuthToken</b> from Cookie</span>
-                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>
+                    <div className="box" style={{paddingLeft:"8pt",marginTop:"8pt",fontSize:"small"}}>
+                        <span className="tool-tip" data-text={Cookie.AuthTokenRaw()?.length + " bytes"} onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer"}}><b>AuthToken</b> from Cookie</span>
+                        <pre className="box" style={{filter:"brightness(1.1)",background:"inherit",fontWeight:"bold",marginTop:"6pt"}}>
                             <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{Json.Str(Auth.Token())}</span>
                             <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken")} style={{float:"right",height:"20px",cursor:"copy"}} />
                             {Yaml.Format(Auth.Token())}
                         </pre>
-                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"-3pt",whiteSpace:"break-spaces"}}>
+                        <pre className="box" style={{filter:"brightness(1.1)",background:"inherit",fontWeight:"bold",marginTop:"-3pt",whiteSpace:"break-spaces"}}>
                             <span style={{fontSize:"0",opacity:"0"}} id={"auth"}>{Cookie.AuthTokenRaw()}</span>
                             <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("auth")} style={{float:"right",height:"20px",cursor:"copy"}} />
                             {Cookie.AuthTokenRaw()}
                         </pre>
                     </div>
                     { (Json.Str(Auth.Token()) !== Json.Str(header?.auth)) &&
-                        <div className="boxstyle info" style={{paddingLeft:"8pt",color:"darkblue",fontSize:"small"}}>
-                            <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkblue"}}><b>Auth</b> from API</span>
-                            <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkblue",fontWeight:"bold",marginTop:"6pt"}}>{Yaml.Format(header?.auth)}</pre>
+                        <div className="box" style={{paddingLeft:"8pt",marginTop:"8pt",fontSize:"small"}}>
+                            <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer"}}><b>Auth</b> from API</span>
+                            <pre className="box" style={{filter:"brightness(1.1)",background:"inherit",fontWeight:"bold",marginTop:"6pt"}}>{Yaml.Format(header?.auth)}</pre>
                         </div>
                     }
                 </>}
@@ -189,7 +187,7 @@ const LoginPage = (props) => {
                     <span onClick={() => setShowAuthToken(true)}>Auth {Char.UpArrow}</span>
                 </>}
             </div>
-            <div className="boxstyle check-warn" style={{marginTop:"15pt",marginLeft:"90pt",marginRight:"90pt",padding:"10pt",color:"darkred"}}>
+            <div className="box warning" style={{marginTop:"15pt",marginLeft:"90pt",marginRight:"90pt",padding:"10pt",color:"darkred"}}>
                 Not logged in.
                 { Cookie.HasAuthToken() && Auth.SessionExpired() && <>
                     &nbsp;Login expired: <LiveTime.FormatDuration start={Auth.Token().authenticated_until} verbose={true} tooltip={true} /> ago.
@@ -199,32 +197,32 @@ const LoginPage = (props) => {
                 {(header?.app?.credentials?.aws_account_number) && <>
                     <br />
                     <small>
-                        AWS Account: {header?.app?.credentials?.aws_account_number}
+                        AWS Account Number: {header?.app?.credentials?.aws_account_number}
                         {(header?.app?.credentials?.aws_account_name) && <>
-                            &nbsp;({header?.app?.credentials?.aws_account_name})
+                            &nbsp;(<b className="tool-tip" data-text={`AWS Account Alias: ${header?.app?.credentials?.aws_account_name}`}>{header?.app?.credentials?.aws_account_name}</b>)
                         </>}
                     </small>
                 </>}
             </div>
             { showingAuthToken && <>
                 { Cookie.HasAuthToken() &&
-                    <div className="boxstyle check-warn" style={{marginLeft:"90pt",marginRight:"90pt",color:"darkred",fontSize:"small"}}>
+                    <div className="box warning" style={{marginLeft:"90pt",marginRight:"90pt",color:"darkred",fontSize:"small"}}>
                         <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkred"}}><b>AuthToken</b> from Cookie</span>
-                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkred",fontWeight:"bold",marginTop:"6pt"}}>
+                        <pre className="box" style={{filter:"brightness(1.1)",background:"inherit",color:"darkred",fontWeight:"bold",marginTop:"6pt"}}>
                             <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{Json.Str(header?.auth)}</span>
                             <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken")} style={{float:"right",height:"20px",cursor:"copy"}} />
                             {Yaml.Format(Cookie.AuthToken())}
                         </pre>
-                        <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkred",fontWeight:"bold",marginTop:"-3pt",whiteSpace:"break-spaces"}}>
+                        <pre className="box" style={{filter:"brightness(1.1)",background:"inherit",color:"darkred",fontWeight:"bold",marginTop:"-3pt",whiteSpace:"break-spaces"}}>
                             <span style={{fontSize:"0",opacity:"0"}} id={"authtoken-raw"}>{Cookie.AuthTokenRaw()}</span>
                             <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken-raw")} style={{float:"right",height:"20px",cursor:"copy"}} />
                             {Cookie.AuthTokenRaw()}
                         </pre>
                     </div>
                 }
-                <div className="boxstyle check-warn" style={{marginLeft:"90pt",marginRight:"90pt",color:"darkred",fontSize:"small"}}>
+                <div className="box warning" style={{marginLeft:"90pt",marginRight:"90pt",marginTop:"8pt",color:"darkred",fontSize:"small"}}>
                     <span onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer",color:"darkred"}}><b>Auth</b> from API</span>
-                    <pre style={{filter:"brightness(1.1)",background:"inherit",color:"darkred",fontWeight:"bold",marginTop:"6pt"}}>
+                    <pre className="box" style={{filter:"brightness(1.1)",background:"inherit",color:"darkred",fontWeight:"bold",marginTop:"6pt"}}>
                         <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{Json.Str(header?.auth)}</span>
                         <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken")} style={{float:"right",height:"20px",cursor:"copy"}} />
                         {Yaml.Format(header?.auth)}

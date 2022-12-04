@@ -1,6 +1,7 @@
 import os
 from random import randrange
 import time
+from typing import Optional
 import uuid
 from foursight_core.react.api.auth import Auth
 from foursight_core.react.api.envs import Envs
@@ -121,12 +122,11 @@ def _change_random_character_within_string_ntimes(value: str, n: int) -> str:
     return value
 
 
-def mock_foursight_env_name(env):
-    if env.startswith("env-a"):
-        return "env-a-foursight-name"
-    elif env.startswith("env-b"):
-        return "env-b-foursight-name"
-    elif env.startswith("env-c"):
-        return "env-c-foursight-name"
-    else:
-        return env
+def mock_foursight_env_name(env: str) -> Optional[str]:
+    known_env = [known_env for known_env in KNOWN_ENVS if env in known_env.values()]
+    return known_env[0].get("foursight_name") if len(known_env) == 1 else None
+
+
+def mock_short_env_name(env: str) -> Optional[str]:
+    known_env = [known_env for known_env in KNOWN_ENVS if env in known_env.values()]
+    return known_env[0].get("short_name") if len(known_env) == 1 else None

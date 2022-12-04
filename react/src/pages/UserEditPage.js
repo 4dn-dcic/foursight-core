@@ -1,22 +1,25 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Link } from '../Components';
 import { useFetch } from '../utils/Fetch';
 import Client from '../utils/Client';
 import EditBox from './EditBox';
 import Server from '../utils/Server';
 import Time from '../utils/Time';
 import UserDefs from './UserDefs';
+import { useReadOnlyMode } from '../ReadOnlyMode';
 
 const UserEditPage = () => {
     
     const { uuid } = useParams();
     const [ inputs, setInputs ] = useState(UserDefs.Inputs());
     const [ notFound, setNotFound ] = useState(false);
+    const [ readOnlyMode ] = useReadOnlyMode();
     const user = useFetch({
         url: Server.Url(`/users/${uuid}`),
         onData: updateUserData,
         onError: (response) => {
-            if (response.status == 404) {
+            if (response.status === 404) {
                 setNotFound(true);
             }
         }
@@ -74,8 +77,8 @@ const UserEditPage = () => {
     return <>
         <center>
             <div style={{display:"table-row"}}>
-                <b style={{paddingLeft:"0.2em",float:"left"}}>Edit User</b>
-                <Link to={Client.Path("/users/create")} style={{fontSize:"small",paddingRight:"0.2em",float:"right"}}>New User</Link>
+                <b style={{float:"left"}}>Edit User</b>
+                <div style={{float:"right",marginTop:"4pt",marginRight:"4pt",fontSize:"small"}}><Link to={"/users/create"} bold={false}>Create User</Link></div>
             </div>
             { notFound ? <>
                 <div className="box">
@@ -90,7 +93,8 @@ const UserEditPage = () => {
                     onDelete={onDelete}
                     onCancel={onCancel}
                     onRefresh={onRefresh}
-                    loading={user.loading} />
+                    loading={user.loading}
+                    readonly={readOnlyMode} />
             </>}
         </center>
     </>

@@ -36,7 +36,7 @@ const UserCreatePage = () => {
     return <>
         <center>
             <div style={{display:"table-row"}}>
-                <b style={{paddingLeft:"0.2em",float:"left"}}>Create User</b>
+                <b style={{float:"left"}}>Create User</b>
             </div>
             <EditBox
                 title={"Edit User"}

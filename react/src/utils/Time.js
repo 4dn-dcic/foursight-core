@@ -9,22 +9,29 @@
 
 import Str from './Str';
 
+function now() {
+    return new Date();
+}
+
 // Returns a formatted date/time string based on the given date/time value (local timezone).
 //
-function FormatDateTime(value, verbose = false) {
+function FormatDateTime(value, verbose = false, timezone = true) {
     if (!(value = ToDateTime(value))) return "";
     if (verbose) {
-        return value.toLocaleDateString('en-us', { weekday:"long",
-                                                   year:"numeric",
-                                                   month:"long",
-                                                   day:"numeric",
-                                                   hour12: true,
-                                                   hour: "numeric",
-                                                   minute: "2-digit",
-                                                   second: "numeric",
-                                                   timeZoneName: "short"}).replace(" at ", " | ");
+        let format = { weekday:"long",
+                       year:"numeric",
+                       month:"long",
+                       day:"numeric",
+                       hour12: true,
+                       hour: "numeric",
+                       minute: "2-digit",
+                       second: "numeric" };
+        if (timezone) {
+            format = { ...format, timeZoneName: "short" };
+        }
+        return value.toLocaleDateString('en-us', format).replace(" at ", " | ");
     }
-    const tz = new Date().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
+    const tz = now().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
     return value.getFullYear() + "-" +
            ("0" + (value.getMonth() + 1)).slice(-2) + "-" +
            ("0" + value.getDate()).slice(-2) + " " +
@@ -35,7 +42,7 @@ function FormatDateTime(value, verbose = false) {
 
 // Returns the duration between the given to date/time values.
 //
-function FormatDuration(startDate, endDate = new Date(), verbose = false, fallback = "", prefix = "", suffix = "") {
+function FormatDuration(startDate, endDate = now(), verbose = false, fallback = "", prefix = "", suffix = "") {
     if (!((startDate = ToDateTime(startDate)) instanceof Date)) return "";
     if (!((endDate   = ToDateTime(endDate))   instanceof Date)) return "";
     const msPerDay    = 86400000;
@@ -72,6 +79,10 @@ function FormatDuration(startDate, endDate = new Date(), verbose = false, fallba
            + (minutes.toString().padStart(2, "0") + ":")
            + (seconds.toString().padStart(2, "0"))
            + (suffix ? " " + suffix : "");
+}
+
+function Ago(date, verbose = true) {
+    return FormatDuration(date, now(), verbose, null, null, "ago");
 }
 
 // Converts the give value to a JavaScript Date object.
@@ -113,7 +124,6 @@ function FormatDate(value, verbose = false) {
                                                    month:"long",
                                                    day:"numeric" });
     }
-    const tz = new Date().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
     return value.getFullYear() + "-" +
            ("0" + (value.getMonth() + 1)).slice(-2) + "-" +
            ("0" + value.getDate()).slice(-2);
@@ -132,7 +142,7 @@ function FormatTime(value, verbose = false) {
                                                    second: "numeric",
                                                    timeZoneName: "short"}).replace(" at ", " | ");
     }
-    const tz = new Date().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
+    const tz = now().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
     return ("0" + value.getHours()).slice(-2) + ":" +
            ("0" + value.getMinutes()).slice(-2) + ":" +
            ("0" + value.getSeconds()).slice(-2) + " " + tz;
@@ -143,10 +153,11 @@ function FormatTime(value, verbose = false) {
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
+    Ago:            Ago,
     FormatDuration: FormatDuration,
     FormatDateTime: FormatDateTime,
     FormatDate:     FormatDate,
     FormatTime:     FormatTime,
     ToDateTime:     ToDateTime,
-    Now:            () => new Date()
+    Now:            () => now()
 }; export default exports;

@@ -63,14 +63,14 @@ class Auth:
             # If given an env, then check that the specified environment is allowed, i.e. that
             # the request is AUTHORIZED. If not, return HTTP 403 (not authorized); we do NOT,
             # in this case, return 401 (not authenticated), as (above) if not authenticated;
-            # the UI acts differently for these two cases. These HTTP status are actually
-            # set in via the decorator in react_route_decorator.
+            # the UI acts differently for these two cases. These HTTP statuses are actually
+            # set via the @route decorator in react_route_decorator.
 
             if env:
                 allowed_envs = authtoken_decoded["allowed_envs"]
                 if not self._envs.is_allowed_env(env, allowed_envs):
                     status = "not-authorized-env" if self._envs.is_known_env(env) else "not-authorized-unknown-env"
-                    return self._create_unauthorized_response(request, status, authtoken_decoded, but_is_authenticated=True)
+                    return self._create_unauthorized_response(request, status, authtoken_decoded, is_authenticated=True)
 
             return {**authtoken_decoded, "authorized": True}
 
@@ -142,10 +142,10 @@ class Auth:
         return jwt_decode(authtoken, self._auth0_client, self._auth0_secret)
 
     def _create_unauthorized_response(self, request: dict, status: str,
-                                      authtoken_decoded: dict, but_is_authenticated: bool) -> dict:
+                                      authtoken_decoded: dict, is_authenticated: bool) -> dict:
         """
         Creates a response suitable for a request which is NOT authorized, or NOT authenticated,
-        depending on the but_is_authenticated argument. Note that we still want to return some
+        depending on the is_authenticated argument. Note that we still want to return some
         basic info, i.e. the default environment, domain, and aud (Auth0 client ID) is required
         for the Auth0 login box (Auth0Lock) on the client-side (i.e. React UI). This info is
         gotten from the given decoded authtoken or if not set then sets this info explicitly.
@@ -161,7 +161,7 @@ class Auth:
                 "domain": get_request_domain(request),
                 JWT_AUDIENCE_PROPERTY_NAME: self._auth0_client  # Needed for Auth0Lock login box on client-side.
             }
-        response["authenticated"] = but_is_authenticated
+        response["authenticated"] = is_authenticated
         response["authorized"] = False
         response["status"] = status
         return response
@@ -170,7 +170,7 @@ class Auth:
         """
         Creates a response suitable for a request which is NOT authenticated.
         """
-        return self._create_unauthorized_response(request, status, authtoken_decoded, but_is_authenticated=False)
+        return self._create_unauthorized_response(request, status, authtoken_decoded, is_authenticated=False)
 
     def get_aws_credentials(self, env: str) -> dict:
         """

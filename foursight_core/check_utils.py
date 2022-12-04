@@ -46,8 +46,8 @@ class CheckHandler(object):
         logger.debug(self.CHECK_SETUP)
         # Validate and finalize CHECK_SETUP
         logger.debug(f"foursight_core/CheckHandler: Validating check_setup.json file: {check_setup_file}")
-        self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
         self.CHECK_SETUP = self.expand_check_setup(self.CHECK_SETUP, env)
+        self.CHECK_SETUP = self.validate_check_setup(self.CHECK_SETUP)
         logger.debug(f"foursight_core/CheckHandler: Done validating check_setup.json file: {check_setup_file}")
 
     def get_module_names(self):

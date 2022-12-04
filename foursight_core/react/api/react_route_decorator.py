@@ -8,7 +8,7 @@ import logging
 from typing import Optional, Tuple
 from dcicutils.misc_utils import get_error_message, PRINT
 from ...app import app
-from ...route_prefixes import ROUTE_CHALICE_LOCAL, ROUTE_PREFIX, ROUTE_EMPTY_PREFIX, ROUTE_PREFIX_EXPLICIT
+from ...route_prefixes import CHALICE_LOCAL, ROUTE_PREFIX, ROUTE_EMPTY_PREFIX, ROUTE_PREFIX_EXPLICIT
 
 REACT_API_PATH_COMPONENT = "reactapi"
 REACT_UI_PATH_COMPONENT = "react"
@@ -19,7 +19,7 @@ ROUTE_PREFIX = ROUTE_PREFIX + ("/" if not ROUTE_PREFIX.endswith("/") else "")
 # directly, on the same port (e.g. 8000), but useful if/when running React on a
 # separate port (e.g. 3000) via npm start in foursight-core/react to facilitate
 # easy/quick development/changes directly to React UI code.
-if ROUTE_CHALICE_LOCAL:
+if CHALICE_LOCAL:
     # Very specific/tricky requirements for running Foursight React UI/API in CORS
     # mode (i.e. UI on localhost:3000 and API on localhost:8000). The allow_origin
     # must be exact (i.e. no "*" allowed), and the allow_credentials must be True.
@@ -62,15 +62,15 @@ def route(*args, **kwargs):
     # chalice local case where /api is NOT the AWS lambda enforced base route in which case
     # we support it explicitly for closer compatibility with the normally deployed case.
     if "root" in kwargs:
-        if kwargs["root"] == True:
+        if kwargs["root"] is True:
             # Registration for root routes, i.e. / (and /api for chalice local).
             def root_route_registration(wrapped_route_function):
                 if not callable(wrapped_route_function):
                     wrapped_route_function = route_root
-                PRINT(f"Registering endpoint: GET {ROUTE_EMPTY_PREFIX} -> {wrapped_route_function.__name__}")
+                PRINT(f"Registering Chalice endpoint: GET {ROUTE_EMPTY_PREFIX} -> {wrapped_route_function.__name__}")
                 if ROUTE_EMPTY_PREFIX != "/":
                     # This is true only for the chalice local case.
-                    PRINT(f"Registering endpoint: GET / -> {wrapped_route_function.__name__}")
+                    PRINT(f"Registering Chalice endpoint: GET / -> {wrapped_route_function.__name__}")
                     app.route("/", methods=["GET"])(wrapped_route_function)
                 return app.route(ROUTE_EMPTY_PREFIX, methods=["GET"])(wrapped_route_function)
             return root_route_registration
@@ -83,7 +83,7 @@ def route(*args, **kwargs):
 
     # This "static" is for serving static files which live in their own specific directory.
     if "static" in kwargs:
-        if kwargs["static"] == True:
+        if kwargs["static"] is True:
             path = ROUTE_PREFIX + REACT_UI_PATH_COMPONENT + path
         del kwargs["static"]
     else:
@@ -98,7 +98,7 @@ def route(*args, **kwargs):
     # Note we DEFAULT to AUTHORIZE for the route! The only way to turn it off is to
     # explicitly pass authorize=False to the route decorator.
     if "authorize" in kwargs:
-        authorize = kwargs["authorize"] == True
+        authorize = kwargs["authorize"] is True
         del kwargs["authorize"]
     else:
         authorize = True
@@ -134,12 +134,12 @@ def route(*args, **kwargs):
                 return wrapped_route_function(*args, **kwargs)
             except Exception as e:
                 # Common endpoint exception handling here.
-                logger.error(f"Exception in route: {get_error_message(e)}")
+                logger.error(f"Exception in route ({wrapped_route_function.__name__}): {get_error_message(e)}")
                 return app.core.create_error_response(e)
         if _CORS:
             # Only used for (cross-origin) localhost development (e.g. UI on 3000 and API on 8000).
             kwargs["cors"] = _CORS
-        PRINT(f"Registering endpoint: {' '.join(kwargs['methods'])} {path} -> {wrapped_route_function.__name__}")
+        PRINT(f"Registering Chalice endpoint: {' '.join(kwargs['methods'])} {path} -> {wrapped_route_function.__name__}")
         # This is the call that actually registers the Chalice route/endpoint.
         return app.route(path, **kwargs)(route_function)
     return route_registration

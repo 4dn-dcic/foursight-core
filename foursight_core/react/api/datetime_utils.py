@@ -1,6 +1,6 @@
 import datetime
 import pytz
-from typing import Union
+from typing import Optional, Union
 
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)  # I.e.: 1970-01-01 00:00:00 UTC
@@ -28,10 +28,10 @@ def convert_utc_datetime_to_useastern_datetime_string(t: Union[datetime.datetime
         t = t.replace(tzinfo=pytz.UTC).astimezone(pytz.timezone("US/Eastern"))
         return t.strftime("%Y-%m-%d %H:%M:%S %Z")
     except Exception:
-        return "datetime-utc-parse-error"
+        return None
 
 
-def convert_time_t_to_useastern_datetime_string(time_t: int) -> str:
+def convert_time_t_to_useastern_datetime_string(time_t: int) -> Optional[str]:
     """
     Converts the given "epoch" time (seconds since 1970-01-01T00:00:00Z)
     integer value to a US/Eastern datetime string and returns its value
@@ -46,7 +46,8 @@ def convert_time_t_to_useastern_datetime_string(time_t: int) -> str:
         t = datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
         return convert_utc_datetime_to_useastern_datetime_string(t)
     except Exception:
-        return "datetime-parse-error"
+        return None
+
 
 def convert_time_t_to_datetime(time_t: int) -> datetime.datetime:
     """
@@ -55,6 +56,7 @@ def convert_time_t_to_datetime(time_t: int) -> datetime.datetime:
     """
     return datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
 
+
 def convert_datetime_to_time_t(value: datetime.datetime) -> int:
     """
     Converts the given datatime value to an "epoch"
@@ -62,9 +64,57 @@ def convert_datetime_to_time_t(value: datetime.datetime) -> int:
     """
     return int(value.timestamp())
 
+
 def convert_utc_datetime_to_cookie_expires_format(t) -> str:
     """
     Converts the given UTC datetime object or string format suitable
     for use by a cookie expires date/time value.
     """
     return t.strftime("%a, %d %b %Y %H:%M:%S GMT")
+
+
+def convert_uptime_to_datetime(uptime: str, relative_to: datetime = None) -> Optional[datetime.datetime]:
+    """
+    Converts the given duration string which (happens to be) from the Portal health endpoint
+    into its equivalent datetime. Format of the given upatime looks something like this:
+
+      1 week, 2 days, 3 hours, 4 minutes, 5.67 seconds
+
+    If the given uptime is not parsable then returns None, otherwise returns the datetime corresponding
+    to this uptime, relative to now, by default, or to the relative_to datetime argument if given.
+    We THINK it's right to interpret the given uptime relative to UTC (TODO).
+    """
+    def normalize_spaces(s: str) -> str:
+        return " ".join(s.split())
+
+    if not uptime:
+        return None
+    try:
+        minutes_per_hour = 60
+        minutes_per_day = minutes_per_hour * 24
+        minutes_per_week = minutes_per_day * 7
+        minutes = 0
+        seconds = 0
+        uptime = normalize_spaces(uptime)
+        for item in uptime.split(","):
+            item = item.strip()
+            if item:
+                item = item.split(" ")
+                if len(item) == 2:
+                    unit = item[1].lower()
+                    value = float(item[0])
+                    if unit.startswith("week"):
+                        minutes += minutes_per_week * value
+                    elif unit.startswith("day"):
+                        minutes += minutes_per_day * value
+                    elif unit.startswith("hour"):
+                        minutes += minutes_per_hour * value
+                    elif unit.startswith("minute"):
+                        minutes += value
+                    elif unit.startswith("second"):
+                        seconds += value
+        t = relative_to if relative_to else datetime.datetime.now(datetime.timezone.utc)
+        return t + datetime.timedelta(minutes=-minutes, seconds=-seconds)
+    except Exception:
+        pass
+    return None
