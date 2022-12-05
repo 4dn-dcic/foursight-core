@@ -1,5 +1,5 @@
 import React from 'react';
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import { RingSpinner, PuffSpinnerInline, StandardSpinner } from '../Spinners';
@@ -10,7 +10,6 @@ import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
-import HeaderData from '../HeaderData';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
 import Server from '../utils/Server';
@@ -361,7 +360,7 @@ import Styles from '../Styles';
         }
 
         return <div>
-            <div className="box check-box" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"450pt"}}>
+            <div className="box check-box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
             <table style={{width:"100%"}}>
                 <tbody>
                     <tr style={{height:"3pt"}}><td></td></tr>
@@ -371,7 +370,9 @@ import Styles from '../Styles';
                         </td>
                         <td style={{veriticalAlign:"top",maxWidth:"600pt",width:"100%",whiteSpace:"nowrap"}}>
                             { (!check.__configuringCheckRun) ? <>
-                                <RunButton check={check} env={env} groupList={groupList} historyList={historyList} style={{marginLeft:"410pt",marginTop:"-1pt",float:"right"}} />
+                                <div style={{marginLeft:"10pt",float:"right"}}>
+                                    <RunButton check={check} env={env} groupList={groupList} historyList={historyList} style={{marginTop:"-1pt"}} />
+                                </div>
                             </>:<>
                                 { (check.__queueingCheckRun) ? <>
                                     <div className={"check-config-wait-button"} style={{float:"right"}}>
@@ -410,7 +411,9 @@ import Styles from '../Styles';
                                     <span className="tool-tip" data-text="This check has an associated (disallowed) action.">&nbsp;{Char.Diamond}</span>
                                 </>}
                             </u>}
-                            &nbsp;&nbsp;<Link className="tool-tip" data-text="Click to view check details and history." to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank"><b>{Char.Trigram}</b></Link>
+                            &nbsp;&nbsp;<Link className="tool-tip" data-text="Click to view check details and history." to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">
+                                <div className="fa fa-external-link" style={{fontWeight:"bold",position:"relative",bottom:"-2px"}}></div>
+                            </Link>
                             { check.registered_github_url && <>
                                 <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"6pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                             </>}
@@ -455,7 +458,7 @@ import Styles from '../Styles';
     const ToggleHistoryButton = ({ check, env, historyList, style }) => {
         return <span style={{...style, cursor:"pointer"}} onClick={() => onClickShowHistory(check, env, historyList)}>
             <span data-text={"Click to " + (check.__showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
-                <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"1px",marginRight:"2pt",height:"18"}} />
+                <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"2px",marginRight:"2pt",height:"18"}} />
             </span>
             { check.__showingHistory ? <span>{Char.RightArrow}</span> : <></> }
         </span>
@@ -465,26 +468,6 @@ import Styles from '../Styles';
 
         const [showResultByUuid, setShowResultByUuid ] = useState(false);
         const [showResultByAction, setShowResultByAction ] = useState(false);
-
-/*
-        check.__result = useFetch();
-        check.__resultByUuid = useFetch();
-        check.__resultByAction = useFetch();
-
-        useEffect(() => {
-            fetchResult(check, env, groupList);
-        }, []);
-
-        function fetchResult(check, env, groupList) {
-            check.__result.fetch({
-                url: Server.Url(`/checks/${check.name}`),
-                onData: (data) => {
-                    fetchResultByUuid(check, data?.uuid, groupList);
-                    fetchResultByAction(check, data?.action, groupList);
-                }
-            });
-        }
-*/
 
         function onClickResultBySummary(check) {
             setShowResultByUuid(false);
@@ -598,7 +581,7 @@ import Styles from '../Styles';
                             {check.__result.get("summary")}&nbsp;&nbsp;
                             {check.__result.get("status")?.toUpperCase() === "PASS" ? (<b style={{fontSize:"12pt",color:"inherit"}}>{Char.Check}</b>) : (<b style={{fontSize:"13pt",color:"darkred"}}>{Char.X}</b>)}
                         </span>
-                        { (check.__result.get("description") && check.__result.get("description") != check.__result.get("summary")) && <>
+                        { (check.__result.get("description") && check.__result.get("description") !== check.__result.get("summary")) && <>
                             <span style={{whiteSpace:"break-spaces"}}>
                                 <br />Description: {check.__result.get("description")}
                             </span>
@@ -797,11 +780,11 @@ import Styles from '../Styles';
         }
         return check.__configuringCheckRun && <>
             { (getDependenciesFromCheck(check).length > 0) && showDependenciesBox && <>
-                <div className="box thickborder bigmargin" style={{background:"#EEEEEE",paddingTop:"4pt",paddingBottom:"4pt"}}>
+                <div className="box bigmargin" style={{background:"#EFEFEF",paddingTop:"4pt",paddingBottom:"4pt"}}>
                     <small><b className="pointer" style={{float:"right"}} onClick={() => setShowDependenciesBox(false)}>{Char.X}</b></small>
                     { getDependenciesFromCheck(check).map((dependency, index) => <>
-                       <table><tbody><tr><td valign="top"><b>&#x27A6;</b>&nbsp;</td><td>
-                        <small style={{whiteSpace:"break-spaces"}}><i>FYI this check has dependencies:</i>&nbsp;
+                       <table style={{color:Styles.GetForegroundColor()}}><tbody><tr><td valign="top"><b>&#x27A6;</b>&nbsp;</td><td>
+                        <small style={{whiteSpace:"break-spaces"}}><i>Just FYI this check has dependencies:</i>&nbsp;
                             {index > 0 && <span>, </span>}
                             <Link to={Client.Path(`/checks/${dependency}/history`)} target="_blank">{dependency}</Link>
                         </small>
@@ -1595,15 +1578,12 @@ const ChecksPage = (props) => {
 // This is outside because finally starting to factor out into independent components.
 const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedState }) => {
 
-    const [ header ] = useContext(HeaderData);
     const [ runActionConfirm, setRunActionConfirm ] = useState(false);
-    const [ runAction, setRunAction ] = useState(false);
     const [ readOnlyMode ] = useReadOnlyMode();
     const fetch = useFetchFunction();
 
     useEffect(() => {
         setRunActionConfirm(false);
-        setRunAction(false);
     }, []);
 
     function onClickRunAction() {
@@ -1612,7 +1592,6 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
             // TODO
             //
             setRunActionConfirm(false);
-            setRunAction(true);
             const action = check.__result?.get("action")
             if (action) {
                 doRunAction(check, action, env, groupList, fetch);
@@ -1624,33 +1603,11 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
         }
         else {
             setRunActionConfirm(true);
-            setRunAction(false);
         }
     }
 
     function onClickRunActionCancel() {
         setRunActionConfirm(false);
-        setRunAction(false);
-    }
-
-    function onClickRunActionResultClose() {
-        setRunActionConfirm(false);
-        setRunAction(false);
-    }
-
-    function getAllowAction(check, resultByUuid) {
-        if (!Type.IsObject(resultByUuid?.data) || !Type.IsObject(check) || !Str.HasValue(check.title)) {
-            return false;
-        }
-        resultByUuid = resultByUuid.get("checks");
-        if (!Type.IsObject(resultByUuid)) {
-            return false;
-        }
-        resultByUuid = resultByUuid[check.title];
-        if (!Type.IsObject(resultByUuid)) {
-            return false;
-        }
-        return resultByUuid.allow_action === true;
     }
 
     return <>
@@ -1687,13 +1644,6 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
                     <b style={{color:"red"}}>{Char.RightArrow}&nbsp;<i>Are you sure you want to run this action?</i></b>
                     <span className="check-action-confirm-button" style={{float:"right",marginTop:"-3pt"}} onClick={onClickRunActionCancel}>&nbsp;<b>Cancel</b></span>
                 </>}
-                {/*
-                { runAction && <>
-                    <div style={{borderTop:"1px solid",marginTop:"8pt",marginBottom:"8pt"}} />
-                    <b style={{float:"right",cursor:"pointer"}} onClick={onClickRunActionResultClose}>{Char.X}&nbsp;</b>
-                    <i><b>Running actions are not yet supported ... Use <a href={Env.LegacyFoursightLink(header)}>legacy</a> site.</b></i>
-                </>}
-                */}
             </div>
         </>}
     </>

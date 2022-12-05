@@ -1,12 +1,9 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { useContext, useEffect, useState, useMemo } from 'react';
+import { useContext } from 'react';
 import Env from '../utils/Env';
 import HeaderData from '../HeaderData';
 import Logout from '../utils/Logout';
 import { HorizontalLine, Link, LoggedInUser } from '../Components';
-import { useFetch, useFetchFunction } from '../utils/Fetch';
-import Server from '../utils/Server';
 
 const HomePage = (props) => {
 

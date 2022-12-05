@@ -41,7 +41,6 @@ const CheckHistoryPage = (props) => {
 
     const history = useFetch();
     const checkInfo = useFetch();
-    const actionInfo = useFetch();
 
     useEffect(() => {
         updateData(limit, offset, sort);
@@ -258,31 +257,6 @@ const CheckHistoryPage = (props) => {
         </div>
     }
 
-    function getCronFromCheck(check) {
-        return Type.IsNonEmptyObject(check?.schedule) ? check.schedule[Object.keys(check.schedule)[0]]?.cron : "";
-    }
-
-    function getCronDescriptionFromCheck(check) {
-        return Type.IsNonEmptyObject(check?.schedule) ? check.schedule[Object.keys(check.schedule)[0]]?.cron_description : "";
-    }
-
-    function getDependenciesFromCheck(checkInfo) {
-        const schedule = checkInfo.get("schedule");
-        if (schedule) {
-            const scheduleValues = Object.values(schedule);
-            if (scheduleValues && scheduleValues.length > 0) {
-                const scheduleFirstElement = scheduleValues[0];
-                if (scheduleFirstElement) {
-                    const scheduleFirstElementEnv = scheduleFirstElement[Env.PreferredName(Env.Current())];
-                    if (scheduleFirstElementEnv && scheduleFirstElementEnv?.dependencies?.length > 0) {
-                        return scheduleFirstElementEnv.dependencies;
-                    }
-                }
-            }
-        }
-        return [];
-    }
-
     if (history.error) return <FetchErrorBox error={history.error} message="Error loading check history from Foursight API" />
     return <>
         <table style={{maxWidth:"1000pt"}}><tbody>
@@ -409,7 +383,7 @@ const ActionDetailBox = ({check, checkInfo}) => {
                         <b>GitHub</b>:
                     </td>
                     <td>
-                        <a href={checkInfo.get("github_url")} target="_blank">
+                        <a href={checkInfo.get("github_url")} rel="noreferrer" target="_blank">
                             {checkInfo.get("github_url")}
                         </a>
                     </td>
@@ -549,7 +523,7 @@ const CheckDetailBox = ({check, checkInfo}) => {
                         <b>GitHub</b>:
                     </td>
                     <td>
-                        <a href={checkInfo.get("registered_github_url")} target="_blank">
+                        <a href={checkInfo.get("registered_github_url")}  rel="noreferrer" target="_blank">
                             {checkInfo.get("registered_github_url")}
                         </a>
                     </td>
@@ -617,7 +591,7 @@ const CheckDetailBox = ({check, checkInfo}) => {
                     <tr>
                         <td style={{paddingRight:"8pt"}}><b>GitHub</b>:</td>
                         <td>
-                            <a href={checkInfo.get("registered_action.github_url")} target="_blank">
+                            <a href={checkInfo.get("registered_action.github_url")} rel="noreferrer" target="_blank">
                                 {checkInfo.get("registered_action.github_url")}
                             </a>
                         </td>
