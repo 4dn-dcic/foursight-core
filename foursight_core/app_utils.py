@@ -34,7 +34,7 @@ from dcicutils.env_utils import (
 from dcicutils import ff_utils
 from dcicutils.exceptions import InvalidParameterError
 from dcicutils.lang_utils import disjoined_list
-from dcicutils.misc_utils import get_error_message, ignored, PRINT
+from dcicutils.misc_utils import get_error_message, ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from .app import app
@@ -175,7 +175,7 @@ class AppUtilsCore(ReactApi, Routes):
         Returns an FSConnection object or raises an error.
         """
         environments = self.init_environments(environ) if _environments is None else _environments
-        PRINT("environments = %s" % str(environments))
+        logger.warning("environments = %s" % str(environments))
         # if still not there, return an error
         if environ not in environments:
             error_res = {
@@ -400,8 +400,7 @@ class AppUtilsCore(ReactApi, Routes):
             if redir_url_cookie:
                 redir_url = redir_url_cookie
         except Exception as e:
-            PRINT("Exception loading cookies: {cookies}")
-            PRINT(e)
+            logger.error("Exception loading cookies: {cookies} - {get_error_message(e)}")
 
         resp_headers = {'Location': redir_url}
         params = req_dict.get('query_params')
@@ -1645,20 +1644,20 @@ class AppUtilsCore(ReactApi, Routes):
             logger.warning(f"queue_scheduled_checks: have schedule_name")
             logger.warning(f"queue_scheduled_checks: environment.is_valid_environment_name(sched_environ, or_all=True)={self.environment.is_valid_environment_name(sched_environ, or_all=True)}")
             if not self.environment.is_valid_environment_name(sched_environ, or_all=True):
-                PRINT(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
+                logger.warning(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
                 return
             sched_environs = self.environment.get_selected_environment_names(sched_environ)
             logger.warning(f"queue_scheduled_checks: sched_environs={sched_environs}")
             check_schedule = self.check_handler.get_check_schedule(schedule_name, conditions)
             logger.warning(f"queue_scheduled_checks: sched_environs={check_schedule}")
             if not check_schedule:
-                PRINT(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
+                logger.warning(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
                 return
             if not sched_environs:
-                print(f'-RUN-> No scheduled environs detected! {sched_environs}, {check_schedule}')
+                logger.warning(f'-RUN-> No scheduled environs detected! {sched_environs}, {check_schedule}')
                 return
             for environ in sched_environs:
-                print(f'-RUN-> Sending messages for {environ}')
+                logger.warning(f'-RUN-> Sending messages for {environ}')
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
                 check_vals.extend(self.get_env_schedule(check_schedule, environ))
@@ -1807,6 +1806,38 @@ class AppUtilsCore(ReactApi, Routes):
             WaitTimeSeconds=10
         )
         message = response.get('Messages', [{}])[0]
+
+        # TODO/2022-12-01/dmichaels: Issue with check not running because not detecting that
+        # dependency # has already run; for example with expset_opf_unique_files_in_experiments
+        # depending on expset_opfsets_unique_titles; seems not checking the result in S3 of the
+        # depdendency correctly. This is what seems to be returned here if the check has a dependency, e.g.:
+        #
+        #   [ "data",
+        #     "2022-12-02T12:00:17.345942",
+        #     "audit_checks/expset_opf_unique_files_in_experiments",
+        #     {"primary": true},
+        #     ["expset_opfsets_unique_titles"]
+        #   ]
+        #
+        # Where the first item (data) is the environment; the second item (2022-12-02T12:00:17.345942)
+        # is the UUID for the DEPENDENCY (expset_opfsets_unique_titles), which is the fifth item;
+        # the third item (audit_checks/expset_opf_unique_files_in_experiments) is the main check;
+        # the fourth item is the kwargs for the main check; and the fifth item (as mentioned)
+        # is the dependency/ies upon which the main check is dependent. Not YET clear if/why/how
+        # the UUID is for the dependency (how did this make it into the SQS message) and/or what
+        # this might look like if multiple dependencies.
+        #
+        # If the check does NOT have a dependency, we see, for example:
+        #
+        #   [ "data",
+        #     "2022-12-02T12:35:34.786686",
+        #     "system_checks/elastic_search_space",
+        #     {"primary": true},
+        #     [] ]
+        #
+        # In this case the second item (2022-12-02T12:35:34.786686) is the UUID for the main check,
+        # which is the third item (system_checks/elastic_search_space).
+
         body = message.get('Body')
         receipt = message.get('ReceiptHandle')
         if not body or not receipt:
@@ -1821,11 +1852,50 @@ class AppUtilsCore(ReactApi, Routes):
         # find information from s3 about completed checks in this run
         # actual id stored in s3 has key: <run_uuid>/<run_name>
         if run_deps and isinstance(run_deps, list):
-            already_run = self.collect_run_info(run_uuid, run_env)
-            deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
-            finished_dependencies = set(deps_w_uuid).issubset(already_run)
+            logger.warning(f'-RUN-> Dependency ({run_deps}) checking for: {run_name}')
+
+            # 2022-12-05/dmichaels: New code for looking up dependency results.
+            deps_w_uuid = ['/'.join([dep, run_uuid]) for dep in run_deps]
+            ndeps_already_run = 0
+            for dep_w_uuid in deps_w_uuid:
+                logger.warning(f'-RUN-> Dependency ({dep_w_uuid}) check for: {run_name}')
+                already_run = self.collect_run_info(dep_w_uuid, run_env, no_trailing_slash=True)
+                if already_run:
+                    logger.warning(f'-RUN-> Dependency ({dep_w_uuid}) already ran for: {run_name}')
+                    ndeps_already_run += 1
+                else:
+                    logger.warning(f'-RUN-> Dependency ({dep_w_uuid}) has not already run for: {run_name}')
+            finished_dependencies = (ndeps_already_run == len(deps_w_uuid))
+            if finished_dependencies:
+                logger.warning(f'-RUN-> Dependency ({run_deps}) check passed for: {run_name}')
+            else:
+                logger.warning(f'-RUN-> Dependency ({run_deps}) check did NOT pass for: {run_name}')
+
+            # 2022-12-05/dmichaels
+            #
+            # Replaced this code with above block. Leaving this code
+            # commented out here for a bit until we are sure this is solid.
+            #
+            # 2022-12-02/dmichaels: This seems wrong; if we search for an S3 key
+            # using just the UUID as the prefix it won't find the check run result there
+            # because it's in a sub-key, e.g. item_counts_by_type/2022-12-02T14:05:32.979264
+            # rather than just 2022-12-02T14:05:32.979264, using the we want to check if
+            # the dependencies have run.
+            #
+            # already_run = self.collect_run_info(run_uuid, run_env)
+            #
+            # 2022-12-02/dmichaels: This seems backwards; should be:
+            # deps_w_uuid = ['/'.join([dep, run_uuid]) for dep in run_deps]
+            # I.e. rather than e.g. 2022-12-02T14:05:32.979264/item_counts_by_type
+            # we want item_counts_by_type/2022-12-02T14:05:32.979264.
+            # Also this code seems to imply that the UUID for all dependencies
+            # are the same (have not actually seen examples of multiple dependencies).
+            #
+            # deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
+            # finished_dependencies = set(deps_w_uuid).issubset(already_run)
+
             if not finished_dependencies:
-                PRINT(f'-RUN-> Not ready for: {run_name}')
+                logger.warning(f'-RUN-> Not ready (due to dependency: {run_deps}) for: {run_name}')
         else:
             finished_dependencies = True
         connection = self.init_connection(run_env)
@@ -1840,7 +1910,7 @@ class AppUtilsCore(ReactApi, Routes):
                 found_rec = connection.get_object(rec_key)
                 if found_rec is not None:
                     # the action record has been written. Abort and propogate
-                    PRINT(f'-RUN-> Found existing action record: {rec_key}. Skipping')
+                    logger.warning(f'-RUN-> Found existing action record: {rec_key}. Skipping')
                     self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
                     return None
                 else:
@@ -1851,9 +1921,9 @@ class AppUtilsCore(ReactApi, Routes):
                     # This was changed per Will's suggestion in code review. -kmp 7-Jun-2022
                     # connection.put_object(rec_key, rec_body)
                     connection.connections['s3'].put_object(rec_key, rec_body)
-                    PRINT(f'-RUN-> Wrote action record: {rec_key}')
+                    logger.warning(f'-RUN-> Wrote action record: {rec_key}')
             run_result = self.check_handler.run_check_or_action(connection, run_name, run_kwargs)
-            PRINT('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))
+            logger.warning('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))
             # invoke action if running a check and kwargs['queue_action'] matches stage
             stage = self.stage.get_stage()
             if run_result['type'] == 'check' and run_result['kwargs']['queue_action'] == stage:
@@ -1865,28 +1935,28 @@ class AppUtilsCore(ReactApi, Routes):
                         self.queue_action(run_env, run_result['action'],
                                           params=action_params, uuid=run_uuid)
                     except Exception as exc:
-                        PRINT('-RUN-> Could not queue action %s on stage %s with kwargs: %s. Error: %s'
+                        logger.warning('-RUN-> Could not queue action %s on stage %s with kwargs: %s. Error: %s'
                               % (run_result['action'], stage, action_params, str(exc)))
                     else:
-                        PRINT('-RUN-> Queued action %s on stage %s with kwargs: %s'
+                        logger.warning('-RUN-> Queued action %s on stage %s with kwargs: %s'
                               % (run_result['action'], stage, action_params))
-            PRINT(f'-RUN-> Finished: {run_name}')
+            logger.warning(f'-RUN-> Finished: {run_name}')
             self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return run_result
         else:
-            PRINT(f'-RUN-> Recovered: {run_name}')
+            logger.warning(f'-RUN-> Recovered: {run_name}')
             self.sqs.recover_message_and_propogate(runner_input, receipt, propogate=propogate)
             return None
 
     @classmethod
-    def collect_run_info(cls, run_uuid, env):
+    def collect_run_info(cls, run_uuid, env, no_trailing_slash=False):
         """
         Returns a set of run checks under this run uuid
         """
         bucket = get_foursight_bucket(envname=env, stage=Stage(cls.prefix).get_stage())
         s3_connection = S3Connection(bucket)
-        run_prefix = ''.join([run_uuid, '/'])
-        complete = s3_connection.list_all_keys_w_prefix(run_prefix)
+        run_prefix = ''.join([run_uuid, '/']) if not no_trailing_slash else run_uuid
+        complete = s3_connection.list_all_keys_w_prefix(run_prefix, no_trailing_slash=no_trailing_slash)
         # eliminate duplicates
         return set(complete)
 
