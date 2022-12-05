@@ -348,9 +348,9 @@ const ActionDetailBox = ({check, checkInfo}) => {
                     <td><b>Checks</b>:</td>
                     <td>
                         {checkInfo.map("checks", (check, index) => <>
-                            { index > 0 && <>,&nbsp;</> }
                             <Link to={Client.Path(`/checks/${check.name}/history`)}>{check.name}</Link>
                             <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"3pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="13"/></a>
+                            <br />
                         </>)}
                     </td>
                 </tr>

@@ -25,7 +25,9 @@ if (Cookie.Get("test_mode_strict_mode") === "1") {
 }
 else {
     root.render(
-        <App />
+        <table style={{width:"100%"}} cellPadding="0" cellSpacing="0"><tbody><tr><td>
+            <App />
+        </td></tr></tbody></table>
     );
 }
 
