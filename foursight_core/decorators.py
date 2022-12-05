@@ -68,19 +68,6 @@ class Decorators(object):
         self.create_registry_record("action", func, default_args, default_kwargs)
 
     def create_registry_record(self, kind, func, default_args, default_kwargs) -> None:
-#       func_name = None
-#       func_file = None
-#       func_line = None
-#       func_module = None
-#       func_package = None
-#       try:
-#           func_name = func.__name__
-#           func_module = func.__module__
-#           func_file = sys.modules[func_module].__file__
-#           _, func_line = inspect.getsourcelines(func)
-#           func_package = __import__(func_module).__package__
-#       except Exception as e:
-#           PRINT(f"ERROR: Creating {kind} registry record: {get_error_message(e)}")
         func_name, func_file, func_module, func_package, func_line, func_github_url = get_function_info(func)
         if _decorator_registry.get(func_name):
             PRINT(f"WARNING: Duplicate {kind} decorator registration (skipping): {func_name}")
