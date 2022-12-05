@@ -104,7 +104,6 @@ class S3Connection(AbstractConnection):
 
         Also see list_all_keys()
         """
-        print(f'xyzzy/list_all_keys_w_prefix({prefix},{records_only})')
         if not self.bucket:
             return []
         all_keys = []
@@ -113,17 +112,9 @@ class S3Connection(AbstractConnection):
         # this will exclude 'primary' and 'latest' in records_only == True
         # use '2' because is is the first digit of year (in uuid)
         use_prefix = ''.join([prefix, '2']) if records_only else prefix
-        print(use_prefix)
         bucket = self.resource.Bucket(self.bucket)
-        print('xyzzy/list_all_keys_w_prefix/b')
-        print(bucket)
-        print(use_prefix)
         for obj in bucket.objects.filter(Prefix=use_prefix):
-            print('xyzzy/list_all_keys_w_prefix/c')
-            print(obj)
             all_keys.append(obj.key)
-        print('xyzzy/list_all_keys_w_prefix/d')
-        print(all_keys)
 
         # not sorted at this point
         return all_keys
