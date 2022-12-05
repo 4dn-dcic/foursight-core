@@ -1868,7 +1868,7 @@ class AppUtilsCore(ReactApi, Routes):
                 finished_dependencies = (ndeps_already_run == len(deps_w_uuid))
             else:
                 # TODO/2022-12-02/dmichaels: This seems wrong; if we search for an S3 key
-                # using just the UUID as the prefix it won't find find the check run result there
+                # using just the UUID as the prefix it won't find the check run result there
                 # because it's in a sub-key, e.g. item_counts_by_type/2022-12-02T14:05:32.979264
                 # rather than just 2022-12-02T14:05:32.979264, using the we want to check if
                 # the dependencies have run.
