@@ -222,7 +222,7 @@ function IsFoursightFourfront(header) {
         return header?.app?.package !== "foursight-cgap";
     }
     else {
-        return Cookie.Site() == "foursight-fourfront";
+        return Cookie.Site() === "foursight-fourfront";
     }
 }
 
