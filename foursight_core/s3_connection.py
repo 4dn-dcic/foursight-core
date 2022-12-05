@@ -90,7 +90,7 @@ class S3Connection(AbstractConnection):
                                              EndTime=now.isoformat())
         return resp['Datapoints']
 
-    def list_all_keys_w_prefix(self, prefix, records_only=False):
+    def list_all_keys_w_prefix(self, prefix, records_only=False, no_trailing_slash=False):
         """
         List all s3 keys with the given prefix (should look like
         '<prefix>/'). If records_only == True, then add '20' to the end of
@@ -104,25 +104,25 @@ class S3Connection(AbstractConnection):
 
         Also see list_all_keys()
         """
-        print(f'list_all_keys_w_prefix({prefix},{records_only})')
+        print(f'xyzzy/list_all_keys_w_prefix({prefix},{records_only})')
         if not self.bucket:
             return []
         all_keys = []
         # make sure prefix ends with a slash (bucket format)
-        prefix = ''.join([prefix, '/']) if not prefix.endswith('/') else prefix
+        prefix = ''.join([prefix, '/']) if not no_trailing_slash and not prefix.endswith('/') else prefix
         # this will exclude 'primary' and 'latest' in records_only == True
         # use '2' because is is the first digit of year (in uuid)
         use_prefix = ''.join([prefix, '2']) if records_only else prefix
         print(use_prefix)
         bucket = self.resource.Bucket(self.bucket)
-        print('list_all_keys_w_prefix/b')
+        print('xyzzy/list_all_keys_w_prefix/b')
         print(bucket)
         print(use_prefix)
         for obj in bucket.objects.filter(Prefix=use_prefix):
-            print('list_all_keys_w_prefix/c')
+            print('xyzzy/list_all_keys_w_prefix/c')
             print(obj)
             all_keys.append(obj.key)
-        print('list_all_keys_w_prefix/d')
+        print('xyzzy/list_all_keys_w_prefix/d')
         print(all_keys)
 
         # not sorted at this point

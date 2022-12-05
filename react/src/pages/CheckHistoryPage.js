@@ -155,10 +155,18 @@ const CheckHistoryPage = (props) => {
         return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
 
             <div title={check}>
-                { checkInfo.get("type") === "action" ? <>
-                    <b className="tool-tip" data-text={check}>Action History</b>: <b>{checkInfo.get("name")}</b>&nbsp;
+                { history.get("list")?.length > 0 ? <>
+                    { checkInfo.get("type") === "action" ? <>
+                        <b className="tool-tip" data-text={check}>Action History</b>: <b>{checkInfo.get("name")}</b>&nbsp;
+                    </>:<>
+                        <b className="tool-tip" data-text={check}>Check History</b>: <b>{checkInfo.get("title")}</b>&nbsp;
+                    </>}
                 </>:<>
-                    <b className="tool-tip" data-text={check}>Check History</b>: <b>{checkInfo.get("title")}</b>&nbsp;
+                    { checkInfo.get("type") === "action" ? <>
+                        <b>{checkInfo.get("name")}</b>&nbsp;
+                    </>:<>
+                        <b>{checkInfo.get("title")}</b>&nbsp;
+                    </>}
                 </>}
                 { history.get("check.registered_github_url") && <>
                     <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={history.get("check.registered_github_url")}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
@@ -245,7 +253,7 @@ const CheckHistoryPage = (props) => {
                     </tbody>
                     </table>
                 </>):(<>
-                    <span style={{color:"black"}}>{ history.loading ? <i>Loading ...</i> : <>No history</> }</span>
+                    <span style={{color:"black"}}>{ history.loading ? <i>Loading ...</i> : <><div style={{background:"gray",marginBottom:"2pt",height:"1px"}} />No history</> }</span>
                 </>)}
         </div>
     }
@@ -278,6 +286,7 @@ const CheckHistoryPage = (props) => {
     if (history.error) return <FetchErrorBox error={history.error} message="Error loading check history from Foursight API" />
     return <>
         <table style={{maxWidth:"1000pt"}}><tbody>
+            { (history.get("list")?.length > 0 || history.loading) ?
             <tr>
                 <td style={{paddingRight:"10pt",paddingBottom:"4pt"}}>
                     <table style={{minWidth:"620pt",width:"100%"}}><tbody><tr>
@@ -314,6 +323,16 @@ const CheckHistoryPage = (props) => {
                     { checkInfo.get("type") === "action" ? <> <b>Action</b> </>:<> <b>Check</b> </>}
                 </td>
             </tr>
+            : <>
+                <tr>
+                    <td>
+                        { checkInfo.get("type") === "action" ? <> <b>Action</b> </>:<> <b>Check</b> </>} <b>History</b>
+                    </td>
+                    <td style={{verticalAlign:"bottom",paddingBottom:"2pt"}}>
+                        { checkInfo.get("type") === "action" ? <> <b>Action</b> </>:<> <b>Check</b> </>}
+                    </td>
+                </tr>
+            </>}
             <tr>
                 <td style={{verticalAlign:"top",paddingRight:"10pt"}}>
                     <HistoryList history={history} />

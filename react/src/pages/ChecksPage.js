@@ -401,12 +401,12 @@ import Styles from '../Styles';
                             </u>
                             { check.__result.get("action") && <u>
                                 { runActionAllowedState[0] ? <>
-                                    <span style={{color:"red"}} className="tool-tip" data-text="This check has an associated (allowed) action.">&nbsp;&#x2756;</span>
+                                    <span style={{color:"red"}} className="tool-tip" data-text="This check has an associated (allowed) action.">&nbsp;{Char.Diamond}</span>
                                 </>:<>
-                                    <span className="tool-tip" data-text="This check has an associated (disallowed) action.">&nbsp;&#x2756;</span>
+                                    <span className="tool-tip" data-text="This check has an associated (disallowed) action.">&nbsp;{Char.Diamond}</span>
                                 </>}
                             </u>}
-                            &nbsp;<Link className="tool-tip" data-text="Click to view check details and history." to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank"><b>&equiv;</b></Link>
+                            &nbsp;&nbsp;<Link className="tool-tip" data-text="Click to view check details and history." to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank"><b>{Char.Trigram}</b></Link>
                             { check.registered_github_url && <>
                                 <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"6pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                             </>}
