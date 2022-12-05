@@ -34,7 +34,7 @@ from dcicutils.env_utils import (
 from dcicutils import ff_utils
 from dcicutils.exceptions import InvalidParameterError
 from dcicutils.lang_utils import disjoined_list
-from dcicutils.misc_utils import get_error_message, ignored, PRINT
+from dcicutils.misc_utils import get_error_message, ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from .app import app
@@ -175,7 +175,7 @@ class AppUtilsCore(ReactApi, Routes):
         Returns an FSConnection object or raises an error.
         """
         environments = self.init_environments(environ) if _environments is None else _environments
-        PRINT("environments = %s" % str(environments))
+        logger.warning("environments = %s" % str(environments))
         # if still not there, return an error
         if environ not in environments:
             error_res = {
@@ -400,8 +400,7 @@ class AppUtilsCore(ReactApi, Routes):
             if redir_url_cookie:
                 redir_url = redir_url_cookie
         except Exception as e:
-            PRINT("Exception loading cookies: {cookies}")
-            PRINT(e)
+            logger.error("Exception loading cookies: {cookies} - {get_error_message(e)}")
 
         resp_headers = {'Location': redir_url}
         params = req_dict.get('query_params')
@@ -1645,20 +1644,20 @@ class AppUtilsCore(ReactApi, Routes):
             logger.warning(f"queue_scheduled_checks: have schedule_name")
             logger.warning(f"queue_scheduled_checks: environment.is_valid_environment_name(sched_environ, or_all=True)={self.environment.is_valid_environment_name(sched_environ, or_all=True)}")
             if not self.environment.is_valid_environment_name(sched_environ, or_all=True):
-                PRINT(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
+                logger.warning(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
                 return
             sched_environs = self.environment.get_selected_environment_names(sched_environ)
             logger.warning(f"queue_scheduled_checks: sched_environs={sched_environs}")
             check_schedule = self.check_handler.get_check_schedule(schedule_name, conditions)
             logger.warning(f"queue_scheduled_checks: sched_environs={check_schedule}")
             if not check_schedule:
-                PRINT(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
+                logger.warning(f'-RUN-> {schedule_name} is not a valid schedule. Cannot queue.')
                 return
             if not sched_environs:
-                PRINT(f'-RUN-> No scheduled environs detected! {sched_environs}, {check_schedule}')
+                logger.warning(f'-RUN-> No scheduled environs detected! {sched_environs}, {check_schedule}')
                 return
             for environ in sched_environs:
-                PRINT(f'-RUN-> Sending messages for {environ}')
+                logger.warning(f'-RUN-> Sending messages for {environ}')
                 # add the run info from 'all' as well as this specific environ
                 check_vals = copy.copy(check_schedule.get('all', []))
                 check_vals.extend(self.get_env_schedule(check_schedule, environ))
