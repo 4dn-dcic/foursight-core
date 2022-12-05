@@ -6,6 +6,12 @@ foursight-core
 Change Log
 ----------
 
+3.1.2
+=====
+* Fixed bug which prevented check with dependency from running because
+  incorrectly looking up in S3 for the dependent check result; fix in
+  run_check_runner in app_utils.py (see collect_run_info calls).
+
 3.1.0
 =====
 * Changes related to a new experimental /accounts page in Foursight which can show summary
