@@ -12,7 +12,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.7,<3.10"
-dcicutils = "^6.0.0"
+dcicutils = "^6.3.0"
 click = "^7.1.2"
 cron-descriptor = "^1.2.31"
 pyDes = "^2.0.1"
