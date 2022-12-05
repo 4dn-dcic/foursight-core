@@ -42,6 +42,7 @@ class Checks:
                 checks[check_key]["name"] = check_key
                 checks[check_key]["group"] = checks[check_key]["group"]
             lambdas = self.get_annotated_lambdas()
+            self._annotate_checks_for_dependencies(checks)
             self._annotate_checks_with_schedules_from_lambdas(checks, lambdas)
             self._annotate_checks_with_kwargs_from_decorators(checks)
             Checks._cached_checks = checks
@@ -56,7 +57,6 @@ class Checks:
         for check_name in checks:
             check_item = checks[check_name]
             check_item_group = check_item["group"]
-            # TODO: Probably a more pythonic way to do this.
             found = False
             for grouped_check in checks_groups:
                 if grouped_check["group"] == check_item_group:
@@ -66,17 +66,6 @@ class Checks:
             if not found:
                 checks_groups.append({"group": check_item_group, "checks": [check_item]})
         return checks_groups
-
-    def is_action(self, env: str, action: str) -> bool:
-        """
-        If the given name is an action (as opposed to a real check) then return True else False.
-        """
-        checks = self.get_checks(env)
-        for check in checks.values():
-            if check.get("registered_action"):
-                if check["registered_action"].get("name") == action:
-                    return True
-        return False
 
     def get_action_checks(self, env: str, action: str) -> list:
         """
@@ -119,7 +108,7 @@ class Checks:
             return checks
         checks_for_env = {}
         for check_key in checks.keys():
-            if checks[check_key]["schedule"]:
+            if checks[check_key].get("schedule"):
                 for check_schedule_key in checks[check_key]["schedule"].keys():
                     for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
                         if check_env_key == "all" or self._envs.is_same_env(check_env_key, env):
@@ -128,6 +117,32 @@ class Checks:
                 # If no schedule section (which has the env section) then include it.
                 checks_for_env[check_key] = checks[check_key]
         return checks_for_env
+
+    def _annotate_checks_for_dependencies(self, checks: dict) -> None:
+        """
+        Annotate the give checks dictionary with "referrer" information related to the
+        check "dependencies". A check may be a list of dependencies, and for general
+        info (in the UI) and troubleshooting purposes it would be useful to also 
+        have the inverse relationship, i.e. for each we create a "referrers" list
+        with the list of names of any checks which depend on (refer to) the check.
+        """
+        def get_check(check_name: str, env: str) -> Optional[dict]:
+            for check_key in self._filter_checks_by_env(checks, env):
+                if check_key == check_name:
+                    return checks[check_key]
+            return None
+        for check_key in checks.keys():
+            if checks[check_key].get("schedule"):
+                for check_schedule_key in checks[check_key]["schedule"].keys():
+                    for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
+                        if checks[check_key]["schedule"][check_schedule_key][check_env_key].get("dependencies"):
+                            for check_dependency_key in checks[check_key]["schedule"][check_schedule_key][check_env_key]["dependencies"]:
+                                check_dependency = get_check(check_dependency_key, check_env_key)
+                                if check_dependency:
+                                    if not check_dependency.get("referrers"):
+                                        check_dependency["referrers"] = [check_key]
+                                    elif check_key not in check_dependency["referrers"]:
+                                        check_dependency["referrers"].append(check_key)
 
     @staticmethod
     def _get_stack_name() -> str:

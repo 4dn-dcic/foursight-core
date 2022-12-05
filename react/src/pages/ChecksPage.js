@@ -348,12 +348,15 @@ import Styles from '../Styles';
             fetchResult(check, env, groupList);
         }, []);
 
+        const [ showDependenciesBox, setShowDependenciesBox ] = useState(true);
+
         function toggleCheckResultsBox(check, env, groupList) {
             if (check.__showingResults) {
                 hideResultBox(check, groupList);
             }
             else {
                 showResultBox(check, env, groupList);
+                setShowDependenciesBox(true);
             }
         }
 
@@ -386,6 +389,7 @@ import Styles from '../Styles';
                                                 check.__configuringCheckRun = true;
                                             }
                                             noteChangedCheckBox(groupList);
+                                                setShowDependenciesBox(true);
                                         }}>
                                         <span
                                             className={"tool-tip"}
@@ -397,7 +401,7 @@ import Styles from '../Styles';
                             </>}
                             <span style={{whiteSpace:"nowrap"}}>
                             <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}.`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check, env, historyList);}}>
-                                {check.title}
+                                {check.title?.length > 70 ? check.title.substring(0, 69) + " ..." : check.title}
                             </u>
                             { check.__result.get("action") && <u>
                                 { runActionAllowedState[0] ? <>
@@ -427,7 +431,14 @@ import Styles from '../Styles';
                                     )}
                                 </div>
                             )}
-                            <CheckRunArgsBox check={check} env={env} groupList={groupList} historyList={historyList} update={() => noteChangedCheckBox(groupList)}/>
+                            <CheckRunArgsBox
+                                check={check}
+                                env={env}
+                                groupList={groupList}
+                                historyList={historyList}
+                                update={() => noteChangedCheckBox(groupList)}
+                                showDependenciesBox={showDependenciesBox}
+                                setShowDependenciesBox={setShowDependenciesBox} />
                             <CheckRunningBox check={check} groupList={groupList} info={info} />
                             <RunActionBox check={check} env={env} groupList={groupList} update={() => groupList.update()} fetchResult={fetchResult} runActionAllowedState={runActionAllowedState} />
                             <ActionRunningBox check={check} groupList={groupList} info={info} />
@@ -711,7 +722,7 @@ import Styles from '../Styles';
     }
 
     // What a pain ...
-    const CheckRunArgsBox = ({ check, env, groupList, historyList, update }) => {
+    const CheckRunArgsBox = ({ check, env, groupList, historyList, update, showDependenciesBox, setShowDependenciesBox}) => {
 
         // This is a bit tedious to unwrap. This is what a check record looks like:
         // {
@@ -762,10 +773,42 @@ import Styles from '../Styles';
             return kwargs;
         }
 
+        function getDependenciesFromCheck(checkInfo) {
+            const schedule = checkInfo.schedule;
+            if (schedule) {
+                const scheduleValues = Object.values(schedule);
+                if (scheduleValues && scheduleValues.length > 0) {
+                    const scheduleFirstElement = scheduleValues[0];
+                    if (scheduleFirstElement) {
+                        const scheduleFirstElementEnv = scheduleFirstElement[Env.PreferredName(Env.Current())];
+                        if (scheduleFirstElementEnv && scheduleFirstElementEnv?.dependencies?.length > 0) {
+                            return scheduleFirstElementEnv.dependencies;
+                        }
+                    }
+                }
+            }
+            return [];
+        }
+
+        // const [ showDependenciesBox, setShowDependenciesBox ] = useState();
+
         if (!Type.IsNonEmptyObject(check.kwargs)) {
             check.kwargs = getKwargsFromCheck(check);
         }
         return check.__configuringCheckRun && <>
+            { (getDependenciesFromCheck(check).length > 0) && showDependenciesBox && <>
+                <div className="box thickborder bigmargin" style={{background:"#EEEEEE",paddingTop:"4pt",paddingBottom:"4pt"}}>
+                    <small><b className="pointer" style={{float:"right"}} onClick={() => setShowDependenciesBox(false)}>{Char.X}</b></small>
+                    { getDependenciesFromCheck(check).map((dependency, index) => <>
+                       <table><tbody><tr><td valign="top"><b>&#x27A6;</b>&nbsp;</td><td>
+                        <small style={{whiteSpace:"break-spaces"}}><i>FYI this check has dependencies:</i>&nbsp;
+                            {index > 0 && <span>, </span>}
+                            <Link to={Client.Path(`/checks/${dependency}/history`)} target="_blank">{dependency}</Link>
+                        </small>
+                        </td></tr></tbody></table>
+                    </>)}
+                </div>
+            </>}
             <div className="box thickborder" style={{marginTop:"4pt",padding:"6pt",cursor:"default",background:"lightyellow"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
                 { (Type.IsNonEmptyObject(check.kwargs)) ? (<>
                     <div style={{marginTop:"-2pt",float:"right"}}>
@@ -842,8 +885,8 @@ import Styles from '../Styles';
             <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}}>
                 { check.__queuedCheckRun &&
                     <small><b>
-                        <span className="tool-tip" data-text="Click to view UUID for this run." onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued check run</span>:&nbsp;
-                        <span onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.__queuedCheckRun + "+00:00")}</span>
+                        <span onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued check run</span>:&nbsp;
+                        <span className="tool-tip" data-text="Click to view UUID for this run." onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.__queuedCheckRun + "+00:00")}</span>
                         &nbsp;{Char.RightArrow}&nbsp;
                                 
                         { showUuid ? <>
@@ -851,7 +894,7 @@ import Styles from '../Styles';
                         </>:<>
                             <span className="tool-tip" data-text={`UUID: ${check.__queuedCheckRun}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>OK</span>
                         </>}
-                        <div style={{float:"right",marginTop:"-0pt",cursor:"pointer"}} onClick={() => {hideCheckRunningBox(check, groupList); }}>&nbsp;{Char.X}</div>
+                        <div style={{float:"right",marginTop:"-0pt",cursor:"pointer"}} onClick={() => {hideCheckRunningBox(check, groupList); }}>&nbsp;<b>{Char.X}</b>&nbsp;</div>
                     </b></small>
                 }
                 { !check.__queuedCheckRun && <div style={{marginTop:"-2pt"}}><StandardSpinner condition={check.__queueingCheckRun} label={" Queueing check run"} color={"darkred"} /></div> }

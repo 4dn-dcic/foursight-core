@@ -1853,34 +1853,46 @@ class AppUtilsCore(ReactApi, Routes):
         # actual id stored in s3 has key: <run_uuid>/<run_name>
         if run_deps and isinstance(run_deps, list):
             logger.warning(f'-RUN-> Dependency ({run_deps}) checking for: {run_name}')
-            if True:
-                # 2022-12-05/dmichaels: Try new way looking up dependency results.
-                deps_w_uuid = ['/'.join([dep, run_uuid]) for dep in run_deps]
-                ndeps_already_run = 0
-                for dep_w_uuid in deps_w_uuid:
-                    logger.warning(f'-RUN-> Dependency ({dep_w_uuid}) check for: {run_name}')
-                    already_run = self.collect_run_info(dep_w_uuid, run_env, no_trailing_slash=True)
-                    if already_run:
-                        logger.warning(f'-RUN-> Dependency ({dep_w_uuid}) already ran for: {run_name}')
-                        ndeps_already_run += 1
-                    else:
-                        logger.warning(f'-RUN-> Dependency ({dep_w_uuid}) has not already run for: {run_name}')
-                finished_dependencies = (ndeps_already_run == len(deps_w_uuid))
+
+            # 2022-12-05/dmichaels: New code for looking up dependency results.
+            deps_w_uuid = ['/'.join([dep, run_uuid]) for dep in run_deps]
+            ndeps_already_run = 0
+            for dep_w_uuid in deps_w_uuid:
+                logger.warning(f'-RUN-> Dependency ({dep_w_uuid}) check for: {run_name}')
+                already_run = self.collect_run_info(dep_w_uuid, run_env, no_trailing_slash=True)
+                if already_run:
+                    logger.warning(f'-RUN-> Dependency ({dep_w_uuid}) already ran for: {run_name}')
+                    ndeps_already_run += 1
+                else:
+                    logger.warning(f'-RUN-> Dependency ({dep_w_uuid}) has not already run for: {run_name}')
+            finished_dependencies = (ndeps_already_run == len(deps_w_uuid))
+            if finished_dependencies:
+                logger.warning(f'-RUN-> Dependency ({run_deps}) check passed for: {run_name}')
             else:
-                # TODO/2022-12-02/dmichaels: This seems wrong; if we search for an S3 key
-                # using just the UUID as the prefix it won't find the check run result there
-                # because it's in a sub-key, e.g. item_counts_by_type/2022-12-02T14:05:32.979264
-                # rather than just 2022-12-02T14:05:32.979264, using the we want to check if
-                # the dependencies have run.
-                already_run = self.collect_run_info(run_uuid, run_env)
-                # TODO/2022-12-02/dmichaels: This seems backwards; should be:
-                # deps_w_uuid = ['/'.join([dep, run_uuid]) for dep in run_deps]
-                # I.e. rather than e.g. 2022-12-02T14:05:32.979264/item_counts_by_type
-                # we want item_counts_by_type/2022-12-02T14:05:32.979264.
-                # Also this code seems to imply that the UUID for all dependencies
-                # are the same (have not actually seen examples of multiple dependencies).
-                deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
-                finished_dependencies = set(deps_w_uuid).issubset(already_run)
+                logger.warning(f'-RUN-> Dependency ({run_deps}) check did NOT pass for: {run_name}')
+
+            # 2022-12-05/dmichaels
+            #
+            # Replaced this code with above block. Leaving this code
+            # commented out here for a bit until we are sure this is solid.
+            #
+            # 2022-12-02/dmichaels: This seems wrong; if we search for an S3 key
+            # using just the UUID as the prefix it won't find the check run result there
+            # because it's in a sub-key, e.g. item_counts_by_type/2022-12-02T14:05:32.979264
+            # rather than just 2022-12-02T14:05:32.979264, using the we want to check if
+            # the dependencies have run.
+            #
+            # already_run = self.collect_run_info(run_uuid, run_env)
+            #
+            # 2022-12-02/dmichaels: This seems backwards; should be:
+            # deps_w_uuid = ['/'.join([dep, run_uuid]) for dep in run_deps]
+            # I.e. rather than e.g. 2022-12-02T14:05:32.979264/item_counts_by_type
+            # we want item_counts_by_type/2022-12-02T14:05:32.979264.
+            # Also this code seems to imply that the UUID for all dependencies
+            # are the same (have not actually seen examples of multiple dependencies).
+            #
+            # deps_w_uuid = ['/'.join([run_uuid, dep]) for dep in run_deps]
+            # finished_dependencies = set(deps_w_uuid).issubset(already_run)
 
             if not finished_dependencies:
                 logger.warning(f'-RUN-> Not ready (due to dependency: {run_deps}) for: {run_name}')

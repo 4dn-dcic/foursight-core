@@ -392,6 +392,9 @@
 .box.margin {
     margin-top: 1.8pt;
 }
+.box.bigmargin {
+    margin-top: 4.0pt;
+}
 .box.cell {
     display: table-cell;
 }

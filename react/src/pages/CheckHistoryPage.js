@@ -152,7 +152,7 @@ const CheckHistoryPage = (props) => {
             { label: "State" }
         ];
 
-        return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+        return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",minWidth:"300pt"}}>
 
             <div title={check}>
                 { history.get("list")?.length > 0 ? <>
@@ -497,6 +497,19 @@ const CheckDetailBox = ({check, checkInfo}) => {
                             {getDependenciesFromCheck(checkInfo).map(dependency => <>
                                 <Link to={Client.Path(`/checks/${dependency}/history`)}>{dependency}</Link>
                             </>)} <br />
+                        </td>
+                    </tr>
+                </>}
+                { (checkInfo.data?.referrers) && <>
+                    <tr><td style={{paddingTop:"2px"}}></td></tr>
+                    <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                    <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                    <tr>
+                        <td><b>Referrers</b>:</td>
+                        <td>
+                            {checkInfo.map("referrers", referrer => <>
+                                <Link to={Client.Path(`/checks/${referrer}/history`)}>{referrer}</Link>
+                            </>)}
                         </td>
                     </tr>
                 </>}
