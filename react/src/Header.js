@@ -36,7 +36,6 @@ const Header = (props) => {
     const [ fetching ] = useFetching();
 
     let titleBackgroundColor = Env.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
- // let subTitleBackgroundColor = Env.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
     let subTitleBackgroundColor = Styles.LightenDarkenColor(Styles.GetBackgroundColor(), -10);
 
     function getTitleBackgroundColorWhileLoading() {
