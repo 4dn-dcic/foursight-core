@@ -395,7 +395,6 @@ function _doFetch(args, current = undefined) {
         args.setLoading(false);
         noteFetchEnd(id, data);
         const responseArg = { data: data, loading: false, status: status, timeout: false, error: null };
-        // _defineResponseConvenienceFunctions(responseArg);
         args.onSuccess(responseArg);
         args.onDone(responseArg);
         if (args.cache) {
@@ -412,7 +411,6 @@ function _doFetch(args, current = undefined) {
         let details = error?.response?.data?.error;
         args.setData(error?.response?.data);
         args.setStatus(status);
-        // args.setError(error.message);
         args.setError({ url: args.url, status: status, code: error.code, message: error.message, details: details });
         args.setLoading(false);
         if (status === 401) {
@@ -465,11 +463,9 @@ function _doFetch(args, current = undefined) {
         }
         else {
             Debug.Info(`FETCH ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
-            // args.setError(`HTTP error (${error.code}): ${args.url}`);
         }
         noteFetchEnd(id);
         const responseArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
-     // _defineResponseConvenienceFunctions(responseArg);
         const data = args.onError(responseArg);
         if (data !== undefined) {
             args.setData(data)
@@ -500,7 +496,6 @@ function _doFetch(args, current = undefined) {
             args.setTimeout(false);
             args.setError(null);
             const responseArg = { data: fetchCache.data, loading: false, status: fetchCache.status, timeout: false, error: null };
-         // _defineResponseConvenienceFunctions(responseArg);
             args.onSuccess(responseArg);
             args.onDone(responseArg);
             return;
