@@ -212,12 +212,12 @@ export const useFetch = (url, args) => {
         // get ["loading"]() { return loading; }
     };
 
-    response.refresh = (function(url, args) {
-        _doFetch({...assembleArgs(url, args, true), nocache: true}, this && this.__usefetch_response === true ? this.data : undefined);
-    }).bind(response);
-
     response.fetch = (function(url, args) {
         _doFetch(assembleArgs(url, args, true), this && this.__usefetch_response === true ? this.data : undefined);
+    }).bind(response);
+
+    response.refresh = (function(url, args) {
+        _doFetch({...assembleArgs(url, args, true), nocache: true}, this && this.__usefetch_response === true ? this.data : undefined);
     }).bind(response);
 
     response.update = (function(data) {

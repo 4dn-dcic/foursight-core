@@ -990,10 +990,12 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
             <b className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}. Group: ${check.group}. Click for full history.`}>
                 <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">{check.title}</Link>
             </b>&nbsp;
+            <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank">
+                &nbsp;<b className="fa fa-external-link" style={{color:"black",fontWeight:"bold",position:"relative",bottom:"-3px"}}></b>
+            </Link>
             { check.registered_github_url && <>
-                <a className="tool-tip" data-text="Click to view source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                &nbsp;<a className="tool-tip" data-text="Click to view source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
             </>}
-            <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"1px",height:"18"}} /></Link>
             <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check, historyList)})}>&nbsp;&nbsp;<b>{Char.X}</b></span>
         </div>
         <div style={{marginBottom:"6pt"}}/>
@@ -1298,7 +1300,7 @@ const ChecksPage = (props) => {
         return recentRunsShow && <>
             <b>Recent Runs</b>
             <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"3pt",marginBottom:"8pt"}}>
-                { recentRuns.loading ? <>
+                { (recentRuns.loading && recentRuns.null) ? <>
                     <StandardSpinner loading={recentRuns.loading} label={"Loading recent runs"} size={60} color={Styles.GetForegroundColor()} />
                 </>:<>
                     { !recentRuns.empty && <small>
@@ -1319,7 +1321,8 @@ const ChecksPage = (props) => {
                             update={() => recentRuns.update()}
                             refresh={() => recentRuns.refresh()}
                             style={{fontWeight:"bold"}}
-                            lines={true} />
+                            lines={true}
+                            loading={recentRuns.loading} />
                         <tbody>
                             { recentRuns.map((run, index) => <React.Fragment key={index}>
                                     
@@ -1339,9 +1342,12 @@ const ChecksPage = (props) => {
                                         <small>{Time.FormatTime(run.timestamp)}</small>
                                     &nbsp;&nbsp;</td>
                                     <td style={{width:"30%"}}>
-                                        <span style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(run.check, run.group), environ, historyList)}>{run.title}</span> <br />
+                                        <span style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(run.check, run.group), environ, historyList)}>{run.title}</span>
+                                        &nbsp;&nbsp;<Link to={Client.Path(`/checks/${run.check}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank">
+                                            <small className="fa fa-external-link" style={{fontSize:"10pt",fontWeight:"bold"}}></small>
+                                        </Link>
+                                        <br />
                                         <i><small style={{cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(run.group), environ, groupList, historyList)}>{run.group}</small></i>&nbsp;
-                                        <Link to={Client.Path(`/checks/${run.check}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"4px",height:"17"}} /></Link>
                                     &nbsp;&nbsp;</td>
                                     <td>&nbsp;
                                         {run.status === "PASS" ? (<>
