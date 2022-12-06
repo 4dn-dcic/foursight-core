@@ -48,8 +48,6 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
         if (!Str.HasValue(sort))     sort   = defaultSort();
 		setArgs({...args, "limit": limit, "offset": offset, "sort": sort });
         function onDone(response) {
-         // const total = parseInt(response.get("paging.total"));
-         // const more = parseInt(response.get("paging.more"));
             const total = parseInt(response.data?.paging?.total);
             const more = parseInt(response.data?.paging?.more);
             if (limit > total) {
@@ -123,7 +121,6 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
                     columns={columns}
                     sort={sort}
                     list={data?.data?.list}
-                 // list={data?.get("list")}
                     update={onSort}
                     bottomline={true}
                     style={{color:Styles.GetForegroundColor(),fontWeight:"bold"}}
