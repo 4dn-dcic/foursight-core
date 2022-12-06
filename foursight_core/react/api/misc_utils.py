@@ -117,14 +117,20 @@ def is_running_locally(request: dict) -> bool:
     """
     return request.get("context", {}).get("identity", {}).get("sourceIp", "") == "127.0.0.1"
 
-def import_function(fully_qualified_function_name: str) -> Optional[Callable]:
-    try:
-        module_name, unit_name = fully_qualified_function_name.rsplit(".", 1)
-        return getattr(__import__(module_name, fromlist=[""]), unit_name)
-    except:
-        return None
-
 def get_function_info(func: Union[str, Callable]) -> Optional[Tuple[str, str, str, str, int, str]]:
+    """
+    Returns a tuple containing, in order, these function properties of the given function by
+    function name or object: name, file, module, package, line number, GitHub link (only
+    if one of these repos: foursight-core, foursight-cgap, foursight, dcicutils)
+    Currently used only for informational purposes in the React UI to display
+    information about code for checks and actions and their GitHub links. 
+    """
+    def import_function(fully_qualified_function_name: str) -> Optional[Callable]:
+        try:
+            module_name, unit_name = fully_qualified_function_name.rsplit(".", 1)
+            return getattr(__import__(module_name, fromlist=[""]), unit_name)
+        except:
+            return None
     func_name = None
     func_file = None
     func_module = None
