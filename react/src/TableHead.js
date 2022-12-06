@@ -99,7 +99,11 @@ const TableHead = ({columns, list, update, refresh, sort = null, state = null, l
                     </span>
                 </>):(<>
                     { column.label === "__refresh" ? <>
-                        <b style={{cursor:"pointer"}} onClick={() => Type.IsFunction(refresh) && refresh()}>{Char.Refresh}</b>
+                        { loading ? <>
+                            <PuffSpinner condition={true} size={"16px"} inline={true} />
+                        </>:<>
+                            <b style={{cursor:"pointer"}} onClick={() => Type.IsFunction(refresh) && refresh()}>{Char.Refresh}</b>
+                        </>}
                     </>:<>
                         <div style={{...style,display:"inline-block",position:"relative",top:"-1pt",cursor:"not-allowed"}}>{column.label}</div>
                     </>}

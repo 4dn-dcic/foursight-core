@@ -356,6 +356,8 @@ const _useFetched = () => {
     return { value: fetched, add: add, clear: clear }
 }
 
+// Should probably implement a maximum cache size, like we do with the useFetched list.
+//
 let _fetchCache = {};
 
 // Internal _doFetch function to actually do the fetch using the Axios library.
@@ -393,7 +395,7 @@ function _doFetch(args, current = undefined) {
         args.setLoading(false);
         noteFetchEnd(id, data);
         const responseArg = { data: data, loading: false, status: status, timeout: false, error: null };
-        _defineResponseConvenienceFunctions(responseArg);
+        // _defineResponseConvenienceFunctions(responseArg);
         args.onSuccess(responseArg);
         args.onDone(responseArg);
         if (args.cache) {
@@ -467,7 +469,7 @@ function _doFetch(args, current = undefined) {
         }
         noteFetchEnd(id);
         const responseArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
-        _defineResponseConvenienceFunctions(responseArg);
+     // _defineResponseConvenienceFunctions(responseArg);
         const data = args.onError(responseArg);
         if (data !== undefined) {
             args.setData(data)
@@ -498,7 +500,7 @@ function _doFetch(args, current = undefined) {
             args.setTimeout(false);
             args.setError(null);
             const responseArg = { data: fetchCache.data, loading: false, status: fetchCache.status, timeout: false, error: null };
-            _defineResponseConvenienceFunctions(responseArg);
+         // _defineResponseConvenienceFunctions(responseArg);
             args.onSuccess(responseArg);
             args.onDone(responseArg);
             return;

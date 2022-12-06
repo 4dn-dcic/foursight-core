@@ -127,26 +127,7 @@ import Styles from '../Styles';
         if (!check.__showingHistory) {
             check.__showingHistory = true;
             historyList.prepend(check);
-            if (!check.history) {
-                historyList.refresh({
-                    url: Server.Url(`/checks/${check.name}/history`, env),
-                    onData: (data, current) => {
-                        check.history = data;
-                        return current;
-                    }
-                });
-            }
         }
-    }
-
-    function fetchHistory(check, env, historyList) {
-        historyList.refresh({
-            url: Server.Url(`/checks/${check.name}/history`, env),
-            onData: (data, current) => {
-                check.history = data;
-                return current;
-            }
-        });
     }
 
     function doRunCheck(check, env, groupList, historyList, fetch) {
@@ -169,7 +150,7 @@ import Styles from '../Styles';
                 // a few (4) seconds after this check run completes (here).
                 //
                 setTimeout(() => {
-                    refreshHistory(check, env, historyList);
+                    refreshHistory(check);
                     noteChangedCheckBox(groupList);
                 }, 4 * 1000);
                 return data.uuid;
@@ -202,11 +183,9 @@ import Styles from '../Styles';
         showActionRunningBox(check, groupList);
     }
 
-    function refreshHistory(check, env, historyList) {
-        check.history = null;
-        if (check.__showingHistory) {
-            hideHistory(check, historyList);
-            showHistory(check, env, historyList);
+    function refreshHistory(check) {
+        if (check.__resultHistory) {
+            check.__resultHistory.refresh();
         }
     }
 
@@ -272,7 +251,7 @@ import Styles from '../Styles';
         }
 
         return <div style={style}>
-            <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",minWidth:"300pt"}}>
+            <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",minWidth:"450pt"}}>
                 <div>
                     <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks, groupList)}>
                         <b>{group?.group.replace(/ checks$/i, "")} Group</b> {isShowingAnyResults(group?.checks) ? (<small>{Char.DownArrowFat}</small>) : (<small>{Char.UpArrowFat}</small>)}
@@ -910,6 +889,200 @@ import Styles from '../Styles';
     } 
 
 
+    const ResultsHistoryPanel = ({ env, historyList }) => {
+        if (historyList.error) {
+            return <FetchErrorBox error={historyList.error} message="Error loading check history from Foursight API" />
+        }
+        let histories = historyList.filter((check) => check.__showingHistory);
+        if (!histories || histories.length <= 0) {
+            return <span />
+        }
+        return <div>
+            <b style={{marginBottom:"100pt"}}>Recent Results</b>
+            { histories?.map((selectedHistory, index) =>
+                <div key={index} style={{marginTop:"3pt"}}>
+                    <ResultsHistoryBox check={selectedHistory} env={env} historyList={historyList} />
+                </div>
+            )}
+        </div>
+    }
+
+const ResultsHistoryBox = ({ check, env, historyList }) => {
+
+    function showHistoryResult(check, history, uuid, historyList) {
+        history.__resultShowing = true;
+        history.__resultLoading = true;
+        historyList.update();
+        historyList.refresh({
+            url: Server.Url(`/checks/${check.name}/history/${uuid}`),
+            onData: (data, current) => {
+                if (history.__resultShowing) {
+                    history.__result = data;
+                }
+                return current;
+            },
+            onDone: (response) => {
+                history.__resultLoading = false;
+            }
+        });
+    }
+
+    function hideHistoryResult(history, historyList) {
+        history.__resultShowing = false;
+        history.__result = null;
+        history.__resultLoading = false;
+        historyList.update();
+    }
+
+    function toggleHistoryResult(check, history, uuid, historyList) {
+        if (history.__resultShowing) {
+            hideHistoryResult(history, historyList);
+        }
+        else {
+            showHistoryResult(check, history, uuid, historyList);
+        }
+    }
+
+    function extractUuid(history) {
+        return !history ? "uuid" : history[2].uuid;
+    }
+    function extractStatus(history) {
+        return !history ? "status" : history[0];
+    }
+    function extractTimestamp(history) {
+        return !history ? "timestamp" : history[2].timestamp;
+    }
+    function extractDuration(history) {
+        return !history ? "duration" : history[2].runtime_seconds;
+    }
+    function extractState(history) {
+        return !history ? "state" : history[2].queue_action;
+    }
+
+    const columns = [
+        { label: "__refresh" },
+        { label: "Timestamp", key: extractTimestamp },
+        { label: "Status", key: extractStatus},
+        { label: "Duration", key: extractDuration, align: "right" },
+        { label: "State", key: extractState }
+    ];
+
+    function useFetchHistory(refresh = false) {
+        return useFetch({ url: Server.Url(`/checks/${check.name}/history`), nofetch: true, cache: true });
+    }
+
+    function fetchHistory(refresh = false) {
+        check.__resultHistory.fetch({ nocache: refresh });
+    }
+
+    function refreshHistory() {
+        fetchHistory(true);
+    }
+
+    check.__resultHistory = useFetchHistory();
+
+    useEffect(() => {
+        fetchHistory();
+    }, []);
+
+    return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt"}}>
+        <div title={check.name}>
+            <b className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}. Group: ${check.group}. Click for full history.`}>
+                <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">{check.title}</Link>
+            </b>&nbsp;
+            { check.registered_github_url && <>
+                <a className="tool-tip" data-text="Click to view source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+            </>}
+            <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"1px",height:"18"}} /></Link>
+            <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check, historyList)})}>&nbsp;&nbsp;<b>{Char.X}</b></span>
+        </div>
+        <div style={{marginBottom:"6pt"}}/>
+        { check.__showingHistory && (<>
+            { check.__resultHistory?.data?.list?.length > 0 ? (<>
+                <table style={{width:"100%"}}>
+                    <TableHead loading={check.__resultHistory.loading} columns={columns} list={check.__resultHistory.data.list} refresh={refreshHistory} xyzzyrefresh={() => refreshHistory(check, env, historyList)} update={(e) => historyList.update()} style={{color:Styles.GetForegroundColor(),fontWeight:"bold"}} lines={true} />
+                <tbody>
+                {check.__resultHistory.data.list.map((history, index) => <React.Fragment key={index}>
+                    <React.Fragment key={extractUuid(history)}>
+                        { index !== 0 && (<>
+                            <tr><td style={{paddingTop:"2px"}}></td></tr>
+                            <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
+                            <tr><td style={{paddingBottom:"2px"}}></td></tr>
+                        </>)}
+                        <tr>
+                        <td>
+                            {extractStatus(history) === "PASS" ?
+                                <span style={{color:"inherit"}}>{Char.Check}</span>
+                            :   <span style={{color:"darkred"}}>{Char.X}</span> }
+                        &nbsp;&nbsp;</td>
+                        <td style={{whiteSpace:"nowrap"}}>
+                            <span className="tool-tip" data-text={Time.Ago(extractTimestamp(history))} onClick={() => {toggleHistoryResult(check, history, extractUuid(history), historyList); }} style={{cursor:"pointer"}}>
+                                {extractTimestamp(history)}
+                            </span>
+                        &nbsp;&nbsp;</td>
+                        <td style={{whiteSpace:"nowrap"}}>
+                            {extractStatus(history) === "PASS" ? (<>
+                                <b style={{color:"inherit"}}>OK</b>
+                            </>):(<>
+                                {extractStatus(history) === "WARN" ? (<>
+                                    <b style={{color:"black"}}>WARNING</b>
+                                </>):(<>
+                                    <b style={{color:"darkred"}}>ERROR</b>
+                                </>)}
+                            </>)}
+                        &nbsp;&nbsp;</td>
+                        <td style={{textAlign:"right"}}>
+                            {extractDuration(history)}
+                        &nbsp;&nbsp;</td>
+                        <td style={{whiteSpace:"nowrap"}}>
+                            { extractStatus(history) === "PASS" && extractState(history) === "Not queued" ? <>
+                                Done
+                            </>:<>
+                                {extractState(history)}
+                            </>}
+                        &nbsp;&nbsp;</td>
+                        </tr>
+                    </React.Fragment>
+                    { (history.__resultShowing) &&
+                        <tr>
+                            <td colSpan="6">
+                                <pre className="box lighten" style={{wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"680pt"}}>
+                                    { history.__resultLoading ? <>
+                                        <StandardSpinner condition={history.__resultLoading} color={Styles.GetForegroundColor()} label="Loading result"/>
+                                    </>:<>
+                                        <div style={{float:"right",marginTop:"-0px"}}>
+                                            <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{Json.Str(history.__result)}</span>
+                                            <img alt="copy" onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
+                                            <span onClick={() => hideHistoryResult(history, historyList)} style={{marginLeft:"6pt",marginRight:"2pt",fontSize:"large",fontWeight:"bold",cursor:"pointer"}}>X</span>
+                                        </div>
+                                        {Yaml.Format(history.__result)}
+                                    </>}
+                                </pre>
+                            </td>
+                        </tr>
+                    }
+                </React.Fragment>)}
+                </tbody>
+                </table>
+            </>):(<>
+                { check.__resultHistory.data?.list ? (<>
+                    <div style={{color:"black", borderTop:"1px solid", paddingTop:"4pt"}}>
+                        { historyList.loading ? <>
+                            <StandardSpinner condition={true} color={Styles.GetForegroundColor()} label="Loading history" />
+                        </>:<>
+                            No history &nbsp;
+                            <b onClick={() => fetchHistory(check, env, historyList)} style={{cursor:"pointer"}}>{Char.Refresh}</b>
+                        </>}
+                    </div>
+                </>):(<>
+                    <div style={{color:"black", borderTop:"1px solid"}} />
+                    <StandardSpinner condition={!check.__resultHistory.loading} color={Styles.GetForegroundColor()} label="Loading history" />
+                </>)}
+            </>)}
+        </>)}
+    </div>
+}
+
 const ChecksPage = (props) => {
 
     // TODO: Lotsa refactoring ...
@@ -1000,184 +1173,6 @@ const ChecksPage = (props) => {
                 )}
             </div>
         </div>
-    }
-
-    const ResultsHistoryBox = ({ check, env }) => {
-
-        function extractUuid(history) {
-            return !history ? "uuid" : history[2].uuid;
-        }
-        function extractStatus(history) {
-            return !history ? "status" : history[0];
-        }
-        function extractTimestamp(history) {
-            return !history ? "timestamp" : history[2].timestamp;
-        }
-        function extractDuration(history) {
-            return !history ? "duration" : history[2].runtime_seconds;
-        }
-        function extractState(history) {
-            return !history ? "state" : history[2].queue_action;
-        }
-
-        const columns = [
-            { label: "__refresh" },
-            { label: "Timestamp", key: extractTimestamp },
-            { label: "Status", key: extractStatus},
-            { label: "Duration", key: extractDuration, align: "right" },
-            { label: "State", key: extractState }
-        ];
-
-        return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt"}}>
-            <div title={check.name}>
-                <b className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}. Group: ${check.group}. Click for full history.`}>
-                    <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">{check.title}</Link>
-                </b>&nbsp;
-                { check.registered_github_url && <>
-                    <a className="tool-tip" data-text="Click to view source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
-                </>}
-                <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank"><img alt="history" src={Image.History()} style={{marginBottom:"1px",height:"18"}} /></Link>
-                <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check, historyList)})}>&nbsp;&nbsp;<b>{Char.X}</b></span>
-            </div>
-            <div style={{marginBottom:"6pt"}}/>
-            { check.__showingHistory && (<>
-                { check.history?.list?.length > 0 ? (<>
-                    <table style={{width:"100%"}}>
-                        <TableHead columns={columns} list={check.history.list} refresh={() => refreshHistory(check, env, historyList)} update={(e) => historyList.update()} style={{color:Styles.GetForegroundColor(),fontWeight:"bold"}} lines={true} />
-                    <tbody>
-                    {check.history.list.map((history, index) => <React.Fragment key={index}>
-                        <React.Fragment key={extractUuid(history)}>
-                            { index !== 0 && (<>
-                                <tr><td style={{paddingTop:"2px"}}></td></tr>
-                                <tr><td style={{height:"1px",background:"gray"}} colSpan="5"></td></tr>
-                                <tr><td style={{paddingBottom:"2px"}}></td></tr>
-                            </>)}
-                            <tr>
-                            <td>
-                                {extractStatus(history) === "PASS" ?
-                                    <span style={{color:"inherit"}}>{Char.Check}</span>
-                                :   <span style={{color:"darkred"}}>{Char.X}</span> }
-                            &nbsp;&nbsp;</td>
-                            <td style={{whiteSpace:"nowrap"}}>
-                                <span className="tool-tip" data-text={Time.Ago(extractTimestamp(history))} onClick={() => {toggleHistoryResult(check, history, extractUuid(history), historyList); }} style={{cursor:"pointer"}}>
-                                    {extractTimestamp(history)}
-                                </span>
-                            &nbsp;&nbsp;</td>
-                            <td style={{whiteSpace:"nowrap"}}>
-                                {extractStatus(history) === "PASS" ? (<>
-                                    <b style={{color:"inherit"}}>OK</b>
-                                </>):(<>
-                                    {extractStatus(history) === "WARN" ? (<>
-                                        <b style={{color:"black"}}>WARNING</b>
-                                    </>):(<>
-                                        <b style={{color:"darkred"}}>ERROR</b>
-                                    </>)}
-                                </>)}
-                            &nbsp;&nbsp;</td>
-                            <td style={{textAlign:"right"}}>
-                                {extractDuration(history)}
-                            &nbsp;&nbsp;</td>
-                            <td style={{whiteSpace:"nowrap"}}>
-                                { extractStatus(history) === "PASS" && extractState(history) === "Not queued" ? <>
-                                    Done
-                                </>:<>
-                                    {extractState(history)}
-                                </>}
-                            &nbsp;&nbsp;</td>
-                            </tr>
-                        </React.Fragment>
-                        { (history.__resultShowing) &&
-                            <tr>
-                                <td colSpan="6">
-                                    <pre className="box lighten" style={{wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"680pt"}}>
-                                        { history.__resultLoading ? <>
-                                            <StandardSpinner condition={history.__resultLoading} color={Styles.GetForegroundColor()} label="Loading result"/>
-                                        </>:<>
-                                            <div style={{float:"right",marginTop:"-0px"}}>
-                                                <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{Json.Str(history.__result)}</span>
-                                                <img alt="copy" onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
-                                                <span onClick={() => hideHistoryResult(history, historyList)} style={{marginLeft:"6pt",marginRight:"2pt",fontSize:"large",fontWeight:"bold",cursor:"pointer"}}>X</span>
-                                            </div>
-                                            {Yaml.Format(history.__result)}
-                                        </>}
-                                    </pre>
-                                </td>
-                            </tr>
-                        }
-                    </React.Fragment>)}
-                    </tbody>
-                    </table>
-                </>):(<>
-                    { check.history?.list ? (<>
-                        <div style={{color:"black", borderTop:"1px solid", paddingTop:"4pt"}}>
-                            { historyList.loading ? <>
-                                <StandardSpinner condition={true} color={Styles.GetForegroundColor()} label="Loading history" />
-                            </>:<>
-                                No history &nbsp;
-                                <b onClick={() => fetchHistory(check, env, historyList)} style={{cursor:"pointer"}}>{Char.Refresh}</b>
-                            </>}
-                        </div>
-                    </>):(<>
-                        <div style={{color:"black", borderTop:"1px solid"}} />
-                        <StandardSpinner condition={!check.history} color={Styles.GetForegroundColor()} label="Loading history" />
-                    </>)}
-                </>)}
-            </>)}
-        </div>
-    }
-
-    const ResultsHistoryPanel = ({ env }) => {
-        if (historyList.error) {
-            return <FetchErrorBox error={historyList.error} message="Error loading check history from Foursight API" />
-        }
-        let histories = historyList.filter((check) => check.__showingHistory);
-        if (!histories || histories.length <= 0) {
-            return <span />
-        }
-        return <div>
-            <b style={{marginBottom:"100pt"}}>Recent Results</b>
-            { histories?.map((selectedHistory, index) =>
-                <div key={index} style={{marginTop:"3pt"}}>
-                    <ResultsHistoryBox check={selectedHistory} env={env} />
-                </div>
-            )}
-        </div>
-    }
-
-    function showHistoryResult(check, history, uuid, historyList) {
-        history.__resultShowing = true;
-        history.__resultLoading = true;
-//      history.__resultError = false;
-        historyList.update();
-        historyList.refresh({
-            url: Server.Url(`/checks/${check.name}/history/${uuid}`, environ),
-            onData: (data, current) => {
-                if (history.__resultShowing) {
-                    history.__result = data;
-                }
-                return current;
-            },
-            onDone: (response) => {
-                history.__resultLoading = false;
-            }
-        });
-    }
-
-    function hideHistoryResult(history, historyList) {
-        history.__resultShowing = false;
-        history.__result = null;
-        history.__resultLoading = false;
-//      history.__resultError = false;
-        historyList.update();
-    }
-
-    function toggleHistoryResult(check, history, uuid, historyList) {
-        if (history.__resultShowing) {
-            hideHistoryResult(history, historyList);
-        }
-        else {
-            showHistoryResult(check, history, uuid, historyList);
-        }
     }
 
     // TODO
@@ -1567,7 +1562,7 @@ const ChecksPage = (props) => {
                     <td style={{paddingLeft: (groupList?.length > 0 || groupList.error || isShowingChecksRaw()) ? "10pt" : "0",verticalAlign:"top"}}>
                         <LambdasView />
                         <RecentRunsView />
-                        <ResultsHistoryPanel env={environ} />
+                        <ResultsHistoryPanel env={environ} historyList={historyList} />
                     </td>
                 </tr>
             </tbody></table>

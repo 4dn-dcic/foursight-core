@@ -32,9 +32,9 @@ export const DotSpinner = ({loading, color, size}) => {
     return <DotLoader color={color} loading={loading} cssOverride={override} width={size} />
 }
 
-export const PuffSpinner = ({loading, color, size}) => {
+export const PuffSpinner = ({loading, color, size, inline = false}) => {
     const override: CSSProperties = {
-        display: "block",
+        display: inline ? "inline" : "block",
         margin: "0 auto"
     };
     return <PuffLoader color={color} loading={loading} cssOverride={override} size={size} />

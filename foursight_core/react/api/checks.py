@@ -32,9 +32,9 @@ class Checks:
     def get_checks(self, env: str) -> dict:
         """
         Returns a dictionary containing all checks, annotated with various info,
-        e.g. the (cron) schedule from the associated lambdas, and check kwargs,
-        from the check function decorators; filtered by the given env name.
-        Cached on/after the first call.
+        e.g. the (cron) schedule from the associated lambdas, check kwargs, and
+        associated actions, from the check function decorators; filtered by the
+        given env name. Cached on the first call, except for the filtering part.
         """
         if not Checks._cached_checks:
             checks = self._check_setup
@@ -67,7 +67,7 @@ class Checks:
                 checks_groups.append({"group": check_item_group, "checks": [check_item]})
         return checks_groups
 
-    def get_action_checks(self, env: str, action: str) -> list:
+    def _get_action_checks(self, env: str, action: str) -> list:
         """
         Returns the list of checks associated with the given action.
         """
@@ -79,12 +79,12 @@ class Checks:
                     action_checks.append(check)
         return action_checks
 
-    def get_action(self, env: str, action: str) -> Optional[dict]:
+    def _get_action(self, env: str, action: str) -> Optional[dict]:
         checks = self.get_checks(env)
         for check_key in checks.keys():
             check = checks[check_key]
             if check.get("registered_action") and check["registered_action"].get("name") == action:
-                action_checks = self.get_action_checks(env, action)
+                action_checks = self._get_action_checks(env, action)
                 return {"type": "action", **check["registered_action"], "checks": action_checks}
         return None
 
@@ -98,7 +98,7 @@ class Checks:
         for check_key in checks.keys():
             if check_key == check:
                 return {"type": "check", **checks[check_key]}
-        return self.get_action(env, check)
+        return self._get_action(env, check)
 
     def _filter_checks_by_env(self, checks: dict, env: str) -> dict:
         """
@@ -121,12 +121,19 @@ class Checks:
     def _annotate_checks_for_dependencies(self, checks: dict) -> None:
         """
         Annotate the give checks dictionary with "referrer" information related to the
-        check "dependencies". A check may be a list of dependencies, and for general
-        info (in the UI) and troubleshooting purposes it would be useful to also 
-        have the inverse relationship, i.e. for each we create a "referrers" list
-        with the list of names of any checks which depend on (refer to) the check.
+        check "dependencies". A check may have a list of dependencies, and for general
+        info (in the UI) and troubleshooting purposes, it would be useful to also 
+        have the inverse relationship, i.e. for each check which is part of another
+        check dependency, we create a "referrers" list with the names of any checks
+        which depend on (refer to) the check, i.e. which have it in its dependencies
+        list. This is intended to be called once and cached (see: get_checks).
         """
         def get_check(check_name: str, env: str) -> Optional[dict]:
+            """
+            Returns the check from the (outer) checks dictionary with the given name;
+            we can't use the top-level get_checks because that one calls into this,
+            which would result in infinite recursion; this is a startup/bootstrap activity.
+            """
             for check_key in self._filter_checks_by_env(checks, env):
                 if check_key == check_name:
                     return checks[check_key]
@@ -342,7 +349,7 @@ class Checks:
 
     def get_registry(self) -> dict:
         # A check may have at most one associated action;
-        # but the same action# may be associated with more than
+        # but the same action may be associated with more than
         # one check; setup the latter part of that relationship here.
         if not self._cached_registry:
             registry = Decorators.get_registry()
