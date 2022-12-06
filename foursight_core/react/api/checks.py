@@ -120,7 +120,7 @@ class Checks:
 
     def _annotate_checks_for_dependencies(self, checks: dict) -> None:
         """
-        Annotate the give checks dictionary with "referrer" information related to the
+        Annotates the give checks dictionary with "referrer" information related to the
         check "dependencies". A check may have a list of dependencies, and for general
         info (in the UI) and troubleshooting purposes, it would be useful to also 
         have the inverse relationship, i.e. for each check which is part of another
