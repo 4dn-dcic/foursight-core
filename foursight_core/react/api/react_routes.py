@@ -133,6 +133,13 @@ class ReactRoutes:
         """
         return app.core.reactapi_checks_grouped(app.current_request.to_dict(), env)
 
+    @route("/{env}/checks/grouped/schedule", authorize=True)
+    def reactapi_route_checks_grouped_by_schedule(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns detailed info on all defined checks, grouped by check group.
+        """
+        return app.core.reactapi_checks_grouped_by_schedule(app.current_request.to_dict(), env)
+
     @route("/{env}/checks/{check}", authorize=True)
     def reactapi_route_checks_check(env: str, check: str) -> Response:  # noqa: implicit @staticmethod via @route
         """

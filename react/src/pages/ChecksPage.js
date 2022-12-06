@@ -1093,6 +1093,7 @@ const ChecksPage = (props) => {
     const historyList = useFetch({ initial: [] });
     const groupList = useFetch({ initial: [] });
     const info = useFetch(Server.Url("/info")); // only to get the raw checks file path for info/display
+    const [ groupBySchedule, setGroupBySchedule ] = useState(false);
 
     function findGroupWithFewestChecks(groups) {
         let group = null;
@@ -1105,7 +1106,8 @@ const ChecksPage = (props) => {
     }
         
     const checks = useFetch({
-        url: Server.Url("/checks/grouped", environ),
+        url: Server.Url("/checks/grouped/schedule", environ),
+        nofetch: true,
         onData: (data) => {
             data.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0));
             if (data.length > 0) {
@@ -1119,6 +1121,7 @@ const ChecksPage = (props) => {
             return data;
         }
     });
+
     const lambdas = useFetch({
         url: Server.Url("/lambdas", environ),
         onData: (data) => {
@@ -1130,11 +1133,12 @@ const ChecksPage = (props) => {
     useEffect(() => {
 
         refreshChecksStatus();
+        checks.fetch(groupBySchedule ? Server.Url("/checks/grouped/schedule") : Server.Url("/checks/grouped"));
 
         // This running periodically screws up the check run configuration inputs.
         // setInterval(() =>  refreshChecksStatus(), 10000);
 
-    }, []);
+    }, [groupBySchedule]);
 
     const checksStatus = useFetch();
     function refreshChecksStatus() {
@@ -1161,7 +1165,16 @@ const ChecksPage = (props) => {
 
     const ChecksGroupBox = ({props}) => {
         return <div style={{minWidth:"150pt"}}>
-            <div style={{fontWeight:"bold",paddingBottom:"3pt",cursor:"pointer"}} onClick={() => onGroupSelectAll()}>Check Groups</div>
+            <div>
+                <div style={{paddingBottom:"3pt",cursor:"pointer"}}>
+                    <b onClick={() => onGroupSelectAll()}>
+                        { groupBySchedule ? <>Check Schedules</> : <>Check Groups</> }
+                    </b>
+                    <span style={{fontSize:"9pt"}}>
+                      &nbsp;(<span className="pointer" onClick={() => { setGroupBySchedule(!groupBySchedule); groupList.update([]); }}>By {groupBySchedule ? <>Group</> : <>Schedule</>}</span>)
+                    </span>
+                </div>
+            </div>
             <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
                 { checks.map((datum, index) =>
                     <div key={datum.group}>

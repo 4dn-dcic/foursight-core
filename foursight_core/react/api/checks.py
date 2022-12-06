@@ -7,6 +7,7 @@ import os
 from typing import Callable, Optional
 from ...decorators import Decorators
 from .envs import Envs
+from .misc_utils import memoize
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -48,24 +49,70 @@ class Checks:
             Checks._cached_checks = checks
         return self._filter_checks_by_env(Checks._cached_checks, env)
 
+    @memoize
     def get_checks_grouped(self, env: str) -> list:
         """
         Like get_checks but returns the checks grouped by their group names.
         """
-        checks_groups = []
+        grouped_checks = []
         checks = self.get_checks(env)
         for check_name in checks:
             check_item = checks[check_name]
             check_item_group = check_item["group"]
             found = False
-            for grouped_check in checks_groups:
+            for grouped_check in grouped_checks:
                 if grouped_check["group"] == check_item_group:
                     grouped_check["checks"].append(check_item)
                     found = True
                     break
             if not found:
-                checks_groups.append({"group": check_item_group, "checks": [check_item]})
-        return checks_groups
+                grouped_checks.append({"group": check_item_group, "checks": [check_item]})
+        return grouped_checks
+
+    @memoize
+    def get_checks_grouped_by_schedule(self, env: str) -> list:
+        """
+        Like get_checks_grouped but groups by schedule (i.e. by scheduling lambdas).
+        """
+        def create_schedule_group_title(name: str):
+            """
+            Pretty lame title-ifying the groiup name for display purposes, based
+            on what we knnow about the currently existing scheduling lambda names.
+            """
+            name = name.replace("Min", " Minute")
+            if name.endswith("Checks"):
+                return name[:len(name) - len("Checks") - 0]
+            elif name.endswith("Checks1"):
+                return name[:len(name) - len("Checks1") - 0] + " I"
+            elif name.endswith("Checks2"):
+                return name[:len(name) - len("Checks2") - 0] + " II"
+            elif name.endswith("Checks3"):
+                return name[:len(name) - len("Checks3") - 0] + " III"
+            elif name.endswith("Checks4"):
+                return name[:len(name) - len("Checks4") - 0] + " IV"
+            elif name.endswith("Checks5"):
+                return name[:len(name) - len("Checks5") - 0] + " V"
+            else:
+                return name
+        grouped_checks = []
+        lambdas = self.get_annotated_lambdas()
+        for lambda_item in lambdas:
+            schedule_group_name = create_schedule_group_title(lambda_item["lambda_name"])
+            if isinstance(lambda_item.get("lambda_checks"), list) and len(lambda_item["lambda_checks"]) > 0:
+                for lambda_item_check in lambda_item["lambda_checks"]:
+                    check = self.get_check(env, lambda_item_check.get("check_name"))
+                    if check:
+                        group = [group for group in grouped_checks if group["group"] == schedule_group_name]
+                        if len(group) == 0:
+                            group = {
+                                "group": schedule_group_name,
+                                "checks": []
+                            }
+                            grouped_checks.append(group)
+                        else:
+                            group = group[0]
+                        group["checks"].append(check)
+        return grouped_checks
 
     def _get_action_checks(self, env: str, action: str) -> list:
         """
@@ -458,3 +505,4 @@ class Checks:
         self._cached_checks = None
         self._cached_lambdas = None
         self._cached_registry = None
+        self.get_checks_grouped.cache_clear()

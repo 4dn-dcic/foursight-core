@@ -427,14 +427,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs)
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
 
-    def reactapi_checks_grouped(self, request: dict, env: str) -> Response:
-        """
-        Called from react_routes for endpoint: GET /{env}/checks_grouped
-        Returns a summary (list) of all defined checks, grouped by check group.
-        """
-        ignored(request)
-        return self.create_success_response(self._checks.get_checks_grouped(env))
-
     def reactapi_checks_ungrouped(self, request: dict, env: str) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/checks
@@ -443,6 +435,22 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         ignored(request)
         return self.create_success_response(self._checks.get_checks(env))
+
+    def reactapi_checks_grouped(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/checks/grouped
+        Returns a summary (list) of all defined checks, grouped by check group.
+        """
+        ignored(request)
+        return self.create_success_response(self._checks.get_checks_grouped(env))
+
+    def reactapi_checks_grouped_by_schedule(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/checks/grouped/schedule
+        Returns a summary (list) of all defined checks, grouped by schedule.
+        """
+        ignored(request)
+        return self.create_success_response(self._checks.get_checks_grouped_by_schedule(env))
 
     def reactapi_checks_check(self, request: dict, env: str, check: str) -> Response:
         return self.create_success_response(self._checks.get_check(env, check))
