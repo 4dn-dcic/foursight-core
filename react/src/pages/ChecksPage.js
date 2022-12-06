@@ -1108,6 +1108,7 @@ const ChecksPage = (props) => {
     const checks = useFetch({
         url: Server.Url("/checks/grouped/schedule", environ),
         nofetch: true,
+        cache: true,
         onData: (data) => {
             data.sort((a,b) => a.group > b.group ? 1 : (a.group < b.group ? -1 : 0));
             if (data.length > 0) {
@@ -1124,6 +1125,7 @@ const ChecksPage = (props) => {
 
     const lambdas = useFetch({
         url: Server.Url("/lambdas", environ),
+        cache: true,
         onData: (data) => {
             data.sort((a,b) => a.lambda_name > b.lambda_name ? 1 : (a.lambda_name < b.lambda_name ? -1 : 0));
             return data;
