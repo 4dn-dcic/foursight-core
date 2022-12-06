@@ -1067,15 +1067,15 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
             </>):(<>
                 { (!check.__resultHistory.loading) ? (<>
                     <div style={{color:"black", borderTop:"1px solid", paddingTop:"4pt"}}>
-                        { historyList.loading ? <>
-                            <StandardSpinner condition={true} color={Styles.GetForegroundColor()} label="Loading history" />
+                        { check.__resultHistory.loading ? <>
+                            <StandardSpinner condition={check.__resultHistory.loading} color={Styles.GetForegroundColor()} label="Loading history" style={{}} />
                         </>:<>
                             No history &nbsp;
                             <b onClick={() => refreshHistory()} style={{cursor:"pointer"}}>{Char.Refresh}</b>
                         </>}
                     </div>
                 </>):(<>
-                    <div style={{color:"black", borderTop:"1px solid"}} />
+                    <div style={{color:"black", borderTop:"1px solid",marginBottom:"3pt"}} />
                     <StandardSpinner condition={check.__resultHistory.loading} color={Styles.GetForegroundColor()} label="Loading history" />
                 </>)}
             </>)}
