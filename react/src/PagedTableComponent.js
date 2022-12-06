@@ -111,7 +111,7 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
                       <option>200</option>
                   </select>
                   </span></span>&nbsp;
-                  <span>Showing {offset + 1} ... {offset + limit}&nbsp;|&nbsp;</span>
+                  <span>Showing {offset + 1} ... {Math.min(offset + limit, total)}&nbsp;|&nbsp;</span>
                   <span>More: {more}&nbsp;|&nbsp;</span>
                   <span>Total: {total}&nbsp;</span>
             </td></tr></tbody></table>

@@ -288,7 +288,7 @@ const CheckHistoryPage = (props) => {
                             </select>
                             </span></span>
                             |
-                            Showing {offset + 1} thru {offset + limit} | Total: {history.get("paging.total")}&nbsp;&nbsp;
+                            Showing {offset + 1} thru {Math.min(offset + limit, history.get("paging.total"))} | Total: {history.get("paging.total")}&nbsp;&nbsp;
                         </div>
                     </td>
                     </tr></tbody></table>
