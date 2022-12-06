@@ -108,14 +108,22 @@ class Checks:
             return checks
         checks_for_env = {}
         for check_key in checks.keys():
+            included = False
             if checks[check_key].get("schedule"):
                 for check_schedule_key in checks[check_key]["schedule"].keys():
                     for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
                         if check_env_key == "all" or self._envs.is_same_env(check_env_key, env):
+                            included = True
                             checks_for_env[check_key] = checks[check_key]
             else:
                 # If no schedule section (which has the env section) then include it.
+                included = True
                 checks_for_env[check_key] = checks[check_key]
+            if not included:
+                if isinstance(checks[check_key].get("display"), list):
+                    for check_env_key in checks[check_key]["display"]:
+                        if check_env_key == "all" or self._envs.is_same_env(check_env_key, env):
+                            checks_for_env[check_key] = checks[check_key]
         return checks_for_env
 
     def _annotate_checks_for_dependencies(self, checks: dict) -> None:
