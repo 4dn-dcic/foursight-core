@@ -900,7 +900,7 @@ import Styles from '../Styles';
         return <div>
             <b style={{marginBottom:"100pt"}}>Recent Results</b>
             { histories?.map((selectedHistory, index) =>
-                <div key={index} style={{marginTop:"3pt"}}>
+                <div key={selectedHistory.name} style={{marginTop:"3pt"}}>
                     <ResultsHistoryBox check={selectedHistory} env={env} historyList={historyList} />
                 </div>
             )}
@@ -1065,18 +1065,18 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
                 </tbody>
                 </table>
             </>):(<>
-                { check.__resultHistory.data?.list ? (<>
+                { (!check.__resultHistory.loading) ? (<>
                     <div style={{color:"black", borderTop:"1px solid", paddingTop:"4pt"}}>
                         { historyList.loading ? <>
                             <StandardSpinner condition={true} color={Styles.GetForegroundColor()} label="Loading history" />
                         </>:<>
                             No history &nbsp;
-                            <b onClick={() => fetchHistory(check, env, historyList)} style={{cursor:"pointer"}}>{Char.Refresh}</b>
+                            <b onClick={() => refreshHistory()} style={{cursor:"pointer"}}>{Char.Refresh}</b>
                         </>}
                     </div>
                 </>):(<>
                     <div style={{color:"black", borderTop:"1px solid"}} />
-                    <StandardSpinner condition={!check.__resultHistory.loading} color={Styles.GetForegroundColor()} label="Loading history" />
+                    <StandardSpinner condition={check.__resultHistory.loading} color={Styles.GetForegroundColor()} label="Loading history" />
                 </>)}
             </>)}
         </>)}
