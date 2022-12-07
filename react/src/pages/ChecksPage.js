@@ -1143,6 +1143,7 @@ const ChecksPage = (props) => {
     }, [groupBySchedule]);
 
     const checksStatus = useFetch();
+
     function refreshChecksStatus() {
         checksStatus.refresh(Server.Url(`/checks_status`, environ));
     }
@@ -1165,21 +1166,19 @@ const ChecksPage = (props) => {
         }
     }
 
-    function onGroupingChoiceSelect(e) {
-        setGroupBySchedule(e.target.value === "schedule");
+    function onGroupClick() {
+        setGroupBySchedule(!groupBySchedule);
         groupList.update([]);
     }
 
     const ChecksGroupBox = ({props}) => {
         return <div style={{minWidth:"150pt"}}>
-            <div className="tool-tip" data-text="Click to choose grouping" style={{paddingBottom:"3pt"}}>
-                <select
-                    defaultValue={groupBySchedule ? "schedule" : "group"}
-                    style={{border:"0",fontSize:"inherit",fontWeight:"bold",cursor:"pointer","WebkitAppearance":"none"}}
-                    onChange={onGroupingChoiceSelect}>
-                    <option value="group">Check Groups&nbsp;&nbsp;&#8576;</option>
-                    <option value="schedule">Check Schedules&nbsp;&nbsp;&#8576;</option>
-                </select>
+            <div className="tool-tip pointer" data-text={`Click to group by ${groupBySchedule ? "group" : "schedule"}.`} style={{paddingBottom:"3pt",fontWeight:"bold"}} onClick={onGroupClick}>
+                { groupBySchedule ? <>
+                    Check Schedules&nbsp;<img src={Image.CalendarIcon()} height="17" style={{marginTop:"1px",marginRight:"6pt",float:"right"}} />
+                </>:<>
+                    Check Groups&nbsp;&nbsp;<img src={Image.HierarchyIcon()} height="16" style={{marginTop:"1pt",marginRight:"6pt",float:"right"}} />
+                </>}
             </div>
             <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
                 { checks.map((datum, index) =>
@@ -1452,7 +1451,7 @@ const ChecksPage = (props) => {
     }
 
     const LambdasPanel = ({props}) => {
-        return <div>
+        return <div style={{fontSize:"small"}}>
             <div style={{fontWeight:"bold",paddingBottom:"3pt"}}>Lambdas</div>
             <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
                 { lambdas.map((lambda, index) =>
@@ -1470,12 +1469,12 @@ const ChecksPage = (props) => {
     const LambdasView = () => {
         const lambdasShowing = lambdas?.filter((lambda) => isShowingLambdaView(lambda));
         if (Type.IsNonEmptyArray(lambdasShowing)) {
-            return <>
+            return <div>
                 <b>Lambdas</b>
                 { lambdasShowing?.map(lambda =>
                      <LambdaView key={lambda.lambda_name} lambda={lambda} />
                 )}
-            </>
+            </div>
         }
     }
 

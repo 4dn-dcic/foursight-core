@@ -49,6 +49,13 @@ const MAX_SAVE = 25;
 //   hook is called. Useful when the fetch defined by this hook needs to be called later,
 //   via the refresh function returned from this hook (see the RETURN VALUE section below).
 //
+// - cache
+//   Cache the result by URL. After successful fetch subsequent fetches will returned
+//   the cached result, unless/until the next fetch with the nocache argument property.
+//
+// - nocache
+//   If there is a cached result then ignore/discard it and fetch anew (and then cache again).
+//
 // - nologout
 //   Boolean indicating, if true, that the default behavior, of automatically logging out
 //   the user if we get an unauthenticated (HTTP 401) response for the fetch, is disabled.

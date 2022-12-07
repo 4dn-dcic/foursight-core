@@ -423,14 +423,14 @@ const CheckDetailBox = ({check, checkInfo}) => {
     return <>
         <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
             <table><tbody style={{fontSize:"small",verticalAlign:"top"}}>
-                <tr>
+                <tr style={{fontSize:"12pt"}}>
                     <td style={{paddingRight:"8pt"}}><b>Name</b>:</td>
                     <td>
                         {checkInfo.get("name")}
                         <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"3pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={checkInfo.get("registered_github_url")}><img alt="github" src={Image.GitHubLoginLogo()} height="13"/></a>
                     </td>
                 </tr>
-                <tr><td style={{paddingTop:"2px"}}></td></tr>
+                <tr><td style={{paddingTop:"3px"}}></td></tr>
                 <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                 <tr><td style={{paddingBottom:"2px"}}></td></tr>
                 <tr>
@@ -439,7 +439,7 @@ const CheckDetailBox = ({check, checkInfo}) => {
                         {checkInfo.get("title")} <br />
                     </td>
                 </tr>
-                <tr><td style={{paddingTop:"2px"}}></td></tr>
+                <tr><td style={{paddingTop:"3px"}}></td></tr>
                 <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                 <tr><td style={{paddingBottom:"2px"}}></td></tr>
                 <tr>
@@ -448,8 +448,8 @@ const CheckDetailBox = ({check, checkInfo}) => {
                         {checkInfo.get("group")}
                     </td>
                 </tr>
-                <tr><td style={{paddingTop:"2px"}}></td></tr>
-                <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                <tr><td style={{paddingTop:"4px"}}></td></tr>
+                <tr><td style={{height:"1px",background:"black"}} colSpan="9"></td></tr>
                 <tr><td style={{paddingBottom:"2px"}}></td></tr>
                 <tr>
                     <td style={{verticalAlign:"top",paddingRight:"8pt"}}><b>Schedule:</b></td>
@@ -462,8 +462,8 @@ const CheckDetailBox = ({check, checkInfo}) => {
                     </td>
                 </tr>
                 { getDependenciesFromCheck(checkInfo).length > 0 && <>
-                    <tr><td style={{paddingTop:"2px"}}></td></tr>
-                    <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                    <tr><td style={{paddingTop:"3px"}}></td></tr>
+                    <tr><td style={{height:"1px",background:"black"}} colSpan="9"></td></tr>
                     <tr><td style={{paddingBottom:"2px"}}></td></tr>
                     <tr>
                         <td style={{paddingRight:"8pt"}}><b>Dependencies</b>:</td>
@@ -475,7 +475,7 @@ const CheckDetailBox = ({check, checkInfo}) => {
                     </tr>
                 </>}
                 { (checkInfo.data?.referrers) && <>
-                    <tr><td style={{paddingTop:"2px"}}></td></tr>
+                    <tr><td style={{paddingTop:"3px"}}></td></tr>
                     <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                     <tr><td style={{paddingBottom:"2px"}}></td></tr>
                     <tr>
@@ -487,8 +487,8 @@ const CheckDetailBox = ({check, checkInfo}) => {
                         </td>
                     </tr>
                 </>}
-                <tr><td style={{paddingTop:"2px"}}></td></tr>
-                <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                <tr><td style={{paddingTop:"3px"}}></td></tr>
+                <tr><td style={{height:"1px",background:"black"}} colSpan="9"></td></tr>
                 <tr><td style={{paddingBottom:"2px"}}></td></tr>
                 <tr>
                     <td><b>Code</b>:</td>
@@ -497,7 +497,7 @@ const CheckDetailBox = ({check, checkInfo}) => {
                         <small>{dirname(checkInfo.get("registered_file"))}</small>
                     </td>
                 </tr>
-                <tr><td style={{paddingTop:"2px"}}></td></tr>
+                <tr><td style={{paddingTop:"3px"}}></td></tr>
                 <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                 <tr><td style={{paddingBottom:"2px"}}></td></tr>
                 <tr>
@@ -506,7 +506,7 @@ const CheckDetailBox = ({check, checkInfo}) => {
                         {checkInfo.get("registered_module")}
                     </td>
                 </tr>
-                <tr><td style={{paddingTop:"2px"}}></td></tr>
+                <tr><td style={{paddingTop:"3px"}}></td></tr>
                 <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                 <tr><td style={{paddingBottom:"2px"}}></td></tr>
                 <tr>
@@ -515,7 +515,7 @@ const CheckDetailBox = ({check, checkInfo}) => {
                         {checkInfo.get("registered_package")}
                     </td>
                 </tr>
-                <tr><td style={{paddingTop:"2px"}}></td></tr>
+                <tr><td style={{paddingTop:"3px"}}></td></tr>
                 <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                 <tr><td style={{paddingBottom:"2px"}}></td></tr>
                 <tr>
@@ -534,14 +534,14 @@ const CheckDetailBox = ({check, checkInfo}) => {
             <b>Associated Action</b>
             <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
                 <table><tbody style={{fontSize:"small",verticalAlign:"top"}}>
-                    <tr>
+                    <tr style={{fontSize:"12pt"}}>
                         <td style={{paddingRight:"8pt"}}><b>Name</b>:</td>
                         <td>
                             <Link to={Client.Path(`/checks/${checkInfo.get("registered_action.name")}/history`)}>{checkInfo.get("registered_action.name")}</Link>
                             <a className="tool-tip" data-text={`Click to view source code for this action.`} style={{marginLeft:"3pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={checkInfo.get("registered_action.github_url")}><img alt="github" src={Image.GitHubLoginLogo()} height="13"/></a>
                         </td>
                     </tr>
-                    <tr><td style={{paddingTop:"2px"}}></td></tr>
+                    <tr><td style={{paddingTop:"3px"}}></td></tr>
                     <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                     <tr><td style={{paddingBottom:"2px"}}></td></tr>
                     <tr>
@@ -557,8 +557,8 @@ const CheckDetailBox = ({check, checkInfo}) => {
                             </React.Fragment>)}
                         </td>
                     </tr>
-                    <tr><td style={{paddingTop:"2px"}}></td></tr>
-                    <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
+                    <tr><td style={{paddingTop:"3px"}}></td></tr>
+                    <tr><td style={{height:"1px",background:"black"}} colSpan="9"></td></tr>
                     <tr><td style={{paddingBottom:"2px"}}></td></tr>
                     <tr>
                         <td style={{paddingRight:"8pt"}}><b>Code</b>:</td>
@@ -567,7 +567,7 @@ const CheckDetailBox = ({check, checkInfo}) => {
                             <small>{dirname(checkInfo.get("registered_action.file"))}</small>
                         </td>
                     </tr>
-                    <tr><td style={{paddingTop:"2px"}}></td></tr>
+                    <tr><td style={{paddingTop:"3px"}}></td></tr>
                     <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                     <tr><td style={{paddingBottom:"2px"}}></td></tr>
                     <tr>
@@ -576,7 +576,7 @@ const CheckDetailBox = ({check, checkInfo}) => {
                             {checkInfo.get("registered_action.module")}
                         </td>
                     </tr>
-                    <tr><td style={{paddingTop:"2px"}}></td></tr>
+                    <tr><td style={{paddingTop:"3px"}}></td></tr>
                     <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                     <tr><td style={{paddingBottom:"2px"}}></td></tr>
                     <tr>
@@ -585,7 +585,7 @@ const CheckDetailBox = ({check, checkInfo}) => {
                             {checkInfo.get("registered_action.package")}
                         </td>
                     </tr>
-                    <tr><td style={{paddingTop:"2px"}}></td></tr>
+                    <tr><td style={{paddingTop:"3px"}}></td></tr>
                     <tr><td style={{height:"1px",background:"gray"}} colSpan="9"></td></tr>
                     <tr><td style={{paddingBottom:"2px"}}></td></tr>
                     <tr>
