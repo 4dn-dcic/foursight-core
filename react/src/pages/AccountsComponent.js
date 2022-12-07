@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
 import { useFetch } from '../utils/Fetch';
 import Server from '../utils/Server';
+import Styles from '../Styles';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
@@ -336,7 +337,11 @@ const AccountInfoRight = ({ info }) => {
 
 const AccountInfo = ({ account, header, all }) => {
 
-    const info = useFetch(Server.Url(`/accounts_from_s3/${account.id}`), { nofetch: false });
+    const info = useFetch(Server.Url(`/accounts_from_s3/${account.id}`), { cache: true, nofetch: true });
+
+    useEffect(() => {
+        refreshData();
+    }, []);
 
     function refreshData() {
         info.refresh();
@@ -356,7 +361,6 @@ const AccountInfo = ({ account, header, all }) => {
     }
 
     if (!all && !isCurrentAccount(info)) return null;
-
     return <>
         <div className={isCurrentAccountAndStage(info) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt"}}>
             {isCurrentAccount(info) ? <>
@@ -419,7 +423,7 @@ const AccountsComponent = ({ header }) => {
 
     function refreshAll() {
         accounts.update(null);
-        accounts.refresh(Server.Url("/accounts_from_s3"));
+        accounts.fetch(Server.Url("/accounts_from_s3"));
     }
 
     function toggleAll() {
@@ -435,23 +439,18 @@ const AccountsComponent = ({ header }) => {
     }
 
     return <>
-        <b>Known Accounts</b>
-        { (header?.app?.accounts_file || header?.app?.accounts_file_from_s3) && <>
-             <small>&nbsp;&nbsp;&ndash;&nbsp;&nbsp;{header?.app?.accounts_file_from_s3}</small>
-        </>}
-        <small style={{float:"right",marginRight:"10pt"}}>
-            { header?.app?.accounts_file_from_s3 ? <>
+        <div style={{borderBottom:"2px solid black",marginBottom:"8pt"}}>
+            <div className="tool-tip" data-text={header?.app?.accounts_file_from_s3} style={{marginTop:"0pt"}}><b>Known Accounts</b>
+                <div style={{float:"right",display:"inline",fontSize:"small",marginRight:"4pt",marginTop:"0pt"}}>
                 { (all)  ? <>
                     <b className="tool-tip" data-text={"Click to show only local accounts/stages."} style={{cursor:"pointer"}} onClick={toggleAll}>All</b>
                 </>:<>
                     <span className="tool-tip" data-text={"Click to show all known accounts."} style={{cursor:"pointer"}} onClick={toggleAll}>All</span>
                 </>}
-            </>:<>
-                <span style={{color:"#777777"}}>S3</span>
-            </>}
-            &nbsp;|&nbsp;
-            <span style={{cursor:"pointer"}} onClick={refreshAll}>{Char.Refresh}</span>
-        </small>
+                &nbsp;|&nbsp; <span style={{cursor:"pointer"}} onClick={refreshAll}>{Char.Refresh}</span>
+                </div>
+            </div>
+        </div>
         { accounts.length > 0 ? <>
             { accounts?.map((account, index) => <React.Fragment key={account.id}>
                 <AccountInfo account={account} header={header} all={all} />

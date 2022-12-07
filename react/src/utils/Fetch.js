@@ -396,9 +396,13 @@ function _doFetch(args, current = undefined, fetcher) {
         if (data === undefined) {
             data = response.data;
         }
+        if (fetcher) {
+             fetcher.status = status;
+             fetcher.data = data;
+             fetcher.loading = false;
+        }
         args.setStatus(status);
         args.setData(data);
-        args.setError(null);
         args.setLoading(false);
         noteFetchEnd(id, data);
         args.onSuccess(fetcher);
