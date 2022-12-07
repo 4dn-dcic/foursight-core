@@ -25,361 +25,361 @@ import Styles from '../Styles';
         groupList.update();
     }
 
-    function noteChangedResults(groupList) {
-        groupList.update();
-    }
+function noteChangedResults(groupList) {
+    groupList.update();
+}
 
-    function noteChangedCheckBox(groupList) {
-        groupList.update();
-    }
+function noteChangedCheckBox(groupList) {
+    groupList.update();
+}
 
-    function hideResultBox(check, groupList) {
-        check.__showingResults = false;
-        noteChangedSelectedGroups(groupList);
-    }
+function hideResultBox(check, groupList) {
+    check.__showingResults = false;
+    noteChangedSelectedGroups(groupList);
+}
 
-    function showResultBox(check, env, groupList) {
-        check.__showingResults = true;
-        noteChangedSelectedGroups(groupList);
-    }
+function showResultBox(check, env, groupList) {
+    check.__showingResults = true;
+    noteChangedSelectedGroups(groupList);
+}
 
-    function showGroup(group, env, groupList) {
-        if (isSelectedGroup(group, groupList)) {
-            return;
+function showGroup(group, env, groupList) {
+    if (isSelectedGroup(group, groupList)) {
+        return;
+    }
+    groupList.prepend(group);
+    noteChangedSelectedGroups(groupList);
+}
+
+function hideGroup(group, groupList, historyList) {
+    group.checks.map(check => hideHistory(check, historyList));
+    const index = findSelectedGroupIndex(group, groupList);
+    groupList.remove(index);
+}
+
+function isSelectedGroup(group, groupList) {
+    for (let i = 0 ; i < groupList.length ; i++) {
+        const selectedGroup = groupList.get(i);
+        if (selectedGroup.group === group.group) {
+            return true;
         }
-        groupList.prepend(group);
-        noteChangedSelectedGroups(groupList);
+    }
+    return false;
+}
+
+function findSelectedGroupIndex(group, groupList) {
+    for (let i = 0 ; i < groupList.length ; i++) {
+        const selectedGroup = groupList.get(i);
+        if (selectedGroup.group === group.group) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+function isShowingSelectedCheckResultsBox(check) {
+    return check?.__showingResults;
+}
+
+function saveInputKwargs(check) {
+    Object.keys(check.kwargs).forEach(key => {
+        if (!Type.IsBoolean(check.kwargs[key]) && !Type.IsNonEmptyArray(check.kwargs[key])) {
+            const inputId = `${check.name}.${key}`;
+            const inputElement = document.getElementById(inputId);
+            const inputValue = inputElement?.value;
+            check.kwargs[key] = inputValue;
+        }
+    });
+}
+
+function hideHistory(check, historyList) {
+    if (check.__showingHistory) {
+        check.__showingHistory = false;
+        const index = findResultsHistoryIndex(check, historyList);
+        historyList.remove(index);
+    }
+}
+
+function findResultsHistoryIndex(check, historyList) {
+    for (let i = 0 ; i < historyList.length ; i++) {
+        const selectedHistory = historyList.get(i)
+        if (selectedHistory.name === check.name) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+function onClickShowHistory(check, env, historyList) {
+    toggleResultsHistory(check, env, historyList);
+}
+
+function toggleResultsHistory(check, env, historyList) {
+    if (check.__showingHistory) {
+        hideHistory(check, historyList);
+    }
+    else {
+        showHistory(check, env, historyList);
+    }
+}
+
+function showHistory(check, env, historyList) {
+    if (!check.__showingHistory) {
+        check.__showingHistory = true;
+        historyList.prepend(check);
+    }
+}
+
+function doRunCheck(check, env, groupList, historyList, fetch) {
+    const args = check.kwargs;
+    const argsString = Json.Str(args);
+    const argsEncoded = btoa(argsString);
+    hideCheckRunningBox(check, groupList);
+    noteChangedCheckBox(groupList);
+    check.__queueingCheckRun = true;
+    fetch({
+        url: Server.Url(`/checks/${check.name}/run?args=${argsEncoded}`, env),
+        onData: (data) => {
+            //
+            // The only thing we need/want from this is the UUID identifying the check run.
+            //
+            check.__queueingCheckRun = false;
+            check.__queuedCheckRun = data.uuid;
+            //
+            // For user convenience do what they plausably would do anyways: refresh the history,
+            // a few (4) seconds after this check run completes (here).
+            //
+            setTimeout(() => {
+                refreshHistory(check);
+                noteChangedCheckBox(groupList);
+            }, 4 * 1000);
+            return data.uuid;
+        }
+    });
+    check.__queuedCheckRun = null;
+    showCheckRunningBox(check, groupList);
+    showHistory(check, env, historyList);
+}
+
+function doRunAction(check, action, env, groupList, fetch) {
+    const args = { check_name: check.name, called_by: check.__result?.get("uuid") }
+    const argsString = Json.Str(args);
+    const argsEncoded = btoa(argsString);
+    hideActionRunningBox(check, groupList);
+    noteChangedCheckBox(groupList);
+    check.__queueingActionRun = true;
+    fetch({
+        url: Server.Url(`/action/${action}/run?args=${argsEncoded}`, env),
+        onData: (data) => {
+            //
+            // The only thing we need/want from this is the UUID identifying the action run.
+            //
+            check.__queueingActionRun = false;
+            check.__queuedActionRun = data.uuid;
+            return data.uuid;
+        }
+    });
+    check.__queuedActionRun = null;
+    showActionRunningBox(check, groupList);
+}
+
+function refreshHistory(check) {
+    if (check.__resultHistory) {
+        check.__resultHistory.refresh();
+    }
+}
+
+function showCheckRunningBox(check, groupList) {
+    check.showingCheckRunningBox = true;
+    noteChangedCheckBox(groupList);
+}
+
+function hideCheckRunningBox(check, groupList) {
+    check.showingCheckRunningBox = false;
+    noteChangedCheckBox(groupList);
+}
+
+function showActionRunningBox(check, groupList) {
+    check.__showingActionRunningBox = true;
+    noteChangedCheckBox(groupList);
+}
+
+function hideActionRunningBox(check, groupList) {
+    check.__showingActionRunningBox = false;
+    noteChangedCheckBox(groupList);
+}
+
+const SelectedGroupsPanel = ({ groupList, env, historyList, info }) => {
+
+    if (groupList.error) return <FetchErrorBox error={groupList.error} message="Error loading checks from Foursight API" />
+    return <div>
+        { groupList.length > 0 /* selectedGroups.length > 0 */ ? (<>
+            <div style={{paddingBottom:"3pt"}}><b>Checks</b></div>
+            { groupList.map((selectedGroup, index) /* selectedGroups?.map((selectedGroup, index) */ =>
+                <SelectedGroupBox key={selectedGroup.group} group={selectedGroup} env={env} groupList={groupList} historyList={historyList} info={info} style={{paddingBottom:"6pt"}} />
+            )}
+        </>):(<></>)}
+    </div>
+}
+
+const SelectedGroupBox = ({group, groupList, historyList, env, info, style = {}}) => {
+
+    function toggleShowAllResults(checks, groupList) {
+        if (isShowingAnyResults(checks)) {
+            hideAllResults(checks, groupList);
+        }
+        else {
+            showAllResults(checks, env, groupList);
+        }
     }
 
-    function hideGroup(group, groupList, historyList) {
-        group.checks.map(check => hideHistory(check, historyList));
-        const index = findSelectedGroupIndex(group, groupList);
-        groupList.remove(index);
-    }
-
-    function isSelectedGroup(group, groupList) {
-        for (let i = 0 ; i < groupList.length ; i++) {
-            const selectedGroup = groupList.get(i);
-            if (selectedGroup.group === group.group) {
+    function isShowingAnyResults(checks) {
+        for (let i = 0 ; i < checks?.length ; i++) {
+            if (checks[i].__showingResults) {
                 return true;
             }
         }
         return false;
     }
 
-    function findSelectedGroupIndex(group, groupList) {
-        for (let i = 0 ; i < groupList.length ; i++) {
-            const selectedGroup = groupList.get(i);
-            if (selectedGroup.group === group.group) {
-                return i;
-            }
-        }
-        return -1;
+    function showAllResults(checks, env, groupList) {
+        checks.map((check) => !check.__showingResults && showResultBox(check, env, groupList));
     }
 
-    function isShowingSelectedCheckResultsBox(check) {
-        return check?.__showingResults;
+    function hideAllResults(checks, groupList) {
+        checks.map((check) => check.__showingResults && hideResultBox(check, groupList));
     }
 
-    function saveInputKwargs(check) {
-        Object.keys(check.kwargs).forEach(key => {
-            if (!Type.IsBoolean(check.kwargs[key]) && !Type.IsNonEmptyArray(check.kwargs[key])) {
-                const inputId = `${check.name}.${key}`;
-                const inputElement = document.getElementById(inputId);
-                const inputValue = inputElement?.value;
-                check.kwargs[key] = inputValue;
-            }
-        });
-    }
-
-    function hideHistory(check, historyList) {
-        if (check.__showingHistory) {
-            check.__showingHistory = false;
-            const index = findResultsHistoryIndex(check, historyList);
-            historyList.remove(index);
-        }
-    }
-
-    function findResultsHistoryIndex(check, historyList) {
-        for (let i = 0 ; i < historyList.length ; i++) {
-            const selectedHistory = historyList.get(i)
-            if (selectedHistory.name === check.name) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    function onClickShowHistory(check, env, historyList) {
-        toggleResultsHistory(check, env, historyList);
-    }
-
-    function toggleResultsHistory(check, env, historyList) {
-        if (check.__showingHistory) {
-            hideHistory(check, historyList);
-        }
-        else {
-            showHistory(check, env, historyList);
-        }
-    }
-
-    function showHistory(check, env, historyList) {
-        if (!check.__showingHistory) {
-            check.__showingHistory = true;
-            historyList.prepend(check);
-        }
-    }
-
-    function doRunCheck(check, env, groupList, historyList, fetch) {
-        const args = check.kwargs;
-        const argsString = Json.Str(args);
-        const argsEncoded = btoa(argsString);
-        hideCheckRunningBox(check, groupList);
-        noteChangedCheckBox(groupList);
-        check.__queueingCheckRun = true;
-        fetch({
-            url: Server.Url(`/checks/${check.name}/run?args=${argsEncoded}`, env),
-            onData: (data) => {
-                //
-                // The only thing we need/want from this is the UUID identifying the check run.
-                //
-                check.__queueingCheckRun = false;
-                check.__queuedCheckRun = data.uuid;
-                //
-                // For user convenience do what they plausably would do anyways: refresh the history,
-                // a few (4) seconds after this check run completes (here).
-                //
-                setTimeout(() => {
-                    refreshHistory(check);
-                    noteChangedCheckBox(groupList);
-                }, 4 * 1000);
-                return data.uuid;
-            }
-        });
-        check.__queuedCheckRun = null;
-        showCheckRunningBox(check, groupList);
-        showHistory(check, env, historyList);
-    }
-
-    function doRunAction(check, action, env, groupList, fetch) {
-        const args = { check_name: check.name, called_by: check.__result?.get("uuid") }
-        const argsString = Json.Str(args);
-        const argsEncoded = btoa(argsString);
-        hideActionRunningBox(check, groupList);
-        noteChangedCheckBox(groupList);
-        check.__queueingActionRun = true;
-        fetch({
-            url: Server.Url(`/action/${action}/run?args=${argsEncoded}`, env),
-            onData: (data) => {
-                //
-                // The only thing we need/want from this is the UUID identifying the action run.
-                //
-                check.__queueingActionRun = false;
-                check.__queuedActionRun = data.uuid;
-                return data.uuid;
-            }
-        });
-        check.__queuedActionRun = null;
-        showActionRunningBox(check, groupList);
-    }
-
-    function refreshHistory(check) {
-        if (check.__resultHistory) {
-            check.__resultHistory.refresh();
-        }
-    }
-
-    function showCheckRunningBox(check, groupList) {
-        check.showingCheckRunningBox = true;
-        noteChangedCheckBox(groupList);
-    }
-
-    function hideCheckRunningBox(check, groupList) {
-        check.showingCheckRunningBox = false;
-        noteChangedCheckBox(groupList);
-    }
-
-    function showActionRunningBox(check, groupList) {
-        check.__showingActionRunningBox = true;
-        noteChangedCheckBox(groupList);
-    }
-
-    function hideActionRunningBox(check, groupList) {
-        check.__showingActionRunningBox = false;
-        noteChangedCheckBox(groupList);
-    }
-
-    const SelectedGroupsPanel = ({ groupList, env, historyList, info }) => {
-
-        if (groupList.error) return <FetchErrorBox error={groupList.error} message="Error loading checks from Foursight API" />
-        return <div>
-            { groupList.length > 0 /* selectedGroups.length > 0 */ ? (<>
-                <div style={{paddingBottom:"3pt"}}><b>Checks</b></div>
-                { groupList.map((selectedGroup, index) /* selectedGroups?.map((selectedGroup, index) */ =>
-                    <SelectedGroupBox key={selectedGroup.group} group={selectedGroup} env={env} groupList={groupList} historyList={historyList} info={info} style={{paddingBottom:"6pt"}} />
-                )}
-            </>):(<></>)}
-        </div>
-    }
-
-    const SelectedGroupBox = ({group, groupList, historyList, env, info, style = {}}) => {
-
-        function toggleShowAllResults(checks, groupList) {
-            if (isShowingAnyResults(checks)) {
-                hideAllResults(checks, groupList);
-            }
-            else {
-                showAllResults(checks, env, groupList);
-            }
-        }
-
-        function isShowingAnyResults(checks) {
-            for (let i = 0 ; i < checks?.length ; i++) {
-                if (checks[i].__showingResults) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        function showAllResults(checks, env, groupList) {
-            checks.map((check) => !check.__showingResults && showResultBox(check, env, groupList));
-        }
-
-        function hideAllResults(checks, groupList) {
-            checks.map((check) => check.__showingResults && hideResultBox(check, groupList));
-        }
-
-        return <div style={style}>
-            <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",minWidth:"450pt"}}>
-                <div>
-                    <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks, groupList)}>
-                        <b>{group?.group.replace(/ checks$/i, "")} Group</b> {isShowingAnyResults(group?.checks) ? (<small>{Char.DownArrowFat}</small>) : (<small>{Char.UpArrowFat}</small>)}
-                    </span>
-                    <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideGroup(group, groupList, historyList)})}><b>{Char.X}</b></span>
-                </div>
-                <div style={{marginTop:"6pt"}} />
-                { group?.checks?.sort((a,b) => a.title > b.title ? 1 : (a.title < b.title ? -1 : 0)).map((check, index) =>
-                    <div key={index}>
-                        { index > 0 && <div style={{marginBottom:"12px"}} /> }
-                        <SelectedGroupCheckBox check={check} env={env} groupList={groupList} historyList={historyList} info={info} />
-                    </div>
-                )}
+    return <div style={style}>
+        <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",minWidth:"450pt"}}>
+            <div>
+                <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks, groupList)}>
+                    <b>{group?.group.replace(/ checks$/i, "")} Group</b> {isShowingAnyResults(group?.checks) ? (<small>{Char.DownArrowFat}</small>) : (<small>{Char.UpArrowFat}</small>)}
+                </span>
+                <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideGroup(group, groupList, historyList)})}><b>{Char.X}</b></span>
             </div>
+            <div style={{marginTop:"6pt"}} />
+            { group?.checks?.sort((a,b) => a.title > b.title ? 1 : (a.title < b.title ? -1 : 0)).map((check, index) =>
+                <div key={index}>
+                    { index > 0 && <div style={{marginBottom:"12px"}} /> }
+                    <SelectedGroupCheckBox check={check} env={env} groupList={groupList} historyList={historyList} info={info} />
+                </div>
+            )}
         </div>
+    </div>
+}
+
+const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
+
+    const runActionAllowedState = useState(false);
+
+    check.__result = useFetch({ cache: true });
+    check.__resultByUuid = useFetch({ cache: true });
+    check.__resultByAction = useFetch({ cache: true });
+
+    useEffect(() => {
+        fetchResult(check, env, groupList);
+    }, []);
+
+    function fetchResult(check, env, groupList, refresh = false) {
+        check.__result.fetch({
+            url: Server.Url(`/checks/${check.name}/history/latest`),
+            nocache: refresh,
+            onData: (data) => {
+                fetchResultByUuid(check, data?.uuid, groupList, refresh);
+                fetchResultByAction(check, data?.action, groupList, refresh);
+            }
+        });
     }
 
-    const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
-
-        const runActionAllowedState = useState(false);
-
-        check.__result = useFetch({ cache: true });
-        check.__resultByUuid = useFetch({ cache: true });
-        check.__resultByAction = useFetch({ cache: true });
-
-        useEffect(() => {
-            fetchResult(check, env, groupList);
-        }, []);
-
-        function fetchResult(check, env, groupList, refresh = false) {
-            check.__result.fetch({
-                url: Server.Url(`/checks/${check.name}/history/latest`),
+    function fetchResultByUuid(check, uuid, groupList, refresh = false) {
+        if (uuid || check.__result.get("uuid")) {
+            check.__resultByUuid.fetch({
+                url: Server.Url(`/checks/${check.name}/history/${uuid || check.__result.get("uuid")}`),
                 nocache: refresh,
-                onData: (data) => {
-                    fetchResultByUuid(check, data?.uuid, groupList, refresh);
-                    fetchResultByAction(check, data?.action, groupList, refresh);
-                }
-            });
-        }
-
-        function fetchResultByUuid(check, uuid, groupList, refresh = false) {
-            if (uuid || check.__result.get("uuid")) {
-                check.__resultByUuid.fetch({
-                    url: Server.Url(`/checks/${check.name}/history/${uuid || check.__result.get("uuid")}`),
-                    nocache: refresh,
-                    onDone: (response) => {
-                        if (response.data?.checks) {
-                            const responseByUuid = response.data.checks[check.title];
-                            if (responseByUuid) {
-                                if (Type.IsBoolean(responseByUuid.allow_action)) {
-                                    runActionAllowedState[1](responseByUuid.allow_action);
-                                }
+                onDone: (response) => {
+                    if (response.data?.checks) {
+                        const responseByUuid = response.data.checks[check.title];
+                        if (responseByUuid) {
+                            if (Type.IsBoolean(responseByUuid.allow_action)) {
+                                runActionAllowedState[1](responseByUuid.allow_action);
                             }
                         }
                     }
-                });
-            }
+                }
+            });
         }
+    }
 
-        function fetchResultByAction(check, action, groupList, refresh = false) {
-            action = check.__result?.get("action") || action;
-            if (action) {
-                check.__resultByAction.fetch({
-                    url: Server.Url(`/checks/${action}/history/latest`),
-                    nocache: refresh
-                });
-            }
+    function fetchResultByAction(check, action, groupList, refresh = false) {
+        action = check.__result?.get("action") || action;
+        if (action) {
+            check.__resultByAction.fetch({
+                url: Server.Url(`/checks/${action}/history/latest`),
+                nocache: refresh
+            });
         }
+    }
 
-        useEffect(() => {
-            check.__showingResults = true;
-            fetchResult(check, env, groupList);
-        }, []);
+    useEffect(() => {
+        check.__showingResults = true;
+        fetchResult(check, env, groupList);
+    }, []);
 
-        const [ showDependenciesBox, setShowDependenciesBox ] = useState(true);
+    const [ showDependenciesBox, setShowDependenciesBox ] = useState(true);
 
-        function toggleCheckResultsBox(check, env, groupList) {
-            if (check.__showingResults) {
-                hideResultBox(check, groupList);
-            }
-            else {
-                showResultBox(check, env, groupList);
-                setShowDependenciesBox(true);
-            }
+    function toggleCheckResultsBox(check, env, groupList) {
+        if (check.__showingResults) {
+            hideResultBox(check, groupList);
         }
+        else {
+            showResultBox(check, env, groupList);
+            setShowDependenciesBox(true);
+        }
+    }
 
-        return <div>
-            <div className="box check-box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
-            <table style={{width:"100%"}}>
-                <tbody>
-                    <tr style={{height:"3pt"}}><td></td></tr>
-                    <tr>
-                        <td style={{verticalAlign:"top",width:"1%","cursor":"pointer"}} onClick={() => {toggleCheckResultsBox(check, env, groupList)}}>
-                            <b>{ isShowingSelectedCheckResultsBox(check) ? <small>{Char.DownArrowHollow}</small> : <small>{Char.RightArrowHollow}</small> }&nbsp;</b>
-                        </td>
-                        <td style={{veriticalAlign:"top",maxWidth:"600pt",width:"100%",whiteSpace:"nowrap"}}>
-                            { (!check.__configuringCheckRun) ? <>
-                                <div style={{marginLeft:"10pt",float:"right"}}>
-                                    <RunButton check={check} env={env} groupList={groupList} historyList={historyList} style={{marginTop:"-1pt"}} />
+    return <div>
+        <div className="box check-box" style={{paddingTop:"6pt",paddingBottom:"6pt"}}>
+        <table style={{width:"100%"}}>
+            <tbody>
+                <tr style={{height:"3pt"}}><td></td></tr>
+                <tr>
+                    <td style={{verticalAlign:"top",width:"1%","cursor":"pointer"}} onClick={() => {toggleCheckResultsBox(check, env, groupList)}}>
+                        <b>{ isShowingSelectedCheckResultsBox(check) ? <small>{Char.DownArrowHollow}</small> : <small>{Char.RightArrowHollow}</small> }&nbsp;</b>
+                    </td>
+                    <td style={{veriticalAlign:"top",maxWidth:"600pt",width:"100%",whiteSpace:"nowrap"}}>
+                        { (!check.__configuringCheckRun) ? <>
+                            <div style={{marginLeft:"10pt",float:"right"}}>
+                                <RunButton check={check} env={env} groupList={groupList} historyList={historyList} style={{marginTop:"-1pt"}} />
+                            </div>
+                        </>:<>
+                            { (check.__queueingCheckRun) ? <>
+                                <div className={"check-config-wait-button"} style={{float:"right"}}>
+                                    <span className={"tool-tip"} data-text={"Configure run below."} style={{}}><span style={{fontSize:"small"}}>{Char.DownArrowFat}</span>&nbsp;Configure</span>
                                 </div>
                             </>:<>
-                                { (check.__queueingCheckRun) ? <>
-                                    <div className={"check-config-wait-button"} style={{float:"right"}}>
-                                        <span className={"tool-tip"} data-text={"Configure run below."} style={{}}><span style={{fontSize:"small"}}>{Char.DownArrowFat}</span>&nbsp;Configure</span>
-                                    </div>
-                                </>:<>
-                                    <div
-                                        className={check.__configuringCheckRun ? "check-config-button" : "check-run-button"} style={{marginTop:"-2pt",float:"right"}}
-                                        onClick={() => {
-                                            if (check.__configuringCheckRun) {
-                                                saveInputKwargs(check);
-                                                check.__configuringCheckRun = false;
-                                            }
-                                            else {
-                                                check.__configuringCheckRun = true;
-                                            }
-                                            noteChangedCheckBox(groupList);
-                                                setShowDependenciesBox(true);
-                                        }}>
-                                        <span
-                                            className={"tool-tip"}
-                                            data-text={"Configure run below."}>
-                                            <span style={{fontSize:"small"}}>{Char.DownArrowFat}</span>&nbsp;Configure
-                                        </span>
-                                    </div>
-                                </>}
+                                <div
+                                    className={check.__configuringCheckRun ? "check-config-button" : "check-run-button"} style={{marginTop:"-2pt",float:"right"}}
+                                    onClick={() => {
+                                        if (check.__configuringCheckRun) {
+                                            saveInputKwargs(check);
+                                            check.__configuringCheckRun = false;
+                                        }
+                                        else {
+                                            check.__configuringCheckRun = true;
+                                        }
+                                        noteChangedCheckBox(groupList);
+                                            setShowDependenciesBox(true);
+                                    }}>
+                                    <span
+                                        className={"tool-tip"}
+                                        data-text={"Configure run below."}>
+                                        <span style={{fontSize:"small"}}>{Char.DownArrowFat}</span>&nbsp;Configure
+                                    </span>
+                                </div>
                             </>}
-                            <span style={{whiteSpace:"nowrap"}}>
+                        </>}
+                        <span style={{whiteSpace:"nowrap"}}>
                             <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}.`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check, env, historyList);}}>
                                 {check.title?.length > 70 ? check.title.substring(0, 69) + " ..." : check.title}
                             </u>
@@ -431,17 +431,17 @@ import Styles from '../Styles';
                 </tbody>
             </table>
         </div>
-        </div>
-    }
+    </div>
+}
 
-    const ToggleHistoryButton = ({ check, env, historyList, style }) => {
-        return <span style={{...style, cursor:"pointer"}} onClick={() => onClickShowHistory(check, env, historyList)}>
-            <span data-text={"Click to " + (check.__showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
-                <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"2px",marginRight:"2pt",height:"18"}} />
-            </span>
-            { check.__showingHistory ? <span>{Char.RightArrow}</span> : <></> }
+const ToggleHistoryButton = ({ check, env, historyList, style }) => {
+    return <span style={{...style, cursor:"pointer"}} onClick={() => onClickShowHistory(check, env, historyList)}>
+        <span data-text={"Click to " + (check.__showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
+            <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"2px",marginRight:"2pt",height:"18"}} />
         </span>
-    }
+        { check.__showingHistory ? <span>{Char.RightArrow}</span> : <></> }
+    </span>
+}
 
     const ResultBox = ({ check, env, groupList, fetchResult, runActionAllowedState }) => {
 
