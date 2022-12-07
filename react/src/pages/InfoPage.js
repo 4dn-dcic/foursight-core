@@ -179,7 +179,7 @@ const InfoPage = () => {
             <InfoRow name={"Environment Name (Foursight)"} value={Env.FoursightName(Env.Current(), header)} monospace={true} copy={true} size="3" />
         </InfoBox>
         <InfoBox info={info} title="Bucket Names">
-            <InfoRow name={"Environment Bucket Name"} value={info.get("buckets.env")} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Global Environment Bucket"} value={info.get("buckets.env")} monospace={true} copy={true} size="3" />
             <InfoRow name={"Foursight Bucket Name"} value={info.get("buckets.foursight")} monospace={true} copy={true} size="3" />
             <InfoRow name={"Foursight Bucket Prefix"} value={info.get("buckets.foursight_prefix")} monospace={true} copy={true} size="3" />
         </InfoBox>

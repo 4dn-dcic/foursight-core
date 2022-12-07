@@ -761,14 +761,14 @@ import Styles from '../Styles';
             { (getDependenciesFromCheck(check).length > 0) && showDependenciesBox && <>
                 <div className="box bigmargin" style={{background:"#EFEFEF",paddingTop:"4pt",paddingBottom:"4pt"}}>
                     <small><b className="pointer" style={{float:"right"}} onClick={() => setShowDependenciesBox(false)}>{Char.X}</b></small>
-                    { getDependenciesFromCheck(check).map((dependency, index) => <>
+                    { getDependenciesFromCheck(check).map((dependency, index) => <React.Fragment key={dependency}>
                        <table style={{color:Styles.GetForegroundColor()}}><tbody><tr><td valign="top"><b>&#x27A6;</b>&nbsp;</td><td>
                         <small style={{whiteSpace:"break-spaces"}}><i>Just FYI this check has dependencies:</i>&nbsp;
                             {index > 0 && <span>, </span>}
                             <Link to={Client.Path(`/checks/${dependency}/history`)} target="_blank">{dependency}</Link>
                         </small>
                         </td></tr></tbody></table>
-                    </>)}
+                    </React.Fragment>)}
                 </div>
             </>}
             <div className="box thickborder" style={{marginTop:"4pt",padding:"6pt",cursor:"default",background:"lightyellow"}} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
@@ -1002,7 +1002,14 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
         { check.__showingHistory && (<>
             { check.__resultHistory?.data?.list?.length > 0 ? (<>
                 <table style={{width:"100%"}}>
-                    <TableHead loading={check.__resultHistory.loading} columns={columns} list={check.__resultHistory.data.list} refresh={refreshHistory} xyzzyrefresh={() => refreshHistory(check, env, historyList)} update={(e) => historyList.update()} style={{color:Styles.GetForegroundColor(),fontWeight:"bold"}} lines={true} />
+                    <TableHead
+                        loading={check.__resultHistory.loading}
+                        columns={columns}
+                        list={check.__resultHistory.data.list}
+                        refresh={refreshHistory}
+                        update={(e) => historyList.update()}
+                        style={{color:Styles.GetForegroundColor(),fontWeight:"bold"}}
+                        lines={true} />
                 <tbody>
                 {check.__resultHistory.data.list.map((history, index) => <React.Fragment key={index}>
                     <React.Fragment key={extractUuid(history)}>
@@ -1175,9 +1182,9 @@ const ChecksPage = (props) => {
         return <div style={{minWidth:"150pt"}}>
             <div className="tool-tip pointer" data-text={`Click to group by ${groupBySchedule ? "group" : "schedule"}.`} style={{paddingBottom:"3pt",fontWeight:"bold"}} onClick={onGroupClick}>
                 { groupBySchedule ? <>
-                    Check Schedules&nbsp;<img src={Image.CalendarIcon()} height="17" style={{marginTop:"1px",marginRight:"6pt",float:"right"}} />
+                    Check Schedules&nbsp;<img src={Image.CalendarIcon()} height="17" style={{marginTop:"1px",marginRight:"8pt",float:"right"}} />
                 </>:<>
-                    Check Groups&nbsp;&nbsp;<img src={Image.HierarchyIcon()} height="16" style={{marginTop:"1pt",marginRight:"6pt",float:"right"}} />
+                    Check Groups&nbsp;&nbsp;<img src={Image.HierarchyIcon()} height="16" style={{marginTop:"1pt",marginRight:"8pt",float:"right"}} />
                 </>}
             </div>
             <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
@@ -1362,7 +1369,7 @@ const ChecksPage = (props) => {
                                     <td style={{width:"30%"}}>
                                         <span style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(run.check, run.group), environ, historyList)}>{run.title}</span>
                                         &nbsp;&nbsp;<Link to={Client.Path(`/checks/${run.check}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank">
-                                            <small className="fa fa-external-link" style={{fontSize:"10pt",fontWeight:"bold"}}></small>
+                                            <small className="fa fa-external-link" style={{color:"black",fontSize:"10pt",fontWeight:"default"}}></small>
                                         </Link>
                                         <br />
                                         <i><small style={{cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(run.group), environ, groupList, historyList)}>{run.group}</small></i>&nbsp;
@@ -1400,7 +1407,7 @@ const ChecksPage = (props) => {
             &nbsp;&nbsp;
             </td><td>
             { checksStatus.loading ? <>
-                { <StandardSpinner loading={checksStatus.loading} label={""} size={60} color={"black"} /> }
+                { <StandardSpinner loading={checksStatus.loading} label={""} size={60} color={"black"} style={{paddingTop:"-2pt"}} /> }
             </>:<>
                 <b style={{cursor:"pointer",fontSize:"small"}} onClick={() => refreshChecksStatus()}>{Char.Refresh}</b>
             </>}

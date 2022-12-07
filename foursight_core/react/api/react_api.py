@@ -221,7 +221,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             environment_and_bucket_info = None
             portal_url = None
         lambda_function_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
-        lambdas = self._checks.get_annotated_lambdas()
+        lambdas = self._checks.get_annotated_lambdas(env)
         lambda_function_info = [info for info in lambdas if info.get("lambda_function_name") == lambda_function_name]
         if len(lambda_function_info) == 1:
             lambda_function_info = lambda_function_info[0]
@@ -677,7 +677,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ignored(request)
         ignored(env)
         # TODO: Filter out checks of lambas not in the env.
-        return self.create_success_response(self._checks.get_annotated_lambdas())
+        return self.create_success_response(self._checks.get_annotated_lambdas(env))
 
     def reactapi_gac_compare(self, request: dict, env: str, env_compare: str) -> Response:
         """

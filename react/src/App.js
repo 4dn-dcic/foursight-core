@@ -31,6 +31,9 @@ function setGlobalStyles(header) {
     if (Env.IsFoursightFourfront(header)) {
         Styles.SetFoursightFourfront();
     }
+    else if (Env.IsFoursightCgap(header)) {
+        Styles.SetFoursightCgap();
+    }
     else {
         Styles.SetFoursightCgap();
     }

@@ -226,6 +226,21 @@ function IsFoursightFourfront(header) {
     }
 }
 
+function IsFoursightCgap(header) {
+    if (Cookie.TestMode.HasFoursightFourfront()) {
+        return false;
+    }
+    else if (Cookie.TestMode.HasFoursightCgap()) {
+        return true;
+    }
+    else if (!header?.loading) {
+        return header?.app?.package === "foursight-cgap";
+    }
+    else {
+        return Cookie.Site() === "foursight-cgap";
+    }
+}
+
 function GetLegacyFoursightLink(header) {
     //
     // For Foursight-CGAP (as opposed to Foursight-Fourfront) going to just,
@@ -260,6 +275,7 @@ const exports = {
     IsCurrent:            IsCurrentEnv,
     IsDefault:            IsDefaultEnv,
     IsFoursightFourfront: IsFoursightFourfront,
+    IsFoursightCgap:      IsFoursightCgap,
     IsKnown:              IsKnownEnv,
     KnownEnvs:            GetKnownEnvs,
     LegacyFoursightLink:  GetLegacyFoursightLink,

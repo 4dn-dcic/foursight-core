@@ -41,7 +41,7 @@ const MAX_SAVE = 25;
 //
 // - timeout
 //   Number of milliiseconds to wait for the fetch to complete before
-//   resulting in failure (an HTTP status code of 408 will be set on timeout).
+//   resulting in failure (an HTTP status code of 504 will be set on timeout).
 //
 // - nofetch
 //   Boolean indicating, if true, that a fetch should actually not be done at all.
@@ -197,11 +197,11 @@ export const useFetch = (url, args) => {
     const assembledArgs = assembleArgs();
 
     const response = {
-        data: data,
         loading: loading,
+        data: data,
         status: status,
-        timeout: timeout,
         error: error,
+        timeout: timeout,
         set: setData,
         //
         // The below is for sanity checking args to bound functions.
@@ -396,8 +396,8 @@ function _doFetch(args, current = undefined, fetcher) {
         if (data === undefined) {
             data = response.data;
         }
-        args.setData(data);
         args.setStatus(status);
+        args.setData(data);
         args.setError(null);
         args.setLoading(false);
         noteFetchEnd(id, data);
@@ -414,11 +414,34 @@ function _doFetch(args, current = undefined, fetcher) {
 
     function _handleError(error, id) {
         let status = error.response?.status || 0;
-        let details = error?.response?.data?.error;
-        args.setData(error?.response?.data);
-        args.setStatus(status);
-        args.setError({ url: args.url, status: status, code: error.code, message: error.message, details: details });
-        args.setLoading(false);
+        let data = error.response?.data;
+        error = {
+            url: args.url,
+            status: status,
+            code: error.code,
+            message: error.message,
+            details: error?.response?.data?.error
+        };
+        let timeout = false;
+        function setupErrorResponse() {
+            if (fetcher) {
+                //
+                // The setTimeout et.al. state functions won't necessarily set the state immediately,
+                // i.e. e.g. within any onError callback specified, so set directly as well.
+                //
+                fetcher.data = data;
+                fetcher.status = status;
+                fetcher.error = error;
+                fetcher.timeout = timeout;
+                fetcher.loading = false;
+            }
+            args.setData(data);
+            args.setStatus(status);
+            args.setError(error);
+            args.setTimeout(timeout);
+            args.setLoading(false);
+            return fetcher ? fetcher : { loading: false, data: data, status: status, error: error, timeout: timeout };
+        }
         if (status === 401) {
             //
             // If we EVER get an HTTP 401 (not authenticated)
@@ -426,6 +449,7 @@ function _doFetch(args, current = undefined, fetcher) {
             //
             Debug.Info(`FETCH UNAUTHENTICATED ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
             if (!args.nologout) {
+                setupErrorResponse();
                 Logout();
             }
         }
@@ -437,21 +461,21 @@ function _doFetch(args, current = undefined, fetcher) {
             Debug.Info(`FETCH UNAUTHORIZED ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
             if (!args.noredirect) {
                 if (Client.CurrentLogicalPath() !== "/env") {
+                    setupErrorResponse();
                     window.location.pathname = Client.Path("/env");
                 }
             }
         }
         else if (error.code === "ECONNABORTED") {
             //
-            // This is what we get on timeout; no status code; set status to 408,
+            // This is what we get on timeout; no status code; set status to 504,
             // though not necessarily a server timeout, so not strictly accurate.
             //
             Debug.Info(`FETCH TIMEOUT ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
+            timeout = true;
             if (!status) {
-                status = 408;
-                args.setStatus(status);
+                status = 504;
             }
-            args.setTimeout(true);
         }
         else if (error.code === "ERR_NETWORK") {
             //
@@ -464,28 +488,26 @@ function _doFetch(args, current = undefined, fetcher) {
             Debug.Info(`FETCH NETWORK ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
             if (!status) {
                 status = 404;
-                args.setStatus(status);
             }
         }
         else {
             Debug.Info(`FETCH ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
         }
+        const response = setupErrorResponse();
         noteFetchEnd(id);
-        if (!fetcher) {
-            fetcher = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
-        }
-        const data = args.onError(fetcher);
+        data = args.onError(response);
         if (data !== undefined) {
+            if (fetcher) fetcher.data = data;
             args.setData(data)
         }
-        args.onDone(fetcher);
+        args.onDone(response);
     }
 
     function noteFetchBegin(fetch) {
         return args.fetching.add(fetch);
     }
 
-    function noteFetchEnd(id, data) {
+    function noteFetchEnd(id, data = null) {
         args.fetched.add(args.fetching.remove(id), data);
     }
 
@@ -777,10 +799,9 @@ function _defineResponseConvenienceFunctions(response) {
                 if (Type.IsArray(data)) {
                     return data.map(f) || [];
                 }
-                return data;
             }
-            return this.data;
         }
+        return [];
     }).bind(response);
 
     response.forEach = (function(f, other) {

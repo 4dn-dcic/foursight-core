@@ -327,7 +327,7 @@ const ActionDetailBox = ({check, checkInfo}) => {
     return <>
         <div className="box">
             <table><tbody style={{fontSize:"small",verticalAlign:"top"}}>
-                <tr>
+                <tr style={{fontSize:"12pt"}}>
                     <td style={{paddingRight:"8pt"}}><b>Name</b>:</td>
                     <td>
                         {checkInfo.get("name")}

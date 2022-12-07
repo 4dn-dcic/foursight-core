@@ -20,16 +20,25 @@ class Checks:
         self._check_setup = copy.deepcopy(check_setup)
         self._envs = envs
 
-    _cached_checks = None
-    _cached_lambdas = None
-    _cached_registry = None
-
     def get_checks_raw(self) -> dict:
         """
         Returns a dictionary containing the pristine, original check_setup.json file contents.
         """
         return self._check_setup_raw
 
+    @memoize
+    def _get_checks(self) -> dict:
+        checks = self._check_setup
+        for check_key in checks.keys():
+            checks[check_key]["name"] = check_key
+            checks[check_key]["group"] = checks[check_key]["group"]
+        lambdas = self.get_annotated_lambdas()
+        self._annotate_checks_for_dependencies(checks)
+        self._annotate_checks_with_schedules_from_lambdas(checks, lambdas)
+        self._annotate_checks_with_kwargs_from_decorators(checks)
+        return checks
+
+    @memoize
     def get_checks(self, env: str) -> dict:
         """
         Returns a dictionary containing all checks, annotated with various info,
@@ -37,17 +46,7 @@ class Checks:
         associated actions, from the check function decorators; filtered by the
         given env name. Cached on the first call, except for the filtering part.
         """
-        if not Checks._cached_checks:
-            checks = self._check_setup
-            for check_key in checks.keys():
-                checks[check_key]["name"] = check_key
-                checks[check_key]["group"] = checks[check_key]["group"]
-            lambdas = self.get_annotated_lambdas()
-            self._annotate_checks_for_dependencies(checks)
-            self._annotate_checks_with_schedules_from_lambdas(checks, lambdas)
-            self._annotate_checks_with_kwargs_from_decorators(checks)
-            Checks._cached_checks = checks
-        return self._filter_checks_by_env(Checks._cached_checks, env)
+        return self._filter_checks_by_env(self._get_checks(), env)
 
     @memoize
     def get_checks_grouped(self, env: str) -> list:
@@ -114,6 +113,19 @@ class Checks:
                         group["checks"].append(check)
         return grouped_checks
 
+    @memoize
+    def get_check(self, env: str, check: str) -> Optional[dict]:
+        """
+        Returns the check for the given check name; filtered by the given env name.
+        If it turns out the check name is really an action then return its info;
+        there is a 'type' property set to 'check' or 'action indicating which it is.
+        """
+        checks = self.get_checks(env)
+        for check_key in checks.keys():
+            if check_key == check:
+                return {"type": "check", **checks[check_key]}
+        return self._get_action(env, check)
+
     def _get_action_checks(self, env: str, action: str) -> list:
         """
         Returns the list of checks associated with the given action.
@@ -134,18 +146,6 @@ class Checks:
                 action_checks = self._get_action_checks(env, action)
                 return {"type": "action", **check["registered_action"], "checks": action_checks}
         return None
-
-    def get_check(self, env: str, check: str) -> Optional[dict]:
-        """
-        Returns the check for the given check name; filtered by the given env name.
-        If it turns out the check name is really an action then return its info;
-        there is a 'type' property set to 'check' or 'action indicating which it is.
-        """
-        checks = self.get_checks(env)
-        for check_key in checks.keys():
-            if check_key == check:
-                return {"type": "check", **checks[check_key]}
-        return self._get_action(env, check)
 
     def _filter_checks_by_env(self, checks: dict, env: str) -> dict:
         """
@@ -193,18 +193,26 @@ class Checks:
                 if check_key == check_name:
                     return checks[check_key]
             return None
-        for check_key in checks.keys():
-            if checks[check_key].get("schedule"):
-                for check_schedule_key in checks[check_key]["schedule"].keys():
-                    for check_env_key in checks[check_key]["schedule"][check_schedule_key].keys():
-                        if checks[check_key]["schedule"][check_schedule_key][check_env_key].get("dependencies"):
-                            for check_dependency_key in checks[check_key]["schedule"][check_schedule_key][check_env_key]["dependencies"]:
-                                check_dependency = get_check(check_dependency_key, check_env_key)
-                                if check_dependency:
-                                    if not check_dependency.get("referrers"):
-                                        check_dependency["referrers"] = [check_key]
-                                    elif check_key not in check_dependency["referrers"]:
-                                        check_dependency["referrers"].append(check_key)
+
+        for check_name in checks:
+            check = checks[check_name]
+            if isinstance(check.get("schedule"), dict):
+                check_schedules = check["schedule"]
+                for check_schedule_name in check_schedules:
+                    check_schedule = check_schedules[check_schedule_name]
+                    if isinstance(check_schedule, dict):
+                        for check_schedule_key in check_schedule:
+                            check_schedule_item = check_schedule[check_schedule_key]
+                            if isinstance(check_schedule_item, dict):
+                                check_schedule_env_name = check_schedule_key
+                                if isinstance(check_schedule_item.get("dependencies"), list):
+                                    for check_dependency_name in check_schedule_item["dependencies"]:
+                                        check_dependency = get_check(check_dependency_name, check_schedule_env_name)
+                                        if check_dependency:
+                                            if not isinstance(check_dependency.get("referrers"), list):
+                                                check_dependency["referrers"] = [check_name]
+                                            elif check_name not in check_dependency["referrers"]:
+                                                check_dependency["referrers"].append(check_name)
 
     @staticmethod
     def _get_stack_name() -> str:
@@ -372,19 +380,44 @@ class Checks:
                 lambda_item["lambda_checks"].sort(key=lambda item: f"{item['check_group']}.{item['check_name']}")
         return lambdas
 
-    def get_annotated_lambdas(self) -> dict:
+    @memoize
+    def _get_annotated_lambdas(self) -> dict:
+        stack_name = self._get_stack_name()
+        stack_template = self._get_stack_template(stack_name)
+        lambdas = self._get_lambdas_from_template(stack_template)
+        lambdas = self._annotate_lambdas_with_schedules_from_template(lambdas, stack_template)
+        lambdas = self._annotate_lambdas_with_function_metadata(lambdas)
+        lambdas = self._annotate_lambdas_with_check_setup(lambdas, self._check_setup)
+        return lambdas
+
+    @memoize
+    def get_annotated_lambdas(self, env: Optional[str] = None) -> dict:
         """
         Returns the dictionary of all AWS lambdas for our defined stack.
         """
-        if not Checks._cached_lambdas:
-            stack_name = self._get_stack_name()
-            stack_template = self._get_stack_template(stack_name)
-            lambdas = self._get_lambdas_from_template(stack_template)
-            lambdas = self._annotate_lambdas_with_schedules_from_template(lambdas, stack_template)
-            lambdas = self._annotate_lambdas_with_function_metadata(lambdas)
-            lambdas = self._annotate_lambdas_with_check_setup(lambdas, self._check_setup)
-            Checks._cached_lambdas = lambdas
-        return Checks._cached_lambdas
+        return self._filter_lambdas_by_env(self._get_annotated_lambdas(), env)
+
+    def _filter_lambdas_by_env(self, lambdas: list, env: Optional[str] = None) -> list:
+        """
+        Filters the given list of lambda info by the given environment (i.e. just the
+        list of checks within each lambda info record), and returns the resultant list.
+        The given list of lambda info is NOT changed (i.e. makes copies if modified).
+        """
+        if not env:
+            return lambdas
+        filtered_lambdas = []
+        for lambda_item in lambdas:
+            lambda_checks = lambda_item.get("lambda_checks")
+            if isinstance(lambda_checks, list) and len(lambda_checks) > 0:
+                lambda_item = copy.deepcopy(lambda_item)
+                lambda_checks_filtered = []
+                for lambda_check in lambda_checks:
+                    check = self.get_check(env, lambda_check.get("check_name"))
+                    if check:
+                        lambda_checks_filtered.append(lambda_check)
+                lambda_item["lambda_checks"] = lambda_checks_filtered
+            filtered_lambdas.append(lambda_item)
+        return filtered_lambdas
 
     @staticmethod
     def _annotate_checks_with_schedules_from_lambdas(checks: dict, lambdas: dict) -> None:
@@ -402,24 +435,27 @@ class Checks:
                             check_schedule[check_schedule_name]["cron"] = la["lambda_schedule"]
                             check_schedule[check_schedule_name]["cron_description"] = la["lambda_schedule_description"]
 
+    @memoize
     def get_registry(self) -> dict:
-        # A check may have at most one associated action;
-        # but the same action may be associated with more than
-        # one check; setup the latter part of that relationship here.
-        if not self._cached_registry:
-            registry = Decorators.get_registry()
-            registered_checks = [check for check in registry if registry[check]["kind"] == "check"]
-            registered_actions = [check for check in registry if registry[check]["kind"] == "action"]
-            for check_name in registered_checks:
-                check = registry[check_name]
-                associated_action_name = check.get("action")
-                if associated_action_name:
-                    action = registry[associated_action_name]
-                    if not action.get("checks"):
-                        action["checks"] = []
-                    action["checks"].append(check_name)
-            self._cached_registry = registry
-        return self._cached_registry
+        """
+        Returns the checks registry dictionary which was set up by the @check_function
+        and @action_function decoratros (deifned in decorators.py).
+        """
+        registry = Decorators.get_registry()
+        registered_checks = [check for check in registry if registry[check]["kind"] == "check"]
+        registered_actions = [check for check in registry if registry[check]["kind"] == "action"]
+        for check_name in registered_checks:
+            check = registry[check_name]
+            # A check may have at most one associated action;
+            # but the same action may be associated with more than
+            # one check; setup the latter part of that relationship here.
+            associated_action_name = check.get("action")
+            if associated_action_name:
+                action = registry[associated_action_name]
+                if not action.get("checks"):
+                    action["checks"] = []
+                action["checks"].append(check_name)
+        return registry
 
     def _annotate_checks_with_kwargs_from_decorators(self, checks: dict) -> None:
         """
@@ -502,7 +538,11 @@ class Checks:
         return results
 
     def cache_clear(self) -> None:
-        self._cached_checks = None
-        self._cached_lambdas = None
-        self._cached_registry = None
+        self._get_checks.cache_clear()
+        self.get_checks.cache_clear()
         self.get_checks_grouped.cache_clear()
+        self.get_checks_grouped_by_schedule.cache_clear()
+        self.get_check.cache_clear()
+        self._get_annotated_lambdas.cache_clear()
+        self.get_annotated_lambdas.cache_clear()
+        self.get_registry.cache_clear()
