@@ -76,7 +76,7 @@ class Checks:
         def create_schedule_group_title(name: str):
             """
             Pretty lame title-ifying the groiup name for display purposes, based
-            on what we knnow about the currently existing scheduling lambda names.
+            on what we know about the currently existing scheduling lambda names.
             """
             name = name.replace("Min", " Minute")
             if name.endswith("Checks"):

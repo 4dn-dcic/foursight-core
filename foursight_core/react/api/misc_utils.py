@@ -97,6 +97,7 @@ def get_github_url(package: str, file: Optional[str] = None, line: Optional[int]
         return None
     repo_url = f"{github_url}/{repo_org}/{package_source}"
     if not file:
+        # Note we assume tagged version in GitHub.
         return f"{repo_url}/releases/tag/{version}"
     if os.path.isabs(file):
         path = os.path.normpath(file).split(os.sep)
