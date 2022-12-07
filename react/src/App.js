@@ -30,6 +30,9 @@ function setGlobalStyles(header) {
     if (Env.IsFoursightFourfront(header)) {
         Styles.SetFoursightFourfront();
     }
+    else if (Env.IsFoursightCgap(header)) {
+        Styles.SetFoursightCgap();
+    }
     else {
         Styles.SetFoursightCgap();
     }
@@ -48,13 +51,19 @@ const App = () => {
                 setHeader(data);
                 setGlobalStyles(data);
             },
-            onDone: (response) => {
-                if (response.error) {
-                    setHeader(header => ({...header, ...{ error: true }}));
-                }
+            onError: (response) => {
+                setHeader(header => ({...header, ...{ error: true }}))
             }
         });
     }, []);
+
+    function getDefaultPath() {
+        const env = Env.Default(header);
+        const envPreferred = Env.PreferredName(env, header);
+        const envRedirect = envPreferred || env;
+        const path = envRedirect ? `/api/react/${envRedirect}/env` : "/api/react/env";
+        return path;
+    }
 
     return <Router>
         <HeaderData.Provider value={[header, setHeader]}>
@@ -62,10 +71,10 @@ const App = () => {
             <div style={{margin:"20px"}}>
                 <Routes>
                     <Route path="/api" element={
-                        <Navigate to={`/api/react/${Env.Default()}/env`} />
+                        <Navigate to={getDefaultPath()} />
                     } />
                     <Route path="/api/react" element={
-                        <Navigate to={`/api/react/${Env.Default()}/env`} />
+                        <Navigate to={getDefaultPath()} />
                     } />
                     <Route path="/api/react/:environ/accounts" element={
                         <Page.AuthorizationRequired>

@@ -2,6 +2,7 @@ import boto3
 import logging
 import time
 from typing import Optional
+from ...app import app
 from .cookie_utils import read_cookie
 from .envs import Envs
 from .jwt_utils import JWT_AUDIENCE_PROPERTY_NAME, JWT_SUBJECT_PROPERTY_NAME, jwt_decode, jwt_encode
@@ -122,6 +123,7 @@ class Auth:
             "default_env": self._envs.get_default_env(),
             "initial_env": env,
             "domain": domain,
+            "site": "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront",
             "authenticator": authenticator
         }
         # JWT-sign-encode the authtoken using our Auth0 client ID (aka audience aka "aud") and
@@ -159,6 +161,7 @@ class Auth:
                 # "known_envs": self._envs.get_known_envs(),
                 "default_env": self._envs.get_default_env(),
                 "domain": get_request_domain(request),
+                "site": "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront",
                 JWT_AUDIENCE_PROPERTY_NAME: self._auth0_client  # Needed for Auth0Lock login box on client-side.
             }
         response["authenticated"] = is_authenticated

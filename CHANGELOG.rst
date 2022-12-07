@@ -6,6 +6,10 @@ foursight-core
 Change Log
 ----------
 
+3.1.3
+=====
+* Support in React version for running actions and viewing their history.
+
 3.1.2
 =====
 * Fixed bug which prevented check with dependency from running because

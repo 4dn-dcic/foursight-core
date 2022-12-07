@@ -106,9 +106,17 @@ function ToDateTime(value) {
         }
     }
     else if (Str.HasValue(value)) {
+        let originalValue = value;
         try {
             if ((value = new Date(Date.parse(value))) === "Invalid Date") {
                 return null;
+            }
+            if (isNaN(value)) {
+                //
+                // Address bug with Safari not parsing dates with timezone like: 2022-11-27 14:40:54 EDT
+                // https://stackoverflow.com/questions/6427204/date-parsing-in-javascript-is-different-between-safari-and-chrome
+                //
+                value = new Date(Date.parse(originalValue.replace(/-/g, '/').replace(/[a-z]+/gi, ' ')));
             }
             return value;
         } catch {}

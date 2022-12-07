@@ -44,13 +44,10 @@ const TableHead = ({columns, list, update, refresh, sort = null, state = null, l
         return (Type.IsFunction(a) && Type.IsFunction(b)) ? a.name === b.name : a === b;
     }
     if (!Type.IsNonEmptyObject(state) && Str.HasValue(sort)) {
-            console.log('tablehead/sort')
-            console.log(sort)
         state = {
             key: sort.replace(".asc", "").replace(".desc", ""),
             order: sort.endsWith(".desc") ? -1 : 1
         };
-            console.log(state)
     }
     if (list && !list.__sort) {
         if (state) {
@@ -102,7 +99,11 @@ const TableHead = ({columns, list, update, refresh, sort = null, state = null, l
                     </span>
                 </>):(<>
                     { column.label === "__refresh" ? <>
-                        <b style={{cursor:"pointer"}} onClick={() => Type.IsFunction(refresh) && refresh()}>{Char.Refresh}</b>
+                        { loading ? <>
+                            <PuffSpinner condition={true} size={"16px"} inline={true} />
+                        </>:<>
+                            <b style={{cursor:"pointer"}} onClick={() => Type.IsFunction(refresh) && refresh()}>{Char.Refresh}</b>
+                        </>}
                     </>:<>
                         <div style={{...style,display:"inline-block",position:"relative",top:"-1pt",cursor:"not-allowed"}}>{column.label}</div>
                     </>}

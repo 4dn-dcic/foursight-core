@@ -63,12 +63,8 @@ export const FetchErrorBox = ({ error, message, center }) => {
         </>}
         <small>
         <br />
-        { error?.url && <>
-            <br /><b>URL</b>: {error?.url}
-        </>}
-        { error?.status && <>
-            <br /><b>Status</b>: {error?.status} {error?.code ? ` (${error.code})` : ""}
-        </>}
+        { (error?.url) && <> <br /><b>URL</b>: {error?.url} </>}
+        { (error?.status > 0) && <><br /><b>Status</b>: {error?.status} {error?.code ? ` (${error.code})` : ""}</>}
         { showDetails && error?.details && <>
             <br />
             <b>Details</b>:&nbsp;

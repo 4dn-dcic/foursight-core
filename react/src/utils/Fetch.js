@@ -41,13 +41,20 @@ const MAX_SAVE = 25;
 //
 // - timeout
 //   Number of milliiseconds to wait for the fetch to complete before
-//   resulting in failure (an HTTP status code of 408 will be set on timeout).
+//   resulting in failure (an HTTP status code of 504 will be set on timeout).
 //
 // - nofetch
 //   Boolean indicating, if true, that a fetch should actually not be done at all.
 //   By default (and when this is false) the fetch is initiated immediately when this
 //   hook is called. Useful when the fetch defined by this hook needs to be called later,
 //   via the refresh function returned from this hook (see the RETURN VALUE section below).
+//
+// - cache
+//   Cache the result by URL. After successful fetch subsequent fetches will returned
+//   the cached result, unless/until the next fetch with the nocache argument property.
+//
+// - nocache
+//   If there is a cached result then ignore/discard it and fetch anew (and then cache again).
 //
 // - nologout
 //   Boolean indicating, if true, that the default behavior, of automatically logging out
@@ -146,7 +153,7 @@ const MAX_SAVE = 25;
 //
 // OTHER COMMENTS
 //
-// - Looking back over this, at 750+ lines (though many comments), it does look rather complex.
+// - Looking back over this, at 800+ lines (though many comments), it does look rather complex.
 //   But the goal was to make the USAGE simple; to fetch, update, manipulate data with as little
 //   detailed logic and friction as possible; and to globally track outstanding fetching, e.g.
 //   to facilitate a global fetching spinner, which obviates the need for these on individual
@@ -187,16 +194,14 @@ export const useFetch = (url, args) => {
                                   fetching, fetched, nonofetch);
     }
 
-    useEffect(() => {
-        _doFetch(assembleArgs());
-    }, [])
+    const assembledArgs = assembleArgs();
 
     const response = {
-        data: data,
         loading: loading,
+        data: data,
         status: status,
-        timeout: timeout,
         error: error,
+        timeout: timeout,
         set: setData,
         //
         // The below is for sanity checking args to bound functions.
@@ -210,8 +215,12 @@ export const useFetch = (url, args) => {
         // get ["loading"]() { return loading; }
     };
 
+    response.fetch = (function(url, args) {
+        _doFetch(assembleArgs(url, args, true), this && this.__usefetch_response === true ? this.data : undefined, this);
+    }).bind(response);
+
     response.refresh = (function(url, args) {
-        _doFetch(assembleArgs(url, args, true), this && this.__usefetch_response === true ? this.data : undefined);
+        _doFetch({...assembleArgs(url, args, true), nocache: true}, this && this.__usefetch_response === true ? this.data : undefined, this);
     }).bind(response);
 
     response.update = (function(data) {
@@ -232,7 +241,17 @@ export const useFetch = (url, args) => {
         _update(setData, data, this && this.__usefetch_response ? this.data : undefined);
     }).bind(response);
 
+    response.uncache = (function(url, args) {
+        if (assembledArgs.cache && _fetchCache[url]) {
+            delete _fetchCache[url];
+        }
+    }).bind(response);
+
     _defineResponseConvenienceFunctions(response);
+
+    useEffect(() => {
+        _doFetch(assembledArgs, undefined, response);
+    }, [])
 
     return response;
 }
@@ -344,6 +363,10 @@ const _useFetched = () => {
     return { value: fetched, add: add, clear: clear }
 }
 
+// Should probably implement a maximum cache size, like we do with the useFetched list.
+//
+let _fetchCache = {};
+
 // Internal _doFetch function to actually do the fetch using the Axios library.
 // Assumes args have been validated and setup properly; must contain (exhaustively):
 // url, setData, onData, onDone, onError, timeout, delay, nologout, noredirect,
@@ -351,7 +374,7 @@ const _useFetched = () => {
 // argument is ONLY set when called via the refresh function returned by the useFetch
 // hook; it is the previous (current, at this point) fetched data.
 //
-function _doFetch(args, current = undefined) {
+function _doFetch(args, current = undefined, fetcher) {
 
     if (args.nofetch || !Str.HasValue(args.url)) {
         return;
@@ -373,25 +396,56 @@ function _doFetch(args, current = undefined) {
         if (data === undefined) {
             data = response.data;
         }
-        args.setData(data);
+        if (fetcher) {
+             fetcher.status = status;
+             fetcher.data = data;
+             fetcher.loading = false;
+        }
         args.setStatus(status);
-        args.setError(null);
+        args.setData(data);
         args.setLoading(false);
         noteFetchEnd(id, data);
-        const responseArg = { data: data, loading: false, status: status, timeout: false, error: null };
-        _defineResponseConvenienceFunctions(responseArg);
-        args.onSuccess(responseArg);
-        args.onDone(responseArg);
+        args.onSuccess(fetcher);
+        args.onDone(fetcher);
+        if (args.cache) {
+            Debug.Info(`FETCH CACHING RESPONSE: ${args.method} ${args.url} -> HTTP ${status}`);
+            _fetchCache[args.url] = {
+                data: data,
+                status: status
+            }
+        }
     }
 
     function _handleError(error, id) {
         let status = error.response?.status || 0;
-        let details = error?.response?.data?.error;
-        args.setData(error?.response?.data);
-        args.setStatus(status);
-        // args.setError(error.message);
-        args.setError({ url: args.url, status: status, code: error.code, message: error.message, details: details });
-        args.setLoading(false);
+        let data = error.response?.data;
+        error = {
+            url: args.url,
+            status: status,
+            code: error.code,
+            message: error.message,
+            details: error?.response?.data?.error
+        };
+        let timeout = false;
+        function setupErrorResponse() {
+            if (fetcher) {
+                //
+                // The setTimeout et.al. state functions won't necessarily set the state immediately,
+                // i.e. e.g. within any onError callback specified, so set directly as well.
+                //
+                fetcher.data = data;
+                fetcher.status = status;
+                fetcher.error = error;
+                fetcher.timeout = timeout;
+                fetcher.loading = false;
+            }
+            args.setData(data);
+            args.setStatus(status);
+            args.setError(error);
+            args.setTimeout(timeout);
+            args.setLoading(false);
+            return fetcher ? fetcher : { loading: false, data: data, status: status, error: error, timeout: timeout };
+        }
         if (status === 401) {
             //
             // If we EVER get an HTTP 401 (not authenticated)
@@ -399,6 +453,7 @@ function _doFetch(args, current = undefined) {
             //
             Debug.Info(`FETCH UNAUTHENTICATED ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
             if (!args.nologout) {
+                setupErrorResponse();
                 Logout();
             }
         }
@@ -410,21 +465,21 @@ function _doFetch(args, current = undefined) {
             Debug.Info(`FETCH UNAUTHORIZED ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
             if (!args.noredirect) {
                 if (Client.CurrentLogicalPath() !== "/env") {
+                    setupErrorResponse();
                     window.location.pathname = Client.Path("/env");
                 }
             }
         }
         else if (error.code === "ECONNABORTED") {
             //
-            // This is what we get on timeout; no status code; set status to 408,
+            // This is what we get on timeout; no status code; set status to 504,
             // though not necessarily a server timeout, so not strictly accurate.
             //
             Debug.Info(`FETCH TIMEOUT ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
+            timeout = true;
             if (!status) {
-                status = 408;
-                args.setStatus(status);
+                status = 504;
             }
-            args.setTimeout(true);
         }
         else if (error.code === "ERR_NETWORK") {
             //
@@ -437,34 +492,51 @@ function _doFetch(args, current = undefined) {
             Debug.Info(`FETCH NETWORK ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
             if (!status) {
                 status = 404;
-                args.setStatus(status);
             }
         }
         else {
             Debug.Info(`FETCH ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
-            // args.setError(`HTTP error (${error.code}): ${args.url}`);
         }
+        const response = setupErrorResponse();
         noteFetchEnd(id);
-        const responseArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
-        _defineResponseConvenienceFunctions(responseArg);
-        const data = args.onError(responseArg);
+        data = args.onError(response);
         if (data !== undefined) {
+            if (fetcher) fetcher.data = data;
             args.setData(data)
         }
-        args.onDone(responseArg);
+        args.onDone(response);
     }
 
     function noteFetchBegin(fetch) {
         return args.fetching.add(fetch);
     }
 
-    function noteFetchEnd(id, data) {
+    function noteFetchEnd(id, data = null) {
         args.fetched.add(args.fetching.remove(id), data);
     }
 
     // Don't think we want to reset the data; leave
     // whatever was there until there is something new.
     // args.setData(null);
+
+    if (args.cache && !args.nocache) {
+        const fetchCache = _fetchCache[args.url];
+        if (fetchCache) {
+            Debug.Info(`FETCH FOUND CACHED RESPONSE: ${args.method} ${args.url} -> HTTP ${fetchCache.status}`);
+            args.onData(fetchCache.data, fetchCache.data);
+            args.setData(fetchCache.data);
+            args.setStatus(fetchCache.status);
+            args.setLoading(false);
+            args.setTimeout(false);
+            args.setError(null);
+            if (!fetcher) {
+                fetcher = { data: fetchCache.data, loading: false, status: fetchCache.status, timeout: false, error: null };
+            }
+            args.onSuccess(fetcher);
+            args.onDone(fetcher);
+            return;
+        }
+    }
 
     args.setLoading(true);
     args.setStatus(0);
@@ -479,7 +551,7 @@ function _doFetch(args, current = undefined) {
         withCredentials: "include",
     };
 
-    Debug.Info(`FETCH: ${args.method} ${args.url} (TIMEOUT: ${args.timeout})`);
+    Debug.Info(`FETCH: ${args.method} ${args.url}`);
     Debug.Info(fetch)
 
     // Finally, the actual (Axois based) HTTP fetch happens here.
@@ -555,6 +627,8 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
         nologout:   Type.First([ argsOverride?.nologout, args?.nologout, false ], Type.IsBoolean),
         noredirect: Type.First([ argsOverride?.noredirect, args?.noredirect, false ], Type.IsBoolean),
         delay:      Type.First([ argsOverride?.delay, args?.delay, DEFAULT_DELAY() ], Type.IsInteger),
+        cache:      Type.First([ argsOverride?.cache, args?.cache, null ], Type.IsBoolean),
+        nocache:    Type.First([ argsOverride?.nocache, args?.nocache, null ], Type.IsBoolean),
         onData:     Type.First([ argsOverride?.onData, args?.onData, () => {} ], Type.IsFunction),
         onSuccess:  Type.First([ argsOverride?.onSuccess, args?.onSuccess , () => {}], Type.IsFunction),
         onError:    Type.First([ argsOverride?.onError, args?.onError , () => {}], Type.IsFunction),
@@ -729,10 +803,9 @@ function _defineResponseConvenienceFunctions(response) {
                 if (Type.IsArray(data)) {
                     return data.map(f) || [];
                 }
-                return data;
             }
-            return this.data;
         }
+        return [];
     }).bind(response);
 
     response.forEach = (function(f, other) {

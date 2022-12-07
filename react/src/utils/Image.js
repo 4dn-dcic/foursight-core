@@ -67,17 +67,27 @@ function GetClearCacheImage() {
     return "https://static.thenounproject.com/png/2495429-200.png";
 }
 
+function GetHierarchyIcon() {
+    return "https://cdn0.iconfinder.com/data/icons/business-454/24/hierarchy-512.png";
+}
+
+function GetCalendarIcon() {
+    return "https://img.freepik.com/free-icon/calendar-icon-black_318-9776.jpg?w=360";
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
+    CalendarIcon:              GetCalendarIcon,
     ClearCache:                GetClearCacheImage,
     Clipboard:                 GetClipboardImage,
     GitHub:                    GetGitHubImage,
     Lock:                      GetLockImage,
     Harvard:                   GetHarvardImage,
     History:                   GetHistoryImage,
+    HierarchyIcon:             GetHierarchyIcon,
     ElasticsearchLogo:         GetElasticsearchLogoImage,
     FoursightCgapFavicon:      GetFoursightCgapFaviconImage,
     FoursightFourfrontFavicon: GetFoursightFourfrontFaviconImage,

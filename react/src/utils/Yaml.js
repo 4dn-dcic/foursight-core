@@ -9,5 +9,5 @@ let yaml = require('json-to-pretty-yaml');
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
-    Format: (value) => { return yaml.stringify(value) }
+    Format: (value) => { return yaml.stringify(value)?.trimLeft() }
 }; export default exports;

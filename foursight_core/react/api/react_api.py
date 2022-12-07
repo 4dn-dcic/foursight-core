@@ -221,7 +221,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             environment_and_bucket_info = None
             portal_url = None
         lambda_function_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
-        lambdas = self._checks.get_annotated_lambdas()
+        lambdas = self._checks.get_annotated_lambdas(env)
         lambda_function_info = [info for info in lambdas if info.get("lambda_function_name") == lambda_function_name]
         if len(lambda_function_info) == 1:
             lambda_function_info = lambda_function_info[0]
@@ -427,18 +427,38 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs)
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
 
-    def reactapi_checks(self, request: dict, env: str) -> Response:
+    def reactapi_checks_ungrouped(self, request: dict, env: str) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/checks
-        Returns a summary (list) of all defined checks.
+        Returns a summary (list) of all defined checks, NOT grouped by check group.
+        For troubleshooting only.
+        """
+        ignored(request)
+        return self.create_success_response(self._checks.get_checks(env))
+
+    def reactapi_checks_grouped(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/checks/grouped
+        Returns a summary (list) of all defined checks, grouped by check group.
         """
         ignored(request)
         return self.create_success_response(self._checks.get_checks_grouped(env))
 
-    def reactapi_check_results(self, request: dict, env: str, check: str) -> Response:
+    def reactapi_checks_grouped_by_schedule(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/checks/grouped/schedule
+        Returns a summary (list) of all defined checks, grouped by schedule.
+        """
+        ignored(request)
+        return self.create_success_response(self._checks.get_checks_grouped_by_schedule(env))
+
+    def reactapi_checks_check(self, request: dict, env: str, check: str) -> Response:
+        return self.create_success_response(self._checks.get_check(env, check))
+
+    def reactapi_checks_history_latest(self, request: dict, env: str, check: str) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/checks/{check}
-        Returns the latest result from the given check (name).
+        Returns the latest result (singular) from the given check (name).
         """
         ignored(request)
         connection = app.core.init_connection(env)
@@ -456,14 +476,15 @@ class ReactApi(ReactApiBase, ReactRoutes):
         check_results["timestamp"] = check_datetime
         return self.create_success_response(check_results)
 
-    def reactapi_check_result(self, request: dict, env: str, check: str, uuid: str) -> Response:
+    def reactapi_checks_history_uuid(self, request: dict, env: str, check: str, uuid: str) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/checks/{check}/{uuid}
         Returns the check result for the given check (name) and uuid.
         Analogous legacy function is app_utils.view_foursight_check.
+        TODO: No need to return array.
         """
         ignored(request)
-        body = []
+        body = {}
         try:
             connection = app.core.init_connection(env)
         except Exception:
@@ -483,11 +504,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     }
                 title = app.core.check_handler.get_check_title_from_setup(check)
                 processed_result = app.core.process_view_result(connection, data, is_admin=True, stringify=False)
-                body.append({
+                body = {
                     'status': 'success',
                     'env': env,
                     'checks': {title: processed_result}
-                })
+                }
         return self.create_success_response(body)
 
     def reactapi_checks_history_recent(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
@@ -556,7 +577,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_history(self, request: dict, env: str, check: str, args: Optional[dict] = None) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks/check/history
+        Called from react_routes for endpoint: GET /{env}/checks/{check}/history
         Returns a (paged) summary (list) of check results for the given check (name).
         """
         ignored(request)
@@ -569,7 +590,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
         sort = args.get("sort", "timestamp.desc") if args else "timestamp.desc"
         sort = urllib.parse.unquote(sort)
 
-        check_record = self._checks.get_check(env, check)
         connection = app.core.init_connection(env)
         history, total = app.core.get_foursight_history(connection, check, offset, limit, sort)
         history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
@@ -583,7 +603,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
                         timestamp = convert_utc_datetime_to_useastern_datetime_string(timestamp)
                         subitem["timestamp"] = timestamp
         body = {
-            "check": check_record,
             "env": env,
             "history_kwargs": history_kwargs,
             "paging": {
@@ -600,16 +619,28 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def reactapi_checks_run(self, request: dict, env: str, check: str, args: str) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/checks/{check}/run
+        The args string, if any, is assumed to be a Base64 encoded JSON object.
         Kicks off a run for the given check (name).
         """
         ignored(request)
-        args = base64_decode_to_json(args)
+        args = base64_decode_to_json(args) if args else None
         queued_uuid = app.core.queue_check(env, check, args)
         return self.create_success_response({"check": check, "env": env, "uuid": queued_uuid})
 
+    def reactapi_action_run(self, request: dict, env: str, action: str, args: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/checks/action/{action}/run
+        The args string, if any, is assumed to be a Base64 encoded JSON object.
+        Kicks off a run for the given action (name).
+        """
+        ignored(request)
+        args = base64_decode_to_json(args) if args else {}
+        queued_uuid = app.core.queue_action(env, action, args)
+        return self.create_success_response({"action": action, "env": env, "uuid": queued_uuid})
+
     def reactapi_checks_status(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks-status
+        Called from react_routes for endpoint: GET /{env}/checks_status
         Returns the status of any/all currently running or queued checks.
         """
         ignored(request)
@@ -621,7 +652,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_raw(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks-raw
+        Called from react_routes for endpoint: GET /{env}/checks_raw
         Returns the content of the raw/original check_setup.json file.
         """
         ignored(request)
@@ -630,13 +661,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_registry(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks-registry
+        Called from react_routes for endpoint: GET /{env}/checks_registry
         Returns the content of the checks registry collected for the check_function
-        decorator in decorators.py.
+        decorator in decorators.py. For troubleshooting only.
         """
         ignored(request)
         ignored(env)
-        return self.create_success_response(Decorators.get_registry())
+        return self.create_success_response(self._checks.get_registry())
 
     def reactapi_lambdas(self, request: dict, env: str) -> Response:
         """
@@ -646,7 +677,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ignored(request)
         ignored(env)
         # TODO: Filter out checks of lambas not in the env.
-        return self.create_success_response(self._checks.get_annotated_lambdas())
+        return self.create_success_response(self._checks.get_annotated_lambdas(env))
 
     def reactapi_gac_compare(self, request: dict, env: str, env_compare: str) -> Response:
         """

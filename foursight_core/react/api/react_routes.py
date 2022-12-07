@@ -119,25 +119,33 @@ class ReactRoutes:
             return app.core.create_forbidden_response()
 
     @route("/{env}/checks", authorize=True)
-    def reactapi_route_checks(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+    def reactapi_route_checks_ungrouped(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Returns detailed info on all defined checks.
+        Returns detailed info on all defined checks, NO grouped by check group.
+        For troubleshooting only.
         """
-        return app.core.reactapi_checks(app.current_request.to_dict(), env)
+        return app.core.reactapi_checks_ungrouped(app.current_request.to_dict(), env)
+
+    @route("/{env}/checks/grouped", authorize=True)
+    def reactapi_route_checks_grouped(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns detailed info on all defined checks, grouped by check group.
+        """
+        return app.core.reactapi_checks_grouped(app.current_request.to_dict(), env)
+
+    @route("/{env}/checks/grouped/schedule", authorize=True)
+    def reactapi_route_checks_grouped_by_schedule(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns detailed info on all defined checks, grouped by check group.
+        """
+        return app.core.reactapi_checks_grouped_by_schedule(app.current_request.to_dict(), env)
 
     @route("/{env}/checks/{check}", authorize=True)
-    def reactapi_route_check_results(env: str, check: str) -> Response:  # noqa: implicit @staticmethod via @route
+    def reactapi_route_checks_check(env: str, check: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns the most result of the most recent run for the given check.
         """
-        return app.core.reactapi_check_results(app.current_request.to_dict(), env, check=check)
-
-    @route("/{env}/checks/{check}/{uuid}", authorize=True)
-    def reactapi_route_check_result(env: str, check: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
-        """
-        Returns the result of the given check.
-        """
-        return app.core.reactapi_check_result(app.current_request.to_dict(), env, check=check, uuid=uuid)
+        return app.core.reactapi_checks_check(app.current_request.to_dict(), env, check=check)
 
     @route("/{env}/checks/{check}/history", authorize=True)
     def reactapi_route_checks_history(env: str, check: str) -> Response:  # noqa: implicit @staticmethod via @route
@@ -147,10 +155,25 @@ class ReactRoutes:
         request = app.current_request.to_dict()
         return app.core.reactapi_checks_history(request, env, check=check, args=get_request_args(request))
 
+    @route("/{env}/checks/{check}/history/latest", authorize=True)
+    def reactapi_route_checks_history_latest(env: str, check: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns the latest (most recent) run result for the given check.
+        """
+        request = app.current_request.to_dict()
+        return app.core.reactapi_checks_history_latest(app.current_request.to_dict(), env, check=check)
+
+    @route("/{env}/checks/{check}/history/{uuid}", authorize=True)
+    def reactapi_route_checks_history_uuid(env: str, check: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns the result of the given check.
+        """
+        return app.core.reactapi_checks_history_uuid(app.current_request.to_dict(), env, check=check, uuid=uuid)
+
     @route("/{env}/checks/history/recent", authorize=True)
     def reactapi_route_checks_history_recent(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Returns all recent check run history.
+        Returns all recent check run history, across all checks.
         """
         request = app.current_request.to_dict()
         return app.core.reactapi_checks_history_recent(request, env, args=get_request_args(request))
@@ -163,21 +186,29 @@ class ReactRoutes:
         request = app.current_request.to_dict()
         return app.core.reactapi_checks_run(request, env, check=check, args=get_request_arg(request, "args"))
 
-    @route("/{env}/checks-status", authorize=True)
+    @route("/{env}/action/{action}/run", authorize=True)
+    def reactapi_route_action_run(env: str, action: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Kicks off a run of the given check.
+        """
+        request = app.current_request.to_dict()
+        return app.core.reactapi_action_run(request, env, action=action, args=get_request_arg(request, "args"))
+
+    @route("/{env}/checks_status", authorize=True)
     def reactapi_route_checks_status(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns info on currently running/queueued checks.
         """
         return app.core.reactapi_checks_status(app.current_request.to_dict(), env)
 
-    @route("/{env}/checks-raw", authorize=True)
+    @route("/{env}/checks_raw", authorize=True)
     def reactapi_route_checks_raw(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns the contents of the raw check_setup.json file.
         """
         return app.core.reactapi_checks_raw(app.current_request.to_dict(), env)
 
-    @route("/{env}/checks-registry", authorize=True)
+    @route("/{env}/checks_registry", authorize=True)
     def reactapi_route_checks_registry(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns detailed registered checks functions.
