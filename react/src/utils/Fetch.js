@@ -189,10 +189,6 @@ export const useFetch = (url, args) => {
 
     const assembledArgs = assembleArgs();
 
-    useEffect(() => {
-        _doFetch(assembledArgs);
-    }, [])
-
     const response = {
         data: data,
         loading: loading,
@@ -213,11 +209,11 @@ export const useFetch = (url, args) => {
     };
 
     response.fetch = (function(url, args) {
-        _doFetch(assembleArgs(url, args, true), this && this.__usefetch_response === true ? this.data : undefined);
+        _doFetch(assembleArgs(url, args, true), this && this.__usefetch_response === true ? this.data : undefined, this);
     }).bind(response);
 
     response.refresh = (function(url, args) {
-        _doFetch({...assembleArgs(url, args, true), nocache: true}, this && this.__usefetch_response === true ? this.data : undefined);
+        _doFetch({...assembleArgs(url, args, true), nocache: true}, this && this.__usefetch_response === true ? this.data : undefined, this);
     }).bind(response);
 
     response.update = (function(data) {
@@ -245,6 +241,10 @@ export const useFetch = (url, args) => {
     }).bind(response);
 
     _defineResponseConvenienceFunctions(response);
+
+    useEffect(() => {
+        _doFetch(assembledArgs, undefined, response);
+    }, [])
 
     return response;
 }
@@ -367,7 +367,7 @@ let _fetchCache = {};
 // argument is ONLY set when called via the refresh function returned by the useFetch
 // hook; it is the previous (current, at this point) fetched data.
 //
-function _doFetch(args, current = undefined) {
+function _doFetch(args, current = undefined, fetcher) {
 
     if (args.nofetch || !Str.HasValue(args.url)) {
         return;
@@ -394,9 +394,8 @@ function _doFetch(args, current = undefined) {
         args.setError(null);
         args.setLoading(false);
         noteFetchEnd(id, data);
-        const responseArg = { data: data, loading: false, status: status, timeout: false, error: null };
-        args.onSuccess(responseArg);
-        args.onDone(responseArg);
+        args.onSuccess(fetcher);
+        args.onDone(fetcher);
         if (args.cache) {
             Debug.Info(`FETCH CACHING RESPONSE: ${args.method} ${args.url} -> HTTP ${status}`);
             _fetchCache[args.url] = {
@@ -465,12 +464,14 @@ function _doFetch(args, current = undefined) {
             Debug.Info(`FETCH ERROR: ${args.method} ${args.url} -> HTTP ${status}`);
         }
         noteFetchEnd(id);
-        const responseArg = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
-        const data = args.onError(responseArg);
+        if (!fetcher) {
+            fetcher = { data: null, loading: false, status: status, timeout: status === 408, error: error.message };
+        }
+        const data = args.onError(fetcher);
         if (data !== undefined) {
             args.setData(data)
         }
-        args.onDone(responseArg);
+        args.onDone(fetcher);
     }
 
     function noteFetchBegin(fetch) {
@@ -495,9 +496,11 @@ function _doFetch(args, current = undefined) {
             args.setLoading(false);
             args.setTimeout(false);
             args.setError(null);
-            const responseArg = { data: fetchCache.data, loading: false, status: fetchCache.status, timeout: false, error: null };
-            args.onSuccess(responseArg);
-            args.onDone(responseArg);
+            if (!fetcher) {
+                fetcher = { data: fetchCache.data, loading: false, status: fetchCache.status, timeout: false, error: null };
+            }
+            args.onSuccess(fetcher);
+            args.onDone(fetcher);
             return;
         }
     }

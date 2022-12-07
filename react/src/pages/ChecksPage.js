@@ -1165,17 +1165,21 @@ const ChecksPage = (props) => {
         }
     }
 
+    function onGroupingChoiceSelect(e) {
+        setGroupBySchedule(e.target.value === "schedule");
+        groupList.update([]);
+    }
+
     const ChecksGroupBox = ({props}) => {
         return <div style={{minWidth:"150pt"}}>
-            <div>
-                <div style={{paddingBottom:"3pt",cursor:"pointer"}}>
-                    <b onClick={() => onGroupSelectAll()}>
-                        { groupBySchedule ? <>Check Schedules</> : <>Check Groups</> }
-                    </b>
-                    <span style={{fontSize:"9pt"}}>
-                      &nbsp;(<span className="pointer" onClick={() => { setGroupBySchedule(!groupBySchedule); groupList.update([]); }}>By {groupBySchedule ? <>Group</> : <>Schedule</>}</span>)
-                    </span>
-                </div>
+            <div className="tool-tip" data-text="Click to choose grouping" style={{paddingBottom:"3pt"}}>
+                <select
+                    defaultValue={groupBySchedule ? "schedule" : "group"}
+                    style={{border:"0",fontSize:"inherit",fontWeight:"bold",cursor:"pointer","WebkitAppearance":"none"}}
+                    onChange={onGroupingChoiceSelect}>
+                    <option value="group">Check Groups&nbsp;&nbsp;&#8576;</option>
+                    <option value="schedule">Check Schedules&nbsp;&nbsp;&#8576;</option>
+                </select>
             </div>
             <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
                 { checks.map((datum, index) =>

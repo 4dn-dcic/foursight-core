@@ -49,10 +49,8 @@ const App = () => {
                 setHeader(data);
                 setGlobalStyles(data);
             },
-            onDone: (response) => {
-                if (response.error) {
-                    setHeader(header => ({...header, ...{ error: true }}));
-                }
+            onError: (response) => {
+                setHeader(header => ({...header, ...{ error: true }}))
             }
         });
     }, []);
