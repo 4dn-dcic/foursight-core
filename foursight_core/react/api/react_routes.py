@@ -296,6 +296,62 @@ class ReactRoutes:
         """
         return app.core.reactapi_account(app.current_request.to_dict(), env, name, from_s3=True)
 
+    @route("/{env}/aws/vpcs", authorize=True)
+    def reactapi_route_aws_vpcs(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info on AWS VPCs.
+        """
+        return app.core.reactapi_aws_vpcs(app.current_request.to_dict(), env)
+
+    @route("/{env}/aws/vpcs/{vpc}", authorize=True)
+    def reactapi_route_aws_vpc(env: str, vpc: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info on AWS VPC.
+        """
+        return app.core.reactapi_aws_vpcs(app.current_request.to_dict(), env, vpc)
+
+    @route("/{env}/aws/subnets", authorize=True)
+    def reactapi_route_aws_subnets(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info on AWS Subnets.
+        """
+        return app.core.reactapi_aws_subnets(app.current_request.to_dict(), env)
+
+    @route("/{env}/aws/subnets/{subnet}", authorize=True)
+    def reactapi_route_aws_subnet(env: str, subnet: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info on AWS Subnet.
+        """
+        return app.core.reactapi_aws_subnets(app.current_request.to_dict(), env, subnet)
+
+    @route("/{env}/aws/security_groups", authorize=True)
+    def reactapi_route_aws_security_groups(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info on AWS Security Groups.
+        """
+        return app.core.reactapi_aws_security_groups(app.current_request.to_dict(), env)
+
+    @route("/{env}/aws/security_groups/{security_group}", authorize=True)
+    def reactapi_route_aws_security_group(env: str, security_group: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info on AWS Security Group.
+        """
+        return app.core.reactapi_aws_security_groups(app.current_request.to_dict(), env, security_group)
+
+    @route("/{env}/aws/network", authorize=True)
+    def reactapi_route_aws_network(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info on AWS VPCs, Subnets, and Security Groups, grouped by VPC.
+        """
+        return app.core.reactapi_aws_network(app.current_request.to_dict(), env)
+
+    @route("/{env}/aws/network/{network}", authorize=True)
+    def reactapi_route_aws_network(env: str, network: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info on AWS VPCs, Subnets, and Security Groups, grouped by VPC.
+        """
+        return app.core.reactapi_aws_network(app.current_request.to_dict(), env, network)
+
     @route("/__reloadlambda__", authorize=True)
     def reactapi_route_reload_lambda() -> Response:  # noqa: implicit @staticmethod via @route
         """

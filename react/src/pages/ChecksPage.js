@@ -1510,13 +1510,13 @@ const ChecksPage = (props) => {
                         <td style={tdLabelStyle}>Handler:</td>
                         <td style={tdContentStyle} className="tool-tip" data-text={lambda.lambda_function_arn}>
                             {lambda.lambda_handler} <br />
-                            <small>{lambda.lambda_function_name}</small>
+                            <small><a href={`https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions/${lambda.lambda_function_name}?tab=code`} rel="noreferrer" target="_blank">{lambda.lambda_function_name}</a></small>
                         </td>
                     </tr>
                     <tr>
                         <td style={tdLabelStyle}><small>Role:</small></td>
                         <td className="tool-tip" data-text={lambda.lambda_role} style={tdContentStyle}>
-                            <small>{lambda.lambda_role?.replace(/.*\//,'')}</small>
+                            <small><a href={`https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/roles/details/${lambda.lambda_role?.replace(/.*\//,'')}`} target="_blank">{lambda.lambda_role?.replace(/.*\//,'')}</a></small>
                         </td>
                     </tr>
                     <tr>
@@ -1576,7 +1576,7 @@ const ChecksPage = (props) => {
         <div>
             <table><tbody>
                 <tr>
-                    <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>
+                    <td style={{paddingLeft:"4pt",verticalAlign:"top"}}>
                         <ChecksGroupBox />
                         <div className="box thickborder check-pass padding-small cursor-hand" style={{marginBottom:"8pt"}}>
                             <RecentRunsControl />
@@ -1586,11 +1586,11 @@ const ChecksPage = (props) => {
                         <ChecksStatus />
                         <LambdasPanel />
                     </td>
-                    <td style={{paddingLeft:"10pt",verticalAlign:"top"}}>
+                    <td style={{paddingLeft:"8pt",verticalAlign:"top"}}>
                         <ChecksRawView info={info} />
                         <SelectedGroupsPanel env={environ} groupList={groupList} historyList={historyList} info={info} />
                     </td>
-                    <td style={{paddingLeft: (groupList?.length > 0 || groupList.error || isShowingChecksRaw()) ? "10pt" : "0",verticalAlign:"top"}}>
+                    <td style={{paddingLeft: (groupList?.length > 0 || groupList.error || isShowingChecksRaw()) ? "8pt" : "0",verticalAlign:"top"}}>
                         <LambdasView />
                         <RecentRunsView />
                         <ResultsHistoryPanel env={environ} historyList={historyList} />

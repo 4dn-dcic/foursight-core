@@ -31,6 +31,7 @@ from .misc_utils import (
     memoize,
     sort_dictionary_by_case_insensitive_keys
 )
+from .aws_vpc_etc_utils import get_aws_network, get_aws_security_groups, get_aws_subnets, get_aws_vpcs
 from .react_routes import ReactRoutes
 from .react_api_base import ReactApiBase
 from .react_ui import ReactUi
@@ -944,6 +945,34 @@ class ReactApi(ReactApiBase, ReactRoutes):
             response["warnings"].append("Identity mismatch.")
 
         return self.create_success_response(response)
+
+    def reactapi_aws_vpcs(self, request: dict, env: str, vpc: Optional[str] = None) -> Response:
+        if vpc == None:
+            vpc = "C4*"
+        elif vpc == "all":
+            vpc = None
+        return self.create_success_response(get_aws_vpcs(vpc))
+
+    def reactapi_aws_subnets(self, request: dict, env: str, subnet: Optional[str] = None) -> Response:
+        if subnet == None:
+            subnet = "C4*"
+        elif subnet == "all":
+            subnet = None
+        return self.create_success_response(get_aws_subnets(subnet))
+
+    def reactapi_aws_security_groups(self, request: dict, env: str, security_group: Optional[str] = None) -> Response:
+        if security_group == None:
+            security_group = "C4*"
+        elif security_group == "all":
+            security_group = None
+        return self.create_success_response(get_aws_security_groups(security_group))
+
+    def reactapi_aws_network(self, request: dict, env: str, network: Optional[str] = None) -> Response:
+        if network == None:
+            network = "C4*"
+        elif network == "all":
+            network = None
+        return self.create_success_response(get_aws_network(network))
 
     # ----------------------------------------------------------------------------------------------
     # END OF EXPERIMENTAL - /accounts page
