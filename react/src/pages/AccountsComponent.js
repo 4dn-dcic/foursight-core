@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BarSpinner } from '../Spinners';
+import { BarSpinner, StandardSpinner } from '../Spinners';
 import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
 import { useFetch } from '../utils/Fetch';
@@ -335,7 +335,7 @@ const AccountInfoRight = ({ info }) => {
     </tbody></table>
 }
 
-const AccountInfo = ({ account, header, all }) => {
+const AccountInfo = ({ account, header, all, decrementAccountCount }) => {
 
     const info = useFetch(Server.Url(`/accounts_from_s3/${account.id}`), { cache: true, nofetch: true });
 
@@ -344,7 +344,7 @@ const AccountInfo = ({ account, header, all }) => {
     }, []);
 
     function refreshData() {
-        info.refresh();
+        info.refresh({ onDone: () => decrementAccountCount()});
     }
 
     function isCurrentAccount(info) {
@@ -416,6 +416,8 @@ const AccountsComponent = ({ header }) => {
     const argsAll = args.get("all");
     const [ all, setAll ] = useState(argsAll?.toLowerCase() === "true" || argsAll === "1" ? true : false);
     const accounts = useFetch(Server.Url("/accounts_from_s3"));
+    const [ accountCount, setAccountCount ] = useState(0);
+    const [ startup, setStartup ] = useState(true);
 
     useEffect(() => {
         refreshAll();
@@ -423,7 +425,12 @@ const AccountsComponent = ({ header }) => {
 
     function refreshAll() {
         accounts.update(null);
-        accounts.fetch(Server.Url("/accounts_from_s3"));
+        accounts.fetch(Server.Url("/accounts_from_s3"), { onDone: (response) => { setAccountCount(response.data?.length) }});
+    }
+
+    function decrementAccountCount() {
+        setAccountCount(count => { return count - 1; });
+        setStartup(false);
     }
 
     function toggleAll() {
@@ -440,11 +447,13 @@ const AccountsComponent = ({ header }) => {
 
     return <>
         <div style={{borderBottom:"2px solid black",marginBottom:"8pt"}}>
-            <div className="tool-tip" data-text={header?.app?.accounts_file_from_s3} style={{marginTop:"0pt"}}><b>Known Accounts</b>
+            <div style={{marginTop:"0pt"}}><b className="tool-tip" data-text={header?.app?.accounts_file_from_s3}>Known Accounts</b>
                 <div style={{float:"right",display:"inline",fontSize:"small",marginRight:"4pt",marginTop:"0pt"}}>
                 { (all)  ? <>
-                    <b className="tool-tip" data-text={"Click to show only local accounts/stages."} style={{cursor:"pointer"}} onClick={toggleAll}>All</b>
+                    <span className="tool-tip" data-text={"Click to show only local accounts/stages."} style={{cursor:"pointer"}} onClick={toggleAll}>Local</span>&nbsp;|&nbsp;
+                    <b style={{cursor:"pointer"}} onClick={toggleAll}>All</b>
                 </>:<>
+                    <b style={{cursor:"pointer"}} onClick={toggleAll}>Local</b>&nbsp;|&nbsp;
                     <span className="tool-tip" data-text={"Click to show all known accounts."} style={{cursor:"pointer"}} onClick={toggleAll}>All</span>
                 </>}
                 &nbsp;|&nbsp; <span style={{cursor:"pointer"}} onClick={refreshAll}>{Char.Refresh}</span>
@@ -453,12 +462,17 @@ const AccountsComponent = ({ header }) => {
         </div>
         { accounts.length > 0 ? <>
             { accounts?.map((account, index) => <React.Fragment key={account.id}>
-                <AccountInfo account={account} header={header} all={all} />
+                <AccountInfo account={account} header={header} all={all} decrementAccountCount={decrementAccountCount} />
             </React.Fragment>)}
+            { (startup || (accountCount > 0)) && <>
+                <div className="box" style={{paddingBottom:"10pt"}}>
+                    <StandardSpinner label="Loading accounts info" style={{paddingBottom:"0pt"}} />
+                </div>
+            </>}
         </>:<>
-            <div className="box" style={{marginTop:"4pt"}}>
+            <div className="box" style={{paddingBottom:"10pt"}} >
                 { (accounts.loading) ? <>
-                    <div style={{paddingTop:"7pt",paddingRight:"2pt"}}><BarSpinner /></div>
+                    <StandardSpinner label="Loading accounts list" />
                 </>:<>
                     No accounts info found.
                 </>}

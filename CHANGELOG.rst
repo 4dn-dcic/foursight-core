@@ -6,6 +6,10 @@ foursight-core
 Change Log
 ----------
 
+3.1.4
+=====
+* Support for viewing info about VPCs, security groups, subnets, et cetera (C4-961).
+
 3.1.3
 =====
 * Support in React version for running actions and viewing their history.
