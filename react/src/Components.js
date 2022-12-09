@@ -1,12 +1,14 @@
 import { Link as ReactLink } from 'react-router-dom';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Auth from './utils/Auth';
 import Client from './utils/Client';
 import Char from './utils/Char';
 import Image from './utils/Image';
+import { PuffSpinnerInline, PuffSpinner } from './Spinners';
 import Str from './utils/Str';
 import Time from './utils/Time';
 import Type from './utils/Type';
+import Styles from './Styles';
 
 export const Link = ({to, env = true, tip = null, bold = true, children}) => {
     return <ReactLink className={tip ? "tool-tip" : ""} data-text={tip} to={Client.Path(to, env ? env : null)} style={{color:"inherit",fontWeight:bold ? "bold" : "inherit"}}>{children}</ReactLink>
@@ -71,5 +73,15 @@ export const FetchErrorBox = ({ error, message, center }) => {
             <small>{error.details}</small>
         </>}
         </small>
+    </div>
+}
+
+export const RefreshButton = (props) => {
+    return <div className={props.refreshing ? "refreshing" : "refresh"} style={{...props.style}}>
+        { props.refreshing ? <>
+            <div style={{cursor:"not-allowed"}}>
+                <PuffSpinner color={Styles.GetForegroundColor()} cssOverride={{}} size={"12pt"} />
+            </div>
+        </>:<span onClick={props.refresh}>{Char.Refresh}</span>}
     </div>
 }

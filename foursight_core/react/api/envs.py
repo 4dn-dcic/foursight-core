@@ -96,7 +96,7 @@ class Envs:
 
     @staticmethod
     def _is_user_allowed_access(user: Optional[dict]) -> bool:
-        return user and Envs._is_user_in_one_or_more_groups(user, [ "admin", "foursight" ])
+        return user and Envs._is_user_in_one_or_more_groups(user, ["admin", "foursight"])
 
     @staticmethod
     def _is_user_in_one_or_more_groups(user: Optional[dict], allowed_groups: list) -> bool:

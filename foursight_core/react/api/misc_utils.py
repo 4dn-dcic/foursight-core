@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 memoize = lru_cache(100)
 
+
 def sort_dictionary_by_case_insensitive_keys(dictionary: dict) -> dict:
     """
     Returns the given dictionary sorted by (case-insenstivie) key values; yes,
@@ -73,7 +74,7 @@ def get_github_url(package: str, file: Optional[str] = None, line: Optional[int]
     TODO: Seems like there should be a better more programmatic way to determine this.
     """
     github_url = "https://github.com"
-    if package == "foursight-core" or package =="foursight_core":
+    if package == "foursight-core" or package == "foursight_core":
         package_source = "foursight-core"
         package_target = "foursight_core"
         repo_org = "4dn-dcic"
@@ -93,7 +94,7 @@ def get_github_url(package: str, file: Optional[str] = None, line: Optional[int]
         return None
     try:
         version = f"v{pkg_resources.get_distribution(package_source).version}"
-    except Exception as e:
+    except Exception:
         return None
     repo_url = f"{github_url}/{repo_org}/{package_source}"
     if not file:
@@ -105,7 +106,7 @@ def get_github_url(package: str, file: Optional[str] = None, line: Optional[int]
             if path[i] == package_target:
                 if i < len(path) - 1:
                     file = "/".join(path[i + 1:])
-                    break;
+                    break
             if file.startswith(os.sep):
                 file = file[len(os.sep):]
     line = f"#L{line}" if line > 0 else ""
@@ -118,13 +119,14 @@ def is_running_locally(request: dict) -> bool:
     """
     return request.get("context", {}).get("identity", {}).get("sourceIp", "") == "127.0.0.1"
 
+
 def get_function_info(func: Union[str, Callable]) -> Optional[Tuple[str, str, str, str, int, str]]:
     """
     Returns a tuple containing, in order, these function properties of the given function by
     function name or object: name, file, module, package, line number, GitHub link (only
     if one of these repos: foursight-core, foursight-cgap, foursight, dcicutils)
     Currently used only for informational purposes in the React UI to display
-    information about code for checks and actions and their GitHub links. 
+    information about code for checks and actions and their GitHub links.
     """
     def import_function(fully_qualified_function_name: str) -> Optional[Callable]:
         try:
@@ -147,7 +149,7 @@ def get_function_info(func: Union[str, Callable]) -> Optional[Tuple[str, str, st
         func_file = sys.modules[func_module].__file__
         _, func_line = inspect.getsourcelines(func)
         func_package = __import__(func_module).__package__
-    except Exception as e:
+    except Exception:
         pass
     func_github_url = get_github_url(func_package, func_file, func_line)
     return func_name, func_file, func_module, func_package, func_line, func_github_url

@@ -17,7 +17,6 @@ from dcicutils import ff_utils
 from dcicutils.misc_utils import ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from ...app import app
-from ...decorators import Decorators
 from .aws_s3 import AwsS3
 from .checks import Checks
 from .cookie_utils import create_delete_cookie_string
@@ -423,7 +422,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # When ES7 has been fully merged/deployed pass this to these calls: skip_indexing=True
         #
         elasticsearch_server_version = self._get_elasticsearch_server_version()
-        kwargs = { "skip_indexing": True } if elasticsearch_server_version >= "7" else {}
+        kwargs = {"skip_indexing": True} if elasticsearch_server_version >= "7" else {}
         ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs)
         ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs)
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
@@ -768,7 +767,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             self._cached_accounts_from_s3 = self._read_accounts_json(accounts_json_content)
         return self._cached_accounts_from_s3
 
-    def _read_accounts_json(self, accounts_json_content) -> dict:
+    @staticmethod
+    def _read_accounts_json(accounts_json_content) -> dict:
         encryption = Encryption()
         accounts_json_content = encryption.decrypt(accounts_json_content)
         accounts_json = json.loads(accounts_json_content)
@@ -947,28 +947,28 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(response)
 
     def reactapi_aws_vpcs(self, request: dict, env: str, vpc: Optional[str] = None) -> Response:
-        if vpc == None:
+        if vpc is None:
             vpc = "C4*"
         elif vpc == "all":
             vpc = None
         return self.create_success_response(get_aws_vpcs(vpc))
 
     def reactapi_aws_subnets(self, request: dict, env: str, subnet: Optional[str] = None) -> Response:
-        if subnet == None:
+        if subnet is None:
             subnet = "C4*"
         elif subnet == "all":
             subnet = None
         return self.create_success_response(get_aws_subnets(subnet))
 
     def reactapi_aws_security_groups(self, request: dict, env: str, security_group: Optional[str] = None) -> Response:
-        if security_group == None:
+        if security_group is None:
             security_group = "C4*"
         elif security_group == "all":
             security_group = None
         return self.create_success_response(get_aws_security_groups(security_group))
 
     def reactapi_aws_network(self, request: dict, env: str, network: Optional[str] = None) -> Response:
-        if network == None:
+        if network is None:
             network = "C4*"
         elif network == "all":
             network = None
