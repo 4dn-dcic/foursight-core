@@ -55,21 +55,22 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self._cached_sqs_queue_url
 
     def _get_versions_object(self) -> dict:
-        try:
-            elasticsearch_version = pkg_resources.get_distribution('elasticsearch').version
-            elasticsearch_dsl_version = pkg_resources.get_distribution('elasticsearch-dsl').version
-        except Exception:
-            elasticsearch_version = None
-            elasticsearch_dsl_version = None
+        def get_package_version(package_name: str) -> Optional[str]:
+            try:
+                return pkg_resources.get_distribution(package_name).version
+            except Exception:
+                return None
         return {
                 "foursight": app.core.get_app_version(),
-                "foursight_core": pkg_resources.get_distribution('foursight-core').version,
-                "dcicutils": pkg_resources.get_distribution('dcicutils').version,
+                "foursight_core": get_package_version("foursight-core"),
+                "dcicutils": get_package_version("dcicutils"),
+                "tibanna": get_package_version("tibanna"),
+                "tibanna_ff": get_package_version("tibanna-ff"),
                 "python": platform.python_version(),
                 "chalice": chalice_version,
                 "elasticsearch_server": self._get_elasticsearch_server_version(),
-                "elasticsearch": elasticsearch_version,
-                "elasticsearch_dsl": elasticsearch_dsl_version
+                "elasticsearch": get_package_version("elasticsearch-dsl"),
+                "elasticsearch_dsl": get_package_version("elasticsearch")
             }
 
     def _get_elasticsearch_server_version(self) -> Optional[str]:

@@ -151,6 +151,8 @@ const InfoPage = () => {
             <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={Env.IsFoursightFourfront(header) ? "4dn-dcic" : "dbmi-bgm"} size="2" />
             <InfoRow name={"foursight-core"} value={header.versions?.foursight_core} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"dcicutils"} value={header.versions?.dcicutils} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
+            <InfoRow name={"tibanna"} value={header.versions?.tibanna} monospace={true} copy={true} pypi={true} size="2" pypi={true} />
+            <InfoRow name={"tibanna-ff"} value={header.versions?.tibanna_ff} monospace={true} copy={true} pypi={true} size="2" pypi={true} />
             <InfoRow name={"chalice"} value={header.versions?.chalice} monospace={true} copy={true} chalice={true} size="2" pypi={true} github={"aws"} />
             <InfoRow name={"python"} value={header.versions?.python} monospace={true} copy={true} python={true} size="2" />
             <InfoRow name={"elasticsearch-server"} value={header.versions?.elasticsearch_server || info.data?.versions?.elasticsearch_server} monospace={true} copy={true} size="2" elasticsearch={true} />

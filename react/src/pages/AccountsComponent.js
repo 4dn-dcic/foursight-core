@@ -9,7 +9,7 @@ import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 
-const AccountInfoLeft = ({ info }) => {
+const AccountInfoLeft = ({ info, foursightUrl }) => {
     return <table style={{width:"100%"}}><tbody style={{whiteSpace:"nowrap"}}>
         <tr>
             <td style={{paddingRight:"10pt",width:"10%"}}>
@@ -24,9 +24,9 @@ const AccountInfoLeft = ({ info }) => {
                 </>}
             </td>
             <td>
-                <a style={{color:"inherit"}} href={info.get("foursight.url")} rel="noreferrer" target="_blank">{info.get("foursight.url")}</a>
+                <a style={{color:"inherit"}} href={info.get("foursight.url") || foursightUrl} rel="noreferrer" target="_blank">{info.get("foursight.url") || foursightUrl}</a>
                 &nbsp;
-                <a style={{color:"inherit"}} href={info.get("foursight.url")} rel="noreferrer" target="_blank">
+                <a style={{color:"inherit"}} href={info.get("foursight.url") || foursightUrl} rel="noreferrer" target="_blank">
                     <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span>
                 </a>
             </td>
@@ -129,6 +129,14 @@ const AccountInfoLeft = ({ info }) => {
         </tr>
         <tr style={{fontSize:"small"}}>
             <td style={{paddingRight:"10pt"}}>
+                Stage:
+            </td>
+            <td>
+                {info.get("foursight.stage")}
+            </td>
+        </tr>
+        <tr style={{fontSize:"small"}}>
+            <td style={{paddingRight:"10pt"}}>
                 Default Environment:
             </td>
             <td>
@@ -194,16 +202,6 @@ const AccountInfoRight = ({ info }) => {
     return <table style={{width:"100%",margin:"0",padding:"0"}}><tbody style={{fontSize:"small",verticalAlign:"top",whiteSpace:"nowrap"}}>
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                foursight-core:
-            </td>
-            <td>
-                {info.get("foursight.versions.foursight_core") ? <>
-                    <b>{info.get("foursight.versions.foursight_core")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
                 { info.get("foursight.package") === "foursight-cgap" ? <>
                     foursight-cgap:
                 </>:<>
@@ -218,11 +216,11 @@ const AccountInfoRight = ({ info }) => {
         </tr>
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                chalice:
+                foursight-core:
             </td>
             <td>
-                {info.get("foursight.versions.chalice") ? <>
-                    <b>{info.get("foursight.versions.chalice")}</b>
+                {info.get("foursight.versions.foursight_core") ? <>
+                    <b>{info.get("foursight.versions.foursight_core")}</b>
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -238,11 +236,41 @@ const AccountInfoRight = ({ info }) => {
         </tr>
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                tibanna:
+            </td>
+            <td>
+                {info.get("foursight.versions.tibanna") ? <>
+                    <b>{info.get("foursight.versions.tibanna")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                tibanna-ff:
+            </td>
+            <td>
+                {info.get("foursight.versions.tibanna_ff") ? <>
+                    <b>{info.get("foursight.versions.tibanna_ff")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
                 foursight-python:
             </td>
             <td>
                 {info.get("foursight.versions.python") ? <>
                     <b>{info.get("foursight.versions.python")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                chalice:
+            </td>
+            <td>
+                {info.get("foursight.versions.chalice") ? <>
+                    <b>{info.get("foursight.versions.chalice")}</b>
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -256,16 +284,6 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("portal.versions.portal") ? <>
                     <b>{info.get("portal.versions.portal")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                snovault:
-            </td>
-            <td>
-                {info.get("portal.versions.snovault") ? <>
-                    <b>{info.get("portal.versions.snovault")}</b>
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -296,6 +314,16 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("portal.health.python_version") ? <>
                     <b>{info.get("portal.health.python_version")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                snovault:
+            </td>
+            <td>
+                {info.get("portal.versions.snovault") ? <>
+                    <b>{info.get("portal.versions.snovault")}</b>
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -335,7 +363,7 @@ const AccountInfoRight = ({ info }) => {
     </tbody></table>
 }
 
-const AccountInfo = ({ account, header, all, decrementAccountCount }) => {
+const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount }) => {
 
     const info = useFetch(Server.Url(`/accounts_from_s3/${account.id}`), { cache: true, nofetch: true });
 
@@ -391,7 +419,7 @@ const AccountInfo = ({ account, header, all, decrementAccountCount }) => {
             <table><tbody>
                 <tr style={{verticalAlign:"top"}}>
                     <td style={{width:"70%"}}>
-                        <AccountInfoLeft info={info} header={header} />
+                        <AccountInfoLeft info={info} header={header} foursightUrl={foursightUrl} />
                     </td>
                     <td style={{paddingLeft:"10pt",width:"12pt"}} />
                     <td style={{marginLeft:"12pt",borderLeft:"1px solid"}} />
@@ -462,7 +490,7 @@ const AccountsComponent = ({ header }) => {
         </div>
         { accounts.length > 0 ? <>
             { accounts?.map((account, index) => <React.Fragment key={account.id}>
-                <AccountInfo account={account} header={header} all={all} decrementAccountCount={decrementAccountCount} />
+                <AccountInfo account={account} header={header} all={all} decrementAccountCount={decrementAccountCount} foursightUrl={account.foursight_url} />
             </React.Fragment>)}
             { (startup || (accountCount > 0)) && <>
                 <div className="box" style={{paddingBottom:"10pt"}}>

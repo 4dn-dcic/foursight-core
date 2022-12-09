@@ -49,7 +49,7 @@ const VpcBox = (props) => {
     return <>
         <div className="box margin" style={{}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
-                VPC: <b>{props.vpc?.name}</b>
+                <b>VPC</b>: <b>{props.vpc?.name}</b>
             </div>
             <table width="100%"><tbody>
                 <tr>
