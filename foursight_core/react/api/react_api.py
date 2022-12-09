@@ -946,26 +946,29 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
         return self.create_success_response(response)
 
-    def reactapi_aws_vpcs(self, request: dict, env: str, vpc: Optional[str] = None) -> Response:
+    def reactapi_aws_vpcs(self, request: dict, env: str, vpc: Optional[str] = None, args: Optional[dict] = None) -> Response:
         if vpc is None:
             vpc = "C4*"
         elif vpc == "all":
             vpc = None
-        return self.create_success_response(get_aws_vpcs(vpc))
+        raw = args.get("raw") == "true"
+        return self.create_success_response(get_aws_vpcs(vpc, raw))
 
-    def reactapi_aws_subnets(self, request: dict, env: str, subnet: Optional[str] = None) -> Response:
+    def reactapi_aws_subnets(self, request: dict, env: str, subnet: Optional[str] = None, args: Optional[dict] = None) -> Response:
         if subnet is None:
             subnet = "C4*"
         elif subnet == "all":
             subnet = None
-        return self.create_success_response(get_aws_subnets(subnet))
+        raw = args.get("raw") == "true"
+        return self.create_success_response(get_aws_subnets(subnet, raw))
 
-    def reactapi_aws_security_groups(self, request: dict, env: str, security_group: Optional[str] = None) -> Response:
+    def reactapi_aws_security_groups(self, request: dict, env: str, security_group: Optional[str] = None, args: Optional[dict] = None) -> Response:
         if security_group is None:
             security_group = "C4*"
         elif security_group == "all":
             security_group = None
-        return self.create_success_response(get_aws_security_groups(security_group))
+        raw = args.get("raw") == "true"
+        return self.create_success_response(get_aws_security_groups(security_group, raw))
 
     def reactapi_aws_network(self, request: dict, env: str, network: Optional[str] = None) -> Response:
         if network is None:

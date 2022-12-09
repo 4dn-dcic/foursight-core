@@ -46,7 +46,7 @@ def _filter_boto_description_list(description: dict,
 
 
 @memoize
-def get_aws_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None) -> list:
+def get_aws_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: Optional[bool] = None) -> list:
     """
     Returns the list of AWS VPCs which have tags names matching the given tag predicate.
     This predicate may be (1) a string in which case it is used to match (case-sensitive) the
@@ -109,19 +109,21 @@ def get_aws_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None) -
         #   }
         #
         return {
-            "name": tag,
-            "tag": tag,
+            "name": tag or item.get("VpcId"),
             "id": item.get("VpcId"),
             "cidr": item.get("CidrBlock"),
             "owner": item.get("OwnerId"),
             "state": item.get("State")
         }
     ec2 = boto3.client('ec2')
-    return _filter_boto_description_list(ec2.describe_vpcs(), "Vpcs", predicate, create_record)
+    vpcs = ec2.describe_vpcs()
+    vpcs = _filter_boto_description_list(vpcs, "Vpcs", predicate, create_record if not raw else None)
+    vpcs = sorted(vpcs, key=lambda value: value["name"]) if not raw else vpcs
+    return vpcs
 
 
 @memoize
-def get_aws_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None) -> list:
+def get_aws_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: Optional[bool] = None) -> list:
     """
     Returns the list of AWS Subnets which have tags names matching the given tag predicate.
     This predicate may be (1) a string in which case it is used to match (case-sensitive) the
@@ -188,7 +190,7 @@ def get_aws_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
         # }
         #
         return {
-            "tag": tag,
+            "name": tag or item.get("SubnetId"),
             "id": item.get("SubnetId"),
             "zone": item.get("AvailabilityZone"),
             "cidr": item.get("CidrBlock"),
@@ -199,11 +201,14 @@ def get_aws_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
             "state": item.get("State")
         }
     ec2 = boto3.client('ec2')
-    return _filter_boto_description_list(ec2.describe_subnets(), "Subnets", predicate, create_record)
+    subnets = ec2.describe_subnets()
+    subnets = _filter_boto_description_list(subnets, "Subnets", predicate, create_record if not raw else None)
+    subnets = sorted(subnets, key=lambda value: value["name"]) if not raw else subnets
+    return subnets
 
 
 @memoize
-def get_aws_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]] = None) -> list:
+def get_aws_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: Optional[bool] = None) -> list:
     """
     Returns the list of AWS Security Groups which have tags names matching the given tag predicate.
     This predicate may be (1) a string in which case it is used to match (case-sensitive) the
@@ -285,15 +290,18 @@ def get_aws_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]
         #   "VpcId": "vpc-066421dc99161d0ea"
         # }
         #
+        name = item.get("GroupName") or tag
         return {
-            "name": item.get("GroupName"),
-            "tag": tag,
+            **({"name": name} if name == tag else {"name": name, "tag": tag}),
             "id": item.get("GroupId"),
             "description": item.get("Description"),
             "vpc": item.get("VpcId")
         }
     ec2 = boto3.client('ec2')
-    return _filter_boto_description_list(ec2.describe_security_groups(), "SecurityGroups", predicate, create_record)
+    security_groups = ec2.describe_security_groups()
+    security_groups = _filter_boto_description_list(security_groups, "SecurityGroups", predicate, create_record if not raw else None)
+    security_groups = sorted(security_groups, key=lambda value: value["name"]) if not raw else security_groups
+    return security_groups
 
 
 @memoize

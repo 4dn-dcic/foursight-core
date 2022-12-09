@@ -20,9 +20,36 @@ import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 import Styles from '../Styles';
 
-const NetworkInfoComponent = (props) => {
+const VpcPanel = (props) => {
 
-    props.caller.refresh = refreshNetworkInfo;
+    const vpcs = useFetchVpcs();
+
+    function useFetchVpcs(refresh = false) {
+        return useFetch({ url: Server.Url(`/aws/vpcs`), nofetch: true, cache: true });
+    }
+
+    function fetchVpcs(refresh = false) {
+        vpcs.fetch({ nocache: refresh });
+    }
+
+    function refreshVpcs() {
+        fetchVpcs(true);
+    }
+
+    useEffect(() => {
+        fetchVpcs();
+    }, []);
+
+    return <>
+        <div className="box">
+            {vpcs.map((vpc, i) =>
+                <b>{vpc.name}</b>
+            )}
+        </div>
+    </>
+}
+
+const NetworkInfoComponent = (props) => {
 
     const networkInfo = useFetchNetworkInfo();
 
@@ -40,12 +67,13 @@ const NetworkInfoComponent = (props) => {
     }
 
     useEffect(() => {
-        fetchNetworkInfo();
+        //fetchNetworkInfo();
     }, []);
 
-    return <div className="box margin">
-        <b onClick={refreshNetworkInfo}>TODO</b>
-        {Yaml.Format(networkInfo)}
+    props.caller.refresh = refreshNetworkInfo;
+
+    return <div>
+        <VpcPanel />
     </div>
 }
 
