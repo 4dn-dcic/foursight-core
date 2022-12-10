@@ -355,14 +355,18 @@ class ReactRoutes:
         """
         Returns info on AWS VPCs, Subnets, and Security Groups, grouped by VPC.
         """
-        return app.core.reactapi_aws_network(app.current_request.to_dict(), env)
+        request = app.current_request.to_dict()
+        args = get_request_args(request)
+        return app.core.reactapi_aws_network(request, env, args=args)
 
     @route("/{env}/aws/network/{network}", authorize=True)
     def reactapi_route_aws_network(env: str, network: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns info on AWS VPCs, Subnets, and Security Groups, grouped by VPC.
         """
-        return app.core.reactapi_aws_network(app.current_request.to_dict(), env, network)
+        request = app.current_request.to_dict()
+        args = get_request_args(request)
+        return app.core.reactapi_aws_network(request, env, network, args=args)
 
     @route("/__reloadlambda__", authorize=True)
     def reactapi_route_reload_lambda() -> Response:  # noqa: implicit @staticmethod via @route

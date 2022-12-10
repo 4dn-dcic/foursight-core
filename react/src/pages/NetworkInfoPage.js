@@ -20,6 +20,20 @@ import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 import Styles from '../Styles';
 
+const tdLabelStyle = {
+    fontWeight: "bold",
+    fontSize: "small",
+    paddingTop: "1pt",
+    verticalAlign: "top",
+    width: "5%",
+    paddingRight: "8pt",
+    whiteSpace: "nowrap"
+}
+const tdContentStyle = {
+    verticalAlign: "top"
+}
+
+
 const VpcBox = (props) => {
 
     const [ showingSubnets, setShowingSubnets ] = useState(false);
@@ -31,20 +45,6 @@ const VpcBox = (props) => {
     function showSecurityGroups()   { setShowingSecurityGroups(true); }
     function hideSecurityGroups()   { setShowingSecurityGroups(false); }
     function toggleSecurityGroups() { showingSecurityGroups ? setShowingSecurityGroups(false) : setShowingSecurityGroups(true); }
-
-    const tdLabelStyle = {
-        fontWeight: "bold",
-        fontSize: "small",
-        paddingTop: "1pt",
-        textAlign: "right",
-        verticalAlign: "top",
-        width: "5%",
-        paddingRight: "4pt",
-        whiteSpace: "nowrap"
-    }
-    const tdContentStyle = {
-        verticalAlign: "top"
-    }
 
     return <>
         <div className="box margin" style={{}}>
@@ -65,31 +65,45 @@ const VpcBox = (props) => {
                     <td>{props.vpc?.state}</td>
                 </tr>
                 <tr onClick={toggleSubnets} className="pointer">
-                    <td style={tdLabelStyle}>{showingSubnets ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;Subnets:</td>
+                    <td style={tdLabelStyle}>Subnets:</td>
                     <td>
                         {showingSubnets ? <>
-                            <span>Hide ({props.vpc?.subnets?.length})</span>
-                            {props.vpc?.subnets.map(subnet => <div key={subnet.id}>
-                                <SubnetBox subnet={subnet} />
-                            </div>)}
+                            <small><u>Hide</u>&nbsp;{Char.DownArrowHollow}&nbsp;&nbsp;({props.vpc?.subnets?.length})</small>
                         </>:<>
-                            <span>Show ({props.vpc?.subnets?.length})</span>
+                            <small><u>Show</u>&nbsp;{Char.UpArrowHollow}&nbsp;&nbsp;({props.vpc?.subnets?.length})</small>
                         </>}
                     </td>
                 </tr>
+                {showingSubnets && <>
+                    <tr onClick={toggleSubnets} className="pointer">
+                        <td style={{paddingTop:"2pt"}} colSpan="2">
+                            {props.vpc?.subnets.map((subnet, i) => <div key={subnet.id}>
+                                <SubnetBox subnet={subnet} />
+                                <div style={{height:"3pt"}} />
+                            </div>)}
+                        </td>
+                    </tr>
+                </>}
                 <tr onClick={toggleSecurityGroups} className="pointer">
-                    <td style={tdLabelStyle}>{showingSecurityGroups ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;Security Groups:</td>
+                    <td style={tdLabelStyle}>Security Groups:</td>
                     <td>
                         {showingSecurityGroups ? <>
-                            <span>Hide ({props.vpc?.security_groups?.length})</span>
-                            {props.vpc?.security_groups.map(security_group => <div key={security_group.id}>
-                                <SecurityGroupBox security_group={security_group} />
-                            </div>)}
+                            <small><u>Hide</u>&nbsp;{Char.DownArrowHollow}&nbsp;&nbsp;({props.vpc?.security_groups?.length})</small>
                         </>:<>
-                            <span>Show ({props.vpc?.security_groups?.length})</span>
+                            <small><u>Show</u>&nbsp;{Char.UpArrowHollow}&nbsp;&nbsp;({props.vpc?.security_groups?.length})</small>
                         </>}
                     </td>
                 </tr>
+                {showingSecurityGroups && <>
+                    <tr onClick={toggleSecurityGroups} className="pointer">
+                        <td style={{paddingTop:"2pt"}} colSpan="2">
+                            {props.vpc?.security_groups.map((security_group, i) => <div key={security_group.id}>
+                                <SecurityGroupBox security_group={security_group} />
+                                { i < props.vpc?.security_groups?.length - 1 && <> <div style={{height:"3pt"}}/> </>}
+                            </div>)}
+                        </td>
+                    </tr>
+                </>}
             </tbody></table>
         </div>
     </>
@@ -97,18 +111,56 @@ const VpcBox = (props) => {
 
 const SubnetBox = (props) => {
     return <>
-        <div className="box margin lighten" style={{width:"100%"}}>
-            <b>{props.subnet.name}</b> <br />
-            <b>{props.subnet.id}</b> <br />
+        <div className="box margin lighten" style={{width:"100%",fontSize:"small"}}>
+            <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
+                <b>Subnet</b>: <b>{props.subnet?.name}</b>
+            </div>
+            <table width="100%" style={{fontSize:"small"}}><tbody>
+                <tr>
+                    <td style={tdLabelStyle}>ID:</td>
+                    <td style={tdContentStyle}>{props.subnet?.id}<br /><small>{props.subnet?.subnet_arn}</small></td>
+                </tr>
+                <tr>
+                    <td style={tdLabelStyle}>CIDR:</td>
+                    <td>{props.subnet?.cidr}</td>
+                </tr>
+                <tr>
+                    <td style={tdLabelStyle}>Availability Zone:</td>
+                    <td>{props.subnet?.zone}</td>
+                </tr>
+                <tr>
+                    <td style={tdLabelStyle}>VPC:</td>
+                    <td>{props.subnet?.vpc}</td>
+                </tr>
+                <tr>
+                    <td style={tdLabelStyle}>Status:</td>
+                    <td>{props.subnet?.state}</td>
+                </tr>
+            </tbody></table>
         </div>
     </>
 }
 
 const SecurityGroupBox = (props) => {
     return <>
-        <div className="box margin lighten" style={{width:"100%"}}>
-            <b>{props.security_group?.name}</b> <br />
-            <b>{props.security_group?.id}</b> <br />
+        <div className="box margin lighten" style={{width:"100%",fontSize:"small"}}>
+            <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
+                <b>Security Group</b>: <b>{props.security_group?.name}</b>
+            </div>
+            <table width="100%" style={{fontSize:"small"}}><tbody>
+                <tr>
+                    <td style={tdLabelStyle}>ID:</td>
+                    <td style={tdContentStyle}>{props.security_group?.id}<br /><small>{props.security_group?.security_group}</small></td>
+                </tr>
+                <tr>
+                    <td style={tdLabelStyle}>Description:</td>
+                    <td>{props.security_group?.description}</td>
+                </tr>
+                <tr>
+                    <td style={tdLabelStyle}>VPC:</td>
+                    <td>{props.security_group?.vpc}</td>
+                </tr>
+            </tbody></table>
         </div>
     </>
 }
@@ -138,6 +190,7 @@ const NetworkInfoPage = (props) => {
         <div style={{width:"fit-content",minWidth:"450pt"}}>
             { vpcs.map(vpc => <div key={vpc.id}>
                 <VpcBox vpc={vpc} />
+                <div style={{height:"4pt"}} />
             </div>)}
         </div>
     </>

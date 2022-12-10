@@ -971,12 +971,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
         raw = args.get("raw") == "true"
         return self.create_success_response(get_aws_security_groups(security_group, raw))
 
-    def reactapi_aws_network(self, request: dict, env: str, network: Optional[str] = None) -> Response:
+    def reactapi_aws_network(self, request: dict, env: str, network: Optional[str] = None, args: Optional[dict] = None) -> Response:
         if network is None:
             network = "C4*"
         elif network == "all":
             network = None
-        return self.create_success_response(get_aws_network(network))
+        raw = args.get("raw") == "true"
+        return self.create_success_response(get_aws_network(network, raw))
 
     # ----------------------------------------------------------------------------------------------
     # END OF EXPERIMENTAL - /accounts page

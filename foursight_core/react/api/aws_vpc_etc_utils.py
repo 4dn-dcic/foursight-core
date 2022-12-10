@@ -305,14 +305,18 @@ def get_aws_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]
 
 
 @memoize
-def get_aws_network(predicate: Optional[Union[str, re.Pattern, Callable]] = None) -> list:
+def get_aws_network(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: Optional[bool] = None) -> list:
     """
     Returns AWS network info, i.e. WRT VPCs, Subnets, and Security Groups.
     """
-    vpcs = copy.deepcopy(get_aws_vpcs(predicate))
-    subnets = get_aws_subnets(predicate)
-    security_groups = get_aws_security_groups(predicate)
+    vpcs = get_aws_vpcs(predicate, raw)
+    # Copy because we're going to modify and it's memoized.
+    vpcs = copy.deepcopy(vpcs)
+    subnets = get_aws_subnets(predicate, raw)
+    sgs = get_aws_security_groups(predicate, raw)
+    vpc_property = "vpc" if not raw else "VpcId"
+    id_property = "id" if not raw else "VpcId"
     for vpc in vpcs:
-        vpc["subnets"] = [subnet for subnet in subnets if subnet["vpc"] == vpc["id"]]
-        vpc["security_groups"] = [security_group for security_group in security_groups if security_group["vpc"] == vpc["id"]]
+        vpc["subnets"] = [subnet for subnet in subnets if subnet[vpc_property] == vpc[id_property]]
+        vpc["security_groups"] = [sg for sg in sgs if sg[vpc_property] == vpc[id_property]]
     return vpcs
