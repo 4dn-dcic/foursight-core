@@ -1092,6 +1092,104 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
     </div>
 }
 
+const ChecksSearchControl = (props) => {
+    return <>
+       &nbsp;<span style={{fontWeight:props.showingChecksSearch ? "bold" : "normal"}} onClick={props.toggleShowingChecksSearch}>Search Checks</span> <br />
+    </>
+}
+
+const ChecksSearchBox = (props) => {
+
+    const [ checksSearch, setChecksSearch ] = useState("");
+    const [ filteredChecks, setFilteredChecks ] = useState([]);
+
+    useEffect(() => {
+        setChecksSearch(checksSearch);
+    }, [checksSearch]);
+
+    function onChecksSearch(e) {
+        const search = e.currentTarget.value;
+        setChecksSearch(search);
+        setFilteredChecks(filterChecks(search));
+    }
+
+    function filterChecks(search) {
+        if (!search || search.length < 2) {
+            return [];
+        }
+        search = search.replace(/\s+/g, ' ').toLowerCase();
+        let matches = []
+        props.checks.forEach(group => {
+            const matchedChecks = group?.checks?.filter(check =>
+                check.name.toLowerCase().includes(search) ||
+                check.title.toLowerCase().includes(search) ||
+                check.group.toLowerCase().includes(search)
+            );
+            matches.push(...matchedChecks)
+            console.log('matches-are:')
+            console.log(matches)
+        });
+        return matches;
+    }
+
+    const inputStyle={
+        outline: "none",
+        paddingLeft: "2pt",
+        border: "1px solid gray",
+        borderTop: "0",
+        borderRight: "0",
+        borderLeft: "0",
+        position: "relative",
+        bottom: "1pt",
+        fontSize: "small",
+        fontWeight: "bold",
+        marginBottom: "-4pt",
+        height: "1.2em",
+        width: "100%"
+    };
+
+    return props.showingChecksSearch && <>
+        <div>
+            <table width="80%"><tbody><tr>
+                <td nowrap="1" width="2%">
+                    <b>Search Checks</b>:&nbsp;
+                </td>
+                <td>
+                    <input placeholder="Search for checks ..." type="text" autoFocus style={inputStyle} defaultValue={checksSearch} onChange={onChecksSearch} />
+                </td>
+            </tr></tbody></table>
+        </div>
+        <div className="box lighten bigmargin" style={{marginBottom:"6pt",minWidth:"250pt"}}>
+            <div style={{fontSize:"small",paddingTop:"6pt"}}>
+                <div style={{float:"right",fontSize:"large",marginTop:"-8pt",cursor:"pointer"}} onClick={() => props.toggleShowingChecksSearch()}>
+                    <b>{Char.X}</b>
+                </div>
+                {filteredChecks.length > 0 ? <>
+                    {filteredChecks.map(check => <table><tbody>
+                        <tr>
+                            <td style={{verticalAlign:"top",paddingTop:"3pt",paddingRight:"6pt"}}>
+                                <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit",marginTop:"800pt"}} rel="noreferrer" target="_blank">
+                                    <small className="fa fa-external-link" style={{color:"black",fontSize:"10pt",fontWeight:"default"}}></small>
+                                </Link>
+                            </td>
+                            <td style={{verticalAlign:"top",paddingBottom:"10pt"}}>
+                                <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit",marginTop:"800pt"}} rel="noreferrer" target="_blank">
+                                    <b>{check.title}</b> <br />
+                                </Link>
+                                <small className="pointer" onClick={() => props.toggleShowGroup(props.findGroup(check.group), props.environ, props.groupList)}>{check.group}</small> (<small>{check.name}</small>)
+                            </td>
+                        </tr>
+                    </tbody></table>)}
+                </>:<>
+                    <div style={{marginTop:"-6pt"}}>
+                        No results{checksSearch.length < 2 && <>&nbsp;&ndash;&nbsp;<small>At least 2 search characters required.</small></>}
+                    </div>
+                </>}
+            </div>
+        </div>
+    </>
+}
+
 const ChecksPage = (props) => {
 
     // TODO: Lotsa refactoring ...
@@ -1235,6 +1333,11 @@ const ChecksPage = (props) => {
         return <>
            &nbsp;<span style={{fontWeight:isShowingChecksRaw() ? "bold" : "normal"}} onClick={() => toggleChecksRaw()}>View Raw Checks</span> <br />
         </>
+    }
+
+    const [ showingChecksSearch, setShowingChecksSearch ] = useState(false);
+    function toggleShowingChecksSearch() {
+        setShowingChecksSearch(value => !value);
     }
 
     const ChecksRawView = ({ info }) => {
@@ -1580,8 +1683,10 @@ const ChecksPage = (props) => {
                         <ChecksGroupBox />
                         <div className="box thickborder check-pass padding-small cursor-hand" style={{marginBottom:"8pt"}}>
                             <RecentRunsControl />
-                            <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:Styles.GetForegroundColor()}} />
+                            <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"var(--box-fg)"}} />
                             <ChecksRawControl />
+                            <div style={{marginTop:"3pt",marginBottom:"3pt",height:"1px", backgroundColor:"var(--box-fg)"}} />
+                            <ChecksSearchControl showingChecksSearch={showingChecksSearch} toggleShowingChecksSearch={toggleShowingChecksSearch} />
                         </div>
                         <ChecksStatus />
                         <LambdasPanel />
@@ -1591,6 +1696,14 @@ const ChecksPage = (props) => {
                         <SelectedGroupsPanel env={environ} groupList={groupList} historyList={historyList} info={info} />
                     </td>
                     <td style={{paddingLeft: (groupList?.length > 0 || groupList.error || isShowingChecksRaw()) ? "8pt" : "0",verticalAlign:"top"}}>
+                        <ChecksSearchBox
+                            checks={checks}
+                            groupList={groupList}
+                            environ={environ}
+                            findGroup={findGroup}
+                            toggleShowGroup={toggleShowGroup}
+                            showingChecksSearch={showingChecksSearch}
+                            toggleShowingChecksSearch={toggleShowingChecksSearch} />
                         <LambdasView />
                         <RecentRunsView />
                         <ResultsHistoryPanel env={environ} historyList={historyList} />
