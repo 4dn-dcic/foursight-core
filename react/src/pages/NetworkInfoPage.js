@@ -195,7 +195,6 @@ const SecurityGroupBox = (props) => {
                     <td style={tdLabelStyle}>VPC:</td>
                     <td>{props.security_group?.vpc}</td>
                 </tr>
-
                 <tr>
                     <td style={tdLabelStyle} onClick={toggleInboundRules} className="pointer">Inbound Rules:</td>
                     <td onClick={toggleInboundRules} className="pointer">
@@ -213,7 +212,6 @@ const SecurityGroupBox = (props) => {
                         </td>
                     </tr>
                 </>}
-
                 <tr>
                     <td style={tdLabelStyle} onClick={toggleOutboundRules} className="pointer">Outbound Rules:</td>
                     <td onClick={toggleOutboundRules} className="pointer">
@@ -260,7 +258,7 @@ const SecurityGroupRulesBox = (props) => {
     return <>
         {rules?.map((rule, i) => <div key={rule.id}>
             <SecurityGroupRuleBox security_group_rule={rule} />
-            <div style={{height:"3pt"}} />
+            <div style={{height:"4pt"}} />
         </div>)}
     </>
 }
@@ -371,7 +369,7 @@ const SecurityGroupRuleBox = (props) => {
     </>
 }
 
-const NetworkInfoPage = (props) => {
+const VpcsPanel = (props) => {
 
     const [ args, setArgs ] = useSearchParams();
     const [ all, setAll ] = useState(args.get("all")?.toLowerCase() === "true")
@@ -415,7 +413,7 @@ const NetworkInfoPage = (props) => {
                     Security {showingAllSecurityGroups ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
                 </small>
            </div>
-           <b>AWS Network Info</b>
+           <b>AWS VPCs</b>&nbsp;&nbsp;({vpcs?.length})
         </div>
         <div style={{width:"fit-content",minWidth:"450pt"}}>
             { vpcs.map(vpc => <div key={vpc.id}>
@@ -424,6 +422,117 @@ const NetworkInfoPage = (props) => {
             </div>)}
         </div>
     </td></tr></tbody></table>
+}
+
+const SubnetsPanel = (props) => {
+
+    const [ args, setArgs ] = useSearchParams();
+    const [ all, setAll ] = useState(args.get("all")?.toLowerCase() === "true")
+
+    const subnets = useFetchSubnets();
+
+    function useFetchSubnets(refresh = false) {
+        return useFetch({ url: Server.Url(`/aws/subnets${all ? "/all" : ""}`), nofetch: true, cache: true });
+    }
+
+    function fetchSubnets(refresh = false) {
+        subnets.fetch({ nocache: refresh });
+    }
+
+    function refreshSubnets() {
+        fetchSubnets(true);
+    }
+
+    useEffect(() => {
+        fetchSubnets();
+    }, []);
+
+    return <table style={{maxWidth:"500pt"}}><tbody><tr><td>
+        <div>
+           <b>AWS Subnets</b>&nbsp;&nbsp;({subnets?.length})
+        </div>
+        <div style={{width:"fit-content",minWidth:"400pt"}}>
+            { subnets.map(subnet => <div key={subnet.id}>
+                <SubnetBox subnet={subnet} />
+                <div style={{height:"4pt"}} />
+            </div>)}
+        </div>
+    </td></tr></tbody></table>
+}
+
+const SecurityGroupsPanel = (props) => {
+
+    const [ args, setArgs ] = useSearchParams();
+    const [ all, setAll ] = useState(args.get("all")?.toLowerCase() === "true")
+
+    const sgs = useFetchSecurityGroups();
+
+    function useFetchSecurityGroups(refresh = false) {
+        return useFetch({ url: Server.Url(`/aws/security_groups${all ? "/all" : ""}`), nofetch: true, cache: true });
+    }
+
+    function fetchSecurityGroups(refresh = false) {
+        sgs.fetch({ nocache: refresh });
+    }
+
+    function refreshSecurityGroups() {
+        fetchSecurityGroups(true);
+    }
+
+    useEffect(() => {
+        fetchSecurityGroups();
+    }, []);
+
+    return <table style={{maxWidth:"500pt"}}><tbody><tr><td>
+        <div>
+           <b>AWS Security Groups</b>&nbsp;&nbsp;({sgs?.length})
+        </div>
+        <div style={{width:"fit-content",minWidth:"400pt"}}>
+            { sgs.map(sg => <div key={sg.id}>
+                <SecurityGroupBox security_group={sg} />
+                <div style={{height:"4pt"}} />
+            </div>)}
+        </div>
+    </td></tr></tbody></table>
+}
+
+const NetworkInfoPage = () => {
+
+    const [ showingVpcsPanel, setShowingVpcsPanel ] = useState(true);
+    const [ showingSubnetsPanel, setShowingSubnetsPanel ] = useState(false);
+    const [ showingSecurityGroupsPanel, setShowingSecurityGroupsPanel ] = useState(false);
+
+    function toggleVpcsPanel()           { setShowingVpcsPanel(value => !value); }
+    function toggleSubnetsPanel()        { setShowingSubnetsPanel(value => !value); }
+    function toggleSecurityGroupsPanel() { setShowingSecurityGroupsPanel(value => !value); }
+
+    return  <table><tbody><tr>
+        <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
+            <div>
+                <b>AWS Network</b>
+            </div>
+            <div className="box darken margin" style={{width:"120pt"}}>
+                <div className="pointer" style={{fontWeight:showingVpcsPanel ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleVpcsPanel}>VPCs</div>
+                <div className="pointer" style={{fontWeight:showingSubnetsPanel ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleSubnetsPanel}>Subnets</div>
+                <div className="pointer" style={{fontWeight:showingSecurityGroupsPanel ? "bold" : "normal"}} onClick={toggleSecurityGroupsPanel}>Security Groups</div>
+            </div>
+        </td>
+        {(showingVpcsPanel) &&
+            <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
+                <VpcsPanel />
+            </td>
+        }
+        {(showingSubnetsPanel) &&
+            <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
+                <SubnetsPanel />
+            </td>
+        }
+        {(showingSecurityGroupsPanel) &&
+            <td style={{verticalAlign:"top"}}>
+                <SecurityGroupsPanel />
+            </td>
+        }
+    </tr></tbody></table>
 }
 
 export default NetworkInfoPage;
