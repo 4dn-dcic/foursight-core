@@ -1114,28 +1114,29 @@ const ChecksSearchBox = (props) => {
     }
 
     function filterChecks(search) {
-        if (!search || search.length < 2) {
+        if (!search || search.trim().length < 1) {
             return [];
         }
-        search = search.replace(/\s+/g, ' ').toLowerCase();
+        search = search.trim().replace(/\s+/g, ' ').toLowerCase();
         let matches = []
         props.checks.forEach(group => {
             const matchedChecks = group?.checks?.filter(check =>
-                check.name.toLowerCase().includes(search) ||
-                check.title.toLowerCase().includes(search) ||
-                check.group.toLowerCase().includes(search)
+                check.name.trim().toLowerCase().includes(search) ||
+                check.title.trim().toLowerCase().includes(search) ||
+                check.group.trim().toLowerCase().includes(search)
             );
             matches.push(...matchedChecks)
             console.log('matches-are:')
             console.log(matches)
         });
+        matches.sort((a,b) => a.title.trim().toLowerCase() > b.title.trim().toLowerCase() ? 1 : (a.title.trim().toLowerCase() < b.title.trim().toLowerCase() ? -1 : 0));
         return matches;
     }
 
     const inputStyle={
         outline: "none",
         paddingLeft: "2pt",
-        border: "1px solid gray",
+        border: "1px solid lightgray",
         borderTop: "0",
         borderRight: "0",
         borderLeft: "0",
@@ -1143,6 +1144,7 @@ const ChecksSearchBox = (props) => {
         bottom: "1pt",
         fontSize: "small",
         fontWeight: "bold",
+        color: "var(--box-fg)",
         marginBottom: "-4pt",
         height: "1.2em",
         width: "100%"
@@ -1160,14 +1162,14 @@ const ChecksSearchBox = (props) => {
             </tr></tbody></table>
         </div>
         <div className="box lighten bigmargin" style={{marginBottom:"6pt",minWidth:"250pt"}}>
-            <div style={{fontSize:"small",paddingTop:"6pt"}}>
-                <div style={{float:"right",fontSize:"large",marginTop:"-8pt",cursor:"pointer"}} onClick={() => props.toggleShowingChecksSearch()}>
+            <div style={{fontSize:"small",paddingTop:"2pt",marginBottom:"-3pt"}}>
+                <div style={{float:"right",marginTop:"-6pt",marginRight:"-3pt",cursor:"pointer"}} onClick={() => props.toggleShowingChecksSearch()}>
                     <b>{Char.X}</b>
                 </div>
-                {filteredChecks.length > 0 ? <>
+                {filteredChecks.length > 0 ? <div style={{marginTop:"4pt"}}>
                     {filteredChecks.map(check => <table><tbody>
                         <tr>
-                            <td style={{verticalAlign:"top",paddingTop:"3pt",paddingRight:"6pt"}}>
+                            <td style={{verticalAlign:"top",paddingTop:"4pt",paddingRight:"6pt"}}>
                                 <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit",marginTop:"800pt"}} rel="noreferrer" target="_blank">
                                     <small className="fa fa-external-link" style={{color:"black",fontSize:"10pt",fontWeight:"default"}}></small>
                                 </Link>
@@ -1180,9 +1182,9 @@ const ChecksSearchBox = (props) => {
                             </td>
                         </tr>
                     </tbody></table>)}
-                </>:<>
+                </div>:<>
                     <div style={{marginTop:"-6pt"}}>
-                        No results{checksSearch.length < 2 && <>&nbsp;&ndash;&nbsp;<small>At least 2 search characters required.</small></>}
+                        No results.
                     </div>
                 </>}
             </div>
