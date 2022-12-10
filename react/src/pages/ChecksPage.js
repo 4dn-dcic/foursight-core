@@ -21,9 +21,9 @@ import Yaml from '../utils/Yaml';
 import LiveTime from '../LiveTime';
 import Styles from '../Styles';
 
-    function noteChangedSelectedGroups(groupList) {
-        groupList.update();
-    }
+function noteChangedSelectedGroups(groupList) {
+    groupList.update();
+}
 
 function noteChangedResults(groupList) {
     groupList.update();

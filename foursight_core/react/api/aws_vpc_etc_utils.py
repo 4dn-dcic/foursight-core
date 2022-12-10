@@ -1,5 +1,6 @@
 import boto3
 import copy
+import json
 import re
 from typing import Callable, Optional, Union
 from .misc_utils import memoize
@@ -295,6 +296,7 @@ def get_aws_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]
             **({"name": name} if name == tag else {"name": name, "tag": tag}),
             "id": item.get("GroupId"),
             "description": item.get("Description"),
+            "owner": item.get("OwnerId"),
             "vpc": item.get("VpcId")
         }
     ec2 = boto3.client('ec2')
@@ -303,6 +305,45 @@ def get_aws_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]
     security_groups = sorted(security_groups, key=lambda value: value["name"]) if not raw else security_groups
     return security_groups
 
+@memoize
+def get_aws_security_group_rules(security_group_id: str, direction: Optional[str] = None, raw: Optional[bool] = None) -> list:
+    def create_record(item: dict) -> dict:
+        #
+        # Example record from boto3.describe_security_group_rules:
+        # {
+        #   "SecurityGroupRuleId": "sgr-05f67771a8807ee27",
+        #   "GroupId": "sg-09c7f9e502c5b3b7c",
+        #   "GroupOwnerId": "643366669028",
+        #   "IsEgress": true,
+        #   "IpProtocol": "tcp",
+        #   "FromPort": 8005,
+        #   "ToPort": 8005,
+        #   "CidrIpv4": "0.0.0.0/0",
+        #   "Description": "outbound traffic for higlass server",
+        #   "Tags": []
+        # }
+        return {
+            "id": item["SecurityGroupRuleId"],
+            "security_group": item["GroupId"],
+            "protocol": item.get("IpProtocol") if item.get("IpProtocol") != "-1" else "Any",
+            "port_from": item.get("FromPort"),
+            "port_thru": item.get("ToPort"),
+            "egress": item.get("IsEgress"),
+            "cidr": item.get("CidrIpv4"),
+            "description": item.get("Description"),
+            "owner": item.get("GroupOwnerId")
+        }
+    ec2 = boto3.client('ec2')
+    filters = [{"Name": "group-id", "Values": [security_group_id]}]
+    security_group_rules = ec2.describe_security_group_rules(Filters=filters)["SecurityGroupRules"]
+    if direction == "inbound":
+        security_group_rules = [security_group_rule for security_group_rule in security_group_rules if security_group_rule.get("IsEgress") is False]
+    elif direction == "outbound":
+        security_group_rules = [security_group_rule for security_group_rule in security_group_rules if security_group_rule.get("IsEgress") is True]
+    if not raw:
+        security_group_rules = [create_record(security_group_rule) for security_group_rule in security_group_rules]
+        security_groups_rules = sorted(security_group_rules, key=lambda value: value["id"])
+    return security_group_rules
 
 @memoize
 def get_aws_network(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: Optional[bool] = None) -> list:

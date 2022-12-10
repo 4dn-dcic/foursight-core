@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import { RingSpinner, PuffSpinnerInline, StandardSpinner } from '../Spinners';
 import { useReadOnlyMode } from '../ReadOnlyMode';
@@ -148,9 +148,38 @@ const SubnetBox = (props) => {
 }
 
 const SecurityGroupBox = (props) => {
+
+    const [ showingRules, setShowingRules ] = useState(false);
+    const [ showingInboundRules, setShowingInboundRules ] = useState(false);
+    const [ showingOutboundRules, setShowingOutboundRules ] = useState(false);
+
+    function toggleRules() {
+        if (showingRules) {
+            setShowingRules(false);
+            setShowingInboundRules(false);
+            setShowingOutboundRules(false);
+        }
+        else {
+            setShowingRules(true);
+            setShowingInboundRules(true);
+            setShowingOutboundRules(true);
+        }
+    }
+    function toggleInboundRules() { showingInboundRules ? setShowingInboundRules(false) : setShowingInboundRules(true); }
+    function toggleOutboundRules() { showingOutboundRules ? setShowingOutboundRules(false) : setShowingOutboundRules(true); }
+
+    useEffect(() => {
+        setShowingRules(props.showingAllRules);
+    }, [props.showingAllRules]);
+
     return <>
         <div className="box margin lighten" style={{width:"100%",fontSize:"small"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
+                <div style={{float:"right",marginRight:"3pt"}}>
+                    <small className="pointer" style={{fontWeight:showingRules ? "bold" : "normal"}} onClick={toggleRules}>
+                        All Rules {showingRules ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
+                    </small>
+                </div>
                 <b>Security Group</b>: <b style={{color:"black"}}>{props.security_group?.name}</b>
             </div>
             <table width="100%" style={{fontSize:"small"}}><tbody>
@@ -166,6 +195,177 @@ const SecurityGroupBox = (props) => {
                     <td style={tdLabelStyle}>VPC:</td>
                     <td>{props.security_group?.vpc}</td>
                 </tr>
+
+                <tr>
+                    <td style={tdLabelStyle} onClick={toggleInboundRules} className="pointer">Inbound Rules:</td>
+                    <td onClick={toggleInboundRules} className="pointer">
+                        {(showingInboundRules) ? <>
+                            <small><u>Hide</u>&nbsp;{Char.DownArrowHollow}</small>
+                        </>:<>
+                            <small><u>Show</u>&nbsp;{Char.UpArrowHollow}</small>
+                        </>}
+                    </td>
+                </tr>
+                {(showingInboundRules) && <>
+                    <tr>
+                        <td style={{paddingTop:"2pt"}} colSpan="2">
+                            <SecurityGroupRulesBox security_group_id={props.security_group?.id} direction="inbound" />
+                        </td>
+                    </tr>
+                </>}
+
+                <tr>
+                    <td style={tdLabelStyle} onClick={toggleOutboundRules} className="pointer">Outbound Rules:</td>
+                    <td onClick={toggleOutboundRules} className="pointer">
+                        {(showingOutboundRules) ? <>
+                            <small><u>Hide</u>&nbsp;{Char.DownArrowHollow}</small>
+                        </>:<>
+                            <small><u>Show</u>&nbsp;{Char.UpArrowHollow}</small>
+                        </>}
+                    </td>
+                </tr>
+                {(showingOutboundRules) && <>
+                    <tr>
+                        <td style={{paddingTop:"2pt"}} colSpan="2">
+                            <SecurityGroupRulesBox security_group_id={props.security_group?.id} direction="outbound" />
+                        </td>
+                    </tr>
+                </>}
+            </tbody></table>
+        </div>
+    </>
+}
+
+const SecurityGroupRulesBox = (props) => {
+
+    const rules = useFetchRules();
+
+    function useFetchRules(refresh = false) {
+        const args = props.direction === "inbound" ? "?direction=inbound" : (props.direction === "outbound" ? "?direction=outbound" : "");
+        return useFetch({ url: Server.Url(`/aws/security_group_rules/${props.security_group_id}${args}`), nofetch: true, cache: true });
+    }
+
+    function fetchRules(refresh = false) {
+        rules.fetch({ nocache: refresh });
+    }
+
+    function refreshRules() {
+        fetchRules(true);
+    }
+
+    useEffect(() => {
+        fetchRules();
+    }, []);
+
+    return <>
+        {rules?.map((rule, i) => <div key={rule.id}>
+            <SecurityGroupRuleBox security_group_rule={rule} />
+            <div style={{height:"3pt"}} />
+        </div>)}
+    </>
+}
+
+const SecurityGroupRuleBox = (props) => {
+
+    function getType(security_group_rule) {
+        if (security_group_rule?.protocol?.toUpperCase() === "TCP") {
+            if ((security_group_rule?.port_from == 22) && (security_group_rule?.port_thru == 22)) {
+                return "SSH";
+            }
+            else if ((security_group_rule?.port_from == 443) && (security_group_rule?.port_thru == 443)) {
+                return "HTTPS";
+            }
+            else if ((security_group_rule?.port_from == 80) && (security_group_rule?.port_thru == 80)) {
+                return "HTTP";
+            }
+        }
+        return security_group_rule?.protocol?.toUpperCase();
+    }
+
+    function getProtocol(security_group_rule) {
+        if ((security_group_rule?.port_from == 3) && (security_group_rule?.port_thru == -1)) {
+            return "Destination Unreachable";
+        }
+        else if ((security_group_rule?.port_from == 4) && (security_group_rule?.port_thru == -1)) {
+            return "Source Quench";
+        }
+        else if ((security_group_rule?.port_from == 8) && (security_group_rule?.port_thru == -1)) {
+            return "Echo Request";
+        }
+        else if ((security_group_rule?.port_from == 11) && (security_group_rule?.port_thru == -1)) {
+            return "Time Exceeded";
+        }
+        return security_group_rule?.protocol?.toUpperCase();
+    }
+
+    function getPorts(security_group_rule) {
+        if ((security_group_rule?.port_from < 0) && (security_group_rule?.port_thru < 0)) {
+            return null;
+        }
+        else if ((security_group_rule?.port_from == 3) && (security_group_rule?.port_thru == -1)) {
+            return null;
+        }
+        else if ((security_group_rule?.port_from == 4) && (security_group_rule?.port_thru == -1)) {
+            return null;
+        }
+        else if ((security_group_rule?.port_from == 8) && (security_group_rule?.port_thru == -1)) {
+            return null;
+        }
+        else if ((security_group_rule?.port_from == 11) && (security_group_rule?.port_thru == -1)) {
+            return null;
+        }
+        else {
+            if (props.security_group_rule?.port_from === props.security_group_rule?.port_thru) {
+                return props.security_group_rule?.port_from
+            }
+            else {
+                return `${props.security_group_rule?.port_from} - ${props.security_group_rule?.port_thru}`;
+            }
+        }
+    }
+
+    return <>
+        <div className="box" style={{background:"#FEFEFE",width:"100%",fontSize:"small"}}>
+            <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
+                <b>Security Group Rule</b>: <b style={{color:"black"}}>{props.security_group_rule?.id}</b>
+            </div>
+            <table width="100%" style={{fontSize:"small"}}><tbody>
+                <tr>
+                    <td style={tdLabelStyle}>Direction:</td>
+                    <td style={tdContentStyle}>{props.security_group_rule?.egress ? "Outbound" : "Inbound"}</td>
+                </tr>
+                <tr>
+                    <td style={tdLabelStyle}>Protocol:</td>
+                    <td style={tdContentStyle}>{getProtocol(props.security_group_rule)}</td>
+                </tr>
+                {(getType(props.security_group_rule) !== getProtocol(props.security_group_rule)) &&
+                    <tr>
+                        <td style={tdLabelStyle}>Type:</td>
+                        <td style={tdContentStyle}>{getType(props.security_group_rule)}</td>
+                    </tr>
+                }
+                {(getPorts(props.security_group_rule)) &&
+                    <tr>
+                        <td style={tdLabelStyle}>Port:</td>
+                        <td>{getPorts(props.security_group_rule)}</td>
+                    </tr>
+                }
+                {props.security_group_rule?.cidr &&
+                    <tr>
+                        <td style={tdLabelStyle}>CIDR:</td>
+                        <td style={tdContentStyle}>{props.security_group_rule?.cidr}</td>
+                    </tr>
+                }
+                {props.security_group_rule?.description &&
+                    <tr>
+                        <td style={tdLabelStyle}>Description:</td>
+                        <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>{props.security_group_rule?.description}</td>
+                    </tr>
+                }
+                <tr>
+                    <td style={tdLabelStyle}>Security Group:</td>
+                    <td>{props.security_group_rule?.security_group}</td>
+                </tr>
             </tbody></table>
         </div>
     </>
@@ -173,10 +373,13 @@ const SecurityGroupBox = (props) => {
 
 const NetworkInfoPage = (props) => {
 
+    const [ args, setArgs ] = useSearchParams();
+    const [ all, setAll ] = useState(args.get("all")?.toLowerCase() === "true")
+
     const vpcs = useFetchVpcs();
 
     function useFetchVpcs(refresh = false) {
-        return useFetch({ url: Server.Url(`/aws/network`), nofetch: true, cache: true });
+        return useFetch({ url: Server.Url(`/aws/network${all ? "/all" : ""}`), nofetch: true, cache: true });
     }
 
     function fetchVpcs(refresh = false) {
@@ -209,7 +412,7 @@ const NetworkInfoPage = (props) => {
                 </small>
                 &nbsp;|&nbsp;
                 <small className="pointer" style={{fontWeight:showingAllSecurityGroups ? "bold" : "normal"}} onClick={toggleShowAllSecurityGroups}>
-                    Security Groups {showingAllSecurityGroups ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
+                    Security {showingAllSecurityGroups ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
                 </small>
            </div>
            <b>AWS Network Info</b>

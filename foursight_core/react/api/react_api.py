@@ -30,7 +30,7 @@ from .misc_utils import (
     memoize,
     sort_dictionary_by_case_insensitive_keys
 )
-from .aws_vpc_etc_utils import get_aws_network, get_aws_security_groups, get_aws_subnets, get_aws_vpcs
+from .aws_vpc_etc_utils import get_aws_network, get_aws_security_groups, get_aws_security_group_rules, get_aws_subnets, get_aws_vpcs
 from .react_routes import ReactRoutes
 from .react_api_base import ReactApiBase
 from .react_ui import ReactUi
@@ -980,6 +980,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
             security_group = None
         raw = args.get("raw") == "true"
         return self.create_success_response(get_aws_security_groups(security_group, raw))
+
+    def reactapi_aws_security_group_rules(self, request: dict, env: str, security_group: Optional[str] = None, args: Optional[dict] = None) -> Response:
+        raw = args.get("raw") == "true"
+        direction = args.get("direction")
+        return self.create_success_response(get_aws_security_group_rules(security_group, direction, raw))
 
     def reactapi_aws_network(self, request: dict, env: str, network: Optional[str] = None, args: Optional[dict] = None) -> Response:
         if network is None:

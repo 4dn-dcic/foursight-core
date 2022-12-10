@@ -350,6 +350,15 @@ class ReactRoutes:
         args = get_request_args(request)
         return app.core.reactapi_aws_security_groups(request, env, security_group, args=args)
 
+    @route("/{env}/aws/security_group_rules/{security_group}", authorize=True)
+    def reactapi_route_aws_security_group(env: str, security_group: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info on AWS Security Group Rules.
+        """
+        request = app.current_request.to_dict()
+        args = get_request_args(request)
+        return app.core.reactapi_aws_security_group_rules(request, env, security_group, args=args)
+
     @route("/{env}/aws/network", authorize=True)
     def reactapi_route_aws_network(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
