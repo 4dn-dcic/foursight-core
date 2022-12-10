@@ -144,7 +144,7 @@ const App = () => {
                             <AwsS3Page />
                         </Page.AuthorizationRequired>
                     }/>
-                    <Route path="/api/react/:environ/aws/network" element={
+                    <Route path="/api/react/:environ/network" element={
                         <Page.AuthorizationRequired>
                             <NetworkInfoPage />
                         </Page.AuthorizationRequired>

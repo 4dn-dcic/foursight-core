@@ -21,6 +21,7 @@ import Yaml from '../utils/Yaml';
 import Styles from '../Styles';
 
 const tdLabelStyle = {
+    color: "var(--box-fg)",
     fontWeight: "bold",
     fontSize: "small",
     paddingTop: "1pt",
@@ -46,10 +47,15 @@ const VpcBox = (props) => {
     function hideSecurityGroups()   { setShowingSecurityGroups(false); }
     function toggleSecurityGroups() { showingSecurityGroups ? setShowingSecurityGroups(false) : setShowingSecurityGroups(true); }
 
+    useEffect(() => {
+        setShowingSubnets(props.showingAllSubnets);
+        setShowingSecurityGroups(props.showingAllSecurityGroups);
+    }, [props.showingAllSubnets, props.showingAllSecurityGroups]);
+
     return <>
         <div className="box margin" style={{}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
-                <b>VPC</b>: <b>{props.vpc?.name}</b>
+                <b>VPC</b>: <b style={{color:"black"}}>{props.vpc?.name}</b>
             </div>
             <table width="100%"><tbody>
                 <tr>
@@ -64,18 +70,18 @@ const VpcBox = (props) => {
                     <td style={tdLabelStyle}>Status:</td>
                     <td>{props.vpc?.state}</td>
                 </tr>
-                <tr onClick={toggleSubnets} className="pointer">
-                    <td style={tdLabelStyle}>Subnets:</td>
-                    <td>
-                        {showingSubnets ? <>
+                <tr>
+                    <td style={tdLabelStyle} onClick={toggleSubnets} className="pointer">Subnets:</td>
+                    <td onClick={toggleSubnets} className="pointer">
+                        {(showingSubnets) ? <>
                             <small><u>Hide</u>&nbsp;{Char.DownArrowHollow}&nbsp;&nbsp;({props.vpc?.subnets?.length})</small>
                         </>:<>
                             <small><u>Show</u>&nbsp;{Char.UpArrowHollow}&nbsp;&nbsp;({props.vpc?.subnets?.length})</small>
                         </>}
                     </td>
                 </tr>
-                {showingSubnets && <>
-                    <tr onClick={toggleSubnets} className="pointer">
+                {(showingSubnets) && <>
+                    <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
                             {props.vpc?.subnets.map((subnet, i) => <div key={subnet.id}>
                                 <SubnetBox subnet={subnet} />
@@ -84,9 +90,9 @@ const VpcBox = (props) => {
                         </td>
                     </tr>
                 </>}
-                <tr onClick={toggleSecurityGroups} className="pointer">
-                    <td style={tdLabelStyle}>Security Groups:</td>
-                    <td>
+                <tr>
+                    <td style={tdLabelStyle} onClick={toggleSecurityGroups} className="pointer">Security Groups:</td>
+                    <td onClick={toggleSecurityGroups} className="pointer">
                         {showingSecurityGroups ? <>
                             <small><u>Hide</u>&nbsp;{Char.DownArrowHollow}&nbsp;&nbsp;({props.vpc?.security_groups?.length})</small>
                         </>:<>
@@ -95,7 +101,7 @@ const VpcBox = (props) => {
                     </td>
                 </tr>
                 {showingSecurityGroups && <>
-                    <tr onClick={toggleSecurityGroups} className="pointer">
+                    <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
                             {props.vpc?.security_groups.map((security_group, i) => <div key={security_group.id}>
                                 <SecurityGroupBox security_group={security_group} />
@@ -113,7 +119,7 @@ const SubnetBox = (props) => {
     return <>
         <div className="box margin lighten" style={{width:"100%",fontSize:"small"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
-                <b>Subnet</b>: <b>{props.subnet?.name}</b>
+                <b>Subnet</b>: <b style={{color:"black"}}>{props.subnet?.name}</b>
             </div>
             <table width="100%" style={{fontSize:"small"}}><tbody>
                 <tr>
@@ -145,7 +151,7 @@ const SecurityGroupBox = (props) => {
     return <>
         <div className="box margin lighten" style={{width:"100%",fontSize:"small"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
-                <b>Security Group</b>: <b>{props.security_group?.name}</b>
+                <b>Security Group</b>: <b style={{color:"black"}}>{props.security_group?.name}</b>
             </div>
             <table width="100%" style={{fontSize:"small"}}><tbody>
                 <tr>
@@ -154,7 +160,7 @@ const SecurityGroupBox = (props) => {
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Description:</td>
-                    <td>{props.security_group?.description}</td>
+                    <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>{props.security_group?.description}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>VPC:</td>
@@ -170,7 +176,7 @@ const NetworkInfoPage = (props) => {
     const vpcs = useFetchVpcs();
 
     function useFetchVpcs(refresh = false) {
-        return useFetch({ url: Server.Url(`/aws/network/all`), nofetch: true, cache: true });
+        return useFetch({ url: Server.Url(`/aws/network`), nofetch: true, cache: true });
     }
 
     function fetchVpcs(refresh = false) {
@@ -181,19 +187,40 @@ const NetworkInfoPage = (props) => {
         fetchVpcs(true);
     }
 
+    const [ showingAllSubnets, setShowingAllSubnets ] = useState(false);
+    const [ showingAllSecurityGroups, setShowingAllSecurityGroups ] = useState(false);
+
     useEffect(() => {
         fetchVpcs();
-    }, []);
+    }, [showingAllSubnets]);
 
-    return <>
-        <b>AWS Network Info</b>
+    function toggleShowAllSubnets() {
+        setShowingAllSubnets(value => { return !value });
+    }
+    function toggleShowAllSecurityGroups() {
+        setShowingAllSecurityGroups(value => { return !value });
+    }
+
+    return <table style={{maxWidth:"500pt"}}><tbody><tr><td>
+        <div>
+           <div style={{float:"right",marginRight:"3pt"}}>
+                <small className="pointer" style={{fontWeight:showingAllSubnets ? "bold" : "normal"}} onClick={toggleShowAllSubnets}>
+                    Subnets {showingAllSubnets ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
+                </small>
+                &nbsp;|&nbsp;
+                <small className="pointer" style={{fontWeight:showingAllSecurityGroups ? "bold" : "normal"}} onClick={toggleShowAllSecurityGroups}>
+                    Security Groups {showingAllSecurityGroups ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
+                </small>
+           </div>
+           <b>AWS Network Info</b>
+        </div>
         <div style={{width:"fit-content",minWidth:"450pt"}}>
             { vpcs.map(vpc => <div key={vpc.id}>
-                <VpcBox vpc={vpc} />
+                <VpcBox vpc={vpc} showingAllSubnets={showingAllSubnets} showingAllSecurityGroups={showingAllSecurityGroups} />
                 <div style={{height:"4pt"}} />
             </div>)}
         </div>
-    </>
+    </td></tr></tbody></table>
 }
 
 export default NetworkInfoPage;
