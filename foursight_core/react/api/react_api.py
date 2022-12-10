@@ -49,7 +49,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._cached_accounts_from_s3 = None
         self._cached_elasticsearch_server_version = None
 
-    def get_sqs_queue_url(self):
+    @staticmethod
+    def _get_stack_name() -> str:
+        """
+        Returns our AWS defined stack name, as specified by the STACK_NAME environment variable.
+        """
+        return os.environ.get("STACK_NAME")
+
+    def _get_sqs_queue_url(self):
         if not self._cached_sqs_queue_url:
             self._cached_sqs_queue_url = app.core.sqs.get_sqs_queue().url
         return self._cached_sqs_queue_url
@@ -162,6 +169,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "version": app.core.get_app_version(),
                 "domain": domain,
                 "context": context,
+                "stack": self._get_stack_name(),
                 "local": is_running_locally(request),
                 "credentials": {
                     "aws_account_number": aws_credentials["aws_account_number"],
@@ -237,6 +245,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "version": app.core.get_app_version(),
                 "domain": domain,
                 "context": context,
+                "stack": self._get_stack_name(),
                 "local": is_running_locally(request),
                 "credentials": self._auth.get_aws_credentials(env or default_env),
                 "launched": app.core.init_load_time,
@@ -249,7 +258,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "portal": portal_url,
                 "es": app.core.host,
                 "rds": os.environ["RDS_HOSTNAME"],
-                "sqs": self.get_sqs_queue_url(),
+                "sqs": self._get_sqs_queue_url(),
             },
             "buckets": {
                 "env": app.core.environment.get_env_bucket_name(),
@@ -847,6 +856,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             foursight_app = foursight_header_json.get("app")
             response["foursight"]["package"] = foursight_app.get("package")
             response["foursight"]["stage"] = foursight_app.get("stage")
+            response["foursight"]["stack"] = foursight_app.get("stack")
             response["foursight"]["deployed"] = foursight_app.get("deployed")
             response["foursight"]["default_env"] = foursight_header_json["auth"]["known_envs"][0]
             response["foursight"]["env_count"] = foursight_header_json["auth"]["known_envs_actual_count"]

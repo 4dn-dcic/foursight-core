@@ -111,6 +111,14 @@ const AccountInfoLeft = ({ info, foursightUrl }) => {
                 </>:<> &ndash; </>}
             </td>
         </tr>
+        <tr style={{fontSize:"small"}}>
+            <td style={{paddingRight:"10pt"}}>
+                Stack Name:
+            </td>
+            <td>
+                {info.get("foursight.stack")}
+            </td>
+        </tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
         <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -125,14 +133,6 @@ const AccountInfoLeft = ({ info, foursightUrl }) => {
                         &nbsp;(<span className="tool-tip" data-text={`AWS Account Alias: ${info.get("foursight.aws_account_name")}`}>{info.get("foursight.aws_account_name")}</span>)
                     </>}
                 </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr style={{fontSize:"small"}}>
-            <td style={{paddingRight:"10pt"}}>
-                Stage:
-            </td>
-            <td>
-                {info.get("foursight.stage")}
             </td>
         </tr>
         <tr style={{fontSize:"small"}}>
