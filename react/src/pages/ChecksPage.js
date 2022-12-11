@@ -209,12 +209,15 @@ function hideActionRunningBox(check, groupList) {
     noteChangedCheckBox(groupList);
 }
 
-const SelectedGroupsPanel = ({ groupList, env, historyList, info }) => {
+const SelectedGroupsPanel = ({ groupList, env, historyList, info, toggleShowingChecksSearch}) => {
 
     if (groupList.error) return <FetchErrorBox error={groupList.error} message="Error loading checks from Foursight API" />
     return <div>
         { groupList.length > 0 /* selectedGroups.length > 0 */ ? (<>
-            <div style={{paddingBottom:"3pt"}}><b>Checks</b></div>
+            <div style={{paddingBottom:"3pt"}}>
+                <b>Checks</b>
+                <small className="pointer" style={{marginLeft:"6pt",marginTop:"2pt"}} onClick={toggleShowingChecksSearch}>&#x1F50D;</small>
+            </div>
             { groupList.map((selectedGroup, index) /* selectedGroups?.map((selectedGroup, index) */ =>
                 <SelectedGroupBox key={selectedGroup.group} group={selectedGroup} env={env} groupList={groupList} historyList={historyList} info={info} style={{paddingBottom:"6pt"}} />
             )}
@@ -1094,7 +1097,9 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
 
 const ChecksSearchControl = (props) => {
     return <>
-       &nbsp;<span style={{fontWeight:props.showingChecksSearch ? "bold" : "normal"}} onClick={props.toggleShowingChecksSearch}>Search Checks</span> <br />
+       &nbsp;<span style={{fontWeight:props.showingChecksSearch ? "bold" : "normal"}} onClick={props.toggleShowingChecksSearch}>
+            Search Checks&nbsp;&nbsp;&nbsp;&#x1F50D;&nbsp;&nbsp;
+        </span> <br />
     </>
 }
 
@@ -1695,7 +1700,12 @@ const ChecksPage = (props) => {
                     </td>
                     <td style={{paddingLeft:"8pt",verticalAlign:"top"}}>
                         <ChecksRawView info={info} />
-                        <SelectedGroupsPanel env={environ} groupList={groupList} historyList={historyList} info={info} />
+                        <SelectedGroupsPanel
+                            env={environ}
+                            groupList={groupList}
+                            historyList={historyList}
+                            info={info}
+                            toggleShowingChecksSearch={toggleShowingChecksSearch} />
                     </td>
                     <td style={{paddingLeft: (groupList?.length > 0 || groupList.error || isShowingChecksRaw()) ? "8pt" : "0",verticalAlign:"top"}}>
                         <ChecksSearchBox
