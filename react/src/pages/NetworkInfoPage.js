@@ -511,7 +511,7 @@ const NetworkInfoPage = () => {
             <div>
                 <b>AWS Network</b>
             </div>
-            <div className="box darken margin" style={{width:"120pt"}}>
+            <div className="box margin" style={{width:"120pt"}}>
                 <div className="pointer" style={{fontWeight:showingVpcsPanel ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleVpcsPanel}>VPCs</div>
                 <div className="pointer" style={{fontWeight:showingSubnetsPanel ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleSubnetsPanel}>Subnets</div>
                 <div className="pointer" style={{fontWeight:showingSecurityGroupsPanel ? "bold" : "normal"}} onClick={toggleSecurityGroupsPanel}>Security Groups</div>

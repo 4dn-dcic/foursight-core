@@ -216,7 +216,7 @@ const SelectedGroupsPanel = ({ groupList, env, historyList, info, toggleShowingC
         { groupList.length > 0 /* selectedGroups.length > 0 */ ? (<>
             <div style={{paddingBottom:"3pt"}}>
                 <b>Checks</b>
-                <small className="pointer" style={{marginLeft:"6pt",marginTop:"2pt"}} onClick={toggleShowingChecksSearch}>&#x1F50D;</small>
+                <small className="pointer" style={{marginLeft:"6pt",marginTop:"2pt"}} onClick={toggleShowingChecksSearch}>{Char.Search}</small>
             </div>
             { groupList.map((selectedGroup, index) /* selectedGroups?.map((selectedGroup, index) */ =>
                 <SelectedGroupBox key={selectedGroup.group} group={selectedGroup} env={env} groupList={groupList} historyList={historyList} info={info} style={{paddingBottom:"6pt"}} />
@@ -1098,7 +1098,9 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
 const ChecksSearchControl = (props) => {
     return <>
        &nbsp;<span style={{fontWeight:props.showingChecksSearch ? "bold" : "normal"}} onClick={props.toggleShowingChecksSearch}>
-            Search Checks&nbsp;&nbsp;&nbsp;&#x1F50D;&nbsp;&nbsp;
+            <span style={{color:"inherit",marginRight:"6pt"}}>Search Checks</span>{Char.Search}&nbsp;&nbsp;
+        {/* <img style={{float:"right",marginTop:"-6pt"}} src="https://cdn.iconscout.com/icon/free/png-256/new-arrival-itema-tag-label-coupon-sticker-12963.png" height="38" /> */}
+        <img style={{float:"left",marginTop:"-8pt"}} src={Image.NewIcon()} height="42" />
         </span> <br />
     </>
 }
@@ -1159,7 +1161,7 @@ const ChecksSearchBox = (props) => {
         <div>
             <table width="80%"><tbody><tr>
                 <td nowrap="1" width="2%">
-                    <b>Search Checks</b>:&nbsp;
+                    <b style={{color:"red"}}>Search Checks</b>:&nbsp;
                 </td>
                 <td>
                     <input placeholder="Search for checks ..." type="text" autoFocus style={inputStyle} defaultValue={checksSearch} onChange={onChecksSearch} />
@@ -1181,8 +1183,12 @@ const ChecksSearchBox = (props) => {
                             </td>
                             <td style={{verticalAlign:"top",paddingBottom:"10pt"}}>
                                 <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit",marginTop:"800pt"}} rel="noreferrer" target="_blank">
-                                    <b>{check.title}</b> <br />
+                                    <b>{check.title}</b>
                                 </Link>
+                                { check.registered_github_url && <>
+                                    <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"6pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                                </>}
+                                <br />
                                 <small className="pointer" onClick={() => props.toggleShowGroup(props.findGroup(check.group), props.environ, props.groupList)}>{check.group}</small> (<small>{check.name}</small>)
                             </td>
                         </tr>

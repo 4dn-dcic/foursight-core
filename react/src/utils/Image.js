@@ -75,6 +75,10 @@ function GetCalendarIcon() {
     return "https://img.freepik.com/free-icon/calendar-icon-black_318-9776.jpg?w=360";
 }
 
+function GetNewIcon() {
+    return "https://zeevector.com/wp-content/uploads/New-PNG-transparent-Sticker@zeevector.png";
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
@@ -95,6 +99,7 @@ const exports = {
     FoursightFourfrontLogo:    GetFoursightFourfrontLogoImage,
     GitHubLoginLogo:           GetGitHubLoginLogoImage,
     GoogleLoginLogo:           GetGoogleLoginLogoImage,
+    NewIcon:                   GetNewIcon,
     PyPi:                      GetPyPiImage,
     Python:                    GetPythonImage,
     Unlock:                    GetUnlockImage
