@@ -1181,12 +1181,12 @@ const ChecksSearchBox = (props) => {
                                     <small className="fa fa-external-link" style={{color:"black",fontSize:"10pt",fontWeight:"default"}}></small>
                                 </Link>
                             </td>
-                            <td style={{verticalAlign:"top",paddingBottom:"10pt"}}>
+                            <td style={{verticalAlign:"top",paddingBottom:"10pt",whiteSpace:"nowrap"}}>
                                 <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit",marginTop:"800pt"}} rel="noreferrer" target="_blank">
                                     <b>{check.title}</b>
                                 </Link>
                                 { check.registered_github_url && <>
-                                    <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"6pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                                    <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"4pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                                 </>}
                                 <br />
                                 <small className="pointer" onClick={() => props.toggleShowGroup(props.findGroup(check.group), props.environ, props.groupList)}>{check.group}</small> (<small>{check.name}</small>)
