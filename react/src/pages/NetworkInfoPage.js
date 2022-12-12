@@ -68,7 +68,7 @@ const VpcBox = (props) => {
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Status:</td>
-                    <td>{props.vpc?.state}</td>
+                    <td>{props.vpc?.status}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle} onClick={toggleSubnets} className="pointer">Subnets:</td>
@@ -117,9 +117,16 @@ const VpcBox = (props) => {
 
 const SubnetBox = (props) => {
     return <>
-        <div className="box margin lighten" style={{width:"100%",fontSize:"small"}}>
+        <div className={"box margin" + (props.subnet?.type === "private" ? " darken" : " lighten")} style={{width:"100%",fontSize:"small"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <b>Subnet</b>: <b style={{color:"black"}}>{props.subnet?.name}</b>
+                <small style={{float:"right"}}>
+                    {props.subnet?.type === "private" ? <>
+                        <b style={{color:"red"}}>PRIVATE</b>
+                    </>:<>
+                        <b style={{color:"green"}}>PUBLIC</b>
+                    </>}
+                 </small>
             </div>
             <table width="100%" style={{fontSize:"small"}}><tbody>
                 <tr>
@@ -140,7 +147,7 @@ const SubnetBox = (props) => {
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Status:</td>
-                    <td>{props.subnet?.state}</td>
+                    <td>{props.subnet?.status}</td>
                 </tr>
             </tbody></table>
         </div>

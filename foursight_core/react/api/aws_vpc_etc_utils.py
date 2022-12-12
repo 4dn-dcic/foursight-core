@@ -114,7 +114,7 @@ def get_aws_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None, r
             "id": item.get("VpcId"),
             "cidr": item.get("CidrBlock"),
             "owner": item.get("OwnerId"),
-            "state": item.get("State")
+            "status": item.get("State")
         }
     ec2 = boto3.client('ec2')
     vpcs = ec2.describe_vpcs()
@@ -190,16 +190,19 @@ def get_aws_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
         #   }
         # }
         #
+        id = item.get("SubnetId")
+        name = tag or id
         return {
-            "name": tag or item.get("SubnetId"),
-            "id": item.get("SubnetId"),
+            "name": name,
+            "id": id,
+            "type": "private" if "private" in name.lower() else "public",
             "zone": item.get("AvailabilityZone"),
             "cidr": item.get("CidrBlock"),
             "owner": item.get("OwnerId"),
             "subnet": item.get("SubnetId"),
             "subnet_arn": item.get("SubnetArn"),
             "vpc": item.get("VpcId"),
-            "state": item.get("State")
+            "status": item.get("State")
         }
     ec2 = boto3.client('ec2')
     subnets = ec2.describe_subnets()

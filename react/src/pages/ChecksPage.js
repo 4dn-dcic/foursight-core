@@ -254,7 +254,7 @@ const SelectedGroupBox = ({group, groupList, historyList, env, info, style = {}}
     }
 
     return <div style={style}>
-        <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",minWidth:"450pt"}}>
+        <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",minWidth:"480pt"}}>
             <div>
                 <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks, groupList)}>
                     <b>{group?.group.replace(/ checks$/i, "")} Group</b> {isShowingAnyResults(group?.checks) ? (<small>{Char.DownArrowFat}</small>) : (<small>{Char.UpArrowFat}</small>)}
@@ -350,7 +350,7 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
                     <td style={{verticalAlign:"top",width:"1%","cursor":"pointer"}} onClick={() => {toggleCheckResultsBox(check, env, groupList)}}>
                         <b>{ isShowingSelectedCheckResultsBox(check) ? <small>{Char.DownArrowHollow}</small> : <small>{Char.RightArrowHollow}</small> }&nbsp;</b>
                     </td>
-                    <td style={{veriticalAlign:"top",maxWidth:"600pt",width:"100%",whiteSpace:"nowrap"}}>
+                    <td style={{veriticalAlign:"top",maxWidth:"480pt",width:"100%",whiteSpace:"nowrap"}}>
                         { (!check.__configuringCheckRun) ? <>
                             <div style={{marginLeft:"10pt",float:"right"}}>
                                 <RunButton check={check} env={env} groupList={groupList} historyList={historyList} style={{marginTop:"-1pt"}} />
@@ -383,7 +383,7 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
                             </>}
                         </>}
                         <span style={{whiteSpace:"nowrap"}}>
-                            <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}.`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal"}} onClick={() => {onClickShowHistory(check, env, historyList);}}>
+                            <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}.`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal",whiteSpace:"break-spaces"}} onClick={() => {onClickShowHistory(check, env, historyList);}}>
                                 {check.title?.length > 70 ? check.title.substring(0, 69) + " ..." : check.title}
                             </u>
                             { check.__result.get("action") && <u>
@@ -900,7 +900,7 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
         if (!histories || histories.length <= 0) {
             return <span />
         }
-        return <div>
+        return <div style={{}}>
             <b style={{marginBottom:"100pt"}}>Recent Results</b>
             { histories?.map((selectedHistory, index) =>
                 <div key={selectedHistory.name} style={{marginTop:"3pt"}}>
@@ -1140,16 +1140,15 @@ const ChecksSearchBox = (props) => {
         return matches;
     }
 
-    const inputStyle={
+    const inputStyle = {
         outline: "none",
         paddingLeft: "2pt",
-        border: "1px solid lightgray",
+        border: "1px solid gray",
         borderTop: "0",
         borderRight: "0",
         borderLeft: "0",
         position: "relative",
         bottom: "1pt",
-        fontSize: "small",
         fontWeight: "bold",
         color: "var(--box-fg)",
         marginBottom: "-4pt",
@@ -1159,16 +1158,16 @@ const ChecksSearchBox = (props) => {
 
     return props.showingChecksSearch && <>
         <div>
-            <table width="80%"><tbody><tr>
+            <table width="90%"><tbody><tr>
                 <td nowrap="1" width="2%">
-                    <b style={{color:"red"}}>Search Checks</b>:&nbsp;
+                    <b style={{color:"darkred"}}>Search Checks</b>:&nbsp;
                 </td>
                 <td>
                     <input placeholder="Search for checks ..." type="text" autoFocus style={inputStyle} defaultValue={checksSearch} onChange={onChecksSearch} />
                 </td>
             </tr></tbody></table>
         </div>
-        <div className="box lighten bigmargin" style={{marginBottom:"6pt",minWidth:"250pt"}}>
+        <div className="box lighten bigmargin" style={{marginBottom:"6pt",minWidth:"250pt",maxWidth:"480pt"}}>
             <div style={{fontSize:"small",paddingTop:"2pt",marginBottom:"-3pt"}}>
                 <div style={{float:"right",marginTop:"-6pt",marginRight:"-3pt",cursor:"pointer"}} onClick={() => props.toggleShowingChecksSearch()}>
                     <b>{Char.X}</b>
@@ -1181,7 +1180,7 @@ const ChecksSearchBox = (props) => {
                                     <small className="fa fa-external-link" style={{color:"black",fontSize:"10pt",fontWeight:"default"}}></small>
                                 </Link>
                             </td>
-                            <td style={{verticalAlign:"top",paddingBottom:"10pt",whiteSpace:"nowrap"}}>
+                            <td style={{verticalAlign:"top",paddingBottom:"10pt",whiteSpace:"break-spaces"}}>
                                 <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit",marginTop:"800pt"}} rel="noreferrer" target="_blank">
                                     <b>{check.title}</b>
                                 </Link>
@@ -1189,7 +1188,7 @@ const ChecksSearchBox = (props) => {
                                     <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"4pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                                 </>}
                                 <br />
-                                <small className="pointer" onClick={() => props.toggleShowGroup(props.findGroup(check.group), props.environ, props.groupList)}>{check.group}</small> (<small>{check.name}</small>)
+                                <small className="pointer" onClick={() => props.toggleShowGroup(props.findGroup(check.group), props.environ, props.groupList)}><i>{check.group}</i></small> (<small>{check.name}</small>)
                             </td>
                         </tr>
                     </tbody></table>)}
@@ -1357,7 +1356,7 @@ const ChecksPage = (props) => {
         return isShowingChecksRaw() && !checksRawHide && <>
             <b className="tool-tip" data-text={info.get("checks.file")}>Raw Checks</b> {Char.RightArrow} <span style={{fontSize:"9pt"}}>{info.get("checks.file")}</span>
             <div style={{marginTop:"3pt"}}>
-            <pre className="box lighten">
+            <pre className="box lighten" style={{maxWidth:"540pt"}}>
             { checksRaw.loading ? <>
                 <StandardSpinner loading={checksRaw.loading} label={"Loading raw checks file"} size={60} color={"black"} />
             </>:<>
@@ -1440,7 +1439,7 @@ const ChecksPage = (props) => {
         }
         return recentRunsShow && <>
             <b>Recent Runs</b>
-            <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"3pt",marginBottom:"8pt"}}>
+            <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"3pt",marginBottom:"8pt",maxWidth:"640"}}>
                 { (recentRuns.loading && recentRuns.null) ? <>
                     <StandardSpinner loading={recentRuns.loading} label={"Loading recent runs"} size={60} color={Styles.GetForegroundColor()} />
                 </>:<>
@@ -1473,34 +1472,34 @@ const ChecksPage = (props) => {
                                     <tr><td style={{paddingBottom:"2px"}}></td></tr>
                                 </React.Fragment>}
                                 <tr key={index} style={{verticalAlign:"top"}}>
-                                    <td>
+                                    <td style={{width:"5%"}}>
                                         { run.status === "PASS" ?
                                             <span style={{color:Styles.GetForegroundColor()}}>{Char.Check}</span>
                                         :   <span style={{color:"darkred"}}>{Char.X}</span> }
                                     &nbsp;</td>
-                                    <td  style={{width:"10%"}} className="tool-tip" data-text={Time.FormatDuration(run.timestamp, new Date(), true, null, null, "ago")}>
+                                    <td  style={{width:"20%"}} className="tool-tip" data-text={Time.FormatDuration(run.timestamp, new Date(), true, null, null, "ago")}>
                                         {Time.FormatDate(run.timestamp)} <br />
                                         <small>{Time.FormatTime(run.timestamp)}</small>
                                     &nbsp;&nbsp;</td>
-                                    <td style={{width:"30%"}}>
-                                        <span style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(run.check, run.group), environ, historyList)}>{run.title}</span>
+                                    <td style={{width:"45%"}}>
+                                        <b style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(run.check, run.group), environ, historyList)}>{run.title}</b>
                                         &nbsp;&nbsp;<Link to={Client.Path(`/checks/${run.check}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank">
                                             <small className="fa fa-external-link" style={{color:"black",fontSize:"10pt",fontWeight:"default"}}></small>
                                         </Link>
                                         <br />
                                         <i><small style={{cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(run.group), environ, groupList, historyList)}>{run.group}</small></i>&nbsp;
                                     &nbsp;&nbsp;</td>
-                                    <td>&nbsp;
+                                    <td style={{width:"10%"}}>&nbsp;
                                         {run.status === "PASS" ? (<>
                                             <b style={{color:Styles.GetForegroundColor()}}>OK</b>
                                         </>):(<>
                                             <b style={{color:"darkred"}}>ERROR</b>
                                         </>)}
                                     &nbsp;&nbsp;</td>
-                                    <td align="right">
+                                    <td align="right" style={{width:"10%"}}>
                                         {run.duration}
                                     &nbsp;&nbsp;</td>
-                                    <td>
+                                    <td style={{width:"10%"}}>
                                         { run.status === "PASS" && run.state === "Not queued" ? <>
                                             Done
                                         </>:<>

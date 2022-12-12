@@ -467,7 +467,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_history_latest(self, request: dict, env: str, check: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks/{check}
+        Called from react_routes for endpoint: GET /{env}/checks/{check}/history/latest
         Returns the latest result (singular) from the given check (name).
         """
         ignored(request)

@@ -21,6 +21,72 @@ import { useFetching } from './utils/Fetch';
 // import LockImage from './media/lock.jpg';
 // import UnlockImage from './media/unlock.jpg';
 
+const MainMenu = ({ header }) => {
+
+    let subTitleBackgroundColor = Styles.LightenDarkenColor(Styles.GetBackgroundColor(), -10);
+
+    const MenuItem = ({ path, label }) => {
+        return <>
+            {(Client.CurrentLogicalPath() === path) ? <span style={{fontWeight:"bold"}}>{label}&nbsp;{Char.Check}</span> : <Link key={path} to={Client.Path(path)} key="2">{label}</Link>}
+        </>
+    }
+    const MenuSeparator = () => {
+        return <div style={{height:"1px",marginTop:"1pt",marginBottom:"1pt",marginLeft:"6pt",marginRight:"6pt",background:"var(--box-fg)"}} />
+    }
+
+    return <span className="dropdown">
+        <b className="dropdown-button"><span style={{fontSize:"large",color:"red"}}>{Char.Trigram}</span></b>&nbsp;|&nbsp;
+        <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
+            <MenuItem path="/home" label="Home" />
+            <MenuItem path="/info" label="General Info" />
+            <MenuItem path="/checks" label="Checks" />
+            <MenuSeparator />
+            <MenuItem path="/users" label="Users" />
+            <MenuItem path="/network" label="Network" />
+            <MenuItem path="/aws/s3" label="S3" />
+            <MenuSeparator />
+            <MenuItem path="/env" label="Environments" />
+            <MenuItem path="/accounts" label="Accounts" />
+            <MenuItem path="/login" label={Auth.IsLoggedIn(header) ? "Session" : "Login"} />
+        </div>
+    </span>
+}
+
+const NavLinks = ({ header }) => {
+    function style(isActive) {
+        if (isActive) {
+            return { textDecoration: "none", color: "black", fontWeight: "bold" }
+        }
+        else {
+            return { textDecoration: "none", color: Styles.GetForegroundColor(), fontWeight: "normal" }
+        }
+    }
+    return <>
+        <NavLink to={Client.Path("/home")} style={({isActive}) => style(isActive)}>HOME</NavLink>&nbsp;|&nbsp;
+        <NavLink to={Client.Path("/info")} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
+        <NavLink to={Client.Path("/checks")} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
+        <NavLink to={Client.Path("/env")} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
+        {/* TODO: portal link does not change appropriately e.g. for 4dn-dcic when choosing from data to mastertest in dropdown */}
+        <a target="_blank" rel="noreferrer" title="Open portal in another tab."
+            style={{textDecoration:"none",color:"darkgreen"}}
+            href={Client.PortalLink(header)}>
+            PORTAL <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
+        </a>&nbsp;|&nbsp;
+        <a target="_blank" rel="noreferrer" title="Open AWS Console for this account ({header.app?.credentials.aws_account_number}) in another tab."
+            style={{textDecoration:"none",color:"darkgreen"}}
+            href={"https://" + header.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>
+            AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
+        </a>
+    </>
+}
+
+const Nav = ({ header }) => {
+    return <span>
+        <MainMenu header={header} />
+        <NavLinks header={header} />
+    </span>
+}
+
 const Header = (props) => {
 
     const [ header ] = useContext(HeaderData);
@@ -45,35 +111,6 @@ const Header = (props) => {
         else {
             return "#444444";
         }
-    }
-
-    function renderNavigationLinks(header) {
-        function style(isActive) {
-            if (isActive) {
-                return { textDecoration: "none", color: "black", fontWeight: "bold" }
-            }
-            else {
-                return { textDecoration: "none", color: Styles.GetForegroundColor(), fontWeight: "normal" }
-            }
-        }
-        return <span>
-            <NavLink to={Client.Path("/home")} style={({isActive}) => style(isActive)}>HOME</NavLink>&nbsp;|&nbsp;
-            <NavLink to={Client.Path("/env")} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
-            <NavLink to={Client.Path("/info")} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
-            <NavLink to={Client.Path("/checks")} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
-            <NavLink to={Client.Path("/users")} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
-            {/* TODO: portal link does not change appropriately e.g. for 4dn-dcic when choosing from data to mastertest in dropdown */}
-            <a target="_blank" rel="noreferrer" title="Open portal in another tab."
-                style={{textDecoration:"none",color:"darkgreen"}}
-                href={Client.PortalLink(header)}>
-                PORTAL <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
-            </a>&nbsp;|&nbsp;
-            <a target="_blank" rel="noreferrer" title="Open AWS Console for this account ({header.app?.credentials.aws_account_number}) in another tab."
-                style={{textDecoration:"none",color:"darkgreen"}}
-                href={"https://" + header.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>
-                AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
-            </a>
-        </span>
     }
 
     return <>
@@ -160,7 +197,7 @@ const Header = (props) => {
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
                 <tr style={{background:subTitleBackgroundColor}}>
                     <td width="49%" style={{paddingLeft:"10pt",paddingTop:"3pt",paddingBottom:"3pt",whiteSpace:"nowrap"}}>
-                        {renderNavigationLinks(header)}
+                        <Nav header={header} />
                     </td>
                     <td width="2%" align="center" style={{whiteSpace:"nowrap",margin:"0 auto"}}>
                         <a target="_blank" rel="noreferrer" href={"https://pypi.org/project/" + (Env.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + "/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48",paddingRight:"8pt"}}>{header.app?.version}</b></a>
@@ -183,9 +220,7 @@ const Header = (props) => {
                                             <Link key={env.public_name} to={Client.Path("/env", Env.PreferredName(env, header))}>{Env.PreferredName(env, header)}{!Env.IsAllowed(env, header) && Auth.IsLoggedIn(header) && <>&nbsp;&nbsp;{Char.Warning}</>}</Link>
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
-                                { Auth.IsLoggedIn(header) && (header.app?.accounts_file || header.app?.accounts_file_from_s3) && <Link id="__accounts__" to={Client.Path("/accounts")}onClick={()=>{document.getElementById("__accounts__").style.fontWeight="normal";}}>Accounts</Link> }
                                 <Link id="__envinfo__" to={Client.Path("/env")}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="normal";}}>Environments</Link>
-                                { Auth.IsLoggedIn(header) && <Link id="__session__" to={Client.Path("/login")}onClick={()=>{document.getElementById("__session__").style.fontWeight="normal";}}>Session</Link> }
                             </div>
                          </span>
                         ):(
