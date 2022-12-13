@@ -36,7 +36,16 @@ const Header = (props) => {
     const [ fetching ] = useFetching();
 
     let titleBackgroundColor = Env.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
-    let subTitleBackgroundColor = Env.IsFoursightFourfront(header) ? "#AEF1D6" : "#AED6F1";
+    let subTitleBackgroundColor = Styles.LightenDarkenColor(Styles.GetBackgroundColor(), -10);
+
+    function getTitleBackgroundColorWhileLoading() {
+        if (Auth.IsLoggedIn(header)) {
+            return titleBackgroundColor;
+        }
+        else {
+            return "#444444";
+        }
+    }
 
     function renderNavigationLinks(header) {
         function style(isActive) {
@@ -70,7 +79,7 @@ const Header = (props) => {
     return <>
         { header.loading ? (
             <div style={{width:"100%"}}>
-            <table style={{width:"100%",height:"42px",background:"#444444"}}><tbody>
+            <table style={{width:"100%",height:"42px",background:getTitleBackgroundColorWhileLoading()}}><tbody>
             <tr>
                 <td width="1%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <div style={{width:"200px"}} />

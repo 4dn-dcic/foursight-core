@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { BarSpinner } from '../Spinners';
+import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
 import { useFetch } from '../utils/Fetch';
 import Server from '../utils/Server';
+import Styles from '../Styles';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
@@ -171,7 +173,7 @@ const AccountInfoLeft = ({ info }) => {
             </td>
             <td>
                 { info.get("foursight.deployed") ? <>
-                    <b className="tool-tip" data-text={Time.Ago(info.get("foursight.deployed"))}>{info.get("foursight.deployed")}</b>
+                    <b className="tool-tip" data-text={Time.Ago(info.get("foursight.deployed"))}>{info.get("foursight.deployed")}</b> &ndash; {Time.Ago(info.get("foursight.deployed"))}
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -181,7 +183,7 @@ const AccountInfoLeft = ({ info }) => {
             </td>
             <td>
                 { info.get("portal.started") ? <>
-                    <b className="tool-tip" data-text={Time.Ago(info.get("portal.started"))}>{info.get("portal.started")}</b>
+                    <b className="tool-tip" data-text={Time.Ago(info.get("portal.started"))}>{info.get("portal.started")}</b> &ndash; {Time.Ago(info.get("portal.started"))}
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -333,12 +335,13 @@ const AccountInfoRight = ({ info }) => {
     </tbody></table>
 }
 
-const AccountInfo = ({ account, header, fromS3 }) => {
+const AccountInfo = ({ account, header, all }) => {
 
-    // The fromS3 flag means we will call /accounts_from_s3 rather than /accounts, to look in S3 for an accounts.json file,
-    // rather than the default included in the (foursight-cgap/chalicelib_cgap or foursight/chalicelib_fourfront) package.
+    const info = useFetch(Server.Url(`/accounts_from_s3/${account.id}`), { cache: true, nofetch: true });
 
-    const info = useFetch(Server.Url(`${fromS3 ? "/accounts_from_s3" : "/accounts"}/${account.id}`), { nofetch: false });
+    useEffect(() => {
+        refreshData();
+    }, []);
 
     function refreshData() {
         info.refresh();
@@ -353,8 +356,13 @@ const AccountInfo = ({ account, header, fromS3 }) => {
         return false;
     }
 
+    function isCurrentAccountAndStage(info) {
+        return isCurrentAccount(info) && (header?.app?.stage === info?.data?.stage);
+    }
+
+    if (!all && !isCurrentAccount(info)) return null;
     return <>
-        <div className={isCurrentAccount(info) ? "box" : "box lighten"}>
+        <div className={isCurrentAccountAndStage(info) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt"}}>
             {isCurrentAccount(info) ? <>
                 <b className="tool-tip" data-text="This is your current account.">{info.data?.name || account.name}</b>
             </>:<>
@@ -404,62 +412,56 @@ const AccountInfo = ({ account, header, fromS3 }) => {
 
 const AccountsComponent = ({ header }) => {
 
-    const [ fromS3, setFromS3 ] = useState(false);
-    const accounts = useFetch(Server.Url(fromS3 ? "/accounts_from_s3" : "/accounts"));
+    const [ args, setArgs ] = useSearchParams();
+    const argsAll = args.get("all");
+    const [ all, setAll ] = useState(argsAll?.toLowerCase() === "true" || argsAll === "1" ? true : false);
+    const accounts = useFetch(Server.Url("/accounts_from_s3"));
 
     useEffect(() => {
-        refreshAll(fromS3);
-    }, [ fromS3 ]);
+        refreshAll();
+    }, []);
 
     function refreshAll() {
         accounts.update(null);
-        accounts.refresh(Server.Url(fromS3 ? "/accounts_from_s3" : "/accounts"));
+        accounts.fetch(Server.Url("/accounts_from_s3"));
     }
 
-    function useS3() {
-        setFromS3(true);
-    }
-
-    function useFile() {
-        setFromS3(false);
+    function toggleAll() {
+        if (all) {
+            delete args["all"]
+		    setArgs({...args});
+            setAll(false);
+        }
+        else {
+		    setArgs({...args, "all": "true" });
+            setAll(true);
+        }
     }
 
     return <>
-        <b>Known Accounts</b>
-        { (header?.app?.accounts_file || header?.app?.accounts_file_from_s3) && <>
-             <small>&nbsp;&nbsp;&ndash;&nbsp;&nbsp;{(fromS3 && header?.app?.accounts_file_from_s3) ? header?.app?.accounts_file_from_s3 : header?.app?.accounts_file}</small>
-        </>}
-        <small style={{float:"right",marginRight:"10pt"}}>
-            { header?.app?.accounts_file ? <>
-                { fromS3 ? <>
-                    <span className="tool-tip" data-text={header.app?.accounts_file} style={{cursor:"pointer"}} onClick={useFile}>File</span>
+        <div style={{borderBottom:"2px solid black",marginBottom:"8pt"}}>
+            <div className="tool-tip" data-text={header?.app?.accounts_file_from_s3} style={{marginTop:"0pt"}}><b>Known Accounts</b>
+                <div style={{float:"right",display:"inline",fontSize:"small",marginRight:"4pt",marginTop:"0pt"}}>
+                { (all)  ? <>
+                    <b className="tool-tip" data-text={"Click to show only local accounts/stages."} style={{cursor:"pointer"}} onClick={toggleAll}>All</b>
                 </>:<>
-                    <b>File</b>
+                    <span className="tool-tip" data-text={"Click to show all known accounts."} style={{cursor:"pointer"}} onClick={toggleAll}>All</span>
                 </>}
-            </>:<>
-                <span style={{color:"gray"}}>File</span>
-            </>}
-            &nbsp;|&nbsp;
-            { header?.app?.accounts_file_from_s3 ? <>
-                { fromS3 ? <>
-                    <b>S3</b>
-                </>:<>
-                    <span className="tool-tip" data-text={header.app?.accounts_file_from_s3} style={{cursor:"pointer"}} onClick={useS3}>S3</span>
-                </>}
-            </>:<>
-                <span style={{color:"#777777"}}>S3</span>
-            </>}
-            &nbsp;|&nbsp;
-            <span style={{cursor:"pointer"}} onClick={refreshAll}>{Char.Refresh}</span>
-        </small>
+                &nbsp;|&nbsp; <span style={{cursor:"pointer"}} onClick={refreshAll}>{Char.Refresh}</span>
+                </div>
+            </div>
+        </div>
         { accounts.length > 0 ? <>
-            { accounts?.map((account, index) => <React.Fragment key={index}>
-                { index > 0 && <div style={{height:"8pt"}} /> }
-                <AccountInfo account={account} header={header} fromS3={fromS3} />
+            { accounts?.map((account, index) => <React.Fragment key={account.id}>
+                <AccountInfo account={account} header={header} all={all} />
             </React.Fragment>)}
         </>:<>
-            <div className="box">
-                No accounts info found.
+            <div className="box" style={{marginTop:"4pt"}}>
+                { (accounts.loading) ? <>
+                    <div style={{paddingTop:"7pt",paddingRight:"2pt"}}><BarSpinner /></div>
+                </>:<>
+                    No accounts info found.
+                </>}
             </div>
         </>}
     </>

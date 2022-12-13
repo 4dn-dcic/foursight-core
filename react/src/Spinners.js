@@ -15,9 +15,9 @@ export const RingSpinner = ({loading, color, size}) => {
     return <RingLoader color={color} loading={loading} cssOverride={override} size={size} />
 }
 
-export const BarSpinner = ({loading, color, size, style}) => {
+export const BarSpinner = ({loading, color, size, inline, style}) => {
     const override: CSSProperties = {
-        display: "block",
+        display: inline ? "inline" : "block",
         margin: "0 auto",
         ...style
     };
@@ -32,9 +32,9 @@ export const DotSpinner = ({loading, color, size}) => {
     return <DotLoader color={color} loading={loading} cssOverride={override} width={size} />
 }
 
-export const PuffSpinner = ({loading, color, size}) => {
+export const PuffSpinner = ({loading, color, size, inline = false}) => {
     const override: CSSProperties = {
-        display: "block",
+        display: inline ? "inline" : "block",
         margin: "0 auto"
     };
     return <PuffLoader color={color} loading={loading} cssOverride={override} size={size} />
@@ -76,10 +76,10 @@ export const GridSpinner = ({loading, color, size}) => {
     return <GridLoader color={color} loading={loading} cssOverride={override} size={size} />
 }
 
-export const StandardSpinner = ({condition, color = "darkblue", size = 100, label = "Loading"}) => {
+export const StandardSpinner = ({condition, color = "darkblue", size = 100, label = "Loading", style = {}}) => {
     return <table><tbody><tr>
         {label && <td nowrap="1"><small style={{color:color}}><b><i>{label}</i></b></small>&nbsp;&nbsp;</td>}
-        <td style={{paddingTop:"6px"}} nowrap="1"> <BarSpinner loading={condition} size={size} color={color} /></td>
+        <td style={{paddingTop:"6px", ...style}} nowrap="1"> <BarSpinner loading={condition} size={size} color={color} /></td>
     </tr></tbody></table>
 }
 

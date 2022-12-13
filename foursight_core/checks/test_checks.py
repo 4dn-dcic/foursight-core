@@ -34,7 +34,7 @@ def test_action_error(connection, **kwargs):
 
 
 # silly check that stores random numbers in a list
-@check_function()
+@check_function(action="add_random_test_nums")
 def test_random_nums(connection, **kwargs):
     ignored(kwargs)
     check = CheckResult(connection, 'test_random_nums')

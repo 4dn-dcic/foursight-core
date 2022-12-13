@@ -1,9 +1,11 @@
 from chalice.app import Request
 from functools import lru_cache
+import inspect
 import json
 import os
 import pkg_resources
-from typing import Optional
+import sys
+from typing import Callable, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 memoize = lru_cache(100)
@@ -26,7 +28,7 @@ def get_request_domain(request: dict) -> str:
 
 
 def get_request_args(request: dict) -> dict:
-    return request.get("query_params", {})
+    return request.get("query_params") or {}
 
 
 def get_request_arg(request: dict, name: str) -> Optional[str]:
@@ -95,6 +97,7 @@ def get_github_url(package: str, file: Optional[str] = None, line: Optional[int]
         return None
     repo_url = f"{github_url}/{repo_org}/{package_source}"
     if not file:
+        # Note we assume tagged version in GitHub.
         return f"{repo_url}/releases/tag/{version}"
     if os.path.isabs(file):
         path = os.path.normpath(file).split(os.sep)
@@ -114,3 +117,37 @@ def is_running_locally(request: dict) -> bool:
     Returns true iff the given request indicates that we are running locally (localhost).
     """
     return request.get("context", {}).get("identity", {}).get("sourceIp", "") == "127.0.0.1"
+
+def get_function_info(func: Union[str, Callable]) -> Optional[Tuple[str, str, str, str, int, str]]:
+    """
+    Returns a tuple containing, in order, these function properties of the given function by
+    function name or object: name, file, module, package, line number, GitHub link (only
+    if one of these repos: foursight-core, foursight-cgap, foursight, dcicutils)
+    Currently used only for informational purposes in the React UI to display
+    information about code for checks and actions and their GitHub links. 
+    """
+    def import_function(fully_qualified_function_name: str) -> Optional[Callable]:
+        try:
+            module_name, unit_name = fully_qualified_function_name.rsplit(".", 1)
+            return getattr(__import__(module_name, fromlist=[""]), unit_name)
+        except:
+            return None
+    func_name = None
+    func_file = None
+    func_module = None
+    func_package = None
+    func_line = None
+    try:
+        if not isinstance(func, Callable):
+            func = import_function(func)
+            if getattr(func, "func"):
+                func = func.func
+        func_name = func.__name__
+        func_module = func.__module__
+        func_file = sys.modules[func_module].__file__
+        _, func_line = inspect.getsourcelines(func)
+        func_package = __import__(func_module).__package__
+    except Exception as e:
+        pass
+    func_github_url = get_github_url(func_package, func_file, func_line)
+    return func_name, func_file, func_module, func_package, func_line, func_github_url

@@ -122,6 +122,10 @@ function GetAllowedEnvsCookie() {
     return GetAuthTokenCookie()?.allowed_envs || [];
 }
 
+function GetSiteCookie() {
+    return GetAuthTokenCookie()?.site || ""
+}
+
 function DeleteAuthCookie() {
     DeleteCookie(_authCookieName);
 }
@@ -192,6 +196,7 @@ const exports = {
     LastUrl:         GetLastUrlCookie,
     HasAuthToken:    HasAuthTokenCookie,
     IsReadOnlyMode:  IsReadOnlyMode,
+    Site:            GetSiteCookie,
     Set:             SetCookie,
     SetLastUrl:      SetLastUrlCookie,
     SetReadOnlyMode: SetReadOnlyMode,

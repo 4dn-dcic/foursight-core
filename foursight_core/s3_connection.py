@@ -90,7 +90,7 @@ class S3Connection(AbstractConnection):
                                              EndTime=now.isoformat())
         return resp['Datapoints']
 
-    def list_all_keys_w_prefix(self, prefix, records_only=False):
+    def list_all_keys_w_prefix(self, prefix, records_only=False, no_trailing_slash=False):
         """
         List all s3 keys with the given prefix (should look like
         '<prefix>/'). If records_only == True, then add '20' to the end of
@@ -108,7 +108,7 @@ class S3Connection(AbstractConnection):
             return []
         all_keys = []
         # make sure prefix ends with a slash (bucket format)
-        prefix = ''.join([prefix, '/']) if not prefix.endswith('/') else prefix
+        prefix = ''.join([prefix, '/']) if not no_trailing_slash and not prefix.endswith('/') else prefix
         # this will exclude 'primary' and 'latest' in records_only == True
         # use '2' because is is the first digit of year (in uuid)
         use_prefix = ''.join([prefix, '2']) if records_only else prefix

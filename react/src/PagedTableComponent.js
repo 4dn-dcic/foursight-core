@@ -48,8 +48,8 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
         if (!Str.HasValue(sort))     sort   = defaultSort();
 		setArgs({...args, "limit": limit, "offset": offset, "sort": sort });
         function onDone(response) {
-            const total = parseInt(response.get("paging.total"));
-            const more = parseInt(response.get("paging.more"));
+            const total = parseInt(response.data?.paging?.total);
+            const more = parseInt(response.data?.paging?.more);
             if (limit > total) {
                 setOffset(0);
             }
@@ -111,7 +111,7 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
                       <option>200</option>
                   </select>
                   </span></span>&nbsp;
-                  <span>Showing {offset + 1} ... {offset + limit}&nbsp;|&nbsp;</span>
+                  <span>Showing {offset + 1} ... {Math.min(offset + limit, total)}&nbsp;|&nbsp;</span>
                   <span>More: {more}&nbsp;|&nbsp;</span>
                   <span>Total: {total}&nbsp;</span>
             </td></tr></tbody></table>
@@ -120,7 +120,7 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
                 <TableHead
                     columns={columns}
                     sort={sort}
-                    list={data?.get("list")}
+                    list={data?.data?.list}
                     update={onSort}
                     bottomline={true}
                     style={{color:Styles.GetForegroundColor(),fontWeight:"bold"}}

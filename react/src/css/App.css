@@ -185,6 +185,16 @@
    cursor: pointer;
    user-select: none;
 }
+.check-run-button.red {
+    background: red;
+}
+.check-run-button.red:hover {
+    background: red;
+}
+.check-run-button.red:active {
+    color: red;
+    background: yellow;
+}
 .check-action-confirm-button {
    border: 1px solid red;
    border-radius: 12px;
@@ -198,6 +208,20 @@
    user-select: none;
 }
 .check-run-button:disabled {
+    color: white;
+    background: gray;
+}
+.check-run-button.disabled {
+    background: gray;
+    color: white !important;
+    cursor:not-allowed;
+}
+.check-run-button.disabled:hover {
+    color: white !important;
+    background: gray;
+}
+.check-run-button.disabled:active {
+    color: white;
     background: gray;
 }
 .check-run-button:hover {
@@ -365,6 +389,12 @@
     padding: 0.6em 0.8em;
     vertical-align: middle;
 }
+.box.margin {
+    margin-top: 1.8pt;
+}
+.box.bigmargin {
+    margin-top: 4.0pt;
+}
 .box.cell {
     display: table-cell;
 }
@@ -376,6 +406,9 @@
 }
 .box.lighten {
     background: var(--box-bg-lighten);
+}
+.box.darken {
+    background: var(--box-bg-darken);
 }
 .box.warning {
     background-color: #FCF8E3;
@@ -511,4 +544,8 @@ form {
   color: var(--box-bg);
   background: var(--box-fg);
   border-color: var(--box-fg);
+}
+
+.pointer {
+    cursor: pointer;
 }

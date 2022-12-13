@@ -6,6 +6,7 @@ const exports = {
     Atom:             String.fromCodePoint(0x269B), // ⚛
     Check:            String.fromCodePoint(0x2713), // ✓
     Copyright:        String.fromCodePoint(0x00A9), // ©
+    Diamond:          String.fromCodePoint(0x2756), // ❖
     Dot:              String.fromCodePoint(0x2022), // •
     DoNotEnter:       String.fromCodePoint(0x229D), // ⊝
     DownArrow:        String.fromCodePoint(0x2193), // ↓
@@ -18,6 +19,7 @@ const exports = {
     Refresh:          String.fromCodePoint(0x21BB), // ↻
     Star:             String.fromCodePoint(0x272E), // ✮
     UpArrow:          String.fromCodePoint(0x2191), // ↑
+    Trigram:          String.fromCodePoint(0x2630), // ☰
     UpArrowFat:       String.fromCodePoint(0x25B2), // ▲
     UpArrowHollow:    String.fromCodePoint(0x1403), // ᐃ
     Warning:          String.fromCodePoint(0x26A0), // ⚠
