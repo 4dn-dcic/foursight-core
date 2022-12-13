@@ -118,6 +118,14 @@ class ReactRoutes:
         else:
             return app.core.create_forbidden_response()
 
+    @route("/{env}/users/institutions", authorize=True)
+    def reactapi_route_users_projects(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_users_institutions(app.current_request.to_dict(), env)
+
+    @route("/{env}/users/projects", authorize=True)
+    def reactapi_route_users_projects(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_users_projects(app.current_request.to_dict(), env)
+
     @route("/{env}/checks", authorize=True)
     def reactapi_route_checks_ungrouped(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """

@@ -437,6 +437,27 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs)
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
 
+    def reactapi_users_institutions(self, request: dict, env: str) -> Response:
+        print('xyzzy/reactapi_users_institutions')
+        connection = app.core.init_connection(env)
+        print('xyzzy/reactapi_users_institutions/a')
+        institutions = ff_utils.search_metadata(f'/search/?type=Institution', key=connection.ff_keys)
+        print('xyzzy/reactapi_users_institutions/b')
+        print(institutions)
+        return self.create_success_response(institutions)
+
+    def reactapi_users_projects(self, request: dict, env: str) -> Response:
+        print('xyzzy/reactapi_users_projects')
+        connection = app.core.init_connection(env)
+        print('xyzzy/reactapi_users_projects')
+        connection = app.core.init_connection(env)
+        print('xyzzy/reactapi_users_projects/a')
+        projects = ff_utils.search_metadata(f'/search/?type=Project', key=connection.ff_keys)
+        print('xyzzy/reactapi_users_projects/b')
+        print(projects)
+        return self.create_success_response(projects)
+        pass
+
     def reactapi_checks_ungrouped(self, request: dict, env: str) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/checks

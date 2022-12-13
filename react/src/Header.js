@@ -34,8 +34,8 @@ const MainMenu = ({ header }) => {
         return <div style={{height:"1px",marginTop:"1pt",marginBottom:"1pt",marginLeft:"6pt",marginRight:"6pt",background:"var(--box-fg)"}} />
     }
 
-    return <span className="dropdown">
-        <b className="dropdown-button"><span style={{fontSize:"large",color:"red"}}>{Char.Trigram}</span></b>&nbsp;|&nbsp;
+    return <span className="pointer"><span className="dropdown">
+        <b className="dropdown-button"><span style={{display:"inline-block",color:"black"}}>{Char.Trigram}</span></b>&nbsp;|&nbsp;
         <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
             <MenuItem path="/home" label="Home" />
             <MenuItem path="/info" label="General Info" />
@@ -49,7 +49,7 @@ const MainMenu = ({ header }) => {
             <MenuItem path="/accounts" label="Accounts" />
             <MenuItem path="/login" label={Auth.IsLoggedIn(header) ? "Session" : "Login"} />
         </div>
-    </span>
+    </span></span>
 }
 
 const NavLinks = ({ header }) => {
