@@ -109,11 +109,14 @@ def get_aws_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None, r
         #     ]
         #   }
         #
+        stack_name_tags = [tag for tag in item["Tags"] if tag.get("Key") == "aws:cloudformation:stack-name"]
+        stack_name = stack_name_tags[0].get("Value") if stack_name_tags else None
         return {
             "name": tag or item.get("VpcId"),
             "id": item.get("VpcId"),
             "cidr": item.get("CidrBlock"),
             "owner": item.get("OwnerId"),
+            "stack": stack_name,
             "status": item.get("State")
         }
     ec2 = boto3.client('ec2')
@@ -192,12 +195,15 @@ def get_aws_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
         #
         id = item.get("SubnetId")
         name = tag or id
+        stack_name_tags = [tag for tag in item["Tags"] if tag.get("Key") == "aws:cloudformation:stack-name"]
+        stack_name = stack_name_tags[0].get("Value") if stack_name_tags else None
         return {
             "name": name,
             "id": id,
             "type": "private" if "private" in name.lower() else "public",
             "zone": item.get("AvailabilityZone"),
             "cidr": item.get("CidrBlock"),
+            "stack": stack_name,
             "owner": item.get("OwnerId"),
             "subnet": item.get("SubnetId"),
             "subnet_arn": item.get("SubnetArn"),
@@ -295,10 +301,13 @@ def get_aws_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]
         # }
         #
         name = item.get("GroupName") or tag
+        stack_name_tags = [tag for tag in item["Tags"] if tag.get("Key") == "aws:cloudformation:stack-name"]
+        stack_name = stack_name_tags[0].get("Value") if stack_name_tags else None
         return {
             **({"name": name} if name == tag else {"name": name, "tag": tag}),
             "id": item.get("GroupId"),
             "description": item.get("Description"),
+            "stack": stack_name,
             "owner": item.get("OwnerId"),
             "vpc": item.get("VpcId")
         }

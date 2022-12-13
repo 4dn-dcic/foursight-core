@@ -120,11 +120,15 @@ class ReactRoutes:
 
     @route("/{env}/users/institutions", authorize=True)
     def reactapi_route_users_projects(env: str) -> Response:  # noqa: implicit @staticmethod via @route
-        return app.core.reactapi_users_institutions(app.current_request.to_dict(), env)
+        request = app.current_request.to_dict()
+        args = get_request_args(request)
+        return app.core.reactapi_users_institutions(request, env, args)
 
     @route("/{env}/users/projects", authorize=True)
     def reactapi_route_users_projects(env: str) -> Response:  # noqa: implicit @staticmethod via @route
-        return app.core.reactapi_users_projects(app.current_request.to_dict(), env)
+        request = app.current_request.to_dict()
+        args = get_request_args(request)
+        return app.core.reactapi_users_projects(request, env, args)
 
     @route("/{env}/checks", authorize=True)
     def reactapi_route_checks_ungrouped(env: str) -> Response:  # noqa: implicit @staticmethod via @route

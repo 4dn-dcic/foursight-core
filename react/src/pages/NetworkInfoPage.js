@@ -63,6 +63,10 @@ const VpcBox = (props) => {
                     <td style={tdContentStyle}>{props.vpc?.id}</td>
                 </tr>
                 <tr>
+                    <td style={tdLabelStyle}>Stack:</td>
+                    <td>{props.vpc?.stack}</td>
+                </tr>
+                <tr>
                     <td style={tdLabelStyle}>CIDR:</td>
                     <td>{props.vpc?.cidr}</td>
                 </tr>
@@ -134,11 +138,15 @@ const SubnetBox = (props) => {
                     <td style={tdContentStyle}>{props.subnet?.id}<br /><small>{props.subnet?.subnet_arn}</small></td>
                 </tr>
                 <tr>
+                    <td style={tdLabelStyle}>Stack:</td>
+                    <td>{props.subnet?.stack}</td>
+                </tr>
+                <tr>
                     <td style={tdLabelStyle}>CIDR:</td>
                     <td>{props.subnet?.cidr}</td>
                 </tr>
                 <tr>
-                    <td style={tdLabelStyle}>Availability Zone:</td>
+                    <td style={tdLabelStyle}>Zone:</td>
                     <td>{props.subnet?.zone}</td>
                 </tr>
                 <tr>
@@ -193,6 +201,10 @@ const SecurityGroupBox = (props) => {
                 <tr>
                     <td style={tdLabelStyle}>ID:</td>
                     <td style={tdContentStyle}>{props.security_group?.id}<br /><small>{props.security_group?.security_group}</small></td>
+                </tr>
+                <tr>
+                    <td style={tdLabelStyle}>Stack:</td>
+                    <td>{props.security_group?.stack}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Description:</td>
@@ -409,7 +421,7 @@ const VpcsPanel = (props) => {
         setShowingAllSecurityGroups(value => { return !value });
     }
 
-    return <table style={{maxWidth:"500pt"}}><tbody><tr><td>
+    return <table style={{maxWidth:"450pt"}}><tbody><tr><td>
         <div>
            <div style={{float:"right",marginRight:"3pt"}}>
                 <small className="pointer" style={{fontWeight:showingAllSubnets ? "bold" : "normal"}} onClick={toggleShowAllSubnets}>
@@ -422,7 +434,7 @@ const VpcsPanel = (props) => {
            </div>
            <b>AWS VPCs</b>&nbsp;&nbsp;({vpcs?.length})
         </div>
-        <div style={{width:"fit-content",minWidth:"450pt"}}>
+        <div style={{width:"fit-content",minWidth:"400pt"}}>
             { vpcs.map(vpc => <div key={vpc.id}>
                 <VpcBox vpc={vpc} showingAllSubnets={showingAllSubnets} showingAllSecurityGroups={showingAllSecurityGroups} />
                 <div style={{height:"4pt"}} />
@@ -454,7 +466,7 @@ const SubnetsPanel = (props) => {
         fetchSubnets();
     }, []);
 
-    return <table style={{maxWidth:"500pt"}}><tbody><tr><td>
+    return <table style={{maxWidth:"450pt"}}><tbody><tr><td>
         <div>
            <b>AWS Subnets</b>&nbsp;&nbsp;({subnets?.length})
         </div>
@@ -490,7 +502,7 @@ const SecurityGroupsPanel = (props) => {
         fetchSecurityGroups();
     }, []);
 
-    return <table style={{maxWidth:"500pt"}}><tbody><tr><td>
+    return <table style={{maxWidth:"450pt"}}><tbody><tr><td>
         <div>
            <b>AWS Security Groups</b>&nbsp;&nbsp;({sgs?.length})
         </div>

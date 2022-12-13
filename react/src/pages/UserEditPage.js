@@ -24,6 +24,8 @@ const UserEditPage = () => {
             }
         }
     });
+    const institutions = useFetch(Server.Url("/users/institutions"), { cache: true });
+    const projects = useFetch(Server.Url("/users/projects"), { cache: true });
     const navigate = useNavigate();
 
     function updateUserData(data) {

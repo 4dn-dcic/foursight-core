@@ -91,6 +91,37 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 pass
         return self._cached_elasticsearch_server_version
 
+    @memoize
+    def _get_user_institutions(self, env: str, raw: bool = False) -> Response:
+        connection = app.core.init_connection(env)
+        institutions = ff_utils.search_metadata(f'/search/?type=Institution', key=connection.ff_keys)
+        if institutions and not raw:
+            institutions = [
+                {
+                    "id": institition.get("uuid"),
+                    "name": institition.get("name"),
+                    "title": institition.get("title")
+                }
+                for institition in institutions
+            ]
+        return institutions
+
+    @memoize
+    def _get_user_projects(self, env: str, raw: bool = False) -> Response:
+        connection = app.core.init_connection(env)
+        projects = ff_utils.search_metadata(f'/search/?type=Project', key=connection.ff_keys)
+        if projects and not raw:
+            projects = [
+                {
+                    "id": project.get("uuid"),
+                    "name": project.get("name"),
+                    "title": project.get("title"),
+                    "description": project.get("description")
+                }
+                for project in projects
+            ]
+        return projects
+
     def react_serve_static_file(self, env: str, paths: list) -> Response:
         """
         Called from react_routes for static endpoints: /{env}/{path}/{etc}
@@ -437,26 +468,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs)
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
 
-    def reactapi_users_institutions(self, request: dict, env: str) -> Response:
-        print('xyzzy/reactapi_users_institutions')
-        connection = app.core.init_connection(env)
-        print('xyzzy/reactapi_users_institutions/a')
-        institutions = ff_utils.search_metadata(f'/search/?type=Institution', key=connection.ff_keys)
-        print('xyzzy/reactapi_users_institutions/b')
-        print(institutions)
-        return self.create_success_response(institutions)
+    def reactapi_users_institutions(self, request: dict, env: str, args: dict) -> Response:
+        raw = args.get("raw") == "true"
+        return self.create_success_response(self._get_user_institutions(env, raw))
 
-    def reactapi_users_projects(self, request: dict, env: str) -> Response:
-        print('xyzzy/reactapi_users_projects')
-        connection = app.core.init_connection(env)
-        print('xyzzy/reactapi_users_projects')
-        connection = app.core.init_connection(env)
-        print('xyzzy/reactapi_users_projects/a')
-        projects = ff_utils.search_metadata(f'/search/?type=Project', key=connection.ff_keys)
-        print('xyzzy/reactapi_users_projects/b')
-        print(projects)
-        return self.create_success_response(projects)
-        pass
+    def reactapi_users_projects(self, request: dict, env: str, args: dict) -> Response:
+        raw = args.get("raw") == "true"
+        return self.create_success_response(self._get_user_projects(env, raw))
 
     def reactapi_checks_ungrouped(self, request: dict, env: str) -> Response:
         """
@@ -1047,6 +1065,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._cached_accounts_from_s3 = None
         self._get_env_and_bucket_info.cache_clear()
         self._get_check_result_bucket_name.cache_clear()
+        self.reactapi_users_institutions.cache_clear()
+        self.reactapi_users_projects.cache_clear()
         return self.create_success_response({"status": "Caches cleared."})
 
     @staticmethod
