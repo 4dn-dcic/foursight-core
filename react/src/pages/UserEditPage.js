@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from '../Components';
 import { useFetch } from '../utils/Fetch';
@@ -15,6 +15,7 @@ const UserEditPage = () => {
     const [ inputs, setInputs ] = useState(UserDefs.Inputs());
     const [ notFound, setNotFound ] = useState(false);
     const [ readOnlyMode ] = useReadOnlyMode();
+        /*
     const user = useFetch({
         url: Server.Url(`/users/${uuid}`),
         onData: updateUserData,
@@ -24,21 +25,59 @@ const UserEditPage = () => {
             }
         }
     });
-    const institutions = useFetch(Server.Url("/users/institutions"), { cache: true });
-    const projects = useFetch(Server.Url("/users/projects"), { cache: true });
+    */
+    const user = useFetch({
+        url: Server.Url(`/users/${uuid}`),
+        nofetch: true,
+        onData: updateUserData,
+        onError: (response) => {
+            if (response.status === 404) {
+                setNotFound(true);
+            }
+        }
+    });
+
+    //const user = useFetch();
+    const institutions = useFetch(Server.Url("/users/institutions"), { nofetch: true, cache: true });
+    const projects = useFetch(Server.Url("/users/projects"), { nofetch: true, cache: true });
     const navigate = useNavigate();
+
+    useEffect(() => {
+        user.fetch();
+            /*
+        user.fetch({
+            url: Server.Url(`/users/${uuid}`),
+            onData: updateUserData,
+            onError: (response) => {
+                if (response.status === 404) {
+                    setNotFound(true);
+                }
+            }
+        });
+        */
+    }, []);
+
+    function getProjects() {
+            console.log('xxxxxxx/get-projects')
+            console.log(projects)
+        return projects.data;
+    }
 
     function updateUserData(data) {
         setInputs(inputs => {
             for (const input of inputs) {
-                if      (input.name === "email")      input.value = data?.email;
-                else if (input.name === "first_name") input.value = data?.first_name;
-                else if (input.name === "last_name")  input.value = data?.last_name;
-                else if (input.name === "admin")      input.value = data?.groups?.includes("admin") ? true : false;
-                else if (input.name === "created")    input.value = Time.FormatDateTime(data?.date_created);
-                else if (input.name === "modified")   input.value = Time.FormatDateTime(data?.last_modified?.date_modified);
-                else if (input.name === "uuid")       input.value = data?.uuid;
+                if      (input.name === "email")       input.value = data?.email;
+                else if (input.name === "first_name")  input.value = data?.first_name;
+                else if (input.name === "last_name")   input.value = data?.last_name;
+                else if (input.name === "admin")       input.value = data?.groups?.includes("admin") ? true : false;
+                else if (input.name === "project")     { input.value = data?.project; input.values = getProjects; }
+                else if (input.name === "institution") { input.value = data?.user_institution; input.values = institutions; }
+                else if (input.name === "created")     input.value = Time.FormatDateTime(data?.date_created);
+                else if (input.name === "modified")    input.value = Time.FormatDateTime(data?.last_modified?.date_modified);
+                else if (input.name === "uuid")        input.value = data?.uuid;
             }
+            institutions.refresh({ onDone: () => { console.log('aaaaa'); setInputs(value => [...value]); } });
+            projects.refresh({ onDone: () => { console.log('bbbbb'); setInputs(value => [...value]); } });
             return [...inputs];
         });
     }

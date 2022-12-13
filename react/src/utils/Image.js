@@ -79,11 +79,25 @@ function GetNewIcon() {
     return "https://zeevector.com/wp-content/uploads/New-PNG-transparent-Sticker@zeevector.png";
 }
 
+function GetSettingsIcon() {
+    return "https://www.freeiconspng.com/thumbs/settings-icon/settings-icon-16.png";
+}
+
+function GetAtomIcon() {
+    return "https://cdn-icons-png.flaticon.com/512/45/45082.png";
+ // return "https://www.pngkey.com/png/full/499-4996576_atom-symbol-comments-black-and-white-atom.png";
+}
+
+function GetMenuIcon() {
+    return "https://icons.veryicon.com/png/o/miscellaneous/offerino-icons/app-menu.png";
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
+    AtomIcon:                  GetAtomIcon,
     CalendarIcon:              GetCalendarIcon,
     ClearCache:                GetClearCacheImage,
     Clipboard:                 GetClipboardImage,
@@ -99,8 +113,10 @@ const exports = {
     FoursightFourfrontLogo:    GetFoursightFourfrontLogoImage,
     GitHubLoginLogo:           GetGitHubLoginLogoImage,
     GoogleLoginLogo:           GetGoogleLoginLogoImage,
+    MenuIcon:                  GetMenuIcon,
     NewIcon:                   GetNewIcon,
     PyPi:                      GetPyPiImage,
     Python:                    GetPythonImage,
+    SettingsIcon:              GetSettingsIcon,
     Unlock:                    GetUnlockImage
 }; export default exports;

@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { StandardSpinner } from '../Spinners';
 import Char from '../utils/Char';
+import Type from '../utils/Type';
 
 // Generic box to edit (create, update, delete) a list of plain input fields representing some data record.
 // If the onCreate argument is specified then assume this is a create.
 //
 const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCancel, onRefresh, readonly = false }) => {
 
+    //const [ inputs,   setInputs ]   = useState([...xinputs]);
     const [ updating, setUpdating ] = useState(false);
     const [ changing, setChanging ] = useState(false);
     const [ deleting, setDeleting ] = useState(false);
@@ -14,6 +16,7 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
 
     useEffect(() => {
         resetInputValuesToOriginal();
+        // setInputs(xinputs);
     }, [inputs]);
 
     function handleSubmit(e) {
@@ -128,7 +131,9 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
     function resetInputValuesToOriginal() {
         for (const input of inputs) {
             const element = document.getElementById(input.name);
-            element.value = valueOf(input);
+            if (element) {
+                element.value = valueOf(input);
+            }
         }
         setCurrentInputsRequiredStatus();
     }
@@ -150,6 +155,9 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
     function valueOf(input) {
         if (input.type === "boolean") {
             return input.value ? true : false;
+        }
+        else if (input.type === "list") {
+            return "TODO";
         }
         else if ((input.value === null) || (input.value === undefined)) {
             return "";
@@ -206,14 +214,30 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
                                     <option value={true}>True</option>
                                 </select>
                             </>:<>
-                                <input
-                                    className="input icon-rtl"
-                                    placeholder={input.placeholder || input.label}
-                                    id={input.name}
-                                    defaultValue={valueOf(input)}
-                                    onChange={handleChange}
-                                    readOnly={input.readonly || deleting ? true : false}
-                                    autoFocus={input.focus ? true : false} />
+                                        {(Type.IsFunction(input.values) && Type.IsArray(input.values())) && <>
+                                        </>}
+                                { input.type === "list" ? <>
+                                    <select className="select" defaultValue="abc">
+                                        {Type.IsFunction(input.values) && Type.IsArray(input.values()) ? <>
+                                            {input.values().map(value =>
+                                                <option key={value.id} value={value.id}>{value.name}</option>
+                                            )}
+                                        </>:<>
+                                            {input.values?.data?.map(value =>
+                                                <option key={value.id} value={value.id}>{value.name}</option>
+                                            )}
+                                        </>}
+                                    </select>
+                                </>:<>
+                                    <input
+                                        className="input icon-rtl"
+                                        placeholder={input.placeholder || input.label}
+                                        id={input.name}
+                                        defaultValue={valueOf(input)}
+                                        onChange={handleChange}
+                                        readOnly={input.readonly || deleting ? true : false}
+                                        autoFocus={input.focus ? true : false} />
+                                </>}
                             </>}
                             { input.required &&
                                 <small style={{fontWeight:"bold",paddingLeft:"0.6em",color:inputRequiredIndicatorColor(input)}}>{Char.Check}</small>

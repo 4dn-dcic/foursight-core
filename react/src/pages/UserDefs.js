@@ -31,7 +31,7 @@ const _UserInputs = [
     {
         name: "institution",
         label: "Institution",
-        type: "bool"
+        type: "list"
     },
 /*
  * TODO ...

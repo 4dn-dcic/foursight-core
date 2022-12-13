@@ -35,7 +35,7 @@ const MainMenu = ({ header }) => {
     }
 
     return <span className="pointer"><span className="dropdown">
-        <b className="dropdown-button"><img style={{marginLeft:"-4pt",marginTop:"-1pt"}} src="https://www.freeiconspng.com/thumbs/settings-icon/settings-icon-16.png" height="20"/></b>&nbsp;|&nbsp;
+        <b className="dropdown-button"><img style={{marginLeft:"-4pt",marginTop:"-0pt"}} src={Image.MenuIcon()} height="20"/></b>&nbsp;|&nbsp;
         <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
             <MenuItem path="/home" label="Home" />
             <MenuItem path="/info" label="General Info" />

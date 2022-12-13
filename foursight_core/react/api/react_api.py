@@ -98,7 +98,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if institutions and not raw:
             institutions = [
                 {
-                    "id": institition.get("uuid"),
+                    "id": institition.get("@id"),
+                    "uuid": institition.get("uuid"),
                     "name": institition.get("name"),
                     "title": institition.get("title")
                 }
@@ -113,7 +114,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if projects and not raw:
             projects = [
                 {
-                    "id": project.get("uuid"),
+                    "id": project.get("@id"),
+                    "uuid": project.get("uuid"),
                     "name": project.get("name"),
                     "title": project.get("title"),
                     "description": project.get("description")
