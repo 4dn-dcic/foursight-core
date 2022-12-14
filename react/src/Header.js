@@ -34,22 +34,24 @@ const MainMenu = ({ header }) => {
         return <div style={{height:"1px",marginTop:"1pt",marginBottom:"1pt",marginLeft:"6pt",marginRight:"6pt",background:"var(--box-fg)"}} />
     }
 
-    return <span className="pointer"><span className="dropdown">
-        <b className="dropdown-button"><img style={{marginLeft:"-4pt",marginTop:"-0pt"}} src={Image.MenuIcon()} height="20"/></b>&nbsp;|&nbsp;
-        <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
-            <MenuItem path="/home" label="Home" />
-            <MenuItem path="/info" label="General Info" />
-            <MenuItem path="/checks" label="Checks" />
-            <MenuSeparator />
-            <MenuItem path="/users" label="Users" />
-            <MenuItem path="/network" label="Network" />
-            <MenuItem path="/aws/s3" label="S3" />
-            <MenuSeparator />
-            <MenuItem path="/env" label="Environments" />
-            <MenuItem path="/accounts" label="Accounts" />
-            <MenuItem path="/login" label={Auth.IsLoggedIn(header) ? "Session" : "Login"} />
-        </div>
-    </span></span>
+    return <>
+        <span className="dropdown">
+            <span className="dropdown-button"><img style={{marginLeft:"-4px",marginTop:"-1px"}} src={Image.MenuIcon()} height="20"/></span>
+            <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
+                <MenuItem path="/home" label="Home" />
+                <MenuItem path="/info" label="General Info" />
+                <MenuItem path="/checks" label="Checks" />
+                <MenuSeparator />
+                <MenuItem path="/users" label="Users" />
+                <MenuItem path="/network" label="Network" />
+                <MenuItem path="/aws/s3" label="S3" />
+                <MenuSeparator />
+                <MenuItem path="/env" label="Environments" />
+                <MenuItem path="/accounts" label="Accounts" />
+                <MenuItem path="/login" label={Auth.IsLoggedIn(header) ? "Session" : "Login"} />
+            </div>
+        </span>
+    </>
 }
 
 const NavLinks = ({ header }) => {
@@ -83,6 +85,7 @@ const NavLinks = ({ header }) => {
 const Nav = ({ header }) => {
     return <span>
         <MainMenu header={header} />
+        <>&nbsp;|&nbsp;</>
         <NavLinks header={header} />
     </span>
 }

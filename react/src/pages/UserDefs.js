@@ -1,4 +1,5 @@
 import Json from '../utils/Json';
+import Server from '../utils/Server';
 
 const _UserInputs = [
     {
@@ -26,13 +27,16 @@ const _UserInputs = [
     {
         name: "project",
         label: "Projects",
-        type: "list"
+        type: "select",
+        url: Server.Url("/users/projects")
     },
+        /*
     {
         name: "institution",
         label: "Institution",
         type: "list"
     },
+    */
 /*
  * TODO ...
  *

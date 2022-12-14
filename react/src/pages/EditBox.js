@@ -1,22 +1,46 @@
 import React, { useEffect, useState } from 'react';
 import { StandardSpinner } from '../Spinners';
+import { useFetch } from '../utils/Fetch';
 import Char from '../utils/Char';
 import Type from '../utils/Type';
+import Uuid from 'react-uuid';
 
 // Generic box to edit (create, update, delete) a list of plain input fields representing some data record.
 // If the onCreate argument is specified then assume this is a create.
-//
-const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCancel, onRefresh, readonly = false }) => {
 
-    //const [ inputs,   setInputs ]   = useState([...xinputs]);
+const DynamicSelect = (props) => {
+
+    const values = useFetch(props.url, { nofetch: true, cache: true });
+    const [ selected, setSelected ] = useState(props.selected);
+    const initial = props.selected;
+
+    useEffect(() => {
+        values.fetch();
+        setSelected(props.selected);
+    }, [props.selected, props.reset]);
+
+    function onChange(e) {
+        setSelected(e.target.value)
+        if (props.onChange) {
+            props.onChange(e);
+        }
+    }
+
+    return <select id={props.id} className="select" value={selected} onChange={onChange} disabled={props.disabled || values.loading}>
+        {values.map(value => <option key={value.id} value={value.id}>{value.name}</option>)}
+    </select>
+}
+
+const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDelete, onCancel, onRefresh, readonly = false }) => {
+
     const [ updating, setUpdating ] = useState(false);
     const [ changing, setChanging ] = useState(false);
     const [ deleting, setDeleting ] = useState(false);
     const [ inputsRequiredStatus, setInputsRequiredStatus ] = useState({});
+    const [ reset, setReset ] = useState(); // To trigger a reset (call of useEffect) in DynamicSelect.
 
     useEffect(() => {
         resetInputValuesToOriginal();
-        // setInputs(xinputs);
     }, [inputs]);
 
     function handleSubmit(e) {
@@ -75,6 +99,7 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
     }
 
     function handleRefresh() {
+        setReset(Uuid())
         if (onCreate) {
             resetInputValuesToOriginal();
             setFocus();
@@ -89,7 +114,7 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
         }
     }
 
-    function handleChange(e) {
+    function handleChange(e, id, value, changed) {
         const input = getInputByName(e.target.id);
         if (input.required) {
             const currentValue = e.target.value?.toString();
@@ -141,6 +166,9 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
     function gatherCurrentInputValues() {
         const values = {}
         for (const input of inputs) {
+            if (input.type === "selecx") {
+                continue
+            }
             if (!input.readonly) {
                 let value = document.getElementById(input.name).value;
                 if (input.type === "boolean") {
@@ -155,9 +183,6 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
     function valueOf(input) {
         if (input.type === "boolean") {
             return input.value ? true : false;
-        }
-        else if (input.type === "list") {
-            return "TODO";
         }
         else if ((input.value === null) || (input.value === undefined)) {
             return "";
@@ -199,7 +224,7 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
     }
 
     return <>
-        <div className="box cell thickborder">
+        <div className="box thickborder" style={{width:"fit-content",maxWidth:"600pt"}}>
             <form onSubmit={handleSubmit}>
                 <table><tbody>
                 { inputs?.map((input, index) =>
@@ -214,20 +239,8 @@ const EditBox = ({ inputs, title, loading, onCreate, onUpdate, onDelete, onCance
                                     <option value={true}>True</option>
                                 </select>
                             </>:<>
-                                        {(Type.IsFunction(input.values) && Type.IsArray(input.values())) && <>
-                                        </>}
-                                { input.type === "list" ? <>
-                                    <select className="select" defaultValue="abc">
-                                        {Type.IsFunction(input.values) && Type.IsArray(input.values()) ? <>
-                                            {input.values().map(value =>
-                                                <option key={value.id} value={value.id}>{value.name}</option>
-                                            )}
-                                        </>:<>
-                                            {input.values?.data?.map(value =>
-                                                <option key={value.id} value={value.id}>{value.name}</option>
-                                            )}
-                                        </>}
-                                    </select>
+                                { input.type === "select" ? <>
+                                    <DynamicSelect id={input.name} url={input.url} selected={input.value} onChange={handleChange} reset={reset} disabled={input.readonly || deleting} />
                                 </>:<>
                                     <input
                                         className="input icon-rtl"

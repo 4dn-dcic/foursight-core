@@ -33,18 +33,17 @@ const UserCreatePage = () => {
         navigate(Client.Path(`/users`));
     }
 
-    return <>
-        <center>
-            <div style={{display:"table-row"}}>
-                <b style={{float:"left"}}>Create User</b>
-            </div>
+    return <center>
+        <table><tbody><tr><td>
+            <b style={{float:"left"}}>Create User</b>
+        </td></tr><tr><td>
             <EditBox
                 title={"Edit User"}
                 inputs={inputs}
                 onCreate={onCreate}
                 onCancel={onCancel} />
-        </center>
-    </>
+        </td></tr></tbody></table>
+    </center>
 }
 
 export default UserCreatePage;

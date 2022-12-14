@@ -395,9 +395,6 @@
 .box.bigmargin {
     margin-top: 3.6pt;
 }
-.box.cell {
-    display: table-cell;
-}
 .box.noborder {
     border: 0;
 }
