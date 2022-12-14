@@ -15,7 +15,8 @@ const DynamicSelect = (props) => {
     const initial = props.selected;
 
     useEffect(() => {
-        values.fetch();
+        props.setLoadingCount(value => value + 1);
+        values.fetch({ onDone: () => props.setLoadingCount(value => value - 1) });
         setSelected(props.selected);
     }, [props.selected, props.reset]);
 
@@ -37,6 +38,7 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
     const [ changing, setChanging ] = useState(false);
     const [ deleting, setDeleting ] = useState(false);
     const [ inputsRequiredStatus, setInputsRequiredStatus ] = useState({});
+    const [ loadingCount, setLoadingCount ] = useState(0);
     const [ reset, setReset ] = useState(); // To trigger a reset (call of useEffect) in DynamicSelect.
 
     useEffect(() => {
@@ -223,6 +225,14 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
         return changing;
     }
 
+    function isLoading() {
+        return loading || loadingCount > 0;
+    }
+
+    function isDisabled() {
+        return deleting || isLoading();
+    }
+
     return <>
         <div className="box thickborder" style={{width:"fit-content",maxWidth:"600pt"}}>
             <form onSubmit={handleSubmit}>
@@ -234,13 +244,21 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                         </td>
                         <td style={{paddingTop: "0.6em",whiteSpace:"nowrap"}}>
                             { input.type === "boolean" ? <>
-                                <select className="select" id={input.name} defaultValue={valueOf(input)} onChange={handleChange} disabled={input.readonly || deleting}>
+                                <select className="select" id={input.name} defaultValue={valueOf(input)} onChange={handleChange} disabled={isDisabled() || input.readonly}>
                                     <option value={false}>False</option>
                                     <option value={true}>True</option>
                                 </select>
                             </>:<>
                                 { input.type === "select" ? <>
-                                    <DynamicSelect id={input.name} url={input.url} selected={input.value} onChange={handleChange} reset={reset} disabled={input.readonly || deleting} />
+                                    <DynamicSelect
+                                        id={input.name}
+                                        url={input.url}
+                                        selected={input.value}
+                                        onChange={handleChange}
+                                        disabled={isDisabled() || input.readonly}
+                                        setLoadingCount={setLoadingCount}
+                                        reset={reset}
+                                    />
                                 </>:<>
                                     <input
                                         className="input icon-rtl"
@@ -248,7 +266,8 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                                         id={input.name}
                                         defaultValue={valueOf(input)}
                                         onChange={handleChange}
-                                        readOnly={input.readonly || deleting ? true : false}
+                                        readOnly={input.readonly}
+                                        disabled={isDisabled()}
                                         autoFocus={input.focus ? true : false} />
                                 </>}
                             </>}
@@ -272,8 +291,8 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                             <span style={{padding:"1px 5px", borderRadius:"4px", border:"1px solid gray", cursor:loading ? "not-allowed" : "pointer"}} onClick={handleRefresh}>{Char.Refresh}</span><>&nbsp;</>
                         </td>
                         <td align="right" style={{paddingTop:"0.8em"}}>
-                            { loading ? <>
-                                <div style={{marginTop:"0.45em"}}> <StandardSpinner condition={loading} label={updating ? "Updating" : "Loading"}/> </div>
+                            { isLoading() ? <>
+                                <div style={{marginTop:"0.8em"}}> <StandardSpinner condition={isLoading()} label={updating ? "Updating" : "Loading"}/> </div>
                             </>:<>
                                 { (readonly) ? <>
                                    <button className="button cancel" type="button" onClick={handleCancel}>Cancel</button><>&nbsp;</>

@@ -26,8 +26,9 @@ const UserPage = (props) => {
         <div className="container">
              <b>User Record</b>
              <div style={{float:"right",fontSize:"small"}}>
-                <Link to="/users/create" bold={false}>Create User</Link>&nbsp;|&nbsp;
-        <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>{Char.Refresh}&nbsp;</b>
+                <Link to="/users" bold={false}>List</Link><>&nbsp;|&nbsp;</>
+                <Link to="/users/create" bold={false}>Create</Link><>&nbsp;|&nbsp;</>
+                <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>{Char.Refresh}&nbsp;</b>
             </div>
             {response.length > 0 && response.map(user => (
                 <div key={user.uuid}>

@@ -130,7 +130,10 @@ const UserEditPage = () => {
     return <center>
         <table><tbody><tr><td>
             <b>Edit User</b>
-            <div style={{float:"right",marginTop:"2pt",marginRight:"4pt",fontSize:"small"}}><Link to={"/users/create"} bold={false}>Create User</Link></div>
+            <div style={{float:"right",marginTop:"1pt",marginRight:"4pt",fontSize:"small"}}>
+                <Link to={"/users/create"} bold={false}>List</Link><>&nbsp;|&nbsp;</>
+                <Link to={"/users/create"} bold={false}>Create</Link>
+            </div>
         </td></tr><tr><td>
             { notFound ? <>
                 <div className="box">

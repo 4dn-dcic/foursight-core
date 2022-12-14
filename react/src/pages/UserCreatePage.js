@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFetch } from '../utils/Fetch';
+import { Link } from '../Components';
 import Client from '../utils/Client';
 import EditBox from './EditBox';
 import Server from '../utils/Server';
@@ -36,6 +37,9 @@ const UserCreatePage = () => {
     return <center>
         <table><tbody><tr><td>
             <b style={{float:"left"}}>Create User</b>
+            <div style={{float:"right",fontSize:"small",marginTop:"1pt",marginRight:"4pt"}}>
+                <Link to="/users" bold={false}><span style={{color:"var(--box-fg)"}}>List</span></Link>
+            </div>
         </td></tr><tr><td>
             <EditBox
                 title={"Edit User"}

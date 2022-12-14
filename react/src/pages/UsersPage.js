@@ -45,8 +45,8 @@ const UsersPage = () => {
         <div className="container fg">
            <div>
                 <b>Users</b>
-                <div style={{float:"right",marginTop:"2pt"}}>
-                    <Link to={"/users/create"} bold={false}><small>Create User</small></Link>&nbsp;
+                <div style={{float:"right",marginTop:"1pt",marginRight:"4pt",fontSize:"small"}}>
+                    <Link to={"/users/create"} bold={false}>Create</Link>
 {/*
                     &nbsp;|&nbsp;
                     <div className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={update}>
