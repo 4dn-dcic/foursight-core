@@ -345,7 +345,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def _create_user_record_from_input(user: dict) -> dict:
         """
         Canonicalizes and returns the given user record from our UI
-        into the common format use in our database. Modifies input.
+        into the common format used in our database. Modifies input.
         """
         if "institution" in user:
             user["user_institution"] = user["institution"]
@@ -458,17 +458,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ignored(request)
         user = self._create_user_record_from_input(user)
         response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env))
-        #if "institution" in user:
-        #    user["user_institution"] = user["institution"]
-        #    del user["institution"]
-        # If project and/or user_institution is present but is empty then remove altogether.
-        #if "user_institution" in user:
-        #    if not user["user_institution"]:
-        #        del user["user_institution"]
-        #if "project" in user:
-        #    if not user["project"]:
-        #        del user["project"]
-        #
         # Response looks like:
         # {'status': 'success', '@type': ['result'], '@graph': [{'date_created': '2022-10-22T18:39:16.973680+00:00',
         # 'submitted_by': '/users/b5f738b6-455a-42e5-bc1c-77fbfd9b15d2/', 'schema_version': '1', 'status': 'current',
