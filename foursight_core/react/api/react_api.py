@@ -107,7 +107,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             ]
         return institutions
 
-    #@memoize
+    @memoize
     def _get_user_projects(self, env: str, raw: bool = False) -> Response:
         connection = app.core.init_connection(env)
         projects = ff_utils.search_metadata(f'/search/?type=Project', key=connection.ff_keys)
