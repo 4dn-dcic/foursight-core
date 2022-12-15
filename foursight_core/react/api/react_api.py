@@ -98,12 +98,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if institutions and not raw:
             institutions = [
                 {
-                    "id": institition.get("@id"),
-                    "uuid": institition.get("uuid"),
-                    "name": institition.get("name"),
-                    "title": institition.get("title")
+                    "id": institution.get("@id"),
+                    "uuid": institution.get("uuid"),
+                    "name": institution.get("name"),
+                    "title": institution.get("title")
                 }
-                for institition in institutions
+                for institution in institutions
             ]
         return institutions
 
@@ -321,7 +321,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Canonicalizes and returns the given raw user record from our database
         into a common form used by our UI.
         """
-        updated = user.get("last_modified") or updated.get("date_modified")
+        last_modified = user.get("last_modified")
+        if isinstance(last_modified, dict):
+            updated = last_modified.get("date_modified") or user.get("date_created")
+        else:
+            updated = user.get("date_created")
         return {
             # Lower case email to avoid any possible issues on lookup later.
             "email": (user.get("email") or "").lower(),
@@ -455,10 +459,16 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ignored(request)
         # Note that there may easily be a delay after update until the record is actually updated.
         # TODO: Find out precisely why this is so, and if and how to specially handle it on the client side.
-        institution = user.get("institution")
-        if institution:
+        if "institution" in user:
+            user["user_institution"] = user["institution"]
             del user["institution"]
-            user["user_institution"] = institution
+        # If project and/or user_institution is present but is empty then remove altogether.
+        if "user_institution" in user:
+            if not user["user_institution"]:
+                del user["user_institution"]
+        if "project" in user:
+            if not user["project"]:
+                del user["project"]
         response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env))
         status = response.get("status")
         if status != "success":
@@ -466,7 +476,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         graph = response.get("@graph")
         if not graph or not isinstance(graph, list) or len(graph) != 1:
             return self.create_error_response(json.dumps(response))
-        updated_user = graph[0]
+        updated_user = self._create_user_record(graph[0])
         return self.create_success_response(updated_user)
 
     def reactapi_delete_user(self, request: dict, env: str, uuid: str) -> Response:

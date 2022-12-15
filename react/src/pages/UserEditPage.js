@@ -53,8 +53,8 @@ const UserEditPage = () => {
                 else if (input.name === "admin")       input.value = data?.groups?.includes("admin") ? true : false;
                 else if (input.name === "project")     input.value = data?.project;
                 else if (input.name === "institution") input.value = data?.institution;
-                else if (input.name === "created")     input.value = Time.FormatDateTime(data?.date_created);
-                else if (input.name === "modified")    input.value = Time.FormatDateTime(data?.last_modified?.date_modified);
+                else if (input.name === "created")     input.value = Time.FormatDateTime(data?.created);
+                else if (input.name === "updated")     input.value = Time.FormatDateTime(data?.updated);
                 else if (input.name === "uuid")        input.value = data?.uuid;
             }
             return [...inputs];

@@ -42,8 +42,8 @@ const _UserInputs = [
         readonly: true
     },
     {
-        name: "modified",
-        label: "Modified",
+        name: "updated",
+        label: "Updated",
         readonly: true
     },
     {
