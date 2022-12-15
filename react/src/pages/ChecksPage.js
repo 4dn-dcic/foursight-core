@@ -1355,7 +1355,7 @@ const ChecksPage = (props) => {
         return isShowingChecksRaw() && !checksRawHide && <>
             <b className="tool-tip" data-text={info.get("checks.file")}>Raw Checks</b> {Char.RightArrow} <span style={{fontSize:"9pt"}}>{info.get("checks.file")}</span>
             <div style={{marginTop:"3pt"}}>
-            <pre className="box lighten" style={{width:"fit-content",maxWidth:"540pt"}}>
+            <pre className="box lighten" style={{maxWidth:"600pt"}}>
             { checksRaw.loading ? <>
                 <StandardSpinner loading={checksRaw.loading} label={"Loading raw checks file"} size={60} color={"black"} />
             </>:<>
