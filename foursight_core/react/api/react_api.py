@@ -1045,6 +1045,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(response)
 
     def reactapi_aws_vpcs(self, request: dict, env: str, vpc: Optional[str] = None, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoint:
+        - GET /{env}/aws/vpcs
+        - GET /{env}/aws/vpcs/{vpc}
+        Returns AWS VPC info. By default returns VPCs with (tagged) names beginning with "C4".
+        If the vpc argument is "all" then info all VPCs are matched; or if the vpc is some other
+        value then it is treated as a regular expression against which the VPC names are matched.
+        """
         if vpc is None:
             vpc = "C4*"
         elif vpc == "all":
@@ -1053,6 +1061,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(get_aws_vpcs(vpc, raw))
 
     def reactapi_aws_subnets(self, request: dict, env: str, subnet: Optional[str] = None, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoint:
+        - GET /{env}/aws/subnets
+        - GET /{env}/aws/subnets/{subnet}
+        Returns AWS Subnet info. By default returns Subnets with (tagged) names beginning with "C4".
+        If the subnet argument is "all" then info all Subnets are matched; or if the subnet is some
+        other value then it is treated as a regular expression against which the Subnet names are matched.
+        """
         if subnet is None:
             subnet = "C4*"
         elif subnet == "all":
@@ -1061,6 +1077,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(get_aws_subnets(subnet, raw))
 
     def reactapi_aws_security_groups(self, request: dict, env: str, security_group: Optional[str] = None, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoints:
+        - GET /{env}/aws/security_groups
+        - GET /{env}/aws/security_groups/{security_group}
+        Returns AWS Security Group info. By default returns Security Groups with (tagged) names beginning with "C4".
+        If the security_group argument is "all" then info all Security Groups are matched; or if the security_group is some
+        other value then it is treated as a regular expression against which the Subnet names are matched.
+        """
         if security_group is None:
             security_group = "C4*"
         elif security_group == "all":
@@ -1069,11 +1093,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(get_aws_security_groups(security_group, raw))
 
     def reactapi_aws_security_group_rules(self, request: dict, env: str, security_group: Optional[str] = None, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoints:
+        - GET /{env}/aws/security_groups_rules/{security_group}
+        Returns AWS Security Group Rule info for the given security_group (ID).
+        """
         raw = args.get("raw") == "true"
         direction = args.get("direction")
         return self.create_success_response(get_aws_security_group_rules(security_group, direction, raw))
 
     def reactapi_aws_network(self, request: dict, env: str, network: Optional[str] = None, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoints:
+        - GET /{env}/aws/network
+        - GET /{env}/aws/network/{network}
+        Returns aggregated AWS network info, i.e. WRT VPCs, Subnets, and Security Groups, ala the above functions.
+        The network argument is treated like the vpc, subnet, and security_group for the above functions.
+        """
         if network is None:
             network = "C4*"
         elif network == "all":
