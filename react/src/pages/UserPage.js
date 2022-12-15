@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from '../Components';
 import { RingSpinner, StandardSpinner } from '../Spinners';
 import { useFetch } from '../utils/Fetch';
@@ -79,19 +79,32 @@ const UserBox = (props) => {
 const UserPage = (props) => {
 
     const { email } = useParams()
-    const response = useFetch(Server.Url(`/users/${email}`), { onData: (data) => Type.IsObject(data) ? [data] : data, cache: true });
     const [ showRaw, setShowRaw ] = useState(false);
     const navigate = useNavigate();
+
+    function useFetchUser() {
+        return useFetch({
+            url: Server.Url(`/users/${email}`),
+            onData: (data) => Type.IsObject(data) ? [data] : data,
+            nofetch: true
+        });
+    }
+
+    const users = useFetchUser();
+
+    useEffect(() => {
+        users.fetch();
+    }, [email]);
 
     function toggleRaw() {
         setShowRaw(value => !value);
     }
 
-    if (response.error) return <FetchErrorBox error={response.error} message={`Cannot load user (${email}) from Foursight`} center={true} />
-    if (response.loading) {
+    if (users.error) return <FetchErrorBox error={users.error} message={`Cannot load user (${email}) from Foursight`} center={true} />
+    if (users.loading) {
         return <>
             <div style={{marginTop:"30px"}}>
-                <RingSpinner loading={response.loading} color={Styles.GetForegroundColor()} size={90} />
+                <RingSpinner loading={users.loading} color={Styles.GetForegroundColor()} size={90} />
             </div>
         </>
     }
@@ -103,15 +116,15 @@ const UserPage = (props) => {
                     <span className="pointer" onClick={toggleRaw}>
                         {showRaw ? <b>Raw</b> : <span>Raw</span>}<>&nbsp;|&nbsp;</>
                     </span>
-                    { response.length == 1 && <>
-                        <Link to={`/users/edit/${response.get(0)?.uuid}`} bold={false}>Edit</Link><>&nbsp;|&nbsp;</>
+                    { users.length == 1 && <>
+                        <Link to={`/users/edit/${users.get(0)?.uuid}`} bold={false}>Edit</Link><>&nbsp;|&nbsp;</>
                     </>}
                     <Link to="/users" bold={false}>List</Link><>&nbsp;|&nbsp;</>
                     <Link to="/users/create" bold={false}>Create</Link><>&nbsp;|&nbsp;</>
-                    <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>{Char.Refresh}&nbsp;</b>
+                    <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={users.refresh}>{Char.Refresh}&nbsp;</b>
                 </div>
             </div>
-            {response.length > 0 && response.map(user => (
+            {users.length > 0 && users.map(user => (
                 <div key={user.uuid}>
                     <div className="box lighten" style={{fontWeight:"bold",marginBottom:"6px"}}>
                         {user.email} <small style={{fontWeight:"normal"}}>({user.uuid})</small>

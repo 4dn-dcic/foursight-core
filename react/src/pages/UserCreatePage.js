@@ -26,7 +26,8 @@ const UserCreatePage = () => {
             url: Server.Url(`/users`),
             method: "POST",
             payload: values,
-            onSuccess: (response) => navigate(Client.Path(`/users/edit/${response.data?.uuid}`))
+            //onSuccess: (response) => navigate(Client.Path(`/users/edit/${response.data?.uuid}`))
+            onSuccess: (response) => navigate(Client.Path(`/users/${response.data?.uuid}`))
         });
     }
 

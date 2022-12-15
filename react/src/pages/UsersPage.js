@@ -78,7 +78,7 @@ const UsersPage = () => {
 
     function doSearch(e) {
         updateArgs("search", search);
-        update(undefined, undefined, undefined, search, undefined);
+        update(undefined, 0, undefined, search, undefined);
         e.stopPropagation(); e.preventDefault();
     }
 

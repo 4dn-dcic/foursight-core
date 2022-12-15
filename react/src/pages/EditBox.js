@@ -27,8 +27,8 @@ const DynamicSelect = (props) => {
         }
     }
 
-    return <select id={props.id} className="select" value={selected} onChange={onChange} disabled={props.disabled || values.loading}>
-        {values.map(value => <option key={value.id} value={value.id}>{value.name}</option>)}
+    return <select id={props.id} className="select" value={selected || ""} onChange={onChange} disabled={props.disabled || values.loading}>
+        {values.map(value => <option key={value.id || ""} value={value.id || ""}>{value.name || ""}</option>)}
     </select>
 }
 

@@ -316,7 +316,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(body)
 
     @staticmethod
-    def _create_user_record(user: dict) -> dict:
+    def _create_user_record_for_output(user: dict) -> dict:
         """
         Canonicalizes and returns the given raw user record from our database
         into a common form used by our UI.
@@ -339,6 +339,25 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "updated": convert_utc_datetime_to_useastern_datetime_string(updated),
             "created": convert_utc_datetime_to_useastern_datetime_string(user.get("date_created"))
         }
+
+
+    @staticmethod
+    def _create_user_record_from_input(user: dict) -> dict:
+        """
+        Canonicalizes and returns the given user record from our UI
+        into the common format use in our database. Modifies input.
+        """
+        if "institution" in user:
+            user["user_institution"] = user["institution"]
+            del user["institution"]
+        # If project and/or user_institution is present but is empty then remove altogether.
+        if "user_institution" in user:
+            if not user["user_institution"]:
+                del user["user_institution"]
+        if "project" in user:
+            if not user["project"]:
+                del user["project"]
+        return user
 
     def reactapi_get_users(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
         """
@@ -375,31 +394,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 results = results[offset:]
             if len(results) > limit:
                 results = results[:limit]
-            print('xyzzy')
-            print(results)
-            print(type(results))
-            print(dir(results))
-            print('xyzzy/looping')
-            for xyzzy in results:
-                print('xyzzy/loop')
-                print(xyzzy)
-            print('xyzzy/done-looping')
         else:
             add_on = f"frame=object&datastore=database&limit={limit}&from={offset}&sort={sort}"
             results = ff_utils.get_metadata("users/", ff_env=full_env_name(env), add_on=add_on)
             total = results["total"]
             results = results["@graph"]
 
-        #xyzzy
-        #connection = app.core.init_connection(env)
-        #xyzzy = ff_utils.search_metadata(f'/search/?type=user&q=do&limit=1&from=1&sort=email', key=connection.ff_keys)
-        #print('xyzzy/search')
-        #print(xyzzy)
-        #xyzzy
-
-        # total = results["total"]
         for user in results: # results["@graph"]:
-            users.append(self._create_user_record(user) if not raw else user)
+            users.append(self._create_user_record_for_output(user) if not raw else user)
         return self.create_success_response({
             "paging": {
                 "total": total,
@@ -431,7 +433,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 # in the database are lowercased; it causes issues with OAuth if we don't do this.
                 user = ff_utils.get_metadata('users/' + item.lower(),
                                              ff_env=full_env_name(env), add_on='frame=object&datastore=database')
-                users.append(self._create_user_record(user) if not raw else user)
+                users.append(self._create_user_record_for_output(user) if not raw else user)
             except Exception as e:
                 if "Not Found" in str(e):
                     not_found_count += 1
@@ -447,18 +449,25 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_post_user(self, request: dict, env: str, user: dict) -> Response:
         """
-        Called from react_routes for endpoint: POST /{env}/users/create
+        Called from react_routes for endpoint: POST /{env}/users
         Creates a new user described by the given data.
         Given user data looks like:
         {email': 'japrufrock@hms.harvard.edu', 'first_name': 'J. Alfred', 'last_name': 'Prufrock'}
         Returns the same response as GET /{env}/users/{uuid} (i.e. reactpi_get_user).
         """
         ignored(request)
-        institution = user.get("institution")
-        if institution:
-            del user["institution"]
-            user["user_institution"] = institution
+        user = self._create_user_record_from_input(user)
         response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env))
+        #if "institution" in user:
+        #    user["user_institution"] = user["institution"]
+        #    del user["institution"]
+        # If project and/or user_institution is present but is empty then remove altogether.
+        #if "user_institution" in user:
+        #    if not user["user_institution"]:
+        #        del user["user_institution"]
+        #if "project" in user:
+        #    if not user["project"]:
+        #        del user["project"]
         #
         # Response looks like:
         # {'status': 'success', '@type': ['result'], '@graph': [{'date_created': '2022-10-22T18:39:16.973680+00:00',
@@ -476,7 +485,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         graph = response.get("@graph")
         if not graph or not isinstance(graph, list) or len(graph) != 1:
             return self.create_error_response(json.dumps(response))
-        created_user = graph[0]
+        created_user = self._create_user_record_for_output(graph[0])
         uuid = created_user.get("uuid")
         if not uuid:
             return self.create_error_response(json.dumps(response))
@@ -484,23 +493,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_patch_user(self, request: dict, env: str, uuid: str, user: dict) -> Response:
         """
-        Called from react_routes for endpoint: PATCH /{env}/users/update/{uuid}
+        Called from react_routes for endpoint: PATCH /{env}/users/{uuid}
         Updates the user identified by the given uuid with the given data.
         Returns the same response as GET /{env}/users/{uuid} (i.e. reactpi_get_user).
         """
         ignored(request)
         # Note that there may easily be a delay after update until the record is actually updated.
         # TODO: Find out precisely why this is so, and if and how to specially handle it on the client side.
-        if "institution" in user:
-            user["user_institution"] = user["institution"]
-            del user["institution"]
-        # If project and/or user_institution is present but is empty then remove altogether.
-        if "user_institution" in user:
-            if not user["user_institution"]:
-                del user["user_institution"]
-        if "project" in user:
-            if not user["project"]:
-                del user["project"]
+        user = self._create_user_record_from_input(user)
         response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env))
         status = response.get("status")
         if status != "success":
@@ -508,12 +508,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         graph = response.get("@graph")
         if not graph or not isinstance(graph, list) or len(graph) != 1:
             return self.create_error_response(json.dumps(response))
-        updated_user = self._create_user_record(graph[0])
+        updated_user = self._create_user_record_for_output(graph[0])
         return self.create_success_response(updated_user)
 
     def reactapi_delete_user(self, request: dict, env: str, uuid: str) -> Response:
         """
-        Called from react_routes for endpoint: DELETE /{env}/users/delete/{uuid}
+        Called from react_routes for endpoint: DELETE /{env}/users/{uuid}
         Deletes the user identified by the given uuid.
         """
         ignored(request)
