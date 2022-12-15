@@ -254,7 +254,7 @@ const SelectedGroupBox = ({group, groupList, historyList, env, info, style = {}}
     }
 
     return <div style={style}>
-        <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",minWidth:"400pt",maxWidth:"480pt"}}>
+        <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",minWidth:"500",maxWidth:"600pt"}}>
             <div>
                 <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks, groupList)}>
                     <b>{group?.group.replace(/ checks$/i, "")} Group</b> {isShowingAnyResults(group?.checks) ? (<small>{Char.DownArrowFat}</small>) : (<small>{Char.UpArrowFat}</small>)}
@@ -1355,7 +1355,7 @@ const ChecksPage = (props) => {
         return isShowingChecksRaw() && !checksRawHide && <>
             <b className="tool-tip" data-text={info.get("checks.file")}>Raw Checks</b> {Char.RightArrow} <span style={{fontSize:"9pt"}}>{info.get("checks.file")}</span>
             <div style={{marginTop:"3pt"}}>
-            <pre className="box lighten" style={{maxWidth:"540pt"}}>
+            <pre className="box lighten" style={{width:"fit-content",maxWidth:"540pt"}}>
             { checksRaw.loading ? <>
                 <StandardSpinner loading={checksRaw.loading} label={"Loading raw checks file"} size={60} color={"black"} />
             </>:<>
