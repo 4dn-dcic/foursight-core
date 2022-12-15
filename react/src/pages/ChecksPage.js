@@ -1133,8 +1133,6 @@ const ChecksSearchBox = (props) => {
                 check.group.trim().toLowerCase().includes(search)
             );
             matches.push(...matchedChecks)
-            console.log('matches-are:')
-            console.log(matches)
         });
         matches.sort((a,b) => a.title.trim().toLowerCase() > b.title.trim().toLowerCase() ? 1 : (a.title.trim().toLowerCase() < b.title.trim().toLowerCase() ? -1 : 0));
         return matches;

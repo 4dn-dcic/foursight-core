@@ -57,8 +57,6 @@ const UserEditPage = () => {
                 else if (input.name === "modified")    input.value = Time.FormatDateTime(data?.last_modified?.date_modified);
                 else if (input.name === "uuid")        input.value = data?.uuid;
             }
-            //institutions.fetch({ onDone: () => { console.log('aaaaa'); setInputs(value => [...value]); } });
-    //        projects.fetch({ onDone: () => { console.log('bbbbb'); setInputs(value => [...value]); } });
             return [...inputs];
         });
     }
@@ -73,8 +71,6 @@ const UserEditPage = () => {
             delete values["admin"]
             values = {...values, "groups": existingGroupsWithoutAnyAdmin }
         }
-            console.log('xyzzy/on-update')
-            console.log(values)
         user.refresh({
             url: Server.Url(`/users/${uuid}`),
             method: "PATCH",

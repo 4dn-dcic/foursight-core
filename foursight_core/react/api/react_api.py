@@ -452,28 +452,18 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ignored(request)
         # Note that there may easily be a delay after update until the record is actually updated.
         # TODO: Find out precisely why this is so, and if and how to specially handle it on the client side.
-        print('xyzzy/patch_user')
-        print(uuid)
-        print(user)
         institution = user.get("institution")
         if institution:
             del user["institution"]
             user["user_institution"] = institution
-        print('xyzzy/patch_user/a')
-        print(user)
         response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env))
-        print('xyzzy/patch_user/b')
-        print(response)
         status = response.get("status")
-        print(status)
         if status != "success":
             return self.create_error_response(json.dumps(response))
         graph = response.get("@graph")
         if not graph or not isinstance(graph, list) or len(graph) != 1:
             return self.create_error_response(json.dumps(response))
-        print('xyzzy/patch_user/c')
         updated_user = graph[0]
-        print(updated_user)
         return self.create_success_response(updated_user)
 
     def reactapi_delete_user(self, request: dict, env: str, uuid: str) -> Response:
