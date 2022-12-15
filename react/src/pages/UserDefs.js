@@ -30,27 +30,12 @@ const _UserInputs = [
         type: "select",
         url: Server.Url("/users/projects")
     },
-        /*
     {
         name: "institution",
-        label: "Institution",
-        type: "list"
+        label: "Institutions",
+        type: "select",
+        url: Server.Url("/users/institutions")
     },
-    */
-/*
- * TODO ...
- *
-    {
-        name: "project",
-        label: "Project",
-        type: "boolean"
-    },
-    {
-        name: "institution",
-        label: "Institution",
-        type: "boolean"
-    },
-*/
     {
         name: "created",
         label: "Created",

@@ -26,6 +26,9 @@ const UserPage = (props) => {
         <div className="container">
              <b>User Record</b>
              <div style={{float:"right",fontSize:"small"}}>
+                { response.length == 1 && <>
+                    <Link to={`/users/edit/${response.get(0)?.uuid}`} bold={false}>Edit</Link><>&nbsp;|&nbsp;</>
+                </>}
                 <Link to="/users" bold={false}>List</Link><>&nbsp;|&nbsp;</>
                 <Link to="/users/create" bold={false}>Create</Link><>&nbsp;|&nbsp;</>
                 <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={response.refresh}>{Char.Refresh}&nbsp;</b>

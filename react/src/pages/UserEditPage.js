@@ -38,39 +38,11 @@ const UserEditPage = () => {
         }
     });
 
-    //const user = useFetch();
-    // const institutions = useFetch(Server.Url("/users/institutions"), { nofetch: true });
-    //const projects = useFetch(Server.Url("/users/projects"), { nofetch: true });
     const navigate = useNavigate();
 
     useEffect(() => {
         user.fetch();
-            /*
-        user.fetch({
-            url: Server.Url(`/users/${uuid}`),
-            onData: updateUserData,
-            onError: (response) => {
-                if (response.status === 404) {
-                    setNotFound(true);
-                }
-            }
-        });
-        */
     }, []);
-
-        /*
-    function getProjects() {
-            console.log('xxxxxxx/get-projects')
-            console.log(projects)
-        return projects.data;
-    }
-    */
-
-    function onProjectChange(value) {
-            console.log('xyzzy/on-project-change')
-            console.log(value)
-        setProject(value);
-    }
 
     function updateUserData(data) {
         setInputs(inputs => {
@@ -80,8 +52,7 @@ const UserEditPage = () => {
                 else if (input.name === "last_name")   input.value = data?.last_name;
                 else if (input.name === "admin")       input.value = data?.groups?.includes("admin") ? true : false;
                 else if (input.name === "project")     input.value = data?.project;
-                // else if (input.name === "project")     { input.value = data?.project; input.values = getProjects; }
-                // else if (input.name === "institution") { input.value = data?.user_institution; input.values = institutions; }
+                else if (input.name === "institution") input.value = data?.institution;
                 else if (input.name === "created")     input.value = Time.FormatDateTime(data?.date_created);
                 else if (input.name === "modified")    input.value = Time.FormatDateTime(data?.last_modified?.date_modified);
                 else if (input.name === "uuid")        input.value = data?.uuid;
@@ -131,7 +102,8 @@ const UserEditPage = () => {
         <table><tbody><tr><td>
             <b>Edit User</b>
             <div style={{float:"right",marginTop:"1pt",marginRight:"4pt",fontSize:"small"}}>
-                <Link to={"/users/create"} bold={false}>List</Link><>&nbsp;|&nbsp;</>
+                <Link to={`/users/${uuid}`} bold={false}>View</Link><>&nbsp;|&nbsp;</>
+                <Link to={"/users"} bold={false}>List</Link><>&nbsp;|&nbsp;</>
                 <Link to={"/users/create"} bold={false}>Create</Link>
             </div>
         </td></tr><tr><td>

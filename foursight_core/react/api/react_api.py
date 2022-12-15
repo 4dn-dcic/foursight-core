@@ -388,6 +388,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 # in the database are lowercased; it causes issues with OAuth if we don't do this.
                 user = ff_utils.get_metadata('users/' + item.lower(),
                                              ff_env=full_env_name(env), add_on='frame=object&datastore=database')
+                institution = user.get("user_institution")
+                if institution:
+                    del user["user_institution"]
+                    user["institution"] = institution
                 users.append(user)
             except Exception as e:
                 if "Not Found" in str(e):
@@ -411,6 +415,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns the same response as GET /{env}/users/{uuid} (i.e. reactpi_get_user).
         """
         ignored(request)
+        institution = user.get("institution")
+        if institution:
+            del user["institution"]
+            user["user_institution"] = institution
         response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env))
         #
         # Response looks like:
@@ -446,6 +454,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # TODO: Find out precisely why this is so, and if and how to specially handle it on the client side.
         print('xyzzy/patch_user')
         print(uuid)
+        print(user)
+        institution = user.get("institution")
+        if institution:
+            del user["institution"]
+            user["user_institution"] = institution
+        print('xyzzy/patch_user/a')
         print(user)
         response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env))
         print('xyzzy/patch_user/b')

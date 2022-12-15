@@ -34,7 +34,7 @@ const UsersPage = () => {
         { label: "User", key: "email" },
         { label: "Groups", key: "groups" },
         { label: "Project", key: "project" },
-        { label: "Institution", key: "user_institution" },
+        { label: "Institution", key: "institution" },
         { label: "Updated", key: "data_modified" }, // DOES NOT WORK (nested in last_modified)
         { label: "Created", key: "date_created" }
     ];
@@ -45,16 +45,8 @@ const UsersPage = () => {
         <div className="container fg">
            <div>
                 <b>Users</b>
-                <div style={{float:"right",marginTop:"1pt",marginRight:"4pt",fontSize:"small"}}>
+                <div style={{float:"right",marginTop:"3pt",marginRight:"4pt",fontSize:"small"}}>
                     <Link to={"/users/create"} bold={false}>Create</Link>
-{/*
-                    &nbsp;|&nbsp;
-                    <div className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={update}>
-                        <span className="bg" style={{border:"1px solid black",borderRadius:"4px",padding:"0px 4px 1px 4px",cursor:"pointer"}}>
-                            <b>{Char.Refresh}</b>
-                        </span>
-                    </div>
-*/}
                 </div>
                 <div style={{height:"1px",background:Styles.GetForegroundColor(),marginTop:"2pt",marginBottom:"4pt"}}></div>
             </div>
@@ -81,10 +73,10 @@ const UsersPage = () => {
                                 {user.groups && user.groups?.length > 0 ? user.groups : Char.EmptySet}
                             </td>
                             <td style={tdStyle}>
-                                {user?.project?.replace("/projects/","")?.replace("/","") || Char.EmptySet}
+                                <span className="tool-tip" data-text={user.project}>{user.project?.replace("/projects/","")?.replace("/","") || Char.EmptySet}</span>
                             </td>
                             <td style={tdStyle}>
-                                {user?.institution?.replace("/institutions/","")?.replace("/","") || Char.EmptySet}
+                                <span className="tool-tip" data-text={user.institution}>{user.institution?.replace("/institutions/","")?.replace("/","") || Char.EmptySet}</span>
                             </td>
                             <td style={tdStyle}>
                                 {user.updated ? Time.FormatDate(user.updated) : Time.FormatDate(user.created)} <br />
