@@ -315,7 +315,28 @@ class ReactApi(ReactApiBase, ReactRoutes):
         }
         return self.create_success_response(body)
 
-    def reactapi_users(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
+    @staticmethod
+    def _create_user_record(user: dict) -> dict:
+        """
+        Canonicalizes and returns the given raw user record from our database
+        into a common form used by our UI.
+        """
+        updated = user.get("last_modified") or updated.get("date_modified")
+        return {
+            # Lower case email to avoid any possible issues on lookup later.
+            "email": (user.get("email") or "").lower(),
+            "first_name": user.get("first_name"),
+            "last_name": user.get("last_name"),
+            "uuid": user.get("uuid"),
+            "title": user.get("title"),
+            "groups": user.get("groups"),
+            "project": user.get("project"),
+            "institution": user.get("user_institution"),
+            "updated": convert_utc_datetime_to_useastern_datetime_string(updated),
+            "created": convert_utc_datetime_to_useastern_datetime_string(user.get("date_created"))
+        }
+
+    def reactapi_get_users(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/users
         Returns a (paged) summary of all users.
@@ -332,6 +353,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             sort = "-" + sort[:-5]
         elif sort.endswith(".asc"):
             sort = sort[:-4]
+        raw = args.get("raw") == "true"
 
         users = []
         # TODO: Consider adding ability to search for both normal users and
@@ -341,23 +363,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         results = ff_utils.get_metadata("users/", ff_env=full_env_name(env), add_on=add_on)
         total = results["total"]
         for user in results["@graph"]:
-            updated = user.get("last_modified")
-            if updated:
-                updated = updated.get("date_modified")
-            created = user.get("date_created")
-            users.append({
-                # Lower case email to avoid any possible issues on lookup later.
-                "email": (user.get("email") or "").lower(),
-                "first_name": user.get("first_name"),
-                "last_name": user.get("last_name"),
-                "uuid": user.get("uuid"),
-                "title": user.get("title"),
-                "groups": user.get("groups"),
-                "project": user.get("project"),
-                "institution": user.get("user_institution"),
-                "updated": convert_utc_datetime_to_useastern_datetime_string(updated),
-                "created": convert_utc_datetime_to_useastern_datetime_string(created)
-            })
+            users.append(self._create_user_record(user) if not raw else user)
         return self.create_success_response({
             "paging": {
                 "total": total,
@@ -369,7 +375,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "list": users
         })
 
-    def reactapi_get_user(self, request: dict, env: str, uuid: str) -> Response:
+    def reactapi_get_user(self, request: dict, env: str, uuid: str, args: Optional[dict] = None) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/user/{uuid}
         Returns info on the specified user uuid. The uuid can actually also
@@ -377,6 +383,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if just one requested then return a single object, otherwise return an array.
         """
         ignored(request)
+        raw = args.get("raw") == "true"
         users = []
         items = uuid.split(",")
         not_found_count = 0
@@ -388,11 +395,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 # in the database are lowercased; it causes issues with OAuth if we don't do this.
                 user = ff_utils.get_metadata('users/' + item.lower(),
                                              ff_env=full_env_name(env), add_on='frame=object&datastore=database')
-                institution = user.get("user_institution")
-                if institution:
-                    del user["user_institution"]
-                    user["institution"] = institution
-                users.append(user)
+                users.append(self._create_user_record(user) if not raw else user)
             except Exception as e:
                 if "Not Found" in str(e):
                     not_found_count += 1

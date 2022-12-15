@@ -89,7 +89,8 @@ class ReactRoutes:
         """
         if app.current_request.method == "GET":
             request = app.current_request.to_dict()
-            return app.core.reactapi_users(request, env, get_request_args(request))
+            args = get_request_args(request)
+            return app.core.reactapi_get_users(request, env, args)
         elif app.current_request.method == "POST":
             user = get_request_body(app.current_request)
             return app.core.reactapi_post_user(app.current_request.to_dict(), env, user=user)
@@ -108,13 +109,15 @@ class ReactRoutes:
         if the methods are different; rather you must bundle them together and
         distinguish between which method is used programmatically as we do here.
         """
+        request = app.current_request.to_dict()
         if app.current_request.method == "GET":
-            return app.core.reactapi_get_user(app.current_request.to_dict(), env, uuid=uuid)
+            args = get_request_args(request)
+            return app.core.reactapi_get_user(request, env, uuid, args)
         elif app.current_request.method == "PATCH":
             user = get_request_body(app.current_request)
-            return app.core.reactapi_patch_user(app.current_request.to_dict(), env, uuid=uuid, user=user)
+            return app.core.reactapi_patch_user(request, env, uuid=uuid, user=user)
         elif app.current_request.method == "DELETE":
-            return app.core.reactapi_delete_user(app.current_request.to_dict(), env, uuid=uuid)
+            return app.core.reactapi_delete_user(request, env, uuid=uuid)
         else:
             return app.core.create_forbidden_response()
 
