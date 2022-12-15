@@ -92,6 +92,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self._cached_elasticsearch_server_version
 
     @memoize
+    def _get_user_projects(self, env: str, raw: bool = False) -> Response:
+        connection = app.core.init_connection(env)
+        projects = ff_utils.search_metadata(f'/search/?type=Project&datastore=database', key=connection.ff_keys)
+        if projects and not raw:
+            projects = [
+                {
+                    "id": project.get("@id"),
+                    "uuid": project.get("uuid"),
+                    "name": project.get("name"),
+                    "title": project.get("title"),
+                    "description": project.get("description")
+                }
+                for project in projects
+            ]
+        return projects
+
+    @memoize
     def _get_user_institutions(self, env: str, raw: bool = False) -> Response:
         connection = app.core.init_connection(env)
         institutions = ff_utils.search_metadata(f'/search/?type=Institution', key=connection.ff_keys)
@@ -106,23 +123,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 for institution in institutions
             ]
         return institutions
-
-    @memoize
-    def _get_user_projects(self, env: str, raw: bool = False) -> Response:
-        connection = app.core.init_connection(env)
-        projects = ff_utils.search_metadata(f'/search/?type=Project', key=connection.ff_keys)
-        if projects and not raw:
-            projects = [
-                {
-                    "id": project.get("@id"),
-                    "uuid": project.get("uuid"),
-                    "name": project.get("name"),
-                    "title": project.get("title"),
-                    "description": project.get("description")
-                }
-                for project in projects
-            ]
-        return projects
 
     def react_serve_static_file(self, env: str, paths: list) -> Response:
         """
@@ -358,15 +358,47 @@ class ReactApi(ReactApiBase, ReactRoutes):
         elif sort.endswith(".asc"):
             sort = sort[:-4]
         raw = args.get("raw") == "true"
+        search = args.get("search")
 
         users = []
         # TODO: Consider adding ability to search for both normal users and
         #       admin/foursight users (who would have access to foursight);
         #       and more advanced, the ability to grant foursight access.
-        add_on = f"frame=object&datastore=database&limit={limit}&from={offset}&sort={sort}"
-        results = ff_utils.get_metadata("users/", ff_env=full_env_name(env), add_on=add_on)
-        total = results["total"]
-        for user in results["@graph"]:
+        if search:
+            connection = app.core.init_connection(env)
+            # Though limit and offset (from) are supported by search_metadata, total counts don't seem to be (?);
+            # very possibly missing something there; so for now get all results and to paging manually here.
+            # results = ff_utils.search_metadata(f"/search/?type=User&frame=object&q={search}&limit={limit}&from={offset}&sort={sort}", key=connection.ff_keys, is_generator=True)
+            results = ff_utils.search_metadata(f"/search/?type=User&frame=object&q={search}&sort={sort}", key=connection.ff_keys)
+            total = len(results)
+            if offset > 0:
+                results = results[offset:]
+            if len(results) > limit:
+                results = results[:limit]
+            print('xyzzy')
+            print(results)
+            print(type(results))
+            print(dir(results))
+            print('xyzzy/looping')
+            for xyzzy in results:
+                print('xyzzy/loop')
+                print(xyzzy)
+            print('xyzzy/done-looping')
+        else:
+            add_on = f"frame=object&datastore=database&limit={limit}&from={offset}&sort={sort}"
+            results = ff_utils.get_metadata("users/", ff_env=full_env_name(env), add_on=add_on)
+            total = results["total"]
+            results = results["@graph"]
+
+        #xyzzy
+        #connection = app.core.init_connection(env)
+        #xyzzy = ff_utils.search_metadata(f'/search/?type=user&q=do&limit=1&from=1&sort=email', key=connection.ff_keys)
+        #print('xyzzy/search')
+        #print(xyzzy)
+        #xyzzy
+
+        # total = results["total"]
+        for user in results: # results["@graph"]:
             users.append(self._create_user_record(user) if not raw else user)
         return self.create_success_response({
             "paging": {

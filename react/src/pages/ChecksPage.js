@@ -254,7 +254,7 @@ const SelectedGroupBox = ({group, groupList, historyList, env, info, style = {}}
     }
 
     return <div style={style}>
-        <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",minWidth:"480pt"}}>
+        <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",minWidth:"400pt",maxWidth:"480pt"}}>
             <div>
                 <span style={{cursor:"pointer"}} onClick={() => toggleShowAllResults(group?.checks, groupList)}>
                     <b>{group?.group.replace(/ checks$/i, "")} Group</b> {isShowingAnyResults(group?.checks) ? (<small>{Char.DownArrowFat}</small>) : (<small>{Char.UpArrowFat}</small>)}
@@ -900,7 +900,7 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
         if (!histories || histories.length <= 0) {
             return <span />
         }
-        return <div style={{}}>
+        return <div>
             <b style={{marginBottom:"100pt"}}>Recent Results</b>
             { histories?.map((selectedHistory, index) =>
                 <div key={selectedHistory.name} style={{marginTop:"3pt"}}>
@@ -988,7 +988,7 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
         fetchHistory();
     }, []);
 
-    return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt"}}>
+    return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt",maxWidth:"525pt"}}>
         <div title={check.name}>
             <b className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}. Group: ${check.group}. Click for full history.`}>
                 <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">{check.title}</Link>
@@ -1058,7 +1058,7 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
                     { (history.__resultShowing) &&
                         <tr>
                             <td colSpan="6">
-                                <pre className="box lighten" style={{wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"680pt"}}>
+                                <pre className="box lighten" style={{wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",width:"fit-content",minWidth:"360pt",maxWidth:"500pt"}}>
                                     { history.__resultLoading ? <>
                                         <StandardSpinner condition={history.__resultLoading} color={Styles.GetForegroundColor()} label="Loading result"/>
                                     </>:<>
@@ -1141,7 +1141,8 @@ const ChecksSearchBox = (props) => {
     const inputStyle = {
         outline: "none",
         paddingLeft: "2pt",
-        border: "1px solid gray",
+     // border: "1px solid gray",
+        borderBottom: "0",
         borderTop: "0",
         borderRight: "0",
         borderLeft: "0",
@@ -1149,7 +1150,7 @@ const ChecksSearchBox = (props) => {
         bottom: "1pt",
         fontWeight: "bold",
         color: "var(--box-fg)",
-        marginBottom: "-4pt",
+        marginBottom: "-2pt",
         height: "1.2em",
         width: "100%"
     };
@@ -1165,7 +1166,7 @@ const ChecksSearchBox = (props) => {
                 </td>
             </tr></tbody></table>
         </div>
-        <div className="box lighten bigmargin" style={{marginBottom:"6pt",minWidth:"250pt",maxWidth:"480pt"}}>
+        <div className="box lighten bigmargin" style={{marginBottom:"6pt",minWidth:"250pt",maxWidth:"540pt"}}>
             <div style={{fontSize:"small",paddingTop:"2pt",marginBottom:"-3pt"}}>
                 <div style={{float:"right",marginTop:"-6pt",marginRight:"-3pt",cursor:"pointer"}} onClick={() => props.toggleShowingChecksSearch()}>
                     <b>{Char.X}</b>
@@ -1437,7 +1438,7 @@ const ChecksPage = (props) => {
         }
         return recentRunsShow && <>
             <b>Recent Runs</b>
-            <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"3pt",marginBottom:"8pt",maxWidth:"640"}}>
+            <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"3pt",marginBottom:"8pt",maxWidth:"700"}}>
                 { (recentRuns.loading && recentRuns.null) ? <>
                     <StandardSpinner loading={recentRuns.loading} label={"Loading recent runs"} size={60} color={Styles.GetForegroundColor()} />
                 </>:<>
