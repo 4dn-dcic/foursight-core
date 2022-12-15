@@ -13,7 +13,7 @@ import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 
 const UserRawBox = (props) => {
-    const user = useFetch(Server.Url(`/users/${props.email}?raw=true`), { cache: true });
+    const user = useFetch(Server.Url(`/users/${props.email}?raw=true`));
     return <pre className="box">
         <span style={{float:"right",marginTop:"-6pt",fontSize:"large",cursor:"pointer"}} onClick={() => user.refresh()}>{Char.Refresh}</span>
         { user.loading ? <>
