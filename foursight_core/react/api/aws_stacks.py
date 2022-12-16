@@ -5,6 +5,8 @@ from dcicutils.obfuscation_utils import obfuscate_dict
 from typing import Optional, Union
 
 
+_STACK_NAME_PREFIX = "c4-"
+
 @memoize
 def aws_get_stacks() -> list:
     """
@@ -13,7 +15,8 @@ def aws_get_stacks() -> list:
     stacks_info = []
     c4 = boto3.resource('cloudformation')
     for stack in sorted(c4.stacks.all(), key=lambda key: key.name):
-        stacks_info.append(_create_aws_stack_info(stack))
+        if stack.name.startswith(_STACK_NAME_PREFIX):
+            stacks_info.append(_create_aws_stack_info(stack))
     return stacks_info
 
 

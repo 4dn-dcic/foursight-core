@@ -2,7 +2,7 @@ import React from 'react';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import Uuid from 'react-uuid';
-import { RingSpinner, PuffSpinnerInline, StandardSpinner } from '../../Spinners';
+import { StandardSpinner } from '../../Spinners';
 import { useReadOnlyMode } from '../../ReadOnlyMode';
 import { useFetch, useFetcher, useFetchFunction } from '../../utils/Fetch';
 import { FetchErrorBox, RefreshButton } from '../../Components';
@@ -604,25 +604,38 @@ const StackBox = (props) => {
         stack.fetch();
     }, []);
     return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
-        <div><b>AWS Stack: {props.stackName}</b></div>
+        <div><b>AWS Stack: {props.stackName}</b><div style={{float:"right",cursor:"pointer"}} onClick={() => stack.refresh()}>{Char.Refresh}</div></div>
         <div className="box margin">
+            { stack.loading ?
+                <StandardSpinner label="Loading stack info" />
+            : 
             <table width="100%"><tbody>
                 <tr>
                     <td style={tdLabelStyle}>Name:</td>
                     <td style={{...tdContentStyle,wordBreak:"break-all"}}>
                         <b style={{float:"right",cursor:"pointer",marginTop:"-2pt"}} onClick={hideStack}>{Char.X}</b>
-                        <span className="tool-tip" data-text={stack.data?.id}>{stack.data?.name}</span><br />
-                        <small>{stack.data?.id}</small>
+                        {stack.data?.name}
                     </td>
                 </tr>
                 <tr>
-                    <td style={tdLabelStyle}>Role:</td>
-                    <td style={tdContentStyle}>{stack.data?.role_arn || Char.EmptySet}</td>
+                    <td style={tdLabelStyle}>ID:</td>
+                    <td style={{...tdContentStyle,wordBreak:"break-all"}}>
+                        <small>{stack.data?.id}</small>
+                    </td>
                 </tr>
+                { stack.data?.role_arn &&
+                    <tr>
+                        <td style={tdLabelStyle}>Role:</td>
+                        <td style={tdContentStyle}>{stack.data?.role_arn || Char.EmptySet}</td>
+                    </tr>
+                }
                 <tr>
                     <td style={tdLabelStyle}>Description:</td>
                     <td style={tdContentStyle}>{stack.data?.description}</td>
                 </tr>
+                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
+                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
                 <tr>
                     <td style={tdLabelStyle}>Status:</td>
                     <td style={tdContentStyle}>{stack.data?.status}</td>
@@ -635,6 +648,9 @@ const StackBox = (props) => {
                     <td style={tdLabelStyle}>Updated:</td>
                     <td style={tdContentStyle}>{stack.data?.updated}</td>
                 </tr>
+                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
+                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
                 <tr className="pointer" onClick={toggleOutputs}>
                     <td style={tdLabelStyle}>Outputs:</td>
                     <td style={tdContentStyle}>
@@ -687,6 +703,7 @@ const StackBox = (props) => {
                     </tr>
                 </>}
             </tbody></table>
+            }
         </div>
     </div>
 }
@@ -699,9 +716,13 @@ const StackOutputs = (props) => {
     return <div style={{maxWidth:"480pt"}}>
         <div className="box lighten">
             { outputs.empty ? <>
-                { !outputs.loading && <small>No stack outputs.</small> }
+                { outputs.loading ? <>
+                    <StandardSpinner label="Loading stack outputs" />
+                </>:<>
+                    <li><i>No stack outputs.</i></li>
+                </>}
             </>:<>
-                <ul style={{marginBottom:"0"}}>
+                <ul style={{marginBottom:"1pt"}}>
                     { outputs.data && Object.keys(outputs.data)?.map(output => <li key={output}>
                         <b>{output}</b> <br />
                         <div style={{wordBreak:"break-all"}}>
@@ -726,14 +747,18 @@ const StackParameters = (props) => {
     return <div style={{maxWidth:"480pt"}}>
         <div className="box lighten">
             { parameters.empty ? <>
-                { !parameters.loading && <small>No stack parameters.</small> }
+                { parameters.loading ? <>
+                    <StandardSpinner label="Loading stack parameters" />
+                </>:<>
+                    <li><i>No stack parameters.</i></li>
+                </>}
             </>:<>
-                <ul style={{marginBottom:"0"}}>
+                <ul style={{marginBottom:"1pt"}}>
                     { parameters.data && Object.keys(parameters.data)?.map(parameter => <li key={parameter}>
                         <b>{parameter}</b> <br />
                         <div style={{wordBreak:"break-all"}}>
                             { parameters.data[parameter] === "********" ? <>
-                                <span style={{color:"red"}}>REDACTED</span>
+                                <i style={{color:"red"}}>REDACTED</i>
                             </>:<>
                                 {parameters.data[parameter]}
                             </>}
@@ -753,11 +778,15 @@ const StackResources = (props) => {
     return <div style={{maxWidth:"480pt"}}>
         <div className="box lighten">
             { resources.empty ? <>
-                { !resources.loading && <small>No stack resources.</small> }
+                { resources.loading ? <>
+                    <StandardSpinner label="Loading stack resources" />
+                </>:<>
+                    <li><i>No stack resources.</i></li>
+                </>}
             </>:<>
-                <ul style={{marginBottom:"0"}}>
+                <ul style={{marginBottom:"1pt"}}>
                     { resources.data && Object.keys(resources.data)?.map(resource => <li key={resource}>
-                        <b>{resource}</b> <br />
+                        <b style={{wordBreak:"break-all"}}>{resource}</b> <br />
                         <div style={{wordBreak:"break-all"}}>
                             { resources.data[resource] === "********" ? <>
                                 <span style={{color:"red"}}>REDACTED</span>
