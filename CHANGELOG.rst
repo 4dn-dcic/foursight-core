@@ -6,9 +6,15 @@ foursight-core
 Change Log
 ----------
 
-3.1.4
+3.2.0
 =====
+* Support for viewing and editing user projects and institutions (C4-945).
 * Support for viewing info about VPCs, security groups, subnets, et cetera (C4-961).
+* Support for viewing info about stacks.
+* Support for viewing checks by schedule.
+* Support for simple checks search.
+* Support for simple users search.
+* New upper-left navigation dropdown menu.
 
 3.1.3
 =====
