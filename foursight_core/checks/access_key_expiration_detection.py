@@ -50,7 +50,8 @@ def access_key_status(connection, **kwargs):
 def refresh_access_keys(connection, **kwargs):
     """ Triggers a refresh of the 3 admin keys, previously run through the portal """
     action = ActionResult(connection, 'refresh_access_keys')
-    admin_keys = [('4dndcic@gmail.com', 'access_key_admin'),
+    admin_keys = [('4dndcic@gmail.com', 'access_key_admin'),  # fourfront admin
+                  ('cgap.platform@gmail.com', 'access_key_admin'),  # cgap admin
                   ('tibanna.app@gmail.com', 'access_key_tibanna'),
                   ('foursight.app@gmail.com', 'access_key_foursight')]
     s3 = s3_utils.s3Utils(env=connection.ff_env)
@@ -58,7 +59,10 @@ def refresh_access_keys(connection, **kwargs):
         'successfully_generated': []
     }
     for email, kp_name in admin_keys:
-        user = get_metadata(f'/users/{email}?datastore=database', key=connection.ff_keys)
+        try:
+            user = get_metadata(f'/users/{email}?datastore=database', key=connection.ff_keys)
+        except Exception:
+            continue  # user not found
         user_uuid = user['uuid']
         access_keys = search_metadata(f'/search/?type=AccessKey&description={kp_name}&user.uuid={user_uuid}'
                                       f'&sort=-date_created', key=connection.ff_keys)
