@@ -256,6 +256,10 @@ export const useFetch = (url, args) => {
     return response;
 }
 
+export const useFetcher = (url, args) => {
+    return useFetch(url, {...args, nofetch: true});
+}
+
 // This useFetchFunction React hook, like useFetch, is also used to centrally facilitate HTTP fetches,
 // and also ties into a globally tracked list of all outstanding (and completed) fetches. But this
 // is simpler. It doesn't setup any state like useFetch, except for the aforementioned global

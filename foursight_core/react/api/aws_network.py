@@ -43,11 +43,11 @@ def _filter_boto_description_list(description: dict,
                     results.append(create_record(None, item) if create_record else item)
             elif predicate is None:
                 results.append(create_record(None, item) if create_record else item)
-    return results
+    return sorted(results, key=lambda value: value["name"]) if create_record else results
 
 
 @memoize
-def get_aws_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: Optional[bool] = None) -> list:
+def aws_get_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: bool = False) -> list:
     """
     Returns the list of AWS VPCs which have tags names matching the given tag predicate.
     This predicate may be (1) a string in which case it is used to match (case-sensitive) the
@@ -122,12 +122,11 @@ def get_aws_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None, r
     ec2 = boto3.client('ec2')
     vpcs = ec2.describe_vpcs()
     vpcs = _filter_boto_description_list(vpcs, "Vpcs", predicate, create_record if not raw else None)
-    vpcs = sorted(vpcs, key=lambda value: value["name"]) if not raw else vpcs
     return vpcs
 
 
 @memoize
-def get_aws_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: Optional[bool] = None) -> list:
+def aws_get_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: bool = False) -> list:
     """
     Returns the list of AWS Subnets which have tags names matching the given tag predicate.
     This predicate may be (1) a string in which case it is used to match (case-sensitive) the
@@ -213,12 +212,11 @@ def get_aws_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
     ec2 = boto3.client('ec2')
     subnets = ec2.describe_subnets()
     subnets = _filter_boto_description_list(subnets, "Subnets", predicate, create_record if not raw else None)
-    subnets = sorted(subnets, key=lambda value: value["name"]) if not raw else subnets
     return subnets
 
 
 @memoize
-def get_aws_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: Optional[bool] = None) -> list:
+def aws_get_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: bool = False) -> list:
     """
     Returns the list of AWS Security Groups which have tags names matching the given tag predicate.
     This predicate may be (1) a string in which case it is used to match (case-sensitive) the
@@ -314,11 +312,11 @@ def get_aws_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]
     ec2 = boto3.client('ec2')
     security_groups = ec2.describe_security_groups()
     security_groups = _filter_boto_description_list(security_groups, "SecurityGroups", predicate, create_record if not raw else None)
-    security_groups = sorted(security_groups, key=lambda value: value["name"]) if not raw else security_groups
     return security_groups
 
+
 @memoize
-def get_aws_security_group_rules(security_group_id: str, direction: Optional[str] = None, raw: Optional[bool] = None) -> list:
+def aws_get_security_group_rules(security_group_id: str, direction: Optional[str] = None, raw: bool = False) -> list:
     def create_record(item: dict) -> dict:
         #
         # Example record from boto3.describe_security_group_rules:
@@ -357,19 +355,27 @@ def get_aws_security_group_rules(security_group_id: str, direction: Optional[str
         security_groups_rules = sorted(security_group_rules, key=lambda value: value["id"])
     return security_group_rules
 
+
 @memoize
-def get_aws_network(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: Optional[bool] = None) -> list:
+def aws_get_network(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: bool = False) -> list:
     """
     Returns AWS network info, i.e. WRT VPCs, Subnets, and Security Groups.
     """
-    vpcs = get_aws_vpcs(predicate, raw)
-    # Copy because we're going to modify and it's memoized.
-    vpcs = copy.deepcopy(vpcs)
-    subnets = get_aws_subnets(predicate, raw)
-    sgs = get_aws_security_groups(predicate, raw)
+    vpcs = aws_get_vpcs(predicate, raw)
+    vpcs = copy.deepcopy(vpcs)  # Copy as we're going to modify and it's memoized.
+    subnets = aws_get_subnets(predicate, raw)
+    sgs = aws_get_security_groups(predicate, raw)
     vpc_property = "vpc" if not raw else "VpcId"
     id_property = "id" if not raw else "VpcId"
     for vpc in vpcs:
         vpc["subnets"] = [subnet for subnet in subnets if subnet[vpc_property] == vpc[id_property]]
         vpc["security_groups"] = [sg for sg in sgs if sg[vpc_property] == vpc[id_property]]
     return vpcs
+
+
+def aws_network_cache_clear():
+    aws_get_vpcs.cache_clear()
+    aws_get_subnets.cache_clear()
+    aws_get_security_groups.cache_clear()
+    aws_get_security_group_rules.cache_clear()
+    aws_get_network.cache_clear()

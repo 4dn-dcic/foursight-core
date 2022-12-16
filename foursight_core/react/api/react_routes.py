@@ -392,6 +392,41 @@ class ReactRoutes:
         args = get_request_args(request)
         return app.core.reactapi_aws_network(request, env, network, args=args)
 
+    @route("/{env}/aws/stacks", authorize=True)
+    def reactapi_route_aws_stacks(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info on AWS Stacks.
+        """
+        return app.core.reactapi_aws_stacks(app.current_request.to_dict(), env)
+
+    @route("/{env}/aws/stacks/{stack}", authorize=True)
+    def reactapi_route_aws_stack(env: str, stack: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info for the given/named AWS Stack.
+        """
+        return app.core.reactapi_aws_stack(app.current_request.to_dict(), env, stack)
+
+    @route("/{env}/aws/stacks/{stack}/outputs", authorize=True)
+    def reactapi_route_aws_stack_outputs(env: str, stack: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns outputs for the given/named AWS Stack.
+        """
+        return app.core.reactapi_aws_stack_outputs(app.current_request.to_dict(), env, stack)
+
+    @route("/{env}/aws/stacks/{stack}/parameters", authorize=True)
+    def reactapi_route_aws_stack_parameters(env: str, stack: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns parameters for the given/named AWS Stack.
+        """
+        return app.core.reactapi_aws_stack_parameters(app.current_request.to_dict(), env, stack)
+
+    @route("/{env}/aws/stacks/{stack}/resources", authorize=True)
+    def reactapi_route_aws_stack_resources(env: str, stack: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns resources for the given/named AWS Stack.
+        """
+        return app.core.reactapi_aws_stack_resources(app.current_request.to_dict(), env, stack)
+
     @route("/__reloadlambda__", authorize=True)
     def reactapi_route_reload_lambda() -> Response:  # noqa: implicit @staticmethod via @route
         """

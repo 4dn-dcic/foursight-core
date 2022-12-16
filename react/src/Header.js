@@ -42,9 +42,9 @@ const MainMenu = ({ header }) => {
                 <MenuItem path="/info" label="General Info" />
                 <MenuItem path="/checks" label="Checks" />
                 <MenuSeparator />
-                <MenuItem path="/users" label="Users" />
-                <MenuItem path="/network" label="Network" />
+                <MenuItem path="/aws/infrastructure" label="Infrastructure" />
                 <MenuItem path="/aws/s3" label="S3" />
+                <MenuItem path="/users" label="Users" />
                 <MenuSeparator />
                 <MenuItem path="/env" label="Environments" />
                 <MenuItem path="/accounts" label="Accounts" />

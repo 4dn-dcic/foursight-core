@@ -37,7 +37,7 @@ const HomePage = (props) => {
                     <li> To view Foursight <b><Link to="/env">environments</Link></b> info click <b><Link to="/env"><u>here</u></Link></b>. </li>
                     <li> To view Foursight <b><Link to="/users">users</Link></b> click <b><Link to="/users"><u>here</u></Link></b>.  </li>
                     <li> To view <b><Link to="/aws/s3">AWS S3</Link></b> info click <b><Link to="/aws/s3"><u>here</u></Link></b>.  </li>
-                    <li> To view <b><Link to="/network">AWS network</Link></b> info click <b><Link to="/network"><u>here</u></Link></b>.  </li>
+                    <li> To view <b><Link to="/aws/infrastructure">AWS Infrastructure</Link></b> info click <b><Link to="/aws/infrastructure"><u>here</u></Link></b>.  </li>
                     <li> To view other Foursight <b><Link to="/accounts">accounts</Link></b> click <b><Link to="/accounts"><u>here</u></Link></b>.  </li>
                 </ul>
             </div>

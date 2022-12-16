@@ -2,28 +2,27 @@ import React from 'react';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import Uuid from 'react-uuid';
-import { RingSpinner, PuffSpinnerInline, StandardSpinner } from '../Spinners';
-import { useReadOnlyMode } from '../ReadOnlyMode';
-import { useFetch, useFetchFunction } from '../utils/Fetch';
-import { FetchErrorBox, RefreshButton } from '../Components';
-import Char from '../utils/Char';
-import Clipboard from '../utils/Clipboard';
-import Client from '../utils/Client';
-import Env from '../utils/Env';
-import Image from '../utils/Image';
-import Json from '../utils/Json';
-import Server from '../utils/Server';
-import Str from '../utils/Str';
-import TableHead from '../TableHead';
-import Time from '../utils/Time';
-import Type from '../utils/Type';
-import Yaml from '../utils/Yaml';
-import Styles from '../Styles';
+import { RingSpinner, PuffSpinnerInline, StandardSpinner } from '../../Spinners';
+import { useReadOnlyMode } from '../../ReadOnlyMode';
+import { useFetch, useFetcher, useFetchFunction } from '../../utils/Fetch';
+import { FetchErrorBox, RefreshButton } from '../../Components';
+import Char from '../../utils/Char';
+import Clipboard from '../../utils/Clipboard';
+import Client from '../../utils/Client';
+import Env from '../../utils/Env';
+import Image from '../../utils/Image';
+import Json from '../../utils/Json';
+import Server from '../../utils/Server';
+import Str from '../../utils/Str';
+import TableHead from '../../TableHead';
+import Time from '../../utils/Time';
+import Type from '../../utils/Type';
+import Yaml from '../../utils/Yaml';
+import Styles from '../../Styles';
 
 const tdLabelStyle = {
     color: "var(--box-fg)",
     fontWeight: "bold",
-    fontSize: "small",
     paddingTop: "1pt",
     verticalAlign: "top",
     width: "5%",
@@ -31,7 +30,7 @@ const tdLabelStyle = {
     whiteSpace: "nowrap"
 }
 const tdContentStyle = {
-    verticalAlign: "top"
+    verticalAlign: "top",
 }
 
 
@@ -53,7 +52,7 @@ const VpcBox = (props) => {
     }, [props.showingAllSubnets, props.showingAllSecurityGroups]);
 
     return <>
-        <div className="box margin" style={{}}>
+        <div className="box margin" style={{marginBottom:"8pt"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <b>VPC</b>: <b style={{color:"black"}}>{props.vpc?.name}</b>
             </div>
@@ -64,23 +63,23 @@ const VpcBox = (props) => {
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Stack:</td>
-                    <td>{props.vpc?.stack}</td>
+                    <td style={tdContentStyle}>{props.vpc?.stack}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>CIDR:</td>
-                    <td>{props.vpc?.cidr}</td>
+                    <td style={tdContentStyle}>{props.vpc?.cidr}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Status:</td>
-                    <td>{props.vpc?.status}</td>
+                    <td style={tdContentStyle}>{props.vpc?.status}</td>
                 </tr>
-                <tr>
-                    <td style={tdLabelStyle} onClick={toggleSubnets} className="pointer">Subnets:</td>
-                    <td onClick={toggleSubnets} className="pointer">
+                <tr onClick={toggleSubnets} className="pointer">
+                    <td style={tdLabelStyle}>Subnets:</td>
+                    <td>
                         {(showingSubnets) ? <>
-                            <small><u>Hide</u>&nbsp;{Char.DownArrowHollow}&nbsp;&nbsp;({props.vpc?.subnets?.length})</small>
+                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u>&nbsp;&nbsp;({props.vpc?.subnets?.length})</small>
                         </>:<>
-                            <small><u>Show</u>&nbsp;{Char.UpArrowHollow}&nbsp;&nbsp;({props.vpc?.subnets?.length})</small>
+                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u>&nbsp;&nbsp;({props.vpc?.subnets?.length})</small>
                         </>}
                     </td>
                 </tr>
@@ -94,13 +93,13 @@ const VpcBox = (props) => {
                         </td>
                     </tr>
                 </>}
-                <tr>
-                    <td style={tdLabelStyle} onClick={toggleSecurityGroups} className="pointer">Security Groups:</td>
-                    <td onClick={toggleSecurityGroups} className="pointer">
+                <tr onClick={toggleSecurityGroups} className="pointer">
+                    <td style={tdLabelStyle}>Security Groups:</td>
+                    <td>
                         {showingSecurityGroups ? <>
-                            <small><u>Hide</u>&nbsp;{Char.DownArrowHollow}&nbsp;&nbsp;({props.vpc?.security_groups?.length})</small>
+                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u>&nbsp;&nbsp;({props.vpc?.security_groups?.length})</small>
                         </>:<>
-                            <small><u>Show</u>&nbsp;{Char.UpArrowHollow}&nbsp;&nbsp;({props.vpc?.security_groups?.length})</small>
+                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u>&nbsp;&nbsp;({props.vpc?.security_groups?.length})</small>
                         </>}
                     </td>
                 </tr>
@@ -121,7 +120,7 @@ const VpcBox = (props) => {
 
 const SubnetBox = (props) => {
     return <>
-        <div className={"box margin" + (props.subnet?.type === "private" ? " darken" : " lighten")} style={{width:"100%",fontSize:"small"}}>
+        <div className={"box margin" + (props.subnet?.type === "private" ? " darken" : " lighten")} style={{width:"100%"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <b>Subnet</b>: <b style={{color:"black"}}>{props.subnet?.name}</b>
                 <small style={{float:"right"}}>
@@ -132,30 +131,30 @@ const SubnetBox = (props) => {
                     </>}
                  </small>
             </div>
-            <table width="100%" style={{fontSize:"small"}}><tbody>
+            <table width="100%"><tbody>
                 <tr>
                     <td style={tdLabelStyle}>ID:</td>
                     <td style={tdContentStyle}>{props.subnet?.id}<br /><small>{props.subnet?.subnet_arn}</small></td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Stack:</td>
-                    <td>{props.subnet?.stack}</td>
+                    <td style={tdContentStyle}>{props.subnet?.stack}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>CIDR:</td>
-                    <td>{props.subnet?.cidr}</td>
+                    <td style={tdContentStyle}>{props.subnet?.cidr}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Zone:</td>
-                    <td>{props.subnet?.zone}</td>
+                    <td style={tdContentStyle}>{props.subnet?.zone}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>VPC:</td>
-                    <td>{props.subnet?.vpc}</td>
+                    <td style={tdContentStyle}>{props.subnet?.vpc}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Status:</td>
-                    <td>{props.subnet?.status}</td>
+                    <td style={tdContentStyle}>{props.subnet?.status}</td>
                 </tr>
             </tbody></table>
         </div>
@@ -188,7 +187,7 @@ const SecurityGroupBox = (props) => {
     }, [props.showingAllRules]);
 
     return <>
-        <div className="box margin lighten" style={{width:"100%",fontSize:"small"}}>
+        <div className="box margin lighten" style={{width:"100%"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <div style={{float:"right",marginRight:"3pt"}}>
                     <small className="pointer" style={{fontWeight:showingRules ? "bold" : "normal"}} onClick={toggleRules}>
@@ -197,14 +196,14 @@ const SecurityGroupBox = (props) => {
                 </div>
                 <b>Security Group</b>: <b style={{color:"black"}}>{props.security_group?.name}</b>
             </div>
-            <table width="100%" style={{fontSize:"small"}}><tbody>
+            <table width="100%"><tbody>
                 <tr>
                     <td style={tdLabelStyle}>ID:</td>
                     <td style={tdContentStyle}>{props.security_group?.id}<br /><small>{props.security_group?.security_group}</small></td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Stack:</td>
-                    <td>{props.security_group?.stack}</td>
+                    <td style={tdContentStyle}>{props.security_group?.stack}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Description:</td>
@@ -212,11 +211,11 @@ const SecurityGroupBox = (props) => {
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>VPC:</td>
-                    <td>{props.security_group?.vpc}</td>
+                    <td style={tdContentStyle}>{props.security_group?.vpc}</td>
                 </tr>
-                <tr>
-                    <td style={tdLabelStyle} onClick={toggleInboundRules} className="pointer">Inbound Rules:</td>
-                    <td onClick={toggleInboundRules} className="pointer">
+                <tr onClick={toggleInboundRules} className="pointer">
+                    <td style={tdLabelStyle}>Inbound Rules:</td>
+                    <td>
                         {(showingInboundRules) ? <>
                             <small><u>Hide</u>&nbsp;{Char.DownArrowHollow}</small>
                         </>:<>
@@ -231,13 +230,13 @@ const SecurityGroupBox = (props) => {
                         </td>
                     </tr>
                 </>}
-                <tr>
-                    <td style={tdLabelStyle} onClick={toggleOutboundRules} className="pointer">Outbound Rules:</td>
-                    <td onClick={toggleOutboundRules} className="pointer">
+                <tr onClick={toggleOutboundRules} className="pointer">
+                    <td style={tdLabelStyle}>Outbound Rules:</td>
+                    <td>
                         {(showingOutboundRules) ? <>
-                            <small><u>Hide</u>&nbsp;{Char.DownArrowHollow}</small>
+                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
-                            <small><u>Show</u>&nbsp;{Char.UpArrowHollow}</small>
+                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
                     </td>
                 </tr>
@@ -342,11 +341,11 @@ const SecurityGroupRuleBox = (props) => {
     }
 
     return <>
-        <div className="box" style={{background:"#FEFEFE",width:"100%",fontSize:"small"}}>
+        <div className="box" style={{background:"#FEFEFE",width:"100%"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <b>Security Group Rule</b>: <b style={{color:"black"}}>{props.security_group_rule?.id}</b>
             </div>
-            <table width="100%" style={{fontSize:"small"}}><tbody>
+            <table width="100%"><tbody>
                 <tr>
                     <td style={tdLabelStyle}>Direction:</td>
                     <td style={tdContentStyle}>{props.security_group_rule?.egress ? "Outbound" : "Inbound"}</td>
@@ -364,7 +363,7 @@ const SecurityGroupRuleBox = (props) => {
                 {(getPorts(props.security_group_rule)) &&
                     <tr>
                         <td style={tdLabelStyle}>Port:</td>
-                        <td>{getPorts(props.security_group_rule)}</td>
+                        <td style={tdContentStyle}>{getPorts(props.security_group_rule)}</td>
                     </tr>
                 }
                 {props.security_group_rule?.cidr &&
@@ -381,7 +380,7 @@ const SecurityGroupRuleBox = (props) => {
                 }
                 <tr>
                     <td style={tdLabelStyle}>Security Group:</td>
-                    <td>{props.security_group_rule?.security_group}</td>
+                    <td style={tdContentStyle}>{props.security_group_rule?.security_group}</td>
                 </tr>
             </tbody></table>
         </div>
@@ -421,7 +420,7 @@ const VpcsPanel = (props) => {
         setShowingAllSecurityGroups(value => { return !value });
     }
 
-    return <table style={{maxWidth:"450pt"}}><tbody><tr><td>
+    return <>
         <div>
            <div style={{float:"right",marginRight:"3pt"}}>
                 <small className="pointer" style={{fontWeight:showingAllSubnets ? "bold" : "normal"}} onClick={toggleShowAllSubnets}>
@@ -434,13 +433,12 @@ const VpcsPanel = (props) => {
            </div>
            <b>AWS VPCs</b>&nbsp;&nbsp;({vpcs?.length})
         </div>
-        <div style={{width:"fit-content",minWidth:"400pt"}}>
+        <div style={{width:"100%"}}>
             { vpcs.map(vpc => <div key={vpc.id}>
                 <VpcBox vpc={vpc} showingAllSubnets={showingAllSubnets} showingAllSecurityGroups={showingAllSecurityGroups} />
-                <div style={{height:"4pt"}} />
             </div>)}
         </div>
-    </td></tr></tbody></table>
+    </>
 }
 
 const SubnetsPanel = (props) => {
@@ -466,17 +464,15 @@ const SubnetsPanel = (props) => {
         fetchSubnets();
     }, []);
 
-    return <table style={{maxWidth:"450pt"}}><tbody><tr><td>
-        <div>
-           <b>AWS Subnets</b>&nbsp;&nbsp;({subnets?.length})
-        </div>
+    return <>
+        <div><b>AWS Subnets</b>&nbsp;&nbsp;({subnets?.length})</div>
         <div style={{width:"fit-content",minWidth:"400pt"}}>
             { subnets.map(subnet => <div key={subnet.id}>
                 <SubnetBox subnet={subnet} />
                 <div style={{height:"4pt"}} />
             </div>)}
         </div>
-    </td></tr></tbody></table>
+    </>
 }
 
 const SecurityGroupsPanel = (props) => {
@@ -502,7 +498,7 @@ const SecurityGroupsPanel = (props) => {
         fetchSecurityGroups();
     }, []);
 
-    return <table style={{maxWidth:"450pt"}}><tbody><tr><td>
+    return <>
         <div>
            <b>AWS Security Groups</b>&nbsp;&nbsp;({sgs?.length})
         </div>
@@ -512,33 +508,47 @@ const SecurityGroupsPanel = (props) => {
                 <div style={{height:"4pt"}} />
             </div>)}
         </div>
-    </td></tr></tbody></table>
+    </>
 }
 
-const NetworkInfoPage = () => {
+const InfrastructurePage = () => {
 
     const [ showingVpcsPanel, setShowingVpcsPanel ] = useState(true);
     const [ showingSubnetsPanel, setShowingSubnetsPanel ] = useState(false);
     const [ showingSecurityGroupsPanel, setShowingSecurityGroupsPanel ] = useState(false);
+    const [ stacks, setStacks ] = useState([]);
 
     function toggleVpcsPanel()           { setShowingVpcsPanel(value => !value); }
     function toggleSubnetsPanel()        { setShowingSubnetsPanel(value => !value); }
     function toggleSecurityGroupsPanel() { setShowingSecurityGroupsPanel(value => !value); }
 
-    return  <table><tbody><tr>
+    function showingStack(stackName = null) {
+        return stackName ? stacks.indexOf(stackName) >= 0 : stacks.length > 0;
+    }
+    function toggleStack(stackName) {
+        if (showingStack(stackName)) {
+            const i = stacks.indexOf(stackName);
+            if (i >= 0) { stacks.splice(i, 1); setStacks([...stacks]); }
+        }
+        else {
+            setStacks([stackName, ...stacks]);
+        }
+    }
+
+    return <table><tbody><tr>
         <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-            <div>
-                <b>AWS Network</b>
-            </div>
-            <div className="box margin" style={{width:"120pt"}}>
+            <div><b>AWS Network</b></div>
+            <div className="box margin" style={{width:"100%",marginBottom:"6pt"}}>
                 <div className="pointer" style={{fontWeight:showingVpcsPanel ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleVpcsPanel}>VPCs</div>
                 <div className="pointer" style={{fontWeight:showingSubnetsPanel ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleSubnetsPanel}>Subnets</div>
                 <div className="pointer" style={{fontWeight:showingSecurityGroupsPanel ? "bold" : "normal"}} onClick={toggleSecurityGroupsPanel}>Security Groups</div>
             </div>
+            <StackList toggleStack={toggleStack} showingStack={showingStack} />
         </td>
-        {(showingVpcsPanel) &&
+        {(showingVpcsPanel || showingStack()) &&
             <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-                <VpcsPanel />
+                { showingVpcsPanel && <VpcsPanel /> }
+                <StackBoxes stacks={stacks} hideStack={toggleStack} />
             </td>
         }
         {(showingSubnetsPanel) &&
@@ -554,4 +564,212 @@ const NetworkInfoPage = () => {
     </tr></tbody></table>
 }
 
-export default NetworkInfoPage;
+const StackList = (props) => {
+    const stacks = useFetcher(Server.Url("/aws/stacks"));
+    useEffect(() => {
+        stacks.fetch();
+    }, []);
+    const styleLast = { cursor: "pointer" };
+    const styleNotLast = { ...styleLast, borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt" };
+    return <>
+        <div><b>AWS Stacks</b></div>
+        <div className="box" style={{whiteSpace:"nowrap"}}>
+            {stacks.map((stack, i) => {
+                function toggleStack() { props.toggleStack(stack.name); }
+                const style = {...(i + 1 < stacks.length ? styleNotLast : styleLast), ...(props.showingStack(stack.name) ? {fontWeight:"bold"} : {})};
+                return <div key={stack.name} style={style} onClick={toggleStack}>{stack.name}</div>
+            })}
+        </div>
+    </>
+}
+
+const StackBoxes = (props) => {
+    return <>
+        { props.stacks.map(stackName =>
+            <StackBox key={stackName} stackName={stackName} hideStack={props.hideStack} />
+        )}
+    </>
+}
+
+const StackBox = (props) => {
+    const stack = useFetcher(Server.Url(`/aws/stacks/${props.stackName}`));
+    const [ showingOutputs, setShowingOutputs ] = useState(false);
+    const toggleOutputs = () => setShowingOutputs(!showingOutputs);
+    const [ showingParameters, setShowingParameters ] = useState(false);
+    const toggleParameters = () => setShowingParameters(!showingParameters);
+    const [ showingResources, setShowingResources ] = useState(false);
+    const toggleResources = () => setShowingResources(!showingResources);
+    const hideStack = () => props.hideStack(stack.data?.name);
+    useEffect(() => {
+        stack.fetch();
+    }, []);
+    return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
+        <div><b>AWS Stack: {props.stackName}</b></div>
+        <div className="box margin">
+            <table width="100%"><tbody>
+                <tr>
+                    <td style={tdLabelStyle}>Name:</td>
+                    <td style={{...tdContentStyle,wordBreak:"break-all"}}>
+                        <b style={{float:"right",cursor:"pointer",marginTop:"-2pt"}} onClick={hideStack}>{Char.X}</b>
+                        <span className="tool-tip" data-text={stack.data?.id}>{stack.data?.name}</span><br />
+                        <small>{stack.data?.id}</small>
+                    </td>
+                </tr>
+                <tr>
+                    <td style={tdLabelStyle}>Role:</td>
+                    <td style={tdContentStyle}>{stack.data?.role_arn || Char.EmptySet}</td>
+                </tr>
+                <tr>
+                    <td style={tdLabelStyle}>Description:</td>
+                    <td style={tdContentStyle}>{stack.data?.description}</td>
+                </tr>
+                <tr>
+                    <td style={tdLabelStyle}>Status:</td>
+                    <td style={tdContentStyle}>{stack.data?.status}</td>
+                </tr>
+                <tr>
+                    <td style={tdLabelStyle}>Created:</td>
+                    <td style={tdContentStyle}>{stack.data?.created}</td>
+                </tr>
+                <tr>
+                    <td style={tdLabelStyle}>Updated:</td>
+                    <td style={tdContentStyle}>{stack.data?.updated}</td>
+                </tr>
+                <tr className="pointer" onClick={toggleOutputs}>
+                    <td style={tdLabelStyle}>Outputs:</td>
+                    <td style={tdContentStyle}>
+                        { showingOutputs ? <>
+                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
+                        </>:<>
+                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
+                        </>}
+                    </td>
+                </tr>
+                { showingOutputs && <>
+                    <tr>
+                        <td colSpan="2" style={{paddingTop:"2pt"}}>
+                            <StackOutputs stackName={stack.data?.name} />
+                        </td>
+                    </tr>
+                </>}
+                <tr className="pointer" onClick={toggleParameters}>
+                    <td style={tdLabelStyle}>Parameters:</td>
+                    <td style={tdContentStyle}>
+                        { showingParameters ? <>
+                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
+                        </>:<>
+                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
+                        </>}
+                    </td>
+                </tr>
+                { showingParameters && <>
+                    <tr>
+                        <td colSpan="2" style={{paddingTop:"2pt"}}>
+                            <StackParameters stackName={stack.data?.name} />
+                        </td>
+                    </tr>
+                </>}
+                <tr className="pointer" onClick={toggleResources}>
+                    <td style={tdLabelStyle}>Resources:</td>
+                    <td style={tdContentStyle}>
+                        { showingResources ? <>
+                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
+                        </>:<>
+                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
+                        </>}
+                    </td>
+                </tr>
+                { showingResources && <>
+                    <tr>
+                        <td colSpan="2" style={{paddingTop:"2pt"}}>
+                            <StackResources stackName={stack.data?.name} />
+                        </td>
+                    </tr>
+                </>}
+            </tbody></table>
+        </div>
+    </div>
+}
+
+const StackOutputs = (props) => {
+    const outputs = useFetcher(Server.Url(`/aws/stacks/${props.stackName}/outputs`));
+    useEffect(() => {
+        outputs.fetch();
+    }, []);
+    return <div style={{maxWidth:"480pt"}}>
+        <div className="box lighten">
+            { outputs.empty ? <>
+                { !outputs.loading && <small>No stack outputs.</small> }
+            </>:<>
+                <ul style={{marginBottom:"0"}}>
+                    { outputs.data && Object.keys(outputs.data)?.map(output => <li key={output}>
+                        <b>{output}</b> <br />
+                        <div style={{wordBreak:"break-all"}}>
+                            { outputs.data[output] === "********" ? <>
+                                <span style={{color:"red"}}>REDACTED</span>
+                            </>:<>
+                                {outputs.data[output]}
+                            </>}
+                        </div>
+                    </li>)}
+                </ul>
+            </>}
+        </div>
+    </div>
+}
+
+const StackParameters = (props) => {
+    const parameters = useFetcher(Server.Url(`/aws/stacks/${props.stackName}/parameters`));
+    useEffect(() => {
+        parameters.fetch();
+    }, []);
+    return <div style={{maxWidth:"480pt"}}>
+        <div className="box lighten">
+            { parameters.empty ? <>
+                { !parameters.loading && <small>No stack parameters.</small> }
+            </>:<>
+                <ul style={{marginBottom:"0"}}>
+                    { parameters.data && Object.keys(parameters.data)?.map(parameter => <li key={parameter}>
+                        <b>{parameter}</b> <br />
+                        <div style={{wordBreak:"break-all"}}>
+                            { parameters.data[parameter] === "********" ? <>
+                                <span style={{color:"red"}}>REDACTED</span>
+                            </>:<>
+                                {parameters.data[parameter]}
+                            </>}
+                        </div>
+                    </li>)}
+                </ul>
+            </>}
+        </div>
+    </div>
+}
+
+const StackResources = (props) => {
+    const resources = useFetcher(Server.Url(`/aws/stacks/${props.stackName}/resources`));
+    useEffect(() => {
+        resources.fetch();
+    }, []);
+    return <div style={{maxWidth:"480pt"}}>
+        <div className="box lighten">
+            { resources.empty ? <>
+                { !resources.loading && <small>No stack resources.</small> }
+            </>:<>
+                <ul style={{marginBottom:"0"}}>
+                    { resources.data && Object.keys(resources.data)?.map(resource => <li key={resource}>
+                        <b>{resource}</b> <br />
+                        <div style={{wordBreak:"break-all"}}>
+                            { resources.data[resource] === "********" ? <>
+                                <span style={{color:"red"}}>REDACTED</span>
+                            </>:<>
+                                {resources.data[resource]}
+                            </>}
+                        </div>
+                    </li>)}
+                </ul>
+            </>}
+        </div>
+    </div>
+}
+
+export default InfrastructurePage;

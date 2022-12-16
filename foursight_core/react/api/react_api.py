@@ -17,7 +17,15 @@ from dcicutils import ff_utils
 from dcicutils.misc_utils import ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from ...app import app
+from .aws_network import (
+    aws_get_network, aws_get_security_groups,
+    aws_get_security_group_rules, aws_get_subnets, aws_get_vpcs, aws_network_cache_clear
+)
 from .aws_s3 import AwsS3
+from .aws_stacks import (
+    aws_get_stack, aws_get_stacks,
+    aws_get_stack_outputs, aws_get_stack_parameters, aws_get_stack_resources, aws_stacks_cache_clear
+)
 from .checks import Checks
 from .cookie_utils import create_delete_cookie_string
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
@@ -30,7 +38,6 @@ from .misc_utils import (
     memoize,
     sort_dictionary_by_case_insensitive_keys
 )
-from .aws_vpc_etc_utils import get_aws_network, get_aws_security_groups, get_aws_security_group_rules, get_aws_subnets, get_aws_vpcs
 from .react_routes import ReactRoutes
 from .react_api_base import ReactApiBase
 from .react_ui import ReactUi
@@ -1058,7 +1065,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         elif vpc == "all":
             vpc = None
         raw = args.get("raw") == "true"
-        return self.create_success_response(get_aws_vpcs(vpc, raw))
+        return self.create_success_response(aws_get_vpcs(vpc, raw))
 
     def reactapi_aws_subnets(self, request: dict, env: str, subnet: Optional[str] = None, args: Optional[dict] = None) -> Response:
         """
@@ -1074,7 +1081,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         elif subnet == "all":
             subnet = None
         raw = args.get("raw") == "true"
-        return self.create_success_response(get_aws_subnets(subnet, raw))
+        return self.create_success_response(aws_get_subnets(subnet, raw))
 
     def reactapi_aws_security_groups(self, request: dict, env: str, security_group: Optional[str] = None, args: Optional[dict] = None) -> Response:
         """
@@ -1090,7 +1097,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         elif security_group == "all":
             security_group = None
         raw = args.get("raw") == "true"
-        return self.create_success_response(get_aws_security_groups(security_group, raw))
+        return self.create_success_response(aws_get_security_groups(security_group, raw))
 
     def reactapi_aws_security_group_rules(self, request: dict, env: str, security_group: Optional[str] = None, args: Optional[dict] = None) -> Response:
         """
@@ -1100,7 +1107,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         raw = args.get("raw") == "true"
         direction = args.get("direction")
-        return self.create_success_response(get_aws_security_group_rules(security_group, direction, raw))
+        return self.create_success_response(aws_get_security_group_rules(security_group, direction, raw))
 
     def reactapi_aws_network(self, request: dict, env: str, network: Optional[str] = None, args: Optional[dict] = None) -> Response:
         """
@@ -1115,7 +1122,37 @@ class ReactApi(ReactApiBase, ReactRoutes):
         elif network == "all":
             network = None
         raw = args.get("raw") == "true"
-        return self.create_success_response(get_aws_network(network, raw))
+        return self.create_success_response(aws_get_network(network, raw))
+
+    def reactapi_aws_stacks(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoints: GET /{env}/aws/stacks
+        """
+        return self.create_success_response(aws_get_stacks())
+
+    def reactapi_aws_stack(self, request: dict, env: str, stack: str) -> Response:
+        """
+        Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/outputs
+        """
+        return self.create_success_response(aws_get_stack(stack))
+
+    def reactapi_aws_stack_outputs(self, request: dict, env: str, stack: str) -> Response:
+        """
+        Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/outputs
+        """
+        return self.create_success_response(aws_get_stack_outputs(stack))
+
+    def reactapi_aws_stack_parameters(self, request: dict, env: str, stack: str) -> Response:
+        """
+        Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/parameters
+        """
+        return self.create_success_response(aws_get_stack_parameters(stack))
+
+    def reactapi_aws_stack_resources(self, request: dict, env: str, stack: str) -> Response:
+        """
+        Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/resources
+        """
+        return self.create_success_response(aws_get_stack_resources(stack))
 
     # ----------------------------------------------------------------------------------------------
     # END OF EXPERIMENTAL - /accounts page
@@ -1149,8 +1186,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._cached_accounts_from_s3 = None
         self._get_env_and_bucket_info.cache_clear()
         self._get_check_result_bucket_name.cache_clear()
-        self.reactapi_users_institutions.cache_clear()
-        self.reactapi_users_projects.cache_clear()
+        self._get_user_projects.cache_clear()
+        self._get_user_institutions.cache_clear()
+        aws_network_cache_clear()
+        aws_stacks_cache_clear()
         return self.create_success_response({"status": "Caches cleared."})
 
     @staticmethod

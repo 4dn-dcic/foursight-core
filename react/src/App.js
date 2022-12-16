@@ -17,7 +17,7 @@ import HomePage from './pages/HomePage';
 import InfoPage from './pages/InfoPage';
 import LoginPage from './pages/LoginPage';
 import GacComparePage from './pages/GacComparePage';
-import NetworkInfoPage from './pages/NetworkInfoPage';
+import InfrastructurePage from './pages/aws/InfrastructurePage';
 import NotFoundPage from './pages/NotFoundPage';
 import Page from './Page';
 import RedirectPage from './pages/RedirectPage';
@@ -144,9 +144,9 @@ const App = () => {
                             <AwsS3Page />
                         </Page.AuthorizationRequired>
                     }/>
-                    <Route path="/api/react/:environ/network" element={
+                    <Route path="/api/react/:environ/aws/infrastructure" element={
                         <Page.AuthorizationRequired>
-                            <NetworkInfoPage />
+                            <InfrastructurePage />
                         </Page.AuthorizationRequired>
                     }/>
                     <Route path="/api/react/:environ/forbidden" element={
