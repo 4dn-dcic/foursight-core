@@ -1,4 +1,5 @@
 from dcicutils.ecs_utils import ECSUtils
+from dcicutils.env_utils import is_cgap_env
 from .helpers.confchecks import *
 
 
@@ -45,18 +46,23 @@ def update_ecs_application_versions(connection, **kwargs):
     client = ECSUtils()
     cluster_name = kwargs.get('cluster_name')
     cluster_arns = client.list_ecs_clusters()
+    env = connection.ff_env
+    if is_cgap_env(env):  # just in case we have a fourfront and a cgap
+        identifier = 'cgap'
+    else:
+        identifier = 'fourfront'
     if not cluster_name:
-        cgap_candidate = list(filter(lambda arn: 'cgap' in arn.lower(), cluster_arns))
-        if not cgap_candidate:
+        app_candidate = list(filter(lambda arn: identifier in arn.lower(), cluster_arns))
+        if not app_candidate:
             check.status = 'FAIL'
             check.summary = 'No clusters could be resolved from %s' % cluster_arns
-        elif len(cgap_candidate) > 1:
+        elif len(app_candidate) > 1:
             check.status = 'FAIL'
-            check.summary = 'Ambiguous cluster setup (not proceeding): %s' % cgap_candidate
+            check.summary = 'Ambiguous cluster setup (not proceeding): %s' % app_candidate
         else:
-            client.update_all_services(cluster_name=cgap_candidate[0])
+            client.update_all_services(cluster_name=app_candidate[0])
             check.status = 'PASS'
-            check.summary = 'Triggered cluster update for %s - updating all services.' % cgap_candidate[0]
+            check.summary = 'Triggered cluster update for %s - updating all services.' % app_candidate[0]
     else:
         if cluster_name not in cluster_arns:
             check.status = 'FAIL'
