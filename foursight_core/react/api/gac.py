@@ -54,7 +54,7 @@ class Gac:
     def get_gac_info():
         return {
             "name": get_identity_name(),
-            "values": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(get_identity_secrets())),
+            "values": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(get_identity_secrets(), obfuscated="********")),
         }
 
     @staticmethod

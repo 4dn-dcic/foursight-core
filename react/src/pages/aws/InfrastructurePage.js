@@ -516,11 +516,15 @@ const InfrastructurePage = () => {
     const [ showingVpcsPanel, setShowingVpcsPanel ] = useState(true);
     const [ showingSubnetsPanel, setShowingSubnetsPanel ] = useState(false);
     const [ showingSecurityGroupsPanel, setShowingSecurityGroupsPanel ] = useState(false);
+    const [ showingGac, setShowingGac ] = useState(false);
+    const [ showingEcosystem, setShowingEcosystem ] = useState(false);
     const [ stacks, setStacks ] = useState([]);
 
     function toggleVpcsPanel()           { setShowingVpcsPanel(value => !value); }
     function toggleSubnetsPanel()        { setShowingSubnetsPanel(value => !value); }
     function toggleSecurityGroupsPanel() { setShowingSecurityGroupsPanel(value => !value); }
+    function toggleGac()                 { setShowingGac(value => !value); }
+    function toggleEcosystem()           { setShowingEcosystem(value => !value); }
 
     function showingStack(stackName = null) {
         return stackName ? stacks.indexOf(stackName) >= 0 : stacks.length > 0;
@@ -537,18 +541,27 @@ const InfrastructurePage = () => {
 
     return <table><tbody><tr>
         <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
+
             <div><b>AWS Network</b></div>
             <div className="box margin" style={{width:"100%",marginBottom:"6pt"}}>
                 <div className="pointer" style={{fontWeight:showingVpcsPanel ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleVpcsPanel}>VPCs</div>
                 <div className="pointer" style={{fontWeight:showingSubnetsPanel ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleSubnetsPanel}>Subnets</div>
                 <div className="pointer" style={{fontWeight:showingSecurityGroupsPanel ? "bold" : "normal"}} onClick={toggleSecurityGroupsPanel}>Security Groups</div>
             </div>
+
+            <div className="box margin thickborder" style={{width:"100%",marginBottom:"6pt"}}>
+                <div className="pointer" style={{fontWeight:showingGac ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleGac}>Global Application Configuration</div>
+                <div className="pointer" style={{fontWeight:showingEcosystem ? "bold" : "normal"}} onClick={toggleEcosystem}>Ecosystem</div>
+            </div>
+
             <StackList toggleStack={toggleStack} showingStack={showingStack} />
         </td>
-        {(showingVpcsPanel || showingStack()) &&
+        {(showingVpcsPanel || showingStack() || showingGac || showingEcosystem) &&
             <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
                 { showingVpcsPanel && <VpcsPanel /> }
                 <StackBoxes stacks={stacks} hideStack={toggleStack} />
+                { showingEcosystem && <EcosystemBox /> }
+                { showingGac && <GacBox /> }
             </td>
         }
         {(showingSubnetsPanel) &&
@@ -798,6 +811,37 @@ const StackResources = (props) => {
                 </ul>
             </>}
         </div>
+    </div>
+}
+
+const GacBox = (props) => {
+    const info = useFetcher(Server.Url("/info"), { cache: true });
+    useEffect(() => {
+        info.fetch();
+    }, []);
+    return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
+        <div><b>GAC</b>:&nbsp;<b>{info.data?.gac?.name}</b></div>
+        <div className="box margin">
+            <ul style={{marginBottom:"1pt"}}>
+                { info.data?.gac && Object.keys(info.data.gac.values)?.map(name => <li key={name}>
+                    <b>{name}</b> <br />
+                    { info.data.gac.values[name] === "********" ? <i style={{color:"red"}}>REDACTED</i> : info.data.gac.values[name] }
+                </li>)}
+            </ul>
+        </div>
+    </div>
+}
+
+const EcosystemBox = (props) => {
+    const info = useFetcher(Server.Url("/info"), { cache: true });
+    useEffect(() => {
+        info.fetch();
+    }, []);
+    return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
+        <div><b>Ecosystem</b>:&nbsp;<b>{info.data?.buckets?.env}</b></div>
+        <pre className="box margin">
+            {Yaml.Format(info.data?.buckets?.ecosystem)}
+        </pre>
     </div>
 }
 
