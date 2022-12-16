@@ -16,7 +16,7 @@ from foursight_core.run_result import (
 from foursight_core.exceptions import BadCheckOrAction
 from foursight_core.react.api.misc_utils import get_github_url
 from foursight_core.sqs_utils import SQS
-from .react.api.misc_utils import get_function_info
+from foursight_core.react.api.misc_utils import get_function_info
 
 # dmichaels/2022-09-20: Foursight React related addition.
 # Added this to get a handle on the check function kwargs defined via the check_function
