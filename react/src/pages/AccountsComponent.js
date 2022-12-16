@@ -4,7 +4,6 @@ import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
 import { useFetch } from '../utils/Fetch';
 import Server from '../utils/Server';
-import Styles from '../Styles';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';

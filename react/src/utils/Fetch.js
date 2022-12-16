@@ -11,6 +11,7 @@ import Cookie from './Cookie';
 import Debug from './Debug';
 import Json from './Json';
 import Logout from './Logout';
+import Server from './Server';
 import Str from './Str';
 import Type from './Type';
 import Yaml from './Yaml';
@@ -256,6 +257,9 @@ export const useFetch = (url, args) => {
     return response;
 }
 
+// Convenience hook with default to nofetch which it turns out we
+// usually want as we then do the actual fetch from within useEffect.
+//
 export const useFetcher = (url, args) => {
     return useFetch(url, {...args, nofetch: true});
 }
@@ -648,6 +652,9 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
     };
     if (nonofetch) {
         delete args.nofetch;
+    }
+    if (Str.HasValue(args.url) && !args.url.startsWith("https://") && !args.url.startsWith("http://")) {
+        args.url = Server.Url(args.url);
     }
     return args;
 }

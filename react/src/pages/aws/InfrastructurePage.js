@@ -1,24 +1,12 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
-import Uuid from 'react-uuid';
+import { useSearchParams } from 'react-router-dom';
 import { StandardSpinner } from '../../Spinners';
-import { useReadOnlyMode } from '../../ReadOnlyMode';
-import { useFetch, useFetcher, useFetchFunction } from '../../utils/Fetch';
-import { FetchErrorBox, RefreshButton } from '../../Components';
+import { useFetcher } from '../../utils/Fetch';
 import Char from '../../utils/Char';
 import Clipboard from '../../utils/Clipboard';
-import Client from '../../utils/Client';
-import Env from '../../utils/Env';
-import Image from '../../utils/Image';
 import Json from '../../utils/Json';
-import Server from '../../utils/Server';
-import Str from '../../utils/Str';
-import TableHead from '../../TableHead';
-import Time from '../../utils/Time';
-import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
-import Styles from '../../Styles';
 
 const tdLabelStyle = {
     color: "var(--box-fg)",
@@ -33,17 +21,12 @@ const tdContentStyle = {
     verticalAlign: "top",
 }
 
-
 const VpcBox = (props) => {
 
     const [ showingSubnets, setShowingSubnets ] = useState(false);
     const [ showingSecurityGroups, setShowingSecurityGroups ] = useState(false);
 
-    function showSubnets()          { setShowingSubnets(true); }
-    function hideSubnets()          { setShowingSubnets(false); }
     function toggleSubnets()        { showingSubnets ? setShowingSubnets(false) : setShowingSubnets(true); }
-    function showSecurityGroups()   { setShowingSecurityGroups(true); }
-    function hideSecurityGroups()   { setShowingSecurityGroups(false); }
     function toggleSecurityGroups() { showingSecurityGroups ? setShowingSecurityGroups(false) : setShowingSecurityGroups(true); }
 
     useEffect(() => {
@@ -258,20 +241,16 @@ const SecurityGroupRulesBox = (props) => {
 
     function useFetchRules(refresh = false) {
         const args = props.direction === "inbound" ? "?direction=inbound" : (props.direction === "outbound" ? "?direction=outbound" : "");
-        return useFetch({ url: Server.Url(`/aws/security_group_rules/${props.security_group_id}${args}`), nofetch: true, cache: true });
+        return useFetcher(`/aws/security_group_rules/${props.security_group_id}${args}`, { cache: true });
     }
 
     function fetchRules(refresh = false) {
         rules.fetch({ nocache: refresh });
     }
 
-    function refreshRules() {
-        fetchRules(true);
-    }
-
     useEffect(() => {
         fetchRules();
-    }, []);
+    }, [props.direction]);
 
     return <>
         {rules?.map((rule, i) => <div key={rule.id}>
@@ -285,13 +264,13 @@ const SecurityGroupRuleBox = (props) => {
 
     function getType(security_group_rule) {
         if (security_group_rule?.protocol?.toUpperCase() === "TCP") {
-            if ((security_group_rule?.port_from == 22) && (security_group_rule?.port_thru == 22)) {
+            if ((security_group_rule?.port_from === 22) && (security_group_rule?.port_thru === 22)) {
                 return "SSH";
             }
-            else if ((security_group_rule?.port_from == 443) && (security_group_rule?.port_thru == 443)) {
+            else if ((security_group_rule?.port_from === 443) && (security_group_rule?.port_thru === 443)) {
                 return "HTTPS";
             }
-            else if ((security_group_rule?.port_from == 80) && (security_group_rule?.port_thru == 80)) {
+            else if ((security_group_rule?.port_from === 80) && (security_group_rule?.port_thru === 80)) {
                 return "HTTP";
             }
         }
@@ -299,16 +278,16 @@ const SecurityGroupRuleBox = (props) => {
     }
 
     function getProtocol(security_group_rule) {
-        if ((security_group_rule?.port_from == 3) && (security_group_rule?.port_thru == -1)) {
+        if ((security_group_rule?.port_from === 3) && (security_group_rule?.port_thru === -1)) {
             return "Destination Unreachable";
         }
-        else if ((security_group_rule?.port_from == 4) && (security_group_rule?.port_thru == -1)) {
+        else if ((security_group_rule?.port_from === 4) && (security_group_rule?.port_thru === -1)) {
             return "Source Quench";
         }
-        else if ((security_group_rule?.port_from == 8) && (security_group_rule?.port_thru == -1)) {
+        else if ((security_group_rule?.port_from === 8) && (security_group_rule?.port_thru === -1)) {
             return "Echo Request";
         }
-        else if ((security_group_rule?.port_from == 11) && (security_group_rule?.port_thru == -1)) {
+        else if ((security_group_rule?.port_from === 11) && (security_group_rule?.port_thru === -1)) {
             return "Time Exceeded";
         }
         return security_group_rule?.protocol?.toUpperCase();
@@ -318,16 +297,16 @@ const SecurityGroupRuleBox = (props) => {
         if ((security_group_rule?.port_from < 0) && (security_group_rule?.port_thru < 0)) {
             return null;
         }
-        else if ((security_group_rule?.port_from == 3) && (security_group_rule?.port_thru == -1)) {
+        else if ((security_group_rule?.port_from === 3) && (security_group_rule?.port_thru === -1)) {
             return null;
         }
-        else if ((security_group_rule?.port_from == 4) && (security_group_rule?.port_thru == -1)) {
+        else if ((security_group_rule?.port_from === 4) && (security_group_rule?.port_thru === -1)) {
             return null;
         }
-        else if ((security_group_rule?.port_from == 8) && (security_group_rule?.port_thru == -1)) {
+        else if ((security_group_rule?.port_from === 8) && (security_group_rule?.port_thru === -1)) {
             return null;
         }
-        else if ((security_group_rule?.port_from == 11) && (security_group_rule?.port_thru == -1)) {
+        else if ((security_group_rule?.port_from === 11) && (security_group_rule?.port_thru === -1)) {
             return null;
         }
         else {
@@ -389,21 +368,17 @@ const SecurityGroupRuleBox = (props) => {
 
 const VpcsPanel = (props) => {
 
-    const [ args, setArgs ] = useSearchParams();
-    const [ all, setAll ] = useState(args.get("all")?.toLowerCase() === "true")
+    const [ args ] = useSearchParams();
+    const [ all ] = useState(args.get("all")?.toLowerCase() === "true")
 
     const vpcs = useFetchVpcs();
 
     function useFetchVpcs(refresh = false) {
-        return useFetch({ url: Server.Url(`/aws/network${all ? "/all" : ""}`), nofetch: true, cache: true });
+        return useFetcher(`/aws/network${all ? "/all" : ""}`, { cache: true });
     }
 
     function fetchVpcs(refresh = false) {
         vpcs.fetch({ nocache: refresh });
-    }
-
-    function refreshVpcs() {
-        fetchVpcs(true);
     }
 
     const [ showingAllSubnets, setShowingAllSubnets ] = useState(false);
@@ -443,21 +418,17 @@ const VpcsPanel = (props) => {
 
 const SubnetsPanel = (props) => {
 
-    const [ args, setArgs ] = useSearchParams();
-    const [ all, setAll ] = useState(args.get("all")?.toLowerCase() === "true")
+    const [ args ] = useSearchParams();
+    const [ all ] = useState(args.get("all")?.toLowerCase() === "true")
 
     const subnets = useFetchSubnets();
 
     function useFetchSubnets(refresh = false) {
-        return useFetch({ url: Server.Url(`/aws/subnets${all ? "/all" : ""}`), nofetch: true, cache: true });
+        return useFetcher(`/aws/subnets${all ? "/all" : ""}`, { cache: true });
     }
 
     function fetchSubnets(refresh = false) {
         subnets.fetch({ nocache: refresh });
-    }
-
-    function refreshSubnets() {
-        fetchSubnets(true);
     }
 
     useEffect(() => {
@@ -477,21 +448,17 @@ const SubnetsPanel = (props) => {
 
 const SecurityGroupsPanel = (props) => {
 
-    const [ args, setArgs ] = useSearchParams();
-    const [ all, setAll ] = useState(args.get("all")?.toLowerCase() === "true")
+    const [ args ] = useSearchParams();
+    const [ all ] = useState(args.get("all")?.toLowerCase() === "true")
 
     const sgs = useFetchSecurityGroups();
 
     function useFetchSecurityGroups(refresh = false) {
-        return useFetch({ url: Server.Url(`/aws/security_groups${all ? "/all" : ""}`), nofetch: true, cache: true });
+        return useFetcher(`/aws/security_groups${all ? "/all" : ""}`, { cache: true });
     }
 
     function fetchSecurityGroups(refresh = false) {
         sgs.fetch({ nocache: refresh });
-    }
-
-    function refreshSecurityGroups() {
-        fetchSecurityGroups(true);
     }
 
     useEffect(() => {
@@ -551,7 +518,7 @@ const InfrastructurePage = () => {
 
             <div className="box margin thickborder" style={{width:"100%",marginBottom:"6pt"}}>
                 <div className="pointer" style={{fontWeight:showingGac ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleGac}>Global Application Configuration</div>
-                <div className="pointer" style={{fontWeight:showingEcosystem ? "bold" : "normal"}} onClick={toggleEcosystem}>Ecosystem</div>
+                <div className="pointer" style={{fontWeight:showingEcosystem ? "bold" : "normal"}} onClick={toggleEcosystem}>Ecosystem Definition</div>
             </div>
 
             <StackList toggleStack={toggleStack} showingStack={showingStack} />
@@ -578,7 +545,7 @@ const InfrastructurePage = () => {
 }
 
 const StackList = (props) => {
-    const stacks = useFetcher(Server.Url("/aws/stacks"));
+    const stacks = useFetcher("/aws/stacks");
     useEffect(() => {
         stacks.fetch();
     }, []);
@@ -605,7 +572,7 @@ const StackBoxes = (props) => {
 }
 
 const StackBox = (props) => {
-    const stack = useFetcher(Server.Url(`/aws/stacks/${props.stackName}`));
+    const stack = useFetcher(`/aws/stacks/${props.stackName}`);
     const [ showingOutputs, setShowingOutputs ] = useState(false);
     const toggleOutputs = () => setShowingOutputs(!showingOutputs);
     const [ showingParameters, setShowingParameters ] = useState(false);
@@ -722,7 +689,7 @@ const StackBox = (props) => {
 }
 
 const StackOutputs = (props) => {
-    const outputs = useFetcher(Server.Url(`/aws/stacks/${props.stackName}/outputs`));
+    const outputs = useFetcher(`/aws/stacks/${props.stackName}/outputs`);
     useEffect(() => {
         outputs.fetch();
     }, []);
@@ -753,7 +720,7 @@ const StackOutputs = (props) => {
 }
 
 const StackParameters = (props) => {
-    const parameters = useFetcher(Server.Url(`/aws/stacks/${props.stackName}/parameters`));
+    const parameters = useFetcher(`/aws/stacks/${props.stackName}/parameters`);
     useEffect(() => {
         parameters.fetch();
     }, []);
@@ -784,7 +751,7 @@ const StackParameters = (props) => {
 }
 
 const StackResources = (props) => {
-    const resources = useFetcher(Server.Url(`/aws/stacks/${props.stackName}/resources`));
+    const resources = useFetcher(`/aws/stacks/${props.stackName}/resources`);
     useEffect(() => {
         resources.fetch();
     }, []);
@@ -815,7 +782,7 @@ const StackResources = (props) => {
 }
 
 const GacBox = (props) => {
-    const info = useFetcher(Server.Url("/info"), { cache: true });
+    const info = useFetcher("/info", { cache: true });
     useEffect(() => {
         info.fetch();
     }, []);
@@ -833,7 +800,7 @@ const GacBox = (props) => {
 }
 
 const EcosystemBox = (props) => {
-    const info = useFetcher(Server.Url("/info"), { cache: true });
+    const info = useFetcher("/info", { cache: true });
     useEffect(() => {
         info.fetch();
     }, []);

@@ -1100,7 +1100,7 @@ const ChecksSearchControl = (props) => {
        &nbsp;<span style={{fontWeight:props.showingChecksSearch ? "bold" : "normal"}} onClick={props.toggleShowingChecksSearch}>
             <span style={{color:"inherit",marginRight:"6pt"}}>Search Checks</span>{Char.Search}&nbsp;&nbsp;
         {/* <img style={{float:"right",marginTop:"-6pt"}} src="https://cdn.iconscout.com/icon/free/png-256/new-arrival-itema-tag-label-coupon-sticker-12963.png" height="38" /> */}
-        <img style={{float:"left",marginTop:"-8pt"}} src={Image.NewIcon()} height="42" />
+        <img alt="new" style={{float:"left",marginTop:"-8pt"}} src={Image.NewIcon()} height="42" />
         </span> <br />
     </>
 }
@@ -1172,7 +1172,7 @@ const ChecksSearchBox = (props) => {
                     <b>{Char.X}</b>
                 </div>
                 {filteredChecks.length > 0 ? <div style={{marginTop:"4pt"}}>
-                    {filteredChecks.map(check => <table><tbody>
+                    {filteredChecks.map(check => <table key={check.name}><tbody>
                         <tr>
                             <td style={{verticalAlign:"top",paddingTop:"4pt",paddingRight:"6pt"}}>
                                 <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit",marginTop:"800pt"}} rel="noreferrer" target="_blank">
@@ -1273,15 +1273,6 @@ const ChecksPage = (props) => {
         }
     }
 
-    function onGroupSelectAll(group) {
-        if (checks.length === groupList.length) {
-            groupList.update([]);
-        }
-        else {
-            groupList.update([...checks.data]);
-        }
-    }
-
     function onGroupClick() {
         setGroupBySchedule(!groupBySchedule);
         groupList.update([]);
@@ -1291,9 +1282,9 @@ const ChecksPage = (props) => {
         return <div style={{minWidth:"150pt"}}>
             <div className="tool-tip pointer" data-text={`Click to group by ${groupBySchedule ? "group" : "schedule"}.`} style={{paddingBottom:"3pt",fontWeight:"bold"}} onClick={onGroupClick}>
                 { groupBySchedule ? <>
-                    Check Schedules&nbsp;<img src={Image.CalendarIcon()} height="17" style={{marginTop:"1px",marginRight:"8pt",float:"right"}} />
+                    Check Schedules&nbsp;<img alt="calendar" src={Image.CalendarIcon()} height="17" style={{marginTop:"1px",marginRight:"8pt",float:"right"}} />
                 </>:<>
-                    Check Groups&nbsp;&nbsp;<img src={Image.HierarchyIcon()} height="16" style={{marginTop:"1pt",marginRight:"8pt",float:"right"}} />
+                    Check Groups&nbsp;&nbsp;<img alt="group" src={Image.HierarchyIcon()} height="16" style={{marginTop:"1pt",marginRight:"8pt",float:"right"}} />
                 </>}
             </div>
             <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
@@ -1630,7 +1621,7 @@ const ChecksPage = (props) => {
                     <tr>
                         <td style={tdLabelStyle}><small>Role:</small></td>
                         <td className="tool-tip" data-text={lambda.lambda_role} style={tdContentStyle}>
-                            <small><a href={`https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/roles/details/${lambda.lambda_role?.replace(/.*\//,'')}`} target="_blank">{lambda.lambda_role?.replace(/.*\//,'')}</a></small>
+                            <small><a href={`https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/roles/details/${lambda.lambda_role?.replace(/.*\//,'')}`} rel="noreferrer" target="_blank">{lambda.lambda_role?.replace(/.*\//,'')}</a></small>
                         </td>
                     </tr>
                     <tr>

@@ -3,8 +3,8 @@ import { useContext } from 'react';
 import Env from '../utils/Env';
 import HeaderData from '../HeaderData';
 import Logout from '../utils/Logout';
+import Server from '../utils/Server';
 import { HorizontalLine, Link, LoggedInUser } from '../Components';
-import Select from 'react-select'
 
 const HomePage = (props) => {
 
@@ -14,6 +14,12 @@ const HomePage = (props) => {
                           + header?.versions?.foursight_core + " / foursight-core: "
                           + header?.versions?.foursight + " / dcicutils: " + header?.versions?.dcicutils;
 
+        let x = Server.Url("/info")
+        console.log('foo')
+        console.log(x)
+        x = Server.Url(x)
+        console.log('goo')
+        console.log(x)
     return <>
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>

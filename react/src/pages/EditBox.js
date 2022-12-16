@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { StandardSpinner } from '../Spinners';
 import { useFetch } from '../utils/Fetch';
 import Char from '../utils/Char';
-import Type from '../utils/Type';
 import Uuid from 'react-uuid';
 
 // Generic box to edit (create, update, delete) a list of plain input fields representing some data record.
@@ -12,7 +11,6 @@ const DynamicSelect = (props) => {
 
     const values = useFetch(props.url, { nofetch: true, cache: true });
     const [ selected, setSelected ] = useState(props.selected);
-    const initial = props.selected;
 
     useEffect(() => {
         props.setLoadingCount(value => value + 1);

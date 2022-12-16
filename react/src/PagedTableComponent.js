@@ -12,7 +12,7 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
     const [ limit, setLimit ] = useState(defaultLimit());
     const [ offset, setOffset ] = useState(defaultOffset());
     const [ sort, setSort ] = useState(initialSort);
-    const [ search, setSearch ] = useState(defaultSearch());
+    const [ search ] = useState(defaultSearch());
     const [ total, setTotal ] = useState(0);
     const [ more, setMore ] = useState(0);
     const [ pageOffset, setPageOffset ] = useState(calculatePageOffset(offset, limit));

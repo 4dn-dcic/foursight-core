@@ -27,7 +27,7 @@ const MainMenu = ({ header }) => {
 
     const MenuItem = ({ path, label }) => {
         return <>
-            {(Client.CurrentLogicalPath() === path) ? <span style={{fontWeight:"bold"}}>{label}&nbsp;{Char.Check}</span> : <Link key={path} to={Client.Path(path)} key="2">{label}</Link>}
+            {(Client.CurrentLogicalPath() === path) ? <span style={{fontWeight:"bold"}}>{label}&nbsp;{Char.Check}</span> : <Link key={path} to={Client.Path(path)}>{label}</Link>}
         </>
     }
     const MenuSeparator = () => {
@@ -36,7 +36,7 @@ const MainMenu = ({ header }) => {
 
     return <>
         <span className="dropdown">
-            <span className="dropdown-button"><img style={{marginLeft:"-4px",marginTop:"-1px"}} src={Image.MenuIcon()} height="20"/></span>
+            <span className="dropdown-button"><img alt="menu" style={{marginLeft:"-4px",marginTop:"-1px"}} src={Image.MenuIcon()} height="20"/></span>
             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                 <MenuItem path="/home" label="Home" />
                 <MenuItem path="/info" label="General Info" />

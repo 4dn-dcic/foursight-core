@@ -4,7 +4,7 @@ import Auth from './utils/Auth';
 import Client from './utils/Client';
 import Char from './utils/Char';
 import Image from './utils/Image';
-import { PuffSpinnerInline, PuffSpinner } from './Spinners';
+import { PuffSpinner } from './Spinners';
 import Str from './utils/Str';
 import Time from './utils/Time';
 import Type from './utils/Type';
