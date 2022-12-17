@@ -85,3 +85,12 @@ export const RefreshButton = (props) => {
         </>:<span onClick={props.refresh}>{Char.Refresh}</span>}
     </div>
 }
+
+export const ExternalLink = (props) => {
+    return <span style={{...props.style}}>
+        <a href={props.href} style={{color:"var(--box-fg)"}} rel="noreferrer" target="_blank">
+            {props.text && <span style={{fontWeight:props.boldText ? "bold" : "normal",marginRight:"5pt"}}>{props.text}</span>}
+            <span className="fa fa-external-link" style={{fontWeight:props.bold ? "bold" : "normal",position:"relative",bottom:"-0.5pt"}} />
+        </a>
+    </span>
+}
