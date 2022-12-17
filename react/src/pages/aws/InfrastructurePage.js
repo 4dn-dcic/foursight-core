@@ -2,7 +2,7 @@ import React from 'react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { StandardSpinner } from '../../Spinners';
-import { useFetcher } from '../../utils/Fetch';
+import { useFetcher, useFetch } from '../../utils/Fetch';
 import Char from '../../utils/Char';
 import Clipboard from '../../utils/Clipboard';
 import Json from '../../utils/Json';
@@ -366,7 +366,7 @@ const SecurityGroupRuleBox = (props) => {
     </>
 }
 
-const VpcsPanel = (props) => {
+const Vpcs = (props) => {
 
     const [ args ] = useSearchParams();
     const [ all ] = useState(args.get("all")?.toLowerCase() === "true")
@@ -416,7 +416,7 @@ const VpcsPanel = (props) => {
     </>
 }
 
-const SubnetsPanel = (props) => {
+const Subnets = (props) => {
 
     const [ args ] = useSearchParams();
     const [ all ] = useState(args.get("all")?.toLowerCase() === "true")
@@ -446,7 +446,7 @@ const SubnetsPanel = (props) => {
     </>
 }
 
-const SecurityGroupsPanel = (props) => {
+const SecurityGroups = (props) => {
 
     const [ args ] = useSearchParams();
     const [ all ] = useState(args.get("all")?.toLowerCase() === "true")
@@ -480,16 +480,16 @@ const SecurityGroupsPanel = (props) => {
 
 const InfrastructurePage = () => {
 
-    const [ showingVpcsPanel, setShowingVpcsPanel ] = useState(true);
-    const [ showingSubnetsPanel, setShowingSubnetsPanel ] = useState(false);
-    const [ showingSecurityGroupsPanel, setShowingSecurityGroupsPanel ] = useState(false);
+    const [ showingVpcs, setShowingVpcs ] = useState(true);
+    const [ showingSubnets, setShowingSubnets ] = useState(false);
+    const [ showingSecurityGroups, setShowingSecurityGroups ] = useState(false);
     const [ showingGac, setShowingGac ] = useState(false);
     const [ showingEcosystem, setShowingEcosystem ] = useState(false);
     const [ stacks, setStacks ] = useState([]);
 
-    function toggleVpcsPanel()           { setShowingVpcsPanel(value => !value); }
-    function toggleSubnetsPanel()        { setShowingSubnetsPanel(value => !value); }
-    function toggleSecurityGroupsPanel() { setShowingSecurityGroupsPanel(value => !value); }
+    function toggleVpcs()           { setShowingVpcs(value => !value); }
+    function toggleSubnets()        { setShowingSubnets(value => !value); }
+    function toggleSecurityGroups() { setShowingSecurityGroups(value => !value); }
     function toggleGac()                 { setShowingGac(value => !value); }
     function toggleEcosystem()           { setShowingEcosystem(value => !value); }
 
@@ -511,9 +511,9 @@ const InfrastructurePage = () => {
 
             <div><b>AWS Network</b></div>
             <div className="box margin" style={{width:"100%",marginBottom:"6pt"}}>
-                <div className="pointer" style={{fontWeight:showingVpcsPanel ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleVpcsPanel}>VPCs</div>
-                <div className="pointer" style={{fontWeight:showingSubnetsPanel ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleSubnetsPanel}>Subnets</div>
-                <div className="pointer" style={{fontWeight:showingSecurityGroupsPanel ? "bold" : "normal"}} onClick={toggleSecurityGroupsPanel}>Security Groups</div>
+                <div className="pointer" style={{fontWeight:showingVpcs ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleVpcs}>VPCs</div>
+                <div className="pointer" style={{fontWeight:showingSubnets ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleSubnets}>Subnets</div>
+                <div className="pointer" style={{fontWeight:showingSecurityGroups ? "bold" : "normal"}} onClick={toggleSecurityGroups}>Security Groups</div>
             </div>
 
             <div className="box margin thickborder" style={{width:"100%",marginBottom:"6pt"}}>
@@ -523,22 +523,22 @@ const InfrastructurePage = () => {
 
             <StackList toggleStack={toggleStack} showingStack={showingStack} />
         </td>
-        {(showingVpcsPanel || showingStack() || showingGac || showingEcosystem) &&
+        {(showingVpcs || showingStack() || showingGac || showingEcosystem) &&
             <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-                { showingVpcsPanel && <VpcsPanel /> }
+                { showingVpcs && <Vpcs /> }
                 <StackBoxes stacks={stacks} hideStack={toggleStack} />
                 { showingEcosystem && <EcosystemBox /> }
                 { showingGac && <GacBox /> }
             </td>
         }
-        {(showingSubnetsPanel) &&
+        {(showingSubnets) &&
             <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-                <SubnetsPanel />
+                <Subnets />
             </td>
         }
-        {(showingSecurityGroupsPanel) &&
+        {(showingSecurityGroups) &&
             <td style={{verticalAlign:"top"}}>
-                <SecurityGroupsPanel />
+                <SecurityGroups />
             </td>
         }
     </tr></tbody></table>
@@ -689,10 +689,7 @@ const StackBox = (props) => {
 }
 
 const StackOutputs = (props) => {
-    const outputs = useFetcher(`/aws/stacks/${props.stackName}/outputs`);
-    useEffect(() => {
-        outputs.fetch();
-    }, []);
+    const outputs = useFetch(`/aws/stacks/${props.stackName}/outputs`, { cache: true });
     return <div style={{maxWidth:"480pt"}}>
         <div className="box lighten">
             { outputs.empty ? <>
@@ -720,10 +717,7 @@ const StackOutputs = (props) => {
 }
 
 const StackParameters = (props) => {
-    const parameters = useFetcher(`/aws/stacks/${props.stackName}/parameters`);
-    useEffect(() => {
-        parameters.fetch();
-    }, []);
+    const parameters = useFetch(`/aws/stacks/${props.stackName}/parameters`, { cache: true });
     return <div style={{maxWidth:"480pt"}}>
         <div className="box lighten">
             { parameters.empty ? <>
@@ -751,10 +745,7 @@ const StackParameters = (props) => {
 }
 
 const StackResources = (props) => {
-    const resources = useFetcher(`/aws/stacks/${props.stackName}/resources`);
-    useEffect(() => {
-        resources.fetch();
-    }, []);
+    const resources = useFetch(`/aws/stacks/${props.stackName}/resources`, { cache: true });
     return <div style={{maxWidth:"480pt"}}>
         <div className="box lighten">
             { resources.empty ? <>
@@ -782,12 +773,14 @@ const StackResources = (props) => {
 }
 
 const GacBox = (props) => {
-    const info = useFetcher("/info", { cache: true });
-    useEffect(() => {
-        info.fetch();
-    }, []);
+    const info = useFetch("/info", { cache: true });
     return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
-        <div><b>GAC</b>:&nbsp;<b>{info.data?.gac?.name}</b></div>
+        <div><b>GAC</b>:&nbsp;<b>{info.data?.gac?.name}</b>&nbsp;
+            <a className="fa fa-external-link"
+                style={{float:"right",fontWeight:"bold",marginRight:"2pt",marginTop:"3pt",color:"var(--box-fg)"}}
+                href={`https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=${info.data?.gac?.name}&region=us-east-1`}
+                rel="noreferrer" target="_blank" />
+        </div>
         <div className="box margin">
             <ul style={{marginBottom:"1pt"}}>
                 { info.data?.gac && Object.keys(info.data.gac.values)?.map(name => <li key={name}>
@@ -800,10 +793,7 @@ const GacBox = (props) => {
 }
 
 const EcosystemBox = (props) => {
-    const info = useFetcher("/info", { cache: true });
-    useEffect(() => {
-        info.fetch();
-    }, []);
+    const info = useFetch("/info", { cache: true });
     return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
         <div><b>Ecosystem</b>:&nbsp;<b>{info.data?.buckets?.env}</b></div>
         <pre className="box margin">

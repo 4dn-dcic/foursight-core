@@ -38,11 +38,17 @@ def _filter_boto_description_list(description: dict,
                 if tags:
                     tag = tags[0].get("Value")
                     if predicate is None or predicate_filter(tag):
-                        results.append(create_record(tag, item) if create_record else item)
+                        item = create_record(tag, item) if create_record else item
+                        if item:
+                            results.append(item)
                 elif predicate is None:
-                    results.append(create_record(None, item) if create_record else item)
+                    item = create_record(None, item) if create_record else item
+                    if item:
+                        results.append(item)
             elif predicate is None:
-                results.append(create_record(None, item) if create_record else item)
+                item = create_record(None, item) if create_record else item
+                if item:
+                    results.append(item)
     return sorted(results, key=lambda value: value["name"]) if create_record else results
 
 
@@ -109,8 +115,11 @@ def aws_get_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None, r
         #     ]
         #   }
         #
-        stack_name_tags = [tag for tag in item["Tags"] if tag.get("Key") == "aws:cloudformation:stack-name"]
-        stack_name = stack_name_tags[0].get("Value") if stack_name_tags else None
+        if item.get("Tags"):
+            stack_name_tags = [tag for tag in item["Tags"] if tag.get("Key") == "aws:cloudformation:stack-name"]
+            stack_name = stack_name_tags[0].get("Value") if stack_name_tags else None
+        else:
+            stack_name = None
         return {
             "name": tag or item.get("VpcId"),
             "id": item.get("VpcId"),
@@ -194,8 +203,11 @@ def aws_get_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
         #
         id = item.get("SubnetId")
         name = tag or id
-        stack_name_tags = [tag for tag in item["Tags"] if tag.get("Key") == "aws:cloudformation:stack-name"]
-        stack_name = stack_name_tags[0].get("Value") if stack_name_tags else None
+        if item.get("Tags"):
+            stack_name_tags = [tag for tag in item["Tags"] if tag.get("Key") == "aws:cloudformation:stack-name"]
+            stack_name = stack_name_tags[0].get("Value") if stack_name_tags else None
+        else:
+            stack_name = None
         return {
             "name": name,
             "id": id,
@@ -299,8 +311,11 @@ def aws_get_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]
         # }
         #
         name = item.get("GroupName") or tag
-        stack_name_tags = [tag for tag in item["Tags"] if tag.get("Key") == "aws:cloudformation:stack-name"]
-        stack_name = stack_name_tags[0].get("Value") if stack_name_tags else None
+        if item.get("Tags"):
+            stack_name_tags = [tag for tag in item["Tags"] if tag.get("Key") == "aws:cloudformation:stack-name"]
+            stack_name = stack_name_tags[0].get("Value") if stack_name_tags else None
+        else:
+            stack_name = None
         return {
             **({"name": name} if name == tag else {"name": name, "tag": tag}),
             "id": item.get("GroupId"),

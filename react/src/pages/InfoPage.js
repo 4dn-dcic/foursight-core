@@ -130,7 +130,7 @@ const InfoRow = ({name, value, monospace = false, copy = true, size = "4", pypi 
 const InfoPage = () => {
 
     const [ header ] = useContext(HeaderData);
-    const info = useFetch(Server.Url("/info"));
+    const info = useFetch("/info");
     const [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [ showingAccounts, setShowingAccounts ] = useState(false);
     const [ reloadingApp, setReloadingApp ] = useState(false);
@@ -138,7 +138,7 @@ const InfoPage = () => {
 
     function initiateAppReload() {
         setReloadingApp(true);
-        fetch(Server.Url("/__reloadlambda__"), { onDone: () => setReloadingApp(false) });
+        fetch("/__reloadlambda__", { onDone: () => setReloadingApp(false) });
     }
 
     function clearCache() {
