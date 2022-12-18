@@ -2,7 +2,7 @@ import React from 'react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { StandardSpinner } from '../../Spinners';
-import { useFetcher, useFetch } from '../../utils/Fetch';
+import { useFetch } from '../../utils/Fetch';
 import { ExternalLink } from '../../Components';
 import Char from '../../utils/Char';
 import Clipboard from '../../utils/Clipboard';
@@ -24,22 +24,20 @@ const tdContentStyle = {
 
 const InfrastructurePage = () => {
 
-    const [ showVpcs, setShowingVpcs ] = useState(true);
-    const [ showSubnets, setShowingSubnets ] = useState(false);
-    const [ showSubnetsPublic, setShowingSubnetsPublic ] = useState(false);
-    const [ showSubnetsPrivate, setShowingSubnetsPrivate ] = useState(false);
-    const [ showSecurityGroups, setShowingSecurityGroups ] = useState(false);
-    const [ showEcosystem, setShowingEcosystem ] = useState(false);
-    const [ showGac, setShowingGac ] = useState(false);
+    const [ showVpcs, setShowVpcs ] = useState(true);
+    const [ showSubnetsPublic, setShowSubnetsPublic ] = useState(false);
+    const [ showSubnetsPrivate, setShowSubnetsPrivate ] = useState(false);
+    const [ showSecurityGroups, setShowSecurityGroups ] = useState(false);
+    const [ showEcosystem, setShowEcosystem ] = useState(false);
+    const [ showGac, setShowGac ] = useState(false);
     const [ stacks, setStacks ] = useState([]);
 
-    function toggleVpcs()           { setShowingVpcs(value => !value); }
-    function toggleSubnets()        { setShowingSubnets(value => !value); }
-    function toggleSubnetsPublic()  { setShowingSubnetsPublic(value => !value); }
-    function toggleSubnetsPrivate() { setShowingSubnetsPrivate(value => !value); }
-    function toggleSecurityGroups() { setShowingSecurityGroups(value => !value); }
-    function toggleEcosystem()      { setShowingEcosystem(value => !value); }
-    function toggleGac()            { setShowingGac(value => !value); }
+    function toggleVpcs()           { setShowVpcs(value => !value); }
+    function toggleSubnetsPublic()  { setShowSubnetsPublic(value => !value); }
+    function toggleSubnetsPrivate() { setShowSubnetsPrivate(value => !value); }
+    function toggleSecurityGroups() { setShowSecurityGroups(value => !value); }
+    function toggleEcosystem()      { setShowEcosystem(value => !value); }
+    function toggleGac()            { setShowGac(value => !value); }
 
     function showStack(stackName = null) {
         return stackName ? stacks.indexOf(stackName) >= 0 : stacks.length > 0;
@@ -58,7 +56,6 @@ const InfrastructurePage = () => {
         <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
             <NetworkList
                 showVpcs={showVpcs} toggleVpcs={toggleVpcs}
-                showSubnets={showSubnets} toggleSubnets={toggleSubnets}
                 showSubnetsPublic={showSubnetsPublic} toggleSubnetsPublic={toggleSubnetsPublic}
                 showSubnetsPrivate={showSubnetsPrivate} toggleSubnetsPrivate={toggleSubnetsPrivate}
                 showSecurityGroups={showSecurityGroups} toggleSecurityGroups={toggleSecurityGroups}
@@ -78,21 +75,11 @@ const InfrastructurePage = () => {
                 { showGac && <Gac /> }
             </td>
         }
-        { (showSubnets) &&
-            <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-                <Subnets type="public" />
-                <Subnets type="private" />
-            </td>
-        }
-        { (showSubnetsPublic || showSubnetsPrivate) &&
+        { (showSubnetsPublic || showSubnetsPrivate || showSecurityGroups) &&
             <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
                 { showSubnetsPublic && <Subnets type="public" /> }
                 { showSubnetsPrivate && <Subnets type="private" /> }
-            </td>
-        }
-        { (showSecurityGroups) &&
-            <td style={{verticalAlign:"top"}}>
-                <SecurityGroups />
+                { showSecurityGroups && <SecurityGroups /> }
             </td>
         }
     </tr></tbody></table>
@@ -121,32 +108,14 @@ const ConfigList = (props) => {
 
 const Vpcs = (props) => {
 
-    const [ args ] = useSearchParams();
-    const [ all ] = useState(args.get("all")?.toLowerCase() === "true")
+    const all = useSearchParams()[0]?.get("all")?.toLowerCase() === "true";
+    const vpcs = useFetch(`/aws/vpcs${all ? "/all" : ""}`, { cache: true });
 
-    const vpcs = useFetchVpcs();
+    const [ showAllSubnets, setShowAllSubnets ] = useState(false);
+    const [ showAllSecurityGroups, setShowAllSecurityGroups ] = useState(false);
 
-    function useFetchVpcs(refresh = false) {
-        return useFetcher(`/aws/network${all ? "/all" : ""}`, { cache: true });
-    }
-
-    function fetchVpcs(refresh = false) {
-        vpcs.fetch({ nocache: refresh });
-    }
-
-    const [ showAllSubnets, setShowingAllSubnets ] = useState(false);
-    const [ showAllSecurityGroups, setShowingAllSecurityGroups ] = useState(false);
-
-    useEffect(() => {
-        fetchVpcs();
-    }, [showAllSubnets]);
-
-    function toggleShowAllSubnets() {
-        setShowingAllSubnets(value => { return !value });
-    }
-    function toggleShowAllSecurityGroups() {
-        setShowingAllSecurityGroups(value => { return !value });
-    }
+    function toggleShowAllSubnets()        { setShowAllSubnets(value => !value); }
+    function toggleShowAllSecurityGroups() { setShowAllSecurityGroups(value => !value); }
 
     return <>
         <div>
@@ -171,16 +140,13 @@ const Vpcs = (props) => {
 
 const Vpc = (props) => {
 
-    const [ showSubnets, setShowingSubnets ] = useState(false);
-    const [ showSecurityGroups, setShowingSecurityGroups ] = useState(false);
+    const [ showSubnetsPublic,  setShowSubnetsPublic  ] = useState(false);
+    const [ showSubnetsPrivate, setShowSubnetsPrivate ] = useState(false);
+    const [ showSecurityGroups, setShowSecurityGroups ] = useState(false);
 
-    function toggleSubnets()        { showSubnets ? setShowingSubnets(false) : setShowingSubnets(true); }
-    function toggleSecurityGroups() { showSecurityGroups ? setShowingSecurityGroups(false) : setShowingSecurityGroups(true); }
-
-    useEffect(() => {
-        setShowingSubnets(props.showAllSubnets);
-        setShowingSecurityGroups(props.showAllSecurityGroups);
-    }, [props.showAllSubnets, props.showAllSecurityGroups]);
+    function toggleSubnetsPublic()  { showSubnetsPublic  ? setShowSubnetsPublic (false) : setShowSubnetsPublic (true); }
+    function toggleSubnetsPrivate() { showSubnetsPrivate ? setShowSubnetsPrivate(false) : setShowSubnetsPrivate(true); }
+    function toggleSecurityGroups() { showSecurityGroups ? setShowSecurityGroups(false) : setShowSecurityGroups(true); }
 
     return <>
         <div className="box margin" style={{marginBottom:"8pt",minWidth:"350pt",maxWidth:"500pt"}}>
@@ -208,23 +174,40 @@ const Vpc = (props) => {
                     <td style={tdLabelStyle}>Status:</td>
                     <td style={tdContentStyle}>{props.vpc?.status}</td>
                 </tr>
-                <tr onClick={toggleSubnets} className="pointer">
-                    <td style={tdLabelStyle}>Subnets:</td>
+                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
+                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <tr onClick={toggleSubnetsPublic} className="pointer">
+                    <td style={tdLabelStyle}>Public Subnets:</td>
                     <td>
-                        {(showSubnets) ? <>
-                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u>&nbsp;&nbsp;({props.vpc?.subnets?.length})</small>
+                        {(showSubnetsPublic) ? <>
+                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
-                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u>&nbsp;&nbsp;({props.vpc?.subnets?.length})</small>
+                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
                     </td>
                 </tr>
-                {(showSubnets) && <>
+                {(showSubnetsPublic) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
-                            {props.vpc?.subnets.map((subnet, i) => <div key={subnet.id}>
-                                <Subnet subnet={subnet} />
-                                <div style={{height:"3pt"}} />
-                            </div>)}
+                            <Subnets type="public" vpcId={props.vpc?.id} notitle={true} />
+                        </td>
+                    </tr>
+                </>}
+                <tr onClick={toggleSubnetsPrivate} className="pointer">
+                    <td style={tdLabelStyle}>Private Subnets:</td>
+                    <td>
+                        {(showSubnetsPrivate) ? <>
+                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
+                        </>:<>
+                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
+                        </>}
+                    </td>
+                </tr>
+                {(showSubnetsPrivate) && <>
+                    <tr>
+                        <td style={{paddingTop:"2pt"}} colSpan="2">
+                            <Subnets type="private" vpcId={props.vpc?.id} notitle={true} />
                         </td>
                     </tr>
                 </>}
@@ -232,19 +215,16 @@ const Vpc = (props) => {
                     <td style={tdLabelStyle}>Security Groups:</td>
                     <td>
                         {showSecurityGroups ? <>
-                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u>&nbsp;&nbsp;({props.vpc?.security_groups?.length})</small>
+                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
-                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u>&nbsp;&nbsp;({props.vpc?.security_groups?.length})</small>
+                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
                     </td>
                 </tr>
                 {showSecurityGroups && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
-                            {props.vpc?.security_groups.map((security_group, i) => <div key={security_group.id}>
-                                <SecurityGroup security_group={security_group} />
-                                { i < props.vpc?.security_groups?.length - 1 && <> <div style={{height:"3pt"}}/> </>}
-                            </div>)}
+                            <SecurityGroups vpcId={props.vpc?.id} notitle={true} />
                         </td>
                     </tr>
                 </>}
@@ -255,26 +235,14 @@ const Vpc = (props) => {
 
 const Subnets = (props) => {
 
-    const [ args ] = useSearchParams();
-    const [ all ] = useState(args.get("all")?.toLowerCase() === "true")
-
-    const subnets = useFetchSubnets();
-
-    function useFetchSubnets(refresh = false) {
-        return useFetcher(`/aws/subnets${all ? "/all" : ""}`, { cache: true });
-    }
-
-    function fetchSubnets(refresh = false) {
-        subnets.fetch({ nocache: refresh });
-    }
-
-    useEffect(() => {
-        fetchSubnets();
-    }, []);
+    const all = useSearchParams()[0].get("all")?.toLowerCase() === "true";
+    const args = props.vpcId ? `?vpc=${props.vpcId}` : ""
+    const subnets = useFetch(`/aws/subnets${all ? "/all" : ""}${args}`, { cache: true });
 
     return <>
-        <div><b>AWS Subnets</b>&nbsp;&nbsp;({subnets?.length})</div>
-        <div style={{width:"fit-content",minWidth:"400pt"}}>
+        { !props.notitle && <div><b>AWS Subnets</b>&nbsp;&nbsp;({subnets?.length})</div> }
+        <div style={{minWidth:"400pt"}}>
+            { subnets.loading && <div className="box lighten" style={{paddingBottom:"10pt"}}><StandardSpinner label="Loading subnets" /></div> }
             { subnets.filter(subnet => props?.type ? subnet.type === props.type : true)?.map(subnet => <div key={subnet.id}>
                 <Subnet subnet={subnet} />
                 <div style={{height:"4pt"}} />
@@ -328,34 +296,20 @@ const Subnet = (props) => {
 
 const SecurityGroups = (props) => {
 
-    const [ args ] = useSearchParams();
-    const all = args.get("all")?.toLowerCase() === "true";
-    const sgs = useFetch(`/aws/security_groups${all ? "/all" : ""}`, { cache: true });
-        /*
-    const [ all ] = useState(args.get("all")?.toLowerCase() === "true")
-
-    const sgs = useFetchSecurityGroups();
-
-    function useFetchSecurityGroups(refresh = false) {
-        return useFetcher(`/aws/security_groups${all ? "/all" : ""}`, { cache: true });
-    }
-
-    function fetchSecurityGroups(refresh = false) {
-        sgs.fetch({ nocache: refresh });
-    }
-
-    useEffect(() => {
-        fetchSecurityGroups();
-    }, []);
-    */
+    const all = useSearchParams()[0].get("all")?.toLowerCase() === "true";
+    const args = props.vpcId ? `?vpc=${props.vpcId}` : ""
+    const securityGroups = useFetch(`/aws/security_groups${all ? "/all" : ""}${args}`, { cache: true });
 
     return <>
-        <div>
-           <b>AWS Security Groups</b>&nbsp;&nbsp;({sgs?.length})
-        </div>
-        <div style={{width:"fit-content",minWidth:"400pt"}}>
-            { sgs.map(sg => <div key={sg.id}>
-                <SecurityGroup security_group={sg} />
+        { !props.notitle &&
+            <div>
+                <b>AWS Security Groups</b>&nbsp;&nbsp;({securityGroups?.length})
+            </div>
+        }
+        <div style={{minWidth:"400pt"}}>
+            { securityGroups.loading && <div className="box lighten" style={{paddingBottom:"10pt"}}><StandardSpinner label="Loading security groups" /></div> }
+            { securityGroups.map(securityGroup => <div key={securityGroup.id}>
+                <SecurityGroup security_group={securityGroup} />
                 <div style={{height:"4pt"}} />
             </div>)}
         </div>
@@ -364,27 +318,27 @@ const SecurityGroups = (props) => {
 
 const SecurityGroup = (props) => {
 
-    const [ showRules, setShowingRules ] = useState(false);
-    const [ showInboundRules, setShowingInboundRules ] = useState(false);
-    const [ showOutboundRules, setShowingOutboundRules ] = useState(false);
+    const [ showRules, setShowRules ] = useState(false);
+    const [ showInboundRules, setShowInboundRules ] = useState(false);
+    const [ showOutboundRules, setShowOutboundRules ] = useState(false);
 
     function toggleRules() {
         if (showRules) {
-            setShowingRules(false);
-            setShowingInboundRules(false);
-            setShowingOutboundRules(false);
+            setShowRules(false);
+            setShowInboundRules(false);
+            setShowOutboundRules(false);
         }
         else {
-            setShowingRules(true);
-            setShowingInboundRules(true);
-            setShowingOutboundRules(true);
+            setShowRules(true);
+            setShowInboundRules(true);
+            setShowOutboundRules(true);
         }
     }
-    function toggleInboundRules() { showInboundRules ? setShowingInboundRules(false) : setShowingInboundRules(true); }
-    function toggleOutboundRules() { showOutboundRules ? setShowingOutboundRules(false) : setShowingOutboundRules(true); }
+    function toggleInboundRules() { showInboundRules ? setShowInboundRules(false) : setShowInboundRules(true); }
+    function toggleOutboundRules() { showOutboundRules ? setShowOutboundRules(false) : setShowOutboundRules(true); }
 
     useEffect(() => {
-        setShowingRules(props.showAllRules);
+        setShowRules(props.showAllRules);
     }, [props.showAllRules]);
 
     return <>
@@ -465,6 +419,7 @@ const SecurityGroupRules = (props) => {
     const rules = useFetch(`/aws/security_group_rules/${props.security_group_id}${args}`, { cache: true });
 
     return <>
+        { rules.loading && <div className="box lighten" style={{paddingBottom:"10pt"}}><StandardSpinner label="Loading security group rules" /></div> }
         {rules?.map(rule => <div key={rule.id}>
             <SecurityGroupRule security_group_rule={rule} />
             <div style={{height:"4pt"}} />
@@ -607,17 +562,18 @@ const Stacks = (props) => {
 }
 
 const Stack = (props) => {
+
     const stack = useFetch(`/aws/stacks/${props.stackName}`);
-    const [ showOutputs, setShowingOutputs ] = useState(false);
-    const toggleOutputs = () => setShowingOutputs(!showOutputs);
-    const [ showParameters, setShowingParameters ] = useState(false);
-    const toggleParameters = () => setShowingParameters(!showParameters);
-    const [ showResources, setShowingResources ] = useState(false);
-    const toggleResources = () => setShowingResources(!showResources);
+
+    const [ showOutputs, setShowOutputs ] = useState(false);
+    const [ showParameters, setShowParameters ] = useState(false);
+    const [ showResources, setShowResources ] = useState(false);
+
+    const toggleOutputs = () => setShowOutputs(!showOutputs);
+    const toggleParameters = () => setShowParameters(!showParameters);
+    const toggleResources = () => setShowResources(!showResources);
     const hideStack = () => props.hideStack(stack.data?.name);
-    //useEffect(() => {
-        //stack.fetch();
-    //}, []);
+
     return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
         <div><b>AWS Stack: {props.stackName}</b>
             <ExternalLink

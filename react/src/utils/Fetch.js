@@ -252,7 +252,7 @@ export const useFetch = (url, args) => {
 
     useEffect(() => {
         _doFetch(assembledArgs, undefined, response);
-    }, [])
+    }, [assembledArgs.url])
 
     return response;
 }

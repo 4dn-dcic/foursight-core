@@ -1081,7 +1081,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         elif subnet == "all":
             subnet = None
         raw = args.get("raw") == "true"
-        return self.create_success_response(aws_get_subnets(subnet, raw))
+        vpc = args.get("vpc")
+        return self.create_success_response(aws_get_subnets(subnet, vpc, raw))
 
     def reactapi_aws_security_groups(self, request: dict, env: str, security_group: Optional[str] = None, args: Optional[dict] = None) -> Response:
         """
@@ -1097,7 +1098,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         elif security_group == "all":
             security_group = None
         raw = args.get("raw") == "true"
-        return self.create_success_response(aws_get_security_groups(security_group, raw))
+        vpc = args.get("vpc")
+        return self.create_success_response(aws_get_security_groups(security_group, vpc, raw))
 
     def reactapi_aws_security_group_rules(self, request: dict, env: str, security_group: Optional[str] = None, args: Optional[dict] = None) -> Response:
         """
