@@ -1280,11 +1280,25 @@ const ChecksPage = (props) => {
 
     const ChecksGroupBox = ({props}) => {
         return <div style={{minWidth:"150pt"}}>
-            <div className="tool-tip pointer" data-text={`Click to group by ${groupBySchedule ? "group" : "schedule"}.`} style={{paddingBottom:"3pt",fontWeight:"bold"}} onClick={onGroupClick}>
+            <div style={{paddingBottom:"3pt",fontWeight:"bold"}}>
                 { groupBySchedule ? <>
-                    Check Schedules&nbsp;<img alt="calendar" src={Image.CalendarIcon()} height="17" style={{marginTop:"1px",marginRight:"8pt",float:"right"}} />
+                    Check Schedules&nbsp;
+                    <div style={{float:"right",borderRadius:"4pt",padding:"3pt",paddingTop:"2pt",marginRight:"8pt",marginTop:"-3pt",cursor:"pointer"}}
+                         className="tool-tip" data-text="Click to group by schedule." >
+                        <img alt="group" src={Image.HierarchyIcon()} height="16" onClick={onGroupClick} />
+                    </div>
+                    <div style={{float:"right",borderRadius:"4pt",border:"1px solid black",padding:"3pt",paddingTop:"2pt",marginRight:"2pt",marginTop:"-3pt"}}>
+                        <img alt="group" src={Image.CalendarIcon()} height="16" />
+                    </div>
                 </>:<>
-                    Check Groups&nbsp;&nbsp;<img alt="group" src={Image.HierarchyIcon()} height="16" style={{marginTop:"1pt",marginRight:"8pt",float:"right"}} />
+                    Check Groups&nbsp;&nbsp;
+                    <div style={{float:"right",borderRadius:"4pt",border:"1px solid black",padding:"3pt",paddingTop:"2pt",marginRight:"8pt",marginTop:"-3pt"}}>
+                        <img alt="group" src={Image.HierarchyIcon()} height="16" />
+                    </div>
+                    <div style={{float:"right",borderRadius:"4pt",padding:"3pt",paddingTop:"2pt",marginRight:"2pt",marginTop:"-3pt",cursor:"pointer"}}
+                         className="tool-tip" data-text="Click to group by schedule." onClick={onGroupClick}>
+                        <img alt="group" src={Image.CalendarIcon()} height="16" />
+                    </div>
                 </>}
             </div>
             <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"6pt"}}>

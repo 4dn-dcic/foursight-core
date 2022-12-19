@@ -31,7 +31,8 @@ const useComponentDefinitions = (componentTypes) => {
     const [ componentDefinitions, setComponentDefinitions ] = useState([]);
     return {
         define: (type, name) => {
-            const componentIndex = -1; // componentDefinitions.findIndex(component => component.type === type && component.name === name);
+            // Disable this caching for now - may not actually be useful.
+            const componentIndex = -1 // componentDefinitions.findIndex(component => component.type === type && component.name === name);
             if (componentIndex >= 0) return componentDefinitions[componentIndex];
             const componentTypeIndex = componentTypes.findIndex(componentType => componentType.type === type);
             if (componentTypeIndex >= 0) {
@@ -166,7 +167,7 @@ const InfrastructurePage = () => {
     }
 
     function createStack(name) {
-        return <Stack stackName={name} hideStack={(name) => hideStack(name)} outerState={outerState} />;
+        return <Stack stackName={name} hide={hideStack} outerState={outerState} />;
     }
 
     const selectedVpcs = () => componentsLeft.selected("vpcs");
@@ -275,7 +276,7 @@ const Vpcs = (props) => {
         <div>
            <b>AWS VPCs</b>&nbsp;&nbsp;{!vpcs.loading && <small>({vpcs?.length})</small>}
            <div style={{float:"right",marginRight:"3pt"}}>
-                {/*
+                {/* eh not so useful and a maybe a bit confusing
                 <small className="pointer" style={{fontWeight:showAllSubnets ? "bold" : "normal"}} onClick={toggleShowAllSubnets}>
                     Subnets {showAllSubnets ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
                 </small>
@@ -283,8 +284,7 @@ const Vpcs = (props) => {
                 <small className="pointer" style={{fontWeight:showAllSecurityGroups ? "bold" : "normal"}} onClick={toggleShowAllSecurityGroups}>
                     Security {showAllSecurityGroups ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
                 </small>
-                &nbsp;|&nbsp;
-                */}
+                &nbsp;|&nbsp; */}
                 <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
            </div>
         </div>
@@ -496,7 +496,7 @@ const SecurityGroups = (props) => {
     return <div style={{marginBottom:"8pt"}}>
         { !props.notitle &&
             <div>
-                <b>AWS Security Groups</b>&nbsp;&nbsp;({securityGroups?.length})
+                <b>AWS Security Groups</b>&nbsp;&nbsp;<small>({securityGroups?.length})</small>
                 <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
             </div>
         }
@@ -752,7 +752,7 @@ const StackList = (props) => {
 
 const Stack = (props) => {
 
-    const { stackName, hideStack, outerState } = props;
+    const { stackName, hide, outerState } = props;
 
     const stack = useFetch(`/aws/stacks/${stackName}`, { cache: true });
 
@@ -786,7 +786,7 @@ const Stack = (props) => {
                 <tr>
                     <td style={tdLabelStyle}>Name:</td>
                     <td style={{...tdContentStyle,wordBreak:"break-all"}}>
-                        <b style={{float:"right",cursor:"pointer",marginTop:"-2pt"}} onClick={() => hideStack(stackName)}>{Char.X}</b>
+                        <b style={{float:"right",cursor:"pointer",marginTop:"-2pt"}} onClick={() => hide(stackName)}>{Char.X}</b>
                         {stackName}
                     </td>
                 </tr>
