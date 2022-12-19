@@ -145,23 +145,23 @@ const InfrastructurePage = () => {
         return <Vpcs hide={hideVpcs} outerState={outerState} setOuterState={setOuterState} />;
     }
 
-    function createSubnetsPrivate(name) {
+    function createSubnetsPrivate() {
         return <Subnets type="private" hide={hideSubnetsPrivate} />;
     }
 
-    function createSubnetsPublic(name) {
+    function createSubnetsPublic() {
         return <Subnets type="public" hide={hideSubnetsPublic} />;
     }
 
-    function createSecurityGroups(name) {
+    function createSecurityGroups() {
         return <SecurityGroups hide={hideSecurityGroups} outerState={outerState} setOuterState={setOuterState} />;
     }
 
-    function createGac(name) {
+    function createGac() {
         return <Gac hide={hideGac} />;
     }
 
-    function createEcosystem(name) {
+    function createEcosystem() {
         return <Ecosystem hide={hideEcosystem} />;
     }
 
@@ -901,7 +901,7 @@ const StackOutputs = (props) => {
                 { outputs.loading ? <>
                     <StandardSpinner label="Loading stack outputs" />
                 </>:<>
-                    <li><i>No stack outputs.</i></li>
+                    <li>No stack outputs.</li>
                 </>}
             </>:<>
                 <ul style={{marginBottom:"1pt"}}>
@@ -929,7 +929,7 @@ const StackParameters = (props) => {
                 { parameters.loading ? <>
                     <StandardSpinner label="Loading stack parameters" />
                 </>:<>
-                    <li><i>No stack parameters.</i></li>
+                    <li>No stack parameters.</li>
                 </>}
             </>:<>
                 <ul style={{marginBottom:"1pt"}}>
@@ -957,7 +957,7 @@ const StackResources = (props) => {
                 { resources.loading ? <>
                     <StandardSpinner label="Loading stack resources" />
                 </>:<>
-                    <li><i>No stack resources.</i></li>
+                    <li>No stack resources.</li>
                 </>}
             </>:<>
                 <ul style={{marginBottom:"1pt"}}>
