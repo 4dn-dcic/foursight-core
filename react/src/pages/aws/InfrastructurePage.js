@@ -8,6 +8,7 @@ import Char from '../../utils/Char';
 import Clipboard from '../../utils/Clipboard';
 import Json from '../../utils/Json';
 import Yaml from '../../utils/Yaml';
+import Uuid from 'react-uuid';
 
 const tdLabelStyle = {
     color: "var(--box-fg)",
@@ -22,6 +23,100 @@ const tdContentStyle = {
     verticalAlign: "top",
 }
 
+// Component/hook to dynamically define/create components by type.
+// In service of useSelectedComponent component/hook below to add
+// remove arbitrary components to a list of "selected" (shown) components.
+//
+const useComponentDefinitions = (componentTypes) => {
+    const [ componentDefinitions, setComponentDefinitions ] = useState([]);
+    return {
+        define: (type, name) => {
+            const componentIndex = -1; // componentDefinitions.findIndex(component => component.type === type && component.name === name);
+            if (componentIndex >= 0) return componentDefinitions[componentIndex];
+            const componentTypeIndex = componentTypes.findIndex(componentType => componentType.type === type);
+            if (componentTypeIndex >= 0) {
+                const componentCreate = componentTypes[componentTypeIndex]?.create;
+                if (componentCreate) {
+                    const component = { type: type, name: name, ui: componentCreate(name) };
+                    componentDefinitions.unshift(component);
+                    setComponentDefinitions([...componentDefinitions]);
+                    return component;
+                }
+            }
+            return null;
+        },
+        label: (type, name) => {
+            const componentTypeIndex = componentTypes.findIndex(componentType => componentType.type === type);
+            return (componentTypeIndex >= 0) ? componentTypes[componentTypeIndex]?.label : null;
+        },
+    };
+}
+
+const useSelectedComponents = (componentDefinitions) => {
+    const [ selectedComponents, setSelectedComponents ] = useState([]);
+    // TODO: Figure out precisely why we need to wrap in useState (but we do or else e.g. X-ing out from
+    // a stack box gets confused - removes all (previously selected) stack boxes - something to do with
+    // the useSelectedComponents state getting captured on each select). 
+    return useState({
+        count: () => {
+            return selectedComponents.length;
+        },
+        empty: () => {
+            return selectedComponents.length == 0;
+        },
+        selected: (type, name = null) => {
+            return selectedComponents.findIndex(
+                selectedComponent => selectedComponent.type === type && selectedComponent.name === name
+            ) >= 0;
+        },
+        map: (f) => {
+            return selectedComponents.map(f);
+        },
+        toggle: (type, name = null) => {
+            const selectedComponentIndex = selectedComponents.findIndex(
+                selectedComponent => selectedComponent.type === type && selectedComponent.name === name
+            );
+            if (selectedComponentIndex >= 0) {
+                selectedComponents.splice(selectedComponentIndex, 1);
+                setSelectedComponents([...selectedComponents]);
+            }
+            else {
+                const component = componentDefinitions.define(type, name);
+                if (component) {
+                    component.key = name ? `${type}::${name}` : type;
+                    selectedComponents.unshift(component);
+                    setSelectedComponents([...selectedComponents]);
+                }
+            }
+        },
+        add: (type, name = null) => {
+            const selectedComponentIndex = selectedComponents.findIndex(
+                selectedComponent => selectedComponent.type === type && selectedComponent.name === name
+            );
+            if (selectedComponentIndex < 0) {
+                const component = componentDefinitions.define(type, name);
+                if (component) {
+                    component.key = name ? `${type}::${name}` : type;
+                    selectedComponents.unshift(component);
+                    setSelectedComponents([...selectedComponents]);
+                }
+            }
+        },
+        remove: (type, name = null) => {
+            const selectedComponentIndex = selectedComponents.findIndex(
+                selectedComponent => selectedComponent.type === type && selectedComponent.name === name
+            );
+            if (selectedComponentIndex >= 0) {
+                selectedComponents.splice(selectedComponentIndex, 1);
+                setSelectedComponents([...selectedComponents]);
+            }
+        },
+        label: (type, name) => {
+            return componentDefinitions.label(type, name);
+        }
+    })[0];
+}
+
 const InfrastructurePage = () => {
 
     const [ showVpcs, setShowVpcs ] = useState(true);
@@ -32,6 +127,8 @@ const InfrastructurePage = () => {
     const [ showGac, setShowGac ] = useState(false);
     const [ stacks, setStacks ] = useState([]);
 
+    const [ outerState, setOuterState ] = useState({});
+
     function toggleVpcs()           { setShowVpcs(value => !value); }
     function toggleSubnetsPublic()  { setShowSubnetsPublic(value => !value); }
     function toggleSubnetsPrivate() { setShowSubnetsPrivate(value => !value); }
@@ -39,47 +136,80 @@ const InfrastructurePage = () => {
     function toggleEcosystem()      { setShowEcosystem(value => !value); }
     function toggleGac()            { setShowGac(value => !value); }
 
-    function showStack(stackName = null) {
-        return stackName ? stacks.indexOf(stackName) >= 0 : stacks.length > 0;
+    const componentDefinitions = useComponentDefinitions([
+         { type: "stack",           create: createStack          },
+         { type: "vpcs",            create: createVpcs           },
+         { type: "subnets-public",  create: createSubnetsPublic  },
+         { type: "subnets-private", create: createSubnetsPrivate },
+         { type: "security-groups", create: createSecurityGroups },
+         { type: "gac",             create: createGac            },
+         { type: "ecosystem",       create: createEcosystem      }
+    ]);
+
+    function createVpcs() {
+        return <Vpcs outerState={outerState} setOuterState={setOuterState} />;
     }
+
+    function createSubnetsPrivate(name) {
+        return <Subnets type="private" />;
+    }
+
+    function createSubnetsPublic(name) {
+        return <Subnets type="public" />;
+    }
+
+    function createSecurityGroups(name) {
+        return <SecurityGroups outerState={outerState} setOuterState={setOuterState} />;
+    }
+
+    function createGac(name) {
+        return <Gac />;
+    }
+
+    function createEcosystem(name) {
+        return <Ecosystem />;
+    }
+
+    function createStack(name) {
+        return <Stack stackName={name} hideStack={(name) => hideStack(name)} outerState={outerState} />;
+    }
+
+    const componentsLeft = useSelectedComponents(componentDefinitions);
+
     function toggleStack(stackName) {
-        if (showStack(stackName)) {
-            const i = stacks.indexOf(stackName);
-            if (i >= 0) { stacks.splice(i, 1); setStacks([...stacks]); }
-        }
-        else {
-            setStacks([stackName, ...stacks]);
-        }
+        componentsLeft.toggle("stack", stackName);
     }
+    function hideStack(stackName) {
+        componentsLeft.remove("stack", stackName);
+    }
+    function selectedStack(stackName) {
+        return componentsLeft.selected("stack", stackName);
+    }
+
+    useEffect(() => {
+        componentsLeft.toggle("vpcs");
+    }, []);
 
     return <table><tbody><tr>
         <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
             <NetworkList
-                showVpcs={showVpcs} toggleVpcs={toggleVpcs}
-                showSubnetsPublic={showSubnetsPublic} toggleSubnetsPublic={toggleSubnetsPublic}
-                showSubnetsPrivate={showSubnetsPrivate} toggleSubnetsPrivate={toggleSubnetsPrivate}
-                showSecurityGroups={showSecurityGroups} toggleSecurityGroups={toggleSecurityGroups}
+                showVpcs={() => componentsLeft.selected("vpcs")} toggleVpcs={() => componentsLeft.toggle("vpcs")}
+                showSubnetsPublic={() => componentsLeft.selected("subnets-public")} toggleSubnetsPublic={() => componentsLeft.toggle("subnets-public")}
+                showSubnetsPrivate={() => componentsLeft.selected("subnets-private")} toggleSubnetsPrivate={() => componentsLeft.toggle("subnets-private")}
+                showSecurityGroups={() => componentsLeft.selected("security-groups")} toggleSecurityGroups={() => componentsLeft.toggle("security-groups")}
             />
             <ConfigList
-                showGac={showGac} toggleGac={toggleGac}
-                showEcosystem={showEcosystem} toggleEcosystem={toggleEcosystem} />
+                showGac={componentsLeft.selected("gac")} toggleGac={() => componentsLeft.toggle("gac")}
+                showEcosystem={componentsLeft.selected("ecosystem")} toggleEcosystem={() => componentsLeft.toggle("ecosystem")} />
             <StackList
                 toggleStack={toggleStack}
-                showStack={showStack} />
+                selectedStack={selectedStack}
+            />
         </td>
-        { (showVpcs || showStack() || showGac || showEcosystem) &&
+        { !componentsLeft.empty() &&
             <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-                { showVpcs && <Vpcs /> }
-                { showStack() && <Stacks stacks={stacks} hideStack={toggleStack} /> }
-                { showEcosystem && <Ecosystem /> }
-                { showGac && <Gac /> }
-            </td>
-        }
-        { (showSubnetsPublic || showSubnetsPrivate || showSecurityGroups) &&
-            <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-                { showSubnetsPublic && <Subnets type="public" /> }
-                { showSubnetsPrivate && <Subnets type="private" /> }
-                { showSecurityGroups && <SecurityGroups /> }
+                
+                { componentsLeft.map(component => <div key={component.key}>{component.ui}</div>) }
             </td>
         }
     </tr></tbody></table>
@@ -89,10 +219,10 @@ const NetworkList = (props) => {
     return <>
         <div><b>AWS Network</b></div>
         <div className="box margin" style={{width:"100%",marginBottom:"6pt"}}>
-            <div className="pointer" style={{fontWeight:props.showVpcs ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleVpcs}>VPCs</div>
-            <div className="pointer" style={{fontWeight:props.showSubnetsPublic ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleSubnetsPublic}>Public Subnets</div>
-            <div className="pointer" style={{fontWeight:props.showSubnetsPrivate ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleSubnetsPrivate}>Private Subnets</div>
-            <div className="pointer" style={{fontWeight:props.showSecurityGroups ? "bold" : "normal"}} onClick={props.toggleSecurityGroups}>Security Groups</div>
+            <div className="pointer" style={{fontWeight:props.showVpcs() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleVpcs}>VPCs</div>
+            <div className="pointer" style={{fontWeight:props.showSubnetsPublic() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleSubnetsPublic}>Public Subnets</div>
+            <div className="pointer" style={{fontWeight:props.showSubnetsPrivate() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleSubnetsPrivate}>Private Subnets</div>
+            <div className="pointer" style={{fontWeight:props.showSecurityGroups() ? "bold" : "normal"}} onClick={props.toggleSecurityGroups}>Security Groups</div>
         </div>
     </>
 }
@@ -108,17 +238,27 @@ const ConfigList = (props) => {
 
 const Vpcs = (props) => {
 
+    const { outerState, setOuterState } = props;
+
     const all = useSearchParams()[0]?.get("all")?.toLowerCase() === "true";
     const vpcs = useFetch(`/aws/vpcs${all ? "/all" : ""}`, { cache: true });
 
-    const [ showAllSubnets, setShowAllSubnets ] = useState(false);
-    const [ showAllSecurityGroups, setShowAllSecurityGroups ] = useState(false);
+    const [ showAllSubnets,        setShowAllSubnets        ] = useState(outerState ? outerState.showAllSubnets        : false);
+    const [ showAllSecurityGroups, setShowAllSecurityGroups ] = useState(outerState ? outerState.showAllSecurityGroups : false);
+    const [ vpcsState,             setVpcsState             ] = useState(outerState ? (outerState.vpcsState || {})     : {});
 
     function toggleShowAllSubnets()        { setShowAllSubnets(value => !value); }
     function toggleShowAllSecurityGroups() { setShowAllSecurityGroups(value => !value); }
 
-    return <>
+    if (outerState) {
+         outerState.showAllSubnets        = showAllSubnets;
+         outerState.showAllSecurityGroups = showAllSecurityGroups;
+         outerState.vpcsState             = vpcsState;
+    }
+
+    return <div style={{marginBottom:"8pt"}}>
         <div>
+           { !vpcs.loading && 
            <div style={{float:"right",marginRight:"3pt"}}>
                 <small className="pointer" style={{fontWeight:showAllSubnets ? "bold" : "normal"}} onClick={toggleShowAllSubnets}>
                     Subnets {showAllSubnets ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
@@ -128,103 +268,133 @@ const Vpcs = (props) => {
                     Security {showAllSecurityGroups ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
                 </small>
            </div>
-           <b>AWS VPCs</b>&nbsp;&nbsp;({vpcs?.length})
+           }
+           <b>AWS VPCs</b>&nbsp;&nbsp;{!vpcs.loading && <small>({vpcs?.length})</small>}
         </div>
         <div style={{width:"100%"}}>
+            { vpcs.loading && <div className="box" style={{marginTop:"2pt"}}><StandardSpinner label="Loading VPCs" /></div> }
             { vpcs.map(vpc => <div key={vpc.id}>
-                <Vpc vpc={vpc} showAllSubnets={showAllSubnets} showAllSecurityGroups={showAllSecurityGroups} />
+                <Vpc vpc={vpc} outerState={vpcsState} setOuterState={setVpcsState} showAllSubnets={showAllSubnets} showAllSecurityGroups={showAllSecurityGroups} />
             </div>)}
         </div>
-    </>
+    </div>
 }
 
 const Vpc = (props) => {
 
-    const [ showSubnetsPublic,  setShowSubnetsPublic  ] = useState(false);
-    const [ showSubnetsPrivate, setShowSubnetsPrivate ] = useState(false);
-    const [ showSecurityGroups, setShowSecurityGroups ] = useState(false);
+    const { vpc, outerState, setOuterState } = props;
 
-    function toggleSubnetsPublic()  { showSubnetsPublic  ? setShowSubnetsPublic (false) : setShowSubnetsPublic (true); }
-    function toggleSubnetsPrivate() { showSubnetsPrivate ? setShowSubnetsPrivate(false) : setShowSubnetsPrivate(true); }
-    function toggleSecurityGroups() { showSecurityGroups ? setShowSecurityGroups(false) : setShowSecurityGroups(true); }
+    let [ state, setState ] = useState({});
+
+    if (outerState && setOuterState) {
+        //
+        // May store state in outer (parent) state so it persists between
+        // invocations (i.e. on hide/show). To do this though we must store
+        // by vpc.id (see isShow/toggleShow below), i.e. assume more than one.
+        //
+        state = outerState;
+        setState = setOuterState;
+    }
+
+    function isShow(property) {
+        return state[vpc.id] ? state[vpc.id][property] : false;
+    }
+
+    function toggleShow(property) {
+        if (!state[vpc.id]) {
+            state[vpc.id] = {};
+            state[vpc.id][property] = true;
+        }
+        else {
+            state[vpc.id][property] = !state[vpc.id][property];
+        }
+        setState({...state});
+    }
+
+    const isShowSubnetsPublic  = () => isShow    ("showSubnetsPublic");
+    const toggleSubnetsPublic  = () => toggleShow("showSubnetsPublic");
+    const isShowSubnetsPrivate = () => isShow    ("showSubnetsPrivate");
+    const toggleSubnetsPrivate = () => toggleShow("showSubnetsPrivate");
+    const isShowSecurityGroups = () => isShow    ("showSecurityGroups");
+    const toggleSecurityGroups = () => toggleShow("showSecurityGroups");
 
     return <>
         <div className="box margin" style={{marginBottom:"8pt",minWidth:"350pt",maxWidth:"500pt"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
-                <b>VPC</b>: <b style={{color:"black"}}>{props.vpc?.name}</b>
+                <b>VPC</b>: <b style={{color:"black"}}>{vpc.name}</b>
                 <ExternalLink
-                    href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#VpcDetails:VpcId=${props.vpc?.id}`}
+                    href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#VpcDetails:VpcId=${vpc.id}`}
                     bold={true}
                     style={{marginLeft:"6pt"}} />
             </div>
             <table width="100%"><tbody>
                 <tr>
                     <td style={tdLabelStyle}>ID:</td>
-                    <td style={tdContentStyle}>{props.vpc?.id}</td>
+                    <td style={tdContentStyle}>{vpc.id}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Stack:</td>
-                    <td style={tdContentStyle}>{props.vpc?.stack}</td>
+                    <td style={tdContentStyle}>{vpc?.stack}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>CIDR:</td>
-                    <td style={tdContentStyle}>{props.vpc?.cidr}</td>
+                    <td style={tdContentStyle}>{vpc?.cidr}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Status:</td>
-                    <td style={tdContentStyle}>{props.vpc?.status}</td>
+                    <td style={tdContentStyle}>{vpc?.status}</td>
                 </tr>
                 <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
                 <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
                 <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
-                <tr onClick={toggleSubnetsPublic} className="pointer">
+                <tr onClick={() => toggleSubnetsPublic(props.vpc.id)} className="pointer">
                     <td style={tdLabelStyle}>Public Subnets:</td>
                     <td>
-                        {(showSubnetsPublic) ? <>
+                        {(isShowSubnetsPublic() /* || props.showAllSubnets */ ) ? <>
                             <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
                             <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
                     </td>
                 </tr>
-                {(showSubnetsPublic) && <>
+                {(isShowSubnetsPublic() /* || props.showAllSubnets */ ) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
-                            <Subnets type="public" vpcId={props.vpc?.id} notitle={true} />
+                            <Subnets type="public" vpcId={vpc?.id} notitle={true} />
                         </td>
                     </tr>
                 </>}
                 <tr onClick={toggleSubnetsPrivate} className="pointer">
                     <td style={tdLabelStyle}>Private Subnets:</td>
                     <td>
-                        {(showSubnetsPrivate) ? <>
+                        {(isShowSubnetsPrivate()) ? <>
                             <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
                             <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
                     </td>
                 </tr>
-                {(showSubnetsPrivate) && <>
+                {(isShowSubnetsPrivate() || props.showAllSubnets) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
-                            <Subnets type="private" vpcId={props.vpc?.id} notitle={true} />
+                            <Subnets type="private" vpcId={vpc?.id} notitle={true} />
                         </td>
                     </tr>
                 </>}
                 <tr onClick={toggleSecurityGroups} className="pointer">
                     <td style={tdLabelStyle}>Security Groups:</td>
                     <td>
-                        {showSecurityGroups ? <>
+                        {isShowSecurityGroups() ? <>
                             <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
                             <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
                     </td>
                 </tr>
-                {showSecurityGroups && <>
+                {(isShowSecurityGroups() || props.showAllSecurityGroups /* || props.showSecurityGroup(vpc?.id) */ ) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
-                            <SecurityGroups vpcId={props.vpc?.id} notitle={true} />
+                            <SecurityGroups vpcId={vpc?.id} notitle={true} outerState={outerState} />
                         </td>
                     </tr>
                 </>}
@@ -239,16 +409,16 @@ const Subnets = (props) => {
     const args = props.vpcId ? `?vpc=${props.vpcId}` : ""
     const subnets = useFetch(`/aws/subnets${all ? "/all" : ""}${args}`, { cache: true });
 
-    return <>
-        { !props.notitle && <div><b>AWS Subnets</b>&nbsp;&nbsp;({subnets?.length})</div> }
+    return <div style={{marginBottom:"8pt"}}>
+        { !props.notitle && <div><b>AWS {props.type === "public" ? "Public" : (props.type === "private" ? "Private" : "")} Subnets</b>&nbsp;&nbsp;({subnets?.length})</div> }
         <div style={{minWidth:"400pt"}}>
-            { subnets.loading && <div className="box lighten" style={{paddingBottom:"10pt"}}><StandardSpinner label="Loading subnets" /></div> }
+            { subnets.loading && <div className="box lighten" style={{marginTop:"2pt"}}><StandardSpinner label="Loading Subnets" /></div> }
             { subnets.filter(subnet => props?.type ? subnet.type === props.type : true)?.map(subnet => <div key={subnet.id}>
                 <Subnet subnet={subnet} />
                 <div style={{height:"4pt"}} />
             </div>)}
         </div>
-    </>
+    </div>
 }
 
 const Subnet = (props) => {
@@ -296,57 +466,62 @@ const Subnet = (props) => {
 
 const SecurityGroups = (props) => {
 
+    const { outerState, setOuterState } = props;
+    let [ state, setState ] = useState(outerState || {});
+
     const all = useSearchParams()[0].get("all")?.toLowerCase() === "true";
     const args = props.vpcId ? `?vpc=${props.vpcId}` : ""
     const securityGroups = useFetch(`/aws/security_groups${all ? "/all" : ""}${args}`, { cache: true });
 
-    return <>
+    return <div style={{marginBottom:"8pt"}}>
         { !props.notitle &&
             <div>
                 <b>AWS Security Groups</b>&nbsp;&nbsp;({securityGroups?.length})
             </div>
         }
         <div style={{minWidth:"400pt"}}>
-            { securityGroups.loading && <div className="box lighten" style={{paddingBottom:"10pt"}}><StandardSpinner label="Loading security groups" /></div> }
+            { securityGroups.loading && <div className="box lighten" style={{marginTop:"2pt"}}><StandardSpinner label="Loading security groups" /></div> }
             { securityGroups.map(securityGroup => <div key={securityGroup.id}>
-                <SecurityGroup security_group={securityGroup} />
+                <SecurityGroup security_group={securityGroup} outerState={outerState} setOuterState={setOuterState} />
                 <div style={{height:"4pt"}} />
             </div>)}
         </div>
-    </>
+    </div>
 }
 
 const SecurityGroup = (props) => {
 
-    const [ showRules, setShowRules ] = useState(false);
-    const [ showInboundRules, setShowInboundRules ] = useState(false);
-    const [ showOutboundRules, setShowOutboundRules ] = useState(false);
+    const { security_group, outerState } = props;
+    let [ state, setState ] = useState(outerState || {});
 
-    function toggleRules() {
-        if (showRules) {
-            setShowRules(false);
-            setShowInboundRules(false);
-            setShowOutboundRules(false);
+    function isShow(property) {
+        return state[security_group.id] ? state[security_group.id][property] : false;
+    }
+
+    function toggleShow(property) {
+        if (!state[security_group.id]) {
+            state[security_group.id] = {};
+            state[security_group.id][property] = true;
         }
         else {
-            setShowRules(true);
-            setShowInboundRules(true);
-            setShowOutboundRules(true);
+            state[security_group.id][property] = !state[security_group.id][property];
         }
+        setState({...state});
     }
-    function toggleInboundRules() { showInboundRules ? setShowInboundRules(false) : setShowInboundRules(true); }
-    function toggleOutboundRules() { showOutboundRules ? setShowOutboundRules(false) : setShowOutboundRules(true); }
 
-    useEffect(() => {
-        setShowRules(props.showAllRules);
-    }, [props.showAllRules]);
+    const isShowRules         = () => isShow    ("showRules");
+    const toggleRules         = () => toggleShow("showRules");
+    const isShowInboundRules  = () => isShow    ("showInboundRules");
+    const toggleInboundRules  = () => toggleShow("showInboundRules");
+    const isShowOutboundRules = () => isShow    ("showOutboundRules");
+    const toggleOutboundRules = () => toggleShow("showOutboundRules");
 
     return <>
         <div className="box margin lighten" style={{width:"100%",maxWidth:"500pt"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <div style={{float:"right",marginLeft:"8pt",marginRight:"3pt"}}>
-                    <small className="pointer" style={{fontWeight:showRules ? "bold" : "normal"}} onClick={toggleRules}>
-                        Rules {showRules ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
+                    <small className="pointer" style={{fontWeight:isShowRules() ? "bold" : "normal"}} onClick={toggleRules}>
+                        Rules {isShowRules() ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
                     </small>
                 </div>
                 <b>Security Group</b>: <b style={{color:"black"}}>{props.security_group?.name}</b>
@@ -377,14 +552,14 @@ const SecurityGroup = (props) => {
                 <tr onClick={toggleInboundRules} className="pointer">
                     <td style={tdLabelStyle}>Inbound Rules:</td>
                     <td>
-                        {(showInboundRules) ? <>
+                        {(isShowInboundRules()) ? <>
                             <small><u>Hide</u>&nbsp;{Char.DownArrowHollow}</small>
                         </>:<>
                             <small><u>Show</u>&nbsp;{Char.UpArrowHollow}</small>
                         </>}
                     </td>
                 </tr>
-                {(showInboundRules) && <>
+                {(isShowInboundRules()) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
                             <SecurityGroupRules security_group_id={props.security_group?.id} direction="inbound" />
@@ -394,14 +569,14 @@ const SecurityGroup = (props) => {
                 <tr onClick={toggleOutboundRules} className="pointer">
                     <td style={tdLabelStyle}>Outbound Rules:</td>
                     <td>
-                        {(showOutboundRules) ? <>
+                        {(isShowOutboundRules()) ? <>
                             <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
                             <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
                     </td>
                 </tr>
-                {(showOutboundRules) && <>
+                {(isShowOutboundRules()) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
                             <SecurityGroupRules security_group_id={props.security_group?.id} direction="outbound" />
@@ -546,36 +721,37 @@ const StackList = (props) => {
         <div className="box" style={{whiteSpace:"nowrap"}}>
             {stacks.map((stack, i) => {
                 function toggleStack() { props.toggleStack(stack.name); }
-                const style = {...(i + 1 < stacks.length ? styleNotLast : styleLast), ...(props.showStack(stack.name) ? {fontWeight:"bold"} : {})};
+                function selectedStack() { return props.selectedStack(stack.name); }
+                const style = {...(i + 1 < stacks.length ? styleNotLast : styleLast), ...(selectedStack(stack.name) ? {fontWeight:"bold"} : {})};
                 return <div key={stack.name} style={style} onClick={toggleStack}>{stack.name}</div>
             })}
         </div>
     </>
 }
 
-const Stacks = (props) => {
-    return <>
-        { props.stacks.map(stackName =>
-            <Stack key={stackName} stackName={stackName} hideStack={props.hideStack} />
-        )}
-    </>
-}
-
 const Stack = (props) => {
 
-    const stack = useFetch(`/aws/stacks/${props.stackName}`);
+    const { stackName, hideStack, outerState } = props;
 
-    const [ showOutputs, setShowOutputs ] = useState(false);
-    const [ showParameters, setShowParameters ] = useState(false);
-    const [ showResources, setShowResources ] = useState(false);
+    const stack = useFetch(`/aws/stacks/${stackName}`, { cache: true });
 
-    const toggleOutputs = () => setShowOutputs(!showOutputs);
+    const [ showOutputs,    setShowOutputs ]    = useState(outerState ? outerState.showOutputs    : false);
+    const [ showParameters, setShowParameters ] = useState(outerState ? outerState.showParameters : false);
+    const [ showResources,  setShowResources ]  = useState(outerState ? outerState.showResources  : false);
+
+    const toggleOutputs    = () => setShowOutputs   (!showOutputs);
     const toggleParameters = () => setShowParameters(!showParameters);
-    const toggleResources = () => setShowResources(!showResources);
-    const hideStack = () => props.hideStack(stack.data?.name);
+    const toggleResources  = () => setShowResources (!showResources);
+
+    if (outerState) {
+         outerState.showOutputs    = showOutputs;
+         outerState.showParameters = showParameters;
+         outerState.showResources  = showResources;
+    }
 
     return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
-        <div><b>AWS Stack: {props.stackName}</b>
+        <div>
+            <b>AWS Stack: {stackName}</b>
             <ExternalLink
                 href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/stackinfo?filteringStatus=active&filteringText=&viewNested=true&stackId=${stack.data?.id}`}
                 bold={true}
@@ -589,8 +765,8 @@ const Stack = (props) => {
                 <tr>
                     <td style={tdLabelStyle}>Name:</td>
                     <td style={{...tdContentStyle,wordBreak:"break-all"}}>
-                        <b style={{float:"right",cursor:"pointer",marginTop:"-2pt"}} onClick={hideStack}>{Char.X}</b>
-                        {stack.data?.name}
+                        <b style={{float:"right",cursor:"pointer",marginTop:"-2pt"}} onClick={() => hideStack(stackName)}>{Char.X}</b>
+                        {stackName}
                     </td>
                 </tr>
                 <tr>
@@ -635,12 +811,16 @@ const Stack = (props) => {
                         </>:<>
                             <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
+                        <ExternalLink
+                            href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/outputs?filteringStatus=active&filteringText=&viewNested=true&stackId=${stack.data?.id}`}
+                            bold={true}
+                            style={{fontSize:"small",marginLeft:"10pt"}} />
                     </td>
                 </tr>
                 { showOutputs && <>
                     <tr>
                         <td colSpan="2" style={{paddingTop:"2pt"}}>
-                            <StackOutputs stackName={stack.data?.name} />
+                            <StackOutputs stackName={stackName} />
                         </td>
                     </tr>
                 </>}
@@ -652,12 +832,16 @@ const Stack = (props) => {
                         </>:<>
                             <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
+                        <ExternalLink
+                            href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/parameters?filteringStatus=active&filteringText=&viewNested=true&stackId=${stack.data?.id}`}
+                            bold={true}
+                            style={{fontSize:"small",marginLeft:"10pt"}} />
                     </td>
                 </tr>
                 { showParameters && <>
                     <tr>
                         <td colSpan="2" style={{paddingTop:"2pt"}}>
-                            <StackParameters stackName={stack.data?.name} />
+                            <StackParameters stackName={stackName} />
                         </td>
                     </tr>
                 </>}
@@ -669,12 +853,16 @@ const Stack = (props) => {
                         </>:<>
                             <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
+                        <ExternalLink
+                            href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/resources?filteringStatus=active&filteringText=&viewNested=true&stackId=${stack.data?.id}`}
+                            bold={true}
+                            style={{fontSize:"small",marginLeft:"10pt"}} />
                     </td>
                 </tr>
                 { showResources && <>
                     <tr>
                         <td colSpan="2" style={{paddingTop:"2pt"}}>
-                            <StackResources stackName={stack.data?.name} />
+                            <StackResources stackName={stackName} />
                         </td>
                     </tr>
                 </>}
