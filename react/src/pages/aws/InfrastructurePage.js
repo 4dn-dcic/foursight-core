@@ -123,18 +123,10 @@ const InfrastructurePage = () => {
     const [ showSubnetsPublic, setShowSubnetsPublic ] = useState(false);
     const [ showSubnetsPrivate, setShowSubnetsPrivate ] = useState(false);
     const [ showSecurityGroups, setShowSecurityGroups ] = useState(false);
-    const [ showEcosystem, setShowEcosystem ] = useState(false);
     const [ showGac, setShowGac ] = useState(false);
+    const [ showEcosystem, setShowEcosystem ] = useState(false);
     const [ stacks, setStacks ] = useState([]);
-
     const [ outerState, setOuterState ] = useState({});
-
-    function toggleVpcs()           { setShowVpcs(value => !value); }
-    function toggleSubnetsPublic()  { setShowSubnetsPublic(value => !value); }
-    function toggleSubnetsPrivate() { setShowSubnetsPrivate(value => !value); }
-    function toggleSecurityGroups() { setShowSecurityGroups(value => !value); }
-    function toggleEcosystem()      { setShowEcosystem(value => !value); }
-    function toggleGac()            { setShowGac(value => !value); }
 
     const componentDefinitions = useComponentDefinitions([
          { type: "stack",           create: createStack          },
@@ -146,45 +138,64 @@ const InfrastructurePage = () => {
          { type: "ecosystem",       create: createEcosystem      }
     ]);
 
+    const componentsLeft = useSelectedComponents(componentDefinitions);
+    const componentsRight = useSelectedComponents(componentDefinitions);
+
     function createVpcs() {
-        return <Vpcs outerState={outerState} setOuterState={setOuterState} />;
+        return <Vpcs hide={hideVpcs} outerState={outerState} setOuterState={setOuterState} />;
     }
 
     function createSubnetsPrivate(name) {
-        return <Subnets type="private" />;
+        return <Subnets type="private" hide={hideSubnetsPrivate} />;
     }
 
     function createSubnetsPublic(name) {
-        return <Subnets type="public" />;
+        return <Subnets type="public" hide={hideSubnetsPublic} />;
     }
 
     function createSecurityGroups(name) {
-        return <SecurityGroups outerState={outerState} setOuterState={setOuterState} />;
+        return <SecurityGroups hide={hideSecurityGroups} outerState={outerState} setOuterState={setOuterState} />;
     }
 
     function createGac(name) {
-        return <Gac />;
+        return <Gac hide={hideGac} />;
     }
 
     function createEcosystem(name) {
-        return <Ecosystem />;
+        return <Ecosystem hide={hideEcosystem} />;
     }
 
     function createStack(name) {
         return <Stack stackName={name} hideStack={(name) => hideStack(name)} outerState={outerState} />;
     }
 
-    const componentsLeft = useSelectedComponents(componentDefinitions);
+    const selectedVpcs = () => componentsLeft.selected("vpcs");
+    const toggleVpcs   = () => componentsLeft.toggle("vpcs");
+    const hideVpcs     = () => componentsLeft.remove("vpcs");
 
-    function toggleStack(stackName) {
-        componentsLeft.toggle("stack", stackName);
-    }
-    function hideStack(stackName) {
-        componentsLeft.remove("stack", stackName);
-    }
-    function selectedStack(stackName) {
-        return componentsLeft.selected("stack", stackName);
-    }
+    const selectedGac = () => componentsLeft.selected("gac");
+    const toggleGac   = () => componentsLeft.toggle("gac");
+    const hideGac     = () => componentsLeft.remove("gac");
+
+    const selectedEcosystem = () => componentsLeft.selected("ecosystem");
+    const toggleEcosystem   = () => componentsLeft.toggle("ecosystem");
+    const hideEcosystem     = () => componentsLeft.remove("ecosystem");
+
+    const selectedStack = (stackName) => componentsLeft.selected("stack", stackName);
+    const toggleStack   = (stackName) => componentsLeft.toggle("stack", stackName);
+    const hideStack     = (stackName) => componentsLeft.remove("stack", stackName);
+
+    const selectedSubnetsPublic = () => componentsRight.selected("subnets-public");
+    const toggleSubnetsPublic   = () => componentsRight.toggle("subnets-public");
+    const hideSubnetsPublic     = () => componentsRight.remove("subnets-public");
+
+    const selectedSubnetsPrivate = () => componentsRight.selected("subnets-private");
+    const toggleSubnetsPrivate   = () => componentsRight.toggle("subnets-private");
+    const hideSubnetsPrivate     = () => componentsRight.remove("subnets-private");
+
+    const selectedSecurityGroups = () => componentsRight.selected("security-groups");
+    const toggleSecurityGroups   = () => componentsRight.toggle("security-groups");
+    const hideSecurityGroups     = () => componentsRight.remove("security-groups");
 
     useEffect(() => {
         componentsLeft.toggle("vpcs");
@@ -193,14 +204,14 @@ const InfrastructurePage = () => {
     return <table><tbody><tr>
         <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
             <NetworkList
-                showVpcs={() => componentsLeft.selected("vpcs")} toggleVpcs={() => componentsLeft.toggle("vpcs")}
-                showSubnetsPublic={() => componentsLeft.selected("subnets-public")} toggleSubnetsPublic={() => componentsLeft.toggle("subnets-public")}
-                showSubnetsPrivate={() => componentsLeft.selected("subnets-private")} toggleSubnetsPrivate={() => componentsLeft.toggle("subnets-private")}
-                showSecurityGroups={() => componentsLeft.selected("security-groups")} toggleSecurityGroups={() => componentsLeft.toggle("security-groups")}
+                showVpcs={selectedVpcs} toggleVpcs={toggleVpcs}
+                showSubnetsPublic={selectedSubnetsPublic} toggleSubnetsPublic={toggleSubnetsPublic}
+                showSubnetsPrivate={selectedSubnetsPrivate} toggleSubnetsPrivate={toggleSubnetsPrivate}
+                showSecurityGroups={selectedSecurityGroups} toggleSecurityGroups={toggleSecurityGroups}
             />
             <ConfigList
-                showGac={componentsLeft.selected("gac")} toggleGac={() => componentsLeft.toggle("gac")}
-                showEcosystem={componentsLeft.selected("ecosystem")} toggleEcosystem={() => componentsLeft.toggle("ecosystem")} />
+                showGac={selectedGac} toggleGac={toggleGac}
+                showEcosystem={selectedEcosystem} toggleEcosystem={toggleEcosystem} />
             <StackList
                 toggleStack={toggleStack}
                 selectedStack={selectedStack}
@@ -208,8 +219,12 @@ const InfrastructurePage = () => {
         </td>
         { !componentsLeft.empty() &&
             <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-                
                 { componentsLeft.map(component => <div key={component.key}>{component.ui}</div>) }
+            </td>
+        }
+        { !componentsRight.empty() &&
+            <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
+                { componentsRight.map(component => <div key={component.key}>{component.ui}</div>) }
             </td>
         }
     </tr></tbody></table>
@@ -230,8 +245,8 @@ const NetworkList = (props) => {
 const ConfigList = (props) => {
     return <>
         <div className="box margin thickborder" style={{width:"100%",marginBottom:"6pt"}}>
-            <div className="pointer" style={{fontWeight:props.showGac ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleGac}>Global Application Configuration</div>
-            <div className="pointer" style={{fontWeight:props.showEcosystem ? "bold" : "normal"}} onClick={props.toggleEcosystem}>Ecosystem Definition</div>
+            <div className="pointer" style={{fontWeight:props.showGac() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleGac}>Global Application Configuration</div>
+            <div className="pointer" style={{fontWeight:props.showEcosystem() ? "bold" : "normal"}} onClick={props.toggleEcosystem}>Ecosystem Definition</div>
         </div>
     </>
 }
@@ -258,8 +273,9 @@ const Vpcs = (props) => {
 
     return <div style={{marginBottom:"8pt"}}>
         <div>
-           { !vpcs.loading && 
+           <b>AWS VPCs</b>&nbsp;&nbsp;{!vpcs.loading && <small>({vpcs?.length})</small>}
            <div style={{float:"right",marginRight:"3pt"}}>
+                {/*
                 <small className="pointer" style={{fontWeight:showAllSubnets ? "bold" : "normal"}} onClick={toggleShowAllSubnets}>
                     Subnets {showAllSubnets ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
                 </small>
@@ -267,9 +283,10 @@ const Vpcs = (props) => {
                 <small className="pointer" style={{fontWeight:showAllSecurityGroups ? "bold" : "normal"}} onClick={toggleShowAllSecurityGroups}>
                     Security {showAllSecurityGroups ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
                 </small>
+                &nbsp;|&nbsp;
+                */}
+                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
            </div>
-           }
-           <b>AWS VPCs</b>&nbsp;&nbsp;{!vpcs.loading && <small>({vpcs?.length})</small>}
         </div>
         <div style={{width:"100%"}}>
             { vpcs.loading && <div className="box" style={{marginTop:"2pt"}}><StandardSpinner label="Loading VPCs" /></div> }
@@ -357,7 +374,7 @@ const Vpc = (props) => {
                         </>}
                     </td>
                 </tr>
-                {(isShowSubnetsPublic() /* || props.showAllSubnets */ ) && <>
+                {(isShowSubnetsPublic() || props.showAllSubnets) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
                             <Subnets type="public" vpcId={vpc?.id} notitle={true} />
@@ -410,7 +427,10 @@ const Subnets = (props) => {
     const subnets = useFetch(`/aws/subnets${all ? "/all" : ""}${args}`, { cache: true });
 
     return <div style={{marginBottom:"8pt"}}>
-        { !props.notitle && <div><b>AWS {props.type === "public" ? "Public" : (props.type === "private" ? "Private" : "")} Subnets</b>&nbsp;&nbsp;({subnets?.length})</div> }
+        { !props.notitle && <div>
+            <b>AWS {props.type === "public" ? "Public" : (props.type === "private" ? "Private" : "")} Subnets</b>&nbsp;&nbsp;<small>({subnets?.length})</small>
+            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
+        </div> }
         <div style={{minWidth:"400pt"}}>
             { subnets.loading && <div className="box lighten" style={{marginTop:"2pt"}}><StandardSpinner label="Loading Subnets" /></div> }
             { subnets.filter(subnet => props?.type ? subnet.type === props.type : true)?.map(subnet => <div key={subnet.id}>
@@ -477,6 +497,7 @@ const SecurityGroups = (props) => {
         { !props.notitle &&
             <div>
                 <b>AWS Security Groups</b>&nbsp;&nbsp;({securityGroups?.length})
+                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
             </div>
         }
         <div style={{minWidth:"400pt"}}>
@@ -956,16 +977,6 @@ const StackResources = (props) => {
     </div>
 }
 
-const Ecosystem = (props) => {
-    const info = useFetch("/info", { cache: true });
-    return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
-        <div><b>Ecosystem</b>:&nbsp;<b>{info.data?.buckets?.env}</b></div>
-        <pre className="box margin">
-            {Yaml.Format(info.data?.buckets?.ecosystem)}
-        </pre>
-    </div>
-}
-
 const Gac = (props) => {
     const info = useFetch("/info", { cache: true });
     return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
@@ -974,6 +985,7 @@ const Gac = (props) => {
                 href={`https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=${info.data?.gac?.name}&region=us-east-1`}
                 bold={true}
                 style={{marginLeft:"6pt"}} />
+                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
         </div>
         <div className="box margin">
             <ul style={{marginBottom:"1pt"}}>
@@ -983,6 +995,19 @@ const Gac = (props) => {
                 </li>)}
             </ul>
         </div>
+    </div>
+}
+
+const Ecosystem = (props) => {
+    const info = useFetch("/info", { cache: true });
+    return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
+        <div>
+            <b>Ecosystem</b>:&nbsp;<b>{info.data?.buckets?.env}</b>
+            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
+        </div>
+        <pre className="box margin">
+            {Yaml.Format(info.data?.buckets?.ecosystem)}
+        </pre>
     </div>
 }
 
