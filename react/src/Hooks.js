@@ -50,7 +50,7 @@ export const useOptionalKeyedState = (keyedState, initial) => {
 export const useComponentDefinitions = (componentTypes) => {
     return {
         count: () => componentTypes.length,
-        instantiate: (type, name, arg) => {
+        instantiate: (type, name, arg, remove) => {
             const componentTypeIndex = componentTypes.findIndex(componentType => componentType.type === type);
             if (componentTypeIndex >= 0) {
                 const key = name ? `${type}::${name}` : type;
@@ -58,7 +58,7 @@ export const useComponentDefinitions = (componentTypes) => {
                     type: type,
                     name: name,
                     key: key,
-                    ui: componentTypes[componentTypeIndex].create(name, key, arg)
+                    ui: componentTypes[componentTypeIndex].create(name, key, arg, remove)
                 };
             }
         },
@@ -92,7 +92,7 @@ export const useSelectedComponents = (componentDefinitions) => {
         key: (type, name = null) => {
             return name ? `${type}::${name}` : type;
         },
-        toggle: (type, name = null, arg = null) => {
+        toggle: function (type, name = null, arg = null) {
             const selectedComponentIndex = selectedComponents.findIndex(
                 selectedComponent => selectedComponent.type === type && selectedComponent.name === name
             );
@@ -101,7 +101,8 @@ export const useSelectedComponents = (componentDefinitions) => {
                 setSelectedComponents([...selectedComponents]);
             }
             else {
-                const component = componentDefinitions.instantiate(type, name, arg);
+                const remove = () => this.remove(type, name);
+                const component = componentDefinitions.instantiate(type, name, arg, remove);
                 if (component) {
                     selectedComponents.unshift(component);
                     setSelectedComponents([...selectedComponents]);

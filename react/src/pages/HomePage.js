@@ -120,7 +120,7 @@ const HomePage = (props) => {
         componentsLeft.toggle("stack", stackName);
     }
 
-    const createStack = (stackName, key, keyedState) => {
+    const createStack = (stackName, key, keyedState, remove) => {
         // TODO:
         // The useComponentDefinitions create function should (maybe) take as args:
         // - name (type not needed as we know what type we are)
@@ -129,8 +129,8 @@ const HomePage = (props) => {
         // - args (aribitray data passed to useComponents.toggle or useCOmponents.add)
         return <Stack
             stackName={stackName}
-            hideStack={() => componentsLeft.toggle("stack", stackName)}
             keyedState={keyedState.keyed(key)}
+            hideStack={remove}
         />
     }
 
