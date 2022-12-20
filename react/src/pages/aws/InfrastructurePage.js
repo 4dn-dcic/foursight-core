@@ -9,6 +9,7 @@ import Clipboard from '../../utils/Clipboard';
 import Json from '../../utils/Json';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
+import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
 
 const tdLabelStyle = {
     color: "var(--box-fg)",
@@ -21,101 +22,6 @@ const tdLabelStyle = {
 }
 const tdContentStyle = {
     verticalAlign: "top",
-}
-
-// Component/hook to dynamically define/create components by type.
-// In service of useSelectedComponent component/hook below to add
-// remove arbitrary components to a list of "selected" (shown) components.
-//
-const useComponentDefinitions = (componentTypes) => {
-    const [ componentDefinitions, setComponentDefinitions ] = useState([]);
-    return {
-        define: (type, name) => {
-            // Disable this caching for now - may not actually be useful.
-            const componentIndex = -1 // componentDefinitions.findIndex(component => component.type === type && component.name === name);
-            if (componentIndex >= 0) return componentDefinitions[componentIndex];
-            const componentTypeIndex = componentTypes.findIndex(componentType => componentType.type === type);
-            if (componentTypeIndex >= 0) {
-                const componentCreate = componentTypes[componentTypeIndex]?.create;
-                if (componentCreate) {
-                    const component = { type: type, name: name, ui: componentCreate(name) };
-                    componentDefinitions.unshift(component);
-                    setComponentDefinitions([...componentDefinitions]);
-                    return component;
-                }
-            }
-            return null;
-        },
-        label: (type, name) => {
-            const componentTypeIndex = componentTypes.findIndex(componentType => componentType.type === type);
-            return (componentTypeIndex >= 0) ? componentTypes[componentTypeIndex]?.label : null;
-        },
-    };
-}
-
-const useSelectedComponents = (componentDefinitions) => {
-    const [ selectedComponents, setSelectedComponents ] = useState([]);
-    // TODO: Figure out precisely why we need to wrap in useState (but we do or else e.g. X-ing out from
-    // a stack box gets confused - removes all (previously selected) stack boxes - something to do with
-    // the useSelectedComponents state getting captured on each select). 
-    return useState({
-        count: () => {
-            return selectedComponents.length;
-        },
-        empty: () => {
-            return selectedComponents.length == 0;
-        },
-        selected: (type, name = null) => {
-            return selectedComponents.findIndex(
-                selectedComponent => selectedComponent.type === type && selectedComponent.name === name
-            ) >= 0;
-        },
-        map: (f) => {
-            return selectedComponents.map(f);
-        },
-        toggle: (type, name = null) => {
-            const selectedComponentIndex = selectedComponents.findIndex(
-                selectedComponent => selectedComponent.type === type && selectedComponent.name === name
-            );
-            if (selectedComponentIndex >= 0) {
-                selectedComponents.splice(selectedComponentIndex, 1);
-                setSelectedComponents([...selectedComponents]);
-            }
-            else {
-                const component = componentDefinitions.define(type, name);
-                if (component) {
-                    component.key = name ? `${type}::${name}` : type;
-                    selectedComponents.unshift(component);
-                    setSelectedComponents([...selectedComponents]);
-                }
-            }
-        },
-        add: (type, name = null) => {
-            const selectedComponentIndex = selectedComponents.findIndex(
-                selectedComponent => selectedComponent.type === type && selectedComponent.name === name
-            );
-            if (selectedComponentIndex < 0) {
-                const component = componentDefinitions.define(type, name);
-                if (component) {
-                    component.key = name ? `${type}::${name}` : type;
-                    selectedComponents.unshift(component);
-                    setSelectedComponents([...selectedComponents]);
-                }
-            }
-        },
-        remove: (type, name = null) => {
-            const selectedComponentIndex = selectedComponents.findIndex(
-                selectedComponent => selectedComponent.type === type && selectedComponent.name === name
-            );
-            if (selectedComponentIndex >= 0) {
-                selectedComponents.splice(selectedComponentIndex, 1);
-                setSelectedComponents([...selectedComponents]);
-            }
-        },
-        label: (type, name) => {
-            return componentDefinitions.label(type, name);
-        }
-    })[0];
 }
 
 const InfrastructurePage = () => {

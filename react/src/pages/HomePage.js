@@ -1,12 +1,100 @@
 import React from 'react';
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import Env from '../utils/Env';
 import HeaderData from '../HeaderData';
 import Logout from '../utils/Logout';
 import Server from '../utils/Server';
+import Char from '../utils/Char';
 import { HorizontalLine, Link, LoggedInUser } from '../Components';
+import { useComponentDefinitions, useSelectedComponents, useKeyedState, useOptionalKeyedState } from '../Hooks.js';
+
+const Stack = (props) => {
+
+    let [ state, setState ] = useState(props.keyedState?.get() || {});
+
+    function isShowOutputs() { return state.showOutputs; }
+    function isShowResources() { return state.showResources; }
+    function toggleOutputs() {
+        _setState({...state, showOutputs: state.showOutputs ? false : true });
+    }
+    function toggleResources() {
+        _setState({...state, showResources: state.showResources ? false : true });
+    }
+    function _setState(state) {
+        setState(state);
+        props.keyedState?.set(state);
+    }
+
+    return <div className="box darken" style={{marginBottom:"4pt"}}>
+        <b>Stack {props.stackName}</b> &nbsp; <span className="pointer" onClick={() => props.hideStack("stack", props.stackName)}>{Char.X}</span>
+        <br />
+        { isShowOutputs() ? <>
+            <span className="pointer" onClick={toggleOutputs}>Hide Outputs</span>
+            <StackOutputs />
+        </>:<>
+            <span className="pointer" onClick={toggleOutputs}>Show Outputs</span>
+        </> }
+        <br />
+        { isShowResources() ? <>
+            <span className="pointer" onClick={toggleResources}>Hide Resources</span>
+                <StackResources keyedState={props.keyedState?.keyed("::resources")} />
+        </>:<>
+            <span className="pointer" onClick={toggleResources}>Show Resources</span>
+        </> }
+    </div>
+}
+
+const StackOutputs = (props) => {
+    return <div className="box" style={{marginBottom:"4pt"}}>
+        Stack {props.stackName} Outputs &nbsp;
+    </div>
+}
+
+const StackResources = (props) => {
+    let [ state, setState ] = useOptionalKeyedState(props.keyedState);
+    function isShowDetails() { return state.showDetails; }
+    function toggleDetails() {
+        //setState({...state, showDetails: state.showDetails ? false : true });
+        setState({showDetails: state.showDetails ? false : true });
+    }
+    return <div className="box" style={{marginBottom:"4pt"}}>
+        Stack {props.stackName} Resources &nbsp; <br />
+        { isShowDetails() ? <>
+            <span className="pointer" onClick={toggleDetails}>Hide Details</span>
+            <StackResourceDetails keyedState={props.keyedState?.keyed("::details")} />
+        </>:<>
+            <span className="pointer" onClick={toggleDetails}>Show Details</span>
+        </> }
+    </div>
+}
+
+const StackResourceDetails = (props) => {
+    let [ state, setState ] = useOptionalKeyedState(props.keyedState);
+    function isShowMoreDetails() { return state.showMoreDetails; }
+    function toggleMoreDetails() {
+        //setState({...state, showMoreDetails: state.showMoreDetails ? false : true });
+        setState({showMoreDetails: state.showMoreDetails ? false : true });
+    }
+    return <div className="box lighten" style={{marginBottom:"4pt"}}>
+        <small>Stack {props.stackName} Resource Details &nbsp;</small>
+        { isShowMoreDetails() ? <>
+            <span className="pointer" onClick={toggleMoreDetails}>Hide More Details</span>
+            <StackResourceMoreDetails />
+        </>:<>
+            <span className="pointer" onClick={toggleMoreDetails}>Show More Details</span>
+        </> }
+    </div>
+}
+
+const StackResourceMoreDetails = (props) => {
+    return <div className="box" style={{marginBottom:"4pt"}}>
+        <small>More Stack {props.stackName} Resource Details &nbsp;</small>
+    </div>
+}
 
 const HomePage = (props) => {
+
+    let keyedState = useKeyedState({abc:"123"});
 
     const [ header ] = useContext(HeaderData);
     const versionsToolTip = `Deployed: ${header?.app?.deployed} / `
@@ -14,13 +102,51 @@ const HomePage = (props) => {
                           + header?.versions?.foursight_core + " / foursight-core: "
                           + header?.versions?.foursight + " / dcicutils: " + header?.versions?.dcicutils;
 
-        let x = Server.Url("/info")
-        console.log('foo')
-        console.log(x)
-        x = Server.Url(x)
-        console.log('goo')
-        console.log(x)
+    function hideStack(stackName) {
+        componentsLeft.toggle("stack", stackName);
+    }
+
+    const createStack = (stackName, keyedState) => {
+        const key = componentsLeft.key("stack", stackName);
+        return <Stack
+            stackName={stackName}
+            hideStack={() => componentsLeft.toggle("stack", stackName)}
+            keyedState={keyedState.keyed(key)}
+        />
+    }
+
+    const componentDefinitions = useComponentDefinitions([
+         { type: "stack", create: createStack }
+    ]);
+
+    const componentsLeft = useSelectedComponents(componentDefinitions);
+
+    const stacks = [ "Abc", "Def" ];
+
+        const [ x, setX ] = useState({foo:'bar'});
+
     return <>
+                <span onClick={() => setX(value => ({goo:'baz'}))}>XXX[{JSON.stringify(x)}]XXX</span>
+        keyedState:[{JSON.stringify(keyedState.get())}]<br/>
+
+        <div className="box" style={{marginBottom:"10pt",width:"fit-content"}}>
+            {stacks.map(stack =>
+                <div
+                    key={stack}
+                    className="pointer"
+                    style={{fontWeight:componentsLeft.selected("stack", stack) ? "bold" : "normal"}}
+                    onClick={() => componentsLeft.toggle("stack", stack, keyedState)}>{stack}</div>
+            )}
+        </div>
+
+        <div>
+            { componentsLeft.map(component => <div key={component.key}>{component.ui}</div>) }
+        </div>
+
+        <br />
+        COMPONENT-COUNT:[{componentsLeft.count()}]<br />
+        COMPONENT-DEFINITION-COUNT:[{componentDefinitions.count()}]
+
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
                 <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})</span></b>

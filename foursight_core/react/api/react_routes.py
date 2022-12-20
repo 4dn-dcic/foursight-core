@@ -136,7 +136,8 @@ class ReactRoutes:
     @route("/{env}/checks", authorize=True)
     def reactapi_route_checks_ungrouped(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Returns detailed info on all defined checks, NO grouped by check group.
+        Returns detailed info on all defined checks, NOT grouped by check group, as dictionary
+        where each key name is the check name and its object contents contain the check details.
         For troubleshooting only.
         """
         return app.core.reactapi_checks_ungrouped(app.current_request.to_dict(), env)
@@ -144,21 +145,23 @@ class ReactRoutes:
     @route("/{env}/checks/grouped", authorize=True)
     def reactapi_route_checks_grouped(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Returns detailed info on all defined checks, grouped by check group.
+        Returns detailed info on all defined checks, grouped by check group, as a list where
+        each item is an object containing the group name and list of check detail objects.
         """
         return app.core.reactapi_checks_grouped(app.current_request.to_dict(), env)
 
     @route("/{env}/checks/grouped/schedule", authorize=True)
     def reactapi_route_checks_grouped_by_schedule(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Returns detailed info on all defined checks, grouped by check group.
+        Returns detailed info on all defined checks, grouped by check group, as a list where each
+        each item is an object containing the schedule namei and list list of check detail objecs.
         """
         return app.core.reactapi_checks_grouped_by_schedule(app.current_request.to_dict(), env)
 
     @route("/{env}/checks/{check}", authorize=True)
     def reactapi_route_checks_check(env: str, check: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Returns the most result of the most recent run for the given check.
+        Returns the details of the given named checke as a dicitonary.
         """
         return app.core.reactapi_checks_check(app.current_request.to_dict(), env, check=check)
 
@@ -181,14 +184,17 @@ class ReactRoutes:
     @route("/{env}/checks/{check}/history/{uuid}", authorize=True)
     def reactapi_route_checks_history_uuid(env: str, check: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Returns the result of the given check.
+        Returns the result of the given check result by its (name and) uuid.
         """
         return app.core.reactapi_checks_history_uuid(app.current_request.to_dict(), env, check=check, uuid=uuid)
 
     @route("/{env}/checks/history/recent", authorize=True)
     def reactapi_route_checks_history_recent(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Returns all recent check run history, across all checks.
+        Returns all "recent" check run history, across all checks.
+        By default this return (at most) the 25 most recent results;
+        a limit argument may be specified to get a different number.
+        Paging is NOT currently supported.
         """
         request = app.current_request.to_dict()
         return app.core.reactapi_checks_history_recent(request, env, args=get_request_args(request))
