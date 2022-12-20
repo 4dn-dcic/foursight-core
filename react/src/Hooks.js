@@ -50,7 +50,7 @@ export const useOptionalKeyedState = (keyedState, initial) => {
 export const useComponentDefinitions = (componentTypes) => {
     return {
         count: () => componentTypes.length,
-        instantiate: (type, name, /* key, */ arg) => {
+        instantiate: (type, name, arg) => {
             const componentTypeIndex = componentTypes.findIndex(componentType => componentType.type === type);
             if (componentTypeIndex >= 0) {
                 const key = name ? `${type}::${name}` : type;
@@ -101,7 +101,7 @@ export const useSelectedComponents = (componentDefinitions) => {
                 setSelectedComponents([...selectedComponents]);
             }
             else {
-                const component = componentDefinitions.instantiate(type, name, /* key, */ arg);
+                const component = componentDefinitions.instantiate(type, name, arg);
                 if (component) {
                     selectedComponents.unshift(component);
                     setSelectedComponents([...selectedComponents]);
