@@ -9,7 +9,7 @@ import Clipboard from '../../utils/Clipboard';
 import Json from '../../utils/Json';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
-import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
+import { useComponentDefinitions, useSelectedComponents, useKeyedState } from '../../Hooks.js';
 
 const tdLabelStyle = {
     color: "var(--box-fg)",
@@ -34,6 +34,8 @@ const InfrastructurePage = () => {
     const [ showEcosystem, setShowEcosystem ] = useState(false);
     const [ stacks, setStacks ] = useState([]);
     const [ outerState, setOuterState ] = useState({});
+
+    const sharedState = useKeyedState();
 
     const componentDefinitions = useComponentDefinitions([
          { type: "stack",           create: createStack          },
@@ -105,7 +107,8 @@ const InfrastructurePage = () => {
     const hideSecurityGroups     = () => componentsRight.remove("security-groups");
 
     useEffect(() => {
-        componentsLeft.toggle("vpcs");
+        toggleEcosystem();
+        toggleVpcs();
     }, []);
 
     return <table><tbody><tr>

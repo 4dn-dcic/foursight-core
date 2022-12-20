@@ -70,11 +70,13 @@ const StackResources = (props) => {
 
 const StackResourceDetails = (props) => {
     let [ state, setState ] = useOptionalKeyedState(props.keyedState);
+
     function isShowMoreDetails() { return state.showMoreDetails; }
-    function toggleMoreDetails() {
-        //setState({...state, showMoreDetails: state.showMoreDetails ? false : true });
-        setState({showMoreDetails: state.showMoreDetails ? false : true });
-    }
+    function toggleMoreDetails() { setState({...state,showMoreDetails: state.showMoreDetails ? false : true }); }
+
+    function isShowTediousDetails() { return state.showTediousDetails; }
+    function toggleTediousDetails() { setState({...state,showTediousDetails: state.showTediousDetails ? false : true }); }
+
     return <div className="box lighten" style={{marginBottom:"4pt"}}>
         <small>Stack {props.stackName} Resource Details &nbsp;</small>
         { isShowMoreDetails() ? <>
@@ -83,12 +85,24 @@ const StackResourceDetails = (props) => {
         </>:<>
             <span className="pointer" onClick={toggleMoreDetails}>Show More Details</span>
         </> }
+        { isShowTediousDetails() ? <>
+            <span className="pointer" onClick={toggleTediousDetails}>Hide Tedious Details</span>
+            <StackResourceTediousDetails />
+        </>:<>
+            <span className="pointer" onClick={toggleTediousDetails}>Show Tedious Details</span>
+        </> }
     </div>
 }
 
 const StackResourceMoreDetails = (props) => {
     return <div className="box" style={{marginBottom:"4pt"}}>
         <small>More Stack {props.stackName} Resource Details &nbsp;</small>
+    </div>
+}
+
+const StackResourceTediousDetails = (props) => {
+    return <div className="box" style={{marginBottom:"4pt"}}>
+        <small>Tedious Stack {props.stackName} Resource Details &nbsp;</small>
     </div>
 }
 
