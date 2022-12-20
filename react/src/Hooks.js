@@ -50,13 +50,15 @@ export const useOptionalKeyedState = (keyedState, initial) => {
 export const useComponentDefinitions = (componentTypes) => {
     return {
         count: () => componentTypes.length,
-        instantiate: (type, name, keyedState) => {
+        instantiate: (type, name, /* key, */ arg) => {
             const componentTypeIndex = componentTypes.findIndex(componentType => componentType.type === type);
             if (componentTypeIndex >= 0) {
+                const key = name ? `${type}::${name}` : type;
                 return {
                     type: type,
                     name: name,
-                    ui: componentTypes[componentTypeIndex].create(name, keyedState)
+                    key: key,
+                    ui: componentTypes[componentTypeIndex].create(name, key, arg)
                 };
             }
         },
@@ -90,7 +92,7 @@ export const useSelectedComponents = (componentDefinitions) => {
         key: (type, name = null) => {
             return name ? `${type}::${name}` : type;
         },
-        toggle: (type, name = null, keyedState = null) => {
+        toggle: (type, name = null, arg = null) => {
             const selectedComponentIndex = selectedComponents.findIndex(
                 selectedComponent => selectedComponent.type === type && selectedComponent.name === name
             );
@@ -99,9 +101,8 @@ export const useSelectedComponents = (componentDefinitions) => {
                 setSelectedComponents([...selectedComponents]);
             }
             else {
-                const component = componentDefinitions.instantiate(type, name, keyedState);
+                const component = componentDefinitions.instantiate(type, name, /* key, */ arg);
                 if (component) {
-                    component.key = name ? `${type}::${name}` : type;
                     selectedComponents.unshift(component);
                     setSelectedComponents([...selectedComponents]);
                 }
