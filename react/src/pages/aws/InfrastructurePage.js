@@ -168,23 +168,8 @@ const ConfigList = (props) => {
 
 const Vpcs = (props) => {
 
-    const { outerState, setOuterState } = props;
-    //let [ state, setState ] = useOptionalKeyedState(props.keyedState);
-
-    //const isShow = (property) => state[property];
-    //const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
-
-    //const isShowSubets         = () => isShow    ("showRules");
-    //const toggleRules         = () => toggleShow("showRules");
-
     const all = useSearchParams()[0]?.get("all")?.toLowerCase() === "true";
     const vpcs = useFetch(`/aws/vpcs${all ? "/all" : ""}`, { cache: true });
-
-    const [ vpcsState, setVpcsState ] = useState(outerState ? (outerState.vpcsState || {})     : {});
-
-    if (outerState) {
-         outerState.vpcsState = vpcsState;
-    }
 
     return <div style={{marginBottom:"8pt"}}>
         <div>
@@ -196,7 +181,7 @@ const Vpcs = (props) => {
         <div style={{width:"100%"}}>
             { vpcs.loading && <div className="box" style={{marginTop:"2pt"}}><StandardSpinner label="Loading VPCs" /></div> }
             { vpcs.map(vpc => <div key={vpc.id}>
-                <Vpc vpc={vpc} keyedState={props.keyedState?.keyed(vpc.id)} outerState={vpcsState} setOuterState={setVpcsState} />
+                <Vpc vpc={vpc} keyedState={props.keyedState?.keyed(vpc.id)} />
             </div>)}
         </div>
     </div>
@@ -204,8 +189,8 @@ const Vpcs = (props) => {
 
 const Vpc = (props) => {
 
-    const { vpc, outerState, setOuterState } = props;
-    let [ state, setState ] = useOptionalKeyedState(props.keyedState);
+    const { vpc, keyedState } = props;
+    let [ state, setState ] = useOptionalKeyedState(keyedState);
 
     const isShow = (property) => state[property];
     const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
@@ -246,7 +231,7 @@ const Vpc = (props) => {
                 <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
                 <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
                 <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
-                <tr onClick={() => toggleSubnetsPublic(props.vpc.id)} className="pointer">
+                <tr onClick={() => toggleSubnetsPublic(vpc.id)} className="pointer">
                     <td style={tdLabelStyle}>Public Subnets:</td>
                     <td>
                         {(isShowSubnetsPublic()) ? <>
@@ -293,7 +278,7 @@ const Vpc = (props) => {
                 { (isShowSecurityGroups()) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
-                            <SecurityGroups vpcId={vpc?.id} notitle={true} keyedState={props.keyedState?.keyed("security-groups")} />
+                            <SecurityGroups vpcId={vpc?.id} notitle={true} keyedState={keyedState?.keyed("security-groups")} />
                         </td>
                     </tr>
                 </>}
