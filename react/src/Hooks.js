@@ -12,13 +12,13 @@ export const useKeyedState = (initial) => {
         get: (key) => (key ? state[key] : state) || {},
         set: (key, value) => key && setState(state => ({ ...state, [key]: { ...state[key], ...value } })),
     };
-    response.keyed = function (key) {
+    response.keyed = function(key) {
         const outer = this;
         return {
             key: key,
             get: () => this.get(key),
             set: (value) => this.set(key, value),
-            keyed: function (key, exact = false) { return outer.keyed(exact || !this.key ? key : this.key + key, true); }
+            keyed: function(key, exact = false) { return outer.keyed(exact || !this.key ? key : this.key + key, true); }
         }
     };
     return response;
