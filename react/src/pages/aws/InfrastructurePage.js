@@ -175,7 +175,7 @@ const Vpcs = (props) => {
         <div>
            <b>AWS VPCs</b>&nbsp;&nbsp;{!vpcs.loading && <small>({vpcs?.length})</small>}
            <div style={{float:"right",marginRight:"3pt"}}>
-                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
+                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={props.hide}>{Char.X}</b>
            </div>
         </div>
         <div style={{width:"100%"}}>
@@ -290,15 +290,13 @@ const Vpc = (props) => {
 }
 
 const Subnets = (props) => {
-
     const all = useSearchParams()[0].get("all")?.toLowerCase() === "true";
     const args = props.vpcId ? `?vpc=${props.vpcId}` : ""
     const subnets = useFetch(`/aws/subnets${all ? "/all" : ""}${args}`, { cache: true });
-
     return <div style={{marginBottom:"8pt"}}>
         { !props.notitle && <div>
             <b>AWS {props.type === "public" ? "Public" : (props.type === "private" ? "Private" : "")} Subnets</b>&nbsp;&nbsp;<small>({subnets?.length})</small>
-            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
+            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={props.hide}>{Char.X}</b>
         </div> }
         <div style={{minWidth:"400pt"}}>
             { subnets.loading && <div className="box lighten" style={{marginTop:"2pt"}}><StandardSpinner label="Loading Subnets" /></div> }
@@ -365,13 +363,13 @@ const SecurityGroups = (props) => {
         { !props.notitle &&
             <div>
                 <b>AWS Security Groups</b>&nbsp;&nbsp;<small>({securityGroups?.length})</small>
-                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
+                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={props.hide}>{Char.X}</b>
             </div>
         }
         <div style={{minWidth:"400pt"}}>
             { securityGroups.loading && <div className="box lighten" style={{marginTop:"2pt"}}><StandardSpinner label="Loading security groups" /></div> }
             { securityGroups.map(securityGroup => <div key={securityGroup.id}>
-                <SecurityGroup security_group={securityGroup} keyedState={props.keyedState?.keyed(securityGroup.id)} />
+                <SecurityGroup securityGroup={securityGroup} keyedState={props.keyedState?.keyed(securityGroup.id)} />
                 <div style={{height:"4pt"}} />
             </div>)}
         </div>
@@ -380,7 +378,7 @@ const SecurityGroups = (props) => {
 
 const SecurityGroup = (props) => {
 
-    const { security_group } = props;
+    const { securityGroup } = props;
     let [ state, setState ] = useOptionalKeyedState(props.keyedState);
 
     const isShow = (property) => state[property];
@@ -401,30 +399,30 @@ const SecurityGroup = (props) => {
                         Rules {isShowRules() ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
                     </small>
                 </div>
-                <b>Security Group</b>: <b style={{color:"black"}}>{props.security_group?.name}</b>
+                <b>Security Group</b>: <b style={{color:"black"}}>{securityGroup?.name}</b>
                 <ExternalLink
-                    href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#SecurityGroup:groupId=${props.security_group?.id}`}
+                    href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#SecurityGroup:groupId=${securityGroup?.id}`}
                     bold={true}
                     style={{marginLeft:"6pt"}} />
             </div>
             <table width="100%"><tbody>
                 <tr>
                     <td style={tdLabelStyle}>ID:</td>
-                    <td style={tdContentStyle}>{props.security_group?.id}<br /><small>{props.security_group?.security_group}</small></td>
+                    <td style={tdContentStyle}>{securityGroup?.id}<br /><small>{securityGroup?.securityGroup}</small></td>
                 </tr>
-                { props.security_group?.stack &&
+                { securityGroup?.stack &&
                     <tr>
                         <td style={tdLabelStyle}>Stack:</td>
-                        <td style={tdContentStyle}>{props.security_group?.stack}</td>
+                        <td style={tdContentStyle}>{securityGroup?.stack}</td>
                     </tr>
                 }
                 <tr>
                     <td style={tdLabelStyle}>Description:</td>
-                    <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>{props.security_group?.description}</td>
+                    <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>{securityGroup?.description}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>VPC:</td>
-                    <td style={tdContentStyle}>{props.security_group?.vpc}</td>
+                    <td style={tdContentStyle}>{securityGroup?.vpc}</td>
                 </tr>
                 <tr onClick={toggleInboundRules} className="pointer">
                     <td style={tdLabelStyle}>Inbound Rules:</td>
@@ -439,7 +437,7 @@ const SecurityGroup = (props) => {
                 {(isShowInboundRules()) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
-                            <SecurityGroupRules security_group_id={props.security_group?.id} direction="inbound" />
+                            <SecurityGroupRules securityGroupId={securityGroup?.id} direction="inbound" />
                         </td>
                     </tr>
                 </>}
@@ -456,7 +454,7 @@ const SecurityGroup = (props) => {
                 {(isShowOutboundRules()) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
-                            <SecurityGroupRules security_group_id={props.security_group?.id} direction="outbound" />
+                            <SecurityGroupRules securityGroupId={securityGroup?.id} direction="outbound" />
                         </td>
                     </tr>
                 </>}
@@ -466,14 +464,12 @@ const SecurityGroup = (props) => {
 }
 
 const SecurityGroupRules = (props) => {
-
     const args = props.direction === "inbound" ? "?direction=inbound" : (props.direction === "outbound" ? "?direction=outbound" : "");
-    const rules = useFetch(`/aws/security_group_rules/${props.security_group_id}${args}`, { cache: true });
-
+    const rules = useFetch(`/aws/security_group_rules/${props.securityGroupId}${args}`, { cache: true });
     return <>
         { rules.loading && <div className="box lighten" style={{paddingBottom:"10pt"}}><StandardSpinner label="Loading security group rules" /></div> }
         {rules?.map(rule => <div key={rule.id}>
-            <SecurityGroupRule security_group_rule={rule} />
+            <SecurityGroupRule securityGroupRule={rule} />
             <div style={{height:"4pt"}} />
         </div>)}
     </>
@@ -481,59 +477,59 @@ const SecurityGroupRules = (props) => {
 
 const SecurityGroupRule = (props) => {
 
-    function getType(security_group_rule) {
-        if (security_group_rule?.protocol?.toUpperCase() === "TCP") {
-            if ((security_group_rule?.port_from === 22) && (security_group_rule?.port_thru === 22)) {
+    function getType(securityGroupRule) {
+        if (securityGroupRule?.protocol?.toUpperCase() === "TCP") {
+            if ((securityGroupRule?.port_from === 22) && (securityGroupRule?.port_thru === 22)) {
                 return "SSH";
             }
-            else if ((security_group_rule?.port_from === 443) && (security_group_rule?.port_thru === 443)) {
+            else if ((securityGroupRule?.port_from === 443) && (securityGroupRule?.port_thru === 443)) {
                 return "HTTPS";
             }
-            else if ((security_group_rule?.port_from === 80) && (security_group_rule?.port_thru === 80)) {
+            else if ((securityGroupRule?.port_from === 80) && (securityGroupRule?.port_thru === 80)) {
                 return "HTTP";
             }
         }
-        return security_group_rule?.protocol?.toUpperCase();
+        return securityGroupRule?.protocol?.toUpperCase();
     }
 
-    function getProtocol(security_group_rule) {
-        if ((security_group_rule?.port_from === 3) && (security_group_rule?.port_thru === -1)) {
+    function getProtocol(securityGroupRule) {
+        if ((securityGroupRule?.port_from === 3) && (securityGroupRule?.port_thru === -1)) {
             return "Destination Unreachable";
         }
-        else if ((security_group_rule?.port_from === 4) && (security_group_rule?.port_thru === -1)) {
+        else if ((securityGroupRule?.port_from === 4) && (securityGroupRule?.port_thru === -1)) {
             return "Source Quench";
         }
-        else if ((security_group_rule?.port_from === 8) && (security_group_rule?.port_thru === -1)) {
+        else if ((securityGroupRule?.port_from === 8) && (securityGroupRule?.port_thru === -1)) {
             return "Echo Request";
         }
-        else if ((security_group_rule?.port_from === 11) && (security_group_rule?.port_thru === -1)) {
+        else if ((securityGroupRule?.port_from === 11) && (securityGroupRule?.port_thru === -1)) {
             return "Time Exceeded";
         }
-        return security_group_rule?.protocol?.toUpperCase();
+        return securityGroupRule?.protocol?.toUpperCase();
     }
 
-    function getPorts(security_group_rule) {
-        if ((security_group_rule?.port_from < 0) && (security_group_rule?.port_thru < 0)) {
+    function getPorts(securityGroupRule) {
+        if ((securityGroupRule?.port_from < 0) && (securityGroupRule?.port_thru < 0)) {
             return null;
         }
-        else if ((security_group_rule?.port_from === 3) && (security_group_rule?.port_thru === -1)) {
+        else if ((securityGroupRule?.port_from === 3) && (securityGroupRule?.port_thru === -1)) {
             return null;
         }
-        else if ((security_group_rule?.port_from === 4) && (security_group_rule?.port_thru === -1)) {
+        else if ((securityGroupRule?.port_from === 4) && (securityGroupRule?.port_thru === -1)) {
             return null;
         }
-        else if ((security_group_rule?.port_from === 8) && (security_group_rule?.port_thru === -1)) {
+        else if ((securityGroupRule?.port_from === 8) && (securityGroupRule?.port_thru === -1)) {
             return null;
         }
-        else if ((security_group_rule?.port_from === 11) && (security_group_rule?.port_thru === -1)) {
+        else if ((securityGroupRule?.port_from === 11) && (securityGroupRule?.port_thru === -1)) {
             return null;
         }
         else {
-            if (props.security_group_rule?.port_from === props.security_group_rule?.port_thru) {
-                return props.security_group_rule?.port_from
+            if (props.securityGroupRule?.port_from === props.securityGroupRule?.port_thru) {
+                return props.securityGroupRule?.port_from
             }
             else {
-                return `${props.security_group_rule?.port_from} - ${props.security_group_rule?.port_thru}`;
+                return `${props.securityGroupRule?.port_from} - ${props.securityGroupRule?.port_thru}`;
             }
         }
     }
@@ -541,49 +537,49 @@ const SecurityGroupRule = (props) => {
     return <>
         <div className="box" style={{background:"#FEFEFE",width:"100%"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
-                <b>Security Group Rule</b>: <b style={{color:"black"}}>{props.security_group_rule?.id}</b>
-                <b style={{float:"right",color:props.security_group_rule?.egress ? "var(--box-fg)" : "red"}}>{props.security_group_rule?.egress ? "OUTBOUND" : "INBOUND"}</b>
+                <b>Security Group Rule</b>: <b style={{color:"black"}}>{props.securityGroupRule?.id}</b>
+                <b style={{float:"right",color:props.securityGroupRule?.egress ? "var(--box-fg)" : "red"}}>{props.securityGroupRule?.egress ? "OUTBOUND" : "INBOUND"}</b>
                 <ExternalLink
-                    href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#ModifyInboundSecurityGroupRules:securityGroupId=${props.security_group_rule?.security_group}`}
+                    href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#ModifyInboundSecurityGroupRules:securityGroupId=${props.securityGroupRule?.security_group}`}
                     bold={true}
                     style={{marginLeft:"6pt"}} />
             </div>
             <table width="100%"><tbody>
                 <tr>
                     <td style={tdLabelStyle}>Direction:</td>
-                    <td style={tdContentStyle}>{props.security_group_rule?.egress ? "Outbound" : "Inbound"}</td>
+                    <td style={tdContentStyle}>{props.securityGroupRule?.egress ? "Outbound" : "Inbound"}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Protocol:</td>
-                    <td style={tdContentStyle}>{getProtocol(props.security_group_rule)}</td>
+                    <td style={tdContentStyle}>{getProtocol(props.securityGroupRule)}</td>
                 </tr>
-                {(getType(props.security_group_rule) !== getProtocol(props.security_group_rule)) &&
+                {(getType(props.securityGroupRule) !== getProtocol(props.securityGroupRule)) &&
                     <tr>
                         <td style={tdLabelStyle}>Type:</td>
-                        <td style={tdContentStyle}>{getType(props.security_group_rule)}</td>
+                        <td style={tdContentStyle}>{getType(props.securityGroupRule)}</td>
                     </tr>
                 }
-                {(getPorts(props.security_group_rule)) &&
+                {(getPorts(props.securityGroupRule)) &&
                     <tr>
                         <td style={tdLabelStyle}>Port:</td>
-                        <td style={tdContentStyle}>{getPorts(props.security_group_rule)}</td>
+                        <td style={tdContentStyle}>{getPorts(props.securityGroupRule)}</td>
                     </tr>
                 }
-                {props.security_group_rule?.cidr &&
+                {props.securityGroupRule?.cidr &&
                     <tr>
                         <td style={tdLabelStyle}>CIDR:</td>
-                        <td style={tdContentStyle}>{props.security_group_rule?.cidr}</td>
+                        <td style={tdContentStyle}>{props.securityGroupRule?.cidr}</td>
                     </tr>
                 }
-                {props.security_group_rule?.description &&
+                {props.securityGroupRule?.description &&
                     <tr>
                         <td style={tdLabelStyle}>Description:</td>
-                        <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>{props.security_group_rule?.description}</td>
+                        <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>{props.securityGroupRule?.description}</td>
                     </tr>
                 }
                 <tr>
                     <td style={tdLabelStyle}>Security Group:</td>
-                    <td style={tdContentStyle}>{props.security_group_rule?.security_group}</td>
+                    <td style={tdContentStyle}>{props.securityGroupRule?.security_group}</td>
                 </tr>
             </tbody></table>
         </div>
@@ -640,7 +636,7 @@ const Stack = (props) => {
                 <tr>
                     <td style={tdLabelStyle}>Name:</td>
                     <td style={{...tdContentStyle,wordBreak:"break-all"}}>
-                        <b style={{float:"right",cursor:"pointer",marginTop:"-2pt"}} onClick={() => hide(stackName)}>{Char.X}</b>
+                        <b style={{float:"right",cursor:"pointer",marginTop:"-2pt"}} onClick={hide}>{Char.X}</b>
                         {stackName}
                     </td>
                 </tr>
@@ -839,7 +835,7 @@ const Gac = (props) => {
                 href={`https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=${info.data?.gac?.name}&region=us-east-1`}
                 bold={true}
                 style={{marginLeft:"6pt"}} />
-                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
+                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={props.hide}>{Char.X}</b>
         </div>
         <div className="box margin">
             { info.loading && <StandardSpinner label="Loading GAC" /> }
@@ -858,7 +854,7 @@ const Ecosystem = (props) => {
     return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
         <div>
             <b>Ecosystem</b>:&nbsp;<b>{info.data?.buckets?.env}</b>
-            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
+            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={props.hide}>{Char.X}</b>
         </div>
         <pre className="box margin">
             { info.loading && <StandardSpinner label="Loading Ecosystem" /> }

@@ -83,9 +83,7 @@ export const useKeyedState = (initial) => {
     const [ state, setState ] = useState(initial || {});
     const response = {
         get: () => state,
-        update: (value) => {
-            setState(state => ({...state, ...value}));
-        },
+        update: (value) => setState(state => ({...state, ...value})),
         __get: (key) => {
             key = key ? `__${key}__` : key = "__key__";
             return (key ? state[key] : state) || {};
