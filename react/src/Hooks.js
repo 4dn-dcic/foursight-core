@@ -13,10 +13,9 @@ export const useKeyedState = (initial) => {
             return (key ? keyedState[key] : keyedState) || {};
         },
         set: (key, state) => {
-            if (key) setKeyedState(keyedState => ({ ...keyedState, [key]: state }));
-        },
+            if (key) setKeyedState(keyedState => ({ ...keyedState, [key]: { ...keyedState[key], ...state } }));
+        }
     };
-    // Don't *think* I need to bind this function to the response (doesn't seem to need it anyways).
     response.keyed = function (key) {
         const outer = this;
         return {
@@ -37,15 +36,16 @@ export const useOptionalKeyedState = (keyedState, initial) => {
     return [
         state,
         (newState) => {
-            setState(state => newState);
-            keyedState?.set(newState);
+            keyedState?.set({...state,...newState});
+            setState({...state,...newState});
         }
     ];
 }
 
 // Component/hook to dynamically define/create components by type.
-// In service of useSelectedComponent component/hook below to add
-// remove arbitrary components to a list of "selected" (shown) components.
+// In service of useSelectedComponents component/hook below to add
+// remove arbitrary components to a list of "selected" (or not,
+// i.e. shown or not shown, i.e. hidden) components.
 //
 export const useComponentDefinitions = (componentTypes) => {
     return {

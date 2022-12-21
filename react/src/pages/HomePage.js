@@ -10,22 +10,28 @@ import { useComponentDefinitions, useSelectedComponents, useKeyedState, useOptio
 
 const Stack = (props) => {
 
-    let [ state, setState ] = useState(props.keyedState?.get() || {});
+    //let [ state, setState ] = useState(props.keyedState?.get() || {});
+    let [ state, setState ] = useOptionalKeyedState(props.keyedState);
 
     function isShowOutputs() { return state.showOutputs; }
     function isShowResources() { return state.showResources; }
     function toggleOutputs() {
-        _setState({...state, showOutputs: state.showOutputs ? false : true });
+        setState({showOutputs: state.showOutputs ? false : true });
+        //setState({...state, showOutputs: state.showOutputs ? false : true });
+        //_setState({...state, showOutputs: state.showOutputs ? false : true });
     }
     function toggleResources() {
-        _setState({...state, showResources: state.showResources ? false : true });
+        setState({showResources: state.showResources ? false : true });
+        //setState({...state, showResources: state.showResources ? false : true });
+        //_setState({...state, showResources: state.showResources ? false : true });
     }
-    function _setState(state) {
-        setState(state);
-        props.keyedState?.set(state);
-    }
+    //function _setState(state) {
+        //setState(state);
+        //props.keyedState?.set(state);
+    //}
 
     return <div className="box darken" style={{marginBottom:"4pt"}}>
+        STACK-STATE[{JSON.stringify(state)}]
         <b>Stack {props.stackName}</b> &nbsp; <span className="pointer" onClick={() => props.hideStack("stack", props.stackName)}>{Char.X}</span>
         <br />
         { isShowOutputs() ? <>
@@ -143,6 +149,8 @@ const HomePage = (props) => {
     const stacks = [ "Abc", "Def" ];
 
         const [ x, setX ] = useState({foo:'bar'});
+        const ks = useKeyedState({hello:'bye'});
+        const [ ls, setLs ] = useState({});
 
     return <>
                 <span onClick={() => setX(value => ({goo:'baz'}))}>XXX[{JSON.stringify(x)}]XXX</span>
@@ -165,6 +173,20 @@ const HomePage = (props) => {
         <br />
         COMPONENT-COUNT:[{componentsLeft.count()}]<br />
         COMPONENT-DEFINITION-COUNT:[{componentDefinitions.count()}]
+
+        <div className="box thickborder error">
+                {/* <span className="pointer" onClick={() => ks.set("K", ({...ks.get("K"),abc:!ks.get("K").abc}))}>A</span> */}
+                {/* <span className="pointer" onClick={() => ks.set("K", ({...ks.get("K"),def:!ks.get("K").def}))}>B</span> */}
+                <span className="pointer" onClick={() => ks.set("K", {abc:!ks.get("K").abc})}>A</span>
+                <span className="pointer" onClick={() => ks.set("K", {def:!ks.get("K").def})}>B</span>
+                <pre style={{background:"lightred"}}>{JSON.stringify(ks.get())}</pre>
+        </div>
+        <br/>
+        <div className="box thickborder error">
+                <span className="pointer" onClick={() => setLs({...ls,abc:!ls.abc})}>A</span>
+                <span className="pointer" onClick={() => setLs({...ls,def:!ls.def})}>B</span>
+                <pre style={{background:"lightred"}}>{JSON.stringify(ls)}</pre>
+        </div>
 
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
