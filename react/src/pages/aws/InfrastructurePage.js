@@ -9,7 +9,8 @@ import Clipboard from '../../utils/Clipboard';
 import Json from '../../utils/Json';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
-import { useComponentDefinitions, useSelectedComponents, useKeyedState } from '../../Hooks.js';
+import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
+import { useKeyedState, useOptionalKeyedState } from '../../Hooks.js';
 
 const tdLabelStyle = {
     color: "var(--box-fg)",
@@ -50,61 +51,55 @@ const InfrastructurePage = () => {
     const componentsLeft = useSelectedComponents(componentDefinitions);
     const componentsRight = useSelectedComponents(componentDefinitions);
 
-    function createVpcs() {
-        return <Vpcs hide={hideVpcs} outerState={outerState} setOuterState={setOuterState} />;
+    function createVpcs(name, key, keyedState, unselect) {
+        return <Vpcs hide={unselect} outerState={outerState} setOuterState={setOuterState} />;
     }
 
-    function createSubnetsPrivate() {
-        return <Subnets type="private" hide={hideSubnetsPrivate} />;
+    function createSubnetsPrivate(name, key, keyedState, unselect) {
+        return <Subnets type="private" hide={unselect} />;
     }
 
-    function createSubnetsPublic() {
-        return <Subnets type="public" hide={hideSubnetsPublic} />;
+    function createSubnetsPublic(name, key, keyedState, unselect) {
+        return <Subnets type="public" hide={unselect} />;
+            
     }
 
-    function createSecurityGroups() {
-        return <SecurityGroups hide={hideSecurityGroups} outerState={outerState} setOuterState={setOuterState} />;
+    function createSecurityGroups(name, key, keyedState, unselect) {
+        return <SecurityGroups hide={unselect} outerState={outerState} setOuterState={setOuterState} />;
     }
 
-    function createGac() {
-        return <Gac hide={hideGac} />;
+    function createGac(name, key, keyedState, unselect) {
+        return <Gac hide={unselect} />;
     }
 
-    function createEcosystem() {
-        return <Ecosystem hide={hideEcosystem} />;
+    function createEcosystem(name, key, keyedState, unselect) {
+        return <Ecosystem hide={unselect} />;
     }
 
-    function createStack(name) {
-        return <Stack stackName={name} hide={hideStack} outerState={outerState} />;
+    function createStack(name, key, keyedState, unselect) {
+        return <Stack stackName={name} hide={unselect} outerState={outerState} />;
     }
 
     const selectedVpcs = () => componentsLeft.selected("vpcs");
     const toggleVpcs   = () => componentsLeft.toggle("vpcs");
-    const hideVpcs     = () => componentsLeft.remove("vpcs");
 
     const selectedGac = () => componentsLeft.selected("gac");
     const toggleGac   = () => componentsLeft.toggle("gac");
-    const hideGac     = () => componentsLeft.remove("gac");
 
     const selectedEcosystem = () => componentsLeft.selected("ecosystem");
     const toggleEcosystem   = () => componentsLeft.toggle("ecosystem");
-    const hideEcosystem     = () => componentsLeft.remove("ecosystem");
 
     const selectedStack = (stackName) => componentsLeft.selected("stack", stackName);
     const toggleStack   = (stackName) => componentsLeft.toggle("stack", stackName);
-    const hideStack     = (stackName) => componentsLeft.remove("stack", stackName);
 
     const selectedSubnetsPublic = () => componentsRight.selected("subnets-public");
     const toggleSubnetsPublic   = () => componentsRight.toggle("subnets-public");
-    const hideSubnetsPublic     = () => componentsRight.remove("subnets-public");
 
     const selectedSubnetsPrivate = () => componentsRight.selected("subnets-private");
     const toggleSubnetsPrivate   = () => componentsRight.toggle("subnets-private");
-    const hideSubnetsPrivate     = () => componentsRight.remove("subnets-private");
 
     const selectedSecurityGroups = () => componentsRight.selected("security-groups");
     const toggleSecurityGroups   = () => componentsRight.toggle("security-groups");
-    const hideSecurityGroups     = () => componentsRight.remove("security-groups");
 
     useEffect(() => {
         toggleEcosystem();

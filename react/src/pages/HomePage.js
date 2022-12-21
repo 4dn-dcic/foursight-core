@@ -10,25 +10,16 @@ import { useComponentDefinitions, useSelectedComponents, useKeyedState, useOptio
 
 const Stack = (props) => {
 
-    //let [ state, setState ] = useState(props.keyedState?.get() || {});
     let [ state, setState ] = useOptionalKeyedState(props.keyedState);
 
     function isShowOutputs() { return state.showOutputs; }
     function isShowResources() { return state.showResources; }
     function toggleOutputs() {
         setState({showOutputs: state.showOutputs ? false : true });
-        //setState({...state, showOutputs: state.showOutputs ? false : true });
-        //_setState({...state, showOutputs: state.showOutputs ? false : true });
     }
     function toggleResources() {
         setState({showResources: state.showResources ? false : true });
-        //setState({...state, showResources: state.showResources ? false : true });
-        //_setState({...state, showResources: state.showResources ? false : true });
     }
-    //function _setState(state) {
-        //setState(state);
-        //props.keyedState?.set(state);
-    //}
 
     return <div className="box darken" style={{marginBottom:"4pt"}}>
         STACK-STATE[{JSON.stringify(state)}]

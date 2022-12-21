@@ -40,8 +40,7 @@ export const useSelectedComponents = (componentDefinitions) => {
     return useState({
         count: () => components.length,
         empty: () => components.length == 0,
-        forEach: (f) => components.forEach(f),
-        map: (f) => components.map(f),
+        map: (f, i) => components.map(f, i),
         selected: function(type, name = null) { return this.__lookup(type, name) >= 0; },
         select:   function(type, name = null) { this.__select(type, name); },
         unselect: function(type, name = null) { this.__unselect(type, name); },
