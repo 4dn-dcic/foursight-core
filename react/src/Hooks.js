@@ -9,12 +9,8 @@ import { useState } from 'react';
 export const useKeyedState = (initial) => {
     const [ keyedState, setKeyedState ] = useState(initial || {});
     const response = {
-        get: (key) => {
-            return (key ? keyedState[key] : keyedState) || {};
-        },
-        set: (key, state) => {
-            if (key) setKeyedState(keyedState => ({ ...keyedState, [key]: { ...keyedState[key], ...state } }));
-        }
+        get: (key) => (key ? keyedState[key] : keyedState) || {},
+        set: (key, state) => key && setKeyedState(keyedState => ({ ...keyedState, [key]: { ...keyedState[key], ...state } })),
     };
     response.keyed = function (key) {
         const outer = this;
