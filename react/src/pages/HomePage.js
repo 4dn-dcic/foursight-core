@@ -126,17 +126,17 @@ const HomePage = (props) => {
         componentsLeft.toggle("stack", stackName);
     }
 
-    const createStack = (stackName, key, keyedState, remove) => {
+    const createStack = (stackName, key, keyedState, unselect) => {
         // TODO:
         // The useComponentDefinitions create function should (maybe) take as args:
         // - name (type not needed as we know what type we are)
         // - key (used as unique key for this component - composed of type and name)
-        // - hide (function - some work to figure out how to pass from useComponents.toggle/add 
-        // - args (aribitray data passed to useComponents.toggle or useCOmponents.add)
+        // - args (aribitray data passed to useComponents.toggle or useComponents.select)
+        // - hide (function - some work to figure out how to pass from useComponents.toggle/select 
         return <Stack
             stackName={stackName}
             keyedState={keyedState.keyed(key)}
-            hideStack={remove}
+            hideStack={unselect}
         />
     }
 
