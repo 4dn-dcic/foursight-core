@@ -538,7 +538,9 @@ const SecurityGroupRule = (props) => {
         <div className="box" style={{background:"#FEFEFE",width:"100%"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <b>Security Group Rule</b>: <b style={{color:"black"}}>{props.securityGroupRule?.id}</b>
-                <b style={{float:"right",color:props.securityGroupRule?.egress ? "var(--box-fg)" : "red"}}>{props.securityGroupRule?.egress ? "OUTBOUND" : "INBOUND"}</b>
+                <small style={{float:"right"}}>
+                    <b style={{color:props.securityGroupRule?.egress ? "var(--box-fg)" : "red"}}>{props.securityGroupRule?.egress ? "OUTBOUND" : "INBOUND"}</b>
+                </small>
                 <ExternalLink
                     href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#ModifyInboundSecurityGroupRules:securityGroupId=${props.securityGroupRule?.security_group}`}
                     bold={true}
