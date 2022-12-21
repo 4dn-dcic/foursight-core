@@ -7,17 +7,17 @@ import { useState } from 'react';
 // e.g. between hide/show of the (child) component.
 //
 export const useKeyedState = (initial) => {
-    const [ keyedState, setKeyedState ] = useState(initial || {});
+    const [ state, setState ] = useState(initial || {});
     const response = {
-        get: (key) => (key ? keyedState[key] : keyedState) || {},
-        set: (key, state) => key && setKeyedState(keyedState => ({ ...keyedState, [key]: { ...keyedState[key], ...state } })),
+        get: (key) => (key ? state[key] : state) || {},
+        set: (key, value) => key && setState(state => ({ ...state, [key]: { ...state[key], ...value } })),
     };
     response.keyed = function (key) {
         const outer = this;
         return {
             key: key,
             get: () => this.get(key),
-            set: (state) => this.set(key, state),
+            set: (value) => this.set(key, value),
             keyed: function (key, exact = false) { return outer.keyed(exact || !this.key ? key : this.key + key, true); }
         }
     };
@@ -31,9 +31,9 @@ export const useOptionalKeyedState = (keyedState, initial) => {
     const [ state, setState ] = useState(keyedState?.get() || initial || {});
     return [
         state,
-        (newState) => {
-            keyedState?.set({...state,...newState});
-            setState({...state,...newState});
+        (value) => {
+            keyedState?.set({ ...state, ...value });
+            setState({ ...state, ...value });
         }
     ];
 }
