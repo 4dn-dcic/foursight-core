@@ -166,8 +166,8 @@ const HomePage = (props) => {
         COMPONENT-COUNT:[{componentsLeft.count()}]<br />
 
         <div className="box thickborder error">
-                {/* <span className="pointer" onClick={() => ks.set("K", ({...ks.get("K"),abc:!ks.get("K").abc}))}>A</span> */}
-                {/* <span className="pointer" onClick={() => ks.set("K", ({...ks.get("K"),def:!ks.get("K").def}))}>B</span> */}
+                {/* <span className="pointer" onClick={() => ks.update("K", ({...ks.get("K"),abc:!ks.get("K").abc}))}>A</span> */}
+                {/* <span className="pointer" onClick={() => ks.update("K", ({...ks.get("K"),def:!ks.get("K").def}))}>B</span> */}
                 <span className="pointer" onClick={() => ks.__set("K", {abc:!ks.__get("K").abc})}>A</span>
                 <span className="pointer" onClick={() => ks.__set("K", {def:!ks.__get("K").def})}>B</span>
                 <pre style={{background:"lightred"}}>{JSON.stringify(ks.get())}</pre>
@@ -180,9 +180,9 @@ const HomePage = (props) => {
         </div>
         <br />
         <div className="box thickborder error">
-                <span className="pointer" onClick={() => ks.set({abc:"prufrock"})}>A</span>
-                <span className="pointer" onClick={() => ks.set({abc:"prufrock2",def:"alfred",hello:"noway"})}>B</span>
-                <span className="pointer" onClick={() => ks.keyed("xyzzy").set({abc:"prufrock3",def:"alfred3"})}>C</span>
+                <span className="pointer" onClick={() => ks.update({abc:"prufrock"})}>A</span>
+                <span className="pointer" onClick={() => ks.update({abc:"prufrock2",def:"alfred",hello:"noway"})}>B</span>
+                <span className="pointer" onClick={() => ks.keyed("xyzzy").update({abc:"prufrock3",def:"alfred3"})}>C</span>
                 <pre style={{background:"lightred"}}>{JSON.stringify(ks.get())}</pre>
         </div>
 

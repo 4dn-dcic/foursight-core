@@ -83,7 +83,7 @@ export const useKeyedState = (initial) => {
     const [ state, setState ] = useState(initial || {});
     const response = {
         get: () => state,
-        set: (value) => {
+        update: (value) => {
             setState(state => ({...state, ...value}));
         },
         __get: (key) => {
@@ -100,7 +100,7 @@ export const useKeyedState = (initial) => {
         return {
             key: key,
             get: () => outer.__get(key),
-            set: (value) => outer.__set(key, value),
+            update: (value) => outer.__set(key, value),
             keyed: function(key, exact = false) { return outer.keyed(exact || !this.key ? key : this.key + key, true); }
         }
     };
@@ -115,7 +115,7 @@ export const useOptionalKeyedState = (keyedState, initial) => {
     return [
         state,
         (value) => {
-            keyedState?.set({ ...state, ...value });
+            keyedState?.update({ ...state, ...value });
             setState({ ...state, ...value });
         }
     ];
