@@ -21,7 +21,7 @@ const ReactTooltipExample = () => {
 }
 
 const Tooltip = ({ id, position = "bottom", text = "Your tooltip here." }) => {
-    return <ReactTooltip id={id} place={position} effect="solid"><div style={{marginLeft:"-8pt",marginRight:"-5pt"}}>
+    return <ReactTooltip id={id} border={true} backgroundColor="red" textColor="yellow" place={position} effect="float" variant={"light"}><div style={{marginLeft:"-8pt",marginRight:"-5pt"}}>
         <b style={{color:"yellow"}}>&#x24D8;</b>&nbsp;&nbsp;{text}
     </div></ReactTooltip>
 }
@@ -36,11 +36,15 @@ const HomePage = (props) => {
 
     return <>
         <div className="box error" style={{marginLeft:"500pt"}}>
+                <a id="attributes-basic" data-tooltip-content="hello world!"> ◕‿‿◕ </a>
+
                 <ReactTooltipExample />
                 <br/>
 
                 <b data-tip data-for="hello">Hello, world!</b>
-                <Tooltip id="hello" text="Greeting from Tooltip!" position="top"/>
+                <Tooltip id="hello" text="Greeting from Tooltip!" position="top" variant={"soft"}>
+                foo
+                </Tooltip>
         </div>
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>

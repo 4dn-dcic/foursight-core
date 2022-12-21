@@ -96,9 +96,13 @@ export const ExternalLink = (props) => {
     </span>
 }
 
-export const Tooltip = ({ id, position = "bottom", text = "Your tooltip here.", icon = false }) => {
-    return <ReactTooltip style={{color:"red"}} id={id} place={position} effect="solid"><div style={{marginLeft:"-8pt",marginRight:"-9pt",fontWeight:"normal"}}>
-        { icon &&<b style={{color:"yellow",marginRight:"4pt"}}>&#x24D8;</b>}
-        <span>{text}</span>
-    </div></ReactTooltip>
+export const Tooltip = ({ id, type = "dark", position = "bottom", text = "Your tooltip here.", color = null, background = null, bold = false, italic = false, icon = false, float = false, image = null, imageHeight = null }) => {
+    // type => dark (black) | success (green-ish) | warning (orange-ish) | error (red-ish) | info (blue-ish) | light (white-ish)
+    return <ReactTooltip delayShow={500} type={color || background ? null : type} textColor={color} backgroundColor={background} id={id} place={position} effect={float ? "float" : "solid"}>
+        <div style={{marginLeft:"-8pt",marginRight:"-9pt",fontWeight:"normal"}}>
+            { icon &&<b style={{color:"yellow",marginRight:"4pt"}}>&#x24D8;</b> }
+            { (image && imageHeight > 0) && <img src={image} height={imageHeight} style={{marginRight:"8pt"}}/> }
+            <span style={{fontWeight:bold ? "bold" : "normal",fontStyle:italic ? "italic" : "normal"}}>{text}</span>
+        </div>
+    </ReactTooltip>
 }
