@@ -842,6 +842,7 @@ const Gac = (props) => {
                 <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
         </div>
         <div className="box margin">
+            { info.loading && <StandardSpinner label="Loading GAC" /> }
             <ul style={{marginBottom:"1pt"}}>
                 { info.data?.gac && Object.keys(info.data.gac.values)?.map(name => <li key={name}>
                     <b>{name}</b> <br />
@@ -860,7 +861,8 @@ const Ecosystem = (props) => {
             <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
         </div>
         <pre className="box margin">
-            {Yaml.Format(info.data?.buckets?.ecosystem)}
+            { info.loading && <StandardSpinner label="Loading Ecosystem" /> }
+            {!info.loading && Yaml.Format(info.data?.buckets?.ecosystem) }
         </pre>
     </div>
 }

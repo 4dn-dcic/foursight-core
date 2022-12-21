@@ -90,7 +90,7 @@ export const useKeyedState = (initial) => {
             key = key ? `__${key}__` : key = "__key__";
             return (key ? state[key] : state) || {};
         },
-        __set: (key, value) => {
+        __update: (key, value) => {
             key = key ? `__${key}__` : key = "__key__";
             setState(state => ({ ...state, [key]: { ...state[key], ...value } }));
         },
@@ -100,7 +100,7 @@ export const useKeyedState = (initial) => {
         return {
             key: key,
             get: () => outer.__get(key),
-            update: (value) => outer.__set(key, value),
+            update: (value) => outer.__update(key, value),
             keyed: function(key, exact = false) { return outer.keyed(exact || !this.key ? key : this.key + key, true); }
         }
     };

@@ -531,7 +531,6 @@ function _doFetch(args, current = undefined, fetcher) {
         const fetchCache = _fetchCache[args.url];
         if (fetchCache) {
             Debug.Info(`FETCH FOUND CACHED RESPONSE: ${args.method} ${args.url} -> HTTP ${fetchCache.status}`);
-            //Debug.Info(fetchCache.data);
             args.onData(fetchCache.data, fetchCache.data);
             args.setData(fetchCache.data);
             args.setStatus(fetchCache.status);
