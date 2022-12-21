@@ -20,6 +20,7 @@ import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 import LiveTime from '../LiveTime';
 import Styles from '../Styles';
+import { Tooltip } from '../Components';
 
 function noteChangedSelectedGroups(groupList) {
     groupList.update();
@@ -1284,21 +1285,26 @@ const ChecksPage = (props) => {
                 { groupBySchedule ? <>
                     <div style={{display:"inline-block",marginTop:"-18pt"}}>Check Schedules</div>&nbsp;
                     <div style={{float:"right",borderRadius:"4pt",padding:"3pt",paddingTop:"2pt",marginRight:"8pt",marginTop:"-3pt",cursor:"pointer"}}
-                         className="tool-tip" data-text="Click to group by schedule." >
+                        data-tip data-for="tooltip-view-group">
                         <img alt="group" src={Image.HierarchyIcon()} height="16" onClick={onGroupClick} />
                     </div>
-                    <div style={{float:"right",borderRadius:"3pt",border:"1px solid black",background:"var(--box-bg-lighten)",padding:"3pt",paddingTop:"2pt",marginRight:"2pt",marginTop:"-2pt"}}>
+                    <Tooltip id="tooltip-view-group" text="Click to view by check groups." />
+                    <div style={{float:"right",borderRadius:"3pt",border:"1px solid black",background:"var(--box-bg-lighten)",padding:"3pt",paddingTop:"2pt",marginRight:"2pt",marginTop:"-2pt"}}
+                        data-tip data-for="tooltip-viewing-schedule">
                         <img alt="group" src={Image.CalendarIcon()} height="15" />
                     </div>
+                    <Tooltip id="tooltip-viewing-schedule" text="Viewing by check schedules." />
                 </>:<>
                     Check Groups&nbsp;&nbsp;
-                    <div style={{float:"right",borderRadius:"3pt",border:"1px solid black",background:"var(--box-bg-lighten)",padding:"3pt",paddingTop:"2pt",marginRight:"6pt",marginTop:"-2pt"}}>
+                    <div data-tip data-for="tooltip-viewing-group" style={{float:"right",borderRadius:"3pt",border:"1px solid black",background:"var(--box-bg-lighten)",padding:"3pt",paddingTop:"2pt",marginRight:"6pt",marginTop:"-2pt"}}>
                         <img alt="group" src={Image.HierarchyIcon()} height="15" />
                     </div>
-                    <div style={{float:"right",borderRadius:"4pt",padding:"3pt",paddingTop:"2pt",marginRight:"2pt",marginTop:"-3pt",cursor:"pointer"}}
-                         className="tool-tip" data-text="Click to group by schedule." onClick={onGroupClick}>
+                    <Tooltip id="tooltip-viewing-group" text="Viewing by check groups." />
+                    <div style={{float:"right",borderRadius:"4pt",padding:"3pt",paddingTop:"2pt",marginRight:"2pt",marginTop:"-3pt",cursor:"pointer"}} onClick={onGroupClick}
+                        data-tip data-for="tooltip-view-schedule">
                         <img alt="group" src={Image.CalendarIcon()} height="16" />
                     </div>
+                    <Tooltip id="tooltip-view-schedule" text="Click to view by check schedules." />
                 </>}
             </div>
             <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"6pt"}}>

@@ -33,7 +33,7 @@
     "react-scripts": "5.0.1",
     "react-select": "^5.4.0",
     "react-spinners": "^0.13.4",
-    "react-tooltip": "^4.2.21",
+    "react-tooltip": "^4.5.1",
     "react-uuid": "^1.0.3",
     "stream": "^0.0.2",
     "stream-browserify": "^3.0.0",

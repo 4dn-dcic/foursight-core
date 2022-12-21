@@ -3,6 +3,28 @@ import Env from '../utils/Env';
 import HeaderData from '../HeaderData';
 import Logout from '../utils/Logout';
 import { HorizontalLine, Link, LoggedInUser } from '../Components';
+import ReactTooltip from 'react-tooltip'
+import Image from '../utils/Image'
+
+const ReactTooltipExample = () => {
+  return (
+    <div className="App">
+      <button data-tip data-for="registerTip">
+        Register
+      </button>
+
+      <ReactTooltip id="registerTip" place="bottom" effect="solid"><div style={{marginLeft:"-7pt",marginRight:"-5pt"}}>
+        <b style={{color:"yellow"}}>&#x24D8;</b>&nbsp;&nbsp;Tooltip for the register <b>button</b>
+      </div></ReactTooltip>
+    </div>
+  );
+}
+
+const Tooltip = ({ id, position = "bottom", text = "Your tooltip here." }) => {
+    return <ReactTooltip id={id} place={position} effect="solid"><div style={{marginLeft:"-8pt",marginRight:"-5pt"}}>
+        <b style={{color:"yellow"}}>&#x24D8;</b>&nbsp;&nbsp;{text}
+    </div></ReactTooltip>
+}
 
 const HomePage = (props) => {
 
@@ -13,6 +35,13 @@ const HomePage = (props) => {
                           + header?.versions?.foursight + " / dcicutils: " + header?.versions?.dcicutils;
 
     return <>
+        <div className="box error" style={{marginLeft:"500pt"}}>
+                <ReactTooltipExample />
+                <br/>
+
+                <b data-tip data-for="hello">Hello, world!</b>
+                <Tooltip id="hello" text="Greeting from Tooltip!" position="top"/>
+        </div>
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
                 <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})</span></b>

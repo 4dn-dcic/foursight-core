@@ -5,10 +5,11 @@ import Client from './utils/Client';
 import Char from './utils/Char';
 import Image from './utils/Image';
 import { PuffSpinner } from './Spinners';
+import ReactTooltip from 'react-tooltip'
 import Str from './utils/Str';
+import Styles from './Styles';
 import Time from './utils/Time';
 import Type from './utils/Type';
-import Styles from './Styles';
 
 export const Link = ({to, env = true, tip = null, bold = true, children}) => {
     return <ReactLink className={tip ? "tool-tip" : ""} data-text={tip} to={Client.Path(to, env ? env : null)} style={{color:"inherit",fontWeight:bold ? "bold" : "inherit"}}>{children}</ReactLink>
@@ -93,4 +94,11 @@ export const ExternalLink = (props) => {
             <span className="fa fa-external-link" style={{fontWeight:props.bold ? "bold" : "normal",position:"relative",bottom:"-0.5pt"}} />
         </a>
     </span>
+}
+
+export const Tooltip = ({ id, position = "bottom", text = "Your tooltip here.", icon = false }) => {
+    return <ReactTooltip style={{color:"red"}} id={id} place={position} effect="solid"><div style={{marginLeft:"-8pt",marginRight:"-9pt",fontWeight:"normal"}}>
+        { icon &&<b style={{color:"yellow",marginRight:"4pt"}}>&#x24D8;</b>}
+        <span>{text}</span>
+    </div></ReactTooltip>
 }
