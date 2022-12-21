@@ -34,7 +34,6 @@ const InfrastructurePage = () => {
     const [ showGac, setShowGac ] = useState(false);
     const [ showEcosystem, setShowEcosystem ] = useState(false);
     const [ stacks, setStacks ] = useState([]);
-    const [ outerState, setOuterState ] = useState({});
 
     const keyedState = useKeyedState();
 
@@ -53,8 +52,6 @@ const InfrastructurePage = () => {
 
     function createVpcs(name, key, keyedState, unselect) {
         return <Vpcs
-            outerState={outerState}
-            setOuterState={setOuterState}
             keyedState={keyedState.keyed(key)}
             hide={unselect}
         />;
@@ -85,7 +82,11 @@ const InfrastructurePage = () => {
     }
 
     function createStack(name, key, keyedState, unselect) {
-        return <Stack stackName={name} hide={unselect} outerState={outerState} />;
+        return <Stack
+            stackName={name}
+            keyedState={keyedState.keyed(key)}
+            hide={unselect}
+        />;
     }
 
     const selectedVpcs           = () => componentsLeft.selected("vpcs");
@@ -98,7 +99,7 @@ const InfrastructurePage = () => {
     const toggleEcosystem        = () => componentsLeft.toggle("ecosystem");
 
     const selectedStack = (stackName) => componentsLeft.selected("stack", stackName);
-    const toggleStack   = (stackName) => componentsLeft.toggle("stack", stackName);
+    const toggleStack   = (stackName) => componentsLeft.toggle("stack", stackName, keyedState);
 
     const selectedSubnetsPublic  = () => componentsRight.selected("subnets-public");
     const toggleSubnetsPublic    = () => componentsRight.toggle("subnets-public");
@@ -114,8 +115,7 @@ const InfrastructurePage = () => {
         toggleVpcs();
     }, []);
 
-    return <table><tbody><tr><td colSpan="3">KEYED-STATE:[{JSON.stringify(keyedState.raw())}]<br/></td></tr><tr>
-                
+    return <table><tbody><tr>
         <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
             <NetworkList
                 keyedState={keyedState}
@@ -152,7 +152,7 @@ const NetworkList = (props) => {
             <div className="pointer" style={{fontWeight:props.showVpcs() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleVpcs}>VPCs</div>
             <div className="pointer" style={{fontWeight:props.showSubnetsPublic() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleSubnetsPublic}>Public Subnets</div>
             <div className="pointer" style={{fontWeight:props.showSubnetsPrivate() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleSubnetsPrivate}>Private Subnets</div>
-            <div className="pointer" style={{fontWeight:props.showSecurityGroups() ? "bold" : "normal"}} onClick={() => props.toggleSecurityGroups()}>Security Groups</div>
+            <div className="pointer" style={{fontWeight:props.showSecurityGroups() ? "bold" : "normal"}} onClick={props.toggleSecurityGroups}>Security Groups</div>
         </div>
     </>
 }
@@ -216,10 +216,12 @@ const Vpc = (props) => {
                     <td style={tdLabelStyle}>ID:</td>
                     <td style={tdContentStyle}>{vpc.id}</td>
                 </tr>
-                <tr>
-                    <td style={tdLabelStyle}>Stack:</td>
-                    <td style={tdContentStyle}>{vpc?.stack}</td>
-                </tr>
+                { (vpc?.stack) &&
+                    <tr>
+                        <td style={tdLabelStyle}>Stack:</td>
+                        <td style={tdContentStyle}>{vpc?.stack}</td>
+                    </tr>
+                }
                 <tr>
                     <td style={tdLabelStyle}>CIDR:</td>
                     <td style={tdContentStyle}>{vpc?.cidr}</td>
@@ -326,10 +328,12 @@ const Subnet = (props) => {
                     <td style={tdLabelStyle}>ID:</td>
                     <td style={tdContentStyle}>{props.subnet?.id}<br /><small>{props.subnet?.subnet_arn}</small></td>
                 </tr>
-                <tr>
-                    <td style={tdLabelStyle}>Stack:</td>
-                    <td style={tdContentStyle}>{props.subnet?.stack}</td>
-                </tr>
+                { (props.subnet?.stack) &&
+                    <tr>
+                        <td style={tdLabelStyle}>Stack:</td>
+                        <td style={tdContentStyle}>{props.subnet?.stack}</td>
+                    </tr>
+                }
                 <tr>
                     <td style={tdLabelStyle}>CIDR:</td>
                     <td style={tdContentStyle}>{props.subnet?.cidr}</td>
@@ -538,6 +542,7 @@ const SecurityGroupRule = (props) => {
         <div className="box" style={{background:"#FEFEFE",width:"100%"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <b>Security Group Rule</b>: <b style={{color:"black"}}>{props.security_group_rule?.id}</b>
+                <b style={{float:"right",color:props.security_group_rule?.egress ? "var(--box-fg)" : "red"}}>{props.security_group_rule?.egress ? "OUTBOUND" : "INBOUND"}</b>
                 <ExternalLink
                     href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#ModifyInboundSecurityGroupRules:securityGroupId=${props.security_group_rule?.security_group}`}
                     bold={true}
@@ -604,23 +609,20 @@ const StackList = (props) => {
 
 const Stack = (props) => {
 
-    const { stackName, hide, outerState } = props;
+    const { stackName, keyedState, hide } = props;
+    let [ state, setState ] = useOptionalKeyedState(keyedState);
 
     const stack = useFetch(`/aws/stacks/${stackName}`, { cache: true });
 
-    const [ showOutputs,    setShowOutputs ]    = useState(outerState ? outerState.showOutputs    : false);
-    const [ showParameters, setShowParameters ] = useState(outerState ? outerState.showParameters : false);
-    const [ showResources,  setShowResources ]  = useState(outerState ? outerState.showResources  : false);
+    const isShow = (property) => state[property];
+    const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
 
-    const toggleOutputs    = () => setShowOutputs   (!showOutputs);
-    const toggleParameters = () => setShowParameters(!showParameters);
-    const toggleResources  = () => setShowResources (!showResources);
-
-    if (outerState) {
-         outerState.showOutputs    = showOutputs;
-         outerState.showParameters = showParameters;
-         outerState.showResources  = showResources;
-    }
+    const isShowOutputs    = () => isShow    ("showOutputs");
+    const toggleOutputs    = () => toggleShow("showOutputs");
+    const isShowParameters = () => isShow    ("showParameters");
+    const toggleParameters = () => toggleShow("showParameters");
+    const isShowResources  = () => isShow    ("showResources");
+    const toggleResources  = () => toggleShow("showResources");
 
     return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
         <div>
@@ -679,7 +681,7 @@ const Stack = (props) => {
                 <tr className="pointer" onClick={toggleOutputs}>
                     <td style={tdLabelStyle}>Outputs:</td>
                     <td style={tdContentStyle}>
-                        { showOutputs ? <>
+                        { isShowOutputs() ? <>
                             <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
                             <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
@@ -690,7 +692,7 @@ const Stack = (props) => {
                             style={{fontSize:"small",marginLeft:"10pt"}} />
                     </td>
                 </tr>
-                { showOutputs && <>
+                { isShowOutputs() && <>
                     <tr>
                         <td colSpan="2" style={{paddingTop:"2pt"}}>
                             <StackOutputs stackName={stackName} />
@@ -700,7 +702,7 @@ const Stack = (props) => {
                 <tr className="pointer" onClick={toggleParameters}>
                     <td style={tdLabelStyle}>Parameters:</td>
                     <td style={tdContentStyle}>
-                        { showParameters ? <>
+                        { isShowParameters() ? <>
                             <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
                             <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
@@ -711,7 +713,7 @@ const Stack = (props) => {
                             style={{fontSize:"small",marginLeft:"10pt"}} />
                     </td>
                 </tr>
-                { showParameters && <>
+                { isShowParameters() && <>
                     <tr>
                         <td colSpan="2" style={{paddingTop:"2pt"}}>
                             <StackParameters stackName={stackName} />
@@ -721,7 +723,7 @@ const Stack = (props) => {
                 <tr className="pointer" onClick={toggleResources}>
                     <td style={tdLabelStyle}>Resources:</td>
                     <td style={tdContentStyle}>
-                        { showResources ? <>
+                        { isShowResources() ? <>
                             <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
                             <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
@@ -732,7 +734,7 @@ const Stack = (props) => {
                             style={{fontSize:"small",marginLeft:"10pt"}} />
                     </td>
                 </tr>
-                { showResources && <>
+                { isShowResources() && <>
                     <tr>
                         <td colSpan="2" style={{paddingTop:"2pt"}}>
                             <StackResources stackName={stackName} />
