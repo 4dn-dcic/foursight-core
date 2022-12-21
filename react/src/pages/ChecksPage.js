@@ -1282,18 +1282,18 @@ const ChecksPage = (props) => {
         return <div style={{minWidth:"150pt"}}>
             <div style={{paddingBottom:"3pt",fontWeight:"bold"}}>
                 { groupBySchedule ? <>
-                    Check Schedules&nbsp;
+                    <div style={{display:"inline-block",marginTop:"-18pt"}}>Check Schedules</div>&nbsp;
                     <div style={{float:"right",borderRadius:"4pt",padding:"3pt",paddingTop:"2pt",marginRight:"8pt",marginTop:"-3pt",cursor:"pointer"}}
                          className="tool-tip" data-text="Click to group by schedule." >
                         <img alt="group" src={Image.HierarchyIcon()} height="16" onClick={onGroupClick} />
                     </div>
-                    <div style={{float:"right",borderRadius:"4pt",border:"1px solid black",padding:"3pt",paddingTop:"2pt",marginRight:"2pt",marginTop:"-3pt"}}>
-                        <img alt="group" src={Image.CalendarIcon()} height="16" />
+                    <div style={{float:"right",borderRadius:"3pt",border:"1px solid black",background:"var(--box-bg-lighten)",padding:"3pt",paddingTop:"2pt",marginRight:"2pt",marginTop:"-2pt"}}>
+                        <img alt="group" src={Image.CalendarIcon()} height="15" />
                     </div>
                 </>:<>
                     Check Groups&nbsp;&nbsp;
-                    <div style={{float:"right",borderRadius:"4pt",border:"1px solid black",padding:"3pt",paddingTop:"2pt",marginRight:"8pt",marginTop:"-3pt"}}>
-                        <img alt="group" src={Image.HierarchyIcon()} height="16" />
+                    <div style={{float:"right",borderRadius:"3pt",border:"1px solid black",background:"var(--box-bg-lighten)",padding:"3pt",paddingTop:"2pt",marginRight:"6pt",marginTop:"-2pt"}}>
+                        <img alt="group" src={Image.HierarchyIcon()} height="15" />
                     </div>
                     <div style={{float:"right",borderRadius:"4pt",padding:"3pt",paddingTop:"2pt",marginRight:"2pt",marginTop:"-3pt",cursor:"pointer"}}
                          className="tool-tip" data-text="Click to group by schedule." onClick={onGroupClick}>

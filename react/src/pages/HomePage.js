@@ -172,7 +172,6 @@ const HomePage = (props) => {
 
         <br />
         COMPONENT-COUNT:[{componentsLeft.count()}]<br />
-        COMPONENT-DEFINITION-COUNT:[{componentDefinitions.count()}]
 
         <div className="box thickborder error">
                 {/* <span className="pointer" onClick={() => ks.set("K", ({...ks.get("K"),abc:!ks.get("K").abc}))}>A</span> */}

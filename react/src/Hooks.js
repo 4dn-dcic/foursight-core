@@ -45,7 +45,6 @@ export const useOptionalKeyedState = (keyedState, initial) => {
 //
 export const useComponentDefinitions = (componentTypes) => {
     return {
-        count: () => componentTypes.length,
         instantiate: (type, name, arg, remove) => {
             const componentTypeIndex = componentTypes.findIndex(componentType => componentType.type === type);
             if (componentTypeIndex >= 0) {
