@@ -36,7 +36,7 @@ const InfrastructurePage = () => {
     const [ stacks, setStacks ] = useState([]);
     const [ outerState, setOuterState ] = useState({});
 
-    const sharedState = useKeyedState();
+    const keyedState = useKeyedState();
 
     const componentDefinitions = useComponentDefinitions([
          { type: "stack",           create: createStack          },
@@ -52,7 +52,12 @@ const InfrastructurePage = () => {
     const componentsRight = useSelectedComponents(componentDefinitions);
 
     function createVpcs(name, key, keyedState, unselect) {
-        return <Vpcs hide={unselect} outerState={outerState} setOuterState={setOuterState} />;
+        return <Vpcs
+            outerState={outerState}
+            setOuterState={setOuterState}
+            keyedState={keyedState.keyed(key)}
+            hide={unselect}
+        />;
     }
 
     function createSubnetsPrivate(name, key, keyedState, unselect) {
@@ -65,7 +70,10 @@ const InfrastructurePage = () => {
     }
 
     function createSecurityGroups(name, key, keyedState, unselect) {
-        return <SecurityGroups hide={unselect} outerState={outerState} setOuterState={setOuterState} />;
+        return <SecurityGroups
+            keyedState={keyedState.keyed(key)}
+            hide={unselect}
+        />;
     }
 
     function createGac(name, key, keyedState, unselect) {
@@ -80,35 +88,37 @@ const InfrastructurePage = () => {
         return <Stack stackName={name} hide={unselect} outerState={outerState} />;
     }
 
-    const selectedVpcs = () => componentsLeft.selected("vpcs");
-    const toggleVpcs   = () => componentsLeft.toggle("vpcs");
+    const selectedVpcs           = () => componentsLeft.selected("vpcs");
+    const toggleVpcs             = () => componentsLeft.toggle("vpcs", null, keyedState);
 
-    const selectedGac = () => componentsLeft.selected("gac");
-    const toggleGac   = () => componentsLeft.toggle("gac");
+    const selectedGac            = () => componentsLeft.selected("gac");
+    const toggleGac              = () => componentsLeft.toggle("gac");
 
-    const selectedEcosystem = () => componentsLeft.selected("ecosystem");
-    const toggleEcosystem   = () => componentsLeft.toggle("ecosystem");
+    const selectedEcosystem      = () => componentsLeft.selected("ecosystem");
+    const toggleEcosystem        = () => componentsLeft.toggle("ecosystem");
 
     const selectedStack = (stackName) => componentsLeft.selected("stack", stackName);
     const toggleStack   = (stackName) => componentsLeft.toggle("stack", stackName);
 
-    const selectedSubnetsPublic = () => componentsRight.selected("subnets-public");
-    const toggleSubnetsPublic   = () => componentsRight.toggle("subnets-public");
+    const selectedSubnetsPublic  = () => componentsRight.selected("subnets-public");
+    const toggleSubnetsPublic    = () => componentsRight.toggle("subnets-public");
 
     const selectedSubnetsPrivate = () => componentsRight.selected("subnets-private");
     const toggleSubnetsPrivate   = () => componentsRight.toggle("subnets-private");
 
     const selectedSecurityGroups = () => componentsRight.selected("security-groups");
-    const toggleSecurityGroups   = () => componentsRight.toggle("security-groups");
+    const toggleSecurityGroups   = () => componentsRight.toggle("security-groups", null, keyedState);
 
     useEffect(() => {
         toggleEcosystem();
         toggleVpcs();
     }, []);
 
-    return <table><tbody><tr>
+    return <table><tbody><tr><td colSpan="3">KEYED-STATE:[{JSON.stringify(keyedState.raw())}]<br/></td></tr><tr>
+                
         <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
             <NetworkList
+                keyedState={keyedState}
                 showVpcs={selectedVpcs} toggleVpcs={toggleVpcs}
                 showSubnetsPublic={selectedSubnetsPublic} toggleSubnetsPublic={toggleSubnetsPublic}
                 showSubnetsPrivate={selectedSubnetsPrivate} toggleSubnetsPrivate={toggleSubnetsPrivate}
@@ -142,7 +152,7 @@ const NetworkList = (props) => {
             <div className="pointer" style={{fontWeight:props.showVpcs() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleVpcs}>VPCs</div>
             <div className="pointer" style={{fontWeight:props.showSubnetsPublic() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleSubnetsPublic}>Public Subnets</div>
             <div className="pointer" style={{fontWeight:props.showSubnetsPrivate() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={props.toggleSubnetsPrivate}>Private Subnets</div>
-            <div className="pointer" style={{fontWeight:props.showSecurityGroups() ? "bold" : "normal"}} onClick={props.toggleSecurityGroups}>Security Groups</div>
+            <div className="pointer" style={{fontWeight:props.showSecurityGroups() ? "bold" : "normal"}} onClick={() => props.toggleSecurityGroups()}>Security Groups</div>
         </div>
     </>
 }
@@ -159,43 +169,34 @@ const ConfigList = (props) => {
 const Vpcs = (props) => {
 
     const { outerState, setOuterState } = props;
+    //let [ state, setState ] = useOptionalKeyedState(props.keyedState);
+
+    //const isShow = (property) => state[property];
+    //const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
+
+    //const isShowSubets         = () => isShow    ("showRules");
+    //const toggleRules         = () => toggleShow("showRules");
 
     const all = useSearchParams()[0]?.get("all")?.toLowerCase() === "true";
     const vpcs = useFetch(`/aws/vpcs${all ? "/all" : ""}`, { cache: true });
 
-    const [ showAllSubnets,        setShowAllSubnets        ] = useState(outerState ? outerState.showAllSubnets        : false);
-    const [ showAllSecurityGroups, setShowAllSecurityGroups ] = useState(outerState ? outerState.showAllSecurityGroups : false);
-    const [ vpcsState,             setVpcsState             ] = useState(outerState ? (outerState.vpcsState || {})     : {});
-
-    function toggleShowAllSubnets()        { setShowAllSubnets(value => !value); }
-    function toggleShowAllSecurityGroups() { setShowAllSecurityGroups(value => !value); }
+    const [ vpcsState, setVpcsState ] = useState(outerState ? (outerState.vpcsState || {})     : {});
 
     if (outerState) {
-         outerState.showAllSubnets        = showAllSubnets;
-         outerState.showAllSecurityGroups = showAllSecurityGroups;
-         outerState.vpcsState             = vpcsState;
+         outerState.vpcsState = vpcsState;
     }
 
     return <div style={{marginBottom:"8pt"}}>
         <div>
            <b>AWS VPCs</b>&nbsp;&nbsp;{!vpcs.loading && <small>({vpcs?.length})</small>}
            <div style={{float:"right",marginRight:"3pt"}}>
-                {/* eh not so useful and a maybe a bit confusing
-                <small className="pointer" style={{fontWeight:showAllSubnets ? "bold" : "normal"}} onClick={toggleShowAllSubnets}>
-                    Subnets {showAllSubnets ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
-                </small>
-                &nbsp;|&nbsp;
-                <small className="pointer" style={{fontWeight:showAllSecurityGroups ? "bold" : "normal"}} onClick={toggleShowAllSecurityGroups}>
-                    Security {showAllSecurityGroups ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
-                </small>
-                &nbsp;|&nbsp; */}
                 <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={() => {props.hide && props.hide()}}>{Char.X}</b>
            </div>
         </div>
         <div style={{width:"100%"}}>
             { vpcs.loading && <div className="box" style={{marginTop:"2pt"}}><StandardSpinner label="Loading VPCs" /></div> }
             { vpcs.map(vpc => <div key={vpc.id}>
-                <Vpc vpc={vpc} outerState={vpcsState} setOuterState={setVpcsState} showAllSubnets={showAllSubnets} showAllSecurityGroups={showAllSecurityGroups} />
+                <Vpc vpc={vpc} keyedState={props.keyedState?.keyed(vpc.id)} outerState={vpcsState} setOuterState={setVpcsState} />
             </div>)}
         </div>
     </div>
@@ -204,33 +205,10 @@ const Vpcs = (props) => {
 const Vpc = (props) => {
 
     const { vpc, outerState, setOuterState } = props;
+    let [ state, setState ] = useOptionalKeyedState(props.keyedState);
 
-    let [ state, setState ] = useState({});
-
-    if (outerState && setOuterState) {
-        //
-        // May store state in outer (parent) state so it persists between
-        // invocations (i.e. on hide/show). To do this though we must store
-        // by vpc.id (see isShow/toggleShow below), i.e. assume more than one.
-        //
-        state = outerState;
-        setState = setOuterState;
-    }
-
-    function isShow(property) {
-        return state[vpc.id] ? state[vpc.id][property] : false;
-    }
-
-    function toggleShow(property) {
-        if (!state[vpc.id]) {
-            state[vpc.id] = {};
-            state[vpc.id][property] = true;
-        }
-        else {
-            state[vpc.id][property] = !state[vpc.id][property];
-        }
-        setState({...state});
-    }
+    const isShow = (property) => state[property];
+    const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
 
     const isShowSubnetsPublic  = () => isShow    ("showSubnetsPublic");
     const toggleSubnetsPublic  = () => toggleShow("showSubnetsPublic");
@@ -271,14 +249,14 @@ const Vpc = (props) => {
                 <tr onClick={() => toggleSubnetsPublic(props.vpc.id)} className="pointer">
                     <td style={tdLabelStyle}>Public Subnets:</td>
                     <td>
-                        {(isShowSubnetsPublic() /* || props.showAllSubnets */ ) ? <>
+                        {(isShowSubnetsPublic()) ? <>
                             <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
                             <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
                     </td>
                 </tr>
-                {(isShowSubnetsPublic() || props.showAllSubnets) && <>
+                { (isShowSubnetsPublic()) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
                             <Subnets type="public" vpcId={vpc?.id} notitle={true} />
@@ -295,7 +273,7 @@ const Vpc = (props) => {
                         </>}
                     </td>
                 </tr>
-                {(isShowSubnetsPrivate() || props.showAllSubnets) && <>
+                { (isShowSubnetsPrivate()) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
                             <Subnets type="private" vpcId={vpc?.id} notitle={true} />
@@ -312,10 +290,10 @@ const Vpc = (props) => {
                         </>}
                     </td>
                 </tr>
-                {(isShowSecurityGroups() || props.showAllSecurityGroups /* || props.showSecurityGroup(vpc?.id) */ ) && <>
+                { (isShowSecurityGroups()) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
-                            <SecurityGroups vpcId={vpc?.id} notitle={true} outerState={outerState} />
+                            <SecurityGroups vpcId={vpc?.id} notitle={true} keyedState={props.keyedState?.keyed("security-groups")} />
                         </td>
                     </tr>
                 </>}
@@ -390,9 +368,6 @@ const Subnet = (props) => {
 
 const SecurityGroups = (props) => {
 
-    const { outerState, setOuterState } = props;
-    let [ state, setState ] = useState(outerState || {});
-
     const all = useSearchParams()[0].get("all")?.toLowerCase() === "true";
     const args = props.vpcId ? `?vpc=${props.vpcId}` : ""
     const securityGroups = useFetch(`/aws/security_groups${all ? "/all" : ""}${args}`, { cache: true });
@@ -407,7 +382,7 @@ const SecurityGroups = (props) => {
         <div style={{minWidth:"400pt"}}>
             { securityGroups.loading && <div className="box lighten" style={{marginTop:"2pt"}}><StandardSpinner label="Loading security groups" /></div> }
             { securityGroups.map(securityGroup => <div key={securityGroup.id}>
-                <SecurityGroup security_group={securityGroup} outerState={outerState} setOuterState={setOuterState} />
+                <SecurityGroup security_group={securityGroup} keyedState={props.keyedState?.keyed(securityGroup.id)} />
                 <div style={{height:"4pt"}} />
             </div>)}
         </div>
@@ -416,23 +391,11 @@ const SecurityGroups = (props) => {
 
 const SecurityGroup = (props) => {
 
-    const { security_group, outerState } = props;
-    let [ state, setState ] = useState(outerState || {});
+    const { security_group } = props;
+    let [ state, setState ] = useOptionalKeyedState(props.keyedState);
 
-    function isShow(property) {
-        return state[security_group.id] ? state[security_group.id][property] : false;
-    }
-
-    function toggleShow(property) {
-        if (!state[security_group.id]) {
-            state[security_group.id] = {};
-            state[security_group.id][property] = true;
-        }
-        else {
-            state[security_group.id][property] = !state[security_group.id][property];
-        }
-        setState({...state});
-    }
+    const isShow = (property) => state[property];
+    const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
 
     const isShowRules         = () => isShow    ("showRules");
     const toggleRules         = () => toggleShow("showRules");

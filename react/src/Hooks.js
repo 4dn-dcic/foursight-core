@@ -82,15 +82,22 @@ export const useSelectedComponents = (componentDefinitions) => {
 export const useKeyedState = (initial) => {
     const [ state, setState ] = useState(initial || {});
     const response = {
-        get: (key) => (key ? state[key] : state) || {},
-        set: (key, value) => key && setState(state => ({ ...state, [key]: { ...state[key], ...value } })),
+        raw: () => state,
+        __get: (key) => {
+            key = key ? `__${key}__` : key = "__key__";
+            return (key ? state[key] : state) || {};
+        },
+        __set: (key, value) => {
+            key = key ? `__${key}__` : key = "__key__";
+            setState(state => ({ ...state, [key]: { ...state[key], ...value } }));
+        },
     };
     response.keyed = function(key) {
         const outer = this;
         return {
             key: key,
-            get: () => this.get(key),
-            set: (value) => this.set(key, value),
+            get: () => outer.__get(key),
+            set: (value) => outer.__set(key, value),
             keyed: function(key, exact = false) { return outer.keyed(exact || !this.key ? key : this.key + key, true); }
         }
     };

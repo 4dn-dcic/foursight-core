@@ -145,7 +145,7 @@ const HomePage = (props) => {
 
     return <>
                 <span onClick={() => setX(value => ({goo:'baz'}))}>XXX[{JSON.stringify(x)}]XXX</span>
-        keyedState:[{JSON.stringify(keyedState.get())}]<br/>
+        keyedState:[{JSON.stringify(keyedState.raw())}]<br/>
 
         <div className="box" style={{marginBottom:"10pt",width:"fit-content"}}>
             {stacks.map(stack =>
@@ -167,9 +167,9 @@ const HomePage = (props) => {
         <div className="box thickborder error">
                 {/* <span className="pointer" onClick={() => ks.set("K", ({...ks.get("K"),abc:!ks.get("K").abc}))}>A</span> */}
                 {/* <span className="pointer" onClick={() => ks.set("K", ({...ks.get("K"),def:!ks.get("K").def}))}>B</span> */}
-                <span className="pointer" onClick={() => ks.set("K", {abc:!ks.get("K").abc})}>A</span>
-                <span className="pointer" onClick={() => ks.set("K", {def:!ks.get("K").def})}>B</span>
-                <pre style={{background:"lightred"}}>{JSON.stringify(ks.get())}</pre>
+                <span className="pointer" onClick={() => ks.__set("K", {abc:!ks.__get("K").abc})}>A</span>
+                <span className="pointer" onClick={() => ks.__set("K", {def:!ks.__get("K").def})}>B</span>
+                <pre style={{background:"lightred"}}>{JSON.stringify(ks.raw())}</pre>
         </div>
         <br/>
         <div className="box thickborder error">
