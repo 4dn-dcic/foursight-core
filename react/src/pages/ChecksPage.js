@@ -906,16 +906,16 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
             <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",color:"darkred",background:"yellow",filter:"brightness(0.9)"}}>
                 {  check.__queuedActionRun &&
                     <small><b>
-                        <span id={`tooltip-view-run-action-uuid-1 ${check.name}`} xclassName="tool-tip" data-text="Click to view UUID for this run." onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued action run</span>:&nbsp;
+                        <span id={`tooltip-view-run-action-uuid-1 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued action run</span>:&nbsp;
                         <span id={`tooltip-view-run-action-uuid-2 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.__queuedActionRun + "+00:00")}</span>
                         <Tooltip id={`tooltip-view-run-action-uuid-1 ${check.name}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this action run."} position="bottom" />
                         <Tooltip id={`tooltip-view-run-action-uuid-2 ${check.name}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this action run."} position="bottom" />
                         &nbsp;{Char.RightArrow}&nbsp;
                         { showUuid ? <>
-                            <a id={`tooltip-view-run-action-s3 ${check.name}`} xclassName="tool-tip" data-text="Click to view in AWS S3." rel="noreferrer" target="_blank" onClick={(e) => {}} href={`https://s3.console.aws.amazon.com/s3/object/${info.get("checks.bucket")}?region=us-east-1&prefix=${check.__result.get("action")}/${check.__queuedActionRun}.json`} style={{color:"inherit"}}><u>{check.__queuedActionRun}</u></a>
+                            <a id={`tooltip-view-run-action-s3 ${check.name}`} rel="noreferrer" target="_blank" onClick={(e) => {}} href={`https://s3.console.aws.amazon.com/s3/object/${info.get("checks.bucket")}?region=us-east-1&prefix=${check.__result.get("action")}/${check.__queuedActionRun}.json`} style={{color:"inherit"}}><u>{check.__queuedActionRun}</u></a>
                             <Tooltip id={`tooltip-view-run-action-s3 ${check.name}`} text="Click to view action run result in AWS S3 (in new tab)." position="bottom" />
                         </>:<>
-                            <span id={`tooltip-view-run-action-uuid-3 ${check.name}`} xclassName="tool-tip" data-text={`UUID: ${check.__queuedActionRun}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>OK</span>
+                            <span id={`tooltip-view-run-action-uuid-3 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>OK</span>
                             <Tooltip id={`tooltip-view-run-action-uuid-3 ${check.name}`} text="Click to view UUID for this action run." position="bottom" />
                         </>}
                         <div style={{float:"right",marginTop:"-0pt",cursor:"pointer"}} onClick={() => {hideActionRunningBox(check, groupList); }}>&nbsp;{Char.X}</div>
