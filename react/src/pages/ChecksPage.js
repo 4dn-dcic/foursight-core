@@ -20,7 +20,7 @@ import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 import LiveTime from '../LiveTime';
 import Styles from '../Styles';
-import { Tooltip } from '../Components';
+import Tooltip from '../components/Tooltip';
 
 function noteChangedSelectedGroups(groupList) {
     groupList.update();
@@ -357,12 +357,8 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
                                 <RunButton check={check} env={env} groupList={groupList} historyList={historyList} style={{marginTop:"-1pt"}} />
                             </div>
                         </>:<>
-                            { (check.__queueingCheckRun) ? <>
-                                <div className={"check-config-wait-button"} style={{float:"right"}}>
-                                    <span className={"tool-tip"} data-text={"Configure run below."} style={{}}><span style={{fontSize:"small"}}>{Char.DownArrowFat}</span>&nbsp;Configure</span>
-                                </div>
-                            </>:<>
-                                <div
+                            { (!check.__queueingCheckRun) && <>
+                                <div id={`tooltip-configure ${check.title}`} 
                                     className={check.__configuringCheckRun ? "check-config-button" : "check-run-button"} style={{marginTop:"-2pt",float:"right"}}
                                     onClick={() => {
                                         if (check.__configuringCheckRun) {
@@ -375,18 +371,16 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
                                         noteChangedCheckBox(groupList);
                                             setShowDependenciesBox(true);
                                     }}>
-                                    <span
-                                        className={"tool-tip"}
-                                        data-text={"Configure run below."}>
-                                        <span style={{fontSize:"small"}}>{Char.DownArrowFat}</span>&nbsp;Configure
-                                    </span>
+                                    <span style={{fontSize:"small"}}>{Char.DownArrowFat}</span>&nbsp;Configure
                                 </div>
+                                <Tooltip id={`tooltip-configure ${check.title}`} position="top" text={"Configure run below."} />
                             </>}
                         </>}
                         <span style={{whiteSpace:"nowrap"}}>
-                            <u className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}.`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal",whiteSpace:"break-spaces"}} onClick={() => {onClickShowHistory(check, env, historyList);}}>
+                            <u id={`tooltip-check-info ${check.title}`} style={{cursor:"pointer",fontWeight:isShowingSelectedCheckResultsBox(check) ? "bold" : "normal",whiteSpace:"break-spaces"}} onClick={() => {onClickShowHistory(check, env, historyList);}}>
                                 {check.title?.length > 70 ? check.title.substring(0, 69) + " ..." : check.title}
                             </u>
+                            <Tooltip id={`tooltip-check-info ${check.title}`} text={`Check: ${check.name}. Module: ${check.module}.`} />
                             { check.__result.get("action") && <u>
                                 { runActionAllowedState[0] ? <>
                                     <span style={{color:"red"}} className="tool-tip" data-text="This check has an associated (allowed) action.">&nbsp;{Char.Diamond}</span>
@@ -394,11 +388,13 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
                                     <span className="tool-tip" data-text="This check has an associated (disallowed) action.">&nbsp;{Char.Diamond}</span>
                                 </>}
                             </u>}
-                            &nbsp;&nbsp;<Link className="tool-tip" data-text="Click to view check details and history." to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">
+                            &nbsp;&nbsp;<Link id={`tooltip-check-details ${check.title}`} to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">
                                 <div className="fa fa-external-link" style={{fontWeight:"bold",position:"relative",bottom:"-2px"}}></div>
                             </Link>
+                            <Tooltip id={`tooltip-check-details ${check.title}`} text="Click to view check details and history (in new tab)." />
                             { check.registered_github_url && <>
-                                <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"6pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                                <a id={`tooltip-view-source ${check.title}`} style={{marginLeft:"6pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                                <Tooltip id={`tooltip-view-source ${check.title}`} text="Click to view source code for this check (in new tab)." />
                             </>}
                             </span>
                             <ToggleHistoryButton check={check} env={env} historyList={historyList} />
@@ -440,9 +436,10 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
 
 const ToggleHistoryButton = ({ check, env, historyList, style }) => {
     return <span style={{...style, cursor:"pointer"}} onClick={() => onClickShowHistory(check, env, historyList)}>
-        <span data-text={"Click to " + (check.__showingHistory ? "hide" : "show") + " recent history of check runs."} className={"tool-tip"}>
+        <span id={`tooltip-recent-history ${check.title}`}>
             <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"2px",marginRight:"2pt",height:"18"}} />
         </span>
+        <Tooltip id={`tooltip-recent-history ${check.title}`} text={"Click to " + (check.__showingHistory ? "hide" : "show") + " recent history of check runs."} />
         { check.__showingHistory ? <span>{Char.RightArrow}</span> : <></> }
     </span>
 }
@@ -484,14 +481,15 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
             }
             else {
                 if (check.__result.loading) {
-                    tooltip = "Fetching latest result summary.";
+                    tooltip = "Fetching latest result.";
                 }
                 else {
-                    tooltip = "Click to fetch latest result summary";
+                    tooltip = "Click to fetch latest result.";
                 }
             }
             return <span style={{cursor:"pointer",color:"inherit",fontSize:"10pt",paddingBottom:"11pt"}} onClick={(e) => { fetchResult(check, env, groupList, true); }}>
-                <b className="tool-tip" data-text={tooltip}>{Char.Refresh}</b>
+                <b id={`tooltip-latest-result-history ${check.title}`}>{Char.Refresh}</b>
+                <Tooltip id={`tooltip-latest-result-history ${check.title}`} text={tooltip} />
             </span>
         }
 
@@ -505,51 +503,71 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
             { (check.__showingResults) && <small style={{color:check.__result.get("status")?.toUpperCase() === "PASS" ? "inherit" : "darkred",cursor:"pointer"}}>
                 { !check.__result.empty ? (<>
                     { <div style={{height:"1px",marginTop:"8px",marginBottom:"2px",background:"gray"}}></div> }
-                    <span onClick={() => onClickResult(check, groupList)}><span className="tool-tip" data-text={Time.FormatDuration(check.__result.get("timestamp"), new Date(), true, null, null, "ago")}>
-                        <b>Latest Result</b></span>
-                        { check.__showingResultDetails ? (
-                            <b className={"tool-tip"} data-text={"Click to hide result details."}>&nbsp;{Char.DownArrow}</b>
-                        ):(
-                            <b className={"tool-tip"} data-text={"Click to show result details."}>&nbsp;{Char.UpArrow}</b>
-                        )}&nbsp;
-                        {check.__result.get("timestamp")}
+                    <span onClick={() => onClickResult(check, groupList)}>
+                        <span id={`tooltip-latest-result ${check.title}`}>
+                            <span><b>Latest Result</b></span>
+                            { check.__showingResultDetails ? (
+                                <b>&nbsp;{Char.DownArrow}</b>
+                            ):(
+                                <b>&nbsp;{Char.UpArrow}</b>
+                            )}&nbsp;
+                        </span>
+                        <span id={`tooltip-latest-result-timestamp ${check.title}`}>{check.__result.get("timestamp")}</span>
+                        <Tooltip id={`tooltip-latest-result ${check.title}`} text={"Click to " + (check.__showingResultDetails ? "hide" : "show") + " latest result."} />
+                        <Tooltip id={`tooltip-latest-result-timestamp ${check.title}`} text={Time.FormatDuration(check.__result.get("timestamp"), new Date(), true, null, null, "ago")} />
                     </span>
                     { check.__showingResultDetails && <>
+                            {/**/}
                         { check.__result.get("uuid") ? <>
                             { showResultByUuid ? <>
                                 { check.__result.get("action") ? <>
-                                    &nbsp;|&nbsp;<span onClick={() => onClickResultBySummary(check)}>Summary</span>
-                                    &nbsp;|&nbsp;<b>Check</b>
-                                    &nbsp;|&nbsp;<span onClick={() => onClickResultByAction(check, groupList)}>Action</span>
+                                    &nbsp;|&nbsp;<span id={`tooltip-view-latest-result-summary ${check.title}`} onClick={() => onClickResultBySummary(check)}>Summary</span>
+                                    &nbsp;|&nbsp;<b id={`tooltip-viewing-latest-result-detail ${check.title}`}>Check</b>
+                                    &nbsp;|&nbsp;<span id={`tooltip-view-latest-action-result ${check.title}`} onClick={() => onClickResultByAction(check, groupList)}>Action</span>
+                                    <Tooltip id={`tooltip-view-latest-result-summary ${check.title}`} text="Click to view latest check result summary." />
+                                    <Tooltip id={`tooltip-viewing-latest-result-detail ${check.title}`} text="Viewing latest check result detail." />
+                                    <Tooltip id={`tooltip-view-latest-action-result ${check.title}`} text="Click to view latest action result." />
                                 </>:<>
-                                    &nbsp;|&nbsp;<span onClick={() => onClickResultBySummary(check)}>Summary</span>
-                                    &nbsp;|&nbsp;<b>Check</b>
+                                    &nbsp;|&nbsp;<span id={`tooltip-view-latest-result-summary ${check.title}`} onClick={() => onClickResultBySummary(check)}>Summary</span>
+                                    &nbsp;|&nbsp;<b id={`tooltip-viewing-latest-result-detail ${check.title}`}>Check</b>
+                                    <Tooltip id={`tooltip-view-latest-result-summary ${check.title}`} text="Click to view latest check result summary." />
+                                    <Tooltip id={`tooltip-viewing-latest-result-detail ${check.title}`} text="Viewing latest check result detail." />
                                 </>}
                             </>:<>
                                 { showResultByAction ? <>
-                                    &nbsp;|&nbsp;<span onClick={() => onClickResultBySummary(check)}>Summary</span>
-                                    &nbsp;|&nbsp;<span onClick={() => onClickResultByUuid(check, groupList)}>Check</span>
-                                    &nbsp;|&nbsp;<b>Action</b>
+                                    &nbsp;|&nbsp;<span id={`tooltip-view-latest-result-summary ${check.title}`} onClick={() => onClickResultBySummary(check)}>Summary</span>
+                                    &nbsp;|&nbsp;<span id={`tooltip-view-latest-result-detail ${check.title}`} onClick={() => onClickResultByUuid(check, groupList)}>Check</span>
+                                    &nbsp;|&nbsp;<b id={`tooltip-viewing-latest-action-result ${check.title}`}>Action</b>
+                                    <Tooltip id={`tooltip-view-latest-result-summary ${check.title}`} text="Click to view latest check result summary." />
+                                    <Tooltip id={`tooltip-view-latest-result-detail ${check.title}`} text="Click to view latest check result detail." />
+                                    <Tooltip id={`tooltip-viewing-latest-action-result ${check.title}`} text="Viewing latest action result." />
                                 </>:<>
                                     { check.__result.get("action") ? <>
-                                        &nbsp;|&nbsp;<b>Summary</b>
-                                        &nbsp;|&nbsp;<span onClick={() => onClickResultByUuid(check, groupList)}>Check</span>
-                                        &nbsp;|&nbsp;<span onClick={() => onClickResultByAction(check, groupList)}>Action</span>
+                                        &nbsp;|&nbsp;<b id={`tooltip-viewing-latest-result-summary ${check.title}`}>Summary</b>
+                                        &nbsp;|&nbsp;<span id={`tooltip-view-latest-result-detail ${check.title}`} onClick={() => onClickResultByUuid(check, groupList)}>Check</span>
+                                        &nbsp;|&nbsp;<span id={`tooltip-view-latest-action-result ${check.title}`} onClick={() => onClickResultByAction(check, groupList)}>Action</span>
+                                        <Tooltip id={`tooltip-viewing-latest-result-summary ${check.title}`} text="Viewing latest check result summary." />
+                                        <Tooltip id={`tooltip-view-latest-result-detail ${check.title}`} text="Click to view latest check result detail." />
+                                        <Tooltip id={`tooltip-view-latest-action-result ${check.title}`} text="Click to view latest action result." />
                                     </>:<>
-                                        &nbsp;|&nbsp;<b>Summary</b>
-                                        &nbsp;|&nbsp;<span onClick={() => onClickResultByUuid(check, groupList)}>Check</span>
+                                        &nbsp;|&nbsp;<b id={`tooltip-viewing-latest-result-summary ${check.title}`}>Summary</b>
+                                        &nbsp;|&nbsp;<span id={`tooltip-view-latest-result-detail ${check.title}`} onClick={() => onClickResultByUuid(check, groupList)}>Check</span>
+                                        <Tooltip id={`tooltip-viewing-latest-result-summary ${check.title}`} text="Viewing latest check result summary." />
+                                        <Tooltip id={`tooltip-view-latest-result-detail ${check.title}`} text="Click to view latest check result detail." />
                                     </>}
                                 </>}
                             </>}
                         </>:<>
                             { check.__result.get("action") ? <>
                                 { showResultByAction ? <>
-                                    &nbsp;|&nbsp;<span onClick={() => onClickResultBySummary(check)}>Summary</span>
-                                    &nbsp;|&nbsp;<b>Action</b>
+                                    &nbsp;|&nbsp;<span id={`tooltip-view-latest-result-summary ${check.title}`} onClick={() => onClickResultBySummary(check)}>Summary</span>
+                                    &nbsp;|&nbsp;<b id={`tooltip-viewing-latest-action-result ${check.title}`}>Action</b>
+                                    <Tooltip id={`tooltip-view-latest-result-summary ${check.title}`} text="Click to view latest check result summary." />
+                                    <Tooltip id={`tooltip-viewing-latest-action-result ${check.title}`} text="Viewing latest action result." />
                                 </>:<>
                                     &nbsp;|&nbsp;<b>Summary</b>
-                                    &nbsp;|&nbsp;<b>Action</b>
-                                    &nbsp;|&nbsp;<span onClick={() => onClickResultByAction(check)}>Action</span>
+                                    &nbsp;|&nbsp;<span id={`tooltip-view-latest-action-result ${check.title}`} onClick={() => onClickResultByAction(check)}>Action</span>
+                                    <Tooltip id={`tooltip-view-latest-action-result ${check.title}`} text="Click to view latest action result." />
                                 </>}
                             </>:<>
                                 &nbsp;|&nbsp;<b>Summary</b>
@@ -559,7 +577,7 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
                     &nbsp;|&nbsp;<RefreshResultButton check={check} env={env} groupList={groupList} />
                     <br />
                     <span style={{color:check.__result.get("status")?.toUpperCase() === "PASS" ? "inherit" : "darkred"}} onClick={() => onClickResult(check, groupList)}>
-                        <span className={"tool-tip"} data-text={"Click to " + (check.__showingResultDetails ? "hide" : "show") + " result details."}>Summary</span>:&nbsp;
+                        <span>Summary</span>:&nbsp;
                         <span style={{whiteSpace:"break-spaces"}}>
                             {check.__result.get("summary")}&nbsp;&nbsp;
                             {check.__result.get("status")?.toUpperCase() === "PASS" ? (<b style={{fontSize:"12pt",color:"inherit"}}>{Char.Check}</b>) : (<b style={{fontSize:"13pt",color:"darkred"}}>{Char.X}</b>)}
@@ -647,15 +665,23 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
         const fetch = useFetchFunction();
         if (check.__queueingCheckRun) {
             return check.__queueingCheckRun && <div className={"check-run-wait-button"} style={style}>
-                <span
-                 className={"tool-tip"}
-                 data-text={"Wait until " + (check.__queueingCheckRun ? "check queueing" : "result fetch") + " completes."}>
+                <span id="tooltip-queueing">
                      <i>Queueing</i>
                  </span>
+                <Tooltip id="tooltip-queueing" text="Wait until check run queueing completes." />
             </div>
         }
+
+        const tooltipId = `tooltip-run-button ${check.title}`;
+        const tooltip = check.__configuringCheckRun ? (readOnlyMode
+                                                       ? "Run check disabled due to readonly mode."
+                                                       : "Click to actually run this check.")
+                                                    : (readOnlyMode
+                                                       ? "Click to configure a check run. But run is disabled due to readonly mode."
+                                                       : "Click to configure a check run.");
         return <div>
-            <div className={"check-run-button" + (check.__configuringCheckRun ? "" : "")} style={{...style, cursor:readOnlyMode && check.__configuringCheckRun ? "not-allowed" : "",background:readOnlyMode && check.__configuringCheckRun ? "#888888" : "",color:check.__configuringCheckRun ? "yellow" : ""}}
+            <Tooltip id={tooltipId} text={tooltip} />
+            <div id={tooltipId} className={"check-run-button" + (check.__configuringCheckRun ? "" : "")} style={{...style, cursor:readOnlyMode && check.__configuringCheckRun ? "not-allowed" : "",background:readOnlyMode && check.__configuringCheckRun ? "#888888" : "",color:check.__configuringCheckRun ? "yellow" : ""}}
                 onClick={(e) => {
                     if (check.__configuringCheckRun) {
                         if (!readOnlyMode) {
@@ -668,18 +694,18 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
                         noteChangedCheckBox(groupList);
                     }
                 }}>
-                <span className={"tool-tip"} data-text={readOnlyMode ? "Run disabled because in readonly mode." : "Click to run this check."}>
+                <span>
                     { !readOnlyMode ? <>
                         { check.__configuringCheckRun ? <>
-                            <span style={{fontSize:"small"}}>{Char.RightArrowFat}</span>&nbsp;<span>Run Check</span>
+                            <span id={check.title + "run"}><span style={{fontSize:"small"}}>{Char.RightArrowFat}</span>&nbsp;<span>Run Check</span></span>
                         </>:<>
-                            <span style={{fontSize:"small"}}></span>&nbsp;<span>Run ...</span>
+                            <span id={check.title + "configure"}>&nbsp;Run ...</span>
                         </>}
                     </>:<>
                         { check.__configuringCheckRun ? <>
-                            <span style={{fontSize:"",color:"white",background:"#888888"}}><small>&nbsp;</small>Run Check Disabled</span>
+                            <span id={check.title + "run-disabled"} style={{fontSize:"",color:"white",background:"#888888"}}><small>&nbsp;</small>Run Check Disabled</span>
                         </>:<>
-                            <span style={{fontSize:"small"}}></span>&nbsp;<span>Run ...</span>
+                            <span id={check.title + "configure-disabled"} style={{fontSize:"normal"}}>&nbsp;Run ...</span>
                         </>}
                     </>}
                 </span>
@@ -1285,26 +1311,26 @@ const ChecksPage = (props) => {
                 { groupBySchedule ? <>
                     <div style={{display:"inline-block",marginTop:"-18pt"}}>Check Schedules</div>&nbsp;
                     <div style={{float:"right",borderRadius:"4pt",padding:"3pt",paddingTop:"2pt",marginRight:"8pt",marginTop:"-3pt",cursor:"pointer"}}
-                        data-tip data-for="tooltip-view-group">
+                        id="tooltip-view-group">
                         <img alt="group" src={Image.HierarchyIcon()} height="16" onClick={onGroupClick} />
                     </div>
-                    <Tooltip id="tooltip-view-group" text="Click to view by check groups." />
+                    <Tooltip id="tooltip-view-group" text="Click to view by check groups." position="top" />
                     <div style={{float:"right",borderRadius:"3pt",border:"1px solid black",background:"var(--box-bg-lighten)",padding:"3pt",paddingTop:"2pt",marginRight:"2pt",marginTop:"-2pt"}}
-                        data-tip data-for="tooltip-viewing-schedule">
+                        id="tooltip-viewing-schedule">
                         <img alt="group" src={Image.CalendarIcon()} height="15" />
                     </div>
-                    <Tooltip id="tooltip-viewing-schedule" text="Viewing by check schedules." />
+                    <Tooltip id="tooltip-viewing-schedule" text="Viewing by check schedules." position="top" />
                 </>:<>
                     Check Groups&nbsp;&nbsp;
-                    <div data-tip data-for="tooltip-viewing-group" style={{float:"right",borderRadius:"3pt",border:"1px solid black",background:"var(--box-bg-lighten)",padding:"3pt",paddingTop:"2pt",marginRight:"6pt",marginTop:"-2pt"}}>
+                    <div id="tooltip-viewing-group" style={{float:"right",borderRadius:"3pt",border:"1px solid black",background:"var(--box-bg-lighten)",padding:"3pt",paddingTop:"2pt",marginRight:"6pt",marginTop:"-2pt"}}>
                         <img alt="group" src={Image.HierarchyIcon()} height="15" />
                     </div>
-                    <Tooltip id="tooltip-viewing-group" text="Viewing by check groups." />
+                    <Tooltip id="tooltip-viewing-group" text="Viewing by check groups." position="top" />
                     <div style={{float:"right",borderRadius:"4pt",padding:"3pt",paddingTop:"2pt",marginRight:"2pt",marginTop:"-3pt",cursor:"pointer"}} onClick={onGroupClick}
-                        data-tip data-for="tooltip-view-schedule">
+                        id="tooltip-view-schedule">
                         <img alt="group" src={Image.CalendarIcon()} height="16" />
                     </div>
-                    <Tooltip id="tooltip-view-schedule" text="Click to view by check schedules." />
+                    <Tooltip id="tooltip-view-schedule" text="Click to view by check schedules." position="top" />
                 </>}
             </div>
             <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"6pt"}}>

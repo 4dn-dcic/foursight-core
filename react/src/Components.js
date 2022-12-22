@@ -5,7 +5,7 @@ import Client from './utils/Client';
 import Char from './utils/Char';
 import Image from './utils/Image';
 import { PuffSpinner } from './Spinners';
-import ReactTooltip from 'react-tooltip'
+// import ReactTooltip from 'react-tooltip'
 import Str from './utils/Str';
 import Styles from './Styles';
 import Time from './utils/Time';
@@ -96,9 +96,11 @@ export const ExternalLink = (props) => {
     </span>
 }
 
-export const Tooltip = ({ id, type = "dark", position = "bottom", text = "Your tooltip here.", color = null, background = null, bold = false, italic = false, icon = false, float = false, image = null, imageHeight = null }) => {
+/*
+export const Tooltip = ({ id, type = "dark", position = "bottom", text = "Your tooltip here.", color = null, background = null, bold = false, italic = false, icon = false, float = false, delay = 500, image = null, imageHeight = null }) => {
     // type => dark (black) | success (green-ish) | warning (orange-ish) | error (red-ish) | info (blue-ish) | light (white-ish)
-    return <ReactTooltip delayShow={500} type={color || background ? null : type} textColor={color} backgroundColor={background} id={id} place={position} effect={float ? "float" : "solid"}>
+    // or override both color and background specifically
+    return <ReactTooltip wrapper="div" delayShow={delay} type={color || background ? null : type} textColor={color} backgroundColor={background} id={id} place={position} effect={float ? "float" : "solid"}>
         <div style={{marginLeft:"-8pt",marginRight:"-9pt",fontWeight:"normal"}}>
             { icon &&<b style={{color:"yellow",marginRight:"4pt"}}>&#x24D8;</b> }
             { (image && imageHeight > 0) && <img src={image} height={imageHeight} style={{marginRight:"8pt"}}/> }
@@ -106,3 +108,4 @@ export const Tooltip = ({ id, type = "dark", position = "bottom", text = "Your t
         </div>
     </ReactTooltip>
 }
+*/

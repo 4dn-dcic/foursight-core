@@ -3,9 +3,49 @@ import Env from '../utils/Env';
 import HeaderData from '../HeaderData';
 import Logout from '../utils/Logout';
 import { HorizontalLine, Link, LoggedInUser } from '../Components';
-import ReactTooltip from 'react-tooltip'
+//import ReactTooltip from 'react-tooltip'
 import Image from '../utils/Image'
+import "react-tooltip/dist/react-tooltip.css";
+import { Tooltip } from "react-tooltip";
 
+const TooltipExample = () => {
+  return <>
+    <>
+      <div className="App">
+        <h1 id="app-title" style={{ backgroundColor: "#999" }}>
+          Hello Tooltip Example
+        </h1>
+        <h2 id="second-app-title" style={{ backgroundColor: "#999" }}>
+          This is a basic example on how to use Tooltip
+        </h2>
+      </div>
+      <Tooltip
+        anchorId="app-title"
+        place="bottom"
+        content="Hello world! I'm a Tooltip"
+      />
+      <Tooltip
+        anchorId="second-app-title"
+        place="bottom"
+        variant="info"
+        content="I'm a info tooltip"
+      />
+    </>
+  </>
+}
+const TooltipExample2 = () => {
+    return <div>
+      <span id="xrun-button" className="button">Run ...</span>
+      <span id="run-button" className="button">Run ...</span>
+      <Tooltip
+        anchorId="run-button"
+        place="left"
+        content="Click to configure check run."
+      />
+    </div>
+}
+
+{/*
 const ReactTooltipExample = () => {
   return (
     <div className="App">
@@ -20,11 +60,15 @@ const ReactTooltipExample = () => {
   );
 }
 
-const Tooltip = ({ id, position = "bottom", text = "Your tooltip here." }) => {
-    return <ReactTooltip id={id} border={true} backgroundColor="red" textColor="yellow" place={position} effect="float" variant={"light"}><div style={{marginLeft:"-8pt",marginRight:"-5pt"}}>
+const Tooltip = ({ id, position = "bottom", text = "Your tooltip here.", float = false }) => {
+    return <ReactTooltip id={id} border={true} backgroundColor="red" textColor="yellow" place={position} effect={float ? "float" : "solid"} variant={"light"}><div style={{marginLeft:"-8pt",marginRight:"-5pt"}}>
         <b style={{color:"yellow"}}>&#x24D8;</b>&nbsp;&nbsp;{text}
     </div></ReactTooltip>
 }
+const XTooltip = ({ id, position = "bottom", text = "Your tooltip here.", r = null }) => {
+    return <ReactTooltip refNode={r} id={id} place={position} effect="solid">{text}</ReactTooltip>
+}
+*/}
 
 const HomePage = (props) => {
 
@@ -35,6 +79,8 @@ const HomePage = (props) => {
                           + header?.versions?.foursight + " / dcicutils: " + header?.versions?.dcicutils;
 
     return <>
+                <TooltipExample2 />
+                {/*
         <div className="box error" style={{marginLeft:"500pt"}}>
                 <a id="attributes-basic" data-tooltip-content="hello world!"> ◕‿‿◕ </a>
 
@@ -46,6 +92,10 @@ const HomePage = (props) => {
                 foo
                 </Tooltip>
         </div>
+                <div>
+                    <div data-tip data-for="tooltip-run-button" style={{border:"1px solid red",marginLeft:"300pt"}}id="xyzzy">FOOO<Tooltip id="tooltip-run-button" text="Click to configure a check run." position="bottom" delay={0} float={true} /></div>
+                </div>
+                */}
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
                 <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})</span></b>

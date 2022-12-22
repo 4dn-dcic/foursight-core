@@ -798,7 +798,7 @@ const StackParameters = (props) => {
                         <b>{parameter}</b> <br />
                         <div style={{wordBreak:"break-all"}}>
                             { parameters.data[parameter] === "********" ? <>
-                                <i style={{color:"red"}}>REDACTED</i>
+                                <span style={{color:"red"}}>REDACTED</span>
                             </>:<>
                                 {parameters.data[parameter]}
                             </>}
@@ -854,7 +854,7 @@ const Gac = (props) => {
             <ul style={{marginBottom:"1pt"}}>
                 { info.data?.gac && Object.keys(info.data.gac.values)?.map(name => <li key={name}>
                     <b>{name}</b> <br />
-                    { info.data.gac.values[name] === "********" ? <i style={{color:"red"}}>REDACTED</i> : info.data.gac.values[name] }
+                    { info.data.gac.values[name] === "********" ? <span style={{color:"red"}}>REDACTED</span> : info.data.gac.values[name] }
                 </li>)}
             </ul>
         </div>
