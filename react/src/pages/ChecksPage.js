@@ -1476,7 +1476,8 @@ const ChecksPage = (props) => {
             </>
         }
         return recentRunsShow && <>
-            <b>Recent Runs</b>
+            <b id="recent-runs-title">Recent Runs</b>
+            <Tooltip id={"recent-runs-title"} text="Most recent runs across all checks." position="top" />
             <div className="box" style={{paddingTop:"4pt",paddingBottom:"6pt",marginTop:"3pt",marginBottom:"8pt",maxWidth:"700"}}>
                 { (recentRuns.loading && recentRuns.null) ? <>
                     <StandardSpinner loading={recentRuns.loading} label={"Loading recent runs"} size={60} color={Styles.GetForegroundColor()} />
@@ -1515,9 +1516,10 @@ const ChecksPage = (props) => {
                                             <span style={{color:Styles.GetForegroundColor()}}>{Char.Check}</span>
                                         :   <span style={{color:"darkred"}}>{Char.X}</span> }
                                     &nbsp;</td>
-                                    <td  style={{width:"20%"}} className="tool-tip" data-text={Time.FormatDuration(run.timestamp, new Date(), true, null, null, "ago")}>
+                                    <td  id={`recent-runs-timestamp ${index}`} style={{width:"20%"}}>
                                         {Time.FormatDate(run.timestamp)} <br />
                                         <small>{Time.FormatTime(run.timestamp)}</small>
+                                        <Tooltip id={`recent-runs-timestamp ${index}`} text={Time.FormatDuration(run.timestamp, new Date(), true, null, null, "agoy")} />
                                     &nbsp;&nbsp;</td>
                                     <td style={{width:"45%"}}>
                                         <b style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(run.check, run.group), environ, historyList)}>{run.title}</b>
