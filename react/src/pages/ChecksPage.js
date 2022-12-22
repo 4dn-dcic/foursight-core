@@ -674,7 +674,7 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
             </div>
         }
 
-        const tooltipId = `tooltip-run-button ${check.title}`;
+        const tooltipId = `tooltip-run-button ${check?.title}`;
         const tooltip = check.__configuringCheckRun ? (readOnlyMode
                                                        ? "Run check disabled due to readonly mode."
                                                        : "Click to actually run this check.")
@@ -877,16 +877,19 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
         const [ showUuid, setShowUuid ] = useState(false);
         return (!check.showingCheckRunningBox || !check.__configuringCheckRun) ? <span /> : <div>
             <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",background:"yellow",filter:"brightness(0.9)"}}>
-                { check.__queuedCheckRun &&
+                { (check.__queuedCheckRun) &&
                     <small><b>
-                        <span onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued check run</span>:&nbsp;
-                        <span className="tool-tip" data-text="Click to view UUID for this run." onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.__queuedCheckRun + "+00:00")}</span>
+                        <span id={`tooltip-view-run-uuid-1 ${check.title}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued check run</span>:&nbsp;
+                        <span id={`tooltip-view-run-uuid-2 ${check.title}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.__queuedCheckRun + "+00:00")}</span>
+                        <Tooltip id={`tooltip-view-run-uuid-1 ${check.title}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this check run."} position="bottom" />
+                        <Tooltip id={`tooltip-view-run-uuid-2 ${check.title}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this check run."} position="bottom" />
                         &nbsp;{Char.RightArrow}&nbsp;
-                                
                         { showUuid ? <>
-                            <a className="tool-tip" data-text="Click to view in AWS S3." rel="noreferrer" target="_blank" onClick={(e) => {}} href={`https://s3.console.aws.amazon.com/s3/object/${info.get("checks.bucket")}?region=us-east-1&prefix=${check.name}/${check.__queuedCheckRun}.json`} style={{color:"inherit"}}><u>{check.__queuedCheckRun}</u></a>
+                            <a  id={`tooltip-view-run-s3 ${check.title}`} rel="noreferrer" target="_blank" onClick={(e) => {}} href={`https://s3.console.aws.amazon.com/s3/object/${info.get("checks.bucket")}?region=us-east-1&prefix=${check.name}/${check.__queuedCheckRun}.json`} style={{color:"inherit"}}><u>{check.__queuedCheckRun}</u></a>
+                            <Tooltip id={`tooltip-view-run-s3 ${check.title}`} text="Click to view check run result in AWS S3 (in new tab)." position="bottom" />
                         </>:<>
-                            <span className="tool-tip" data-text={`UUID: ${check.__queuedCheckRun}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>OK</span>
+                            <span id={`tooltip-view-run-uuid-3 ${check.title}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>OK</span>
+                            <Tooltip id={`tooltip-view-run-uuid-3 ${check.title}`} text="Click to view UUID for this check run." position="bottom" />
                         </>}
                         <div style={{float:"right",marginTop:"-0pt",cursor:"pointer"}} onClick={() => {hideCheckRunningBox(check, groupList); }}>&nbsp;<b>{Char.X}</b>&nbsp;</div>
                     </b></small>
@@ -903,14 +906,17 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
             <div className="box" style={{marginTop:"4pt",padding:"6pt",cursor:"default",borderColor:"red",color:"darkred",background:"yellow",filter:"brightness(0.9)"}}>
                 {  check.__queuedActionRun &&
                     <small><b>
-                        <span className="tool-tip" data-text="Click to view UUID for this run." onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued action run</span>:&nbsp;
-                        <span onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.__queuedActionRun + "+00:00")}</span>
+                        <span id={`tooltip-view-run-action-uuid-1 ${check.title}`} xclassName="tool-tip" data-text="Click to view UUID for this run." onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued action run</span>:&nbsp;
+                        <span id={`tooltip-view-run-action-uuid-2 ${check.title}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.__queuedActionRun + "+00:00")}</span>
+                        <Tooltip id={`tooltip-view-run-action-uuid-1 ${check.title}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this action run."} position="bottom" />
+                        <Tooltip id={`tooltip-view-run-action-uuid-2 ${check.title}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this action run."} position="bottom" />
                         &nbsp;{Char.RightArrow}&nbsp;
-                                
                         { showUuid ? <>
-                            <a className="tool-tip" data-text="Click to view in AWS S3." rel="noreferrer" target="_blank" onClick={(e) => {}} href={`https://s3.console.aws.amazon.com/s3/object/${info.get("checks.bucket")}?region=us-east-1&prefix=${check.__result.get("action")}/${check.__queuedActionRun}.json`} style={{color:"inherit"}}><u>{check.__queuedActionRun}</u></a>
+                            <a id={`tooltip-view-run-action-s3 ${check.title}`} xclassName="tool-tip" data-text="Click to view in AWS S3." rel="noreferrer" target="_blank" onClick={(e) => {}} href={`https://s3.console.aws.amazon.com/s3/object/${info.get("checks.bucket")}?region=us-east-1&prefix=${check.__result.get("action")}/${check.__queuedActionRun}.json`} style={{color:"inherit"}}><u>{check.__queuedActionRun}</u></a>
+                            <Tooltip id={`tooltip-view-run-action-s3 ${check.title}`} text="Click to view action run result in AWS S3 (in new tab)." position="bottom" />
                         </>:<>
-                            <span className="tool-tip" data-text={`UUID: ${check.__queuedActionRun}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>OK</span>
+                            <span id={`tooltip-view-run-action-uuid-3 ${check.title}`} xclassName="tool-tip" data-text={`UUID: ${check.__queuedActionRun}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>OK</span>
+                            <Tooltip id={`tooltip-view-run-action-uuid-3 ${check.title}`} text="Click to view UUID for this action run." position="bottom" />
                         </>}
                         <div style={{float:"right",marginTop:"-0pt",cursor:"pointer"}} onClick={() => {hideActionRunningBox(check, groupList); }}>&nbsp;{Char.X}</div>
                     </b></small>
@@ -1811,9 +1817,10 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
             <div className="box thickborder" style={{background:"lightyellow",fontSize:"small",marginTop:"4pt",paddingTop:"8pt",paddingBottom:"8pt"}}>
                 <div style={{marginTop:"0pt"}}>
                     <b><u>Action</u></b>:&nbsp;
-                    <span className="tool-tip" style={{color:runActionConfirm ? "red" : "inherit",fontWeight:runActionConfirm ?  "bold" : "inherit"}} data-text={check.__result.get("action")}>
+                    <span id={`tooltip-view-action ${check.title}`} className="tool-tip" style={{color:runActionConfirm ? "red" : "inherit",fontWeight:runActionConfirm ?  "bold" : "inherit"}} data-text={check.__result.get("action")}>
                         <b>{check.__result.get("action_title")}</b>
                     </span>
+                    <Tooltip id={`tooltip-view-action ${check.title}`} text={`Action: ${check.title}. Module: ${check.module}`} position="bottom" />
                     <div style={{float:"right",marginTop:"-2pt"}}>
                         {(runActionAllowedState[0] && !readOnlyMode) ?<>
                             { runActionConfirm ? <>
