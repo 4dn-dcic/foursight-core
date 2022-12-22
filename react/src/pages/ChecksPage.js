@@ -383,9 +383,11 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
                             <Tooltip id={`tooltip-check-info ${check.title}`} text={`Check: ${check.name}. Module: ${check.module}.`} />
                             { check.__result.get("action") && <u>
                                 { runActionAllowedState[0] ? <>
-                                    <span style={{color:"red"}} className="tool-tip" data-text="This check has an associated (allowed) action.">&nbsp;{Char.Diamond}</span>
+                                    <span id={`tooltip-associated-action ${check.title}`} style={{color:"red"}}>&nbsp;{Char.Diamond}</span>
+                                    <Tooltip id={`tooltip-associated-action ${check.title}`} text="This check has an associated (allowed) action." />
                                 </>:<>
-                                    <span className="tool-tip" data-text="This check has an associated (disallowed) action.">&nbsp;{Char.Diamond}</span>
+                                    <span id={`tooltip-associated-action-disallowed ${check.title}`}>&nbsp;{Char.Diamond}</span>
+                                    <Tooltip id={`tooltip-associated-action-disallowed ${check.title}`} text="This check has an associated (disallowed) action." />
                                 </>}
                             </u>}
                             &nbsp;&nbsp;<Link id={`tooltip-check-details ${check.title}`} to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">
