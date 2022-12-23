@@ -1216,15 +1216,17 @@ const ChecksSearchBox = (props) => {
                         <tr>
                             <td style={{verticalAlign:"top",paddingTop:"4pt",paddingRight:"6pt"}}>
                                 <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit",marginTop:"800pt"}} rel="noreferrer" target="_blank">
-                                    <small className="fa fa-external-link" style={{color:"black",fontSize:"10pt",fontWeight:"default"}}></small>
+                                    <b id={`tooltip-search-full-history-${check.name}`} className="fa fa-external-link" style={{color:"black",fontSize:"11pt"}}></b>
+                                    <Tooltip id={`tooltip-search-full-history-${check.name}`} text="Click for full history (in new tab)." position="bottom" />
                                 </Link>
                             </td>
                             <td style={{verticalAlign:"top",paddingBottom:"10pt",whiteSpace:"break-spaces"}}>
                                 <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit",marginTop:"800pt"}} rel="noreferrer" target="_blank">
-                                    <b>{check.title}</b>
+                                    <b><u>{check.title}</u></b>
                                 </Link>
                                 { check.registered_github_url && <>
-                                    <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"4pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                                    <a id={`tooltip-search-${check.name}`} style={{marginLeft:"4pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                                    <Tooltip id={`tooltip-search-${check.name}`} text="Click to view source code for this check (in new tab)." position="bottom" />
                                 </>}
                                 <br />
                                 <small className="pointer" onClick={() => props.toggleShowGroup(props.findGroup(check.group), props.environ, props.groupList)}><i>{check.group}</i></small> (<small>{check.name}</small>)
@@ -1349,8 +1351,9 @@ const ChecksPage = (props) => {
             <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"6pt"}}>
                 { checks.map((datum, index) =>
                     <div key={datum.group}>
-                        <span style={{fontWeight:isSelectedGroup(datum, groupList) ? "bold" : "normal",cursor:"pointer"}} onClick={() => toggleShowGroup(datum, environ, groupList, historyList)}>
-                            {datum.group.replace(/ checks$/i, "")} &nbsp;<small className="tool-tip" data-text={`Checks: ${datum.checks?.length}`}>({datum.checks.length})</small>
+                        <span id={`tooltip-group-count-${index}`} style={{fontWeight:isSelectedGroup(datum, groupList) ? "bold" : "normal",cursor:"pointer"}} onClick={() => toggleShowGroup(datum, environ, groupList, historyList)}>
+                            {datum.group.replace(/ checks$/i, "")} &nbsp;<small>({datum.checks.length})</small>
+                        <Tooltip id={`tooltip-group-count-${index}`} text={`Checks: ${datum.checks?.length}`} position="right" shape="squared" />
                         </span>
                         { index < checks.length - 1 &&
                             <div className="fgbg" style={{marginTop:"3pt",marginBottom:"3pt",height:"1px"}} />
@@ -1403,7 +1406,7 @@ const ChecksPage = (props) => {
 
     const ChecksRawView = ({ info }) => {
         return isShowingChecksRaw() && !checksRawHide && <>
-            <b className="tool-tip" data-text={info.get("checks.file")}>Raw Checks</b> {Char.RightArrow} <span style={{fontSize:"9pt"}}>{info.get("checks.file")}</span>
+            <b>Raw Checks</b> {Char.RightArrow} <span style={{fontSize:"9pt"}}>{info.get("checks.file")}</span>
             <div style={{marginTop:"3pt"}}>
             <pre className="box lighten" style={{maxWidth:"600pt"}}>
             { checksRaw.loading ? <>
@@ -1534,8 +1537,9 @@ const ChecksPage = (props) => {
                                     &nbsp;&nbsp;</td>
                                     <td style={{width:"45%"}}>
                                         <b style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(run.check, run.group), environ, historyList)}>{run.title}</b>
-                                        &nbsp;&nbsp;<Link to={Client.Path(`/checks/${run.check}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank">
-                                            <small className="fa fa-external-link" style={{color:"black",fontSize:"10pt",fontWeight:"default"}}></small>
+                                        &nbsp;&nbsp;<Link to={Client.Path(`/checks/${run.check}/history`)} rel="noreferrer" target="_blank">
+                                            <small id={`tooltip-recent-runs-full-${index}`} className="fa fa-external-link" style={{color:"black",fontSize:"10pt",fontWeight:"default"}}></small>
+                                            <Tooltip id={`tooltip-recent-runs-full-${index}`} text="Click for full history (in new tab)." position="bottom" />
                                         </Link>
                                         <br />
                                         <i><small style={{cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(run.group), environ, groupList, historyList)}>{run.group}</small></i>&nbsp;
@@ -1568,9 +1572,10 @@ const ChecksPage = (props) => {
 
     const ChecksStatus = () => {
         return <>
-            <table><tbody className="tool-tip" data-text="Click to refresh current check run status."><tr><td style={{whiteSpace:"nowrap",paddingBottom:"3pt"}}>
-            <b style={{cursor:"pointer",marginBottom:"10pt"}} onClick={() => refreshChecksStatus()}>Checks Status</b>
-            &nbsp;&nbsp;
+            <table><tbody id={`tooltip-run-status`}><tr><td style={{whiteSpace:"nowrap",paddingBottom:"3pt"}}>
+                <b style={{cursor:"pointer",marginBottom:"10pt"}} onClick={() => refreshChecksStatus()}>Checks Status</b>
+                <Tooltip id={`tooltip-run-status`} text="Click to refresh current check run status." position="top" />
+                &nbsp;&nbsp;
             </td><td>
             { checksStatus.loading ? <>
                 { <StandardSpinner loading={checksStatus.loading} label={""} size={60} color={"black"} style={{paddingTop:"-2pt"}} /> }
