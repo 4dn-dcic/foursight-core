@@ -8,6 +8,7 @@ import Server from '../utils/Server';
 import Str from '../utils/Str';
 import PagedTableComponent from '../PagedTableComponent';
 import Styles from '../Styles';
+import Tooltip from '../components/Tooltip';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
 
@@ -149,10 +150,12 @@ const UsersPage = () => {
                                 {user.groups && user.groups?.length > 0 ? user.groups : Char.EmptySet}
                             </td>
                             <td style={tdStyle}>
-                                <span className="tool-tip" data-text={user.project}>{user.project?.replace("/projects/","")?.replace("/","") || Char.EmptySet}</span>
+                                <span id={`tooltip-users-project-${user.email}`}>{user.project?.replace("/projects/","")?.replace("/","") || Char.EmptySet}</span>
+                                <Tooltip id={`tooltip-users-project-${user.email}`} position="bottom" size="small" text={`Project: ${user.project}`} />
                             </td>
                             <td style={tdStyle}>
-                                <span className="tool-tip" data-text={user.institution}>{user.institution?.replace("/institutions/","")?.replace("/","") || Char.EmptySet}</span>
+                            <span id={`tooltip-users-institution-${user.email}`}>{user.institution?.replace("/institutions/","")?.replace("/","") || Char.EmptySet}</span>
+                                <Tooltip id={`tooltip-users-institution-${user.email}`} position="bottom" size="small" text={`Institution: ${user.institution}`} />
                             </td>
                             <td style={tdStyle}>
                                 {user.updated ? Time.FormatDate(user.updated) : Time.FormatDate(user.created)} <br />
