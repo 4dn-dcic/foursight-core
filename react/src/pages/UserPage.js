@@ -10,6 +10,7 @@ import Server from '../utils/Server';
 import Styles from '../Styles';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
+import Tooltip from '../components/Tooltip';
 import Yaml from '../utils/Yaml';
 
 const UserRawBox = (props) => {
@@ -121,7 +122,8 @@ const UserPage = (props) => {
                     </>}
                     <Link to="/users" bold={false}>List</Link><>&nbsp;|&nbsp;</>
                     <Link to="/users/create" bold={false}>Create</Link><>&nbsp;|&nbsp;</>
-                    <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={users.refresh}>{Char.Refresh}&nbsp;</b>
+                    <b id="tooltip-users" style={{float:"right",cursor:"pointer"}} onClick={users.refresh}>{Char.Refresh}&nbsp;</b>
+                    <Tooltip id={`tooltip-users`} position="top" text={"Click to refresh."} />
                 </div>
             </div>
             {users.length > 0 && users.map(user => (
