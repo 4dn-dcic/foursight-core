@@ -1032,7 +1032,7 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
             </b>&nbsp;
             &nbsp;<Link to={Client.Path(`/checks/${check.name}/history`)} rel="noreferrer" target="_blank">
                 <b id={`tooltip-history-full-${check.name}`} className="fa fa-external-link" style={{color:"black",fontWeight:"bold",position:"relative",bottom:"-3px"}}></b>
-                <Tooltip id={`tooltip-history-full-${check.name}`} text="Click for full history (in new tab)." position="bottom" />
+                <Tooltip id={`tooltip-history-full-${check.name}`} text="Click for full history (in new tab)." position="bottom" offset={-3} />
             </Link>
             { check.registered_github_url && <>
                 &nbsp;<a id={`tooltip-history-source-${check.name}`} style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
