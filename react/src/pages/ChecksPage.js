@@ -1847,9 +1847,10 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
                         </>}
                     </div>
                     { (!readOnlyMode && !runActionAllowedState[0] && !check.__result.loading && !check.__resultByUuid.loading && !check.__resultByAction.loading) && <>
-                        <div className="tool-tip" data-text="Click to refresh result." style={{float:"right",marginRight:"8pt",marginTop:"0pt",cursor:"pointer",color:"black"}} onClick={() => fetchResult(check, env, groupList, true)}>
+                        <div id={`tooltip-result-refresh-${check.name}`} style={{float:"right",marginRight:"8pt",marginTop:"0pt",cursor:"pointer",color:"black"}} onClick={() => fetchResult(check, env, groupList, true)}>
                             <big><b>{Char.Refresh}</b></big>
                         </div>
+                        <Tooltip id={`tooltip-result-refresh-${check.name}`} text="Click to refresh latest result." position="bottom" />
                     </>}
                 </div>
                 { runActionConfirm && <>
