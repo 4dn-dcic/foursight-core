@@ -1670,8 +1670,11 @@ const ChecksPage = (props) => {
                     <tr><td colSpan="2" style={{height:"4pt"}}></td></tr>
                     { (lambda.lambda_schedule) &&  <>
                         <tr>
-                            <td className="tool-tip" data-text={lambda.lambda_schedule}style={tdLabelStyle}>Schedule:</td>
-                            <td style={tdContentStyle}><i>{lambda.lambda_schedule_description}</i></td>
+                            <td style={tdLabelStyle}>Schedule:</td>
+                            <td style={tdContentStyle}>
+                                <i id={`tooltip-lambda-cron.${lambda.lambda_name}`} >{lambda.lambda_schedule_description}</i>
+                                <Tooltip id={`tooltip-lambda-cron.${lambda.lambda_name}`} text={lambda.lambda_schedule} position="right" shape="squared" />
+                            </td>
                         </tr>
                         <tr><td colSpan="2" style={{height:"4pt"}}></td></tr>
                         <tr><td colSpan="2" style={{height:"1px",background:"gray"}}></td></tr>
@@ -1679,31 +1682,36 @@ const ChecksPage = (props) => {
                     </>}
                     <tr>
                         <td style={tdLabelStyle}>Handler:</td>
-                        <td style={tdContentStyle} className="tool-tip" data-text={lambda.lambda_function_arn}>
-                            {lambda.lambda_handler} <br />
+                        <td style={tdContentStyle}>
+                            <span id={`tooltip-lambda-arn-${lambda.lambda_name}`}>{lambda.lambda_handler}</span> <br />
+                            <Tooltip id={`tooltip-lambda-arn-${lambda.lambda_name}`} text={`ARN: ${lambda.lambda_function_arn}`} position="top" />
                             <small><a href={`https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions/${lambda.lambda_function_name}?tab=code`} rel="noreferrer" target="_blank">{lambda.lambda_function_name}</a></small>
                         </td>
                     </tr>
                     <tr>
                         <td style={tdLabelStyle}><small>Role:</small></td>
-                        <td className="tool-tip" data-text={lambda.lambda_role} style={tdContentStyle}>
-                            <small><a href={`https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/roles/details/${lambda.lambda_role?.replace(/.*\//,'')}`} rel="noreferrer" target="_blank">{lambda.lambda_role?.replace(/.*\//,'')}</a></small>
+                        <td style={tdContentStyle}>
+                            <small id={`tooltip-lambda-role-arn-${lambda.lambda_role}`}><a href={`https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/roles/details/${lambda.lambda_role?.replace(/.*\//,'')}`} rel="noreferrer" target="_blank">{lambda.lambda_role?.replace(/.*\//,'')}</a></small>
+                            <Tooltip id={`tooltip-lambda-role-arn-${lambda.lambda_role}`} text={`Role ARN: ${lambda.lambda_role}`} position="bottom" />
                         </td>
                     </tr>
                     <tr>
                         <td style={tdLabelStyle}>Updated:</td>
-                        <td style={tdContentStyle}><span className="tool-tip" data-text={Time.Ago(lambda.lambda_modified)} >{Time.FormatDateTime(lambda.lambda_modified)}</span></td>
+                        <td style={tdContentStyle}><span id={`tooltip-lambda-updated-${lambda.lambda_name}`}>{Time.FormatDateTime(lambda.lambda_modified)}</span></td>
+                        <Tooltip id={`tooltip-lambda-updated-${lambda.lambda_name}`} text={Time.Ago(lambda.lambda_modified)} position="right" shape="squared" />
                     </tr>
                     <tr style={{fontSize:"small"}}>
                         <td style={tdLabelStyle}>Code:</td>
-                        <td style={tdContentStyle} className="tool-tip" data-text="S3 Code Location">
-                            <a href={`https://s3.console.aws.amazon.com/s3/object/${lambda.lambda_code_s3_bucket}?region=us-east-1&prefix=${lambda.lambda_code_s3_bucket_key}`} rel="noreferrer" target="_blank">{lambda.lambda_code_s3_bucket_key}</a> <br />
+                        <td style={tdContentStyle}>
+                            <a id={`tooltip-lambda-s3-${lambda.lambda_name}`} href={`https://s3.console.aws.amazon.com/s3/object/${lambda.lambda_code_s3_bucket}?region=us-east-1&prefix=${lambda.lambda_code_s3_bucket_key}`} rel="noreferrer" target="_blank">{lambda.lambda_code_s3_bucket_key}</a> <br />
                             <small><a href={`https://s3.console.aws.amazon.com/s3/buckets/${lambda.lambda_code_s3_bucket}?region=us-east-1&tab=objects`} rel="noreferrer" target="_blank">{lambda.lambda_code_s3_bucket}</a></small>
+                            <Tooltip id={`tooltip-lambda-s3-${lambda.lambda_name}`} text={"Click to view code location in AWS S3 (in new tab)."} position="bottom" />
                         </td>
                     </tr>
                     <tr>
                         <td style={tdLabelStyle}>Code Size:</td>
-                        <td style={tdContentStyle}><span className="tool-tip" data-text={lambda.lambda_code_size} >{Str.FormatBytes(lambda.lambda_code_size)}</span></td>
+                        <td style={tdContentStyle}><span id={`tooltip-lambda-size-${lambda.lambda_name}`}>{Str.FormatBytes(lambda.lambda_code_size)}</span></td>
+                       <Tooltip id={`tooltip-lambda-size-${lambda.lambda_name}`} text={`Code size in bytes: ${lambda.lambda_code_size}`} position="right" shape="squared" />
                     </tr>
                     { (lambda?.lambda_checks && lambda?.lambda_checks?.length > 0) && <>
                         <tr><td colSpan="2" style={{height:"4pt"}}></td></tr>
