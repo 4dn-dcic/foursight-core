@@ -5,6 +5,7 @@ import Char from '../utils/Char';
 import { useFetch } from '../utils/Fetch';
 import Server from '../utils/Server';
 import Time from '../utils/Time';
+import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 
@@ -407,9 +408,11 @@ const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount
                     <div style={{paddingTop:"7pt",paddingRight:"2pt"}}><BarSpinner /></div>
                 </>:<>
                     { info.data?.__showraw ? <>
-                        <span className="tool-tip" data-text="Click to hide raw results." onClick={() => { info.data.__showraw = false; info.update(); }} style={{cursor:"pointer"}}>{Char.DownArrow}</span>
+                        <span id={`tooltip-hide-raw-${account.id}`} onClick={() => { info.data.__showraw = false; info.update(); }} style={{cursor:"pointer"}}>{Char.DownArrow}</span>
+                        <Tooltip id={`tooltip-hide-raw-${account.id}`} text={"Click to hide raw result."} position="top" />
                     </>:<>
-                        <span className="tool-tip" data-text="Click to show raw results." onClick={() => {info.data.__showraw = true;info.update(); }} style={{cursor:"pointer"}}>{Char.UpArrow}</span>
+                        <span id={`tooltip-show-raw-${account.id}`} onClick={() => {info.data.__showraw = true;info.update(); }} style={{cursor:"pointer"}}>{Char.UpArrow}</span>
+                        <Tooltip id={`tooltip-show-raw-${account.id}`} text={"Click to show raw result."} position="top" />
                     </>}
                     <span onClick={refreshData} style={{cursor:"pointer"}}>&nbsp;&nbsp;{Char.Refresh}</span>
                 </>}
@@ -474,14 +477,19 @@ const AccountsComponent = ({ header }) => {
 
     return <>
         <div style={{borderBottom:"2px solid black",marginBottom:"8pt"}}>
-            <div style={{marginTop:"0pt"}}><b className="tool-tip" data-text={header?.app?.accounts_file_from_s3}>Known Accounts</b>
+            <div style={{marginTop:"0pt"}}><b id={`tooltip-known-accounts`}>Known Accounts</b>
+                <Tooltip id={`tooltip-known-accounts`} text={`This info from: ${header?.app?.accounts_file_from_s3}`} position="top" />
                 <div style={{float:"right",display:"inline",fontSize:"small",marginRight:"4pt",marginTop:"0pt"}}>
                 { (all)  ? <>
-                    <span className="tool-tip" data-text={"Click to show only local accounts/stages."} style={{cursor:"pointer"}} onClick={toggleAll}>Local</span>&nbsp;|&nbsp;
-                    <b style={{cursor:"pointer"}} onClick={toggleAll}>All</b>
+                    <span id={`tooltip-show-local`} style={{cursor:"pointer"}} onClick={toggleAll}>Local</span>&nbsp;|&nbsp;
+                    <Tooltip id={`tooltip-show-local`} text={`Click to show accounts within AWS account: ${header?.app?.credentials?.aws_account_number} (${header?.app?.credentials?.aws_account_name})`} position="top" />
+                    <b id={`tooltip-showing-all`} style={{cursor:"pointer"}} onClick={toggleAll}>All</b>
+                    <Tooltip id={`tooltip-showing-all`} text={"Showing all known accounts."} position="top" />
                 </>:<>
-                    <b style={{cursor:"pointer"}} onClick={toggleAll}>Local</b>&nbsp;|&nbsp;
-                    <span className="tool-tip" data-text={"Click to show all known accounts."} style={{cursor:"pointer"}} onClick={toggleAll}>All</span>
+                    <b id={`tooltip-showing-local`} style={{cursor:"pointer"}} onClick={toggleAll}>Local</b>&nbsp;|&nbsp;
+                    <Tooltip id={`tooltip-showing-local`} text={`Showing accounts within AWS account: ${header?.app?.credentials?.aws_account_number} (${header?.app?.credentials?.aws_account_name})`} position="top" />
+                    <span id={`tooltip-show-all`} style={{cursor:"pointer"}} onClick={toggleAll}>All</span>
+                    <Tooltip id={`tooltip-show-all`} text={"Click to show all known accounts."} position="top" />
                 </>}
                 &nbsp;|&nbsp; <span style={{cursor:"pointer"}} onClick={refreshAll}>{Char.Refresh}</span>
                 </div>
