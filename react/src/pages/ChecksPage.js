@@ -1723,15 +1723,17 @@ const ChecksPage = (props) => {
                                 <table border="0"><tbody>
                                     { lambda.lambda_checks?.map((lambda_check) =>
                                         <tr key={lambda_check.check_name}>
-                                            <td style={{...tdContentStyle}} className="tool-tip" data-text={lambda_check.check_name}>
+                                            <td style={{...tdContentStyle}}>
                                                 { (getCheck(lambda_check.check_name, lambda_check.check_group)) ? <>
-                                                    <b style={{color:Styles.GetForegroundColor(),cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(lambda_check.check_name, lambda_check.check_group), environ, historyList)}>{lambda_check.check_title}</b> <br />
-                                                    <i style={{color:Styles.GetForegroundColor(),cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(lambda_check.check_group), environ, groupList, historyList)}>{lambda_check.check_group}</i>
+                                                    <b id={`tooltip-lambda-check-${lambda_check.check_name}`} style={{color:Styles.GetForegroundColor(),cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(lambda_check.check_name, lambda_check.check_group), environ, historyList)}>{lambda_check.check_title}</b> <br />
+                                                    <i id={`tooltip-lambda-check-group-${lambda_check.check_name}`} style={{color:Styles.GetForegroundColor(),cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(lambda_check.check_group), environ, groupList, historyList)}>{lambda_check.check_group}</i>
                                                 </>:<>
                                                     <b style={{color:"#444444"}}>{lambda_check.check_title}</b> <br />
                                                     <i style={{color:"#444444"}}>{lambda_check.check_group}</i>
                                                 </>}
                                             </td>
+                                            <Tooltip id={`tooltip-lambda-check-${lambda_check.check_name}`} text={`Check: ${lambda_check.check_name}.`} position="bottom" />
+                                            <Tooltip id={`tooltip-lambda-check-group-${lambda_check.check_name}`} text={`Check Group: ${lambda_check.check_group}.`} position="bottom" />
                                         </tr>
                                     )}
                                 </tbody></table>
