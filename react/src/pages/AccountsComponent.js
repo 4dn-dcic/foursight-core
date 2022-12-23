@@ -96,7 +96,8 @@ const AccountInfoLeft = ({ info, foursightUrl }) => {
                 { info.get("foursight.s3.global_env_bucket") ? <>
                     {info.get("foursight.s3.global_env_bucket")}
                     { info.get("foursight.s3.bucket_org") && <>
-                        &nbsp;(<span className="tool-tip" data-text={`S3 Bucket Org: ${info.get("foursight.s3.bucket_org")}`}>{info.get("foursight.s3.bucket_org")}</span>)
+                        &nbsp;(<span id={`tooltip-bucket-org-${info.get("foursight.aws_account_number")}`}>{info.get("foursight.s3.bucket_org")}</span>)
+                        <Tooltip id={`tooltip-bucket-org-${info.get("foursight.aws_account_number")}`} text={`S3 Bucket Org: ${info.get("foursight.s3.bucket_org")}`} position="top" />
                     </>}
                 </>:<>{Char.EmptySet}</>}
             </td>
@@ -107,7 +108,8 @@ const AccountInfoLeft = ({ info, foursightUrl }) => {
             </td>
             <td>
                 { info.get("foursight.s3.encrypt_key_id") ? <>
-                    <span className="tool-tip" data-text="S3 Encryption Key ID.">{info.get("foursight.s3.encrypt_key_id")}</span>
+                    <span id={`tooltip-encryption-key-${info.get("foursight.aws_account_number")}`}>{info.get("foursight.s3.encrypt_key_id")}</span>
+                    <Tooltip id={`tooltip-encryption-key-${info.get("foursight.aws_account_number")}`} text={`S3 Encryption Key ID`} position="top" />
                 </>:<> &ndash; </>}
             </td>
         </tr>
@@ -130,7 +132,8 @@ const AccountInfoLeft = ({ info, foursightUrl }) => {
                 { info.get("foursight.aws_account_number") ? <>
                     <b>{info.get("foursight.aws_account_number")}</b>
                     { info.get("foursight.aws_account_name") && <>
-                        &nbsp;(<span className="tool-tip" data-text={`AWS Account Alias: ${info.get("foursight.aws_account_name")}`}>{info.get("foursight.aws_account_name")}</span>)
+                        &nbsp;(<span id={`tooltip-alias-${info.get("foursight.aws_account_name")}-${info?.data?.stage }`}>{info.get("foursight.aws_account_name")}</span>)
+                        <Tooltip id={`tooltip-alias-${info.get("foursight.aws_account_name")}-${info?.data?.stage }`} text={`AWS Account Alias: ${info.get("foursight.aws_account_name")}`} position="top" />
                     </>}
                 </>:<>{Char.EmptySet}</>}
             </td>
@@ -181,7 +184,7 @@ const AccountInfoLeft = ({ info, foursightUrl }) => {
             </td>
             <td>
                 { info.get("foursight.deployed") ? <>
-                    <b className="tool-tip" data-text={Time.Ago(info.get("foursight.deployed"))}>{info.get("foursight.deployed")}</b> &ndash; {Time.Ago(info.get("foursight.deployed"))}
+                    <b>{info.get("foursight.deployed")}</b> &ndash; {Time.Ago(info.get("foursight.deployed"))}
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -191,7 +194,7 @@ const AccountInfoLeft = ({ info, foursightUrl }) => {
             </td>
             <td>
                 { info.get("portal.started") ? <>
-                    <b className="tool-tip" data-text={Time.Ago(info.get("portal.started"))}>{info.get("portal.started")}</b> &ndash; {Time.Ago(info.get("portal.started"))}
+                    <b>{info.get("portal.started")}</b> &ndash; {Time.Ago(info.get("portal.started"))}
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -378,8 +381,9 @@ const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount
     function isCurrentAccount(info) {
         if (!Type.IsNull(header?.app?.credentials?.aws_account_number) &&
             !Type.IsNull(info?.data?.foursight?.aws_account_number) &&
-            (header?.app?.credentials?.aws_account_number === info?.data?.foursight?.aws_account_number)) {
-                return true;
+            (header?.app?.credentials?.aws_account_number === info?.data?.foursight?.aws_account_number) &&
+            (header?.app?.stage === info?.data?.stage)) {
+            return true;
         }
         return false;
     }
@@ -392,15 +396,19 @@ const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount
     return <>
         <div className={isCurrentAccountAndStage(info) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt"}}>
             {isCurrentAccount(info) ? <>
-                <b className="tool-tip" data-text="This is your current account.">{info.data?.name || account.name}</b>
+                <b id={`tooltip-current-${account.name}-${info?.data?.stage}`}>{info.data?.name || account.name}</b>
+                <Tooltip id={`tooltip-current-${account.name}-${info?.data?.stage}`} text={`This is your current account: ${info.get("foursight.aws_account_number")}`} position="top" />
             </>:<>
-                <b>{info.data?.name || account.name}</b>
+                <b id={`tooltip-account-${account.name}-${account.stage}`}>{info.data?.name || account.name}</b>
+                <Tooltip id={`tooltip-account-${account.name}-${account.stage}`} text={`AWS Account: ${info.get("foursight.aws_account_number")}.`} position="top" />
             </>}
             { info.get("foursight.stage") ? <>
-                &nbsp;&nbsp;&mdash;&nbsp;&nbsp;<span className="tool-tip" data-text={`Stage: ${info.get("foursight.stage")}`}>{info.get("foursight.stage")}</span>
+                &nbsp;&nbsp;&mdash;&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${info.get("foursight.stage")}`}>{info.get("foursight.stage")}</span>
+                <Tooltip id={`tooltip-stage-${account.id}-${info.get("foursight.stage")}`} text={`Stage: ${info.get("foursight.stage")}`} position="top" />
             </>:<>
                 { account.stage && <>
-                    &nbsp;&nbsp;&mdash;&nbsp;&nbsp;<span className="tool-tip" data-text={`Stage: ${account.stage}`}>{account.stage}</span>
+                    &nbsp;&nbsp;&mdash;&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${account.stage}`}>{account.stage}</span>
+                    <Tooltip id={`tooltip-stage-${account.id}-${account.stage}`} text={`Stage: ${account.state}`} position="top" />
                 </>}
             </>}
             <div style={{float:"right",marginTop:"-2pt"}}>
