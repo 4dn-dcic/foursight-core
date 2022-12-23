@@ -406,7 +406,8 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
                                 <div key={key}>
                                     { Str.HasValue(check.schedule[key]?.cron_description) ? (
                                         <div style={{whiteSpace:"nowrap",width:"100%"}} key={index} title={check.schedule[key].cron}>
-                                            <small><i>Schedule: <span className={"tool-tip"} data-text={check.schedule[key]?.cron}>{check.schedule[key].cron_description}</span>.</i></small>
+                                            <small><i>Schedule: <span id={`tooltip-cron-${check.name}`}>{check.schedule[key].cron_description}</span>.</i></small>
+                                            <Tooltip id={`tooltip-cron-${check.name}`} text={check.schedule[key]?.cron} />
                                         </div>
                                     ):(
                                         <small><i>
@@ -1024,15 +1025,18 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
     }, []);
 
     return <div className="box" style={{paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"8pt",maxWidth:"525pt"}}>
-        <div title={check.name}>
-            <b className="tool-tip" data-text={`Check: ${check.name}. Module: ${check.module}. Group: ${check.group}. Click for full history.`}>
-                <Link to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">{check.title}</Link>
+        <div>
+            <b>
+                <Link id={`tooltip-history-check-name-${check.name}`} to={Client.Path(`/checks/${check.name}/history`)} style={{color:"inherit"}} rel="noreferrer" target="_blank">{check.title}</Link>
+                <Tooltip id={`tooltip-history-check-name-${check.name}`} text={`Check: ${check.name}. Module: ${check.module}. Group: ${check.group}.`} position="bottom" />
             </b>&nbsp;
-            <Link to={Client.Path(`/checks/${check.name}/history`)} className={"tool-tip"} data-text={"Click for full history."} rel="noreferrer" target="_blank">
-                &nbsp;<b className="fa fa-external-link" style={{color:"black",fontWeight:"bold",position:"relative",bottom:"-3px"}}></b>
+            &nbsp;<Link to={Client.Path(`/checks/${check.name}/history`)} rel="noreferrer" target="_blank">
+                <b id={`tooltip-history-full-${check.name}`} className="fa fa-external-link" style={{color:"black",fontWeight:"bold",position:"relative",bottom:"-3px"}}></b>
+                <Tooltip id={`tooltip-history-full-${check.name}`} text="Click for full history (in new tab)." position="bottom" />
             </Link>
             { check.registered_github_url && <>
-                &nbsp;<a className="tool-tip" data-text="Click to view source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                &nbsp;<a id={`tooltip-history-source-${check.name}`} style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                <Tooltip id={`tooltip-history-source-${check.name}`} text="Click to view source code for this check (in new tab)." />
             </>}
             <span style={{float:"right",cursor:"pointer"}} onClick={(() => {hideHistory(check, historyList)})}>&nbsp;&nbsp;<b>{Char.X}</b></span>
         </div>
@@ -1063,9 +1067,10 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
                             :   <span style={{color:"darkred"}}>{Char.X}</span> }
                         &nbsp;&nbsp;</td>
                         <td style={{whiteSpace:"nowrap"}}>
-                            <span className="tool-tip" data-text={Time.Ago(extractTimestamp(history))} onClick={() => {toggleHistoryResult(check, history, extractUuid(history), historyList); }} style={{cursor:"pointer"}}>
+                            <span id={`tooltip-history-timestamp-${check.name}-${index}`} onClick={() => {toggleHistoryResult(check, history, extractUuid(history), historyList); }} style={{cursor:"pointer"}}>
                                 {extractTimestamp(history)}
                             </span>
+                            <Tooltip id={`tooltip-history-timestamp-${check.name}-${index}`} text={Time.Ago(extractTimestamp(history))} position="right" shape="squared" />
                         &nbsp;&nbsp;</td>
                         <td style={{whiteSpace:"nowrap"}}>
                             {extractStatus(history) === "PASS" ? (<>
