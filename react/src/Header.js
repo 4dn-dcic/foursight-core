@@ -250,9 +250,7 @@ const Header = (props) => {
                                     </>}
                                 </>}
                             </>):(<>
-                                <span className={"tool-tip"} data-text="Running locally and unknown user logged in.">
-                                    <b style={{color:"darkred"}}>UNKNOWN USER</b>
-                                </span>
+                                <b style={{color:"darkred"}}>UNKNOWN USER</b>
                             </>)}
                         </>):(<>
                             <Link to={Client.Path("/login", Env.Current(header))} style={{textDecoration:"none"}}><b style={{color:"darkblue"}}>NOT LOGGED IN</b></Link>
