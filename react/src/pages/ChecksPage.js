@@ -217,7 +217,8 @@ const SelectedGroupsPanel = ({ groupList, env, historyList, info, toggleShowingC
         { groupList.length > 0 /* selectedGroups.length > 0 */ ? (<>
             <div style={{paddingBottom:"3pt"}}>
                 <b>Checks</b>
-                <small className="pointer" style={{marginLeft:"6pt",marginTop:"2pt"}} onClick={toggleShowingChecksSearch}>{Char.Search}</small>
+                <small id={`tooltip-search`} className="pointer" style={{marginLeft:"6pt",marginTop:"2pt"}} onClick={toggleShowingChecksSearch}>{Char.Search}</small>
+                <Tooltip id={`tooltip-search`} position="right" shape="squared" size="small" text={"Click to search for checks."} />
             </div>
             { groupList.map((selectedGroup, index) /* selectedGroups?.map((selectedGroup, index) */ =>
                 <SelectedGroupBox key={selectedGroup.group} group={selectedGroup} env={env} groupList={groupList} historyList={historyList} info={info} style={{paddingBottom:"6pt"}} />
@@ -373,7 +374,7 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
                                     }}>
                                     <span style={{fontSize:"small"}}>{Char.DownArrowFat}</span>&nbsp;Configure
                                 </div>
-                                <Tooltip id={`tooltip-configure ${check.name}`} position="top" text={"Configure run below."} />
+                                <Tooltip id={`tooltip-configure ${check.name}`} position="top" text={"Configure check run below."} />
                             </>}
                         </>}
                         <span style={{whiteSpace:"nowrap"}}>
@@ -1139,8 +1140,7 @@ const ChecksSearchControl = (props) => {
     return <>
        &nbsp;<span style={{fontWeight:props.showingChecksSearch ? "bold" : "normal"}} onClick={props.toggleShowingChecksSearch}>
             <span style={{color:"inherit",marginRight:"6pt"}}>Search Checks</span>{Char.Search}&nbsp;&nbsp;
-        {/* <img style={{float:"right",marginTop:"-6pt"}} src="https://cdn.iconscout.com/icon/free/png-256/new-arrival-itema-tag-label-coupon-sticker-12963.png" height="38" /> */}
-        <img alt="new" style={{float:"left",marginTop:"-8pt"}} src={Image.NewIcon()} height="42" />
+            <img alt="new" style={{float:"right",marginTop:"-8pt",marginRight:"-4pt"}} src={Image.NewIcon()} height="42" />
         </span> <br />
     </>
 }
@@ -1199,7 +1199,7 @@ const ChecksSearchBox = (props) => {
         <div>
             <table width="90%"><tbody><tr>
                 <td nowrap="1" width="2%">
-                    <b style={{color:"darkred"}}>Search Checks</b>:&nbsp;
+                    <b style={{color:"var(--box-fg)"}}>Search Checks</b>:&nbsp;
                 </td>
                 <td>
                     <input placeholder="Search for checks ..." type="text" autoFocus style={inputStyle} defaultValue={checksSearch} onChange={onChecksSearch} />

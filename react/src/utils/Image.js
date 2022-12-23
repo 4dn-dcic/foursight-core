@@ -76,7 +76,8 @@ function GetCalendarIcon() {
 }
 
 function GetNewIcon() {
-    return "https://zeevector.com/wp-content/uploads/New-PNG-transparent-Sticker@zeevector.png";
+    return "https://cdn2.iconfinder.com/data/icons/picons-essentials/71/new-512.png";
+    // return "https://zeevector.com/wp-content/uploads/New-PNG-transparent-Sticker@zeevector.png";
 }
 
 function GetSettingsIcon() {

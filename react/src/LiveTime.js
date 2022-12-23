@@ -27,9 +27,9 @@ const FormatDuration = ({start = null, end = null, verbose = false, fallback = "
         return () => clearInterval(intervalId);
     }, []);
     return <>
-        <span id={tooltip ? "tooltip-timestamp" : ""} data-text={Time.FormatDateTime(start || end)}>
+        <span id={tooltip ? `tooltip-timestamp-${start || end}` : ""} data-text={Time.FormatDateTime(start || end)}>
             {Time.FormatDuration(start || now, end || now, verbose, fallback, prefix, suffix)}
-            <Tooltip id={"tooltip-timestamp"} text={Time.FormatDateTime(start || end)} />
+            <Tooltip id={`tooltip-timestamp-${start || end}`} text={Time.FormatDateTime(start || end)} />
         </span>
     </>
 }
