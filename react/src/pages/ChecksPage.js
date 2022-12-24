@@ -703,7 +703,7 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
                         { check.__configuringCheckRun ? <>
                             <span style={{fontSize:"small"}}>{Char.RightArrowFat}</span>&nbsp;<span>Run Check</span>
                         </>:<>
-                            <span>&nbsp;Run ...</span>
+                            <span>&nbsp;Run <b>...</b></span>
                         </>}
                     </>:<>
                         { check.__configuringCheckRun ? <>
@@ -1837,16 +1837,23 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
             <div className="box thickborder" style={{background:"lightyellow",fontSize:"small",marginTop:"4pt",paddingTop:"8pt",paddingBottom:"8pt"}}>
                 <div style={{marginTop:"0pt"}}>
                     <b><u>Action</u></b>:&nbsp;
-                    <span id={`tooltip-view-action ${check.name}`} style={{color:runActionConfirm ? "red" : "inherit",fontWeight:runActionConfirm ?  "bold" : "inherit"}}>
-                        <b>{check.__result.get("action_title")}</b>
+                    <span style={{color:runActionConfirm ? "red" : "inherit",fontWeight:runActionConfirm ?  "bold" : "inherit"}}>
+                        <b id={`tooltip-view-action-${check.name}`} >{check.__result.get("action_title")}</b>
+                        { check.registered_action.github_url && <>
+                            <a id={`tooltip-view-action-source-${check.name}`} style={{marginLeft:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_action.github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="16"/></a>
+                            <Tooltip id={`tooltip-view-action-source-${check.name}`} text="Click to view source code for this action (in new tab)." />
+                        </>}
                     </span>
-                    <Tooltip id={`tooltip-view-action ${check.name}`} text={`Action: ${check.name}. Module: ${check.module}`} position="bottom" />
+                    <Tooltip id={`tooltip-view-action-${check.name}`} text={`Action: ${check.name}. Module: ${check.module}`} position="bottom" />
                     <div style={{float:"right",marginTop:"-2pt"}}>
                         {(runActionAllowedState[0] && !readOnlyMode) ?<>
                             { runActionConfirm ? <>
-                                <button className="check-run-button red" onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
+                                <span id={`tooltip-action-run-${check.name}`}>
+                                    <button className="check-run-button red" onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
+                                </span>
+                                <Tooltip id={`tooltip-action-run-${check.name}`} text="Click to actually run this action." position="top" />
                             </>:<>
-                                <button className="check-run-button" onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
+                                <button className="check-run-button" onClick={onClickRunAction}> Run Action <b>...</b></button>
                             </>}
                         </>:<>
                             { !readOnlyMode ? <>
