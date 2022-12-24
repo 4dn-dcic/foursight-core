@@ -24,7 +24,9 @@ from .aws_network import (
 from .aws_s3 import AwsS3
 from .aws_stacks import (
     aws_get_stack, aws_get_stacks,
-    aws_get_stack_outputs, aws_get_stack_parameters, aws_get_stack_resources, aws_stacks_cache_clear
+    aws_get_stack_outputs, aws_get_stack_parameters,
+    aws_get_stack_resources, aws_get_stack_template,
+    aws_stacks_cache_clear
 )
 from .checks import Checks
 from .cookie_utils import create_delete_cookie_string
@@ -1155,6 +1157,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/resources
         """
         return self.create_success_response(aws_get_stack_resources(stack))
+
+    def reactapi_aws_stack_template(self, request: dict, env: str, stack: str) -> Response:
+        """
+        Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/template
+        """
+        return self.create_success_response(aws_get_stack_template(stack))
 
     # ----------------------------------------------------------------------------------------------
     # END OF EXPERIMENTAL - /accounts page

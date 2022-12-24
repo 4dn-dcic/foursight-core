@@ -1,6 +1,8 @@
 import boto3
+import json
 from .datetime_utils import convert_utc_datetime_to_useastern_datetime_string
 from .misc_utils import memoize
+from collections import OrderedDict
 from dcicutils.obfuscation_utils import obfuscate_dict
 from typing import Optional, Union
 
@@ -13,7 +15,7 @@ def aws_get_stacks() -> list:
     Returns the list of all known AWS CloudFormation stacks with various metadata.
     """
     stacks_info = []
-    c4 = boto3.resource('cloudformation')
+    c4 = boto3.resource("cloudformation")
     for stack in sorted(c4.stacks.all(), key=lambda key: key.name):
         if stack.name.startswith(_STACK_NAME_PREFIX):
             stacks_info.append(_create_aws_stack_info(stack))
@@ -97,9 +99,29 @@ def aws_get_stack_resources(stack_name: str) -> dict:
 def _aws_get_stack_object(stack_name_or_object: Union[str, object]) -> Optional[object]:
     if "cloudformation.Stack" in str(type(stack_name_or_object)):  # TODO: right way to type check.
         return stack_name_or_object
-    c4 = boto3.resource('cloudformation')
+    c4 = boto3.resource("cloudformation")
     stack = list(c4.stacks.filter(StackName=stack_name_or_object))
     return stack[0] if len(stack) == 1 else None
+
+
+@memoize
+def aws_get_stack_template(stack_name: str) -> str:
+    c4 = boto3.client("cloudformation")
+    stack_template = c4.get_template(StackName=stack_name)
+    stack_template_body = stack_template["TemplateBody"]
+    if isinstance(stack_template_body, OrderedDict):
+        #
+        # For some reason for our AWS stack c4-foursight-cgap-supertest-stack
+        # in particular, we get back an OrderedDict, which we print as JSON;
+        # having trouble converting to YAML.
+        #
+        return json.dumps(stack_template_body, default=str, indent=2)
+    else:
+        #
+        # For other AWS stacks like c4-datastore-cgap-supertest-stack,
+        # we get a simple string containing the YAML for the template.
+        #
+        return stack_template_body
 
 
 def aws_stacks_cache_clear() -> None:
@@ -108,3 +130,4 @@ def aws_stacks_cache_clear() -> None:
     aws_get_stack_outputs.cache_clear()
     aws_get_stack_parameters.cache_clear()
     aws_get_stack_resources.cache_clear()
+    aws_get_stack_template.cache_clear()

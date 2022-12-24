@@ -3,7 +3,8 @@ import copy
 import json
 import re
 from typing import Callable, Optional, Union
-from .misc_utils import memoize
+from dcicutils.obfuscation_utils import obfuscate_dict
+from .misc_utils import memoize, sort_dictionary_by_case_insensitive_keys
 
 
 def _filter_boto_description_list(description: dict,
@@ -50,6 +51,15 @@ def _filter_boto_description_list(description: dict,
                 if item:
                     results.append(item)
     return sorted(results, key=lambda value: value["name"]) if create_record else results
+
+
+def _create_tags_dictionary(aws_tags: dict) -> dict:
+    tags = {}
+    for tag in aws_tags:
+        key = tag.get("Key")
+        if key:
+            tags[key] = tag.get("Value")
+    return sort_dictionary_by_case_insensitive_keys(obfuscate_dict(dict(tags)))
 
 
 @memoize
@@ -118,15 +128,18 @@ def aws_get_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None, r
         if item.get("Tags"):
             stack_name_tags = [tag for tag in item["Tags"] if tag.get("Key") == "aws:cloudformation:stack-name"]
             stack_name = stack_name_tags[0].get("Value") if stack_name_tags else None
+            tags = _create_tags_dictionary(item["Tags"])
         else:
             stack_name = None
+            tags = None
         return {
             "name": tag or item.get("VpcId"),
             "id": item.get("VpcId"),
             "cidr": item.get("CidrBlock"),
             "owner": item.get("OwnerId"),
             "stack": stack_name,
-            "status": item.get("State")
+            "status": item.get("State"),
+            "tags": tags
         }
     ec2 = boto3.client('ec2')
     vpcs = ec2.describe_vpcs()
@@ -206,8 +219,10 @@ def aws_get_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
         if item.get("Tags"):
             stack_name_tags = [tag for tag in item["Tags"] if tag.get("Key") == "aws:cloudformation:stack-name"]
             stack_name = stack_name_tags[0].get("Value") if stack_name_tags else None
+            tags = _create_tags_dictionary(item["Tags"])
         else:
             stack_name = None
+            tags = None
         return {
             "name": name,
             "id": id,
@@ -219,7 +234,8 @@ def aws_get_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
             "subnet": item.get("SubnetId"),
             "subnet_arn": item.get("SubnetArn"),
             "vpc": item.get("VpcId"),
-            "status": item.get("State")
+            "status": item.get("State"),
+            "tags": tags
         }
     ec2 = boto3.client('ec2')
     subnets = ec2.describe_subnets()
@@ -317,15 +333,18 @@ def aws_get_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]
         if item.get("Tags"):
             stack_name_tags = [tag for tag in item["Tags"] if tag.get("Key") == "aws:cloudformation:stack-name"]
             stack_name = stack_name_tags[0].get("Value") if stack_name_tags else None
+            tags = _create_tags_dictionary(item["Tags"])
         else:
             stack_name = None
+            tags = None
         return {
             **({"name": name} if name == tag else {"name": name, "tag": tag}),
             "id": item.get("GroupId"),
             "description": item.get("Description"),
             "stack": stack_name,
             "owner": item.get("OwnerId"),
-            "vpc": item.get("VpcId")
+            "vpc": item.get("VpcId"),
+            "tags": tags
         }
     ec2 = boto3.client('ec2')
     security_groups = ec2.describe_security_groups()

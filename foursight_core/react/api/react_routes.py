@@ -433,6 +433,13 @@ class ReactRoutes:
         """
         return app.core.reactapi_aws_stack_resources(app.current_request.to_dict(), env, stack)
 
+    @route("/{env}/aws/stacks/{stack}/template", authorize=True)
+    def reactapi_route_aws_stack_template(env: str, stack: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns template (as a string) for the given/named AWS Stack.
+        """
+        return app.core.reactapi_aws_stack_template(app.current_request.to_dict(), env, stack)
+
     @route("/__reloadlambda__", authorize=True)
     def reactapi_route_reload_lambda() -> Response:  # noqa: implicit @staticmethod via @route
         """

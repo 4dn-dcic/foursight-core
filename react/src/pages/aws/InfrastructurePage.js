@@ -7,6 +7,7 @@ import { ExternalLink } from '../../Components';
 import Char from '../../utils/Char';
 import Clipboard from '../../utils/Clipboard';
 import Json from '../../utils/Json';
+import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
 import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
@@ -51,18 +52,15 @@ const InfrastructurePage = () => {
     const componentsRight = useSelectedComponents(componentDefinitions);
 
     function createVpcs(name, key, keyedState, unselect) {
-        return <Vpcs
-            keyedState={keyedState.keyed(key)}
-            hide={unselect}
-        />;
+        return <Vpcs keyedState={keyedState.keyed(key)} hide={unselect} />;
     }
 
     function createSubnetsPrivate(name, key, keyedState, unselect) {
-        return <Subnets type="private" hide={unselect} />;
+        return <Subnets type="private" keyedState={keyedState.keyed(key)} hide={unselect} />;
     }
 
     function createSubnetsPublic(name, key, keyedState, unselect) {
-        return <Subnets type="public" hide={unselect} />;
+        return <Subnets type="public" keyedState={keyedState.keyed(key)} hide={unselect} />;
             
     }
 
@@ -102,10 +100,10 @@ const InfrastructurePage = () => {
     const toggleStack   = (stackName) => componentsLeft.toggle("stack", stackName, keyedState);
 
     const selectedSubnetsPublic  = () => componentsRight.selected("subnets-public");
-    const toggleSubnetsPublic    = () => componentsRight.toggle("subnets-public");
+    const toggleSubnetsPublic    = () => componentsRight.toggle("subnets-public", null, keyedState);
 
     const selectedSubnetsPrivate = () => componentsRight.selected("subnets-private");
-    const toggleSubnetsPrivate   = () => componentsRight.toggle("subnets-private");
+    const toggleSubnetsPrivate   = () => componentsRight.toggle("subnets-private", null, keyedState);
 
     const selectedSecurityGroups = () => componentsRight.selected("security-groups");
     const toggleSecurityGroups   = () => componentsRight.toggle("security-groups", null, keyedState);
@@ -205,6 +203,8 @@ const Vpc = (props) => {
     const toggleSubnetsPrivate = () => toggleShow("showSubnetsPrivate");
     const isShowSecurityGroups = () => isShow    ("showSecurityGroups");
     const toggleSecurityGroups = () => toggleShow("showSecurityGroups");
+    const isShowTags           = () => isShow    ("showTags");
+    const toggleTags           = () => toggleShow("showTags");
 
     return <>
         <div className="box margin" style={{marginBottom:"8pt",minWidth:"350pt",maxWidth:"500pt"}}>
@@ -267,7 +267,7 @@ const Vpc = (props) => {
                 { (isShowSubnetsPrivate()) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
-                            <Subnets type="private" vpcId={vpc?.id} notitle={true} />
+                            <Subnets type="private" vpcId={vpc?.id} notitle={true} keyedState={keyedState?.keyed("subnets")} />
                         </td>
                     </tr>
                 </>}
@@ -288,13 +288,30 @@ const Vpc = (props) => {
                         </td>
                     </tr>
                 </>}
+                <tr onClick={toggleTags} className="pointer">
+                    <td style={tdLabelStyle}>Tags:</td>
+                    <td>
+                        {isShowTags() ? <>
+                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
+                        </>:<>
+                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
+                        </>}
+                    </td>
+                </tr>
+                { (isShowTags()) && <>
+                    <tr>
+                        <td style={{paddingTop:"2pt"}} colSpan="2">
+                            <Tags tags={vpc?.tags} />
+                        </td>
+                    </tr>
+                </>}
             </tbody></table>
         </div>
     </>
 }
 
 const Subnets = (props) => {
-    const { vpcId, type, hide, notitle } = props;
+    const { vpcId, type, hide, notitle, keyedState } = props;
     const all = useSearchParams()[0].get("all")?.toLowerCase() === "true";
     const args = vpcId ? `?vpc=${vpcId}` : ""
     const subnets = useFetch(`/aws/subnets${all ? "/all" : ""}${args}`, { cache: true });
@@ -306,7 +323,7 @@ const Subnets = (props) => {
         <div style={{minWidth:"400pt"}}>
             { subnets.loading && <div className="box lighten" style={{marginTop:"2pt"}}><StandardSpinner label="Loading Subnets" /></div> }
             { subnets.filter(subnet => type ? subnet.type === type : true)?.map(subnet => <div key={subnet.id}>
-                <Subnet subnet={subnet} />
+                <Subnet subnet={subnet} keyedState={keyedState?.keyed(subnet.id)} />
                 <div style={{height:"4pt"}} />
             </div>)}
         </div>
@@ -314,7 +331,12 @@ const Subnets = (props) => {
 }
 
 const Subnet = (props) => {
-    const { subnet } = props;
+    const { subnet, keyedState } = props;
+    const [ state, setState ] = useOptionalKeyedState(keyedState);
+    const isShow = (property) => state[property];
+    const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
+    const isShowTags = () => isShow    ("showTags");
+    const toggleTags = () => toggleShow("showTags");
     return <>
         <div className={"box margin" + (subnet?.type === "private" ? " darken" : " lighten")} style={{width:"100%"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
@@ -354,6 +376,26 @@ const Subnet = (props) => {
                     <td style={tdLabelStyle}>Status:</td>
                     <td style={tdContentStyle}>{subnet?.status}</td>
                 </tr>
+                <tr><td style={{height:"4pt"}} colSpan="2"></td></tr>
+                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
+                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <tr onClick={toggleTags} className="pointer">
+                    <td style={tdLabelStyle}>Tags:</td>
+                    <td>
+                        {isShowTags() ? <>
+                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
+                        </>:<>
+                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
+                        </>}
+                    </td>
+                </tr>
+                { (isShowTags()) && <>
+                    <tr>
+                        <td style={{paddingTop:"2pt"}} colSpan="2">
+                            <Tags tags={subnet?.tags} />
+                        </td>
+                    </tr>
+                </>}
             </tbody></table>
         </div>
     </>
@@ -395,15 +437,12 @@ const SecurityGroup = (props) => {
     const toggleInboundRules  = () => toggleShow("showInboundRules");
     const isShowOutboundRules = () => isShow    ("showOutboundRules");
     const toggleOutboundRules = () => toggleShow("showOutboundRules");
+    const isShowTags          = () => isShow    ("showTags");
+    const toggleTags          = () => toggleShow("showTags");
 
     return <>
         <div className="box margin lighten" style={{width:"100%",maxWidth:"500pt"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
-                <div style={{float:"right",marginLeft:"8pt",marginRight:"3pt"}}>
-                    <small className="pointer" style={{fontWeight:isShowRules() ? "bold" : "normal"}} onClick={toggleRules}>
-                        Rules {isShowRules() ? Char.DownArrowHollow : Char.UpArrowHollow}&nbsp;
-                    </small>
-                </div>
                 <b>Security Group</b>: <b style={{color:"black"}}>{securityGroup?.name}</b>
                 <ExternalLink
                     href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#SecurityGroup:groupId=${securityGroup?.id}`}
@@ -429,6 +468,9 @@ const SecurityGroup = (props) => {
                     <td style={tdLabelStyle}>VPC:</td>
                     <td style={tdContentStyle}>{securityGroup?.vpc}</td>
                 </tr>
+                <tr><td style={{height:"4pt"}} colSpan="2"></td></tr>
+                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
+                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
                 <tr onClick={toggleInboundRules} className="pointer">
                     <td style={tdLabelStyle}>Inbound Rules:</td>
                     <td>
@@ -460,6 +502,23 @@ const SecurityGroup = (props) => {
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
                             <SecurityGroupRules securityGroupId={securityGroup?.id} direction="outbound" />
+                        </td>
+                    </tr>
+                </>}
+                <tr onClick={toggleTags} className="pointer">
+                    <td style={tdLabelStyle}>Tags:</td>
+                    <td>
+                        {(isShowTags()) ? <>
+                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
+                        </>:<>
+                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
+                        </>}
+                    </td>
+                </tr>
+                {(isShowTags()) && <>
+                    <tr>
+                        <td style={{paddingTop:"2pt"}} colSpan="2">
+                            <Tags tags={securityGroup?.tags} />
                         </td>
                     </tr>
                 </>}
@@ -596,6 +655,29 @@ const SecurityGroupRule = (props) => {
     </>
 }
 
+const Tags = (props) => {
+    return <div style={{maxWidth:"480pt"}}>
+        <div className="box lighten">
+            { !props.tags ? <>
+                <li>No tags.</li>
+            </>:<>
+                <ul style={{marginBottom:"1pt"}}>
+                    { props.tags && Object.keys(props.tags)?.map(key => <li key={key}>
+                        <b>{key}</b> <br />
+                        <div style={{wordBreak:"break-all"}}>
+                            { props.tags[key] === "********" ? <>
+                                <span style={{color:"red"}}>REDACTED</span>
+                            </>:<>
+                                {props.tags[key]}
+                            </>}
+                        </div>
+                    </li>)}
+                </ul>
+            </>}
+        </div>
+    </div>
+}
+
 const StackList = (props) => {
     const stacks = useFetch("/aws/stacks", { cache: true });
     const styleLast = { cursor: "pointer" };
@@ -630,6 +712,8 @@ const Stack = (props) => {
     const toggleParameters = () => toggleShow("showParameters");
     const isShowResources  = () => isShow    ("showResources");
     const toggleResources  = () => toggleShow("showResources");
+    const isShowTemplate   = () => isShow    ("showTemplate");
+    const toggleTemplate   = () => toggleShow("showTemplate");
 
     return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
         <div>
@@ -685,13 +769,13 @@ const Stack = (props) => {
                 <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
                 <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
                 <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
-                <tr className="pointer" onClick={toggleOutputs}>
+                <tr>
                     <td style={tdLabelStyle}>Outputs:</td>
                     <td style={tdContentStyle}>
                         { isShowOutputs() ? <>
-                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
+                            <small className="pointer" onClick={toggleOutputs}><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
-                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
+                            <small className="pointer" onClick={toggleOutputs}><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
                         <ExternalLink
                             href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/outputs?filteringStatus=active&filteringText=&viewNested=true&stackId=${stack.data?.id}`}
@@ -706,13 +790,13 @@ const Stack = (props) => {
                         </td>
                     </tr>
                 </>}
-                <tr className="pointer" onClick={toggleParameters}>
+                <tr>
                     <td style={tdLabelStyle}>Parameters:</td>
                     <td style={tdContentStyle}>
                         { isShowParameters() ? <>
-                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
+                            <small className="pointer" onClick={toggleParameters}><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
-                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
+                            <small className="pointer" onClick={toggleParameters}><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
                         <ExternalLink
                             href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/parameters?filteringStatus=active&filteringText=&viewNested=true&stackId=${stack.data?.id}`}
@@ -727,13 +811,13 @@ const Stack = (props) => {
                         </td>
                     </tr>
                 </>}
-                <tr className="pointer" onClick={toggleResources}>
+                <tr>
                     <td style={tdLabelStyle}>Resources:</td>
                     <td style={tdContentStyle}>
                         { isShowResources() ? <>
-                            <small><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
+                            <small className="pointer" onClick={toggleResources}><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
                         </>:<>
-                            <small><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
+                            <small className="pointer" onClick={toggleResources}><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
                         </>}
                         <ExternalLink
                             href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/resources?filteringStatus=active&filteringText=&viewNested=true&stackId=${stack.data?.id}`}
@@ -745,6 +829,27 @@ const Stack = (props) => {
                     <tr>
                         <td colSpan="2" style={{paddingTop:"2pt"}}>
                             <StackResources stackName={stackName} />
+                        </td>
+                    </tr>
+                </>}
+                <tr>
+                    <td style={tdLabelStyle}>Template:</td>
+                    <td style={tdContentStyle}>
+                        { isShowTemplate() ? <>
+                            <small className="pointer" onClick={toggleTemplate}><u>Hide&nbsp;{Char.DownArrowHollow}</u></small>
+                        </>:<>
+                            <small className="pointer" onClick={toggleTemplate}><u>Show&nbsp;{Char.UpArrowHollow}</u></small>
+                        </>}
+                        <ExternalLink
+                            href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/template?filteringStatus=active&filteringText=&viewNested=true&stackId=${stack.data?.id}`}
+                            bold={true}
+                            style={{fontSize:"small",marginLeft:"10pt"}} />
+                    </td>
+                </tr>
+                { isShowTemplate() && <>
+                    <tr>
+                        <td colSpan="2" style={{paddingTop:"2pt"}}>
+                            <StackTemplate stackName={stackName} />
                         </td>
                     </tr>
                 </>}
@@ -833,6 +938,27 @@ const StackResources = (props) => {
                         </div>
                     </li>)}
                 </ul>
+            </>}
+        </div>
+    </div>
+}
+
+const StackTemplate = (props) => {
+    const template = useFetch(`/aws/stacks/${props.stackName}/template`, { cache: true });
+    return <div style={{maxWidth:"480pt"}}>
+        <div className="box lighten nomargin">
+            { template.empty ? <>
+                { template.loading ? <>
+                    <StandardSpinner label="Loading stack template" />
+                </>:<>
+                    <li>No stack template.</li>
+                </>}
+            </>:<>
+                { template.data &&
+                    <pre style={{border:"0",background:"var(--box-bg-lighten)",marginLeft:"-6pt",marginTop:"-6pt",marginBottom:"-6pt"}}>
+                        {Type.IsObject(template.data) ? Json.Format(template.data) : template.data}
+                    </pre>
+                }
             </>}
         </div>
     </div>
