@@ -23,8 +23,7 @@ const Tooltip = ({ id, type = "dark", position = "bottom", text = "Your tooltip 
                          variant={type}
                          float={float}
                          offset={10 + offset}
-                         style={tipStyle}
-                         xstyle={{ ...style, padding:nopad ? "2pt 2pt 2pt 2pt" : "10",borderRadius:shape == "squared" ? "0 0 0 0" : "14px 0 14px 0", opacity:"1.0", zIndex:1000, fontWeight:bold ? "bold" : "normal",fontSize:size ? size : "normal"}}></ReactTooltip>
+                         style={tipStyle} />
 }
 
 export default Tooltip;
