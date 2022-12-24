@@ -17,6 +17,7 @@ import Json from '../utils/Json';
 import LiveTime from '../LiveTime';
 import Server from '../utils/Server';
 import Time from '../utils/Time';
+import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 
@@ -26,7 +27,8 @@ const InfoBox = ({title, show = true, info, children}) => {
         <div className="container">
             { showing ? <>
                 <b onClick={() => setShowing(false)} style={{cursor:"pointer"}}>{title}</b> &nbsp;<span onClick={() => setShowing(false)} style={{cursor:"pointer"}}>{Char.DownArrow}</span>
-                { title === "Versions" && <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={info.refresh}>{Char.Refresh}&nbsp;</b> }
+                { title === "Versions" && <b id="tooltip-info-refresh" style={{float:"right",cursor:"pointer"}} onClick={info.refresh}>{Char.Refresh}&nbsp;</b> }
+                 <Tooltip id="tooltip-info-refresh" position="bottom" size="small" text="Click to refresh." />
                 <ul className="top-level-list">
                     <div className="box" style={{paddingLeft:"8pt",paddingTop:"6pt",paddingBottom:"8pt"}}>
                         {children}
@@ -236,11 +238,14 @@ const InfoPage = () => {
         }
         <InfoBox info={info} title="Miscellany">
             { reloadingApp ? <>
-                <div data-text={"Reloading the Foursight app."} className="tool-tip" style={{float:"right"}}><StandardSpinner condition={reloadingApp} label={""} color={"darkblue"} /></div>
+                <div id="tooltip-info-reloading" style={{float:"right"}}><StandardSpinner condition={reloadingApp} label={""} color={"darkblue"} /></div>
+                <Tooltip id="tooltip-info-reloading" position="bottom" size="small" text="Reloading the Foursight app." />
             </>:<>
-                <b onClick={() => initiateAppReload()}data-text={"Click here to reload the Foursight app."} className={"tool-tip"} style={{float:"right",cursor:"pointer"}}>{Char.Refresh}</b>
+                <b onClick={() => initiateAppReload()} id="tooltip-info-reload" style={{float:"right",cursor:"pointer"}}>{Char.Refresh}</b>
+                <Tooltip id="tooltip-info-reload" position="bottom" size="small" text="Click here to reload the Foursight app." />
             </>}
-            <div className="tool-tip" data-text="Click to clear any caches." style={{float:"right",marginTop:"-1px",marginRight:"4pt",cursor:"pointer"}}>&nbsp;&nbsp;<img alt="Clear Cache" src={Image.ClearCache()} height="19" onClick={clearCache}/></div>
+            <div id="tooltip-info-clear" style={{float:"right",marginTop:"-1px",marginRight:"4pt",cursor:"pointer"}}>&nbsp;&nbsp;<img alt="Clear Cache" src={Image.ClearCache()} height="19" onClick={clearCache}/></div>
+            <Tooltip id="tooltip-info-clear" position="bottom" size="small" text="Click to clear any server-side caches." />
             <InfoRow name={"App Deployed At"} value={Server.IsLocal() ? "running locally" + (Context.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + Time.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
             <InfoRow name={"App Launched At"} value={header.app?.launched + Time.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Page Loaded At"} value={info.get("page.loaded") + Time.FormatDuration(info.get("page.loaded"), new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
