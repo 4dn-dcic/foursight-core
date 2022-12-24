@@ -15,6 +15,7 @@ Change Log
 * Support for simple checks search.
 * Support for simple users search.
 * New upper-left navigation dropdown menu.
+* Changed all tooltips to use react-toolip fixing issue with occlusion of adjacent elements. 
 
 3.1.3
 =====
