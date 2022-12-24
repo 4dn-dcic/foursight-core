@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StandardSpinner } from '../Spinners';
 import { useFetch } from '../utils/Fetch';
 import Char from '../utils/Char';
+import Tooltip from '../components/Tooltip';
 import Uuid from 'react-uuid';
 
 // Generic box to edit (create, update, delete) a list of plain input fields representing some data record.
@@ -298,12 +299,18 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                                 </>:<>
                                     <button className="button cancel" type="button" onClick={handleCancel}>Cancel</button><>&nbsp;</>
                                     { onCreate ? <>
-                                        <button className="button tool-tip" data-text={allowSubmit() ? "Click to create." : "Nothing to create."} id="create" disabled={!allowSubmit()}>Create</button>
+                                        <span id="tooltip-editbox-create">
+                                            <button className="button" data-text={allowSubmit() ? "Click to create." : "Nothing to create."} id="create" disabled={!allowSubmit()}>Create</button>
+                                        </span>
+                                        <Tooltip id="tooltip-editbox-create" position="bottom" text={allowSubmit() ? "Click to create." : "Nothing to create."} />
                                     </>:<>
                                         { onDelete && <>
                                             <button className="button delete" type="button" onClick={handleDelete}>Delete</button><>&nbsp;</>
                                         </>}
-                                        <button className="button tool-tip" data-text={allowSubmit() ? "Click to save changes." : "No changes to save."} id="update" disabled={!allowSubmit()}>Update</button>
+                                        <span id="tooltip-editbox-save">
+                                            <button className="button" id="update" disabled={!allowSubmit()}>Update</button>
+                                        </span>
+                                        <Tooltip id="tooltip-editbox-save" position="bottom" text={allowSubmit() ? "Click to save changes." : "No changes to save."} />
                                     </>}
                                 </>}
                             </>}
