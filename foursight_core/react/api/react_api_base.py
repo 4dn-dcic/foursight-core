@@ -202,7 +202,7 @@ class ReactApiBase:
         if redirect_url:
             # Not certain if by design but the React library (universal-cookie) used to
             # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
-            redirect_url = urllib.parse.unquote(redirect_url)
+            return urllib.parse.unquote(redirect_url)
         else:
             return f"{self.get_this_base_url(request)}/react/{env}/login"
 
