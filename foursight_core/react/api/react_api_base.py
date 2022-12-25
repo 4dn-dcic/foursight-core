@@ -179,7 +179,34 @@ class ReactApiBase:
         """
         return self._auth.authorize(request, env)
 
+    def get_this_base_url(self, request: dict) -> str:
+        """
+        Returns the base URL of this Foursight instance.
+        """
+        domain, context = app.core.get_domain_and_context(request)
+        if is_running_locally(request):
+            scheme = "http"
+            context = ROUTE_PREFIX
+        else:
+            scheme = "https"
+        if context.endswith("/"):
+            context = context[0:-1]
+        return f"{scheme}://{domain}{context}"
+
     def get_redirect_url(self, request: dict, env: str, domain: str, context: str) -> str:
+        """
+        Returns the redirect URL to the UI from the reactredir cookie, or if that
+        is not set then to the /login page of the UI; for redirect on login/logout.
+        """
+        redirect_url = read_cookie(request, "reactredir")
+        if redirect_url:
+            # Not certain if by design but the React library (universal-cookie) used to
+            # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
+            redirect_url = urllib.parse.unquote(redirect_url)
+        else:
+            return f"{self.get_this_base_url(request)}/react/{env}/login"
+
+    def xyzzy_old_get_redirect_url(self, request: dict, env: str, domain: str, context: str) -> str:
         """
         Returns the redirect URL to the UI from the reactredir cookie, or if that
         is not set then to the /login page of the UI; for redirect on login/logout.

@@ -857,21 +857,36 @@ class ReactApi(ReactApiBase, ReactRoutes):
             return None
         return f"s3://{bucket}/{key}"
 
-    def _get_accounts_from_s3(self) -> Optional[dict]:
+    def _get_accounts_from_s3(self, request: dict) -> Optional[dict]:
         # Let's not cache this for now, maybe change mind later, thus the OR True clause below.
         if True or not self._cached_accounts_from_s3:
             s3_uri = self._get_accounts_file_from_s3()
             if not s3_uri:
-                return None
+                return self._get_accounts_only_for_current_account(request)
             s3_uri = s3_uri.replace("s3://", "")
             s3_uri_components = s3_uri.split("/")
             if len(s3_uri_components) != 2:
-                return None
+                return self._get_accounts_only_for_current_account(request)
             bucket = s3_uri_components[0]
             key = s3_uri_components[1]
             accounts_json_content = AwsS3.get_bucket_key_contents(bucket, key)
             self._cached_accounts_from_s3 = self._read_accounts_json(accounts_json_content)
         return self._cached_accounts_from_s3
+
+    def _get_accounts_only_for_current_account(self, request: dict) -> Optional[dict]:
+        aws_credentials = self._auth.get_aws_credentials(self._envs.get_default_env())
+        if aws_credentials:
+            account_name = aws_credentials.get("aws_account_name")
+            if account_name:
+                account_stage = app.core.stage.get_stage()
+                account_id = account_name + ":" + account_stage
+                return [{
+                    "id": account_id,
+                    "name": account_name,
+                    "stage": account_stage,
+                    "foursight_url": self.get_this_base_url(request)
+                }]
+        return None
 
     @staticmethod
     def _read_accounts_json(accounts_json_content) -> dict:
@@ -904,8 +919,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self._cached_accounts
 
     def reactapi_accounts(self, request: dict, env: str, from_s3: bool = False) -> Response:
-        ignored(request)
-        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3()
+        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3(request)
         return self.create_success_response(accounts)
 
     def reactapi_account(self, request: dict, env: str, name: str, from_s3: bool = False) -> Response:
@@ -1010,8 +1024,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
         ignored(request)
         response = {"accounts_file": self._get_accounts_file(), "accounts_file_from_s3": self._get_accounts_file_from_s3()}
-        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3()
+        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3(request)
         if not accounts:
+            print('xyzzy/1')
+            print(self.get_this_base_url(request))
             return self.create_success_response({"status": "No accounts file support."})
         account = [account for account in accounts if is_account_name_match(account, name)] if accounts else None
         if not account or len(account) > 1:

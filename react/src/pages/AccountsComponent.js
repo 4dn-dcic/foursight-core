@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BarSpinner, StandardSpinner } from '../Spinners';
 import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
-import { useFetch } from '../utils/Fetch';
+import { useFetch, useFetching } from '../utils/Fetch';
 import Server from '../utils/Server';
 import Time from '../utils/Time';
 import Tooltip from '../components/Tooltip';
@@ -366,7 +366,7 @@ const AccountInfoRight = ({ info }) => {
     </tbody></table>
 }
 
-export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount }) => {
+export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount, brighten }) => {
 
     const info = useFetch(`/accounts_from_s3/${account.id}`, { onDone: () => decrementAccountCount(), cache: true, nofetch: true });
 
@@ -398,7 +398,7 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
 
     if (!all && !isCurrentAccount(info)) return null;
     return <>
-        <div className={isCurrentAccountAndStage(info) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt"}}>
+        <div className={isCurrentAccountAndStage(info) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt",filter:brighten ? "brightness(1.1)" : ""}}>
             {isCurrentAccount(info) ? <>
                 <b id={`tooltip-current-${account.name}-${info?.data?.stage}`}>{info.data?.name || account.name}</b>
                 <Tooltip id={`tooltip-current-${account.name}-${info?.data?.stage}`} text={`This is your current account: ${info.get("foursight.aws_account_number")}`} position="top" />
@@ -460,6 +460,7 @@ const AccountsComponent = ({ header }) => {
     const accounts = useFetch("/accounts_from_s3", { cache: true });
     const [ accountCount, setAccountCount ] = useState(0);
     const [ startup, setStartup ] = useState(true);
+    const [ fetching ] = useFetching();
 
     useEffect(() => {
         refreshAll();
@@ -509,7 +510,7 @@ const AccountsComponent = ({ header }) => {
             { accounts?.map((account, index) => <React.Fragment key={account.id}>
                 <AccountInfo account={account} header={header} all={all} decrementAccountCount={decrementAccountCount} foursightUrl={account.foursight_url} />
             </React.Fragment>)}
-            { (startup || (accountCount > 0)) && <>
+            { ((startup || (accountCount > 0)) && (fetching.length > 0) /* bit of hack - need to straighten out this count/decrement stuff */ ) && <>
                 <div className="box" style={{paddingBottom:"10pt"}}>
                     <StandardSpinner label="Loading accounts info" style={{paddingBottom:"0pt"}} />
                 </div>
