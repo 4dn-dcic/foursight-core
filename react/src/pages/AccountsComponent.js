@@ -453,7 +453,7 @@ const AccountsComponent = ({ header }) => {
     const [ args, setArgs ] = useSearchParams();
     const argsAll = args.get("all");
     const [ all, setAll ] = useState(argsAll?.toLowerCase() === "true" || argsAll === "1" ? true : false);
-    const accounts = useFetch(Server.Url("/accounts_from_s3"));
+    const accounts = useFetch(Server.Url("/accounts_from_s3"), { cache: true });
     const [ accountCount, setAccountCount ] = useState(0);
     const [ startup, setStartup ] = useState(true);
 
@@ -462,8 +462,7 @@ const AccountsComponent = ({ header }) => {
     }, []);
 
     function refreshAll() {
-        accounts.update(null);
-        accounts.fetch(Server.Url("/accounts_from_s3"), { onDone: (response) => { setAccountCount(response.data?.length) }});
+        accounts.fetch(Server.Url("/accounts_from_s3"), { cache: true, onDone: (response) => { setAccountCount(response.data?.length) }});
     }
 
     function decrementAccountCount() {

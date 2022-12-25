@@ -81,7 +81,11 @@ function GetNewIcon() {
 }
 
 function GetSettingsIcon() {
-    return "https://www.freeiconspng.com/thumbs/settings-icon/settings-icon-16.png";
+    return "https://www.freeiconspng.com/thumbs/settings-icon/settings-icon-16.png"
+    // return "https://www.citypng.com/public/uploads/preview/free-square-settings-options-app-icon-png-11641214244is22gdjyqx.png"
+    //return "https://www.clipartmax.com/png/small/113-1131137_png-file-settings-vector-icon.png"
+    // return "https://www.freeiconspng.com/thumbs/settings-icon/settings-icon-16.png";
+    // return "https://purepng.com/public/uploads/thumbnail/purepng.com-settings-icon-ios-7symbolsiconsapple-iosiosios-7-iconsios-7-721522596658ne7ja.png"
 }
 
 function GetAtomIcon() {
