@@ -368,14 +368,18 @@ const AccountInfoRight = ({ info }) => {
 
 export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount }) => {
 
-    const info = useFetch(Server.Url(`/accounts_from_s3/${account.id}`), { cache: true, nofetch: true });
+    const info = useFetch(`/accounts_from_s3/${account.id}`, { onDone: () => decrementAccountCount(), cache: true, nofetch: true });
 
     useEffect(() => {
-        refreshData();
+        fetchData();
     }, []);
 
+    function fetchData() {
+        info.fetch();
+    }
+
     function refreshData() {
-        info.refresh({ onDone: () => decrementAccountCount()});
+        info.refresh();
     }
 
     function isCurrentAccount(info) {
@@ -453,7 +457,7 @@ const AccountsComponent = ({ header }) => {
     const [ args, setArgs ] = useSearchParams();
     const argsAll = args.get("all");
     const [ all, setAll ] = useState(argsAll?.toLowerCase() === "true" || argsAll === "1" ? true : false);
-    const accounts = useFetch(Server.Url("/accounts_from_s3"), { cache: true });
+    const accounts = useFetch("/accounts_from_s3", { cache: true });
     const [ accountCount, setAccountCount ] = useState(0);
     const [ startup, setStartup ] = useState(true);
 
@@ -462,7 +466,7 @@ const AccountsComponent = ({ header }) => {
     }, []);
 
     function refreshAll() {
-        accounts.fetch(Server.Url("/accounts_from_s3"), { cache: true, onDone: (response) => { setAccountCount(response.data?.length) }});
+        accounts.refresh("/accounts_from_s3", { cache: true, onDone: (response) => { setAccountCount(response.data?.length) }});
     }
 
     function decrementAccountCount() {
@@ -498,7 +502,6 @@ const AccountsComponent = ({ header }) => {
                     <span id={`tooltip-show-all`} style={{cursor:"pointer"}} onClick={toggleAll}>All</span>
                     <Tooltip id={`tooltip-show-all`} text={"Click to show all known accounts."} position="top" />
                 </>}
-                &nbsp;|&nbsp; <span style={{cursor:"pointer"}} onClick={refreshAll}>{Char.Refresh}</span>
                 </div>
             </div>
         </div>

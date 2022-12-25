@@ -44,12 +44,12 @@ const HomePage = (props) => {
                 <HorizontalLine top="10pt" bottom="4pt" />
                 This is the <b>new</b> React version of Foursight. To use the previous version click <b><a href={Env.LegacyFoursightLink(header)} style={{color:"inherit"}}><u>here</u></a></b>.
                 <span id={"tooltip-account-summary"}style={{float:"right",marginTop:"-2pt"}} className="pointer" onClick={() => setShowAccountSummary(!showAccountSummary)}>
-                    <img src={Image.SettingsIcon()} height="26" />
+                    <img src={Image.SettingsIcon()} height="25" />
                 </span>
                 <Tooltip id="tooltip-account-summary" position="top" size="small" text={"Click to " + (showAccountSummary ? "hide" : "show") + " account summary."} />
                 <HorizontalLine top="4pt" bottom="10pt" />
                 { showAccountSummary && <>
-                    { <div style={{marginBottom:"0pt"}}><AccountInfo account={account} header={header} decrementAccountCount={() => {}} all={true} /></div> }
+                    { <div style={{marginBottom:"12pt"}}><AccountInfo account={account} header={header} decrementAccountCount={() => {}} all={true} /></div> }
                 </>}
                 <p />
                 <ul>
