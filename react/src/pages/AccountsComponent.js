@@ -366,7 +366,7 @@ const AccountInfoRight = ({ info }) => {
     </tbody></table>
 }
 
-const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount }) => {
+export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount }) => {
 
     const info = useFetch(Server.Url(`/accounts_from_s3/${account.id}`), { cache: true, nofetch: true });
 

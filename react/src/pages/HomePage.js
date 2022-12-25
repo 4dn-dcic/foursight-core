@@ -1,9 +1,13 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
+import Char from '../utils/Char';
 import Env from '../utils/Env';
 import HeaderData from '../HeaderData';
+import { useFetch } from '../utils/Fetch';
 import Logout from '../utils/Logout';
 import { HorizontalLine, Link, LoggedInUser } from '../Components';
 import Tooltip from '../components/Tooltip';
+import Str from '../utils/Str';
+import { AccountInfo } from './AccountsComponent';
 
 const HomePage = (props) => {
 
@@ -11,6 +15,14 @@ const HomePage = (props) => {
     const versionsToolTip = (Env.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + ": "
                           + header?.versions?.foursight_core + " | foursight-core: "
                           + header?.versions?.foursight + " | dcicutils: " + header?.versions?.dcicutils;
+
+    const account = {
+        id: `${header.app?.credentials?.aws_account_name}:${header?.app?.stage}`,
+        name: header.app?.credentials?.aws_account_name,
+        stage: header.app?.stage
+    }
+
+   const [ showAccountSummary, setShowAccountSummary ] = useState(false);
 
     return <>
         <div className="container" style={{marginTop:"-16pt"}}>
@@ -47,9 +59,17 @@ const HomePage = (props) => {
                 To view your <b><Link to="/login">session</Link></b> info click <b><Link to="/login"><u>here</u></Link></b>. <br />
                 To <b onClick={Logout}><Link>logout</Link></b> click <b onClick={Logout}><Link><u>here</u></Link></b>.
             </div>
+            <div className="box lighten" style={{margin:"20pt",padding:"10pt",marginTop:"-10pt"}}>
+                { showAccountSummary ? <>
+                    <span>Click <b className="pointer" onClick={() => setShowAccountSummary(false)}>here</b> to hide account summary.</span>
+                    { <div style={{marginBottom:"-10pt"}}><AccountInfo account={account} header={header} decrementAccountCount={() => {}} all={true} /></div> }
+                </>:<>
+                    <span>Click <b className="pointer" onClick={() => setShowAccountSummary(true)}>here</b> to view account summary.</span>
+                </>}
+            </div>
             { (header.app?.accounts_file || header.app?.accounts_file_from_s3) && <>
                 <div className="box" style={{margin:"20pt",padding:"10pt",marginTop:"-10pt"}}>
-                    Click <Link to="/accounts">here</Link> to view other <Link to="/accounts" bold={false}>known accounts</Link>.
+                    Click <Link to="/accounts?all=true">here</Link> to view all <Link to="/accounts?all=true" bold={false}>known accounts</Link>.
                 </div>
             </>}
         </div>
