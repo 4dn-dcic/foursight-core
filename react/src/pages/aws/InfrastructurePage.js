@@ -250,7 +250,7 @@ const Vpc = (props) => {
                 { (isShowSubnetsPublic()) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
-                            <Subnets type="public" vpcId={vpc?.id} notitle={true} />
+                            <Subnets type="public" vpcId={vpc?.id} notitle={true} keyedState={keyedState?.keyed("subnets-public")} />
                         </td>
                     </tr>
                 </>}
@@ -267,7 +267,7 @@ const Vpc = (props) => {
                 { (isShowSubnetsPrivate()) && <>
                     <tr>
                         <td style={{paddingTop:"2pt"}} colSpan="2">
-                            <Subnets type="private" vpcId={vpc?.id} notitle={true} keyedState={keyedState?.keyed("subnets")} />
+                            <Subnets type="private" vpcId={vpc?.id} notitle={true} keyedState={keyedState?.keyed("subnets-private")} />
                         </td>
                     </tr>
                 </>}
