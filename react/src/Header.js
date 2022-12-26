@@ -164,7 +164,7 @@ const Header = (props) => {
                     </a>
                 </td>
                 <td width="24%" align="center" style={{whiteSpace:"nowrap"}}>
-                    <div style={{fontSize:"20pt",color:"white",cursor:"pointer"}} onClick={() => navigate(Client.Path("/login"))}>
+                    <div style={{fontSize:"20pt",color:"white",cursor:"pointer"}} onClick={() => navigate(Client.Path("/home"))}>
                         { header.app?.stage === 'dev' ? (<>
                             { header.app?.local ? (<>
                                 <span title="Running locally." style={{position:"relative",bottom:"3pt",color:"yellow",fontSize:"17pt"}}>{Char.DoNotEnter}</span>&nbsp;
