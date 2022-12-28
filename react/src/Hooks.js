@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // Component/hook to dynamically define/create components by type name and an optional
 // identifying name. This is in service of the useSelectedComponents component/hook
@@ -74,32 +74,45 @@ export const useSelectedComponents = (componentDefinitions) => {
     })[0];
 }
 
+// Ensure the keyed state value is an object or a function producing an object.
+//
+function __keyedStateValue(value, arg = undefined) {
+    if (typeof(value) == "function") value = value(arg);
+    if (value === undefined || value === null && value.constructor !== Object) return {};
+    return value;
+}
+
 // Component/hook to provide a generic "keyed" state which can be useful for passing down
 // to children components (recursively) from a parent component so that the state of
 // the children component can be stored in the parent, // so that it it is maintained,
 // for example, between instantiations, i.e. e.g. between hide/show of the (child) component.
 //
 export const useKeyedState = (initial) => {
-    const [ state, setState ] = useState(initial || {});
+    const [ state, setState ] = useState(__keyedStateValue(initial));
     const response = {
-        get: () => state,
-        update: (value) => setState(state => ({...state, ...value})),
-        __get: (key) => {
+        __keyedState: true,
+        __get: () => state,
+        __update: (value) => setState(state => ({...state, ...__keyedStateValue(value, state)})),
+        __getKey: (key) => {
             key = key ? `__${key}__` : key = "__key__";
             return (key ? state[key] : state) || {};
         },
-        __update: (key, value) => {
+        __updateKey: (key, value) => {
             key = key ? `__${key}__` : key = "__key__";
-            setState(state => ({ ...state, [key]: { ...state[key], ...value } }));
+            setState(state => ({ ...state, [key]: { ...state[key], ...__keyedStateValue(value, state) } }));
         },
     };
     response.keyed = function(key) {
         const outer = this;
         return {
+            __keyedState: true,
             key: key,
-            get: () => outer.__get(key),
-            update: (value) => outer.__update(key, value),
-            keyed: function(key, exact = false) { return outer.keyed(exact || !this.key ? key : this.key + key, true); }
+            __get: () => outer.__getKey(key),
+            __update: (value) => outer.__updateKey(key, value),
+            keyed: function(key, exact = false) {
+                if (!exact && this.key) key = this.key + "::" + key;
+                return outer.keyed(key, true);
+            }
         }
     };
     return response;
@@ -109,11 +122,26 @@ export const useKeyedState = (initial) => {
 // to use either a passed in keyed state or its own local state.
 //
 export const useOptionalKeyedState = (keyedState, initial) => {
-    const [ state, setState ] = useState(keyedState?.get() || initial || {});
+    if (keyedState?.__keyedState !== true) keyedState = null;
+    const [ state, setState ] = useState(keyedState?.__get() || {});
+    useEffect(() => {
+        if (keyedState) {
+            if (Object.keys(keyedState.__get()).length == 0) {
+                initial = __keyedStateValue(initial);
+                keyedState.__update({...initial, ...state});
+                setState({...initial, ...state});
+            }
+        }
+        else {
+            initial = __keyedStateValue(initial);
+            setState({...initial, ...state});
+        }
+    }, []);
     return [
         state,
         (value) => {
-            keyedState?.update({ ...state, ...value });
+            value = __keyedStateValue(value, state);
+            keyedState?.__update({ ...state, ...value });
             setState({ ...state, ...value });
         }
     ];

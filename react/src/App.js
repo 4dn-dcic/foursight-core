@@ -27,6 +27,8 @@ import UserCreatePage from './pages/UserCreatePage';
 import UserEditPage from './pages/UserEditPage';
 import UsersPage from './pages/UsersPage';
 
+import TestCheckBox from './pages/checks/CheckBox';
+
 function setGlobalStyles(header) {
     if (Env.IsFoursightFourfront(header)) {
         Styles.SetFoursightFourfront();
@@ -151,6 +153,9 @@ const App = () => {
                     }/>
                     <Route path="/api/react/:environ/forbidden" element={
                         <ForbiddenPage />
+                    }/>
+                    <Route path="/api/react/:environ/test/checkbox" element={
+                        <TestCheckBox />
                     }/>
                     <Route path="/redirect" element={
                         <RedirectPage />

@@ -440,6 +440,15 @@ class ReactRoutes:
         """
         return app.core.reactapi_aws_stack_template(app.current_request.to_dict(), env, stack)
 
+    @route("/{env}/aws/logs/groups", authorize=True)
+    def reactapi_route_aws_logs_groups(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info on AWS log groups.
+        """
+        request = app.current_request.to_dict()
+        args = get_request_args(request)
+        return app.core.reactapi_aws_logs_groups(request, env, args)
+
     @route("/__reloadlambda__", authorize=True)
     def reactapi_route_reload_lambda() -> Response:  # noqa: implicit @staticmethod via @route
         """

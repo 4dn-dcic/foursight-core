@@ -17,6 +17,7 @@ from dcicutils import ff_utils
 from dcicutils.misc_utils import ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from ...app import app
+from .aws_logs import aws_get_log_groups
 from .aws_network import (
     aws_get_network, aws_get_security_groups,
     aws_get_security_group_rules, aws_get_subnets, aws_get_vpcs, aws_network_cache_clear
@@ -1179,6 +1180,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/template
         """
         return self.create_success_response(aws_get_stack_template(stack))
+
+    def reactapi_aws_logs_groups(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
+        sort = args.get("sort") if args else None
+        return self.create_success_response(aws_get_log_groups(sort))
 
     # ----------------------------------------------------------------------------------------------
     # END OF EXPERIMENTAL - /accounts page

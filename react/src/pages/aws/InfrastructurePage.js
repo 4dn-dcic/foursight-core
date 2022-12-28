@@ -1,5 +1,5 @@
 import React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { StandardSpinner } from '../../Spinners';
 import { useFetch } from '../../utils/Fetch';
@@ -27,14 +27,6 @@ const tdContentStyle = {
 }
 
 const InfrastructurePage = () => {
-
-    const [ showVpcs, setShowVpcs ] = useState(true);
-    const [ showSubnetsPublic, setShowSubnetsPublic ] = useState(false);
-    const [ showSubnetsPrivate, setShowSubnetsPrivate ] = useState(false);
-    const [ showSecurityGroups, setShowSecurityGroups ] = useState(false);
-    const [ showGac, setShowGac ] = useState(false);
-    const [ showEcosystem, setShowEcosystem ] = useState(false);
-    const [ stacks, setStacks ] = useState([]);
 
     const keyedState = useKeyedState();
 
@@ -65,10 +57,7 @@ const InfrastructurePage = () => {
     }
 
     function createSecurityGroups(name, key, keyedState, unselect) {
-        return <SecurityGroups
-            keyedState={keyedState.keyed(key)}
-            hide={unselect}
-        />;
+        return <SecurityGroups keyedState={keyedState.keyed(key)} hide={unselect} />;
     }
 
     function createGac(name, key, keyedState, unselect) {
@@ -80,11 +69,7 @@ const InfrastructurePage = () => {
     }
 
     function createStack(name, key, keyedState, unselect) {
-        return <Stack
-            stackName={name}
-            keyedState={keyedState.keyed(key)}
-            hide={unselect}
-        />;
+        return <Stack stackName={name} keyedState={keyedState.keyed(key)} hide={unselect} />;
     }
 
     const selectedVpcs           = () => componentsLeft.selected("vpcs");
