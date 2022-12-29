@@ -13,6 +13,7 @@ import Env from '../../utils/Env';
 import Json from '../../utils/Json';
 import Str from '../../utils/Str';
 import Time from '../../utils/Time';
+import Tooltip from '../../components/Tooltip';
 import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
@@ -81,13 +82,13 @@ export const CheckBox = (props) => {
                 parentState={parentState?.keyed("runbox")}
             />
         </>}
-        <CheckLatestResult check={check} margintop={"5pt"} />
+        <CheckLatestResult check={check} parentState={parentState} />
     </div>
 }
 
 const CheckRunBox = (props) => {
 
-    const { check, env, parentState } = props;
+    const { check, env, parentState, fontSize = "small", marginTop = "4pt" } = props;
     //
     // Note we use the useOptionalKeyState hook passing in the passed in parentState
     // which is from useKeyedState (TODO: need better names for these), so that
@@ -198,9 +199,9 @@ const CheckRunBox = (props) => {
     function onActionRun() {
     }
 
-    return <div style={{width:"100%"}}>
+    return <div style={{fontSize:fontSize,marginTop:marginTop,width:"100%"}}>
         <div className="box thickborder" style={{background:background}}>
-            <table style={{width:"100%"}} border="1"><tbody><tr>
+            <table style={{width:"100%"}}><tbody><tr>
                 <td style={{paddingRight:"8pt"}}>
                     <CheckRunArgs check={check} env={env} args={args} setArg={setArg} />
                 </td>
@@ -210,14 +211,14 @@ const CheckRunBox = (props) => {
             </tr></tbody></table>
         </div>
         { state.running && <>
-            <CheckRunClickedBox checkName={check.name} args={args} margintop="5pt" />
+            <CheckRunClickedBox checkName={check.name} args={args} />
         </> }
     </div>
 }
 
 const CheckRunClickedBox = (props) => {
 
-    const { checkName, args, margintop } = props;
+    const { checkName, args, marginTop = "4pt" } = props;
 
     function getCheckRunUrl(args) {
         function assembleArgs(args) {
@@ -234,11 +235,11 @@ const CheckRunClickedBox = (props) => {
     const url = getCheckRunUrl(args);
     const run = useFetch(url, { nofetch: false });
 
-    return <div className="box" style={{background:"yellow",filter:"brightness(0.9)",borderColor:"red",marginTop:margintop ? margintop : "0"}}>
+    return <div className="box" style={{background:"yellow",filter:"brightness(0.9)",borderColor:"red",marginTop:marginTop}}>
         { run.loading ?
             <StandardSpinner label="Queueing check run" />
         : <b>
-            Queued check run: {Time.FormatDateTime(run.data.uuid + "+00:00")} {Char.RightArrow} OK
+            Queued check run: {Time.FormatDateTime(run.data?.uuid + "+00:00")} {Char.RightArrow} OK
         </b> }
     </div>
 }
@@ -320,10 +321,85 @@ const CheckRunButton = (props) => {
 }
 
 const CheckLatestResult = (props) => {
-    const { margintop } = props;
-    return <div style={{marginTop:margintop ? margintop : "0"}}>
-        <div style={{height:"1",marginBottom:"2pt",background:"gray"}}></div>
-        <b>Latest Result&nbsp;{Char.UpArrow}</b>
+
+    const { check, parentState, fontSize = "small", marginTop = "5pt" } = props;
+    const [ state, setState ] = useOptionalKeyedState(parentState);
+
+    const resultSummary = useFetch(`/checks/${check.name}/history/latest`, { cache: true });
+    const resultDetail = useFetch();
+    const resultAction = useFetch();
+
+    const isShowResult = () => state.showResult;
+    const toggleShowResult = () => setState({ showResult: !isShowResult() });
+    const isShowResultSummary = () => !state.showResultType || state.showResultType === "summary";
+    const setShowResultSummary = () => setState({ showResultType: "summary" });
+    const isShowResultDetail = () => state.showResultType === "detail";
+    const setShowResultDetail = () => {
+        setState({ showResultType: "detail" });
+        resultDetail.fetch(`/checks/${check.name}/history/${resultSummary.data.uuid}`, { cache: true });
+    }
+    const isShowResultAction = () => state.showResultType === "action";
+    const setShowResultAction = () => {
+        setState({ showResultType: "action" });
+        resultAction.fetch(`/checks/${check.action}/history/latest`, { cache: true });
+    }
+
+    return <div style={{fontSize:fontSize,marginTop:marginTop}}>
+        <div style={{height:"1",marginBottom:"4pt",background:"gray"}}></div>
+        { (resultSummary.loading || !resultSummary.data) ?
+            <StandardSpinner label="Loading latest result summary" nudgeUp={true} />
+        : <>
+            <span className="pointer" onClick={toggleShowResult}>
+                <b>Latest Result&nbsp;{Char.UpArrow}</b> {resultSummary.data.timestamp}
+            </span>
+            { (isShowResult()) && <>
+                &nbsp;|&nbsp;
+                { (isShowResultSummary()) ? <>
+                    <b id={`tooltip-${check.name}-result-summary-show`}>Summary</b>
+                    <Tooltip id={`tooltip-${check.name}-result-summary-show`} text="Showing latest result summary." />
+                </>:<>
+                    <span id={`tooltip-${check.name}-result-summary-noshow`} className="pointer" onClick={setShowResultSummary}>Summary</span>
+                    <Tooltip id={`tooltip-${check.name}-result-summary-noshow`} text="Click to show latest result summary." />
+                </> }
+                &nbsp;|&nbsp;
+                { (isShowResultDetail()) ? <>
+                    <b id={`tooltip-${check.name}-result-detail-show`}>Detail</b>
+                    <Tooltip id={`tooltip-${check.name}-result-detail-show`} text="Showing latest result detail." />
+                </>:<>
+                    <span id={`tooltip-${check.name}-result-detail-noshow`} className="pointer" onClick={setShowResultDetail}>Detail</span>
+                    <Tooltip id={`tooltip-${check.name}-result-detail-noshow`} text="Click to show latest result detail." />
+                </> }
+                { (check.action) && <>
+                    &nbsp;|&nbsp;
+                    { (isShowResultAction()) ? <>
+                        <b id={`tooltip-${check.name}-result-action-show`}>Action</b>
+                        <Tooltip id={`tooltip-${check.name}-result-action-show`} text="Showing latest action result." />
+                    </>:<>
+                        <span id={`tooltip-${check.name}-result-action-noshow`} className="pointer" onClick={setShowResultAction}>Action</span>
+                        <Tooltip id={`tooltip-${check.name}-result-action-noshow`} text="Click to show latest action result." />
+                    </> }
+                </> }
+            </>}
+            &nbsp;|&nbsp;
+            <b id={`tooltip-${check.name}-result-refresh`} className="pointer" onClick={() => resultSummary.refresh()}>{Char.Refresh}</b>
+            <Tooltip id={`tooltip-${check.name}-result-refresh`} text="Click to fetch latest result."/>
+            { (isShowResult()) && <>
+                <pre className="box lighten" style={{marginTop:"4pt"}}>
+                    { (isShowResultSummary()) ? <>
+                        {Yaml.Format(resultSummary.data)}
+                    </>:<>
+                        { (isShowResultDetail()) ? <>
+                            { (resultDetail.loading) ?
+                                <StandardSpinner label="Loading latest result detail" />
+                            : <> {Yaml.Format(resultDetail.data)} </> }
+                        </>:<>
+                            { (resultAction.loading) ? <StandardSpinner label="Loading latest result action" />
+                            : <> {Yaml.Format(resultAction.data)} </> }
+                        </> }
+                    </> }
+                </pre>
+            </> }
+        </> }
     </div>
 }
 
