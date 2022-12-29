@@ -180,9 +180,10 @@ export const useFetch = (url, args) => {
     // want to set the initial value for the data here at definition time.
     //
     const initial = Type.IsObject(url) ? url.initial : (Type.IsObject(args) ? args.initial : null);
+    const initialLoading = Type.IsObject(url) ? (url.loading || false) : (Type.IsObject(args) ? (args.loading || false) : false);
 
     const [ data, setData ] = useState(initial);
-    const [ loading, setLoading ] = useState(false); // TODO: IS THIS OKAY IN GENERAL CASE?
+    const [ loading, setLoading ] = useState(initialLoading); // TODO: IS THIS OKAY IN GENERAL CASE?
     const [ status, setStatus ] = useState(0);
     const [ timeout, setTimeout ] = useState(false);
     const [ error, setError ] = useState(null);

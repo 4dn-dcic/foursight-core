@@ -325,9 +325,9 @@ const CheckLatestResult = (props) => {
     const { check, parentState, fontSize = "small", marginTop = "5pt" } = props;
     const [ state, setState ] = useOptionalKeyedState(parentState);
 
-    const resultSummary = useFetch(`/checks/${check.name}/history/latest`, { cache: true });
-    const resultDetail = useFetch();
-    const resultAction = useFetch();
+    const resultSummary = useFetch({ cache: true, loading: true });
+    const resultDetail  = useFetch({ cache: true });
+    const resultAction  = useFetch({ cache: true });
 
     const isShowResult = () => state.showResult;
     const toggleShowResult = () => setState({ showResult: !isShowResult() });
@@ -336,22 +336,49 @@ const CheckLatestResult = (props) => {
     const isShowResultDetail = () => state.showResultType === "detail";
     const setShowResultDetail = () => {
         setState({ showResultType: "detail" });
-        resultDetail.fetch(`/checks/${check.name}/history/${resultSummary.data.uuid}`, { cache: true });
+        fetchResultDetail();
+        //resultDetail.fetch(`/checks/${check.name}/history/${resultSummary.data.uuid}`, { cache: true });
     }
     const isShowResultAction = () => state.showResultType === "action";
     const setShowResultAction = () => {
         setState({ showResultType: "action" });
-        resultAction.fetch(`/checks/${check.action}/history/latest`, { cache: true });
+        fetchResultAction();
+        //resultAction.fetch(`/checks/${check.action}/history/latest`, { cache: true });
     }
+
+    function fetchResultSummary(refresh = false) {
+        const url = `/checks/${check.name}/history/latest`;
+        refresh ? resultSummary.refresh(url) : resultSummary.fetch(url);
+    }
+    function fetchResultDetail(refresh = false) {
+        const url = `/checks/${check.name}/history/${resultSummary.data.uuid}`;
+        refresh ? resultDetail.refresh(url) : resultDetail.fetch(url);
+    }
+    function fetchResultAction(refresh = false) {
+        const url = `/checks/${check.action}/history/latest`;
+        refresh ? resultAction.refresh(url) : resultAction.fetch(url);
+    }
+    function refreshResult() {
+        fetchResultSummary(true);
+        isShowResultDetail() && fetchResultDetail(true);
+        isShowResultAction() && fetchResultAction(true);
+    }
+
+    useEffect(() => {
+        fetchResultSummary();
+    }, []);
 
     return <div style={{fontSize:fontSize,marginTop:marginTop}}>
         <div style={{height:"1",marginBottom:"4pt",background:"gray"}}></div>
-        { (resultSummary.loading || !resultSummary.data) ?
+        { (resultSummary.loading) ?
             <StandardSpinner label="Loading latest result summary" nudgeUp={true} />
         : <>
             <span className="pointer" onClick={toggleShowResult}>
-                <b>Latest Result&nbsp;{Char.UpArrow}</b> {resultSummary.data.timestamp}
+                <b id={`tooltip-${check.name}-result`}>Latest Result&nbsp;{isShowResult() ? Char.UpArrow : Char.DownArrow}&nbsp;</b>
+                <span id={`tooltip-${check.name}-result-timestamp`}>{resultSummary.data.timestamp}</span>
             </span>
+            <Tooltip id={`tooltip-${check.name}-result`} text={`Click to ${isShowResult() ? "hide" : "show"} latest result detail.`} />
+            <Tooltip id={`tooltip-${check.name}-result-timestamp`} text={Time.FormatDuration(resultSummary.data.timestamp, new Date(), true, null, null, "ago")} />
             { (isShowResult()) && <>
                 &nbsp;|&nbsp;
                 { (isShowResultSummary()) ? <>
@@ -381,8 +408,19 @@ const CheckLatestResult = (props) => {
                 </> }
             </>}
             &nbsp;|&nbsp;
-            <b id={`tooltip-${check.name}-result-refresh`} className="pointer" onClick={() => resultSummary.refresh()}>{Char.Refresh}</b>
+            <b id={`tooltip-${check.name}-result-refresh`} className="pointer" onClick={refreshResult}>{Char.Refresh}</b>
             <Tooltip id={`tooltip-${check.name}-result-refresh`} text="Click to fetch latest result."/>
+                { (resultSummary.data.summary || resultSummary.data.summary) && <span className="pointer" onClick={toggleShowResult}>
+                    { (resultSummary.data.summary) && <>
+                        <br />
+                        Summary: {resultSummary.data.summary}
+                    </> }
+                    { (resultSummary.data.description && resultSummary.data.description !== resultSummary.data.summary) && <>
+                        <br />
+                        Description: {resultSummary.data.description}
+                    </> }
+                    &nbsp;&nbsp;<b><big>{resultSummary.data.status === "PASS" ? Char.Check : Char.X}</big></b>
+                </span> }
             { (isShowResult()) && <>
                 <pre className="box lighten" style={{marginTop:"4pt"}}>
                     { (isShowResultSummary()) ? <>
