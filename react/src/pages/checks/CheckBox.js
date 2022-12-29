@@ -12,6 +12,7 @@ import Clipboard from '../../utils/Clipboard';
 import Env from '../../utils/Env';
 import Json from '../../utils/Json';
 import Str from '../../utils/Str';
+import Time from '../../utils/Time';
 import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
@@ -24,13 +25,13 @@ const TestCheckBox = (props) => {
 
     let { environ } = useParams();
     const checkBoxState = useKeyedState();
-    const [ show, setShow ] = useState(false);
+    const [ show, setShow ] = useState(true);
     //const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
     const checkName =  "elastic_search_space";
     return <>
         { show ? <>
             <span className="pointer" onClick={() => setShow(value => !value)}>Hide CheckBox</span>
-            <CheckBox checkName={checkName} env={environ} parentState={checkBoxState.keyed(checkName)} />
+            <CheckBoxWithFetch checkName={checkName} env={environ} parentState={checkBoxState.keyed(checkName)} />
         </>:<>
             <span className="pointer" onClick={() => setShow(value => !value)}>Show CheckBox</span>
         </>}
@@ -38,23 +39,33 @@ const TestCheckBox = (props) => {
     </>
 }
 
-const CheckBox = (props) => {
-
+export const CheckBoxWithFetch = (props) => {
     const { checkName, env, parentState } = props;
-    const check = useFetch(`/checks/${checkName}`, { cache: true, delay: 0 });
+    const check = useFetch(`/checks/${checkName}`, { cache: true });
+    if (check.loading || !check.data) return <CheckBoxLoading />
+    return <CheckBox check={check.data} env={env} parentState={parentState}/>
+}
+
+const CheckBoxLoading = (props) => {
+    return <div className="box" style={{width:props.width || "500pt"}}>
+        <StandardSpinner label="Loading check" />
+    </div>
+}
+
+export const CheckBox = (props) => {
+
+    const { check, env, parentState } = props;
+    //const { checkName, env, parentState } = props;
+    //const check = useFetch(`/checks/${checkName}`, { cache: true, delay: 0 });
     const [ state, setState ] = useOptionalKeyedState(parentState);
 
     const isShowRunBox = () => state.showRunBox;
     const toggleShowRunBox = () => setState({ showRunBox: !isShowRunBox() });
 
-    if (check.loading || !check.data) {
-        return <div className="box" style={{width:props.width || "500pt"}}>
-            <StandardSpinner loading={check.loading} label="Loading check" />
-        </div>
-    }
     return <div className="box" style={{width:props.width || "500pt"}}>
+                [{JSON.stringify(state)}]
         <div style={{marginBottom:"4pt"}}>
-            Check: {check.data.name}
+            Check: {check.name}
             <span className="pointer" style={{float:"right"}} onClick={toggleShowRunBox}>
                 { isShowRunBox() ? <>
                     Configure {Char.DownArrowHollow}
@@ -64,8 +75,13 @@ const CheckBox = (props) => {
             </span>
         </div>
         { isShowRunBox() && <>
-            <CheckRunBox check={check.data} env={env} parentState={parentState.keyed("runbox")} />
+            <CheckRunBox
+                check={check}
+                env={env}
+                parentState={parentState?.keyed("runbox")}
+            />
         </>}
+        <CheckLatestResult check={check} margintop={"5pt"} />
     </div>
 }
 
@@ -80,12 +96,7 @@ const CheckRunBox = (props) => {
     //
     const [ args, setArgs ] = useOptionalKeyedState(parentState, () => getArgs(check, env));
     const setArg = (name, value) => setArgs({ ...args, [name]: { ...args[name], value: value } });
-
-    function onCheckRun(value) {
-    }
-
-    function onActionRun(value) {
-    }
+    const [ state, setState ] = useOptionalKeyedState(parentState);
 
     // Parses out the the arguments for the check run from the info (ultimately) from the
     // check_setup.json file and the check_function decorator. Returned object has a property
@@ -171,7 +182,7 @@ const CheckRunBox = (props) => {
                 args[name] = { type: "list", list: value, value: null };
             }
             else {
-                args[name] = { type: "string", value: value };
+                args[name] = { type: "string", value: Str.HasValue(value) ? value : "" };
             }
         }
 
@@ -180,17 +191,55 @@ const CheckRunBox = (props) => {
         return args;
     }
 
+    function onCheckRun() {
+        setState({ running: true });
+    }
+
+    function onActionRun() {
+    }
+
     return <div style={{width:"100%"}}>
         <div className="box thickborder" style={{background:background}}>
-            <table style={{width:"100%"}}><tbody><tr>
+            <table style={{width:"100%"}} border="1"><tbody><tr>
                 <td style={{paddingRight:"8pt"}}>
                     <CheckRunArgs check={check} env={env} args={args} setArg={setArg} />
                 </td>
-                <td style={{verticalAlign:"top",textAlign:"right"}}>
-                    <CheckRunButton />
+                <td style={{verticalAlign:"top"}} align="right">
+                    <CheckRunButton onClick={onCheckRun} />
                 </td>
             </tr></tbody></table>
         </div>
+        { state.running && <>
+            <CheckRunClickedBox checkName={check.name} args={args} margintop="5pt" />
+        </> }
+    </div>
+}
+
+const CheckRunClickedBox = (props) => {
+
+    const { checkName, args, margintop } = props;
+
+    function getCheckRunUrl(args) {
+        function assembleArgs(args) {
+            const assembledArgs = {};
+            Object.keys(args).forEach(argName => assembledArgs[argName] = args[argName].value);
+            return assembledArgs;
+        }
+        const assembledArgs = assembleArgs(args);
+        const stringifiedArgs = JSON.stringify(assembledArgs);
+        const encodedArgs = btoa(stringifiedArgs);
+        return `/checks/${checkName}/run?args=${encodedArgs}`;
+    }
+
+    const url = getCheckRunUrl(args);
+    const run = useFetch(url, { nofetch: false });
+
+    return <div className="box" style={{background:"yellow",filter:"brightness(0.9)",borderColor:"red",marginTop:margintop ? margintop : "0"}}>
+        { run.loading ?
+            <StandardSpinner label="Queueing check run" />
+        : <b>
+            Queued check run: {Time.FormatDateTime(run.data.uuid + "+00:00")} {Char.RightArrow} OK
+        </b> }
     </div>
 }
 
@@ -264,8 +313,18 @@ const CheckRunArgString = (props) => {
 
 const CheckRunButton = (props) => {
     return <>
-        <button>RUN-BUTTON</button>
+        <div className={"check-run-button"} style={{width:"fit-content"}} onClick={props.onClick}>
+            <small>{Char.RightArrowFat}</small>&nbsp;&nbsp;Run Check
+        </div>
     </>
+}
+
+const CheckLatestResult = (props) => {
+    const { margintop } = props;
+    return <div style={{marginTop:margintop ? margintop : "0"}}>
+        <div style={{height:"1",marginBottom:"2pt",background:"gray"}}></div>
+        <b>Latest Result&nbsp;{Char.UpArrow}</b>
+    </div>
 }
 
 export default TestCheckBox;

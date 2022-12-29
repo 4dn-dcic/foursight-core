@@ -182,7 +182,7 @@ export const useFetch = (url, args) => {
     const initial = Type.IsObject(url) ? url.initial : (Type.IsObject(args) ? args.initial : null);
 
     const [ data, setData ] = useState(initial);
-    const [ loading, setLoading ] = useState(false);
+    const [ loading, setLoading ] = useState(false); // TODO: IS THIS OKAY IN GENERAL CASE?
     const [ status, setStatus ] = useState(0);
     const [ timeout, setTimeout ] = useState(false);
     const [ error, setError ] = useState(null);
