@@ -541,6 +541,15 @@ function _doFetch(args, current = undefined, fetcher) {
             if (!fetcher) {
                 fetcher = { data: fetchCache.data, loading: false, status: fetchCache.status, timeout: false, error: null };
             }
+            //
+            // The setTimeout et.al. state functions won't necessarily set the state immediately,
+            // i.e. e.g. within any onError callback specified, so set directly as well.
+            //
+            fetcher.data = fetchCache.data;
+            fetcher.status = fetchCache.status;
+            fetcher.error = null;
+            fetcher.timeout = false;
+            fetcher.loading = false;
             args.onSuccess(fetcher);
             args.onDone(fetcher);
             return;

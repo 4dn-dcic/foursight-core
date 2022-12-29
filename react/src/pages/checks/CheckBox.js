@@ -337,27 +337,31 @@ const CheckLatestResult = (props) => {
     const setShowResultDetail = () => {
         setState({ showResultType: "detail" });
         fetchResultDetail();
-        //resultDetail.fetch(`/checks/${check.name}/history/${resultSummary.data.uuid}`, { cache: true });
     }
     const isShowResultAction = () => state.showResultType === "action";
     const setShowResultAction = () => {
         setState({ showResultType: "action" });
         fetchResultAction();
-        //resultAction.fetch(`/checks/${check.action}/history/latest`, { cache: true });
     }
 
-    function fetchResultSummary(refresh = false) {
+    function fetchResultSummary(refresh = false, onDone = null) {
+        if (!onDone) onDone = () => {};
         const url = `/checks/${check.name}/history/latest`;
-        refresh ? resultSummary.refresh(url) : resultSummary.fetch(url);
+        refresh ? resultSummary.refresh(url, { onDone: () => onDone() }) : resultSummary.fetch(url, { onDone: () => onDone() });
     }
+
     function fetchResultDetail(refresh = false) {
-        const url = `/checks/${check.name}/history/${resultSummary.data.uuid}`;
-        refresh ? resultDetail.refresh(url) : resultDetail.fetch(url);
+        if (!resultSummary.loading) {
+            const url = `/checks/${check.name}/history/${resultSummary.data.uuid}`;
+            refresh ? resultDetail.refresh(url) : resultDetail.fetch(url);
+        }
     }
+
     function fetchResultAction(refresh = false) {
         const url = `/checks/${check.action}/history/latest`;
         refresh ? resultAction.refresh(url) : resultAction.fetch(url);
     }
+
     function refreshResult() {
         fetchResultSummary(true);
         isShowResultDetail() && fetchResultDetail(true);
@@ -365,7 +369,7 @@ const CheckLatestResult = (props) => {
     }
 
     useEffect(() => {
-        fetchResultSummary();
+        fetchResultSummary(false, isShowResultDetail() ? fetchResultDetail : null);
     }, []);
 
     return <div style={{fontSize:fontSize,marginTop:marginTop}}>
