@@ -25,8 +25,8 @@ const TestCheckBox = (props) => {
     let { environ } = useParams();
     const checkBoxState = useKeyedState();
     const [ show, setShow ] = useState(false);
-    //const checkName =  "elastic_search_space";
-    const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
+    //const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
+    const checkName =  "elastic_search_space";
     return <>
         { show ? <>
             <span className="pointer" onClick={() => setShow(value => !value)}>Hide CheckBox</span>
@@ -40,15 +40,18 @@ const TestCheckBox = (props) => {
 
 const CheckBox = (props) => {
 
-    let { checkName, env, parentState } = props;
-
+    const { checkName, env, parentState } = props;
     const check = useFetch(`/checks/${checkName}`, { cache: true, delay: 0 });
-
     const [ state, setState ] = useOptionalKeyedState(parentState);
+
     const isShowRunBox = () => state.showRunBox;
     const toggleShowRunBox = () => setState({ showRunBox: !isShowRunBox() });
 
-    if (check.loading || !check.data) return <div><StandardSpinner label="Loading check run info ..." /></div>
+    if (check.loading || !check.data) {
+        return <div className="box" style={{width:props.width || "500pt"}}>
+            <StandardSpinner loading={check.loading} label="Loading check" />
+        </div>
+    }
     return <div className="box" style={{width:props.width || "500pt"}}>
         <div style={{marginBottom:"4pt"}}>
             Check: {check.data.name}
@@ -61,14 +64,22 @@ const CheckBox = (props) => {
             </span>
         </div>
         { isShowRunBox() && <>
-            <CheckRunBox check={check.data} env={env} parentState={parentState.keyed("run-box")} />
+            <CheckRunBox check={check.data} env={env} parentState={parentState.keyed("runbox")} />
         </>}
     </div>
 }
 
 const CheckRunBox = (props) => {
 
-    let { check, env, parentState } = props;
+    const { check, env, parentState } = props;
+    //
+    // Note we use the useOptionalKeyState hook passing in the passed in parentState
+    // which is from useKeyedState (TODO: need better names for these), so that
+    // our state gets stored in the parent, so that it can maintained between
+    // instantiations of this component, which can happen via component hide/show.
+    //
+    const [ args, setArgs ] = useOptionalKeyedState(parentState, () => getArgs(check, env));
+    const setArg = (name, value) => setArgs({ ...args, [name]: { ...args[name], value: value } });
 
     function onCheckRun(value) {
     }
@@ -169,18 +180,11 @@ const CheckRunBox = (props) => {
         return args;
     }
 
-    // Note we use the useOptionaKeyState hook passing in the passed in parentState
-    // which is from useKeyedState (TODO: need better names for these), so that
-    // our state gets stored in the parent, so that it can maintained between
-    // instantiations of this component, which can happen via component hide/show.
-    //
-    const [ args, setArgs ] = useOptionalKeyedState(parentState, () => getArgs(check, env));
-
     return <div style={{width:"100%"}}>
         <div className="box thickborder" style={{background:background}}>
             <table style={{width:"100%"}}><tbody><tr>
                 <td style={{paddingRight:"8pt"}}>
-                    <CheckRunArgs check={check} env={env} args={args} setArgs={setArgs} />
+                    <CheckRunArgs check={check} env={env} args={args} setArg={setArg} />
                 </td>
                 <td style={{verticalAlign:"top",textAlign:"right"}}>
                     <CheckRunButton />
@@ -191,27 +195,17 @@ const CheckRunBox = (props) => {
 }
 
 const CheckRunArgs = (props) => {
-
-    const { check, env, args, setArgs } = props;
-
+    const { check, env, args, setArg } = props;
     const tdstyle = { paddingTop:"2pt", paddingBottom:"2pt", paddingRight:"8pt" };
-
     return <>
         <table><tbody>
-            { Object.keys(args).map((argName, argIndex) => {
-                function setArg(value) {
-                    setArgs({ ...args, [argName]: { ...args[argName], value: value } });
-                }
-                return <tr key={argName} style={{}}>
-                    <td style={tdstyle}>
-                        <b>{argName}</b>:
-                    </td>
-                    <td style={tdstyle}>
-                        <CheckRunArg arg={args[argName]} setArg={setArg} />
-                    </td>
+            { Object.keys(args).map(name => {
+                const setThisArg = (value) => setArg(name, value);
+                return <tr key={name} style={{}}>
+                    <td style={tdstyle}><b>{name}</b>:</td>
+                    <td style={tdstyle}><CheckRunArg arg={args[name]} setArg={setThisArg} /></td>
                 </tr>
-                }
-            )}
+            })}
         </tbody></table>
     </>
 }
@@ -233,10 +227,7 @@ const CheckRunArgBoolean = (props) => {
     const { arg, setArg } = props;
     return <>
         <select defaultValue={arg.value} style={{background:background,border:"1px solid lightgray",borderRadius:"4pt"}}
-            onChange={(e) => {
-               const value = e.target.value === "true" ? true : false;
-               setArg(value);
-            }}>
+            onChange={e => setArg(e.target.value === "true" ? true : false)}>
             <option>false</option>
             <option>true</option>
         </select> 
@@ -248,15 +239,12 @@ const CheckRunArgList = (props) => {
     const EMPTY = "-";
     return <>
         <select key={Uuid()} defaultValue={arg.value} style={{background:"lightyellow",border:"1px solid lightgray"}}
-            onChange={(e) => {
-                const value = e.target.value;
-                setArg(value === EMPTY ? null : value);
-            }}>
-            { (!arg.initial || !arg.value || arg.value == EMPTY) && 
+            onChange={e => setArg(e.target.value === EMPTY ? null : e.target.value)}>
+            { (!arg.value || arg.value == EMPTY) && 
                 <option key={0}>{EMPTY}</option>
             }
             { arg.list.map(item =>
-                <option key={Uuid()}>{item}</option>
+                <option key={item}>{item}</option>
             )}
         </select>
     </>
@@ -267,10 +255,7 @@ const CheckRunArgString = (props) => {
     return <>
         <input
             defaultValue={arg.value}
-            onChange={(e) => {
-                const value = e.target.value;
-                setArg(value);
-            }}
+            onChange={e => setArg(e.target.value)}
             placeholder="Empty"
             style={{marginLeft:"0pt",height:"14pt",background:"lightyellow",border:"1px solid lightgray",borderRadius:"2pt"}}
         />
