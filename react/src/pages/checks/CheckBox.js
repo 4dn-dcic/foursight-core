@@ -363,8 +363,7 @@ const CheckLatestResult = (props) => {
     }
 
     function refreshResult() {
-        fetchResultSummary(true);
-        isShowResultDetail() && fetchResultDetail(true);
+        fetchResultSummary(true, isShowResultDetail() ? fetchResultDetail : null);
         isShowResultAction() && fetchResultAction(true);
     }
 
