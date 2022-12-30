@@ -577,6 +577,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             return self.create_success_response({})
         uuid = check_results["uuid"]
         if check_results.get("action"):
+            # TODO: Get rid of this and put it in /checks/${check_name} ...
+            # This is what the legacy code (in templates) does to get action title.
             check_results["action_title"] = " ".join(check_results["action"].split("_")).title()
         check_datetime = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
         check_datetime = convert_utc_datetime_to_useastern_datetime_string(check_datetime)

@@ -144,7 +144,8 @@ class Checks:
             check = checks[check_key]
             if check.get("registered_action") and check["registered_action"].get("name") == action:
                 action_checks = self._get_action_checks(env, action)
-                return {"type": "action", **check["registered_action"], "checks": action_checks}
+                action_title = " ".join(action.split("_")).title()
+                return {"type": "action", **check["registered_action"], "checks": action_checks, "title": action_title}
         return None
 
     def _filter_checks_by_env(self, checks: dict, env: str) -> dict:

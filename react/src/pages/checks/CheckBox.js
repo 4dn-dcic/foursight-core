@@ -29,8 +29,9 @@ const TestCheckBox = (props) => {
     let { environ } = useParams();
     const checkBoxState = useKeyedState();
     const [ show, setShow ] = useState(true);
+    //const checkName =  "elastic_search_space";
     //const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
-    const checkName =  "elastic_search_space";
+    const checkName =  "mcoolqc_status"; // "elastic_search_space";
 
         const [ showHistory, setShowHistory ] = useState(true);
     return <>
@@ -75,8 +76,6 @@ const CheckBoxLoading = (props) => {
 export const CheckBox = (props) => {
 
     const { check, env, parentState, showHistory, setShowHistory } = props;
-    //const { checkName, env, parentState } = props;
-    //const check = useFetch(`/checks/${checkName}`, { cache: true, delay: 0 });
     const [ state, setState ] = useOptionalKeyedState(parentState);
 
     const isShowRunBox = () => state.showRunBox;
@@ -92,9 +91,23 @@ export const CheckBox = (props) => {
 
     const schedule = getSchedule(check, env);
 
+    const actionExists = () => check.registered_action?.name;
+    const [ actionAllowed, setActionAllowed ] = useState(false);
+
     return <div className="box hover-lighten" style={{width:props.width || "500pt"}}>
         <div style={{marginBottom:"4pt"}}>
-            <b id={`tooltip-${check.name}`} className="pointer" onClick={() => setShowHistory(!showHistory)}><u>{check.title}</u></b>
+            <b className="pointer" onClick={() => setShowHistory(!showHistory)}>
+                <u>
+                    <span id={`tooltip-${check.name}`} >{check.title}</span>
+                    {actionExists() && <>
+                        &nbsp;
+                        <span id={`tooltip-${check.name}-action`} style={{color:actionAllowed ? "red" : "inherit"}}>
+                            {Char.Diamond}
+                        </span>
+                        <Tooltip id={`tooltip-${check.name}-action`} text={`This check has an associated (${actionAllowed ? "allowed" : "disallowed"}) action.`} />
+                    </>}
+                </u>
+            </b>
             <Tooltip id={`tooltip-${check.name}`} text={`Check ${check.name}. Module: ${check.module}.`} />
             <span className="pointer" style={{float:"right",marginTop:"2pt",marginRight:"2pt"}} onClick={toggleShowRunBox}>
                 { isShowRunBox() ? <>
@@ -107,13 +120,13 @@ export const CheckBox = (props) => {
                 href={Client.Path(`/checks/${check.name}/history`)}
                 bold={true}
                 tooltip="Click to view check details and history (in new tab)."
-                style={{marginLeft:"6pt"}} />
+                style={{marginLeft:"8pt"}} />
             <GitHubLink
                 href={check.registered_github_url}
                 type="check"
                 style={{marginLeft:"6pt"}} />
             <span style={{marginLeft:"3pt",cursor:"pointer"}} onClick={() => setShowHistory(!showHistory)}>
-                <img id={`tooltip-${check.name}-history-show`} src={Image.History()} style={{marginTop:"-4pt"}} height="18" /> { showHistory && Char.RightArrow}
+                <img id={`tooltip-${check.name}-history-show`} src={Image.History()} style={{marginTop:"-1pt"}} height="18" /> { showHistory && Char.RightArrow}
                 <Tooltip id={`tooltip-${check.name}-history-show`} text={`Click to ${showHistory ? "hide" : "show"} recent history of check runs.`} />
             </span>
             { Str.HasValue(schedule.cron_description) ? (
@@ -131,16 +144,21 @@ export const CheckBox = (props) => {
             <CheckRunBox
                 check={check}
                 env={env}
+                actionAllowed={actionAllowed}
                 parentState={parentState?.keyed("runbox")}
             />
         </>}
-        <CheckLatestResult check={check} parentState={parentState} />
+        <CheckLatestResult check={check} setActionAllowed={setActionAllowed} parentState={parentState} />
     </div>
 }
 
 const CheckRunBox = (props) => {
 
-    const { check, env, parentState, fontSize = "small", marginTop = "4pt" } = props;
+    const {
+        check, env, actionAllowed, parentState,
+        fontSize = "small", marginTop = "4pt"
+    } = props;
+
     //
     // Note we use the useOptionalKeyState hook passing in the passed in parentState
     // which is from useKeyedState (TODO: need better names for these), so that
@@ -149,7 +167,7 @@ const CheckRunBox = (props) => {
     //
     const [ args, setArgs ] = useOptionalKeyedState(parentState, () => getArgs(check, env));
     const setArg = (name, value) => setArgs({ ...args, [name]: { ...args[name], value: value } });
-    const [ state, setState ] = useOptionalKeyedState(parentState.keyed("state"));
+    const [ state, setState ] = useOptionalKeyedState(parentState.keyed("local"));
 
     // Parses out the the arguments for the check run from the info (ultimately) from the
     // check_setup.json file and the check_function decorator. Returned object has a property
@@ -244,42 +262,72 @@ const CheckRunBox = (props) => {
         return args;
     }
 
-    const setRunning = (value = true) => setState({ running: value });
-    const isRunning = () => state.running;
+    const setCheckRunning = () => setState({ checkRunning: true });
+    const isCheckRunning = () => state.checkRunning;
+    const setCheckRan = (uuid) => setState({ checkRunning: false, checkRan: uuid });
+    const isCheckRan = () => state.checkRan;
 
-    const setRan = (uuid) => setState({ running: false, ranUuid: uuid });
-    const isRan = () => state.ranUuid;
-
-    function onCheckRun() {
-        setRunning(true);
-    }
-
-    function onCheckRunDone(uuid) {
-        setRunning(false);
-        setRan(uuid);
-    }
-
-    function onActionRun() {
-    }
+    const setActionRunning = () => setState({ actionRunning: true });
+    const isActionRunning = () => state.actionRunning;
+    const setActionRan = (uuid) => setState({ actionRunning: false, actionRan: uuid });
+    const isActionRan = () => state.actionRan;
 
     return <div style={{marginTop:marginTop,width:"100%"}}>
-        <div className="box thickborder" style={{background:background}}>
-            <table style={{width:"100%"}}><tbody><tr>
-                <td style={{paddingRight:"8pt"}}>
-                    <CheckRunArgs check={check} env={env} args={args} setArg={setArg} fontSize={fontSize} />
-                </td>
-                <td style={{verticalAlign:"top"}} align="right">
-                    <CheckRunButton onClick={onCheckRun} />
-                </td>
-            </tr></tbody></table>
-        </div>
-        { (isRunning() || isRan()) && <>
-            <CheckRunClickedBox checkName={check.name} args={args} run={isRunning()} ran={isRan()} onRunDone={onCheckRunDone} fontSize={fontSize} />
+        <ConfigureCheckRun
+            check={check}
+            args={args}
+            setArg={setArg}
+            onRun={setCheckRunning}
+            fontSize={fontSize} />
+        <ConfigureActionRun
+            check={check}
+            args={args}
+            setArg={setArg}
+            onRun={setActionRunning}
+            actionAllowed={actionAllowed}
+            fontSize={fontSize} />
+        { (isCheckRunning() || isCheckRan()) && <>
+            <CheckRunningOrRan checkName={check.name} args={args} run={isCheckRunning()} ran={isCheckRan()} onDone={setCheckRan} fontSize={fontSize} />
+        </> }
+        { (isActionRunning() || isActionRan()) && <>
+            <ActionRunningOrRan checkName={check.name} args={args} run={isActionRunning()} ran={isActionRan()} onDone={setActionRan} fontSize={fontSize} />
         </> }
     </div>
 }
 
-const CheckRunClickedBox = (props) => {
+const ConfigureCheckRun = (props) => {
+    const { check, env, args, setArg, onRun, fontSize = "small" } = props;
+    return <div className="box thickborder" style={{background:background}}>
+        <table style={{width:"100%"}}><tbody><tr>
+            <td style={{paddingRight:"8pt"}}>
+                <CheckRunArgs check={check} env={env} args={args} setArg={setArg} fontSize={fontSize} />
+            </td>
+            <td style={{verticalAlign:"top"}} align="right">
+                <CheckRunButton onClick={onRun} />
+            </td>
+        </tr></tbody></table>
+    </div>
+}
+
+const ConfigureActionRun = (props) => {
+    const { check, env, onActionRun, actionAllowed, fontSize = "small", marginTop = "4pt" } = props;
+    const action = useFetch({ cache: true });
+    useEffect(() => {
+        if (check.registered_action?.name) {
+            action.fetch(`/checks/${check.registered_action.name}`);
+        }
+    }, []);
+    if (!check.registered_action?.name) return null;
+    return <div className="box thickborder" style={{fontSize:fontSize,marginTop:marginTop,background:background}}>
+        &nbsp;<b><u>Action</u></b>: <b>{action.data?.title}</b>
+        <GitHubLink
+            href={action.data?.github_url}
+            style={{marginLeft:"6pt"}}
+        />
+    </div>
+}
+
+const CheckRunningOrRan = (props) => {
 
     const { checkName, args, fontSize = "small", marginTop = "4pt" } = props;
 
@@ -295,26 +343,29 @@ const CheckRunClickedBox = (props) => {
         return `/checks/${checkName}/run?args=${encodedArgs}`;
     }
 
-    const run = useFetch();
+    const runner = useFetch();
 
     useEffect(() => {
         if (props.run) {
             const url = getCheckRunUrl(args);
-            run.fetch(url, { onDone: () => props.onRunDone(run.data.uuid) });
+            runner.fetch(url, { onDone: () => props.onDone(runner.data.uuid) });
         }
     }, [props.run]);
 
     return <div className="box" style={{fontSize:fontSize,background:"yellow",filter:"brightness(0.9)",borderColor:"red",marginTop:marginTop}}>
-        { props.run && run.loading ?
+        { props.run && runner.loading ?
             <StandardSpinner label="Queueing check run" />
         : <b>
             { props.ran ? <>
                 Queued check run: {Time.FormatDateTime(props.ran + "+00:00")} {Char.RightArrow} OK
             </>:<>
-                Queued check run: {Time.FormatDateTime(run.data?.uuid + "+00:00")} {Char.RightArrow} OK
+                Queued check run: {Time.FormatDateTime(runner.data?.uuid + "+00:00")} {Char.RightArrow} OK
             </> }
         </b> }
     </div>
+}
+
+const ActionRunClickedBox = (props) => {
 }
 
 const CheckRunArgs = (props) => {
@@ -331,6 +382,9 @@ const CheckRunArgs = (props) => {
             })}
         </tbody></table>
     </>
+}
+
+const ActionRunningOrRan = (props) => {
 }
 
 const CheckRunArg = (props) => {
@@ -395,7 +449,7 @@ const CheckRunButton = (props) => {
 
 const CheckLatestResult = (props) => {
 
-    const { check, parentState, fontSize = "small", marginTop = "5pt" } = props;
+    const { check, parentState, setActionAllowed, fontSize = "small", marginTop = "5pt" } = props;
     const [ state, setState ] = useOptionalKeyedState(parentState);
 
     const resultSummary = useFetch({ cache: true, loading: true });
@@ -418,9 +472,13 @@ const CheckLatestResult = (props) => {
     }
 
     function fetchResultSummary(refresh = false, onDone = null) {
-        if (!onDone) onDone = () => {};
+        const _onDone = () => {
+            if (resultSummary.data?.allow_action) setActionAllowed(true);
+            if (onDone) onDone();
+        }
         const url = `/checks/${check.name}/history/latest`;
-        refresh ? resultSummary.refresh(url, { onDone: () => onDone() }) : resultSummary.fetch(url, { onDone: () => onDone() });
+        //refresh ? resultSummary.refresh(url, { onDone: () => { onDone(); if (resultSummary.data.allow_action) setActionAllowed(); } }) : resultSummary.fetch(url, { onDone: () => onDone() });
+        refresh ? resultSummary.refresh(url, { onDone: _onDone }) : resultSummary.fetch(url, { onDone: _onDone });
     }
 
     function fetchResultDetail(refresh = false) {

@@ -98,7 +98,7 @@ export const ExternalLink = (props) => {
     return <span style={{...props.style}}>
         <a id={props.href} href={props.href} style={{color:"var(--box-fg)"}} rel="noreferrer" target="_blank">
             {props.text && <span style={{fontWeight:props.boldText ? "bold" : "normal"}}>{props.text}</span>}
-            <span className="fa fa-external-link" style={{fontWeight:props.bold ? "bold" : "normal",position:"relative",bottom:"-0.8pt"}} />
+            <span className="fa fa-external-link" style={{fontWeight:props.bold ? "bold" : "normal",position:"relative",bottom:"-1.5pt"}} />
         </a>
         { props.tooltip && <Tooltip id={props.href} text={props.tooltip} /> }
     </span>
@@ -106,7 +106,7 @@ export const ExternalLink = (props) => {
 
 export const GitHubLink = (props) => {
     if (!props.href) return null;
-    return <span style={{position:"relative",bottom:"1pt",...props.style}}>
+    return <span style={{position:"relative",bottom:"0pt",...props.style}}>
         <a id={props.href} rel="noreferrer" target="_blank" href={props.href}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
         <Tooltip id={props.href} text={`Click to view source code for this ${props.type} (in new tab).`} />
     </span>
