@@ -29,10 +29,11 @@ const TestCheckBox = (props) => {
     let { environ } = useParams();
     const checkBoxState = useKeyedState();
     const [ show, setShow ] = useState(true);
-    const checkName =  "elastic_search_space";
+    //const checkName =  "elastic_search_space";
     //const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
     //const checkName =  "mcoolqc_status"; // "elastic_search_space";
     //const checkName =  "pairsqc_status"; // "elastic_search_space";
+    const checkName =  "find_cypress_test_items_to_purge"; // "elastic_search_space";
     const [ showHistory, setShowHistory ] = useState(true);
 
     return <>
@@ -52,8 +53,7 @@ const TestCheckBox = (props) => {
                 parentState={checkBoxState.keyed(checkName)}
                 showHistory={showHistory}
                 setShowHistory={setShowHistory}
-                showStandaloneCheckPageLink={true}
-            />
+                showStandaloneCheckPageLink={true} />
         </>:<>
             <span className="pointer" onClick={() => setShow(value => !value)}>Show CheckBox</span>
         </>}
@@ -83,8 +83,7 @@ export const CheckBoxWithFetch = (props) => {
             parentState={parentState}
             showHistory={props.showHistory}
             setShowHistory={props.setShowHistory}
-            showStandaloneCheckPageLink={props.showStandaloneCheckPageLink}
-        />
+            showStandaloneCheckPageLink={props.showStandaloneCheckPageLink} />
     </>
 }
 
@@ -105,6 +104,7 @@ export const CheckBox = (props) => {
     const [ actionAllowed, setActionAllowed ] = useState(null); // set to latest result uuid (for called_by arg to action run)
     const schedule = getSchedule(check, env);
     const [ triggerRefreshResult, setTriggerRefreshResult ] = useState(false);
+    const info = useFetch("/info");
 
     function getSchedule(check, env) {
         for (const scheduleKey in check.schedule) {
@@ -170,16 +170,15 @@ export const CheckBox = (props) => {
                 env={env}
                 actionAllowed={actionAllowed}
                 parentState={parentState?.keyed("runbox")}
-                setTriggerRefreshResult={setTriggerRefreshResult}
-            />
+                bucket={info.data?.checks?.bucket}
+                setTriggerRefreshResult={setTriggerRefreshResult} />
         </>}
         <CheckLatestResult
             check={check}
             setActionAllowed={setActionAllowed}
             parentState={parentState}
             triggerRefreshResult={triggerRefreshResult}
-            setTriggerRefreshResult={setTriggerRefreshResult}
-        />
+            setTriggerRefreshResult={setTriggerRefreshResult} />
     </div>
 }
 
@@ -190,7 +189,7 @@ export const CheckBox = (props) => {
 const RunConfigure = (props) => {
 
     const {
-        check, env, actionAllowed, parentState, setTriggerRefreshResult,
+        check, env, actionAllowed, parentState, bucket, setTriggerRefreshResult,
         fontSize = "small", marginTop = "4pt"
     } = props;
 
@@ -316,7 +315,15 @@ const RunConfigure = (props) => {
             onRun={setCheckRunning}
             fontSize={fontSize} />
         { (isCheckRunning() || isCheckRan()) && <>
-            <CheckRunningOrRan checkName={check.name} args={args} run={isCheckRunning()} ran={isCheckRan()} onDone={setCheckRan} fontSize={fontSize} />
+            <CheckRunningOrRan
+                checkName={check.name}
+                args={args}
+                parentState={parentState.keyed("check-run-or-ran")}
+                run={isCheckRunning()}
+                ran={isCheckRan()}
+                onDone={setCheckRan}
+                bucket={bucket}
+                fontSize={fontSize} />
         </> }
         <ConfigureActionRun
             check={check}
@@ -328,7 +335,16 @@ const RunConfigure = (props) => {
             setTriggerRefreshResult={setTriggerRefreshResult}
             fontSize={fontSize} />
         { (isActionRunning() || isActionRan()) && <>
-            <ActionRunningOrRan check={check} args={args} run={isActionRunning()} ran={isActionRan()} uuid={actionAllowed} onDone={setActionRan} fontSize={fontSize} />
+            <ActionRunningOrRan
+                check={check}
+                args={args}
+                parentState={parentState.keyed("action-run-or-ran")}
+                run={isActionRunning()}
+                ran={isActionRan()}
+                uuid={actionAllowed}
+                onDone={setActionRan}
+                bucket={bucket}
+                fontSize={fontSize} />
         </> }
     </div>
 }
@@ -401,15 +417,19 @@ const ConfigureActionRun = (props) => {
             { running ? <>
                 <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}}><i>Queueing</i></div>
             </>:<>
-                <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}} onClick={onRun}> <small>{Char.RightArrowFat}</small> Run Action</div>
+                <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}} onClick={() => { setConfirmRun(false); onRun(); }}> <small>{Char.RightArrowFat}</small> Run Action</div>
             </> }
         </>:<>
             <div style={{float:"right",marginTop:"1pt"}}>
                 <b id={`tooltip-${action.data?.name}-refresh-result`} onClick={() => setTriggerRefreshResult(true)} style={{marginRight:"8pt",position:"relative",top:"1pt",cursor:"pointer"}}>{Char.Refresh}</b>
                 <Tooltip id={`tooltip-${action.data?.name}-refresh-result`} text="Click to fetch latest result (and possibly allow action)." />
-                <span className={`check-run-button ${!actionAllowed && "disabled"}`} onClick={() => actionAllowed && onRunConfirm()}>
+                <span className={`check-run-button ${!actionAllowed && "disabled"}`} onClick={() => (actionAllowed && !running) && onRunConfirm()}>
                     { actionAllowed ? <>
-                        Run Action <b>...</b>
+                        { running ? <>
+                            <i>Queueing</i>
+                        </>:<>
+                            Run Action <b>...</b>
+                        </> }
                     </>:<>
                         Run Action Disallowed
                     </> }
@@ -427,8 +447,8 @@ const ConfigureActionRun = (props) => {
 const CheckRunningOrRan = (props) => {
 
     const {
-        checkName, args,
-        run, ran, onDone,
+        checkName, args, parentState,
+        run, ran, onDone, bucket,
         fontSize = "small", marginTop = "4pt"
     } = props;
 
@@ -449,18 +469,29 @@ const CheckRunningOrRan = (props) => {
     useEffect(() => {
         if (run) {
             const url = getCheckRunUrl(args);
-            runner.fetch(url, { onDone: () => onDone(runner.data.uuid) });
+            runner.fetch(url, { onDone: () => onDone(runner.data.uuid), delay: 2000 });
         }
     }, [run]);
+
+    const [ state, setState ] = useOptionalKeyedState(parentState);
+    const toggleShowUuid = () => setState({ showUuid: !state.showUuid });
+    const isShowUuid = () => state.showUuid;
 
     return <div className="box" style={{fontSize:fontSize,background:"yellow",filter:"brightness(0.9)",borderColor:"red",marginTop:marginTop}}>
         { run && runner.loading ?
             <StandardSpinner label="Queueing check run" nudgeUp={true} />
         : <b>
-            { ran ? <>
-                Queued check run: {Time.FormatDateTime(ran + "+00:00")} {Char.RightArrow} OK
-            </>:<>
-                Queued check run: {Time.FormatDateTime(runner.data?.uuid + "+00:00")} {Char.RightArrow} OK
+            { ran && <>
+                <span id={`tooltip-${checkName}-uuid`} className="pointer" onClick={toggleShowUuid}>
+                    Queued check run: {Time.FormatDateTime(ran + "+00:00")}
+                    <Tooltip id={`tooltip-${checkName}-uuid`} text={`Click to ${isShowUuid() ? "hide" : "show"} check run result UUID.`} />
+                </span>
+                &nbsp;{Char.RightArrow}&nbsp;
+                { isShowUuid() ? <>
+                    <a rel="noreferrer" target="_blank" href={`https://s3.console.aws.amazon.com/s3/object/${bucket}?region=us-east-1&prefix=${checkName}/${ran}.json`}><u>{ran}</u></a>
+                </>:<>
+                    OK
+                </> }
             </> }
         </b> }
     </div>
@@ -474,8 +505,8 @@ const CheckRunningOrRan = (props) => {
 const ActionRunningOrRan = (props) => {
 
     const {
-        check, args,
-        run, ran, onDone, uuid,
+        check, args, parentState,
+        run, ran, onDone, uuid, bucket,
         fontSize = "small", marginTop = "4pt"
     } = props;
 
@@ -495,14 +526,25 @@ const ActionRunningOrRan = (props) => {
         }
     }, [run]);
 
+    const [ state, setState ] = useOptionalKeyedState(parentState);
+    const toggleShowUuid = () => setState({ showUuid: !state.showUuid });
+    const isShowUuid = () => state.showUuid;
+
     return <div className="box" style={{fontSize:fontSize,background:"yellow",filter:"brightness(0.9)",borderColor:"red",marginTop:marginTop}}>
         { run && runner.loading ?
             <StandardSpinner label="Queueing action run" nudgeUp={true} />
         : <b>
-            { ran ? <>
-                Queued action run: {Time.FormatDateTime(ran + "+00:00")} {Char.RightArrow} OK
-            </>:<>
-                Queued action run: {Time.FormatDateTime(runner.data?.uuid + "+00:00")} {Char.RightArrow} OK
+            { ran && <>
+                <span id={`tooltip-${check.name}-action-uuid`} className="pointer" onClick={toggleShowUuid}>
+                    Queued action run: {Time.FormatDateTime(ran + "+00:00")}
+                    <Tooltip id={`tooltip-${check.name}-action-uuid`} text={`Click to ${isShowUuid() ? "hide" : "show"} action run result UUID.`} />
+                </span>
+                &nbsp;{Char.RightArrow}&nbsp;
+                { isShowUuid() ? <>
+                    <a rel="noreferrer" target="_blank" href={`https://s3.console.aws.amazon.com/s3/object/${bucket}?region=us-east-1&prefix=${check.registered_action.name}/${ran}.json`}><u>{ran}</u></a>
+                </>:<>
+                    OK
+                </> }
             </> }
         </b> }
     </div>
@@ -612,7 +654,6 @@ const CheckLatestResult = (props) => {
 
     function fetchResultSummary(refresh = false, onDone = null) {
         const _onDone = () => {
-            //setActionAllowed("some-uuid"); //xyzzy
             if (resultSummary.data?.allow_action) setActionAllowed(resultSummary.data?.uuid);
             if (onDone) onDone();
             if (refresh) setTriggerRefreshResult(false);
