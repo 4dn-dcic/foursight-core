@@ -312,18 +312,33 @@ const ConfigureCheckRun = (props) => {
 const ConfigureActionRun = (props) => {
     const { check, env, onActionRun, actionAllowed, fontSize = "small", marginTop = "4pt" } = props;
     const action = useFetch({ cache: true });
+    const [ confirmRun, setConfirmRun ] = useState(false);
     useEffect(() => {
         if (check.registered_action?.name) {
             action.fetch(`/checks/${check.registered_action.name}`);
         }
     }, []);
     if (!check.registered_action?.name) return null;
+    function onActionRunConfirm() {
+            setConfirmRun(true);
+    }
     return <div className="box thickborder" style={{fontSize:fontSize,marginTop:marginTop,background:background}}>
-        &nbsp;<b><u>Action</u></b>: <b>{action.data?.title}</b>
+        &nbsp;
+        <span style={{verticalAlign:"middle"}}>
+            <b><u>Action</u></b>: <b>{action.data?.title}</b>
+        </span>
         <GitHubLink
             href={action.data?.github_url}
             style={{marginLeft:"6pt"}}
         />
+        { (confirmRun) ? <>
+            <button className={`check-run-button`} style={{float:"right",marginTop:"-1pt"}} onClick={onActionRunConfirm}> <small>{Char.RightArrowFat}</small> Run Action</button>
+            <div style={{height:"1px",background:"gray",marginTop:"8pt",marginBottom:"8pt"}} />
+                &nbsp;<b style={{color:"red",position:"relative",bottom:"1pt"}}>{Char.RightArrow} Are you sure you want to run this action?</b>
+                <button className="check-action-confirm-button" style={{float:"right",marginRight:"2pt",marginTop:"-4pt"}} onClick={() => setConfirmRun(false)}><b>Cancel</b></button>
+        </>:<>
+            <button className={`check-run-button ${!actionAllowed && "disabled"}`} style={{float:"right",marginTop:"-1pt"}} onClick={() => actionAllowed && onActionRunConfirm()}>Run Action <b>...</b></button>
+        </>}
     </div>
 }
 
@@ -442,7 +457,7 @@ const CheckRunArgString = (props) => {
 const CheckRunButton = (props) => {
     return <>
         <div className={"check-run-button"} style={{width:"fit-content"}} onClick={props.onClick}>
-            <small>{Char.RightArrowFat}</small>&nbsp;&nbsp;Run Check
+            <small>{Char.RightArrowFat}</small>&nbsp;Run Check
         </div>
     </>
 }
@@ -473,6 +488,7 @@ const CheckLatestResult = (props) => {
 
     function fetchResultSummary(refresh = false, onDone = null) {
         const _onDone = () => {
+            setActionAllowed(true); //xyzzy
             if (resultSummary.data?.allow_action) setActionAllowed(true);
             if (onDone) onDone();
         }
