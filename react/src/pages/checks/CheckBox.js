@@ -29,10 +29,10 @@ const TestCheckBox = (props) => {
     let { environ } = useParams();
     const checkBoxState = useKeyedState();
     const [ show, setShow ] = useState(true);
-    //const checkName =  "elastic_search_space";
+    const checkName =  "elastic_search_space";
     //const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
     //const checkName =  "mcoolqc_status"; // "elastic_search_space";
-    const checkName =  "pairsqc_status"; // "elastic_search_space";
+    //const checkName =  "pairsqc_status"; // "elastic_search_space";
     const [ showHistory, setShowHistory ] = useState(true);
 
     return <>
@@ -455,7 +455,7 @@ const CheckRunningOrRan = (props) => {
 
     return <div className="box" style={{fontSize:fontSize,background:"yellow",filter:"brightness(0.9)",borderColor:"red",marginTop:marginTop}}>
         { run && runner.loading ?
-            <StandardSpinner label="Queueing check run" />
+            <StandardSpinner label="Queueing check run" nudgeUp={true} />
         : <b>
             { ran ? <>
                 Queued check run: {Time.FormatDateTime(ran + "+00:00")} {Char.RightArrow} OK
@@ -508,6 +508,8 @@ const ActionRunningOrRan = (props) => {
     </div>
 }
 
+// This box contains just the check arguments.
+//
 const CheckRunArgs = (props) => {
     const { check, env, args, setArg, fontSize } = props;
     const tdstyle = { paddingTop:"2pt", paddingBottom:"2pt", paddingRight:"8pt" };
