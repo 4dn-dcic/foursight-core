@@ -29,11 +29,11 @@ const TestCheckBox = (props) => {
     let { environ } = useParams();
     const checkBoxState = useKeyedState();
     const [ show, setShow ] = useState(true);
-    //const checkName =  "elastic_search_space";
+    const checkName =  "elastic_search_space";
     //const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
-    const checkName =  "mcoolqc_status"; // "elastic_search_space";
+    //const checkName =  "mcoolqc_status"; // "elastic_search_space";
+    const [ showHistory, setShowHistory ] = useState(true);
 
-        const [ showHistory, setShowHistory ] = useState(true);
     return <>
         { show ? <>
             <span className="pointer" onClick={() => setShow(value => !value)}>Hide CheckBox</span>
@@ -45,7 +45,14 @@ const TestCheckBox = (props) => {
                         Show History
                     </>}
                 </span>
-            <CheckBoxWithFetch checkName={checkName} env={environ} parentState={checkBoxState.keyed(checkName)} showHistory={showHistory} setShowHistory={setShowHistory} />
+            <CheckBoxWithFetch
+                checkName={checkName}
+                env={environ}
+                parentState={checkBoxState.keyed(checkName)}
+                showHistory={showHistory}
+                setShowHistory={setShowHistory}
+                showStandaloneCheckPageLink={true}
+            />
         </>:<>
             <span className="pointer" onClick={() => setShow(value => !value)}>Show CheckBox</span>
         </>}
@@ -63,23 +70,39 @@ const TestCheckBox = (props) => {
 export const CheckBoxWithFetch = (props) => {
     const { checkName, env, parentState } = props;
     const check = useFetch(`/checks/${checkName}`, { cache: true });
-    if (check.loading || !check.data) return <CheckBoxLoading />
-    return <CheckBox check={check.data} env={env} parentState={parentState} showHistory={props.showHistory} setShowHistory={props.setShowHistory} />
-}
-
-const CheckBoxLoading = (props) => {
-    return <div className="box" style={{width:props.width || "500pt"}}>
-        <StandardSpinner label="Loading check" />
-    </div>
+    if (check.loading || !check.data) {
+        return <div className="box" style={{width:props.width || "500pt"}}>
+            <StandardSpinner label="Loading check" />
+        </div>
+    }
+    return <>
+        <CheckBox
+            check={check.data}
+            env={env}
+            parentState={parentState}
+            showHistory={props.showHistory}
+            setShowHistory={props.setShowHistory}
+            showStandaloneCheckPageLink={props.showStandaloneCheckPageLink}
+        />
+    </>
 }
 
 export const CheckBox = (props) => {
 
-    const { check, env, parentState, showHistory, setShowHistory } = props;
-    const [ state, setState ] = useOptionalKeyedState(parentState);
+    const {
+        check,
+        env,
+        parentState,
+        showHistory, setShowHistory,
+        showStandaloneCheckPageLink = true
+    } = props;
 
+    const [ state, setState ] = useOptionalKeyedState(parentState);
     const isShowRunBox = () => state.showRunBox;
     const toggleShowRunBox = () => setState({ showRunBox: !isShowRunBox() });
+    const actionExists = () => check.registered_action?.name;
+    const [ actionAllowed, setActionAllowed ] = useState(false);
+    const schedule = getSchedule(check, env);
 
     function getSchedule(check, env) {
         for (const scheduleKey in check.schedule) {
@@ -88,11 +111,6 @@ export const CheckBox = (props) => {
             }
         }
     }
-
-    const schedule = getSchedule(check, env);
-
-    const actionExists = () => check.registered_action?.name;
-    const [ actionAllowed, setActionAllowed ] = useState(false);
 
     return <div className="box hover-lighten" style={{width:props.width || "500pt"}}>
         <div style={{marginBottom:"4pt"}}>
@@ -116,19 +134,23 @@ export const CheckBox = (props) => {
                     <div className="check-run-button">Run <b>...</b></div>
                 </>}
             </span>
-            <ExternalLink
-                href={Client.Path(`/checks/${check.name}/history`)}
-                bold={true}
-                tooltip="Click to view check details and history (in new tab)."
-                style={{marginLeft:"8pt"}} />
+            { showStandaloneCheckPageLink &&
+                <ExternalLink
+                    href={Client.Path(`/checks/${check.name}/history`)}
+                    bold={true}
+                    tooltip="Click to view check details and history (in new tab)."
+                    style={{marginLeft:"8pt"}} />
+            }
             <GitHubLink
                 href={check.registered_github_url}
                 type="check"
                 style={{marginLeft:"6pt"}} />
-            <span style={{marginLeft:"3pt",cursor:"pointer"}} onClick={() => setShowHistory(!showHistory)}>
-                <img id={`tooltip-${check.name}-history-show`} src={Image.History()} style={{marginTop:"-1pt"}} height="18" /> { showHistory && Char.RightArrow}
-                <Tooltip id={`tooltip-${check.name}-history-show`} text={`Click to ${showHistory ? "hide" : "show"} recent history of check runs.`} />
-            </span>
+            { setShowHistory &&
+                <span style={{marginLeft:"3pt",cursor:"pointer"}} onClick={() => setShowHistory(!showHistory)}>
+                    <img id={`tooltip-${check.name}-history-show`} src={Image.History()} style={{marginTop:"-1pt"}} height="18" /> { showHistory && Char.RightArrow}
+                    <Tooltip id={`tooltip-${check.name}-history-show`} text={`Click to ${showHistory ? "hide" : "show"} recent history of check runs.`} />
+                </span>
+            }
             { Str.HasValue(schedule.cron_description) ? (
                 <div style={{whiteSpace:"nowrap",width:"100%",marginTop:"2pt"}}>
                     <small><i>Schedule: <span id={`tooltip-cron-${check.name}`}>{schedule.cron_description}</span>.</i></small>
@@ -141,7 +163,7 @@ export const CheckBox = (props) => {
             )}
         </div>
         { isShowRunBox() && <>
-            <CheckRunBox
+            <RunConfigure
                 check={check}
                 env={env}
                 actionAllowed={actionAllowed}
@@ -152,7 +174,11 @@ export const CheckBox = (props) => {
     </div>
 }
 
-const CheckRunBox = (props) => {
+// This is the entire run-configure box which includes the run-check arguments
+// box, the run-check button, and if applicable, the run-associated-action box
+// and its run-associated-action button.
+//
+const RunConfigure = (props) => {
 
     const {
         check, env, actionAllowed, parentState,
@@ -295,6 +321,8 @@ const CheckRunBox = (props) => {
     </div>
 }
 
+// This box contains just the run-check arguments and the run-check button.
+//
 const ConfigureCheckRun = (props) => {
     const { check, env, args, setArg, onRun, fontSize = "small" } = props;
     return <div className="box thickborder" style={{background:background}}>
@@ -309,6 +337,8 @@ const ConfigureCheckRun = (props) => {
     </div>
 }
 
+// This box contains just the run-associated-action and its run-associated-action button.
+//
 const ConfigureActionRun = (props) => {
     const { check, env, onActionRun, actionAllowed, fontSize = "small", marginTop = "4pt" } = props;
     const action = useFetch({ cache: true });
@@ -342,9 +372,18 @@ const ConfigureActionRun = (props) => {
     </div>
 }
 
+// This box is displayed upon actually clicking the run-check button, or if this
+// was previously clicked/run. If the former, it actually kicks off (queues) the
+// check run, displaying an appopriate UI; if the latter it displays the UI
+// with the result of the last queued check run.
+//
 const CheckRunningOrRan = (props) => {
 
-    const { checkName, args, fontSize = "small", marginTop = "4pt" } = props;
+    const {
+        checkName, args,
+        run, ran,
+        fontSize = "small", marginTop = "4pt"
+    } = props;
 
     function getCheckRunUrl(args) {
         function assembleArgs(args) {
@@ -361,18 +400,18 @@ const CheckRunningOrRan = (props) => {
     const runner = useFetch();
 
     useEffect(() => {
-        if (props.run) {
+        if (run) {
             const url = getCheckRunUrl(args);
             runner.fetch(url, { onDone: () => props.onDone(runner.data.uuid) });
         }
-    }, [props.run]);
+    }, [run]);
 
     return <div className="box" style={{fontSize:fontSize,background:"yellow",filter:"brightness(0.9)",borderColor:"red",marginTop:marginTop}}>
-        { props.run && runner.loading ?
+        { run && runner.loading ?
             <StandardSpinner label="Queueing check run" />
         : <b>
-            { props.ran ? <>
-                Queued check run: {Time.FormatDateTime(props.ran + "+00:00")} {Char.RightArrow} OK
+            { ran ? <>
+                Queued check run: {Time.FormatDateTime(ran + "+00:00")} {Char.RightArrow} OK
             </>:<>
                 Queued check run: {Time.FormatDateTime(runner.data?.uuid + "+00:00")} {Char.RightArrow} OK
             </> }
@@ -380,7 +419,15 @@ const CheckRunningOrRan = (props) => {
     </div>
 }
 
-const ActionRunClickedBox = (props) => {
+// This box is displayed upon actually clicking the run-associated-action button, or if
+// this was previously clicked/run. If the former, it actually kicks off (queues) the
+// associated-action run, displaying an appopriate UI; if the latter it displays
+// the UI with the result of the last queued associated-action run.
+//
+const ActionRunningOrRan = (props) => {
+    return <>
+        TODO
+    </>
 }
 
 const CheckRunArgs = (props) => {
@@ -397,9 +444,6 @@ const CheckRunArgs = (props) => {
             })}
         </tbody></table>
     </>
-}
-
-const ActionRunningOrRan = (props) => {
 }
 
 const CheckRunArg = (props) => {
@@ -462,6 +506,8 @@ const CheckRunButton = (props) => {
     </>
 }
 
+// This box contains the latest check results.
+//
 const CheckLatestResult = (props) => {
 
     const { check, parentState, setActionAllowed, fontSize = "small", marginTop = "5pt" } = props;
@@ -493,7 +539,6 @@ const CheckLatestResult = (props) => {
             if (onDone) onDone();
         }
         const url = `/checks/${check.name}/history/latest`;
-        //refresh ? resultSummary.refresh(url, { onDone: () => { onDone(); if (resultSummary.data.allow_action) setActionAllowed(); } }) : resultSummary.fetch(url, { onDone: () => onDone() });
         refresh ? resultSummary.refresh(url, { onDone: _onDone }) : resultSummary.fetch(url, { onDone: _onDone });
     }
 
@@ -563,12 +608,10 @@ const CheckLatestResult = (props) => {
             <Tooltip id={`tooltip-${check.name}-result-refresh`} text="Click to fetch latest result."/>
                 { (resultSummary.data.summary || resultSummary.data.summary) && <span className="pointer" onClick={toggleShowResult}>
                     { (resultSummary.data.summary) && <>
-                        <br />
-                        Summary: {resultSummary.data.summary}
+                        <br /> Summary: {resultSummary.data.summary}
                     </> }
                     { (resultSummary.data.description && resultSummary.data.description !== resultSummary.data.summary) && <>
-                        <br />
-                        Description: {resultSummary.data.description}
+                        <br /> Description: {resultSummary.data.description}
                     </> }
                     &nbsp;&nbsp;<b><big>{resultSummary.data.status === "PASS" ? Char.Check : Char.X}</big></b>
                 </span> }
