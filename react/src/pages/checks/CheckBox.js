@@ -30,11 +30,12 @@ const TestCheckBox = (props) => {
     let { environ } = useParams();
     const checkBoxState = useKeyedState();
     const [ show, setShow ] = useState(true);
-    //const checkName =  "elastic_search_space";
+    const checkName =  "elastic_search_space";
     //const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
-    //const checkName =  "mcoolqc_status"; // "elastic_search_space";
+    const checkName2 =  "mcoolqc_status"; // "elastic_search_space";
     //const checkName =  "pairsqc_status"; // "elastic_search_space";
-    const checkName =  "find_cypress_test_items_to_purge"; // "elastic_search_space";
+    //const checkName =  "find_cypress_test_items_to_purge"; // "elastic_search_space";
+    //const checkName2 =  "pairsqc_status"; // "elastic_search_space";
     const [ showHistory, setShowHistory ] = useState(true);
 
     return <>
@@ -55,6 +56,15 @@ const TestCheckBox = (props) => {
                 showHistory={showHistory}
                 setShowHistory={setShowHistory}
                 showStandaloneCheckPageLink={true} />
+                {/*
+            <CheckBoxWithFetch
+                checkName={checkName2}
+                env={environ}
+                parentState={checkBoxState.keyed(checkName2)}
+                showHistory={showHistory}
+                setShowHistory={setShowHistory}
+                showStandaloneCheckPageLink={true} />
+                */}
         </>:<>
             <span className="pointer" onClick={() => setShow(value => !value)}>Show CheckBox</span>
         </>}
@@ -154,7 +164,7 @@ export const CheckBox = (props) => {
                     <Tooltip id={`tooltip-${check.name}-history-show`} text={`Click to ${showHistory ? "hide" : "show"} recent history of check runs.`} />
                 </span>
             }
-            { Str.HasValue(schedule.cron_description) ? (
+            { Str.HasValue(schedule?.cron_description) ? (
                 <div style={{whiteSpace:"nowrap",width:"100%",marginTop:"2pt"}}>
                     <small><i>Schedule: <span id={`tooltip-cron-${check.name}`}>{schedule.cron_description}</span>.</i></small>
                     <Tooltip id={`tooltip-cron-${check.name}`} text={schedule.cron} />
