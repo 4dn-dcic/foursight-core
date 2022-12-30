@@ -29,8 +29,8 @@ const TestCheckBox = (props) => {
     let { environ } = useParams();
     const checkBoxState = useKeyedState();
     const [ show, setShow ] = useState(true);
-    const checkName =  "elastic_search_space";
-    //const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
+    //const checkName =  "elastic_search_space";
+    const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
     //const checkName =  "mcoolqc_status"; // "elastic_search_space";
     const [ showHistory, setShowHistory ] = useState(true);
 
@@ -362,7 +362,7 @@ const ConfigureActionRun = (props) => {
             style={{marginLeft:"6pt"}}
         />
         { (confirmRun) ? <>
-            <button className={`check-run-button`} style={{float:"right",marginTop:"-1pt"}} onClick={onActionRunConfirm}> <small>{Char.RightArrowFat}</small> Run Action</button>
+            <button className={`check-run-button red`} style={{float:"right",marginTop:"-1pt"}} onClick={onActionRunConfirm}> <small>{Char.RightArrowFat}</small> Run Action</button>
             <div style={{height:"1px",background:"gray",marginTop:"8pt",marginBottom:"8pt"}} />
                 &nbsp;<b style={{color:"red",position:"relative",bottom:"1pt"}}>{Char.RightArrow} Are you sure you want to run this action?</b>
                 <button className="check-action-confirm-button" style={{float:"right",marginRight:"2pt",marginTop:"-4pt"}} onClick={() => setConfirmRun(false)}><b>Cancel</b></button>
