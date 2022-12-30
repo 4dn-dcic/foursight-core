@@ -10,6 +10,7 @@ import { ExternalLink } from '../../Components';
 import Char from '../../utils/Char';
 import Clipboard from '../../utils/Clipboard';
 import Env from '../../utils/Env';
+import Image from '../../utils/Image';
 import Json from '../../utils/Json';
 import Str from '../../utils/Str';
 import Time from '../../utils/Time';
@@ -29,13 +30,30 @@ const TestCheckBox = (props) => {
     const [ show, setShow ] = useState(true);
     //const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
     const checkName =  "elastic_search_space";
+
+        const [ showHistory, setShowHistory ] = useState(true);
     return <>
         { show ? <>
             <span className="pointer" onClick={() => setShow(value => !value)}>Hide CheckBox</span>
-            <CheckBoxWithFetch checkName={checkName} env={environ} parentState={checkBoxState.keyed(checkName)} />
+                &nbsp;|&nbsp;
+                <span style={{cursor:"pointer"}} onClick={() => setShowHistory(!showHistory)}>
+                    { showHistory ? <>
+                        Hide History
+                    </>:<>
+                        Show History
+                    </>}
+                </span>
+            <CheckBoxWithFetch checkName={checkName} env={environ} parentState={checkBoxState.keyed(checkName)} showHistory={showHistory} setShowHistory={setShowHistory} />
         </>:<>
             <span className="pointer" onClick={() => setShow(value => !value)}>Show CheckBox</span>
         </>}
+        { showHistory && <>
+            <br />
+            <div className="box">
+                This represents the check history box.
+            </div>
+        </> }
+            <br />
         <pre>{Json.Format(checkBoxState.__get())}</pre>
     </>
 }
@@ -44,7 +62,7 @@ export const CheckBoxWithFetch = (props) => {
     const { checkName, env, parentState } = props;
     const check = useFetch(`/checks/${checkName}`, { cache: true });
     if (check.loading || !check.data) return <CheckBoxLoading />
-    return <CheckBox check={check.data} env={env} parentState={parentState}/>
+    return <CheckBox check={check.data} env={env} parentState={parentState} showHistory={props.showHistory} setShowHistory={props.setShowHistory} />
 }
 
 const CheckBoxLoading = (props) => {
@@ -55,7 +73,7 @@ const CheckBoxLoading = (props) => {
 
 export const CheckBox = (props) => {
 
-    const { check, env, parentState } = props;
+    const { check, env, parentState, showHistory, setShowHistory } = props;
     //const { checkName, env, parentState } = props;
     //const check = useFetch(`/checks/${checkName}`, { cache: true, delay: 0 });
     const [ state, setState ] = useOptionalKeyedState(parentState);
@@ -63,17 +81,43 @@ export const CheckBox = (props) => {
     const isShowRunBox = () => state.showRunBox;
     const toggleShowRunBox = () => setState({ showRunBox: !isShowRunBox() });
 
+    function getSchedule(check, env) {
+        for (const scheduleKey in check.schedule) {
+            if (Str.HasValue(check.schedule[scheduleKey]?.cron)) {
+                return check.schedule[scheduleKey];
+            }
+        }
+    }
+
+    const schedule = getSchedule(check, env);
+
     return <div className="box" style={{width:props.width || "500pt"}}>
-                [{JSON.stringify(state)}]
         <div style={{marginBottom:"4pt"}}>
-            Check: {check.name}
-            <span className="pointer" style={{float:"right"}} onClick={toggleShowRunBox}>
+            <b><u>{check.title}</u></b>
+            <span className="pointer" style={{float:"right",marginTop:"2pt",marginRight:"2pt"}} onClick={toggleShowRunBox}>
                 { isShowRunBox() ? <>
-                    Configure {Char.DownArrowHollow}
+                    <div className="check-config-button">Configure {Char.DownArrowHollow}</div>
                 </>:<>
-                    Run ...
+                    <div className="check-run-button">Run <b>...</b></div>
                 </>}
             </span>
+            <span style={{marginLeft:"8pt"}} onClick={() => setShowHistory(!showHistory)}>
+                { showHistory ? <>
+                    <img src={Image.History()} style={{marginTop:"-1pt"}} height="18" /> {Char.RightArrow}
+                </>:<>
+                    <img src={Image.History()} style={{marginTop:"-1pt"}} height="18" />
+                </> }
+            </span>
+            { Str.HasValue(schedule.cron_description) ? (
+                <div style={{whiteSpace:"nowrap",width:"100%",marginTop:"2pt"}} title={schedule.cron}>
+                    <small><i>Schedule: <span id={`tooltip-cron-${check.name}`}>{schedule.cron_description}</span>.</i></small>
+                    <Tooltip id={`tooltip-cron-${check.name}`} text={schedule.cron} />
+                </div>
+            ):(
+                <small><i>
+                    Not scheduled.
+                </i></small>
+            )}
         </div>
         { isShowRunBox() && <>
             <CheckRunBox
@@ -199,11 +243,11 @@ const CheckRunBox = (props) => {
     function onActionRun() {
     }
 
-    return <div style={{fontSize:fontSize,marginTop:marginTop,width:"100%"}}>
+    return <div style={{marginTop:marginTop,width:"100%"}}>
         <div className="box thickborder" style={{background:background}}>
             <table style={{width:"100%"}}><tbody><tr>
                 <td style={{paddingRight:"8pt"}}>
-                    <CheckRunArgs check={check} env={env} args={args} setArg={setArg} />
+                    <CheckRunArgs check={check} env={env} args={args} setArg={setArg} fontSize={fontSize} />
                 </td>
                 <td style={{verticalAlign:"top"}} align="right">
                     <CheckRunButton onClick={onCheckRun} />
@@ -245,10 +289,10 @@ const CheckRunClickedBox = (props) => {
 }
 
 const CheckRunArgs = (props) => {
-    const { check, env, args, setArg } = props;
+    const { check, env, args, setArg, fontSize } = props;
     const tdstyle = { paddingTop:"2pt", paddingBottom:"2pt", paddingRight:"8pt" };
     return <>
-        <table><tbody>
+        <table style={{fontSize:fontSize}}><tbody>
             { Object.keys(args).map(name => {
                 const setThisArg = (value) => setArg(name, value);
                 return <tr key={name} style={{}}>
@@ -377,8 +421,9 @@ const CheckLatestResult = (props) => {
             <StandardSpinner label="Loading latest result summary" nudgeUp={true} />
         : <>
             <span className="pointer" onClick={toggleShowResult}>
-                <b id={`tooltip-${check.name}-result`}>Latest Result&nbsp;{isShowResult() ? Char.UpArrow : Char.DownArrow}&nbsp;</b>
+                <b id={`tooltip-${check.name}-result`}>Latest Result&nbsp;{isShowResult() ? Char.DownArrow : Char.UpArrow}&nbsp;</b>
                 <span id={`tooltip-${check.name}-result-timestamp`}>{resultSummary.data.timestamp}</span>
+                { resultSummary.error && <span style={{color:"red"}}> Error fetching latest result </span> }
             </span>
             <Tooltip id={`tooltip-${check.name}-result`} text={`Click to ${isShowResult() ? "hide" : "show"} latest result detail.`} />
             <Tooltip id={`tooltip-${check.name}-result-timestamp`} text={Time.FormatDuration(resultSummary.data.timestamp, new Date(), true, null, null, "ago")} />
