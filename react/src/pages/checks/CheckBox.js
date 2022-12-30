@@ -497,7 +497,7 @@ const ActionRunningOrRan = (props) => {
 
     return <div className="box" style={{fontSize:fontSize,background:"yellow",filter:"brightness(0.9)",borderColor:"red",marginTop:marginTop}}>
         { run && runner.loading ?
-            <StandardSpinner label="Queueing action run" />
+            <StandardSpinner label="Queueing action run" nudgeUp={true} />
         : <b>
             { ran ? <>
                 Queued action run: {Time.FormatDateTime(ran + "+00:00")} {Char.RightArrow} OK
