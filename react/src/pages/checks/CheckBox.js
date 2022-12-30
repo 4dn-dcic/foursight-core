@@ -1,4 +1,5 @@
 // REWRITE IN PROGRESS | NOT YET IN USE | 2022-12-27
+// PURPOSE IS TO ALLOW EASILY PLOPPING THIS ON ANY PAGE.
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
