@@ -104,6 +104,7 @@ export const CheckBox = (props) => {
     const actionExists = () => check.registered_action?.name;
     const [ actionAllowed, setActionAllowed ] = useState(null); // set to latest result uuid (for called_by arg to action run)
     const schedule = getSchedule(check, env);
+    const [ triggerRefreshResult, setTriggerRefreshResult ] = useState(false);
 
     function getSchedule(check, env) {
         for (const scheduleKey in check.schedule) {
@@ -127,7 +128,7 @@ export const CheckBox = (props) => {
                     </>}
                 </u>
             </b>
-            <Tooltip id={`tooltip-${check.name}`} text={`Check ${check.name}. Module: ${check.module}.`} />
+            <Tooltip id={`tooltip-${check.name}`} text={`Check: ${check.module}.${check.name}. Group: ${check.group}.`} />
             <span className="pointer" style={{float:"right",marginTop:"2pt",marginRight:"2pt"}} onClick={toggleShowRunBox}>
                 { isShowRunBox() ? <>
                     <div className="check-config-button"><small>{Char.DownArrowFat}</small> Configure</div>
@@ -169,9 +170,16 @@ export const CheckBox = (props) => {
                 env={env}
                 actionAllowed={actionAllowed}
                 parentState={parentState?.keyed("runbox")}
+                setTriggerRefreshResult={setTriggerRefreshResult}
             />
         </>}
-        <CheckLatestResult check={check} setActionAllowed={setActionAllowed} parentState={parentState} />
+        <CheckLatestResult
+            check={check}
+            setActionAllowed={setActionAllowed}
+            parentState={parentState}
+            triggerRefreshResult={triggerRefreshResult}
+            setTriggerRefreshResult={setTriggerRefreshResult}
+        />
     </div>
 }
 
@@ -182,7 +190,7 @@ export const CheckBox = (props) => {
 const RunConfigure = (props) => {
 
     const {
-        check, env, actionAllowed, parentState,
+        check, env, actionAllowed, parentState, setTriggerRefreshResult,
         fontSize = "small", marginTop = "4pt"
     } = props;
 
@@ -317,6 +325,7 @@ const RunConfigure = (props) => {
             running={isActionRunning()}
             onRun={setActionRunning}
             actionAllowed={actionAllowed}
+            setTriggerRefreshResult={setTriggerRefreshResult}
             fontSize={fontSize} />
         { (isActionRunning() || isActionRan()) && <>
             <ActionRunningOrRan check={check} args={args} run={isActionRunning()} ran={isActionRan()} uuid={actionAllowed} onDone={setActionRan} fontSize={fontSize} />
@@ -356,7 +365,7 @@ const ConfigureCheckRun = (props) => {
 const ConfigureActionRun = (props) => {
 
     const {
-        check, env, running, onRun, actionAllowed,
+        check, env, running, onRun, actionAllowed, setTriggerRefreshResult,
         fontSize = "small", marginTop = "4pt"
     } = props;
 
@@ -377,34 +386,14 @@ const ConfigureActionRun = (props) => {
     return <div className="box thickborder" style={{fontSize:fontSize,marginTop:marginTop,background:background}}>
         &nbsp;
         <span style={{verticalAlign:"middle"}}>
-            <b><u>Action</u></b>: <b style={{color:confirmRun ? "red" : "inherit"}}>{action.data?.title}</b>
+            <b><u>Action</u></b>: <b id={`tooltip=${action.data?.name}`} style={{color:confirmRun ? "red" : "inherit"}}>{action.data?.title}</b>
+                <Tooltip id={`tooltip=${action.data?.name}`} text={`Action: ${action.data?.module} ${action.data?.name}`} />
         </span>
         <GitHubLink
             href={action.data?.github_url}
+            type="action"
             style={{marginLeft:"6pt"}}
         />
-
-{/*
-        { confirmRun ? <>
-            { running ? <>
-                <div className={`check-run-button red`} style={{float:"right",marginTop:"-1pt"}}><i>Queueing</i></div>
-            </>:<>
-                <div className={`check-run-button red`} style={{float:"right",marginTop:"-1pt"}} onClick={onRun}> <small>{Char.RightArrowFat}</small> Run Action</div>
-            </> }
-            <div style={{height:"1px",background:"gray",marginTop:"8pt",marginBottom:"8pt"}} />
-                &nbsp;<b style={{color:"red",position:"relative",bottom:"1pt"}}>{Char.RightArrow} Are you sure you want to run this action?</b>
-                <div className="check-action-confirm-button" style={{float:"right",marginRight:"2pt",marginTop:"-4pt"}} onClick={() => setConfirmRun(false)}><b>Cancel</b></div>
-        </>:<>
-            <div className={`check-run-button ${!actionAllowed && "disabled"}`} style={{float:"right",marginTop:"-1pt"}} onClick={() => actionAllowed && onRunConfirm()}>
-                { actionAllowed ? <>
-                    Run Action <b>...</b>
-                </>:<>
-                    Run Action Disallowed
-                </> }
-            </div>
-        </>}
-*/}
-
         { confirmRun ? <>
             <div className="check-action-confirm-button" style={{float:"right",marginRight:"2pt"}} onClick={() => setConfirmRun(false)}><b>Cancel</b></div>
             <div style={{height:"1px",background:"gray",marginTop:"8pt",marginBottom:"8pt"}} />
@@ -415,15 +404,18 @@ const ConfigureActionRun = (props) => {
                 <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}} onClick={onRun}> <small>{Char.RightArrowFat}</small> Run Action</div>
             </> }
         </>:<>
-            <div className={`check-run-button ${!actionAllowed && "disabled"}`} style={{float:"right",marginTop:"-1pt"}} onClick={() => actionAllowed && onRunConfirm()}>
-                { actionAllowed ? <>
-                    Run Action <b>...</b>
-                </>:<>
-                    Run Action Disallowed
-                </> }
+            <div style={{float:"right",marginTop:"1pt"}}>
+                <b id={`tooltip-${action.data?.name}-refresh-result`} onClick={() => setTriggerRefreshResult(true)} style={{marginRight:"8pt",position:"relative",top:"1pt",cursor:"pointer"}}>{Char.Refresh}</b>
+                <Tooltip id={`tooltip-${action.data?.name}-refresh-result`} text="Click to fetch latest result (and possibly allow action)." />
+                <span className={`check-run-button ${!actionAllowed && "disabled"}`} onClick={() => actionAllowed && onRunConfirm()}>
+                    { actionAllowed ? <>
+                        Run Action <b>...</b>
+                    </>:<>
+                        Run Action Disallowed
+                    </> }
+                </span>
             </div>
         </> }
-
     </div>
 }
 
@@ -591,6 +583,7 @@ const CheckLatestResult = (props) => {
 
     const {
         check, parentState, setActionAllowed,
+        triggerRefreshResult, setTriggerRefreshResult,
         fontSize = "small", marginTop = "5pt"
     } = props;
 
@@ -620,6 +613,7 @@ const CheckLatestResult = (props) => {
             //setActionAllowed("some-uuid"); //xyzzy
             if (resultSummary.data?.allow_action) setActionAllowed(resultSummary.data?.uuid);
             if (onDone) onDone();
+            if (refresh) setTriggerRefreshResult(false);
         }
         const url = `/checks/${check.name}/history/latest`;
         refresh ? resultSummary.refresh(url, { onDone: _onDone }) : resultSummary.fetch(url, { onDone: _onDone });
@@ -646,9 +640,10 @@ const CheckLatestResult = (props) => {
 
     useEffect(() => {
         refreshResult(false);
-        //fetchResultSummary(false, isShowResultDetail() ? fetchResultDetail : null);
-        //isShowResultAction() && fetchResultAction();
-    }, []);
+        if (triggerRefreshResult) {
+            refreshResult(true);
+        }
+    }, [triggerRefreshResult]);
 
     return <div style={{fontSize:fontSize,marginTop:marginTop}}>
         <div style={{height:"1",marginBottom:"4pt",background:"gray"}}></div>

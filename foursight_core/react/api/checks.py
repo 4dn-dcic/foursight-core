@@ -465,6 +465,8 @@ class Checks:
         # Decorators.get_registry() is a dictionary keyed by (unique) decorator function
         # name; the value of each key is an object contain the args, kwargs fields, as well
         # as other (file, module, asssociated action, etc) metadata for display purposes.
+        def get_base_module_name(module: str) -> str:
+            return module.split(".")[-1:][0] if module else module
         checks_registry = self.get_registry()
         registered_checks = [check for check in checks_registry if checks_registry[check]["kind"] == "check"]
         if not registered_checks:
@@ -496,7 +498,8 @@ class Checks:
                                 "name": registered_action.get("name"),
                                 "file": registered_action.get("file"),
                                 "line": registered_action.get("line"),
-                                "module": registered_action.get("module"),
+                                "module": get_base_module_name(registered_action.get("module")),
+                                "registered_module": registered_action.get("module"),
                                 "package": registered_action.get("package"),
                                 "github_url": registered_action.get("github_url"),
                                 "checks": registered_action.get("checks")
