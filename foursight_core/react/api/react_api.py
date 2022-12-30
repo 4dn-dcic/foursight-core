@@ -738,7 +738,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_action_run(self, request: dict, env: str, action: str, args: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks/action/{action}/run
+        Called from react_routes for endpoint: GET /{env}/action/{action}/run
         The args string, if any, is assumed to be a Base64 encoded JSON object.
         Kicks off a run for the given action (name).
         """

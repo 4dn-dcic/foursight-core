@@ -30,8 +30,9 @@ const TestCheckBox = (props) => {
     const checkBoxState = useKeyedState();
     const [ show, setShow ] = useState(true);
     //const checkName =  "elastic_search_space";
-    const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
+    //const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
     //const checkName =  "mcoolqc_status"; // "elastic_search_space";
+    const checkName =  "pairsqc_status"; // "elastic_search_space";
     const [ showHistory, setShowHistory ] = useState(true);
 
     return <>
@@ -101,7 +102,7 @@ export const CheckBox = (props) => {
     const isShowRunBox = () => state.showRunBox;
     const toggleShowRunBox = () => setState({ showRunBox: !isShowRunBox() });
     const actionExists = () => check.registered_action?.name;
-    const [ actionAllowed, setActionAllowed ] = useState(false);
+    const [ actionAllowed, setActionAllowed ] = useState(null); // set to latest result uuid (for called_by arg to action run)
     const schedule = getSchedule(check, env);
 
     function getSchedule(check, env) {
@@ -303,20 +304,22 @@ const RunConfigure = (props) => {
             check={check}
             args={args}
             setArg={setArg}
+            running={isCheckRunning()}
             onRun={setCheckRunning}
-            fontSize={fontSize} />
-        <ConfigureActionRun
-            check={check}
-            args={args}
-            setArg={setArg}
-            onRun={setActionRunning}
-            actionAllowed={actionAllowed}
             fontSize={fontSize} />
         { (isCheckRunning() || isCheckRan()) && <>
             <CheckRunningOrRan checkName={check.name} args={args} run={isCheckRunning()} ran={isCheckRan()} onDone={setCheckRan} fontSize={fontSize} />
         </> }
+        <ConfigureActionRun
+            check={check}
+            args={args}
+            setArg={setArg}
+            running={isActionRunning()}
+            onRun={setActionRunning}
+            actionAllowed={actionAllowed}
+            fontSize={fontSize} />
         { (isActionRunning() || isActionRan()) && <>
-            <ActionRunningOrRan checkName={check.name} args={args} run={isActionRunning()} ran={isActionRan()} onDone={setActionRan} fontSize={fontSize} />
+            <ActionRunningOrRan check={check} args={args} run={isActionRunning()} ran={isActionRan()} uuid={actionAllowed} onDone={setActionRan} fontSize={fontSize} />
         </> }
     </div>
 }
@@ -324,14 +327,25 @@ const RunConfigure = (props) => {
 // This box contains just the run-check arguments and the run-check button.
 //
 const ConfigureCheckRun = (props) => {
-    const { check, env, args, setArg, onRun, fontSize = "small" } = props;
+
+    const {
+        check, env, args, setArg, running, onRun,
+        fontSize = "small"
+    } = props;
+
     return <div className="box thickborder" style={{background:background}}>
         <table style={{width:"100%"}}><tbody><tr>
             <td style={{paddingRight:"8pt"}}>
                 <CheckRunArgs check={check} env={env} args={args} setArg={setArg} fontSize={fontSize} />
             </td>
             <td style={{verticalAlign:"top"}} align="right">
-                <CheckRunButton onClick={onRun} />
+                <div className={"check-run-button"} style={{width:"fit-content"}} onClick={onRun}>
+                    { running ? <>
+                        &nbsp;<i>Queueing</i>
+                    </>:<>
+                        <small>{Char.RightArrowFat}</small>&nbsp;Run Check
+                    </> }
+                </div>
             </td>
         </tr></tbody></table>
     </div>
@@ -340,35 +354,76 @@ const ConfigureCheckRun = (props) => {
 // This box contains just the run-associated-action and its run-associated-action button.
 //
 const ConfigureActionRun = (props) => {
-    const { check, env, onActionRun, actionAllowed, fontSize = "small", marginTop = "4pt" } = props;
+
+    const {
+        check, env, running, onRun, actionAllowed,
+        fontSize = "small", marginTop = "4pt"
+    } = props;
+
     const action = useFetch({ cache: true });
     const [ confirmRun, setConfirmRun ] = useState(false);
+
     useEffect(() => {
         if (check.registered_action?.name) {
             action.fetch(`/checks/${check.registered_action.name}`);
         }
     }, []);
-    if (!check.registered_action?.name) return null;
-    function onActionRunConfirm() {
-            setConfirmRun(true);
+
+    function onRunConfirm() {
+        setConfirmRun(true);
     }
+
+    if (!check.registered_action?.name) return null;
     return <div className="box thickborder" style={{fontSize:fontSize,marginTop:marginTop,background:background}}>
         &nbsp;
         <span style={{verticalAlign:"middle"}}>
-            <b><u>Action</u></b>: <b>{action.data?.title}</b>
+            <b><u>Action</u></b>: <b style={{color:confirmRun ? "red" : "inherit"}}>{action.data?.title}</b>
         </span>
         <GitHubLink
             href={action.data?.github_url}
             style={{marginLeft:"6pt"}}
         />
-        { (confirmRun) ? <>
-            <button className={`check-run-button red`} style={{float:"right",marginTop:"-1pt"}} onClick={onActionRunConfirm}> <small>{Char.RightArrowFat}</small> Run Action</button>
+
+{/*
+        { confirmRun ? <>
+            { running ? <>
+                <div className={`check-run-button red`} style={{float:"right",marginTop:"-1pt"}}><i>Queueing</i></div>
+            </>:<>
+                <div className={`check-run-button red`} style={{float:"right",marginTop:"-1pt"}} onClick={onRun}> <small>{Char.RightArrowFat}</small> Run Action</div>
+            </> }
             <div style={{height:"1px",background:"gray",marginTop:"8pt",marginBottom:"8pt"}} />
                 &nbsp;<b style={{color:"red",position:"relative",bottom:"1pt"}}>{Char.RightArrow} Are you sure you want to run this action?</b>
-                <button className="check-action-confirm-button" style={{float:"right",marginRight:"2pt",marginTop:"-4pt"}} onClick={() => setConfirmRun(false)}><b>Cancel</b></button>
+                <div className="check-action-confirm-button" style={{float:"right",marginRight:"2pt",marginTop:"-4pt"}} onClick={() => setConfirmRun(false)}><b>Cancel</b></div>
         </>:<>
-            <button className={`check-run-button ${!actionAllowed && "disabled"}`} style={{float:"right",marginTop:"-1pt"}} onClick={() => actionAllowed && onActionRunConfirm()}>Run Action <b>...</b></button>
+            <div className={`check-run-button ${!actionAllowed && "disabled"}`} style={{float:"right",marginTop:"-1pt"}} onClick={() => actionAllowed && onRunConfirm()}>
+                { actionAllowed ? <>
+                    Run Action <b>...</b>
+                </>:<>
+                    Run Action Disallowed
+                </> }
+            </div>
         </>}
+*/}
+
+        { confirmRun ? <>
+            <div className="check-action-confirm-button" style={{float:"right",marginRight:"2pt"}} onClick={() => setConfirmRun(false)}><b>Cancel</b></div>
+            <div style={{height:"1px",background:"gray",marginTop:"8pt",marginBottom:"8pt"}} />
+            &nbsp;<b style={{color:"red",position:"relative",bottom:"1pt"}}>{Char.RightArrow} Are you sure you want to run this action?</b>
+            { running ? <>
+                <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}}><i>Queueing</i></div>
+            </>:<>
+                <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}} onClick={onRun}> <small>{Char.RightArrowFat}</small> Run Action</div>
+            </> }
+        </>:<>
+            <div className={`check-run-button ${!actionAllowed && "disabled"}`} style={{float:"right",marginTop:"-1pt"}} onClick={() => actionAllowed && onRunConfirm()}>
+                { actionAllowed ? <>
+                    Run Action <b>...</b>
+                </>:<>
+                    Run Action Disallowed
+                </> }
+            </div>
+        </> }
+
     </div>
 }
 
@@ -381,7 +436,7 @@ const CheckRunningOrRan = (props) => {
 
     const {
         checkName, args,
-        run, ran,
+        run, ran, onDone,
         fontSize = "small", marginTop = "4pt"
     } = props;
 
@@ -402,7 +457,7 @@ const CheckRunningOrRan = (props) => {
     useEffect(() => {
         if (run) {
             const url = getCheckRunUrl(args);
-            runner.fetch(url, { onDone: () => props.onDone(runner.data.uuid) });
+            runner.fetch(url, { onDone: () => onDone(runner.data.uuid) });
         }
     }, [run]);
 
@@ -425,9 +480,40 @@ const CheckRunningOrRan = (props) => {
 // the UI with the result of the last queued associated-action run.
 //
 const ActionRunningOrRan = (props) => {
-    return <>
-        TODO
-    </>
+
+    const {
+        check, args,
+        run, ran, onDone, uuid,
+        fontSize = "small", marginTop = "4pt"
+    } = props;
+
+    function getActionRunUrl() {
+        const args = { check_name: check.name, called_by: uuid }
+        const argsString = Json.Str(args);
+        const argsEncoded = btoa(argsString);
+        return `/action/${check.registered_action.name}/run?args=${argsEncoded}`;
+    }
+
+    const runner = useFetch();
+
+    useEffect(() => {
+        if (run) {
+            const url = getActionRunUrl(args);
+            runner.fetch(url, { onDone: () => onDone(runner.data.uuid) });
+        }
+    }, [run]);
+
+    return <div className="box" style={{fontSize:fontSize,background:"yellow",filter:"brightness(0.9)",borderColor:"red",marginTop:marginTop}}>
+        { run && runner.loading ?
+            <StandardSpinner label="Queueing action run" />
+        : <b>
+            { ran ? <>
+                Queued action run: {Time.FormatDateTime(ran + "+00:00")} {Char.RightArrow} OK
+            </>:<>
+                Queued action run: {Time.FormatDateTime(runner.data?.uuid + "+00:00")} {Char.RightArrow} OK
+            </> }
+        </b> }
+    </div>
 }
 
 const CheckRunArgs = (props) => {
@@ -498,19 +584,16 @@ const CheckRunArgString = (props) => {
     </>
 }
 
-const CheckRunButton = (props) => {
-    return <>
-        <div className={"check-run-button"} style={{width:"fit-content"}} onClick={props.onClick}>
-            <small>{Char.RightArrowFat}</small>&nbsp;Run Check
-        </div>
-    </>
-}
 
 // This box contains the latest check results.
 //
 const CheckLatestResult = (props) => {
 
-    const { check, parentState, setActionAllowed, fontSize = "small", marginTop = "5pt" } = props;
+    const {
+        check, parentState, setActionAllowed,
+        fontSize = "small", marginTop = "5pt"
+    } = props;
+
     const [ state, setState ] = useOptionalKeyedState(parentState);
 
     const resultSummary = useFetch({ cache: true, loading: true });
@@ -534,8 +617,8 @@ const CheckLatestResult = (props) => {
 
     function fetchResultSummary(refresh = false, onDone = null) {
         const _onDone = () => {
-            setActionAllowed(true); //xyzzy
-            if (resultSummary.data?.allow_action) setActionAllowed(true);
+            //setActionAllowed("some-uuid"); //xyzzy
+            if (resultSummary.data?.allow_action) setActionAllowed(resultSummary.data?.uuid);
             if (onDone) onDone();
         }
         const url = `/checks/${check.name}/history/latest`;
@@ -550,17 +633,21 @@ const CheckLatestResult = (props) => {
     }
 
     function fetchResultAction(refresh = false) {
-        const url = `/checks/${check.action}/history/latest`;
-        refresh ? resultAction.refresh(url) : resultAction.fetch(url);
+        if (check.registered_action?.name) {
+            const url = `/checks/${check.registered_action.name}/history/latest`;
+            refresh ? resultAction.refresh(url) : resultAction.fetch(url);
+        }
     }
 
-    function refreshResult() {
-        fetchResultSummary(true, isShowResultDetail() ? fetchResultDetail : null);
-        isShowResultAction() && fetchResultAction(true);
+    function refreshResult(refresh = true) {
+        fetchResultSummary(refresh, isShowResultDetail() ? fetchResultDetail : null);
+        isShowResultAction() && fetchResultAction(refresh);
     }
 
     useEffect(() => {
-        fetchResultSummary(false, isShowResultDetail() ? fetchResultDetail : null);
+        refreshResult(false);
+        //fetchResultSummary(false, isShowResultDetail() ? fetchResultDetail : null);
+        //isShowResultAction() && fetchResultAction();
     }, []);
 
     return <div style={{fontSize:fontSize,marginTop:marginTop}}>
@@ -592,7 +679,7 @@ const CheckLatestResult = (props) => {
                     <span id={`tooltip-${check.name}-result-detail-noshow`} className="pointer" onClick={setShowResultDetail}>Detail</span>
                     <Tooltip id={`tooltip-${check.name}-result-detail-noshow`} text="Click to show latest result detail." />
                 </> }
-                { (check.action) && <>
+                { (check.registered_action?.name) && <>
                     &nbsp;|&nbsp;
                     { (isShowResultAction()) ? <>
                         <b id={`tooltip-${check.name}-result-action-show`}>Action</b>
