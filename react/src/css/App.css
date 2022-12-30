@@ -416,6 +416,9 @@
     color: darkred;
     border-color: darkred;
 }
+.hover-lighten:hover {
+    filter: brightness(1.05);
+}
 
 .bg {
     background: var(--box-bg);

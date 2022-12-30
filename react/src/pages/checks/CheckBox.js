@@ -6,9 +6,10 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { StandardSpinner } from '../../Spinners';
 import { useFetch } from '../../utils/Fetch';
-import { ExternalLink } from '../../Components';
+import { ExternalLink, GitHubLink } from '../../Components';
 import Char from '../../utils/Char';
 import Clipboard from '../../utils/Clipboard';
+import Client from '../../utils/Client';
 import Env from '../../utils/Env';
 import Image from '../../utils/Image';
 import Json from '../../utils/Json';
@@ -91,31 +92,38 @@ export const CheckBox = (props) => {
 
     const schedule = getSchedule(check, env);
 
-    return <div className="box" style={{width:props.width || "500pt"}}>
+    return <div className="box hover-lighten" style={{width:props.width || "500pt"}}>
         <div style={{marginBottom:"4pt"}}>
-            <b><u>{check.title}</u></b>
+            <b id={`tooltip-${check.name}`} className="pointer" onClick={() => setShowHistory(!showHistory)}><u>{check.title}</u></b>
+            <Tooltip id={`tooltip-${check.name}`} text={`Check ${check.name}. Module: ${check.module}.`} />
             <span className="pointer" style={{float:"right",marginTop:"2pt",marginRight:"2pt"}} onClick={toggleShowRunBox}>
                 { isShowRunBox() ? <>
-                    <div className="check-config-button">Configure {Char.DownArrowHollow}</div>
+                    <div className="check-config-button"><small>{Char.DownArrowFat}</small> Configure</div>
                 </>:<>
                     <div className="check-run-button">Run <b>...</b></div>
                 </>}
             </span>
-            <span style={{marginLeft:"8pt"}} onClick={() => setShowHistory(!showHistory)}>
-                { showHistory ? <>
-                    <img src={Image.History()} style={{marginTop:"-1pt"}} height="18" /> {Char.RightArrow}
-                </>:<>
-                    <img src={Image.History()} style={{marginTop:"-1pt"}} height="18" />
-                </> }
+            <ExternalLink
+                href={Client.Path(`/checks/${check.name}/history`)}
+                bold={true}
+                tooltip="Click to view check details and history (in new tab)."
+                style={{marginLeft:"6pt"}} />
+            <GitHubLink
+                href={check.registered_github_url}
+                type="check"
+                style={{marginLeft:"6pt"}} />
+            <span style={{marginLeft:"3pt",cursor:"pointer"}} onClick={() => setShowHistory(!showHistory)}>
+                <img id={`tooltip-${check.name}-history-show`} src={Image.History()} style={{marginTop:"-4pt"}} height="18" /> { showHistory && Char.RightArrow}
+                <Tooltip id={`tooltip-${check.name}-history-show`} text={`Click to ${showHistory ? "hide" : "show"} recent history of check runs.`} />
             </span>
             { Str.HasValue(schedule.cron_description) ? (
-                <div style={{whiteSpace:"nowrap",width:"100%",marginTop:"2pt"}} title={schedule.cron}>
+                <div style={{whiteSpace:"nowrap",width:"100%",marginTop:"2pt"}}>
                     <small><i>Schedule: <span id={`tooltip-cron-${check.name}`}>{schedule.cron_description}</span>.</i></small>
                     <Tooltip id={`tooltip-cron-${check.name}`} text={schedule.cron} />
                 </div>
             ):(
                 <small><i>
-                    Not scheduled.
+                    No schedule.
                 </i></small>
             )}
         </div>
@@ -141,7 +149,7 @@ const CheckRunBox = (props) => {
     //
     const [ args, setArgs ] = useOptionalKeyedState(parentState, () => getArgs(check, env));
     const setArg = (name, value) => setArgs({ ...args, [name]: { ...args[name], value: value } });
-    const [ state, setState ] = useOptionalKeyedState(parentState);
+    const [ state, setState ] = useOptionalKeyedState(parentState.keyed("state"));
 
     // Parses out the the arguments for the check run from the info (ultimately) from the
     // check_setup.json file and the check_function decorator. Returned object has a property
@@ -236,8 +244,19 @@ const CheckRunBox = (props) => {
         return args;
     }
 
+    const setRunning = (value = true) => setState({ running: value });
+    const isRunning = () => state.running;
+
+    const setRan = (uuid) => setState({ running: false, ranUuid: uuid });
+    const isRan = () => state.ranUuid;
+
     function onCheckRun() {
-        setState({ running: true });
+        setRunning(true);
+    }
+
+    function onCheckRunDone(uuid) {
+        setRunning(false);
+        setRan(uuid);
     }
 
     function onActionRun() {
@@ -254,15 +273,15 @@ const CheckRunBox = (props) => {
                 </td>
             </tr></tbody></table>
         </div>
-        { state.running && <>
-            <CheckRunClickedBox checkName={check.name} args={args} />
+        { (isRunning() || isRan()) && <>
+            <CheckRunClickedBox checkName={check.name} args={args} run={isRunning()} ran={isRan()} onRunDone={onCheckRunDone} fontSize={fontSize} />
         </> }
     </div>
 }
 
 const CheckRunClickedBox = (props) => {
 
-    const { checkName, args, marginTop = "4pt" } = props;
+    const { checkName, args, fontSize = "small", marginTop = "4pt" } = props;
 
     function getCheckRunUrl(args) {
         function assembleArgs(args) {
@@ -276,14 +295,24 @@ const CheckRunClickedBox = (props) => {
         return `/checks/${checkName}/run?args=${encodedArgs}`;
     }
 
-    const url = getCheckRunUrl(args);
-    const run = useFetch(url, { nofetch: false });
+    const run = useFetch();
 
-    return <div className="box" style={{background:"yellow",filter:"brightness(0.9)",borderColor:"red",marginTop:marginTop}}>
-        { run.loading ?
+    useEffect(() => {
+        if (props.run) {
+            const url = getCheckRunUrl(args);
+            run.fetch(url, { onDone: () => props.onRunDone(run.data.uuid) });
+        }
+    }, [props.run]);
+
+    return <div className="box" style={{fontSize:fontSize,background:"yellow",filter:"brightness(0.9)",borderColor:"red",marginTop:marginTop}}>
+        { props.run && run.loading ?
             <StandardSpinner label="Queueing check run" />
         : <b>
-            Queued check run: {Time.FormatDateTime(run.data?.uuid + "+00:00")} {Char.RightArrow} OK
+            { props.ran ? <>
+                Queued check run: {Time.FormatDateTime(props.ran + "+00:00")} {Char.RightArrow} OK
+            </>:<>
+                Queued check run: {Time.FormatDateTime(run.data?.uuid + "+00:00")} {Char.RightArrow} OK
+            </> }
         </b> }
     </div>
 }

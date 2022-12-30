@@ -41,13 +41,13 @@ export const LoggedInUser = ({ link = undefined}) => {
         </>}
         { Auth.LoggedInViaGoogle() ? <>
             <span id="tooltip-login-google">
-                <img alt="google" title="Via Google" style={{marginLeft:"9px",marginRight:"0",marginBottom:"2px"}} src={Image.GoogleLoginLogo()} height="15" />
+                <img alt="google" style={{marginLeft:"9px",marginRight:"0",marginBottom:"2px"}} src={Image.GoogleLoginLogo()} height="15" />
             </span>
             <Tooltip id="tooltip-login-google" position="bottom" text="Via Google authentication." />
         </>:<>
             { Auth.LoggedInViaGitHub() && <>
                 <span id="tooltip-login-github">
-                    <img alt="github" title="Via GitHub" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
+                    <img alt="github" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
                 </span>
                 <Tooltip id="tooltip-login-github" position="bottom" text="Via GitHub authentication." />
             </>}
@@ -96,10 +96,19 @@ export const RefreshButton = (props) => {
 
 export const ExternalLink = (props) => {
     return <span style={{...props.style}}>
-        <a href={props.href} style={{color:"var(--box-fg)"}} rel="noreferrer" target="_blank">
-            {props.text && <span style={{fontWeight:props.boldText ? "bold" : "normal",marginRight:"5pt"}}>{props.text}</span>}
-            <span className="fa fa-external-link" style={{fontWeight:props.bold ? "bold" : "normal",position:"relative",bottom:"-0.5pt"}} />
+        <a id={props.href} href={props.href} style={{color:"var(--box-fg)"}} rel="noreferrer" target="_blank">
+            {props.text && <span style={{fontWeight:props.boldText ? "bold" : "normal"}}>{props.text}</span>}
+            <span className="fa fa-external-link" style={{fontWeight:props.bold ? "bold" : "normal",position:"relative",bottom:"-0.8pt"}} />
         </a>
+        { props.tooltip && <Tooltip id={props.href} text={props.tooltip} /> }
+    </span>
+}
+
+export const GitHubLink = (props) => {
+    if (!props.href) return null;
+    return <span style={{position:"relative",bottom:"1pt",...props.style}}>
+        <a id={props.href} rel="noreferrer" target="_blank" href={props.href}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+        <Tooltip id={props.href} text={`Click to view source code for this ${props.type} (in new tab).`} />
     </span>
 }
 
