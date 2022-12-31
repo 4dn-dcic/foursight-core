@@ -19,6 +19,7 @@ import Time from '../utils/Time';
 import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
+import { CheckBoxWithFetch } from './checks/CheckBox';
 
 function basename(path) {
     return path?.split('/')?.reverse()[0];
@@ -121,7 +122,82 @@ const CheckHistoryPage = (props) => {
         }
     }
 
-    const HistoryList = ({history}) => {
+    if (history.error) return <FetchErrorBox error={history.error} message="Error loading check history from Foursight API" />
+    return <>
+        <table style={{maxWidth:"1000pt"}}><tbody>
+            { (history.get("list")?.length > 0 || history.loading) ?
+            <tr>
+                <td style={{paddingRight:"10pt",paddingBottom:"4pt"}}>
+                    <table style={{minWidth:"620pt",width:"100%"}}><tbody><tr>
+                    <td style={{width:"90%"}}>
+                        <PaginationComponent
+                            pages={pages}
+                            onChange={onPaginationClick}
+                            refresh={() => updateData(limit, offset, sort)}
+                            page={page}
+                            spinner={true}
+                            loading={history.loading} />
+                    </td>
+                    <td style={{width:"10%",whiteSpace:"nowrap",verticalAlign:"bottom",align:"right"}}>
+                        <div className="fg" style={{fontSize:"small",fontWeight:"bold"}}>
+                            Page Size:&nbsp;
+                            <span style={{cursor:history.loading ? "not-allowed" : "",width:"fit-content"}}>
+                            <span style={{pointerEvents:history.loading ? "none" : "",width:"fit-content"}}>
+                            <select style={{border:"0",marginRight:"2pt"}} defaultValue={limit} onChange={e => {update(parseInt(e.target.value), offset, sort)}}>
+                                <option>10</option>
+                                <option>25</option>
+                                <option>50</option>
+                                <option>75</option>
+                                <option>100</option>
+                                <option>200</option>
+                            </select>
+                            </span></span>
+                            |
+                            Showing {offset + 1} thru {Math.min(offset + limit, history.get("paging.total"))} | Total: {history.get("paging.total")}&nbsp;&nbsp;
+                        </div>
+                    </td>
+                    </tr></tbody></table>
+                </td>
+                <td style={{verticalAlign:"bottom",paddingBottom:"2pt"}}>
+                    { checkInfo.get("type") === "action" ? <> <b>Action</b> </>:<> <b>Check</b> </>} <b>Details</b>
+                </td>
+            </tr>
+            : <>
+                <tr>
+                    <td>
+                        { checkInfo.get("type") === "action" ? <> <b>Action</b> </>:<> <b>Check</b> </>} <b>History</b>
+                    </td>
+                    <td style={{verticalAlign:"bottom",paddingBottom:"2pt"}}>
+                        { checkInfo.get("type") === "action" ? <> <b>Action</b> </>:<> <b>Check</b> </>} <b>Details</b>
+                    </td>
+                </tr>
+            </>}
+            <tr>
+                <td style={{verticalAlign:"top",paddingRight:"10pt"}}>
+                    <HistoryList check={check} checkInfo={checkInfo} history={history} limit={limit} offset={offset} sort={sort} onSort={onSort} updateData={updateData} hideResult={hideResult} toggleResult={toggleResult} />
+                </td>
+                <td style={{verticalAlign:"top",maxWidth:"500pt"}}>
+                    { (checkInfo.get("type") === "action") ?
+                        <ActionDetailBox check={check} checkInfo={checkInfo} />
+                    :
+                        <CheckDetailBox check={check} checkInfo={checkInfo} />
+                    }
+                    { (checkInfo.get("type") !== "action") && <>
+                        <div style={{marginTop:"4pt",marginBottom:"1pt"}}><b>Check Run</b></div>
+                        <CheckBoxWithFetch
+                            checkName={check}
+                            env={environ}
+                            showRunBox={true}
+                            showStandaloneCheckPageLink={false}
+                            width={"100%"} />
+                    </> }
+                </td>
+            </tr>
+        </tbody></table>
+    </>
+};
+
+    const HistoryList = ({ check, checkInfo, history, limit, offset, sort, onSort, updateData, hideResult, toggleResult}) => {
 
         function extractUUID(history) {
             return !history ? "uuid" : history[2].uuid;
@@ -258,72 +334,6 @@ const CheckHistoryPage = (props) => {
                 </>)}
         </div>
     }
-
-    if (history.error) return <FetchErrorBox error={history.error} message="Error loading check history from Foursight API" />
-    return <>
-        <table style={{maxWidth:"1000pt"}}><tbody>
-            { (history.get("list")?.length > 0 || history.loading) ?
-            <tr>
-                <td style={{paddingRight:"10pt",paddingBottom:"4pt"}}>
-                    <table style={{minWidth:"620pt",width:"100%"}}><tbody><tr>
-                    <td style={{width:"90%"}}>
-                        <PaginationComponent
-                            pages={pages}
-                            onChange={onPaginationClick}
-                            refresh={() => updateData(limit, offset, sort)}
-                            page={page}
-                            spinner={true}
-                            loading={history.loading} />
-                    </td>
-                    <td style={{width:"10%",whiteSpace:"nowrap",verticalAlign:"bottom",align:"right"}}>
-                        <div className="fg" style={{fontSize:"small",fontWeight:"bold"}}>
-                            Page Size:&nbsp;
-                            <span style={{cursor:history.loading ? "not-allowed" : "",width:"fit-content"}}>
-                            <span style={{pointerEvents:history.loading ? "none" : "",width:"fit-content"}}>
-                            <select style={{border:"0",marginRight:"2pt"}} defaultValue={limit} onChange={e => {update(parseInt(e.target.value), offset, sort)}}>
-                                <option>10</option>
-                                <option>25</option>
-                                <option>50</option>
-                                <option>75</option>
-                                <option>100</option>
-                                <option>200</option>
-                            </select>
-                            </span></span>
-                            |
-                            Showing {offset + 1} thru {Math.min(offset + limit, history.get("paging.total"))} | Total: {history.get("paging.total")}&nbsp;&nbsp;
-                        </div>
-                    </td>
-                    </tr></tbody></table>
-                </td>
-                <td style={{verticalAlign:"bottom",paddingBottom:"2pt"}}>
-                    { checkInfo.get("type") === "action" ? <> <b>Action</b> </>:<> <b>Check</b> </>}
-                </td>
-            </tr>
-            : <>
-                <tr>
-                    <td>
-                        { checkInfo.get("type") === "action" ? <> <b>Action</b> </>:<> <b>Check</b> </>} <b>History</b>
-                    </td>
-                    <td style={{verticalAlign:"bottom",paddingBottom:"2pt"}}>
-                        { checkInfo.get("type") === "action" ? <> <b>Action</b> </>:<> <b>Check</b> </>}
-                    </td>
-                </tr>
-            </>}
-            <tr>
-                <td style={{verticalAlign:"top",paddingRight:"10pt"}}>
-                    <HistoryList history={history} />
-                </td>
-                <td style={{verticalAlign:"top"}}>
-                    { (checkInfo.get("type") === "action") ?
-                        <ActionDetailBox check={check} checkInfo={checkInfo} />
-                    :
-                        <CheckDetailBox check={check} checkInfo={checkInfo} />
-                    }
-                </td>
-            </tr>
-        </tbody></table>
-    </>
-};
 
 const ActionDetailBox = ({check, checkInfo}) => {
     return <>

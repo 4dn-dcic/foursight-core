@@ -27,6 +27,11 @@ const HomePage = (props) => {
    const [ showAccountSummary, setShowAccountSummary ] = useState(false);
 
     return <>
+        <div>
+                </div>
+    </>
+
+    return <>
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
                 <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})</span></b>

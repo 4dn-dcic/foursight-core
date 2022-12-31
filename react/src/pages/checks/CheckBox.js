@@ -30,9 +30,9 @@ const TestCheckBox = (props) => {
     let { environ } = useParams();
     const checkBoxState = useKeyedState();
     const [ show, setShow ] = useState(true);
-    const checkName =  "elastic_search_space";
-    //const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
-    const checkName2 =  "mcoolqc_status"; // "elastic_search_space";
+    //const checkName =  "elastic_search_space";
+    const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
+    //const checkName2 =  "mcoolqc_status"; // "elastic_search_space";
     //const checkName =  "pairsqc_status"; // "elastic_search_space";
     //const checkName =  "find_cypress_test_items_to_purge"; // "elastic_search_space";
     //const checkName2 =  "pairsqc_status"; // "elastic_search_space";
@@ -53,6 +53,8 @@ const TestCheckBox = (props) => {
                 checkName={checkName}
                 env={environ}
                 parentState={checkBoxState.keyed(checkName)}
+                showRunBox={true}
+                showLatestResult={true}
                 showHistory={showHistory}
                 setShowHistory={setShowHistory}
                 showStandaloneCheckPageLink={true} />
@@ -80,7 +82,7 @@ const TestCheckBox = (props) => {
 }
 
 export const CheckBoxWithFetch = (props) => {
-    const { checkName, env, parentState } = props;
+    const { checkName, env, parentState, showRunBox, showLatestResult } = props;
     const check = useFetch(`/checks/${checkName}`, { cache: true });
     if (check.loading || !check.data) {
         return <div className="box" style={{width:props.width || "500pt"}}>
@@ -92,9 +94,12 @@ export const CheckBoxWithFetch = (props) => {
             check={check.data}
             env={env}
             parentState={parentState}
+            showRunBox={showRunBox}
+            showLatestResult={showLatestResult}
             showHistory={props.showHistory}
             setShowHistory={props.setShowHistory}
-            showStandaloneCheckPageLink={props.showStandaloneCheckPageLink} />
+            showStandaloneCheckPageLink={props.showStandaloneCheckPageLink}
+            width={props.width} />
     </>
 }
 
@@ -104,17 +109,26 @@ export const CheckBox = (props) => {
         check,
         env,
         parentState,
+        showRunBox = false,
+        showLatestResult = true,
         showHistory, setShowHistory,
-        showStandaloneCheckPageLink = true
+        showStandaloneCheckPageLink = true,
+        width = null
     } = props;
 
-    const [ state, setState ] = useOptionalKeyedState(parentState);
+    const [ state, setState ] = useOptionalKeyedState(parentState, { showRunBox: showRunBox, showLatestResult: showLatestResult });
     const isShowRunBox = () => state.showRunBox;
     const toggleShowRunBox = () => setState({ showRunBox: !isShowRunBox() });
+    const isShowLatestResult = () => state.showLatestResult;
+    const toggleShowLatestResult = () => setState({ showLatestResult: !isShowLatestResult() });
+
     const actionExists = () => check.registered_action?.name;
     const [ actionAllowed, setActionAllowed ] = useState(null); // set to latest result uuid (for called_by arg to action run)
+
     const schedule = getSchedule(check, env);
+
     const [ triggerRefreshResult, setTriggerRefreshResult ] = useState(false);
+
     const info = useFetch("/info");
 
     function getSchedule(check, env) {
@@ -125,7 +139,15 @@ export const CheckBox = (props) => {
         }
     }
 
-    return <div className="box hover-lighten" style={{width:props.width || "500pt"}}>
+    return <div className="box" style={{width:props.width || "500pt"}}>
+        <table width="100%"><tbody><tr>
+        <td style={{verticalAlign:"top",width:"12pt"}}>
+            <small><b id={`tooltip-${check.name}-latest_result`} style={{verticalAlign:"top",width:"12pt",cursor:"pointer"}} onClick={toggleShowLatestResult}>
+                { isShowLatestResult() ? Char.DownArrowHollow : Char.UpArrowHollow }
+            </b></small>
+            <Tooltip id={`tooltip-${check.name}-latest_result`} text={`Click to ${isShowLatestResult() ? "hide" : "show"} latest result.`} position="top" />
+        </td>
+        <td style={{maxWidth:"400pt"}}>
         <div style={{marginBottom:"4pt"}}>
             <b className="pointer" onClick={() => setShowHistory(!showHistory)}>
                 <u>
@@ -165,14 +187,14 @@ export const CheckBox = (props) => {
                 </span>
             }
             { Str.HasValue(schedule?.cron_description) ? (
-                <div style={{whiteSpace:"nowrap",width:"100%",marginTop:"2pt"}}>
+                <div style={{whiteSpace:"nowrap",width:"100%"}}>
                     <small><i>Schedule: <span id={`tooltip-cron-${check.name}`}>{schedule.cron_description}</span>.</i></small>
                     <Tooltip id={`tooltip-cron-${check.name}`} text={schedule.cron} />
                 </div>
             ):(
-                <small><i>
+                <div><small><i>
                     No schedule.
-                </i></small>
+                </i></small></div>
             )}
         </div>
         { isShowRunBox() && <>
@@ -184,12 +206,15 @@ export const CheckBox = (props) => {
                 bucket={info.data?.checks?.bucket}
                 setTriggerRefreshResult={setTriggerRefreshResult} />
         </>}
-        <CheckLatestResult
-            check={check}
-            setActionAllowed={setActionAllowed}
-            parentState={parentState}
-            triggerRefreshResult={triggerRefreshResult}
-            setTriggerRefreshResult={setTriggerRefreshResult} />
+        { isShowLatestResult() &&
+            <CheckLatestResult
+                check={check}
+                setActionAllowed={setActionAllowed}
+                parentState={parentState}
+                triggerRefreshResult={triggerRefreshResult}
+                setTriggerRefreshResult={setTriggerRefreshResult} />
+        }
+        </td></tr></tbody></table>
     </div>
 }
 
@@ -212,7 +237,7 @@ const RunConfigure = (props) => {
     //
     const [ args, setArgs ] = useOptionalKeyedState(parentState, () => getArgs(check, env));
     const setArg = (name, value) => setArgs({ ...args, [name]: { ...args[name], value: value } });
-    const [ state, setState ] = useOptionalKeyedState(parentState.keyed("local"));
+    const [ state, setState ] = useOptionalKeyedState(parentState?.keyed("local"));
 
     // Parses out the the arguments for the check run from the info (ultimately) from the
     // check_setup.json file and the check_function decorator. Returned object has a property
@@ -329,7 +354,7 @@ const RunConfigure = (props) => {
             <CheckRunningOrRan
                 checkName={check.name}
                 args={args}
-                parentState={parentState.keyed("check-run-or-ran")}
+                parentState={parentState?.keyed("check-run-or-ran")}
                 run={isCheckRunning()}
                 ran={isCheckRan()}
                 onDone={setCheckRan}
@@ -410,10 +435,10 @@ const ConfigureActionRun = (props) => {
     }
 
     if (!check.registered_action?.name) return null;
-    return <div className="box thickborder" style={{fontSize:fontSize,marginTop:marginTop,background:background}}>
-        &nbsp;
+    return <div className="box thickborder" style={{fontSize:fontSize,marginTop:marginTop,paddingLeft:"8pt",background:background}}>
+        <table style={{fontSize:fontSize,width:"100%"}}><tbody><tr><td style={{whiteSpace:"nowrap"}}>
         <span style={{verticalAlign:"middle"}}>
-            <b><u>Action</u></b>: <b id={`tooltip=${action.data?.name}`} style={{color:confirmRun ? "red" : "inherit"}}>{action.data?.title}</b>
+            <b><u>Action</u></b>: <b id={`tooltip=${action.data?.name}`} style={{color:confirmRun ? "red" : "inherit",whiteSpace:"break-spaces"}}>{action.data?.title} asdfasdfadsfadsa asdfasdfadsfadf asdfadsffads</b>
                 <Tooltip id={`tooltip=${action.data?.name}`} text={`Action: ${action.data?.module} ${action.data?.name}`} />
         </span>
         <GitHubLink
@@ -421,6 +446,7 @@ const ConfigureActionRun = (props) => {
             type="action"
             style={{marginLeft:"6pt"}}
         />
+</td><td style={{whiteSpace:"nowrap",verticalAlign:"top"}}>
         { confirmRun ? <>
             <div className="check-action-confirm-button" style={{float:"right",marginRight:"2pt"}} onClick={() => setConfirmRun(false)}><b>Cancel</b></div>
             <div style={{height:"1px",background:"gray",marginTop:"8pt",marginBottom:"8pt"}} />
@@ -433,7 +459,7 @@ const ConfigureActionRun = (props) => {
         </>:<>
             <div style={{float:"right",marginTop:"1pt"}}>
                 <b id={`tooltip-${action.data?.name}-refresh-result`} onClick={() => setTriggerRefreshResult(true)} style={{marginRight:"8pt",position:"relative",top:"1pt",cursor:"pointer"}}>{Char.Refresh}</b>
-                <Tooltip id={`tooltip-${action.data?.name}-refresh-result`} text="Click to fetch latest result (and possibly allow action)." />
+                <Tooltip id={`tooltip-${action.data?.name}-refresh-result`} text="Click to fetch latest result (and possibly allow action)." position="top" />
                 <span className={`check-run-button ${!actionAllowed && "disabled"}`} onClick={() => (actionAllowed && !running) && onRunConfirm()}>
                     { actionAllowed ? <>
                         { running ? <>
@@ -442,11 +468,12 @@ const ConfigureActionRun = (props) => {
                             Run Action <b>...</b>
                         </> }
                     </>:<>
-                        Run Action Disallowed
+                        Action Disallowed
                     </> }
                 </span>
             </div>
         </> }
+        </td></tr></tbody></table>
     </div>
 }
 
@@ -752,7 +779,7 @@ const CheckLatestResult = (props) => {
                     &nbsp;&nbsp;<b><big>{resultSummary.data.status === "PASS" ? Char.Check : Char.X}</big></b>
                 </span> }
             { (isShowResult()) && <>
-                <pre className="box lighten" style={{marginTop:"4pt"}}>
+                <pre className="box lighten" style={{marginTop:"4pt",marginBottom:"0pt"}}>
                     { (isShowResultSummary()) ? <>
                         {Yaml.Format(resultSummary.data)}
                     </>:<>
