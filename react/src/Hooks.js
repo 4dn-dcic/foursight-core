@@ -19,7 +19,7 @@ export const useComponentDefinitions = (componentTypes) => {
                     type: type,
                     name: name,
                     key: key,
-                    ui: componentTypes[index].create(name, key, arg, unselect)
+                    ui: (arg) => componentTypes[index].create(name, key, arg, unselect)
                 };
             }
             return null;
@@ -71,7 +71,7 @@ export const useSelectedComponents = (componentDefinitions) => {
                 setComponents([...components]);
             }
         }
-    })[0];
+   })[0];
 }
 
 // Ensure the keyed state value is an object or a function producing an object.
@@ -123,6 +123,8 @@ export const useKeyedState = (initial) => {
 //
 export const useOptionalKeyedState = (keyedState, initial) => {
     if (keyedState?.__keyedState !== true) keyedState = null;
+    // This may be better setting here than the below within useEffect?
+    // const [ state, setState ] = useState((Object.keys(keyedState?.__get()).length === 0) ? __keyedStateValue(initial) : (keyedState.__get() || {}));
     const [ state, setState ] = useState(keyedState?.__get() || {});
     useEffect(() => {
         if (keyedState) {

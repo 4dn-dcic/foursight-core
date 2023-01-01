@@ -19,7 +19,8 @@ import Time from '../utils/Time';
 import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
-import { CheckBoxWithFetch } from './checks/CheckBox';
+import CheckWithFetch from './checks/CheckWithFetch';
+import { useKeyedState } from '../Hooks';
 
 function basename(path) {
     return path?.split('/')?.reverse()[0];
@@ -30,6 +31,8 @@ function dirname(path) {
 }
 
 const CheckHistoryPage = (props) => {
+
+    const keyedState = useKeyedState();
 
     const { environ, check } = useParams();
     const [ args, setArgs ] = useSearchParams();
@@ -184,11 +187,12 @@ const CheckHistoryPage = (props) => {
                     }
                     { (checkInfo.get("type") !== "action") && <>
                         <div style={{marginTop:"4pt",marginBottom:"1pt"}}><b>Check Run</b></div>
-                        <CheckBoxWithFetch
+                        <CheckWithFetch
                             checkName={check}
                             env={environ}
                             showRunBox={true}
                             showStandaloneCheckPageLink={false}
+                            parentState={keyedState}
                             width={"100%"} />
                     </> }
                 </td>

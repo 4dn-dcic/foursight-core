@@ -25,85 +25,7 @@ import { useKeyedState, useOptionalKeyedState } from '../../Hooks.js';
 
 const background = "lightyellow";
 
-const TestCheckBox = (props) => {
-
-    let { environ } = useParams();
-    const checkBoxState = useKeyedState();
-    const [ show, setShow ] = useState(true);
-    //const checkName =  "elastic_search_space";
-    const checkName =  "biorxiv_is_now_published"; // "elastic_search_space";
-    //const checkName2 =  "mcoolqc_status"; // "elastic_search_space";
-    //const checkName =  "pairsqc_status"; // "elastic_search_space";
-    //const checkName =  "find_cypress_test_items_to_purge"; // "elastic_search_space";
-    //const checkName2 =  "pairsqc_status"; // "elastic_search_space";
-    const [ showHistory, setShowHistory ] = useState(true);
-
-    return <>
-        { show ? <>
-            <span className="pointer" onClick={() => setShow(value => !value)}>Hide CheckBox</span>
-                &nbsp;|&nbsp;
-                <span style={{cursor:"pointer"}} onClick={() => setShowHistory(!showHistory)}>
-                    { showHistory ? <>
-                        Hide History
-                    </>:<>
-                        Show History
-                    </>}
-                </span>
-            <CheckBoxWithFetch
-                checkName={checkName}
-                env={environ}
-                parentState={checkBoxState.keyed(checkName)}
-                showRunBox={true}
-                showLatestResult={true}
-                showHistory={showHistory}
-                setShowHistory={setShowHistory}
-                showStandaloneCheckPageLink={true} />
-                {/*
-            <CheckBoxWithFetch
-                checkName={checkName2}
-                env={environ}
-                parentState={checkBoxState.keyed(checkName2)}
-                showHistory={showHistory}
-                setShowHistory={setShowHistory}
-                showStandaloneCheckPageLink={true} />
-                */}
-        </>:<>
-            <span className="pointer" onClick={() => setShow(value => !value)}>Show CheckBox</span>
-        </>}
-        { showHistory && <>
-            <br />
-            <div className="box">
-                This represents the check history box.
-            </div>
-        </> }
-            <br />
-        <pre>{Json.Format(checkBoxState.__get())}</pre>
-    </>
-}
-
-export const CheckBoxWithFetch = (props) => {
-    const { checkName, env, parentState, showRunBox, showLatestResult } = props;
-    const check = useFetch(`/checks/${checkName}`, { cache: true });
-    if (check.loading || !check.data) {
-        return <div className="box" style={{width:props.width || "500pt"}}>
-            <StandardSpinner label="Loading check" />
-        </div>
-    }
-    return <>
-        <CheckBox
-            check={check.data}
-            env={env}
-            parentState={parentState}
-            showRunBox={showRunBox}
-            showLatestResult={showLatestResult}
-            showHistory={props.showHistory}
-            setShowHistory={props.setShowHistory}
-            showStandaloneCheckPageLink={props.showStandaloneCheckPageLink}
-            width={props.width} />
-    </>
-}
-
-export const CheckBox = (props) => {
+export const Check = (props) => {
 
     const {
         check,
@@ -149,7 +71,7 @@ export const CheckBox = (props) => {
         </td>
         <td style={{maxWidth:"400pt"}}>
         <div style={{marginBottom:"4pt"}}>
-            <b className="pointer" onClick={() => setShowHistory(!showHistory)}>
+            <b className="pointer" onClick={() => setShowHistory && setShowHistory(!showHistory)}>
                 <u>
                     <span id={`tooltip-${check.name}`} >{check.title}</span>
                     {actionExists() && <>
@@ -798,4 +720,4 @@ const CheckLatestResult = (props) => {
     </div>
 }
 
-export default TestCheckBox;
+export default Check;
