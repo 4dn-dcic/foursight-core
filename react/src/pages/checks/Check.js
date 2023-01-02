@@ -35,14 +35,16 @@ export const Check = (props) => {
         showLatestResult = true,
         showHistory, setShowHistory,
         showStandaloneCheckPageLink = true,
+        lightenOnHover = false,
         width = null
     } = props;
 
-    const [ state, setState ] = useOptionalKeyedState(parentState, { showRunBox: showRunBox, showLatestResult: showLatestResult });
+    const [ state, setState ] = useOptionalKeyedState(parentState , { showRunBox: showRunBox, showLatestResult: showLatestResult });
     const isShowRunBox = () => state.showRunBox;
     const toggleShowRunBox = () => setState({ showRunBox: !isShowRunBox() });
     const isShowLatestResult = () => state.showLatestResult;
-    const toggleShowLatestResult = () => setState({ showLatestResult: !isShowLatestResult() });
+    const toggleShowLatestResult = () => setState({ showLatestResult: !state.showLatestResult });
+    const setShowLatestResult = (value) => setState({ showLatestResult: value });
 
     const actionExists = () => check.registered_action?.name;
     const [ actionAllowed, setActionAllowed ] = useState(null); // set to latest result uuid (for called_by arg to action run)
@@ -53,6 +55,9 @@ export const Check = (props) => {
 
     const info = useFetch("/info");
 
+    useEffect(() => {
+    }, []);
+
     function getSchedule(check, env) {
         for (const scheduleKey in check.schedule) {
             if (Str.HasValue(check.schedule[scheduleKey]?.cron)) {
@@ -61,7 +66,7 @@ export const Check = (props) => {
         }
     }
 
-    return <div className="box" style={{width:props.width || "500pt"}}>
+    return <div className={`box ${lightenOnHover ? "check-box" : ""}`} style={{width:props.width || "500pt"}}>
         <table width="100%"><tbody><tr>
         <td style={{verticalAlign:"top",width:"12pt"}}>
             <small><b id={`tooltip-${check.name}-latest_result`} style={{verticalAlign:"top",width:"12pt",cursor:"pointer"}} onClick={toggleShowLatestResult}>
@@ -84,7 +89,7 @@ export const Check = (props) => {
                 </u>
             </b>
             <Tooltip id={`tooltip-${check.name}`} text={`Check: ${check.module}.${check.name}. Group: ${check.group}.`} />
-            <span className="pointer" style={{float:"right",marginTop:"2pt",marginRight:"2pt"}} onClick={toggleShowRunBox}>
+            <span className="pointer" style={{float:"right",marginTop:"-1pt",marginRight:"2pt"}} onClick={toggleShowRunBox}>
                 { isShowRunBox() ? <>
                     <div className="check-config-button"><small>{Char.DownArrowFat}</small> Configure</div>
                 </>:<>

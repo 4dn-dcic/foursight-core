@@ -11,7 +11,7 @@ import { useState, useEffect } from 'react';
 //
 export const useComponentDefinitions = (componentTypes) => {
     return {
-        create: (type, name, arg, unselect) => {
+        create: (type, name, arg, unselect, additionalArgs) => {
             const index = componentTypes.findIndex(componentType => componentType.type === type);
             if (index >= 0) {
                 const key = name ? `${type}::${name}` : type;
@@ -19,7 +19,7 @@ export const useComponentDefinitions = (componentTypes) => {
                     type: type,
                     name: name,
                     key: key,
-                    ui: (arg) => componentTypes[index].create(name, key, arg, unselect)
+                    ui: (arg) => componentTypes[index].create(name, key, arg, unselect, additionalArgs)
                 };
             }
             return null;
@@ -44,20 +44,20 @@ export const useSelectedComponents = (componentDefinitions) => {
         selected: function(type, name = null) { return this.__lookup(type, name) >= 0; },
         select:   function(type, name = null) { this.__select(type, name); },
         unselect: function(type, name = null) { this.__unselect(type, name); },
-        toggle:   function(type, name = null, arg = null) {
+        toggle:   function(type, name = null, arg = null, additionalArgs) {
             const index = this.__lookup(type, name);
             if (index >= 0) {
                 this.__unselect(type, name, index);
             }
             else {
-                this.__select(type, name, arg, index);
+                this.__select(type, name, arg, index, additionalArgs);
             }
         },
         __lookup: (type, name = null) => components.findIndex(item => item.type === type && item.name === name),
-        __select: function (type, name = null, arg = null, index = null) {
+        __select: function (type, name = null, arg = null, index = null, additionalArgs) {
             if (index == null) index = this.__lookup(type, name);
             if (index < 0) {
-                const component = componentDefinitions.create(type, name, arg, () => this.unselect(type, name));
+                const component = componentDefinitions.create(type, name, arg, () => this.unselect(type, name), additionalArgs);
                 if (component) {
                     components.unshift(component);
                     setComponents([...components]);

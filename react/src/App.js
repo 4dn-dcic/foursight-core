@@ -28,6 +28,7 @@ import UserEditPage from './pages/UserEditPage';
 import UsersPage from './pages/UsersPage';
 
 import TestCheck from './pages/checks/TestCheck';
+import TestChecksPage from './pages/checks/ChecksPage';
 
 function setGlobalStyles(header) {
     if (Env.IsFoursightFourfront(header)) {
@@ -156,6 +157,9 @@ const App = () => {
                     }/>
                     <Route path="/api/react/:environ/test/checkbox" element={
                         <TestCheck />
+                    }/>
+                    <Route path="/api/react/:environ/test/checks" element={
+                        <TestChecksPage />
                     }/>
                     <Route path="/redirect" element={
                         <RedirectPage />
