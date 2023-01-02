@@ -34,6 +34,7 @@ export const Check = (props) => {
         showRunBox = false,
         showLatestResult = true,
         showHistory, setShowHistory,
+        onCollapse = null,
         showStandaloneCheckPageLink = true,
         lightenOnHover = false,
         width = null
@@ -69,10 +70,10 @@ export const Check = (props) => {
     return <div className={`box ${lightenOnHover ? "check-box" : ""}`} style={{width:props.width || "500pt"}}>
         <table width="100%"><tbody><tr>
         <td style={{verticalAlign:"top",width:"12pt"}}>
-            <small><b id={`tooltip-${check.name}-latest_result`} style={{verticalAlign:"top",width:"12pt",cursor:"pointer"}} onClick={toggleShowLatestResult}>
+            <small><b id={`tooltip-${check.name}-latest_result`} style={{verticalAlign:"top",width:"12pt",cursor:"pointer"}} onClick={() => onCollapse ? onCollapse(check.name) : toggleShowLatestResult()}>
                 { isShowLatestResult() ? Char.DownArrowHollow : Char.UpArrowHollow }
             </b></small>
-            <Tooltip id={`tooltip-${check.name}-latest_result`} text={`Click to ${isShowLatestResult() ? "hide" : "show"} latest result.`} position="top" />
+            <Tooltip id={`tooltip-${check.name}-latest_result`} text={onCollapse ? "Click to collapse." : `Click to ${isShowLatestResult() ? "hide" : "show"} latest result.`} position="top" />
         </td>
         <td style={{maxWidth:"400pt"}}>
         <div style={{marginBottom:"4pt"}}>
