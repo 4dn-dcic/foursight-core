@@ -12,7 +12,6 @@ import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
 import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
 import { useKeyedState, useOptionalKeyedState } from '../../Hooks.js';
-import CheckWithFetch from '../checks/CheckWithFetch';
 
 const tdLabelStyle = {
     color: "var(--box-fg)",
@@ -32,7 +31,6 @@ const InfrastructurePage = () => {
     const keyedState = useKeyedState();
 
     const componentDefinitions = useComponentDefinitions([
-         { type: "check",           create: createCheck          },
          { type: "stack",           create: createStack          },
          { type: "vpcs",            create: createVpcs           },
          { type: "subnets-public",  create: createSubnetsPublic  },
@@ -83,13 +81,6 @@ const InfrastructurePage = () => {
             {children}
        </div>
     }
-        const xyzzy = useKeyedState();
-
-    function createCheck(name, key, keyedState, unselect) {
-        //return <BoxWrapper title="Check" close={unselect}>
-        return <CheckWithFetch checkName={"elastic_search_space"} env={"data"} parentState={keyedState.keyed(key)} />
-        //</BoxWrapper>
-    }
 
     const selectedVpcs           = () => componentsLeft.selected("vpcs");
     const toggleVpcs             = () => componentsLeft.toggle("vpcs", null, keyedState);
@@ -112,13 +103,9 @@ const InfrastructurePage = () => {
     const selectedSecurityGroups = () => componentsRight.selected("security-groups");
     const toggleSecurityGroups   = () => componentsRight.toggle("security-groups", null, keyedState);
 
-    const selectedCheck = (checkName) => componentsLeft.selected("check");
-    const toggleCheck   = (checkName) => componentsLeft.toggle("check", null, keyedState);
-
     useEffect(() => {
         toggleEcosystem();
         toggleVpcs();
-        toggleCheck("elastic_search_space", keyedState.keyed("asdfdadfadsfa"));
     }, []);
 
     return <table><tbody><tr>

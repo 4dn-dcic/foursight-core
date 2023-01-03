@@ -6,7 +6,9 @@ import { useFetch } from '../../utils/Fetch';
 import { ExternalLink } from '../../Components';
 import Char from '../../utils/Char';
 import Clipboard from '../../utils/Clipboard';
+import Client from '../../utils/Client';
 import Json from '../../utils/Json';
+import Tooltip from '../../components/Tooltip';
 import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
@@ -44,7 +46,7 @@ const TestChecksPage = () => {
 
     function createGroup(name, key, keyedState, unselect, additionalArgs) {
         const checks = additionalArgs;
-        return <Group groupName={name} env={environ} parentState={keyedState.keyed(key)} groupChecks={checks} />
+        return <Group groupName={name} env={environ} parentState={keyedState.keyed(key)} groupChecks={checks} close={unselect} />
     }
 
     function createCheck(name, key, keyedState, unselect) {
@@ -66,9 +68,6 @@ const TestChecksPage = () => {
     const isSelectedCheck = (checkName) => componentsLeft.selected("check");
     const toggleCheck     = (checkName) => componentsLeft.toggle("check", checkName, keyedState);
 
-    useEffect(() => {
-    }, []);
-
     return <table><tbody><tr>
         <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
             <GroupList
@@ -78,7 +77,7 @@ const TestChecksPage = () => {
         </td>
         { !componentsLeft.empty() &&
             <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-                { componentsLeft.map((component, i) => <div key={component.key}>{component.ui(keyedState)}</div>) }
+                { componentsLeft.map((component, i) => <div key={component.key} style={{marginTop:"0",marginBottom:"0"}}>{component.ui(keyedState)}</div>) }
             </td>
         }
         { !componentsRight.empty() &&
@@ -97,12 +96,13 @@ const GroupList = (props) => {
         <div><b>Check Groups</b></div>
         <div className="box" style={{whiteSpace:"nowrap"}}>
             { groups.loading && <StandardSpinner label="Loading check groups" /> }
-            {!groups.loading && groups.data && groups?.data?.map((group, i) => {
+            {!groups.loading && groups.data.map((group, i) => {
                 const toggle = () => props.toggle(group.group, group.checks);
                 const isSelected = () => props.isSelected(group.group);
                 const style = {...(i + 1 < groups.length ? styleNotLast : styleLast), ...(isSelected(group.name) ? {fontWeight:"bold"} : {})};
                 return <div key={group.group} style={style} onClick={toggle}>
-                   {group.group}
+                    <span id={`tooltip-${group.group}`}>{group.group}&nbsp;&nbsp;<small>({group.checks.length})</small></span>
+                    <Tooltip id={`tooltip-${group.group}`} text={`Click to view (${group.checks.length}) group checks.`} />
                 </div>
             })}
         </div>
@@ -110,41 +110,43 @@ const GroupList = (props) => {
 }
 
 const Group = (props) => {
-    const { groupName, groupChecks, env, parentState } = props;
+    const { groupName, groupChecks, env, parentState, close } = props;
     const [ state, setState ] = useOptionalKeyedState(parentState);
     const title = groupName.replace(/ checks$/i, "") + " Group";
     const isShowBrief = (checkName) => state.showBriefList?.find(item => item === checkName);
     const isShowAnyBrief = () => state.showBriefList?.length > 0;
+    const isShowAllBrief = () => state.showBriefList?.length === groupChecks.length;
     const setShowAllBrief = () => { setState({ showBriefList: groupChecks.map(check => check.name) }); }
     const setShowNoneBrief = () => setState({ showBriefList: [] }); 
     const toggleShowBrief = (checkName) => {
-        if (isShowBrief(checkName)) {
-            setState({ showBriefList: state.showBriefList.filter(item => item !== checkName) });
-        }
-        else {
-            //state.showBriefList = [...(state.showBriefList || []), checkName]
-            //setState({ showBriefList: state.showBriefList });
-            setState({ showBriefList: [...(state.showBriefList || []), checkName] });
-        }
+        isShowBrief(checkName) ?
+            setState({ showBriefList: state.showBriefList.filter(item => item !== checkName) })
+        :   setState({ showBriefList: [...(state.showBriefList || []), checkName] });
     }
     return <>
-        <b>Checks</b>
-        <div className="box" style={{whiteSpace:"nowrap"}}>
-            <div style={{marginBottom:"4pt",cursor:"pointer"}} onClick={() => isShowAnyBrief() ? setShowNoneBrief() : setShowAllBrief()}>
+        <div>&nbsp;</div>
+        <div className="box" style={{marginBottom:"-6pt",whiteSpace:"nowrap"}}>
+            <div style={{marginBottom:"4pt",cursor:"pointer"}} onClick={() => !isShowAllBrief() ? setShowAllBrief() : setShowNoneBrief()}>
                 <b>{title}</b>&nbsp;
-                <small>{isShowAnyBrief() ? <span>{Char.UpArrowFat}</span> : Char.DownArrowFat}</small>
+                <small>{!isShowAllBrief() ? <span>{Char.DownArrowFat}</span> : Char.UpArrowFat}</small>
+                <div style={{float:"right",marginTop:"-1pt",fontSize:"small",cursor:"pointer"}} onClick={close}><b>{Char.X}</b></div>
             </div>
             {groupChecks.map((check, i) => {
                 if (isShowBrief(check.name)) {
                     const style = i > 0 ? { marginTop:"3pt" } : {};
-                    return <div className="box darken" style={style}>
-                        <small className="pointer" onClick={() => toggleShowBrief(check.name)}><b>{Char.UpArrowHollow} {check.title}</b></small>
-                    </div>
+                    return <div className="box darken check-box" style={style}>
+                        <span className="pointer" onClick={() => toggleShowBrief(check.name)}><b><small>{Char.UpArrowHollow}</small> {check.title}</b></span>
+                    <ExternalLink
+                        href={Client.Path(`/checks/${check.name}/history`)}
+                        bold={true}
+                        tooltip="Click to view check details and history (in new tab)."
+                        style={{float:"right",marginLeft:"8pt"}} />
+                        </div>
                 }
                 else {
                     const style = i > 0 ? { marginTop:"6pt" } : {};
                     return <div style={style}>
-                        <Check check={check} env={env} parentState={parentState.keyed("asdfasdf"+check.name)} lightenOnHover={true} onCollapse={() => toggleShowBrief(check.name)}/>
+                        <Check width="100%" check={check} env={env} parentState={parentState.keyed(check.name)} lightenOnHover={true} onCollapse={() => toggleShowBrief(check.name)}/>
                     </div>
                 }
             })}
