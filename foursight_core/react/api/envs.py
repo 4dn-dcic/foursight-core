@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Optional, Tuple
 from dcicutils import ff_utils
-from dcicutils.env_utils import foursight_env_name
+from dcicutils.env_utils import env_equals, foursight_env_name
 from dcicutils.misc_utils import find_association
 from .gac import Gac
 from .misc_utils import memoize
@@ -65,7 +65,8 @@ class Envs:
 
     @memoize
     def is_same_env(self, env_a: str, env_b: str) -> bool:
-        return foursight_env_name(env_a) == foursight_env_name(env_b)
+        return env_equals(env_a, env_b)
+        # return foursight_env_name(env_a) == foursight_env_name(env_b)
 
     def get_user_auth_info(self, email: str) -> Tuple[list, str, str]:
         """

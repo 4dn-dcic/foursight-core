@@ -37,7 +37,8 @@ export const Check = (props) => {
         onCollapse = null,
         showStandaloneCheckPageLink = true,
         lightenOnHover = false,
-        width = null
+        width = null,
+        style = {}
     } = props;
 
     const [ state, setState ] = useOptionalKeyedState(parentState , { showRunBox: showRunBox, showLatestResult: showLatestResult });
@@ -67,7 +68,7 @@ export const Check = (props) => {
         }
     }
 
-    return <div className={`box ${lightenOnHover ? "check-box" : ""}`} style={{width:props.width || "500pt"}}>
+    return <div className={`box ${lightenOnHover ? "check-box" : ""}`} style={{...style, width:props.width || "500pt"}}>
         <table width="100%"><tbody><tr>
         <td style={{verticalAlign:"top",width:"12pt"}}>
             <small><b id={`tooltip-${check.name}-latest_result`} style={{verticalAlign:"top",width:"12pt",cursor:"pointer"}} onClick={() => onCollapse ? onCollapse(check.name) : toggleShowLatestResult()}>
@@ -363,45 +364,65 @@ const ConfigureActionRun = (props) => {
     }
 
     if (!check.registered_action?.name) return null;
-    return <div className="box thickborder" style={{fontSize:fontSize,marginTop:marginTop,paddingLeft:"8pt",background:background}}>
-        <table style={{fontSize:fontSize,width:"100%"}}><tbody><tr><td style={{whiteSpace:"nowrap"}}>
-        <span style={{verticalAlign:"middle"}}>
-            <b><u>Action</u></b>: <b id={`tooltip=${action.data?.name}`} style={{color:confirmRun ? "red" : "inherit",whiteSpace:"break-spaces"}}>{action.data?.title} asdfasdfadsfadsa asdfasdfadsfadf asdfadsffads</b>
-                <Tooltip id={`tooltip=${action.data?.name}`} text={`Action: ${action.data?.module} ${action.data?.name}`} />
-        </span>
-        <GitHubLink
-            href={action.data?.github_url}
-            type="action"
-            style={{marginLeft:"6pt"}}
-        />
-</td><td style={{whiteSpace:"nowrap",verticalAlign:"top"}}>
-        { confirmRun ? <>
-            <div className="check-action-confirm-button" style={{float:"right",marginRight:"2pt"}} onClick={() => setConfirmRun(false)}><b>Cancel</b></div>
-            <div style={{height:"1px",background:"gray",marginTop:"8pt",marginBottom:"8pt"}} />
-            &nbsp;<b style={{color:"red",position:"relative",bottom:"1pt"}}>{Char.RightArrow} Are you sure you want to run this action?</b>
-            { running ? <>
-                <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}}><i>Queueing</i></div>
-            </>:<>
-                <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}} onClick={() => { setConfirmRun(false); onRun(); }}> <small>{Char.RightArrowFat}</small> Run Action</div>
-            </> }
-        </>:<>
-            <div style={{float:"right",marginTop:"1pt"}}>
-                <b id={`tooltip-${action.data?.name}-refresh-result`} onClick={() => setTriggerRefreshResult(true)} style={{marginRight:"8pt",position:"relative",top:"1pt",cursor:"pointer"}}>{Char.Refresh}</b>
-                <Tooltip id={`tooltip-${action.data?.name}-refresh-result`} text="Click to fetch latest result (and possibly allow action)." position="top" />
-                <span className={`check-run-button ${!actionAllowed && "disabled"}`} onClick={() => (actionAllowed && !running) && onRunConfirm()}>
-                    { actionAllowed ? <>
-                        { running ? <>
-                            <i>Queueing</i>
-                        </>:<>
-                            Run Action <b>...</b>
-                        </> }
-                    </>:<>
-                        Action Disallowed
-                    </> }
+
+    return <div className="box thickborder" style={{fontSize:fontSize,marginTop:marginTop,paddingBottom:"4pt",paddingLeft:"8pt",background:background}}>
+        <table style={{fontSize:fontSize,width:"100%"}}><tbody>
+        <tr>
+            <td style={{whiteSpace:"nowrap"}}>
+                <span>
+                    <b><u>Action</u></b>: <b id={`tooltip=${action.data?.name}`} style={{color:confirmRun ? "red" : "inherit",whiteSpace:"break-spaces"}}>{action.data?.title}</b>
+                        <Tooltip id={`tooltip=${action.data?.name}`} text={`Action: ${action.data?.module} ${action.data?.name}`} />
                 </span>
-            </div>
-        </> }
-        </td></tr></tbody></table>
+                <GitHubLink
+                    href={action.data?.github_url}
+                    type="action"
+                    style={{marginLeft:"6pt"}}
+                />
+            </td>
+            <td nowrap="1">
+                { !confirmRun && <>
+                    <div style={{float:"right",marginTop:"1pt",marginBottom:"4pt"}}>
+                        { !actionAllowed && <>
+                            <b id={`tooltip-${action.data?.name}-refresh-result`} onClick={() => setTriggerRefreshResult(true)} style={{marginRight:"8pt",position:"relative",top:"1pt",cursor:"pointer"}}>{Char.Refresh}</b>
+                            <Tooltip id={`tooltip-${action.data?.name}-refresh-result`} text="Click to fetch latest result (and possibly allow action)." position="top" />
+                        </> }
+                        <span className={`check-run-button ${!actionAllowed && "disabled"}`} onClick={() => (actionAllowed && !running) && onRunConfirm()}>
+                            { actionAllowed ? <>
+                                { running ? <>
+                                    <i>Queueing</i>
+                                </>:<>
+                                    Run Action <b>...</b>
+                                </> }
+                            </>:<>
+                                Action Disallowed
+                            </> }
+                        </span>
+                    </div>
+                </> }
+                { confirmRun &&
+                    <div className="check-action-confirm-button" style={{float:"right",marginRight:"2pt"}} onClick={() => setConfirmRun(false)}><b>Cancel</b></div>
+                }
+            </td>
+        </tr>
+        { confirmRun && <>
+        <tr style={{height:"4pt"}}><td></td></tr>
+        <tr style={{height:"1px",background:"gray"}}><td colspan="2"></td></tr>
+        <tr style={{height:"8pt"}}><td></td></tr>
+        <tr>
+            <td>
+                { confirmRun && <>
+                    &nbsp;<b style={{color:"red",position:"relative",bottom:"1pt"}}>{Char.RightArrow} Are you sure you want to run this action?</b>
+                </> }
+            </td>
+            <td nowrap="1">
+                { running ? <>
+                    <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}}><i>Queueing</i></div>
+                </>:<>
+                    <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}} onClick={() => { setConfirmRun(false); onRun(); }}> <small>{Char.RightArrowFat}</small> Run Action</div>
+                </> }
+            </td>
+        </tr> </>}
+        </tbody></table>
     </div>
 }
 
@@ -523,6 +544,9 @@ const CheckRunArgs = (props) => {
     const tdstyle = { paddingTop:"2pt", paddingBottom:"2pt", paddingRight:"8pt" };
     return <>
         <table style={{fontSize:fontSize}}><tbody>
+            { Object.keys(args).length === 0 && <>
+                <b style={{fontSize:"110%"}}>No arguments.</b>
+            </> }
             { Object.keys(args).map(name => {
                 const setThisArg = (value) => setArg(name, value);
                 return <tr key={name} style={{}}>

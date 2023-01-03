@@ -132,26 +132,36 @@ const Group = (props) => {
                 <div style={{float:"right",marginTop:"-1pt",fontSize:"small",cursor:"pointer"}} onClick={close}><b>{Char.X}</b></div>
             </div>
             {groupChecks.map((check, i) => {
+                const style = i > 0 ? { marginTop: isShowAllBrief() ? "3pt" : "6pt" } : {};
+                const toggleBrief = () => toggleShowBrief(check.name);
                 if (isShowBrief(check.name)) {
-                    const style = i > 0 ? { marginTop:"3pt" } : {};
-                    return <div className="box darken check-box" style={style}>
-                        <span className="pointer" onClick={() => toggleShowBrief(check.name)}><b><small>{Char.UpArrowHollow}</small> {check.title}</b></span>
-                    <ExternalLink
-                        href={Client.Path(`/checks/${check.name}/history`)}
-                        bold={true}
-                        tooltip="Click to view check details and history (in new tab)."
-                        style={{float:"right",marginLeft:"8pt"}} />
-                        </div>
+                    return <CheckBrief
+                        check={check}
+                        toggleBrief={toggleBrief} style={style}
+                    />
                 }
                 else {
-                    const style = i > 0 ? { marginTop:"6pt" } : {};
-                    return <div style={style}>
-                        <Check width="100%" check={check} env={env} parentState={parentState.keyed(check.name)} lightenOnHover={true} onCollapse={() => toggleShowBrief(check.name)}/>
-                    </div>
+                    return <Check
+                        check={check} env={env} parentState={parentState.keyed(check.name)}
+                        lightenOnHover={true} onCollapse={toggleBrief}
+                        style={style} width="100%"
+                    />
                 }
             })}
         </div>
     </>
+}
+
+const CheckBrief = (props) => {
+    const { check, toggleBrief, style = {} } = props;
+    return <div className="box darken check-box" style={style}>
+        <span className="pointer" onClick={toggleBrief}><b><small>{Char.UpArrowHollow}</small> {check.title}</b></span>
+        <ExternalLink
+            href={Client.Path(`/checks/${check.name}/history`)}
+            bold={true}
+            tooltip="Click to view check details and history (in new tab)."
+            style={{float:"right",marginTop:"1pt",marginLeft:"8pt"}} />
+    </div>
 }
 
 
