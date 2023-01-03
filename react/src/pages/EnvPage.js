@@ -143,6 +143,7 @@ const EnvPage = (props) => {
                             Full Name: <span style={envNameTextStyles(env.full_name)}>{env.full_name}</span> <br />
                             Short Name: <span style={envNameTextStyles(env.short_name)}>{env.short_name}</span> <br />
                             Public Name: <span style={envNameTextStyles(env.public_name)}>{env.public_name}</span> <br />
+                            Foursight Name: <span style={envNameTextStyles(env.foursight_name)}>{env.foursight_name}</span> <br />
                             { Auth.IsLoggedIn() && <>
                                 GAC Name: {GetGacName(env, info.data)} <br />
                                 { IsKnownCurrentEnv() && HasGacName(env, info.data) && <>

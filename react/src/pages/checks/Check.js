@@ -707,7 +707,7 @@ const CheckLatestResult = (props) => {
                     &nbsp;&nbsp;<b><big>{resultSummary.data.status === "PASS" ? Char.Check : Char.X}</big></b>
                 </span> }
             { (isShowResult()) && <>
-                <pre className="box lighten" style={{marginTop:"4pt",marginBottom:"0pt"}}>
+                <pre className="box lighten" style={{marginTop:"4pt",marginBottom:"0pt",maxHeight:"600pt"}}>
                     { (isShowResultSummary()) ? <>
                         {Yaml.Format(resultSummary.data)}
                     </>:<>
