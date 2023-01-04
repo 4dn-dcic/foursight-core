@@ -11,7 +11,7 @@ import { useState, useEffect } from 'react';
 //
 export const useComponentDefinitions = (componentTypes) => {
     return {
-        create: (type, name, arg, unselect, additionalArgs) => {
+        __get: (type, name, unselect, createArgs) => {
             const index = componentTypes.findIndex(componentType => componentType.type === type);
             if (index >= 0) {
                 const key = name ? `${type}::${name}` : type;
@@ -19,7 +19,7 @@ export const useComponentDefinitions = (componentTypes) => {
                     type: type,
                     name: name,
                     key: key,
-                    ui: (arg) => componentTypes[index].create(name, key, arg, unselect, additionalArgs)
+                    ui: (args) => componentTypes[index].create(name, key, unselect, { ...createArgs, ...args })
                 };
             }
             return null;
@@ -44,20 +44,20 @@ export const useSelectedComponents = (componentDefinitions) => {
         selected: function(type, name = null) { return this.__lookup(type, name) >= 0; },
         select:   function(type, name = null) { this.__select(type, name); },
         unselect: function(type, name = null) { this.__unselect(type, name); },
-        toggle:   function(type, name = null, arg = null, additionalArgs) {
+        toggle:   function(type, name = null, args = {}) {
             const index = this.__lookup(type, name);
             if (index >= 0) {
                 this.__unselect(type, name, index);
             }
             else {
-                this.__select(type, name, arg, index, additionalArgs);
+                this.__select(type, name, index, args);
             }
         },
-        __lookup: (type, name = null) => components.findIndex(item => item.type === type && item.name === name),
-        __select: function (type, name = null, arg = null, index = null, additionalArgs) {
+        __lookup: (type, name) => components.findIndex(item => item.type === type && item.name === name),
+        __select: function (type, name, index, args) {
             if (index == null) index = this.__lookup(type, name);
             if (index < 0) {
-                const component = componentDefinitions.create(type, name, arg, () => this.unselect(type, name), additionalArgs);
+                const component = componentDefinitions.__get(type, name, () => this.unselect(type, name), args);
                 if (component) {
                     components.unshift(component);
                     setComponents([...components]);
@@ -76,8 +76,8 @@ export const useSelectedComponents = (componentDefinitions) => {
 
 // Ensure the keyed state value is an object or a function producing an object.
 //
-function __keyedStateValue(value, arg = undefined) {
-    if (typeof(value) == "function") value = value(arg);
+function __keyedStateValue(value, args = undefined) {
+    if (typeof(value) == "function") value = value(args);
     if (value === undefined || value === null && value.constructor !== Object) return {};
     return value;
 }
@@ -87,16 +87,6 @@ function __keyedStateValue(value, arg = undefined) {
 // the children component can be stored in the parent, // so that it it is maintained,
 // for example, between instantiations, i.e. e.g. between hide/show of the (child) component.
 //
-export const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
-    const keyedState = keyedStateOrInitial.__keyedState === true ? keyedStateOrInitial : null;
-    const initial = keyedState ? undefinedOrInitial : keyedStateOrInitial;
-    const [ state, setState ] = useState(keyedState ? (keyedState.__get() || {}) : __keyedStateValue(initial));
-    if (keyedState) {
-    }
-    else {
-    }
-}
-
 export const useKeyedState = (initial) => {
     const [ state, setState ] = useState(__keyedStateValue(initial));
     const response = {

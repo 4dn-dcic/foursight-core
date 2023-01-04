@@ -405,23 +405,24 @@ const ConfigureActionRun = (props) => {
             </td>
         </tr>
         { confirmRun && <>
-        <tr style={{height:"4pt"}}><td></td></tr>
-        <tr style={{height:"1px",background:"gray"}}><td colspan="2"></td></tr>
-        <tr style={{height:"8pt"}}><td></td></tr>
-        <tr>
-            <td>
-                { confirmRun && <>
-                    &nbsp;<b style={{color:"red",position:"relative",bottom:"1pt"}}>{Char.RightArrow} Are you sure you want to run this action?</b>
-                </> }
-            </td>
-            <td nowrap="1">
-                { running ? <>
-                    <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}}><i>Queueing</i></div>
-                </>:<>
-                    <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}} onClick={() => { setConfirmRun(false); onRun(); }}> <small>{Char.RightArrowFat}</small> Run Action</div>
-                </> }
-            </td>
-        </tr> </>}
+            <tr style={{height:"4pt"}}><td></td></tr>
+            <tr style={{height:"1px",background:"gray"}}><td colSpan="2"></td></tr>
+            <tr style={{height:"8pt"}}><td></td></tr>
+            <tr>
+                <td>
+                    { confirmRun && <>
+                        &nbsp;<b style={{color:"red",position:"relative",bottom:"1pt"}}>{Char.RightArrow} Are you sure you want to run this action?</b>
+                    </> }
+                </td>
+                <td nowrap="1">
+                    { running ? <>
+                        <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}}><i>Queueing</i></div>
+                    </>:<>
+                        <div className={`check-run-button red`} style={{float:"right",marginTop:"-3pt"}} onClick={() => { setConfirmRun(false); onRun(); }}> <small>{Char.RightArrowFat}</small> Run Action</div>
+                    </> }
+                </td>
+            </tr>
+        </>}
         </tbody></table>
     </div>
 }
@@ -545,7 +546,7 @@ const CheckRunArgs = (props) => {
     return <>
         <table style={{fontSize:fontSize}}><tbody>
             { Object.keys(args).length === 0 && <>
-                <b style={{fontSize:"110%"}}>No arguments.</b>
+                <tr><td><b style={{fontSize:"110%"}}>No arguments.</b></td></tr>
             </> }
             { Object.keys(args).map(name => {
                 const setThisArg = (value) => setArg(name, value);

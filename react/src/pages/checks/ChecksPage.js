@@ -37,21 +37,23 @@ const TestChecksPage = () => {
     const keyedState = useKeyedState();
 
     const componentDefinitions = useComponentDefinitions([
-         //{ type: "check", create: createCheck },
          { type: "group", create: createGroup },
     ]);
 
     const componentsLeft = useSelectedComponents(componentDefinitions);
     const componentsRight = useSelectedComponents(componentDefinitions);
 
-    function createGroup(name, key, keyedState, unselect, args) {
-        const { checks, showBrief } = args;
-        return <Group groupName={name} env={environ} parentState={keyedState.keyed(key)} groupChecks={checks} close={unselect} />
+    function createGroup(name, key, unselect, args) {
+        const { keyedState, checks, showBrief } = args;
+        return <Group
+            groupName={name}
+            env={environ}
+            parentState={keyedState.keyed(key)}
+            groupChecks={checks}
+            showBrief={showBrief}
+            close={unselect}
+        />
     }
-
-    //function createCheck(name, key, keyedState, unselect) {
-        //return <CheckWithFetch checkName={name} env={environ} parentState={keyedState.keyed(key)} />
-    //}
 
     const BoxWrapper = ({ title, close, children }) => {
         return <div style={{marginBottom:"8pt"}}>
@@ -64,9 +66,7 @@ const TestChecksPage = () => {
     }
 
     const isSelectedGroup = (groupName) => componentsLeft.selected("group", groupName);
-    const toggleGroup     = (groupName, args) => componentsLeft.toggle("group", groupName, keyedState, args);
-    //const isSelectedCheck = (checkName) => componentsLeft.selected("check");
-    //const toggleCheck     = (checkName) => componentsLeft.toggle("check", checkName, keyedState);
+    const toggleGroup     = (groupName, args) => componentsLeft.toggle("group", groupName, args);
 
     return <table><tbody><tr>
         <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
@@ -77,12 +77,12 @@ const TestChecksPage = () => {
         </td>
         { !componentsLeft.empty() &&
             <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-                { componentsLeft.map((component, i) => <div key={component.key} style={{marginTop:"0",marginBottom:"0"}}>{component.ui(keyedState)}</div>) }
+                { componentsLeft.map((component, i) => <div key={component.key} style={{marginTop:"0",marginBottom:"0"}}>{component.ui({ keyedState: keyedState })}</div>) }
             </td>
         }
         { !componentsRight.empty() &&
             <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-                { componentsRight.map(component => <div key={component.key}>{component.ui(keyedState)}</div>) }
+                { componentsRight.map(component => <div key={component.key}>{component.ui({ keyedState: keyedState })}</div>) }
             </td>
         }
     </tr></tbody></table>
@@ -99,9 +99,9 @@ const GroupList = (props) => {
             {!groups.loading && groups.data.map((group, i) => {
                 const toggle = () => props.toggle(group.group, { checks: group.checks });
                 const isSelected = () => props.isSelected(group.group);
-                const style = {...(i + 1 < groups.length ? styleNotLast : styleLast), ...(isSelected(group.name) ? {fontWeight:"bold"} : {})};
+                const style = i + 1 < groups.length ? styleNotLast : styleLast;
                 return <div key={group.group} style={style} onClick={toggle}>
-                    <span id={`tooltip-${group.group}`}>{group.group}&nbsp;&nbsp;<small>({group.checks.length})</small></span>
+                    <span id={`tooltip-${group.group}`} style={{fontWeight: isSelected(group.name) ? "bold" : "inherit"}}>{group.group}</span>&nbsp;&nbsp;<small>({group.checks.length})</small>
                     <Tooltip id={`tooltip-${group.group}`} text={`Click to view (${group.checks.length}) group checks.`} />
                 </div>
             })}
@@ -111,12 +111,7 @@ const GroupList = (props) => {
 
 const Group = (props) => {
     // TODO: how to pass in showBrief - do this if click on (say) the number of checks per group rather than the group name
-        console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxx')
-        console.log(props)
     const { groupName, groupChecks, env, parentState, showBrief, close } = props;
-        console.log(groupChecks)
-    //const { checks } = args;
-    //const groupChecks = checks;
     const [ state, setState ] = useOptionalKeyedState(parentState, { showBriefList: showBrief ? groupChecks.map(check => check.name) : []});
     const title = groupName.replace(/ checks$/i, "") + " Group";
     const isShowBrief = (checkName) => state.showBriefList?.find(item => item === checkName);
@@ -142,13 +137,15 @@ const Group = (props) => {
                 const toggleBrief = () => toggleShowBrief(check.name);
                 if (isShowBrief(check.name)) {
                     return <CheckBrief
+                        key={i}
                         check={check}
                         toggleBrief={toggleBrief} style={style}
                     />
                 }
                 else {
                     return <Check
-                        check={check} env={env} parentState={parentState.keyed(check.name)}
+                        key={i}
+                        check={check} env={env} parentState={parentState?.keyed(check.name)}
                         lightenOnHover={true} onCollapse={toggleBrief}
                         style={style} width="100%"
                     />
