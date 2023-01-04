@@ -44,13 +44,12 @@ const TestChecksPage = () => {
     const componentsRight = useSelectedComponents(componentDefinitions);
 
     function createGroup(name, key, unselect, args) {
-        const { keyedState, checks, showBrief } = args;
+        const { keyedState, checks } = args;
         return <Group
             groupName={name}
             env={environ}
             parentState={keyedState.keyed(key)}
             groupChecks={checks}
-            showBrief={showBrief}
             close={unselect}
         />
     }
@@ -115,25 +114,28 @@ const Group = (props) => {
     const [ state, setState ] = useOptionalKeyedState(parentState, { showBriefList: showBrief ? groupChecks.map(check => check.name) : []});
     const title = groupName.replace(/ checks$/i, "") + " Group";
     const isShowBrief = (checkName) => state.showBriefList?.find(item => item === checkName);
-    const isShowAnyBrief = () => state.showBriefList?.length > 0;
-    const isShowAllBrief = () => state.showBriefList?.length === groupChecks.length;
-    const setShowAllBrief = () => { setState({ showBriefList: groupChecks.map(check => check.name) }); }
-    const setShowNoneBrief = () => setState({ showBriefList: [] }); 
+    const isShowBriefAny = () => state.showBriefList?.length > 0;
+    const isShowBriefAll = () => state.showBriefList?.length === groupChecks.length;
+    const setShowBriefAll = () => { setState({ showBriefList: groupChecks.map(check => check.name) }); }
+    const setShowBriefNone = () => setState({ showBriefList: [] }); 
     const toggleShowBrief = (checkName) => {
         isShowBrief(checkName) ?
             setState({ showBriefList: state.showBriefList.filter(item => item !== checkName) })
         :   setState({ showBriefList: [...(state.showBriefList || []), checkName] });
     }
+    const toggleShowBriefAll = () => {
+        !isShowBriefAll() ? setShowBriefAll() : setShowBriefNone();
+    }
     return <>
         <div>&nbsp;</div>
         <div className="box" style={{marginBottom:"-6pt",whiteSpace:"nowrap"}}>
-            <div style={{marginBottom:"4pt",cursor:"pointer"}} onClick={() => !isShowAllBrief() ? setShowAllBrief() : setShowNoneBrief()}>
+            <div style={{marginBottom:"4pt",cursor:"pointer"}} onClick={toggleShowBriefAll}>
                 <b>{title}</b>&nbsp;
-                <small>{!isShowAllBrief() ? <span>{Char.DownArrowFat}</span> : Char.UpArrowFat}</small>
+                <small>{!isShowBriefAll() ? <span>{Char.DownArrowFat}</span> : Char.UpArrowFat}</small>
                 <div style={{float:"right",marginTop:"-1pt",fontSize:"small",cursor:"pointer"}} onClick={close}><b>{Char.X}</b></div>
             </div>
             {groupChecks.map((check, i) => {
-                const style = i > 0 ? { marginTop: isShowAllBrief() ? "3pt" : "6pt" } : {};
+                const style = i > 0 ? { marginTop: isShowBriefAll() ? "3pt" : "6pt" } : {};
                 const toggleBrief = () => toggleShowBrief(check.name);
                 if (isShowBrief(check.name)) {
                     return <CheckBrief
