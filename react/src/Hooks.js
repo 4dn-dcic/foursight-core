@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import useKeyedStateNew from './pages/checks/k';
 
 // Component/hook to dynamically define/create components by type name and an optional
 // identifying name. This is in service of the useSelectedComponents component/hook
@@ -89,33 +90,32 @@ function __keyedStateValue(value, args = undefined) {
 //
 export const useKeyedState = (initial) => {
     const [ state, setState ] = useState(__keyedStateValue(initial));
-    const response = {
+    return {
         __keyedState: true,
         __get: () => state,
-        __update: (value) => setState(state => ({...state, ...__keyedStateValue(value, state)})),
+        // __update: (value) => setState(state => ({...state, ...__keyedStateValue(value, state)})),
         __getKey: (key) => {
             key = key ? `__${key}__` : key = "__key__";
             return (key ? state[key] : state) || {};
         },
         __updateKey: (key, value) => {
             key = key ? `__${key}__` : key = "__key__";
-            setState(state => ({ ...state, [key]: { ...state[key], ...__keyedStateValue(value, state) } }));
+            setState(state => ({ ...state, [key]: { ...state[key], ...__keyedStateValue(value, state[key]) } }));
         },
-    };
-    response.keyed = function(key) {
-        const outer = this;
-        return {
-            __keyedState: true,
-            key: key,
-            __get: () => outer.__getKey(key),
-            __update: (value) => outer.__updateKey(key, value),
-            keyed: function(key, exact = false) {
-                if (!exact && this.key) key = this.key + "::" + key;
-                return outer.keyed(key, true);
+        keyed: function(key) {
+            const outer = this;
+            return {
+                __keyedState: true,
+                key: key,
+                __get: () => outer.__getKey(key),
+                __update: (value) => outer.__updateKey(key, value),
+                keyed: function(key, exact = false) {
+                    if (!exact && this.key) key = this.key + "::" + key;
+                    return outer.keyed(key, true);
+                }
             }
         }
     };
-    return response;
 }
 
 // Convenience component/hook to wrap the above useKeyedState hook in a child component

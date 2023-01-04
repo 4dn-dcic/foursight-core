@@ -294,6 +294,7 @@ const RunConfigure = (props) => {
             check={check}
             args={args}
             setArg={setArg}
+            parentState={parentState.keyed("config-action-run")}
             running={isActionRunning()}
             onRun={setActionRunning}
             actionAllowed={actionAllowed}
@@ -346,12 +347,18 @@ const ConfigureCheckRun = (props) => {
 const ConfigureActionRun = (props) => {
 
     const {
-        check, env, running, onRun, actionAllowed, setTriggerRefreshResult,
+        check, env, parentState,
+        running, onRun, actionAllowed, setTriggerRefreshResult,
         fontSize = "small", marginTop = "4pt"
     } = props;
 
     const action = useFetch({ cache: true });
-    const [ confirmRun, setConfirmRun ] = useState(false);
+//  const [ confirmRun, setConfirmRun ] = useState(false);
+//  const isConfirmRun = () => confirmRun;
+
+    const [ state, setState ] = useOptionalKeyedState(parentState);
+    const isConfirmRun = () => state.confirmRun;
+    const setConfirmRun = (value) => setState({ confirmRun: value });
 
     useEffect(() => {
         if (check.registered_action?.name) {
@@ -370,7 +377,7 @@ const ConfigureActionRun = (props) => {
         <tr>
             <td style={{whiteSpace:"nowrap"}}>
                 <span>
-                    <b><u>Action</u></b>: <b id={`tooltip=${action.data?.name}`} style={{color:confirmRun ? "red" : "inherit",whiteSpace:"break-spaces"}}>{action.data?.title}</b>
+                    <b><u>Action</u></b>: <b id={`tooltip=${action.data?.name}`} style={{color:isConfirmRun() ? "red" : "inherit",whiteSpace:"break-spaces"}}>{action.data?.title}</b>
                         <Tooltip id={`tooltip=${action.data?.name}`} text={`Action: ${action.data?.module} ${action.data?.name}`} />
                 </span>
                 <GitHubLink
@@ -380,7 +387,7 @@ const ConfigureActionRun = (props) => {
                 />
             </td>
             <td nowrap="1">
-                { !confirmRun && <>
+                { !isConfirmRun() && <>
                     <div style={{float:"right",marginTop:"1pt",marginBottom:"4pt"}}>
                         { !actionAllowed && <>
                             <b id={`tooltip-${action.data?.name}-refresh-result`} onClick={() => setTriggerRefreshResult(true)} style={{marginRight:"8pt",position:"relative",top:"1pt",cursor:"pointer"}}>{Char.Refresh}</b>
@@ -399,18 +406,18 @@ const ConfigureActionRun = (props) => {
                         </span>
                     </div>
                 </> }
-                { confirmRun &&
+                { isConfirmRun() &&
                     <div className="check-action-confirm-button" style={{float:"right",marginRight:"2pt"}} onClick={() => setConfirmRun(false)}><b>Cancel</b></div>
                 }
             </td>
         </tr>
-        { confirmRun && <>
+        { isConfirmRun() && <>
             <tr style={{height:"4pt"}}><td></td></tr>
             <tr style={{height:"1px",background:"gray"}}><td colSpan="2"></td></tr>
             <tr style={{height:"8pt"}}><td></td></tr>
             <tr>
                 <td>
-                    { confirmRun && <>
+                    { isConfirmRun() && <>
                         &nbsp;<b style={{color:"red",position:"relative",bottom:"1pt"}}>{Char.RightArrow} Are you sure you want to run this action?</b>
                     </> }
                 </td>

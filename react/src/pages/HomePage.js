@@ -10,6 +10,8 @@ import { HorizontalLine, Link, LoggedInUser } from '../Components';
 import Tooltip from '../components/Tooltip';
 import Str from '../utils/Str';
 import { AccountInfo } from './AccountsComponent';
+import Uuid from 'react-uuid';
+import useKeyedStateNew from '../hooks/KeyedStateNew';
 
 const HomePage = (props) => {
 
@@ -24,9 +26,22 @@ const HomePage = (props) => {
         stage: header.app?.stage
     }
 
-   const [ showAccountSummary, setShowAccountSummary ] = useState(false);
+    const [ showAccountSummary, setShowAccountSummary ] = useState(false);
+
+    const ks = useKeyedStateNew({adfadf:"123132"});
+    const [ no, setNo ] = useKeyedStateNew(ks);
+    const [ uks, setUks ] = useKeyedStateNew(ks.keyed('foo'));
+    const [ uks2, setUks2 ] = useKeyedStateNew(ks.keyed('foo2'));
 
     return <>
+                KS: [{JSON.stringify(ks.__getState())}] <br />
+                UKS: [{JSON.stringify(uks)}] <br />
+                UKS2: [{JSON.stringify(uks2)}] <br />
+                no: [{JSON.stringify(no)}] <br />
+                <span className="pointer" onClick={() => { setUks(Uuid()); }}>UPDATE-UKS</span> <br />
+                <span className="pointer" onClick={() => { setUks2({prufrock:Uuid()}); }}>UPDATE-UKS2</span> <br />
+                <span className="pointer" onClick={() => { setUks2({melville:Uuid()}); }}>UPDATE-UKS2b</span> <br />
+                <span className="pointer" onClick={() => { setNo({noway:Uuid()}); }}>UPDATE-NO</span> <br />
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
                 <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})</span></b>
