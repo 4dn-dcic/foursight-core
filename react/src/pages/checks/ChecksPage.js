@@ -37,7 +37,7 @@ const TestChecksPage = () => {
     const keyedState = useKeyedState();
 
     const componentDefinitions = useComponentDefinitions([
-         { type: "check", create: createCheck },
+         //{ type: "check", create: createCheck },
          { type: "group", create: createGroup },
     ]);
 
@@ -110,8 +110,9 @@ const GroupList = (props) => {
 }
 
 const Group = (props) => {
-    const { groupName, groupChecks, env, parentState, close } = props;
-    const [ state, setState ] = useOptionalKeyedState(parentState);
+    // TODO: how to pass in showBrief - do this if click on (say) the number of checks per group rather than the group name
+    const { groupName, groupChecks, env, parentState, showBrief, close } = props;
+    const [ state, setState ] = useOptionalKeyedState(parentState, { showBriefList: showBrief ? groupChecks.map(check => check.name) : []});
     const title = groupName.replace(/ checks$/i, "") + " Group";
     const isShowBrief = (checkName) => state.showBriefList?.find(item => item === checkName);
     const isShowAnyBrief = () => state.showBriefList?.length > 0;
