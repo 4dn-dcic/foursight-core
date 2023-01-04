@@ -87,6 +87,16 @@ function __keyedStateValue(value, arg = undefined) {
 // the children component can be stored in the parent, // so that it it is maintained,
 // for example, between instantiations, i.e. e.g. between hide/show of the (child) component.
 //
+export const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
+    const keyedState = keyedStateOrInitial.__keyedState === true ? keyedStateOrInitial : null;
+    const initial = keyedState ? undefinedOrInitial : keyedStateOrInitial;
+    const [ state, setState ] = useState(keyedState ? (keyedState.__get() || {}) : __keyedStateValue(initial));
+    if (keyedState) {
+    }
+    else {
+    }
+}
+
 export const useKeyedState = (initial) => {
     const [ state, setState ] = useState(__keyedStateValue(initial));
     const response = {
