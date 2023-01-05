@@ -36,7 +36,7 @@ const HomePage = (props) => {
     const [ uks4, setUks4 ] = useKeyedStateNew(ks.keyed('foo3').keyed().keyed('fall'));
 
     return <>
-                KS: [{JSON.stringify(ks.__getState())}] <br />
+                {/* KS: [{JSON.stringify(ks.__getState())}] <br /> */}
                 UKS: [{JSON.stringify(uks)}] <br />
                 UKS2: [{JSON.stringify(uks2)}] <br />
                 UKS3: [{JSON.stringify(uks3)}] <br />
@@ -46,7 +46,7 @@ const HomePage = (props) => {
                 <span className="pointer" onClick={() => { setUks2({prufrock:Uuid()}); }}>UPDATE-UKS2</span> <br />
                 <span className="pointer" onClick={() => { setUks2({melville:Uuid()}); }}>UPDATE-UKS2b</span> <br />
                 <span className="pointer" onClick={() => { setUks3({darwin:Uuid()}); }}>UPDATE-UKS3</span> <br />
-                <span className="pointer" onClick={() => { setUks4({leibnitz:Uuid()}); }}>UPDATE-UKS4</span> <br />
+                <span className="pointer" onClick={() => { setUks4(["leibnitz",Uuid()]); }}>UPDATE-UKS4</span> <br />
                 <span className="pointer" onClick={() => { setNo({noway:Uuid()}); }}>UPDATE-NO</span> <br />
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>

@@ -10,8 +10,8 @@ const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
 
     const initial = keyedState ? (keyedState.__getState()
                                   ? keyedState.__getState()
-                                  : __keyedStateUsageInitialValue(undefinedOrInitial))
-                               : __keyedStateInitialValue(keyedStateOrInitial);
+                                  : __keyedStateUsageValue(undefinedOrInitial))
+                               : __keyedStateValue(keyedStateOrInitial);
 
     const [ state, setState ] = useState(initial);
 
@@ -29,7 +29,7 @@ const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
     }
     else {
         //
-        // Defining a keyed state.
+        // Defining a (parent) keyed state.
         //
         return { __keyedState: true,
             key: null,
@@ -40,9 +40,8 @@ const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
                 return { __keyedState: true, __keyedStateUsage: true,
                     key: key,
                     keyed: function(key) {
-                        if ((this.__keyedState !== true) || (this.__keyedStateUsage !== true)) return undefined;
+                        if ((this.__keyedState !== true) || (this.__keyedStateUsage !== true) || (this.__keyedStateUsage !== true)) return undefined;
                         if ((key?.constructor !== String) || (key.length === 0)) key = "default";
-                        if (this.__keyedStateUsage !== true) return undefined;
                         return outer.keyed(this.key ? `${this.key}.${key}` : key, true);
                     },
                     __updateState: function(value) {
@@ -53,11 +52,11 @@ const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
                     }
                 }
             },
-            __updateState: function(value) {
-                setState(__keyedStateInitialValue(value));
-            },
+         // __updateState: function(value) {
+         //     setState(__keyedStateValue(value));
+         // },
             __updateKeyedState: function(key, value) {
-                value = __keyedStateUsageUpdateValue(value)
+                value = __keyedStateUsageValue(value)
                 setState(state => ({ ...state, [key]: value }));
             },
             __getState: function(key = null) {
@@ -67,38 +66,17 @@ const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
     }
 }
 
-const __keyedStateValue = (value, args = undefined) => {
-    if (typeof(value) == "function") value = value(args);
-    return (value?.constructor === Object) ? value : {};
-}
-
-const __keyedStateInitialValue = (value) => {
+const __keyedStateValue = (value) => {
     if (typeof(value) == "function") value = value();
     return (value?.constructor === Object) ? value : {};
 }
 
-const __keyedStateUsageInitialValue = (value) => {
-    return (typeof(value) == "function") ? value() : ((value === undefined) || (value === null) ? {} : value);
-}
-
-const __keyedStateUsageUpdateValue = (value, state) => {
-    return (typeof(value) == "function") ? value(state) : value;
+const __keyedStateUsageValue = (value, state) => {
+    if (typeof(value) == "function") value = value();
+    return (value !== undefined) ? value : {};
 }
 
 function __updateState(setState, newState, currentState = undefined, updateObject = true) {
-    function __copyArrayWithAnyProperties(value) {
-        const newValue = [...value];
-        const keys = Object.keys(value);
-        const nelements = value.length;
-        const nproperties = keys.length - nelements;
-        if (nproperties > 0) {
-            for (let i = 0 ; i < nproperties ; i++) {
-                const key = keys[nelements - i];
-                newValue[key] = value[key];
-            }
-        }
-        return newValue;
-    }
     if (Object.is(newState, currentState)) {
         //
         // If the new state is DIFFERENT, by reference (i.e. Object.is),
@@ -118,6 +96,19 @@ function __updateState(setState, newState, currentState = undefined, updateObjec
             // Special case of array to include any (odd) properties which might exist for the array.
             // as by default using the spread operator (...) on an array will not include these.
             //
+            function __copyArrayWithAnyProperties(value) {
+                const newValue = [...value];
+                const keys = Object.keys(value);
+                const nelements = value.length;
+                const nproperties = keys.length - nelements;
+                if (nproperties > 0) {
+                    for (let i = 0 ; i < nproperties ; i++) {
+                        const key = keys[nelements - i];
+                        newValue[key] = value[key];
+                    }
+                }
+                return newValue;
+            }
             newState = __copyArrayWithAnyProperties(newState);
         }
         else if (typeof(newState) === "function") {
