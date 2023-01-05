@@ -20,8 +20,7 @@ import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 import CheckWithFetch from './checks/CheckWithFetch';
-import { useKeyedState } from '../Hooks';
-import useKeyedStateNew from '../hooks/KeyedStateNew';
+import useKeyedState from '../hooks/KeyedState';
 
 function basename(path) {
     return path?.split('/')?.reverse()[0];
@@ -34,7 +33,7 @@ function dirname(path) {
 const CheckHistoryPage = (props) => {
 
     //const keyedState = useKeyedState();
-    const keyedState = useKeyedStateNew();
+    const keyedState = useKeyedState();
 
     const { environ, check } = useParams();
     const [ args, setArgs ] = useSearchParams();

@@ -22,7 +22,7 @@ import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
 import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
 //import { useKeyedState, useOptionalKeyedState } from '../../Hooks.js';
-import useKeyedStateNew from '../../hooks/KeyedStateNew';
+import useKeyedState from '../../hooks/KeyedState';
 
 const background = "lightyellow";
 
@@ -43,8 +43,8 @@ export const Check = (props) => {
     } = props;
 
     //const [ state, setState ] = useOptionalKeyedState(parentState , { showRunBox: showRunBox, showLatestResult: showLatestResult });
-    //const [ state, setState ] = useKeyedStateNew(parentState , { showRunBox: showRunBox, showLatestResult: showLatestResult });
-    const [ state, setState ] = useKeyedStateNew(parentState, { showLatestResult: showLatestResult, showRunBox: showRunBox});
+    //const [ state, setState ] = useKeyedState(parentState , { showRunBox: showRunBox, showLatestResult: showLatestResult });
+    const [ state, setState ] = useKeyedState(parentState, { showLatestResult: showLatestResult, showRunBox: showRunBox});
     const isShowRunBox = () => state.showRunBox;
     const toggleShowRunBox = () => setState({ showRunBox: !isShowRunBox() });
     const isShowLatestResult = () => state.showLatestResult;
@@ -168,10 +168,10 @@ const RunConfigure = (props) => {
     // instantiations of this component, which can happen via component hide/show.
     //
     //const [ args, setArgs ] = useOptionalKeyedState(parentState, () => getArgs(check, env));
-    const [ args, setArgs ] = useKeyedStateNew(parentState, () => getArgs(check, env));
+    const [ args, setArgs ] = useKeyedState(parentState, () => getArgs(check, env));
     const setArg = (name, value) => setArgs({ ...args, [name]: { ...args[name], value: value } });
     //const [ state, setState ] = useOptionalKeyedState(parentState?.keyed("local"));
-    const [ state, setState ] = useKeyedStateNew(parentState?.keyed("local"));
+    const [ state, setState ] = useKeyedState(parentState?.keyed("local"));
 
     // Parses out the the arguments for the check run from the info (ultimately) from the
     // check_setup.json file and the check_function decorator. Returned object has a property
@@ -362,7 +362,7 @@ const ConfigureActionRun = (props) => {
 //  const isConfirmRun = () => confirmRun;
 
     //const [ state, setState ] = useOptionalKeyedState(parentState);
-    const [ state, setState ] = useKeyedStateNew(parentState);
+    const [ state, setState ] = useKeyedState(parentState);
     const isConfirmRun = () => state.confirmRun;
     const setConfirmRun = (value) => setState({ confirmRun: value });
 
@@ -475,7 +475,7 @@ const CheckRunningOrRan = (props) => {
     }, [run]);
 
     //const [ state, setState ] = useOptionalKeyedState(parentState);
-    const [ state, setState ] = useKeyedStateNew(parentState);
+    const [ state, setState ] = useKeyedState(parentState);
     const toggleShowUuid = () => setState({ showUuid: !state.showUuid });
     const isShowUuid = () => state.showUuid;
 
@@ -529,7 +529,7 @@ const ActionRunningOrRan = (props) => {
     }, [run]);
 
     //const [ state, setState ] = useOptionalKeyedState(parentState);
-    const [ state, setState ] = useKeyedStateNew(parentState);
+    const [ state, setState ] = useKeyedState(parentState);
     const toggleShowUuid = () => setState({ showUuid: !state.showUuid });
     const isShowUuid = () => state.showUuid;
 
@@ -638,7 +638,7 @@ const CheckLatestResult = (props) => {
     } = props;
 
     //const [ state, setState ] = useOptionalKeyedState(parentState);
-    const [ state, setState ] = useKeyedStateNew(parentState);
+    const [ state, setState ] = useKeyedState(parentState);
 
     const resultSummary = useFetch({ cache: true, loading: true });
     const resultDetail  = useFetch({ cache: true });

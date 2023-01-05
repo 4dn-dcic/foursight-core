@@ -14,7 +14,7 @@ import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
 import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
 //import { useKeyedState, useOptionalKeyedState } from '../../Hooks.js';
-import useKeyedStateNew from '../../hooks/KeyedStateNew';
+import useKeyedState from '../../hooks/KeyedState';
 import Check from '../checks/Check';
 import CheckWithFetch from '../checks/CheckWithFetch';
 
@@ -36,7 +36,7 @@ const TestChecksPage = () => {
     const { environ } = useParams();
 
     //const keyedState = useKeyedState();
-    const keyedState = useKeyedStateNew();
+    const keyedState = useKeyedState();
 
     const componentDefinitions = useComponentDefinitions([
          { type: "group", create: createGroup },
@@ -114,7 +114,7 @@ const Group = (props) => {
     // TODO: how to pass in showBrief - do this if click on (say) the number of checks per group rather than the group name
     const { groupName, groupChecks, env, parentState, showBrief, close } = props;
     //const [ state, setState ] = useOptionalKeyedState(parentState, { showBriefList: showBrief ? groupChecks.map(check => check.name) : []});
-    const [ state, setState ] = useKeyedStateNew(parentState, { showBriefList: showBrief ? groupChecks.map(check => check.name) : []});
+    const [ state, setState ] = useKeyedState(parentState, { showBriefList: showBrief ? groupChecks.map(check => check.name) : []});
     const title = groupName.replace(/ checks$/i, "") + " Group";
     const isShowBrief = (checkName) => state.showBriefList?.find(item => item === checkName);
     const isShowBriefAny = () => state.showBriefList?.length > 0;
