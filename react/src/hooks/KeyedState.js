@@ -8,10 +8,11 @@ const useKeyedState = (keyedStateOrInitial, undefinedOrInitial) => {
                             : keyedStateOrInitial.keyed("default"))
                         : null;
 
-    const initial = keyedState ? (keyedState.__state()
-                                  ? keyedState.__state()
-                                  : __keyedStateUsageValue(undefinedOrInitial))
-                               : __keyedStateValue(keyedStateOrInitial);
+    const initial = keyedState
+                    ? (keyedState.__state()
+                       ? keyedState.__state()
+                       : __keyedStateUsageValue(undefinedOrInitial))
+                    : __keyedStateValue(keyedStateOrInitial);
 
     const [ state, setState ] = useState(initial);
 

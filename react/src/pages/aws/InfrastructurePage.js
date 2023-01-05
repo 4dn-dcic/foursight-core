@@ -11,7 +11,6 @@ import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
 import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
-//import { useKeyedState, useOptionalKeyedState } from '../../Hooks.js';
 import useKeyedState from '../../hooks/KeyedState';
 
 const tdLabelStyle = {
@@ -194,7 +193,6 @@ const Vpcs = (props) => {
 const Vpc = (props) => {
 
     const { vpc, keyedState } = props;
-    //const [ state, setState ] = useOptionalKeyedState(keyedState);
     const [ state, setState ] = useKeyedState(keyedState);
 
     const isShow = (property) => state[property];
@@ -335,17 +333,9 @@ const Subnets = (props) => {
 
 const Subnet = (props) => {
     const { subnet, keyedState } = props;
-    //const [ state, setState ] = useOptionalKeyedState(keyedState);
     const [ state, setState ] = useKeyedState(keyedState, false);
-
-    //const isShow = (property) => state[property];
-    //const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
-    //const isShowTags = () => isShow    ("showTags");
-    //const toggleTags = () => toggleShow("showTags");
-
     const isShowTags = () => state;
     const toggleTags = () => setState(!state);
-
     return <>
         <div className={"box margin" + (subnet?.type === "private" ? " darken" : " lighten")} style={{width:"100%"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
@@ -435,7 +425,6 @@ const SecurityGroups = (props) => {
 const SecurityGroup = (props) => {
 
     const { securityGroup, keyedState } = props;
-    //const [ state, setState ] = useOptionalKeyedState(keyedState);
     const [ state, setState ] = useKeyedState(keyedState);
 
     const isShow = (property) => state[property];
@@ -709,7 +698,6 @@ const StackList = (props) => {
 const Stack = (props) => {
 
     const { stackName, keyedState, hide } = props;
-    //const [ state, setState ] = useOptionalKeyedState(keyedState);
     const [ state, setState ] = useKeyedState(keyedState);
 
     const stack = useFetch(`/aws/stacks/${stackName}`, { cache: true });
