@@ -347,7 +347,6 @@ const Subnet = (props) => {
     const toggleTags = () => setState(!state);
 
     return <>
-                [{JSON.stringify(state)}]
         <div className={"box margin" + (subnet?.type === "private" ? " darken" : " lighten")} style={{width:"100%"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <b>Subnet</b>: <b style={{color:"black"}}>{subnet?.name}</b>

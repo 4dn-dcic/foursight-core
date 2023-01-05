@@ -16,7 +16,7 @@ const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
     const [ state, setState ] = useState(initial);
 
     useEffect(() => {
-        if (keyedState && initial) {
+        if (initial && keyedState && !keyedState.__state()) {
             keyedState.__updateState(__updateState(initial, state, true));
         }
     }, []);
@@ -52,7 +52,6 @@ const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
                         return outer.keyed(this.key ? `${this.key}.${key}` : key, true);
                     },
                     __updateState: function(value) {
-                        value = __keyedStateUsageValue(value);
                         if (value?.constructor === Object) {
                             setState(state => ({ ...state, [key]: { ...state[key], ...value } }));
                         }
@@ -64,8 +63,7 @@ const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
                         return state[key];
                     }
                 }
-            },
-            __state: () => state
+            }
         };
     }
 }
