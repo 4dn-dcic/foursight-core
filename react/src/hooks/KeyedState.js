@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
 
+// Hook to manage a (parent) "keyed" state object used to pass down
+// to child components in which this can be used to transparently
+// store the local state of the child component within the parent.
+//
 const useKeyedState = (keyedStateOrInitial, undefinedOrInitial) => {
 
     const keyedState = (keyedStateOrInitial?.__keyedState === true)
