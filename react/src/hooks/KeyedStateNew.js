@@ -48,7 +48,8 @@ const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
                         outer.__updateKeyedState(key, value);
                     },
                     __getState: function() {
-                        return outer.__getState(key);
+                        return state[key];
+                     // return outer.__getState(key);
                     }
                 }
             },
