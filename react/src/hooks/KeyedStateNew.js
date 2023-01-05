@@ -124,11 +124,7 @@ function __updateState(newState, currentState = undefined, updateObject = true) 
         // Special case of object update. If desired, i.e. if the updateObject argument is true, which
         // is the default, then AMEND the existing/current object, updating/overriding from the new object.
         //
-        console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxy')
-        console.log(newState)
-        console.log(currentState)
         newState = { ...currentState, ...newState };
-        console.log(newState)
     }
     return newState;
 }

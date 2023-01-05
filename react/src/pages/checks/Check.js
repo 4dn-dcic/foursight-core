@@ -72,7 +72,6 @@ export const Check = (props) => {
     }
 
     return <div className={`box ${lightenOnHover ? "check-box" : ""}`} style={{...style, width:props.width || "500pt"}}>
-                CHECK-STATE: [{JSON.stringify(state)}]
         <table width="100%"><tbody><tr>
         <td style={{verticalAlign:"top",width:"12pt"}}>
             <small><b id={`tooltip-${check.name}-latest_result`} style={{verticalAlign:"top",width:"12pt",cursor:"pointer"}} onClick={() => onCollapse ? onCollapse(check.name) : toggleShowLatestResult()}>
@@ -143,7 +142,6 @@ export const Check = (props) => {
             <CheckLatestResult
                 check={check}
                 setActionAllowed={setActionAllowed}
-                xparentState={parentState?.keyed("latest_result")}
                 parentState={parentState}
                 triggerRefreshResult={triggerRefreshResult}
                 setTriggerRefreshResult={setTriggerRefreshResult} />

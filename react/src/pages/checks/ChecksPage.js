@@ -69,8 +69,7 @@ const TestChecksPage = () => {
     const isSelectedGroup = (groupName) => componentsLeft.selected("group", groupName);
     const toggleGroup     = (groupName, args) => componentsLeft.toggle("group", groupName, args);
 
-    return <> KEYED-STATE: [{JSON.stringify(keyedState.__state())}] <br/> <table><tbody><tr>
-                
+    return <table><tbody><tr>
         <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
             <GroupList
                 toggle={toggleGroup}
@@ -87,7 +86,7 @@ const TestChecksPage = () => {
                 { componentsRight.map(component => <div key={component.key}>{component.ui({ keyedState: keyedState })}</div>) }
             </td>
         }
-    </tr></tbody></table> </>
+    </tr></tbody></table>
 }
 
 const GroupList = (props) => {
@@ -131,7 +130,6 @@ const Group = (props) => {
         !isShowBriefAll() ? setShowBriefAll() : setShowBriefNone();
     }
     return <>
-                GROUP-STATE:[{JSON.stringify(state)}] | GROUP-STATE-KEY:[{JSON.stringify(parentState.key)}].
         <div>&nbsp;</div>
         <div className="box" style={{marginBottom:"-6pt",whiteSpace:"nowrap"}}>
             <div style={{marginBottom:"4pt",cursor:"pointer"}} onClick={toggleShowBriefAll}>
