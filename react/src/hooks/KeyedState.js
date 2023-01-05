@@ -48,7 +48,7 @@ const useKeyedState = (keyedStateOrInitial, undefinedOrInitial) => {
                 return { __keyedState: true, __keyedStateUsage: true,
                     key: key,
                     keyed: function(key) {
-                        if ((this.__keyedState !== true) || (this.__keyedStateUsage !== true) || (this.__keyedStateUsage !== true)) return undefined;
+                        if ((this.__keyedState !== true) || (this.__keyedStateUsage !== true)) return undefined;
                         if ((key?.constructor !== String) || (key.length === 0)) key = "default";
                         return outer.keyed(this.key ? `${this.key}.${key}` : key, true);
                     },

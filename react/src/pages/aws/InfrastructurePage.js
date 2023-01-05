@@ -10,7 +10,7 @@ import Json from '../../utils/Json';
 import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
-import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
+import useSelectedComponents from '../../hooks/SelectedComponents';
 import useKeyedState from '../../hooks/KeyedState';
 
 const tdLabelStyle = {
@@ -28,10 +28,9 @@ const tdContentStyle = {
 
 const InfrastructurePage = () => {
 
-    //const keyedState = useKeyedState();
     const keyedState = useKeyedState();
 
-    const componentDefinitions = useComponentDefinitions([
+    const componentDefinitions = [
          { type: "stack",           create: createStack          },
          { type: "vpcs",            create: createVpcs           },
          { type: "subnets-public",  create: createSubnetsPublic  },
@@ -39,7 +38,7 @@ const InfrastructurePage = () => {
          { type: "security-groups", create: createSecurityGroups },
          { type: "gac",             create: createGac            },
          { type: "ecosystem",       create: createEcosystem      }
-    ]);
+    ];
 
     const componentsLeft = useSelectedComponents(componentDefinitions);
     const componentsRight = useSelectedComponents(componentDefinitions);

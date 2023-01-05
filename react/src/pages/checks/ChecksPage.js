@@ -12,7 +12,7 @@ import Tooltip from '../../components/Tooltip';
 import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
-import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
+import useSelectedComponents from '../../hooks/SelectedComponents';
 import useKeyedState from '../../hooks/KeyedState';
 import Check from '../checks/Check';
 import CheckWithFetch from '../checks/CheckWithFetch';
@@ -34,12 +34,11 @@ const TestChecksPage = () => {
 
     const { environ } = useParams();
 
-    //const keyedState = useKeyedState();
     const keyedState = useKeyedState();
 
-    const componentDefinitions = useComponentDefinitions([
-         { type: "group", create: createGroup },
-    ]);
+    const componentDefinitions = [
+        { type: "group", create: createGroup }
+    ];
 
     const componentsLeft = useSelectedComponents(componentDefinitions);
     const componentsRight = useSelectedComponents(componentDefinitions);
@@ -169,6 +168,5 @@ const CheckBrief = (props) => {
             style={{float:"right",marginTop:"1pt",marginLeft:"8pt"}} />
     </div>
 }
-
 
 export default TestChecksPage;

@@ -21,7 +21,7 @@ import Tooltip from '../../components/Tooltip';
 import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
-import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
+import { useComponentDefinitions, useSelectedComponents } from '../../hooks/SelectedComponents';
 import useKeyedState from '../../hooks/KeyedState';
 
 const background = "lightyellow";
