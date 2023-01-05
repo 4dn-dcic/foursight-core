@@ -15,7 +15,8 @@ export const useComponentDefinitions = (componentTypes) => {
         __get: (type, name, unselect, createArgs) => {
             const index = componentTypes.findIndex(componentType => componentType.type === type);
             if (index >= 0) {
-                const key = name ? `${type}::${name}` : type;
+                //const key = name ? `${type}::${name}` : type;
+                const key = name ? `${type}.${name}` : type;
                 return {
                     type: type,
                     name: name,

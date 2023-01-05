@@ -36,7 +36,7 @@ const HomePage = (props) => {
     const [ uks4, setUks4 ] = useKeyedStateNew(ks.keyed('foo3').keyed().keyed('fall'));
 
     return <>
-                KS: [{JSON.stringify(ks.__getState())}] <br />
+                KS: [{JSON.stringify(ks.__state())}] <br />
                 UKS: [{JSON.stringify(uks)}] <br />
                 UKS2: [{JSON.stringify(uks2)}] <br />
                 UKS3: [{JSON.stringify(uks3)}] <br />

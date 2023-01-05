@@ -13,7 +13,8 @@ import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
 import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
-import { useKeyedState, useOptionalKeyedState } from '../../Hooks.js';
+//import { useKeyedState, useOptionalKeyedState } from '../../Hooks.js';
+import useKeyedStateNew from '../../hooks/KeyedStateNew';
 import Check from '../checks/Check';
 import CheckWithFetch from '../checks/CheckWithFetch';
 
@@ -34,7 +35,8 @@ const TestChecksPage = () => {
 
     const { environ } = useParams();
 
-    const keyedState = useKeyedState();
+    //const keyedState = useKeyedState();
+    const keyedState = useKeyedStateNew();
 
     const componentDefinitions = useComponentDefinitions([
          { type: "group", create: createGroup },
@@ -67,7 +69,8 @@ const TestChecksPage = () => {
     const isSelectedGroup = (groupName) => componentsLeft.selected("group", groupName);
     const toggleGroup     = (groupName, args) => componentsLeft.toggle("group", groupName, args);
 
-    return <table><tbody><tr>
+    return <> KEYED-STATE: [{JSON.stringify(keyedState.__state())}] <br/> <table><tbody><tr>
+                
         <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
             <GroupList
                 toggle={toggleGroup}
@@ -84,7 +87,7 @@ const TestChecksPage = () => {
                 { componentsRight.map(component => <div key={component.key}>{component.ui({ keyedState: keyedState })}</div>) }
             </td>
         }
-    </tr></tbody></table>
+    </tr></tbody></table> </>
 }
 
 const GroupList = (props) => {
@@ -111,7 +114,8 @@ const GroupList = (props) => {
 const Group = (props) => {
     // TODO: how to pass in showBrief - do this if click on (say) the number of checks per group rather than the group name
     const { groupName, groupChecks, env, parentState, showBrief, close } = props;
-    const [ state, setState ] = useOptionalKeyedState(parentState, { showBriefList: showBrief ? groupChecks.map(check => check.name) : []});
+    //const [ state, setState ] = useOptionalKeyedState(parentState, { showBriefList: showBrief ? groupChecks.map(check => check.name) : []});
+    const [ state, setState ] = useKeyedStateNew(parentState, { showBriefList: showBrief ? groupChecks.map(check => check.name) : []});
     const title = groupName.replace(/ checks$/i, "") + " Group";
     const isShowBrief = (checkName) => state.showBriefList?.find(item => item === checkName);
     const isShowBriefAny = () => state.showBriefList?.length > 0;
@@ -127,6 +131,7 @@ const Group = (props) => {
         !isShowBriefAll() ? setShowBriefAll() : setShowBriefNone();
     }
     return <>
+                GROUP-STATE:[{JSON.stringify(state)}] | GROUP-STATE-KEY:[{JSON.stringify(parentState.key)}].
         <div>&nbsp;</div>
         <div className="box" style={{marginBottom:"-6pt",whiteSpace:"nowrap"}}>
             <div style={{marginBottom:"4pt",cursor:"pointer"}} onClick={toggleShowBriefAll}>

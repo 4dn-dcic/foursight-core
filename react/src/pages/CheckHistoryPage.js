@@ -21,6 +21,7 @@ import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 import CheckWithFetch from './checks/CheckWithFetch';
 import { useKeyedState } from '../Hooks';
+import useKeyedStateNew from '../hooks/KeyedStateNew';
 
 function basename(path) {
     return path?.split('/')?.reverse()[0];
@@ -32,7 +33,8 @@ function dirname(path) {
 
 const CheckHistoryPage = (props) => {
 
-    const keyedState = useKeyedState();
+    //const keyedState = useKeyedState();
+    const keyedState = useKeyedStateNew();
 
     const { environ, check } = useParams();
     const [ args, setArgs ] = useSearchParams();

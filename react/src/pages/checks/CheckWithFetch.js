@@ -21,8 +21,6 @@ import Tooltip from '../../components/Tooltip';
 import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
-import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
-import { useKeyedState, useOptionalKeyedState } from '../../Hooks.js';
 
 export const CheckWithFetch = (props) => {
     const { checkName, env, parentState, showRunBox, showLatestResult } = props;

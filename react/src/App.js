@@ -27,7 +27,7 @@ import UserCreatePage from './pages/UserCreatePage';
 import UserEditPage from './pages/UserEditPage';
 import UsersPage from './pages/UsersPage';
 
-import TestCheck from './pages/checks/TestCheck';
+//import TestCheck from './pages/checks/TestCheck';
 import TestChecksPage from './pages/checks/ChecksPage';
 
 function setGlobalStyles(header) {
@@ -156,7 +156,7 @@ const App = () => {
                         <ForbiddenPage />
                     }/>
                     <Route path="/api/react/:environ/test/checkbox" element={
-                        <TestCheck />
+                            {/* <TestCheck /> */}
                     }/>
                     <Route path="/api/react/:environ/test/checks" element={
                         <TestChecksPage />

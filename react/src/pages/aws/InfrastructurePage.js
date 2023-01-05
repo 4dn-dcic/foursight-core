@@ -134,11 +134,7 @@ const InfrastructurePage = () => {
         </td>
         { !componentsLeft.empty() &&
             <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-                
                 { componentsLeft.map((component, i) => <div key={component.key}>{component.ui({ keyedState: keyedState })}</div>) }
-                {/* { componentsLeft.map((component, i) => <div key={component.key}>{componentsLeft.ui(i, keyedState)}</div>) } */}
-                {/* { componentsLeft.map((component, i) => <div key={component.key}>{componentsLeft.ui(i)}</div>) } */}
-                {/* { componentsLeft.map((component, i) => <div key={component.key}>{component.ui}</div>) } */}
             </td>
         }
         { !componentsRight.empty() &&
@@ -340,12 +336,18 @@ const Subnets = (props) => {
 const Subnet = (props) => {
     const { subnet, keyedState } = props;
     //const [ state, setState ] = useOptionalKeyedState(keyedState);
-    const [ state, setState ] = useKeyedStateNew(keyedState);
-    const isShow = (property) => state[property];
-    const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
-    const isShowTags = () => isShow    ("showTags");
-    const toggleTags = () => toggleShow("showTags");
+    const [ state, setState ] = useKeyedStateNew(keyedState, false);
+
+    //const isShow = (property) => state[property];
+    //const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
+    //const isShowTags = () => isShow    ("showTags");
+    //const toggleTags = () => toggleShow("showTags");
+
+    const isShowTags = () => state;
+    const toggleTags = () => setState(!state);
+
     return <>
+                [{JSON.stringify(state)}]
         <div className={"box margin" + (subnet?.type === "private" ? " darken" : " lighten")} style={{width:"100%"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <b>Subnet</b>: <b style={{color:"black"}}>{subnet?.name}</b>

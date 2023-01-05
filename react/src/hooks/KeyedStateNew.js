@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
 
@@ -8,12 +8,18 @@ const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
                             : keyedStateOrInitial.keyed("default"))
                         : null;
 
-    const initial = keyedState ? (keyedState.__getState()
-                                  ? keyedState.__getState()
+    const initial = keyedState ? (keyedState.__state()
+                                  ? keyedState.__state()
                                   : __keyedStateUsageValue(undefinedOrInitial))
                                : __keyedStateValue(keyedStateOrInitial);
 
     const [ state, setState ] = useState(initial);
+
+    useEffect(() => {
+        if (keyedState && initial) {
+            keyedState.__updateState(__updateState(initial, state, true));
+        }
+    }, []);
 
     if (keyedState) {
         //
@@ -22,7 +28,8 @@ const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
         return [
             state,
             (value) => {
-                value = __updateState(setState, value, state, true);
+                value = __updateState(value, state, true);
+                setState(value);
                 keyedState.__updateState(value);
             }
         ];
@@ -45,24 +52,20 @@ const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
                         return outer.keyed(this.key ? `${this.key}.${key}` : key, true);
                     },
                     __updateState: function(value) {
-                        outer.__updateKeyedState(key, value);
+                        value = __keyedStateUsageValue(value);
+                        if (value?.constructor === Object) {
+                            setState(state => ({ ...state, [key]: { ...state[key], ...value } }));
+                        }
+                        else {
+                            setState(state => ({ ...state, [key]: value }));
+                        }
                     },
-                    __getState: function() {
+                    __state: function() {
                         return state[key];
-                     // return outer.__getState(key);
                     }
                 }
             },
-         // __updateState: function(value) {
-         //     setState(__keyedStateValue(value));
-         // },
-            __updateKeyedState: function(key, value) {
-                value = __keyedStateUsageValue(value)
-                setState(state => ({ ...state, [key]: value }));
-            },
-            __getState: function(key = null) {
-                return key?.constructor == String ? state[key] : state;
-            }
+            __state: () => state
         };
     }
 }
@@ -77,7 +80,7 @@ const __keyedStateUsageValue = (value, state) => {
     return (value !== undefined) ? value : {};
 }
 
-function __updateState(setState, newState, currentState = undefined, updateObject = true) {
+function __updateState(newState, currentState = undefined, updateObject = true) {
     if (Object.is(newState, currentState)) {
         //
         // If the new state is DIFFERENT, by reference (i.e. Object.is),
@@ -90,15 +93,15 @@ function __updateState(setState, newState, currentState = undefined, updateObjec
         // an update by impliclitly creating a new (appropriate) object.
         //
         if (newState?.constructor === Object) {
-            newState = {...newState};
+            newState = { ...newState };
         }
         else if (Array.isArray(newState)) {
             //
-            // Special case of array to include any (odd) properties which might exist for the array.
-            // as by default using the spread operator (...) on an array will not include these.
+            // Special case of array update. Include any properties which might exist for the array.
+            // as, by default, using the spread operator (...) on an array will not include these.
             //
             function __copyArrayWithAnyProperties(value) {
-                const newValue = [...value];
+                const newValue = [ ...value ];
                 const keys = Object.keys(value);
                 const nelements = value.length;
                 const nproperties = keys.length - nelements;
@@ -118,12 +121,15 @@ function __updateState(setState, newState, currentState = undefined, updateObjec
     }
     else if ((newState?.constructor === Object) && (currentState?.constructor === Object) && updateObject) {
         //
-        // Special case of object update. If desired, i.e. if the updateObject argument is true, which is
-        // the default, then AMEND the existing/current object, updating/overriding from the new object.
+        // Special case of object update. If desired, i.e. if the updateObject argument is true, which
+        // is the default, then AMEND the existing/current object, updating/overriding from the new object.
         //
+        console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxy')
+        console.log(newState)
+        console.log(currentState)
         newState = { ...currentState, ...newState };
+        console.log(newState)
     }
-    setState(newState);
     return newState;
 }
 

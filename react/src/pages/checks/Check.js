@@ -21,7 +21,8 @@ import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
 import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
-import { useKeyedState, useOptionalKeyedState } from '../../Hooks.js';
+//import { useKeyedState, useOptionalKeyedState } from '../../Hooks.js';
+import useKeyedStateNew from '../../hooks/KeyedStateNew';
 
 const background = "lightyellow";
 
@@ -41,7 +42,9 @@ export const Check = (props) => {
         style = {}
     } = props;
 
-    const [ state, setState ] = useOptionalKeyedState(parentState , { showRunBox: showRunBox, showLatestResult: showLatestResult });
+    //const [ state, setState ] = useOptionalKeyedState(parentState , { showRunBox: showRunBox, showLatestResult: showLatestResult });
+    //const [ state, setState ] = useKeyedStateNew(parentState , { showRunBox: showRunBox, showLatestResult: showLatestResult });
+    const [ state, setState ] = useKeyedStateNew(parentState, { showLatestResult: showLatestResult, showRunBox: showRunBox});
     const isShowRunBox = () => state.showRunBox;
     const toggleShowRunBox = () => setState({ showRunBox: !isShowRunBox() });
     const isShowLatestResult = () => state.showLatestResult;
@@ -69,6 +72,7 @@ export const Check = (props) => {
     }
 
     return <div className={`box ${lightenOnHover ? "check-box" : ""}`} style={{...style, width:props.width || "500pt"}}>
+                CHECK-STATE: [{JSON.stringify(state)}]
         <table width="100%"><tbody><tr>
         <td style={{verticalAlign:"top",width:"12pt"}}>
             <small><b id={`tooltip-${check.name}-latest_result`} style={{verticalAlign:"top",width:"12pt",cursor:"pointer"}} onClick={() => onCollapse ? onCollapse(check.name) : toggleShowLatestResult()}>
@@ -139,6 +143,7 @@ export const Check = (props) => {
             <CheckLatestResult
                 check={check}
                 setActionAllowed={setActionAllowed}
+                xparentState={parentState?.keyed("latest_result")}
                 parentState={parentState}
                 triggerRefreshResult={triggerRefreshResult}
                 setTriggerRefreshResult={setTriggerRefreshResult} />
@@ -164,9 +169,11 @@ const RunConfigure = (props) => {
     // our state gets stored in the parent, so that it can maintained between
     // instantiations of this component, which can happen via component hide/show.
     //
-    const [ args, setArgs ] = useOptionalKeyedState(parentState, () => getArgs(check, env));
+    //const [ args, setArgs ] = useOptionalKeyedState(parentState, () => getArgs(check, env));
+    const [ args, setArgs ] = useKeyedStateNew(parentState, () => getArgs(check, env));
     const setArg = (name, value) => setArgs({ ...args, [name]: { ...args[name], value: value } });
-    const [ state, setState ] = useOptionalKeyedState(parentState?.keyed("local"));
+    //const [ state, setState ] = useOptionalKeyedState(parentState?.keyed("local"));
+    const [ state, setState ] = useKeyedStateNew(parentState?.keyed("local"));
 
     // Parses out the the arguments for the check run from the info (ultimately) from the
     // check_setup.json file and the check_function decorator. Returned object has a property
@@ -356,7 +363,8 @@ const ConfigureActionRun = (props) => {
 //  const [ confirmRun, setConfirmRun ] = useState(false);
 //  const isConfirmRun = () => confirmRun;
 
-    const [ state, setState ] = useOptionalKeyedState(parentState);
+    //const [ state, setState ] = useOptionalKeyedState(parentState);
+    const [ state, setState ] = useKeyedStateNew(parentState);
     const isConfirmRun = () => state.confirmRun;
     const setConfirmRun = (value) => setState({ confirmRun: value });
 
@@ -468,7 +476,8 @@ const CheckRunningOrRan = (props) => {
         }
     }, [run]);
 
-    const [ state, setState ] = useOptionalKeyedState(parentState);
+    //const [ state, setState ] = useOptionalKeyedState(parentState);
+    const [ state, setState ] = useKeyedStateNew(parentState);
     const toggleShowUuid = () => setState({ showUuid: !state.showUuid });
     const isShowUuid = () => state.showUuid;
 
@@ -521,7 +530,8 @@ const ActionRunningOrRan = (props) => {
         }
     }, [run]);
 
-    const [ state, setState ] = useOptionalKeyedState(parentState);
+    //const [ state, setState ] = useOptionalKeyedState(parentState);
+    const [ state, setState ] = useKeyedStateNew(parentState);
     const toggleShowUuid = () => setState({ showUuid: !state.showUuid });
     const isShowUuid = () => state.showUuid;
 
@@ -629,7 +639,8 @@ const CheckLatestResult = (props) => {
         fontSize = "small", marginTop = "5pt"
     } = props;
 
-    const [ state, setState ] = useOptionalKeyedState(parentState);
+    //const [ state, setState ] = useOptionalKeyedState(parentState);
+    const [ state, setState ] = useKeyedStateNew(parentState);
 
     const resultSummary = useFetch({ cache: true, loading: true });
     const resultDetail  = useFetch({ cache: true });
