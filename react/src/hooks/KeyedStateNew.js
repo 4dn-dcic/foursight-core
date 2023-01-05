@@ -1,5 +1,72 @@
 import { useState } from 'react';
 
+const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
+
+    const keyedState = (keyedStateOrInitial?.__keyedState === true)
+                        ? ((keyedStateOrInitial.__keyedStateUsage === true)
+                            ? keyedStateOrInitial
+                            : keyedStateOrInitial.keyed("default"))
+                        : null;
+
+    const initial = keyedState ? (keyedState.__getState()
+                                  ? keyedState.__getState()
+                                  : __keyedStateUsageInitialValue(undefinedOrInitial))
+                               : __keyedStateInitialValue(keyedStateOrInitial);
+
+    const [ state, setState ] = useState(initial);
+
+    if (keyedState) {
+        //
+        // Using an existing (parent) keyed state.
+        //
+        return [
+            state,
+            (value) => {
+                value = __updateState(setState, value, state, true);
+                keyedState.__updateState(value);
+            }
+        ];
+    }
+    else {
+        //
+        // Defining a keyed state.
+        //
+        return { __keyedState: true,
+            key: null,
+            keyed: function(key) {
+                if (this.__keyedState !== true) return undefined;
+                if ((key?.constructor !== String) || (key.length === 0)) key = "default";
+                const outer = this;
+                return { __keyedState: true, __keyedStateUsage: true,
+                    key: key,
+                    keyed: function(key) {
+                        if ((this.__keyedState !== true) || (this.__keyedStateUsage !== true)) return undefined;
+                        if ((key?.constructor !== String) || (key.length === 0)) key = "default";
+                        if (this.__keyedStateUsage !== true) return undefined;
+                        return outer.keyed(this.key ? `${this.key}.${key}` : key, true);
+                    },
+                    __updateState: function(value) {
+                        outer.__updateKeyedState(key, value);
+                    },
+                    __getState: function() {
+                        return outer.__getState(key);
+                    }
+                }
+            },
+            __updateState: function(value) {
+                setState(__keyedStateInitialValue(value));
+            },
+            __updateKeyedState: function(key, value) {
+                value = __keyedStateUsageUpdateValue(value)
+                setState(state => ({ ...state, [key]: value }));
+            },
+            __getState: function(key = null) {
+                return key?.constructor == String ? state[key] : state;
+            }
+        };
+    }
+}
+
 const __keyedStateValue = (value, args = undefined) => {
     if (typeof(value) == "function") value = value(args);
     return (value?.constructor === Object) ? value : {};
@@ -11,7 +78,7 @@ const __keyedStateInitialValue = (value) => {
 }
 
 const __keyedStateUsageInitialValue = (value) => {
-    return (typeof(value) == "function") ? value() : value;
+    return (typeof(value) == "function") ? value() : ((value === undefined) || (value === null) ? {} : value);
 }
 
 const __keyedStateUsageUpdateValue = (value, state) => {
@@ -66,77 +133,6 @@ function __updateState(setState, newState, currentState = undefined, updateObjec
     }
     setState(newState);
     return newState;
-}
-
-const useKeyedStateNew = (keyedStateOrInitial, undefinedOrInitial) => {
-    // const keyedState = keyedStateOrInitial?.__keyedState === true ? keyedStateOrInitial : null;
-    const keyedState = (keyedStateOrInitial?.__keyedState === true)
-                        ? ((keyedStateOrInitial.__keyedStateUsage === true)
-                            ? keyedStateOrInitial
-                            : keyedStateOrInitial.keyed("default"))
-                        : null;
-    const initial = keyedState ? __keyedStateUsageInitialValue(undefinedOrInitial)
-                               : __keyedStateInitialValue(keyedStateOrInitial);
-    const [ state, setState ] = useState(initial);
-    if (keyedState) {
-        //if (keyedState.__keyedStateUsage !== true) {
-                //keyedState = keyedState.keyed("key");
-        //}
-        //
-        // Using an existing (parent) keyed state.
-        //
-        return [
-            state,
-            (value) => {
-                if (keyedState.__keyedStateUsage !== true) {
-                    //
-                    // Should not really happen but if it is an object what the heck.
-                    //
-                    value = __updateState(setState, value, state, true);
-                    if (value?.constructor === Object) {
-                        keyedState.__updateState(value);
-                    }
-                    return;
-                }
-                value = __updateState(setState, value, state, true);
-                keyedState.__updateState(value);
-            }
-        ];
-    }
-    else {
-        //
-        // Defining a keyed state.
-        //
-        return { __keyedState: true,
-            key: null,
-            keyed: function(key) {
-                if ((this.__keyedState !== true) || (key?.constructor !== String) || (key.length === 0)) return undefined;
-                const outer = this;
-                return { __keyedState: true, __keyedStateUsage: true,
-                    key: key,
-                    keyed: function(key) {
-                        if (this.__keyedState !== true) return undefined;
-                        return outer.keyed(this.key ? `${this.key}.${key}` : key, true);
-                    },
-                    __updateState: function(value) {
-                        outer.__updateKey(key, value);
-                    }
-                }
-            },
-            __updateKey: function(key, value) {
-                if ((this.__keyedState !== true) || (key?.constructor !== String) || (key.length === 0)) return undefined;
-                value = __keyedStateUsageUpdateValue(value)
-             // setState(state => ({ ...state, [key]: { ...state[key], ...__keyedStateValue(value, state[key]) } }));
-                setState(state => ({ ...state, [key]: value }));
-            },
-            __getState: function() {
-                return state;
-            },
-            __updateState: function(value) {
-                setState(__keyedStateInitialValue(value));
-            }
-        };
-    }
 }
 
 export default useKeyedStateNew;

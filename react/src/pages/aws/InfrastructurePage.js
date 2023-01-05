@@ -12,6 +12,7 @@ import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
 import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
 import { useKeyedState, useOptionalKeyedState } from '../../Hooks.js';
+import useKeyedStateNew from '../../hooks/KeyedStateNew';
 
 const tdLabelStyle = {
     color: "var(--box-fg)",
@@ -28,7 +29,8 @@ const tdContentStyle = {
 
 const InfrastructurePage = () => {
 
-    const keyedState = useKeyedState();
+    //const keyedState = useKeyedState();
+    const keyedState = useKeyedStateNew();
 
     const componentDefinitions = useComponentDefinitions([
          { type: "stack",           create: createStack          },
@@ -196,7 +198,8 @@ const Vpcs = (props) => {
 const Vpc = (props) => {
 
     const { vpc, keyedState } = props;
-    const [ state, setState ] = useOptionalKeyedState(keyedState);
+    //const [ state, setState ] = useOptionalKeyedState(keyedState);
+    const [ state, setState ] = useKeyedStateNew(keyedState);
 
     const isShow = (property) => state[property];
     const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
@@ -336,7 +339,8 @@ const Subnets = (props) => {
 
 const Subnet = (props) => {
     const { subnet, keyedState } = props;
-    const [ state, setState ] = useOptionalKeyedState(keyedState);
+    //const [ state, setState ] = useOptionalKeyedState(keyedState);
+    const [ state, setState ] = useKeyedStateNew(keyedState);
     const isShow = (property) => state[property];
     const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
     const isShowTags = () => isShow    ("showTags");
@@ -430,7 +434,8 @@ const SecurityGroups = (props) => {
 const SecurityGroup = (props) => {
 
     const { securityGroup, keyedState } = props;
-    const [ state, setState ] = useOptionalKeyedState(keyedState);
+    //const [ state, setState ] = useOptionalKeyedState(keyedState);
+    const [ state, setState ] = useKeyedStateNew(keyedState);
 
     const isShow = (property) => state[property];
     const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
@@ -703,7 +708,8 @@ const StackList = (props) => {
 const Stack = (props) => {
 
     const { stackName, keyedState, hide } = props;
-    const [ state, setState ] = useOptionalKeyedState(keyedState);
+    //const [ state, setState ] = useOptionalKeyedState(keyedState);
+    const [ state, setState ] = useKeyedStateNew(keyedState);
 
     const stack = useFetch(`/aws/stacks/${stackName}`, { cache: true });
 
