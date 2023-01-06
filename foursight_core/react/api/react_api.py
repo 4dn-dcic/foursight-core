@@ -422,12 +422,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # TODO: Consider adding ability to search for both normal users and
         #       admin/foursight users (who would have access to foursight);
         #       and more advanced, the ability to grant foursight access.
+        connection = app.core.init_connection(env)
         if search:
-            connection = app.core.init_connection(env)
             # Though limit and offset (from) are supported by search_metadata, total counts don't seem to be (?);
             # very possibly missing something there; so for now get all results and to paging manually here.
             # results = ff_utils.search_metadata(f"/search/?type=User&frame=object&q={search}&limit={limit}&from={offset}&sort={sort}", key=connection.ff_keys, is_generator=True)
-            results = ff_utils.search_metadata(f"/search/?type=User&frame=object&q={search}&sort={sort}", key=connection.ff_keys)
+            results = ff_utils.search_metadata(f"/search/?type=User&frame=object&q={search}&sort={sort}",
+                                               key=connection.ff_keys)
             total = len(results)
             if offset > 0:
                 results = results[offset:]
@@ -435,7 +436,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 results = results[:limit]
         else:
             add_on = f"frame=object&datastore=database&limit={limit}&from={offset}&sort={sort}"
-            results = ff_utils.get_metadata("users/", ff_env=full_env_name(env), add_on=add_on)
+            results = ff_utils.get_metadata("users/", ff_env=full_env_name(env), add_on=add_on,
+                                            key=connection.ff_keys)
             total = results["total"]
             results = results["@graph"]
 
@@ -465,13 +467,15 @@ class ReactApi(ReactApiBase, ReactRoutes):
         items = uuid.split(",")
         not_found_count = 0
         other_error_count = 0
+        connection = app.core.init_connection(env)
         for item in items:
             try:
                 # Note these call works for both email address or user UUID.
                 # Note we must lower case the email to find the user. This is because all emails
                 # in the database are lowercased; it causes issues with OAuth if we don't do this.
                 user = ff_utils.get_metadata('users/' + item.lower(),
-                                             ff_env=full_env_name(env), add_on='frame=object&datastore=database')
+                                             ff_env=full_env_name(env), add_on='frame=object&datastore=database',
+                                             key=connection.ff_keys)
                 users.append(self._create_user_record_for_output(user) if not raw else user)
             except Exception as e:
                 if "Not Found" in str(e):
@@ -496,7 +500,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         ignored(request)
         user = self._create_user_record_from_input(user)
-        response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env))
+        connection = app.core.init_connection(env)
+        response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env),
+                                          key=connection.ff_keys)
         # Response looks like:
         # {'status': 'success', '@type': ['result'], '@graph': [{'date_created': '2022-10-22T18:39:16.973680+00:00',
         # 'submitted_by': '/users/b5f738b6-455a-42e5-bc1c-77fbfd9b15d2/', 'schema_version': '1', 'status': 'current',
@@ -529,7 +535,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # Note that there may easily be a delay after update until the record is actually updated.
         # TODO: Find out precisely why this is so, and if and how to specially handle it on the client side.
         user = self._create_user_record_from_input(user)
-        response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env))
+        connection = app.core.init_connection(env)
+        response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env),
+                                           key=connection.ff_keys)
         status = response.get("status")
         if status != "success":
             return self.create_error_response(json.dumps(response))
@@ -551,8 +559,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         #
         elasticsearch_server_version = self._get_elasticsearch_server_version()
         kwargs = {"skip_indexing": True} if elasticsearch_server_version >= "7" else {}
-        ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs)
-        ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs)
+        connection = app.core.init_connection(env)
+        ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs, key=connection.ff_keys)
+        ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs, key=connection.ff_keys)
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
 
     def reactapi_users_institutions(self, request: dict, env: str, args: dict) -> Response:

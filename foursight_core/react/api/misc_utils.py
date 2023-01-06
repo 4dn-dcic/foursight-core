@@ -74,19 +74,19 @@ def get_github_url(package: str, file: Optional[str] = None, line: Optional[int]
     TODO: Seems like there should be a better more programmatic way to determine this.
     """
     github_url = "https://github.com"
-    if package == "foursight-core" or package == "foursight_core":
+    if package == "foursight_core":
         package_source = "foursight-core"
         package_target = "foursight_core"
         repo_org = "4dn-dcic"
-    elif package == "foursight-cgap" or package == "chalicelib_cgap":
+    elif package == "chalicelib_cgap":
         package_source = "foursight-cgap"
         package_target = "chalicelib_cgap"
         repo_org = "dbmi-bgm"
-    elif package == "foursight" or package == "chalicelib_fourfront":
+    elif package == "chalicelib_fourfront":
         package_source = "foursight"
         package_target = "chalicelib_fourfront"
         repo_org = "4dn-dcic"
-    elif package == "dcicutils" or package == "utils":
+    elif package == "dcicutils":
         package_source = "utils"
         package_target = "dcicutils"
         repo_org = "4dn-dcic"
