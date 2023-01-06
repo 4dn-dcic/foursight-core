@@ -956,7 +956,7 @@ const StackTemplate = (props) => {
             </>:<>
                 { template.data &&
                     <pre style={{border:"0",background:"var(--box-bg-lighten)",marginLeft:"-6pt",marginTop:"-6pt",marginBottom:"-6pt"}}>
-                        {Type.IsObject(template.data) ? Json.Format(template.data) : template.data}
+                        {Type.IsObject(template.data) ? Yaml.Format(template.data) : template.data}
                     </pre>
                 }
             </>}

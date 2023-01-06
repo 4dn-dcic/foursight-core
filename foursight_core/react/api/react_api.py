@@ -133,6 +133,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
             ]
         return institutions
 
+    def _get_user_roles(self, env: str) -> Response:
+        #
+        # The below enumerated user role values where copied from here:
+        # https://github.com/dbmi-bgm/cgap-portal/blob/master/src/encoded/schemas/user.json#L69-L106
+        #
+        roles = [
+            "clinician",
+            "scientist",
+            "developer",
+            "director",
+            "project_member",
+            "patient",
+            "other",
+            "unknown"
+        ]
+        return [{"id": role, "name": role, "title": role} for role in roles]
+
     def react_serve_static_file(self, env: str, paths: list) -> Response:
         """
         Called from react_routes for static endpoints: /{env}/{path}/{etc}
@@ -335,6 +352,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             updated = last_modified.get("date_modified") or user.get("date_created")
         else:
             updated = user.get("date_created")
+        project_roles = user.get("project_roles")
+        project_role = project_roles[0] if project_roles else None
         return {
             # Lower case email to avoid any possible issues on lookup later.
             "email": (user.get("email") or "").lower(),
@@ -345,6 +364,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "groups": user.get("groups"),
             "project": user.get("project"),
             "institution": user.get("user_institution"),
+            # TODO: Deal with multiple roles (?)
+            "role": project_role.get("role") if project_role else None,
+            "roles": project_roles,
             "updated": convert_utc_datetime_to_useastern_datetime_string(updated),
             "created": convert_utc_datetime_to_useastern_datetime_string(user.get("date_created"))
         }
@@ -366,6 +388,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if "project" in user:
             if not user["project"]:
                 del user["project"]
+            elif "role" in user:
+                if not user["role"]:
+                    del user["role"]
+                else:
+                    # TODO: Deal with possible multiple values?
+                    user["project_roles"] = [{"role": user["role"], "project": user["project"]}]
+        if "role" in user:
+            del user["role"]
         return user
 
     def reactapi_get_users(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
@@ -532,6 +562,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def reactapi_users_projects(self, request: dict, env: str, args: dict) -> Response:
         raw = args.get("raw") == "true"
         return self.create_success_response(self._get_user_projects(env, raw))
+
+    def reactapi_users_roles(self, request: dict, env: str) -> Response:
+        return self.create_success_response(self._get_user_roles(env))
 
     def reactapi_checks_ungrouped(self, request: dict, env: str) -> Response:
         """
@@ -1026,8 +1059,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
         response = {"accounts_file": self._get_accounts_file(), "accounts_file_from_s3": self._get_accounts_file_from_s3()}
         accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3(request)
         if not accounts:
-            print('xyzzy/1')
-            print(self.get_this_base_url(request))
             return self.create_success_response({"status": "No accounts file support."})
         account = [account for account in accounts if is_account_name_match(account, name)] if accounts else None
         if not account or len(account) > 1:

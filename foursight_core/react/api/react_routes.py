@@ -133,6 +133,11 @@ class ReactRoutes:
         args = get_request_args(request)
         return app.core.reactapi_users_projects(request, env, args)
 
+    @route("/{env}/users/roles", authorize=True)
+    def reactapi_route_users_roles(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        request = app.current_request.to_dict()
+        return app.core.reactapi_users_roles(request, env)
+
     @route("/{env}/checks", authorize=True)
     def reactapi_route_checks_ungrouped(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """

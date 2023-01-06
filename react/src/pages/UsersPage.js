@@ -41,6 +41,7 @@ const UsersPage = () => {
         { label: "Groups", key: "groups" },
         { label: "Project", key: "project" },
         { label: "Institution", key: "institution" },
+        { label: "Role", key: "role" },
         { label: "Updated", key: "data_modified" }, // DOES NOT WORK (nested in last_modified)
         { label: "Created", key: "date_created" }
     ];
@@ -156,6 +157,10 @@ const UsersPage = () => {
                             <td style={tdStyle}>
                             <span id={`tooltip-users-institution-${user.email}`}>{user.institution?.replace("/institutions/","")?.replace("/","") || Char.EmptySet}</span>
                                 <Tooltip id={`tooltip-users-institution-${user.email}`} position="bottom" size="small" text={`Institution: ${user.institution}`} />
+                            </td>
+                            <td style={tdStyle}>
+                            <span id={`tooltip-users-role-${user.email}`}>{user.role || Char.EmptySet} <small>({user.roles?.length})</small></span>
+                                <Tooltip id={`tooltip-users-role-${user.email}`} position="bottom" size="small" text={`Role: ${user.role}`} />
                             </td>
                             <td style={tdStyle}>
                                 {user.updated ? Time.FormatDate(user.updated) : Time.FormatDate(user.created)} <br />

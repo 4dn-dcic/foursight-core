@@ -28,13 +28,19 @@ const _UserInputs = [
         name: "project",
         label: "Project",
         type: "select",
-        url: Server.Url("/users/projects")
+        url: "/users/projects"
+    },
+    {
+        name: "role",
+        label: "Role",
+        type: "select",
+        url: "/users/roles"
     },
     {
         name: "institution",
         label: "Institution",
         type: "select",
-        url: Server.Url("/users/institutions")
+        url: "/users/institutions"
     },
     {
         name: "created",

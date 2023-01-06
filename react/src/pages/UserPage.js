@@ -68,6 +68,7 @@ const UserBox = (props) => {
         { label: "Last Name", name: "last_name" },
         { label: "Groups", name: "groups" },
         { label: "Project", name: "project", map: value => value?.replace("/projects/","")?.replace("/","") },
+        { label: "Role", name: "role", map: value => value },
         { label: "Institution", name: "institution", map: value => value?.replace("/institutions/","")?.replace("/","") },
         { label: "Created", name: "created", map: value => Time.FormatDateTime(value) },
         { label: "Updated", name: "updated", map: value => Time.FormatDateTime(value) },

@@ -2,12 +2,14 @@ import boto3
 import json
 from .datetime_utils import convert_utc_datetime_to_useastern_datetime_string
 from .misc_utils import memoize
+from .yaml_utils import load_yaml
 from collections import OrderedDict
 from dcicutils.obfuscation_utils import obfuscate_dict
 from typing import Optional, Union
 
 
 _STACK_NAME_PREFIX = "c4-"
+
 
 @memoize
 def aws_get_stacks() -> list:
@@ -66,7 +68,7 @@ def aws_get_stack_outputs(stack_name: str) -> dict:
     if stack and stack.outputs:
         for stack_output in sorted(stack.outputs, key=lambda key: key["OutputKey"]):
             result[stack_output.get("OutputKey")] = stack_output.get("OutputValue")
-    return obfuscate_dict(result, obfuscated="********")
+    return _obfuscate(result)
 
 
 @memoize
@@ -80,7 +82,7 @@ def aws_get_stack_parameters(stack_name: str) -> dict:
     if stack and stack.parameters:
         for stack_parameter in sorted(stack.parameters, key=lambda key: key["ParameterKey"]):
             result[stack_parameter.get("ParameterKey")] = stack_parameter.get("ParameterValue")
-    return obfuscate_dict(result, obfuscated="********")
+    return _obfuscate(result)
 
 
 @memoize
@@ -105,7 +107,7 @@ def _aws_get_stack_object(stack_name_or_object: Union[str, object]) -> Optional[
 
 
 @memoize
-def aws_get_stack_template(stack_name: str) -> str:
+def aws_get_stack_template(stack_name: str) -> dict:
     c4 = boto3.client("cloudformation")
     stack_template = c4.get_template(StackName=stack_name)
     stack_template_body = stack_template["TemplateBody"]
@@ -115,13 +117,14 @@ def aws_get_stack_template(stack_name: str) -> str:
         # in particular, we get back an OrderedDict, which we print as JSON;
         # having trouble converting to YAML.
         #
-        return json.dumps(stack_template_body, default=str, indent=2)
+        stack_template_dict = stack_template_body
     else:
         #
         # For other AWS stacks like c4-datastore-cgap-supertest-stack,
         # we get a simple string containing the YAML for the template.
         #
-        return stack_template_body
+        stack_template_dict = load_yaml(stack_template_body)
+    return _obfuscate(stack_template_dict)
 
 
 def aws_stacks_cache_clear() -> None:
@@ -131,3 +134,7 @@ def aws_stacks_cache_clear() -> None:
     aws_get_stack_parameters.cache_clear()
     aws_get_stack_resources.cache_clear()
     aws_get_stack_template.cache_clear()
+
+
+def _obfuscate(value: dict) -> dict:
+    return obfuscate_dict(value, obfuscated="********")

@@ -16,19 +16,8 @@ const UserEditPage = () => {
     const [ notFound, setNotFound ] = useState(false);
     const [ readOnlyMode ] = useReadOnlyMode();
     const [ project, setProject ] = useState('foo');
-        /*
     const user = useFetch({
-        url: Server.Url(`/users/${uuid}`),
-        onData: updateUserData,
-        onError: (response) => {
-            if (response.status === 404) {
-                setNotFound(true);
-            }
-        }
-    });
-    */
-    const user = useFetch({
-        url: Server.Url(`/users/${uuid}`),
+        url: `/users/${uuid}`,
         nofetch: true,
         onData: updateUserData,
         onError: (response) => {
@@ -52,6 +41,7 @@ const UserEditPage = () => {
                 else if (input.name === "last_name")   input.value = data?.last_name;
                 else if (input.name === "admin")       input.value = data?.groups?.includes("admin") ? true : false;
                 else if (input.name === "project")     input.value = data?.project;
+                else if (input.name === "role")        input.value = data?.role;
                 else if (input.name === "institution") input.value = data?.institution;
                 else if (input.name === "created")     input.value = Time.FormatDateTime(data?.created);
                 else if (input.name === "updated")     input.value = Time.FormatDateTime(data?.updated);
