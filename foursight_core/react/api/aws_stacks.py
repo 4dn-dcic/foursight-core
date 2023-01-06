@@ -25,6 +25,9 @@ def aws_get_stacks() -> list:
 
 
 def _create_aws_stack_info(stack: object):
+    """
+    Returns the given boto3 format AWS stack info in our canonical form.
+    """
     return {
         "name": stack.name,
         "id": stack.stack_id,
@@ -37,14 +40,14 @@ def _create_aws_stack_info(stack: object):
 
 
 @memoize
-def aws_get_stack(stack_name: str) -> object:
+def aws_get_stack(stack_name_or_object: Union[str, object]) -> object:
     """
     Returns all detailed info for the given AWS CloudFormation stack name,
     including various metadata, outputs, parameters, and resources.
     Output and parameter values are obfuscated if their names represents a sensitive value.
     """
     result = {}
-    stack = _aws_get_stack_object(stack_name)
+    stack = _get_aws_get_stack_object(stack_name_or_object)
     if stack:
         result = {**_create_aws_stack_info(stack)}
         outputs = aws_get_stack_outputs(stack)
@@ -58,13 +61,13 @@ def aws_get_stack(stack_name: str) -> object:
 
 
 @memoize
-def aws_get_stack_outputs(stack_name: str) -> dict:
+def aws_get_stack_outputs(stack_name_or_object: Union[str, object]) -> dict:
     """
     Returns the name/value outputs for the given AWS CloudFormation stack name.
     Output values are obfuscated if the output name represents a sensitive value.
     """
     result = {}
-    stack = _aws_get_stack_object(stack_name)
+    stack = _get_aws_get_stack_object(stack_name_or_object)
     if stack and stack.outputs:
         for stack_output in sorted(stack.outputs, key=lambda key: key["OutputKey"]):
             result[stack_output.get("OutputKey")] = stack_output.get("OutputValue")
@@ -72,13 +75,13 @@ def aws_get_stack_outputs(stack_name: str) -> dict:
 
 
 @memoize
-def aws_get_stack_parameters(stack_name: str) -> dict:
+def aws_get_stack_parameters(stack_name_or_object: Union[str, object]) -> dict:
     """
     Returns a name/value dictionary of the parameters for the given AWS CloudFormation stack name.
     Parameter values are obfuscated if the parameter name represents a sensitive value.
     """
     result = {}
-    stack = _aws_get_stack_object(stack_name)
+    stack = _get_aws_get_stack_object(stack_name_or_object)
     if stack and stack.parameters:
         for stack_parameter in sorted(stack.parameters, key=lambda key: key["ParameterKey"]):
             result[stack_parameter.get("ParameterKey")] = stack_parameter.get("ParameterValue")
@@ -86,21 +89,29 @@ def aws_get_stack_parameters(stack_name: str) -> dict:
 
 
 @memoize
-def aws_get_stack_resources(stack_name: str) -> dict:
+def aws_get_stack_resources(stack_name_or_object: Union[str, object]) -> dict:
     """
     Returns a name/value dictionary of the resources for the given AWS CloudFormation stack name.
     """
     result = {}
-    stack = _aws_get_stack_object(stack_name)
+    stack = _get_aws_get_stack_object(stack_name_or_object)
     if stack:
         for stack_resource in sorted(list(stack.resource_summaries.all()), key=lambda key: key.logical_resource_id):
             result[stack_resource.logical_resource_id] = stack_resource.resource_type
     return result
 
 
-def _aws_get_stack_object(stack_name_or_object: Union[str, object]) -> Optional[object]:
-    if "cloudformation.Stack" in str(type(stack_name_or_object)):  # TODO: right way to type check.
+def _get_aws_get_stack_object(stack_name_or_object: Union[str, object]) -> Optional[object]:
+    """
+    Returns the boto3 Cloudformation stack object for the given stack name, if the given argument
+    is a string, or if the given argument is already a boto3 stack object, then return that value.
+    :param stack_name_or_object: String representing Cloudformation stack name or boto3 stack object.
+    :returns: The boto3 Cloudformation stack object or None if not found.
+    """
+    if type(stack_name_or_object).__name__ == "cloudformation.Stack":
         return stack_name_or_object
+    elif not isinstance(stack_name_or_object, str):
+        return None
     c4 = boto3.resource("cloudformation")
     stack = list(c4.stacks.filter(StackName=stack_name_or_object))
     return stack[0] if len(stack) == 1 else None
