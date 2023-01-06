@@ -98,7 +98,7 @@ def aws_get_stack_resources(stack_name_or_object: Union[str, object]) -> dict:
     if stack:
         for stack_resource in sorted(list(stack.resource_summaries.all()), key=lambda key: key.logical_resource_id):
             result[stack_resource.logical_resource_id] = stack_resource.resource_type
-    return result
+    return _obfuscate(result)
 
 
 def _get_aws_get_stack_object(stack_name_or_object: Union[str, object]) -> Optional[object]:

@@ -85,8 +85,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "python": platform.python_version(),
                 "chalice": chalice_version,
                 "elasticsearch_server": self._get_elasticsearch_server_version(),
-                "elasticsearch": get_package_version("elasticsearch-dsl"),
-                "elasticsearch_dsl": get_package_version("elasticsearch")
+                "elasticsearch": get_package_version("elasticsearch"),
+                "elasticsearch_dsl": get_package_version("elasticsearch-dsl")
             }
 
     def _get_elasticsearch_server_version(self) -> Optional[str]:
