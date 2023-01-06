@@ -16,9 +16,11 @@ def aws_get_stacks() -> list:
     """
     Returns the list of all known AWS CloudFormation stacks with various metadata.
     """
+    def stack_id(element):
+        return element.name
     stacks_info = []
     c4 = boto3.resource("cloudformation")
-    for stack in sorted(c4.stacks.all(), key=lambda key: key.name):
+    for stack in sorted(c4.stacks.all(), key=stack_id):
         if stack.name.startswith(_STACK_NAME_PREFIX):
             stacks_info.append(_create_aws_stack_info(stack))
     return stacks_info
@@ -66,10 +68,12 @@ def aws_get_stack_outputs(stack_name_or_object: Union[str, object]) -> dict:
     Returns the name/value outputs for the given AWS CloudFormation stack name.
     Output values are obfuscated if the output name represents a sensitive value.
     """
+    def output_id(element):
+        return element["OutputKey"]
     result = {}
     stack = _get_aws_get_stack_object(stack_name_or_object)
     if stack and stack.outputs:
-        for stack_output in sorted(stack.outputs, key=lambda key: key["OutputKey"]):
+        for stack_output in sorted(stack.outputs, key=output_id):
             result[stack_output.get("OutputKey")] = stack_output.get("OutputValue")
     return _obfuscate(result)
 
@@ -80,10 +84,12 @@ def aws_get_stack_parameters(stack_name_or_object: Union[str, object]) -> dict:
     Returns a name/value dictionary of the parameters for the given AWS CloudFormation stack name.
     Parameter values are obfuscated if the parameter name represents a sensitive value.
     """
+    def parameter_id(element):
+        return element["ParameterKey"]
     result = {}
     stack = _get_aws_get_stack_object(stack_name_or_object)
     if stack and stack.parameters:
-        for stack_parameter in sorted(stack.parameters, key=lambda key: key["ParameterKey"]):
+        for stack_parameter in sorted(stack.parameters, key=parameter_id):
             result[stack_parameter.get("ParameterKey")] = stack_parameter.get("ParameterValue")
     return _obfuscate(result)
 
@@ -93,10 +99,12 @@ def aws_get_stack_resources(stack_name_or_object: Union[str, object]) -> dict:
     """
     Returns a name/value dictionary of the resources for the given AWS CloudFormation stack name.
     """
+    def resource_id(element):
+        return element.logical_resource_id
     result = {}
     stack = _get_aws_get_stack_object(stack_name_or_object)
     if stack:
-        for stack_resource in sorted(list(stack.resource_summaries.all()), key=lambda key: key.logical_resource_id):
+        for stack_resource in sorted(list(stack.resource_summaries.all()), key=resource_id):
             result[stack_resource.logical_resource_id] = stack_resource.resource_type
     return _obfuscate(result)
 
@@ -114,19 +122,29 @@ def _get_aws_get_stack_object(stack_name_or_object: Union[str, object]) -> Optio
         return None
     c4 = boto3.resource("cloudformation")
     stack = list(c4.stacks.filter(StackName=stack_name_or_object))
-    return stack[0] if len(stack) == 1 else None
+    return get_single_item_list_value(stack)
+    # return stack[0] if len(stack) == 1 else None
+
+
+def get_single_item_list_value(any_list: list) -> object:
+    if len(any_list) != 1:
+        raise Exception(f"Single item list expected but contains {len(any_list)}")
+    return any_list[0]
 
 
 @memoize
 def aws_get_stack_template(stack_name: str) -> dict:
+    """
+    Returns the AWS Cloudformation template as a dictionary for the given stack name.
+    The entire template will be obfuscated according to the obfuscate_dict function.
+    """
     c4 = boto3.client("cloudformation")
     stack_template = c4.get_template(StackName=stack_name)
     stack_template_body = stack_template["TemplateBody"]
-    if isinstance(stack_template_body, OrderedDict):
+    if isinstance(stack_template_body, dict) or isinstance(stack_template_body, OrderedDict):
         #
         # For some reason for our AWS stack c4-foursight-cgap-supertest-stack
-        # in particular, we get back an OrderedDict, which we print as JSON;
-        # having trouble converting to YAML.
+        # in particular, we get back an OrderedDict rather than the usual string.
         #
         stack_template_dict = stack_template_body
     else:
