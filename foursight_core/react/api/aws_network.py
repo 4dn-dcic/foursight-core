@@ -1,6 +1,5 @@
 import boto3
 import copy
-import json
 import re
 from typing import Callable, Optional, Union
 from dcicutils.obfuscation_utils import obfuscate_dict
@@ -18,7 +17,45 @@ def _filter_boto_description_list(description: dict,
     the tag name exactly, or as a prefix if it ends with an asterisk; or (2) a regular expression
     against which the tag name will be matched, or (3) a function which will be called with
     each tag name and which should return True iff the tag name should be considered a match.
-    If no matches then returns empty list. Raises exception on error.
+    If no matches then returns empty list. Raises exception on error. Abbreviated example description:
+
+    { "Vpcs": [
+        {
+          "ExampleRecord": "Example record",
+          "Tags": [
+            {
+              "Key": "Name",
+              "Value": "This is the tag name to match with the given predicate"
+            },
+          ]
+        },
+        {
+          "AnotherExampleRecord": "Another example record",
+          "Tags": [
+            {
+              "Key": "Name",
+              "Value": "This is the tag name to match with the given predicate"
+            },
+          ]
+        },
+      ]
+    }
+
+    :param description:   Dictionary from output of boto3 describe_vpcs, describe_subnets,
+                          or describe_security_groups; object with main list element with name
+                          specified by the given name argument; a subset of these elements are
+                          returned based on the given predicate.
+    :param name:          Property name of the main list element in the given description dictionary
+                          containing the relevant items, a subset of which will be returned based on
+                          match of item tag name values via the given predicate.
+    :param predicate:     Predicate choosing which items in main list to return based on it matching "Value"
+                          of tag in "Tags" list, within each item, whose "Key" value is "Name". Case-sensitive
+                          string matching tag name value exactly or its prefix if ending in asterisk; or regular
+                          expression matching tag name; or function returning True on match of given tag name.
+    :param create_record: Optional function taking a matched item (dictionary) and returning
+                          a modified version of it.
+    :returns:             List of items from given description dictionary as described above.
+    :raises Exception:    On any error.
     """
     results = []
     if isinstance(predicate, str):
@@ -30,7 +67,7 @@ def _filter_boto_description_list(description: dict,
         predicate_filter = lambda tag: isinstance(tag, str) and predicate.match(tag) is not None
     elif isinstance(predicate, Callable):
         predicate_filter = lambda tag: isinstance(tag, str) and predicate(tag)
-    elif predicate is not None:
+    else:
         raise Exception(f"Unknown predicate type {type(predicate)} passed to filter_boto_description.")
     if isinstance(description.get(name), list):
         for item in description[name]:
@@ -53,7 +90,28 @@ def _filter_boto_description_list(description: dict,
     return sorted(results, key=lambda value: value["name"]) if create_record else results
 
 
-def _create_tags_dictionary(aws_tags: dict) -> dict:
+def _create_tags_dictionary(aws_tags: list) -> dict:
+    """
+    Transforms the given boto3-style list of tag objects, each containing a "Key" and "Value" property,
+    to a simple dictionary of keys/values. For example given this:
+    [
+      { "Key": "env",
+        "Value": "prod"
+      },
+      { "Key": "aws:cloudformation:stack-name",
+        "Value": "c4-network-main-stack"
+      }
+    ]
+
+    We would return this:
+    {
+      "env": "prod"
+      "aws:cloudformation:stack-name": "c4-network-main-stack"
+    }
+
+    :param aws_tags: Dictionary of tags as described above.
+    :returns: List from given dictionary of tags as described above.
+    """
     tags = {}
     for tag in aws_tags:
         key = tag.get("Key")
@@ -71,6 +129,14 @@ def aws_get_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None, r
     against which the tag name will be matched, or (3) a function which will be called with
     each tag name and which should return True iff the tag name should be considered a match.
     If no matches then returns empty list. Raises exception on error.
+
+    :param predicate: Predicate choosing which items in main array to return based on it matching "Value"
+                      of tag in "Tags" array, within each item, whose "Key" value is "Name". Case-sensitive
+                      string matching tag name value exactly or its prefix if ending in asterisk; or regular
+                      expression matching tag name; or function returning True on match of given tag name.
+    :param raw: Returns raw (matched) objects iff True otherwise returns our own canonical form.
+    :returns: List of matching (based on predicate) AWS VPC objects.
+    :raises Exception: On any error.
     """
     def create_record(tag: str, item: dict) -> dict:
         #
@@ -118,10 +184,6 @@ def aws_get_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None, r
         #         "Key": "env",
         #         "Value": "prod"
         #       },
-        #       {
-        #         "Key": "aws:cloudformation:stack-id",
-        #         "Value": "arn:aws:cloudformation:us-east-1:643366669028:stack/c4-network-main-stack/731ba770-31d5-11ec-b3df-0acc80a06d55"
-        #       }
         #     ]
         #   }
         #
@@ -141,14 +203,15 @@ def aws_get_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None, r
             "status": item.get("State"),
             "tags": tags
         }
-    ec2 = boto3.client('ec2')
+    ec2 = boto3.client("ec2")
     vpcs = ec2.describe_vpcs()
     vpcs = _filter_boto_description_list(vpcs, "Vpcs", predicate, create_record if not raw else None)
     return vpcs
 
 
 @memoize
-def aws_get_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None, vpc: Optional[str] = None, raw: bool = False) -> list:
+def aws_get_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None,
+                    vpc_id: Optional[str] = None, raw: bool = False) -> list:
     """
     Returns the list of AWS Subnets which have tags names matching the given tag predicate.
     This predicate may be (1) a string in which case it is used to match (case-sensitive) the
@@ -156,6 +219,15 @@ def aws_get_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
     against which the tag name will be matched, or (3) a function which will be called with
     each tag name and which should return True iff the tag name should be considered a match.
     If no matches then returns empty list. Raises exception on error.
+
+    :param predicate: Predicate choosing which items in main array to return based on it matching "Value"
+                      of tag in "Tags" array, within each item, whose "Key" value is "Name". Case-sensitive
+                      string matching tag name value exactly or its prefix if ending in asterisk; or regular
+                      expression matching tag name; or function returning True on match of given tag name.
+    :param vpc_id: Optional VPC ID to limit returned Subnets to those associated with this VPC ID.
+    :param raw: Returns raw (matched) objects iff True otherwise returns our own canonical form.
+    :returns: List of matching (based on predicate) AWS Subnet objects.
+    :raises Exception: On any error.
     """
     def create_record(tag: str, item: dict) -> dict:
         #
@@ -178,10 +250,6 @@ def aws_get_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
         #     {
         #       "Key": "env",
         #       "Value": "prod"
-        #     },
-        #     {
-        #       "Key": "aws:cloudformation:stack-id",
-        #       "Value": "arn:aws:cloudformation:us-east-1:643366669028:stack/c4-network-main-stack/731ba770-31d5-11ec-b3df-0acc80a06d55"
         #     },
         #     {
         #       "Key": "owner",
@@ -214,8 +282,8 @@ def aws_get_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
         #   }
         # }
         #
-        id = item.get("SubnetId")
-        name = tag or id
+        subnet_id = item.get("SubnetId")
+        name = tag or subnet_id
         if item.get("Tags"):
             stack_name_tags = [tag for tag in item["Tags"] if tag.get("Key") == "aws:cloudformation:stack-name"]
             stack_name = stack_name_tags[0].get("Value") if stack_name_tags else None
@@ -225,7 +293,7 @@ def aws_get_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
             tags = None
         return {
             "name": name,
-            "id": id,
+            "id": subnet_id,
             "type": "private" if "private" in name.lower() else "public",
             "zone": item.get("AvailabilityZone"),
             "cidr": item.get("CidrBlock"),
@@ -237,17 +305,18 @@ def aws_get_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
             "status": item.get("State"),
             "tags": tags
         }
-    ec2 = boto3.client('ec2')
+    ec2 = boto3.client("ec2")
     subnets = ec2.describe_subnets()
     subnets = _filter_boto_description_list(subnets, "Subnets", predicate, create_record if not raw else None)
-    if vpc:
+    if vpc_id:
         vpc_property = "vpc" if not raw else "VpcId"
-        subnets = [subnet for subnet in subnets if subnet.get(vpc_property) == vpc]
+        subnets = [subnet for subnet in subnets if subnet.get(vpc_property) == vpc_id]
     return subnets
 
 
 @memoize
-def aws_get_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]] = None, vpc: Optional[str] = None, raw: bool = False) -> list:
+def aws_get_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]] = None,
+                            vpc_id: Optional[str] = None, raw: bool = False) -> list:
     """
     Returns the list of AWS Security Groups which have tags names matching the given tag predicate.
     This predicate may be (1) a string in which case it is used to match (case-sensitive) the
@@ -255,6 +324,15 @@ def aws_get_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]
     against which the tag name will be matched, or (3) a function which will be called with
     each tag name and which should return True iff the tag name should be considered a match.
     If no matches then returns empty list. Raises exception on error.
+
+    :param predicate: Predicate choosing which items in main array to return based on it matching "Value"
+                      of tag in "Tags" array, within each item, whose "Key" value is "Name". Case-sensitive
+                      string matching tag name value exactly or its prefix if ending in asterisk; or regular
+                      expression matching tag name; or function returning True on match of given tag name.
+    :param vpc_id: Optional VPC ID to limit returned Securty Groups to those associated with this VPC ID.
+    :param raw: Returns raw (matched) objects iff True otherwise returns our own canonical form.
+    :returns: List of matching (based on predicate) AWS Security Group objects.
+    :raises Exception: On any error.
     """
     def create_record(tag: str, item: dict) -> dict:
         #
@@ -302,10 +380,6 @@ def aws_get_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]
         #       "Value": "prod"
         #     },
         #     {
-        #       "Key": "aws:cloudformation:stack-id",
-        #       "Value": "arn:aws:cloudformation:us-east-1:643366669028:stack/c4-network-main-stack/731ba770-31d5-11ec-b3df-0acc80a06d55"
-        #     },
-        #     {
         #       "Key": "owner",
         #       "Value": "project"
         #     },
@@ -346,17 +420,27 @@ def aws_get_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]
             "vpc": item.get("VpcId"),
             "tags": tags
         }
-    ec2 = boto3.client('ec2')
+    ec2 = boto3.client("ec2")
     security_groups = ec2.describe_security_groups()
-    security_groups = _filter_boto_description_list(security_groups, "SecurityGroups", predicate, create_record if not raw else None)
-    if vpc:
+    security_groups = _filter_boto_description_list(security_groups, "SecurityGroups", predicate,
+                                                    create_record if not raw else None)
+    if vpc_id:
         vpc_property = "vpc" if not raw else "VpcId"
-        security_groups = [security_group for security_group in security_groups if security_group.get(vpc_property) == vpc]
+        security_groups = [security_group for security_group in security_groups
+                           if security_group.get(vpc_property) == vpc_id]
     return security_groups
 
 
 @memoize
 def aws_get_security_group_rules(security_group_id: str, direction: Optional[str] = None, raw: bool = False) -> list:
+    """
+    Returns list of AWS Security Group Rules for the given Security Group ID in our own canonical form.
+
+    :param security_group_id: AWS Security Group ID of Rules to return,
+    :param direction: If "inbound" or "outbound" then returns only inbound/outbound rules; otherwise all.
+    :param raw: Returns raw objects iff True otherwise returns our own canonical form.
+    :returns: List of Security Group Rules as described above.
+    """
     def create_record(item: dict) -> dict:
         #
         # Example record from boto3.describe_security_group_rules:
@@ -383,23 +467,32 @@ def aws_get_security_group_rules(security_group_id: str, direction: Optional[str
             "description": item.get("Description"),
             "owner": item.get("GroupOwnerId")
         }
-    ec2 = boto3.client('ec2')
+    ec2 = boto3.client("ec2")
     filters = [{"Name": "group-id", "Values": [security_group_id]}]
     security_group_rules = ec2.describe_security_group_rules(Filters=filters)["SecurityGroupRules"]
     if direction == "inbound":
-        security_group_rules = [security_group_rule for security_group_rule in security_group_rules if security_group_rule.get("IsEgress") is False]
+        security_group_rules = [security_group_rule for security_group_rule in security_group_rules
+                                if security_group_rule.get("IsEgress") is False]
     elif direction == "outbound":
-        security_group_rules = [security_group_rule for security_group_rule in security_group_rules if security_group_rule.get("IsEgress") is True]
+        security_group_rules = [security_group_rule for security_group_rule in security_group_rules
+                                if security_group_rule.get("IsEgress") is True]
     if not raw:
         security_group_rules = [create_record(security_group_rule) for security_group_rule in security_group_rules]
-        security_groups_rules = sorted(security_group_rules, key=lambda value: value["id"])
     return security_group_rules
 
 
 @memoize
 def aws_get_network(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: bool = False) -> list:
     """
-    Returns AWS network info, i.e. WRT VPCs, Subnets, and Security Groups.
+    Returns AWS network info, i.e. WRT VPCs, Subnets, and Security Groups, whose tags match the given predicate
+
+    :param predicate: Predicate choosing which items in to return based on it matching "Value" of tag in "Tags" array,
+                      within each item, whose "Key" value is "Name". Case-sensitive string matching tag name value
+                      exactly or its prefix if ending in asterisk; or regular expression matching tag name; or function
+                      returning True on match of given tag name.
+    :param raw: Returns raw (matched) objects iff True otherwise returns our own canonical form.
+    :returns: List of matching (based on predicate) AWS VPC, Subnet, and Security Group objects.
+    :raises Exception: On any error.
     """
     vpcs = aws_get_vpcs(predicate, raw)
     vpcs = copy.deepcopy(vpcs)  # Copy as we're going to modify and it's memoized.
@@ -414,6 +507,9 @@ def aws_get_network(predicate: Optional[Union[str, re.Pattern, Callable]] = None
 
 
 def aws_network_cache_clear():
+    """
+    Clears any cached info herein, i.e. based on memoize.
+    """
     aws_get_vpcs.cache_clear()
     aws_get_subnets.cache_clear()
     aws_get_security_groups.cache_clear()
