@@ -153,3 +153,85 @@ def get_function_info(func: Union[str, Callable]) -> Optional[Tuple[str, str, st
         pass
     func_github_url = get_github_url(func_package, func_file, func_line)
     return func_name, func_file, func_module, func_package, func_line, func_github_url
+
+
+# TODO: Included here until we get utils PR-236 approved/merged/pushed
+
+def keys_and_values_to_dict(keys_and_values: list, key_name: str = "Key", value_name: str = "Value") -> dict:
+    """
+    Transforms the given list of key/value objects, each containing a "Key" and "Value" property,
+    or alternately named via the key_name and/or value_name arguments, into a simple
+    dictionary of keys/values, and returns this value. For example, given this:
+
+      [
+        { "Key": "env",
+          "Value": "prod"
+        },
+        { "Key": "aws:cloudformation:stack-name",
+          "Value": "c4-network-main-stack"
+        }
+      ]
+
+    This function would return this:
+
+      {
+        "env": "prod",
+        "aws:cloudformation:stack-name": "c4-network-main-stack"
+      }
+
+    :param keys_and_values: List of key/value objects as described above.
+    :param key_name: Name of the given key property in the given list of key/value objects; default to "Key".
+    :param value_name: Name of the given value property in the given list of key/value objects; default to "Value".
+    :returns: Dictionary of keys/values from given list of key/value object as described above.
+    :raises ValueError: if item in list does not contain key or value name; or on duplicate key name in list.
+    """
+    # result = {}
+    # for item in keys_and_values:
+    #     key = item.get(key_name)
+    #     if key:
+    #         result[str(key)] = item.get(value_name)
+    # return result
+
+    result = {}
+    for item in keys_and_values:
+        if key_name not in item:
+            raise ValueError(f"Key {key_name} is not in {item}.")
+        if value_name not in item:
+            raise ValueError(f"Key {value_name} is not in {item}.")
+        if item[key_name] in result:
+            raise ValueError(f"Key {key_name} is duplicated in {keys_and_values}.")
+        result[item[key_name]] = item[value_name]
+    return result
+
+
+def dict_to_keys_and_values(dictionary: dict, key_name: str = "Key", value_name: str = "Value") -> list:
+    """
+    Transforms the keys/values in the given dictionary to a list of key/value objects, each containing
+    a "Key" and "Value" property, or alternately named via the key_name and/or value_name arguments,
+    and returns this value. For example, given this:
+
+      {
+        "env": "prod",
+        "aws:cloudformation:stack-name": "c4-network-main-stack"
+      }
+
+    This function would return this:
+
+      [
+        { "Key": "env",
+          "Value": "prod"
+        },
+        { "Key": "aws:cloudformation:stack-name",
+          "Value": "c4-network-main-stack"
+        }
+      ]
+
+    :param keys_and_values: Dictionary of keys/values described above.
+    :param key_name: Name of the given key property in the result list of key/value objects; default to "Key".
+    :param value_name: Name of the given value property in the result list of key/value objects; default to "Value".
+    :returns: List of key/value objects from the given dictionary as described above.
+    """
+    result = []
+    for key in dictionary:
+        result.append({key_name: key, value_name: dictionary[key]})
+    return result

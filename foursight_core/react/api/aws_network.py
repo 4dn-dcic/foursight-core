@@ -2,7 +2,9 @@ import boto3
 import copy
 import re
 from typing import Callable, Optional, Union
-from dcicutils.misc_utils import keys_and_values_to_dict
+# TODO: Included here until we get utils PR-236 approved/merged/pushed
+# from dcicutils.misc_utils import keys_and_values_to_dict
+from .misc_utils import keys_and_values_to_dict
 from dcicutils.obfuscation_utils import obfuscate_dict
 from .misc_utils import memoize, sort_dictionary_by_case_insensitive_keys
 
