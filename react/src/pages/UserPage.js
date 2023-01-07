@@ -14,7 +14,7 @@ import Tooltip from '../components/Tooltip';
 import Yaml from '../utils/Yaml';
 
 const UserRawBox = (props) => {
-    const user = useFetch(Server.Url(`/users/${props.email}?raw=true`));
+    const user = useFetch(`/users/${props.email}?raw=true`);
     return <pre className="box">
         <span style={{float:"right",marginTop:"-6pt",fontSize:"large",cursor:"pointer"}} onClick={() => user.refresh()}>{Char.Refresh}</span>
         { user.loading ? <>
@@ -39,6 +39,7 @@ const KeyValueBox = (props) => {
     const tdContentStyle = {
         verticalAlign: "top"
     }
+    const [ toggle, setToggle ] = useState({});
     return <div className="box" style={{marginBottom:"8pt"}}>
         <table><tbody>
             {props.keys.map((key, i) => <React.Fragment key={key.name}>
@@ -49,10 +50,27 @@ const KeyValueBox = (props) => {
                 </>}
                 <tr>
                     <td style={tdLabelStyle}>
-                        {key.label}:
+                        { key.toggle ? <>
+                            { toggle[key.label] ? <span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: false}))}>
+                                {key.label}:
+                            </span>:<span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: true}))}>
+                                {key.label}:
+                            </span> }
+                        </>:<>
+                            {key.label}:
+                        </> }
                     </td>
                     <td style={tdContentStyle}>
-                        {Type.IsFunction(key.map) ? key.map(props.value[key.name]) : props.value[key.name]}
+                        { key.ui ? <>
+                            { toggle[key.label] ? <span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: false}))}>
+                                <small><u>Hide</u> {Char.DownArrowHollow}</small>
+                                {key.ui}
+                            </span>:<span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: true}))}>
+                                <small><u>Show</u> {Char.UpArrowHollow}</small>
+                            </span> }
+                        </>:<>
+                            {Type.IsFunction(key.map) ? key.map(props.value[key.name]) : props.value[key.name]}
+                        </> }
                     </td>
                 </tr>
             </React.Fragment>)}
@@ -69,13 +87,38 @@ const UserBox = (props) => {
         { label: "Groups", name: "groups" },
         { label: "Project", name: "project", map: value => value?.replace("/projects/","")?.replace("/","") },
         { label: "Role", name: "role", map: value => value },
+        { label: "Roles", name: "roles", ui: <RolesBox user={props.user} />, toggle: true },
         { label: "Institution", name: "institution", map: value => value?.replace("/institutions/","")?.replace("/","") },
         { label: "Created", name: "created", map: value => Time.FormatDateTime(value) },
         { label: "Updated", name: "updated", map: value => Time.FormatDateTime(value) },
         { label: "UUID", name: "uuid" }
     ]
 
-    return <KeyValueBox keys={items} value={props.user} separators={true} />
+    return <>
+        <KeyValueBox keys={items} value={props.user} separators={true} />
+    </>
+}
+
+const RolesBox = (props) => {
+    return <div className="box lighten" style={{marginTop:"2pt",marginBottom:"2pt"}}>
+        <table style={{width:"100%",fontSize:"small",marginTop:"-3pt",marginBottom:"-2pt"}}><tbody>
+            <tr>
+                <td> <b>Project</b> </td>
+                <td style={{paddingLeft:"8pt"}}> <b>Role</b> </td>
+            </tr>
+            <tr><td style={{height:"2pt"}} /></tr>
+            <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2" ></td></tr>
+            <tr><td style={{height:"2pt"}} /></tr>
+            { props.user.roles.map(role => <tr key={role}>
+                <td style={{width:"5%",whiteSpace:"nowrap"}}>
+                    {role.project.replace("/projects/","")?.replace("/","")}
+                </td>
+                <td style={{paddingLeft:"8pt",whiteSpace:"nowrap"}}>
+                    {role.role}
+                </td>
+            </tr>)}
+        </tbody></table>
+    </div>
 }
 
 const UserPage = (props) => {
@@ -86,9 +129,9 @@ const UserPage = (props) => {
 
     function useFetchUser() {
         return useFetch({
-            url: Server.Url(`/users/${email}`),
+            url: `/users/${email}`,
             onData: (data) => Type.IsObject(data) ? [data] : data,
-            nofetch: true
+            nofetch: true, cache: true
         });
     }
 
