@@ -79,7 +79,14 @@ class ReactRoutes:
     @route("/{env}/users", methods=["GET", "POST"], authorize=True)
     def reactapi_route_users_get_or_post(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        GET:  Returns the list of all defined users (TODO: not yet paged).
+        GET:  Returns the (paged) list of all defined users.
+              Optional arguments (args) for the request are any of:
+              - search: to search for the specified value.
+              - limit: to limit the results to the specified number.
+              - offset: to skip past the first specified number of results.
+              - sort: to sort by the specified field name (optionally suffixed with .asc which is default or .desc);
+                      default is email.asc.
+              - raw: if true then returns the raw format of the data.
         POST: Creates a new user described by the given data;
               must contain: email, first_name, last_name.
 
@@ -88,9 +95,9 @@ class ReactRoutes:
         distinguish between which method is used programmatically as we do here.
         """
         if app.current_request.method == "GET":
-            request = app.current_request.to_dict()
-            args = get_request_args(request)
-            return app.core.reactapi_get_users(request, env, args)
+            request_dict = app.current_request.to_dict()
+            args = get_request_args(request_dict)
+            return app.core.reactapi_get_users(request_dict, env, args)
         elif app.current_request.method == "POST":
             user = get_request_body(app.current_request)
             return app.core.reactapi_post_user(app.current_request.to_dict(), env, user=user)
@@ -101,6 +108,8 @@ class ReactRoutes:
     def reactapi_route_user_get_or_patch_or_delete(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         GET:    Returns detailed info for the user identified by the given uuid (may also be email).
+                Optional arguments (args) for the request are any of:
+                - raw: if true then returns the raw format of the data.
         PATCH:  Updates the user identified by the given uuid with the given user data;
                 must contain: email, first_name, last_name.
         DELETE: Deletes the user identified by the given uuid.
@@ -109,34 +118,47 @@ class ReactRoutes:
         if the methods are different; rather you must bundle them together and
         distinguish between which method is used programmatically as we do here.
         """
-        request = app.current_request.to_dict()
+        request_dict = app.current_request.to_dict()
         if app.current_request.method == "GET":
-            args = get_request_args(request)
-            return app.core.reactapi_get_user(request, env, uuid, args)
+            args = get_request_args(request_dict)
+            return app.core.reactapi_get_user(request_dict, env, uuid, args)
         elif app.current_request.method == "PATCH":
             user = get_request_body(app.current_request)
-            return app.core.reactapi_patch_user(request, env, uuid=uuid, user=user)
+            return app.core.reactapi_patch_user(request_dict, env, uuid=uuid, user=user)
         elif app.current_request.method == "DELETE":
-            return app.core.reactapi_delete_user(request, env, uuid=uuid)
+            return app.core.reactapi_delete_user(request_dict, env, uuid=uuid)
         else:
             return app.core.create_forbidden_response()
 
     @route("/{env}/users/institutions", authorize=True)
-    def reactapi_route_users_projects(env: str) -> Response:  # noqa: implicit @staticmethod via @route
-        request = app.current_request.to_dict()
-        args = get_request_args(request)
-        return app.core.reactapi_users_institutions(request, env, args)
+    def reactapi_route_users_institutions(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns the list of available user insitutions.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_users_institutions(request_dict, env, args)
 
     @route("/{env}/users/projects", authorize=True)
     def reactapi_route_users_projects(env: str) -> Response:  # noqa: implicit @staticmethod via @route
-        request = app.current_request.to_dict()
-        args = get_request_args(request)
-        return app.core.reactapi_users_projects(request, env, args)
+        """
+        Returns the list of available user projects.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_users_projects(request_dict, env, args)
 
     @route("/{env}/users/roles", authorize=True)
     def reactapi_route_users_roles(env: str) -> Response:  # noqa: implicit @staticmethod via @route
-        request = app.current_request.to_dict()
-        return app.core.reactapi_users_roles(request, env)
+        """
+        Returns the list of available user roles.
+        """
+        request_dict = app.current_request.to_dict()
+        return app.core.reactapi_users_roles(request_dict, env)
 
     @route("/{env}/checks", authorize=True)
     def reactapi_route_checks_ungrouped(env: str) -> Response:  # noqa: implicit @staticmethod via @route
@@ -174,16 +196,21 @@ class ReactRoutes:
     def reactapi_route_checks_history(env: str, check: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns detailed info on the run histories of the given check (paged).
+        Optional arguments (args) for the request are any of:
+        - limit: to limit the results to the specified number.
+        - offset: to skip past the first specified number of results.
+        - sort: to sort by the specified field name (optionally suffixed with .asc which is default or .desc);
+                default value is timestamp.desc.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_checks_history(request, env, check=check, args=get_request_args(request))
+        request_dict = app.current_request.to_dict()
+        return app.core.reactapi_checks_history(request_dict, env, check=check, args=get_request_args(request_dict))
 
     @route("/{env}/checks/{check}/history/latest", authorize=True)
     def reactapi_route_checks_history_latest(env: str, check: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns the latest (most recent) run result for the given check.
         """
-        request = app.current_request.to_dict()
+        request_dict = app.current_request.to_dict()
         return app.core.reactapi_checks_history_latest(app.current_request.to_dict(), env, check=check)
 
     @route("/{env}/checks/{check}/history/{uuid}", authorize=True)
@@ -197,28 +224,34 @@ class ReactRoutes:
     def reactapi_route_checks_history_recent(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns all "recent" check run history, across all checks.
-        By default this return (at most) the 25 most recent results;
-        a limit argument may be specified to get a different number.
-        Paging is NOT currently supported.
+        Paging is NOT currently supported, though the number of results can be limited
+        via the limit argument, the default of which is 25; sorted by timestamp descending.
+        Optional arguments (args) for the request are any of:
+        - limit: to limit the results to the specified number; default is 25;
+                 no additionl paging related functionality is currently supported.
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_checks_history_recent(request, env, args=get_request_args(request))
+        request_dict = app.current_request.to_dict()
+        return app.core.reactapi_checks_history_recent(request_dict, env, args=get_request_args(request_dict))
 
     @route("/{env}/checks/{check}/run", authorize=True)
     def reactapi_route_checks_run(env: str, check: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Kicks off a run of the given check.
+        Arguments (args) for the request are any of:
+        - args: Base-64 encode JSON object containing fields/values appropriate for the check run. 
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_checks_run(request, env, check=check, args=get_request_arg(request, "args"))
+        request_dict = app.current_request.to_dict()
+        return app.core.reactapi_checks_run(request_dict, env, check=check, args=get_request_arg(request_dict, "args"))
 
     @route("/{env}/action/{action}/run", authorize=True)
     def reactapi_route_action_run(env: str, action: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Kicks off a run of the given check.
+        Arguments (args) for the request are any of:
+        - args: Base-64 encode JSON object containing fields/values appropriate for the action run. 
         """
-        request = app.current_request.to_dict()
-        return app.core.reactapi_action_run(request, env, action=action, args=get_request_arg(request, "args"))
+        request_dict = app.current_request.to_dict()
+        return app.core.reactapi_action_run(request_dict, env, action=action, args=get_request_arg(request_dict, "args"))
 
     @route("/{env}/checks_status", authorize=True)
     def reactapi_route_checks_status(env: str) -> Response:  # noqa: implicit @staticmethod via @route
@@ -326,82 +359,100 @@ class ReactRoutes:
     def reactapi_route_aws_vpcs(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns info on AWS VPCs.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
-        request = app.current_request.to_dict()
-        args = get_request_args(request)
-        return app.core.reactapi_aws_vpcs(request, env, args=args)
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_aws_vpcs(request_dict, env, args=args)
 
     @route("/{env}/aws/vpcs/{vpc}", authorize=True)
     def reactapi_route_aws_vpc(env: str, vpc: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Returns info on AWS VPC.
+        Returns info on AWS VPC for the given VPC ID..
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
-        request = app.current_request.to_dict()
-        args = get_request_args(request)
-        return app.core.reactapi_aws_vpcs(request, env, vpc, args=args)
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_aws_vpcs(request_dict, env, vpc, args=args)
 
     @route("/{env}/aws/subnets", authorize=True)
     def reactapi_route_aws_subnets(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns info on AWS Subnets.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
-        request = app.current_request.to_dict()
-        args = get_request_args(request)
-        return app.core.reactapi_aws_subnets(request, env, args=args)
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_aws_subnets(request_dict, env, args=args)
 
     @route("/{env}/aws/subnets/{subnet}", authorize=True)
     def reactapi_route_aws_subnet(env: str, subnet: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns info on AWS Subnet.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
-        request = app.current_request.to_dict()
-        args = get_request_args(request)
-        return app.core.reactapi_aws_subnets(request, env, subnet, args=args)
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_aws_subnets(request_dict, env, subnet, args=args)
 
     @route("/{env}/aws/security_groups", authorize=True)
     def reactapi_route_aws_security_groups(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns info on AWS Security Groups.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
-        request = app.current_request.to_dict()
-        args = get_request_args(request)
-        return app.core.reactapi_aws_security_groups(request, env, args=args)
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_aws_security_groups(request_dict, env, args=args)
 
     @route("/{env}/aws/security_groups/{security_group}", authorize=True)
     def reactapi_route_aws_security_group(env: str, security_group: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns info on AWS Security Group.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
-        request = app.current_request.to_dict()
-        args = get_request_args(request)
-        return app.core.reactapi_aws_security_groups(request, env, security_group, args=args)
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_aws_security_groups(request_dict, env, security_group, args=args)
 
     @route("/{env}/aws/security_group_rules/{security_group}", authorize=True)
     def reactapi_route_aws_security_group(env: str, security_group: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns info on AWS Security Group Rules.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
-        request = app.current_request.to_dict()
-        args = get_request_args(request)
-        return app.core.reactapi_aws_security_group_rules(request, env, security_group, args=args)
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_aws_security_group_rules(request_dict, env, security_group, args=args)
 
     @route("/{env}/aws/network", authorize=True)
     def reactapi_route_aws_network(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns info on AWS VPCs, Subnets, and Security Groups, grouped by VPC.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
-        request = app.current_request.to_dict()
-        args = get_request_args(request)
-        return app.core.reactapi_aws_network(request, env, args=args)
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_aws_network(request_dict, env, args=args)
 
     @route("/{env}/aws/network/{network}", authorize=True)
     def reactapi_route_aws_network(env: str, network: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns info on AWS VPCs, Subnets, and Security Groups, grouped by VPC.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
-        request = app.current_request.to_dict()
-        args = get_request_args(request)
-        return app.core.reactapi_aws_network(request, env, network, args=args)
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_aws_network(request_dict, env, network, args=args)
 
     @route("/{env}/aws/stacks", authorize=True)
     def reactapi_route_aws_stacks(env: str) -> Response:  # noqa: implicit @staticmethod via @route

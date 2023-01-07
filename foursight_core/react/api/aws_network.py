@@ -2,6 +2,7 @@ import boto3
 import copy
 import re
 from typing import Callable, Optional, Union
+from dcicutils.misc_utils import keys_and_values_to_dict
 from dcicutils.obfuscation_utils import obfuscate_dict
 from .misc_utils import memoize, sort_dictionary_by_case_insensitive_keys
 
@@ -58,17 +59,20 @@ def _filter_boto_description_list(description: dict,
     :raises Exception:    On any error.
     """
     results = []
+
     if isinstance(predicate, str):
         if predicate.endswith("*"):
-            predicate_filter = lambda tag: isinstance(tag, str) and tag.startswith(predicate[0:len(predicate) - 1])
+            predicate_prefix = predicate[:-1]
+            predicate_filter = lambda tag: tag and tag.startswith(predicate_prefix)
         else:
-            predicate_filter = lambda tag: isinstance(tag, str) and tag == predicate
+            predicate_filter = lambda tag: tag and tag == predicate
     elif isinstance(predicate, re.Pattern):
-        predicate_filter = lambda tag: isinstance(tag, str) and predicate.match(tag) is not None
+        predicate_filter = lambda tag: tag and predicate.match(tag) is not None
     elif isinstance(predicate, Callable):
-        predicate_filter = lambda tag: isinstance(tag, str) and predicate(tag)
+        predicate_filter = lambda tag: tag and predicate(tag)
     else:
         raise Exception(f"Unknown predicate type {type(predicate)} passed to filter_boto_description.")
+
     if isinstance(description.get(name), list):
         for item in description[name]:
             if isinstance(item.get("Tags"), list):
@@ -90,10 +94,10 @@ def _filter_boto_description_list(description: dict,
     return sorted(results, key=lambda value: value["name"]) if create_record else results
 
 
-def _create_tags_dictionary(aws_tags: list) -> dict:
+def _create_tags_dictionary(tags: list) -> dict:
     """
     Transforms the given boto3-style list of tag objects, each containing a "Key" and "Value" property,
-    to a simple dictionary of keys/values. For example given this:
+    to a simple dictionary of keys/values, sorted (alphabetically ascending by key). For example given this:
     [
       { "Key": "env",
         "Value": "prod"
@@ -109,15 +113,10 @@ def _create_tags_dictionary(aws_tags: list) -> dict:
       "aws:cloudformation:stack-name": "c4-network-main-stack"
     }
 
-    :param aws_tags: Dictionary of tags as described above.
+    :param tags: Dictionary of tags as described above.
     :returns: List from given dictionary of tags as described above.
     """
-    tags = {}
-    for tag in aws_tags:
-        key = tag.get("Key")
-        if key:
-            tags[key] = tag.get("Value")
-    return sort_dictionary_by_case_insensitive_keys(obfuscate_dict(dict(tags)))
+    return sort_dictionary_by_case_insensitive_keys(obfuscate_dict(keys_and_values_to_dict(tags)))
 
 
 @memoize
@@ -495,7 +494,7 @@ def aws_get_network(predicate: Optional[Union[str, re.Pattern, Callable]] = None
     :raises Exception: On any error.
     """
     vpcs = aws_get_vpcs(predicate, raw)
-    vpcs = copy.deepcopy(vpcs)  # Copy as we're going to modify and it's memoized.
+    vpcs = copy.deepcopy(vpcs)  # Copy because we're going to modify and it's memoized.
     subnets = aws_get_subnets(predicate, None, raw)
     sgs = aws_get_security_groups(predicate, None, raw)
     vpc_property = "vpc" if not raw else "VpcId"

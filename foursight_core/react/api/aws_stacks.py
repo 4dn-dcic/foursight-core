@@ -49,16 +49,15 @@ def aws_get_stack(stack_name_or_object: Union[str, object]) -> object:
     Output and parameter values are obfuscated if their names represents a sensitive value.
     """
     result = {}
-    stack = _get_aws_get_stack_object(stack_name_or_object)
+    stack = _get_aws_stack_object(stack_name_or_object)
     if stack:
-        result = {**_create_aws_stack_info(stack)}
+        result = _create_aws_stack_info(stack)
         outputs = aws_get_stack_outputs(stack)
         parameters = aws_get_stack_parameters(stack)
         resources = aws_get_stack_resources(stack)
         result["outputs"] = outputs
         result["parameters"] = parameters
         result["resources"] = resources
-        pass
     return result
 
 
@@ -71,7 +70,7 @@ def aws_get_stack_outputs(stack_name_or_object: Union[str, object]) -> dict:
     def output_id(element):
         return element["OutputKey"]
     result = {}
-    stack = _get_aws_get_stack_object(stack_name_or_object)
+    stack = _get_aws_stack_object(stack_name_or_object)
     if stack and stack.outputs:
         for stack_output in sorted(stack.outputs, key=output_id):
             result[stack_output.get("OutputKey")] = stack_output.get("OutputValue")
@@ -87,7 +86,7 @@ def aws_get_stack_parameters(stack_name_or_object: Union[str, object]) -> dict:
     def parameter_id(element):
         return element["ParameterKey"]
     result = {}
-    stack = _get_aws_get_stack_object(stack_name_or_object)
+    stack = _get_aws_stack_object(stack_name_or_object)
     if stack and stack.parameters:
         for stack_parameter in sorted(stack.parameters, key=parameter_id):
             result[stack_parameter.get("ParameterKey")] = stack_parameter.get("ParameterValue")
@@ -102,14 +101,14 @@ def aws_get_stack_resources(stack_name_or_object: Union[str, object]) -> dict:
     def resource_id(element):
         return element.logical_resource_id
     result = {}
-    stack = _get_aws_get_stack_object(stack_name_or_object)
+    stack = _get_aws_stack_object(stack_name_or_object)
     if stack:
         for stack_resource in sorted(list(stack.resource_summaries.all()), key=resource_id):
             result[stack_resource.logical_resource_id] = stack_resource.resource_type
     return _obfuscate(result)
 
 
-def _get_aws_get_stack_object(stack_name_or_object: Union[str, object]) -> Optional[object]:
+def _get_aws_stack_object(stack_name_or_object: Union[str, object]) -> Optional[object]:
     """
     Returns the boto3 Cloudformation stack object for the given stack name, if the given argument
     is a string, or if the given argument is already a boto3 stack object, then return that value.

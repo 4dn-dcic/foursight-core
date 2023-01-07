@@ -179,9 +179,10 @@ class ReactApiBase:
         """
         return self._auth.authorize(request, env)
 
-    def get_this_base_url(self, request: dict) -> str:
+    def foursight_instance_url(self, request: dict) -> str:
         """
-        Returns the base URL of this Foursight instance.
+        Returns the "base" URL of this Foursight instance, for example:
+        https://zvalpb2vxb.execute-api.us-east-1.amazonaws.com/api.
         """
         domain, context = app.core.get_domain_and_context(request)
         if is_running_locally(request):
@@ -204,37 +205,7 @@ class ReactApiBase:
             # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
             return urllib.parse.unquote(redirect_url)
         else:
-            return f"{self.get_this_base_url(request)}/react/{env}/login"
-
-    def xyzzy_old_get_redirect_url(self, request: dict, env: str, domain: str, context: str) -> str:
-        """
-        Returns the redirect URL to the UI from the reactredir cookie, or if that
-        is not set then to the /login page of the UI; for redirect on login/logout.
-        """
-        redirect_url = read_cookie(request, "reactredir")
-        if not redirect_url:
-            if is_running_locally(request):
-                # TODO: Allow https for localhost development.
-                scheme = "http"
-                # Using ROUTE_PREFIX here instead of context because may be just "/" for the local
-                # deploy case because we get here via the /callback endpoint (during authentication).
-                # Due to confusion between local deploy not implicitly using /api as context so setting
-                # it explicitly; this is just so we are dealing with the same paths for either case.
-                context = ROUTE_PREFIX
-            else:
-                scheme = "https"
-            if not env:
-                env = self._envs.get_default_env()
-            if not context:
-                context = "/"
-            elif not context.endswith("/"):
-                context = context + "/"
-            redirect_url = f"{scheme}://{domain}{context}react/{env}/login"
-        else:
-            # Not certain if by design but the React library (universal-cookie) used to
-            # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
-            redirect_url = urllib.parse.unquote(redirect_url)
-        return redirect_url
+            return f"{self.foursight_instance_url(request)}/react/{env}/login"
 
     def cache_clear(self) -> None:
         self._auth.cache_clear()

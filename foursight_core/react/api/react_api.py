@@ -160,7 +160,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_auth0_config(self, request: dict) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/auth0_config
+        Called from react_routes for endpoint: GET /{env}/auth0_config or /auth0_config
         Note that this in an UNPROTECTED route.
         """
         auth0_config = self._auth0_config.get_config_data()
@@ -170,7 +170,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_logout(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/logout
+        Called from react_routes for endpoint: GET /{env}/logout or GET /logout
         Note that this in an UNPROTECTED route.
         """
         authorize_response = self._auth.authorize(request, env)
@@ -401,7 +401,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def reactapi_get_users(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/users
-        Returns a (paged) summary of all users.
+        Returns a (paged) summary of all users from ElasticSearch.
+        Optional arguments (args) for the request are any of:
+        - search: to search for the specified value.
+        - limit: to limit the results to the specified number.
+        - offset: to skip past the first specified number of results.
+        - sort: to sort by the specified field name (optionally suffixed with .asc which is default or .desc);
+                default is email.asc.
+        - raw: if true then returns the raw format of the data.
         """
         ignored(request)
         offset = int(args.get("offset", "0")) if args else 0
@@ -460,6 +467,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns info on the specified user uuid. The uuid can actually also
         be an email address; and can also be a comma-separated list of these;
         if just one requested then return a single object, otherwise return an array.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
         ignored(request)
         raw = args.get("raw") == "true"
@@ -565,14 +574,30 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
 
     def reactapi_users_institutions(self, request: dict, env: str, args: dict) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/institutions
+        Returns the list of available user institutions.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
         raw = args.get("raw") == "true"
         return self.create_success_response(self._get_user_institutions(env, raw))
 
     def reactapi_users_projects(self, request: dict, env: str, args: dict) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/projects
+        Returns the list of available user projects.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
         raw = args.get("raw") == "true"
         return self.create_success_response(self._get_user_projects(env, raw))
 
     def reactapi_users_roles(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/roles
+        Returns the list of available user roles.
+        """
         return self.create_success_response(self._get_user_roles(env))
 
     def reactapi_checks_ungrouped(self, request: dict, env: str) -> Response:
@@ -665,6 +690,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns the most results among all defined checks for the given environment.
         Does this by looping through each check and getting the 10 most recent results from each
         and then globally sorting (in descending order) each of those results by check run timestamp.
+        Optional arguments (args) for the request are any of:
+        - limit: to limit the results to the specified number; default is 25.
         """
         ignored(request)
         max_results_per_check = 10
@@ -727,6 +754,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         Called from react_routes for endpoint: GET /{env}/checks/{check}/history
         Returns a (paged) summary (list) of check results for the given check (name).
+        Optional arguments (args) for the request are any of:
+        - limit: to limit the results to the specified number.
+        - offset: to skip past the first specified number of results.
+        - sort: to sort by the specified field name (optionally suffixed with .asc which is default or .desc);
+                default value is timestamp.desc.
         """
         ignored(request)
         offset = int(args.get("offset", "0")) if args else 0
@@ -769,6 +801,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/checks/{check}/run
         The args string, if any, is assumed to be a Base64 encoded JSON object.
         Kicks off a run for the given check (name).
+        Arguments (args) for the request are any of:
+        - args: Base-64 encode JSON object containing fields/values appropriate for the check run. 
         """
         ignored(request)
         args = base64_decode_to_json(args) if args else None
@@ -780,6 +814,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/checks/action/{action}/run
         The args string, if any, is assumed to be a Base64 encoded JSON object.
         Kicks off a run for the given action (name).
+        Arguments (args) for the request are any of:
+        - args: Base-64 encode JSON object containing fields/values appropriate for the action run. 
         """
         ignored(request)
         args = base64_decode_to_json(args) if args else {}
@@ -926,7 +962,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     "id": account_id,
                     "name": account_name,
                     "stage": account_stage,
-                    "foursight_url": self.get_this_base_url(request)
+                    "foursight_url": self.foursight_instance_url(request)
                 }]
         return None
 
@@ -1117,6 +1153,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns AWS VPC info. By default returns VPCs with (tagged) names beginning with "C4".
         If the vpc argument is "all" then info all VPCs are matched; or if the vpc is some other
         value then it is treated as a regular expression against which the VPC names are matched.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
         if vpc is None:
             vpc = "C4*"
@@ -1133,6 +1171,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns AWS Subnet info. By default returns Subnets with (tagged) names beginning with "C4".
         If the subnet argument is "all" then info all Subnets are matched; or if the subnet is some
         other value then it is treated as a regular expression against which the Subnet names are matched.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
         if subnet is None:
             subnet = "C4*"
@@ -1150,6 +1190,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns AWS Security Group info. By default returns Security Groups with (tagged) names beginning with "C4".
         If the security_group argument is "all" then info all Security Groups are matched; or if the security_group is some
         other value then it is treated as a regular expression against which the Subnet names are matched.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
         if security_group is None:
             security_group = "C4*"
@@ -1164,6 +1206,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoints:
         - GET /{env}/aws/security_groups_rules/{security_group}
         Returns AWS Security Group Rule info for the given security_group (ID).
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
         raw = args.get("raw") == "true"
         direction = args.get("direction")
@@ -1176,6 +1220,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         - GET /{env}/aws/network/{network}
         Returns aggregated AWS network info, i.e. WRT VPCs, Subnets, and Security Groups, ala the above functions.
         The network argument is treated like the vpc, subnet, and security_group for the above functions.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
         if network is None:
             network = "C4*"
