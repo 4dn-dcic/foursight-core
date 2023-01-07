@@ -10,8 +10,7 @@ import Json from '../../utils/Json';
 import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
 import Uuid from 'react-uuid';
-import { useComponentDefinitions, useSelectedComponents } from '../../Hooks.js';
-//import { useKeyedState, useOptionalKeyedState } from '../../Hooks.js';
+import useSelectedComponents from '../../hooks/SelectedComponents';
 import useKeyedState from '../../hooks/KeyedState';
 
 const tdLabelStyle = {
@@ -39,7 +38,7 @@ const InfrastructurePage = () => {
 
     const keyedState = useKeyedState();
 
-    const componentDefinitions = useComponentDefinitions([
+    const componentDefinitions = [
          { type: "stack",           create: createStack          },
          { type: "vpcs",            create: createVpcs           },
          { type: "subnets-public",  create: createSubnetsPublic  },
@@ -47,49 +46,47 @@ const InfrastructurePage = () => {
          { type: "security-groups", create: createSecurityGroups },
          { type: "gac",             create: createGac            },
          { type: "ecosystem",       create: createEcosystem      }
-    ]);
+    ];
 
     const componentsLeft = useSelectedComponents(componentDefinitions);
     const componentsRight = useSelectedComponents(componentDefinitions);
 
-    function createVpcs(name, key, keyedState, unselect) {
+    function createVpcs(name, key, unselect, args) {
+        const { keyedState } = args;
         return <Vpcs keyedState={keyedState.keyed(key)} hide={unselect} />;
     }
 
-    function createSubnetsPrivate(name, key, keyedState, unselect) {
+    function createSubnetsPrivate(name, key, unselect, args) {
+        const { keyedState } = args;
         return <Subnets type="private" keyedState={keyedState.keyed(key)} hide={unselect} />;
     }
 
-    function createSubnetsPublic(name, key, keyedState, unselect) {
+    function createSubnetsPublic(name, key, unselect, args) {
+        const { keyedState } = args;
         return <Subnets type="public" keyedState={keyedState.keyed(key)} hide={unselect} />;
             
     }
 
-    function createSecurityGroups(name, key, keyedState, unselect) {
-        return <SecurityGroups
-            keyedState={keyedState.keyed(key)}
-            hide={unselect}
-        />;
+    function createSecurityGroups(name, key, unselect, args) {
+        const { keyedState } = args;
+        return <SecurityGroups keyedState={keyedState.keyed(key)} hide={unselect} />;
     }
 
-    function createGac(name, key, keyedState, unselect) {
+    function createGac(name, key, unselect, args) {
         return <Gac hide={unselect} />;
     }
 
-    function createEcosystem(name, key, keyedState, unselect) {
+    function createEcosystem(name, key, unselect, args) {
         return <Ecosystem hide={unselect} />;
     }
 
-    function createStack(name, key, keyedState, unselect) {
-        return <Stack
-            stackName={name}
-            keyedState={keyedState.keyed(key)}
-            hide={unselect}
-        />;
+    function createStack(name, key, unselect, args) {
+        const { keyedState } = args;
+        return <Stack stackName={name} keyedState={keyedState.keyed(key)} hide={unselect} />;
     }
 
     const selectedVpcs           = () => componentsLeft.selected("vpcs");
-    const toggleVpcs             = () => componentsLeft.toggle("vpcs", null, keyedState);
+    const toggleVpcs             = () => componentsLeft.toggle("vpcs");
 
     const selectedGac            = () => componentsLeft.selected("gac");
     const toggleGac              = () => componentsLeft.toggle("gac");
@@ -98,16 +95,16 @@ const InfrastructurePage = () => {
     const toggleEcosystem        = () => componentsLeft.toggle("ecosystem");
 
     const selectedStack = (stackName) => componentsLeft.selected("stack", stackName);
-    const toggleStack   = (stackName) => componentsLeft.toggle("stack", stackName, keyedState);
+    const toggleStack   = (stackName) => componentsLeft.toggle("stack", stackName);
 
     const selectedSubnetsPublic  = () => componentsRight.selected("subnets-public");
-    const toggleSubnetsPublic    = () => componentsRight.toggle("subnets-public", null, keyedState);
+    const toggleSubnetsPublic    = () => componentsRight.toggle("subnets-public");
 
     const selectedSubnetsPrivate = () => componentsRight.selected("subnets-private");
-    const toggleSubnetsPrivate   = () => componentsRight.toggle("subnets-private", null, keyedState);
+    const toggleSubnetsPrivate   = () => componentsRight.toggle("subnets-private");
 
     const selectedSecurityGroups = () => componentsRight.selected("security-groups");
-    const toggleSecurityGroups   = () => componentsRight.toggle("security-groups", null, keyedState);
+    const toggleSecurityGroups   = () => componentsRight.toggle("security-groups");
 
     useEffect(() => {
         toggleEcosystem();
@@ -133,12 +130,12 @@ const InfrastructurePage = () => {
         </td>
         { !componentsLeft.empty() &&
             <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-                { componentsLeft.map(component => <div key={component.key}>{component.ui}</div>) }
+                { componentsLeft.map(component => <div key={component.key}>{component.ui({ keyedState: keyedState })}</div>) }
             </td>
         }
         { !componentsRight.empty() &&
             <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
-                { componentsRight.map(component => <div key={component.key}>{component.ui}</div>) }
+                { componentsRight.map(component => <div key={component.key}>{component.ui({ keyedState: keyedState })}</div>) }
             </td>
         }
     </tr></tbody></table>
@@ -193,7 +190,6 @@ const Vpcs = (props) => {
 const Vpc = (props) => {
 
     const { vpc, keyedState } = props;
-    //const [ state, setState ] = useOptionalKeyedState(keyedState);
     const [ state, setState ] = useKeyedState(keyedState);
 
     const isShow = (property) => state[property];
@@ -334,7 +330,6 @@ const Subnets = (props) => {
 
 const Subnet = (props) => {
     const { subnet, keyedState } = props;
-    //const [ state, setState ] = useOptionalKeyedState(keyedState);
     const [ state, setState ] = useKeyedState(keyedState);
     const isShow = (property) => state[property];
     const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
@@ -429,7 +424,6 @@ const SecurityGroups = (props) => {
 const SecurityGroup = (props) => {
 
     const { securityGroup, keyedState } = props;
-    //const [ state, setState ] = useOptionalKeyedState(keyedState);
     const [ state, setState ] = useKeyedState(keyedState);
 
     const isShow = (property) => state[property];
@@ -703,7 +697,6 @@ const StackList = (props) => {
 const Stack = (props) => {
 
     const { stackName, keyedState, hide } = props;
-    //const [ state, setState ] = useOptionalKeyedState(keyedState);
     const [ state, setState ] = useKeyedState(keyedState);
 
     const stack = useFetch(`/aws/stacks/${stackName}`, { cache: true });
