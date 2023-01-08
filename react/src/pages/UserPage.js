@@ -1,11 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Link } from '../Components';
 import { RingSpinner, StandardSpinner } from '../Spinners';
 import { useFetch } from '../utils/Fetch';
 import { FetchErrorBox } from '../Components';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
+import Env from '../utils/Env';
+import HeaderData from '../HeaderData';
 import Server from '../utils/Server';
 import Styles from '../Styles';
 import Time from '../utils/Time';
@@ -83,7 +85,7 @@ const KeyValueBox = (props) => {
 
 const UserBox = (props) => {
 
-    const items = [
+    let items = [
         { label: "Email", name: "email" },
         { label: "First Name", name: "first_name" },
         { label: "Last Name", name: "last_name" },
@@ -98,10 +100,16 @@ const UserBox = (props) => {
         { label: "UUID", name: "uuid" }
     ]
 
+    if (Env.IsFoursightFourfront(useContext(HeaderData))) {
+        items = items.filter(item => (item.name !== "institution") && (item.name !== "project") && (item.name !== "roles") && (item.name !== "role"));
+    }
+
     function getUserRoleAssociatedWithProject(project) {
-        for (const projectRole of props.user.roles) {
-            if (projectRole.project === project) {
-                return projectRole.role;
+        if (props.user.data) {
+            for (const projectRole of props.user.roles) {
+                if (projectRole.project === project) {
+                    return projectRole.role;
+                }
             }
         }
     }

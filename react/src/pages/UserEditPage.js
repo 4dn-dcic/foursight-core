@@ -1,17 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from '../Components';
 import { useFetch } from '../utils/Fetch';
 import Client from '../utils/Client';
+import Env from '../utils/Env';
 import EditBox from './EditBox';
 import Time from '../utils/Time';
 import UserDefs from './UserDefs';
 import { useReadOnlyMode } from '../ReadOnlyMode';
+import HeaderData from '../HeaderData';
 
 const UserEditPage = () => {
     
     const { uuid } = useParams();
-    const [ inputs, setInputs ] = useState(UserDefs.Inputs());
+    const [ inputs, setInputs ] = useState
+    (
+        Env.IsFoursightFourfront(useContext(HeaderData))
+        ? UserDefs.Inputs().filter(input => (input.name !== "institution") && (input.name !== "project") && (input.name !== "role"))
+        : UserDefs.Inputs()
+    );
     const [ notFound, setNotFound ] = useState(false);
     const [ readOnlyMode ] = useReadOnlyMode();
     const [ project, setProject ] = useState('foo');
@@ -33,21 +40,22 @@ const UserEditPage = () => {
     }, [uuid]);
 
     function getUserRoleAssociatedWithProject(/*user,*/ project) {
-        if (user.loading || !user.data) return "";
-        for (const projectRole of user.data.roles) {
-            if (projectRole.project === project) {
-                return projectRole.role;
+        if (!user.loading && user.data && user.data.roles) {
+            for (const projectRole of user.data.roles) {
+                if (projectRole.project === project) {
+                    return projectRole.role;
+                }
             }
-        }
-        //
-        // if (project === "/projects/cgap-backend-testing/") return "director" // xyzzy/testing
-        // If the given project (currently selected on edit page) does not have
-        // an associated role, then return the role for the associaed with the
-        // actual current user project.
-        //
-        for (const projectRole of user.data.roles) {
-            if (projectRole.project === user.data.project) {
-                return projectRole.role;
+            //
+            // if (project === "/projects/cgap-backend-testing/") return "director" // xyzzy/testing
+            // If the given project (currently selected on edit page) does not have
+            // an associated role, then return the role for the associaed with the
+            // actual current user project.
+            //
+            for (const projectRole of user.data.roles) {
+                if (projectRole.project === user.data.project) {
+                    return projectRole.role;
+                }
             }
         }
         return null;

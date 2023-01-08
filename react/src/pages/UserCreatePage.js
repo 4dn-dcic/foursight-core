@@ -1,16 +1,23 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFetch } from '../utils/Fetch';
 import { Link } from '../Components';
 import Client from '../utils/Client';
+import Env from '../utils/Env';
 import EditBox from './EditBox';
 import Server from '../utils/Server';
 import UserDefs from './UserDefs';
+import HeaderData from '../HeaderData';
 
 const UserCreatePage = () => {
     
     const user = useFetch(Server.Url("/users"), { method: "POST", nofetch: true });
-    const [ inputs ] = useState(UserDefs.Inputs());
+    const [ inputs, setInputs ] = useState
+    (
+        Env.IsFoursightFourfront(useContext(HeaderData))
+        ? UserDefs.Inputs().filter(input => (input.name !== "institution") && (input.name !== "project") && (input.name !== "role"))
+        : UserDefs.Inputs()
+    );
     const navigate = useNavigate();
 
     function onCreate(values) {

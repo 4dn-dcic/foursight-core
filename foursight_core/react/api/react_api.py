@@ -607,7 +607,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
         - raw: if true then returns the raw format of the data.
         """
         raw = args.get("raw") == "true"
-        return self.create_success_response(self._get_user_institutions(env, raw))
+        try:
+            institutions = self._get_user_institutions(env, raw)
+        except Exception:
+            #
+            # TODO: Only works for foursight-cgap not foursight-fourfront. Right way to handl?
+            #
+            institutions = []
+        return self.create_success_response(institutions)
 
     def reactapi_users_projects(self, request: dict, env: str, args: dict) -> Response:
         """
@@ -617,7 +624,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
         - raw: if true then returns the raw format of the data.
         """
         raw = args.get("raw") == "true"
-        return self.create_success_response(self._get_user_projects(env, raw))
+        try:
+            projects = self._get_user_projects(env, raw)
+        except Exception:
+            #
+            # TODO: Only works for foursight-cgap not foursight-fourfront. Right way to handl?
+            #
+            projects = []
+        return self.create_success_response(projects)
 
     def reactapi_users_roles(self, request: dict, env: str) -> Response:
         """
