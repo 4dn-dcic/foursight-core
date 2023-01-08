@@ -121,13 +121,17 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def _get_user_institutions(self, env: str, raw: bool = False) -> Response:
         connection = app.core.init_connection(env)
         institutions = ff_utils.search_metadata(f'/search/?type=Institution', key=connection.ff_keys)
+        def get_principle_investigator(institution):
+            pi = institution.get("pi")
+            return {"name": pi.get("display_title"), "uuid": pi.get("uuid"), "id": pi.get("@id")} if pi else None
         if institutions and not raw:
             institutions = [
                 {
                     "id": institution.get("@id"),
                     "uuid": institution.get("uuid"),
                     "name": institution.get("name"),
-                    "title": institution.get("title")
+                    "title": institution.get("title"),
+                    "pi": get_principle_investigator(institution)
                 }
                 for institution in institutions
             ]
@@ -346,14 +350,21 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         Canonicalizes and returns the given raw user record from our database
         into a common form used by our UI.
+
+        WRT roles: Roles are in ElasticSearch as an array property (named "project_roles")
+        of objects each containing a "project" and a "role" property. We send this array back
+        to the frontend as-is (but named just "roles"); we also send back the "project" property;
+        but we do NOT send back a single "role" property, rather then UI displays the role, from
+        the "roles" property, associated with the "project" property. On edit/update/create, the
+        UI, in addition to sending back the "roles" property as received (from here), DOES send a
+        single "role" property, as well the "project" property; this role will then be associated
+        with this project in the "project_roles" property when writing the record to ElasticSearch.
         """
         last_modified = user.get("last_modified")
         if isinstance(last_modified, dict):
             updated = last_modified.get("date_modified") or user.get("date_created")
         else:
             updated = user.get("date_created")
-        project_roles = user.get("project_roles")
-        project_role = project_roles[0] if project_roles else None
         return {
             # Lower case email to avoid any possible issues on lookup later.
             "email": (user.get("email") or "").lower(),
@@ -364,9 +375,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "groups": user.get("groups"),
             "project": user.get("project"),
             "institution": user.get("user_institution"),
-            # TODO: Deal with multiple roles (?)
-            "role": project_role.get("role") if project_role else None,
-            "roles": project_roles,
+            "roles": user.get("project_roles"),
             "updated": convert_utc_datetime_to_useastern_datetime_string(updated),
             "created": convert_utc_datetime_to_useastern_datetime_string(user.get("date_created"))
         }
@@ -377,11 +386,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         Canonicalizes and returns the given user record from our UI
         into the common format used in our database. Modifies input.
+        Please see comment above (in _create_user_record_for_output) WRT roles.
         """
         if "institution" in user:
             user["user_institution"] = user["institution"]
             del user["institution"]
         # If project and/or user_institution is present but is empty then remove altogether.
+        if "roles" in user:
+            user["project_roles"] = user["roles"]
         if "user_institution" in user:
             if not user["user_institution"]:
                 del user["user_institution"]
@@ -389,13 +401,27 @@ class ReactApi(ReactApiBase, ReactRoutes):
             if not user["project"]:
                 del user["project"]
             elif "role" in user:
+                project = user["project"]
                 if not user["role"]:
                     del user["role"]
                 else:
-                    # TODO: Deal with possible multiple values?
-                    user["project_roles"] = [{"role": user["role"], "project": user["project"]}]
+                    role = user["role"]
+                    project_roles = user["roles"]
+                    if project_roles:
+                        found = False
+                        for project_role in project_roles:
+                            if project_role.get("project") == project:
+                                project_role["role"] = role
+                                found = True
+                                break
+                        if not found:
+                            project_roles.append({"role": role, "project": project})
+                    else:
+                        user["project_roles"] = [{"role": role, "project": project}]
         if "role" in user:
             del user["role"]
+        if "roles" in user:
+            del user["roles"]
         return user
 
     def reactapi_get_users(self, request: dict, env: str, args: Optional[dict] = None) -> Response:

@@ -81,6 +81,10 @@ const UserEditPage = () => {
             delete values["admin"]
             values = {...values, "groups": existingGroupsWithoutAnyAdmin }
         }
+            console.log('xxxxx')
+            console.log(values)
+        values = { ...values, "roles": user.get("roles") };
+            console.log(values)
         user.refresh({
             url: `/users/${uuid}`,
             method: "PATCH",

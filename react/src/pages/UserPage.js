@@ -71,6 +71,9 @@ const KeyValueBox = (props) => {
                         </>:<>
                             {Type.IsFunction(key.map) ? key.map(props.value[key.name]) : props.value[key.name]}
                         </> }
+                        { key.subvalue && <>
+                            <br /> {key.subvalue}
+                        </> }
                     </td>
                 </tr>
             </React.Fragment>)}
@@ -86,17 +89,24 @@ const UserBox = (props) => {
         { label: "Last Name", name: "last_name" },
         { label: "Groups", name: "groups" },
         { label: "Project", name: "project", map: value => value?.replace("/projects/","")?.replace("/","") },
-        { label: "Role", name: "role", map: value => value },
+        { label: "Role", name: "role", map: value => getUserRoleAssociatedWithProject(props.user.project) },
         { label: "Roles", name: "roles", ui: <RolesBox user={props.user} />, toggle: true },
-        { label: "Institution", name: "institution", map: value => value?.replace("/institutions/","")?.replace("/","") },
+        { label: "Institution", name: "institution", map: value => value?.replace("/institutions/","")?.replace("/",""),
+                                subvalue: <PrinciplInvestigatorLine institution={props.user.institution} /> },
         { label: "Created", name: "created", map: value => Time.FormatDateTime(value) },
         { label: "Updated", name: "updated", map: value => Time.FormatDateTime(value) },
         { label: "UUID", name: "uuid" }
     ]
 
-    return <>
-        <KeyValueBox keys={items} value={props.user} separators={true} />
-    </>
+    function getUserRoleAssociatedWithProject(project) {
+        for (const projectRole of props.user.roles) {
+            if (projectRole.project === project) {
+                return projectRole.role;
+            }
+        }
+    }
+
+    return <KeyValueBox keys={items} value={props.user} separators={true} />
 }
 
 const RolesBox = (props) => {
@@ -109,7 +119,7 @@ const RolesBox = (props) => {
             <tr><td style={{height:"2pt"}} /></tr>
             <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2" ></td></tr>
             <tr><td style={{height:"2pt"}} /></tr>
-            { props.user.roles.map(role => <tr key={role}>
+            { props.user.roles.map(role => <tr key={role.project}>
                 <td style={{width:"5%",whiteSpace:"nowrap"}}>
                     {role.project.replace("/projects/","")?.replace("/","")}
                 </td>
@@ -119,6 +129,17 @@ const RolesBox = (props) => {
             </tr>)}
         </tbody></table>
     </div>
+}
+
+const PrinciplInvestigatorLine = (props) => {
+    const { institution } = props;
+    const institutions = useFetch("/users/institutions");
+    const pi = institutions?.data?.find(item => item.id === institution)?.pi;
+    return <>
+        { pi && <small>
+            <b>Principle Investigator</b>: {pi.name}
+        </small> }
+    </>
 }
 
 const UserPage = (props) => {
