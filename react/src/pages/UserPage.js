@@ -131,7 +131,7 @@ const UserPage = (props) => {
         return useFetch({
             url: `/users/${email}`,
             onData: (data) => Type.IsObject(data) ? [data] : data,
-            nofetch: true, cache: true
+            nofetch: true
         });
     }
 

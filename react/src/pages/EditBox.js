@@ -26,9 +26,14 @@ const DynamicSelect = (props) => {
         }
     }
 
-    return <select id={props.id} className="select" value={selected || ""} onChange={onChange} disabled={props.disabled || values.loading}>
-        {values.map(value => <option key={value.id || ""} value={value.id || ""}>{value.name || ""}</option>)}
-    </select>
+    return <>
+        <select id={props.id} className="select" value={selected || ""} onChange={onChange} disabled={props.disabled || values.loading}>
+            { !props.required && <option key="">-</option> }
+            { values.map(value => {
+                if (value.id) return <option key={value.id} value={value.id}>{value.name}</option>
+            })}
+        </select>
+    </>
 }
 
 const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDelete, onCancel, onRefresh, readonly = false }) => {
@@ -115,7 +120,7 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
         }
     }
 
-    function handleChange(e, id, value, changed) {
+    function handleChange(e /* , id, value, changed */ ) {
         const input = getInputByName(e.target.id);
         if (input.required) {
             const currentValue = e.target.value?.toString();
@@ -127,7 +132,40 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
             inputsRequiredStatus[input.name] = isValidEmail(currentValue);
             setInputsRequiredStatus(current => ({...inputsRequiredStatus}));
         }
+        //
+        // If this input which just changed has dependencies (i.e. inputs which
+        // have a dependsOn property with a value which is the name of this input),
+        // AND the dependent property has a value which is a function, then call
+        // that dependent input value function with an argument which is the new
+        // value of this input, and set the value of the dependent input to that
+        // resultant value. TODO: And to get this to actually "take" we have a hack
+        // for now is to set this in a timer callback; how to do this correctly.
+        // TODO
+        //
+        const dependentInputs = getInputDependencies(input); 
+        for (const dependentInput of dependentInputs) {
+            if (typeof(dependentInput.value) === "function") {
+                const dependentElement = document.getElementById(dependentInput.name);
+                if (dependentElement) {
+                    const dependentValue = dependentInput.value(e.target.value?.toString());
+                    dependentElement.value = dependentValue;
+                    window.setTimeout(() => { dependentElement.value = dependentValue; }, 10); }
+            }
+        }
         setChanging(changesExist());
+    }
+
+    function getInputDependencies(input) {
+        const results = [];
+        if (input) {
+            const inputName = input.name;
+            for (const input of inputs) {
+                if (input.dependsOn === inputName) {
+                    results.push(input);
+                }
+            }
+        }
+        return results;
     }
 
     function getInputByName(name) {
@@ -182,11 +220,15 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
     }
 
     function valueOf(input) {
+        if (!input) return undefined;
         if (input.type === "boolean") {
             return input.value ? true : false;
         }
         else if ((input.value === null) || (input.value === undefined)) {
             return "";
+        }
+        else if (typeof(input.value) === "function") {
+            return input.value(input.dependsOn ? valueOf(input.dependsOn) : undefined);
         }
         else {
             return input.value.toString();
@@ -252,7 +294,8 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                                     <DynamicSelect
                                         id={input.name}
                                         url={input.url}
-                                        selected={input.value}
+                                        required={input.required}
+                                        selected={valueOf(input)}
                                         onChange={handleChange}
                                         disabled={isDisabled() || input.readonly}
                                         setLoadingCount={setLoadingCount}

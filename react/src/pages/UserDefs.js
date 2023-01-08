@@ -28,13 +28,14 @@ const _UserInputs = [
         name: "project",
         label: "Project",
         type: "select",
-        url: "/users/projects"
+        url: "/users/projects",
     },
     {
         name: "role",
         label: "Role",
         type: "select",
-        url: "/users/roles"
+        url: "/users/roles",
+        dependsOn: "project"
     },
     {
         name: "institution",
