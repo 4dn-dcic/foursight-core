@@ -162,7 +162,7 @@ const UsersPage = () => {
                             <td style={tdStyle}>
                             <span id={`tooltip-users-role-${user.email}`}>
                                 {UserDefs.GetProjectRole(user, user.project) || Char.EmptySet}
-                                {user.roles.length > 1 && <small>&nbsp;({user.roles?.length})</small>}
+                                {user.roles?.length > 1 && <small>&nbsp;({user.roles?.length})</small>}
                             </span>
                                 <Tooltip id={`tooltip-users-role-${user.email}`} position="bottom" size="small"
                                     text={`Role: ${UserDefs.GetProjectRole(user, user.project)}${user.roles?.length > 1 ? `. Total: ${user.roles.length}` : ""}`} />
