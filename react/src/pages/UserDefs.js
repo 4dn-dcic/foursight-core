@@ -44,7 +44,8 @@ const _UserInputs = [
         name: "institution",
         label: "Institution",
         type: "select",
-        url: "/users/institutions"
+        url: "/users/institutions",
+        dependsOn: "institution"
     },
     {
         name: "created",
@@ -76,7 +77,7 @@ function getProjectRole(user, project) {
 
 const PrincipalInvestigatorLine = (props) => {
     const { institution } = props;
-    const institutions = useFetch("/users/institutions");
+    const institutions = useFetch("/users/institutions", { cache: true });
     const getPI = (institution) => institutions?.data?.find(item => item.id === institution)?.pi;
     return <div style={props.style}>
         { getPI(institution) && <small>

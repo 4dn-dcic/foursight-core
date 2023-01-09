@@ -33,6 +33,9 @@ const DynamicSelect = (props) => {
                 if (value.id) return <option key={value.id} value={value.id}>{value.name}</option>
             })}
         </select>
+        { props.subComponent && <>
+            {props.subComponent(selected)}
+        </> }
     </>
 }
 
@@ -148,8 +151,11 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                 const dependentElement = document.getElementById(dependentInput.name);
                 if (dependentElement) {
                     const dependentValue = dependentInput.value(e.target.value?.toString());
-                    dependentElement.value = dependentValue;
-                    window.setTimeout(() => { dependentElement.value = dependentValue; }, 10); }
+                    if (dependentValue !== undefined) {
+                        dependentElement.value = dependentValue;
+                        window.setTimeout(() => { dependentElement.value = dependentValue; }, 10);
+                    }
+                }
             }
         }
         setChanging(changesExist());
@@ -303,9 +309,9 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                                         onChange={handleChange}
                                         disabled={isDisabled() || input.readonly}
                                         setLoadingCount={setLoadingCount}
+                                        subComponent={input.subComponent}
                                         reset={reset}
                                     />
-                                    { input.subvalue && input.subvalue(currentValueOf(input)) }
                                 </>:<>
                                     <input
                                         className="input icon-rtl"

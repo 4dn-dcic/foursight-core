@@ -74,8 +74,8 @@ const KeyValueBox = (props) => {
                         </>:<>
                             {Type.IsFunction(key.map) ? key.map(props.value[key.name]) : props.value[key.name]}
                         </> }
-                        { key.subvalue && <>
-                            <br /> {key.subvalue}
+                        { key.subComponent && <>
+                            <br /> {key.subComponent(props.value[key.name])}
                         </> }
                     </td>
                 </tr>
@@ -95,7 +95,7 @@ const UserBox = (props) => {
         { label: "Role", name: "role", map: value => UserDefs.GetProjectRole(props.user, props.user.project) },
         { label: "Roles", name: "roles", ui: <RolesBox user={props.user} />, toggle: true },
         { label: "Institution", name: "institution", map: value => value?.replace("/institutions/","")?.replace("/",""),
-                                subvalue: <UserDefs.PrincipalInvestigatorLine institution={"/institutions/hms-dbmi/"} /> },
+                                subComponent: (institution) => <UserDefs.PrincipalInvestigatorLine institution={institution} /> },
         { label: "Created", name: "created", map: value => Time.FormatDateTime(value) },
         { label: "Updated", name: "updated", map: value => Time.FormatDateTime(value) },
         { label: "UUID", name: "uuid" }

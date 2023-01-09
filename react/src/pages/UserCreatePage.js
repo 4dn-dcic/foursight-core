@@ -24,7 +24,7 @@ const UserCreatePage = () => {
     useEffect(() => {
         const institutionInput = inputs.find(input => input.name == "institution");
         if (institutionInput) {
-            institutionInput.subvalue =
+            institutionInput.subComponent =
                 (institution) =>
                     <UserDefs.PrincipalInvestigatorLine institution={institution} />
         }

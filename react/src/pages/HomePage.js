@@ -10,6 +10,7 @@ import { HorizontalLine, Link, LoggedInUser } from '../Components';
 import Tooltip from '../components/Tooltip';
 import Str from '../utils/Str';
 import { AccountInfo } from './AccountsComponent';
+import UserDefs from './UserDefs';
 
 const HomePage = (props) => {
 

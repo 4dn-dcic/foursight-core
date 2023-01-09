@@ -22,7 +22,7 @@ const UserEditPage = () => {
     );
     const [ notFound, setNotFound ] = useState(false);
     const [ readOnlyMode ] = useReadOnlyMode();
-    const [ project, setProject ] = useState('foo');
+    const [ project, setProject ] = useState();
     const user = useFetch({
         url: `/users/${uuid}`,
         nofetch: true,
@@ -40,7 +40,7 @@ const UserEditPage = () => {
         user.fetch();
         const institutionInput = inputs.find(input => input.name == "institution");
         if (institutionInput) {
-            institutionInput.subvalue =
+            institutionInput.subComponent =
                 (institution) =>
                     <UserDefs.PrincipalInvestigatorLine institution={institution} />
         }
