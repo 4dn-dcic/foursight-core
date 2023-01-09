@@ -8,7 +8,7 @@ const Tooltip = ({ id, type = "dark", position = "bottom", text = "Your tooltip 
     // if (!Str.HasValue(id) || !Str.HasValue(text)) return null;
     let tipStyle = {
         ...style,
-        borderRadius: shape == "squared" ? "0 0 0 0" : "14px 0 14px 0",
+        borderRadius: shape === "squared" ? "0 0 0 0" : "14px 0 14px 0",
         opacity:"1.0",
         zIndex: 1000,
         fontWeight: bold ? "bold" : "normal",

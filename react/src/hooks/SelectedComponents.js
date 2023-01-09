@@ -13,7 +13,7 @@ const useSelectedComponents = (componentDefinitions) => {
     // the useSelectedComponents state getting captured on each select). 
     return useState({
         count: () => components.length,
-        empty: () => components.length == 0,
+        empty: () => components.length === 0,
         map: (f, i) => components.map(f, i),
         selected: function(type, name = null) { return this.__lookup(type, name) >= 0; },
         select:   function(type, name = null) { this.__select(type, name); },

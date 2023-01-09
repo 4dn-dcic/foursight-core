@@ -8,7 +8,6 @@ import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
 import HeaderData from '../HeaderData';
-import Server from '../utils/Server';
 import Styles from '../Styles';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
@@ -167,12 +166,12 @@ const UserPage = (props) => {
     return <>
         <div className="container" style={{width:"fit-content",minWidth:"550pt",maxWidth:"800pt"}}>
             <div style={{marginBottom:"2pt"}}>
-                <b>User</b>{users.length == 1 && ": " + users.get(0)?.first_name + " " + users.get(0)?.last_name}
+                <b>User</b>{users.length === 1 && ": " + users.get(0)?.first_name + " " + users.get(0)?.last_name}
                 <div style={{float:"right",fontSize:"small",marginTop:"2pt"}}>
                     <span className="pointer" onClick={toggleRaw}>
                         {showRaw ? <b>Raw</b> : <span>Raw</span>}<>&nbsp;|&nbsp;</>
                     </span>
-                    { users.length == 1 && <>
+                    { users.length === 1 && <>
                         <Link to={`/users/edit/${users.get(0)?.uuid}`} bold={false}>Edit</Link><>&nbsp;|&nbsp;</>
                     </>}
                     <Link to="/users" bold={false}>List</Link><>&nbsp;|&nbsp;</>

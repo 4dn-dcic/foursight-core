@@ -3,7 +3,6 @@ import { BarSpinner, StandardSpinner } from '../Spinners';
 import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
 import { useFetch, useFetching } from '../utils/Fetch';
-import Server from '../utils/Server';
 import Time from '../utils/Time';
 import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';

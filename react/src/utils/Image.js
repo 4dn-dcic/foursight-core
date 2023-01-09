@@ -52,7 +52,6 @@ function GetFoursightFourfrontLogoImage() {
 
 function GetGitHubLoginLogoImage() {
     return "https://github.githubassets.com/images/modules/logos_page/Octocat.png"
- // return "https://cdn4.iconfinder.com/data/icons/iconsimple-logotypes/512/github-512.png";
 }
 
 function GetGoogleLoginLogoImage() {
@@ -77,25 +76,18 @@ function GetCalendarIcon() {
 
 function GetNewIcon() {
     return "https://cdn2.iconfinder.com/data/icons/picons-essentials/71/new-512.png";
-    // return "https://zeevector.com/wp-content/uploads/New-PNG-transparent-Sticker@zeevector.png";
 }
 
 function GetSettingsIcon() {
     return "https://www.freeiconspng.com/thumbs/settings-icon/settings-icon-16.png"
-    // return "https://www.citypng.com/public/uploads/preview/free-square-settings-options-app-icon-png-11641214244is22gdjyqx.png"
-    // return "https://www.clipartmax.com/png/small/113-1131137_png-file-settings-vector-icon.png"
-    // return "https://www.freeiconspng.com/thumbs/settings-icon/settings-icon-16.png";
-    // return "https://purepng.com/public/uploads/thumbnail/purepng.com-settings-icon-ios-7symbolsiconsapple-iosiosios-7-iconsios-7-721522596658ne7ja.png"
 }
 
 function GetSettingsRedIcon() {
     return "https://icones.pro/wp-content/uploads/2022/02/services-parametres-et-icone-d-engrenage-rouge.png"
-    return "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQg_cmiNw_dAYio7qPF1lrOvKQp_Pspp0IDyw&usqp=CAU"
 }
 
 function GetAtomIcon() {
     return "https://cdn-icons-png.flaticon.com/512/45/45082.png";
- // return "https://www.pngkey.com/png/full/499-4996576_atom-symbol-comments-black-and-white-atom.png";
 }
 
 function GetMenuIcon() {

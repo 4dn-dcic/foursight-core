@@ -22,7 +22,6 @@ const UserEditPage = () => {
     );
     const [ notFound, setNotFound ] = useState(false);
     const [ readOnlyMode ] = useReadOnlyMode();
-    const [ project, setProject ] = useState();
     const user = useFetch({
         url: `/users/${uuid}`,
         nofetch: true,
@@ -38,7 +37,7 @@ const UserEditPage = () => {
 
     useEffect(() => {
         user.fetch();
-        const institutionInput = inputs.find(input => input.name == "institution");
+        const institutionInput = inputs.find(input => input.name === "institution");
         if (institutionInput) {
             institutionInput.subComponent =
                 (institution) =>

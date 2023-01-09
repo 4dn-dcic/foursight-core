@@ -1,15 +1,12 @@
 import React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { StandardSpinner } from '../../Spinners';
 import { useFetch } from '../../utils/Fetch';
 import { ExternalLink } from '../../Components';
 import Char from '../../utils/Char';
-import Clipboard from '../../utils/Clipboard';
-import Json from '../../utils/Json';
 import Type from '../../utils/Type';
 import Yaml from '../../utils/Yaml';
-import Uuid from 'react-uuid';
 import useSelectedComponents from '../../hooks/SelectedComponents';
 import useKeyedState from '../../hooks/KeyedState';
 
@@ -27,14 +24,6 @@ const tdContentStyle = {
 }
 
 const InfrastructurePage = () => {
-
-    const [ showVpcs, setShowVpcs ] = useState(true);
-    const [ showSubnetsPublic, setShowSubnetsPublic ] = useState(false);
-    const [ showSubnetsPrivate, setShowSubnetsPrivate ] = useState(false);
-    const [ showSecurityGroups, setShowSecurityGroups ] = useState(false);
-    const [ showGac, setShowGac ] = useState(false);
-    const [ showEcosystem, setShowEcosystem ] = useState(false);
-    const [ stacks, setStacks ] = useState([]);
 
     const keyedState = useKeyedState();
 
@@ -429,8 +418,6 @@ const SecurityGroup = (props) => {
     const isShow = (property) => state[property];
     const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
 
-    const isShowRules         = () => isShow    ("showRules");
-    const toggleRules         = () => toggleShow("showRules");
     const isShowInboundRules  = () => isShow    ("showInboundRules");
     const toggleInboundRules  = () => toggleShow("showInboundRules");
     const isShowOutboundRules = () => isShow    ("showOutboundRules");

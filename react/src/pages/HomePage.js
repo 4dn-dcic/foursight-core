@@ -1,5 +1,4 @@
 import { useContext, useState } from 'react';
-import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
 import { ExternalLink } from '../Components';
@@ -8,9 +7,7 @@ import Image from '../utils/Image';
 import Logout from '../utils/Logout';
 import { HorizontalLine, Link, LoggedInUser } from '../Components';
 import Tooltip from '../components/Tooltip';
-import Str from '../utils/Str';
 import { AccountInfo } from './AccountsComponent';
-import UserDefs from './UserDefs';
 
 const HomePage = (props) => {
 
@@ -45,7 +42,7 @@ const HomePage = (props) => {
                 <HorizontalLine top="10pt" bottom="4pt" />
                 This is the <b>new</b> React version of Foursight. To use the previous version click <b><a href={Env.LegacyFoursightLink(header)} style={{color:"inherit"}}><u>here</u></a></b>.
                 <span id={"tooltip-account-summary"}style={{float:"right",marginTop:"-3pt"}} className="pointer" onClick={() => setShowAccountSummary(!showAccountSummary)}>
-                    <img src={Image.SettingsRedIcon()} height="28" />
+                    <img alt="settings" src={Image.SettingsRedIcon()} height="28" />
                 </span>
                 <Tooltip id="tooltip-account-summary" position="top" size="small" text={"Click to " + (showAccountSummary ? "hide" : "show") + " account summary."} />
                 <HorizontalLine top="4pt" bottom="10pt" />

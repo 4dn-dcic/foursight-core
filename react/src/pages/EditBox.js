@@ -30,7 +30,7 @@ const DynamicSelect = (props) => {
         <select id={props.id} className="select" value={selected || ""} onChange={onChange} disabled={props.disabled || values.loading}>
             { !props.required && <option key="" value="">-</option> }
             { values.map(value => {
-                if (value.id) return <option key={value.id} value={value.id}>{value.name}</option>
+                if (value.id) return <option key={value.id} value={value.id}>{value.name}</option>; else return null;
             })}
         </select>
         { props.subComponent && <>
@@ -239,10 +239,6 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
         else {
             return input.value.toString();
         }
-    }
-
-    function currentValueOf(input) {
-        return document.getElementById(input.name)?.value?.toString();
     }
 
     function isValidEmail(email) {

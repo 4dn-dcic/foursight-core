@@ -13,7 +13,7 @@ const UserCreatePage = () => {
     
     const user = useFetch(Server.Url("/users"), { method: "POST", nofetch: true });
     const [ header ] = useContext(HeaderData);
-    const [ inputs, setInputs ] = useState
+    const [ inputs ] = useState
     (
         Env.IsFoursightFourfront(header)
         ? UserDefs.Inputs().filter(input => (input.name !== "institution") && (input.name !== "project") && (input.name !== "role"))
@@ -22,7 +22,7 @@ const UserCreatePage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const institutionInput = inputs.find(input => input.name == "institution");
+        const institutionInput = inputs.find(input => input.name === "institution");
         if (institutionInput) {
             institutionInput.subComponent =
                 (institution) =>
