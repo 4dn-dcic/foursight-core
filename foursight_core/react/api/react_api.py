@@ -345,8 +345,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         }
         return self.create_success_response(body)
 
-    @staticmethod
-    def _create_user_record_for_output(user: dict) -> dict:
+    def _create_user_record_for_output(self, user: dict) -> dict:
         """
         Canonicalizes and returns the given raw user record from our database
         into a common form used by our UI.
@@ -380,14 +379,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "created": convert_utc_datetime_to_useastern_datetime_string(user.get("date_created"))
         }
 
-
-    @staticmethod
-    def _create_user_record_from_input(user: dict) -> dict:
+    def _create_user_record_from_input(self, user: dict) -> dict:
         """
         Canonicalizes and returns the given user record from our UI
         into the common format used in our database. Modifies input.
         Please see comment above (in _create_user_record_for_output) WRT roles.
         """
+        if self.is_foursight_fourfront():
+            if "institution" in user:
+                del user["institution"]
+            if "project" in user:
+                del user["project"]
+            if "role" in user:
+                del user["role"]
+            if "roles" in user:
+                del user["roles"]
+            return user
+
         if "institution" in user:
             user["user_institution"] = user["institution"]
             del user["institution"]
@@ -606,15 +614,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
+        if self.is_foursight_fourfront():
+            return self.create_success_response([])
         raw = args.get("raw") == "true"
-        try:
-            institutions = self._get_user_institutions(env, raw)
-        except Exception:
-            #
-            # TODO: Only works for foursight-cgap not foursight-fourfront. Right way to handl?
-            #
-            institutions = []
-        return self.create_success_response(institutions)
+        return self.create_success_response(self._get_user_institutions(env, raw))
 
     def reactapi_users_projects(self, request: dict, env: str, args: dict) -> Response:
         """
@@ -623,21 +626,18 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
+        if self.is_foursight_fourfront():
+            return self.create_success_response([])
         raw = args.get("raw") == "true"
-        try:
-            projects = self._get_user_projects(env, raw)
-        except Exception:
-            #
-            # TODO: Only works for foursight-cgap not foursight-fourfront. Right way to handl?
-            #
-            projects = []
-        return self.create_success_response(projects)
+        return self.create_success_response(self._get_user_projects(env, raw))
 
     def reactapi_users_roles(self, request: dict, env: str) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/users/roles
         Returns the list of available user roles.
         """
+        if self.is_foursight_fourfront():
+            return self.create_success_response([])
         return self.create_success_response(self._get_user_roles(env))
 
     def reactapi_checks_ungrouped(self, request: dict, env: str) -> Response:

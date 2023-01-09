@@ -13,9 +13,10 @@ import HeaderData from '../HeaderData';
 const UserEditPage = () => {
     
     const { uuid } = useParams();
+    const [ header ] = useContext(HeaderData);
     const [ inputs, setInputs ] = useState
     (
-        Env.IsFoursightFourfront(useContext(HeaderData))
+        Env.IsFoursightFourfront(header)
         ? UserDefs.Inputs().filter(input => (input.name !== "institution") && (input.name !== "project") && (input.name !== "role"))
         : UserDefs.Inputs()
     );

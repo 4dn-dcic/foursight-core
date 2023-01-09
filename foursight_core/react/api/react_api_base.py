@@ -207,6 +207,9 @@ class ReactApiBase:
         else:
             return f"{self.foursight_instance_url(request)}/react/{env}/login"
 
+    def is_foursight_fourfront(self) -> bool:
+        return app.core.APP_PACKAGE_NAME == "foursight"
+
     def cache_clear(self) -> None:
         self._auth.cache_clear()
         self._auth0_config.cache_clear()

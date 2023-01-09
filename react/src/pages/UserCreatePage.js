@@ -12,9 +12,10 @@ import HeaderData from '../HeaderData';
 const UserCreatePage = () => {
     
     const user = useFetch(Server.Url("/users"), { method: "POST", nofetch: true });
+    const [ header ] = useContext(HeaderData);
     const [ inputs, setInputs ] = useState
     (
-        Env.IsFoursightFourfront(useContext(HeaderData))
+        Env.IsFoursightFourfront(header)
         ? UserDefs.Inputs().filter(input => (input.name !== "institution") && (input.name !== "project") && (input.name !== "role"))
         : UserDefs.Inputs()
     );

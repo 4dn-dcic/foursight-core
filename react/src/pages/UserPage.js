@@ -100,12 +100,14 @@ const UserBox = (props) => {
         { label: "UUID", name: "uuid" }
     ]
 
-    if (Env.IsFoursightFourfront(useContext(HeaderData))) {
+    const [ header ] = useContext(HeaderData);
+
+    if (Env.IsFoursightFourfront(header)) {
         items = items.filter(item => (item.name !== "institution") && (item.name !== "project") && (item.name !== "roles") && (item.name !== "role"));
     }
 
     function getUserRoleAssociatedWithProject(project) {
-        if (props.user.data) {
+        if (props.user.roles) {
             for (const projectRole of props.user.roles) {
                 if (projectRole.project === project) {
                     return projectRole.role;
