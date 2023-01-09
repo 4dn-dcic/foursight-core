@@ -385,8 +385,7 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
     function isCurrentAccount(info) {
         if (!Type.IsNull(header?.app?.credentials?.aws_account_number) &&
             !Type.IsNull(info?.data?.foursight?.aws_account_number) &&
-            (header?.app?.credentials?.aws_account_number === info?.data?.foursight?.aws_account_number) &&
-            (header?.app?.stage === info?.data?.stage)) {
+            (header?.app?.credentials?.aws_account_number === info?.data?.foursight?.aws_account_number)) {
             return true;
         }
         return false;
