@@ -1,3 +1,4 @@
+import Char from '../utils/Char';
 import Json from '../utils/Json';
 import { useFetch } from '../utils/Fetch';
 import { ExternalLink } from '../Components';
@@ -80,7 +81,7 @@ const PrincipalInvestigatorLine = (props) => {
     const getPI = (institution) => institutions?.data?.find(item => item.id === institution)?.pi;
     return <div style={props.style}>
         { getPI(institution) && <small>
-            <b>Principle Investigator</b>: {getPI(institution).name}&nbsp;
+            <b>Principle Investigator {Char.RightArrow}</b> {getPI(institution).name}&nbsp;
             <ExternalLink
                 href={Client.Path(`/users/${getPI(institution).uuid}`)} />
         </small> }
