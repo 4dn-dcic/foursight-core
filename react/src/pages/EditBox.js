@@ -28,7 +28,7 @@ const DynamicSelect = (props) => {
 
     return <>
         <select id={props.id} className="select" value={selected || ""} onChange={onChange} disabled={props.disabled || values.loading}>
-            { !props.required && <option key="">-</option> }
+            { !props.required && <option key="" value="">-</option> }
             { values.map(value => {
                 if (value.id) return <option key={value.id} value={value.id}>{value.name}</option>
             })}
@@ -235,6 +235,10 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
         }
     }
 
+    function currentValueOf(input) {
+        return document.getElementById(input.name)?.value?.toString();
+    }
+
     function isValidEmail(email) {
         const valid = /\S+@\S+\.\S+/.test(email);
         return valid;
@@ -280,7 +284,7 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                 <table><tbody>
                 { inputs?.map((input, index) =>
                     <tr key={input.label}>
-                        <td align={input.label_align || 'right'} style={{paddingTop: "0.6em", paddingRight:"0.4em", whiteSpace:"nowrap"}}>
+                        <td align={input.label_align || 'right'} style={{verticalAlign:"top",paddingTop:"0.6em",paddingRight:"0.4em",whiteSpace:"nowrap"}}>
                             {input.label}:
                         </td>
                         <td style={{paddingTop: "0.6em",whiteSpace:"nowrap"}}>
@@ -301,6 +305,7 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                                         setLoadingCount={setLoadingCount}
                                         reset={reset}
                                     />
+                                    { input.subvalue && input.subvalue(currentValueOf(input)) }
                                 </>:<>
                                     <input
                                         className="input icon-rtl"

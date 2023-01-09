@@ -19,8 +19,13 @@ class Routes:
         """
         Special callback route, only to be used as a callback from Auth0
         Will return a redirect to view on error/any missing callback info.
-        Note this is NOT /api/callback RATHER it is just /callback;
-        for both normal and local deployment scenarios.
+
+        Note we do NOT prefix this with ROUTE_PREFIX (which is /api for local deployment only,
+        and just / for normal deployment, though it is implicitly /api for this case via AWS
+        lambda/chalice configuration) as with other endpoints, because Auth0 is configured,
+        for local deployement, to be cognizant only of http://localhost:8000/callback.
+        For normal deployment, Auth0 config is cognizant of each of the Foursight instances
+        we have, e.g. https://cm3dqx36s7.execute-api.us-east-1.amazonaws.com/api/callback.
         """
         request = app.current_request
         # Note that we login to the default environment.

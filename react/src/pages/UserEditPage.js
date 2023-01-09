@@ -38,29 +38,13 @@ const UserEditPage = () => {
 
     useEffect(() => {
         user.fetch();
-    }, [uuid]);
-
-    function getUserRoleAssociatedWithProject(/*user,*/ project) {
-        if (!user.loading && user.data && user.data.roles) {
-            for (const projectRole of user.data.roles) {
-                if (projectRole.project === project) {
-                    return projectRole.role;
-                }
-            }
-            //
-            // if (project === "/projects/cgap-backend-testing/") return "director" // xyzzy/testing
-            // If the given project (currently selected on edit page) does not have
-            // an associated role, then return the role for the associaed with the
-            // actual current user project.
-            //
-            for (const projectRole of user.data.roles) {
-                if (projectRole.project === user.data.project) {
-                    return projectRole.role;
-                }
-            }
+        const institutionInput = inputs.find(input => input.name == "institution");
+        if (institutionInput) {
+            institutionInput.subvalue =
+                (institution) =>
+                    <UserDefs.PrincipalInvestigatorLine institution={institution} />
         }
-        return null;
-    }
+    }, [uuid]);
 
     function updateUserData(data) {
         setInputs(inputs => {
@@ -70,7 +54,7 @@ const UserEditPage = () => {
                 else if (input.name === "last_name")   input.value = data?.last_name;
                 else if (input.name === "admin")       input.value = data?.groups?.includes("admin") ? true : false;
                 else if (input.name === "project")     input.value = data?.project;
-                else if (input.name === "role")        input.value = (project) => getUserRoleAssociatedWithProject(/*data,*/ project || data?.project);
+                else if (input.name === "role")        input.value = (project) => UserDefs.GetProjectRole(data, project || data?.project);
                 else if (input.name === "institution") input.value = data?.institution;
                 else if (input.name === "created")     input.value = Time.FormatDateTime(data?.created);
                 else if (input.name === "updated")     input.value = Time.FormatDateTime(data?.updated);
@@ -90,10 +74,7 @@ const UserEditPage = () => {
             delete values["admin"]
             values = {...values, "groups": existingGroupsWithoutAnyAdmin }
         }
-            console.log('xxxxx')
-            console.log(values)
         values = { ...values, "roles": user.get("roles") };
-            console.log(values)
         user.refresh({
             url: `/users/${uuid}`,
             method: "PATCH",
@@ -119,7 +100,7 @@ const UserEditPage = () => {
 
     return <center>
         <table><tbody><tr><td>
-            <b>Edit User</b>
+            <b>Edit User</b>{!user.loading && user.data ? ": " + user.data.first_name + " " + user.data.last_name : ""}
             <div style={{float:"right",marginTop:"1pt",marginRight:"4pt",fontSize:"small"}}>
                 <Link to={`/users/${uuid}`} bold={false}>View</Link><>&nbsp;|&nbsp;</>
                 <Link to={"/users"} bold={false}>List</Link><>&nbsp;|&nbsp;</>

@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react';
 import Json from '../utils/Json';
-import Server from '../utils/Server';
+import { useFetch } from '../utils/Fetch';
+import { ExternalLink } from '../Components';
+import Client from '../utils/Client';
 
 const _UserInputs = [
     {
@@ -60,6 +63,32 @@ const _UserInputs = [
     }
 ];
 
+function getProjectRole(user, project) {
+    if (user?.roles) {
+        for (const projectRole of user.roles) {
+            if (projectRole.project === project) {
+                return projectRole.role;
+            }
+        }
+        return "";
+    }
+}
+
+const PrincipalInvestigatorLine = (props) => {
+    const { institution } = props;
+    const institutions = useFetch("/users/institutions");
+    const getPI = (institution) => institutions?.data?.find(item => item.id === institution)?.pi;
+    return <div style={props.style}>
+        { getPI(institution) && <small>
+            <b>Principle Investigator</b>: {getPI(institution).name}&nbsp;
+            <ExternalLink
+                href={Client.Path(`/users/${getPI(institution).uuid}`)} />
+        </small> }
+    </div>
+}
+
 const exports = {
-    Inputs: () => Json.Clone(_UserInputs)
+    Inputs: () => Json.Clone(_UserInputs),
+    GetProjectRole: getProjectRole,
+    PrincipalInvestigatorLine: PrincipalInvestigatorLine
 }; export default exports;

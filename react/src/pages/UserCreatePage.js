@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFetch } from '../utils/Fetch';
 import { Link } from '../Components';
@@ -21,6 +21,15 @@ const UserCreatePage = () => {
     );
     const navigate = useNavigate();
 
+    useEffect(() => {
+        const institutionInput = inputs.find(input => input.name == "institution");
+        if (institutionInput) {
+            institutionInput.subvalue =
+                (institution) =>
+                    <UserDefs.PrincipalInvestigatorLine institution={institution} />
+        }
+    }, []);
+
     function onCreate(values) {
         if (values.admin) {
             delete values["admin"]
@@ -34,7 +43,6 @@ const UserCreatePage = () => {
             url: Server.Url(`/users`),
             method: "POST",
             payload: values,
-            //onSuccess: (response) => navigate(Client.Path(`/users/edit/${response.data?.uuid}`))
             onSuccess: (response) => navigate(Client.Path(`/users/${response.data?.uuid}`))
         });
     }

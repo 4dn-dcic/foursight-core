@@ -11,6 +11,7 @@ import Styles from '../Styles';
 import Tooltip from '../components/Tooltip';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
+import UserDefs from './UserDefs';
 
 const UsersPage = () => {
 
@@ -159,8 +160,12 @@ const UsersPage = () => {
                                 <Tooltip id={`tooltip-users-institution-${user.email}`} position="bottom" size="small" text={`Institution: ${user.institution}`} />
                             </td>
                             <td style={tdStyle}>
-                            <span id={`tooltip-users-role-${user.email}`}>{user.role || Char.EmptySet} <small>({user.roles?.length})</small></span>
-                                <Tooltip id={`tooltip-users-role-${user.email}`} position="bottom" size="small" text={`Role: ${user.role}`} />
+                            <span id={`tooltip-users-role-${user.email}`}>
+                                {UserDefs.GetProjectRole(user, user.project) || Char.EmptySet}
+                                {user.roles.length > 1 && <small>&nbsp;({user.roles?.length})</small>}
+                            </span>
+                                <Tooltip id={`tooltip-users-role-${user.email}`} position="bottom" size="small"
+                                    text={`Role: ${UserDefs.GetProjectRole(user, user.project)}${user.roles?.length > 1 ? `. Total: ${user.roles.length}` : ""}`} />
                             </td>
                             <td style={tdStyle}>
                                 {user.updated ? Time.FormatDate(user.updated) : Time.FormatDate(user.created)} <br />

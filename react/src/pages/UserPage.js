@@ -13,6 +13,7 @@ import Styles from '../Styles';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Tooltip from '../components/Tooltip';
+import UserDefs from './UserDefs';
 import Yaml from '../utils/Yaml';
 
 const UserRawBox = (props) => {
@@ -91,10 +92,10 @@ const UserBox = (props) => {
         { label: "Last Name", name: "last_name" },
         { label: "Groups", name: "groups" },
         { label: "Project", name: "project", map: value => value?.replace("/projects/","")?.replace("/","") },
-        { label: "Role", name: "role", map: value => getUserRoleAssociatedWithProject(props.user.project) },
+        { label: "Role", name: "role", map: value => UserDefs.GetProjectRole(props.user, props.user.project) },
         { label: "Roles", name: "roles", ui: <RolesBox user={props.user} />, toggle: true },
         { label: "Institution", name: "institution", map: value => value?.replace("/institutions/","")?.replace("/",""),
-                                subvalue: <PrinciplInvestigatorLine institution={props.user.institution} /> },
+                                subvalue: <UserDefs.PrincipalInvestigatorLine institution={"/institutions/hms-dbmi/"} /> },
         { label: "Created", name: "created", map: value => Time.FormatDateTime(value) },
         { label: "Updated", name: "updated", map: value => Time.FormatDateTime(value) },
         { label: "UUID", name: "uuid" }
@@ -104,16 +105,6 @@ const UserBox = (props) => {
 
     if (Env.IsFoursightFourfront(header)) {
         items = items.filter(item => (item.name !== "institution") && (item.name !== "project") && (item.name !== "roles") && (item.name !== "role"));
-    }
-
-    function getUserRoleAssociatedWithProject(project) {
-        if (props.user.roles) {
-            for (const projectRole of props.user.roles) {
-                if (projectRole.project === project) {
-                    return projectRole.role;
-                }
-            }
-        }
     }
 
     return <KeyValueBox keys={items} value={props.user} separators={true} />
@@ -129,7 +120,7 @@ const RolesBox = (props) => {
             <tr><td style={{height:"2pt"}} /></tr>
             <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2" ></td></tr>
             <tr><td style={{height:"2pt"}} /></tr>
-            { props.user.roles.map(role => <tr key={role.project}>
+            { props.user.roles.sort((a,b) => a.project > b.project ? 1 : (a.project < b.project ? -1 : 0)).map(role => <tr key={role.project}>
                 <td style={{width:"5%",whiteSpace:"nowrap"}}>
                     {role.project.replace("/projects/","")?.replace("/","")}
                 </td>
@@ -139,17 +130,6 @@ const RolesBox = (props) => {
             </tr>)}
         </tbody></table>
     </div>
-}
-
-const PrinciplInvestigatorLine = (props) => {
-    const { institution } = props;
-    const institutions = useFetch("/users/institutions");
-    const pi = institutions?.data?.find(item => item.id === institution)?.pi;
-    return <>
-        { pi && <small>
-            <b>Principle Investigator</b>: {pi.name}
-        </small> }
-    </>
 }
 
 const UserPage = (props) => {
@@ -187,7 +167,7 @@ const UserPage = (props) => {
     return <>
         <div className="container" style={{width:"fit-content",minWidth:"550pt",maxWidth:"800pt"}}>
             <div style={{marginBottom:"2pt"}}>
-                <b>User</b>
+                <b>User</b>{users.length == 1 && ": " + users.get(0)?.first_name + " " + users.get(0)?.last_name}
                 <div style={{float:"right",fontSize:"small",marginTop:"2pt"}}>
                     <span className="pointer" onClick={toggleRaw}>
                         {showRaw ? <b>Raw</b> : <span>Raw</span>}<>&nbsp;|&nbsp;</>
