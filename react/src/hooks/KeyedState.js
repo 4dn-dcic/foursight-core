@@ -3,6 +3,10 @@ import { useEffect, useState } from 'react';
 // Hook to manage a (parent) "keyed" state object used to pass down
 // to child components in which this can be used to transparently
 // store the local state of the child component within the parent.
+// The primary (initial) purpose to be to maintain state of a component
+// between instantiations of it, i.e. e.g. between show and hide, e.g.
+// like what is done on the AWS Infrastructure page where any number of
+// components can dynamically be selected (shown) or unselected (hidden).
 //
 const useKeyedState = (keyedStateOrInitial, undefinedOrInitial) => {
 

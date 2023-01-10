@@ -211,9 +211,6 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
     function gatherCurrentInputValues() {
         const values = {}
         for (const input of inputs) {
-            if (input.type === "selecx") {
-                continue
-            }
             if (!input.readonly) {
                 let value = document.getElementById(input.name).value;
                 if (input.type === "boolean") {
@@ -234,7 +231,8 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
             return "";
         }
         else if (typeof(input.value) === "function") {
-            return input.value(input.dependsOn ? valueOf(input.dependsOn) : undefined);
+            //return input.value(input.dependsOn ? valueOf(input.dependsOn) : undefined);
+            return input.dependsOn ? input.value(valueOf(input.dependsOn)) : input.value();
         }
         else {
             return input.value.toString();

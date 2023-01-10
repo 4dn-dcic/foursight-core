@@ -59,12 +59,12 @@ def _filter_boto_description_list(description: dict,
                           a modified version of it.
     :returns:             List of items from given description dictionary as described above.
     :raises Exception:    On any error.
-
-    TODO: Could possibly extend the dcicutils.misc_utils.find_associations function to be able to do some
-    of this work; won't work as-is because we're the Tags Key/Value list we're looking at choose the given
-    list of items is a sub-list of each item.
     """
     results = []
+
+    # TODO: Could possibly extend the dcicutils.misc_utils.find_associations function to be able to do some
+    # of this work; won't work as-is because we're the Tags Key/Value list we're looking at choose the given
+    # list of items is a sub-list of each item.
 
     if isinstance(predicate, str):
         if predicate.endswith("*"):

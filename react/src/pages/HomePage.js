@@ -22,7 +22,7 @@ const HomePage = (props) => {
         stage: header.app?.stage
     }
 
-   const [ showAccountSummary, setShowAccountSummary ] = useState(false);
+    const [ showAccountSummary, setShowAccountSummary ] = useState(false);
 
     return <>
         <div className="container" style={{marginTop:"-16pt"}}>

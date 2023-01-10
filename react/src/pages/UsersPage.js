@@ -22,7 +22,7 @@ const UsersPage = () => {
     const [ search, setSearch ] = useState(args.get("search") || "");
     const [ showSearch, setShowSearch ] = useState(Str.HasValue(search));
 
-    function update(limit, offset, sort, search, onDone) {
+    function update({ limit, offset, sort, search, onDone }) {
         if (!Type.IsInteger(limit)) limit = parseInt(args.get("limit")) || 25;
         if (!Type.IsInteger(offset)) offset = parseInt(args.get("offset")) || 0;
         if (!Str.HasValue(sort)) sort = args.get("sort") || "email.asc";
@@ -53,7 +53,7 @@ const UsersPage = () => {
         if (showSearch) {
             if (Str.HasValue(search)) {
                 updateArgs("search", null);
-                update(null, null, null, null, null);
+                update();
             }
             setSearch("");
             setShowSearch(false);
@@ -81,7 +81,7 @@ const UsersPage = () => {
 
     function doSearch(e) {
         updateArgs("search", search);
-        update(undefined, 0, undefined, search, undefined);
+        update({ offste: 0, search: search });
         e.stopPropagation(); e.preventDefault();
     }
 

@@ -80,7 +80,7 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
             setPageCount(calculatePageCount(total, limit));
             setPageOffset(calculatePageOffset(offset, limit));
         }
-        update(limit, offset, sort, search, onDone);
+        update({ limit: limit, offset: offset, sort: sort, search: search, onDone: onDone });
     }
 
     function onPageSize(event) {

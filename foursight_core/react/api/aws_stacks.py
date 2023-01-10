@@ -1,5 +1,4 @@
 import boto3
-import json
 from .datetime_utils import convert_utc_datetime_to_useastern_datetime_string
 from .misc_utils import memoize
 from .yaml_utils import load_yaml

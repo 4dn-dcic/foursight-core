@@ -9,49 +9,33 @@ def load_yaml(yaml_string: str) -> dict:
     try:
         return yaml.load(yaml_string, Loader=yaml.Loader)
     except Exception:
-        return {}
+        return {"error": "Cannot parse YAML."}
 
 
-class _Ref(yaml.YAMLObject):
+class _SpecialTag(yaml.YAMLObject):
+    yaml_tag = None
+    def __init__(self, val):
+        self.val = val
+    @classmethod
+    def from_yaml(cls, loader, node):
+        return str(node.value)
+
+
+class _Ref(_SpecialTag):
     yaml_tag = '!Ref'
-    def __init__(self, val):
-        self.val = val
-    @classmethod
-    def from_yaml(cls, loader, node):
-        return str(node.value)
 
 
-class _Sub(yaml.YAMLObject):
+class _Sub(_SpecialTag):
     yaml_tag = '!Sub'
-    def __init__(self, val):
-        self.val = val
-    @classmethod
-    def from_yaml(cls, loader, node):
-        return str(node.value)
 
 
-class _Join(yaml.YAMLObject):
+class _Join(_SpecialTag):
     yaml_tag = '!Join'
-    def __init__(self, val):
-        self.val = val
-    @classmethod
-    def from_yaml(cls, loader, node):
-        return str(node.value)
 
 
-class _GetAtt(yaml.YAMLObject):
+class _GetAtt(_SpecialTag):
     yaml_tag = '!GetAtt'
-    def __init__(self, val):
-        self.val = val
-    @classmethod
-    def from_yaml(cls, loader, node):
-        return str(node.value)
 
 
-class _ImportValue(yaml.YAMLObject):
+class _ImportValue(_SpecialTag):
     yaml_tag = '!ImportValue'
-    def __init__(self, val):
-        self.val = val
-    @classmethod
-    def from_yaml(cls, loader, node):
-        return str(node.value)
