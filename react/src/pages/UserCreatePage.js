@@ -11,7 +11,7 @@ import useHeader from '../hooks/Header';
 const UserCreatePage = () => {
     
     const user = useFetch(Server.Url("/users"), { method: "POST", nofetch: true });
-    const [ inputs ] = useState(UserDefs.Inputs(useHeader()));
+    const [ inputs, setInputs ] = UserDefs.useUserInputs();
 
     const navigate = useNavigate();
 

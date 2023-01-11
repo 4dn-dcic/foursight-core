@@ -404,10 +404,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "created": convert_utc_datetime_to_useastern_datetime_string(user.get("date_created"))
         }
 
-    def _create_user_record_from_input(self, user: dict, include_deleted: bool = False) -> dict:
+    def _create_user_record_from_input(self, user: dict, include_deletes: bool = False) -> dict:
         """
-        Canonicalizes and returns the given user record from our UI
-        into the common format used in our database. Modifies input.
+        Canonicalizes and returns the given user record from our UI into the
+        common format suitable for insert/update to our database. Modifies input.
         Please see comment above (in _create_user_record_for_output) WRT roles.
         """
         if self.is_foursight_fourfront():
@@ -421,7 +421,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 del user["roles"]
             return user
 
-        deleted = []
+        deletes = []
+        if "status" in user:
+            if not user["status"] or user["status"] == "-":
+                deletes.append("status")
+                del user["status"]
         if "institution" in user:
             user["user_institution"] = user["institution"]
             del user["institution"]
@@ -429,16 +433,16 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if "roles" in user:
             user["project_roles"] = user["roles"]
         if "user_institution" in user:
-            if not user["user_institution"]:
-                deleted.append("user_institution")
+            if not user["user_institution"] or user["user_institution"] == "-":
+                deletes.append("user_institution")
                 del user["user_institution"]
         if "project" in user:
-            if not user["project"]:
-                deleted.append("project")
+            if not user["project"] or user["project"] == "-":
+                deletes.append("project")
                 del user["project"]
             elif "role" in user:
                 project = user["project"]
-                if not user["role"]:
+                if not user["role"] or user["role"] == "-":
                     del user["role"]
                 else:
                     role = user["role"]
@@ -458,8 +462,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             del user["role"]
         if "roles" in user:
             del user["roles"]
-        if include_deleted and deleted:
-            user["deleted"] = deleted
+        if include_deletes and deletes:
+            user["deletes"] = deletes
         return user
 
     def reactapi_get_users(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
@@ -572,7 +576,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns the same response as GET /{env}/users/{uuid} (i.e. reactpi_get_user).
         """
         ignored(request)
-        user = self._create_user_record_from_input(user, include_deleted=False)
+        user = self._create_user_record_from_input(user, include_deletes=False)
         connection = app.core.init_connection(env)
         response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env),
                                           key=connection.ff_keys)
@@ -607,10 +611,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ignored(request)
         # Note that there may easily be a delay after update until the record is actually updated.
         # TODO: Find out precisely why this is so, and if and how to specially handle it on the client side.
-        user = self._create_user_record_from_input(user, include_deleted=True)
-        if "deleted" in user:
-            add_on = "delete_fields=" + ",".join(user["deleted"])
-            del user["deleted"]
+        user = self._create_user_record_from_input(user, include_deletes=True)
+        if "deletes" in user:
+            add_on = "delete_fields=" + ",".join(user["deletes"])
+            del user["deletes"]
         else:
             add_on = ""
         connection = app.core.init_connection(env)
