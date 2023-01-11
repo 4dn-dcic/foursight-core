@@ -101,7 +101,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self._cached_elasticsearch_server_version
 
     @memoize
-    def _get_user_projects(self, env: str, raw: bool = False) -> Response:
+    def _get_user_projects(self, env: str, raw: bool = False) -> list:
+        """
+        Returns the list of available user projects.
+        """
         connection = app.core.init_connection(env)
         projects = ff_utils.search_metadata(f'/search/?type=Project&datastore=database', key=connection.ff_keys)
         if projects and not raw:
@@ -118,7 +121,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return projects
 
     @memoize
-    def _get_user_institutions(self, env: str, raw: bool = False) -> Response:
+    def _get_user_institutions(self, env: str, raw: bool = False) -> list:
+        """
+        Returns the list of available user institutions.
+        """
         connection = app.core.init_connection(env)
         institutions = ff_utils.search_metadata(f'/search/?type=Institution', key=connection.ff_keys)
         def get_principle_investigator(institution):
@@ -137,7 +143,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             ]
         return institutions
 
-    def _get_user_roles(self, env: str) -> Response:
+    @memoize
+    def _get_user_roles(self, env: str) -> list:
         #
         # The below enumerated user role values where copied from here:
         # https://github.com/dbmi-bgm/cgap-portal/blob/master/src/encoded/schemas/user.json#L69-L106
@@ -152,7 +159,24 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "other",
             "unknown"
         ]
-        return [{"id": role, "name": role, "title": role} for role in roles]
+        return [{"id": role, "name": role, "title": role.replace("_", " ").title()} for role in roles]
+
+    @memoize
+    def _get_user_schema(self, env: str) -> dict:
+        portal_url = get_base_url(app.core.get_portal_url(env))
+        user_schema_url = f"{portal_url}/profiles/User.json?format=json"
+        user_schema = requests.get(user_schema_url).json()
+        return user_schema
+
+    @memoize
+    def _get_user_statuses(self, env: str) -> list:
+        user_schema = self._get_user_schema(env)
+        user_schema_properties = user_schema.get("properties") if user_schema else None
+        user_schema_status = user_schema_properties.get("status") if user_schema_properties else None
+        user_schema_status_enum = user_schema_status.get("enum") if user_schema_status else None
+        if not user_schema_status_enum:
+            return []
+        return [{"id": status, "name": status, "title": status.title()} for status in user_schema_status_enum]
 
     def react_serve_static_file(self, env: str, paths: list) -> Response:
         """
@@ -375,11 +399,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "project": user.get("project"),
             "institution": user.get("user_institution"),
             "roles": user.get("project_roles"),
+            "status": user.get("status"),
             "updated": convert_utc_datetime_to_useastern_datetime_string(updated),
             "created": convert_utc_datetime_to_useastern_datetime_string(user.get("date_created"))
         }
 
-    def _create_user_record_from_input(self, user: dict) -> dict:
+    def _create_user_record_from_input(self, user: dict, include_deleted: bool = False) -> dict:
         """
         Canonicalizes and returns the given user record from our UI
         into the common format used in our database. Modifies input.
@@ -396,6 +421,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 del user["roles"]
             return user
 
+        deleted = []
         if "institution" in user:
             user["user_institution"] = user["institution"]
             del user["institution"]
@@ -404,9 +430,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
             user["project_roles"] = user["roles"]
         if "user_institution" in user:
             if not user["user_institution"]:
+                deleted.append("user_institution")
                 del user["user_institution"]
         if "project" in user:
             if not user["project"]:
+                deleted.append("project")
                 del user["project"]
             elif "role" in user:
                 project = user["project"]
@@ -430,6 +458,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             del user["role"]
         if "roles" in user:
             del user["roles"]
+        if include_deleted and deleted:
+            user["deleted"] = deleted
         return user
 
     def reactapi_get_users(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
@@ -542,7 +572,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns the same response as GET /{env}/users/{uuid} (i.e. reactpi_get_user).
         """
         ignored(request)
-        user = self._create_user_record_from_input(user)
+        user = self._create_user_record_from_input(user, include_deleted=False)
         connection = app.core.init_connection(env)
         response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env),
                                           key=connection.ff_keys)
@@ -577,10 +607,16 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ignored(request)
         # Note that there may easily be a delay after update until the record is actually updated.
         # TODO: Find out precisely why this is so, and if and how to specially handle it on the client side.
-        user = self._create_user_record_from_input(user)
+        user = self._create_user_record_from_input(user, include_deleted=True)
+        if "deleted" in user:
+            add_on = "delete_fields=" + ",".join(user["deleted"])
+            del user["deleted"]
+        else:
+            add_on = ""
         connection = app.core.init_connection(env)
         response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env),
-                                           key=connection.ff_keys)
+                # key=connection.ff_keys, add_on="delete_fields=project")
+                key=connection.ff_keys, add_on=add_on)
         status = response.get("status")
         if status != "success":
             return self.create_error_response(json.dumps(response))
@@ -639,6 +675,20 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if self.is_foursight_fourfront():
             return self.create_success_response([])
         return self.create_success_response(self._get_user_roles(env))
+
+    def reactapi_users_schema(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/schema
+        Returns the ElasticSearch user schema.
+        """
+        return self.create_success_response(self._get_user_schema(env))
+
+    def reactapi_users_statuses(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/status
+        Returns the list of available user statuses.
+        """
+        return self.create_success_response(self._get_user_statuses(env))
 
     def reactapi_checks_ungrouped(self, request: dict, env: str) -> Response:
         """

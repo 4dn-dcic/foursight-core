@@ -12,6 +12,7 @@ import Tooltip from '../components/Tooltip';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
 import UserDefs from './UserDefs';
+import useUserMetadata from '../hooks/UserMetadata';
 
 const UsersPage = () => {
 
@@ -21,6 +22,8 @@ const UsersPage = () => {
 
     const [ search, setSearch ] = useState(args.get("search") || "");
     const [ showSearch, setShowSearch ] = useState(Str.HasValue(search));
+
+    const userMetadata = useUserMetadata();
 
     function update({ limit, offset, sort, search, onDone }) {
         if (!Type.IsInteger(limit)) limit = parseInt(args.get("limit")) || 25;
@@ -43,6 +46,7 @@ const UsersPage = () => {
         { label: "Project", key: "project" },
         { label: "Institution", key: "institution" },
         { label: "Role", key: "role" },
+        { label: "Status", key: "status" },
         { label: "Updated", key: "data_modified" }, // DOES NOT WORK (nested in last_modified)
         { label: "Created", key: "date_created" }
     ];
@@ -149,23 +153,27 @@ const UsersPage = () => {
                                 <small id="{user.uuid}" style={{cursor:"copy"}}>{user.uuid}</small>
                             </td>
                             <td style={tdStyle}>
-                                {user.groups && user.groups?.length > 0 ? user.groups : Char.EmptySet}
+                                {user.groups?.length > 0 ? (userMetadata.titles(user.groups) || Char.EmptySet) : Char.EmptySet}
                             </td>
                             <td style={tdStyle}>
-                                <span id={`tooltip-users-project-${user.email}`}>{user.project?.replace("/projects/","")?.replace("/","") || Char.EmptySet}</span>
+                                <span id={`tooltip-users-project-${user.email}`}>{userMetadata.projectTitle(user.project) || Char.EmptySet}</span>
                                 <Tooltip id={`tooltip-users-project-${user.email}`} position="bottom" size="small" text={`Project: ${user.project}`} />
                             </td>
                             <td style={tdStyle}>
-                            <span id={`tooltip-users-institution-${user.email}`}>{user.institution?.replace("/institutions/","")?.replace("/","") || Char.EmptySet}</span>
+                                <span id={`tooltip-users-institution-${user.email}`}>{userMetadata.institutionTitle(user.institution) || Char.EmptySet}</span>
                                 <Tooltip id={`tooltip-users-institution-${user.email}`} position="bottom" size="small" text={`Institution: ${user.institution}`} />
                             </td>
                             <td style={tdStyle}>
-                            <span id={`tooltip-users-role-${user.email}`}>
-                                {UserDefs.GetProjectRole(user, user.project) || Char.EmptySet}
-                                {user.roles?.length > 1 && <small>&nbsp;({user.roles?.length})</small>}
-                            </span>
+                                <span id={`tooltip-users-role-${user.email}`}>
+                                    {userMetadata.userRoleTitle(user, user.project) || Char.EmptySet}
+                                    {user.roles?.length > 1 && <small>&nbsp;({user.roles?.length})</small>}
+                                </span>
                                 <Tooltip id={`tooltip-users-role-${user.email}`} position="bottom" size="small"
-                                    text={`Role: ${UserDefs.GetProjectRole(user, user.project)}${user.roles?.length > 1 ? `. Total: ${user.roles.length}` : ""}`} />
+                                    text={`Role: ${userMetadata.userRole(user, user.project)}${user.roles?.length > 1 ? `. Total: ${user.roles.length}` : ""}`} />
+                            </td>
+                            <td style={tdStyle}>
+                                <span id={`tooltip-users-status-${user.status}`}>{userMetadata.statusTitle(user.status) || Char.EmptySet}</span>
+                                <Tooltip id={`tooltip-users-status-${user.status}`} position="bottom" size="small" text={`Status: ${user.status}`} />
                             </td>
                             <td style={tdStyle}>
                                 {user.updated ? Time.FormatDate(user.updated) : Time.FormatDate(user.created)} <br />
@@ -176,7 +184,7 @@ const UsersPage = () => {
                                 <small>{Time.FormatTime(user.created)}</small>
                             </td>
                             <td style={tdStyle}>
-                                <Link to={`/users/edit/${user.uuid}`}>Edit</Link>
+                                &nbsp;&nbsp;<button><Link to={`/users/edit/${user.uuid}`}>Edit</Link></button>
                             </td>
                         </tr>
                     ))}

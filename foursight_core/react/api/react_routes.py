@@ -160,6 +160,22 @@ class ReactRoutes:
         request_dict = app.current_request.to_dict()
         return app.core.reactapi_users_roles(request_dict, env)
 
+    @route("/{env}/users/schema", authorize=True)
+    def reactapi_route_users_schema(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns the user schema (JSON) from ElasticSearch.
+        """
+        request_dict = app.current_request.to_dict()
+        return app.core.reactapi_users_schema(request_dict, env)
+
+    @route("/{env}/users/statuses", authorize=True)
+    def reactapi_route_users_statuses(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns the possible user status.
+        """
+        request_dict = app.current_request.to_dict()
+        return app.core.reactapi_users_statuses(request_dict, env)
+
     @route("/{env}/checks", authorize=True)
     def reactapi_route_checks_ungrouped(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """

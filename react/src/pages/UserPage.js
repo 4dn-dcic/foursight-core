@@ -7,13 +7,14 @@ import { FetchErrorBox } from '../Components';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
-import HeaderData from '../HeaderData';
 import Styles from '../Styles';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Tooltip from '../components/Tooltip';
 import UserDefs from './UserDefs';
 import Yaml from '../utils/Yaml';
+import useHeader from '../hooks/Header';
+import useUserMetadata from '../hooks/UserMetadata';
 
 const UserRawBox = (props) => {
     const user = useFetch(`/users/${props.email}?raw=true`);
@@ -71,7 +72,7 @@ const KeyValueBox = (props) => {
                                 <small><u>Show</u> {Char.UpArrowHollow}</small>
                             </span> }
                         </>:<>
-                            {Type.IsFunction(key.map) ? key.map(props.value[key.name]) : props.value[key.name]}
+                            {(Type.IsFunction(key.map) ? key.map(props.value[key.name]) : props.value[key.name]) || Char.EmptySet}
                         </> }
                         { key.subComponent && <>
                             <br /> {key.subComponent(props.value[key.name])}
@@ -82,27 +83,27 @@ const KeyValueBox = (props) => {
         </tbody></table>
     </div>
 }
-
 const UserBox = (props) => {
+
+    const userMetadata = useUserMetadata();
 
     let items = [
         { label: "Email", name: "email" },
         { label: "First Name", name: "first_name" },
         { label: "Last Name", name: "last_name" },
-        { label: "Groups", name: "groups" },
-        { label: "Project", name: "project", map: value => value?.replace("/projects/","")?.replace("/","") },
-        { label: "Role", name: "role", map: value => UserDefs.GetProjectRole(props.user, props.user.project) },
+        { label: "Groups", name: "groups", map: value => userMetadata.titles(value) },
+        { label: "Project", name: "project", map: value => userMetadata.projectTitle(value) },
+        { label: "Role", name: "role", map: value => value },
         { label: "Roles", name: "roles", ui: <RolesBox user={props.user} />, toggle: true },
-        { label: "Institution", name: "institution", map: value => value?.replace("/institutions/","")?.replace("/",""),
+        { label: "Institution", name: "institution", map: value => userMetadata.institutionTitle(value),
                                 subComponent: (institution) => <UserDefs.PrincipalInvestigatorLine institution={institution} /> },
+        { label: "Status", name: "status", map: value => userMetadata.statusTitle(value) },
         { label: "Created", name: "created", map: value => Time.FormatDateTime(value) },
         { label: "Updated", name: "updated", map: value => Time.FormatDateTime(value) },
         { label: "UUID", name: "uuid" }
     ]
 
-    const [ header ] = useContext(HeaderData);
-
-    if (Env.IsFoursightFourfront(header)) {
+    if (Env.IsFoursightFourfront(useHeader())) {
         items = items.filter(item => (item.name !== "institution") && (item.name !== "project") && (item.name !== "roles") && (item.name !== "role"));
     }
 
@@ -110,6 +111,7 @@ const UserBox = (props) => {
 }
 
 const RolesBox = (props) => {
+    const userMetadata = useUserMetadata();
     return <div className="box lighten" style={{marginTop:"2pt",marginBottom:"2pt"}}>
         <table style={{width:"100%",fontSize:"small",marginTop:"-3pt",marginBottom:"-2pt"}}><tbody>
             <tr>
@@ -121,10 +123,10 @@ const RolesBox = (props) => {
             <tr><td style={{height:"2pt"}} /></tr>
             { props.user.roles.sort((a,b) => a.project > b.project ? 1 : (a.project < b.project ? -1 : 0)).map(role => <tr key={role.project}>
                 <td style={{width:"5%",whiteSpace:"nowrap"}}>
-                    {role.project.replace("/projects/","")?.replace("/","")}
+                    {userMetadata.projectTitle(role.project)}
                 </td>
                 <td style={{paddingLeft:"8pt",whiteSpace:"nowrap"}}>
-                    {role.role}
+                    {userMetadata.roleTitle(role.role)}
                 </td>
             </tr>)}
         </tbody></table>

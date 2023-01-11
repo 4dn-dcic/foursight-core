@@ -7,18 +7,13 @@ import Env from '../utils/Env';
 import EditBox from './EditBox';
 import Server from '../utils/Server';
 import UserDefs from './UserDefs';
-import HeaderData from '../HeaderData';
+import useHeader from '../hooks/Header';
 
 const UserCreatePage = () => {
     
     const user = useFetch(Server.Url("/users"), { method: "POST", nofetch: true });
-    const [ header ] = useContext(HeaderData);
-    const [ inputs ] = useState
-    (
-        Env.IsFoursightFourfront(header)
-        ? UserDefs.Inputs().filter(input => (input.name !== "institution") && (input.name !== "project") && (input.name !== "role"))
-        : UserDefs.Inputs()
-    );
+    const [ inputs ] = useState(UserDefs.Inputs(useHeader()));
+
     const navigate = useNavigate();
 
     useEffect(() => {

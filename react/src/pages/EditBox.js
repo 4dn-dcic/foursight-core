@@ -28,9 +28,9 @@ const DynamicSelect = (props) => {
 
     return <>
         <select id={props.id} className="select" value={selected || ""} onChange={onChange} disabled={props.disabled || values.loading}>
-            { !props.required && <option key="" value="">-</option> }
+            { !props.required && <option key="-" value="-">-</option> }
             { values.map(value => {
-                if (value.id) return <option key={value.id} value={value.id}>{value.name}</option>; else return null;
+                if (value.id) return <option key={value.id} value={value.id}>{value.title || value.name}</option>; else return null;
             })}
         </select>
         { props.subComponent && <>
@@ -123,7 +123,7 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
         }
     }
 
-    function handleChange(e /* , id, value, changed */ ) {
+    function handleChange(e) {
         const input = getInputByName(e.target.id);
         if (input.required) {
             const currentValue = e.target.value?.toString();

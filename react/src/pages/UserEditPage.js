@@ -8,18 +8,13 @@ import EditBox from './EditBox';
 import Time from '../utils/Time';
 import UserDefs from './UserDefs';
 import { useReadOnlyMode } from '../ReadOnlyMode';
-import HeaderData from '../HeaderData';
+import useHeader from '../hooks/Header';
+import useUserMetadata from '../hooks/UserMetadata';
 
 const UserEditPage = () => {
     
     const { uuid } = useParams();
-    const [ header ] = useContext(HeaderData);
-    const [ inputs, setInputs ] = useState
-    (
-        Env.IsFoursightFourfront(header)
-        ? UserDefs.Inputs().filter(input => (input.name !== "institution") && (input.name !== "project") && (input.name !== "role"))
-        : UserDefs.Inputs()
-    );
+    const [ inputs, setInputs ] = UserDefs.useUserInputs();
     const [ notFound, setNotFound ] = useState(false);
     const [ readOnlyMode ] = useReadOnlyMode();
     const user = useFetch({
@@ -33,6 +28,8 @@ const UserEditPage = () => {
         }
     });
 
+    const userMetadata = useUserMetadata();
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -45,19 +42,21 @@ const UserEditPage = () => {
         }
     }, [uuid]);
 
-    function updateUserData(data) {
+    function updateUserData(user) {
         setInputs(inputs => {
             for (const input of inputs) {
-                if      (input.name === "email")       input.value = data?.email;
-                else if (input.name === "first_name")  input.value = data?.first_name;
-                else if (input.name === "last_name")   input.value = data?.last_name;
-                else if (input.name === "admin")       input.value = data?.groups?.includes("admin") ? true : false;
-                else if (input.name === "project")     input.value = data?.project;
-                else if (input.name === "role")        input.value = (project) => UserDefs.GetProjectRole(data, project || data?.project);
-                else if (input.name === "institution") input.value = data?.institution;
-                else if (input.name === "created")     input.value = Time.FormatDateTime(data?.created);
-                else if (input.name === "updated")     input.value = Time.FormatDateTime(data?.updated);
-                else if (input.name === "uuid")        input.value = data?.uuid;
+                if      (input.name === "email")       input.value = user.email;
+                else if (input.name === "first_name")  input.value = user.first_name;
+                else if (input.name === "last_name")   input.value = user.last_name;
+                else if (input.name === "admin")       input.value = user.groups?.includes("admin") ? true : false;
+                else if (input.name === "project")     input.value = user.project;
+                else if (input.name === "role")        input.value = (project) => { if ((project === undefined) || (project === null)) return "-"
+                                                                                    return userMetadata.userRole(user, project || user?.project) || "-"; }
+                else if (input.name === "institution") input.value = user.institution;
+                else if (input.name === "status")      input.value = user.status;
+                else if (input.name === "created")     input.value = Time.FormatDateTime(user.created);
+                else if (input.name === "updated")     input.value = Time.FormatDateTime(user.updated);
+                else if (input.name === "uuid")        input.value = user.uuid;
             }
             return [...inputs];
         });

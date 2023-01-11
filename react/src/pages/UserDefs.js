@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import Char from '../utils/Char';
+import Client from '../utils/Client';
+import Env from '../utils/Env';
+import { ExternalLink } from '../Components';
 import Json from '../utils/Json';
 import { useFetch } from '../utils/Fetch';
-import { ExternalLink } from '../Components';
-import Client from '../utils/Client';
+import useHeader from '../hooks/Header';
+import useUserMetadata from '../hooks/UserMetadata';
 
 const _UserInputs = [
     {
@@ -48,6 +52,12 @@ const _UserInputs = [
         dependsOn: "institution"
     },
     {
+        name: "status",
+        label: "Status",
+        type: "select",
+        url: "/users/statuses",
+    },
+    {
         name: "created",
         label: "Created",
         readonly: true
@@ -64,32 +74,29 @@ const _UserInputs = [
     }
 ];
 
-function getProjectRole(user, project) {
-    if (user?.roles) {
-        for (const projectRole of user.roles) {
-            if (projectRole.project === project) {
-                return projectRole.role;
-            }
-        }
-        return "";
-    }
+const useUserInputs = () => {
+    const header = useHeader();
+    let inputs = Env.IsFoursightFourfront(header)
+                 ? _UserInputs.filter(input => (input.name !== "project") &&
+                                               (input.name !== "role") &&
+                                               (input.name !== "institution"))
+                 : _UserInputs;
+    return useState(Json.Clone(Json.Clone(inputs)));
 }
 
 const PrincipalInvestigatorLine = (props) => {
     const { institution } = props;
-    const institutions = useFetch("/users/institutions", { cache: true });
-    const getPI = (institution) => institutions?.data?.find(item => item.id === institution)?.pi;
+    const userMetadata = useUserMetadata();
     return <div style={props.style}>
-        { getPI(institution) && <small>
-            <b>Principle Investigator {Char.RightArrow}</b> {getPI(institution).name}&nbsp;
+        { userMetadata.principleInvestigator(institution) && <small>
+            <b>Principle Investigator {Char.RightArrow}</b> {userMetadata.principleInvestigator(institution)?.name}&nbsp;
             <ExternalLink
-                href={Client.Path(`/users/${getPI(institution).uuid}`)} />
+                href={Client.Path(`/users/${userMetadata.principleInvestigator(institution)?.uuid}`)} />
         </small> }
     </div>
 }
 
 const exports = {
-    Inputs: () => Json.Clone(_UserInputs),
-    GetProjectRole: getProjectRole,
-    PrincipalInvestigatorLine: PrincipalInvestigatorLine
+    PrincipalInvestigatorLine: PrincipalInvestigatorLine,
+    useUserInputs: useUserInputs
 }; export default exports;
