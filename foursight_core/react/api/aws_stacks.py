@@ -18,8 +18,8 @@ def aws_get_stacks() -> list:
     def stack_id(element):
         return element.name
     stacks_info = []
-    c4 = boto3.resource("cloudformation")
-    for stack in sorted(c4.stacks.all(), key=stack_id):
+    cf = boto3.resource("cloudformation")
+    for stack in sorted(cf.stacks.all(), key=stack_id):
         if stack.name.startswith(_STACK_NAME_PREFIX):
             stacks_info.append(_create_aws_stack_info(stack))
     return stacks_info
@@ -118,8 +118,8 @@ def _get_aws_stack_object(stack_name_or_object: Union[str, object]) -> Optional[
         return stack_name_or_object
     elif not isinstance(stack_name_or_object, str):
         return None
-    c4 = boto3.resource("cloudformation")
-    stack = list(c4.stacks.filter(StackName=stack_name_or_object))
+    cf = boto3.resource("cloudformation")
+    stack = list(cf.stacks.filter(StackName=stack_name_or_object))
     return get_single_item_list_value(stack)
     # return stack[0] if len(stack) == 1 else None
 
@@ -136,8 +136,8 @@ def aws_get_stack_template(stack_name: str) -> dict:
     Returns the AWS Cloudformation template as a dictionary for the given stack name.
     The entire template will be obfuscated according to the obfuscate_dict function.
     """
-    c4 = boto3.client("cloudformation")
-    stack_template = c4.get_template(StackName=stack_name)
+    cf = boto3.client("cloudformation")
+    stack_template = cf.get_template(StackName=stack_name)
     stack_template_body = stack_template["TemplateBody"]
     if isinstance(stack_template_body, dict) or isinstance(stack_template_body, OrderedDict):
         #
