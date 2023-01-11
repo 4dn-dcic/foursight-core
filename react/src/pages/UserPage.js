@@ -93,7 +93,7 @@ const UserBox = (props) => {
         { label: "Last Name", name: "last_name" },
         { label: "Groups", name: "groups", map: value => userMetadata.titles(value) },
         { label: "Project", name: "project", map: value => userMetadata.projectTitle(value) },
-        { label: "Role", name: "role", map: value => value },
+        { label: "Role", name: "role", map: value => userMetadata.userRoleTitle(props.user, props.user.project) },
         { label: "Roles", name: "roles", ui: <RolesBox user={props.user} />, toggle: true },
         { label: "Institution", name: "institution", map: value => userMetadata.institutionTitle(value),
                                 subComponent: (institution) => <UserDefs.PrincipalInvestigatorLine institution={institution} /> },
