@@ -11,7 +11,6 @@ import Styles from '../Styles';
 import Tooltip from '../components/Tooltip';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
-import UserDefs from './UserDefs';
 import useUserMetadata from '../hooks/UserMetadata';
 
 const UsersPage = () => {

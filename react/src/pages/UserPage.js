@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from '../Components';
 import { RingSpinner, StandardSpinner } from '../Spinners';
 import { useFetch } from '../utils/Fetch';

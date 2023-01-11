@@ -1,14 +1,12 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from '../Components';
 import { useFetch } from '../utils/Fetch';
 import Client from '../utils/Client';
-import Env from '../utils/Env';
 import EditBox from './EditBox';
 import Time from '../utils/Time';
 import UserDefs from './UserDefs';
 import { useReadOnlyMode } from '../ReadOnlyMode';
-import useHeader from '../hooks/Header';
 import useUserMetadata from '../hooks/UserMetadata';
 
 const UserEditPage = () => {

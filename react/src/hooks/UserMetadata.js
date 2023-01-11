@@ -10,7 +10,7 @@ const useUserMetadata = () => {
         roleTitle: (id) => roles.data?.find(item => item.id === id)?.title || "",
         institutionTitle: (id) => institutions.data?.find(item => item.id === id)?.title || "",
         statusTitle: (id) => statuses.data?.find(item => item.id === id)?.title || "",
-        userRole: (user, projectId) => user.roles?.find(item => item.project == projectId)?.role || "",
+        userRole: (user, projectId) => user.roles?.find(item => item.project === projectId)?.role || "",
         title: (s) => s.replace(/\w\S*/g, (s) => s.charAt(0).toUpperCase() + s.substr(1).toLowerCase()) || "",
         principleInvestigator: (institutionId) => institutions?.data?.find(item => item.id === institutionId)?.pi
     }

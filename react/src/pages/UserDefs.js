@@ -4,7 +4,6 @@ import Client from '../utils/Client';
 import Env from '../utils/Env';
 import { ExternalLink } from '../Components';
 import Json from '../utils/Json';
-import { useFetch } from '../utils/Fetch';
 import useHeader from '../hooks/Header';
 import useUserMetadata from '../hooks/UserMetadata';
 
