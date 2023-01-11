@@ -2,16 +2,16 @@ import { useContext, useState } from 'react';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
 import { ExternalLink } from '../Components';
-import HeaderData from '../HeaderData';
 import Image from '../utils/Image';
 import Logout from '../utils/Logout';
 import { HorizontalLine, Link, LoggedInUser } from '../Components';
 import Tooltip from '../components/Tooltip';
 import { AccountInfo } from './AccountsComponent';
+import useHeader from '../hooks/Header';
 
 const HomePage = (props) => {
 
-    const [ header ] = useContext(HeaderData);
+    const header = useHeader();
     const versionsToolTip = (Env.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + ": "
                           + header?.versions?.foursight_core + " | foursight-core: "
                           + header?.versions?.foursight + " | dcicutils: " + header?.versions?.dcicutils;
