@@ -8,6 +8,9 @@ import { HorizontalLine, Link, LoggedInUser } from '../Components';
 import Tooltip from '../components/Tooltip';
 import { AccountInfo } from './AccountsComponent';
 import useHeader from '../hooks/Header';
+import useReadOnlyMode from '../hooks/ReadOnlyMode';
+import ReadOnlyModeComponent from '../hooks/ReadOnlyModeComponent';
+import Cookie from '../utils/Cookie';
 
 const HomePage = (props) => {
 
@@ -24,7 +27,14 @@ const HomePage = (props) => {
 
     const [ showAccountSummary, setShowAccountSummary ] = useState(false);
 
+        const [ro, setRo] = useReadOnlyMode();
+
     return <>
+RO:[{ro ? 'readonly' : 'not-readonly'}] <br />
+<span className="pointer" onClick={() => setRo(!ro)}>TOGGLE-RO</span> <br />
+<ReadOnlyModeComponent />
+                <span className="pointer" onClick={() => window.alert(Cookie.IsReadOnlyMode())}>SHOW-RO-COOKIE</span>
+
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
                 <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})</span></b>

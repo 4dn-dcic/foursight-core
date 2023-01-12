@@ -18,13 +18,17 @@ import { useEffect, useState } from 'react';
 // - YourGlobalUsage.js:
 //   import useGlobal from './hooks/Global'; 
 //   import YourGlobalData from './YourGlobalData'; 
-//   const [ yourGlobal, setYourGlobal ] = useGlobal(YourGlobalData);
+//   const [ yourGlobal, setYourGlobal ] = defineGlobal(YourGlobalData);
 //   return <div>
 //     Your global value is: {yourGlobal}
 //     Click the button to update your global value:
 //     <button onClick={() => setYourGlobal(your-updated-value-or-update-function)}>Update YourGlobal</button>
 //   </div>
 
+// This is (not a hook but) a function to define some global state.
+// The value of this should be used as an argument to the useGlobal
+// hook which is used to provide read/write access to this global data.
+//
 export const defineGlobal = (initial = null) => {
     if (typeof initial === "function") initial = initial(null);
     return {
@@ -34,15 +38,18 @@ export const defineGlobal = (initial = null) => {
     };
 }
 
-const __useGlobal = (global) => {
+// This hook provide read/write access to the global data specifier
+// by the given global data identifier as returned by defineGlobal.
+//
+export const useGlobal = (global) => {
     const [ , listener ] = useState();
     useEffect(() => {
         global.__listeners.add(listener);
         return () => global.__listeners.delete(listener);
     }, [ global.value, global.__listeners ]);
-    return {
-        value: global.value,
-        update: (value) => {
+    return [
+        global.value,
+        (value) => {
             global.value = value;
             //
             // Don't actually even need to specify a value here ...
@@ -50,22 +57,5 @@ const __useGlobal = (global) => {
             //
             global.__listeners.forEach(listener => listener(({})));
          }
-    }
-};
-
-export const useGlobal = (globalDefinitionOrNot) => {
-    if (globalDefinitionOrNot.__globalDefinition === true) {
-        const global = __useGlobal(globalDefinitionOrNot);
-        return [
-            global.value,
-            global.update
-        ];
-    }
-    else {
-        //
-        // Nevermind this part.
-        // Cannot call useGlobal at global scope; use defineGlobal.
-        //
-        return defineGlobal(globalDefinitionOrNot);
-    }
+    ];
 };

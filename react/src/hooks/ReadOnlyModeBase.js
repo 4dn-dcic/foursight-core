@@ -1,21 +1,25 @@
 import Cookie from '../utils/Cookie';
 import defineGlobal from './GlobalDefinition';
 import useGlobal from './Global';
-import Image from './utils/Image';
-import Tooltip from './components/Tooltip';
 
-const __readOnlyModeGlobal = defineGlobal(() => Cookie.IsReadOnlyMode());
-const _ReadOnlyModeDisplay = () => {
-    const [ readOnlyMode, setReadOnlyMode ] = useGlobal(_ReadOnlyModeGlobal);
-    return <>
-        <img id={`tooltip-readonly`} alt="lock" src={readOnlyMode ? Image.Lock() : Image.Unlock()} style={{height:"35",cursor:"pointer"}}
-            onClick={() => {
-                Cookie.SetReadOnlyMode(!readOnlyMode);
-                setReadOnlyMode(!readOnlyMode);
-            }} />
-        <Tooltip id={`tooltip-readonly`} position="bottom" text={`You are in ${readOnlyMode ? 'readonly' : 'read/write'} mode. Click to enter ${readOnlyMode ? 'read/write' : 'readonly'} mode.`} />
-    </>
+// This is the actual global readonly-mode data definition; INTERNAL to this module.
+// This is initialized from the ("readonly") cookie where we store readonly-mode,
+// i.e. via Cookie.IsReadOnlyMode.
+//
+const readOnlyModeGlobalData = defineGlobal(() => Cookie.IsReadOnlyMode());
+
+// This hook provides read/write access to the global readonly-mode data.
+// E.g. const [ readOnlyMode, setReadOnlyMode ] = useReadOnlyMode();
+// The setter for this not only update the global readonly-mode data but
+// also the associated ("readonly") cookie, i.e. via Cookie.SetReadOnlyMode.
+//
+export const useReadOnlyMode = () => {
+    const [ readOnlyMode, setReadOnlyMode ] = useGlobal(readOnlyModeGlobalData);
+    return [
+        readOnlyMode,
+        (value) => {
+            setReadOnlyMode(value);
+            Cookie.SetReadOnlyMode(value);
+        }
+    ];
 }
-
-export const ReadOnlyModeDisplay = _ReadOnlyModeDisplay;
-export const useReadOnlyMode = () => useGlobal(_ReadOnlyModeGlobal);

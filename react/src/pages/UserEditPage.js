@@ -6,7 +6,8 @@ import Client from '../utils/Client';
 import EditBox from './EditBox';
 import Time from '../utils/Time';
 import UserDefs from './UserDefs';
-import { useReadOnlyMode } from '../ReadOnlyMode';
+//import { useReadOnlyMode } from '../ReadOnlyMode';
+import useReadOnlyMode from '../hooks/ReadOnlyMode';
 import useUserMetadata from '../hooks/UserMetadata';
 
 const UserEditPage = () => {

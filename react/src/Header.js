@@ -15,7 +15,8 @@ import Image from './utils/Image';
 import Logout from './utils/Logout';
 import Styles from './Styles';
 import Tooltip from './components/Tooltip';
-import { ReadOnlyModeDisplay } from './ReadOnlyMode';
+//import { ReadOnlyModeDisplay } from './ReadOnlyMode';
+import ReadOnlyModeComponent from './hooks/ReadOnlyModeComponent';
 //import { useFetching } from './utils/Fetch';
 import useFetching from './hooks/Fetching';
 // import JustLoggedIn from './JustLoggedIn';
@@ -331,7 +332,7 @@ const Header = (props) => {
                 <div>
                     <table><tbody><tr>
                         {/* <td style={{}}><JustLoggedIn /></td> */}
-                        <td style={{paddingLeft:"10pt"}}><ReadOnlyModeDisplay /></td>
+                        <td style={{paddingLeft:"10pt"}}><ReadOnlyModeComponent /></td>
                     </tr></tbody></table>
                 </div>
             </div>
