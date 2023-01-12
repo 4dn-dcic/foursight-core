@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Navigate, BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import HeaderData from './HeaderData';
+//import HeaderData from './HeaderData';
 import Env from './utils/Env';
-import { useFetchFunction } from './utils/Fetch';
+//import useFetchFunction from './hooks/FetchFunction';
 import Server from './utils/Server';
 
 import AccountsPage from './pages/AccountsPage';
 import AwsS3Page from './pages/aws/AwsS3Page';
 import ChecksPage from './pages/ChecksPage';
 import CheckHistoryPage from './pages/CheckHistoryPage';
+import Client from './utils/Client';
 import EnvPage from './pages/EnvPage';
 import Footer from './Footer';
 import ForbiddenPage from './pages/ForbiddenPage';
@@ -27,6 +28,10 @@ import UserCreatePage from './pages/UserCreatePage';
 import UserEditPage from './pages/UserEditPage';
 import UsersPage from './pages/UsersPage';
 
+import HeaderProvider from './hooks/HeaderProvider';
+import useHeader from './hooks/Header';
+
+/*
 function setGlobalStyles(header) {
     if (Env.IsFoursightFourfront(header)) {
         Styles.SetFoursightFourfront();
@@ -38,12 +43,14 @@ function setGlobalStyles(header) {
         Styles.SetFoursightCgap();
     }
 }
+*/
 
 const App = () => {
 
-    let [ header, setHeader ] = useState({ loading: true });
-    const fetch = useFetchFunction();
+    // let [ header, setHeader ] = useState({ loading: true });
+    // const fetch = useFetchFunction();
 
+        /*
     useEffect(() => {
         fetch({
             url: Server.Url("/header"),
@@ -57,24 +64,38 @@ const App = () => {
             }
         });
     }, []);
+    */
+
+        //const header = useHeader();
+
+    const header = useHeader();
 
     function getDefaultPath() {
+        return `/api/react/${Env.PreferredName(Env.Default(header))}/login`;
+            /*
         const env = Env.Default(header);
         const envPreferred = Env.PreferredName(env, header);
         const envRedirect = envPreferred || env;
         const path = envRedirect ? `/api/react/${envRedirect}/env` : "/api/react/env";
         return path;
+        */
     }
 
     return <Router>
-        <HeaderData.Provider value={[header, setHeader]}>
+        <HeaderProvider>
             <Header />
-            <div style={{margin:"20px"}}>
+            <div style={{margin:"14pt"}}>
                 <Routes>
+                    <Route path="/" element={
+                        <Navigate to={getDefaultPath()} />
+                    } />
                     <Route path="/api" element={
                         <Navigate to={getDefaultPath()} />
                     } />
                     <Route path="/api/react" element={
+                        <Navigate to={getDefaultPath()} />
+                    } />
+                    <Route path="/api/react/:environ" element={
                         <Navigate to={getDefaultPath()} />
                     } />
                     <Route path="/api/react/:environ/accounts" element={
@@ -163,7 +184,7 @@ const App = () => {
                 </Routes>
             </div>
             <Footer />
-        </HeaderData.Provider>
+         </HeaderProvider>
     </Router>
 };
 

@@ -1,8 +1,8 @@
 import React from 'react';
 import { useContext } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import HeaderData from './HeaderData';
-import { useHeaderRefresh } from './HeaderRefresh';
+import useHeader from './hooks/Header';
+import useHeaderRefresh from './hooks/HeaderRefresh';
 import { BarSpinner, StandardSpinner } from './Spinners';
 import Auth from './utils/Auth';
 import Char from './utils/Char';
@@ -16,7 +16,8 @@ import Logout from './utils/Logout';
 import Styles from './Styles';
 import Tooltip from './components/Tooltip';
 import { ReadOnlyModeDisplay } from './ReadOnlyMode';
-import { useFetching } from './utils/Fetch';
+//import { useFetching } from './utils/Fetch';
+import useFetching from './hooks/Fetching';
 // import JustLoggedIn from './JustLoggedIn';
 // Issues with serving images ONLY from 4dn-dcic/dev NOT from cgap-supertest ...
 // So serve from my GitHub account for now ...
@@ -96,7 +97,8 @@ const Nav = ({ header }) => {
 
 const Header = (props) => {
 
-    const [ header ] = useContext(HeaderData);
+    //const [ header ] = useContext(HeaderData);
+    const header = useHeader();
     const refreshHeader = useHeaderRefresh();
     //
     // Very odd but this below (navigate) declaration of useNavigate is REQUIRED, even if not

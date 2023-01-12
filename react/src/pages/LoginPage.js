@@ -2,7 +2,8 @@ import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import HeaderData from '../HeaderData';
+//import HeaderData from '../HeaderData';
+import useHeader from '../hooks/Header';
 import Auth0Lock from 'auth0-lock';
 import Auth from '../utils/Auth';
 import Char from '../utils/Char';
@@ -11,7 +12,7 @@ import Clipboard from '../utils/Clipboard';
 import { FetchErrorBox } from '../Components';
 import Cookie from '../utils/Cookie';
 import Env from '../utils/Env';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
 import LiveTime from '../LiveTime';
@@ -24,7 +25,8 @@ import { LoggedInUser, Link } from '../Components';
 
 const LoginPage = (props) => {
 
-    const [ header ] = useContext(HeaderData);
+    //const [ header ] = useContext(HeaderData);
+    const header = useHeader();
     const [ showingAuthBox, setShowingAuthBox ] = useState(false);
     const [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [ args ] = useSearchParams();

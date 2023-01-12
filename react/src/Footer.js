@@ -1,11 +1,13 @@
 import { useContext } from 'react';
-import HeaderData from './HeaderData';
+// import HeaderData from './HeaderData';
+import useHeader from './hooks/Header';
 import Client from './utils/Client';
 import Image from './utils/Image';
 
 const Footer = (props) => {
 
-    const [ header ] = useContext(HeaderData);
+    // const [ header ] = useContext(HeaderData);
+    const header = useHeader();
 
     // TODO
     // Get the URLs CGAP/4DN URLs below directly from the Portal.

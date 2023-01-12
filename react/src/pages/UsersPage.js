@@ -1,7 +1,7 @@
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { Link } from '../Components';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import Char from '../utils/Char';
 import { FetchErrorBox } from '../Components';
 import Server from '../utils/Server';

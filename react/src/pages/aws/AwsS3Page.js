@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { BarSpinner } from '../../Spinners';
 import Clipboard from '../../utils/Clipboard';
-import { useFetch } from '../../utils/Fetch';
+import useFetch from '../../hooks/Fetch';
 import { FetchErrorBox } from '../../Components';
 import Char from '../../utils/Char';
 import Image from '../../utils/Image';

@@ -1,9 +1,2 @@
-import { useContext } from 'react';
-import HeaderData from '../HeaderData';
-
-const useHeader = () => {
-    const [ header ] = useContext(HeaderData);
-    return header;
-}
-
+import { useHeader } from './HeaderBase';
 export default useHeader;

@@ -1,12 +1,14 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import HeaderData from '../HeaderData';
+//import HeaderData from '../HeaderData';
+import useHeader from '../hooks/Header';
 import Env from '../utils/Env';
 import Client from '../utils/Client';
 
 const NotFoundPage = (props) => {
 
-    const [ header ] = useContext(HeaderData);
+    // const [ header ] = useContext(HeaderData);
+    const header = useHeader();
 
     return <>
         <div className="container" id="login_container">

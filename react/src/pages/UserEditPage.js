@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from '../Components';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import Client from '../utils/Client';
 import EditBox from './EditBox';
 import Time from '../utils/Time';

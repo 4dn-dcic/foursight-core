@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import { FetchErrorBox } from '../Components';
 import { StandardSpinner } from '../Spinners';
 import PaginationComponent from '../PaginationComponent';

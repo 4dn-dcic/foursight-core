@@ -2,16 +2,17 @@ import React from 'react';
 import { useContext, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Uuid from 'react-uuid';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import { FetchErrorBox } from '../Components';
 import Char from '../utils/Char';
 import Env from '../utils/Env';
-import HeaderData from '../HeaderData';
+// import HeaderData from '../HeaderData';
+import useHeader from '../hooks/Header';
 import Server from '../utils/Server';
 
 const GacComparePage = (props) => {
 
-    const [ header ] = useContext(HeaderData);
+    const header = useHeader();
     const { environCompare } = useParams();
     const [ showingRaw, setShowingRaw ] = useState(false);
     const [ showingType, setShowingType ] = useState("all");

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import { Link } from '../Components';
 import Client from '../utils/Client';
 import EditBox from './EditBox';

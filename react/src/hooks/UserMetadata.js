@@ -1,4 +1,4 @@
-import { useFetch } from '../utils/Fetch';
+import useFetch from './Fetch';
 
 const useUserMetadata = () => {
     const projects = useFetch("/users/projects", { cache: true });

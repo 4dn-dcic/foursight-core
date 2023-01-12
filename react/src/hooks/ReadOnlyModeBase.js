@@ -1,13 +1,10 @@
-import Cookie from './utils/Cookie';
-// import { defineGlobal, useGlobal } from './Global';
-// import useGlobal from './hooks/Global';
-// import { defineGlobal, useGlobal } from './hooks/Global';
-import defineGlobal from './hooks/GlobalDefinition';
-import useGlobal from './hooks/Global';
+import Cookie from '../utils/Cookie';
+import defineGlobal from './GlobalDefinition';
+import useGlobal from './Global';
 import Image from './utils/Image';
 import Tooltip from './components/Tooltip';
 
-const _ReadOnlyModeGlobal = defineGlobal(() => Cookie.IsReadOnlyMode());
+const __readOnlyModeGlobal = defineGlobal(() => Cookie.IsReadOnlyMode());
 const _ReadOnlyModeDisplay = () => {
     const [ readOnlyMode, setReadOnlyMode ] = useGlobal(_ReadOnlyModeGlobal);
     return <>
