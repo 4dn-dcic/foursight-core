@@ -30,11 +30,10 @@ import { useEffect, useState } from 'react';
 // hook which is used to provide read/write access to this global data.
 //
 export const defineGlobal = (initial = null) => {
-    if (typeof initial === "function") initial = initial(null);
+    if (typeof initial === "function") initial = initial();
     return {
         value: initial,
-        __listeners: new Set(),
-        __globalDefinition: true
+        __listeners: new Set()
     };
 }
 
