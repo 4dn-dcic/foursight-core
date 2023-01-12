@@ -5,7 +5,6 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import uuid from 'react-uuid';
-import { defineGlobal, useGlobal } from '../Global';
 import Client from '../utils/Client';
 import Cookie from '../utils/Cookie';
 import Debug from '../utils/Debug';
@@ -15,6 +14,8 @@ import Server from '../utils/Server';
 import Str from '../utils/Str';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
+import defineGlobal from '../hooks/GlobalDefinition';
+import useGlobal from '../hooks/Global';
 
 const DEFAULT_METHOD = "GET";
 const DEFAULT_TIMEOUT = 30 * 1000;

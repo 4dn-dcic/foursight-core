@@ -16,7 +16,8 @@ import useHeader from '../hooks/Header';
 const EnvPage = (props) => {
 
     const header = useHeader();
-    const refreshHeader = useHeaderRefresh();
+    const refreshHeader = useHeaderRefresh(); // not sure this is actually necessary anymore
+
     // We call the /info endpoint API just to get the GAC names.
     const info = useFetch(Auth.IsLoggedIn() ? Server.Url("/info") : null);
 

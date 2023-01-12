@@ -25,7 +25,7 @@ import { useEffect, useState } from 'react';
 //     <button onClick={() => setYourGlobal(your-updated-value-or-update-function)}>Update YourGlobal</button>
 //   </div>
 
-// This is (not a hook but) a function to define some global state.
+// This is (NOT a hook but) a function to define some global state.
 // The value of this should be used as an argument to the useGlobal
 // hook which is used to provide read/write access to this global data.
 //

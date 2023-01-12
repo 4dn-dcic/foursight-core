@@ -4,35 +4,39 @@ import Env from '../utils/Env';
 import Server from '../utils/Server';
 import Styles from '../Styles';
 import useFetch from './Fetch';
-//
-// TODO: Why doesn't this work ...
-// import useFetcher from './Fetcher';
-// Fetch.js:3 Uncaught ReferenceError: Cannot access 'useFetcher' before initialization
-// at Module.useFetcher (Fetch.js:3:1) at ./src/hooks/Fetcher.js (Fetcher.js:3:1)
-//
-import { useFetcher } from './FetchBase';
+import useFetcher from './Fetcher';
 
-// This is the actual global header data definition,
-// which will be populated from our React API /header call.
+// This is the actual global header data definition, which will be populated from
+// the API /header fetch in the "provider" below. This may be shared globally
+// across all components in our app via the useHeader hook defined here.
 //
 export const HeaderData = React.createContext(null);
 
-//
-//import HeaderData from '../HeaderData';
-
 // This the "provider" component for our global header data, which should be wrapped
 // around our ENTIRE app in order for ANY component within our app to reference this
-// global header data, i.e. via the userHeader hook defined here.
+// global header data, i.e. via the useHeader hook defined here.
 //
 export const HeaderProvider = ({ children }) => {
 
     let [ header, setHeader ] = useState({ loading: true });
 
+    const fetcher = useFetcher();
+
+    // Call our API /header endpoint to get the global
+    // header data (for the current environment).
+    //
     useFetch("/header", {
         onData: (header) => {
             header.loading = false;
             setHeader(header);
-            setGlobalStyles(header);
+            //
+            // Here we set the global styles based on the site type, i.e. Foursight-CGAP
+            // vs. Foursight-Fourfront, which is determined from the fetched header data;
+            // The former is a blue-ish color-schema and green-ish for the latter.
+            //
+            Env.IsFoursightFourfront(header)
+                ? Styles.SetFoursightFourfront()
+                : Styles.SetFoursightCgap();
         },
         onError: (response) => {
             setHeader(header => ({ ...header, ...{ error: true } }));
@@ -40,32 +44,31 @@ export const HeaderProvider = ({ children }) => {
         cache: true
     });
 
-    const setGlobalStyles = () => {
-        Env.IsFoursightFourfront(header)
-            ? Styles.SetFoursightFourfront()
-            : Styles.SetFoursightCgap();
-    }
-
+    // This "provider" is what ties our HeaderData, defined globally above, with our
+    // actual header state, fetched and stored locally above in the header/setHeader
+    // state; so that any children components get get access to it, via userHeader().
+    //
     return <HeaderData.Provider value={ [ header, setHeader ] }>
         {children}
     </HeaderData.Provider>
 }
 
 // This is the hook which should be used by any component which wants to referent our global header data.
+// E.g. const header = useHeader();
+//      const version = header.app?.version;
 //
 export const useHeader = () => {
     const header = useContext(HeaderData);
     return header ? header[0] : null;
 }
 
-// This hook can be used to explicitly/manually refresh the global header data.
+// This hook can be used to explicitly/manually refresh the global header data;
+// useful when the user switches environments via the UI as the header is per-environment.
+// E.g. const headerRefresher = useHeaderRefresh();
+//      headerRefresher(env);
 //
 export const useHeaderRefresh = () => {
     const [ _, setHeader ] = useContext(HeaderData);
     const fetcher = useFetcher();
-    return (env) => {
-        fetcher.refresh(Server.Url("/header", env), { onData: (data) => setHeader(data), cache: true });
-    }
+    return (env) => fetcher.refresh(Server.Url("/header", env), { onData: (data) => setHeader(data), cache: true });
 }
-
-// export default HeaderData;
