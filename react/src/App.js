@@ -17,6 +17,7 @@ import Header from './Header';
 import HomePage from './pages/HomePage';
 import InfoPage from './pages/InfoPage';
 import LoginPage from './pages/LoginPage';
+// import LoginCallbackPage from './pages/LoginCallbackPage';
 import GacComparePage from './pages/GacComparePage';
 import InfrastructurePage from './pages/aws/InfrastructurePage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -30,6 +31,8 @@ import UsersPage from './pages/UsersPage';
 
 import HeaderProvider from './hooks/HeaderProvider';
 import useHeader from './hooks/Header';
+import Context from './utils/Context';
+import { useSearchParams } from 'react-router-dom';
 
 /*
 function setGlobalStyles(header) {
@@ -81,11 +84,54 @@ const App = () => {
         */
     }
 
+        console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxy')
+        console.log(Client.Path());
+        console.log(Client.CurrentLogicalPath());
+        console.log(Context.Client.CurrentPath());
+        console.log(window.location)
+
+    // if (window.location.pathname=== "/callback") { // OK
+      //       console.log("GOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
+        //             return;
+    // }
+
+    // if (window.location.pathname=== "/callback") { // OK
+    if (window.location.pathname=== "/api/react/oauth/callback") { // OK
+        console.log('IOOO xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxy')
+        console.log(window.location.search)
+        const code = "asdf"; // args.get("code");
+        const state = "asdf"; // args.get("state");
+        const ouath_pkce_key = sessionStorage.getItem("ouath_pkce_key");
+        const oauth_state = sessionStorage.getItem("oauth_state");
+        // const url = `http://localhost:8000/callback?code=${code}&state=${state}&oauth_state=${oauth_state}&ouath_pkce_key=${ouath_pkce_key}`;
+        const url = `http://localhost:8000/callback${window.location.search}&oauth_state=${oauth_state}&ouath_pkce_key=${ouath_pkce_key}`;
+            console.log(url)
+            return
+    }
+    if (window.location.pathname=== "/api/oauth/callback") { // OK
+        console.log('FOOO xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxy')
+        console.log(window.location.search)
+        const code = "asdf"; // args.get("code");
+        const state = "asdf"; // args.get("state");
+        const ouath_pkce_key = sessionStorage.getItem("ouath_pkce_key");
+        const oauth_state = sessionStorage.getItem("oauth_state");
+        // const url = `http://localhost:8000/callback?code=${code}&state=${state}&oauth_state=${oauth_state}&ouath_pkce_key=${ouath_pkce_key}`;
+        const url = `http://localhost:8000/callback${window.location.search}&oauth_state=${oauth_state}&ouath_pkce_key=${ouath_pkce_key}`;
+            console.log(url)
+            // window.location.href = url;
+            return
+    }
+
     return <Router>
         <HeaderProvider>
             <Header />
             <div style={{margin:"14pt"}}>
                 <Routes>
+{/*
+                    <Route path="/callback" element={
+                        <LoginCallbackPage />
+                    }/>
+*/}
                     <Route path="/" element={
                         <Navigate to={getDefaultPath()} />
                     } />

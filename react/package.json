@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@aws-amplify/ui-react": "^4.3.3",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^13.5.0",
     "assert": "^2.0.0",
     "auth0-lock": "^11.33.3",
+    "aws-amplify": "^5.0.10",
     "axios": "^1.1.2",
     "babel-standalone": "^6.26.0",
     "browserify-cipher": "^1.0.1",
