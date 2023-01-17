@@ -26,7 +26,7 @@ def get_cognito_oauth_config(include_secret: bool = False) -> object:
         #
         # This is a temporary test account - no harm in checking in.
         #
-        response["client_secret"] = "REDACTED"
+        response["client_secret"] = "8caa9mn0f696ic1utvrg1ni5j48e5kap9l5rm5c785d7c7bdnjn"
     return response
 
 def retrieve_cognito_oauth_token(request: dict) -> dict:
@@ -34,11 +34,22 @@ def retrieve_cognito_oauth_token(request: dict) -> dict:
     Calls the /oauth2/token endpoint with the code (and other relevant data from the given
     request, e.g. code_verifier) to retrieve the associated JWT token (id_token) and returns
     its decoded value. See call_cognito_oauth_token_endpoint for details on request arguments.
+
     Cognito configuration dependencies: domain, client ID, client secret.
     Cognito endpoint dependencies: Token i.e. /oauth2/token, JWKS i.e. /.well-known/jwks.json.
 
     This is called from our backend authentication callback (i.e. /api/callback) which itself
     is redirected to from our frontend authentication callback (i.e. /api/react/oauth/callback).
+    This is split into two pieces (a frontend and backend part) because we need the frontend
+    callback to pick up the PKCE (Proof Key for Code Exchange) value (aka code_verifier) from
+    browser local storage (which was written at the start of the authentication process, i.e.
+    by Amplify.federatedSignIn), which obviously can only be done by frontend code; and the
+    backend is needed to make the /oauth2/token (POST) call to the (Cognito) authentication
+    server because it needs to pass to that call the (Cognito) client secret, which obviously
+    must be done by backend code so as to not expose this secret outside of that secured context.
+
+    :param request: Dictionary containing the HTTP request for our Cognito authentication callback.
+    :returns: Dictionary containing decoded JWT token (id_token) from the /oauth2/token endpoint call.
     """
     response = call_cognito_oauth_token_endpoint(request)
     token = response.get("id_token")
@@ -53,15 +64,19 @@ def call_cognito_oauth_token_endpoint(request: dict) -> dict:
     a "code_verifier" argument, which came from "ouath_pkce_key" (sic) which was stored in browser
     local storage by our client-side authentication initiation code (i.e. Amplify.federatedSignIn),
     together with "oauth_state" which should match the request state argument.
+
     Cognito configuration dependencies: domain, client ID, client secret.
     Cognito endpoint dependencies: Token i.e. /oauth2/token, JWKS i.e. /.well-known/jwks.json.
+
+    :param request: Dictionary containing the HTTP request for our Cognito authentication callback.
+    :returns: Dictionary containing the HTTP response for the /oauth2/token endpoint (POST) call.
     """
     args = request.get("query_params") or {}
     code = args.get("code")
     state = args.get("state")
     client_side_state = args.get("oauth_state")
     #
-    # Note the known misspelling of "ouath_pkce_key" browser local storage variable.
+    # Note the odd/known misspelling of "ouath_pkce_key" browser local storage variable.
     # This, and the above "oauth_state", is set by the client-side code which initiated the
     # authentication process, i.e. e.g. Amplify.federatedSignIn. This is the "code_verifier"
     # which we pass as an argument, along with the given code, to the /oauth2/token endpoint.
