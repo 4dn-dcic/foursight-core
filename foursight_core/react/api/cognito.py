@@ -2,10 +2,12 @@ import jwt as jwtlib
 from jwt import PyJWKClient
 import requests
 from foursight_core.react.api.encoding_utils import base64_encode, string_to_bytes
+from foursight_core.react.api.jwt_utils import jwt_encode
 
-def get_cognito_oauth_config(include_secret: bool = False) -> object:
+def get_cognito_oauth_config(include_secret: bool = False) -> dict:
     """
     Returns all necessary configuration info for our AWS Coginito authentication server.
+    :returns: Dictionary containing AWS Cognito configuration info.
     """
     #
     # TODO: Get this info from safe place.
@@ -33,7 +35,7 @@ def retrieve_cognito_oauth_token(request: dict) -> dict:
     """
     Calls the /oauth2/token endpoint with the code (and other relevant data from the given
     request, e.g. code_verifier) to retrieve the associated JWT token (id_token) and returns
-    its decoded value. See call_cognito_oauth_token_endpoint for details on request arguments.
+    its decoded value. See: call_cognito_oauth_token_endpoint for details on request arguments.
 
     Cognito configuration dependencies: domain, client ID, client secret.
     Cognito endpoint dependencies: Token i.e. /oauth2/token, JWKS i.e. /.well-known/jwks.json.
@@ -52,6 +54,17 @@ def retrieve_cognito_oauth_token(request: dict) -> dict:
     :returns: Dictionary containing decoded JWT token (id_token) from the /oauth2/token endpoint call.
     """
     response = call_cognito_oauth_token_endpoint(request)
+    #
+    # Note that we also get back from the /oauth2/token call above (in addition to the "id_token" JWT,
+    # which we use) an "access_token" and a "refresh_token"; we do not currently use these; and trying
+    # to decode the access_token gives us (unless we disable signature verification) an error because
+    # there is no "aud" field there, and trying to decode the refresh_token gives us an invalid payload 
+    # padding error for some as yet unknown reason, but no matter for now as we don't use these.
+    #
+    # Note that we also get back from the /oauth2/token call above an "expires_in" (e.g. 3600, for an
+    # hour from "now") but the JWT (id_token) also contains a "exp" field (a time_t value) which is
+    # effectively the same thing; we will just use the latter (see: create_cognito_auth_token).
+    #
     token = response.get("id_token")
     decoded_token = decode_cognito_oauth_token_jwt(token)
     return decoded_token
@@ -106,6 +119,7 @@ def _get_cognito_oauth_token_endpoint_url() -> str:
     """
     Returns the URL for the POST to the /oauth2/token endpoint.
     Cognito configuration dependencies: domain.
+    :returns: URL for /oauth2/token endpoint.
     """
     config = get_cognito_oauth_config()
     domain = config["domain"]
@@ -116,6 +130,7 @@ def _get_cognito_oauth_token_endpoint_authorization() -> dict:
     Returns the value for basic authorization value suitable
     for the header of a POST to the /oauth2/token endpoint.
     Cognito configuration dependencies: client ID, client secret.
+    :returns: Authorization header value for /oauth2/token endpoint.
     """
     config = get_cognito_oauth_config(include_secret=True)
     client_id = config["client_id"]
@@ -125,9 +140,14 @@ def _get_cognito_oauth_token_endpoint_authorization() -> dict:
 def _get_cognito_oauth_token_endpoint_data(code: str, code_verifier: str) -> dict:
     """
     Returns the data (dictionary) suitable as the payload for a POST to the /oauth2/token
-    endpoint, given an authorization code and associated code_verifier (passed in from
-    the /oauth2/authorize endpoint) to our authentication callback.
-    Cognito configuration dependencies: client ID.
+    endpoint, given an authorization code and associated code_verifier passed to our
+    our authentication callback.
+
+    Cognito configuration dependencies: client ID, our authentication callback URL.
+
+    :param code: Value passed to our backend authentication callback.
+    :param code_verifier: Value passed to our backend authentication callback.
+    :returns: Data suitable for POST payload for /oauth2/token endpoint.
     """
     config = get_cognito_oauth_config(include_secret=True)
     return {
@@ -136,7 +156,7 @@ def _get_cognito_oauth_token_endpoint_data(code: str, code_verifier: str) -> dic
         #
         # Note that do NOT pass the client secret here as we are passing it in the header
         # to the /oauth2/token endpoint (POST) call. Though it would do no harm to do so.
-        # See _get_cognito_oauth_token_endpoint_authorization.
+        # See: _get_cognito_oauth_token_endpoint_authorization.
         #
         "code": code,
         "code_verifier": code_verifier,
@@ -150,6 +170,11 @@ def decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, veri
     using info from the Cognito authentication server JWKA (JSON Web Key Sets) API.
     Cognito configuration dependencies: user pool ID, client ID.
     Cognito endpoint dependencies: JWKS i.e. /.well-known/jwks.json.
+
+    :param jwt: JWT token value (id_token) retrieved from the /oauth2/token endpoint.
+    :param verify_signature: Boolean (default True) indicating JWT signature verification.
+    :param verify_expiration: Boolean (default True) indicating JWT expiration verification.
+    :returns: Dictionary containing decoded value of the given JWT.
     """
     #
     # Example decoded (id_tokn) JWT:
@@ -200,9 +225,14 @@ def decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, veri
 
 def get_cognito_oauth_signing_key(jwt: str) -> object:
     """
-    Returns the signing key from the given JWT.
+    Returns the signing key (object) from the given JWT.
+    Actual type of returned object: cryptography.hazmat.backends.openssl.rsa._RSAPublicKey.
+
     Cognito configuration dependencies: user pool ID.
     Cognito endpoint dependencies: JWKS i.e. /.well-known/jwks.json.
+
+    :param jwt: JWT token value (id_token) retrieved from the /oauth2/token endpoint.
+    :returns: Object suitable for use as a signing key to decode a JWT.
     """
     signing_key_client = get_cognito_oauth_signing_key_client()
     signing_key = signing_key_client.get_signing_key_from_jwt(string_to_bytes(jwt))
@@ -211,30 +241,48 @@ def get_cognito_oauth_signing_key(jwt: str) -> object:
 def get_cognito_oauth_signing_key_client() -> object:
     """
     Returns an object which can be used to extract a signing key from a JWT.
+    The returned object will contain a "get_signing_key_from_jwt" method, which takes
+    JWT (as bytes) argument and returns a signing key object which has a "key" property.
     Hits the jwks.json (JSON Web Key Sets) API for the Cognito authentication server.
+    Actual type of returned object: jwt.jwks_client.PyJWKClient
+
     Cognito configuration dependencies: user pool ID.
     Cognito endpoint dependencies: JWKS i.e. /.well-known/jwks.json.
+
+    :returns: Object suitable for extracting a signing key from a JWT.
     """
     config = get_cognito_oauth_config()
     user_pool_id = config["user_pool_id"]
     cognito_jwks_url = f"https://cognito-idp.us-east-1.amazonaws.com/{user_pool_id}/.well-known/jwks.json"
     return PyJWKClient(cognito_jwks_url)
 
-# TESTING ...
+def create_cognito_auth_token(token: dict) -> dict:
+    """
+    Creates from the given (decoded) JWT token, retrieved from the /oauth2/token endpoint, an
+    authtoken suitable for use as a cookie to indicate the user has been authenticated (logged in).
+    This is analagous to foursight_core.react.api.auth.create_authtoken used for Auth0 authentication.
 
-id_token = "eyJraWQiOiJ1Z1JBUEtXMkNzdk9pUFgyUEtvRFwvZTNVN1BCQUYyTXAzMHp1NGprUG05bz0iLCJhbGciOiJSUzI1NiJ9.eyJhdF9oYXNoIjoiQzlzQTM5cHNINnpvUktYdUxmUVZHdyIsInN1YiI6IjdkY2E5YjkyLTc0NmItNDQwNi05ZjdkLTNlNThjZDdiMjQ3ZiIsImNvZ25pdG86Z3JvdXBzIjpbInVzLWVhc3QtMV9oNkk1SXFRU3NfR29vZ2xlIl0sImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLWVhc3QtMS5hbWF6b25hd3MuY29tXC91cy1lYXN0LTFfaDZJNUlxUVNzIiwiY29nbml0bzp1c2VybmFtZSI6Imdvb2dsZV8xMTczMDAyMDYwMTMwMDczOTg5MjQiLCJnaXZlbl9uYW1lIjoiRGF2aWQiLCJub25jZSI6Ik1tOUtURnluUHBHN0o2NEZBOVh4VEJZbmptdmU1UzBxalhQTFFtR1JFLVFfNlc1U2VUMUF0OUFKQnc1bldrWmNkWDV2UGxxTmR2aHlLRHBwU0RtVF9jUVlRQV9jbS0tREpXTElXMzNONHloWTZUN0k4RnplS05pUC1NS2dsbWVOc3ZvY2ZJZVUyZFR3elptdF81T3lTd3d5NERVMEJzSGNUWk9nS1QwWkd0ayIsIm9yaWdpbl9qdGkiOiIwNGVlN2RjZi1hMmNhLTRkZjUtODc5MC02MDQ0NTY2MDlkNjkiLCJhdWQiOiI1ZDU4NnNlM3I5NzY0MzUxNjduazhrOHM0aCIsImlkZW50aXRpZXMiOlt7InVzZXJJZCI6IjExNzMwMDIwNjAxMzAwNzM5ODkyNCIsInByb3ZpZGVyTmFtZSI6Ikdvb2dsZSIsInByb3ZpZGVyVHlwZSI6Ikdvb2dsZSIsImlzc3VlciI6bnVsbCwicHJpbWFyeSI6InRydWUiLCJkYXRlQ3JlYXRlZCI6IjE2NzM5MTMxOTAxMjUifV0sInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNjczOTEzMTkyLCJleHAiOjE2NzM5MTY3OTIsImlhdCI6MTY3MzkxMzE5MiwiZmFtaWx5X25hbWUiOiJNaWNoYWVscyIsImp0aSI6ImMyMDYxMjc4LWMwY2QtNGJmNi1hZDc3LTFmZmFlZWQyZjYyNiIsImVtYWlsIjoiZGF2aWRfbWljaGFlbHNAaG1zLmhhcnZhcmQuZWR1In0.kHbm6oz5bWhH4sJzy8YjrVnBIu3_PT2H1xlnKzm5c3lFs2V-FfieC3AV-MUYZa_CJRfdFsajh8mW4JDA7QMfOSHVoF47Fo3uoD0Yt9gk8WrmxQz_R5R_ko-pApg3fw4eaKqwcQpdLe5n0s0-Ee67M4QdLdbfIwyFd-rSaexeII0RMu2M5x0wrPyl7mq_J92fYJXK1hExalVZkyuHTYaddqF4p2LE-TmIhrt-7bZhAPbDBCKZGR3msM90h1K2yLXNZ2XrQN4gVmz-HrgBkP-ctHoYOucqpXq04kcS-HTI_quT1WgMwAeO-hZrvfpVoHpFsWnlRbTuGEZubkYQL9fBxg"
-#id_token_decoded = decode_cognito_oauth_token_jwt(id_token)
-#print('ID_TOKEN_DECODED')
-#print(id_token_decoded)
+    Cognito configuration dependencies: client ID, client secret.
 
-access_token = "eyJraWQiOiJnK3RNYkRUZitORXI3aUNSb0NMUDNvNzNXTFZjaFwveFZ0XC90NmZOZkg3VWc9IiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiI3ZGNhOWI5Mi03NDZiLTQ0MDYtOWY3ZC0zZTU4Y2Q3YjI0N2YiLCJjb2duaXRvOmdyb3VwcyI6WyJ1cy1lYXN0LTFfaDZJNUlxUVNzX0dvb2dsZSJdLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0xLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMV9oNkk1SXFRU3MiLCJ2ZXJzaW9uIjoyLCJjbGllbnRfaWQiOiI1ZDU4NnNlM3I5NzY0MzUxNjduazhrOHM0aCIsIm9yaWdpbl9qdGkiOiIwNGVlN2RjZi1hMmNhLTRkZjUtODc5MC02MDQ0NTY2MDlkNjkiLCJ0b2tlbl91c2UiOiJhY2Nlc3MiLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiYXV0aF90aW1lIjoxNjczOTEzMTkyLCJleHAiOjE2NzM5MTY3OTIsImlhdCI6MTY3MzkxMzE5MiwianRpIjoiNTg5ZmY4NTMtOGY4YS00ODFkLTk3YWQtMWVmOTY2NWE2MjVmIiwidXNlcm5hbWUiOiJnb29nbGVfMTE3MzAwMjA2MDEzMDA3Mzk4OTI0In0.r7dv1uHjIv4qso5O_0WfJs2VD-Ysf5yif2LVX3hbaZDDY0r5bWDR-sKYgcK7B6-QLRhWNnNXWBKIsibY2bBw3fDu-AHgdvV9yJliE6FJpIqwbwNrfi8w6DLz8h-r2VEldqpm0notRHYBIkKJWSufbSboI9eMnDYLphPVvxLq_oG-suK3sOWfrID7Ilctonvq6i1SMhJZqVL9Jas0FJM3gZPHqwIePfTqOxGiuCotwV8vwUYxsknhrFHIfZbdmJHmOPO-PwSjWgjVO3mYUgbBzsRpfzkxJL_Bo5KAn4kXRi3RdcqX0vqut0ddNG2SZRfiloVBVxDwkcNhmKvJREUJyQ"
-# Set verify_signature to False no 'aud' field in the JWT; do not know why.
-#access_token_decoded = decode_cognito_oauth_token_jwt(access_token, verify_signature=False)
-#print('ACCESS_TOKEN_DECODED')
-#print(access_token_decoded)
-
-refresh_token = "eyJjdHkiOiJKV1QiLCJlbmMiOiJBMjU2R0NNIiwiYWxnIjoiUlNBLU9BRVAifQ.nYIF_3232ZFcfX9rgXp9K8RMxiT-PcgVQWKkyMMcRz-ggAq8uCGM2R5KEYedEdlhGtdCGPNXSTViIfMFpBcQl83Ik5rndrSZnjtzZJHYO4j2CMfDt6d9kuBoS4rDjPmce_cP4ui1uE5F5nI6BiZyJ8f6cKi4DUgfDFgRHUy97U7r59hw7krw_bY4vOZwqoh8vyVQCFVogetlWsbyx4ueUTo2mLK-6Ze5yQijxWt7XsEqEncPhiNA3rbCbWPmqHBL-pOD2fqjGmw2PMsvl4_wmC0RZpyYZkFxammLDT27w2hxXDnvSO73N028QJ3szuiOof4MaWZ4Wyt9GUtFZTXwuQ.Nw_EZ48uCyxmSxi3.MxUeWodSD6fjCGDCaZzu7XIlG_8KX3_p9mBhJZ_EHSkpioItR2j8tOdlG97dpyryg9M4a9UFqukUe29h9TUN7gL0xCjaLLgB84ho7Nvxchf3ncZTHLH85lgOetR-Zbtj7E9f3jKbn0zwjfCa1H6wKyEfDHJayEqpoPgej4z8tYGisCsDf0_yH290-tMsVKGJZNCb5RINwAuscjDB-x0jK1ZuVjW-CmrMKLxFE0qsQDn3nRSHe2uc70O0H-E6fwTCkMm_Yrrfbq9oU1KI9J28zKK8779Gh1yBDZZSKX-HrTAca0LczYQnAbHlAv8K822s2xK1lt6zK-y_sUnsIdO6bz1DH65e_J3EzQdJRJ_9Xb-KANAn8K7cIwzNF7rvUTMjk9Tv4SIRtBs-Gtkbzl8EOitIZxBNKv9yFQvWA-qIiHIgDivfCZbgw9tldtdHp4THmy4n-AC47LlQCYSojr_A2avcemfKhohmEPgPN8xRcEtXlTMoz7AFAMTeZO_zZ4q8kxLXd0mfN17ss7TxqLAtg4AB00tF6XpTnV1Ujvd-rRpmSmOjxKATpVipTtEk4Gomj00DhGcAnXiVLrOtPPVXGXB-kODHTZnZM2UzILb3cIxMMtAKkdl0LYT74w3szKqTfBOOVd9ZOTP8R0xbWl3XJLQmZKksQK0-liUF1jCcFO7xiSc5M7Fdo4tiXg4TfJxC7_LkfNg2FeWpHqPgtdhgSLLbry_B8dAqx5exQiK6C3me4ZtyBCMFKgRJchXmnf99g-sgtE79QgdhYhLGK65GjksN0SP3mnZSz3YRW6yV7CwD69J1VSnuSkt_KLrx8Mq2QjK1zIzCcJehO8VVVKuQ_2wro9EEKkj-9e3NP-qFBA2Uvapar_xbOvEkR4KtuMTznr4KWKkNqApnOYZx_uBEmzpoUpHkrpT1gDMLuSMIhrexP2mOfEULWCVbWZLGWDR9GWgMhw0k79Y6u3ujhHnS9DmN7aSfXrMMYvP24qgx4BY7y_4lAqXmeW5rzqTz9QABNEGjqspPm_ZtqdWmmZXFxaNwHJkw4pzwicR2IrPwRLHx18FANJplDnssLz_X--8y2Z5bLktuCemgv_hU7QfF3eCTpcqtaNYcCEcWF5r6Bn9srutPD5CBSF8pNOX05evjhwD6VdO3CCHYyF7Y4tHdSwyLMmmIXZLlJkzPsOIMVNIOQnC8deBlEriGp4jTogjeIvdmcRupDES0Q4L33Bo-OI6C.bDL05PXt-bjgHqicvuQq1A"
-# jwt.exceptions.DecodeError: Invalid payload padding
-#refresh_token_decoded = decode_cognito_oauth_token_jwt(refresh_token, verify_signature=False)
-#print('REFRESH_TOKEN_DECODED')
-#print(refresh_token_decoded)
+    :param token: Decoded JWT token from the /oauth2/token endpoint.
+    :returns: JWT-encoded "authtoken" dictionary suitable for cookie-ing the authenticated user.
+    """
+    config = get_cognito_oauth_config()
+    authtoken = {}
+#   authtoken = {
+#       "authenticated": True,
+#       "authenticated_at": token.get("iat"),
+#       "authenticated_until": jwt_expires_at,
+#       "user": email,
+#       "user_verified": jwt_decoded.get("email_verified"),
+#       "first_name": first_name,
+#       "last_name": last_name,
+#       "allowed_envs": allowed_envs,
+#       "known_envs": self._envs.get_known_envs(),
+#       "default_env": self._envs.get_default_env(),
+#       "initial_env": env,
+#       "domain": domain,
+#       "site": "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront",
+#       "authenticator": authenticator
+    authtoken_encoded = jwt_encode(authtoken, audience=config["client_id"], secret=config["client_secret"])
+    return authtoken_encoded
