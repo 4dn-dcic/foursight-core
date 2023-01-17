@@ -4,8 +4,15 @@ import requests
 from foursight_core.react.api.encoding_utils import base64_encode, string_to_bytes
 
 def get_cognito_oauth_config(include_secret: bool = False) -> object:
+    """
+    Returns all necessary configuration info for our AWS Coginito authorization server.
+    """
     #
     # TODO: Get this info from safe place.
+    # Need to figure our which pieces go where and if they are per Foursight instance or what et cetera.
+    # I guess it's just the use pool ID, client ID, and domain. 
+    # Do we use one user pool (and associaetd client) for all or one per Foursight instance(s)?
+    # Simpler but probably not technically ideal.
     #
     response = {
         "client_id": "5d586se3r976435167nk8k8s4h",
@@ -23,7 +30,7 @@ def get_cognito_oauth_config(include_secret: bool = False) -> object:
         response["client_secret"] = "8caa9mn0f696ic1utvrg1ni5j48e5kap9l5rm5c785d7c7bdnjn"
     return response
 
-def get_cognito_oauth_token_decoded(request_dict: dict) -> dict:
+def get_cognito_oauth_token(request_dict: dict) -> dict:
     response = call_cognito_oauth_token_endpoint(request_dict)
     token = response.get("id_token")
     decoded_token = decode_cognito_oauth_token_jwt(token)

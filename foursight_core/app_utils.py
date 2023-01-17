@@ -538,9 +538,9 @@ class AppUtilsCore(ReactApi, Routes):
         #return
 
         def try_cognito2():
-            from .react.api.cognito import get_cognito_oauth_token_decoded
+            from .react.api.cognito import get_cognito_oauth_token
             print('xyzzy/123')
-            xyzzy = get_cognito_oauth_token_decoded(req_dict)
+            xyzzy = get_cognito_oauth_token(req_dict)
             print('xyzzy/234')
             print(xyzzy)
             pass
