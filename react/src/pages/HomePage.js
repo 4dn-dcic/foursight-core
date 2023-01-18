@@ -11,49 +11,8 @@ import useHeader from '../hooks/Header';
 import useReadOnlyMode from '../hooks/ReadOnlyMode';
 import ReadOnlyModeComponent from '../hooks/ReadOnlyModeComponent';
 import Cookie from '../utils/Cookie';
-import { withAuthenticator, Button, Heading } from '@aws-amplify/ui-react';
-import '@aws-amplify/ui-react/styles.css';
-import awsExports from '../aws-config';
-import { Auth } from '@aws-amplify/auth'
-import Amplify from "aws-amplify";
-import { CognitoHostedUIIdentityProvider } from "@aws-amplify/auth";
-
 
 const HomePage = (props) => {
-
-        useEffect(() => {
-            console.log('DO TEST SIGNUP')
-            console.log(CognitoHostedUIIdentityProvider)
-            const email = "david_michaels@hms.harvard.edu";
-            const password = ".0Harvard";
-            const firstName = "David";
-            const lastName = "Michaels";
-            const signUpData = {
-                username: email,
-                password,
-                attributes: { given_name: firstName, family_name: lastName },
-            }
-            // Auth.signUp(signUpData);
-            const signInData = {
-                usename: email,
-                password
-            };
-            console.log('signInData')
-            console.log(signInData)
-            console.log('signInData/b')
-            // Auth.signIn(email, password);
-            console.log(Auth.federatedSignIn)
-            //Auth.federatedSignIn({ provider: "Google", oauth: { redirectSignIn: "http://localhost:8000" } });
-            //Auth.federatedSignIn({ provider: CognitoHostedUIIdentityProvider.Google });
-            //Auth.federatedSignIn({ provider: "Googlex" });
-            //Auth.federatedSignIn({ provider: "Google" });
-        }, []);
-
-        function federatedSignIn() {
-            //Auth.federatedSignIn({ provider: CognitoHostedUIIdentityProvider.Google });
-            //Auth.federatedSignIn({ provider: "Google" });
-            Auth.federatedSignIn();
-        }
 
     const header = useHeader();
     const versionsToolTip = (Env.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + ": "
@@ -69,7 +28,6 @@ const HomePage = (props) => {
     const [ showAccountSummary, setShowAccountSummary ] = useState(false);
 
     return <>
-<span className="pointer" onClick={federatedSignIn}>SIGNIN</span>
         <div className="container" style={{marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
                 <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})</span></b>
