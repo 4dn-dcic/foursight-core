@@ -19,10 +19,11 @@ def get_cognito_oauth_config() -> dict:
     # Simpler but probably not technically ideal.
     #
     response = {
-        "client_id": "5d586se3r976435167nk8k8s4h",
-        "user_pool_id": "us-east-1_h6I5IqQSs",
+        "region": "us-east-1",
         "domain": "foursightc.auth.us-east-1.amazoncognito.com",
-        "scope": "openid email profile",
+        "user_pool_id": "us-east-1_h6I5IqQSs",
+        "client_id": "5d586se3r976435167nk8k8s4h",
+        "scope": [ "openid", "email", "profile" ],
         "connections": [ "Google" ],
       # "callback": "http://localhost:8000/api/react/oauth/callback" # TODO: /api/react/oauth/cognito/callback
       # "callback": "http://localhost:8000/callback" # TODO: /api/react/oauth/cognito/callback
@@ -263,8 +264,7 @@ def _get_cognito_oauth_signing_key_client() -> object:
     cognito_jwks_url = f"https://cognito-idp.us-east-1.amazonaws.com/{user_pool_id}/.well-known/jwks.json"
     return PyJWKClient(cognito_jwks_url)
 
-def create_cognito_authtoken(token: dict, env: str, envs: Envs, domain: str, site: str,
-                             authtoken_client_id: str, authtoken_client_secret: str) -> Tuple[dict, int]:
+def create_cognito_authtoken(token: dict, env: str, envs: Envs, domain: str, site: str) -> Tuple[dict, int]:
     """
     Creates from the given (decoded) JWT token, retrieved from the /oauth2/token endpoint, an
     authtoken suitable for use as a cookie to indicate the user has been authenticated (logged in).
@@ -275,9 +275,6 @@ def create_cognito_authtoken(token: dict, env: str, envs: Envs, domain: str, sit
     :param token: Decoded JWT token from the /oauth2/token endpoint.
     :returns: JWT-encoded "authtoken" dictionary suitable for cookie-ing the authenticated user.
     """
-    config = get_cognito_oauth_config()
-    client_id = config["client_id"]
-    client_secret = _get_cognito_oauth_client_secret()
     email = token.get("email")
     allowed_envs, first_name, last_name = envs.get_user_auth_info(email)
     expires_at = token.get("exp")
@@ -287,7 +284,7 @@ def create_cognito_authtoken(token: dict, env: str, envs: Envs, domain: str, sit
         "authenticated": True,
         "authenticated_at": token.get("iat"),
         "authenticated_until": expires_at,
-        "user": token.get("email"),
+        "user": email,
         "user_verified": token.get("email_verified"),
         "first_name": token.get("first_name"),
         "last_name": token.get("last_name"),
@@ -298,5 +295,4 @@ def create_cognito_authtoken(token: dict, env: str, envs: Envs, domain: str, sit
         "domain": domain,
         "site": site
     }
-    authtoken_encoded = jwt_encode(authtoken, audience=authtoken_client_id, secret=authtoken_client_secret)
-    return authtoken_encoded, expires_at
+    return authtoken, expires_at

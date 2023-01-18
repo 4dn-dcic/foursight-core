@@ -10,7 +10,6 @@ from ...app import app
 from ...route_prefixes import ROUTE_PREFIX
 from .auth import Auth
 from .auth0_config import Auth0Config
-from .cognito import create_cognito_authtoken, retrieve_cognito_oauth_token
 from .cookie_utils import create_set_cookie_string, read_cookie
 from .datetime_utils import convert_datetime_to_time_t
 from .envs import Envs
@@ -175,53 +174,6 @@ class ReactApiBase:
         redirect_url = self.get_redirect_url(request, env, domain, context)
         return self.create_redirect_response(location=redirect_url, headers={"Set-Cookie": authtoken_cookie})
 
-    @staticmethod
-    def is_cognito_first_authentication_callback(request: dict) -> bool:
-        """
-        Returns True iff the given request is the Cognito authentication callback request.
-        """
-        args = get_request_args(request)
-        return args.get("code") is not None and args.get("state") is not None and args.get("code_verifier") is None
-
-    @staticmethod
-    def is_cognito_second_authentication_callback(request: dict) -> bool:
-        """
-        Returns True iff the given request is the Cognito authentication callback request.
-        """
-        args = get_request_args(request)
-        return args.get("code") is not None and args.get("code_verifier") is not None
-
-    @staticmethod
-    def get_site_name() -> str:
-        return "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront"
-
-    def reactapi_cognito_callback(self, request: dict) -> Response:
-
-        if self.is_cognito_first_authentication_callback(request):
-            headers = {"Content-Type": "text/html"}
-            html = "<html><head><script>var q=new URLSearchParams(window.location.search);var c=q.get('code');var v=sessionStorage.getItem('ouath_pkce_key');window.location.href=`http://localhost:8000/api/reactapi/cognito/callback?code=${c}&code_verifier=${v}`;</script></head></html>"
-            return Response(status_code=200, body=html, headers=headers)
-
-        domain, context = app.core.get_domain_and_context(request)
-        site = self.get_site_name()
-        env = self._envs.get_default_env()
-
-        token = retrieve_cognito_oauth_token(request)
-
-        # Sic. For now use Auth0 client ID and secret to ENCODE
-        # the JWT we use for the authtokn even for Cognito. 
-        authtoken_client_id = self._auth0_config.get_client()
-        authtoken_client_secret = self._auth0_config.get_secret()
-        authtoken, expires_at = create_cognito_authtoken(token, env, self._envs, domain, site, authtoken_client_id, authtoken_client_secret)
-
-        authtoken_cookie = create_set_cookie_string(request, name="authtoken",
-                                                    value=authtoken,
-                                                    domain=domain,
-                                                    expires=expires_at, http_only=False)
-        redirect_url = self.get_redirect_url(request, env, domain, context)
-
-        return self.create_redirect_response(location=redirect_url, headers={"Set-Cookie": authtoken_cookie})
-
     def react_authorize(self, request: dict, env: Optional[str]) -> dict:
         """
         Exposed for call from "route" decorator for endpoint authentication protection.
@@ -258,6 +210,10 @@ class ReactApiBase:
 
     def is_foursight_fourfront(self) -> bool:
         return app.core.APP_PACKAGE_NAME == "foursight"
+
+    @staticmethod
+    def get_site_name() -> str:
+        return "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront"
 
     def cache_clear(self) -> None:
         self._auth.cache_clear()

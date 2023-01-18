@@ -29,14 +29,16 @@ from .aws_stacks import (
     aws_stacks_cache_clear
 )
 from .checks import Checks
-from .cognito import get_cognito_oauth_config
-from .cookie_utils import create_delete_cookie_string
+from .cognito import create_cognito_authtoken, get_cognito_oauth_config, retrieve_cognito_oauth_token
+from .cookie_utils import create_delete_cookie_string, create_set_cookie_string
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
 from .encryption import Encryption
 from .encoding_utils import base64_decode_to_json
 from .gac import Gac
+from .jwt_utils import jwt_encode
 from .misc_utils import (
     get_base_url,
+    get_request_arg,
     is_running_locally,
     memoize,
     sort_dictionary_by_case_insensitive_keys
@@ -199,6 +201,30 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_cognito_config(self, request: dict) -> Response:
         return self.create_success_response(get_cognito_oauth_config())
+
+    def reactapi_cognito_callback(self, request: dict) -> Response:
+        return Response(status_code=200, body="<b>HELO</b>", headers={"Content-Type": "text/html"})
+        if not get_request_arg(request, "code_verifier"):
+            # First callback does NOT have code_verifier, needed for the (POST) /oauth2/token call.
+            # This is stored in the ouath_pkce_key (sic) property in browser session storage; it got
+            # there via frontend/client code initiating authentication, i.e. Amplify.federatedSignIn).
+            # So we redirect to frontend to pick up this data and redirect back here (a second time).
+            html = "<html><head><script>var q=new URLSearchParams(window.location.search);var c=q.get('code');var v=sessionStorage.getItem('ouath_pkce_key');window.location.href=`http://localhost:8000/api/reactapi/cognito/callback?code=${c}&code_verifier=${v}`;</script></head><body>Logging in ... One moment please ...</body></html>"
+            return Response(status_code=200, body=html, headers={"Content-Type": "text/html"})
+        domain, context = app.core.get_domain_and_context(request)
+        site = self.get_site_name()
+        env = self._envs.get_default_env()
+        token = retrieve_cognito_oauth_token(request)
+        authtoken, expires_at = create_cognito_authtoken(token, env, self._envs, domain, site)
+        # Sic. For now just use Auth0 client ID and secret to JWT encode
+        # the authtoken, for easily compatibilty with existing Auth0 code.
+        authtoken_encoded = jwt_encode(authtoken, audience=self._auth0_config.get_client(),
+                                                  secret=self._auth0_config.get_secret())
+        authtoken_cookie = create_set_cookie_string(request, name="authtoken", value=authtoken_encoded,
+                                                    domain=domain, expires=expires_at, http_only=False)
+        redirect_url = self.get_redirect_url(request, env, domain, context)
+        headers = {"Set-Cookie": authtoken_cookie}
+        return self.create_redirect_response(location=redirect_url, headers=headers)
 
     def reactapi_logout(self, request: dict, env: str) -> Response:
         """

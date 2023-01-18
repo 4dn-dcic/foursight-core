@@ -379,45 +379,14 @@ class AppUtilsCore(ReactApi, Routes):
         logger.error("foursight_core.check_authorization: Returning False ")
         return False
 
-    @staticmethod
-    def try_cognito2(req_dict: dict):
-        from .react.api.cognito import retrieve_cognito_oauth_token
-        print('xyzzy/123')
-        xyzzy = retrieve_cognito_oauth_token(req_dict)
-        print('xyzzy/234')
-        print(xyzzy)
-        pass
-
     def auth0_callback(self, request, env):
-        print('xyzzy/auth0_callback/enter')
         req_dict = request.to_dict()
-        print(req_dict)
-        print(env)
-#       if False and self.is_cognito_first_authentication_callback(req_dict):
-#           domain, context = self.get_domain_and_context(req_dict)
-#           print('xyzzy/auth0_callback/is_cognito_authentication_callback/FIRST-TRUE')
-#           headers = {"Content-Type": "text/html"}
-#           # html = "<html><head><script>var q = new URLSearchParams(window.location.search); var code = q.get(\"code\"); var code_verifier = sessionStorage.getItem(\"ouath_pkce_key\"); var url = `http://localhost:8000/callback?code=${code}&code_verifier=${code_verifier}`; console.log('xyzzycallback'); console.log(url); window.location.href = url;</script></head></html>"
-#           # html = "<html><head><script>var q = new URLSearchParams(window.location.search); var code = q.get(\"code\"); var code_verifier = sessionStorage.getItem(\"ouath_pkce_key\"); var url = `http://localhost:8000/callback?code=${code}&code_verifier=${code_verifier}`; console.log('xyzzycallback'); console.log(url);</script></head></html>"
-#           html = "<html><head><script>var q=new URLSearchParams(window.location.search);var c=q.get('code');var v=sessionStorage.getItem('ouath_pkce_key');window.location.href=`http://localhost:8000/callback?code=${c}&code_verifier=${v}`;</script></head></html>"
-#           return Response(status_code=200, body=html, headers=headers)
-#       if False and self.is_cognito_second_authentication_callback(req_dict):
-#           print('xyzzy/auth0_callback/is_cognito_authentication_callback/SECOND-TRUE')
-#           return self.react_cognito_authentication_callback(req_dict, env)
-#           # self.try_cognito2(req_dict)
-#           # return
         if self.is_react_authentication_callback(req_dict):
             return self.react_authentication_callback(req_dict, env)
         domain, context = self.get_domain_and_context(req_dict)
-        print('xyzzy/auth0_callback/a')
-        print(domain)
-        print(context)
         # extract redir cookie
         cookies = req_dict.get('headers', {}).get('cookie')
         redir_url = context + 'view/' + env
-        print('xyzzy/auth0_callback/b')
-        print(cookies)
-        print(redir_url)
 
 #       for cookie in cookies.split(';'):
 #           name, val = cookie.strip().split('=')
@@ -435,18 +404,11 @@ class AppUtilsCore(ReactApi, Routes):
 
         resp_headers = {'Location': redir_url}
         params = req_dict.get('query_params')
-        print('xyzzy/auth0_callback/c')
-        print(resp_headers)
-        print(params)
         if not params:
             return self.forbidden_response()
         auth0_code = params.get('code', None)
         auth0_client = self.get_auth0_client_id(env)
         auth0_secret = self.get_auth0_secret(env)
-        print('xyzzy/auth0_callback/d')
-        print(auth0_code)
-        print(auth0_client)
-        print(auth0_secret)
         if not (domain and auth0_code and auth0_client and auth0_secret):
             return Response(status_code=301, body=json.dumps(resp_headers), headers=resp_headers)
         if self.is_running_locally(req_dict):
@@ -462,108 +424,6 @@ class AppUtilsCore(ReactApi, Routes):
         }
         json_payload = json.dumps(payload)
         headers = {'content-type': "application/json"}
-        print('xyzzy/auth0_callback/post')
-        print(self.OAUTH_TOKEN_URL)
-        print(json_payload)
-        print(headers)
-
-        #xyzzy
-        def try_cognito():
-            from .react.api.encoding_utils import base64_encode
-            # 3q9rslg0b6rs0omvlibq17ev22:h08lrp495rv27i59ic30l1mbl7oaf2q447t2cjulcco9tnfnnfh
-            # client_id = "3q9rslg0b6rs0omvlibq17ev22"
-            # client_secret = "h08lrp495rv27i59ic30l1mbl7oaf2q447t2cjulcco9tnfnnfh"
-            # cognito_oauth2_token_url = "https://testfoursight3.auth.us-east-1.amazoncognito.com/oauth2/token"
-            client_id = "5d586se3r976435167nk8k8s4h"
-            client_secret = "8caa9mn0f696ic1utvrg1ni5j48e5kap9l5rm5c785d7c7bdnjn"
-            cognito_oauth2_token_url = "https://foursightc.auth.us-east-1.amazoncognito.com/oauth2/token"
-            args = req_dict.get("query_params") or {}
-            args_code = args.get("code")
-            args_state = args.get("state")
-            args_oauth_state = args.get("oauth_state")
-            args_ouath_pkce_key = args.get("ouath_pkce_key")
-            code_verifier = args_ouath_pkce_key
-            p = {
-                "grant_type": "authorization_code",
-                "client_id": client_id,
-                "client_secret": client_secret,
-                "code": auth0_code,
-                "code_verifier": code_verifier,
-              # "scope": "email openid profile",
-              # "redirect_uri": "http://localhost:8000/callback"
-              # "redirect_uri": "http://localhost:3000/callback" # OK
-              # "redirect_uri": "http://localhost:3000/api/oauth/callback"
-                "redirect_uri": "http://localhost:8000/api/react/oauth/callback"
-            }
-            #p = json.dumps(p)
-
-            pp = (f"grant_type=authorization_code&" +
-                  f"client_id={client_id}&" +
-                  f"client_secret={client_secret}&" +
-                  f"code={auth0_code}&" +
-                  f"code_verifier={code_verifier}&" +
-                  f"redirect_uri=http://localhost:8000/api/react/oauth/callback")
-
-            #import urllib
-            #p = urllib.parse.quote(json.dumps(p, ensure_ascii=False).encode('utf-8'))
-            #p = p.replace('%20','')
-
-            base64_encoded_client_id_and_secret = base64_encode(f"{client_id}:{client_secret}")
-            h = {
-                "Content-Type": "application/x-www-form-urlencoded",
-                # "Content-Type": "application/json", -> HTTP 405
-                "Authorization": f"Basic {base64_encoded_client_id_and_secret}"
-            }
-            print('xyzzy/calling-cognito...')
-            print(base64_encoded_client_id_and_secret)
-            print(json.dumps(p))
-            print(p)
-            print(pp)
-            print(h)
-
-            # curl -X POST \
-            # "https://foursightc.auth.us-east-1.amazoncognito.com/oauth2/token" \
-            # --header 'Authorization: Basic NWQ1ODZzZTNyOTc2NDM1MTY3bms4azhzNGg6OGNhYTltbjBmNjk2aWMxdXR2cmcxbmk1ajQ4ZTVrYXA5bDVybTVjNzg1ZDdjN2Jkbmpu' \
-            # --header 'Content-Type: application/x-www-form-urlencoded' \
-            # --data-urlencode 'grant_type=authorization_code' \
-            # --data-urlencode 'client_id=5d586se3r976435167nk8k8s4h' \
-            # --data-urlencode 'client_secret=8caa9mn0f696ic1utvrg1ni5j48e5kap9l5rm5c785d7c7bdnjn' \
-            # --data-urlencode 'code=e42aef3d-0262-46ed-95a9-5081d5eeca34' \
-            # --data-urlencode 'code_verifier=Kr1V7nBl2R7HyZpZuo5rNFXYXBQV20rL4XLFdfM1rwbBnkyj4fofafhApPMdBDmYrzc7XeeT6r2Bf5Icy1f3xZbtC4Df6i3gngSuNCwHOxqmADVqR5eBitbmYoHFIKGH' \
-            # --data-urlencode 'redirect_uri=http://localhost:8000/api/react/oauth/callback' \
-
-            # curl -X POST https://foursightc.auth.us-east-1.amazoncognito.com/oauth2/token --header 'Authorization: Basic NWQ1ODZzZTNyOTc2NDM1MTY3bms4azhzNGg6OGNhYTltbjBmNjk2aWMxdXR2cmcxbmk1ajQ4ZTVrYXA5bDVybTVjNzg1ZDdjN2Jkbmpu' --header 'Content-Type: application/x-www-form-urlencoded' --data 'grant_type=authorization_code&client_id=5d586se3r976435167nk8k8s4h&client_secret=8caa9mn0f696ic1utvrg1ni5j48e5kap9l5rm5c785d7c7bdnjn&code=34cae865-e1d7-41f2-9a6f-7edc3d0cce24&code_verifier=vafd8jOTW4acloaHV4VgUlyfo1ANT2xG5aW5jDng4M13FKOLBDL7k4ZwUQjImUSwwFXT0jSeUykLEvFuVK9HIHWV2gD6M8LEzv3cHYnfqPT8wWeLALuUHtT1MpOo7gHl&redirect_uri=http://localhost:8000/api/react/oauth/callback'
-
-            print(f"curl -X POST https://foursightc.auth.us-east-1.amazoncognito.com/oauth2/token --header 'Authorization: Basic {base64_encoded_client_id_and_secret}' --header 'Content-Type: application/x-www-form-urlencoded' --data '{pp}'")
-
-            cognito_auth_token_response = requests.post(cognito_oauth2_token_url, data=p, headers=h)
-            #c = requests.post(cognito_oauth2_token_url, data=json.dumps(p), headers=h)
-            #c = requests.post(cognito_oauth2_token_url, data=pp, headers=h)
-            #c = requests.post(cognito_oauth2_token_url, data=p, headers=headers)
-            #c = requests.post(cognito_oauth2_token_url, data=p, headers=headers)
-            print('xyzzy/calling-cognito/after...')
-            print(cognito_auth_token_response)
-            print(cognito_auth_token_response.content)
-            print(cognito_auth_token_response.status_code)
-            pass
-            print('xyzzy/calling-cognito/jwt...')
-            cognito_auth_token_response_json = cognito_auth_token_response.json()
-            cognito_auth_token_jwt = cognito_auth_token_response_json.get("id_token")
-            print('xyzzy/calling-cognito/id_token...')
-            print(cognito_auth_token_jwt)
-            from .react.api.jwt_utils import jwt_decode
-            cognito_auth_token_jwt_decoded = jwt_decode(cognito_auth_token_jwt, client_id, client_secret)
-            print('xyzzy/calling-cognito/id_token/decoded...')
-            print(cognito_auth_token_jwt_decoded)
-
-        #try_cognito()
-        #return
-
-        # self.try_cognito2(req_dict)
-        return
-
-        #xyzzy
-
         res = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
         id_token = res.json().get('id_token', None)
         if id_token:
