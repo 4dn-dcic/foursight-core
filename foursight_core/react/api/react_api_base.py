@@ -125,6 +125,7 @@ class ReactApiBase:
         return get_request_arg(request, "react") is not None
 
     def react_authentication_callback(self, request: dict, env: str) -> Response:
+        print('xyzzy/REACT_AUTHENTICATION_CALLBACK..............................................................................................')
         """
         Called by the main authentication callback function (app_utils.auth0_callback)
         if the above is_react_authentication_callback returns True. Performs the actual

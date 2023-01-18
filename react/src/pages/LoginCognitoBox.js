@@ -29,7 +29,8 @@ import { Auth as AmplifyAuth } from '@aws-amplify/auth'
 
 export const LoginCognitoBox = () => {
 
-    let { environ } = useParams();
+    const { environ } = useParams();
+    const header = useHeader();
 
     const config = useFetch(Server.Url("/cognito/config", false),
     {
@@ -47,17 +48,18 @@ export const LoginCognitoBox = () => {
                     responseType: "code"
                 }
             };
+                console.log('cognito-config')
+                console.log(configuration)
             AmplifyAuth.configure(configuration);
         }
     });
 
     function signinWithGoogle() {
-        Cookie.Set("env", environ);
+        Cookie.Set("env", Env.PreferredName(environ, header));
         AmplifyAuth.federatedSignIn({ provider: "Google" });
     }
 
     function signinWithGitHub() {
-        Cookie.Set("env", environ);
         window.alert("Sign in with GitHub is not yet supported.");
     }
 

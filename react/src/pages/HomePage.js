@@ -11,6 +11,7 @@ import useHeader from '../hooks/Header';
 import useReadOnlyMode from '../hooks/ReadOnlyMode';
 import ReadOnlyModeComponent from '../hooks/ReadOnlyModeComponent';
 import Cookie from '../utils/Cookie';
+import Path from '../utils/Path';
 
 const HomePage = (props) => {
 

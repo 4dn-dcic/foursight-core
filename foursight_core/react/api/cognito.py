@@ -1,12 +1,15 @@
 import jwt as jwtlib
 from jwt import PyJWKClient
 import requests
+import os
 from typing import Tuple
 from foursight_core.react.api.encoding_utils import base64_encode, string_to_bytes
 from foursight_core.react.api.jwt_utils import jwt_encode
 from foursight_core.react.api.envs import Envs
+from foursight_core.react.api.gac import Gac
+from foursight_core.react.api.misc_utils import get_request_origin, memoize
 
-def get_cognito_oauth_config() -> dict:
+def get_cognito_oauth_config(request: dict) -> dict:
     """
     Returns all necessary configuration info for our AWS Coginito authentication server.
     :returns: Dictionary containing AWS Cognito configuration info.
@@ -18,7 +21,7 @@ def get_cognito_oauth_config() -> dict:
     # Do we use one user pool (and associaetd client) for all or one per Foursight instance(s)?
     # Simpler but probably not technically ideal.
     #
-    response = {
+    obsolete_response = {
         "region": "us-east-1",
         "domain": "foursightc.auth.us-east-1.amazoncognito.com",
         "user_pool_id": "us-east-1_h6I5IqQSs",
@@ -30,13 +33,34 @@ def get_cognito_oauth_config() -> dict:
       # "callback": "http://localhost:8000/api/reactapi/cognito/callback"
         "callback": "http://localhost:3000/api/react/cognito/callback"
     }
-    return response
 
-def _get_cognito_oauth_client_secret() -> dict:
+    config = _get_cognito_oauth_config_base()
+    config["callback"] = f"{get_request_origin(request)}/api/react/cognito/callback"
+    return config
+
+@memoize
+def _get_cognito_oauth_config_base() -> dict:
+    domain = os.environ.get("FOURSIGHT_COGNITO_DOMAIN", Gac.get_secret_value("COGNITO_DOMAIN"))
+    user_pool_id = os.environ.get("FOURSIGHT_COGNITO_USER_POOL_ID", Gac.get_secret_value("COGNITO_USER_POOL_ID"))
+    client_id = os.environ.get("FOURSIGHT_COGNITO_CLIENT_ID", Gac.get_secret_value("COGNITO_CLIENT_ID"))
+    return {
+        "region": "us-east-1",
+        "domain": domain,
+        "user_pool_id": user_pool_id,
+        "client_id": client_id,
+        "scope": [ "openid", "email", "profile" ],
+        "connections": [ "Google" ]
+    }
+
+@memoize
+def _get_cognito_oauth_config_client_secret() -> dict:
     #
     # This is a temporary test account - no harm in checking in.
     #
-    return "8caa9mn0f696ic1utvrg1ni5j48e5kap9l5rm5c785d7c7bdnjn"
+    client_secret = os.environ.get("FOURSIGHT_COGNITO_CLIENT_SECRET", Gac.get_secret_value("COGNITO_CLIENT_SECRET"))
+    if not client_secret:
+        client_secret = "8caa9mn0f696ic1utvrg1ni5j48e5kap9l5rm5c785d7c7bdnjn"
+    return client_secret
 
 def retrieve_cognito_oauth_token(request: dict) -> dict:
     """
@@ -107,7 +131,7 @@ def _call_cognito_oauth_token_endpoint(request: dict) -> dict:
     print(args)
     print(code)
     print(code_verifier)
-    data = _get_cognito_oauth_token_endpoint_data(code=code, code_verifier=code_verifier)
+    data = _get_cognito_oauth_token_endpoint_data(request, code=code, code_verifier=code_verifier)
     print('xyzzy/_call_cognito_oauth_token_endpoint/2')
     #
     # Note that for the /oauth2/token endpoint call we need EITHER this authorization
@@ -131,6 +155,7 @@ def _call_cognito_oauth_token_endpoint(request: dict) -> dict:
     if cognito_auth_token_response.status_code != 200:
         raise Exception("Invalid response from /oauth2/token")
     cognito_auth_token_response_json = cognito_auth_token_response.json()
+    print(cognito_auth_token_response_json)
     return cognito_auth_token_response_json
 
 def _get_cognito_oauth_token_endpoint_url() -> str:
@@ -139,7 +164,7 @@ def _get_cognito_oauth_token_endpoint_url() -> str:
     Cognito configuration dependencies: domain.
     :returns: URL for /oauth2/token endpoint.
     """
-    config = get_cognito_oauth_config()
+    config = _get_cognito_oauth_config_base()
     domain = config["domain"]
     return f"https://{domain}/oauth2/token"
 
@@ -150,12 +175,12 @@ def _get_cognito_oauth_token_endpoint_authorization() -> dict:
     Cognito configuration dependencies: client ID, client secret.
     :returns: Authorization header value for /oauth2/token endpoint.
     """
-    config = get_cognito_oauth_config()
+    config = _get_cognito_oauth_config_base()
     client_id = config["client_id"]
-    client_secret = _get_cognito_oauth_client_secret()
+    client_secret = _get_cognito_oauth_config_client_secret()
     return base64_encode(f"{client_id}:{client_secret}")
 
-def _get_cognito_oauth_token_endpoint_data(code: str, code_verifier: str) -> dict:
+def _get_cognito_oauth_token_endpoint_data(request: dict, code: str, code_verifier: str) -> dict:
     """
     Returns the data (dictionary) suitable as the payload for a POST to the /oauth2/token
     endpoint, given an authorization code and associated code_verifier passed to our
@@ -167,7 +192,7 @@ def _get_cognito_oauth_token_endpoint_data(code: str, code_verifier: str) -> dic
     :param code_verifier: Value passed to our backend authentication callback.
     :returns: Data suitable for POST payload for /oauth2/token endpoint.
     """
-    config = get_cognito_oauth_config()
+    config = get_cognito_oauth_config(request)
     client_id = config["client_id"]
     callback = config["callback"]
     return {
@@ -234,7 +259,7 @@ def _decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, ver
     # the JWT as we had to do for Auth0; i.e. this JWT is publicly VERIFIABLE by anyone; which
     # I suppose is reasonable; being a JWT, it is ALREADY publicly READABLE by anyone.
     #
-    config = get_cognito_oauth_config()
+    config = _get_cognito_oauth_config_base()
     client_id = config["client_id"]
     signing_key = _get_cognito_oauth_signing_key(jwt)
     options = {
@@ -271,7 +296,7 @@ def _get_cognito_oauth_signing_key_client() -> object:
 
     :returns: Object suitable for extracting a signing key from a JWT.
     """
-    config = get_cognito_oauth_config()
+    config = _get_cognito_oauth_config_base()
     user_pool_id = config["user_pool_id"]
     cognito_jwks_url = f"https://cognito-idp.us-east-1.amazonaws.com/{user_pool_id}/.well-known/jwks.json"
     return PyJWKClient(cognito_jwks_url)
@@ -298,8 +323,8 @@ def create_cognito_authtoken(token: dict, env: str, envs: Envs, domain: str, sit
         "authenticated_until": expires_at,
         "user": email,
         "user_verified": token.get("email_verified"),
-        "first_name": token.get("first_name"),
-        "last_name": token.get("last_name"),
+        "first_name": token.get("given_name") or first_name,
+        "last_name": token.get("family_name") or last_name,
         "allowed_envs": allowed_envs,
         "known_envs": envs.get_known_envs(),
         "default_env": envs.get_default_env(),

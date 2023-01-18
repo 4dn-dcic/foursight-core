@@ -200,9 +200,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(self._auth0_config.get_config_data())
 
     def reactapi_cognito_config(self, request: dict) -> Response:
-        return self.create_success_response(get_cognito_oauth_config())
+        return self.create_success_response(get_cognito_oauth_config(request))
 
-    def reactapi_cognito_callback(self, request: dict) -> Response:
+    def obsolete_reactapi_cognito_callback(self, request: dict) -> Response:
         if not get_request_arg(request, "code_verifier"):
             # First callback does NOT have code_verifier, needed for the (POST) /oauth2/token call.
             # This is stored in the ouath_pkce_key (sic) property in browser session storage; it got
@@ -225,7 +225,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         headers = {"Set-Cookie": authtoken_cookie}
         return self.create_redirect_response(location=redirect_url, headers=headers)
 
-    def reactapi_cognito_login(self, request: dict) -> Response:
+    def reactapi_cognito_callback(self, request: dict) -> Response:
         # API version of reactapi_cognito_callback.
         domain, context = app.core.get_domain_and_context(request)
         site = self.get_site_name()

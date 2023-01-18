@@ -167,6 +167,14 @@ const LoginPage = (props) => {
                         <small>Click <Link to="/env"><u>here</u></Link> to go the the <Link to="/env">Environments Page</Link> to select another environment.</small>
                     </div>
                 </>}
+                { (Auth.Token()?.authentication === "cognito") && <>
+                    <div className="box error thickborder" style={{marginTop:"6pt",padding:"6pt",color:"darkred",fontSize:"small"}}>
+                        <img src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
+                        <span style={{position:"relative",top:"1pt"}}>
+                            Logged in via new AWS <b>Cognito</b> support.
+                        </span>
+                    </div>
+                </> }
                 { showingAuthToken && <>
                     <div className="box" style={{paddingLeft:"8pt",marginTop:"8pt",fontSize:"small"}}>
                         <span id="tooltip-login-cookie-size" onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer"}}><b>AuthToken</b> from Cookie</span>

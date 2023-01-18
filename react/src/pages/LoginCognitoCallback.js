@@ -17,11 +17,13 @@ import Image from '../utils/Image';
 import Json from '../utils/Json';
 import LiveTime from '../LiveTime';
 import Logout from '../utils/Logout';
+import Str from '../utils/Str';
 import Server from '../utils/Server';
 import Tooltip from '../components/Tooltip';
 import Yaml from '../utils/Yaml';
 import Page from '../Page';
 import Styles from '../Styles';
+import Path from '../utils/Path';
 import { StandardSpinner } from '../Spinners';
 import { LoggedInUser, Link } from '../Components';
 import { LoginCognitoBoxWrapper } from './LoginCognitoBox';
@@ -38,21 +40,34 @@ const LoginCognitoCallback = (props) => {
 
     const navigate = useNavigate();
 
-    const url = `${Server.Url("/cognito/login", false)}?code=${code}&code_verifier=${code_verifier}&state=${state}&state_verifier=${state_verifier}`;
+    const url = `${Server.Url("/cognito/callback", false)}?code=${code}&code_verifier=${code_verifier}&state=${state}&state_verifier=${state_verifier}`;
 
-    const login = useFetch(url, {
+    const callback = useFetch(url, {
         onDone: (response) => {
             const authtoken = response.data?.authtoken;
             const expires = response.data?.expires;
-            Cookie.Set("authtoken", authtoken);
-            const env = Cookie.Get("env");
-            navigate(Client.Path(`/aws/infrastructure`, env), { replace: true })
+            Cookie.Set("authtoken", authtoken, expires);
+            let redirect_url = Cookie.Redirect();
+            if (Str.HasValue(redirect_url)) {
+                redirect_url = Path.FromUrl(redirect_url);
+            }
+            else {
+                redirect_url = Cookie.LastUrl();
+                if (Str.HasValue(redirect_url)) {
+                    redirect_url = Path.FromUrl(redirect_url);
+                }
+                else {
+                    const env = Cookie.Get("env");
+                    redirect_url = Client.Path("/home", env);
+                }
+            }
+            navigate(redirect_url);
         }
     });
 
-    if (login.loading) {
+    if (callback.loading) {
         return <LoginCognitoBoxWrapper>
-            <StandardSpinner condition={login.loading} color={Styles.GetForegroundColor()} bold={false} size={210} label={"Signing in"} />
+            <StandardSpinner condition={callback.loading} color={Styles.GetForegroundColor()} bold={false} size={210} label={"Signing in"} />
         </LoginCognitoBoxWrapper>
     }
 };
