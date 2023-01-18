@@ -9,34 +9,16 @@ from foursight_core.react.api.envs import Envs
 from foursight_core.react.api.gac import Gac
 from foursight_core.react.api.misc_utils import get_request_origin, memoize
 
+
 def get_cognito_oauth_config(request: dict) -> dict:
     """
     Returns all necessary configuration info for our AWS Coginito authentication server.
     :returns: Dictionary containing AWS Cognito configuration info.
     """
-    #
-    # TODO: Get this info from safe place.
-    # Need to figure our which pieces go where and if they are per Foursight instance or what et cetera.
-    # I guess it's just the use pool ID, client ID, and domain. 
-    # Do we use one user pool (and associaetd client) for all or one per Foursight instance(s)?
-    # Simpler but probably not technically ideal.
-    #
-    obsolete_response = {
-        "region": "us-east-1",
-        "domain": "foursightc.auth.us-east-1.amazoncognito.com",
-        "user_pool_id": "us-east-1_h6I5IqQSs",
-        "client_id": "5d586se3r976435167nk8k8s4h",
-        "scope": [ "openid", "email", "profile" ],
-        "connections": [ "Google" ],
-      # "callback": "http://localhost:8000/api/react/oauth/callback" # TODO: /api/react/oauth/cognito/callback
-      # "callback": "http://localhost:8000/callback" # TODO: /api/react/oauth/cognito/callback
-      # "callback": "http://localhost:8000/api/reactapi/cognito/callback"
-        "callback": "http://localhost:3000/api/react/cognito/callback"
-    }
-
     config = _get_cognito_oauth_config_base()
     config["callback"] = f"{get_request_origin(request)}/api/react/cognito/callback"
     return config
+
 
 @memoize
 def _get_cognito_oauth_config_base() -> dict:
@@ -52,6 +34,7 @@ def _get_cognito_oauth_config_base() -> dict:
         "connections": [ "Google" ]
     }
 
+
 @memoize
 def _get_cognito_oauth_config_client_secret() -> dict:
     #
@@ -61,6 +44,7 @@ def _get_cognito_oauth_config_client_secret() -> dict:
     if not client_secret:
         client_secret = "8caa9mn0f696ic1utvrg1ni5j48e5kap9l5rm5c785d7c7bdnjn"
     return client_secret
+
 
 def retrieve_cognito_oauth_token(request: dict) -> dict:
     """
@@ -100,6 +84,7 @@ def retrieve_cognito_oauth_token(request: dict) -> dict:
     token = response.get("id_token")
     decoded_token = _decode_cognito_oauth_token_jwt(token)
     return decoded_token
+
 
 def _call_cognito_oauth_token_endpoint(request: dict) -> dict:
     """
@@ -158,6 +143,7 @@ def _call_cognito_oauth_token_endpoint(request: dict) -> dict:
     print(cognito_auth_token_response_json)
     return cognito_auth_token_response_json
 
+
 def _get_cognito_oauth_token_endpoint_url() -> str:
     """
     Returns the URL for the POST to the /oauth2/token endpoint.
@@ -167,6 +153,7 @@ def _get_cognito_oauth_token_endpoint_url() -> str:
     config = _get_cognito_oauth_config_base()
     domain = config["domain"]
     return f"https://{domain}/oauth2/token"
+
 
 def _get_cognito_oauth_token_endpoint_authorization() -> dict:
     """
@@ -179,6 +166,7 @@ def _get_cognito_oauth_token_endpoint_authorization() -> dict:
     client_id = config["client_id"]
     client_secret = _get_cognito_oauth_config_client_secret()
     return base64_encode(f"{client_id}:{client_secret}")
+
 
 def _get_cognito_oauth_token_endpoint_data(request: dict, code: str, code_verifier: str) -> dict:
     """
@@ -207,6 +195,7 @@ def _get_cognito_oauth_token_endpoint_data(request: dict, code: str, code_verifi
         "code_verifier": code_verifier,
         "redirect_uri": callback
     }
+
 
 def _decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, verify_expiration = True) -> dict:
     """
@@ -268,6 +257,7 @@ def _decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, ver
     }
     return jwtlib.decode(jwt, signing_key, audience=client_id, algorithms=["RS256"], options=options)
 
+
 def _get_cognito_oauth_signing_key(jwt: str) -> object:
     """
     Returns the signing key (object) from the given JWT.
@@ -282,6 +272,7 @@ def _get_cognito_oauth_signing_key(jwt: str) -> object:
     signing_key_client = _get_cognito_oauth_signing_key_client()
     signing_key = signing_key_client.get_signing_key_from_jwt(string_to_bytes(jwt))
     return signing_key.key
+
 
 def _get_cognito_oauth_signing_key_client() -> object:
     """
@@ -300,6 +291,7 @@ def _get_cognito_oauth_signing_key_client() -> object:
     user_pool_id = config["user_pool_id"]
     cognito_jwks_url = f"https://cognito-idp.us-east-1.amazonaws.com/{user_pool_id}/.well-known/jwks.json"
     return PyJWKClient(cognito_jwks_url)
+
 
 def create_cognito_authtoken(token: dict, env: str, envs: Envs, domain: str, site: str) -> Tuple[dict, int]:
     """
@@ -333,3 +325,8 @@ def create_cognito_authtoken(token: dict, env: str, envs: Envs, domain: str, sit
         "site": site
     }
     return authtoken, expires_at
+
+
+def cognito_cache_clear():
+    _get_cognito_oauth_config_base.cache_clear()
+    _get_cognito_oauth_config_client_secret.cache_clear()

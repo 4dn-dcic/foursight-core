@@ -78,7 +78,7 @@ export const LoginCognitoBox = () => {
 export const LoginCognitoBoxWrapper = ({ children }) => {
     return <div className="container" style={{width:"265pt",marginTop:"30pt",marginBottom:"30pt"}}>
         <div style={{background:"#FEFEFE",border:"1px solid var(--box-fg)",border:"2px solid black",borderRadius:"6px",overflow:"hidden",width:"240pt"}}>
-            <div style={{background:"var(--box-fg)",color:"var(--box-bg-lighten)",padding:"8pt 12pt 8pt 12pt",textAlign:"center"}}>
+            <div style={{background:"var(--box-fg)",color:"var(--box-bg)",padding:"8pt 12pt 8pt 12pt",textAlign:"center"}}>
                 <b className="title-font" style={{fontSize:"18pt"}}>FOURSIGHT LOGIN</b>
             </div>
             <div style={{padding:"12pt 6pt 12pt 6pt"}}>

@@ -29,7 +29,7 @@ from .aws_stacks import (
     aws_stacks_cache_clear
 )
 from .checks import Checks
-from .cognito import create_cognito_authtoken, get_cognito_oauth_config, retrieve_cognito_oauth_token
+from .cognito import cognito_cache_clear, create_cognito_authtoken, get_cognito_oauth_config, retrieve_cognito_oauth_token
 from .cookie_utils import create_delete_cookie_string, create_set_cookie_string
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
 from .encryption import Encryption
@@ -1442,6 +1442,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._get_user_institutions.cache_clear()
         aws_network_cache_clear()
         aws_stacks_cache_clear()
+        cognito_cache_clear()
         return self.create_success_response({"status": "Caches cleared."})
 
     @staticmethod
