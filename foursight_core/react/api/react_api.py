@@ -203,7 +203,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(get_cognito_oauth_config())
 
     def reactapi_cognito_callback(self, request: dict) -> Response:
-        return Response(status_code=200, body="<b>HELO</b>", headers={"Content-Type": "text/html"})
         if not get_request_arg(request, "code_verifier"):
             # First callback does NOT have code_verifier, needed for the (POST) /oauth2/token call.
             # This is stored in the ouath_pkce_key (sic) property in browser session storage; it got
@@ -225,6 +224,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
         redirect_url = self.get_redirect_url(request, env, domain, context)
         headers = {"Set-Cookie": authtoken_cookie}
         return self.create_redirect_response(location=redirect_url, headers=headers)
+
+    def reactapi_cognito_login(self, request: dict) -> Response:
+        # API version of reactapi_cognito_callback.
+        domain, context = app.core.get_domain_and_context(request)
+        site = self.get_site_name()
+        env = self._envs.get_default_env()
+        token = retrieve_cognito_oauth_token(request)
+        authtoken, expires = create_cognito_authtoken(token, env, self._envs, domain, site)
+        # Sic. For now just use Auth0 client ID and secret to JWT encode
+        # the authtoken, for easily compatibilty with existing Auth0 code.
+        authtoken_encoded = jwt_encode(authtoken, audience=self._auth0_config.get_client(),
+                                                  secret=self._auth0_config.get_secret())
+        response = {
+            "authtoken": authtoken_encoded,
+            "expires": expires
+        }
+        return self.create_success_response(response)
 
     def reactapi_logout(self, request: dict, env: str) -> Response:
         """

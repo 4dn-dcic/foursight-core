@@ -94,6 +94,10 @@ function GetMenuIcon() {
     return "https://icons.veryicon.com/png/o/miscellaneous/offerino-icons/app-menu.png";
 }
 
+function GetCognitoLogoImage() {
+    return "https://miro.medium.com/max/600/1*aWDf6UyKfk7sdSMiq9sGJA.png";
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
@@ -103,6 +107,7 @@ const exports = {
     CalendarIcon:              GetCalendarIcon,
     ClearCache:                GetClearCacheImage,
     Clipboard:                 GetClipboardImage,
+    CognitoLogo:               GetCognitoLogoImage,
     GitHub:                    GetGitHubImage,
     Lock:                      GetLockImage,
     Harvard:                   GetHarvardImage,

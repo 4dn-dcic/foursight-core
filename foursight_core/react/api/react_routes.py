@@ -46,6 +46,14 @@ class ReactRoutes:
         """
         return app.core.reactapi_cognito_callback(app.current_request.to_dict())
 
+    @route("/cognito/login", authorize=False)
+    def reactapi_route_cognito_login() -> Response:  # noqa: implicit @staticmethod via @route
+        # API version of reactapi_route_cognito_callback.
+        """
+        Note that this in an UNPROTECTED route.
+        """
+        return app.core.reactapi_cognito_login(app.current_request.to_dict())
+
     @route("/{env}/logout", authorize=False)
     def reactapi_route_logout(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """

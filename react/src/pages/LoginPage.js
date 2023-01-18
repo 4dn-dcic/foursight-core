@@ -22,9 +22,7 @@ import Tooltip from '../components/Tooltip';
 import Yaml from '../utils/Yaml';
 import Page from '../Page';
 import { LoggedInUser, Link } from '../Components';
-
-import { Auth as AmplifyAuth } from '@aws-amplify/auth'
-import awsExports from '../aws-config';
+import { LoginCognitoBox } from './LoginCognitoBox';
 
 const LoginPage = (props) => {
 
@@ -128,69 +126,8 @@ const LoginPage = (props) => {
         </>
     }
 
-function fff() {
-console.log('xxx')
-console.log(Auth.signinRedirect)
-const AWS_COGNITO_REGION = "us-east-1";
-const AWS_COGNITO_USER_POOL_ID = "us-east-1_h6I5IqQSs";
-const AWS_COGNITO_USER_POOL_APP_CLIENT_ID = "5d586se3r976435167nk8k8s4h";
-const AWS_COGNITO_DOMAIN = "foursightc.auth.us-east-1.amazoncognito.com";
-// const AWS_COGNITO_SCOPES = [ "email", "openid" ]; // OK
-const AWS_COGNITO_SCOPES = [ "email", "openid", "profile" ]; // OK
-// const AWS_COGNITO_SIGNIN_CALLBACK = "http://localhost:8000/callback";
-// const AWS_COGNITO_SIGNOUT_CALLBACK = "http://localhost:8000/api/reactapi/logout";
-// const AWS_COGNITO_SIGNIN_CALLBACK = "http://localhost:3000/callback"; // OK
-// const AWS_COGNITO_SIGNIN_CALLBACK = "http://localhost:8000/api/react/oauth/callback"; // OK
-// const AWS_COGNITO_SIGNIN_CALLBACK = "http://localhost:8000/callback"; // OK
-const AWS_COGNITO_SIGNIN_CALLBACK = "http://localhost:8000/api/reactapi/cognito/callback";
-const AWS_COGNITO_SIGNOUT_CALLBACK = "http://localhost:8000/api/reactapi/logout";
-AmplifyAuth.configure({
-    region: AWS_COGNITO_REGION,
-    userPoolId: AWS_COGNITO_USER_POOL_ID,
-    userPoolWebClientId: AWS_COGNITO_USER_POOL_APP_CLIENT_ID,
-    mandatorySignIn: true,
-    // authenticationFlowType: "USER_SRP_AUTH", // code and state both come thru
-    // authenticationFlowType: "USER_PASSWORD_AUTH", // code and state both come thru
-    // authenticationFlowType: "CUSTOM_AUTH", // code and state both come thru
-    oauth: {
-        domain: AWS_COGNITO_DOMAIN,
-        scope: AWS_COGNITO_SCOPES,
-        // must match what's in user pool
-        // redirectSignIn: "https://ylj728g1pb.execute-api.us-east-1.amazonaws.com/api/callback",
-        // redirectSignOut: "https://ylj728g1pb.execute-api.us-east-1.amazonaws.com/api/logout",
-        // redirectSignIn: "http://localhost:8000/callback",
-        // redirectSignOut: "http://localhost:8000/api/reactapi/logout",
-        // redirectSignIn: "https://www.example.com/callback",
-        // redirectSignOut: "https://www.example.com/signout",
-        // redirectSignIn: "http://localhost:8000/callback",
-        redirectSignIn: AWS_COGNITO_SIGNIN_CALLBACK,
-        redirectSignOut: AWS_COGNITO_SIGNOUT_CALLBACK,
-        // redirectSignOut: "http://localhost:8000/api/reactapi/logout",
-        responseType: "code"
-    }
-});
-}
-        function federatedSignIn() {
-                fff();
-            AmplifyAuth.federatedSignIn({ provider: "Google" });
-            //AmplifyAuth.federatedSignIn({ provider: "Google"});
-            // AmplifyAuth.federatedSignIn({ provider: CognitoHostedUIIdentityProvider.Google });
-            //AmplifyAuth.federatedSignIn({ provider: CognitoHostedUIIdentityProvider.Google });
-            //AmplifyAuth.federatedSignIn({ provider: "Google" });
-            //Auth.federatedSignIn({ provider: "Google" });
-            //AmplifyAuth.federatedSignIn({ provider: "Google" });
-            //AmplifyAuth.federatedSignIn();
-        }
-        function signOut() {
-            // https://mydomain.auth.us-east-1.amazoncognito.com/logout?client_id=ad398u21ijw3s9w3939&logout_uri=https://myclient/logout
-            const url = "https://testfoursight3.auth.us-east-1.amazoncognito.com/logout?client_id=3q9rslg0b6rs0omvlibq17ev22&logout_uri=https://www.example.com/signout";
-            AmplifyAuth.signOut();
-        }
-
     if (showCognitoAuthBox) return <LoginCognitoBox />
     return <>
-                <span className="pointer" onClick={federatedSignIn}>TRY-LOGIN</span> <br />
-                <span className="pointer" onClick={fff}>TRY-LOGOUT</span> <br />
         { Auth.IsLoggedIn(header) ? (<React.Fragment>
             <div className="container" style={{width:"800pt"}}>
                 {Auth.LoggedInUserName(header) && <b>Hello, {Auth.LoggedInUserName(header)}</b>} ...
@@ -280,6 +217,14 @@ AmplifyAuth.configure({
                     </small>
                 </>}
             </div>
+            <div className="box error thickborder" style={{marginTop:"8pt",marginLeft:"90pt",marginRight:"90pt",padding:"6pt",color:"darkred",fontSize:"small"}}>
+                <img src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
+                <span style={{position:"relative",top:"1pt"}}>
+                    Click <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}><u>here</u></b> to try the
+                    new <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}>login</b> via
+                    AWS <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}>Cognito</b> support.
+                </span>
+            </div>
             { showingAuthToken && <>
                 { Cookie.HasAuthToken() &&
                     <div className="box warning" style={{marginLeft:"90pt",marginRight:"90pt",color:"darkred",fontSize:"small"}}>
@@ -319,63 +264,5 @@ AmplifyAuth.configure({
         </React.Fragment>)}
     </>
 };
-
-    const LoginCognitoBox = () => {
-        const configUrl = Server.Url("/cognito/config", false);
-        const config = useFetch(configUrl,
-        {
-            cache: true,
-            onData: (data) => {
-                const configuration = {
-                    region: data.region,
-                    userPoolId: data.user_pool_id,
-                    userPoolWebClientId: data.client_id,
-                    mandatorySignIn: true,
-                    oauth: {
-                        domain: data.domain,
-                        scope: data.scope,
-                        redirectSignIn: data.callback,
-                        responseType: "code"
-                    }
-                };
-                AmplifyAuth.configure(configuration);
-            }
-        });
-
-        function signinWithGoogle() {
-            AmplifyAuth.federatedSignIn({ provider: "Google" });
-        }
-
-        function signinWithGitHub() {
-            window.alert("Sign in with GitHub is not yet supported.");
-        }
-
-        return <div className="container" style={{width:"240pt",marginTop:"30pt",marginBottom:"30pt"}}>
-            <div style={{border:"1px solid var(--box-fg)",border:"2px solid black",borderRadius:"6px",overflow:"hidden",width:"240pt"}}>
-                { config.loading ? <>
-                    Loading Cognito authentication configuration ...
-                </>:<>
-                    <div style={{background:"#EEEEEE",color:"#111111",padding:"8pt 12pt 8pt 12pt",textAlign:"center"}}>
-                        <b className="title-font" style={{fontSize:"18pt"}}>FOURSIGHT LOGIN</b>
-                    </div>
-                    <div style={{paddingTop:"12pt"}} />
-                    <div style={{background:"white",padding:"0 10pt 0 10pt"}}>
-                        <button style={{border:"1px solid lightgray",borderRadius:"2pt",padding:"6pt 0 6pt 10pt",width:"100%",textAlign:"left",whiteSpace:"nowrap"}} onClick={signinWithGitHub}>
-                            <img src={Image.GitHubLoginLogo()} style={{position:"relative",marginTop:"-2px"}} height="20" />
-                            <b className="title-font" style={{fontSize:"12pt",marginLeft:"7pt"}}>Sign in with GitHub</b>
-                        </button>
-                    </div>
-                    <div style={{paddingTop:"6pt"}} />
-                    <div style={{background:"white",padding:"0 10pt 0 10pt"}}>
-                        <button style={{border:"1px solid lightgray",borderRadius:"2pt",padding:"6pt 0 6pt 10pt",width:"100%",textAlign:"left",whiteSpace:"nowrap"}} onClick={signinWithGoogle}>
-                            <img src={Image.GoogleLoginLogo()} style={{position:"relative",marginTop:"-2px"}} height="18" />
-                            <b className="title-font" style={{fontSize:"12pt",marginLeft:"10pt"}}>Sign in with Google</b>
-                        </button>
-                    </div>
-                    <div style={{paddingTop:"12pt"}} />
-                </> }
-            </div>
-        </div>
-    }
 
 export default LoginPage;

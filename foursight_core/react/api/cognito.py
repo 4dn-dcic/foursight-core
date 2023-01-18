@@ -27,7 +27,8 @@ def get_cognito_oauth_config() -> dict:
         "connections": [ "Google" ],
       # "callback": "http://localhost:8000/api/react/oauth/callback" # TODO: /api/react/oauth/cognito/callback
       # "callback": "http://localhost:8000/callback" # TODO: /api/react/oauth/cognito/callback
-        "callback": "http://localhost:8000/api/reactapi/cognito/callback"
+      # "callback": "http://localhost:8000/api/reactapi/cognito/callback"
+        "callback": "http://localhost:3000/api/react/cognito/callback"
     }
     return response
 
@@ -45,6 +46,7 @@ def retrieve_cognito_oauth_token(request: dict) -> dict:
 
     Cognito configuration dependencies: domain, client ID, client secret.
     Cognito endpoint dependencies: Token i.e. /oauth2/token, JWKS i.e. /.well-known/jwks.json.
+    Request arguments: code, code_verifier, state, oauth_state
 
     This is called from our backend authentication callback (i.e. /api/callback) which itself
     is redirected to from our frontend authentication callback (i.e. /api/react/oauth/callback).
@@ -79,33 +81,34 @@ def _call_cognito_oauth_token_endpoint(request: dict) -> dict:
     """
     Calls the Cognito /oauth2/token endpoint to exchange an authorization code for a (JWT) token.
     This authorization "code" is an argument within the given request; this code, also along with
-    a "state", was passed to our authenticaiton callback from Cognito. This request also contains
+    a "state", was passed to our authentication callback from Cognito. This request also contains
     a "code_verifier" argument, which came from "ouath_pkce_key" (sic) which was stored in browser
     local storage by our client-side authentication initiation code (i.e. Amplify.federatedSignIn),
     together with "oauth_state" which should match the request state argument.
 
     Cognito configuration dependencies: domain, client ID, client secret.
     Cognito endpoint dependencies: Token i.e. /oauth2/token, JWKS i.e. /.well-known/jwks.json.
+    Request arguments: code, code_verifier, state, oauth_state
 
     :param request: Dictionary containing the HTTP request for our Cognito authentication callback.
     :returns: Dictionary containing the HTTP response for the /oauth2/token endpoint (POST) call.
     """
     args = request.get("query_params") or {}
     code = args.get("code")
-    state = args.get("state")
-    client_side_state = args.get("oauth_state")
     #
     # Note the odd/known misspelling of "ouath_pkce_key" browser local storage variable.
     # This, and the above "oauth_state", is set by the client-side code which initiated the
     # authentication process, i.e. e.g. Amplify.federatedSignIn. This is the "code_verifier"
     # which we pass as an argument, along with the given code, to the /oauth2/token endpoint.
     #
-    code_verifier = args.get("ouath_pkce_key")
-    if not code_verifier:
-        code_verifier = args.get("code_verifier")
-    if state != client_side_state:
-        raise Exception("Authentication state value mismatch.")
+    code_verifier = args.get("code_verifier")
+    print('xyzzy/_call_cognito_oauth_token_endpoint')
+    print(request)
+    print(args)
+    print(code)
+    print(code_verifier)
     data = _get_cognito_oauth_token_endpoint_data(code=code, code_verifier=code_verifier)
+    print('xyzzy/_call_cognito_oauth_token_endpoint/2')
     #
     # Note that for the /oauth2/token endpoint call we need EITHER this authorization
     # header, containing the authentication server client secret, OR we need to pass
@@ -117,7 +120,16 @@ def _call_cognito_oauth_token_endpoint(request: dict) -> dict:
         "Authorization": f"Basic {_get_cognito_oauth_token_endpoint_authorization()}"
     }
     url = _get_cognito_oauth_token_endpoint_url()
+    print('xyzzy/_call_cognito_oauth_token_endpoint/posting')
+    print(url)
+    print(headers)
+    print(data)
     cognito_auth_token_response = requests.post(url, headers=headers, data=data)
+    print('xyzzy/_call_cognito_oauth_token_endpoint/posting/after')
+    print(cognito_auth_token_response)
+    print(cognito_auth_token_response.status_code)
+    if cognito_auth_token_response.status_code != 200:
+        raise Exception("Invalid response from /oauth2/token")
     cognito_auth_token_response_json = cognito_auth_token_response.json()
     return cognito_auth_token_response_json
 

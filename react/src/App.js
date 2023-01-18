@@ -17,7 +17,7 @@ import Header from './Header';
 import HomePage from './pages/HomePage';
 import InfoPage from './pages/InfoPage';
 import LoginPage from './pages/LoginPage';
-// import LoginCallbackPage from './pages/LoginCallbackPage';
+import LoginCognitoCallback from './pages/LoginCognitoCallback';
 import GacComparePage from './pages/GacComparePage';
 import InfrastructurePage from './pages/aws/InfrastructurePage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -127,11 +127,9 @@ const App = () => {
             <Header />
             <div style={{margin:"14pt"}}>
                 <Routes>
-{/*
-                    <Route path="/callback" element={
-                        <LoginCallbackPage />
+                    <Route path="/api/react/cognito/callback" element={
+                        <LoginCognitoCallback />
                     }/>
-*/}
                     <Route path="/" element={
                         <Navigate to={getDefaultPath()} />
                     } />
