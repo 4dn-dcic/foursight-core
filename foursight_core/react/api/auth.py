@@ -29,10 +29,12 @@ class Auth:
         and/or not authenticated, and containing the basic info from the authtoken.
         """
         try:
+            print('xyzzy/AUTHORIZE/...............................................................')
 
             # Read the authtoken cookie.
 
             authtoken = read_cookie(request, "authtoken")
+            print(authtoken)
             if not authtoken:
                 return self._create_unauthenticated_response(request, "no-authtoken")
 

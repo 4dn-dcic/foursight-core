@@ -10,7 +10,7 @@ from ...app import app
 from ...route_prefixes import ROUTE_PREFIX
 from .auth import Auth
 from .auth0_config import Auth0Config
-from .cognito import create_cognito_auth_token, retrieve_cognito_oauth_token
+from .cognito import create_cognito_authtoken, retrieve_cognito_oauth_token
 from .cookie_utils import create_set_cookie_string, read_cookie
 from .datetime_utils import convert_datetime_to_time_t
 from .envs import Envs
@@ -198,38 +198,27 @@ class ReactApiBase:
     def reactapi_cognito_callback(self, request: dict) -> Response:
 
         if self.is_cognito_first_authentication_callback(request):
-            print('xyzzy/auth0_callback/is_cognito_authentication_callback/FIRST-TRUE')
             headers = {"Content-Type": "text/html"}
             html = "<html><head><script>var q=new URLSearchParams(window.location.search);var c=q.get('code');var v=sessionStorage.getItem('ouath_pkce_key');window.location.href=`http://localhost:8000/api/reactapi/cognito/callback?code=${c}&code_verifier=${v}`;</script></head></html>"
             return Response(status_code=200, body=html, headers=headers)
-
-        print('xyzzy/auth0_callback/is_cognito_authentication_callback/SECOND-TRUE')
 
         domain, context = app.core.get_domain_and_context(request)
         site = self.get_site_name()
         env = self._envs.get_default_env()
 
-        print('xyzzy/auth0_callback/is_cognito_authentication_callback/RETRIEVING-TOKEN')
-        print(request)
         token = retrieve_cognito_oauth_token(request)
-        print('xyzzy/auth0_callback/is_cognito_authentication_callback/RETRIEVED-TOKEN')
-        print(token)
 
-        authtoken, expires_at = create_cognito_auth_token(token, env, self._envs, domain, site)
-        print('xyzzy/auth0_callback/is_cognito_authentication_callback/CREATED-AUTHTOKEN')
-        print(authtoken)
-        print(expires_at)
+        # Sic. For now use Auth0 client ID and secret to ENCODE
+        # the JWT we use for the authtokn even for Cognito. 
+        authtoken_client_id = self._auth0_config.get_client()
+        authtoken_client_secret = self._auth0_config.get_secret()
+        authtoken, expires_at = create_cognito_authtoken(token, env, self._envs, domain, site, authtoken_client_id, authtoken_client_secret)
 
-        print('xyzzy/auth0_callback/is_cognito_authentication_callback/CREATING-AUTHTOKEN-COOKIE')
         authtoken_cookie = create_set_cookie_string(request, name="authtoken",
                                                     value=authtoken,
                                                     domain=domain,
                                                     expires=expires_at, http_only=False)
-        print(authtoken_cookie)
-
-        print('xyzzy/auth0_callback/is_cognito_authentication_callback/REDIRECT-URL')
         redirect_url = self.get_redirect_url(request, env, domain, context)
-        print(redirect_url)
 
         return self.create_redirect_response(location=redirect_url, headers={"Set-Cookie": authtoken_cookie})
 

@@ -40,7 +40,7 @@ def retrieve_cognito_oauth_token(request: dict) -> dict:
     """
     Calls the /oauth2/token endpoint with the code (and other relevant data from the given
     request, e.g. code_verifier) to retrieve the associated JWT token (id_token) and returns
-    its decoded value. See: call_cognito_oauth_token_endpoint for details on request arguments.
+    its decoded value. See: _call_cognito_oauth_token_endpoint for details on request arguments.
 
     Cognito configuration dependencies: domain, client ID, client secret.
     Cognito endpoint dependencies: Token i.e. /oauth2/token, JWKS i.e. /.well-known/jwks.json.
@@ -58,7 +58,7 @@ def retrieve_cognito_oauth_token(request: dict) -> dict:
     :param request: Dictionary containing the HTTP request for our Cognito authentication callback.
     :returns: Dictionary containing decoded JWT token (id_token) from the /oauth2/token endpoint call.
     """
-    response = call_cognito_oauth_token_endpoint(request)
+    response = _call_cognito_oauth_token_endpoint(request)
     #
     # Note that we also get back from the /oauth2/token call above (in addition to the "id_token" JWT,
     # which we use) an "access_token" and a "refresh_token"; we do not currently use these; and trying
@@ -68,13 +68,13 @@ def retrieve_cognito_oauth_token(request: dict) -> dict:
     #
     # Note that we also get back from the /oauth2/token call above an "expires_in" (e.g. 3600, for an
     # hour from "now") but the JWT (id_token) also contains a "exp" field (a time_t value) which is
-    # effectively the same thing; we will just use the latter (see: create_cognito_auth_token).
+    # effectively the same thing; we will just use the latter (see: create_cognito_authtoken).
     #
     token = response.get("id_token")
-    decoded_token = decode_cognito_oauth_token_jwt(token)
+    decoded_token = _decode_cognito_oauth_token_jwt(token)
     return decoded_token
 
-def call_cognito_oauth_token_endpoint(request: dict) -> dict:
+def _call_cognito_oauth_token_endpoint(request: dict) -> dict:
     """
     Calls the Cognito /oauth2/token endpoint to exchange an authorization code for a (JWT) token.
     This authorization "code" is an argument within the given request; this code, also along with
@@ -116,13 +116,8 @@ def call_cognito_oauth_token_endpoint(request: dict) -> dict:
         "Authorization": f"Basic {_get_cognito_oauth_token_endpoint_authorization()}"
     }
     url = _get_cognito_oauth_token_endpoint_url()
-    print('xyzzy/cognito_auth_token_response_json/calling-oauth-token2-endpoint')
-    print(headers)
-    print(data)
     cognito_auth_token_response = requests.post(url, headers=headers, data=data)
     cognito_auth_token_response_json = cognito_auth_token_response.json()
-    print('xyzzy/cognito_auth_token_response_json/a')
-    print(cognito_auth_token_response_json)
     return cognito_auth_token_response_json
 
 def _get_cognito_oauth_token_endpoint_url() -> str:
@@ -175,7 +170,7 @@ def _get_cognito_oauth_token_endpoint_data(code: str, code_verifier: str) -> dic
         "redirect_uri": callback
     }
 
-def decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, verify_expiration = True) -> dict:
+def _decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, verify_expiration = True) -> dict:
     """
     Decodes and returns the dictionary for the given JWT.
     To do this we use the signing key within the given JWT which we extract
@@ -228,14 +223,14 @@ def decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, veri
     #
     config = get_cognito_oauth_config()
     client_id = config["client_id"]
-    signing_key = get_cognito_oauth_signing_key(jwt)
+    signing_key = _get_cognito_oauth_signing_key(jwt)
     options = {
         "verify_signature": verify_signature,
         "verify_exp": verify_expiration
     }
     return jwtlib.decode(jwt, signing_key, audience=client_id, algorithms=["RS256"], options=options)
 
-def get_cognito_oauth_signing_key(jwt: str) -> object:
+def _get_cognito_oauth_signing_key(jwt: str) -> object:
     """
     Returns the signing key (object) from the given JWT.
     Actual type of returned object: cryptography.hazmat.backends.openssl.rsa._RSAPublicKey.
@@ -246,11 +241,11 @@ def get_cognito_oauth_signing_key(jwt: str) -> object:
     :param jwt: JWT token value (id_token) retrieved from the /oauth2/token endpoint.
     :returns: Object suitable for use as a signing key to decode a JWT.
     """
-    signing_key_client = get_cognito_oauth_signing_key_client()
+    signing_key_client = _get_cognito_oauth_signing_key_client()
     signing_key = signing_key_client.get_signing_key_from_jwt(string_to_bytes(jwt))
     return signing_key.key
 
-def get_cognito_oauth_signing_key_client() -> object:
+def _get_cognito_oauth_signing_key_client() -> object:
     """
     Returns an object which can be used to extract a signing key from a JWT.
     The returned object will contain a "get_signing_key_from_jwt" method, which takes
@@ -268,7 +263,8 @@ def get_cognito_oauth_signing_key_client() -> object:
     cognito_jwks_url = f"https://cognito-idp.us-east-1.amazonaws.com/{user_pool_id}/.well-known/jwks.json"
     return PyJWKClient(cognito_jwks_url)
 
-def create_cognito_auth_token(token: dict, env: str, envs: Envs, domain: str, site: str) -> Tuple[dict, int]:
+def create_cognito_authtoken(token: dict, env: str, envs: Envs, domain: str, site: str,
+                             authtoken_client_id: str, authtoken_client_secret: str) -> Tuple[dict, int]:
     """
     Creates from the given (decoded) JWT token, retrieved from the /oauth2/token endpoint, an
     authtoken suitable for use as a cookie to indicate the user has been authenticated (logged in).
@@ -283,13 +279,7 @@ def create_cognito_auth_token(token: dict, env: str, envs: Envs, domain: str, si
     client_id = config["client_id"]
     client_secret = _get_cognito_oauth_client_secret()
     email = token.get("email")
-    print('xyzzy/create_cognito_auth_token/CALLING-GET-USER-AUTH-INFO')
-    print(email)
     allowed_envs, first_name, last_name = envs.get_user_auth_info(email)
-    print('xyzzy/create_cognito_auth_token/CALLED-GET-USER-AUTH-INFO')
-    print(allowed_envs)
-    print(first_name)
-    print(last_name)
     expires_at = token.get("exp")
     authtoken = {
         "authentication": "cognito",
@@ -308,5 +298,5 @@ def create_cognito_auth_token(token: dict, env: str, envs: Envs, domain: str, si
         "domain": domain,
         "site": site
     }
-    authtoken_encoded = jwt_encode(authtoken, audience=client_id, secret=client_secret)
+    authtoken_encoded = jwt_encode(authtoken, audience=authtoken_client_id, secret=authtoken_client_secret)
     return authtoken_encoded, expires_at
