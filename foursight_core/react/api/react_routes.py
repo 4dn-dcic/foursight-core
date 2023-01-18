@@ -23,13 +23,28 @@ class ReactRoutes:
         """
         return app.core.reactapi_auth0_config(app.current_request.to_dict())
 
-    @route("/auth0_config", authorize=False)
+    @route("/auth0/config", authorize=False)
     def reactapi_route_auth0_config_noenv() -> Response:  # noqa: implicit @staticmethod via @route
         """
         Note that this in an UNPROTECTED route.
         No-env version of above /{env}/auth0_config route.
         """
         return app.core.reactapi_auth0_config(app.current_request.to_dict())
+
+    @route("/cognito/config", authorize=False)
+    def reactapi_route_cognito_config_noenv() -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Note that this in an UNPROTECTED route.
+        No-env version of above /{env}/cognito_config route.
+        """
+        return app.core.reactapi_cognito_config(app.current_request.to_dict())
+
+    @route("/cognito/callback", authorize=False)
+    def reactapi_route_cognito_callback() -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Note that this in an UNPROTECTED route.
+        """
+        return app.core.reactapi_cognito_callback(app.current_request.to_dict())
 
     @route("/{env}/logout", authorize=False)
     def reactapi_route_logout(env: str) -> Response:  # noqa: implicit @staticmethod via @route

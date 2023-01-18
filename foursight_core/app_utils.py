@@ -379,11 +379,33 @@ class AppUtilsCore(ReactApi, Routes):
         logger.error("foursight_core.check_authorization: Returning False ")
         return False
 
+    @staticmethod
+    def try_cognito2(req_dict: dict):
+        from .react.api.cognito import retrieve_cognito_oauth_token
+        print('xyzzy/123')
+        xyzzy = retrieve_cognito_oauth_token(req_dict)
+        print('xyzzy/234')
+        print(xyzzy)
+        pass
+
     def auth0_callback(self, request, env):
         print('xyzzy/auth0_callback/enter')
         req_dict = request.to_dict()
         print(req_dict)
         print(env)
+#       if False and self.is_cognito_first_authentication_callback(req_dict):
+#           domain, context = self.get_domain_and_context(req_dict)
+#           print('xyzzy/auth0_callback/is_cognito_authentication_callback/FIRST-TRUE')
+#           headers = {"Content-Type": "text/html"}
+#           # html = "<html><head><script>var q = new URLSearchParams(window.location.search); var code = q.get(\"code\"); var code_verifier = sessionStorage.getItem(\"ouath_pkce_key\"); var url = `http://localhost:8000/callback?code=${code}&code_verifier=${code_verifier}`; console.log('xyzzycallback'); console.log(url); window.location.href = url;</script></head></html>"
+#           # html = "<html><head><script>var q = new URLSearchParams(window.location.search); var code = q.get(\"code\"); var code_verifier = sessionStorage.getItem(\"ouath_pkce_key\"); var url = `http://localhost:8000/callback?code=${code}&code_verifier=${code_verifier}`; console.log('xyzzycallback'); console.log(url);</script></head></html>"
+#           html = "<html><head><script>var q=new URLSearchParams(window.location.search);var c=q.get('code');var v=sessionStorage.getItem('ouath_pkce_key');window.location.href=`http://localhost:8000/callback?code=${c}&code_verifier=${v}`;</script></head></html>"
+#           return Response(status_code=200, body=html, headers=headers)
+#       if False and self.is_cognito_second_authentication_callback(req_dict):
+#           print('xyzzy/auth0_callback/is_cognito_authentication_callback/SECOND-TRUE')
+#           return self.react_cognito_authentication_callback(req_dict, env)
+#           # self.try_cognito2(req_dict)
+#           # return
         if self.is_react_authentication_callback(req_dict):
             return self.react_authentication_callback(req_dict, env)
         domain, context = self.get_domain_and_context(req_dict)
@@ -537,15 +559,7 @@ class AppUtilsCore(ReactApi, Routes):
         #try_cognito()
         #return
 
-        def try_cognito2():
-            from .react.api.cognito import retrieve_cognito_oauth_token
-            print('xyzzy/123')
-            xyzzy = retrieve_cognito_oauth_token(req_dict)
-            print('xyzzy/234')
-            print(xyzzy)
-            pass
-
-        try_cognito2()
+        # self.try_cognito2(req_dict)
         return
 
         #xyzzy

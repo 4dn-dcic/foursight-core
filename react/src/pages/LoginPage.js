@@ -135,7 +135,9 @@ const AWS_COGNITO_SCOPES = [ "email", "openid", "profile" ]; // OK
 // const AWS_COGNITO_SIGNIN_CALLBACK = "http://localhost:8000/callback";
 // const AWS_COGNITO_SIGNOUT_CALLBACK = "http://localhost:8000/api/reactapi/logout";
 // const AWS_COGNITO_SIGNIN_CALLBACK = "http://localhost:3000/callback"; // OK
-const AWS_COGNITO_SIGNIN_CALLBACK = "http://localhost:8000/api/react/oauth/callback";
+// const AWS_COGNITO_SIGNIN_CALLBACK = "http://localhost:8000/api/react/oauth/callback"; // OK
+// const AWS_COGNITO_SIGNIN_CALLBACK = "http://localhost:8000/callback"; // OK
+const AWS_COGNITO_SIGNIN_CALLBACK = "http://localhost:8000/api/reactapi/cognito/callback";
 const AWS_COGNITO_SIGNOUT_CALLBACK = "http://localhost:8000/api/reactapi/logout";
 AmplifyAuth.configure({
     region: AWS_COGNITO_REGION,

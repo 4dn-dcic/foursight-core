@@ -29,6 +29,7 @@ from .aws_stacks import (
     aws_stacks_cache_clear
 )
 from .checks import Checks
+from .cognito import get_cognito_oauth_config
 from .cookie_utils import create_delete_cookie_string
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
 from .encryption import Encryption
@@ -195,6 +196,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # Note we add the callback for the UI to setup its Auth0 login for.
         auth0_config["callback"] = self._auth0_config.get_callback_url(request)
         return self.create_success_response(self._auth0_config.get_config_data())
+
+    def reactapi_cognito_config(self, request: dict) -> Response:
+        return self.create_success_response(get_cognito_oauth_config())
 
     def reactapi_logout(self, request: dict, env: str) -> Response:
         """

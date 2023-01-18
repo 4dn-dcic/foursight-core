@@ -74,6 +74,8 @@ class Envs:
         names for the given user/email, via the users store in ElasticSearch; and since we're
         getting the user record anyways, the first/last name of the user, for display only.
         """
+        print('xyzzy/get_user_auth_info')
+        print(email)
         allowed_envs = []
         first_name = None
         last_name = None

@@ -1,10 +1,12 @@
 import jwt as jwtlib
 from jwt import PyJWKClient
 import requests
+from typing import Tuple
 from foursight_core.react.api.encoding_utils import base64_encode, string_to_bytes
 from foursight_core.react.api.jwt_utils import jwt_encode
+from foursight_core.react.api.envs import Envs
 
-def get_cognito_oauth_config(include_secret: bool = False) -> dict:
+def get_cognito_oauth_config() -> dict:
     """
     Returns all necessary configuration info for our AWS Coginito authentication server.
     :returns: Dictionary containing AWS Cognito configuration info.
@@ -22,14 +24,17 @@ def get_cognito_oauth_config(include_secret: bool = False) -> dict:
         "domain": "foursightc.auth.us-east-1.amazoncognito.com",
         "scope": "openid email profile",
         "connections": [ "Google" ],
-        "callback": "http://localhost:8000/api/react/oauth/callback" # TODO: /api/react/oauth/cognito/callback
+      # "callback": "http://localhost:8000/api/react/oauth/callback" # TODO: /api/react/oauth/cognito/callback
+      # "callback": "http://localhost:8000/callback" # TODO: /api/react/oauth/cognito/callback
+        "callback": "http://localhost:8000/api/reactapi/cognito/callback"
     }
-    if include_secret:
-        #
-        # This is a temporary test account - no harm in checking in.
-        #
-        response["client_secret"] = "8caa9mn0f696ic1utvrg1ni5j48e5kap9l5rm5c785d7c7bdnjn"
     return response
+
+def _get_cognito_oauth_client_secret() -> dict:
+    #
+    # This is a temporary test account - no harm in checking in.
+    #
+    return "8caa9mn0f696ic1utvrg1ni5j48e5kap9l5rm5c785d7c7bdnjn"
 
 def retrieve_cognito_oauth_token(request: dict) -> dict:
     """
@@ -95,6 +100,8 @@ def call_cognito_oauth_token_endpoint(request: dict) -> dict:
     # which we pass as an argument, along with the given code, to the /oauth2/token endpoint.
     #
     code_verifier = args.get("ouath_pkce_key")
+    if not code_verifier:
+        code_verifier = args.get("code_verifier")
     if state != client_side_state:
         raise Exception("Authentication state value mismatch.")
     data = _get_cognito_oauth_token_endpoint_data(code=code, code_verifier=code_verifier)
@@ -109,6 +116,9 @@ def call_cognito_oauth_token_endpoint(request: dict) -> dict:
         "Authorization": f"Basic {_get_cognito_oauth_token_endpoint_authorization()}"
     }
     url = _get_cognito_oauth_token_endpoint_url()
+    print('xyzzy/cognito_auth_token_response_json/calling-oauth-token2-endpoint')
+    print(headers)
+    print(data)
     cognito_auth_token_response = requests.post(url, headers=headers, data=data)
     cognito_auth_token_response_json = cognito_auth_token_response.json()
     print('xyzzy/cognito_auth_token_response_json/a')
@@ -132,9 +142,9 @@ def _get_cognito_oauth_token_endpoint_authorization() -> dict:
     Cognito configuration dependencies: client ID, client secret.
     :returns: Authorization header value for /oauth2/token endpoint.
     """
-    config = get_cognito_oauth_config(include_secret=True)
+    config = get_cognito_oauth_config()
     client_id = config["client_id"]
-    client_secret = config["client_secret"]
+    client_secret = _get_cognito_oauth_client_secret()
     return base64_encode(f"{client_id}:{client_secret}")
 
 def _get_cognito_oauth_token_endpoint_data(code: str, code_verifier: str) -> dict:
@@ -149,10 +159,12 @@ def _get_cognito_oauth_token_endpoint_data(code: str, code_verifier: str) -> dic
     :param code_verifier: Value passed to our backend authentication callback.
     :returns: Data suitable for POST payload for /oauth2/token endpoint.
     """
-    config = get_cognito_oauth_config(include_secret=True)
+    config = get_cognito_oauth_config()
+    client_id = config["client_id"]
+    callback = config["callback"]
     return {
         "grant_type": "authorization_code",
-        "client_id": config["client_id"],
+        "client_id": client_id,
         #
         # Note that do NOT pass the client secret here as we are passing it in the header
         # to the /oauth2/token endpoint (POST) call. Though it would do no harm to do so.
@@ -160,7 +172,7 @@ def _get_cognito_oauth_token_endpoint_data(code: str, code_verifier: str) -> dic
         #
         "code": code,
         "code_verifier": code_verifier,
-        "redirect_uri": config["callback"]
+        "redirect_uri": callback
     }
 
 def decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, verify_expiration = True) -> dict:
@@ -256,7 +268,7 @@ def get_cognito_oauth_signing_key_client() -> object:
     cognito_jwks_url = f"https://cognito-idp.us-east-1.amazonaws.com/{user_pool_id}/.well-known/jwks.json"
     return PyJWKClient(cognito_jwks_url)
 
-def create_cognito_auth_token(token: dict) -> dict:
+def create_cognito_auth_token(token: dict, env: str, envs: Envs, domain: str, site: str) -> Tuple[dict, int]:
     """
     Creates from the given (decoded) JWT token, retrieved from the /oauth2/token endpoint, an
     authtoken suitable for use as a cookie to indicate the user has been authenticated (logged in).
@@ -268,21 +280,33 @@ def create_cognito_auth_token(token: dict) -> dict:
     :returns: JWT-encoded "authtoken" dictionary suitable for cookie-ing the authenticated user.
     """
     config = get_cognito_oauth_config()
-    authtoken = {}
-#   authtoken = {
-#       "authenticated": True,
-#       "authenticated_at": token.get("iat"),
-#       "authenticated_until": jwt_expires_at,
-#       "user": email,
-#       "user_verified": jwt_decoded.get("email_verified"),
-#       "first_name": first_name,
-#       "last_name": last_name,
-#       "allowed_envs": allowed_envs,
-#       "known_envs": self._envs.get_known_envs(),
-#       "default_env": self._envs.get_default_env(),
-#       "initial_env": env,
-#       "domain": domain,
-#       "site": "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront",
-#       "authenticator": authenticator
-    authtoken_encoded = jwt_encode(authtoken, audience=config["client_id"], secret=config["client_secret"])
-    return authtoken_encoded
+    client_id = config["client_id"]
+    client_secret = _get_cognito_oauth_client_secret()
+    email = token.get("email")
+    print('xyzzy/create_cognito_auth_token/CALLING-GET-USER-AUTH-INFO')
+    print(email)
+    allowed_envs, first_name, last_name = envs.get_user_auth_info(email)
+    print('xyzzy/create_cognito_auth_token/CALLED-GET-USER-AUTH-INFO')
+    print(allowed_envs)
+    print(first_name)
+    print(last_name)
+    expires_at = token.get("exp")
+    authtoken = {
+        "authentication": "cognito",
+        "authenticator": "google", # TODO: get from identities
+        "authenticated": True,
+        "authenticated_at": token.get("iat"),
+        "authenticated_until": expires_at,
+        "user": token.get("email"),
+        "user_verified": token.get("email_verified"),
+        "first_name": token.get("first_name"),
+        "last_name": token.get("last_name"),
+        "allowed_envs": allowed_envs,
+        "known_envs": envs.get_known_envs(),
+        "default_env": envs.get_default_env(),
+        "initial_env": env,
+        "domain": domain,
+        "site": site
+    }
+    authtoken_encoded = jwt_encode(authtoken, audience=client_id, secret=client_secret)
+    return authtoken_encoded, expires_at
