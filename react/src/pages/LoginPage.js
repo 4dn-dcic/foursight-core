@@ -11,16 +11,17 @@ import Clipboard from '../utils/Clipboard';
 import { FetchErrorBox } from '../Components';
 import Cookie from '../utils/Cookie';
 import Env from '../utils/Env';
-import useFetch from '../hooks/Fetch';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
 import LiveTime from '../LiveTime';
+import { LoggedInUser, Link } from '../Components';
+import { LoginCognitoBox } from './LoginCognitoBox';
 import Logout from '../utils/Logout';
 import Server from '../utils/Server';
 import Tooltip from '../components/Tooltip';
 import Yaml from '../utils/Yaml';
 import Page from '../Page';
-import { LoggedInUser, Link } from '../Components';
+import useFetch from '../hooks/Fetch';
 
 const LoginPage = (props) => {
 
@@ -29,7 +30,8 @@ const LoginPage = (props) => {
     const [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [ args ] = useSearchParams();
     const showAuthBoxAtOutset = args.get("auth")?.length >= 0;
-    const auth0Config = useFetch(Server.Url("/auth0_config"));
+    const auth0Config = useFetch(Server.Url("/auth0_config", false));
+    const [ showCognitoAuthBox, setShowCognitoAuthBox ] = useState(false);
 
     function login() {
         showAuthBox();
@@ -118,6 +120,7 @@ const LoginPage = (props) => {
         </>
     }
 
+    if (showCognitoAuthBox) return <LoginCognitoBox />
     return <>
         { Auth.IsLoggedIn(header) ? (<React.Fragment>
             <div className="container" style={{width:"800pt"}}>
@@ -158,6 +161,14 @@ const LoginPage = (props) => {
                         <small>Click <Link to="/env"><u>here</u></Link> to go the the <Link to="/env">Environments Page</Link> to select another environment.</small>
                     </div>
                 </>}
+                { (Auth.Token()?.authentication === "cognito") && <>
+                    <div className="box error thickborder" style={{marginTop:"6pt",padding:"6pt",color:"darkred",fontSize:"small"}}>
+                        <img src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
+                        <span style={{position:"relative",top:"1pt"}}>
+                            Logged in via new AWS <b>Cognito</b> support.
+                        </span>
+                    </div>
+                </> }
                 { showingAuthToken && <>
                     <div className="box" style={{paddingLeft:"8pt",marginTop:"8pt",fontSize:"small"}}>
                         <span id="tooltip-login-cookie-size" onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer"}}><b>AuthToken</b> from Cookie</span>
@@ -207,6 +218,14 @@ const LoginPage = (props) => {
                         </>}
                     </small>
                 </>}
+            </div>
+            <div className="box error thickborder" style={{marginTop:"8pt",marginLeft:"90pt",marginRight:"90pt",padding:"6pt",color:"darkred",fontSize:"small"}}>
+                <img src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
+                <span style={{position:"relative",top:"1pt"}}>
+                    Click <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}><u>here</u></b> to try the
+                    new <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}>login</b> via
+                    AWS <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}>Cognito</b> support.
+                </span>
             </div>
             { showingAuthToken && <>
                 { Cookie.HasAuthToken() &&

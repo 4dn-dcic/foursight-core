@@ -10,7 +10,7 @@ import useFetcher from './Fetcher';
 // the API /header fetch in the "provider" below. This may be shared globally
 // across all components in our app via the useHeader hook defined here.
 //
-export const HeaderData = React.createContext(null);
+export const HeaderData = React.createContext({});
 
 // This the "provider" component for our global header data, which should be wrapped
 // around our ENTIRE app in order for ANY component within our app to reference this
@@ -57,7 +57,7 @@ export const HeaderProvider = ({ children }) => {
 //
 export const useHeader = () => {
     const header = useContext(HeaderData);
-    return header ? header[0] : null;
+    return header ? header[0] : {};
 }
 
 // This hook can be used to explicitly/manually refresh the global header data;

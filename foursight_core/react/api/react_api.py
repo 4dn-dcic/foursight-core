@@ -29,11 +29,13 @@ from .aws_stacks import (
     aws_stacks_cache_clear
 )
 from .checks import Checks
+from .cognito import cognito_cache_clear, create_cognito_authtoken, get_cognito_oauth_config, retrieve_cognito_oauth_token
 from .cookie_utils import create_delete_cookie_string
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
 from .encryption import Encryption
 from .encoding_utils import base64_decode_to_json
 from .gac import Gac
+from .jwt_utils import jwt_encode
 from .misc_utils import (
     get_base_url,
     is_running_locally,
@@ -195,6 +197,39 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # Note we add the callback for the UI to setup its Auth0 login for.
         auth0_config["callback"] = self._auth0_config.get_callback_url(request)
         return self.create_success_response(self._auth0_config.get_config_data())
+
+    def reactapi_cognito_config(self, request: dict) -> Response:
+        """
+        Called from react_routes for endpoint: GET /cognito_config
+        Note that this in an UNPROTECTED route.
+        """
+        return self.create_success_response(get_cognito_oauth_config(request))
+
+    def reactapi_cognito_callback(self, request: dict) -> Response:
+        """
+        Called from react_routes for endpoint: GET /cognito/callback
+        This is actually called from our primary frontend (React) callback /api/react/cognito/callback
+        which is redirected to from Cognito so it can pick up the ouath_pkce_key (sic) which is written
+        to browser session storage by the React authentication kickoff code (Amplify.federatedSignIn).
+        That value (ouath_pkce_key) is passed to this API as the code_verifier argument, alond with the
+        code argument which is passed to our primary callback. FYI note known typo in ouath_pkce_key.
+        Note that this in an UNPROTECTED route.
+        """
+        domain, _ = app.core.get_domain_and_context(request)
+        site = self.get_site_name()
+        env = self._envs.get_default_env()
+        # Retrieve (via /oauth2/token) and decode the OAuth (JWT) token, given code/code_verifier arguments.
+        token = retrieve_cognito_oauth_token(request)
+        # Create our authtoken (to cookie user) based on the retieved token.
+        authtoken, expires = create_cognito_authtoken(token, env, self._envs, domain, site)
+        # Sic (WRT usage of Auth0 client ID and secret).
+        # For now we just use the Auth0 client ID and secret to JWT encode
+        # the authtoken, for straightforward compatibilty with existing Auth0 code.
+        # I.e. once we've done the initial (login) authentication/authorization we
+        # act exactly like (as-if) previously implemented Auth0 based authentication.
+        authtoken_encoded = jwt_encode(authtoken, audience=self._auth0_config.get_client(),
+                                                  secret=self._auth0_config.get_secret())
+        return self.create_success_response({ "authtoken": authtoken_encoded, "expires": expires })
 
     def reactapi_logout(self, request: dict, env: str) -> Response:
         """
@@ -1396,6 +1431,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._get_user_institutions.cache_clear()
         aws_network_cache_clear()
         aws_stacks_cache_clear()
+        cognito_cache_clear()
         return self.create_success_response({"status": "Caches cleared."})
 
     @staticmethod
