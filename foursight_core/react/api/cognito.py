@@ -71,6 +71,8 @@ def retrieve_cognito_oauth_token(request: dict) -> dict:
     server because it needs to pass to that call the (Cognito) client secret, which obviously
     must be done by backend code so as to not expose this secret outside of that secured context.
 
+    https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow-with-proof-key-for-code-exchange-pkce
+
     :param request: Dictionary containing the HTTP request for our Cognito authentication callback.
     :returns: Dictionary containing decoded JWT token (id_token) from the /oauth2/token endpoint call.
     """

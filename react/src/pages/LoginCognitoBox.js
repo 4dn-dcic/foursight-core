@@ -10,6 +10,7 @@ import Styles from '../Styles';
 import { StandardSpinner } from '../Spinners';
 import { Auth as AmplifyAuth } from '@aws-amplify/auth'
 
+const BOX_BACKGROUND = "#FEFEFE";
 
 export const LoginCognitoBox = ({ hide }) => {
 
@@ -32,8 +33,6 @@ export const LoginCognitoBox = ({ hide }) => {
                     responseType: "code"
                 }
             };
-                console.log('cognito-config')
-                console.log(configuration)
             AmplifyAuth.configure(configuration);
         }
     });
@@ -47,7 +46,7 @@ export const LoginCognitoBox = ({ hide }) => {
         window.alert("Sign in with GitHub is not yet supported.");
     }
 
-    return <>
+    return <div style={{transform:"scale(1.1)",marginTop:"10pt",marginBottom:"30pt"}}>
         <LoginCognitoBoxWrapper>
             { config.loading ? <>
                 <StandardSpinner condition={true || config.loading} color={Styles.GetForegroundColor()} bold={false} size="140" label={"Loading configuration "} />
@@ -61,17 +60,19 @@ export const LoginCognitoBox = ({ hide }) => {
         <center className="pointer title-font" style={{marginTop:"4pt",fontSize:"8pt"}} onClick={hide}>
             Cancel
         </center>
-    </>
+    </div>
 }
 
 export const LoginCognitoBoxWrapper = ({ children }) => {
     return <div className="container" style={{width:"265pt",marginTop:"30pt"}}>
-        <div style={{background:"#FEFEFE",border:"2px solid var(--box-fg)",borderRadius:"6px",overflow:"hidden",width:"240pt"}}>
-            <div style={{background:"var(--box-fg)",color:"var(--box-bg)",padding:"8pt 12pt 8pt 12pt",textAlign:"center"}}>
-                <b className="title-font" style={{fontSize:"18pt"}}>FOURSIGHT LOGIN</b>
-            </div>
-            <div style={{padding:"12pt 6pt 12pt 6pt"}}>
-                {children}
+        <div style={{border:"2px solid var(--box-fg)",padding:"2px 2px 2px 2px",borderRadius:"6px",overflow:"hidden"}}>
+            <div style={{background:BOX_BACKGROUND,border:"1px solid var(--box-fg)",borderRadius:"6px",overflow:"hidden"}}>
+                <div style={{background:"var(--box-fg)",color:"var(--box-bg)",padding:"8pt 12pt 8pt 12pt",textAlign:"center"}}>
+                    <b className="title-font" style={{fontSize:"18pt"}}>FOURSIGHT LOGIN</b>
+                </div>
+                <div style={{padding:"12pt 6pt 12pt 6pt"}}>
+                    {children}
+                </div>
             </div>
         </div>
     </div>
@@ -92,7 +93,7 @@ const GitHubLoginButton = ({ signin }) => {
 }
 
 const LoginButtonWrapper = ({ signin, children }) => {
-    return <div style={{background:"#FEFEFE",padding:"0 10pt 0 10pt"}}>
+    return <div style={{background:BOX_BACKGROUND,padding:"0 10pt 0 10pt"}}>
         <button className="signin-as-button" onClick={signin}>
             {children}
         </button>
