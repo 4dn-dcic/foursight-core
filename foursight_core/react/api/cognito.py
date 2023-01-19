@@ -10,6 +10,9 @@ from foursight_core.react.api.gac import Gac
 from foursight_core.react.api.misc_utils import get_request_origin, memoize
 
 
+COGNITO_BASE_URL = "https://cognito-idp.us-east-1.amazonaws.com"
+
+
 def get_cognito_oauth_config(request: dict) -> dict:
     """
     Returns all necessary configuration info for our AWS Coginito authentication server.
@@ -36,7 +39,8 @@ def _get_cognito_oauth_config_base() -> dict:
         "user_pool_id": user_pool_id,
         "client_id": client_id,
         "scope": [ "openid", "email", "profile" ],
-        "connections": [ "Google" ]
+        "connections": [ "Google" ],
+        "config": f"{COGNITO_BASE_URL}/{user_pool_id}/.well-known/openid-configuration"
     }
 
 
@@ -118,13 +122,7 @@ def _call_cognito_oauth_token_endpoint(request: dict) -> dict:
     # which we pass as an argument, along with the given code, to the /oauth2/token endpoint.
     #
     code_verifier = args.get("code_verifier")
-    print('xyzzy/_call_cognito_oauth_token_endpoint')
-    print(request)
-    print(args)
-    print(code)
-    print(code_verifier)
     data = _get_cognito_oauth_token_endpoint_data(request, code=code, code_verifier=code_verifier)
-    print('xyzzy/_call_cognito_oauth_token_endpoint/2')
     #
     # Note that for the /oauth2/token endpoint call we need EITHER this authorization
     # header, containing the authentication server client secret, OR we need to pass
@@ -136,18 +134,10 @@ def _call_cognito_oauth_token_endpoint(request: dict) -> dict:
         "Authorization": f"Basic {_get_cognito_oauth_token_endpoint_authorization()}"
     }
     url = _get_cognito_oauth_token_endpoint_url()
-    print('xyzzy/_call_cognito_oauth_token_endpoint/posting')
-    print(url)
-    print(headers)
-    print(data)
     cognito_auth_token_response = requests.post(url, headers=headers, data=data)
-    print('xyzzy/_call_cognito_oauth_token_endpoint/posting/after')
-    print(cognito_auth_token_response)
-    print(cognito_auth_token_response.status_code)
     if cognito_auth_token_response.status_code != 200:
         raise Exception("Invalid response from /oauth2/token")
     cognito_auth_token_response_json = cognito_auth_token_response.json()
-    print(cognito_auth_token_response_json)
     return cognito_auth_token_response_json
 
 
@@ -296,11 +286,11 @@ def _get_cognito_oauth_signing_key_client() -> object:
     """
     config = _get_cognito_oauth_config_base()
     user_pool_id = config["user_pool_id"]
-    cognito_jwks_url = f"https://cognito-idp.us-east-1.amazonaws.com/{user_pool_id}/.well-known/jwks.json"
+    cognito_jwks_url = f"{COGNITO_BASE_URL}/{user_pool_id}/.well-known/jwks.json"
     return PyJWKClient(cognito_jwks_url)
 
 
-def create_cognito_authtoken(token: dict, env: str, envs: Envs, domain: str, site: str) -> Tuple[dict, int]:
+def create_cognito_authtoken(token: dict, envs: Envs, domain: str, site: str) -> Tuple[dict, int]:
     """
     Creates from the given (decoded) JWT token, retrieved from the /oauth2/token endpoint, an
     authtoken suitable for use as a cookie to indicate the user has been authenticated (logged in).
@@ -310,6 +300,8 @@ def create_cognito_authtoken(token: dict, env: str, envs: Envs, domain: str, sit
     :returns: JWT-encoded "authtoken" dictionary suitable for cookie-ing the authenticated user.
     """
     email = token.get("email")
+    default_env = envs.get_default_env()
+    known_envs = envs.get_known_envs()
     allowed_envs, first_name, last_name = envs.get_user_auth_info(email)
     expires = token.get("exp")
     authtoken = {
@@ -323,9 +315,9 @@ def create_cognito_authtoken(token: dict, env: str, envs: Envs, domain: str, sit
         "first_name": token.get("given_name") or first_name,
         "last_name": token.get("family_name") or last_name,
         "allowed_envs": allowed_envs,
-        "known_envs": envs.get_known_envs(),
-        "default_env": envs.get_default_env(),
-        "initial_env": env,
+        "known_envs": known_envs,
+        "default_env": default_env,
+        "initial_env": default_env,
         "domain": domain,
         "site": site
     }

@@ -38,6 +38,7 @@ from .gac import Gac
 from .jwt_utils import jwt_encode
 from .misc_utils import (
     get_base_url,
+    get_request_domain,
     is_running_locally,
     memoize,
     sort_dictionary_by_case_insensitive_keys
@@ -215,15 +216,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
         code argument which is passed to our primary callback. FYI note known typo in ouath_pkce_key.
         Note that this in an UNPROTECTED route.
         """
-        domain, _ = app.core.get_domain_and_context(request)
-        site = self.get_site_name()
-        env = self._envs.get_default_env()
         # Retrieve (via /oauth2/token) and decode the OAuth (JWT) token, given code/code_verifier arguments.
         token = retrieve_cognito_oauth_token(request)
         # Create our authtoken (to cookie user) based on the retieved token.
-        authtoken, expires = create_cognito_authtoken(token, env, self._envs, domain, site)
+        domain = get_request_domain(request)
+        site = self.get_site_name()
+        authtoken, expires = create_cognito_authtoken(token, self._envs, domain, site)
         # Sic (WRT usage of Auth0 client ID and secret).
-        # For now we just use the Auth0 client ID and secret to JWT encode
+        # For now at least we use the Auth0 client ID and secret to JWT encode
         # the authtoken, for straightforward compatibilty with existing Auth0 code.
         # I.e. once we've done the initial (login) authentication/authorization we
         # act exactly like (as-if) previously implemented Auth0 based authentication.

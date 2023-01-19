@@ -211,9 +211,11 @@ class ReactApiBase:
     def is_foursight_fourfront(self) -> bool:
         return app.core.APP_PACKAGE_NAME == "foursight"
 
-    @staticmethod
-    def get_site_name() -> str:
+    def get_site_name(self) -> str:
         return "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront"
+
+    def get_default_env(self) -> str:
+        return self._envs.get_default_env()
 
     def cache_clear(self) -> None:
         self._auth.cache_clear()
