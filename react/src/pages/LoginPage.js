@@ -120,7 +120,7 @@ const LoginPage = (props) => {
         </>
     }
 
-    if (showCognitoAuthBox) return <LoginCognitoBox />
+    if (showCognitoAuthBox) return <LoginCognitoBox hide={() => setShowCognitoAuthBox(false)} />
     return <>
         { Auth.IsLoggedIn(header) ? (<React.Fragment>
             <div className="container" style={{width:"800pt"}}>
@@ -163,7 +163,7 @@ const LoginPage = (props) => {
                 </>}
                 { (Auth.Token()?.authentication === "cognito") && <>
                     <div className="box error thickborder" style={{marginTop:"6pt",padding:"6pt",color:"darkred",fontSize:"small"}}>
-                        <img src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
+                        <img alt="cognito" src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
                         <span style={{position:"relative",top:"1pt"}}>
                             Logged in via new AWS <b>Cognito</b> support.
                         </span>
@@ -220,7 +220,7 @@ const LoginPage = (props) => {
                 </>}
             </div>
             <div className="box error thickborder" style={{marginTop:"8pt",marginLeft:"90pt",marginRight:"90pt",padding:"6pt",color:"darkred",fontSize:"small"}}>
-                <img src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
+                <img alt="cognito" src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
                 <span style={{position:"relative",top:"1pt"}}>
                     Click <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}><u>here</u></b> to try the
                     new <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}>login</b> via

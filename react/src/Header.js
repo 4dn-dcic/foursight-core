@@ -1,5 +1,4 @@
 import React from 'react';
-import { useContext } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import useHeader from './hooks/Header';
 import useHeaderRefresh from './hooks/HeaderRefresh';
@@ -91,7 +90,6 @@ const Nav = ({ header }) => {
 
 const Header = (props) => {
 
-    //const [ header ] = useContext(HeaderData);
     const header = useHeader();
     const refreshHeader = useHeaderRefresh();
     //
