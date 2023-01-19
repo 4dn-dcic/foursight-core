@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import { Link } from '../Components';
 import { RingSpinner, StandardSpinner } from '../Spinners';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import { FetchErrorBox } from '../Components';
 import Char from '../utils/Char';
 import Client from '../utils/Client';

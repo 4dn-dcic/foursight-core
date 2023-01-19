@@ -1,17 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import { Link } from '../Components';
 import Client from '../utils/Client';
 import EditBox from './EditBox';
 import Server from '../utils/Server';
 import UserDefs from './UserDefs';
-import useHeader from '../hooks/Header';
 
 const UserCreatePage = () => {
     
     const user = useFetch(Server.Url("/users"), { method: "POST", nofetch: true });
-    const [ inputs, setInputs ] = UserDefs.useUserInputs();
+    const [ inputs, _ ] = UserDefs.useUserInputs();
 
     const navigate = useNavigate();
 

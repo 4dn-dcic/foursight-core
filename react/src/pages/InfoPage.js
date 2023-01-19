@@ -2,7 +2,7 @@ import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import { StandardSpinner } from '../Spinners';
-import HeaderData from '../HeaderData';
+import useHeader from '../hooks/Header';
 import AccountsComponent from './AccountsComponent';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
@@ -10,7 +10,8 @@ import Clipboard from '../utils/Clipboard';
 import Char from '../utils/Char';
 import Context from '../utils/Context';
 import Env from '../utils/Env';
-import { useFetch, useFetchFunction } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
+import useFetchFunction from '../hooks/FetchFunction';
 import { FetchErrorBox } from '../Components';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
@@ -131,7 +132,7 @@ const InfoRow = ({name, value, monospace = false, copy = true, size = "4", pypi 
 
 const InfoPage = () => {
 
-    const [ header ] = useContext(HeaderData);
+    const header = useHeader();
     const info = useFetch("/info");
     const [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [ showingAccounts, setShowingAccounts ] = useState(false);

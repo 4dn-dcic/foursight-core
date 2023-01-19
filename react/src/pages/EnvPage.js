@@ -1,13 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import Uuid from 'react-uuid';
-import { useHeaderRefresh } from '../HeaderRefresh';
+import useHeaderRefresh from '../hooks/HeaderRefresh';
 import { FetchErrorBox } from '../Components';
 import Page from '../Page';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
 import Char from '../utils/Char';
 import Env from '../utils/Env';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import Server from '../utils/Server';
 import Type from '../utils/Type';
 import Tooltip from '../components/Tooltip';
@@ -16,7 +16,8 @@ import useHeader from '../hooks/Header';
 const EnvPage = (props) => {
 
     const header = useHeader();
-    const refreshHeader = useHeaderRefresh();
+    const refreshHeader = useHeaderRefresh(); // not sure this is actually necessary anymore
+
     // We call the /info endpoint API just to get the GAC names.
     const info = useFetch(Auth.IsLoggedIn() ? Server.Url("/info") : null);
 

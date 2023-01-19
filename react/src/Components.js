@@ -5,7 +5,6 @@ import Client from './utils/Client';
 import Char from './utils/Char';
 import Image from './utils/Image';
 import { PuffSpinner } from './Spinners';
-// import ReactTooltip from 'react-tooltip'
 import Str from './utils/Str';
 import Styles from './Styles';
 import Time from './utils/Time';
@@ -96,23 +95,18 @@ export const RefreshButton = (props) => {
 
 export const ExternalLink = (props) => {
     return <span style={{...props.style}}>
-        <a href={props.href} style={{color:"var(--box-fg)"}} rel="noreferrer" target="_blank">
+        <a id={props.href} href={props.href} style={{color:"var(--box-fg)"}} rel="noreferrer" target="_blank">
             {props.text && <span style={{fontWeight:props.boldText ? "bold" : "normal",marginRight:"5pt"}}>{props.text}</span>}
             <span className="fa fa-external-link" style={{fontWeight:props.bold ? "bold" : "normal",position:"relative",bottom:"-0.5pt"}} />
         </a>
+        { props.tooltip && <Tooltip id={props.href} text={props.tooltip} /> }
     </span>
 }
 
-/*
-export const Tooltip = ({ id, type = "dark", position = "bottom", text = "Your tooltip here.", color = null, background = null, bold = false, italic = false, icon = false, float = false, delay = 500, image = null, imageHeight = null }) => {
-    // type => dark (black) | success (green-ish) | warning (orange-ish) | error (red-ish) | info (blue-ish) | light (white-ish)
-    // or override both color and background specifically
-    return <ReactTooltip wrapper="div" delayShow={delay} type={color || background ? null : type} textColor={color} backgroundColor={background} id={id} place={position} effect={float ? "float" : "solid"}>
-        <div style={{marginLeft:"-8pt",marginRight:"-9pt",fontWeight:"normal"}}>
-            { icon &&<b style={{color:"yellow",marginRight:"4pt"}}>&#x24D8;</b> }
-            { (image && imageHeight > 0) && <img src={image} height={imageHeight} style={{marginRight:"8pt"}}/> }
-            <span style={{fontWeight:bold ? "bold" : "normal",fontStyle:italic ? "italic" : "normal"}}>{text}</span>
-        </div>
-    </ReactTooltip>
+export const GitHubLink = (props) => {
+    if (!props.href) return null;
+    return <span style={{position:"relative",bottom:"0pt",...props.style}}>
+        <a id={props.href} rel="noreferrer" target="_blank" href={props.href}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+        <Tooltip id={props.href} text={`Click to view source code for this ${props.type} (in new tab).`} />
+    </span>
 }
-*/

@@ -74,6 +74,10 @@ class Gac:
         }
 
     @staticmethod
+    def get_secret_value(name: str) -> str:
+        return get_identity_secrets().get(name)
+
+    @staticmethod
     def cache_clear() -> None:
         Gac.get_gac_name.cache_clear()
         Gac.get_gac_info.cache_clear()

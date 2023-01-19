@@ -15,6 +15,7 @@ from .datetime_utils import convert_datetime_to_time_t
 from .envs import Envs
 from .misc_utils import (
     get_request_arg,
+    get_request_args,
     is_running_locally,
 )
 
@@ -209,6 +210,10 @@ class ReactApiBase:
 
     def is_foursight_fourfront(self) -> bool:
         return app.core.APP_PACKAGE_NAME == "foursight"
+
+    @staticmethod
+    def get_site_name() -> str:
+        return "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront"
 
     def cache_clear(self) -> None:
         self._auth.cache_clear()

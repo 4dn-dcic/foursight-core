@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StandardSpinner } from '../Spinners';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import Char from '../utils/Char';
 import Tooltip from '../components/Tooltip';
 import Uuid from 'react-uuid';

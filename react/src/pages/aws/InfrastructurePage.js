@@ -2,7 +2,7 @@ import React from 'react';
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { StandardSpinner } from '../../Spinners';
-import { useFetch } from '../../utils/Fetch';
+import useFetch from '../../hooks/Fetch';
 import { ExternalLink } from '../../Components';
 import Char from '../../utils/Char';
 import Type from '../../utils/Type';

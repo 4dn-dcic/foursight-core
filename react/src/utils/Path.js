@@ -18,11 +18,28 @@ function GetNormalizedPath(path) {
     return path;
 }
 
+function GetPathFromUrl(url) {
+    if (url.startsWith("http://")) {
+        const path = url.substring(7);
+        const slash = path.indexOf("/");
+        return (slash >= 0) ? GetNormalizedPath(path.substring(slash)) : "/";
+    }
+    else if (url.startsWith("https://")) {
+        const path = url.substring(8);
+        const slash = path.indexOf("/");
+        return (slash >= 0) ? GetNormalizedPath(path.substring(slash)) : "/";
+    }
+    else {
+        return url;
+    }
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 const Exports = {
-    Normalize: GetNormalizedPath
+    Normalize: GetNormalizedPath,
+    FromUrl: GetPathFromUrl
 };
 export default Exports;

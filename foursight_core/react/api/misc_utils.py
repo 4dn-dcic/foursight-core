@@ -46,6 +46,13 @@ def get_request_body(request: Request) -> dict:
     return json.loads(request.raw_body.decode())
 
 
+def get_request_origin(request: dict) -> str:
+    headers = request.get("headers", {})
+    scheme = headers.get("x-forwarded-proto", "http" if is_running_locally(request) else "https")
+    domain = headers.get("host")
+    return f"{scheme}://{domain}"
+
+
 def get_base_url(url: str) -> str:
     """
     Returns the base (root) URL if the given URL, i.e. with just the scheme/protocol (e.g.
