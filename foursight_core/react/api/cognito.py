@@ -15,8 +15,12 @@ def get_cognito_oauth_config(request: dict) -> dict:
     Returns all necessary configuration info for our AWS Coginito authentication server.
     :returns: Dictionary containing AWS Cognito configuration info.
     """
+    #
+    # TODO
+    # Could maybe read this from the AWS Cognito configuration directly.
+    #
     config = _get_cognito_oauth_config_base()
-    config["callback"] = f"{get_request_origin(request)}/api/react/cognito/callback"
+    config["callback"] = os.environ.get("FOURSIGHT_COGNITO_CALLBACK", f"{get_request_origin(request)}/api/react/cognito/callback")
     return config
 
 
