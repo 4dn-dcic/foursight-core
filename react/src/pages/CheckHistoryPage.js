@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import { FetchErrorBox } from '../Components';
 import { StandardSpinner } from '../Spinners';
 import PaginationComponent from '../PaginationComponent';
@@ -16,6 +16,7 @@ import Str from '../utils/Str';
 import Styles from '../Styles';
 import TableHead from '../TableHead';
 import Time from '../utils/Time';
+import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 
@@ -156,9 +157,11 @@ const CheckHistoryPage = (props) => {
             <div title={check}>
                 { history.get("list")?.length > 0 ? <>
                     { checkInfo.get("type") === "action" ? <>
-                        <b className="tool-tip" data-text={check}>Action History</b>: <b>{checkInfo.get("name")}</b>&nbsp;
+                        <b id={`tooltip-action-name-${check}`}>Action History</b>: <b>{checkInfo.get("name")}</b>&nbsp;
+                        <Tooltip id={`tooltip-action-name-${check}`} position="top" text={`Action: ${check}.`} />
                     </>:<>
-                        <b className="tool-tip" data-text={check}>Check History</b>: <b>{checkInfo.get("title")}</b>&nbsp;
+                        <b id={`tooltip-name-${check}`}>Check History</b>: <b>{checkInfo.get("title")}</b>&nbsp;
+                        <Tooltip id={`tooltip-name-${check}`} position="top" text={`Check: ${check}.`} />
                     </>}
                 </>:<>
                     { checkInfo.get("type") === "action" ? <>
@@ -166,9 +169,6 @@ const CheckHistoryPage = (props) => {
                     </>:<>
                         <b>{checkInfo.get("title")}</b>&nbsp;
                     </>}
-                </>}
-                { history.get("check.registered_github_url") && <>
-                    <a className="tool-tip" data-text="Click here to view the source code for this check." style={{marginLeft:"4pt",marginRight:"6pt"}} rel="noreferrer" target="_blank" href={history.get("check.registered_github_url")}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
                 </>}
             </div>
             <div style={{marginBottom:"6pt"}}/>
@@ -203,14 +203,15 @@ const CheckHistoryPage = (props) => {
                                 <small>{offset + index + 1}.</small>
                             &nbsp;</td>
                             <td style={{verticalAlign:"top",whiteSpace:"nowrap"}}>
-                                <span className="tool-tip" data-text={Time.Ago(extractTimestamp(history))} onClick={() => toggleResult(check, history, extractUUID(history))} style={{cursor:"pointer"}}>
+                                <span id={`tooltip-timestamp-${index}`} onClick={() => toggleResult(check, history, extractUUID(history))} style={{cursor:"pointer"}}>
                                     {extractTimestamp(history)}
                                 </span>
+                                <Tooltip id={`tooltip-timestamp-${index}`} text={Time.Ago(extractTimestamp(history))} position="right" shape="squared" />
                             &nbsp;&nbsp;</td>
                             <td style={{verticalAlign:"top",whiteSpace:"nowrap"}}>
                                 {extractUUID(history)}
                             &nbsp;&nbsp;</td>
-                            <td className="tool-tip" data-text={extractStatus(history)} style={{verticalAlign:"top",whiteSpace:"break-spaces"}}>
+                            <td id={`tooltip-status-${index}`} style={{verticalAlign:"top",whiteSpace:"break-spaces"}}>
                                 {extractStatus(history) === "PASS" ? (<>
                                     <b>OK</b>
                                 </>):(<>
@@ -221,6 +222,7 @@ const CheckHistoryPage = (props) => {
                                     </>)}
                                 </>)}
                                 {/* <br/> <small> {extractSummary(history)} </small> */}
+                                <Tooltip id={`tooltip-status-${index}`} text={extractStatus(history)} position="right" shape="squared" offset={-12} />
                             &nbsp;&nbsp;</td>
                             <td style={{verticalAlign:"top",textAlign:"right"}}>
                                 {extractDuration(history)}
@@ -331,7 +333,8 @@ const ActionDetailBox = ({check, checkInfo}) => {
                     <td style={{paddingRight:"8pt"}}><b>Name</b>:</td>
                     <td>
                         {checkInfo.get("name")}
-                        <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"3pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={checkInfo.get("github_url")}><img alt="github" src={Image.GitHubLoginLogo()} height="13"/></a>
+                        <a id={`tooltip-action-source-${check.name}`} style={{marginLeft:"3pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={checkInfo.get("github_url")}><img alt="github" src={Image.GitHubLoginLogo()} height="13"/></a>
+                        <Tooltip id={`tooltip-action-source-${check.name}`} text="Click to view source code for this action (in new tab)." position="top" />
                     </td>
                 </tr>
                 <tr><td style={{paddingTop:"2px"}}></td></tr>
@@ -342,7 +345,8 @@ const ActionDetailBox = ({check, checkInfo}) => {
                     <td>
                         {checkInfo.map("checks", (check, index) => <>
                             <Link to={Client.Path(`/checks/${check.name}/history`)}>{check.name}</Link>
-                            <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"3pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="13"/></a>
+                            <a id={`tooltip-source-${check.name}`} style={{marginLeft:"3pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="13"/></a>
+                            <Tooltip id={`tooltip-source-${check.name}`} text="Click to view source code for this check (in new tab)." position="bottom" />
                             <br />
                         </>)}
                     </td>
@@ -427,7 +431,8 @@ const CheckDetailBox = ({check, checkInfo}) => {
                     <td style={{paddingRight:"8pt"}}><b>Name</b>:</td>
                     <td>
                         {checkInfo.get("name")}
-                        <a className="tool-tip" data-text={`Click to view source code for this check.`} style={{marginLeft:"3pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={checkInfo.get("registered_github_url")}><img alt="github" src={Image.GitHubLoginLogo()} height="13"/></a>
+                        <a id={`tooltip-source-${check.name}`} style={{marginLeft:"3pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={checkInfo.get("registered_github_url")}><img alt="github" src={Image.GitHubLoginLogo()} height="13"/></a>
+                        <Tooltip id={`tooltip-source-${check.name}`} text="Click to view source code for this check (in new tab)." position="top" />
                     </td>
                 </tr>
                 <tr><td style={{paddingTop:"3px"}}></td></tr>
@@ -538,7 +543,8 @@ const CheckDetailBox = ({check, checkInfo}) => {
                         <td style={{paddingRight:"8pt"}}><b>Name</b>:</td>
                         <td>
                             <Link to={Client.Path(`/checks/${checkInfo.get("registered_action.name")}/history`)}>{checkInfo.get("registered_action.name")}</Link>
-                            <a className="tool-tip" data-text={`Click to view source code for this action.`} style={{marginLeft:"3pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={checkInfo.get("registered_action.github_url")}><img alt="github" src={Image.GitHubLoginLogo()} height="13"/></a>
+                            <a id={`tooltip-action-source-${check}`}  style={{marginLeft:"3pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={checkInfo.get("registered_action.github_url")}><img alt="github" src={Image.GitHubLoginLogo()} height="13"/></a>
+                            <Tooltip id={`tooltip-action-source-${check}`} text="Click to view source code for this action (in new tab)." position="top" />
                         </td>
                     </tr>
                     <tr><td style={{paddingTop:"3px"}}></td></tr>

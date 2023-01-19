@@ -393,10 +393,7 @@
     margin-top: 1.8pt;
 }
 .box.bigmargin {
-    margin-top: 4.0pt;
-}
-.box.cell {
-    display: table-cell;
+    margin-top: 3.6pt;
 }
 .box.noborder {
     border: 0;
@@ -544,6 +541,54 @@ form {
   color: var(--box-bg);
   background: var(--box-fg);
   border-color: var(--box-fg);
+}
+
+.refresh {
+    background: white;
+    color: var(--box-fg);
+    border-radius: 4pt;
+    border: 1px solid var(--box-fg);
+    width: 16pt;
+    max-width: 16pt;
+    height: 16pt;
+    max-height: 16pt;
+    padding-left: 2.8pt;
+    padding-bottom: 15.0pt;
+    cursor: pointer;
+    user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+}
+.refreshing {
+    background: white;
+    color: var(--box-fg);
+    border-radius: 4pt;
+    border: 1px solid var(--box-fg);
+    width: 16pt;
+    max-width: 16pt;
+    height: 16pt;
+    max-height: 16pt;
+    padding-left: 0.4pt;
+    padding-top: 1.6pt;
+    padding-bottom: 13.2pt;
+    cursor: pointer;
+    user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+}
+.refresh:hover {
+    background: var(--box-fg);
+    color: white;
+    border: 1px solid var(--box-bg);
+}
+.refresh:active {
+    background: yellow;
+    color: red;
+    border: 1px solid red;
 }
 
 .pointer {

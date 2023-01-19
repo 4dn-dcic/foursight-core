@@ -1,28 +1,37 @@
 import { useParams, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
 import { Link } from '../Components';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import Char from '../utils/Char';
 import { FetchErrorBox } from '../Components';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
 import PagedTableComponent from '../PagedTableComponent';
 import Styles from '../Styles';
+import Tooltip from '../components/Tooltip';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
+import useUserMetadata from '../hooks/UserMetadata';
 
 const UsersPage = () => {
 
     const { environ } = useParams();
-    const [ args ] = useSearchParams();
+    const [ args, setArgs ] = useSearchParams();
     const users = useFetch();
 
-    function update(limit, offset, sort, onDone) {
+    const [ search, setSearch ] = useState(args.get("search") || "");
+    const [ showSearch, setShowSearch ] = useState(Str.HasValue(search));
+
+    const userMetadata = useUserMetadata();
+
+    function update({ limit, offset, sort, search, onDone }) {
         if (!Type.IsInteger(limit)) limit = parseInt(args.get("limit")) || 25;
         if (!Type.IsInteger(offset)) offset = parseInt(args.get("offset")) || 0;
         if (!Str.HasValue(sort)) sort = args.get("sort") || "email.asc";
+        if (!Str.HasValue(search)) search = args.get("search") || "";
         if (!Type.IsFunction(onDone)) onDone = () => {}
         users.refresh({
-            url: Server.Url(`/users/?limit=${limit}&offset=${offset}&sort=${sort}`, environ),
+            url: Server.Url(`/users/?limit=${limit}&offset=${offset}&sort=${sort}${search ? `&search=${search}` : ""}`, environ),
             onDone: (response) => onDone(response)
         });
     }
@@ -34,27 +43,92 @@ const UsersPage = () => {
         { label: "User", key: "email" },
         { label: "Groups", key: "groups" },
         { label: "Project", key: "project" },
-        { label: "Institution", key: "user_institution" },
+        { label: "Institution", key: "institution" },
+        { label: "Role", key: "role" },
+        { label: "Status", key: "status" },
         { label: "Updated", key: "data_modified" }, // DOES NOT WORK (nested in last_modified)
         { label: "Created", key: "date_created" }
     ];
 
     const tdStyle = { verticalAlign: "top", paddingRight: "1pt", paddingTop: "4pt", paddingBottom: "8pt" };
 
+    function toggleSearch() {
+        if (showSearch) {
+            if (Str.HasValue(search)) {
+                updateArgs("search", null);
+                update();
+            }
+            setSearch("");
+            setShowSearch(false);
+        }
+        else {
+            setShowSearch(true);
+        }
+    }
+
+    function updateArgs(...items) {
+        for (let i = 0 ; i < items.length ; i += 2) {
+            const name = items[i];
+            if (Str.HasValue(name)) {
+                const value = i + 1 < items.length ? items[i + 1] : undefined;
+                if (Type.IsNull(value) || (Type.IsString(value) && !Str.HasValue(value))) {
+                    args.delete(name);
+                }
+                else {
+                    args.set(name, value);
+                }
+            }
+        }
+        setArgs(args);
+    }
+
+    function doSearch(e) {
+        updateArgs("search", search);
+        update({ offste: 0, search: search });
+        e.stopPropagation(); e.preventDefault();
+    }
+
+    function onSearchInput(e) {
+        const search = e.currentTarget.value;
+        setSearch(search);
+    }
+
+    const inputStyle = {
+        outline: "none",
+        paddingLeft: "2pt",
+        display: "inline",
+     // border: "1px solid gray",
+        borderBottom: "0",
+        borderTop: "0",
+        borderRight: "0",
+        borderLeft: "0",
+        bottom: "1pt",
+        fontSize: "small",
+        fontWeight: "bold",
+        color: "var(--box-fg)",
+        width: "100%"
+    };
+
     return <>
         <div className="container fg">
            <div>
-                <b>Users</b>
-                <div style={{float:"right",marginTop:"2pt"}}>
-                    <Link to={"/users/create"} bold={false}><small>Create User</small></Link>&nbsp;
-{/*
-                    &nbsp;|&nbsp;
-                    <div className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={update}>
-                        <span className="bg" style={{border:"1px solid black",borderRadius:"4px",padding:"0px 4px 1px 4px",cursor:"pointer"}}>
-                            <b>{Char.Refresh}</b>
-                        </span>
-                    </div>
-*/}
+                <table width="100%" border="0"><tbody><tr>
+                    <td style={{width:"2%"}}>
+                        <div style={{marginBottom:"2pt"}}><b>Users</b></div>
+                    </td>
+                    <td style={{whiteSpace:"nowrap"}}>
+                        <span className="pointer" onClick={toggleSearch}>&nbsp;&nbsp;{Char.Search}</span>&nbsp;&nbsp;
+                        { (showSearch || Str.HasValue(search)) && <>
+                            <form onSubmit={doSearch}>
+                                <input placeholder="Experimental search for users ..." type="text" autoFocus style={inputStyle} value={search} onChange={onSearchInput} />
+                            </form>
+                        </>}
+                    </td>
+                    <td style={{fontSize:"small"}}>
+                        <div style={{float:"right"}}><Link to={"/users/create"} bold={false}>Create</Link></div>
+                    </td>
+                </tr></tbody></table>
+                <div style={{float:"right",marginTop:"3pt",marginRight:"4pt",fontSize:"small"}}>
                 </div>
                 <div style={{height:"1px",background:Styles.GetForegroundColor(),marginTop:"2pt",marginBottom:"4pt"}}></div>
             </div>
@@ -78,13 +152,27 @@ const UsersPage = () => {
                                 <small id="{user.uuid}" style={{cursor:"copy"}}>{user.uuid}</small>
                             </td>
                             <td style={tdStyle}>
-                                {user.groups && user.groups?.length > 0 ? user.groups : Char.EmptySet}
+                                {user.groups?.length > 0 ? (userMetadata.titles(user.groups) || Char.EmptySet) : Char.EmptySet}
                             </td>
                             <td style={tdStyle}>
-                                {user?.project?.replace("/projects/","")?.replace("/","") || Char.EmptySet}
+                                <span id={`tooltip-users-project-${user.email}`}>{userMetadata.projectTitle(user.project) || Char.EmptySet}</span>
+                                <Tooltip id={`tooltip-users-project-${user.email}`} position="bottom" size="small" text={`Project: ${user.project}`} />
                             </td>
                             <td style={tdStyle}>
-                                {user?.institution?.replace("/institutions/","")?.replace("/","") || Char.EmptySet}
+                                <span id={`tooltip-users-institution-${user.email}`}>{userMetadata.institutionTitle(user.institution) || Char.EmptySet}</span>
+                                <Tooltip id={`tooltip-users-institution-${user.email}`} position="bottom" size="small" text={`Institution: ${user.institution}`} />
+                            </td>
+                            <td style={tdStyle}>
+                                <span id={`tooltip-users-role-${user.email}`}>
+                                    {userMetadata.userRoleTitle(user, user.project) || Char.EmptySet}
+                                    {user.roles?.length > 1 && <small>&nbsp;({user.roles?.length})</small>}
+                                </span>
+                                <Tooltip id={`tooltip-users-role-${user.email}`} position="bottom" size="small"
+                                    text={`Role: ${userMetadata.userRole(user, user.project)}${user.roles?.length > 1 ? `. Total: ${user.roles.length}` : ""}`} />
+                            </td>
+                            <td style={tdStyle}>
+                                <span id={`tooltip-users-status-${user.status}`}>{userMetadata.statusTitle(user.status) || Char.EmptySet}</span>
+                                <Tooltip id={`tooltip-users-status-${user.status}`} position="bottom" size="small" text={`Status: ${user.status}`} />
                             </td>
                             <td style={tdStyle}>
                                 {user.updated ? Time.FormatDate(user.updated) : Time.FormatDate(user.created)} <br />
@@ -95,7 +183,7 @@ const UsersPage = () => {
                                 <small>{Time.FormatTime(user.created)}</small>
                             </td>
                             <td style={tdStyle}>
-                                <Link to={`/users/edit/${user.uuid}`}>Edit</Link>
+                                &nbsp;&nbsp;<button><Link to={`/users/edit/${user.uuid}`}>Edit</Link></button>
                             </td>
                         </tr>
                     ))}

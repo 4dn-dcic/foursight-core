@@ -12,14 +12,15 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
     const [ limit, setLimit ] = useState(defaultLimit());
     const [ offset, setOffset ] = useState(defaultOffset());
     const [ sort, setSort ] = useState(initialSort);
+    const [ search ] = useState(defaultSearch());
     const [ total, setTotal ] = useState(0);
     const [ more, setMore ] = useState(0);
     const [ pageOffset, setPageOffset ] = useState(calculatePageOffset(offset, limit));
     const [ pageCount, setPageCount ] = useState(total, limit);
 
     useEffect(() => {
-        updateData(limit, offset, sort);
-    }, [limit, offset, sort]);
+        updateData(limit, offset, sort, search);
+    }, [limit, offset, sort, search]);
 
 
     function defaultLimit() {
@@ -34,6 +35,10 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
         return args.get("sort") || "";
     }
 
+    function defaultSearch() {
+        return args.get("search") || "";
+    }
+
     function calculatePageOffset(offset, limit) {
         return Math.ceil(offset / limit);
     }
@@ -42,11 +47,28 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
         return Math.ceil(total / limit);
     }
 
-    function updateData(limit, offset, sort) {
+    function updateArgs(...items) {
+        for (let i = 0 ; i < items.length ; i += 2) {
+            const name = items[i];
+            if (Str.HasValue(name)) {
+                const value = i + 1 < items.length ? items[i + 1] : undefined;
+                if (Type.IsNull(value) || (Type.IsString(value) && !Str.HasValue(value))) {
+                    args.delete(name);
+                }
+                else {
+                    args.set(name, value);
+                }
+            }
+        }
+        setArgs(args);
+    }
+
+    function updateData(limit, offset, sort, search) {
         if (!Type.IsInteger(limit))  limit  = defaultLimit();
         if (!Type.IsInteger(offset)) offset = defaultOffset();
         if (!Str.HasValue(sort))     sort   = defaultSort();
-		setArgs({...args, "limit": limit, "offset": offset, "sort": sort });
+        if (!Str.HasValue(search))   search = defaultSearch();
+        updateArgs("limit", limit, "offset", offset, "sort", sort, "search", search)
         function onDone(response) {
             const total = parseInt(response.data?.paging?.total);
             const more = parseInt(response.data?.paging?.more);
@@ -58,7 +80,7 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
             setPageCount(calculatePageCount(total, limit));
             setPageOffset(calculatePageOffset(offset, limit));
         }
-        update(limit, offset, sort, onDone);
+        update({ limit: limit, offset: offset, sort: sort, search: search, onDone: onDone });
     }
 
     function onPageSize(event) {
@@ -70,7 +92,8 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
         //
         const limit = parseInt(event.target.value);
         if (offset > 0) {
-		    setArgs({...args, "limit": limit, "offset": 0 });
+		    //setArgs({...args, "limit": limit, "offset": 0 });
+		    updateArgs("limit", limit, "offset", 0);
             window.location.reload();
         }
         else {
@@ -102,6 +125,7 @@ const PagedTableComponent = ({columns, data, update, initialSort, children}) => 
                   <span style={{cursor:data?.loading ? "not-allowed" : "",width:"fit-content"}}>
                   <span style={{pointerEvents:data?.loading ? "none" : "",width:"fit-content"}}>
                   <select style={{border:"0",marginRight:"2pt"}} defaultValue={limit} onChange={onPageSize}>
+                      <option>1</option>
                       <option>5</option>
                       <option>10</option>
                       <option>25</option>

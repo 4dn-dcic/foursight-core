@@ -5,15 +5,17 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import uuid from 'react-uuid';
-import { defineGlobal, useGlobal } from '../Global';
-import Client from './Client';
-import Cookie from './Cookie';
-import Debug from './Debug';
-import Json from './Json';
-import Logout from './Logout';
-import Str from './Str';
-import Type from './Type';
-import Yaml from './Yaml';
+import Client from '../utils/Client';
+import Cookie from '../utils/Cookie';
+import Debug from '../utils/Debug';
+import Json from '../utils/Json';
+import Logout from '../utils/Logout';
+import Server from '../utils/Server';
+import Str from '../utils/Str';
+import Type from '../utils/Type';
+import Yaml from '../utils/Yaml';
+import defineGlobal from '../hooks/GlobalDefinition';
+import useGlobal from '../hooks/Global';
 
 const DEFAULT_METHOD = "GET";
 const DEFAULT_TIMEOUT = 30 * 1000;
@@ -251,9 +253,16 @@ export const useFetch = (url, args) => {
 
     useEffect(() => {
         _doFetch(assembledArgs, undefined, response);
-    }, [])
+    }, [assembledArgs.url])
 
     return response;
+}
+
+// Convenience hook with default to nofetch which it turns out we
+// usually want as we then do the actual fetch from within useEffect.
+//
+export const useFetcher = (url, args) => {
+    return useFetch(url, {...args, nofetch: true});
 }
 
 // This useFetchFunction React hook, like useFetch, is also used to centrally facilitate HTTP fetches,
@@ -643,6 +652,9 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
     };
     if (nonofetch) {
         delete args.nofetch;
+    }
+    if (Str.HasValue(args.url) && !args.url.startsWith("https://") && !args.url.startsWith("http://")) {
+        args.url = Server.Url(args.url);
     }
     return args;
 }

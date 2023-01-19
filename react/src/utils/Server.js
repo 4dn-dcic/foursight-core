@@ -19,6 +19,9 @@ function GetUrl(path, env = true) {
     if (!Str.HasValue(path)) {
         path = "/"
     }
+    else if (path.startsWith("https://") || path.startsWith("http://")) {
+        return path;
+    }
     else if (!path.startsWith("/")) {
         path = "/" + path;
     }

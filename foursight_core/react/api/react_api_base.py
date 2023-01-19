@@ -15,6 +15,7 @@ from .datetime_utils import convert_datetime_to_time_t
 from .envs import Envs
 from .misc_utils import (
     get_request_arg,
+    get_request_args,
     is_running_locally,
 )
 
@@ -179,35 +180,40 @@ class ReactApiBase:
         """
         return self._auth.authorize(request, env)
 
+    def foursight_instance_url(self, request: dict) -> str:
+        """
+        Returns the "base" URL of this Foursight instance, for example:
+        https://zvalpb2vxb.execute-api.us-east-1.amazonaws.com/api.
+        """
+        domain, context = app.core.get_domain_and_context(request)
+        if is_running_locally(request):
+            scheme = "http"
+            context = ROUTE_PREFIX
+        else:
+            scheme = "https"
+        if context.endswith("/"):
+            context = context[0:-1]
+        return f"{scheme}://{domain}{context}"
+
     def get_redirect_url(self, request: dict, env: str, domain: str, context: str) -> str:
         """
         Returns the redirect URL to the UI from the reactredir cookie, or if that
         is not set then to the /login page of the UI; for redirect on login/logout.
         """
         redirect_url = read_cookie(request, "reactredir")
-        if not redirect_url:
-            if is_running_locally(request):
-                # TODO: Allow https for localhost development.
-                scheme = "http"
-                # Using ROUTE_PREFIX here instead of context because may be just "/" for the local
-                # deploy case because we get here via the /callback endpoint (during authentication).
-                # Due to confusion between local deploy not implicitly using /api as context so setting
-                # it explicitly; this is just so we are dealing with the same paths for either case.
-                context = ROUTE_PREFIX
-            else:
-                scheme = "https"
-            if not env:
-                env = self._envs.get_default_env()
-            if not context:
-                context = "/"
-            elif not context.endswith("/"):
-                context = context + "/"
-            redirect_url = f"{scheme}://{domain}{context}react/{env}/login"
-        else:
+        if redirect_url:
             # Not certain if by design but the React library (universal-cookie) used to
             # write cookies URL-encodes them; rolling with it for now and URL-decoding here.
-            redirect_url = urllib.parse.unquote(redirect_url)
-        return redirect_url
+            return urllib.parse.unquote(redirect_url)
+        else:
+            return f"{self.foursight_instance_url(request)}/react/{env}/login"
+
+    def is_foursight_fourfront(self) -> bool:
+        return app.core.APP_PACKAGE_NAME == "foursight"
+
+    @staticmethod
+    def get_site_name() -> str:
+        return "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront"
 
     def cache_clear(self) -> None:
         self._auth.cache_clear()

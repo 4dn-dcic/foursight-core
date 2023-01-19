@@ -248,7 +248,28 @@ class Deploy(object):
         flags = ['--stage', stage, '--pkg-format', 'cloudformation', '--template-format', 'yaml']
         if merge_template:
             flags.extend(['--merge-template', merge_template])
+        PRINT(f"Starting chalice package: {output_file}")
         subprocess_call(['chalice', 'package', *flags, output_file], verbose=True)
+        PRINT(f"Finished chalice package: {output_file}")
+
+        # dmichaels/2022-12-16/C4-???:
+        # We reached the maximum size of a Chalice package to deploy in AWS (220,476,770 bytes)
+        # Prune out of it unnecessary modules, which look like tests and/or examples.
+        # This prune process is done by this bash script which lives in 4dn-cloud-infra:
+        # scripts/prune_chalice_package.sh.
+        prune_chalice_package_script_file = os.path.join(os.getcwd(), "scripts/prune_chalice_package.sh")
+        if os.path.exists(prune_chalice_package_script_file):
+            chalice_package_file = os.path.join(output_file, "deployment.zip")
+            if not os.path.exists(chalice_package_file):
+                PRINT(f"WARNING: Chalice package file not found: {chalice_package_file}")
+                PRINT(f"WARNING: Not running chalice prune script.")
+            else:
+                PRINT(f"Found chalice prune script: {prune_chalice_package_script_file}")
+                PRINT(f"Starting chalice package prune: {chalice_package_file}")
+                subprocess_call([prune_chalice_package_script_file, chalice_package_file], verbose=True)
+                PRINT(f"Finished chalice package prune: {chalice_package_file}")
+        else:
+            PRINT(f"No chalice prune script found.")
 
 
 def main():

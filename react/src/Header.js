@@ -1,29 +1,105 @@
 import React from 'react';
 import { useContext } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import HeaderData from './HeaderData';
-import { useHeaderRefresh } from './HeaderRefresh';
+import useHeader from './hooks/Header';
+import useHeaderRefresh from './hooks/HeaderRefresh';
 import { BarSpinner, StandardSpinner } from './Spinners';
 import Auth from './utils/Auth';
 import Char from './utils/Char';
 import Client from './utils/Client';
 import Context from './utils/Context';
 import LiveTime from './LiveTime';
+import Time from './utils/Time';
 import Env from './utils/Env';
 import Image from './utils/Image';
 import Logout from './utils/Logout';
 import Styles from './Styles';
-import { ReadOnlyModeDisplay } from './ReadOnlyMode';
-import { useFetching } from './utils/Fetch';
+import Tooltip from './components/Tooltip';
+//import { ReadOnlyModeDisplay } from './ReadOnlyMode';
+import ReadOnlyModeComponent from './hooks/ReadOnlyModeComponent';
+//import { useFetching } from './utils/Fetch';
+import useFetching from './hooks/Fetching';
 // import JustLoggedIn from './JustLoggedIn';
 // Issues with serving images ONLY from 4dn-dcic/dev NOT from cgap-supertest ...
 // So serve from my GitHub account for now ...
 // import LockImage from './media/lock.jpg';
 // import UnlockImage from './media/unlock.jpg';
 
+const MainMenu = ({ header }) => {
+
+    let subTitleBackgroundColor = Styles.LightenDarkenColor(Styles.GetBackgroundColor(), -10);
+
+    const MenuItem = ({ path, label }) => {
+        return <>
+            {(Client.CurrentLogicalPath() === path) ? <span style={{fontWeight:"bold"}}>{label}&nbsp;{Char.Check}</span> : <Link key={path} to={Client.Path(path)}>{label}</Link>}
+        </>
+    }
+    const MenuSeparator = () => {
+        return <div style={{height:"1px",marginTop:"1pt",marginBottom:"1pt",marginLeft:"6pt",marginRight:"6pt",background:"var(--box-fg)"}} />
+    }
+
+    return <>
+        <span className="dropdown">
+            <span className="dropdown-button"><img alt="menu" style={{marginLeft:"-4px",marginTop:"-1px"}} src={Image.MenuIcon()} height="20"/></span>
+            <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
+                <MenuItem path="/home" label="Home" />
+                <MenuItem path="/info" label="General Info" />
+                <MenuItem path="/checks" label="Checks" />
+                <MenuSeparator />
+                <MenuItem path="/aws/infrastructure" label="Infrastructure" />
+                <MenuItem path="/aws/s3" label="S3" />
+                <MenuItem path="/users" label="Users" />
+                <MenuSeparator />
+                <MenuItem path="/env" label="Environments" />
+                <MenuItem path="/accounts" label="Accounts" />
+                <MenuItem path="/login" label={Auth.IsLoggedIn(header) ? "Session" : "Login"} />
+            </div>
+        </span>
+    </>
+}
+
+const NavLinks = ({ header }) => {
+    function style(isActive) {
+        if (isActive) {
+            return { textDecoration: "none", color: "black", fontWeight: "bold" }
+        }
+        else {
+            return { textDecoration: "none", color: Styles.GetForegroundColor(), fontWeight: "normal" }
+        }
+    }
+    return <>
+        <NavLink to={Client.Path("/home")} style={({isActive}) => style(isActive)}>HOME</NavLink>&nbsp;|&nbsp;
+        <NavLink to={Client.Path("/info")} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
+        <NavLink to={Client.Path("/checks")} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
+        <NavLink to={Client.Path("/env")} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
+        {/* TODO: portal link does not change appropriately e.g. for 4dn-dcic when choosing from data to mastertest in dropdown */}
+        <a target="_blank" rel="noreferrer" id="tooltip-header-portal"
+            style={{textDecoration:"none",color:"darkgreen"}}
+            href={Client.PortalLink(header)}>
+            PORTAL <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
+        </a>&nbsp;|&nbsp;
+        <a target="_blank" rel="noreferrer" id="tooltip-header-aws"
+            style={{textDecoration:"none",color:"darkgreen"}}
+            href={"https://" + header.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>
+            AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
+        </a>
+        <Tooltip id="tooltip-header-portal" position="bottom" text={`Open portal (in new tab).`} />
+        <Tooltip id="tooltip-header-aws" position="bottom" text={`Open AWS console for (${header.app?.credentials.aws_account_name ? header.app?.credentials.aws_account_name + "/" : ""}${header.app?.credentials.aws_account_number}) account (in new tab).`} />
+    </>
+}
+
+const Nav = ({ header }) => {
+    return <span>
+        <MainMenu header={header} />
+        <>&nbsp;|&nbsp;</>
+        <NavLinks header={header} />
+    </span>
+}
+
 const Header = (props) => {
 
-    const [ header ] = useContext(HeaderData);
+    //const [ header ] = useContext(HeaderData);
+    const header = useHeader();
     const refreshHeader = useHeaderRefresh();
     //
     // Very odd but this below (navigate) declaration of useNavigate is REQUIRED, even if not
@@ -45,35 +121,6 @@ const Header = (props) => {
         else {
             return "#444444";
         }
-    }
-
-    function renderNavigationLinks(header) {
-        function style(isActive) {
-            if (isActive) {
-                return { textDecoration: "none", color: "black", fontWeight: "bold" }
-            }
-            else {
-                return { textDecoration: "none", color: Styles.GetForegroundColor(), fontWeight: "normal" }
-            }
-        }
-        return <span>
-            <NavLink to={Client.Path("/home")} style={({isActive}) => style(isActive)}>HOME</NavLink>&nbsp;|&nbsp;
-            <NavLink to={Client.Path("/env")} style={({isActive}) => style(isActive)}>ENV</NavLink>&nbsp;|&nbsp;
-            <NavLink to={Client.Path("/info")} style={({isActive}) => style(isActive)}>INFO</NavLink>&nbsp;|&nbsp;
-            <NavLink to={Client.Path("/checks")} style={({isActive}) => style(isActive)}>CHECKS</NavLink>&nbsp;|&nbsp;
-            <NavLink to={Client.Path("/users")} style={({isActive}) => style(isActive)}>USERS</NavLink>&nbsp;|&nbsp;
-            {/* TODO: portal link does not change appropriately e.g. for 4dn-dcic when choosing from data to mastertest in dropdown */}
-            <a target="_blank" rel="noreferrer" title="Open portal in another tab."
-                style={{textDecoration:"none",color:"darkgreen"}}
-                href={Client.PortalLink(header)}>
-                PORTAL <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
-            </a>&nbsp;|&nbsp;
-            <a target="_blank" rel="noreferrer" title="Open AWS Console for this account ({header.app?.credentials.aws_account_number}) in another tab."
-                style={{textDecoration:"none",color:"darkgreen"}}
-                href={"https://" + header.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>
-                AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
-            </a>
-        </span>
     }
 
     return <>
@@ -109,7 +156,7 @@ const Header = (props) => {
             <div style={{width:"100%",background:titleBackgroundColor}}>
             {/* TODO: Refactor to center the title in the main header more reliably no matter how long the left and right parts are */}
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
-            <tr title={"App Deployed:" + header.app?.deployed + " | App Launched: " + header.app?.launched + " | Page Loaded: " + header.page?.loaded}>
+            <tr>
                 <td width="38%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={Client.PortalLink(header)} target="_blank" rel="noreferrer">
                         { Env.IsFoursightFourfront(header) ? (<span>
@@ -120,7 +167,7 @@ const Header = (props) => {
                     </a>
                 </td>
                 <td width="24%" align="center" style={{whiteSpace:"nowrap"}}>
-                    <div style={{fontSize:"20pt",color:"white",cursor:"pointer"}} onClick={() => navigate(Client.Path("/login"))}>
+                    <div style={{fontSize:"20pt",color:"white",cursor:"pointer"}} onClick={() => navigate(Client.Path("/home"))}>
                         { header.app?.stage === 'dev' ? (<>
                             { header.app?.local ? (<>
                                 <span title="Running locally." style={{position:"relative",bottom:"3pt",color:"yellow",fontSize:"17pt"}}>{Char.DoNotEnter}</span>&nbsp;
@@ -147,12 +194,14 @@ const Header = (props) => {
                 <td width="38%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
                     <small><LiveTime.FormatDateTime verbose={true} timezone={false} /></small>
                     { (header.app?.credentials?.aws_account_name) && <>
-                        &nbsp;|&nbsp;<Link to={Client.Path("/login")} style={{textDecoration:"none",color:"inherit"}}><b title={`AWS Account Number: ${header.app?.credentials?.aws_account_number}`}>{header.app?.credentials?.aws_account_name?.replace(/^cgap-/, "")}</b></Link>
+                        &nbsp;|&nbsp;<Link id="tooltip-header-account" to={Client.Path("/login")} style={{textDecoration:"none",color:"inherit"}}><b>{header.app?.credentials?.aws_account_name?.replace(/^cgap-/, "")}</b></Link>
+                        <Tooltip id="tooltip-header-account" position="bottom" text={`AWS account number: ${header.app?.credentials?.aws_account_number}`} />
                     </>}
                     { (Auth.IsLoggedIn(header)) ? (<span>
                         &nbsp;|&nbsp;<span style={{cursor:"pointer",color:"#D6EAF8"}} onClick={() => Logout()}>LOGOUT</span>
                     </span>):(<span>
-                        &nbsp;|&nbsp;<Link to={Client.Path("/login?auth", Env.Current(header))} style={{cursor:"pointer",color:"#D6EAF8"}} title="Not logged in. Click to login.">LOGIN</Link>
+                        &nbsp;|&nbsp;<Link to={Client.Path("/login?auth", Env.Current(header))} style={{cursor:"pointer",color:"#D6EAF8"}} id="tooltip-header-nologin">LOGIN</Link>
+                        <Tooltip id="tooltip-header-nologin" position="bottom" text="Not logged in. Click to login." />
                     </span>)}
                 </td>
             </tr>
@@ -160,15 +209,19 @@ const Header = (props) => {
             <table width="100%" cellPadding="0" cellSpacing="0"><tbody>
                 <tr style={{background:subTitleBackgroundColor}}>
                     <td width="49%" style={{paddingLeft:"10pt",paddingTop:"3pt",paddingBottom:"3pt",whiteSpace:"nowrap"}}>
-                        {renderNavigationLinks(header)}
+                        <Nav header={header} />
                     </td>
                     <td width="2%" align="center" style={{whiteSpace:"nowrap",margin:"0 auto"}}>
-                        <a target="_blank" rel="noreferrer" href={"https://pypi.org/project/" + (Env.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + "/" + header.app?.version + "/"}><b title="Version of: foursight-cgap" style={{textDecoration:"none",color:"#263A48",paddingRight:"8pt"}}>{header.app?.version}</b></a>
+                        <a target="_blank" rel="noreferrer" href={"https://pypi.org/project/" + (Env.IsFoursightFourfront(header) ? "foursight" : "foursight-cgap") + "/" + header.app?.version + "/"}>
+                            <b style={{textDecoration:"none",color:"#263A48",paddingRight:"8pt"}} id="tooltip-header-version">{header.app?.version}</b>
+                            <Tooltip id="tooltip-header-version" position="bottom" text={(header.app?.deployed ? `Deployed: ${header.app?.deployed}. ` : "") + "Launched: " + header.app?.launched} size="x-small" />
+                        </a>
                     </td>
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
                         { (Env.KnownEnvs(header).length > 0) ? (
                         <span className="dropdown">
-                            <b className="dropdown-button" style={{color:(!Env.IsKnown(Env.Current(), header) || (Auth.IsLoggedIn(header) && !Env.IsAllowed(Env.Current(), header))) ? "red" : "#143c53"}} title={"Environment: " + Env.Current() + (!Env.IsKnown(Env.Current(), header) ? " -> UNKNOWN" : "")}>{Env.Current() || "unknown-env"}</b>
+                            <Tooltip id="tooltip-header-env" position="left" size={"small"} text={`Environments`} shape="squared" nopad={true} />
+                            <b id="tooltip-header-env" className="dropdown-button" style={{color:(!Env.IsKnown(Env.Current(), header) || (Auth.IsLoggedIn(header) && !Env.IsAllowed(Env.Current(), header))) ? "red" : "#143c53"}}>{Env.Current() || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { Env.KnownEnvs(header).map(env => 
                                     Env.Equals(env, Env.Current()) ?
@@ -183,41 +236,48 @@ const Header = (props) => {
                                             <Link key={env.public_name} to={Client.Path("/env", Env.PreferredName(env, header))}>{Env.PreferredName(env, header)}{!Env.IsAllowed(env, header) && Auth.IsLoggedIn(header) && <>&nbsp;&nbsp;{Char.Warning}</>}</Link>
                                 )}
                                 <div height="1" style={{marginTop:"2px",height:"1px",background:"darkblue"}}></div>
-                                { Auth.IsLoggedIn(header) && (header.app?.accounts_file || header.app?.accounts_file_from_s3) && <Link id="__accounts__" to={Client.Path("/accounts")}onClick={()=>{document.getElementById("__accounts__").style.fontWeight="normal";}}>Accounts</Link> }
                                 <Link id="__envinfo__" to={Client.Path("/env")}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="normal";}}>Environments</Link>
-                                { Auth.IsLoggedIn(header) && <Link id="__session__" to={Client.Path("/login")}onClick={()=>{document.getElementById("__session__").style.fontWeight="normal";}}>Session</Link> }
                             </div>
                          </span>
                         ):(
-                            <b style={{color:titleBackgroundColor}} title="Environment: {Env.Current()}">{Env.Current()}</b>
+                            <b style={{color:titleBackgroundColor}}>{Env.Current()}</b>
                         )}
                         &nbsp;|&nbsp;
                         { (header.app?.stage === 'prod') ? (<>
-                            <b title="Deployment stage: PROD!" style={{color:"darkred"}}>{header.app?.stage}</b> &nbsp;|&nbsp;
+                            <b id="tooltip-header-stage-prod" style={{color:"darkred"}}>{header.app?.stage}</b> &nbsp;|&nbsp;
+                            <Tooltip id="tooltip-header-stage-prod" position="bottom" text={`Deployment stage: PROD`} />
                         </>):(<></>)}
                         { (header.app?.stage === 'dev') ? (<>
-                            <b title="Deployment stage: DEV" style={{color:"darkgreen"}}>{header.app?.stage}</b> &nbsp;|&nbsp;
+                            <b id="tooltip-header-stage-dev" style={{color:"darkgreen"}}>{header.app?.stage}</b> &nbsp;|&nbsp;
+                            <Tooltip id="tooltip-header-stage-dev" position="bottom" text={`Deployment stage: DEV`} />
                         </>):(<></>)}
                         { (header.app?.stage !== 'prod' && header.app?.stage !== 'dev') ? (<>
-                            <b title="Deployment stage: {header.app?.stage}">{header.app?.stage}}</b> &nbsp;|&nbsp;
+                            <b id="tooltip-header-stage">{header.app?.stage}}</b> &nbsp;|&nbsp;
+                            <Tooltip id="tooltip-header-stage" position="bottom" text={`Deployment stage: {header.app?.stage}`} />
                         </>):(<></>)}
                         { (Auth.IsLoggedIn(header)) ? (<>
                             { Auth.LoggedInUser(header) ? (<>
-                                <Link to={Client.Path("/login")} style={{textDecoration:"none"}}><b style={{color:"darkblue"}} title="Logged in as.">{Auth.LoggedInUser(header)}</b></Link>
+                                <Link to={Client.Path("/login")} id="tooltip-header-logged-in" style={{textDecoration:"none"}}><b style={{color:"darkblue"}}>{Auth.LoggedInUser(header)}</b></Link>
+                                <Tooltip id="tooltip-header-logged-in" position="bottom" text={`Logged in ${Time.Ago(Auth.LoggedInAt())}`} />
                                 { Auth.LoggedInViaGoogle(header) ? <>
-                                    <img alt="google" title="Google Authentication" style={{marginLeft:"9px",marginRight:"0",marginBottom:"2px"}} src={Image.GoogleLoginLogo()} height="15" />
+                                    <span>
+                                        <img id="tooltip-header-login-google" alt="google" style={{marginLeft:"9px",marginRight:"0",marginBottom:"2px"}} src={Image.GoogleLoginLogo()} height="15" />
+                                        <Tooltip id="tooltip-header-login-google" position="bottom" text="Logged in via Google authentication." />
+                                    </span>
                                 </>:<>
                                     { Auth.LoggedInViaGitHub(header) && <>
-                                        <img alt="github" title="GitHub Authentication" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
+                                        <span id="tooltip-header-login-github">
+                                        <img alt="github" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
+                                        </span>
+                                        <Tooltip id="tooltip-header-login-github" position="bottom" text="Logged in via GitHub authentication." />
                                     </>}
                                 </>}
                             </>):(<>
-                                <span className={"tool-tip"} data-text="Running locally and unknown user logged in.">
-                                    <b style={{color:"darkred"}}>UNKNOWN USER</b>
-                                </span>
+                                <b style={{color:"darkred"}}>UNKNOWN USER</b>
                             </>)}
                         </>):(<>
-                            <Link to={Client.Path("/login", Env.Current(header))} style={{textDecoration:"none"}}><b style={{color:"darkblue"}}>NOT LOGGED IN</b></Link>
+                            <Link to={Client.Path("/login", Env.Current(header))} style={{textDecoration:"none"}}><b style={{color:"darkblue"}} id="tooltip-header-nologin-2">NOT LOGGED IN</b></Link>
+                            <Tooltip id="tooltip-header-nologin-2" position="bottom" text="Not logged in. Click to login." />
                         </>)}
                     </td>
                 </tr>
@@ -272,7 +332,7 @@ const Header = (props) => {
                 <div>
                     <table><tbody><tr>
                         {/* <td style={{}}><JustLoggedIn /></td> */}
-                        <td style={{paddingLeft:"10pt"}}><ReadOnlyModeDisplay /></td>
+                        <td style={{paddingLeft:"10pt"}}><ReadOnlyModeComponent /></td>
                     </tr></tbody></table>
                 </div>
             </div>

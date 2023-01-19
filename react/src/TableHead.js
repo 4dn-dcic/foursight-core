@@ -112,7 +112,7 @@ const TableHead = ({columns, list, update, refresh, sort = null, state = null, l
         })}</tr>
         { (lines || bottomline) && <>
             <tr><td style={{paddingBottom:"0pt"}}></td></tr>
-             <tr><td style={{height:"1px",background:style?.color ? style.color : "gray"}} colSpan="9"></td></tr>
+             <tr><td style={{height:"1px",background:style?.color ? style.color : "gray"}} colSpan="11"></td></tr>
              <tr><td style={{height:"4pt"}} colSpan="6"></td></tr>
         </>}
         {children}

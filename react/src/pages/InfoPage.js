@@ -2,7 +2,7 @@ import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import { StandardSpinner } from '../Spinners';
-import HeaderData from '../HeaderData';
+import useHeader from '../hooks/Header';
 import AccountsComponent from './AccountsComponent';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
@@ -10,13 +10,15 @@ import Clipboard from '../utils/Clipboard';
 import Char from '../utils/Char';
 import Context from '../utils/Context';
 import Env from '../utils/Env';
-import { useFetch, useFetchFunction } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
+import useFetchFunction from '../hooks/FetchFunction';
 import { FetchErrorBox } from '../Components';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
 import LiveTime from '../LiveTime';
 import Server from '../utils/Server';
 import Time from '../utils/Time';
+import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 
@@ -26,7 +28,8 @@ const InfoBox = ({title, show = true, info, children}) => {
         <div className="container">
             { showing ? <>
                 <b onClick={() => setShowing(false)} style={{cursor:"pointer"}}>{title}</b> &nbsp;<span onClick={() => setShowing(false)} style={{cursor:"pointer"}}>{Char.DownArrow}</span>
-                { title === "Versions" && <b className="tool-tip" data-text="Click to refresh." style={{float:"right",cursor:"pointer"}} onClick={info.refresh}>{Char.Refresh}&nbsp;</b> }
+                { title === "Versions" && <b id="tooltip-info-refresh" style={{float:"right",cursor:"pointer"}} onClick={info.refresh}>{Char.Refresh}&nbsp;</b> }
+                 <Tooltip id="tooltip-info-refresh" position="bottom" size="small" text="Click to refresh." />
                 <ul className="top-level-list">
                     <div className="box" style={{paddingLeft:"8pt",paddingTop:"6pt",paddingBottom:"8pt"}}>
                         {children}
@@ -129,8 +132,8 @@ const InfoRow = ({name, value, monospace = false, copy = true, size = "4", pypi 
 
 const InfoPage = () => {
 
-    const [ header ] = useContext(HeaderData);
-    const info = useFetch(Server.Url("/info"));
+    const header = useHeader();
+    const info = useFetch("/info");
     const [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [ showingAccounts, setShowingAccounts ] = useState(false);
     const [ reloadingApp, setReloadingApp ] = useState(false);
@@ -138,7 +141,7 @@ const InfoPage = () => {
 
     function initiateAppReload() {
         setReloadingApp(true);
-        fetch(Server.Url("/__reloadlambda__"), { onDone: () => setReloadingApp(false) });
+        fetch("/__reloadlambda__", { onDone: () => setReloadingApp(false) });
     }
 
     function clearCache() {
@@ -151,6 +154,8 @@ const InfoPage = () => {
             <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={Env.IsFoursightFourfront(header) ? "4dn-dcic" : "dbmi-bgm"} size="2" />
             <InfoRow name={"foursight-core"} value={header.versions?.foursight_core} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"dcicutils"} value={header.versions?.dcicutils} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
+            <InfoRow name={"tibanna"} value={header.versions?.tibanna} monospace={true} copy={true} size="2" pypi={true} />
+            <InfoRow name={"tibanna-ff"} value={header.versions?.tibanna_ff} monospace={true} copy={true} size="2" pypi={true} />
             <InfoRow name={"chalice"} value={header.versions?.chalice} monospace={true} copy={true} chalice={true} size="2" pypi={true} github={"aws"} />
             <InfoRow name={"python"} value={header.versions?.python} monospace={true} copy={true} python={true} size="2" />
             <InfoRow name={"elasticsearch-server"} value={header.versions?.elasticsearch_server || info.data?.versions?.elasticsearch_server} monospace={true} copy={true} size="2" elasticsearch={true} />
@@ -177,6 +182,7 @@ const InfoPage = () => {
             <InfoRow name={"Environment Name (Short)"} value={Env.ShortName(Env.Current(), header)} monospace={true} copy={true} size="3" />
             <InfoRow name={"Environment Name (Public)"} value={Env.PublicName(Env.Current(), header)} monospace={true} copy={true} size="3" />
             <InfoRow name={"Environment Name (Foursight)"} value={Env.FoursightName(Env.Current(), header)} monospace={true} copy={true} size="3" />
+            <InfoRow name={"Environment Name (Preferred)"} value={Env.PreferredName(Env.Current(header), header)} monospace={true} copy={true} size="3" />
         </InfoBox>
         <InfoBox info={info} title="Bucket Names">
             <InfoRow name={"Global Environment Bucket"} value={info.get("buckets.env")} monospace={true} copy={true} size="3" />
@@ -233,11 +239,14 @@ const InfoPage = () => {
         }
         <InfoBox info={info} title="Miscellany">
             { reloadingApp ? <>
-                <div data-text={"Reloading the Foursight app."} className="tool-tip" style={{float:"right"}}><StandardSpinner condition={reloadingApp} label={""} color={"darkblue"} /></div>
+                <div id="tooltip-info-reloading" style={{float:"right"}}><StandardSpinner condition={reloadingApp} label={""} color={"darkblue"} /></div>
+                <Tooltip id="tooltip-info-reloading" position="bottom" size="small" text="Reloading the Foursight app." />
             </>:<>
-                <b onClick={() => initiateAppReload()}data-text={"Click here to reload the Foursight app."} className={"tool-tip"} style={{float:"right",cursor:"pointer"}}>{Char.Refresh}</b>
+                <b onClick={() => initiateAppReload()} id="tooltip-info-reload" style={{float:"right",cursor:"pointer"}}>{Char.Refresh}</b>
+                <Tooltip id="tooltip-info-reload" position="bottom" size="small" text="Click here to reload the Foursight app." />
             </>}
-            <div className="tool-tip" data-text="Click to clear any caches." style={{float:"right",marginTop:"-1px",marginRight:"4pt",cursor:"pointer"}}>&nbsp;&nbsp;<img alt="Clear Cache" src={Image.ClearCache()} height="19" onClick={clearCache}/></div>
+            <div id="tooltip-info-clear" style={{float:"right",marginTop:"-1px",marginRight:"4pt",cursor:"pointer"}}>&nbsp;&nbsp;<img alt="Clear Cache" src={Image.ClearCache()} height="19" onClick={clearCache}/></div>
+            <Tooltip id="tooltip-info-clear" position="bottom" size="small" text="Click to clear any server-side caches." />
             <InfoRow name={"App Deployed At"} value={Server.IsLocal() ? "running locally" + (Context.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + Time.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
             <InfoRow name={"App Launched At"} value={header.app?.launched + Time.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Page Loaded At"} value={info.get("page.loaded") + Time.FormatDuration(info.get("page.loaded"), new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />

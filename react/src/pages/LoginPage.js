@@ -1,8 +1,8 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import HeaderData from '../HeaderData';
+import useHeader from '../hooks/Header';
 import Auth0Lock from 'auth0-lock';
 import Auth from '../utils/Auth';
 import Char from '../utils/Char';
@@ -11,19 +11,20 @@ import Clipboard from '../utils/Clipboard';
 import { FetchErrorBox } from '../Components';
 import Cookie from '../utils/Cookie';
 import Env from '../utils/Env';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
 import LiveTime from '../LiveTime';
 import Logout from '../utils/Logout';
 import Server from '../utils/Server';
+import Tooltip from '../components/Tooltip';
 import Yaml from '../utils/Yaml';
 import Page from '../Page';
 import { LoggedInUser, Link } from '../Components';
 
 const LoginPage = (props) => {
 
-    const [ header ] = useContext(HeaderData);
+    const header = useHeader();
     const [ showingAuthBox, setShowingAuthBox ] = useState(false);
     const [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [ args ] = useSearchParams();
@@ -109,7 +110,8 @@ const LoginPage = (props) => {
             {(header?.app?.credentials?.aws_account_number) && <>
                 AWS Account Number: <b>{header?.app?.credentials?.aws_account_number}</b>
                 {(header?.app?.credentials?.aws_account_name) && <>
-                    &nbsp;(<span className="tool-tip" data-text={`AWS Account Alias: ${header?.app?.credentials?.aws_account_name}`}>{header?.app?.credentials?.aws_account_name}</span>)
+                    &nbsp;(<span id="tooltip-login-aws-alias">{header?.app?.credentials?.aws_account_name}</span>)
+                    <Tooltip id="tooltip-login-aws-alias" position="bottom" text={`AWS Account Alias: ${header?.app?.credentials?.aws_account_name}`} />
                 </>}
                 <br />
             </>}
@@ -158,7 +160,8 @@ const LoginPage = (props) => {
                 </>}
                 { showingAuthToken && <>
                     <div className="box" style={{paddingLeft:"8pt",marginTop:"8pt",fontSize:"small"}}>
-                        <span className="tool-tip" data-text={Cookie.AuthTokenRaw()?.length + " bytes"} onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer"}}><b>AuthToken</b> from Cookie</span>
+                        <span id="tooltip-login-cookie-size" onClick={() => setShowAuthToken(false)} style={{position:"relative",top:"4pt",left:"2pt",cursor:"pointer"}}><b>AuthToken</b> from Cookie</span>
+                        <Tooltip id="tooltip-login-cookie-size" position="right" text={`Authentication cookie size: ${Cookie.AuthTokenRaw()?.length} bytes`} shape="squared" />
                         <pre className="box" style={{filter:"brightness(1.1)",background:"inherit",fontWeight:"bold",marginTop:"6pt"}}>
                             <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{Json.Str(Auth.Token())}</span>
                             <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken")} style={{float:"right",height:"20px",cursor:"copy"}} />
@@ -199,7 +202,8 @@ const LoginPage = (props) => {
                     <small>
                         AWS Account Number: {header?.app?.credentials?.aws_account_number}
                         {(header?.app?.credentials?.aws_account_name) && <>
-                            &nbsp;(<b className="tool-tip" data-text={`AWS Account Alias: ${header?.app?.credentials?.aws_account_name}`}>{header?.app?.credentials?.aws_account_name}</b>)
+                            &nbsp;(<b id="tooltip-login-aws-alias-2">{header?.app?.credentials?.aws_account_name}</b>)
+                            <Tooltip id="tooltip-login-aws-alias-2" position="bottom" text={`AWS Account alias: ${header?.app?.credentials?.aws_account_name}`} />
                         </>}
                     </small>
                 </>}

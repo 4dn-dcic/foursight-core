@@ -52,7 +52,6 @@ function GetFoursightFourfrontLogoImage() {
 
 function GetGitHubLoginLogoImage() {
     return "https://github.githubassets.com/images/modules/logos_page/Octocat.png"
- // return "https://cdn4.iconfinder.com/data/icons/iconsimple-logotypes/512/github-512.png";
 }
 
 function GetGoogleLoginLogoImage() {
@@ -75,14 +74,40 @@ function GetCalendarIcon() {
     return "https://img.freepik.com/free-icon/calendar-icon-black_318-9776.jpg?w=360";
 }
 
+function GetNewIcon() {
+    return "https://cdn2.iconfinder.com/data/icons/picons-essentials/71/new-512.png";
+}
+
+function GetSettingsIcon() {
+    return "https://www.freeiconspng.com/thumbs/settings-icon/settings-icon-16.png"
+}
+
+function GetSettingsRedIcon() {
+    return "https://icones.pro/wp-content/uploads/2022/02/services-parametres-et-icone-d-engrenage-rouge.png"
+}
+
+function GetAtomIcon() {
+    return "https://cdn-icons-png.flaticon.com/512/45/45082.png";
+}
+
+function GetMenuIcon() {
+    return "https://icons.veryicon.com/png/o/miscellaneous/offerino-icons/app-menu.png";
+}
+
+function GetCognitoLogoImage() {
+    return "https://miro.medium.com/max/600/1*aWDf6UyKfk7sdSMiq9sGJA.png";
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
+    AtomIcon:                  GetAtomIcon,
     CalendarIcon:              GetCalendarIcon,
     ClearCache:                GetClearCacheImage,
     Clipboard:                 GetClipboardImage,
+    CognitoLogo:               GetCognitoLogoImage,
     GitHub:                    GetGitHubImage,
     Lock:                      GetLockImage,
     Harvard:                   GetHarvardImage,
@@ -95,7 +120,11 @@ const exports = {
     FoursightFourfrontLogo:    GetFoursightFourfrontLogoImage,
     GitHubLoginLogo:           GetGitHubLoginLogoImage,
     GoogleLoginLogo:           GetGoogleLoginLogoImage,
+    MenuIcon:                  GetMenuIcon,
+    NewIcon:                   GetNewIcon,
     PyPi:                      GetPyPiImage,
     Python:                    GetPythonImage,
+    SettingsIcon:              GetSettingsIcon,
+    SettingsRedIcon:           GetSettingsRedIcon,
     Unlock:                    GetUnlockImage
 }; export default exports;

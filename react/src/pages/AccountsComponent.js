@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { BarSpinner } from '../Spinners';
+import { BarSpinner, StandardSpinner } from '../Spinners';
 import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
-import { useFetch } from '../utils/Fetch';
-import Server from '../utils/Server';
-import Styles from '../Styles';
+import useFetch from '../hooks/Fetch';
+import useFetching from '../hooks/Fetching';
 import Time from '../utils/Time';
+import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 
-const AccountInfoLeft = ({ info }) => {
+const AccountInfoLeft = ({ info, foursightUrl }) => {
     return <table style={{width:"100%"}}><tbody style={{whiteSpace:"nowrap"}}>
         <tr>
             <td style={{paddingRight:"10pt",width:"10%"}}>
@@ -24,9 +24,9 @@ const AccountInfoLeft = ({ info }) => {
                 </>}
             </td>
             <td>
-                <a style={{color:"inherit"}} href={info.get("foursight.url")} rel="noreferrer" target="_blank">{info.get("foursight.url")}</a>
+                <a style={{color:"inherit"}} href={info.get("foursight.url") || foursightUrl} rel="noreferrer" target="_blank">{info.get("foursight.url") || foursightUrl}</a>
                 &nbsp;
-                <a style={{color:"inherit"}} href={info.get("foursight.url")} rel="noreferrer" target="_blank">
+                <a style={{color:"inherit"}} href={info.get("foursight.url") || foursightUrl} rel="noreferrer" target="_blank">
                     <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span>
                 </a>
             </td>
@@ -96,7 +96,8 @@ const AccountInfoLeft = ({ info }) => {
                 { info.get("foursight.s3.global_env_bucket") ? <>
                     {info.get("foursight.s3.global_env_bucket")}
                     { info.get("foursight.s3.bucket_org") && <>
-                        &nbsp;(<span className="tool-tip" data-text={`S3 Bucket Org: ${info.get("foursight.s3.bucket_org")}`}>{info.get("foursight.s3.bucket_org")}</span>)
+                        &nbsp;(<span id={`tooltip-bucket-org-${info.get("foursight.aws_account_number")}`}>{info.get("foursight.s3.bucket_org")}</span>)
+                        <Tooltip id={`tooltip-bucket-org-${info.get("foursight.aws_account_number")}`} text={`S3 Bucket Org: ${info.get("foursight.s3.bucket_org")}`} position="top" />
                     </>}
                 </>:<>{Char.EmptySet}</>}
             </td>
@@ -107,8 +108,17 @@ const AccountInfoLeft = ({ info }) => {
             </td>
             <td>
                 { info.get("foursight.s3.encrypt_key_id") ? <>
-                    <span className="tool-tip" data-text="S3 Encryption Key ID.">{info.get("foursight.s3.encrypt_key_id")}</span>
+                    <span id={`tooltip-encryption-key-${info.get("foursight.aws_account_number")}`}>{info.get("foursight.s3.encrypt_key_id")}</span>
+                    <Tooltip id={`tooltip-encryption-key-${info.get("foursight.aws_account_number")}`} text={`S3 Encryption Key ID`} position="top" />
                 </>:<> &ndash; </>}
+            </td>
+        </tr>
+        <tr style={{fontSize:"small"}}>
+            <td style={{paddingRight:"10pt"}}>
+                Stack Name:
+            </td>
+            <td>
+                {info.get("foursight.stack")}
             </td>
         </tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -122,7 +132,8 @@ const AccountInfoLeft = ({ info }) => {
                 { info.get("foursight.aws_account_number") ? <>
                     <b>{info.get("foursight.aws_account_number")}</b>
                     { info.get("foursight.aws_account_name") && <>
-                        &nbsp;(<span className="tool-tip" data-text={`AWS Account Alias: ${info.get("foursight.aws_account_name")}`}>{info.get("foursight.aws_account_name")}</span>)
+                        &nbsp;(<span id={`tooltip-alias-${info.get("foursight.aws_account_name")}-${info?.data?.stage }`}>{info.get("foursight.aws_account_name")}</span>)
+                        <Tooltip id={`tooltip-alias-${info.get("foursight.aws_account_name")}-${info?.data?.stage }`} text={`AWS Account Alias: ${info.get("foursight.aws_account_name")}`} position="top" />
                     </>}
                 </>:<>{Char.EmptySet}</>}
             </td>
@@ -173,7 +184,7 @@ const AccountInfoLeft = ({ info }) => {
             </td>
             <td>
                 { info.get("foursight.deployed") ? <>
-                    <b className="tool-tip" data-text={Time.Ago(info.get("foursight.deployed"))}>{info.get("foursight.deployed")}</b> &ndash; {Time.Ago(info.get("foursight.deployed"))}
+                    <b>{info.get("foursight.deployed")}</b> &ndash; {Time.Ago(info.get("foursight.deployed"))}
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -183,7 +194,7 @@ const AccountInfoLeft = ({ info }) => {
             </td>
             <td>
                 { info.get("portal.started") ? <>
-                    <b className="tool-tip" data-text={Time.Ago(info.get("portal.started"))}>{info.get("portal.started")}</b> &ndash; {Time.Ago(info.get("portal.started"))}
+                    <b>{info.get("portal.started")}</b> &ndash; {Time.Ago(info.get("portal.started"))}
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -192,16 +203,6 @@ const AccountInfoLeft = ({ info }) => {
 
 const AccountInfoRight = ({ info }) => {
     return <table style={{width:"100%",margin:"0",padding:"0"}}><tbody style={{fontSize:"small",verticalAlign:"top",whiteSpace:"nowrap"}}>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                foursight-core:
-            </td>
-            <td>
-                {info.get("foursight.versions.foursight_core") ? <>
-                    <b>{info.get("foursight.versions.foursight_core")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
                 { info.get("foursight.package") === "foursight-cgap" ? <>
@@ -218,11 +219,11 @@ const AccountInfoRight = ({ info }) => {
         </tr>
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                chalice:
+                foursight-core:
             </td>
             <td>
-                {info.get("foursight.versions.chalice") ? <>
-                    <b>{info.get("foursight.versions.chalice")}</b>
+                {info.get("foursight.versions.foursight_core") ? <>
+                    <b>{info.get("foursight.versions.foursight_core")}</b>
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -238,11 +239,41 @@ const AccountInfoRight = ({ info }) => {
         </tr>
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                tibanna:
+            </td>
+            <td>
+                {info.get("foursight.versions.tibanna") ? <>
+                    <b>{info.get("foursight.versions.tibanna")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                tibanna-ff:
+            </td>
+            <td>
+                {info.get("foursight.versions.tibanna_ff") ? <>
+                    <b>{info.get("foursight.versions.tibanna_ff")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
                 foursight-python:
             </td>
             <td>
                 {info.get("foursight.versions.python") ? <>
                     <b>{info.get("foursight.versions.python")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                chalice:
+            </td>
+            <td>
+                {info.get("foursight.versions.chalice") ? <>
+                    <b>{info.get("foursight.versions.chalice")}</b>
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -256,16 +287,6 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("portal.versions.portal") ? <>
                     <b>{info.get("portal.versions.portal")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                snovault:
-            </td>
-            <td>
-                {info.get("portal.versions.snovault") ? <>
-                    <b>{info.get("portal.versions.snovault")}</b>
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -296,6 +317,16 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("portal.health.python_version") ? <>
                     <b>{info.get("portal.health.python_version")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                snovault:
+            </td>
+            <td>
+                {info.get("portal.versions.snovault") ? <>
+                    <b>{info.get("portal.versions.snovault")}</b>
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -335,13 +366,17 @@ const AccountInfoRight = ({ info }) => {
     </tbody></table>
 }
 
-const AccountInfo = ({ account, header, all }) => {
+export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount, brighten }) => {
 
-    const info = useFetch(Server.Url(`/accounts_from_s3/${account.id}`), { cache: true, nofetch: true });
+    const info = useFetch(`/accounts_from_s3/${account.id}`, { onDone: () => decrementAccountCount(), cache: true, nofetch: true });
 
     useEffect(() => {
-        refreshData();
+        fetchData();
     }, []);
+
+    function fetchData() {
+        info.fetch();
+    }
 
     function refreshData() {
         info.refresh();
@@ -351,7 +386,7 @@ const AccountInfo = ({ account, header, all }) => {
         if (!Type.IsNull(header?.app?.credentials?.aws_account_number) &&
             !Type.IsNull(info?.data?.foursight?.aws_account_number) &&
             (header?.app?.credentials?.aws_account_number === info?.data?.foursight?.aws_account_number)) {
-                return true;
+            return true;
         }
         return false;
     }
@@ -362,17 +397,21 @@ const AccountInfo = ({ account, header, all }) => {
 
     if (!all && !isCurrentAccount(info)) return null;
     return <>
-        <div className={isCurrentAccountAndStage(info) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt"}}>
+        <div className={isCurrentAccountAndStage(info) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt",filter:brighten ? "brightness(1.1)" : ""}}>
             {isCurrentAccount(info) ? <>
-                <b className="tool-tip" data-text="This is your current account.">{info.data?.name || account.name}</b>
+                <b id={`tooltip-current-${account.name}-${info?.data?.stage}`}>{info.data?.name || account.name}</b>
+                <Tooltip id={`tooltip-current-${account.name}-${info?.data?.stage}`} text={`This is your current account: ${info.get("foursight.aws_account_number")}`} position="top" />
             </>:<>
-                <b>{info.data?.name || account.name}</b>
+                <b id={`tooltip-account-${account.name}-${account.stage}`}>{info.data?.name || account.name}</b>
+                <Tooltip id={`tooltip-account-${account.name}-${account.stage}`} text={`AWS Account: ${info.get("foursight.aws_account_number")}.`} position="top" />
             </>}
             { info.get("foursight.stage") ? <>
-                &nbsp;&nbsp;&mdash;&nbsp;&nbsp;<span className="tool-tip" data-text={`Stage: ${info.get("foursight.stage")}`}>{info.get("foursight.stage")}</span>
+                &nbsp;&nbsp;&mdash;&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${info.get("foursight.stage")}`}>{info.get("foursight.stage")}</span>
+                <Tooltip id={`tooltip-stage-${account.id}-${info.get("foursight.stage")}`} text={`Stage: ${info.get("foursight.stage")}`} position="top" />
             </>:<>
                 { account.stage && <>
-                    &nbsp;&nbsp;&mdash;&nbsp;&nbsp;<span className="tool-tip" data-text={`Stage: ${account.stage}`}>{account.stage}</span>
+                    &nbsp;&nbsp;&mdash;&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${account.stage}`}>{account.stage}</span>
+                    <Tooltip id={`tooltip-stage-${account.id}-${account.stage}`} text={`Stage: ${account.state}`} position="top" />
                 </>}
             </>}
             <div style={{float:"right",marginTop:"-2pt"}}>
@@ -380,9 +419,11 @@ const AccountInfo = ({ account, header, all }) => {
                     <div style={{paddingTop:"7pt",paddingRight:"2pt"}}><BarSpinner /></div>
                 </>:<>
                     { info.data?.__showraw ? <>
-                        <span className="tool-tip" data-text="Click to hide raw results." onClick={() => { info.data.__showraw = false; info.update(); }} style={{cursor:"pointer"}}>{Char.DownArrow}</span>
+                        <span id={`tooltip-hide-raw-${account.id}`} onClick={() => { info.data.__showraw = false; info.update(); }} style={{cursor:"pointer"}}>{Char.DownArrow}</span>
+                        <Tooltip id={`tooltip-hide-raw-${account.id}`} text={"Click to hide raw result."} position="top" />
                     </>:<>
-                        <span className="tool-tip" data-text="Click to show raw results." onClick={() => {info.data.__showraw = true;info.update(); }} style={{cursor:"pointer"}}>{Char.UpArrow}</span>
+                        <span id={`tooltip-show-raw-${account.id}`} onClick={() => {info.data.__showraw = true;info.update(); }} style={{cursor:"pointer"}}>{Char.UpArrow}</span>
+                        <Tooltip id={`tooltip-show-raw-${account.id}`} text={"Click to show raw result."} position="top" />
                     </>}
                     <span onClick={refreshData} style={{cursor:"pointer"}}>&nbsp;&nbsp;{Char.Refresh}</span>
                 </>}
@@ -391,7 +432,7 @@ const AccountInfo = ({ account, header, all }) => {
             <table><tbody>
                 <tr style={{verticalAlign:"top"}}>
                     <td style={{width:"70%"}}>
-                        <AccountInfoLeft info={info} header={header} />
+                        <AccountInfoLeft info={info} header={header} foursightUrl={foursightUrl} />
                     </td>
                     <td style={{paddingLeft:"10pt",width:"12pt"}} />
                     <td style={{marginLeft:"12pt",borderLeft:"1px solid"}} />
@@ -415,15 +456,22 @@ const AccountsComponent = ({ header }) => {
     const [ args, setArgs ] = useSearchParams();
     const argsAll = args.get("all");
     const [ all, setAll ] = useState(argsAll?.toLowerCase() === "true" || argsAll === "1" ? true : false);
-    const accounts = useFetch(Server.Url("/accounts_from_s3"));
+    const accounts = useFetch("/accounts_from_s3", { cache: true });
+    const [ accountCount, setAccountCount ] = useState(0);
+    const [ startup, setStartup ] = useState(true);
+    const [ fetching ] = useFetching();
 
     useEffect(() => {
         refreshAll();
     }, []);
 
     function refreshAll() {
-        accounts.update(null);
-        accounts.fetch(Server.Url("/accounts_from_s3"));
+        accounts.refresh("/accounts_from_s3", { cache: true, onDone: (response) => { setAccountCount(response.data?.length) }});
+    }
+
+    function decrementAccountCount() {
+        setAccountCount(count => { return count - 1; });
+        setStartup(false);
     }
 
     function toggleAll() {
@@ -440,25 +488,36 @@ const AccountsComponent = ({ header }) => {
 
     return <>
         <div style={{borderBottom:"2px solid black",marginBottom:"8pt"}}>
-            <div className="tool-tip" data-text={header?.app?.accounts_file_from_s3} style={{marginTop:"0pt"}}><b>Known Accounts</b>
+            <div style={{marginTop:"0pt"}}><b id={`tooltip-known-accounts`}>Known Accounts</b>
+                <Tooltip id={`tooltip-known-accounts`} text={`This info from: ${header?.app?.accounts_file_from_s3}`} position="top" />
                 <div style={{float:"right",display:"inline",fontSize:"small",marginRight:"4pt",marginTop:"0pt"}}>
                 { (all)  ? <>
-                    <b className="tool-tip" data-text={"Click to show only local accounts/stages."} style={{cursor:"pointer"}} onClick={toggleAll}>All</b>
+                    <span id={`tooltip-show-local`} style={{cursor:"pointer"}} onClick={toggleAll}>Local</span>&nbsp;|&nbsp;
+                    <Tooltip id={`tooltip-show-local`} text={`Click to show accounts within AWS account: ${header?.app?.credentials?.aws_account_number} (${header?.app?.credentials?.aws_account_name})`} position="top" />
+                    <b id={`tooltip-showing-all`} style={{cursor:"pointer"}} onClick={toggleAll}>All</b>
+                    <Tooltip id={`tooltip-showing-all`} text={"Showing all known accounts."} position="top" />
                 </>:<>
-                    <span className="tool-tip" data-text={"Click to show all known accounts."} style={{cursor:"pointer"}} onClick={toggleAll}>All</span>
+                    <b id={`tooltip-showing-local`} style={{cursor:"pointer"}} onClick={toggleAll}>Local</b>&nbsp;|&nbsp;
+                    <Tooltip id={`tooltip-showing-local`} text={`Showing accounts within AWS account: ${header?.app?.credentials?.aws_account_number} (${header?.app?.credentials?.aws_account_name})`} position="top" />
+                    <span id={`tooltip-show-all`} style={{cursor:"pointer"}} onClick={toggleAll}>All</span>
+                    <Tooltip id={`tooltip-show-all`} text={"Click to show all known accounts."} position="top" />
                 </>}
-                &nbsp;|&nbsp; <span style={{cursor:"pointer"}} onClick={refreshAll}>{Char.Refresh}</span>
                 </div>
             </div>
         </div>
         { accounts.length > 0 ? <>
             { accounts?.map((account, index) => <React.Fragment key={account.id}>
-                <AccountInfo account={account} header={header} all={all} />
+                <AccountInfo account={account} header={header} all={all} decrementAccountCount={decrementAccountCount} foursightUrl={account.foursight_url} />
             </React.Fragment>)}
+            { ((startup || (accountCount > 0)) && (fetching.length > 0) /* bit of hack - need to straighten out this count/decrement stuff */ ) && <>
+                <div className="box" style={{paddingBottom:"10pt"}}>
+                    <StandardSpinner label="Loading accounts info" style={{paddingBottom:"0pt"}} />
+                </div>
+            </>}
         </>:<>
-            <div className="box" style={{marginTop:"4pt"}}>
+            <div className="box" style={{paddingBottom:"10pt"}} >
                 { (accounts.loading) ? <>
-                    <div style={{paddingTop:"7pt",paddingRight:"2pt"}}><BarSpinner /></div>
+                    <StandardSpinner label="Loading accounts list" />
                 </>:<>
                     No accounts info found.
                 </>}

@@ -1,52 +1,70 @@
 import datetime
+import dateutil.parser as dateutil_parser
 import pytz
 from typing import Optional, Union
 
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)  # I.e.: 1970-01-01 00:00:00 UTC
+TIMEZONE_USEASTERN = "US/Eastern"
 
 
-def convert_utc_datetime_to_useastern_datetime_string(t: Union[datetime.datetime, str]) -> str:
+def convert_utc_datetime_to_datetime_string(t: Union[datetime.datetime, str], tzname: str) -> Optional[str]:
     """
-    Converts the given UTC datetime object or string into a US/Eastern datetime string
-    and returns its value in a form that looks like 2022-08-22 13:25:34 EDT.
-    If the argument is a string it is ASSUMED to have a value which looks
-    like 2022-08-22T14:24:49.000+0000; this is the datetime string format
-    we get from AWS via boto3 (e.g. for a lambda last-modified value).
+    Converts the given datetime object OR string, which is ASSUMED to by in the UTC timezone,
+    into a datetime string in the given/named timezone, and returns its value in a form that looks
+    like 2022-08-22 13:25:34 EDT. If the argument is a string it is ASSUMED to have a value which
+    looks like 2022-08-22T14:24:49.000+0000; this is (for example) the format we get from AWS via
+    boto3 (e.g. for a lambda last-modified value) or from values in ElasticSearch.
 
-    :param t: UTC datetime object or string value.
-    :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
+    :param t: A datetime object or string value ASSUMED to be in the UTC timezone.
+    :return: A datetime string in the given timezone formatted like: 2022-08-22 13:25:34 EDT
     """
+    def make_utc_aware_datetime(t: datetime) -> datetime:
+        return t.replace(tzinfo=pytz.UTC)
     try:
         if isinstance(t, str):
-            # Can sometimes get dates (from userr database) which
-            # look like this: 2019-06-20T00:00:00.0000000+00:00
-            # with 7-digits for ms which does not parse (up to 6).
-            if ".0000000" in t:
-                t = t.replace(".0000000", ".000000")
-            t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
-        t = t.replace(tzinfo=pytz.UTC).astimezone(pytz.timezone("US/Eastern"))
+            #
+            # Can sometimes get dates (from user ElasticSearch index)
+            # which look like this: 2019-06-20T00:00:00.0000000+00:00
+            # i.e. with 7-digits for ms which does not parse (up to 6).
+            # Was doing this hack below but found that the Python
+            # dateutil.parser is more forgiving so using that now.
+            #
+            # if ".0000000" in t:
+            #     t = t.replace(".0000000", ".000000")
+            # t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
+            #
+            t = dateutil_parser.parse(t)
+        t = make_utc_aware_datetime(t).astimezone(pytz.timezone(tzname))
         return t.strftime("%Y-%m-%d %H:%M:%S %Z")
     except Exception:
         return None
 
 
-def convert_time_t_to_useastern_datetime_string(time_t: int) -> Optional[str]:
+def convert_utc_datetime_to_useastern_datetime_string(t: Union[datetime.datetime, str]) -> Optional[str]:
+    """
+    Same as convert_utc_datetime_to_datetime_string (above) but specifically for US/Eastern timezone.
+    """
+    return convert_utc_datetime_to_datetime_string(t, TIMEZONE_USEASTERN)
+
+
+def convert_time_t_to_datetime_string(time_t: int, tzname: str) -> Optional[str]:
     """
     Converts the given "epoch" time (seconds since 1970-01-01T00:00:00Z)
-    integer value to a US/Eastern datetime string and returns its value
-    in a form that looks like 2022-08-22 13:25:34 EDT.
+    integer value to a datetime string in the given/named timezone,
+    and returns its value in a form that looks like 2022-08-22 13:25:34 EDT.
 
     :param time_t: Epoch time value (i.e. seconds since 1970-01-01T00:00:00Z)
-    :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
+    :return: A datetime string in the given timezone formatted like: 2022-08-22 13:25:34 EDT
     """
-    try:
-        if not isinstance(time_t, int):
-            return ""
-        t = datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
-        return convert_utc_datetime_to_useastern_datetime_string(t)
-    except Exception:
-        return None
+    return convert_utc_datetime_to_datetime_string(convert_time_t_to_datetime(time_t), tzname)
+
+
+def convert_time_t_to_useastern_datetime_string(time_t: int) -> Optional[str]:
+    """
+    Same as convert_time_t_to_datetime_string (above) but specifically for US/Eastern timezone.
+    """
+    return convert_time_t_to_datetime_string(time_t, TIMEZONE_USEASTERN)
 
 
 def convert_time_t_to_datetime(time_t: int) -> datetime.datetime:

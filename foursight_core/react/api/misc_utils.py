@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 memoize = lru_cache(100)
 
+
 def sort_dictionary_by_case_insensitive_keys(dictionary: dict) -> dict:
     """
     Returns the given dictionary sorted by (case-insenstivie) key values; yes,
@@ -45,6 +46,13 @@ def get_request_body(request: Request) -> dict:
     return json.loads(request.raw_body.decode())
 
 
+def get_request_origin(request: dict) -> str:
+    headers = request.get("headers", {})
+    scheme = headers.get("x-forwarded-proto", "http" if is_running_locally(request) else "https")
+    domain = headers.get("host")
+    return f"{scheme}://{domain}"
+
+
 def get_base_url(url: str) -> str:
     """
     Returns the base (root) URL if the given URL, i.e. with just the scheme/protocol (e.g.
@@ -73,19 +81,19 @@ def get_github_url(package: str, file: Optional[str] = None, line: Optional[int]
     TODO: Seems like there should be a better more programmatic way to determine this.
     """
     github_url = "https://github.com"
-    if package == "foursight-core" or package =="foursight_core":
+    if package == "foursight_core":
         package_source = "foursight-core"
         package_target = "foursight_core"
         repo_org = "4dn-dcic"
-    elif package == "foursight-cgap" or package == "chalicelib_cgap":
+    elif package == "chalicelib_cgap":
         package_source = "foursight-cgap"
         package_target = "chalicelib_cgap"
         repo_org = "dbmi-bgm"
-    elif package == "foursight" or package == "chalicelib_fourfront":
+    elif package == "chalicelib_fourfront":
         package_source = "foursight"
         package_target = "chalicelib_fourfront"
         repo_org = "4dn-dcic"
-    elif package == "dcicutils" or package == "utils":
+    elif package == "dcicutils":
         package_source = "utils"
         package_target = "dcicutils"
         repo_org = "4dn-dcic"
@@ -93,7 +101,7 @@ def get_github_url(package: str, file: Optional[str] = None, line: Optional[int]
         return None
     try:
         version = f"v{pkg_resources.get_distribution(package_source).version}"
-    except Exception as e:
+    except Exception:
         return None
     repo_url = f"{github_url}/{repo_org}/{package_source}"
     if not file:
@@ -105,7 +113,7 @@ def get_github_url(package: str, file: Optional[str] = None, line: Optional[int]
             if path[i] == package_target:
                 if i < len(path) - 1:
                     file = "/".join(path[i + 1:])
-                    break;
+                    break
             if file.startswith(os.sep):
                 file = file[len(os.sep):]
     line = f"#L{line}" if line > 0 else ""
@@ -118,13 +126,14 @@ def is_running_locally(request: dict) -> bool:
     """
     return request.get("context", {}).get("identity", {}).get("sourceIp", "") == "127.0.0.1"
 
+
 def get_function_info(func: Union[str, Callable]) -> Optional[Tuple[str, str, str, str, int, str]]:
     """
     Returns a tuple containing, in order, these function properties of the given function by
     function name or object: name, file, module, package, line number, GitHub link (only
     if one of these repos: foursight-core, foursight-cgap, foursight, dcicutils)
     Currently used only for informational purposes in the React UI to display
-    information about code for checks and actions and their GitHub links. 
+    information about code for checks and actions and their GitHub links.
     """
     def import_function(fully_qualified_function_name: str) -> Optional[Callable]:
         try:
@@ -147,7 +156,89 @@ def get_function_info(func: Union[str, Callable]) -> Optional[Tuple[str, str, st
         func_file = sys.modules[func_module].__file__
         _, func_line = inspect.getsourcelines(func)
         func_package = __import__(func_module).__package__
-    except Exception as e:
+    except Exception:
         pass
     func_github_url = get_github_url(func_package, func_file, func_line)
     return func_name, func_file, func_module, func_package, func_line, func_github_url
+
+
+# TODO: Included here until we get utils PR-236 approved/merged/pushed
+
+def keys_and_values_to_dict(keys_and_values: list, key_name: str = "Key", value_name: str = "Value") -> dict:
+    """
+    Transforms the given list of key/value objects, each containing a "Key" and "Value" property,
+    or alternately named via the key_name and/or value_name arguments, into a simple
+    dictionary of keys/values, and returns this value. For example, given this:
+
+      [
+        { "Key": "env",
+          "Value": "prod"
+        },
+        { "Key": "aws:cloudformation:stack-name",
+          "Value": "c4-network-main-stack"
+        }
+      ]
+
+    This function would return this:
+
+      {
+        "env": "prod",
+        "aws:cloudformation:stack-name": "c4-network-main-stack"
+      }
+
+    :param keys_and_values: List of key/value objects as described above.
+    :param key_name: Name of the given key property in the given list of key/value objects; default to "Key".
+    :param value_name: Name of the given value property in the given list of key/value objects; default to "Value".
+    :returns: Dictionary of keys/values from given list of key/value object as described above.
+    :raises ValueError: if item in list does not contain key or value name; or on duplicate key name in list.
+    """
+    # result = {}
+    # for item in keys_and_values:
+    #     key = item.get(key_name)
+    #     if key:
+    #         result[str(key)] = item.get(value_name)
+    # return result
+
+    result = {}
+    for item in keys_and_values:
+        if key_name not in item:
+            raise ValueError(f"Key {key_name} is not in {item}.")
+        if value_name not in item:
+            raise ValueError(f"Key {value_name} is not in {item}.")
+        if item[key_name] in result:
+            raise ValueError(f"Key {key_name} is duplicated in {keys_and_values}.")
+        result[item[key_name]] = item[value_name]
+    return result
+
+
+def dict_to_keys_and_values(dictionary: dict, key_name: str = "Key", value_name: str = "Value") -> list:
+    """
+    Transforms the keys/values in the given dictionary to a list of key/value objects, each containing
+    a "Key" and "Value" property, or alternately named via the key_name and/or value_name arguments,
+    and returns this value. For example, given this:
+
+      {
+        "env": "prod",
+        "aws:cloudformation:stack-name": "c4-network-main-stack"
+      }
+
+    This function would return this:
+
+      [
+        { "Key": "env",
+          "Value": "prod"
+        },
+        { "Key": "aws:cloudformation:stack-name",
+          "Value": "c4-network-main-stack"
+        }
+      ]
+
+    :param dictionary: Dictionary of keys/values described above.
+    :param key_name: Name of the given key property in the result list of key/value objects; default to "Key".
+    :param value_name: Name of the given value property in the result list of key/value objects; default to "Value".
+    :returns: List of key/value objects from the given dictionary as described above.
+    """
+    result = []
+    for key in dictionary:
+        result.append({key_name: key, value_name: dictionary[key]})
+    return result

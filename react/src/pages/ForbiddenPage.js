@@ -1,13 +1,12 @@
-import { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import HeaderData from '../HeaderData';
 import Env from '../utils/Env';
 import Client from '../utils/Client';
 import Logout from '../utils/Logout';
+import useHeader from '../hooks/Header';
 
 const ForbiddenPage = (props) => {
 
-    const [ header ] = useContext(HeaderData);
+    const header = useHeader();
 
     return <>
         <div className="container" id="login_container">

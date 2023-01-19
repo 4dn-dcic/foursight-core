@@ -17,8 +17,17 @@ from dcicutils import ff_utils
 from dcicutils.misc_utils import ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from ...app import app
-from ...decorators import Decorators
+from .aws_network import (
+    aws_get_network, aws_get_security_groups,
+    aws_get_security_group_rules, aws_get_subnets, aws_get_vpcs, aws_network_cache_clear
+)
 from .aws_s3 import AwsS3
+from .aws_stacks import (
+    aws_get_stack, aws_get_stacks,
+    aws_get_stack_outputs, aws_get_stack_parameters,
+    aws_get_stack_resources, aws_get_stack_template,
+    aws_stacks_cache_clear
+)
 from .checks import Checks
 from .cookie_utils import create_delete_cookie_string
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
@@ -49,27 +58,35 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._cached_accounts_from_s3 = None
         self._cached_elasticsearch_server_version = None
 
-    def get_sqs_queue_url(self):
+    @staticmethod
+    def _get_stack_name() -> str:
+        """
+        Returns our AWS defined stack name, as specified by the STACK_NAME environment variable.
+        """
+        return os.environ.get("STACK_NAME")
+
+    def _get_sqs_queue_url(self):
         if not self._cached_sqs_queue_url:
             self._cached_sqs_queue_url = app.core.sqs.get_sqs_queue().url
         return self._cached_sqs_queue_url
 
     def _get_versions_object(self) -> dict:
-        try:
-            elasticsearch_version = pkg_resources.get_distribution('elasticsearch').version
-            elasticsearch_dsl_version = pkg_resources.get_distribution('elasticsearch-dsl').version
-        except Exception:
-            elasticsearch_version = None
-            elasticsearch_dsl_version = None
+        def get_package_version(package_name: str) -> Optional[str]:
+            try:
+                return pkg_resources.get_distribution(package_name).version
+            except Exception:
+                return None
         return {
                 "foursight": app.core.get_app_version(),
-                "foursight_core": pkg_resources.get_distribution('foursight-core').version,
-                "dcicutils": pkg_resources.get_distribution('dcicutils').version,
+                "foursight_core": get_package_version("foursight-core"),
+                "dcicutils": get_package_version("dcicutils"),
+                "tibanna": get_package_version("tibanna"),
+                "tibanna_ff": get_package_version("tibanna-ff"),
                 "python": platform.python_version(),
                 "chalice": chalice_version,
                 "elasticsearch_server": self._get_elasticsearch_server_version(),
-                "elasticsearch": elasticsearch_version,
-                "elasticsearch_dsl": elasticsearch_dsl_version
+                "elasticsearch": get_package_version("elasticsearch"),
+                "elasticsearch_dsl": get_package_version("elasticsearch-dsl")
             }
 
     def _get_elasticsearch_server_version(self) -> Optional[str]:
@@ -83,6 +100,84 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 pass
         return self._cached_elasticsearch_server_version
 
+    @memoize
+    def _get_user_projects(self, env: str, raw: bool = False) -> list:
+        """
+        Returns the list of available user projects.
+        """
+        connection = app.core.init_connection(env)
+        projects = ff_utils.search_metadata(f'/search/?type=Project&datastore=database', key=connection.ff_keys)
+        if projects and not raw:
+            projects = [
+                {
+                    "id": project.get("@id"),
+                    "uuid": project.get("uuid"),
+                    "name": project.get("name"),
+                    "title": project.get("title"),
+                    "description": project.get("description")
+                }
+                for project in projects
+            ]
+        return projects
+
+    @memoize
+    def _get_user_institutions(self, env: str, raw: bool = False) -> list:
+        """
+        Returns the list of available user institutions.
+        """
+        connection = app.core.init_connection(env)
+        institutions = ff_utils.search_metadata(f'/search/?type=Institution', key=connection.ff_keys)
+        def get_principle_investigator(institution):
+            pi = institution.get("pi")
+            return {"name": pi.get("display_title"), "uuid": pi.get("uuid"), "id": pi.get("@id")} if pi else None
+        if institutions and not raw:
+            institutions = [
+                {
+                    "id": institution.get("@id"),
+                    "uuid": institution.get("uuid"),
+                    "name": institution.get("name"),
+                    "title": institution.get("title"),
+                    "pi": get_principle_investigator(institution)
+                }
+                for institution in institutions
+            ]
+        return institutions
+
+    @memoize
+    def _get_user_roles(self, env: str) -> list:
+        #
+        # The below enumerated user role values where copied from here:
+        # https://github.com/dbmi-bgm/cgap-portal/blob/master/src/encoded/schemas/user.json#L69-L106
+        #
+        roles = [
+            "clinician",
+            "scientist",
+            "developer",
+            "director",
+            "project_member",
+            "patient",
+            "other",
+            "unknown"
+        ]
+        return [{"id": role, "name": role, "title": role.replace("_", " ").title()} for role in roles]
+
+    @memoize
+    def _get_user_schema(self, env: str) -> dict:
+        portal_url = get_base_url(app.core.get_portal_url(env))
+        user_schema_url = f"{portal_url}/profiles/User.json?format=json"
+        user_schema = requests.get(user_schema_url).json()
+        return user_schema
+
+    @memoize
+    def _get_user_statuses(self, env: str) -> list:
+        user_schema = self._get_user_schema(env)
+        user_schema_properties = user_schema.get("properties") if user_schema else None
+        user_schema_status = user_schema_properties.get("status") if user_schema_properties else None
+        user_schema_status_enum = user_schema_status.get("enum") if user_schema_status else None
+        if not user_schema_status_enum:
+            return []
+        return [{"id": status, "name": status, "title": status.title()} for status in user_schema_status_enum]
+
     def react_serve_static_file(self, env: str, paths: list) -> Response:
         """
         Called from react_routes for static endpoints: /{env}/{path}/{etc}
@@ -93,7 +188,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_auth0_config(self, request: dict) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/auth0_config
+        Called from react_routes for endpoint: GET /{env}/auth0_config or /auth0_config
         Note that this in an UNPROTECTED route.
         """
         auth0_config = self._auth0_config.get_config_data()
@@ -103,7 +198,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_logout(self, request: dict, env: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/logout
+        Called from react_routes for endpoint: GET /{env}/logout or GET /logout
         Note that this in an UNPROTECTED route.
         """
         authorize_response = self._auth.authorize(request, env)
@@ -161,6 +256,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "version": app.core.get_app_version(),
                 "domain": domain,
                 "context": context,
+                "stack": self._get_stack_name(),
                 "local": is_running_locally(request),
                 "credentials": {
                     "aws_account_number": aws_credentials["aws_account_number"],
@@ -236,6 +332,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "version": app.core.get_app_version(),
                 "domain": domain,
                 "context": context,
+                "stack": self._get_stack_name(),
                 "local": is_running_locally(request),
                 "credentials": self._auth.get_aws_credentials(env or default_env),
                 "launched": app.core.init_load_time,
@@ -248,7 +345,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "portal": portal_url,
                 "es": app.core.host,
                 "rds": os.environ["RDS_HOSTNAME"],
-                "sqs": self.get_sqs_queue_url(),
+                "sqs": self._get_sqs_queue_url(),
             },
             "buckets": {
                 "env": app.core.environment.get_env_bucket_name(),
@@ -272,10 +369,114 @@ class ReactApi(ReactApiBase, ReactRoutes):
         }
         return self.create_success_response(body)
 
-    def reactapi_users(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
+    def _create_user_record_for_output(self, user: dict) -> dict:
+        """
+        Canonicalizes and returns the given raw user record from our database
+        into a common form used by our UI.
+
+        WRT roles: Roles are in ElasticSearch as an array property (named "project_roles")
+        of objects each containing a "project" and a "role" property. We send this array back
+        to the frontend as-is (but named just "roles"); we also send back the "project" property;
+        but we do NOT send back a single "role" property, rather then UI displays the role, from
+        the "roles" property, associated with the "project" property. On edit/update/create, the
+        UI, in addition to sending back the "roles" property as received (from here), DOES send a
+        single "role" property, as well the "project" property; this role will then be associated
+        with this project in the "project_roles" property when writing the record to ElasticSearch.
+        """
+        last_modified = user.get("last_modified")
+        if isinstance(last_modified, dict):
+            updated = last_modified.get("date_modified") or user.get("date_created")
+        else:
+            updated = user.get("date_created")
+        return {
+            # Lower case email to avoid any possible issues on lookup later.
+            "email": (user.get("email") or "").lower(),
+            "first_name": user.get("first_name"),
+            "last_name": user.get("last_name"),
+            "uuid": user.get("uuid"),
+            "title": user.get("title"),
+            "groups": user.get("groups"),
+            "project": user.get("project"),
+            "institution": user.get("user_institution"),
+            "roles": user.get("project_roles"),
+            "status": user.get("status"),
+            "updated": convert_utc_datetime_to_useastern_datetime_string(updated),
+            "created": convert_utc_datetime_to_useastern_datetime_string(user.get("date_created"))
+        }
+
+    def _create_user_record_from_input(self, user: dict, include_deletes: bool = False) -> dict:
+        """
+        Canonicalizes and returns the given user record from our UI into the
+        common format suitable for insert/update to our database. Modifies input.
+        Please see comment above (in _create_user_record_for_output) WRT roles.
+        """
+        if self.is_foursight_fourfront():
+            if "institution" in user:
+                del user["institution"]
+            if "project" in user:
+                del user["project"]
+            if "role" in user:
+                del user["role"]
+            if "roles" in user:
+                del user["roles"]
+            return user
+
+        deletes = []
+        if "status" in user:
+            if not user["status"] or user["status"] == "-":
+                deletes.append("status")
+                del user["status"]
+        if "institution" in user:
+            user["user_institution"] = user["institution"]
+            del user["institution"]
+        # If project and/or user_institution is present but is empty then remove altogether.
+        if "roles" in user:
+            user["project_roles"] = user["roles"]
+        if "user_institution" in user:
+            if not user["user_institution"] or user["user_institution"] == "-":
+                deletes.append("user_institution")
+                del user["user_institution"]
+        if "project" in user:
+            if not user["project"] or user["project"] == "-":
+                deletes.append("project")
+                del user["project"]
+            elif "role" in user:
+                project = user["project"]
+                if not user["role"] or user["role"] == "-":
+                    del user["role"]
+                else:
+                    role = user["role"]
+                    project_roles = user["roles"]
+                    if project_roles:
+                        found = False
+                        for project_role in project_roles:
+                            if project_role.get("project") == project:
+                                project_role["role"] = role
+                                found = True
+                                break
+                        if not found:
+                            project_roles.append({"role": role, "project": project})
+                    else:
+                        user["project_roles"] = [{"role": role, "project": project}]
+        if "role" in user:
+            del user["role"]
+        if "roles" in user:
+            del user["roles"]
+        if include_deletes and deletes:
+            user["deletes"] = deletes
+        return user
+
+    def reactapi_get_users(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/users
-        Returns a (paged) summary of all users.
+        Returns a (paged) summary of all users from ElasticSearch.
+        Optional arguments (args) for the request are any of:
+        - search: to search for the specified value.
+        - limit: to limit the results to the specified number.
+        - offset: to skip past the first specified number of results.
+        - sort: to sort by the specified field name (optionally suffixed with .asc which is default or .desc);
+                default is email.asc.
+        - raw: if true then returns the raw format of the data.
         """
         ignored(request)
         offset = int(args.get("offset", "0")) if args else 0
@@ -289,32 +490,34 @@ class ReactApi(ReactApiBase, ReactRoutes):
             sort = "-" + sort[:-5]
         elif sort.endswith(".asc"):
             sort = sort[:-4]
+        raw = args.get("raw") == "true"
+        search = args.get("search")
 
         users = []
         # TODO: Consider adding ability to search for both normal users and
         #       admin/foursight users (who would have access to foursight);
         #       and more advanced, the ability to grant foursight access.
-        add_on = f"frame=object&datastore=database&limit={limit}&from={offset}&sort={sort}"
-        results = ff_utils.get_metadata("users/", ff_env=full_env_name(env), add_on=add_on)
-        total = results["total"]
-        for user in results["@graph"]:
-            updated = user.get("last_modified")
-            if updated:
-                updated = updated.get("date_modified")
-            created = user.get("date_created")
-            users.append({
-                # Lower case email to avoid any possible issues on lookup later.
-                "email": (user.get("email") or "").lower(),
-                "first_name": user.get("first_name"),
-                "last_name": user.get("last_name"),
-                "uuid": user.get("uuid"),
-                "title": user.get("title"),
-                "groups": user.get("groups"),
-                "project": user.get("project"),
-                "institution": user.get("user_institution"),
-                "updated": convert_utc_datetime_to_useastern_datetime_string(updated),
-                "created": convert_utc_datetime_to_useastern_datetime_string(created)
-            })
+        connection = app.core.init_connection(env)
+        if search:
+            # Though limit and offset (from) are supported by search_metadata, total counts don't seem to be (?);
+            # very possibly missing something there; so for now get all results and to paging manually here.
+            # results = ff_utils.search_metadata(f"/search/?type=User&frame=object&q={search}&limit={limit}&from={offset}&sort={sort}", key=connection.ff_keys, is_generator=True)
+            results = ff_utils.search_metadata(f"/search/?type=User&frame=object&q={search}&sort={sort}",
+                                               key=connection.ff_keys)
+            total = len(results)
+            if offset > 0:
+                results = results[offset:]
+            if len(results) > limit:
+                results = results[:limit]
+        else:
+            add_on = f"frame=object&datastore=database&limit={limit}&from={offset}&sort={sort}"
+            results = ff_utils.get_metadata("users/", ff_env=full_env_name(env), add_on=add_on,
+                                            key=connection.ff_keys)
+            total = results["total"]
+            results = results["@graph"]
+
+        for user in results: # results["@graph"]:
+            users.append(self._create_user_record_for_output(user) if not raw else user)
         return self.create_success_response({
             "paging": {
                 "total": total,
@@ -326,26 +529,31 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "list": users
         })
 
-    def reactapi_get_user(self, request: dict, env: str, uuid: str) -> Response:
+    def reactapi_get_user(self, request: dict, env: str, uuid: str, args: Optional[dict] = None) -> Response:
         """
         Called from react_routes for endpoint: GET /{env}/user/{uuid}
         Returns info on the specified user uuid. The uuid can actually also
         be an email address; and can also be a comma-separated list of these;
         if just one requested then return a single object, otherwise return an array.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
         """
         ignored(request)
+        raw = args.get("raw") == "true"
         users = []
         items = uuid.split(",")
         not_found_count = 0
         other_error_count = 0
+        connection = app.core.init_connection(env)
         for item in items:
             try:
                 # Note these call works for both email address or user UUID.
                 # Note we must lower case the email to find the user. This is because all emails
                 # in the database are lowercased; it causes issues with OAuth if we don't do this.
                 user = ff_utils.get_metadata('users/' + item.lower(),
-                                             ff_env=full_env_name(env), add_on='frame=object&datastore=database')
-                users.append(user)
+                                             ff_env=full_env_name(env), add_on='frame=object&datastore=database',
+                                             key=connection.ff_keys)
+                users.append(self._create_user_record_for_output(user) if not raw else user)
             except Exception as e:
                 if "Not Found" in str(e):
                     not_found_count += 1
@@ -361,15 +569,17 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_post_user(self, request: dict, env: str, user: dict) -> Response:
         """
-        Called from react_routes for endpoint: POST /{env}/users/create
+        Called from react_routes for endpoint: POST /{env}/users
         Creates a new user described by the given data.
         Given user data looks like:
         {email': 'japrufrock@hms.harvard.edu', 'first_name': 'J. Alfred', 'last_name': 'Prufrock'}
         Returns the same response as GET /{env}/users/{uuid} (i.e. reactpi_get_user).
         """
         ignored(request)
-        response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env))
-        #
+        user = self._create_user_record_from_input(user, include_deletes=False)
+        connection = app.core.init_connection(env)
+        response = ff_utils.post_metadata(schema_name="users", post_item=user, ff_env=full_env_name(env),
+                                          key=connection.ff_keys)
         # Response looks like:
         # {'status': 'success', '@type': ['result'], '@graph': [{'date_created': '2022-10-22T18:39:16.973680+00:00',
         # 'submitted_by': '/users/b5f738b6-455a-42e5-bc1c-77fbfd9b15d2/', 'schema_version': '1', 'status': 'current',
@@ -386,7 +596,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         graph = response.get("@graph")
         if not graph or not isinstance(graph, list) or len(graph) != 1:
             return self.create_error_response(json.dumps(response))
-        created_user = graph[0]
+        created_user = self._create_user_record_for_output(graph[0])
         uuid = created_user.get("uuid")
         if not uuid:
             return self.create_error_response(json.dumps(response))
@@ -394,26 +604,35 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_patch_user(self, request: dict, env: str, uuid: str, user: dict) -> Response:
         """
-        Called from react_routes for endpoint: PATCH /{env}/users/update/{uuid}
+        Called from react_routes for endpoint: PATCH /{env}/users/{uuid}
         Updates the user identified by the given uuid with the given data.
         Returns the same response as GET /{env}/users/{uuid} (i.e. reactpi_get_user).
         """
         ignored(request)
         # Note that there may easily be a delay after update until the record is actually updated.
         # TODO: Find out precisely why this is so, and if and how to specially handle it on the client side.
-        response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env))
+        user = self._create_user_record_from_input(user, include_deletes=True)
+        if "deletes" in user:
+            add_on = "delete_fields=" + ",".join(user["deletes"])
+            del user["deletes"]
+        else:
+            add_on = ""
+        connection = app.core.init_connection(env)
+        response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env),
+                # key=connection.ff_keys, add_on="delete_fields=project")
+                key=connection.ff_keys, add_on=add_on)
         status = response.get("status")
         if status != "success":
             return self.create_error_response(json.dumps(response))
         graph = response.get("@graph")
         if not graph or not isinstance(graph, list) or len(graph) != 1:
             return self.create_error_response(json.dumps(response))
-        updated_user = graph[0]
+        updated_user = self._create_user_record_for_output(graph[0])
         return self.create_success_response(updated_user)
 
     def reactapi_delete_user(self, request: dict, env: str, uuid: str) -> Response:
         """
-        Called from react_routes for endpoint: DELETE /{env}/users/delete/{uuid}
+        Called from react_routes for endpoint: DELETE /{env}/users/{uuid}
         Deletes the user identified by the given uuid.
         """
         ignored(request)
@@ -422,10 +641,58 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # When ES7 has been fully merged/deployed pass this to these calls: skip_indexing=True
         #
         elasticsearch_server_version = self._get_elasticsearch_server_version()
-        kwargs = { "skip_indexing": True } if elasticsearch_server_version >= "7" else {}
-        ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs)
-        ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs)
+        kwargs = {"skip_indexing": True} if elasticsearch_server_version >= "7" else {}
+        connection = app.core.init_connection(env)
+        ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs, key=connection.ff_keys)
+        ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs, key=connection.ff_keys)
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
+
+    def reactapi_users_institutions(self, request: dict, env: str, args: dict) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/institutions
+        Returns the list of available user institutions.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        if self.is_foursight_fourfront():
+            return self.create_success_response([])
+        raw = args.get("raw") == "true"
+        return self.create_success_response(self._get_user_institutions(env, raw))
+
+    def reactapi_users_projects(self, request: dict, env: str, args: dict) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/projects
+        Returns the list of available user projects.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        if self.is_foursight_fourfront():
+            return self.create_success_response([])
+        raw = args.get("raw") == "true"
+        return self.create_success_response(self._get_user_projects(env, raw))
+
+    def reactapi_users_roles(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/roles
+        Returns the list of available user roles.
+        """
+        if self.is_foursight_fourfront():
+            return self.create_success_response([])
+        return self.create_success_response(self._get_user_roles(env))
+
+    def reactapi_users_schema(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/schema
+        Returns the ElasticSearch user schema.
+        """
+        return self.create_success_response(self._get_user_schema(env))
+
+    def reactapi_users_statuses(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/status
+        Returns the list of available user statuses.
+        """
+        return self.create_success_response(self._get_user_statuses(env))
 
     def reactapi_checks_ungrouped(self, request: dict, env: str) -> Response:
         """
@@ -457,7 +724,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_history_latest(self, request: dict, env: str, check: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks/{check}
+        Called from react_routes for endpoint: GET /{env}/checks/{check}/history/latest
         Returns the latest result (singular) from the given check (name).
         """
         ignored(request)
@@ -517,6 +784,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns the most results among all defined checks for the given environment.
         Does this by looping through each check and getting the 10 most recent results from each
         and then globally sorting (in descending order) each of those results by check run timestamp.
+        Optional arguments (args) for the request are any of:
+        - limit: to limit the results to the specified number; default is 25.
         """
         ignored(request)
         max_results_per_check = 10
@@ -579,6 +848,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         Called from react_routes for endpoint: GET /{env}/checks/{check}/history
         Returns a (paged) summary (list) of check results for the given check (name).
+        Optional arguments (args) for the request are any of:
+        - limit: to limit the results to the specified number.
+        - offset: to skip past the first specified number of results.
+        - sort: to sort by the specified field name (optionally suffixed with .asc which is default or .desc);
+                default value is timestamp.desc.
         """
         ignored(request)
         offset = int(args.get("offset", "0")) if args else 0
@@ -621,6 +895,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/checks/{check}/run
         The args string, if any, is assumed to be a Base64 encoded JSON object.
         Kicks off a run for the given check (name).
+        Arguments (args) for the request are any of:
+        - args: Base-64 encode JSON object containing fields/values appropriate for the check run. 
         """
         ignored(request)
         args = base64_decode_to_json(args) if args else None
@@ -632,6 +908,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/checks/action/{action}/run
         The args string, if any, is assumed to be a Base64 encoded JSON object.
         Kicks off a run for the given action (name).
+        Arguments (args) for the request are any of:
+        - args: Base-64 encode JSON object containing fields/values appropriate for the action run. 
         """
         ignored(request)
         args = base64_decode_to_json(args) if args else {}
@@ -751,23 +1029,39 @@ class ReactApi(ReactApiBase, ReactRoutes):
             return None
         return f"s3://{bucket}/{key}"
 
-    def _get_accounts_from_s3(self) -> Optional[dict]:
+    def _get_accounts_from_s3(self, request: dict) -> Optional[dict]:
         # Let's not cache this for now, maybe change mind later, thus the OR True clause below.
         if True or not self._cached_accounts_from_s3:
             s3_uri = self._get_accounts_file_from_s3()
             if not s3_uri:
-                return None
+                return self._get_accounts_only_for_current_account(request)
             s3_uri = s3_uri.replace("s3://", "")
             s3_uri_components = s3_uri.split("/")
             if len(s3_uri_components) != 2:
-                return None
+                return self._get_accounts_only_for_current_account(request)
             bucket = s3_uri_components[0]
             key = s3_uri_components[1]
             accounts_json_content = AwsS3.get_bucket_key_contents(bucket, key)
             self._cached_accounts_from_s3 = self._read_accounts_json(accounts_json_content)
         return self._cached_accounts_from_s3
 
-    def _read_accounts_json(self, accounts_json_content) -> dict:
+    def _get_accounts_only_for_current_account(self, request: dict) -> Optional[dict]:
+        aws_credentials = self._auth.get_aws_credentials(self._envs.get_default_env())
+        if aws_credentials:
+            account_name = aws_credentials.get("aws_account_name")
+            if account_name:
+                account_stage = app.core.stage.get_stage()
+                account_id = account_name + ":" + account_stage
+                return [{
+                    "id": account_id,
+                    "name": account_name,
+                    "stage": account_stage,
+                    "foursight_url": self.foursight_instance_url(request)
+                }]
+        return None
+
+    @staticmethod
+    def _read_accounts_json(accounts_json_content) -> dict:
         encryption = Encryption()
         accounts_json_content = encryption.decrypt(accounts_json_content)
         accounts_json = json.loads(accounts_json_content)
@@ -797,8 +1091,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self._cached_accounts
 
     def reactapi_accounts(self, request: dict, env: str, from_s3: bool = False) -> Response:
-        ignored(request)
-        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3()
+        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3(request)
         return self.create_success_response(accounts)
 
     def reactapi_account(self, request: dict, env: str, name: str, from_s3: bool = False) -> Response:
@@ -845,6 +1138,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             foursight_app = foursight_header_json.get("app")
             response["foursight"]["package"] = foursight_app.get("package")
             response["foursight"]["stage"] = foursight_app.get("stage")
+            response["foursight"]["stack"] = foursight_app.get("stack")
             response["foursight"]["deployed"] = foursight_app.get("deployed")
             response["foursight"]["default_env"] = foursight_header_json["auth"]["known_envs"][0]
             response["foursight"]["env_count"] = foursight_header_json["auth"]["known_envs_actual_count"]
@@ -902,7 +1196,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
         ignored(request)
         response = {"accounts_file": self._get_accounts_file(), "accounts_file_from_s3": self._get_accounts_file_from_s3()}
-        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3()
+        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3(request)
         if not accounts:
             return self.create_success_response({"status": "No accounts file support."})
         account = [account for account in accounts if is_account_name_match(account, name)] if accounts else None
@@ -945,6 +1239,127 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
         return self.create_success_response(response)
 
+    def reactapi_aws_vpcs(self, request: dict, env: str, vpc: Optional[str] = None, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoint:
+        - GET /{env}/aws/vpcs
+        - GET /{env}/aws/vpcs/{vpc}
+        Returns AWS VPC info. By default returns VPCs with (tagged) names beginning with "C4".
+        If the vpc argument is "all" then info all VPCs are matched; or if the vpc is some other
+        value then it is treated as a regular expression against which the VPC names are matched.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        if vpc is None:
+            vpc = "C4*"
+        elif vpc == "all":
+            vpc = None
+        raw = args.get("raw") == "true"
+        return self.create_success_response(aws_get_vpcs(vpc, raw))
+
+    def reactapi_aws_subnets(self, request: dict, env: str, subnet: Optional[str] = None, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoint:
+        - GET /{env}/aws/subnets
+        - GET /{env}/aws/subnets/{subnet}
+        Returns AWS Subnet info. By default returns Subnets with (tagged) names beginning with "C4".
+        If the subnet argument is "all" then info all Subnets are matched; or if the subnet is some
+        other value then it is treated as a regular expression against which the Subnet names are matched.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        if subnet is None:
+            subnet = "C4*"
+        elif subnet == "all":
+            subnet = None
+        raw = args.get("raw") == "true"
+        vpc = args.get("vpc")
+        return self.create_success_response(aws_get_subnets(subnet, vpc, raw))
+
+    def reactapi_aws_security_groups(self, request: dict, env: str, security_group: Optional[str] = None, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoints:
+        - GET /{env}/aws/security_groups
+        - GET /{env}/aws/security_groups/{security_group}
+        Returns AWS Security Group info. By default returns Security Groups with (tagged) names beginning with "C4".
+        If the security_group argument is "all" then info all Security Groups are matched; or if the security_group is some
+        other value then it is treated as a regular expression against which the Subnet names are matched.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        if security_group is None:
+            security_group = "C4*"
+        elif security_group == "all":
+            security_group = None
+        raw = args.get("raw") == "true"
+        vpc = args.get("vpc")
+        return self.create_success_response(aws_get_security_groups(security_group, vpc, raw))
+
+    def reactapi_aws_security_group_rules(self, request: dict, env: str, security_group: Optional[str] = None, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoints:
+        - GET /{env}/aws/security_groups_rules/{security_group}
+        Returns AWS Security Group Rule info for the given security_group (ID).
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        raw = args.get("raw") == "true"
+        direction = args.get("direction")
+        return self.create_success_response(aws_get_security_group_rules(security_group, direction, raw))
+
+    def reactapi_aws_network(self, request: dict, env: str, network: Optional[str] = None, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoints:
+        - GET /{env}/aws/network
+        - GET /{env}/aws/network/{network}
+        Returns aggregated AWS network info, i.e. WRT VPCs, Subnets, and Security Groups, ala the above functions.
+        The network argument is treated like the vpc, subnet, and security_group for the above functions.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        if network is None:
+            network = "C4*"
+        elif network == "all":
+            network = None
+        raw = args.get("raw") == "true"
+        return self.create_success_response(aws_get_network(network, raw))
+
+    def reactapi_aws_stacks(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoints: GET /{env}/aws/stacks
+        """
+        return self.create_success_response(aws_get_stacks())
+
+    def reactapi_aws_stack(self, request: dict, env: str, stack: str) -> Response:
+        """
+        Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/outputs
+        """
+        return self.create_success_response(aws_get_stack(stack))
+
+    def reactapi_aws_stack_outputs(self, request: dict, env: str, stack: str) -> Response:
+        """
+        Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/outputs
+        """
+        return self.create_success_response(aws_get_stack_outputs(stack))
+
+    def reactapi_aws_stack_parameters(self, request: dict, env: str, stack: str) -> Response:
+        """
+        Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/parameters
+        """
+        return self.create_success_response(aws_get_stack_parameters(stack))
+
+    def reactapi_aws_stack_resources(self, request: dict, env: str, stack: str) -> Response:
+        """
+        Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/resources
+        """
+        return self.create_success_response(aws_get_stack_resources(stack))
+
+    def reactapi_aws_stack_template(self, request: dict, env: str, stack: str) -> Response:
+        """
+        Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/template
+        """
+        return self.create_success_response(aws_get_stack_template(stack))
+
     # ----------------------------------------------------------------------------------------------
     # END OF EXPERIMENTAL - /accounts page
     # ----------------------------------------------------------------------------------------------
@@ -977,6 +1392,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._cached_accounts_from_s3 = None
         self._get_env_and_bucket_info.cache_clear()
         self._get_check_result_bucket_name.cache_clear()
+        self._get_user_projects.cache_clear()
+        self._get_user_institutions.cache_clear()
+        aws_network_cache_clear()
+        aws_stacks_cache_clear()
         return self.create_success_response({"status": "Caches cleared."})
 
     @staticmethod

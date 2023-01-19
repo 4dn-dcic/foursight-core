@@ -62,6 +62,12 @@ function DeleteCookie(name) {
 function SetCookie(name, value, expires = null) {
     if (Str.HasValue(name)) {
         if (Str.HasValue(value)) {
+            if (Type.IsInteger(expires)) {
+                //
+                // If expires is an integer then assume it is seconds since the epoch.
+                //
+                expires = new Date(expires * 1000);
+            }
             if (!Type.IsDateTime(expires)) {
                 expires = null;
             }
@@ -150,6 +156,10 @@ function SetRedirectCookie(url, expires = null) {
     SetCookie(_redirectCookieName, url, expires);
 }
 
+function GetRedirectCookie() {
+    return GetCookie(_redirectCookieName);
+}
+
 // -------------------------------------------------------------------------------------------------
 // Readonly mode related cookies.
 // Boolean value indicating whether or not we are (globally) in "read-only" mode, meaning that
@@ -196,6 +206,7 @@ const exports = {
     LastUrl:         GetLastUrlCookie,
     HasAuthToken:    HasAuthTokenCookie,
     IsReadOnlyMode:  IsReadOnlyMode,
+    Redirect:        GetRedirectCookie,
     Site:            GetSiteCookie,
     Set:             SetCookie,
     SetLastUrl:      SetLastUrlCookie,

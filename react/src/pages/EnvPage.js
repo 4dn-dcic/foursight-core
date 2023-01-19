@@ -1,22 +1,23 @@
-import { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Uuid from 'react-uuid';
-import HeaderData from '../HeaderData';
-import { useHeaderRefresh } from '../HeaderRefresh';
+import useHeaderRefresh from '../hooks/HeaderRefresh';
 import { FetchErrorBox } from '../Components';
 import Page from '../Page';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
 import Char from '../utils/Char';
 import Env from '../utils/Env';
-import { useFetch } from '../utils/Fetch';
+import useFetch from '../hooks/Fetch';
 import Server from '../utils/Server';
 import Type from '../utils/Type';
+import Tooltip from '../components/Tooltip';
+import useHeader from '../hooks/Header';
 
 const EnvPage = (props) => {
 
-    const [ header ] = useContext(HeaderData);
-    const refreshHeader = useHeaderRefresh();
+    const header = useHeader();
+    const refreshHeader = useHeaderRefresh(); // not sure this is actually necessary anymore
+
     // We call the /info endpoint API just to get the GAC names.
     const info = useFetch(Auth.IsLoggedIn() ? Server.Url("/info") : null);
 
@@ -99,7 +100,7 @@ const EnvPage = (props) => {
         </>):(<>
         <div className={boxClass} style={{marginBottom:"8pt",padding:"10pt"}}>
             Current environment: <b>{Env.PreferredName(Env.Current(), header)}</b>
-            { (Auth.IsLoggedIn(header) && !Env.IsAllowed(Env.Current(), header)) && <span style={{color:"red"}}>&nbsp;{Char.RightArrow} You do not have permission for this environment {Char.Warning}</span> }
+            { (Auth.IsLoggedIn(header) && !Env.IsAllowed(Env.Current(), header)) && <span style={{color:"red"}}>&nbsp;<b>{Char.RightArrow}</b> You do not have permission for this environment <b>{Char.Warning}</b></span> }
         </div>
         </>)}
         <b>Available Environments</b> { header.auth?.known_envs_actual_count > Env.KnownEnvs(header)?.length && <small>&nbsp;({header.auth.known_envs_actual_count})</small> }
@@ -109,28 +110,32 @@ const EnvPage = (props) => {
                     <tr key={Uuid()}>
                         <td style={{fontWeight:IsCurrentEnv(env) ? "bold" : "normal",color:!IsKnownCurrentEnv(env.public_name) ? "red" : (IsCurrentEnv(env) ? "black" : "inherit"),verticalAlign:"top"}}>
                             { IsCurrentEnv(env) ? (<>
-                                <span>{Char.RightArrow}&nbsp;&nbsp;</span>
+                                <span id={`tooltip-env-current-check`} style={{color:Auth.IsLoggedIn(header) && !Env.IsAllowed(env, header) ? "red" : "inherit"}}>{Char.Check}&nbsp;&nbsp;</span>
                             </>):(<>
-                                <span>&ndash;&nbsp;&nbsp;</span>
+                                <span style={{color:!Env.IsAllowed(env, header) ? "red" : "inherit"}}>{Char.Dot}&nbsp;&nbsp;</span>
                             </>)}
+                            <Tooltip id={`tooltip-env-current-check`} position="bottom" text="This is your current environment." />
                         </td>
                         <td>
                             { Auth.IsLoggedIn(header) && !Env.IsAllowed(env, header) ? (<>
-                                <span className={"tool-tip"} data-text={"This is a restricted environment!"} style={{color:"red"}}>
-                                    <Link to={Client.Path("/env", Env.PreferredName(env, header))} onClick={() => refreshHeader(Env.PreferredName(env, header))} style={{color:"inherit",textDecoration:IsCurrentEnv(env) ? "underline" : "normal"}}><b>{Env.PreferredName(env, header)}</b></Link>
-                                    { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;{Char.Star}</b> }
-                                    &nbsp;{Char.RightArrow} You do not have permission for this environment {Char.Warning}
+                                <span style={{color:"red"}}>
+                                    <Link id={`tooltip-env-nopermission`} to={Client.Path("/env", Env.PreferredName(env, header))} onClick={() => refreshHeader(Env.PreferredName(env, header))} style={{color:"inherit",textDecoration:IsCurrentEnv(env) ? "underline" : "normal"}}><b>{Env.PreferredName(env, header)}</b></Link>
+                                    { IsDefaultEnv(env) && <span style={{color:"black"}}>&nbsp;<b>{Char.RightArrow}</b>This is the default environment {Char.Star}</span> }
+                                    &nbsp;<b>{Char.RightArrow}</b> You do not have permission for this environment <b>{Char.Warning}</b>
+                                    <Tooltip id={`tooltip-env-nopermission`} position="bottom" text="You do not have permission for this environment." />
                                 </span>
                             </>):(<>
                                 { IsCurrentEnv(env) ? (<>
-                                    <span className={"tool-tip"} data-text={"This is the current environment."} style={{color:"black"}}>
-                                        <Link to={Client.Path("/env", Env.PreferredName(env, header))} onClick={() => refreshHeader(Env.PreferredName(env, header))} style={{color:"inherit"}}><b><u>{Env.PreferredName(env, header)}</u></b></Link>
-                                        { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;{Char.Star}</b> }
+                                    <span style={{color:"black"}}>
+                                        <Link id={IsCurrentEnv(env) ? "tooltip-env-current" : ""} to={Client.Path("/env", Env.PreferredName(env, header))} onClick={() => refreshHeader(Env.PreferredName(env, header))} style={{color:"inherit"}}><b><u>{Env.PreferredName(env, header)}</u></b></Link>
+                                        { IsDefaultEnv(env) && <span>&nbsp;<b>{Char.RightArrow}</b> This is the default environment {Char.Star}</span> }
                                     </span>
+                                    <Tooltip id={`tooltip-env-current`} position="bottom" text="This is your current environment." />
                                 </>):(<>
                                     <span>
-                                        <Link to={Client.Path("/env", Env.PreferredName(env, header))} onClick={() => refreshHeader(Env.PreferredName(env, header))} style={{color:"inherit"}}><b>{Env.PreferredName(env, header)}</b></Link>
-                                        { IsDefaultEnv(env) && <b className={"tool-tip"} data-text={"This is the default environment."}>&nbsp;{Char.Star}</b> }
+                                        <Link id={`tooltip-env-default-${env.full_name}`} to={Client.Path("/env", Env.PreferredName(env, header))} onClick={() => refreshHeader(Env.PreferredName(env, header))} style={{color:"inherit"}}><b>{Env.PreferredName(env, header)}</b></Link>
+                                        { IsDefaultEnv(env) && <span style={{color:"black"}}>&nbsp;<b>{Char.RightArrow}</b> This is the default environment {Char.Star}</span> }
+                                        <Tooltip id={`tooltip-env-default-${env.full_name}`} position="top" text="This is the default environment." />
                                     </span>
                                 </>)}
                             </>)}
