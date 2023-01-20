@@ -232,10 +232,6 @@ def _decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, ver
     #     "email": "david_michaels@hms.harvard.edu"
     # }
     #
-    # TODO: Better understand why it is okay not to require to use the client secret to verify
-    # the JWT as we had to do for Auth0; i.e. this JWT is publicly VERIFIABLE by anyone; which
-    # I suppose is reasonable; being a JWT, it is ALREADY publicly READABLE by anyone.
-    #
     config = _get_cognito_oauth_config_base()
     client_id = config["client_id"]
     signing_key = _get_cognito_oauth_signing_key(jwt)
