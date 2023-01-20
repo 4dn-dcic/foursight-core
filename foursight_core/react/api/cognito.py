@@ -43,8 +43,6 @@ def _get_cognito_oauth_config_base() -> dict:
 @memoize
 def _get_cognito_oauth_config_client_secret() -> str:
     client_secret = os.environ.get("FOURSIGHT_COGNITO_CLIENT_SECRET", Gac.get_secret_value("COGNITO_CLIENT_SECRET"))
-    if not client_secret:
-        client_secret = "8caa9mn0f696ic1utvrg1ni5j48e5kap9l5rm5c785d7c7bdnjn"
     return client_secret
 
 

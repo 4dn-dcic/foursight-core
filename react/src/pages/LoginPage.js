@@ -165,7 +165,7 @@ const LoginPage = (props) => {
                     <div className="box error thickborder" style={{marginTop:"6pt",padding:"6pt",color:"darkred",fontSize:"small"}}>
                         <img alt="cognito" src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
                         <span style={{position:"relative",top:"1pt"}}>
-                            Logged in via new AWS <b>Cognito</b> support.
+                            Logged in via new <b>AWS Cognito</b> support.
                         </span>
                     </div>
                 </> }
@@ -223,8 +223,7 @@ const LoginPage = (props) => {
                 <img alt="cognito" src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
                 <span style={{position:"relative",top:"1pt"}}>
                     Click <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}><u>here</u></b> to try the
-                    new <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}>login</b> via
-                    AWS <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}>Cognito</b> support.
+                    new login via <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}>AWS Cognito</b> support.
                 </span>
             </div>
             { showingAuthToken && <>
