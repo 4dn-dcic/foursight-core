@@ -48,8 +48,9 @@ const LoginCognitoCallback = (props) => {
     });
 
     if (callback.loading) {
+        const signinvia = Cookie.Get("signinvia");
         return <LoginCognitoBoxWrapper>
-            <StandardSpinner condition={callback.loading} color={Styles.GetForegroundColor()} bold={false} size={210} label={"Signing in"} />
+            <StandardSpinner condition={callback.loading} color={Styles.GetForegroundColor()} bold={false} size={140} label={`Signing in via ${signinvia}`} />
         </LoginCognitoBoxWrapper>
     }
 };

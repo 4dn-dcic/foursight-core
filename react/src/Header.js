@@ -209,7 +209,7 @@ const Header = (props) => {
                         </a>
                     </td>
                     <td width="49%" style={{paddingRight:"10pt",paddingTop:"2pt",paddingBottom:"1pt",whiteSpace:"nowrap"}} align="right" nowrap="1">
-                        { (Env.KnownEnvs(header).length > 0) ? (
+                        { ((Env.Current() !== "cognito") && (Env.KnownEnvs(header).length > 0)) ? <>
                         <span className="dropdown">
                             <Tooltip id="tooltip-header-env" position="left" size={"small"} text={`Environments`} shape="squared" nopad={true} />
                             <b id="tooltip-header-env" className="dropdown-button" style={{color:(!Env.IsKnown(Env.Current(), header) || (Auth.IsLoggedIn(header) && !Env.IsAllowed(Env.Current(), header))) ? "red" : "#143c53"}}>{Env.Current() || "unknown-env"}</b>
@@ -230,10 +230,15 @@ const Header = (props) => {
                                 <Link id="__envinfo__" to={Client.Path("/env")}onClick={()=>{document.getElementById("__envinfo__").style.fontWeight="normal";}}>Environments</Link>
                             </div>
                          </span>
-                        ):(
-                            <b style={{color:titleBackgroundColor}}>{Env.Current()}</b>
-                        )}
-                        &nbsp;|&nbsp;
+                         &nbsp;|&nbsp;
+                        </>:<>
+                            { (Env.Current() !== "cognito") ? <>
+                                <b style={{color:titleBackgroundColor}}>{Env.Current()}</b>
+                                &nbsp;|&nbsp;
+                            </>:<>
+                                <b style={{color:titleBackgroundColor}}>{Env.PreferredName(Env.Default(header))}</b>
+                            </> }
+                        </> }
                         { (header.app?.stage === 'prod') ? (<>
                             <b id="tooltip-header-stage-prod" style={{color:"darkred"}}>{header.app?.stage}</b> &nbsp;|&nbsp;
                             <Tooltip id="tooltip-header-stage-prod" position="bottom" text={`Deployment stage: PROD`} />

@@ -23,6 +23,7 @@ import UserCreatePage from './pages/UserCreatePage';
 import UserEditPage from './pages/UserEditPage';
 import UsersPage from './pages/UsersPage';
 import useHeader from './hooks/Header';
+import Client from './utils/Client';
 
 const App = () => {
 

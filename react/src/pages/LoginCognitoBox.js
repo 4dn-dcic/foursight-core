@@ -39,6 +39,7 @@ export const LoginCognitoBox = ({ hide }) => {
 
     function signinWithGoogle() {
         Cookie.Set("env", Env.PreferredName(environ, header));
+        Cookie.Set("signinvia", "Google");
         AmplifyAuth.federatedSignIn({ provider: "Google" });
     }
 
