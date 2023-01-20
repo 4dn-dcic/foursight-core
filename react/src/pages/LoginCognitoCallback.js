@@ -17,8 +17,8 @@ const LoginCognitoCallback = (props) => {
 
     const code = args.get("code");
     const state = args.get("state");
-    const state_verifier = sessionStorage.getItem("oauth_state")
-    const code_verifier = sessionStorage.getItem("ouath_pkce_key")
+    const state_verifier = sessionStorage.getItem("oauth_state");
+    const code_verifier = sessionStorage.getItem("ouath_pkce_key");
 
     const navigate = useNavigate();
 
@@ -43,15 +43,19 @@ const LoginCognitoCallback = (props) => {
                     redirect_url = Client.Path("/home", env);
                 }
             }
+            sessionStorage.removeItem("oauth_state");
+            sessionStorage.removeItem("ouath_pkce_key");
             navigate(redirect_url);
         }
     });
 
     if (callback.loading) {
         const signinvia = Cookie.Get("signinvia");
-        return <LoginCognitoBoxWrapper>
-            <StandardSpinner condition={callback.loading} color={Styles.GetForegroundColor()} bold={false} size={140} label={`Signing in via ${signinvia}`} />
-        </LoginCognitoBoxWrapper>
+        return <div style={{transform:"scale(1.1)",marginTop:"10pt",marginBottom:"40pt"}}>
+            <LoginCognitoBoxWrapper>
+                <StandardSpinner condition={callback.loading} color={Styles.GetForegroundColor()} bold={false} size={140} label={`Signing in via ${signinvia}`} />
+            </LoginCognitoBoxWrapper>
+        </div>
     }
 };
 

@@ -58,10 +58,14 @@ const App = () => {
                         </Page.AuthorizationRequired>
                     } />
                     <Route path="/api/react/:environ/env" element={
-                        <EnvPage />
+                        <Page.KnownEnvRequired>
+                            <EnvPage />
+                        </Page.KnownEnvRequired>
                     } />
                     <Route path="/api/react/env" element={
-                        <EnvPage />
+                        <Page.KnownEnvRequired>
+                            <EnvPage />
+                        </Page.KnownEnvRequired>
                     } />
                     <Route path="/api/react/:environ/login" element={
                         <Page.KnownEnvRequired>

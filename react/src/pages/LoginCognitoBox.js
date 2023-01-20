@@ -50,7 +50,7 @@ export const LoginCognitoBox = ({ hide }) => {
     return <div style={{transform:"scale(1.1)",marginTop:"10pt",marginBottom:"40pt"}}>
         <LoginCognitoBoxWrapper>
             { config.loading ? <>
-                <StandardSpinner condition={true || config.loading} color={Styles.GetForegroundColor()} bold={false} size="140" label={"Loading configuration "} />
+                <StandardSpinner condition={true || config.loading} color={Styles.GetForegroundColor()} bold={false} size="140px" label={"Loading configuration "} />
             </>:<>
                 <div style={{paddingTop:"0pt"}} />
                 <GoogleLoginButton signin={signinWithGoogle} />

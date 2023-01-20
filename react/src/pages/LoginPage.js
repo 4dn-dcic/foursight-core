@@ -161,7 +161,7 @@ const LoginPage = (props) => {
                         <small>Click <Link to="/env"><u>here</u></Link> to go the the <Link to="/env">Environments Page</Link> to select another environment.</small>
                     </div>
                 </>}
-                { (Auth.Token()?.authentication === "cognito") && <>
+                { (Auth.LoggedInViaCognito()) && <>
                     <div className="box error thickborder" style={{marginTop:"6pt",padding:"6pt",color:"darkred",fontSize:"small"}}>
                         <img alt="cognito" src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
                         <span style={{position:"relative",top:"1pt"}}>

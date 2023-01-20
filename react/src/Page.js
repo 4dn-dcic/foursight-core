@@ -14,11 +14,6 @@ import useHeader from './hooks/Header';
 // data (from the React API /header endpoint), then redirect to the /env page.
 //
 function KnownEnvRequired({ children }) {
-    //
-    // Maybe just NoteLastUrl on AuthorizationRequired pages,
-    // i.e. all protected pages except the /login page.
-    // NoteLastUrl();
-    //
     const header = useHeader();
     //
     // TODO: More fully understand this next line added 2022-09-16.
@@ -28,11 +23,17 @@ function KnownEnvRequired({ children }) {
     //
     if (header.loading) return children;
     if (!Env.IsKnown(Env.Current(), header) ) {
-        return <Navigate to={Client.Path("/env")} replace />
+        return RedirectToKnownEnvPath(header);
     }
     else {
+        NoteLastUrl();
         return children;
     }
+}
+
+function RedirectToKnownEnvPath(header) {
+    const path = Client.Path(Client.CurrentLogicalPath(), Env.PreferredName(Env.Default(header), header));
+    window.location.href = path;
 }
 
 // If the user is NOT authenticated (i.e. logged in) OR is NOT authorized for the current
@@ -43,17 +44,17 @@ function KnownEnvRequired({ children }) {
 //
 function AuthorizationRequired({ children }) {
     const header = useHeader();
-    NoteLastUrl(header);
     if (!Auth.IsLoggedIn(header)) {
         return <Navigate to={Client.Path("/login")} replace />
+    }
+    else if (!Env.IsKnown(Env.Current(), header)) {
+        return RedirectToKnownEnvPath(header); // NEW
     }
     else if (!Env.IsAllowed(Env.Current(), header)) {
         return <Navigate to={Client.Path("/env")} replace />
     }
-    else if (!Env.IsKnown(Env.Current(), header)) {
-        return <Navigate to={Client.Path("/env")} replace />
-    }
     else {
+        NoteLastUrl();
         return children;
     }
 }

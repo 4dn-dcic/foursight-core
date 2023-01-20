@@ -53,6 +53,10 @@ function LoggedInViaGitHub(header) {
     return authenticator === "github";
 }
 
+function LoggedInViaCognito(header) {
+    return Cookie.AuthToken()?.authentication === "cognito";
+}
+
 function LoggedInAt() {
     return Cookie.AuthToken()?.authenticated_at;
 }
@@ -62,13 +66,14 @@ function LoggedInAt() {
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
-    IsLoggedIn:        IsLoggedIn,
-    LoggedInAt:        LoggedInAt,
-    LoggedInInfo:      LoggedInInfo,
-    LoggedInUser:      LoggedInUser,
-    LoggedInUserName:  LoggedInUserName,
-    LoggedInViaGoogle: LoggedInViaGoogle,
-    LoggedInViaGitHub: LoggedInViaGitHub,
-    SessionExpired:    SessionExpired,
-    Token:             Cookie.AuthToken
+    IsLoggedIn:         IsLoggedIn,
+    LoggedInAt:         LoggedInAt,
+    LoggedInInfo:       LoggedInInfo,
+    LoggedInUser:       LoggedInUser,
+    LoggedInUserName:   LoggedInUserName,
+    LoggedInViaCognito: LoggedInViaCognito,
+    LoggedInViaGoogle:  LoggedInViaGoogle,
+    LoggedInViaGitHub:  LoggedInViaGitHub,
+    SessionExpired:     SessionExpired,
+    Token:              Cookie.AuthToken
 }; export default exports;
