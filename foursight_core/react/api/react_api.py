@@ -212,7 +212,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         This is actually called from our primary frontend (React) callback /api/react/cognito/callback
         which is redirected to from Cognito so it can pick up the ouath_pkce_key (sic) which is written
         to browser session storage by the React authentication kickoff code (Amplify.federatedSignIn).
-        That value (ouath_pkce_key) is passed to this API as the code_verifier argument, alond with the
+        That value (ouath_pkce_key) is passed to this API as the code_verifier argument, along with the
         code argument which is passed to our primary callback. FYI note known typo in ouath_pkce_key.
         Note that this in an UNPROTECTED route.
         """
