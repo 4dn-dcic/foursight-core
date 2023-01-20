@@ -47,7 +47,7 @@ export const LoginCognitoBox = ({ hide }) => {
         window.alert("Sign in with GitHub is not yet supported.");
     }
 
-    return <div style={{transform:"scale(1.1)",marginTop:"10pt",marginBottom:"30pt"}}>
+    return <div style={{transform:"scale(1.1)",marginTop:"10pt",marginBottom:"40pt"}}>
         <LoginCognitoBoxWrapper>
             { config.loading ? <>
                 <StandardSpinner condition={true || config.loading} color={Styles.GetForegroundColor()} bold={false} size="140" label={"Loading configuration "} />

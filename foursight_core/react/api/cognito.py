@@ -3,8 +3,7 @@ from jwt import PyJWKClient
 import requests
 import os
 from typing import Tuple
-from foursight_core.react.api.encoding_utils import base64_encode, string_to_bytes
-from foursight_core.react.api.jwt_utils import jwt_encode
+from foursight_core.react.api.encoding_utils import base64_encode
 from foursight_core.react.api.envs import Envs
 from foursight_core.react.api.gac import Gac
 from foursight_core.react.api.misc_utils import get_request_origin, memoize
@@ -19,12 +18,9 @@ def get_cognito_oauth_config(request: dict) -> dict:
     Retrieved via either environment variables of AWS Secrets Manager.
     :returns: Dictionary containing AWS Cognito configuration info.
     """
-    #
-    # TODO
-    # Could maybe read this from the AWS Cognito configuration directly.
-    #
     config = _get_cognito_oauth_config_base()
-    config["callback"] = os.environ.get("FOURSIGHT_COGNITO_CALLBACK", f"{get_request_origin(request)}/api/react/cognito/callback")
+    config["callback"] = os.environ.get("FOURSIGHT_COGNITO_CALLBACK",
+                                        f"{get_request_origin(request)}/api/react/cognito/callback")
     return config
 
 
@@ -264,11 +260,12 @@ def _get_cognito_oauth_signing_key(jwt: str) -> object:
     :returns: Object suitable for use as a signing key to decode a JWT.
     """
     signing_key_client = _get_cognito_oauth_signing_key_client()
-    signing_key = signing_key_client.get_signing_key_from_jwt(string_to_bytes(jwt))
+    # signing_key = signing_key_client.get_signing_key_from_jwt(string_to_bytes(jwt))
+    signing_key = signing_key_client.get_signing_key_from_jwt(jwt)
     return signing_key.key
 
 
-def _get_cognito_oauth_signing_key_client() -> object:
+def _get_cognito_oauth_signing_key_client() -> PyJWKClient:
     """
     Returns an object which can be used to extract a signing key from a JWT.
     The returned object will contain a "get_signing_key_from_jwt" method, which takes

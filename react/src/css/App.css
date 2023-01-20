@@ -605,8 +605,8 @@ form {
     white-space: nowrap;
 }
 .signin-as-button:hover {
-    background: var(--box-bg-lighten);
+    background: yellow;
 }
 .signin-as-button:active {
-    background: yellow;
+    background: var(--box-bg-lighten);
 }
