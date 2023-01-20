@@ -38,14 +38,14 @@ def _get_cognito_oauth_config_base() -> dict:
         "domain": domain,
         "user_pool_id": user_pool_id,
         "client_id": client_id,
-        "scope": [ "openid", "email", "profile" ],
-        "connections": [ "Google" ],
+        "scope": ["openid", "email", "profile"],
+        "connections": ["Google"],
         "config": f"{COGNITO_BASE_URL}/{user_pool_id}/.well-known/openid-configuration"
     }
 
 
 @memoize
-def _get_cognito_oauth_config_client_secret() -> dict:
+def _get_cognito_oauth_config_client_secret() -> str:
     client_secret = os.environ.get("FOURSIGHT_COGNITO_CLIENT_SECRET", Gac.get_secret_value("COGNITO_CLIENT_SECRET"))
     if not client_secret:
         client_secret = "8caa9mn0f696ic1utvrg1ni5j48e5kap9l5rm5c785d7c7bdnjn"
@@ -82,7 +82,7 @@ def retrieve_cognito_oauth_token(request: dict) -> dict:
     # Note that we also get back from the /oauth2/token call above (in addition to the "id_token" JWT,
     # which we use) an "access_token" and a "refresh_token"; we do not currently use these; and trying
     # to decode the access_token gives us (unless we disable signature verification) an error because
-    # there is no "aud" field there, and trying to decode the refresh_token gives us an invalid payload 
+    # there is no "aud" field there, and trying to decode the refresh_token gives us an invalid payload
     # padding error for some as yet unknown reason, but no matter for now as we don't use these.
     #
     # Note that we also get back from the /oauth2/token call above an "expires_in" (e.g. 3600, for an
@@ -149,7 +149,7 @@ def _get_cognito_oauth_token_endpoint_url() -> str:
     return f"https://{domain}/oauth2/token"
 
 
-def _get_cognito_oauth_token_endpoint_authorization() -> dict:
+def _get_cognito_oauth_token_endpoint_authorization() -> str:
     """
     Returns the value for basic authorization value suitable
     for the header of a POST to the /oauth2/token endpoint.
@@ -294,6 +294,9 @@ def create_cognito_authtoken(token: dict, envs: Envs, domain: str, site: str) ->
     This is analagous to foursight_core.react.api.auth.create_authtoken used for Auth0 authentication.
 
     :param token: Decoded JWT token from the /oauth2/token endpoint.
+    :param envs: An Envs object (from react_api_base.ReactApiBase).
+    :param domain: Domain name of this instance of the application (i.e. Foursight server itself).
+    :param site: Domain Either foursight-cgap or foursignt=fourfront as appropriate.
     :returns: JWT-encoded "authtoken" dictionary suitable for cookie-ing the authenticated user.
     """
     email = token.get("email")
@@ -303,7 +306,7 @@ def create_cognito_authtoken(token: dict, envs: Envs, domain: str, site: str) ->
     expires = token.get("exp")
     authtoken = {
         "authentication": "cognito",
-        "authenticator": "google", # TODO: get from identities
+        "authenticator": "google",  # TODO: get from identities
         "authenticated": True,
         "authenticated_at": token.get("iat"),
         "authenticated_until": expires,
