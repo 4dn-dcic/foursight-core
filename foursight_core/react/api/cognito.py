@@ -308,7 +308,6 @@ def create_cognito_authtoken(token: dict, envs: Envs, domain: str, site: str) ->
         "allowed_envs": allowed_envs,
         "known_envs": known_envs,
         "default_env": default_env,
-        "initial_env": default_env,
         "domain": domain,
         "site": site
     }

@@ -23,7 +23,7 @@ function KnownEnvRequired({ children }) {
     //
     if (header.loading) return children;
     if (!Env.IsKnown(Env.Current(), header) ) {
-        return RedirectToKnownEnvPath(header);
+        return RedirectToDefaultEnvPath(header);
     }
     else {
         NoteLastUrl();
@@ -31,9 +31,14 @@ function KnownEnvRequired({ children }) {
     }
 }
 
-function RedirectToKnownEnvPath(header) {
-    const path = Client.Path(Client.CurrentLogicalPath(), Env.PreferredName(Env.Default(header), header));
-    window.location.href = path;
+function RedirectToDefaultEnvPath(header) {
+    const env = Env.PreferredName(Env.Default(header), header);
+    if (Env.IsKnown(env, header)) {
+        const path = Client.Path(Client.CurrentLogicalPath(), env);
+        if (path !== window.location.href) {
+            window.location.href = path;
+        }
+    }
 }
 
 // If the user is NOT authenticated (i.e. logged in) OR is NOT authorized for the current
@@ -48,7 +53,7 @@ function AuthorizationRequired({ children }) {
         return <Navigate to={Client.Path("/login")} replace />
     }
     else if (!Env.IsKnown(Env.Current(), header)) {
-        return RedirectToKnownEnvPath(header); // NEW
+        return RedirectToDefaultEnvPath(header);
     }
     else if (!Env.IsAllowed(Env.Current(), header)) {
         return <Navigate to={Client.Path("/env")} replace />

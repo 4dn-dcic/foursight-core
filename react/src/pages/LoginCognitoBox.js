@@ -29,9 +29,10 @@ export const LoginCognitoBox = ({ hide }) => {
                 oauth: {
                     domain: data.domain,
                     scope: data.scope,
+                    prompt: "select_account", // DOES NOT WORK!
                     redirectSignIn: data.callback,
                     responseType: "code"
-                }
+                },
             };
             AmplifyAuth.configure(configuration);
         }
@@ -40,11 +41,11 @@ export const LoginCognitoBox = ({ hide }) => {
     function signinWithGoogle() {
         Cookie.Set("env", Env.PreferredName(environ, header));
         Cookie.Set("signinvia", "Google");
-        AmplifyAuth.federatedSignIn({ provider: "Google" });
+        AmplifyAuth.federatedSignIn({ provider: "Google", prompt: 'select_account' }, { prompt: 'select_account' });
     }
 
     function signinWithGitHub() {
-        window.alert("Sign in with GitHub is not yet supported.");
+        window.alert("Sign in with GitHub via Cognito not supported.");
     }
 
     const links = <div>

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import useHeaderRefresh from '../hooks/HeaderRefresh';
-import { FetchErrorBox } from '../Components';
+import { FetchErrorBox, HorizontalLine } from '../Components';
 import Page from '../Page';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
@@ -75,10 +75,11 @@ const EnvPage = (props) => {
     return <div>
         <div className="container">
         { !Auth.IsLoggedIn(header) && IsKnownCurrentEnv() ? (
-            <div className="box warning" style={{margin:"0pt",padding:"10pt",marginBottom:"8pt",color:"#6F4E37"}}>
-                <Link to={Client.Path("/login")} style={{color:"inherit"}}><b>Not Logged In</b></Link> <br />
+            <div className="box warning" style={{margin:"0pt",padding:"10pt",marginBottom:"8pt"}}>
+                <span className="pointer" onClick={() => navigate(Client.Path("/login?auth=1"))} style={{fontSize:"large",color:"inherit"}}><b>{Char.Warning}&nbsp;&nbsp;Not Logged In</b></span> <br />
+                <HorizontalLine top="6pt" bottom="6pt" />
                 <small>
-                    Click <Link to={Client.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b><u>here</u></b></Link> to go to the <Link to={Client.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"#6F4E37"}}><b>login</b></Link> page.
+                    Click <Link to={Client.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"inherit"}}><b><u>here</u></b></Link> to go to the <Link to={Client.Path("/login", !IsKnownCurrentEnv() ? header : true, header)} style={{cursor:"pointer",color:"inherit"}}><b>login</b></Link> page.
                 </small>
                 </div>
         ):(<span/>)}

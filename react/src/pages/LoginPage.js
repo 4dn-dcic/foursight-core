@@ -8,7 +8,7 @@ import Auth from '../utils/Auth';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
-import { FetchErrorBox } from '../Components';
+import { FetchErrorBox, HorizontalLine } from '../Components';
 import Cookie from '../utils/Cookie';
 import Env from '../utils/Env';
 import Image from '../utils/Image';
@@ -18,6 +18,7 @@ import { LoggedInUser, Link } from '../Components';
 import { LoginCognitoBox } from './LoginCognitoBox';
 import Logout from '../utils/Logout';
 import Server from '../utils/Server';
+import Time from '../utils/Time';
 import Tooltip from '../components/Tooltip';
 import Yaml from '../utils/Yaml';
 import Page from '../Page';
@@ -94,8 +95,8 @@ const LoginPage = (props) => {
             { Env.Current() && <>
                 Current environment: <Link to="/env" env={Env.PreferredName(Env.Current(), header)}>{Env.PreferredName(Env.Current(), header)}</Link> <br />
             </>}
-            { header?.auth?.initial_env && <>
-                Initial environment: <Link to="/env" env={Env.PreferredName(header.auth.initial_env, header)} bold={false}>{Env.PreferredName(header.auth.initial_env, header)}</Link> <br />
+            { header?.auth?.default_env && <>
+                Default environment: <Link to="/env" env={Env.PreferredName(header.auth.default_env, header)} bold={false}>{Env.PreferredName(header.auth.default_env, header)}</Link> <br />
             </>}
             { Env.KnownEnvs(header) && <>
                 Available environments:
@@ -201,14 +202,21 @@ const LoginPage = (props) => {
                     <span onClick={() => setShowAuthToken(true)}>Auth {Char.UpArrow}</span>
                 </>}
             </div>
-            <div className="box warning" style={{marginTop:"15pt",marginLeft:"90pt",marginRight:"90pt",padding:"10pt",color:"darkred"}}>
-                Not logged in.
-                { Cookie.HasAuthToken() && Auth.SessionExpired() && <>
-                    &nbsp;Login expired: <LiveTime.FormatDuration start={Auth.Token().authenticated_until} verbose={true} tooltip={true} /> ago.
-                </>}
-                <br />
-                Click <u style={{cursor:"pointer"}} onClick={() => login()}><b>here</b></u> to <span style={{cursor:"pointer"}} onClick={() => login()}><b>login</b></span>.
-                {(header?.app?.credentials?.aws_account_number) && <>
+            <span style={{float:"right",color:"darkred",fontSize:"small"}}>
+                AWS Account: {header?.app?.credentials?.aws_account_number}
+                {(header?.app?.credentials?.aws_account_name) && <>
+                    &nbsp;|&nbsp;<span id="tooltip-login-aws-alias-2">{header?.app?.credentials?.aws_account_name}</span>
+                    <Tooltip id="tooltip-login-aws-alias-2" position="bottom" text={`AWS Account Alias: ${header?.app?.credentials?.aws_account_name}`} />
+                </>} &nbsp;|&nbsp;
+            </span>
+            <div className="box warning" style={{marginTop:"15pt",marginLeft:"90pt",marginRight:"90pt",padding:"10pt"}}>
+                <b id="tooltip-nologin" className="pointer" onClick={login} style={{fontSize:"large"}}>{Char.Warning}&nbsp;&nbsp;Not Logged In</b>
+                { (Cookie.HasAuthToken() && Auth.SessionExpired()) && <small>
+                   <Tooltip id="tooltip-nologin" position="bottom" text={`${Time.FormatDuration(Auth.Token().authenticated_until, new Date(), true, "", "Login expired:", "ago")}`} />
+                </small> }
+                <HorizontalLine top="6pt" bottom="6pt" />
+                Click <u style={{cursor:"pointer"}} onClick={login}><b>here</b></u> to <span style={{cursor:"pointer"}} onClick={() => login()}><b>login</b></span>.
+                {(false && header?.app?.credentials?.aws_account_number) && <>
                     <br />
                     <small>
                         AWS Account Number: {header?.app?.credentials?.aws_account_number}
@@ -217,6 +225,7 @@ const LoginPage = (props) => {
                             <Tooltip id="tooltip-login-aws-alias-2" position="bottom" text={`AWS Account alias: ${header?.app?.credentials?.aws_account_name}`} />
                         </>}
                     </small>
+                        -->
                 </>}
             </div>
             <div className="box error thickborder" style={{marginTop:"8pt",marginLeft:"90pt",marginRight:"90pt",padding:"6pt",color:"darkred",fontSize:"small"}}>

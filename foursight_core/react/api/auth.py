@@ -79,7 +79,7 @@ class Auth:
             logger.error(f"Authorization exception: {e}")
             return self._create_unauthenticated_response(request, "exception: " + str(e))
 
-    def create_authtoken(self, jwt: str, jwt_expires_at: int, env: str, domain: str) -> str:
+    def create_authtoken(self, jwt: str, jwt_expires_at: int, domain: str) -> str:
         """
         Creates and returns a new signed JWT, to be used as the login authtoken (cookie), from
         the given AUTHENTICATED and signed and encoded JWT, which will contain the following:
@@ -121,7 +121,6 @@ class Auth:
             "allowed_envs": allowed_envs,
             "known_envs": self._envs.get_known_envs(),
             "default_env": self._envs.get_default_env(),
-            "initial_env": env,
             "domain": domain,
             "site": "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront",
             "authenticator": authenticator
