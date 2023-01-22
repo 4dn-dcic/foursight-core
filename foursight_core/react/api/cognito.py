@@ -16,7 +16,7 @@ def get_cognito_oauth_config(request: dict) -> dict:
     """
     Returns all necessary configuration info for our AWS Coginito authentication server.
     Retrieved via either environment variables of AWS Secrets Manager.
-    :returns: Dictionary containing AWS Cognito configuration info.
+    :returns: Dictionary with AWS Cognito configuration info.
     """
     config = _get_cognito_oauth_config_base()
     config["callback"] = os.environ.get("FOURSIGHT_COGNITO_CALLBACK",
@@ -68,8 +68,8 @@ def retrieve_cognito_oauth_token(request: dict) -> dict:
 
     https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow-with-proof-key-for-code-exchange-pkce
 
-    :param request: Dictionary containing the HTTP request for our Cognito authentication callback.
-    :returns: Dictionary containing decoded JWT token (id_token) from the /oauth2/token endpoint call.
+    :param request: Dictionary with HTTP request for our Cognito authentication callback.
+    :returns: Dictionary with decoded JWT token (id_token) from Cognito /oauth2/token endpoint call.
     """
     response = _call_cognito_oauth_token_endpoint(request)
     #
@@ -101,8 +101,8 @@ def _call_cognito_oauth_token_endpoint(request: dict) -> dict:
     Cognito endpoint dependencies: Token i.e. /oauth2/token, JWKS i.e. /.well-known/jwks.json.
     Request arguments: code, code_verifier, state, oauth_state
 
-    :param request: Dictionary containing the HTTP request for our Cognito authentication callback.
-    :returns: Dictionary containing the HTTP response for the /oauth2/token endpoint (POST) call.
+    :param request: Dictionary with HTTP request for our Cognito authentication callback.
+    :returns: Dictionary with HTTP response for Cognito /oauth2/token endpoint (POST) call.
     """
     args = request.get("query_params") or {}
     code = args.get("code")
@@ -134,9 +134,9 @@ def _call_cognito_oauth_token_endpoint(request: dict) -> dict:
 
 def _get_cognito_oauth_token_endpoint_url() -> str:
     """
-    Returns the URL for the POST to the /oauth2/token endpoint.
+    Returns the URL for the POST to the Cognito /oauth2/token endpoint.
     Cognito configuration dependencies: domain.
-    :returns: URL for /oauth2/token endpoint.
+    :returns: URL for Cognito /oauth2/token endpoint.
     """
     config = _get_cognito_oauth_config_base()
     domain = config["domain"]
@@ -146,9 +146,9 @@ def _get_cognito_oauth_token_endpoint_url() -> str:
 def _get_cognito_oauth_token_endpoint_authorization() -> str:
     """
     Returns the value for basic authorization value suitable
-    for the header of a POST to the /oauth2/token endpoint.
+    for the header of a POST to the Cognito /oauth2/token endpoint.
     Cognito configuration dependencies: client ID, client secret.
-    :returns: Authorization header value for /oauth2/token endpoint.
+    :returns: Authorization header value for Cognito /oauth2/token endpoint.
     """
     config = _get_cognito_oauth_config_base()
     client_id = config["client_id"]
@@ -164,9 +164,9 @@ def _get_cognito_oauth_token_endpoint_data(request: dict, code: str, code_verifi
 
     Cognito configuration dependencies: client ID, our authentication callback URL.
 
-    :param code: Value passed to our backend authentication callback.
-    :param code_verifier: Value passed to our backend authentication callback.
-    :returns: Data suitable for POST payload for /oauth2/token endpoint.
+    :param code: Value passed from Cognito to our backend authentication callback.
+    :param code_verifier: Value passed from Cognito to our backend authentication callback.
+    :returns: Data suitable for POST payload for Cognito /oauth2/token endpoint.
     """
     config = get_cognito_oauth_config(request)
     client_id = config["client_id"]
@@ -196,7 +196,7 @@ def _decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, ver
     :param jwt: JWT token value (id_token) retrieved from the /oauth2/token endpoint.
     :param verify_signature: Boolean (default True) indicating JWT signature verification.
     :param verify_expiration: Boolean (default True) indicating JWT expiration verification.
-    :returns: Dictionary containing decoded value of the given JWT.
+    :returns: Dictionary with decoded value of given JWT.
     """
     #
     # Example decoded (id_tokn) JWT:
