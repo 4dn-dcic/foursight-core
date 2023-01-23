@@ -1,3 +1,10 @@
+# AWS Cognito authentication support functions.
+#
+# - get_cognito_oauth_config
+# - retrieve_cognito_oauth_token
+# - create_cognito_authtoken
+# - cognito_cache_clear
+
 import jwt as jwtlib
 from jwt import PyJWKClient
 import requests
@@ -14,18 +21,18 @@ COGNITO_BASE_URL = "https://cognito-idp.us-east-1.amazonaws.com"
 
 def get_cognito_oauth_config(request: dict) -> dict:
     """
-    Returns all necessary configuration info for our AWS Coginito authentication server.
+    Returns all necessary configuration info for our AWS Cognito authentication server.
     Retrieved via either environment variables of AWS Secrets Manager.
     :returns: Dictionary with AWS Cognito configuration info.
     """
-    config = _get_cognito_oauth_config_base()
+    config = _get_cognito_oauth_config_basic()
     config["callback"] = os.environ.get("FOURSIGHT_COGNITO_CALLBACK",
                                         f"{get_request_origin(request)}/api/react/cognito/callback")
     return config
 
 
 @memoize
-def _get_cognito_oauth_config_base() -> dict:
+def _get_cognito_oauth_config_basic() -> dict:
     domain = os.environ.get("FOURSIGHT_COGNITO_DOMAIN", Gac.get_secret_value("COGNITO_DOMAIN"))
     user_pool_id = os.environ.get("FOURSIGHT_COGNITO_USER_POOL_ID", Gac.get_secret_value("COGNITO_USER_POOL_ID"))
     client_id = os.environ.get("FOURSIGHT_COGNITO_CLIENT_ID", Gac.get_secret_value("COGNITO_CLIENT_ID"))
@@ -138,7 +145,7 @@ def _get_cognito_oauth_token_endpoint_url() -> str:
     Cognito configuration dependencies: domain.
     :returns: URL for Cognito /oauth2/token endpoint.
     """
-    config = _get_cognito_oauth_config_base()
+    config = _get_cognito_oauth_config_basic()
     domain = config["domain"]
     return f"https://{domain}/oauth2/token"
 
@@ -150,7 +157,7 @@ def _get_cognito_oauth_token_endpoint_authorization() -> str:
     Cognito configuration dependencies: client ID, client secret.
     :returns: Authorization header value for Cognito /oauth2/token endpoint.
     """
-    config = _get_cognito_oauth_config_base()
+    config = _get_cognito_oauth_config_basic()
     client_id = config["client_id"]
     client_secret = _get_cognito_oauth_config_client_secret()
     return base64_encode(f"{client_id}:{client_secret}")
@@ -187,9 +194,19 @@ def _get_cognito_oauth_token_endpoint_data(request: dict, code: str, code_verifi
 
 def _decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, verify_expiration = True) -> dict:
     """
-    Decodes and returns the dictionary for the given JWT.
-    To do this we use the signing key within the given JWT which we extract
-    using info from the Cognito authentication server JWKA (JSON Web Key Sets) API.
+    Decodes and returns the dictionary for the given JWT (which is assumed to have been returned
+    by the Cognito /auth2/token endpoint). To do this we use the signing key within the given JWT
+    which we extract using info from the Cognito authentication server JWKA (JSON Web Key Sets) API.
+
+    Note that this is different than how we decode the JWT for Auth0 (from its /oauth/token
+    endpoint) which just uses the Auth0 client ID (aka aud) and associated secret.
+
+    Also note that, as alluded to, this JWT is the one returned by the Cognito /oauth2/token endpoint.
+    We create/use our own (entirely different) JWT which we use to cookie the user on successful login;
+    this one is signed and encoded using the normal client ID (aka aud) and secret mechanism (i.e. not
+    a signing key); and we use this same strategy for both Auth0 and Cognito; i.e once a user is
+    authenticated via Cognito, the authentication/authorization flow is the same for Cognito and Auth0.
+
     Cognito configuration dependencies: user pool ID, client ID.
     Cognito endpoint dependencies: JWKS endpoint .../.well-known/jwks.json.
 
@@ -232,7 +249,7 @@ def _decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, ver
     #     "email": "david_michaels@hms.harvard.edu"
     # }
     #
-    config = _get_cognito_oauth_config_base()
+    config = _get_cognito_oauth_config_basic()
     client_id = config["client_id"]
     signing_key = _get_cognito_oauth_signing_key(jwt)
     options = {
@@ -245,6 +262,7 @@ def _decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, ver
 def _get_cognito_oauth_signing_key(jwt: str) -> object:
     """
     Returns the signing key (object) from the given JWT.
+    This is used to verify and decode the JWT (see: _decode_cognito_oauth_token_jwt).
     Actual type of returned object: cryptography.hazmat.backends.openssl.rsa._RSAPublicKey.
 
     Cognito configuration dependencies: user pool ID.
@@ -254,7 +272,6 @@ def _get_cognito_oauth_signing_key(jwt: str) -> object:
     :returns: Object suitable for use as a signing key to decode a JWT.
     """
     signing_key_client = _get_cognito_oauth_signing_key_client()
-    # signing_key = signing_key_client.get_signing_key_from_jwt(string_to_bytes(jwt))
     signing_key = signing_key_client.get_signing_key_from_jwt(jwt)
     return signing_key.key
 
@@ -263,7 +280,7 @@ def _get_cognito_oauth_signing_key_client() -> PyJWKClient:
     """
     Returns an object which can be used to extract a signing key from a JWT.
     The returned object will contain a "get_signing_key_from_jwt" method, which takes
-    JWT (as bytes) argument and returns a signing key object which has a "key" property.
+    JWT string argument and returns a signing key object which has a "key" property.
     Hits the jwks.json (JSON Web Key Sets) API for the Cognito authentication server.
     Actual type of returned object: jwt.jwks_client.PyJWKClient
 
@@ -272,7 +289,7 @@ def _get_cognito_oauth_signing_key_client() -> PyJWKClient:
 
     :returns: Object suitable for extracting a signing key from a JWT.
     """
-    config = _get_cognito_oauth_config_base()
+    config = _get_cognito_oauth_config_basic()
     user_pool_id = config["user_pool_id"]
     cognito_jwks_url = f"{COGNITO_BASE_URL}/{user_pool_id}/.well-known/jwks.json"
     return PyJWKClient(cognito_jwks_url)
@@ -315,5 +332,5 @@ def create_cognito_authtoken(token: dict, envs: Envs, domain: str, site: str) ->
 
 
 def cognito_cache_clear():
-    _get_cognito_oauth_config_base.cache_clear()
+    _get_cognito_oauth_config_basic.cache_clear()
     _get_cognito_oauth_config_client_secret.cache_clear()
