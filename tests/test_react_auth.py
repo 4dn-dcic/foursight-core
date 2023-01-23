@@ -15,7 +15,6 @@ from test_react_auth_defs import (
     EXPIRES_AT,
     EXPIRED_AT,
     FIRST_NAME,
-    INITIAL_ENV,
     LAST_NAME,
     ISSUED_AT,
     KNOWN_ENVS,
@@ -42,7 +41,6 @@ def assert_authorized_response(response):
     assert response["known_envs"] == KNOWN_ENVS
     assert response["allowed_envs"] == ALLOWED_ENVS
     assert response["default_env"] == DEFAULT_ENV
-    assert response["initial_env"] == INITIAL_ENV
     assert response["domain"] == DOMAIN
     assert response["aud"] == AUTH0_CLIENT_ID
 
