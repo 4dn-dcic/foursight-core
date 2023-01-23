@@ -50,7 +50,7 @@ export const LoginCognitoBox = ({ hide }) => {
 
     const links = <div>
         <div className="title-font" style={{marginTop:"4pt",fontSize:"8pt"}}>
-            <span>&nbsp;<a href="https://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html" target="_blank" style={{color:"gray"}}>Powered by AWS Cognito</a></span>
+            <span>&nbsp;<a href="https://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html" target="_blank" rel="noreferrer" style={{color:"gray"}}>Powered by AWS Cognito</a></span>
             <span className="pointer" style={{float:"right"}} onClick={hide}>Cancel&nbsp;&nbsp;</span>
         </div>
     </div>
