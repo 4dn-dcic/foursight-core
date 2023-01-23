@@ -29,7 +29,7 @@ from .aws_stacks import (
     aws_stacks_cache_clear
 )
 from .checks import Checks
-from .cognito import cognito_cache_clear, create_cognito_authtoken, get_cognito_oauth_config, retrieve_cognito_oauth_token
+from .cognito import cognito_cache_clear, get_cognito_oauth_config, handle_cognito_oauth_callback
 from .cookie_utils import create_delete_cookie_string
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
 from .encryption import Encryption
@@ -216,20 +216,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         code argument which is passed to our primary callback. FYI note known typo in ouath_pkce_key.
         Note that this in an UNPROTECTED route.
         """
-        # Retrieve (via /oauth2/token) and decode the OAuth (JWT) token, given code/code_verifier arguments.
-        token = retrieve_cognito_oauth_token(request)
-        # Create our authtoken (to cookie user) based on the retieved token.
-        domain = get_request_domain(request)
+        envs = self._envs
         site = self.get_site_name()
-        authtoken, expires = create_cognito_authtoken(token, self._envs, domain, site)
-        # Sic (WRT usage of Auth0 client ID and secret).
-        # For now at least we use the Auth0 client ID and secret to JWT encode
-        # the authtoken, for straightforward compatibilty with existing Auth0 code.
-        # I.e. once we've done the initial (login) authentication/authorization we
-        # act exactly like (as-if) previously implemented Auth0 based authentication.
-        authtoken_encoded = jwt_encode(authtoken, audience=self._auth0_config.get_client(),
-                                                  secret=self._auth0_config.get_secret())
-        return self.create_success_response({ "authtoken": authtoken_encoded, "expires": expires })
+        authtoken_audience = self._auth0_config.get_client()
+        authtoken_secret = self._auth0_config.get_secret()
+        response = handle_cognito_oauth_callback(request, envs, site, authtoken_audience, authtoken_secret)
+        return self.create_success_response(response)
 
     def reactapi_logout(self, request: dict, env: str) -> Response:
         """

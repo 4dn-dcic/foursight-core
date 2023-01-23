@@ -1,9 +1,4 @@
 # AWS Cognito authentication support functions.
-#
-# - get_cognito_oauth_config
-# - retrieve_cognito_oauth_token
-# - create_cognito_authtoken
-# - cognito_cache_clear
 
 import jwt as jwtlib
 from jwt import PyJWKClient
@@ -13,7 +8,8 @@ from typing import Tuple
 from foursight_core.react.api.encoding_utils import base64_encode
 from foursight_core.react.api.envs import Envs
 from foursight_core.react.api.gac import Gac
-from foursight_core.react.api.misc_utils import get_request_origin, memoize
+from foursight_core.react.api.jwt_utils import jwt_encode
+from foursight_core.react.api.misc_utils import get_request_domain, get_request_origin, memoize
 
 
 COGNITO_BASE_URL = "https://cognito-idp.us-east-1.amazonaws.com"
@@ -53,7 +49,38 @@ def _get_cognito_oauth_config_client_secret() -> str:
     return client_secret
 
 
-def retrieve_cognito_oauth_token(request: dict) -> dict:
+def handle_cognito_oauth_callback(request: dict, envs: Envs, site: str,
+                                  authtoken_audience: str, authtoken_secret: str) -> dict:
+    """
+    Called (ultimately) from react_routes for endpoint: GET /cognito/callback
+    This is actually called from our primary frontend (React) callback /api/react/cognito/callback
+    which is redirected to from Cognito so it can pick up the ouath_pkce_key (sic) which is written
+    to browser session storage by the React authentication kickoff code (Amplify.federatedSignIn).
+    That value (ouath_pkce_key) is passed to this API as the code_verifier argument, along with the
+    code argument which is passed to our primary callback. FYI note known typo in ouath_pkce_key.
+    Returns encoded authtoken and expires time suitable for cookie-ing the user for successful login.
+
+    :param request: Dictionary with HTTP request for the Cognito authentication callback.
+    :param envs: Envs object used to get environment and user info for authorization.
+    :param site: Site name (foursight-cgap or foursight-fourfront) used in authtoken.
+    :param authtoken_audience: Audience (aka client ID) with which to encode our authtoken JWT.
+    :param authtoken_secret: Secret (aka client secret) with which to encode our authtoken JWT.
+    :returns: Dictionary with authtoken and expires time which (React) caller will cookie user with.
+    """
+    # Retrieve (via /oauth2/token) and decode the OAuth (JWT) token, given code/code_verifier arguments.
+    token = _retrieve_cognito_oauth_token(request)
+    # Create our authtoken (to cookie user) based on the retieved token.
+    authtoken, expires = _create_cognito_authtoken(token, envs, get_request_domain(request), site)
+    # Sic (WRT usage of Auth0 client ID and secret).
+    # For now at least we use the Auth0 client ID and secret to JWT encode
+    # the authtoken, for straightforward compatibilty with existing Auth0 code.
+    # I.e. once we've done the initial (login) authentication/authorization we
+    # act exactly like (as-if) previously implemented Auth0 based authentication.
+    authtoken_encoded = jwt_encode(authtoken, audience=authtoken_audience, secret=authtoken_secret)
+    return {"authtoken": authtoken_encoded, "expires": expires}
+
+
+def _retrieve_cognito_oauth_token(request: dict) -> dict:
     """
     Calls the /oauth2/token endpoint with the code (and other relevant data from the given
     request, e.g. code_verifier) to retrieve the associated JWT token (id_token) and returns
@@ -88,7 +115,7 @@ def retrieve_cognito_oauth_token(request: dict) -> dict:
     #
     # Note that we also get back from the /oauth2/token call above an "expires_in" (e.g. 3600, for an
     # hour from "now") but the JWT (id_token) also contains a "exp" field (a time_t value) which is
-    # effectively the same thing; we will just use the latter (see: create_cognito_authtoken).
+    # effectively the same thing; we will just use the latter (see: _create_cognito_authtoken).
     #
     token = response.get("id_token")
     decoded_token = _decode_cognito_oauth_token_jwt(token)
@@ -295,7 +322,7 @@ def _get_cognito_oauth_signing_key_client() -> PyJWKClient:
     return PyJWKClient(cognito_jwks_url)
 
 
-def create_cognito_authtoken(token: dict, envs: Envs, domain: str, site: str) -> Tuple[dict, int]:
+def _create_cognito_authtoken(token: dict, envs: Envs, domain: str, site: str) -> Tuple[dict, int]:
     """
     Creates from the given (decoded) JWT token, retrieved from the /oauth2/token endpoint, an
     authtoken suitable for use as a cookie to indicate the user has been authenticated (logged in).
