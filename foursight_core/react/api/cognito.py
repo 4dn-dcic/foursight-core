@@ -346,7 +346,7 @@ def _create_cognito_authtoken(token: dict, envs: Envs, domain: str, site: str) -
     :param token: Decoded JWT token from the /oauth2/token endpoint.
     :param envs: An Envs object (from react_api_base.ReactApiBase).
     :param domain: Domain name of this instance of the application (i.e. Foursight server itself).
-    :param site: Domain Either foursight-cgap or foursignt=fourfront as appropriate.
+    :param site: Either foursight-cgap or foursignt-fourfront as appropriate.
     :returns: JWT-encoded "authtoken" dictionary suitable for cookie-ing the authenticated user.
     """
     email = token.get("email")
