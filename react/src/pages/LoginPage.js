@@ -228,13 +228,15 @@ const LoginPage = (props) => {
                         -->
                 </>}
             </div>
-            <div className="box error thickborder" style={{marginTop:"8pt",marginLeft:"90pt",marginRight:"90pt",padding:"6pt",color:"darkred",fontSize:"small"}}>
-                <img alt="cognito" src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
-                <span style={{position:"relative",top:"1pt"}}>
-                    Click <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}><u>here</u></b> to try the
-                    new login via <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}>AWS Cognito</b> support.
-                </span>
-            </div>
+            { (Client.IsCognitoEnabled()) &&
+                <div className="box error thickborder" style={{marginTop:"8pt",marginLeft:"90pt",marginRight:"90pt",padding:"6pt",color:"darkred",fontSize:"small"}}>
+                    <img alt="cognito" src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
+                    <span style={{position:"relative",top:"1pt"}}>
+                        Click <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}><u>here</u></b> to try the
+                        new login via <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}>AWS Cognito</b> support.
+                    </span>
+                </div>
+            }
             { showingAuthToken && <>
                 { Cookie.HasAuthToken() &&
                     <div className="box warning" style={{marginLeft:"90pt",marginRight:"90pt",color:"darkred",fontSize:"small"}}>

@@ -132,6 +132,10 @@ function IsReadOnlyMode(header) {
     return Cookie.IsReadOnlyMode();
 }
 
+function IsCognitoEnabled() {
+    return Cookie.Get("cognito") === "1";
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
@@ -142,6 +146,7 @@ const exports = {
     CurrentLogicalPath: GetCurrentLogicalPath,
     Domain:             Context.Client.Domain,
     HomeUrl:            GetHomeUrl,
+    IsCognitoEnabled:   IsCognitoEnabled,
     IsLocal:            Context.Client.IsLocal,
     IsReadOnlyMode:     IsReadOnlyMode,
     Origin:             Context.Client.Origin,
