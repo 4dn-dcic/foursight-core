@@ -357,9 +357,9 @@ def _create_cognito_authtoken(token: dict, envs: Envs, domain: str, site: str) -
     authtoken = {
         "authentication": "cognito",
         "authenticator": "google",  # TODO: get from identities
-        "authenticated": True,
         "authenticated_at": token.get("iat"),
         "authenticated_until": expires,
+        "authenticated": True,
         "user": email,
         "user_verified": token.get("email_verified"),
         "first_name": token.get("given_name") or first_name,

@@ -111,9 +111,11 @@ class Auth:
                 authenticator = "github"
         allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email)
         authtoken_decoded = {
-            "authenticated": True,
+            "authentication": "auth0",
+            "authenticator": authenticator,
             "authenticated_at": jwt_decoded.get("iat"),
             "authenticated_until": jwt_expires_at,
+            "authenticated": True,
             "user": email,
             "user_verified": jwt_decoded.get("email_verified"),
             "first_name": first_name,
@@ -122,8 +124,7 @@ class Auth:
             "known_envs": self._envs.get_known_envs(),
             "default_env": self._envs.get_default_env(),
             "domain": domain,
-            "site": "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront",
-            "authenticator": authenticator
+            "site": app.core.get_site_name()
         }
         # JWT-sign-encode the authtoken using our Auth0 client ID (aka audience aka "aud") and
         # secret. This *required* audience is added to the JWT before encoding (done in the
