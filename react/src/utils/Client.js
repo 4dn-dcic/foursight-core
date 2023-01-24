@@ -136,6 +136,14 @@ function IsCognitoEnabled() {
     return Cookie.Get("cognito") === "1";
 }
 
+function EnableCognito() {
+    return Cookie.Set("cognito", "1");
+}
+
+function DisableCognito() {
+    return Cookie.Delete("cognito");
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
@@ -144,7 +152,9 @@ const exports = {
     BasePath:           Context.Client.BasePath,
     BaseUrl:            Context.Client.BaseUrl,
     CurrentLogicalPath: GetCurrentLogicalPath,
+    DisableCognito:     DisableCognito,
     Domain:             Context.Client.Domain,
+    EnableCognito:      EnableCognito,
     HomeUrl:            GetHomeUrl,
     IsCognitoEnabled:   IsCognitoEnabled,
     IsLocal:            Context.Client.IsLocal,
