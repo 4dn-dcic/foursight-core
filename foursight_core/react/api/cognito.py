@@ -60,6 +60,11 @@ def handle_cognito_oauth_callback(request: dict, envs: Envs, site: str,
     code argument which is passed to our primary callback. FYI note known typo in ouath_pkce_key.
     Returns encoded authtoken and expires time suitable for cookie-ing the user for successful login.
 
+    Note that for now at least we use the Auth0 audient (aka client ID) and secret to JWT encode the
+    authtoken, for straightforward compatibilty with existing Auth0 code. I.e. once we've done the
+    initial (login) authentication/authorization we act exactly like (as-if) previously implemented
+    Auth0 based authentication.
+
     :param request: Dictionary with HTTP request for the Cognito authentication callback.
     :param envs: Envs object used to get environment and user info for authorization.
     :param site: Site name (foursight-cgap or foursight-fourfront) used in authtoken.
@@ -69,13 +74,9 @@ def handle_cognito_oauth_callback(request: dict, envs: Envs, site: str,
     """
     # Retrieve (via /oauth2/token) and decode the OAuth (JWT) token, given code/code_verifier arguments.
     token = _retrieve_cognito_oauth_token(request)
-    # Create our authtoken (to cookie user) based on the retieved token.
+    # Create our authtoken (to cookie user) based on the retrieved token.
     authtoken, expires = _create_cognito_authtoken(token, envs, get_request_domain(request), site)
-    # Sic (WRT usage of Auth0 client ID and secret).
-    # For now at least we use the Auth0 client ID and secret to JWT encode
-    # the authtoken, for straightforward compatibilty with existing Auth0 code.
-    # I.e. once we've done the initial (login) authentication/authorization we
-    # act exactly like (as-if) previously implemented Auth0 based authentication.
+    # Encode our authtoken using the given (Auth0 actually) audience (aka client ID) and secret.
     authtoken_encoded = jwt_encode(authtoken, audience=authtoken_audience, secret=authtoken_secret)
     return {"authtoken": authtoken_encoded, "expires": expires}
 
