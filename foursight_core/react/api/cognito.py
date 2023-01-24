@@ -19,6 +19,7 @@ def get_cognito_oauth_config(request: dict) -> dict:
     """
     Returns all necessary configuration info for our AWS Cognito authentication server.
     Retrieved via either environment variables of AWS Secrets Manager.
+    :param request: Dictionary with HTTP request an backend API call (e.g. /api/reactapi/cognito_config).
     :returns: Dictionary with AWS Cognito configuration info.
     """
     config = _get_cognito_oauth_config_basic()
@@ -29,9 +30,20 @@ def get_cognito_oauth_config(request: dict) -> dict:
 
 @memoize
 def _get_cognito_oauth_config_basic() -> dict:
-    domain = os.environ.get("FOURSIGHT_COGNITO_DOMAIN", Gac.get_secret_value("COGNITO_DOMAIN"))
-    user_pool_id = os.environ.get("FOURSIGHT_COGNITO_USER_POOL_ID", Gac.get_secret_value("COGNITO_USER_POOL_ID"))
-    client_id = os.environ.get("FOURSIGHT_COGNITO_CLIENT_ID", Gac.get_secret_value("COGNITO_CLIENT_ID"))
+    """
+    Returns basinecessary configuration info for our AWS Cognito authentication server.
+    Retrieved via either environment variables of AWS Secrets Manager.
+    :returns: Dictionary with basic AWS Cognito configuration info.
+    """
+    domain = os.environ.get("FOURSIGHT_COGNITO_DOMAIN")
+    if not domain:
+        domain = Gac.get_secret_value("COGNITO_DOMAIN")
+    user_pool_id = os.environ.get("FOURSIGHT_COGNITO_USER_POOL_ID")
+    if not user_pool_id:
+        user_pool_id = Gac.get_secret_value("COGNITO_USER_POOL_ID")
+    client_id = os.environ.get("FOURSIGHT_COGNITO_CLIENT_ID")
+    if not client_id:
+        client_id = Gac.get_secret_value("COGNITO_CLIENT_ID")
     return {
         "region": "us-east-1",
         "domain": domain,
@@ -45,7 +57,9 @@ def _get_cognito_oauth_config_basic() -> dict:
 
 @memoize
 def _get_cognito_oauth_config_client_secret() -> str:
-    client_secret = os.environ.get("FOURSIGHT_COGNITO_CLIENT_SECRET", Gac.get_secret_value("COGNITO_CLIENT_SECRET"))
+    client_secret = os.environ.get("FOURSIGHT_COGNITO_CLIENT_SECRET")
+    if not client_secret:
+        client_secret = Gac.get_secret_value("COGNITO_CLIENT_SECRET")
     return client_secret
 
 
