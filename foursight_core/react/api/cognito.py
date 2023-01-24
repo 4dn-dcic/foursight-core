@@ -210,7 +210,7 @@ def _get_cognito_oauth_token_endpoint_data(request: dict, code: str, code_verifi
         "grant_type": "authorization_code",
         "client_id": client_id,
         #
-        # Note that do NOT pass the client secret here as we are passing it in the header
+        # Note that we do NOT pass the client secret here as we are passing it in the header
         # to the /oauth2/token endpoint (POST) call. Though it would do no harm to do so.
         # See: _get_cognito_oauth_token_endpoint_authorization.
         #
