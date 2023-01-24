@@ -24,6 +24,8 @@ import UserEditPage from './pages/UserEditPage';
 import UsersPage from './pages/UsersPage';
 import useHeader from './hooks/Header';
 
+import TestChecksPage from './pages/checks/ChecksPage';
+
 const App = () => {
 
     const header = useHeader();
@@ -130,6 +132,9 @@ const App = () => {
                     }/>
                     <Route path="/api/react/:environ/forbidden" element={
                         <ForbiddenPage />
+                    }/>
+                    <Route path="/api/react/:environ/test/checks" element={
+                        <TestChecksPage />
                     }/>
                     <Route path="/redirect" element={
                         <RedirectPage />
