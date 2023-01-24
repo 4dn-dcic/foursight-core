@@ -29,7 +29,7 @@ from .aws_stacks import (
     aws_stacks_cache_clear
 )
 from .checks import Checks
-from .cognito import cognito_cache_clear, get_cognito_oauth_config, handle_cognito_oauth_callback
+from .cognito import clear_cognito_cache, get_cognito_oauth_config, handle_cognito_oauth_callback
 from .cookie_utils import create_delete_cookie_string
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
 from .encryption import Encryption
@@ -218,6 +218,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         envs = self._envs
         site = self.get_site_name()
+        # Note that for now at least we use the Auth0 audience (aka client ID) and secret to JWT encode the
+        # authtoken (for cookie-ing the user on successful login), for straightforward compatibilty with
+        # existing Auth0 code. I.e. once we've done the initial (login) authentication/authorization we
+        # act exactly like (as-if) previously implemented Auth0 based authentication.
         authtoken_audience = self._auth0_config.get_client()
         authtoken_secret = self._auth0_config.get_secret()
         response = handle_cognito_oauth_callback(request, envs, site, authtoken_audience, authtoken_secret)
@@ -1423,7 +1427,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._get_user_institutions.cache_clear()
         aws_network_cache_clear()
         aws_stacks_cache_clear()
-        cognito_cache_clear()
+        clear_cognito_clear()
         return self.create_success_response({"status": "Caches cleared."})
 
     @staticmethod

@@ -58,12 +58,12 @@ def handle_cognito_oauth_callback(request: dict, envs: Envs, site: str,
     to browser session storage by the React authentication kickoff code (Amplify.federatedSignIn).
     That value (ouath_pkce_key) is passed to this API as the code_verifier argument, along with the
     code argument which is passed to our primary callback. FYI note known typo in ouath_pkce_key.
-    Returns encoded authtoken and expires time suitable for cookie-ing the user for successful login.
+    Returns encoded authtoken and expires time suitable for cookie-ing the user on successful login.
 
-    Note that for now at least we use the Auth0 audient (aka client ID) and secret to JWT encode the
-    authtoken, for straightforward compatibilty with existing Auth0 code. I.e. once we've done the
-    initial (login) authentication/authorization we act exactly like (as-if) previously implemented
-    Auth0 based authentication.
+    Note that for now at least we use the Auth0 audience (aka client ID) and secret to JWT encode the
+    authtoken (for cookie-ing the user on successful login), for straightforward compatibilty with
+    existing Auth0 code. I.e. once we've done the initial (login) authentication/authorization we
+    act exactly like (as-if) previously implemented Auth0 based authentication.
 
     :param request: Dictionary with HTTP request for the Cognito authentication callback.
     :param envs: Envs object used to get environment and user info for authorization.
@@ -359,6 +359,6 @@ def _create_cognito_authtoken(token: dict, envs: Envs, domain: str, site: str) -
     return authtoken, expires
 
 
-def cognito_cache_clear():
+def clear_cognito_cache():
     _get_cognito_oauth_config_basic.cache_clear()
     _get_cognito_oauth_config_client_secret.cache_clear()
