@@ -6,6 +6,10 @@ foursight-core
 Change Log
 ----------
 
+3.3.0
+=====
+* Support for AWS Cognito (to POSSIBLY eventually supplant Auth0 for login).
+
 3.2.0
 =====
 * Support for viewing and editing user projects and institutions (C4-945).
