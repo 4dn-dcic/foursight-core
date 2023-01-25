@@ -451,6 +451,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 del user["role"]
             if "roles" in user:
                 del user["roles"]
+            if "status" in user:
+                if not user["status"] or user["status"] == "-":
+                    del user["status"]
             return user
 
         deletes = []
