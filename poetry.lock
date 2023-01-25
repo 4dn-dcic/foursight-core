@@ -222,7 +222,7 @@ test = ["hypothesis (>=1.11.4,!=3.79.2)", "iso8601", "pretend", "pytest (>=6.2.0
 
 [[package]]
 name = "dcicutils"
-version = "6.3.0"
+version = "6.5.0"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 category = "main"
 optional = false
@@ -1091,7 +1091,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.10"
-content-hash = "d12b5d6fef087a17279d6ba7ceb5b123a0067fc8aba69bd2d100c8d97682e39b"
+content-hash = "dce79f07bc952fb77efc1068eaf82e0a6b69d7f340634690572753173ad709e6"
 
 [metadata.files]
 ansicon = [
@@ -1296,8 +1296,8 @@ cryptography = [
     {file = "cryptography-39.0.0.tar.gz", hash = "sha256:f964c7dcf7802d133e8dbd1565914fa0194f9d683d82411989889ecd701e8adf"},
 ]
 dcicutils = [
-    {file = "dcicutils-6.3.0-py3-none-any.whl", hash = "sha256:5bd7051a5c69e52190dc353e3a53839813bbeb90c655ba9c8073daaead467743"},
-    {file = "dcicutils-6.3.0.tar.gz", hash = "sha256:98ecab3179df8548e91c3bb8244efd4aaf84a787eabf26f168b9c7e46465dc4f"},
+    {file = "dcicutils-6.5.0-py3-none-any.whl", hash = "sha256:8d06f3acbcc5388a4dbfc877b9d5bf0fe926b7a481ad433ad5574a2b799625e5"},
+    {file = "dcicutils-6.5.0.tar.gz", hash = "sha256:6bb14066a8edb7664ac86f73903e12fb18d3673f808aa738340f2f55c7bff2a6"},
 ]
 decorator = [
     {file = "decorator-5.1.1-py3-none-any.whl", hash = "sha256:b8c3f85900b9dc423225913c5aace94729fe1fa9763b38939a95226f02d37186"},
