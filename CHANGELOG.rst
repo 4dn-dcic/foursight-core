@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+3.3.1
+=====
+
+* Some minor code changes based on (prematurely merged) PR-40.
+
 3.3.0
 =====
 * Support for AWS Cognito (to POSSIBLY eventually supplant Auth0 for login).
