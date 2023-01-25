@@ -43,8 +43,8 @@ const LoginCognitoCallback = (props) => {
                     redirect_url = Client.Path("/home", env);
                 }
             }
-            //sessionStorage.removeItem("oauth_state");
-            //sessionStorage.removeItem("ouath_pkce_key");
+            sessionStorage.removeItem("oauth_state");
+            sessionStorage.removeItem("ouath_pkce_key");
             navigate(redirect_url);
         }
     });

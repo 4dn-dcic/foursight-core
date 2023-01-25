@@ -650,7 +650,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         else:
             add_on = ""
         connection = app.core.init_connection(env)
-        response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env), key=connection.ff_keys, add_on=add_on)
+        response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user,
+                                           ff_env=full_env_name(env), key=connection.ff_keys, add_on=add_on)
         status = response.get("status")
         if status != "success":
             return self.create_error_response(json.dumps(response))
@@ -957,8 +958,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/checks_status
         Returns the status of any/all currently running or queued checks.
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         checks_queue = app.core.sqs.get_sqs_attributes(app.core.sqs.get_sqs_queue().url)
         checks_running = checks_queue.get('ApproximateNumberOfMessagesNotVisible')
         checks_queued = checks_queue.get('ApproximateNumberOfMessages')
@@ -969,8 +969,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/checks_raw
         Returns the content of the raw/original check_setup.json file.
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         return self.create_success_response(self._checks.get_checks_raw())
 
     def reactapi_checks_registry(self, request: dict, env: str) -> Response:
@@ -979,8 +978,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns the content of the checks registry collected for the check_function
         decorator in decorators.py. For troubleshooting only.
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         return self.create_success_response(self._checks.get_registry())
 
     def reactapi_lambdas(self, request: dict, env: str) -> Response:
@@ -988,8 +986,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/lambdas
         Returns a summary (list) of all defined AWS lambdas for the current AWS environment.
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         # TODO: Filter out checks of lambas not in the env.
         return self.create_success_response(self._checks.get_annotated_lambdas(env))
 
@@ -998,8 +995,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/gac/{environ_compare}
         Returns differences between two GACs (global application configurations).
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         return self.create_success_response(Gac.compare_gacs(env, env_compare))
 
     def reactapi_aws_s3_buckets(self, request: dict, env: str) -> Response:
@@ -1007,8 +1003,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/s3/buckets
         Return a list of all AWS S3 bucket names for the current AWS environment.
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         return self.create_success_response(AwsS3.get_buckets())
 
     def reactapi_aws_s3_buckets_keys(self, request: dict, env: str, bucket: str) -> Response:
@@ -1017,8 +1012,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Return a list of all AWS S3 bucket key names in the given bucket
         for the current AWS environment.
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         return self.create_success_response(AwsS3.get_bucket_keys(bucket))
 
     def reactapi_aws_s3_buckets_key_contents(self, request: dict, env: str, bucket: str, key: str) -> Response:
@@ -1026,9 +1020,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/s3/buckets/{bucket}/{key}
         Return the contents of the AWS S3 bucket key in the given bucket for the current AWS environment.
         """
-        ignored(env)
-        ignored(bucket)
-        ignored(key)
+        ignored(env, bucket, key)
         #
         # TODO!!!
         # Disabling this feature for now until we can discuss/resolve security concerns.
@@ -1286,8 +1278,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         if vpc is None:
             vpc = "C4*"
         elif vpc == "all":
@@ -1306,8 +1297,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         if subnet is None:
             subnet = "C4*"
         elif subnet == "all":
@@ -1327,8 +1317,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         if security_group is None:
             security_group = "C4*"
         elif security_group == "all":
@@ -1345,8 +1334,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         raw = args.get("raw") == "true"
         direction = args.get("direction")
         return self.create_success_response(aws_get_security_group_rules(security_group, direction, raw))
@@ -1361,8 +1349,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         if network is None:
             network = "C4*"
         elif network == "all":
@@ -1374,48 +1361,42 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         Called from react_routes for endpoints: GET /{env}/aws/stacks
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         return self.create_success_response(aws_get_stacks())
 
     def reactapi_aws_stack(self, request: dict, env: str, stack: str) -> Response:
         """
         Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/outputs
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         return self.create_success_response(aws_get_stack(stack))
 
     def reactapi_aws_stack_outputs(self, request: dict, env: str, stack: str) -> Response:
         """
         Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/outputs
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         return self.create_success_response(aws_get_stack_outputs(stack))
 
     def reactapi_aws_stack_parameters(self, request: dict, env: str, stack: str) -> Response:
         """
         Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/parameters
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         return self.create_success_response(aws_get_stack_parameters(stack))
 
     def reactapi_aws_stack_resources(self, request: dict, env: str, stack: str) -> Response:
         """
         Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/resources
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         return self.create_success_response(aws_get_stack_resources(stack))
 
     def reactapi_aws_stack_template(self, request: dict, env: str, stack: str) -> Response:
         """
         Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/template
         """
-        ignored(request)
-        ignored(env)
+        ignored(request, env)
         return self.create_success_response(aws_get_stack_template(stack))
 
     # ----------------------------------------------------------------------------------------------
@@ -1454,7 +1435,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._get_user_institutions.cache_clear()
         aws_network_cache_clear()
         aws_stacks_cache_clear()
-        clear_cognito_clear()
+        clear_cognito_cache()
         return self.create_success_response({"status": "Caches cleared."})
 
     @staticmethod

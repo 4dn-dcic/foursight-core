@@ -17,15 +17,15 @@ class ReactRoutes:
     @route("/auth0_config", authorize=False)
     def reactapi_route_auth0_config() -> Response:  # noqa: implicit @staticmethod via @route
         """
+        Returns Auth0 configuration for authentication (from Portal).
         Note that this in an UNPROTECTED route.
-        No-env version of above /{env}/auth0_config route.
         """
         return app.core.reactapi_auth0_config(app.current_request.to_dict())
 
     @route("/cognito_config", authorize=False)
     def reactapi_route_cognito_config() -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Returns AWS Cognito configuration (from environment variables and/or Secrets Manager).
+        Returns AWS Cognito configuration for authentication (from environment variables or Secrets Manager).
         Note that this in an UNPROTECTED route.
         """
         return app.core.reactapi_cognito_config(app.current_request.to_dict())
