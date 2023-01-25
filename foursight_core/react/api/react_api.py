@@ -670,13 +670,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # TODO
         # When ES7 has been fully merged/deployed pass this to these calls: skip_indexing=True
         #
-        #elasticsearch_server_version = self._get_elasticsearch_server_version()
-        #kwargs = {"skip_indexing": True} if elasticsearch_server_version >= "7" else {}
+        elasticsearch_server_version = self._get_elasticsearch_server_version()
+        kwargs = {"skip_indexing": True} if elasticsearch_server_version >= "7" else {}
         connection = app.core.init_connection(env)
-        #ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), key=connection.ff_keys, **kwargs)
-        #ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), key=connection.ff_keys, **kwargs)
-        ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), key=connection.ff_keys)
-        ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), key=connection.ff_keys)
+        ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), key=connection.ff_keys, **kwargs)
+        ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), key=connection.ff_keys, **kwargs)
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
 
     def reactapi_users_institutions(self, request: dict, env: str, args: dict) -> Response:

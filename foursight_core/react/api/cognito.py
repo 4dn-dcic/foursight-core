@@ -18,11 +18,18 @@ COGNITO_BASE_URL = "https://cognito-idp.us-east-1.amazonaws.com"
 def get_cognito_oauth_config(request: dict) -> dict:
     """
     Returns all necessary configuration info for our AWS Cognito authentication server.
-    Retrieved via either environment variables of AWS Secrets Manager.
+    Retrieved via (first) either environment variables or (second) via AWS Secrets Manager.
     :param request: Dictionary with HTTP request an backend API call (e.g. /api/reactapi/cognito_config).
     :returns: Dictionary with AWS Cognito configuration info.
     """
     config = _get_cognito_oauth_config_basic()
+    #
+    # We make this set-able via environment variable because it can be useful for running locally
+    # in "cross-origin mode", where the React UI is running on its own on localhost:3000 (via npm)
+    # and the Foursight app is running locally on localhost:8000, so that live React code updates can
+    # be made and seen immediately on localhost:3000. In this case we set FOURSIGHT_COGNITO_CALLBACK
+    # to localhost:3000, rather than to what the default would have been, localhost:8000.
+    #
     config["callback"] = os.environ.get("FOURSIGHT_COGNITO_CALLBACK",
                                         f"{get_request_origin(request)}/api/react/cognito/callback")
     return config
@@ -31,10 +38,14 @@ def get_cognito_oauth_config(request: dict) -> dict:
 @memoize
 def _get_cognito_oauth_config_basic() -> dict:
     """
-    Returns basinecessary configuration info for our AWS Cognito authentication server.
+    Returns basic configuration info for our AWS Cognito authentication server.
     Retrieved via either environment variables of AWS Secrets Manager.
     :returns: Dictionary with basic AWS Cognito configuration info.
     """
+    #
+    # This is separated from get_cognito_oauth_config just so we can memoize these most commonly used
+    # configuration values (as the dictionary argument required for that function is not memoize-able).
+    #
     domain = os.environ.get("FOURSIGHT_COGNITO_DOMAIN")
     if not domain:
         domain = Gac.get_secret_value("COGNITO_DOMAIN")
@@ -57,6 +68,11 @@ def _get_cognito_oauth_config_basic() -> dict:
 
 @memoize
 def _get_cognito_oauth_config_client_secret() -> str:
+    """
+    Returns the Cognito user pool client secret value.
+    Note not returned by get_cognito_oauth_config and used only internally to this module.
+    :returns: Cognito user pool client secret value.
+    """
     client_secret = os.environ.get("FOURSIGHT_COGNITO_CLIENT_SECRET")
     if not client_secret:
         client_secret = Gac.get_secret_value("COGNITO_CLIENT_SECRET")
