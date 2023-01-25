@@ -40,7 +40,6 @@ ALLOWED_ENVS = ["env-b-full-name", "env-c-full-name"]
 ALLOWED_ENV = "env-c-full-name"
 DISALLOWED_ENV = "env-a-full-name"
 DEFAULT_ENV = "env-a-full-name"
-INITIAL_ENV = "env-b-full-name"
 
 ISSUED_AT  = int(time.time())
 EXPIRES_AT = int(time.time()) + (60 * 60 * 24)
@@ -76,7 +75,7 @@ def create_test_authtoken(expires_or_expired_at: int = EXPIRES_AT, use_invalid_a
     jwt = create_test_jwt(use_invalid_auth0_secret)
     os.environ["ENV_NAME"] = DEFAULT_ENV
     auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET_INVALID if use_invalid_auth0_secret else AUTH0_SECRET, ENVS)
-    authtoken = auth.create_authtoken(jwt, expires_or_expired_at, INITIAL_ENV, DOMAIN)
+    authtoken = auth.create_authtoken(jwt, expires_or_expired_at, DOMAIN)
     return authtoken
 
 

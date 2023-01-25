@@ -594,3 +594,19 @@ form {
 .pointer {
     cursor: pointer;
 }
+
+.signin-as-button {
+    background: lightyellow;
+    border: 1px solid darkgray;
+    border-radius: 2pt;
+    padding: 8pt 0 8pt 10pt;
+    width: 100%;
+    text-align: left;
+    white-space: nowrap;
+}
+.signin-as-button:hover {
+    background: var(--box-bg-lighten);
+}
+.signin-as-button:active {
+    background: yellow;
+}

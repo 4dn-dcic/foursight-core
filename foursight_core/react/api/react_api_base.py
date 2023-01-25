@@ -166,7 +166,7 @@ class ReactApiBase:
         jwt_expires_at = convert_datetime_to_time_t(datetime.datetime.utcnow() +
                                                     datetime.timedelta(seconds=jwt_expires_in))
         domain, context = app.core.get_domain_and_context(request)
-        authtoken = self._auth.create_authtoken(jwt, jwt_expires_at, env, domain)
+        authtoken = self._auth.create_authtoken(jwt, jwt_expires_at, domain)
         authtoken_cookie = create_set_cookie_string(request, name="authtoken",
                                                     value=authtoken,
                                                     domain=domain,
@@ -211,9 +211,11 @@ class ReactApiBase:
     def is_foursight_fourfront(self) -> bool:
         return app.core.APP_PACKAGE_NAME == "foursight"
 
-    @staticmethod
-    def get_site_name() -> str:
+    def get_site_name(self) -> str:
         return "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront"
+
+    def get_default_env(self) -> str:
+        return self._envs.get_default_env()
 
     def cache_clear(self) -> None:
         self._auth.cache_clear()

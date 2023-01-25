@@ -11,6 +11,7 @@ import Header from './Header';
 import HeaderProvider from './hooks/HeaderProvider';
 import HomePage from './pages/HomePage';
 import InfoPage from './pages/InfoPage';
+import LoginCognitoCallback from './pages/LoginCognitoCallback';
 import LoginPage from './pages/LoginPage';
 import GacComparePage from './pages/GacComparePage';
 import InfrastructurePage from './pages/aws/InfrastructurePage';
@@ -36,6 +37,9 @@ const App = () => {
             <Header />
             <div style={{margin:"14pt"}}>
                 <Routes>
+                    <Route path="/api/react/cognito/callback" element={
+                        <LoginCognitoCallback />
+                    }/>
                     <Route path="/" element={
                         <Navigate to={getDefaultPath()} />
                     } />
@@ -54,10 +58,14 @@ const App = () => {
                         </Page.AuthorizationRequired>
                     } />
                     <Route path="/api/react/:environ/env" element={
-                        <EnvPage />
+                        <Page.KnownEnvRequired>
+                            <EnvPage />
+                        </Page.KnownEnvRequired>
                     } />
                     <Route path="/api/react/env" element={
-                        <EnvPage />
+                        <Page.KnownEnvRequired>
+                            <EnvPage />
+                        </Page.KnownEnvRequired>
                     } />
                     <Route path="/api/react/:environ/login" element={
                         <Page.KnownEnvRequired>

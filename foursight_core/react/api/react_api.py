@@ -29,6 +29,7 @@ from .aws_stacks import (
     aws_stacks_cache_clear
 )
 from .checks import Checks
+from .cognito import clear_cognito_cache, get_cognito_oauth_config, handle_cognito_oauth_callback
 from .cookie_utils import create_delete_cookie_string
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
 from .encryption import Encryption
@@ -127,9 +128,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         connection = app.core.init_connection(env)
         institutions = ff_utils.search_metadata(f'/search/?type=Institution', key=connection.ff_keys)
+
         def get_principle_investigator(institution):
             pi = institution.get("pi")
             return {"name": pi.get("display_title"), "uuid": pi.get("uuid"), "id": pi.get("@id")} if pi else None
+
         if institutions and not raw:
             institutions = [
                 {
@@ -145,6 +148,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     @memoize
     def _get_user_roles(self, env: str) -> list:
+        ignored(env)
         #
         # The below enumerated user role values where copied from here:
         # https://github.com/dbmi-bgm/cgap-portal/blob/master/src/encoded/schemas/user.json#L69-L106
@@ -195,6 +199,34 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # Note we add the callback for the UI to setup its Auth0 login for.
         auth0_config["callback"] = self._auth0_config.get_callback_url(request)
         return self.create_success_response(self._auth0_config.get_config_data())
+
+    def reactapi_cognito_config(self, request: dict) -> Response:
+        """
+        Called from react_routes for endpoint: GET /cognito_config
+        Note that this in an UNPROTECTED route.
+        """
+        return self.create_success_response(get_cognito_oauth_config(request))
+
+    def reactapi_cognito_callback(self, request: dict) -> Response:
+        """
+        Called from react_routes for endpoint: GET /cognito/callback
+        This is actually called from our primary frontend (React) callback /api/react/cognito/callback
+        which is redirected to from Cognito so it can pick up the ouath_pkce_key (sic) which is written
+        to browser session storage by the React authentication kickoff code (Amplify.federatedSignIn).
+        That value (ouath_pkce_key) is passed to this API as the code_verifier argument, along with the
+        code argument which is passed to our primary callback. FYI note known typo in ouath_pkce_key.
+        Note that this in an UNPROTECTED route.
+        """
+        envs = self._envs
+        site = self.get_site_name()
+        # Note that for now at least we use the Auth0 audience (aka client ID) and secret to JWT encode the
+        # authtoken (for cookie-ing the user on successful login), for straightforward compatibilty with
+        # existing Auth0 code. I.e. once we've done the initial (login) authentication/authorization we
+        # act exactly like (as-if) previously implemented Auth0 based authentication.
+        authtoken_audience = self._auth0_config.get_client()
+        authtoken_secret = self._auth0_config.get_secret()
+        response = handle_cognito_oauth_callback(request, envs, site, authtoken_audience, authtoken_secret)
+        return self.create_success_response(response)
 
     def reactapi_logout(self, request: dict, env: str) -> Response:
         """
@@ -446,7 +478,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     del user["role"]
                 else:
                     role = user["role"]
-                    project_roles = user["roles"]
+                    project_roles = user.get("roles")
                     if project_roles:
                         found = False
                         for project_role in project_roles:
@@ -618,9 +650,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         else:
             add_on = ""
         connection = app.core.init_connection(env)
-        response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env),
-                # key=connection.ff_keys, add_on="delete_fields=project")
-                key=connection.ff_keys, add_on=add_on)
+        response = ff_utils.patch_metadata(obj_id=f"users/{uuid}", patch_item=user, ff_env=full_env_name(env), key=connection.ff_keys, add_on=add_on)
         status = response.get("status")
         if status != "success":
             return self.create_error_response(json.dumps(response))
@@ -643,8 +673,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         elasticsearch_server_version = self._get_elasticsearch_server_version()
         kwargs = {"skip_indexing": True} if elasticsearch_server_version >= "7" else {}
         connection = app.core.init_connection(env)
-        ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs, key=connection.ff_keys)
-        ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), **kwargs, key=connection.ff_keys)
+        ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), key=connection.ff_keys, **kwargs)
+        ff_utils.purge_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), key=connection.ff_keys, **kwargs)
         return self.create_success_response({"status": "User deleted.", "uuid": uuid})
 
     def reactapi_users_institutions(self, request: dict, env: str, args: dict) -> Response:
@@ -654,6 +684,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
+        ignored(request)
         if self.is_foursight_fourfront():
             return self.create_success_response([])
         raw = args.get("raw") == "true"
@@ -666,6 +697,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
+        ignored(request)
         if self.is_foursight_fourfront():
             return self.create_success_response([])
         raw = args.get("raw") == "true"
@@ -676,6 +708,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/users/roles
         Returns the list of available user roles.
         """
+        ignored(request)
         if self.is_foursight_fourfront():
             return self.create_success_response([])
         return self.create_success_response(self._get_user_roles(env))
@@ -685,6 +718,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/users/schema
         Returns the ElasticSearch user schema.
         """
+        ignored(request)
         return self.create_success_response(self._get_user_schema(env))
 
     def reactapi_users_statuses(self, request: dict, env: str) -> Response:
@@ -692,6 +726,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/users/status
         Returns the list of available user statuses.
         """
+        ignored(request)
         return self.create_success_response(self._get_user_statuses(env))
 
     def reactapi_checks_ungrouped(self, request: dict, env: str) -> Response:
@@ -720,6 +755,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(self._checks.get_checks_grouped_by_schedule(env))
 
     def reactapi_checks_check(self, request: dict, env: str, check: str) -> Response:
+        ignored(request)
         return self.create_success_response(self._checks.get_check(env, check))
 
     def reactapi_checks_history_latest(self, request: dict, env: str, check: str) -> Response:
@@ -896,7 +932,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         The args string, if any, is assumed to be a Base64 encoded JSON object.
         Kicks off a run for the given check (name).
         Arguments (args) for the request are any of:
-        - args: Base-64 encode JSON object containing fields/values appropriate for the check run. 
+        - args: Base-64 encode JSON object containing fields/values appropriate for the check run.
         """
         ignored(request)
         args = base64_decode_to_json(args) if args else None
@@ -909,7 +945,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         The args string, if any, is assumed to be a Base64 encoded JSON object.
         Kicks off a run for the given action (name).
         Arguments (args) for the request are any of:
-        - args: Base-64 encode JSON object containing fields/values appropriate for the action run. 
+        - args: Base-64 encode JSON object containing fields/values appropriate for the action run.
         """
         ignored(request)
         args = base64_decode_to_json(args) if args else {}
@@ -1045,7 +1081,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             self._cached_accounts_from_s3 = self._read_accounts_json(accounts_json_content)
         return self._cached_accounts_from_s3
 
-    def _get_accounts_only_for_current_account(self, request: dict) -> Optional[dict]:
+    def _get_accounts_only_for_current_account(self, request: dict) -> Optional[list]:
         aws_credentials = self._auth.get_aws_credentials(self._envs.get_default_env())
         if aws_credentials:
             account_name = aws_credentials.get("aws_account_name")
@@ -1081,7 +1117,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
             return None
         if not self._cached_accounts:
             try:
-                encryption = Encryption()
                 with io.open(self._get_accounts_file(), "r") as accounts_json_f:
                     accounts_json_content_encrypted = accounts_json_f.read()
                     accounts_json = self._read_accounts_json(accounts_json_content_encrypted)
@@ -1091,6 +1126,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self._cached_accounts
 
     def reactapi_accounts(self, request: dict, env: str, from_s3: bool = False) -> Response:
+        ignored(env)
         accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3(request)
         return self.create_success_response(accounts)
 
@@ -1250,6 +1286,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
+        ignored(request)
+        ignored(env)
         if vpc is None:
             vpc = "C4*"
         elif vpc == "all":
@@ -1268,6 +1306,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
+        ignored(request)
+        ignored(env)
         if subnet is None:
             subnet = "C4*"
         elif subnet == "all":
@@ -1287,6 +1327,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
+        ignored(request)
+        ignored(env)
         if security_group is None:
             security_group = "C4*"
         elif security_group == "all":
@@ -1303,6 +1345,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
+        ignored(request)
+        ignored(env)
         raw = args.get("raw") == "true"
         direction = args.get("direction")
         return self.create_success_response(aws_get_security_group_rules(security_group, direction, raw))
@@ -1317,6 +1361,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
+        ignored(request)
+        ignored(env)
         if network is None:
             network = "C4*"
         elif network == "all":
@@ -1328,36 +1374,48 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         Called from react_routes for endpoints: GET /{env}/aws/stacks
         """
+        ignored(request)
+        ignored(env)
         return self.create_success_response(aws_get_stacks())
 
     def reactapi_aws_stack(self, request: dict, env: str, stack: str) -> Response:
         """
         Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/outputs
         """
+        ignored(request)
+        ignored(env)
         return self.create_success_response(aws_get_stack(stack))
 
     def reactapi_aws_stack_outputs(self, request: dict, env: str, stack: str) -> Response:
         """
         Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/outputs
         """
+        ignored(request)
+        ignored(env)
         return self.create_success_response(aws_get_stack_outputs(stack))
 
     def reactapi_aws_stack_parameters(self, request: dict, env: str, stack: str) -> Response:
         """
         Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/parameters
         """
+        ignored(request)
+        ignored(env)
         return self.create_success_response(aws_get_stack_parameters(stack))
 
     def reactapi_aws_stack_resources(self, request: dict, env: str, stack: str) -> Response:
         """
         Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/resources
         """
+        ignored(request)
+        ignored(env)
         return self.create_success_response(aws_get_stack_resources(stack))
 
     def reactapi_aws_stack_template(self, request: dict, env: str, stack: str) -> Response:
         """
         Called from react_routes for endpoints: GET /{env}/aws/stacks/{stack}/template
         """
+        ignored(request)
+        ignored(env)
         return self.create_success_response(aws_get_stack_template(stack))
 
     # ----------------------------------------------------------------------------------------------
@@ -1396,6 +1454,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._get_user_institutions.cache_clear()
         aws_network_cache_clear()
         aws_stacks_cache_clear()
+        clear_cognito_clear()
         return self.create_success_response({"status": "Caches cleared."})
 
     @staticmethod

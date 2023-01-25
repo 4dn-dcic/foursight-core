@@ -79,7 +79,7 @@ class Auth:
             logger.error(f"Authorization exception: {e}")
             return self._create_unauthenticated_response(request, "exception: " + str(e))
 
-    def create_authtoken(self, jwt: str, jwt_expires_at: int, env: str, domain: str) -> str:
+    def create_authtoken(self, jwt: str, jwt_expires_at: int, domain: str) -> str:
         """
         Creates and returns a new signed JWT, to be used as the login authtoken (cookie), from
         the given AUTHENTICATED and signed and encoded JWT, which will contain the following:
@@ -111,9 +111,11 @@ class Auth:
                 authenticator = "github"
         allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email)
         authtoken_decoded = {
-            "authenticated": True,
+            "authentication": "auth0",
+            "authenticator": authenticator,
             "authenticated_at": jwt_decoded.get("iat"),
             "authenticated_until": jwt_expires_at,
+            "authenticated": True,
             "user": email,
             "user_verified": jwt_decoded.get("email_verified"),
             "first_name": first_name,
@@ -121,10 +123,8 @@ class Auth:
             "allowed_envs": allowed_envs,
             "known_envs": self._envs.get_known_envs(),
             "default_env": self._envs.get_default_env(),
-            "initial_env": env,
             "domain": domain,
-            "site": "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront",
-            "authenticator": authenticator
+            "site": app.core.get_site_name()
         }
         # JWT-sign-encode the authtoken using our Auth0 client ID (aka audience aka "aud") and
         # secret. This *required* audience is added to the JWT before encoding (done in the

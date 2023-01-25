@@ -41,7 +41,7 @@ def _create_aws_stack_info(stack: object):
 
 
 @memoize
-def aws_get_stack(stack_name_or_object: Union[str, object]) -> object:
+def aws_get_stack(stack_name_or_object: Union[str, object]) -> dict:
     """
     Returns all detailed info for the given AWS CloudFormation stack name,
     including various metadata, outputs, parameters, and resources.

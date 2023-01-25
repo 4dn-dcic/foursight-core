@@ -14,22 +14,32 @@ class ReactRoutes:
     # Foursight React API routes UNPROTECTED by authorization/authentication.
     # ----------------------------------------------------------------------------------------------
 
-    @route("/{env}/auth0_config", authorize=False)
-    def reactapi_route_auth0_config(env) -> Response:  # noqa: implicit @staticmethod via @route
-        ignored(env)
-        """
-        Note that this in an UNPROTECTED route.
-        Returns the Auth0 configuration info required for login.
-        """
-        return app.core.reactapi_auth0_config(app.current_request.to_dict())
-
     @route("/auth0_config", authorize=False)
-    def reactapi_route_auth0_config_noenv() -> Response:  # noqa: implicit @staticmethod via @route
+    def reactapi_route_auth0_config() -> Response:  # noqa: implicit @staticmethod via @route
         """
         Note that this in an UNPROTECTED route.
         No-env version of above /{env}/auth0_config route.
         """
         return app.core.reactapi_auth0_config(app.current_request.to_dict())
+
+    @route("/cognito_config", authorize=False)
+    def reactapi_route_cognito_config() -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns AWS Cognito configuration (from environment variables and/or Secrets Manager).
+        Note that this in an UNPROTECTED route.
+        """
+        return app.core.reactapi_cognito_config(app.current_request.to_dict())
+
+    @route("/cognito/callback", authorize=False)
+    def reactapi_route_cognito_callback() -> Response:  # noqa: implicit @staticmethod via @route
+        # API version of reactapi_route_cognito_callback.
+        """
+        Secondary AWS Cognito OAuth callback; called from our primary frontend callback which is
+        redirected to from Cognito so it can pick up the ouath_pkce_key (sic) which is written to
+        browser session storage by the React authentication kickoff code (Amplify.federatedSignIn).
+        Note that this in an UNPROTECTED route.
+        """
+        return app.core.reactapi_cognito_callback(app.current_request.to_dict())
 
     @route("/{env}/logout", authorize=False)
     def reactapi_route_logout(env: str) -> Response:  # noqa: implicit @staticmethod via @route
