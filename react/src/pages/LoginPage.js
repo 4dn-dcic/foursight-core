@@ -33,9 +33,24 @@ const LoginPage = (props) => {
     const showAuthBoxAtOutset = args.get("auth")?.length >= 0;
     const auth0Config = useFetch(Server.Url("/auth0_config", false));
     const [ showCognitoAuthBox, setShowCognitoAuthBox ] = useState(false);
+    const [ cognitoEnabled, setCognitoEnabled ] = useState(Client.IsCognitoEnabled());
 
     function login() {
         showAuthBox();
+    }
+
+    function isCognitoEnabled() {
+        return cognitoEnabled || Client.IsCognitoEnabled();
+    }
+
+    function enableCognito() {
+        setCognitoEnabled(true);
+        Client.EnableCognito();
+    }
+
+    function disableCognito() {
+        setCognitoEnabled(false);
+        Client.DisableCognito();
     }
 
     function showAuthBox() {
@@ -216,6 +231,10 @@ const LoginPage = (props) => {
                 </small> }
                 <HorizontalLine top="6pt" bottom="6pt" />
                 Click <u style={{cursor:"pointer"}} onClick={login}><b>here</b></u> to <span style={{cursor:"pointer"}} onClick={() => login()}><b>login</b></span>.
+                { (isCognitoEnabled()) ?
+                    <span onClick={disableCognito} style={{float:"right",position:"relative",top:"-2pt",fontSize:"8pt",cursor:"pointer"}}>Disable Cognito&nbsp;</span>
+                :   <span onClick={enableCognito} style={{float:"right",position:"relative",top:"-2pt",fontSize:"8pt",cursor:"pointer"}}>Enable Cognito&nbsp;</span>
+                }
                 {(false && header?.app?.credentials?.aws_account_number) && <>
                     <br />
                     <small>
@@ -228,13 +247,14 @@ const LoginPage = (props) => {
                         -->
                 </>}
             </div>
-            { (Client.IsCognitoEnabled()) &&
+            { (isCognitoEnabled()) &&
                 <div className="box error thickborder" style={{marginTop:"8pt",marginLeft:"90pt",marginRight:"90pt",padding:"6pt",color:"darkred",fontSize:"small"}}>
                     <img alt="cognito" src={Image.CognitoLogo()} style={{marginLeft:"2pt",marginRight:"8pt"}} height="22" />
                     <span style={{position:"relative",top:"1pt"}}>
                         Click <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}><u>here</u></b> to try the
-                        new login via <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}>AWS Cognito</b> support.
+                        new <b>experimental</b> login via <b className="pointer" onClick={() => setShowCognitoAuthBox(true)}>AWS Cognito</b> support.
                     </span>
+                    <b onClick={disableCognito} style={{float:"right",cursor:"pointer"}}>{Char.X}&nbsp;</b>
                 </div>
             }
             { showingAuthToken && <>
