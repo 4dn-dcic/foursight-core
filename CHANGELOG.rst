@@ -6,6 +6,10 @@ foursight-core
 Change Log
 ----------
 
+3.3.1
+=====
+* Lock dcicutils==6.5.0.1b0; fix for Andrea 2022-01-26 ~11:15am.
+
 3.3.0
 =====
 * Support for AWS Cognito (to POSSIBLY eventually supplant Auth0 for login).
