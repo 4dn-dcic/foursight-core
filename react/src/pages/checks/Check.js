@@ -68,9 +68,9 @@ export const Check = (props) => {
     }
 
     return <div className={`box ${lightenOnHover ? "check-box" : ""}`} style={{...style, width:props.width || "500pt"}}>
-        <table width="100%"><tbody><tr>
+        <table width="100%" style={{marginLeft:"-3pt"}}><tbody><tr>
         <td style={{verticalAlign:"top",width:"12pt"}}>
-            <small><b id={`tooltip-${check.name}-latest_result`} style={{verticalAlign:"top",width:"12pt",cursor:"pointer"}} onClick={() => onCollapse ? onCollapse(check.name) : toggleShowLatestResult()}>
+            <small><b id={`tooltip-${check.name}-latest_result`} style={{verticalAlign:"top",width:"12pt",marginRight:"1pt",cursor:"pointer"}} onClick={() => onCollapse ? onCollapse(check.name) : toggleShowLatestResult()}>
                 { isShowLatestResult() ? Char.DownArrowHollow : Char.UpArrowHollow }
             </b></small>
             <Tooltip id={`tooltip-${check.name}-latest_result`} text={onCollapse ? "Click to collapse." : `Click to ${isShowLatestResult() ? "hide" : "show"} latest result.`} position="top" />
