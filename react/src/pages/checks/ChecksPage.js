@@ -160,7 +160,7 @@ const Group = (props) => {
 const CheckBrief = (props) => {
     const { check, toggleBrief, style = {} } = props;
     return <div className="box darken check-box" style={style}>
-        <span className="pointer" onClick={toggleBrief}><b><small style={{position:"relative",top:"-1.1pt",left:"-3pt",marginRight:"1pt"}}>{Char.UpArrowHollow}</small>{check.title}</b></span>
+        <span className="pointer" onClick={toggleBrief}><b><small style={{position:"relative",top:"-0.8pt",left:"-3pt",marginRight:"1pt"}}>{Char.UpArrowHollow}</small>{check.title}</b></span>
         <ExternalLink
             href={Client.Path(`/checks/${check.name}/history`)}
             bold={true}
