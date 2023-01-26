@@ -23,8 +23,8 @@ export const LoginCognitoBox = ({ hide }) => {
         onData: (data) => {
             const configuration = {
                 region: data.region,
-                userPoolId: data.user_pool_id,
-                userPoolWebClientId: data.client_id,
+                userPoolId: data.userpool,
+                userPoolWebClientId: data.client,
                 mandatorySignIn: true,
                 oauth: {
                     domain: data.domain,
