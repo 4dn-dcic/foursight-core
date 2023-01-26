@@ -70,12 +70,12 @@ export const Check = (props) => {
     return <div className={`box ${lightenOnHover ? "check-box" : ""}`} style={{...style, width:props.width || "500pt"}}>
         <table width="100%" style={{marginLeft:"-3pt"}}><tbody><tr>
         <td style={{verticalAlign:"top",width:"12pt"}}>
-            <small><b id={`tooltip-${check.name}-latest_result`} style={{verticalAlign:"top",width:"12pt",marginRight:"1pt",cursor:"pointer"}} onClick={() => onCollapse ? onCollapse(check.name) : toggleShowLatestResult()}>
+            <small><b id={`tooltip-${check.name}-latest_result`} style={{position:"relative",verticalAlign:"top",width:"12pt",top:"1px",marginRight:"1pt",cursor:"pointer"}} onClick={() => onCollapse ? onCollapse(check.name) : toggleShowLatestResult()}>
                 { isShowLatestResult() ? Char.DownArrowHollow : Char.UpArrowHollow }
             </b></small>
             <Tooltip id={`tooltip-${check.name}-latest_result`} text={onCollapse ? "Click to collapse." : `Click to ${isShowLatestResult() ? "hide" : "show"} latest result.`} position="top" />
         </td>
-        <td style={{maxWidth:"400pt"}}>
+        <td style={{maxWidth:"400pt",whiteSpace:"nowrap"}}>
         <div style={{marginBottom:"4pt"}}>
             <b className="pointer" onClick={() => setShowHistory && setShowHistory(!showHistory)}>
                 <u>
@@ -107,7 +107,7 @@ export const Check = (props) => {
             <GitHubLink
                 href={check.registered_github_url}
                 type="check"
-                style={{marginLeft:"6pt"}} />
+                style={{marginLeft:"6pt",marginRight:"20pt"}} />
             { setShowHistory &&
                 <span style={{marginLeft:"3pt",cursor:"pointer"}} onClick={() => setShowHistory(!showHistory)}>
                     <img id={`tooltip-${check.name}-history-show`} src={Image.History()} style={{marginTop:"-1pt"}} height="18" /> { showHistory && Char.RightArrow}
@@ -115,8 +115,8 @@ export const Check = (props) => {
                 </span>
             }
             { Str.HasValue(schedule?.cron_description) ? (
-                <div style={{whiteSpace:"nowrap",width:"100%"}}>
-                    <small><i>Schedule: <span id={`tooltip-cron-${check.name}`}>{schedule.cron_description}</span>.</i></small>
+                <div style={{width:"100%"}}>
+                    <i style={{fontSize:"9pt"}}>Schedule: <span id={`tooltip-cron-${check.name}`}>{schedule.cron_description}</span>.</i>
                     <Tooltip id={`tooltip-cron-${check.name}`} text={schedule.cron} />
                 </div>
             ):(
@@ -134,14 +134,14 @@ export const Check = (props) => {
                 bucket={info.data?.checks?.bucket}
                 setTriggerRefreshResult={setTriggerRefreshResult} />
         </>}
-        { isShowLatestResult() &&
+        { isShowLatestResult() && <>
             <CheckLatestResult
                 check={check}
                 setActionAllowed={setActionAllowed}
                 parentState={parentState}
                 triggerRefreshResult={triggerRefreshResult}
                 setTriggerRefreshResult={setTriggerRefreshResult} />
-        }
+        </>}
         </td></tr></tbody></table>
     </div>
 }
@@ -726,15 +726,17 @@ const CheckLatestResult = (props) => {
             &nbsp;|&nbsp;
             <b id={`tooltip-${check.name}-result-refresh`} className="pointer" onClick={refreshResult}>{Char.Refresh}</b>
             <Tooltip id={`tooltip-${check.name}-result-refresh`} text="Click to fetch latest result."/>
+            <div style={{fontSize:"9pt",whiteSpace:"break-spaces"}}>
                 { (resultSummary.data?.summary || resultSummary.data?.summary) && <span className="pointer" onClick={toggleShowResult}>
                     { (resultSummary.data.summary) && <>
-                        <br /> Summary: {resultSummary.data.summary}
+                        Summary: {resultSummary.data.summary}
                     </> }
                     { (resultSummary.data.description && resultSummary.data.description !== resultSummary.data.summary) && <>
-                        <br /> Description: {resultSummary.data.description}
+                        <br />Description: {resultSummary.data.description}
                     </> }
                     &nbsp;&nbsp;<b><big>{resultSummary.data.status === "PASS" ? Char.Check : Char.X}</big></b>
                 </span> }
+            </div>
             { (isShowResult()) && <>
                 <pre className="box lighten" style={{marginTop:"4pt",marginBottom:"0pt",maxHeight:"600pt"}}>
                     { (isShowResultSummary()) ? <>

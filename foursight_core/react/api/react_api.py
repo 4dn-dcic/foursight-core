@@ -268,6 +268,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             known_envs_actual_count = self._envs.get_known_envs_count()
             data["auth"]["known_envs"] = [known_envs_default]
             data["auth"]["known_envs_actual_count"] = known_envs_actual_count
+        data["auth"]["default_env"] = self._envs.get_default_env()
         data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
         return self.create_success_response(data)
 
