@@ -67,19 +67,23 @@ export const Check = (props) => {
         }
     }
 
+    function formatTitle(check) {
+        return (check.title.length > 62) ? check.title.substring(0, 49) + " ..." : check.title;
+    }
+
     return <div className={`box ${lightenOnHover ? "check-box" : ""}`} style={{...style, width:props.width || "500pt"}}>
         <table width="100%" style={{marginLeft:"-3pt"}}><tbody><tr>
         <td style={{verticalAlign:"top",width:"12pt"}}>
             <small><b id={`tooltip-${check.name}-latest_result`} style={{position:"relative",verticalAlign:"top",width:"12pt",top:"1px",marginRight:"1pt",cursor:"pointer"}} onClick={() => onCollapse ? onCollapse(check.name) : toggleShowLatestResult()}>
                 { isShowLatestResult() ? Char.DownArrowHollow : Char.UpArrowHollow }
             </b></small>
-            <Tooltip id={`tooltip-${check.name}-latest_result`} text={onCollapse ? "Click to collapse." : `Click to ${isShowLatestResult() ? "hide" : "show"} latest result.`} position="top" />
         </td>
-        <td style={{maxWidth:"400pt",whiteSpace:"nowrap"}}>
+        <Tooltip id={`tooltip-${check.name}-latest_result`} text={onCollapse ? "Click to collapse." : `Click to ${isShowLatestResult() ? "hide" : "show"} latest result.`} position="top" />
+        <td style={{maxWidth:"480pt",whiteSpace:"nowrap"}}>
         <div style={{marginBottom:"4pt"}}>
             <b className="pointer" onClick={() => setShowHistory && setShowHistory(!showHistory)}>
                 <u>
-                    <span id={`tooltip-${check.name}`} >{check.title}</span>
+                    <span id={`tooltip-${check.name}`} >{formatTitle(check)}</span>
                     {actionExists() && <>
                         &nbsp;
                         <span id={`tooltip-${check.name}-action`} style={{color:actionAllowed ? "red" : "inherit"}}>

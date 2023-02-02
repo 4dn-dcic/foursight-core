@@ -10,7 +10,7 @@ const Tooltip = ({ id, type = "dark", position = "bottom", text = "Your tooltip 
         ...style,
         borderRadius: shape === "squared" ? "0 0 0 0" : "14px 0 14px 0",
         opacity:"1.0",
-        zIndex: 1000,
+        zindex: 9000,
         fontWeight: bold ? "bold" : "normal",
         fontSize: size ? size : "normal"
     };
