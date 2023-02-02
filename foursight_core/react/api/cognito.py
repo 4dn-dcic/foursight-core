@@ -7,12 +7,12 @@ import requests
 import os
 from typing import Tuple
 from typing_extensions import TypedDict
+from dcicutils.common import REGION as AWS_REGION
 from foursight_core.react.api.encoding_utils import base64_encode
 from foursight_core.react.api.envs import Envs
 from foursight_core.react.api.gac import Gac
 from foursight_core.react.api.jwt_utils import jwt_encode
 from foursight_core.react.api.misc_utils import get_request_domain, get_request_origin, memoize
-from dcicutils.common import REGION as AWS_REGION
 
 
 AWS_COGNITO_SERVICE_BASE_URL = f"https://cognito-idp.{AWS_REGION}.amazonaws.com"
