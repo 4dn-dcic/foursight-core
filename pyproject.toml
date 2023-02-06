@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "foursight-core"
-version = "3.3.0"
+version = "3.3.2"
 description = "Serverless Chalice Application for Monitoring"
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
@@ -12,7 +12,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.7,<3.10"
-dcicutils = "^6.5.0"
+dcicutils = "^6.8.0"
 click = "^7.1.2"
 cron-descriptor = "^1.2.31"
 cryptography = "39.0.0" # Required for AWS Cognito JWT decode (PyJWKClient)

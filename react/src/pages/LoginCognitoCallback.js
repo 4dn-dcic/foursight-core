@@ -17,6 +17,11 @@ const LoginCognitoCallback = (props) => {
 
     const code = args.get("code");
     const state = args.get("state");
+    //
+    // These values are written by our call to AmplifyAuth.federatedSignIn in LoginCognitoBox.
+    // We pass these to our /cognito/callback endpoint (below), which in turn passes them to
+    // the Cognito /oauths/token endpoint call. We delete them when done for extra security.
+    //
     const state_verifier = sessionStorage.getItem("oauth_state");
     const code_verifier = sessionStorage.getItem("ouath_pkce_key");
 
@@ -43,8 +48,12 @@ const LoginCognitoCallback = (props) => {
                     redirect_url = Client.Path("/home", env);
                 }
             }
-            //sessionStorage.removeItem("oauth_state");
-            //sessionStorage.removeItem("ouath_pkce_key");
+            //
+            // These are no longer needed; delete them for
+            // an extra measure of security; see above comment.
+            //
+            sessionStorage.removeItem("oauth_state");
+            sessionStorage.removeItem("ouath_pkce_key");
             navigate(redirect_url);
         }
     });

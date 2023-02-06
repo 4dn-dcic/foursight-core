@@ -17,7 +17,11 @@ def ecs_status(connection, **kwargs):
     client = ECSUtils()
     cluster_arns = client.list_ecs_clusters()
     for cluster_arn in cluster_arns:
-        if 'cgap' in cluster_arn:
+        # TODO: When dcicutil 6.7.1 is released replace next line with:
+        # if is_c4_arn(cluster_arn):
+        # And add at top:
+        # from dcicutils.misc_utils import is_c4_arn
+        if 'cgap' in cluster_arn or 'fourfront' in cluster_arn:
             cluster_services = client.list_ecs_services(cluster_name=cluster_arn)
             full_output['ECSMeta']['clusters'][cluster_arn] = {
                 'services': cluster_services

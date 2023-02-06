@@ -1,10 +1,13 @@
 # AWS Cognito authentication support functions.
 
+from cryptography.hazmat.backends.openssl.rsa import _RSAPublicKey as RSAPublicKey
 import jwt as jwtlib
 from jwt import PyJWKClient
 import requests
 import os
 from typing import Tuple
+from typing_extensions import TypedDict
+from dcicutils.common import REGION as AWS_REGION
 from foursight_core.react.api.encoding_utils import base64_encode
 from foursight_core.react.api.envs import Envs
 from foursight_core.react.api.gac import Gac
@@ -12,10 +15,30 @@ from foursight_core.react.api.jwt_utils import jwt_encode
 from foursight_core.react.api.misc_utils import get_request_domain, get_request_origin, memoize
 
 
-COGNITO_BASE_URL = "https://cognito-idp.us-east-1.amazonaws.com"
+AWS_COGNITO_SERVICE_BASE_URL = f"https://cognito-idp.{AWS_REGION}.amazonaws.com"
+
+KEY_REGION = "region"
+KEY_DOMAIN = "domain"
+KEY_USER_POOL_ID = "userpool"
+KEY_CLIENT_ID = "client"
+KEY_SCOPES = "scope"
+KEY_CONNECTIONS = "connections"
+KEY_CONFIG_URL = "config"
+KEY_CALLBACK_URL = "callback"
 
 
-def get_cognito_oauth_config(request: dict) -> dict:
+class CognitoConfig(TypedDict):
+    region: str
+    domain: str
+    userpool: str
+    client: str
+    scope: list
+    connections: list
+    config: str
+    callback: str
+
+
+def get_cognito_oauth_config(request: dict) -> CognitoConfig:
     """
     Returns all necessary configuration info for our AWS Cognito authentication server.
     Retrieved via (first) either environment variables or (second) via AWS Secrets Manager.
@@ -30,13 +53,13 @@ def get_cognito_oauth_config(request: dict) -> dict:
     # be made and seen immediately on localhost:3000. In this case we set FOURSIGHT_COGNITO_CALLBACK
     # to localhost:3000, rather than to what the default would have been, localhost:8000.
     #
-    config["callback"] = os.environ.get("FOURSIGHT_COGNITO_CALLBACK",
-                                        f"{get_request_origin(request)}/api/react/cognito/callback")
+    config[KEY_CALLBACK_URL] = os.environ.get("FOURSIGHT_COGNITO_CALLBACK",
+                                              f"{get_request_origin(request)}/api/react/cognito/callback")
     return config
 
 
 @memoize
-def _get_cognito_oauth_config_basic() -> dict:
+def _get_cognito_oauth_config_basic() -> CognitoConfig:
     """
     Returns basic configuration info for our AWS Cognito authentication server.
     Retrieved via either environment variables of AWS Secrets Manager.
@@ -55,14 +78,15 @@ def _get_cognito_oauth_config_basic() -> dict:
     client_id = os.environ.get("FOURSIGHT_COGNITO_CLIENT_ID")
     if not client_id:
         client_id = Gac.get_secret_value("COGNITO_CLIENT_ID")
-    return {
-        "region": "us-east-1",
-        "domain": domain,
-        "user_pool_id": user_pool_id,
-        "client_id": client_id,
-        "scope": ["openid", "email", "profile"],
-        "connections": ["Google"],
-        "config": f"{COGNITO_BASE_URL}/{user_pool_id}/.well-known/openid-configuration"
+    return { # noqa: TypedDict 'CognitoConfig' has missing keys et cetera - using KEY_XYZ constants
+        KEY_REGION: AWS_REGION,
+        KEY_DOMAIN: domain,
+        KEY_USER_POOL_ID: user_pool_id,
+        KEY_CLIENT_ID: client_id,
+        KEY_SCOPES: ["openid", "email", "profile"],
+        KEY_CONNECTIONS: ["Google"],
+        KEY_CONFIG_URL: f"{AWS_COGNITO_SERVICE_BASE_URL}/{user_pool_id}/.well-known/openid-configuration",
+        KEY_CALLBACK_URL: ""
     }
 
 
@@ -204,7 +228,7 @@ def _get_cognito_oauth_token_endpoint_url() -> str:
     :returns: URL for Cognito /oauth2/token endpoint.
     """
     config = _get_cognito_oauth_config_basic()
-    domain = config["domain"]
+    domain = config[KEY_DOMAIN]
     return f"https://{domain}/oauth2/token"
 
 
@@ -216,7 +240,7 @@ def _get_cognito_oauth_token_endpoint_authorization() -> str:
     :returns: Authorization header value for Cognito /oauth2/token endpoint.
     """
     config = _get_cognito_oauth_config_basic()
-    client_id = config["client_id"]
+    client_id = config[KEY_CLIENT_ID]
     client_secret = _get_cognito_oauth_config_client_secret()
     return base64_encode(f"{client_id}:{client_secret}")
 
@@ -234,14 +258,14 @@ def _get_cognito_oauth_token_endpoint_data(request: dict, code: str, code_verifi
     :returns: Data suitable for POST payload for Cognito /oauth2/token endpoint.
     """
     config = get_cognito_oauth_config(request)
-    client_id = config["client_id"]
-    callback = config["callback"]
+    client_id = config[KEY_CLIENT_ID]
+    callback = config[KEY_CALLBACK_URL]
     return {
         "grant_type": "authorization_code",
         "client_id": client_id,
         #
-        # Note that we do NOT pass the client secret here as we are passing it in the header
-        # to the /oauth2/token endpoint (POST) call. Though it would do no harm to do so.
+        # Note that we do NOT pass the client secret here as we are passing
+        # it in the header to the /oauth2/token endpoint (POST) call.
         # See: _get_cognito_oauth_token_endpoint_authorization.
         #
         "code": code,
@@ -308,7 +332,7 @@ def _decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, ver
     # }
     #
     config = _get_cognito_oauth_config_basic()
-    client_id = config["client_id"]
+    client_id = config[KEY_CLIENT_ID]
     signing_key = _get_cognito_oauth_signing_key(jwt)
     options = {
         "verify_signature": verify_signature,
@@ -317,7 +341,7 @@ def _decode_cognito_oauth_token_jwt(jwt: str, verify_signature: bool = True, ver
     return jwtlib.decode(jwt, signing_key, audience=client_id, algorithms=["RS256"], options=options)
 
 
-def _get_cognito_oauth_signing_key(jwt: str) -> object:
+def _get_cognito_oauth_signing_key(jwt: str) -> RSAPublicKey:
     """
     Returns the signing key (object) from the given JWT.
     This is used to verify and decode the JWT (see: _decode_cognito_oauth_token_jwt).
@@ -348,8 +372,8 @@ def _get_cognito_oauth_signing_key_client() -> PyJWKClient:
     :returns: Object suitable for extracting a signing key from a JWT.
     """
     config = _get_cognito_oauth_config_basic()
-    user_pool_id = config["user_pool_id"]
-    cognito_jwks_url = f"{COGNITO_BASE_URL}/{user_pool_id}/.well-known/jwks.json"
+    user_pool_id = config[KEY_USER_POOL_ID]
+    cognito_jwks_url = f"{AWS_COGNITO_SERVICE_BASE_URL}/{user_pool_id}/.well-known/jwks.json"
     return PyJWKClient(cognito_jwks_url)
 
 
