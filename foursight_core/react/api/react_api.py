@@ -203,6 +203,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def reactapi_cognito_config(self, request: dict) -> Response:
         """
         Called from react_routes for endpoint: GET /cognito_config
+        Returns AWS Cognito configuration for authentication; from environment variables or Secrets Manager;
+        getting from one or the other happens in cognito.get_cognito_oauth_config.
         Note that this in an UNPROTECTED route.
         """
         return self.create_success_response(get_cognito_oauth_config(request))
@@ -443,6 +445,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         common format suitable for insert/update to our database. Modifies input.
         Please see comment above (in _create_user_record_for_output) WRT roles.
         """
+        user = copy.deepcopy(user)
+        # TODO
+        # Handle these "-" checking things in the (React) UI!
         if self.is_foursight_fourfront():
             if "institution" in user:
                 del user["institution"]

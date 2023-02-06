@@ -25,7 +25,8 @@ class ReactRoutes:
     @route("/cognito_config", authorize=False)
     def reactapi_route_cognito_config() -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Returns AWS Cognito configuration for authentication (from environment variables or Secrets Manager).
+        Returns AWS Cognito configuration for authentication; from environment variables or Secrets Manager;
+        getting from one or the other happens in cognito.get_cognito_oauth_config.
         Note that this in an UNPROTECTED route.
         """
         return app.core.reactapi_cognito_config(app.current_request.to_dict())

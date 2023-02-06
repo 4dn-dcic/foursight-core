@@ -15,7 +15,6 @@ from .datetime_utils import convert_datetime_to_time_t
 from .envs import Envs
 from .misc_utils import (
     get_request_arg,
-    get_request_args,
     is_running_locally,
 )
 
