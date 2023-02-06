@@ -6,10 +6,14 @@ foursight-core
 Change Log
 ----------
 
-3.3.1
+3.3.2
 =====
 
 * Some minor code changes based on (prematurely merged) PR-40.
+
+3.3.1
+=====
+* Somehow this verison got tagged/pushed prematurely.
 
 3.3.0
 =====
