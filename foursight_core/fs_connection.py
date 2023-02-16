@@ -2,6 +2,8 @@ from foursight_core.s3_connection import S3Connection
 from foursight_core.es_connection import ESConnection
 from dcicutils.s3_utils import s3Utils
 from dcicutils.env_utils import full_env_name, is_stg_or_prd_env
+from dcicutils.redis_utils import create_redis_client
+from dcicutils.redis_tools import RedisBase, RedisSessionToken
 
 
 class FSConnection(object):
@@ -40,6 +42,10 @@ class FSConnection(object):
         self.ff_env = fs_environ_info['ff_env']
         self.ff_es = fs_environ_info['es']
         self.ff_bucket = fs_environ_info['bucket']
+        if 'redis' in fs_environ_info:
+            self.redis = RedisBase(create_redis_client(url=fs_environ_info['redis']))
+        else:
+            self.redis = None
         if not test:
             self.ff_s3 = s3Utils(env=self.ff_env)
             try:  # TODO: make this configurable from env variables?
@@ -84,3 +90,11 @@ class FSConnection(object):
         """ Returns basic info about the Elasticsearch server. """
         if self.connections['es']:
             return self.connections['es'].info()
+
+    def redis_info(self):
+        """ Returns basic info about the Redis server """
+        return self.redis.info() if self.redis else None
+
+    def get_redis_base(self):
+        """ Returns handle to FS Redis Base object """
+        return self.redis
