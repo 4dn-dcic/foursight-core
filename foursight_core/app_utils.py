@@ -337,7 +337,10 @@ class AppUtilsCore(ReactApi, Routes):
         """
         Manual authorization, since the builtin chalice @app.authorizer() was not
         working for me and was limited by a requirement that the authorization
-        be in a token. Check the cookies of the request for jwtToken using utils
+        be in a token. Check the cookies of the request for c4_st using utils.
+
+        Note as of February 2023 we've migrated away from JWT to a generic session
+        token. When Redis is not enabled c4_st will still be a JWT.
 
         Take in a dictionary format of the request (app.current_request) so we
         can test this.
@@ -405,7 +408,10 @@ class AppUtilsCore(ReactApi, Routes):
 
     def auth0_callback(self, request, env):
         """ Callback that implements the generation of JWT and returning that back
-            to the user to make authenticated requests with
+            to the user to make authenticated requests with.
+
+            Note that when Redis is enabled the JWT is instead stored in Redis and
+            a 32-byte session token is returned instead.
         """
         req_dict = request.to_dict()
         if self.is_react_authentication_callback(req_dict):
@@ -457,6 +463,7 @@ class AppUtilsCore(ReactApi, Routes):
             token_url = self.OAUTH_TOKEN_URL
         res = requests.post(token_url, data=json_payload, headers=headers)
         id_token = res.json().get('id_token', None)
+        expires_in = res.json().get('expires_in', None)
 
         # store redis token if turned on
         conn = self.init_connection(env)
@@ -468,16 +475,16 @@ class AppUtilsCore(ReactApi, Routes):
             redis_session_token.store_session_token(redis_handler=redis_handle)
             # overwrite id_token in this case to be the session token
             id_token = redis_session_token.get_session_token()
+            expires_in = (3 * 60 * 59)  # default session token expiration is 3 hours
 
         if id_token:
-            expires_in = res.json().get('expires_in', None)
             if domain and not self.is_running_locally(req_dict):
-                cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
+                cookie_str = ''.join(['c4_st=', id_token, '; Domain=', domain, '; Path=/;'])
             else:
                 # N.B. When running on localhost cookies cannot be set unless we leave off the domain entirely.
                 # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
-                cookie_str = ''.join(['jwtToken=', id_token, '; Path=/;'])
-            if expires_in:
+                cookie_str = ''.join(['c4_st=', id_token, '; Path=/;'])
+            if expires_in:  # in seconds
                 expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
                 cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
             resp_headers['Set-Cookie'] = cookie_str
@@ -495,7 +502,7 @@ class AppUtilsCore(ReactApi, Routes):
                 cookie_split = cookie.strip().split('=')
                 if len(cookie_split) == 2:
                     cookie_dict[cookie_split[0]] = cookie_split[1]
-        token = cookie_dict.get('jwtToken', None)
+        token = cookie_dict.get('c4_st', None)
         return token
 
     def get_decoded_jwt_token(self, env_name: str, request_dict) -> Optional[dict]:

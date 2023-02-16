@@ -250,7 +250,7 @@
                                     {% else %}
                                         <a href="{{request.context.path.replace('/' + env, '/' + environment['public_name'])}}" onclick="this.style.color = 'yellow'; this.style.backgroundColor = '#143c53'; this.style.fontWeight = 'bold';">{{environment["public_name"]}}</a>
                                     {% endif %}
-                                {% endfor %}     
+                                {% endfor %}
                             </span>
                          </span>
                     {% else %}
@@ -408,7 +408,7 @@
         window.getSelection().removeAllRanges();
     }
     function delete_login_cookies() {
-        document.cookie = "jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + location.hostname + ";";
+        document.cookie = "c4_st=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + location.hostname + ";";
     }
 </script>
 {% block script %}{% endblock %}
