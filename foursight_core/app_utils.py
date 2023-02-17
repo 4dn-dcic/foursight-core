@@ -457,7 +457,7 @@ class AppUtilsCore(ReactApi, Routes):
         }
         json_payload = json.dumps(payload)
         headers = {'content-type': "application/json"}
-        if self.auth0_domain != self.AUTH0_DOMAIN_FALLBACK:
+        if self.auth0_domain:
             token_url = f'https://{self.auth0_domain}/oauth/token'
         else:
             token_url = self.OAUTH_TOKEN_URL
@@ -515,12 +515,13 @@ class AppUtilsCore(ReactApi, Routes):
             auth0_secret = self.get_auth0_secret(env_name)
 
             # if redis is enabled check for session token and extract JWT from there
-            conn = self.init_connection(env_name)
+            canonical_env_name = full_env_name(env_name)
+            conn = self.init_connection(canonical_env_name)
             redis_handle = conn.get_redis_base()
             if redis_handle:
                 redis_session_token = RedisSessionToken.from_redis(
                     redis_handler=redis_handle,
-                    namespace=env_name,
+                    namespace=canonical_env_name,
                     token=jwt_token  # this is NOT JWT but the session token itself
                 )
                 if (not redis_session_token or

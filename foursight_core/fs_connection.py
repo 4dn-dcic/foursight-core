@@ -1,3 +1,5 @@
+import os
+
 from foursight_core.s3_connection import S3Connection
 from foursight_core.es_connection import ESConnection
 from dcicutils.s3_utils import s3Utils
@@ -44,6 +46,8 @@ class FSConnection(object):
         self.ff_bucket = fs_environ_info['bucket']
         if 'redis' in fs_environ_info:
             self.redis = RedisBase(create_redis_client(url=fs_environ_info['redis']))
+        elif 'REDIS_HOST' in os.environ:  # temporary patch in until env config is fully sorted - Will
+            self.redis = RedisBase(create_redis_client(url=os.environ['REDIS_HOST']))
         else:
             self.redis = None
         if not test:
