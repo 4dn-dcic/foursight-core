@@ -6,6 +6,7 @@ import requests
 from typing import Optional, Union
 import urllib.parse
 from dcicutils.misc_utils import get_error_message
+from dcicutils.redis_tools import RedisSessionToken
 from ...app import app
 from ...route_prefixes import ROUTE_PREFIX
 from .auth import Auth
@@ -129,7 +130,7 @@ class ReactApiBase:
         if the above is_react_authentication_callback returns True. Performs the actual
         Auth0 authentication for login via the Auth0 (HTTP POST) API. If successful,
         returns a redirect response (to the UI) with a cookie setting for the login
-        authtoken. If unsuccessful, returnes a forbidden (HTTP 403) response.
+        authtoken. If unsuccessful, returns a forbidden (HTTP 403) response.
         """
 
         auth0_code = get_request_arg(request, "code")
@@ -170,6 +171,20 @@ class ReactApiBase:
                                                     value=authtoken,
                                                     domain=domain,
                                                     expires=jwt_expires_at, http_only=False)
+
+        # if Redis is in use, create and return session token as well
+        redis_handle = self._auth.get_redis_handle()
+        if redis_handle:
+            redis_session_token = RedisSessionToken(
+                namespace=env, jwt=jwt
+            )
+            redis_session_token.store_session_token(redis_handler=redis_handle)
+            c4_st_cookie = create_set_cookie_string(request, name="c4_st",
+                                                    value=redis_session_token.get_session_token(),
+                                                    domain=domain,
+                                                    expires=redis_session_token.session_hset[redis_session_token.EXPIRATION])
+            authtoken_cookie += c4_st_cookie
+
         redirect_url = self.get_redirect_url(request, env, domain, context)
         return self.create_redirect_response(location=redirect_url, headers={"Set-Cookie": authtoken_cookie})
 

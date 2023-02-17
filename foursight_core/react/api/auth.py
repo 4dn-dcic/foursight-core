@@ -1,7 +1,11 @@
+import os
 import boto3
 import logging
 import time
 from typing import Optional
+from dcicutils.redis_utils import create_redis_client
+from dcicutils.redis_tools import RedisBase, RedisSessionToken
+from dcicutils.env_utils import full_env_name
 from ...app import app
 from .cookie_utils import read_cookie
 from .envs import Envs
@@ -18,8 +22,18 @@ class Auth:
         self._auth0_client = auth0_client
         self._auth0_secret = auth0_secret
         self._envs = envs
+        # acquired from identity or env variable locally
+        self._redis = RedisBase(create_redis_client(
+            url=os.environ['REDIS_HOST'])
+        ) if 'REDIS_HOST' in os.environ else None
 
     _cached_aws_credentials = {}
+
+    def get_redis_handle(self):
+        """
+        Returns a handler to Redis or None if not in use
+        """
+        return self._redis
 
     def authorize(self, request: dict, env: Optional[str] = None) -> dict:
         """
@@ -29,8 +43,21 @@ class Auth:
         and/or not authenticated, and containing the basic info from the authtoken.
         """
         try:
+            # Read the c4_st token (new Redis session token if Redis is in use)
 
-            # Read the authtoken cookie.
+            if self._redis:
+                c4_st = read_cookie(request, "c4_st")
+                redis_session_token = RedisSessionToken.from_redis(
+                    redis_handler=self._redis,
+                    namespace=full_env_name(env),
+                    token=c4_st
+                )
+                # if this session token is not valid, nothing else is to be trusted, so bail here
+                if (not redis_session_token or
+                        not redis_session_token.validate_session_token(redis_handler=self._redis)):
+                    return self._create_unauthenticated_response(request, "missing-or-invalid-session-token")
+
+            # Read the authtoken cookie (will always be present).
 
             authtoken = read_cookie(request, "authtoken")
             if not authtoken:
