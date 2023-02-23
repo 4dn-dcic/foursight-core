@@ -244,7 +244,6 @@ const LoginPage = (props) => {
                             <Tooltip id="tooltip-login-aws-alias-2" position="bottom" text={`AWS Account alias: ${header?.app?.credentials?.aws_account_name}`} />
                         </>}
                     </small>
-                        -->
                 </>}
             </div>
             { (isCognitoEnabled()) &&

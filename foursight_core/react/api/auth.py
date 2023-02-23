@@ -44,7 +44,6 @@ class Auth:
         """
         try:
             # Read the c4_st token (new Redis session token if Redis is in use)
-
             if self._redis:
                 c4_st = read_cookie(request, "c4_st")
                 redis_session_token = RedisSessionToken.from_redis(
