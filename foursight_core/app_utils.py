@@ -125,6 +125,10 @@ class AppUtilsCore(ReactApi, Routes):
         self.ActionResult = self.check_handler.ActionResult
         self.jin_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(self.get_template_path()),
+            # TODO: AutoEscape is deprecated as of Jinja2 3.0. I think this autoescape option can simply be removed
+            #       as of that version (maybe even before but it's less clear where that line is). -kmp 23-Feb-2023
+            #       For details, see https://jinja.palletsprojects.com/en/3.1.x/changes/
+            #       and https://github.com/pallets/jinja/issues/1203
             autoescape=jinja2.select_autoescape(['html', 'xml'])
         )
         self.auth0_domain = None
