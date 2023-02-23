@@ -6,7 +6,7 @@ import requests
 from typing import Optional, Union
 import urllib.parse
 from dcicutils.misc_utils import get_error_message
-from dcicutils.redis_tools import RedisSessionToken
+from dcicutils.redis_tools import RedisSessionToken, SESSION_TOKEN_COOKIE
 from ...app import app
 from ...route_prefixes import ROUTE_PREFIX
 from .auth import Auth
@@ -173,13 +173,13 @@ class ReactApiBase:
                                                     expires=jwt_expires_at, http_only=False)
 
         # if Redis is in use, create and return session token as well
-        redis_handle = self._auth.get_redis_handle()
-        if redis_handle:
+        redis_handler = self._auth.get_redis_handler()
+        if redis_handler:
             redis_session_token = RedisSessionToken(
                 namespace=env, jwt=jwt
             )
-            redis_session_token.store_session_token(redis_handler=redis_handle)
-            c4_st_cookie = create_set_cookie_string(request, name="c4_st",
+            redis_session_token.store_session_token(redis_handler=redis_handler)
+            c4_st_cookie = create_set_cookie_string(request, name=SESSION_TOKEN_COOKIE,
                                                     value=redis_session_token.get_session_token(),
                                                     domain=domain,
                                                     expires=redis_session_token.session_hset[redis_session_token.EXPIRATION])

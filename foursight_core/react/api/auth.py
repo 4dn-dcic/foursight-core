@@ -4,7 +4,7 @@ import logging
 import time
 from typing import Optional
 from dcicutils.redis_utils import create_redis_client
-from dcicutils.redis_tools import RedisBase, RedisSessionToken
+from dcicutils.redis_tools import RedisBase, RedisSessionToken, SESSION_TOKEN_COOKIE
 from dcicutils.env_utils import full_env_name
 from ...app import app
 from .cookie_utils import read_cookie
@@ -29,7 +29,7 @@ class Auth:
 
     _cached_aws_credentials = {}
 
-    def get_redis_handle(self):
+    def get_redis_handler(self):
         """
         Returns a handler to Redis or None if not in use
         """
@@ -45,7 +45,7 @@ class Auth:
         try:
             # Read the c4_st token (new Redis session token if Redis is in use)
             if self._redis:
-                c4_st = read_cookie(request, "c4_st")
+                c4_st = read_cookie(request, SESSION_TOKEN_COOKIE)
                 redis_session_token = RedisSessionToken.from_redis(
                     redis_handler=self._redis,
                     namespace=full_env_name(env),

@@ -37,7 +37,7 @@ from dcicutils.lang_utils import disjoined_list
 from dcicutils.misc_utils import get_error_message, ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
-from dcicutils.redis_tools import RedisSessionToken, RedisException
+from dcicutils.redis_tools import RedisSessionToken, RedisException, SESSION_TOKEN_COOKIE
 from .app import app
 from .check_utils import CheckHandler
 from .deploy import Deploy
@@ -467,23 +467,23 @@ class AppUtilsCore(ReactApi, Routes):
 
         # store redis token if turned on
         conn = self.init_connection(env)
-        redis_handle = conn.get_redis_base()
-        if redis_handle:
+        redis_handler = conn.get_redis_base()
+        if redis_handler:
             redis_session_token = RedisSessionToken(
                 namespace=env, jwt=id_token
             )
-            redis_session_token.store_session_token(redis_handler=redis_handle)
+            redis_session_token.store_session_token(redis_handler=redis_handler)
             # overwrite id_token in this case to be the session token
             id_token = redis_session_token.get_session_token()
             expires_in = (3 * 60 * 59)  # default session token expiration is 3 hours
 
         if id_token:
             if domain and not self.is_running_locally(req_dict):
-                cookie_str = ''.join(['c4_st=', id_token, '; Domain=', domain, '; Path=/;'])
+                cookie_str = f'{SESSION_TOKEN_COOKIE}={id_token}; Domain={domain}; Path=/;'
             else:
                 # N.B. When running on localhost cookies cannot be set unless we leave off the domain entirely.
                 # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
-                cookie_str = ''.join(['c4_st=', id_token, '; Path=/;'])
+                cookie_str = f'{SESSION_TOKEN_COOKIE}={id_token}; Domain={domain}; Path=/;'
             if expires_in:  # in seconds
                 expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
                 cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
@@ -502,7 +502,7 @@ class AppUtilsCore(ReactApi, Routes):
                 cookie_split = cookie.strip().split('=')
                 if len(cookie_split) == 2:
                     cookie_dict[cookie_split[0]] = cookie_split[1]
-        token = cookie_dict.get('c4_st', None)
+        token = cookie_dict.get(SESSION_TOKEN_COOKIE, None)
         return token
 
     def get_decoded_jwt_token(self, env_name: str, request_dict) -> Optional[dict]:
@@ -517,15 +517,15 @@ class AppUtilsCore(ReactApi, Routes):
             # if redis is enabled check for session token and extract JWT from there
             canonical_env_name = full_env_name(env_name)
             conn = self.init_connection(canonical_env_name)
-            redis_handle = conn.get_redis_base()
-            if redis_handle:
+            redis_handler = conn.get_redis_base()
+            if redis_handler:
                 redis_session_token = RedisSessionToken.from_redis(
-                    redis_handler=redis_handle,
+                    redis_handler=redis_handler,
                     namespace=canonical_env_name,
                     token=jwt_token  # this is NOT JWT but the session token itself
                 )
                 if (not redis_session_token or
-                        not redis_session_token.validate_session_token(redis_handler=redis_handle)):
+                        not redis_session_token.validate_session_token(redis_handler=redis_handler)):
                     raise RedisException('Given session token either expired or invalid')
                 # if we got here, session token is valid, now decode jwt like usual
                 return redis_session_token.decode_jwt(
