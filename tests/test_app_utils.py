@@ -76,7 +76,7 @@ class TestAppUtils:
         app_utils, conn = app_utils_obj_conn
         # try with a non-valid jwt
         # this should fully test self.app_utils_obj.get_jwt
-        req_dict = {'headers': {'cookie': 'jwtToken=not_a_jwt;other=blah;'}}
+        req_dict = {'headers': {'cookie': 'c4_st=not_a_jwt;other=blah;'}}
         auth = app_utils.check_authorization(req_dict)
         assert not auth
         jwtToken = app_utils.get_jwt_token(req_dict)
