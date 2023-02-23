@@ -106,7 +106,7 @@ def test_react_authentication_decorator_unauthenticated_expired():
             app = MockChaliceApp(request)
             with mock.patch.object(react_route_decorator, "app", app):
                 @react_route_decorator.route("/{env}/dummy", authorize=True)
-                def test_react_route(enviroenv: str):
+                def test_react_route(env: str):
                     return create_test_route_response(env)
                 response = test_react_route(env=ALLOWED_ENV)
                 assert_unauthenticated_response(response)
