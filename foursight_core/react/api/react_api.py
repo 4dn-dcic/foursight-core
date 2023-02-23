@@ -247,7 +247,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         c4_st_cookie_deletion = create_delete_cookie_string(request=request, name=SESSION_TOKEN_COOKIE, domain=domain)
         redirect_url = self.get_redirect_url(request, env, domain, context)
         # always delete both cookies on logout
-        headers = {"Set-Cookie": authtoken_cookie_deletion + c4_st_cookie_deletion}
+        headers = {"Set-Cookie": [authtoken_cookie_deletion, c4_st_cookie_deletion]}
         redis_handler = self._auth.get_redis_handler()
         if redis_handler:
             redis_session_token = RedisSessionToken.from_redis(

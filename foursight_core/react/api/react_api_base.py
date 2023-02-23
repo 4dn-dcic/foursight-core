@@ -183,7 +183,7 @@ class ReactApiBase:
                                                     value=redis_session_token.get_session_token(),
                                                     domain=domain,
                                                     expires=redis_session_token.session_hset[redis_session_token.EXPIRATION])
-            authtoken_cookie += f', {c4_st_cookie}'
+            authtoken_cookie = [authtoken_cookie, c4_st_cookie]
         redirect_url = self.get_redirect_url(request, env, domain, context)
         return self.create_redirect_response(location=redirect_url, headers={"Set-Cookie": authtoken_cookie})
 
