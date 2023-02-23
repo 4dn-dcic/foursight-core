@@ -16,6 +16,11 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
+# Constant for authtoken derived from JWT to give info about the user to
+# the front-end
+AUTH_TOKEN_COOKIE = 'authtoken'
+
+
 class Auth:
 
     def __init__(self, auth0_client: str, auth0_secret: str, envs: Envs):
@@ -58,7 +63,7 @@ class Auth:
 
             # Read the authtoken cookie (will always be present).
 
-            authtoken = read_cookie(request, "authtoken")
+            authtoken = read_cookie(request, AUTH_TOKEN_COOKIE)
             if not authtoken:
                 return self._create_unauthenticated_response(request, "no-authtoken")
 

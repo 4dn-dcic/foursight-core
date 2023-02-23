@@ -9,7 +9,7 @@ from dcicutils.misc_utils import get_error_message
 from dcicutils.redis_tools import RedisSessionToken, SESSION_TOKEN_COOKIE
 from ...app import app
 from ...route_prefixes import ROUTE_PREFIX
-from .auth import Auth
+from .auth import Auth, AUTH_TOKEN_COOKIE
 from .auth0_config import Auth0Config
 from .cookie_utils import create_set_cookie_string, read_cookie
 from .datetime_utils import convert_datetime_to_time_t
@@ -167,7 +167,7 @@ class ReactApiBase:
                                                     datetime.timedelta(seconds=jwt_expires_in))
         domain, context = app.core.get_domain_and_context(request)
         authtoken = self._auth.create_authtoken(jwt, jwt_expires_at, domain)
-        authtoken_cookie = create_set_cookie_string(request, name="authtoken",
+        authtoken_cookie = create_set_cookie_string(request, name=AUTH_TOKEN_COOKIE,
                                                     value=authtoken,
                                                     domain=domain,
                                                     expires=jwt_expires_at, http_only=False)
