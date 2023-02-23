@@ -487,7 +487,7 @@ class AppUtilsCore(ReactApi, Routes):
             else:
                 # N.B. When running on localhost cookies cannot be set unless we leave off the domain entirely.
                 # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
-                cookie_str = f'{SESSION_TOKEN_COOKIE}={id_token}; Domain={domain}; Path=/;'
+                cookie_str = f'{SESSION_TOKEN_COOKIE}={id_token}; Path=/;'
             if expires_in:  # in seconds
                 expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
                 cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
