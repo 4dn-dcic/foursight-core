@@ -50,6 +50,8 @@ class FSConnection(object):
             self.redis = RedisBase(create_redis_client(url=os.environ['REDIS_HOST']))
         else:
             self.redis = None
+        print(self.redis)
+        print(os.environ.get('REDIS_HOST', 'no-redis-host'))
         if not test:
             self.ff_s3 = s3Utils(env=self.ff_env)
             try:  # TODO: make this configurable from env variables?
