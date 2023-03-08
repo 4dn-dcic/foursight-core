@@ -1,7 +1,9 @@
 import os
 
+import redis.exceptions
 from foursight_core.s3_connection import S3Connection
 from foursight_core.es_connection import ESConnection
+from dcicutils.misc_utils import PRINT
 from dcicutils.s3_utils import s3Utils
 from dcicutils.env_utils import full_env_name, is_stg_or_prd_env
 from dcicutils.redis_utils import create_redis_client
@@ -44,14 +46,18 @@ class FSConnection(object):
         self.ff_env = fs_environ_info['ff_env']
         self.ff_es = fs_environ_info['es']
         self.ff_bucket = fs_environ_info['bucket']
-        if 'redis' in fs_environ_info:
-            self.redis = RedisBase(create_redis_client(url=fs_environ_info['redis']))
-        elif 'REDIS_HOST' in os.environ:  # temporary patch in until env config is fully sorted - Will
-            self.redis = RedisBase(create_redis_client(url=os.environ['REDIS_HOST']))
-        else:
-            self.redis = None
-        print(self.redis)
-        print(os.environ.get('REDIS_HOST', 'no-redis-host'))
+        try:
+            if 'redis' in fs_environ_info:
+                self.redis = RedisBase(create_redis_client(url=fs_environ_info['redis']))
+            elif 'REDIS_HOST' in os.environ:  # temporary patch in until env config is fully sorted - Will
+                self.redis = RedisBase(create_redis_client(url=os.environ['REDIS_HOST']))
+            else:
+                self.redis = None
+        except redis.exceptions.ConnectionError:
+            PRINT('Cannot connect to Redis')
+            PRINT('This error is expected when deploying with remote (ElastiCache) Redis')
+        PRINT(self.redis)
+        PRINT(os.environ.get('REDIS_HOST', 'no-redis-host'))
         if not test:
             self.ff_s3 = s3Utils(env=self.ff_env)
             try:  # TODO: make this configurable from env variables?
