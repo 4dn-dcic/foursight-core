@@ -2,10 +2,12 @@ import os
 import boto3
 import logging
 import time
+import redis
 from typing import Optional
 from dcicutils.redis_utils import create_redis_client
 from dcicutils.redis_tools import RedisBase, RedisSessionToken, SESSION_TOKEN_COOKIE
 from dcicutils.env_utils import full_env_name
+from dcicutils.misc_utils import PRINT
 from ...app import app
 from .cookie_utils import read_cookie
 from .envs import Envs
@@ -28,9 +30,14 @@ class Auth:
         self._auth0_secret = auth0_secret
         self._envs = envs
         # acquired from identity or env variable locally
-        self._redis = RedisBase(create_redis_client(
-            url=os.environ['REDIS_HOST'])
-        ) if 'REDIS_HOST' in os.environ else None
+        try:
+            self._redis = RedisBase(create_redis_client(
+                url=os.environ['REDIS_HOST'])
+            ) if 'REDIS_HOST' in os.environ else None
+        except redis.exceptions.ConnectionError:
+            PRINT('Cannot connect to Redis')
+            PRINT('This error is expected when deploying with remote (ElastiCache) Redis')
+            self._redis = None
 
     _cached_aws_credentials = {}
 
