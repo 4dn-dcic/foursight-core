@@ -11,6 +11,11 @@ from .misc_utils import memoize
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
+_TEMPORARY_HACK_FOR_DEBUGGING_TO_ALLOW_DAVID_MICHAELS_FOR_ANY_ENV_20230316 = True
+
+def _temporary_hack_for_debugging_to_allow_david_michaels_for_any_env_20230316(email: str) -> bool:
+    return _TEMPORARY_HACK_FOR_DEBUGGING_TO_ALLOW_DAVID_MICHAELS_FOR_ANY_ENV_20230316 and email == "david_michaels@hms.harvard.edu"
+
 
 # TODO
 # Rationalize this with dcicutil.utils env_utils functions for name versions, normalizations, comparisons.
@@ -68,6 +73,7 @@ class Envs:
         return foursight_env_name(env_a) == foursight_env_name(env_b)
 
     def get_user_auth_info(self, email: str) -> Tuple[list, str, str]:
+        print(f'xyzzy/get_user_auth_info/enter: [{email}]')
         """
         Returns a tuple containing (in left-right order): the list of known environments,
         i.e the list of annotated environment name objects; the list of allowed environment
@@ -81,9 +87,12 @@ class Envs:
             try:
                 # Note we must lower case the email to find the user. This is because all emails
                 # in the database are lowercased; it causes issues with OAuth if we don't do this.
+                print(f'xyzzy/get_user_auth_info/a: [{known_env}]')
                 user = ff_utils.get_metadata('users/' + email.lower(),
                                              ff_env=known_env["full_name"], add_on="frame=object&datastore=database")
-                if self._is_user_allowed_access(user):
+                print(f'xyzzy/get_user_auth_info/b: [{known_env}]')
+                print(user)
+                if _temporary_hack_for_debugging_to_allow_david_michaels_for_any_env_20230316(email) or self._is_user_allowed_access(user):
                     # Since this is in a loop, for each env, this setup here will end up getting first/last name
                     # from the last env in the loop; doesn't really matter, just pick one set; this is just for
                     # informational/display purposes in the UI.
@@ -92,6 +101,12 @@ class Envs:
                     allowed_envs.append(known_env["full_name"])
             except Exception as e:
                 logger.warning(f"Exception getting allowed envs for {email}: {e}")
+                if _temporary_hack_for_debugging_to_allow_david_michaels_for_any_env_20230316(email):
+                    print(f'xyzzy/get_user_auth_info/c: temporary hack for debugging to allow david_michaels@hms.harvard.edu access any environment.')
+                    first_name = "David"
+                    last_name = "Michaels"
+                    allowed_envs.append(known_env["full_name"])
+        print(f'xyzzy/get_user_auth_info/return: {allowed_envs} [{first_name}] [{last_name}]')
         return allowed_envs, first_name, last_name
 
     @staticmethod
