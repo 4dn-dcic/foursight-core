@@ -524,14 +524,14 @@ test = ["hypothesis (>=1.11.4,!=3.79.2)", "iso8601", "pretend", "pytest (>=6.2.0
 
 [[package]]
 name = "dcicutils"
-version = "6.10.0.1b0"
+version = "6.9.9.0b10"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 category = "main"
 optional = false
 python-versions = ">=3.7,<3.10"
 files = [
-    {file = "dcicutils-6.10.0.1b0-py3-none-any.whl", hash = "sha256:38181d9f9fbb4b701daf1473e450e2c8193f157036d27b16eb4898b4c8df28a3"},
-    {file = "dcicutils-6.10.0.1b0.tar.gz", hash = "sha256:fe5c287a6cc092c86b3e882596b5616d10ff67e47c88ecfb8da79ffe38de0e15"},
+    {file = "dcicutils-6.9.9.0b10-py3-none-any.whl", hash = "sha256:7260ff3e6db6dfa38793f0fff0e13f571fdecfe07b342d25f60b012a98535207"},
+    {file = "dcicutils-6.9.9.0b10.tar.gz", hash = "sha256:0efa86d251e323ed57ea519972aae1082374fd75481f17198202ba89d2b4146d"},
 ]
 
 [package.dependencies]
@@ -542,8 +542,10 @@ docker = ">=4.4.4,<5.0.0"
 elasticsearch = "7.13.4"
 gitpython = ">=3.1.2,<4.0.0"
 opensearch-py = ">=2.0.1,<3.0.0"
+PyJWT = ">=2.6.0,<3.0.0"
 pytz = ">=2020.4"
 PyYAML = ">=5.1,<5.5"
+redis = ">=4.5.1,<5.0.0"
 requests = ">=2.21.0,<3.0.0"
 rfc3986 = ">=1.4.0,<2.0.0"
 structlog = ">=19.2.0,<20.0.0"
@@ -1880,4 +1882,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7,<3.10"
-content-hash = "394889a46c3fb3f555616ee86c47b57a999b04afb0e4b45cca2b31bc94a16a27"
+content-hash = "def84c336bcbd8236285c23db0da6deaad95981c42fb3f55e515d2bbab185d3e"
