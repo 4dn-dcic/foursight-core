@@ -18,6 +18,11 @@ from test_react_auth_defs import (
 )
 
 
+class TestSetupApp:
+    def test_setup_app(self, app_utils_obj_conn):
+        pass
+
+
 def create_test_route_response_body(env: str):
     return {"env": env, "react-response-property": "react-response-value"}
 

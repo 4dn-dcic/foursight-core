@@ -30,6 +30,11 @@ from test_react_auth_defs import (
 )
 
 
+class TestSetupApp:
+    def test_setup_app(self, app_utils_obj_conn):
+        pass
+
+
 def assert_authorized_response(response):
     assert response["authenticated"] == True
     assert response["authenticated_at"] == ISSUED_AT
