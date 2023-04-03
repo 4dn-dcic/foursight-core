@@ -19,6 +19,7 @@ from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.redis_tools import RedisSessionToken, SESSION_TOKEN_COOKIE
 from ...app import app
 from .auth import AUTH_TOKEN_COOKIE
+from .auth import Auth
 from .aws_network import (
     aws_get_network, aws_get_security_groups,
     aws_get_security_group_rules, aws_get_subnets, aws_get_vpcs, aws_network_cache_clear
@@ -252,7 +253,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if redis_handler:
             redis_session_token = RedisSessionToken.from_redis(
                 redis_handler=redis_handler,
-                namespace=env,
+                namespace=Auth.get_redis_namespace(env),
                 token=read_cookie(request, SESSION_TOKEN_COOKIE)
             )
             if redis_session_token:
