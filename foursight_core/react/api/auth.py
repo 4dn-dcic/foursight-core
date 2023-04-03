@@ -7,7 +7,7 @@ from typing import Optional
 from dcicutils.redis_utils import create_redis_client
 from dcicutils.redis_tools import RedisBase, RedisSessionToken, SESSION_TOKEN_COOKIE
 from dcicutils.env_utils import full_env_name
-from dcicutils.misc_utils import PRINT
+from dcicutils.misc_utils import ignored, PRINT
 from ...app import app
 from .cookie_utils import read_cookie
 from .envs import Envs
@@ -47,6 +47,14 @@ class Auth:
         """
         return self._redis
 
+    @classmethod
+    def get_redis_namespace(cls, env: str) -> str:
+        ignored(env)
+        # As of April 2023 simply use a static non-per-environment namespace for the Redis
+        # auth token; this is so we can switch among different environments in Foursight
+        # with the same login session, as it was working before the Redis auth work;
+        return "foursight"
+
     def authorize(self, request: dict, env: Optional[str] = None) -> dict:
         """
         Verifies that the given request is authenticated AND authorized, based on the authtoken
@@ -60,7 +68,7 @@ class Auth:
                 c4_st = read_cookie(request, SESSION_TOKEN_COOKIE)
                 redis_session_token = RedisSessionToken.from_redis(
                     redis_handler=self._redis,
-                    namespace=full_env_name(env),
+                    namespace=self.get_redis_namespace(env),
                     token=c4_st
                 )
                 # if this session token is not valid, nothing else is to be trusted, so bail here

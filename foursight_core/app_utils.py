@@ -44,6 +44,7 @@ from .deploy import Deploy
 from .environment import Environment
 from .fs_connection import FSConnection
 from .s3_connection import S3Connection
+from .react.api.auth import Auth
 from .react.api.react_api import ReactApi
 from .routes import Routes
 from .route_prefixes import CHALICE_LOCAL
@@ -474,7 +475,7 @@ class AppUtilsCore(ReactApi, Routes):
         redis_handler = conn.get_redis_base()
         if redis_handler:
             redis_session_token = RedisSessionToken(
-                namespace=env, jwt=id_token
+                namespace=Auth.get_redis_namespace(env), jwt=id_token
             )
             redis_session_token.store_session_token(redis_handler=redis_handler)
             # overwrite id_token in this case to be the session token
@@ -525,7 +526,7 @@ class AppUtilsCore(ReactApi, Routes):
             if redis_handler:
                 redis_session_token = RedisSessionToken.from_redis(
                     redis_handler=redis_handler,
-                    namespace=canonical_env_name,
+                    namespace=Auth.get_redis_namespace(canonical_env_name),
                     token=jwt_token  # this is NOT JWT but the session token itself
                 )
                 if (not redis_session_token or

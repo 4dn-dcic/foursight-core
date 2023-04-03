@@ -176,7 +176,7 @@ class ReactApiBase:
         redis_handler = self._auth.get_redis_handler()
         if redis_handler:
             redis_session_token = RedisSessionToken(
-                namespace=env, jwt=jwt
+                namespace=Auth.get_redis_namespace(env), jwt=jwt
             )
             redis_session_token.store_session_token(redis_handler=redis_handler)
             c4_st_cookie = create_set_cookie_string(request, name=SESSION_TOKEN_COOKIE,
