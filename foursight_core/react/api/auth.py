@@ -1,7 +1,13 @@
+import os
 import boto3
 import logging
 import time
+import redis
 from typing import Optional
+from dcicutils.redis_utils import create_redis_client
+from dcicutils.redis_tools import RedisBase, RedisSessionToken, SESSION_TOKEN_COOKIE
+from dcicutils.env_utils import full_env_name
+from dcicutils.misc_utils import ignored, PRINT
 from ...app import app
 from .cookie_utils import read_cookie
 from .envs import Envs
@@ -12,14 +18,42 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
+# Constant for authtoken derived from JWT to give info about the user to
+# the front-end
+AUTH_TOKEN_COOKIE = 'authtoken'
+
+
 class Auth:
 
     def __init__(self, auth0_client: str, auth0_secret: str, envs: Envs):
         self._auth0_client = auth0_client
         self._auth0_secret = auth0_secret
         self._envs = envs
+        # acquired from identity or env variable locally
+        try:
+            self._redis = RedisBase(create_redis_client(
+                url=os.environ['REDIS_HOST'])
+            ) if 'REDIS_HOST' in os.environ else None
+        except redis.exceptions.ConnectionError:
+            PRINT('Cannot connect to Redis')
+            PRINT('This error is expected when deploying with remote (ElastiCache) Redis')
+            self._redis = None
 
     _cached_aws_credentials = {}
+
+    def get_redis_handler(self):
+        """
+        Returns a handler to Redis or None if not in use
+        """
+        return self._redis
+
+    @classmethod
+    def get_redis_namespace(cls, env: str) -> str:
+        ignored(env)
+        # As of April 2023 simply use a static non-per-environment namespace for the Redis
+        # auth token; this is so we can switch among different environments in Foursight
+        # with the same login session, as it was working before the Redis auth work;
+        return "foursight"
 
     def authorize(self, request: dict, env: Optional[str] = None) -> dict:
         """
@@ -29,10 +63,22 @@ class Auth:
         and/or not authenticated, and containing the basic info from the authtoken.
         """
         try:
+            # Read the c4_st token (new Redis session token if Redis is in use)
+            if self._redis:
+                c4_st = read_cookie(request, SESSION_TOKEN_COOKIE)
+                redis_session_token = RedisSessionToken.from_redis(
+                    redis_handler=self._redis,
+                    namespace=self.get_redis_namespace(env),
+                    token=c4_st
+                )
+                # if this session token is not valid, nothing else is to be trusted, so bail here
+                if (not redis_session_token or
+                        not redis_session_token.validate_session_token(redis_handler=self._redis)):
+                    return self._create_unauthenticated_response(request, "missing-or-invalid-session-token")
 
-            # Read the authtoken cookie.
+            # Read the authtoken cookie (will always be present).
 
-            authtoken = read_cookie(request, "authtoken")
+            authtoken = read_cookie(request, AUTH_TOKEN_COOKIE)
             if not authtoken:
                 return self._create_unauthenticated_response(request, "no-authtoken")
 

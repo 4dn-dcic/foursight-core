@@ -6,9 +6,10 @@ import requests
 from typing import Optional, Union
 import urllib.parse
 from dcicutils.misc_utils import get_error_message
+from dcicutils.redis_tools import RedisSessionToken, SESSION_TOKEN_COOKIE
 from ...app import app
 from ...route_prefixes import ROUTE_PREFIX
-from .auth import Auth
+from .auth import Auth, AUTH_TOKEN_COOKIE
 from .auth0_config import Auth0Config
 from .cookie_utils import create_set_cookie_string, read_cookie
 from .datetime_utils import convert_datetime_to_time_t
@@ -129,7 +130,7 @@ class ReactApiBase:
         if the above is_react_authentication_callback returns True. Performs the actual
         Auth0 authentication for login via the Auth0 (HTTP POST) API. If successful,
         returns a redirect response (to the UI) with a cookie setting for the login
-        authtoken. If unsuccessful, returnes a forbidden (HTTP 403) response.
+        authtoken. If unsuccessful, returns a forbidden (HTTP 403) response.
         """
 
         auth0_code = get_request_arg(request, "code")
@@ -166,10 +167,24 @@ class ReactApiBase:
                                                     datetime.timedelta(seconds=jwt_expires_in))
         domain, context = app.core.get_domain_and_context(request)
         authtoken = self._auth.create_authtoken(jwt, jwt_expires_at, domain)
-        authtoken_cookie = create_set_cookie_string(request, name="authtoken",
+        authtoken_cookie = create_set_cookie_string(request, name=AUTH_TOKEN_COOKIE,
                                                     value=authtoken,
                                                     domain=domain,
                                                     expires=jwt_expires_at, http_only=False)
+
+        # if Redis is in use, create and return session token as well
+        redis_handler = self._auth.get_redis_handler()
+        if redis_handler:
+            redis_session_token = RedisSessionToken(
+                namespace=Auth.get_redis_namespace(env), jwt=jwt
+            )
+            redis_session_token.store_session_token(redis_handler=redis_handler)
+            c4_st_cookie = create_set_cookie_string(request, name=SESSION_TOKEN_COOKIE,
+                                                    value=redis_session_token.get_session_token(),
+                                                    domain=domain,
+                                                    expires=str(datetime.datetime.utcnow() +
+                                                                redis_session_token.get_expiration()))
+            authtoken_cookie = [authtoken_cookie, c4_st_cookie]
         redirect_url = self.get_redirect_url(request, env, domain, context)
         return self.create_redirect_response(location=redirect_url, headers={"Set-Cookie": authtoken_cookie})
 

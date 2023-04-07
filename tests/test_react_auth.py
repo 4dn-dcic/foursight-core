@@ -31,11 +31,11 @@ from test_react_auth_defs import (
 
 
 def assert_authorized_response(response):
-    assert response["authenticated"] == True
+    assert response["authenticated"] is True
     assert response["authenticated_at"] == ISSUED_AT
     assert response["authenticated_until"] == EXPIRES_AT
     assert response["user"] == EMAIL
-    assert response["user_verified"] == True
+    assert response["user_verified"] is True
     assert response["first_name"] == FIRST_NAME
     assert response["last_name"] == LAST_NAME
     assert response["known_envs"] == KNOWN_ENVS
@@ -46,13 +46,13 @@ def assert_authorized_response(response):
 
 
 def assert_unauthenticated_response(response):
-    assert response["authenticated"] == False
-    assert response["authorized"] == False
+    assert response["authenticated"] is False
+    assert response["authorized"] is False
 
 
 def assert_unauthorized_response(response):
-    assert response["authenticated"] == True
-    assert response["authorized"] == False
+    assert response["authenticated"] is True
+    assert response["authorized"] is False
 
 
 def test_jwt_encode_and_decode():

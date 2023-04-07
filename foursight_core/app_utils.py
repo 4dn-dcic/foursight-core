@@ -37,12 +37,14 @@ from dcicutils.lang_utils import disjoined_list
 from dcicutils.misc_utils import get_error_message, ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
+from dcicutils.redis_tools import RedisSessionToken, RedisException, SESSION_TOKEN_COOKIE
 from .app import app
 from .check_utils import CheckHandler
 from .deploy import Deploy
 from .environment import Environment
 from .fs_connection import FSConnection
 from .s3_connection import S3Connection
+from .react.api.auth import Auth
 from .react.api.react_api import ReactApi
 from .routes import Routes
 from .route_prefixes import CHALICE_LOCAL
@@ -92,7 +94,8 @@ class AppUtilsCore(ReactApi, Routes):
     # replace with e.g. 'https://search-foursight-fourfront-ylxn33a5qytswm63z52uytgkm4.us-east-1.es.amazonaws.com'
     host = 'placeholder_host'
 
-    OAUTH_TOKEN_URL = "https://hms-dbmi.auth0.com/oauth/token"
+    AUTH0_DOMAIN_FALLBACK = 'hms-dbmi.auth0.com'
+    OAUTH_TOKEN_URL = f'https://{AUTH0_DOMAIN_FALLBACK}/oauth/token'
 
     # replaced with e.g. 'chalicelib_cgap' or 'chalicelib_fourfront' in
     # foursight-cgap/chalicelib_cgap/app_utils.py or foursight/chalicelib_fourfront/app_utils.py.
@@ -123,8 +126,13 @@ class AppUtilsCore(ReactApi, Routes):
         self.ActionResult = self.check_handler.ActionResult
         self.jin_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(self.get_template_path()),
+            # TODO: AutoEscape is deprecated as of Jinja2 3.0. I think this autoescape option can simply be removed
+            #       as of that version (maybe even before but it's less clear where that line is). -kmp 23-Feb-2023
+            #       For details, see https://jinja.palletsprojects.com/en/3.1.x/changes/
+            #       and https://github.com/pallets/jinja/issues/1203
             autoescape=jinja2.select_autoescape(['html', 'xml'])
         )
+        self.auth0_domain = None
         self.auth0_client_id = None
         self.user_records = {}
         # self.user_record = None
@@ -305,6 +313,27 @@ class AppUtilsCore(ReactApi, Routes):
         logger.warning(f"Done fetching Auth0 client ID from portal ({auth0_config_url}): {self.auth0_client_id}")
         return self.auth0_client_id or auth0_client_id_fallback
 
+    def get_auth0_domain(self, env_name: str) -> str:
+        auth0_domain = os.environ.get("CLIENT_DOMAIN")
+        if not auth0_domain:
+            auth0_domain = self.get_auth0_domain_from_portal(env_name)
+        return auth0_domain
+
+    def get_auth0_domain_from_portal(self, env_name: str) -> Optional[str]:
+        logger.warning(f"Fetching Auth0 Domain from portal.")
+        portal_url = self.get_portal_url(env_name)
+        auth0_config_url = portal_url + "/auth0_config?format=json"
+        if not self.auth0_domain:
+            try:
+                response = requests.get(auth0_config_url).json()
+                self.auth0_domain = response.get("auth0Domain", self.AUTH0_DOMAIN_FALLBACK)
+            except Exception as e:
+                # TODO: Fallback behavior to old hardcoded value (previously in templates/header.html).
+                logger.error(
+                    f"Error fetching Auth0 domain from portal ({auth0_config_url}); using default value: {e}")
+        logger.warning(f"Done fetching Auth0 domain from portal ({auth0_config_url}): {self.auth0_domain}")
+        return self.auth0_domain or self.AUTH0_DOMAIN_FALLBACK
+
     def get_auth0_secret(self, env_name: str) -> str:
         ignored(env_name)
         return os.environ.get("CLIENT_SECRET")
@@ -313,7 +342,10 @@ class AppUtilsCore(ReactApi, Routes):
         """
         Manual authorization, since the builtin chalice @app.authorizer() was not
         working for me and was limited by a requirement that the authorization
-        be in a token. Check the cookies of the request for jwtToken using utils
+        be in a token. Check the cookies of the request for c4_st using utils.
+
+        Note as of February 2023 we've migrated away from JWT to a generic session
+        token. When Redis is not enabled c4_st will still be a JWT.
 
         Take in a dictionary format of the request (app.current_request) so we
         can test this.
@@ -380,6 +412,12 @@ class AppUtilsCore(ReactApi, Routes):
         return False
 
     def auth0_callback(self, request, env):
+        """ Callback that implements the generation of JWT and returning that back
+            to the user to make authenticated requests with.
+
+            Note that when Redis is enabled the JWT is instead stored in Redis and
+            a 32-byte session token is returned instead.
+        """
         req_dict = request.to_dict()
         if self.is_react_authentication_callback(req_dict):
             return self.react_authentication_callback(req_dict, env)
@@ -424,17 +462,34 @@ class AppUtilsCore(ReactApi, Routes):
         }
         json_payload = json.dumps(payload)
         headers = {'content-type': "application/json"}
-        res = requests.post(self.OAUTH_TOKEN_URL, data=json_payload, headers=headers)
+        if self.auth0_domain:
+            token_url = f'https://{self.auth0_domain}/oauth/token'
+        else:
+            token_url = self.OAUTH_TOKEN_URL
+        res = requests.post(token_url, data=json_payload, headers=headers)
         id_token = res.json().get('id_token', None)
+        expires_in = res.json().get('expires_in', None)
+
+        # store redis token if turned on
+        conn = self.init_connection(env)
+        redis_handler = conn.get_redis_base()
+        if redis_handler:
+            redis_session_token = RedisSessionToken(
+                namespace=Auth.get_redis_namespace(env), jwt=id_token
+            )
+            redis_session_token.store_session_token(redis_handler=redis_handler)
+            # overwrite id_token in this case to be the session token
+            id_token = redis_session_token.get_session_token()
+            expires_in = (3 * 60 * 59)  # default session token expiration is 3 hours
+
         if id_token:
-            expires_in = res.json().get('expires_in', None)
             if domain and not self.is_running_locally(req_dict):
-                cookie_str = ''.join(['jwtToken=', id_token, '; Domain=', domain, '; Path=/;'])
+                cookie_str = f'{SESSION_TOKEN_COOKIE}={id_token}; Domain={domain}; Path=/;'
             else:
                 # N.B. When running on localhost cookies cannot be set unless we leave off the domain entirely.
                 # https://stackoverflow.com/questions/1134290/cookies-on-localhost-with-explicit-domain
-                cookie_str = ''.join(['jwtToken=', id_token, '; Path=/;'])
-            if expires_in:
+                cookie_str = f'{SESSION_TOKEN_COOKIE}={id_token}; Path=/;'
+            if expires_in:  # in seconds
                 expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
                 cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
             resp_headers['Set-Cookie'] = cookie_str
@@ -452,18 +507,41 @@ class AppUtilsCore(ReactApi, Routes):
                 cookie_split = cookie.strip().split('=')
                 if len(cookie_split) == 2:
                     cookie_dict[cookie_split[0]] = cookie_split[1]
-        token = cookie_dict.get('jwtToken', None)
+        token = cookie_dict.get(SESSION_TOKEN_COOKIE, None)
         return token
 
     def get_decoded_jwt_token(self, env_name: str, request_dict) -> Optional[dict]:
+        """ This function not only decodes but verifies the signature on the token """
         try:
             jwt_token = self.get_jwt_token(request_dict)
             if not jwt_token:
                 return None
             auth0_client_id = self.get_auth0_client_id(env_name)
             auth0_secret = self.get_auth0_secret(env_name)
-            # leeway accounts for clock drift between us and auth0
-            return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30, options={"verify_signature": True}, algorithms=["HS256"])
+
+            # if redis is enabled check for session token and extract JWT from there
+            canonical_env_name = full_env_name(env_name)
+            conn = self.init_connection(canonical_env_name)
+            redis_handler = conn.get_redis_base()
+            if redis_handler:
+                redis_session_token = RedisSessionToken.from_redis(
+                    redis_handler=redis_handler,
+                    namespace=Auth.get_redis_namespace(canonical_env_name),
+                    token=jwt_token  # this is NOT JWT but the session token itself
+                )
+                if (not redis_session_token or
+                        not redis_session_token.validate_session_token(redis_handler=redis_handler)):
+                    raise RedisException('Given session token either expired or invalid')
+                # if we got here, session token is valid, now decode jwt like usual
+                return redis_session_token.decode_jwt(
+                    audience=auth0_client_id,
+                    secret=auth0_secret,
+                )
+
+            # if redis not enabled this is standard JWT and can proceed as usual
+            else:
+                return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30,
+                                  options={"verify_signature": True}, algorithms=["HS256"])
         except Exception as e:
             logger.warning(f"foursight_core: Exception decoding JWT token ({jwt_token}): {get_error_message(e)}")
             return None
@@ -471,7 +549,7 @@ class AppUtilsCore(ReactApi, Routes):
     @classmethod
     def get_favicon(cls):
         """
-        Returns faviron
+        Returns favicon
         """
         return cls.FAVICON  # want full HTTPS, so hard-coded in
 

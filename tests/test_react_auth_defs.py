@@ -97,12 +97,6 @@ def create_test_authtoken_munged():
     return authtoken
 
 
-def create_test_authtoken_expired():
-    authtoken = create_test_authtoken_good()
-    authtoken = _change_random_character_within_string_ntimes(authtoken, 3)
-    return authtoken
-
-
 def create_test_request(authtoken: str):
     return {
         "headers": {

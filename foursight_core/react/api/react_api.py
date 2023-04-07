@@ -16,7 +16,10 @@ from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bu
 from dcicutils import ff_utils
 from dcicutils.misc_utils import ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
+from dcicutils.redis_tools import RedisSessionToken, SESSION_TOKEN_COOKIE
 from ...app import app
+from .auth import AUTH_TOKEN_COOKIE
+from .auth import Auth
 from .aws_network import (
     aws_get_network, aws_get_security_groups,
     aws_get_security_group_rules, aws_get_subnets, aws_get_vpcs, aws_network_cache_clear
@@ -30,7 +33,7 @@ from .aws_stacks import (
 )
 from .checks import Checks
 from .cognito import clear_cognito_cache, get_cognito_oauth_config, handle_cognito_oauth_callback
-from .cookie_utils import create_delete_cookie_string
+from .cookie_utils import create_delete_cookie_string, read_cookie
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
 from .encryption import Encryption
 from .encoding_utils import base64_decode_to_json
@@ -241,9 +244,20 @@ class ReactApi(ReactApiBase, ReactRoutes):
         else:
             body = {"status": "Logged out."}
         domain, context = app.core.get_domain_and_context(request)
-        authtoken_cookie_deletion = create_delete_cookie_string(request=request, name="authtoken", domain=domain)
+        authtoken_cookie_deletion = create_delete_cookie_string(request=request, name=AUTH_TOKEN_COOKIE, domain=domain)
+        c4_st_cookie_deletion = create_delete_cookie_string(request=request, name=SESSION_TOKEN_COOKIE, domain=domain)
         redirect_url = self.get_redirect_url(request, env, domain, context)
-        headers = {"Set-Cookie": authtoken_cookie_deletion}
+        # always delete both cookies on logout
+        headers = {"Set-Cookie": [authtoken_cookie_deletion, c4_st_cookie_deletion]}
+        redis_handler = self._auth.get_redis_handler()
+        if redis_handler:
+            redis_session_token = RedisSessionToken.from_redis(
+                redis_handler=redis_handler,
+                namespace=Auth.get_redis_namespace(env),
+                token=read_cookie(request, SESSION_TOKEN_COOKIE)
+            )
+            if redis_session_token:
+                redis_session_token.delete_session_token(redis_handler=redis_handler)
         return self.create_redirect_response(location=redirect_url, body=body, headers=headers)
 
     def reactapi_header(self, request: dict, env: str) -> Response:

@@ -113,6 +113,8 @@ def test_get_environment_info_from_s3():
                 print(f"{es_url} is properly {'blue' if is_blue else 'green'}.")
 
             env_pattern = full_test_env.replace("-", ".*")
+            if 'production' in env_pattern:
+                env_pattern = env_pattern.replace('production', 'prod')
             assert re.match(f"https?://.*{env_pattern}.*", es_url)
             print(f"{es_url} is of the proper form to match env {test_env} (full name = {full_test_env}.")
 

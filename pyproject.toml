@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "foursight-core"
-version = "3.3.2"
+version = "4.0.0"
 description = "Serverless Chalice Application for Monitoring"
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
@@ -12,34 +12,40 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.7,<3.10"
-dcicutils = "^6.8.0"
 click = "^7.1.2"
 cron-descriptor = "^1.2.31"
 cryptography = "39.0.0" # Required for AWS Cognito JWT decode (PyJWKClient)
-pyDes = "^2.0.1"
-PyJWT = "2.5.0"
-Jinja2 = "2.10.1"
-MarkupSafe = "1.1.1"
+dcicutils = "^7.0.0"
+elasticsearch = "7.13.4"
+elasticsearch-dsl = "^7.0.0"
+geocoder = "1.38.1"
+gitpython = "^3.1.2"
 google = "^3.0.0"
 google-auth-oauthlib = "^0.7.0"
 google-api-python-client = "^1.12.5"
-geocoder = "1.38.1"
-elasticsearch = "7.13.4"
-elasticsearch-dsl = "^7.0.0"
-gitpython = "^3.1.2"
-pytz = "^2020.1"
+# TODO: I think this can update to ">=2.10.1,<4" so that it can move to version 3.x.
+#        -kmp 23-Feb-2023
+Jinja2 = "2.10.1"
+# TODO: I think this can update to ">=1.1.1,<3" so that it can move to version 2.x.
+#       Doing so will mean adjusting the Jinja2 constraint as well. -kmp 23-Feb-2023
+MarkupSafe = "1.1.1"
+pyDes = "^2.0.1"
+PyJWT = "^2.5.0"
+pytz = ">=2020.1"
+redis = "^4.5.1"
 
 [tool.poetry.dev-dependencies]
 chalice = "^1.21.4"
 flake8 = ">=3.9.2"
+flaky = "3.6.1"
 pytest = "5.1.2"
 pytest-cov = "2.7.1"
-flaky = "3.6.1"
+pytest-redis = "^2.0.0"
 
 [tool.poetry.scripts]
 encrypt-accounts-file = "foursight_core.scripts.encrypt_accounts_file:main"
 decrypt-accounts-file = "foursight_core.scripts.decrypt_accounts_file:main"
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

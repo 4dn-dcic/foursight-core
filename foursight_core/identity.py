@@ -114,7 +114,8 @@ def apply_identity_environment_variables() -> None:
         "ENCODED_ES_SERVER": "ES_HOST",
     }
     IDENTITY_KEY_MAP_OPTIONAL = {
-        "ENCODED_S3_ENCRYPT_KEY_ID": "S3_ENCRYPT_KEY_ID"
+        "ENCODED_S3_ENCRYPT_KEY_ID": "S3_ENCRYPT_KEY_ID",
+        "ENCODED_REDIS_SERVER": "REDIS_HOST"
     }
 
     apply_identity(identity_kind=GLOBAL_APPLICATION_CONFIGURATION, rename_keys=IDENTITY_KEY_MAP_REQUIRED)
