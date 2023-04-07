@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+4.0.0
+=====
+
+* Support for Redis Sessions if a server is configured from the GAC
+
 3.3.2
 =====
 
@@ -28,7 +33,7 @@ Change Log
 * Support for simple checks search.
 * Support for simple users search.
 * New upper-left navigation dropdown menu.
-* Changed all tooltips to use react-tooltip fixing issue with occlusion of adjacent elements. 
+* Changed all tooltips to use react-tooltip fixing issue with occlusion of adjacent elements.
 
 3.1.3
 =====
