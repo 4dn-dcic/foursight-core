@@ -273,7 +273,7 @@ class AppUtilsCore(ReactApi, Routes):
         user_record["error"] = error
         user_record["exception"] = exception
 
-    def get_portal_url(self, env_name: str) -> Optional[str]:
+    def get_portal_url(self, env_name: str, raise_exception: bool = False) -> Optional[str]:
         portal_url = self._cached_portal_url.get(env_name)
         if not portal_url:
             try:
@@ -282,10 +282,11 @@ class AppUtilsCore(ReactApi, Routes):
                 portal_url = environment_and_bucket_info.get("fourfront")
                 self._cached_portal_url[env_name] = portal_url
             except Exception as e:
+                if raise_exception:
+                    raise e
                 message = f"Error getting portal URL: {get_error_message(e)}"
                 logger.error(message)
                 return None
-                # raise Exception(message)
         return self._cached_portal_url[env_name]
 
     def get_auth0_client_id(self, env_name: str) -> str:

@@ -76,6 +76,14 @@ class ReactRoutes:
         """
         return app.core.reactapi_header(app.current_request.to_dict(), app.core.get_default_env())
 
+    @route("/certificates", authorize=False)
+    def reactapi_route_certificates() -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Note that this in an UNPROTECTED route.
+        Returns SSL certificate info about this Foursight instance and its associated Portal instance.
+        """
+        return app.core.reactapi_certificates(app.current_request.to_dict())
+
     # ----------------------------------------------------------------------------------------------
     # Foursight React API routes PROTECTED by authorization/authentication.
     # ----------------------------------------------------------------------------------------------

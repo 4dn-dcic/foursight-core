@@ -13,6 +13,7 @@ from typing import Optional
 import urllib.parse
 from itertools import chain
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
+from dcicutils.env_utils import get_portal_url as env_utils_get_portal_url
 from dcicutils import ff_utils
 from dcicutils.misc_utils import ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
@@ -47,6 +48,7 @@ from .misc_utils import (
 from .react_routes import ReactRoutes
 from .react_api_base import ReactApiBase
 from .react_ui import ReactUi
+from .ssl_certificate_utils import get_ssl_certificate_info
 
 
 # Implementation functions corresponding directly to the routes in react_routes.
@@ -285,6 +287,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
             data["auth"]["known_envs"] = [known_envs_default]
             data["auth"]["known_envs_actual_count"] = known_envs_actual_count
         data["auth"]["default_env"] = self._envs.get_default_env()
+        if not data["portal"]["url"]:
+            # Here we did not get a Portal URL from the to app.core.get_portal_url (via _reactapi_header_nocache).
+            # That call ends up ultimately calling the Portal health endpoint (via s3Utils.get_synthetic_env_config
+            # via environment.get_environment_and_bucket_info). So there may have been a problem with the Portal,
+            # e.g. bad SSL certificate; we will get the Portal URL by other means, and from get get its SSL
+            # certificate to help diagnose any problem with that. C4-1017 (April 2023).
+            try:
+                portal_url = app.core.get_portal_url(env or default_env, raise_exception=True)
+                data["portal"]["url"] = portal_url
+            except Exception as e:
+                e = str(e)
+                data["portal"]["exception"] = e
+                if "cert" in e.lower():
+                    data["portal"]["ssl_certificate_error"] = True
+                portal_url = env_utils_get_portal_url(env)
+                data["portal"]["url"] = portal_url
+                data["portal"]["ssl_certificate"] = get_ssl_certificate_info(portal_url)
         data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
         return self.create_success_response(data)
 
@@ -296,7 +315,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         stage_name = app.core.stage.get_stage()
         default_env = self._envs.get_default_env()
         aws_credentials = self._auth.get_aws_credentials(env or default_env)
-        portal_url = get_base_url(app.core.get_portal_url(env or default_env))
+        portal_url = app.core.get_portal_url(env or default_env)
+        portal_base_url = get_base_url(portal_url)
         response = {
             "app": {
                 "title": app.core.html_main_title,
@@ -308,7 +328,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "stack": self._get_stack_name(),
                 "local": is_running_locally(request),
                 "credentials": {
-                    "aws_account_number": aws_credentials["aws_account_number"],
+                    "aws_account_number": aws_credentials.get("aws_account_number"),
                     "aws_account_name": aws_credentials.get("aws_account_name"),
                     "re_captcha_key": os.environ.get("reCaptchaKey", None)
                 },
@@ -320,8 +340,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "versions": self._get_versions_object(),
             "portal": {
                 "url": app.core.get_portal_url(env or default_env),
-                "health_url": portal_url + "/health?format=json",
-                "health_ui_url": portal_url + "/health"
+                "health_url": portal_base_url + "/health?format=json",
+                "health_ui_url": portal_base_url + "/health"
             },
             "s3": {
                 "bucket_org": os.environ.get("ENCODED_S3_BUCKET_ORG", os.environ.get("S3_BUCKET_ORG", None)),
@@ -330,6 +350,17 @@ class ReactApi(ReactApiBase, ReactRoutes):
             }
         }
         return response
+
+    def reactapi_certificates(self, request: dict) -> Response:
+        foursight_url = self.foursight_instance_url(request)
+        portal_url = env_utils_get_portal_url(self._envs.get_default_env())
+        foursight_ssl_certificate_info = get_ssl_certificate_info(foursight_url)
+        portal_ssl_certificate_info = get_ssl_certificate_info(portal_url)
+        response = {
+            "foursight_ssl_certificate": foursight_ssl_certificate_info,
+            "portal_ssl_certificate": portal_ssl_certificate_info
+        }
+        return self.create_success_response(response)
 
     @memoize
     def _get_env_and_bucket_info(self, env: str, stage_name: str) -> dict:

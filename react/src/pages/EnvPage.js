@@ -12,6 +12,7 @@ import Server from '../utils/Server';
 import Type from '../utils/Type';
 import Tooltip from '../components/Tooltip';
 import useHeader from '../hooks/Header';
+import FatalError from './FatalError';
 
 const EnvPage = (props) => {
 
@@ -70,6 +71,7 @@ const EnvPage = (props) => {
 
     // This page is unprotected.
 
+    if (FatalError.IsFatalError(header)) return <FatalError header={header} />
     if (header.error) return <FetchErrorBox error={header.error} message="Error loading users from Foursight API" />
     if (header.loading) return <>Loading ...</>;
     return <div>
