@@ -18,6 +18,7 @@ from dcicutils import ff_utils
 from dcicutils.misc_utils import ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.redis_tools import RedisSessionToken, SESSION_TOKEN_COOKIE
+from dcicutils.ssl_certificate_utils import get_ssl_certificate_info
 from ...app import app
 from .auth import AUTH_TOKEN_COOKIE
 from .auth import Auth
@@ -48,7 +49,6 @@ from .misc_utils import (
 from .react_routes import ReactRoutes
 from .react_api_base import ReactApiBase
 from .react_ui import ReactUi
-from .ssl_certificate_utils import get_ssl_certificate_info
 
 
 # Implementation functions corresponding directly to the routes in react_routes.

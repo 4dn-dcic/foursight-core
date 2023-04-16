@@ -50,9 +50,9 @@ const SslCertificateErrorBox = (props) => {
             There is a problem with the SSL certificate for the <b>Portal</b> associated with this Foursight instance:
                 &nbsp;<b><small><a href={header.portal.url} style={{color:"darkred"}} target="_blank" >{header.portal.url}</a></small></b> <br />
             <HorizontalLine top="6pt" bottom="6pt" color="darkred" />
-            <b><small><i>You must contact your system adminstrator to resolve this issue</i>&nbsp;&nbsp;:-(</small></b>
+            <b>{Char.RightArrow} <small><i>You <u>must</u> contact your system adminstrator to resolve this issue</i>&nbsp;&nbsp;:-(</small></b>
             <HorizontalLine top="6pt" bottom="6pt" color="darkred" />
-                <table><tbody>
+            <table><tbody>
                 <tr><td style={tdstyle}>Hostname:</td><td style={tdstyle}><b>{header.portal.ssl_certificate.hostname}</b></td></tr>
                 <tr>
                     <td style={tdstyle}>Owner:</td>
@@ -120,7 +120,7 @@ const SslCertificateErrorBox = (props) => {
                         </td>
                     </tr>
                 </> }
-                </tbody></table>
+            </tbody></table>
         </div></div>
     </>
 }
