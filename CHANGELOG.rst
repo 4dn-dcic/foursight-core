@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+4.1.0
+=====
+
+* Support for catching SSL certificate errors for Portal.
+
 4.0.0
 =====
 
