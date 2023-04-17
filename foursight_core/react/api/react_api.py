@@ -351,11 +351,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         }
         return response
 
-    def reactapi_certificates(self, request: dict) -> Response:
+    def reactapi_certificates(self, request: dict, args: Optional[dict] = None) -> Response:
+        expires_soon_days = int(args.get("soon", "0")) if args else 0
         foursight_url = self.foursight_instance_url(request)
         portal_url = env_utils_get_portal_url(self._envs.get_default_env())
-        foursight_ssl_certificate_info = get_ssl_certificate_info(foursight_url)
-        portal_ssl_certificate_info = get_ssl_certificate_info(portal_url)
+        foursight_ssl_certificate_info = get_ssl_certificate_info(foursight_url, expires_soon_days=expires_soon_days)
+        portal_ssl_certificate_info = get_ssl_certificate_info(portal_url, expires_soon_days=expires_soon_days)
         response = {
             "foursight_ssl_certificate": foursight_ssl_certificate_info,
             "portal_ssl_certificate": portal_ssl_certificate_info

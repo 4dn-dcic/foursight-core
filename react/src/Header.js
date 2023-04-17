@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import useHeader from './hooks/Header';
 import useHeaderRefresh from './hooks/HeaderRefresh';
 import { BarSpinner, StandardSpinner } from './Spinners';
@@ -16,6 +17,32 @@ import Styles from './Styles';
 import Tooltip from './components/Tooltip';
 import ReadOnlyModeComponent from './hooks/ReadOnlyModeComponent';
 import useFetching from './hooks/Fetching';
+import useFetch from './hooks/Fetch';
+import FatalError from './pages/FatalError';
+
+const WarningBar = ({ header }) => {
+    const [ args ] = useSearchParams();
+    const soon = args.get("soon");
+    const sslCertificateIinfo = useFetch(`/certificates?soon=${soon}`);
+    if (sslCertificateIinfo.loading) return <></>
+    if (!sslCertificateIinfo?.data?.portal_ssl_certificate?.expires_soon) return <></>
+    return <>
+        <tr><td style={{background:"white"}} colSpan="3">{JSON.stringify(sslCertificateIinfo)}</td></tr>
+        <tr><td style={{background:"black",height:"2px"}} colSpan="3"></td></tr>
+        <tr>
+            <td style={{background:"darkred",color:"#FFF4F3",padding:"3pt"}} colSpan="3">
+                <b>
+                    Warning: SSL Certificate associated Portal will expire soon
+                </b>
+                    &nbsp;{Char.RightArrow}&nbsp;
+                    {sslCertificateIinfo.data.portal_ssl_certificate?.expires_at}
+                    &nbsp;{Char.RightArrow}&nbsp;
+                    {Time.FromNow(sslCertificateIinfo.data.portal_ssl_certificate?.expires_at)}
+            </td>
+        </tr>
+        <tr><td style={{background:"black",height:"1px"}} colSpan="3"></td></tr>
+    </>
+}
 
 const MainMenu = ({ header }) => {
 
@@ -308,9 +335,8 @@ const Header = (props) => {
                         </tr></tbody></table>
                     </td>
                 </tr>
-                <tr>
-                    <td style={{height:"1px",background:"darkblue"}}></td>
-                </tr>
+                <WarningBar header={header} />
+                <tr><td style={{height:"1px",background:"darkblue"}}></td></tr>
             </tbody></table>
             </div>
             <div style={{float:"right",marginRight:"7pt",marginTop:"6pt"}}>

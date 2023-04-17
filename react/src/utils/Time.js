@@ -85,6 +85,10 @@ function Ago(date, verbose = true) {
     return FormatDuration(date, now(), verbose, null, null, "ago");
 }
 
+function FromNow(date, verbose = true) {
+    return FormatDuration(now(), date, verbose, null, null, "from now");
+}
+
 // Converts the give value to a JavaScript Date object.
 //
 function ToDateTime(value) {
@@ -166,6 +170,7 @@ const exports = {
     FormatDateTime: FormatDateTime,
     FormatDate:     FormatDate,
     FormatTime:     FormatTime,
+    FromNow:        FromNow,
     ToDateTime:     ToDateTime,
     Now:            () => now()
 }; export default exports;
