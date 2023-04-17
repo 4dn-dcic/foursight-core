@@ -27,12 +27,11 @@ const WarningBar = ({ header }) => {
     if (sslCertificateIinfo.loading) return <></>
     if (!sslCertificateIinfo?.data?.portal_ssl_certificate?.expires_soon) return <></>
     return <>
-        <tr><td style={{background:"white"}} colSpan="3">{JSON.stringify(sslCertificateIinfo)}</td></tr>
         <tr><td style={{background:"black",height:"2px"}} colSpan="3"></td></tr>
         <tr>
-            <td style={{background:"darkred",color:"#FFF4F3",padding:"3pt"}} colSpan="3">
+            <td style={{background:"darkred",color:"#FFF4F3",padding:"3pt",fontSize:"9pt"}} colSpan="3">
                 <b>
-                    Warning: SSL Certificate associated Portal will expire soon
+                    Warning: SSL certificate for associated Portal will expire soon
                 </b>
                     &nbsp;{Char.RightArrow}&nbsp;
                     {sslCertificateIinfo.data.portal_ssl_certificate?.expires_at}
