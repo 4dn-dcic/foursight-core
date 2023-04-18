@@ -5,6 +5,7 @@ import ChecksPage from './pages/ChecksPage';
 import CheckHistoryPage from './pages/CheckHistoryPage';
 import Env from './utils/Env';
 import EnvPage from './pages/EnvPage';
+import FatalErrorPage from './pages/FatalErrorPage';
 import Footer from './Footer';
 import ForbiddenPage from './pages/ForbiddenPage';
 import Header from './Header';
@@ -130,6 +131,12 @@ const App = () => {
                     }/>
                     <Route path="/api/react/:environ/forbidden" element={
                         <ForbiddenPage />
+                    }/>
+                    <Route path="/api/react/:environ/error" element={
+                        <FatalErrorPage />
+                    }/>
+                    <Route path="/api/react/error" element={
+                        <FatalErrorPage />
                     }/>
                     <Route path="/redirect" element={
                         <RedirectPage />

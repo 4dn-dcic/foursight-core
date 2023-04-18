@@ -28,14 +28,15 @@ const IsFatalError = (header) => {
     return header?.portal?.ssl_certificate_error;
 }
 
-const FatalError = (props) => {
-    if (!IsFatalError(props.header)) return <></>
+const FatalErrorPage = (props) => {
+    const header = useHeader();
+    if (!IsFatalError(header)) return <></>
     return <>
-        <SslCertificateErrorBox header={props.header} />
+        <SslCertificateErrorBox header={header} />
     </>
 }
 
-FatalError.IsFatalError = IsFatalError;
+FatalErrorPage.IsFatalError = IsFatalError;
 
 const SslCertificateErrorBox = (props) => {
     const header = props.header;
@@ -67,7 +68,8 @@ const SslCertificateErrorBox = (props) => {
                     <td style={tdstyle}>Issuer:</td>
                     <td style={tdstyle}>
                         {header.portal.ssl_certificate.issuer}
-                        { header.portal.ssl_certificate.issuer_entity && <>
+                        { header.portal.ssl_certificate.issuer_entity &&
+                         (header.portal.ssl_certificate.issuer != header.portal.ssl_certificate.issuer) && <>
                             &nbsp;({header.portal.ssl_certificate.issuer_entity})
                         </> }
                     </td>
@@ -125,4 +127,4 @@ const SslCertificateErrorBox = (props) => {
     </>
 }
 
-export default FatalError;
+export default FatalErrorPage;

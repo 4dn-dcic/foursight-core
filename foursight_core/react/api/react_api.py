@@ -15,7 +15,7 @@ from itertools import chain
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils.env_utils import get_portal_url as env_utils_get_portal_url
 from dcicutils import ff_utils
-from dcicutils.misc_utils import ignored
+from dcicutils.misc_utils import ignored, str_to_bool
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.redis_tools import RedisSessionToken, SESSION_TOKEN_COOKIE
 from dcicutils.ssl_certificate_utils import get_ssl_certificate_info
@@ -287,6 +287,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
             data["auth"]["known_envs"] = [known_envs_default]
             data["auth"]["known_envs_actual_count"] = known_envs_actual_count
         data["auth"]["default_env"] = self._envs.get_default_env()
+        test_mode_certificate_simulate_error = str_to_bool(read_cookie(request, "test_mode_certificate_simulate_error"))
+        test_mode_certificate_simulate_expired = str_to_bool(read_cookie(request, "test_mode_certificate_simulate_expired"))
+        if test_mode_certificate_simulate_error:
+            data["portal"]["url"] = None
         if not data["portal"]["url"]:
             # Here we did not get a Portal URL from the to app.core.get_portal_url (via _reactapi_header_nocache).
             # That call ends up ultimately calling the Portal health endpoint (via s3Utils.get_synthetic_env_config
@@ -294,6 +298,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             # e.g. bad SSL certificate; we will get the Portal URL by other means, and from get get its SSL
             # certificate to help diagnose any problem with that. C4-1017 (April 2023).
             try:
+                if test_mode_certificate_simulate_error:
+                    raise Exception("test_mode_certificate_simulate_error")
                 portal_url = app.core.get_portal_url(env or default_env, raise_exception=True)
                 data["portal"]["url"] = portal_url
             except Exception as e:
@@ -303,7 +309,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     data["portal"]["ssl_certificate_error"] = True
                 portal_url = env_utils_get_portal_url(env)
                 data["portal"]["url"] = portal_url
-                data["portal"]["ssl_certificate"] = get_ssl_certificate_info(portal_url)
+                data["portal"]["ssl_certificate"] = get_ssl_certificate_info(
+                    portal_url,
+                    test_mode_certificate_simulate_expired=test_mode_certificate_simulate_expired
+                )
         data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
         return self.create_success_response(data)
 
@@ -352,11 +361,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return response
 
     def reactapi_certificates(self, request: dict, args: Optional[dict] = None) -> Response:
-        expires_soon_days = int(args.get("soon", "0")) if args else 0
+        test_mode_certificate_expiration_warning_days= \
+            str_to_bool(read_cookie(request, "test_mode_certificate_expiration_warning_days"))
         foursight_url = self.foursight_instance_url(request)
         portal_url = env_utils_get_portal_url(self._envs.get_default_env())
-        foursight_ssl_certificate_info = get_ssl_certificate_info(foursight_url, expires_soon_days=expires_soon_days)
-        portal_ssl_certificate_info = get_ssl_certificate_info(portal_url, expires_soon_days=expires_soon_days)
+        foursight_ssl_certificate_info = get_ssl_certificate_info(foursight_url)
+        portal_ssl_certificate_info = get_ssl_certificate_info(portal_url)
         response = {
             "foursight_ssl_certificate": foursight_ssl_certificate_info,
             "portal_ssl_certificate": portal_ssl_certificate_info

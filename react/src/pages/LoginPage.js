@@ -23,7 +23,6 @@ import Tooltip from '../components/Tooltip';
 import Yaml from '../utils/Yaml';
 import Page from '../Page';
 import useFetch from '../hooks/Fetch';
-import FatalError from './FatalError';
 
 const LoginPage = (props) => {
 
@@ -137,7 +136,6 @@ const LoginPage = (props) => {
         </>
     }
 
-    if (FatalError.IsFatalError(header)) return <FatalError header={header} />
     if (showCognitoAuthBox) return <LoginCognitoBox hide={() => setShowCognitoAuthBox(false)} />
     return <>
         { Auth.IsLoggedIn(header) ? (<React.Fragment>

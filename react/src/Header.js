@@ -18,7 +18,6 @@ import Tooltip from './components/Tooltip';
 import ReadOnlyModeComponent from './hooks/ReadOnlyModeComponent';
 import useFetching from './hooks/Fetching';
 import useFetch from './hooks/Fetch';
-import FatalError from './pages/FatalError';
 
 const WarningBar = ({ header }) => {
     const [ args ] = useSearchParams();
