@@ -5,23 +5,54 @@ import Time from '../utils/Time';
 const SslCertificate = (props) => {
     const certificate = props.certificate;
     const color = props.error ? "darkred" : "inhert";
-    const tdstyle = { fontSize: "11pt", color: color, verticalAlign: "top", paddingBottom: "2pt", paddingRight: "10pt" };
+    const tdstyle = { fontSize: "11pt", color: color, verticalAlign: "top", paddingBottom: "2pt", paddingRight: "10pt", whiteSpace: "nowrap" };
+    const tdlabel = { ...tdstyle, width: "1%" };
     const [ showDetails, setShowDetails ] = useState(false);
+    const [ showJson, setShowJson ] = useState(false);
     if (!certificate) return <></>
     return <>
-        <table><tbody>
+        <table width="100%"><tbody>
             { certificate.name &&
                 <tr>
-                    <td style={tdstyle}>Certificate For:</td>
+                    <td style={tdlabel}>Certificate For:</td>
                     <td style={tdstyle}>
-                        {certificate.name}
+                        <u>{certificate.name}</u>
+                        <small style={{float:"right", marginRight:"-10pt"}}><b>
+                            { showJson ? <>
+                                <span onClick={() => setShowJson(false)} style={{cursor:"pointer"}}>
+                                    JSON&nbsp;{Char.DownArrow}
+                                </span>
+                            </>:<>
+                                <span onClick={() => setShowJson(true)} style={{cursor:"pointer"}}>
+                                    JSON&nbsp;{Char.UpArrow}
+                                </span>
+                            </> }
+                        </b></small>
                     </td>
                 </tr>
             }
-            <tr><td style={tdstyle}>Hostname:</td><td style={tdstyle}><b>{certificate.hostname}</b></td></tr>
+            <tr>
+                <td style={tdlabel}>Hostname:</td>
+                <td style={tdstyle}><b>
+                    {certificate.hostname}</b>
+                    { !certificate.name &&
+                        <small style={{float:"right", marginRight:"-10pt"}}><b>
+                            { showJson ? <>
+                                <span onClick={() => setShowJson(false)} style={{cursor:"pointer"}}>
+                                    JSON&nbsp;{Char.DownArrow}
+                                </span>
+                            </>:<>
+                                <span onClick={() => setShowJson(true)} style={{cursor:"pointer"}}>
+                                    JSON&nbsp;{Char.UpArrow}
+                                </span>
+                            </> }
+                        </b></small>
+                    }
+                </td>
+            </tr>
             { certificate.owner &&
                 <tr>
-                    <td style={tdstyle}>Owner:</td>
+                    <td style={tdlabel}>Owner:</td>
                     <td style={tdstyle}>
                         {certificate.owner}
                         { certificate.owner_entity && (certificate.owner_entity != certificate.owner) && <>
@@ -31,7 +62,7 @@ const SslCertificate = (props) => {
                 </tr>
             }
             <tr>
-                <td style={tdstyle}>Issuer:</td>
+                <td style={tdlabel}>Issuer:</td>
                 <td style={tdstyle}>
                     {certificate.issuer}
                     { certificate.issuer_entity && (certificate.issuer != certificate.issuer) && <>
@@ -40,7 +71,7 @@ const SslCertificate = (props) => {
                 </td>
             </tr>
             <tr>
-                <td style={tdstyle}>Activation Date:</td>
+                <td style={tdlabel}>Activation Date:</td>
                 <td style={tdstyle}>
                     {certificate.active_at}
                     { certificate.inactive && <b style={{color:color}}>
@@ -49,7 +80,7 @@ const SslCertificate = (props) => {
                 </td>
             </tr>
             <tr>
-                <td style={tdstyle}>Expiration Date:</td>
+                <td style={tdlabel}>Expiration Date:</td>
                 <td style={tdstyle}>
                     {certificate.expires_at}
                     { certificate.expired ? <>
@@ -62,9 +93,7 @@ const SslCertificate = (props) => {
                 </td>
             </tr>
             <tr>
-                <td style={tdstyle}>
-                    Details:
-                </td>
+                <td style={tdlabel}>Details:</td>
                 <td style={tdstyle}>
                     { showDetails ? <>
                         <span onClick={() => setShowDetails(false)} style={{cursor:"pointer"}}>
@@ -78,9 +107,9 @@ const SslCertificate = (props) => {
                 </td>
             </tr>
             { showDetails && <>
-                <tr><td style={tdstyle}>Serial Number:</td><td style={tdstyle}>{certificate.serial_number}</td></tr>
+                <tr><td style={tdlabel}>Serial Number:</td><td style={tdstyle}>{certificate.serial_number}</td></tr>
                 <tr>
-                    <td style={tdstyle}>
+                    <td style={tdlabel}>
                         PEM:
                     </td>
                     <td style={tdstyle}>
@@ -90,12 +119,22 @@ const SslCertificate = (props) => {
                     </td>
                 </tr>
                 <tr>
-                    <td style={tdstyle}>
+                    <td style={tdlabel}>
                         Public Key:
                     </td>
                     <td style={tdstyle}>
                         <pre style={{background:"inherit", color: "inherit", marginTop:"2pt"}}>
                             {certificate.public_key_pem}
+                        </pre>
+                    </td>
+                </tr>
+            </> }
+            { showJson && <>
+                <tr><td style={{height:"2pt"}}></td></tr>
+                <tr>
+                    <td colSpan="2">
+                        <pre style={{background:"inherit", color: color, marginTop:"2pt",whiteSpace:"pre-wrap"}}>
+                            {JSON.stringify(certificate, null, 2)}
                         </pre>
                     </td>
                 </tr>

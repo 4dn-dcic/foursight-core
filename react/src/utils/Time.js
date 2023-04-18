@@ -42,7 +42,7 @@ function FormatDateTime(value, verbose = false, timezone = true) {
 
 // Returns the duration between the given to date/time values.
 //
-function FormatDuration(startDate, endDate = now(), verbose = false, fallback = "", prefix = "", suffix = "") {
+function FormatDuration(startDate, endDate = now(), verbose = false, fallback = "", prefix = "", suffix = "", include_seconds = true) {
     if (!((startDate = ToDateTime(startDate)) instanceof Date)) return "";
     if (!((endDate   = ToDateTime(endDate))   instanceof Date)) return "";
     const msPerDay    = 86400000;
@@ -69,7 +69,7 @@ function FormatDuration(startDate, endDate = now(), verbose = false, fallback = 
                + (days    > 0 ? days    + (days    === 1 ? " day "    : " days "   ) : "")
                + (hours   > 0 ? hours   + (hours   === 1 ? " hour "   : " hours "  ) : "")
                + (minutes > 0 ? minutes + (minutes === 1 ? " minute " : " minutes ") : "")
-               + (seconds > 0 ? seconds + (seconds === 1 ? " second " : " seconds ") : "")
+               + (include_seconds ? (seconds > 0 ? seconds + (seconds === 1 ? " second " : " seconds ") : "") : "")
                + (suffix ? " " + suffix : "");
     }
     return (prefix ? " " + prefix + " " : "")
@@ -77,16 +77,16 @@ function FormatDuration(startDate, endDate = now(), verbose = false, fallback = 
            + (days > 0 ? days + (days === 1 ? " day " : " days " ) : "")
            + (hours.toString().padStart(2, "0") + ":")
            + (minutes.toString().padStart(2, "0") + ":")
-           + (seconds.toString().padStart(2, "0"))
+           + (include_seconds ? (seconds.toString().padStart(2, "0")) : "")
            + (suffix ? " " + suffix : "");
 }
 
-function Ago(date, verbose = true) {
-    return FormatDuration(date, now(), verbose, null, null, "ago");
+function Ago(date, verbose = true, include_seconds = true) {
+    return FormatDuration(date, now(), verbose, null, null, "ago", include_seconds);
 }
 
-function FromNow(date, verbose = true) {
-    return FormatDuration(now(), date, verbose, null, null, "from now");
+function FromNow(date, verbose = true, include_seconds = true) {
+    return FormatDuration(now(), date, verbose, null, null, "from now", include_seconds);
 }
 
 // Converts the give value to a JavaScript Date object.

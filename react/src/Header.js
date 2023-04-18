@@ -21,11 +21,10 @@ import useFetch from './hooks/Fetch';
 
 const WarningBar = ({ header }) => {
     const [ args ] = useSearchParams();
-    const soon = args.get("soon");
     const sslCertificateInfo = useFetch(`/certificates`);
     if (sslCertificateInfo.loading) return <></>
     const sslCertificateInfoPortal = sslCertificateInfo.find(certificate => certificate.name === "Portal");
-    if (!sslCertificateInfoPortal) return <></>
+    if (!sslCertificateInfoPortal || !sslCertificateInfoPortal.expires_soon) return <></>
     return <>
         <tr><td style={{background:"black",height:"2px"}} colSpan="3"></td></tr>
         <tr>
@@ -36,9 +35,11 @@ const WarningBar = ({ header }) => {
                     &nbsp;{Char.RightArrow}&nbsp;
                     {sslCertificateInfoPortal.expires_at}
                     &nbsp;{Char.RightArrow}&nbsp;
-                    {Time.FromNow(sslCertificateInfoPortal.expires_at)}
-                    &nbsp;{Char.RightArrow}&nbsp;
-                    <Link to={Client.Path("/certificate")} style={{color:"inherit"}}>View</Link>
+                    {Time.FromNow(sslCertificateInfoPortal.expires_at, true, false)}
+                    { Client.CurrentLogicalPath(header) !== "/certificate" && <>
+                        &nbsp;{Char.RightArrow}&nbsp;
+                        <Link to={Client.Path("/certificate")} style={{color:"inherit"}}>View</Link>
+                    </> }
             </td>
         </tr>
         <tr><td style={{background:"black",height:"1px"}} colSpan="3"></td></tr>

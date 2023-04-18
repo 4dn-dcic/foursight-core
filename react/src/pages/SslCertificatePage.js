@@ -9,7 +9,7 @@ const SslCertificatePage = (props) => {
     const certificates = useFetch(`/certificates?hostname=${hostname}`);
     return <>
         <div className="container" style={{width:"800pt"}}>
-            <b>Certificates</b>
+            <b>SSL Certificates</b>
             { certificates?.data?.map(certificate => <div key={certificate.serial_number}>
                 <SslCertificateBox certificate={certificate} />
             </div>)}
