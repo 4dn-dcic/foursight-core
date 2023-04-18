@@ -35,7 +35,7 @@ from .aws_stacks import (
 )
 from .checks import Checks
 from .cognito import clear_cognito_cache, get_cognito_oauth_config, handle_cognito_oauth_callback
-from .cookie_utils import create_delete_cookie_string, read_cookie, read_cookie_bool
+from .cookie_utils import create_delete_cookie_string, read_cookie, read_cookie_bool, read_cookie_int
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
 from .encryption import Encryption
 from .encoding_utils import base64_decode_to_json
@@ -288,7 +288,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
             data["auth"]["known_envs_actual_count"] = known_envs_actual_count
         data["auth"]["default_env"] = self._envs.get_default_env()
         test_mode_certificate_simulate_error = read_cookie_bool(request, "test_mode_certificate_simulate_error")
-        test_mode_certificate_simulate_expired = read_cookie_bool(request, "test_mode_certificate_simulate_expired")
         if test_mode_certificate_simulate_error:
             data["portal"]["url"] = None
         if not data["portal"]["url"]:
@@ -305,14 +304,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
             except Exception as e:
                 e = str(e)
                 data["portal"]["exception"] = e
-                if "cert" in e.lower():
+                if "certifi" in e.lower():
                     data["portal"]["ssl_certificate_error"] = True
                 portal_url = env_utils_get_portal_url(env)
                 data["portal"]["url"] = portal_url
-                data["portal"]["ssl_certificate"] = get_ssl_certificate_info(
-                    portal_url,
-                    test_mode_certificate_simulate_expired=test_mode_certificate_simulate_expired
-                )
+                data["portal"]["ssl_certificate"] = get_ssl_certificate_info(portal_url)
         data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
         return self.create_success_response(data)
 
@@ -361,16 +357,28 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return response
 
     def reactapi_certificates(self, request: dict, args: Optional[dict] = None) -> Response:
-        test_mode_certificate_expiration_warning_days = \
-            read_cookie_bool(request, "test_mode_certificate_expiration_warning_days")
-        foursight_url = self.foursight_instance_url(request)
-        portal_url = env_utils_get_portal_url(self._envs.get_default_env())
-        foursight_ssl_certificate_info = get_ssl_certificate_info(foursight_url)
-        portal_ssl_certificate_info = get_ssl_certificate_info(portal_url)
-        response = {
-            "foursight_ssl_certificate": foursight_ssl_certificate_info,
-            "portal_ssl_certificate": portal_ssl_certificate_info
-        }
+        hostnames = args.get("hostname", args.get("hostnames", None))
+        response = []
+        if hostnames and hostnames.lower() != "null":
+            for hostname in hostnames.split(","):
+                certificate = get_ssl_certificate_info(hostname.strip())
+                if certificate:
+                    response.append(certificate)
+        else:
+            test_mode_certificate_expiration_warning_days = \
+                read_cookie_int(request, "test_mode_certificate_expiration_warning_days")
+            foursight_url = self.foursight_instance_url(request)
+            portal_url = env_utils_get_portal_url(self._envs.get_default_env())
+            foursight_ssl_certificate_info = get_ssl_certificate_info(
+                foursight_url, test_mode_certificate_expiration_warning_days=test_mode_certificate_expiration_warning_days)
+            if foursight_ssl_certificate_info:
+                foursight_ssl_certificate_info["name"] = "Foursight"
+                response.append(foursight_ssl_certificate_info)
+            portal_ssl_certificate_info = get_ssl_certificate_info(
+                portal_url, test_mode_certificate_expiration_warning_days=test_mode_certificate_expiration_warning_days)
+            if portal_ssl_certificate_info:
+                portal_ssl_certificate_info["name"] = "Portal"
+                response.append(portal_ssl_certificate_info)
         return self.create_success_response(response)
 
     @memoize

@@ -22,9 +22,10 @@ import useFetch from './hooks/Fetch';
 const WarningBar = ({ header }) => {
     const [ args ] = useSearchParams();
     const soon = args.get("soon");
-    const sslCertificateIinfo = useFetch(`/certificates?soon=${soon}`);
-    if (sslCertificateIinfo.loading) return <></>
-    if (!sslCertificateIinfo?.data?.portal_ssl_certificate?.expires_soon) return <></>
+    const sslCertificateInfo = useFetch(`/certificates`);
+    if (sslCertificateInfo.loading) return <></>
+    const sslCertificateInfoPortal = sslCertificateInfo.find(certificate => certificate.name === "Portal");
+    if (!sslCertificateInfoPortal) return <></>
     return <>
         <tr><td style={{background:"black",height:"2px"}} colSpan="3"></td></tr>
         <tr>
@@ -33,9 +34,11 @@ const WarningBar = ({ header }) => {
                     Warning: SSL certificate for associated Portal will expire soon
                 </b>
                     &nbsp;{Char.RightArrow}&nbsp;
-                    {sslCertificateIinfo.data.portal_ssl_certificate?.expires_at}
+                    {sslCertificateInfoPortal.expires_at}
                     &nbsp;{Char.RightArrow}&nbsp;
-                    {Time.FromNow(sslCertificateIinfo.data.portal_ssl_certificate?.expires_at)}
+                    {Time.FromNow(sslCertificateInfoPortal.expires_at)}
+                    &nbsp;{Char.RightArrow}&nbsp;
+                    <Link to={Client.Path("/certificate")} style={{color:"inherit"}}>View</Link>
             </td>
         </tr>
         <tr><td style={{background:"black",height:"1px"}} colSpan="3"></td></tr>

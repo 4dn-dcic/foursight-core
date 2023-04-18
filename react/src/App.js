@@ -19,6 +19,7 @@ import InfrastructurePage from './pages/aws/InfrastructurePage';
 import NotFoundPage from './pages/NotFoundPage';
 import Page from './Page';
 import RedirectPage from './pages/RedirectPage';
+import SslCertificatePage from './pages/SslCertificatePage';
 import UserPage from './pages/UserPage';
 import UserCreatePage from './pages/UserCreatePage';
 import UserEditPage from './pages/UserEditPage';
@@ -128,6 +129,11 @@ const App = () => {
                         <Page.AuthorizationRequired>
                             <InfrastructurePage />
                         </Page.AuthorizationRequired>
+                    }/>
+                    <Route path="/api/react/:environ/certificate" element={
+                        <Page.KnownEnvRequired>
+                            <SslCertificatePage />
+                        </Page.KnownEnvRequired>
                     }/>
                     <Route path="/api/react/:environ/forbidden" element={
                         <ForbiddenPage />
