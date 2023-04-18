@@ -19,21 +19,22 @@ const SslCertificate = (props) => {
                 </tr>
             }
             <tr><td style={tdstyle}>Hostname:</td><td style={tdstyle}><b>{certificate.hostname}</b></td></tr>
-            <tr>
-                <td style={tdstyle}>Owner:</td>
-                <td style={tdstyle}>
-                    {certificate.owner}
-                    { certificate.owner_entity && <>
-                        &nbsp;({certificate.owner_entity})
-                    </> }
-                </td>
-            </tr>
+            { certificate.owner &&
+                <tr>
+                    <td style={tdstyle}>Owner:</td>
+                    <td style={tdstyle}>
+                        {certificate.owner}
+                        { certificate.owner_entity && (certificate.owner_entity != certificate.owner) && <>
+                            &nbsp;({certificate.owner_entity})
+                        </> }
+                    </td>
+                </tr>
+            }
             <tr>
                 <td style={tdstyle}>Issuer:</td>
                 <td style={tdstyle}>
                     {certificate.issuer}
-                    { certificate.issuer_entity &&
-                     (certificate.issuer != certificate.issuer) && <>
+                    { certificate.issuer_entity && (certificate.issuer != certificate.issuer) && <>
                         &nbsp;({certificate.issuer_entity})
                     </> }
                 </td>
