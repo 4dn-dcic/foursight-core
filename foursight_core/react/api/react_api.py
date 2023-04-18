@@ -15,7 +15,7 @@ from itertools import chain
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils.env_utils import get_portal_url as env_utils_get_portal_url
 from dcicutils import ff_utils
-from dcicutils.misc_utils import ignored, str_to_bool
+from dcicutils.misc_utils import ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.redis_tools import RedisSessionToken, SESSION_TOKEN_COOKIE
 from dcicutils.ssl_certificate_utils import get_ssl_certificate_info
@@ -35,7 +35,7 @@ from .aws_stacks import (
 )
 from .checks import Checks
 from .cognito import clear_cognito_cache, get_cognito_oauth_config, handle_cognito_oauth_callback
-from .cookie_utils import create_delete_cookie_string, read_cookie
+from .cookie_utils import create_delete_cookie_string, read_cookie, read_cookie_bool
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
 from .encryption import Encryption
 from .encoding_utils import base64_decode_to_json
@@ -287,8 +287,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             data["auth"]["known_envs"] = [known_envs_default]
             data["auth"]["known_envs_actual_count"] = known_envs_actual_count
         data["auth"]["default_env"] = self._envs.get_default_env()
-        test_mode_certificate_simulate_error = str_to_bool(read_cookie(request, "test_mode_certificate_simulate_error"))
-        test_mode_certificate_simulate_expired = str_to_bool(read_cookie(request, "test_mode_certificate_simulate_expired"))
+        test_mode_certificate_simulate_error = read_cookie_bool(request, "test_mode_certificate_simulate_error")
+        test_mode_certificate_simulate_expired = read_cookie_bool(request, "test_mode_certificate_simulate_expired")
         if test_mode_certificate_simulate_error:
             data["portal"]["url"] = None
         if not data["portal"]["url"]:
@@ -361,8 +361,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return response
 
     def reactapi_certificates(self, request: dict, args: Optional[dict] = None) -> Response:
-        test_mode_certificate_expiration_warning_days= \
-            str_to_bool(read_cookie(request, "test_mode_certificate_expiration_warning_days"))
+        test_mode_certificate_expiration_warning_days = \
+            read_cookie_bool(request, "test_mode_certificate_expiration_warning_days")
         foursight_url = self.foursight_instance_url(request)
         portal_url = env_utils_get_portal_url(self._envs.get_default_env())
         foursight_ssl_certificate_info = get_ssl_certificate_info(foursight_url)
