@@ -85,10 +85,10 @@ const SslCertificate = (props) => {
                     {certificate.expires_at}
                     { certificate.expired ? <>
                         &nbsp;&nbsp;{Char.RightArrow}&nbsp;&nbsp;<b><u>Expired</u></b>&nbsp;&nbsp;{Char.LeftArrow}
-                        &nbsp;&nbsp;<small>{Time.Ago(certificate.expires_at)}</small>
+                        &nbsp;&nbsp;<small>{Time.Ago(certificate.expires_at, true, false)}</small>
                     </>:<>
                         &nbsp;{Char.RightArrow}
-                        &nbsp;<small>{Time.FromNow(certificate.expires_at)}</small>
+                        &nbsp;<small>{Time.FromNow(certificate.expires_at, true, false)}</small>
                     </> }
                 </td>
             </tr>
