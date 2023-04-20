@@ -19,7 +19,8 @@ import InfrastructurePage from './pages/aws/InfrastructurePage';
 import NotFoundPage from './pages/NotFoundPage';
 import Page from './Page';
 import RedirectPage from './pages/RedirectPage';
-import SslCertificatePage from './pages/SslCertificatePage';
+import SslCertificatesPage from './pages/SslCertificatesPage';
+import PortalAccessKeyPage from './pages/PortalAccessKeyPage';
 import UserPage from './pages/UserPage';
 import UserCreatePage from './pages/UserCreatePage';
 import UserEditPage from './pages/UserEditPage';
@@ -130,9 +131,14 @@ const App = () => {
                             <InfrastructurePage />
                         </Page.AuthorizationRequired>
                     }/>
-                    <Route path="/api/react/:environ/certificate" element={
+                    <Route path="/api/react/:environ/certificates" element={
                         <Page.KnownEnvRequired>
-                            <SslCertificatePage />
+                            <SslCertificatesPage />
+                        </Page.KnownEnvRequired>
+                    }/>
+                    <Route path="/api/react/:environ/portal_access_key" element={
+                        <Page.KnownEnvRequired>
+                            <PortalAccessKeyPage />
                         </Page.KnownEnvRequired>
                     }/>
                     <Route path="/api/react/:environ/forbidden" element={

@@ -46,6 +46,7 @@ from .misc_utils import (
     memoize,
     sort_dictionary_by_case_insensitive_keys
 )
+from .portal_access_key_utils import get_portal_access_key_info
 from .react_routes import ReactRoutes
 from .react_api_base import ReactApiBase
 from .react_ui import ReactUi
@@ -268,29 +269,41 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Note that this in an UNPROTECTED route.
         """
         # Note that this route is not protected but/and we return the results from authorize.
+        print('xyzzy/foo/a')
         auth = self._auth.authorize(request, env)
         data = self._cached_header.get(env)
         if not data:
             data = self._reactapi_header_nocache(request, env)
             self._cached_header[env] = data
         data = copy.deepcopy(data)
+        print('xyzzy/foo/b')
         data["auth"] = auth
+        print('xyzzy/foo/c')
         # 2022-10-18
         # No longer sharing known-envs widely; send only if authenticated;
         # if not authenticated then act as-if the default-env is the only known-env;
         # in this case also include (as an FYI for the UI) the real number of known-envs.
         if auth["authenticated"]:
             data["auth"]["known_envs"] = self._envs.get_known_envs_with_gac_names()
+            is_logged_in = True
         else:
+            is_logged_in = False
             known_envs_default = self._envs.find_known_env(self._envs.get_default_env())
             known_envs_actual_count = self._envs.get_known_envs_count()
             data["auth"]["known_envs"] = [known_envs_default]
             data["auth"]["known_envs_actual_count"] = known_envs_actual_count
+        print('xyzzy/foo/d')
         data["auth"]["default_env"] = self._envs.get_default_env()
+        print('xyzzy/foo/d1')
         test_mode_certificate_simulate_error = read_cookie_bool(request, "test_mode_certificate_simulate_error")
+        print('xyzzy/foo/d2')
         if test_mode_certificate_simulate_error:
+            print('xyzzy/foo/d3')
             data["portal"]["url"] = None
+            print('xyzzy/foo/d4')
+        print('xyzzy/foo/d5')
         if not data["portal"]["url"]:
+            print('xyzzy/foo/d6')
             # Here we did not get a Portal URL from the to app.core.get_portal_url (via _reactapi_header_nocache).
             # That call ends up ultimately calling the Portal health endpoint (via s3Utils.get_synthetic_env_config
             # via environment.get_environment_and_bucket_info). So there may have been a problem with the Portal,
@@ -302,26 +315,73 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 portal_url = app.core.get_portal_url(env or default_env, raise_exception=True)
                 data["portal"]["url"] = portal_url
             except Exception as e:
+                print('xyzzy/foo/d7')
                 e = str(e)
+                print('xyzzy/foo/d8')
                 data["portal"]["exception"] = e
+                print('xyzzy/foo/d9')
                 if "certifi" in e.lower():
                     data["portal"]["ssl_certificate_error"] = True
                 portal_url = env_utils_get_portal_url(env)
+                print('xyzzy/foo/d10')
                 data["portal"]["url"] = portal_url
+                print('xyzzy/foo/d11')
+                print(data["portal"])
                 data["portal"]["ssl_certificate"] = get_ssl_certificate_info(portal_url)
+                print('xyzzy/foo/d11a')
+                data["portal"]["ssl_certificate"]["name"] = "Portal"
+                print('xyzzy/foo/d12')
+                data["portal"]["ssl_certificate"]["exception"] = e
+                print('xyzzy/foo/d13')
         data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
+        print('xyzzy/foo/e')
+        test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
+        print('xyzzy/foo/f')
+        if auth.get("user_exception") or test_mode_access_key_simulate_error:
+            print('xyzzy/foo/g')
+            # Since this call to get the Portal access key info can be relatively expensive, we don't want to
+            # do it on every /header API call; so we only call it if, according to the user's authtoken cookie,
+            # an exception was experienced when trying to authorize# the user (via envs.get_user_auth_info) on
+            # login, which if so, would indicate that the is likely a problem with the Portal access key.
+            test_mode_access_key_expiration_warning_days = \
+                read_cookie_int(request, "test_mode_access_key_expiration_warning_days")
+            print('xyzzy/foo/g1')
+            print(data)
+            print(env)
+            print(is_logged_in)
+            print(test_mode_access_key_simulate_error)
+            print(test_mode_access_key_expiration_warning_days)
+            print('xyzzy/foo/g1a')
+            data["portal_access_key"] = get_portal_access_key_info(
+                env,
+                obfuscate=not is_logged_in,
+                test_mode_access_key_simulate_error=test_mode_access_key_simulate_error,
+                test_mode_access_key_expiration_warning_days=test_mode_access_key_expiration_warning_days)
+            print('xyzzy/foo/g2')
+            print(data.get("portal_access_key"))
+            print('xyzzy/foo/g2a')
+            print(data)
+            if not data["portal_access_key"].get("valid"):
+                print('xyzzy/foo/g3')
+                data["portal_access_key_error"] = True
+                print('xyzzy/foo/g4')
+            print('xyzzy/foo/g5')
+        print('xyzzy/foo/h')
         return self.create_success_response(data)
 
     def _reactapi_header_nocache(self, request: dict, env: str) -> dict:
         """
         No-cache version of above reactapi_header function.
         """
+        print('xyzzy/a')
+        print(env)
         domain, context = app.core.get_domain_and_context(request)
         stage_name = app.core.stage.get_stage()
         default_env = self._envs.get_default_env()
         aws_credentials = self._auth.get_aws_credentials(env or default_env)
         portal_url = app.core.get_portal_url(env or default_env)
         portal_base_url = get_base_url(portal_url)
+        print('xyzzy/b')
         response = {
             "app": {
                 "title": app.core.html_main_title,
@@ -335,6 +395,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "credentials": {
                     "aws_account_number": aws_credentials.get("aws_account_number"),
                     "aws_account_name": aws_credentials.get("aws_account_name"),
+                    "aws_access_key_id": aws_credentials.get("aws_access_key_id"),
                     "re_captcha_key": os.environ.get("reCaptchaKey", None)
                 },
                 "launched": app.core.init_load_time,
@@ -354,6 +415,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "encrypt_key_id": os.environ.get("S3_ENCRYPT_KEY_ID", None)
             }
         }
+        print('xyzzy/c')
         return response
 
     def reactapi_certificates(self, request: dict, args: Optional[dict] = None) -> Response:
@@ -379,6 +441,20 @@ class ReactApi(ReactApiBase, ReactRoutes):
             if portal_ssl_certificate_info:
                 portal_ssl_certificate_info["name"] = "Portal"
                 response.append(portal_ssl_certificate_info)
+        return self.create_success_response(response)
+
+    def reactapi_portal_access_key(self, request: dict, args: Optional[dict] = None) -> Response:
+        env = self._envs.get_default_env()
+        auth = self._auth.authorize(request, env)
+        is_logged_in = auth.get("authenticated")
+        test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
+        test_mode_access_key_expiration_warning_days = read_cookie_int(
+                request, "test_mode_access_key_expiration_warning_days")
+        response = get_portal_access_key_info(
+            env,
+            obfuscate=not is_logged_in,
+            test_mode_access_key_simulate_error=test_mode_access_key_simulate_error,
+            test_mode_access_key_expiration_warning_days=test_mode_access_key_expiration_warning_days)
         return self.create_success_response(response)
 
     @memoize

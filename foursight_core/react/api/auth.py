@@ -155,7 +155,15 @@ class Auth:
                 authenticator = "google"
             elif "github" in authenticator:
                 authenticator = "github"
-        allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email)
+        try:
+            allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email, raise_exception=True)
+            user_exception = False
+        except Exception as e:
+            allowed_envs = []
+            first_name = None
+            last_name = None
+            user_exception = True
+
         authtoken_decoded = {
             "authentication": "auth0",
             "authenticator": authenticator,
@@ -172,6 +180,8 @@ class Auth:
             "domain": domain,
             "site": app.core.get_site_name()
         }
+        if user_exception:
+            authtoken_decoded["user_exception"] = True
         # JWT-sign-encode the authtoken using our Auth0 client ID (aka audience aka "aud") and
         # secret. This *required* audience is added to the JWT before encoding (done in the
         # jwt_encode function), set to the value we pass here, namely, self._auth0_client;
@@ -188,6 +198,13 @@ class Auth:
         Returns the verified/decoded JWT as a dictionary.
         """
         return jwt_decode(authtoken, self._auth0_client, self._auth0_secret)
+
+#   def read_authtoken(self, request: dict) -> Optional[dict]: # xyzzy
+#       """
+#       Returns the decoded authtoken cookie, with no other checking.
+#       """
+#       authtoken = read_cookie(request, AUTH_TOKEN_COOKIE)
+#       return self.decode_authtoken(authtoken) if authtoken else None
 
     def _create_unauthorized_response(self, request: dict, status: str,
                                       authtoken_decoded: dict, is_authenticated: bool) -> dict:

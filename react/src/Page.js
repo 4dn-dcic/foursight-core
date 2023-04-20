@@ -17,7 +17,8 @@ import FatalErrorPage from './pages/FatalErrorPage';
 function KnownEnvRequired({ children }) {
     const header = useHeader();
     if (FatalErrorPage.IsFatalError(header)) {
-        return <Navigate to={Client.Path("/error")} replace />
+        const env = Env.PreferredName(Env.Default(header), header);
+        return <Navigate to={Client.Path("/error", env)} replace />
     }
     else if (SanityCheckPath()) {
         return;

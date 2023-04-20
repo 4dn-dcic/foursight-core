@@ -14,11 +14,11 @@ const SslCertificateError = (props) => {
             <b style={{fontSize:"16pt", marginLeft:"10pt"}}>SSL Certificate Error</b><br />
             <HorizontalLine top="6pt" bottom="6pt" color="darkred" />
             There is a problem with the SSL certificate for the <b>Portal</b> associated with this Foursight instance:
-                &nbsp;<b><small><a href={header.portal.url} style={{color:"darkred"}} target="_blank" >{header.portal.url}</a></small></b> <br />
+                &nbsp;<b><small><a href={header?.portal?.url} style={{color:"darkred"}} target="_blank" >{header?.portal?.url}</a></small></b> <br />
             <HorizontalLine top="6pt" bottom="6pt" color="darkred" />
             <b>{Char.RightArrow} <small><i>You <u>must</u> contact your system adminstrator to resolve this issue</i>&nbsp;&nbsp;:-(</small></b>
             <HorizontalLine top="6pt" bottom="6pt" color="darkred" />
-            <SslCertificate certificate={header.portal.ssl_certificate} error={true} />
+            <SslCertificate certificate={header?.portal?.ssl_certificate} error={true} />
         </div></div>
     </>
 }

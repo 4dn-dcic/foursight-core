@@ -3,7 +3,7 @@ import useHeader from '../hooks/Header';
 import useFetch from '../hooks/Fetch';
 import SslCertificate from '../components/SslCertificate';
 
-const SslCertificatePage = (props) => {
+const SslCertificatesPage = (props) => {
     const [ args ] = useSearchParams();
     const hostname = args.get("hostname");
     const certificates = useFetch(`/certificates?hostname=${hostname}`);
@@ -25,4 +25,4 @@ const SslCertificateBox = (props) => {
     </>
 }
 
-export default SslCertificatePage;
+export default SslCertificatesPage;
