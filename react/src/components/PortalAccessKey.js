@@ -15,6 +15,17 @@ const PortalAccessKey = (props) => {
                 <td style={tdlabel}>Access Key:</td>
                 <td style={tdstyle}>
                     {accessKey.key}
+                    <small style={{float:"right", marginRight:"-10pt"}}><b>
+                        { showJson ? <>
+                            <span onClick={() => setShowJson(false)} style={{cursor:"pointer"}}>
+                                JSON&nbsp;{Char.DownArrow}
+                            </span>
+                        </>:<>
+                            <span onClick={() => setShowJson(true)} style={{cursor:"pointer"}}>
+                                JSON&nbsp;{Char.UpArrow}
+                            </span>
+                        </> }
+                    </b></small>
                 </td>
             </tr>
             <tr>
@@ -36,6 +47,14 @@ const PortalAccessKey = (props) => {
                     </> }
                 </td>
             </tr>
+            { accessKey.exception &&
+                <tr>
+                    <td style={tdlabel}>Error:</td>
+                    <td style={tdstyle}>
+                        {accessKey.exception}
+                    </td>
+                </tr>
+            }
             { showJson && <>
                 <tr><td style={{height:"2pt"}}></td></tr>
                 <tr>

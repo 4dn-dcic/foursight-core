@@ -45,14 +45,22 @@ const PortalSslCertificateWarning = () => {
 const PortalAccessKeyWarning = () => {
     const portalAccessKeyInfo = useFetch(`/portal_access_key`);
     if (portalAccessKeyInfo.loading) return <></>
-    if (portalAccessKeyInfo && portalAccessKeyInfo?.data?.expires_soon) {
-        return <WarningBar>
-            <b>Warning: Access key for associated Portal will expire soon</b>
-            &nbsp;{Char.RightArrow}&nbsp; {portalAccessKeyInfo.data.expires_at} &nbsp;{Char.RightArrow}&nbsp;
-            {Time.FromNow(portalAccessKeyInfo.data.expires_at, true, false)}
-            &nbsp;{Char.RightArrow}&nbsp;
-            <Link to={Client.Path("/portal_access_key")} style={{color:"inherit"}}>View</Link>
-        </WarningBar>
+    if (portalAccessKeyInfo) {
+        if (portalAccessKeyInfo?.data?.expires_soon) {
+            return <WarningBar>
+                <b>Warning: Access key for associated Portal will expire soon</b>
+                &nbsp;{Char.RightArrow}&nbsp; {portalAccessKeyInfo.data.expires_at} &nbsp;{Char.RightArrow}&nbsp;
+                {Time.FromNow(portalAccessKeyInfo.data.expires_at, true, false)}
+                &nbsp;{Char.RightArrow}&nbsp;
+                <Link to={Client.Path("/portal_access_key")} style={{color:"inherit"}}>View</Link>
+            </WarningBar>
+        } else if (!portalAccessKeyInfo?.data?.valid) {
+            return <WarningBar>
+                <b>Warning: Access key for associated Portal is invalid</b>
+                &nbsp;{Char.RightArrow}&nbsp;
+                <Link to={Client.Path("/portal_access_key")} style={{color:"inherit"}}>View</Link>
+            </WarningBar>
+        }
     }
 }
 

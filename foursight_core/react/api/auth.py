@@ -9,7 +9,7 @@ from dcicutils.redis_tools import RedisBase, RedisSessionToken, SESSION_TOKEN_CO
 from dcicutils.env_utils import full_env_name
 from dcicutils.misc_utils import ignored, PRINT
 from ...app import app
-from .cookie_utils import read_cookie
+from .cookie_utils import read_cookie, read_cookie_bool
 from .envs import Envs
 from .jwt_utils import JWT_AUDIENCE_PROPERTY_NAME, JWT_SUBJECT_PROPERTY_NAME, jwt_decode, jwt_encode
 from .misc_utils import get_request_domain
@@ -156,6 +156,16 @@ class Auth:
             elif "github" in authenticator:
                 authenticator = "github"
         try:
+            test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
+            if test_mode_access_key_simulate_error:
+                # For testing only, we simulate a portal aaccess key error, which would manifest here, on login.
+                # If/when this happens we set the user_exception flag in the authtoken JWT cookie; then in
+                # the /header endpoint if this is set then we get get more detailed information about the
+                # access key (via get_portal_access_key_info) and return it so an error can be displayed;
+                # we do not just always get this detailed information in the /header endpoint simply
+                # because we do not want to do that synchronous work there unless there is actually
+                # a problem (which we discover here) because it would slow down that endpoint.
+                raise Exception("test_mode_access_key_simulate_error")
             allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email, raise_exception=True)
             user_exception = False
         except Exception as e:
@@ -198,13 +208,6 @@ class Auth:
         Returns the verified/decoded JWT as a dictionary.
         """
         return jwt_decode(authtoken, self._auth0_client, self._auth0_secret)
-
-#   def read_authtoken(self, request: dict) -> Optional[dict]: # xyzzy
-#       """
-#       Returns the decoded authtoken cookie, with no other checking.
-#       """
-#       authtoken = read_cookie(request, AUTH_TOKEN_COOKIE)
-#       return self.decode_authtoken(authtoken) if authtoken else None
 
     def _create_unauthorized_response(self, request: dict, status: str,
                                       authtoken_decoded: dict, is_authenticated: bool) -> dict:
