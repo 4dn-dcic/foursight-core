@@ -166,7 +166,7 @@ class ReactApiBase:
         jwt_expires_at = convert_datetime_to_time_t(datetime.datetime.utcnow() +
                                                     datetime.timedelta(seconds=jwt_expires_in))
         domain, context = app.core.get_domain_and_context(request)
-        authtoken = self._auth.create_authtoken(jwt, jwt_expires_at, domain)
+        authtoken = self._auth.create_authtoken(jwt, jwt_expires_at, domain, request=request)
         authtoken_cookie = create_set_cookie_string(request, name=AUTH_TOKEN_COOKIE,
                                                     value=authtoken,
                                                     domain=domain,

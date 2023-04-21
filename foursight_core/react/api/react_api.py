@@ -319,7 +319,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if auth.get("user_exception"): # or test_mode_access_key_simulate_error:
             # Since this call to get the Portal access key info can be relatively expensive, we don't want to
             # do it on every /header API call; so we only call it if, according to the user's authtoken cookie,
-            # an exception was experienced when trying to authorize# the user (via envs.get_user_auth_info) on
+            # an exception was experienced when trying to authorize the user (via envs.get_user_auth_info) on
             # login, which if so, would indicate that the is likely a problem with the Portal access key.
             test_mode_access_key_expiration_warning_days = \
                 read_cookie_int(request, "test_mode_access_key_expiration_warning_days")

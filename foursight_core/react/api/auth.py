@@ -125,7 +125,7 @@ class Auth:
             logger.error(f"Authorization exception: {e}")
             return self._create_unauthenticated_response(request, "exception: " + str(e))
 
-    def create_authtoken(self, jwt: str, jwt_expires_at: int, domain: str) -> str:
+    def create_authtoken(self, jwt: str, jwt_expires_at: int, domain: str, request: Optional[dict] = None) -> str:
         """
         Creates and returns a new signed JWT, to be used as the login authtoken (cookie), from
         the given AUTHENTICATED and signed and encoded JWT, which will contain the following:
@@ -156,19 +156,41 @@ class Auth:
             elif "github" in authenticator:
                 authenticator = "github"
         try:
-            test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
-            if test_mode_access_key_simulate_error:
-                # For testing only, we simulate a portal aaccess key error, which would manifest here, on login.
-                # If/when this happens we set the user_exception flag in the authtoken JWT cookie; then in
-                # the /header endpoint if this is set then we get get more detailed information about the
-                # access key (via get_portal_access_key_info) and return it so an error can be displayed;
-                # we do not just always get this detailed information in the /header endpoint simply
-                # because we do not want to do that synchronous work there unless there is actually
-                # a problem (which we discover here) because it would slow down that endpoint.
-                raise Exception("test_mode_access_key_simulate_error")
+            if request:
+                test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
+                if test_mode_access_key_simulate_error:
+                    # For testing only, we simulate a portal access key error (e.g. due to expiration),
+                    # which would manifest itselft, most importantly, here, on login.
+                    raise Exception("test_mode_access_key_simulate_error")
             allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email, raise_exception=True)
             user_exception = False
         except Exception as e:
+            #
+            # Here there was a problem getting the user info via Portal (e.g. due to expired or otherwise bad
+            # Portal acesss key); this will NOT prevent the user from being logged in BUT it WILL prevent the
+            # user from doing anything because there will be no allowed environments. We note this particular
+            # error with a flag (user_exception) in the authtoken JWT cookie; we catch this case in the /header
+            # endpoint to send back information about the portal access key (via get_portal_access_key_info) in
+            # its response, so an appropriate error can be shown in the UI. We do NOT want to ALWAYS get this
+            # information (via get_portal_access_key_info) in the /header endpoint (like in the normal case
+            # where there is no error) because it would impact performance (the /header endpoint should be as
+            # fast as possible), so we only do it if looks like there is a problem, i.e. as there is here.
+            #
+            # There is also a separate /portal_access_key endpoint to be called asynchronously by the UI to
+            # display any error (e.g. acesss key expired) or warning (e.g. access key expiring soon), but
+            # the UI does not use that to redirect to an error page (on error) because, being asynchronous,
+            # it could be a jarring UX (i.e. to all of a sudden be redirected to an error page after the
+            # current page looks like it is stable), so the UI uses this /portal_access_key endpoint to
+            # just display a (red) bar across the top of the page indicating that the accesss key is
+            # invalid (e.g. expired) or will expire soon.
+            #
+            # This is in contrast the the analogous behavior of the Portal SSL certicifcate checking.
+            # In that case, since the /header endpoint indirectly and synchronously calls the Portal
+            # health endpoint ANYWAYS, we will know at that point if the certificate is problematic,
+            # and in that case we can return from the /header endpoint information about the certificate,
+            # which the UI can use to redirect to an error, without a jarring UX, i.e. since this the
+            # /header endpoint is the first and primary API called by the UI before it can do anything.
+            #
             allowed_envs = []
             first_name = None
             last_name = None
