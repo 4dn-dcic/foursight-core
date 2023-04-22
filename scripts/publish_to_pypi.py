@@ -57,7 +57,7 @@ def publish_package(pypi_username: str = None, pypi_password: str = None):
 
 def verify_unstaged_changes() -> bool:
     """
-    If the current git repo has no uncommitted changes then returns True,
+    If the current git repo has no unstaged changes then returns True,
     otherwise prints a warning and returns False.
     """
     git_diff_results = execute_command(["git", "diff"])
