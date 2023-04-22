@@ -2,7 +2,15 @@ from unittest import mock
 import os
 from foursight_core.react.api import envs as react_envs
 from foursight_core.react.api.envs import Envs
-from test_react_auth_defs import KNOWN_ENVS, KNOWN_ENV_A, KNOWN_ENV_B, KNOWN_ENV_C, ALLOWED_ENV, DISALLOWED_ENV, mock_foursight_env_name
+from test_react_auth_defs import (
+    KNOWN_ENVS,
+    KNOWN_ENV_A,
+    KNOWN_ENV_B,
+    KNOWN_ENV_C,
+    ALLOWED_ENV,
+    DISALLOWED_ENV,
+    mock_foursight_env_name
+)
 
 
 def test_envs():

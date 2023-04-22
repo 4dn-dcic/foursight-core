@@ -1,7 +1,8 @@
 from unittest import mock
-from foursight_core.react.api.jwt_utils import jwt_decode
+from foursight_core.react.api import auth
 from foursight_core.react.api import envs
 from foursight_core.react.api import gac
+from foursight_core.react.api.jwt_utils import jwt_decode
 from test_react_auth_defs import (
     ALLOWED_ENV,
     ALLOWED_ENVS,
@@ -13,7 +14,6 @@ from test_react_auth_defs import (
     DOMAIN,
     EMAIL,
     EXPIRES_AT,
-    EXPIRED_AT,
     FIRST_NAME,
     LAST_NAME,
     ISSUED_AT,
@@ -26,7 +26,8 @@ from test_react_auth_defs import (
     create_test_jwt_unencoded,
     create_test_request,
     mock_foursight_env_name,
-    mock_short_env_name
+    mock_short_env_name,
+    MockChaliceApp
 )
 
 
@@ -83,7 +84,7 @@ def test_react_authorize_unauthorized():
         with mock.patch.object(gac, "short_env_name", mock_short_env_name):
             authtoken = create_test_authtoken_good()
             request = create_test_request(authtoken)
-            response = AUTH.authorize(request, DISALLOWED_ENV) # Note disallowed env
+            response = AUTH.authorize(request, DISALLOWED_ENV)  # Note disallowed env
             assert_unauthorized_response(response)
 
 
@@ -97,18 +98,20 @@ def test_react_authorize_expired():
 
 
 def test_react_authorize_invalid_auth0_secret():
-    with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
-        with mock.patch.object(gac, "short_env_name", mock_short_env_name):
-            authtoken = create_test_authtoken_invalid_auth0_secret()
-            request = create_test_request(authtoken)
-            response = AUTH.authorize(request, ALLOWED_ENV)
-            assert_unauthenticated_response(response)
+    with mock.patch.object(auth, "app", MockChaliceApp()):
+        with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
+            with mock.patch.object(gac, "short_env_name", mock_short_env_name):
+                authtoken = create_test_authtoken_invalid_auth0_secret()
+                request = create_test_request(authtoken)
+                response = AUTH.authorize(request, ALLOWED_ENV)
+                assert_unauthenticated_response(response)
 
 
 def test_react_authorize_munged():
-    with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
-        with mock.patch.object(gac, "short_env_name", mock_short_env_name):
-            authtoken = create_test_authtoken_munged()
-            request = create_test_request(authtoken)
-            response = AUTH.authorize(request, ALLOWED_ENV)
-            assert_unauthenticated_response(response)
+    with mock.patch.object(auth, "app", MockChaliceApp()):
+        with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
+            with mock.patch.object(gac, "short_env_name", mock_short_env_name):
+                authtoken = create_test_authtoken_munged()
+                request = create_test_request(authtoken)
+                response = AUTH.authorize(request, ALLOWED_ENV)
+                assert_unauthenticated_response(response)
