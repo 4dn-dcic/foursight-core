@@ -47,7 +47,7 @@ def publish_package(pypi_username: str = None, pypi_password: str = None):
     if verbose:
         print(" ".join(poetry_publish_command))
     poetry_publish_results = execute_command(poetry_publish_command)
-    print(poetry_publish_results)
+    print("\n".join(poetry_publish_results))
 
 
 def verify_untracked_files() -> bool:
