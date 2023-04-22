@@ -16,7 +16,8 @@ from typing import Union
 
 def main() -> None:
 
-    print(execute_command("uname -a"))
+    if "GITHUB_ACTIONS" in os.environ:
+        print("Running PyPi publish script in GitHub Actions environment.")
 
     argp = argparse.ArgumentParser()
     argp.add_argument("--noconfirm", required=False, dest="noconfirm", action="store_true")
