@@ -169,6 +169,7 @@ def execute_command(command_argv: list, lines_containing: str = None) -> list:
     result as a list of lines from the output of the command.
     """
     def remove_funny_output(output: str) -> str:
+        return output
         return output.replace("('", "").replace("',)", "").replace("\\n\\n", "\n").replace("\\n", "\n")
 
     print('exect/a')
