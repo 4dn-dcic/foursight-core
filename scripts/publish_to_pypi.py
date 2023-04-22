@@ -33,7 +33,7 @@ def main() -> None:
     repo_name = get_repo_name()
     tag_name = get_tag_name()
 
-    if answered_yes_to_confirmation("Do you want to publish {repo_name} {tag_name} to PyPi?"):
+    if answered_yes_to_confirmation(f"Do you want to publish {repo_name} {tag_name} to PyPi?"):
         print(f"Publishing {repo_name} {tag_name} PyPi ...")
         publish_package()
 
