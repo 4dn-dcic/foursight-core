@@ -13,6 +13,8 @@ import toml
 
 
 def main() -> None:
+    print(get_repo_name())
+    print(get_tag_name())
 
     if not verify_uncommitted_changes():
         exit_with_no_action()
@@ -29,6 +31,7 @@ def main() -> None:
     if not verify_untracked_files():
         exit_with_no_action()
 
+    print(f"Publishing {get_repo_name()} {get_tag_name()} ...")
     publish_package()
 
 
@@ -129,6 +132,20 @@ def get_untracked_files() -> list:
                 if untracked_file:
                     untracked_files.append(untracked_file)
     return untracked_files
+
+
+def get_tag_name() -> str:
+    tag_commit = execute_command(["git",  "rev-list", "--tags", "--max-count=1"])
+    tag_name = execute_command(["git",  "describe", "--tags",  tag_commit[0]])
+    return tag_name[0]
+
+
+def get_repo_name() -> str:
+    repo_name = execute_command("git config --get remote.origin.url".split(" "))
+    repo_name = os.path.basename(repo_name[0])
+    if repo_name.endswith(".git"):
+        repo_name = repo_name[:-4]
+    return repo_name
 
 
 def get_package_directories() -> list:
