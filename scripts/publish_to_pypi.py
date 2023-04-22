@@ -167,6 +167,9 @@ def execute_command(command_argv: list, lines_containing: str = None) -> list:
     Executes the given command as a command-line subprocess, and returns the
     result as a list of lines from the output of the command.
     """
+    def remove_funny_output(output: str) -> str:
+        return output.replace("('", "").replace("',)", "").replace("\\n\\n", "\n").replace("\\n", "\n"))
+
     print('exect/a')
     lines = subprocess.run(command_argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode("utf-8").split("\n")
     print('exect/b')
@@ -176,7 +179,8 @@ def execute_command(command_argv: list, lines_containing: str = None) -> list:
         lines = [line for line in lines if lines_containing in line]
     print('exect/d')
     print([line.strip() for line in lines if line])
-    return [line.strip() for line in lines if line]
+    #return [line.strip() for line in lines if line]
+    return [remove_funny_output(line.strip()) for line in lines if line]
 
 
 def get_poetry_command() -> str:
