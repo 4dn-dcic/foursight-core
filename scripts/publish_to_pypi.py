@@ -33,9 +33,11 @@ def main() -> None:
     repo_name = get_repo_name()
     tag_name = get_tag_name()
 
-    if answered_yes_to_confirmation(f"Do you want to publish {repo_name} {tag_name} to PyPi?"):
-        print(f"Publishing {repo_name} {tag_name} PyPi ...")
-        publish_package()
+    if not answered_yes_to_confirmation(f"Do you want to publish {repo_name} {tag_name} to PyPi?"):
+        exit_with_no_action()
+
+    print(f"Publishing {repo_name} {tag_name} PyPi ...")
+    publish_package()
 
 
 def publish_package(pypi_username: str = None, pypi_password: str = None):
