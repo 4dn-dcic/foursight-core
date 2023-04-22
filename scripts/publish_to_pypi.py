@@ -43,10 +43,6 @@ def publish_package(pypi_username: str = None, pypi_password: str = None):
         "--build",
         f"--username={pypi_username}", f"--password={pypi_password}"
     ]
-    poetry_command = get_poetry_command()
-    verbose = True
-    if verbose:
-        print(" ".join(poetry_publish_command))
     poetry_publish_results = execute_command(poetry_publish_command)
     print("\n".join(poetry_publish_results))
 
@@ -166,11 +162,6 @@ def execute_command(command_argv: list, lines_containing: str = None) -> list:
     if lines_containing:
         lines = [line for line in lines if lines_containing in line]
     return [remove_funny_output(line.strip()) for line in lines if line.strip()]
-
-
-def get_poetry_command() -> str:
-    response = execute_command(["which", "poetry"])
-    return response[0] if response else "poetry"
 
 
 def answered_yes_to_confirmation(message: str) -> bool:
