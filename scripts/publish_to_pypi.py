@@ -22,18 +22,23 @@ def main() -> None:
 
     print('a')
     if not verify_unstaged_changes():
+        print('a1')
         exit_with_no_action()
 
     if not verify_uncommitted_changes():
+        print('a2')
         exit_with_no_action()
 
     if not verify_unpushed_changes():
+        print('a3')
         exit_with_no_action()
 
     if not verify_tagged():
+        print('a4')
         exit_with_no_action()
 
     if not verify_untracked_files():
+        print('a5')
         exit_with_no_action()
     print('b')
 
