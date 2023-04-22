@@ -173,7 +173,7 @@ def execute_command(command_argv: list, lines_containing: str = None) -> list:
 
     print('exect/a')
     #lines = subprocess.run(command_argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode("utf-8").split("\n")
-    lines = subprocess.run(command_argv, capture_output=True).stdout.decode("utf-8").split("\n")
+    lines = subprocess.run(command_argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8").split("\n")
     print('exect/b')
     print(lines)
     print('exect/c')
