@@ -49,14 +49,15 @@ def publish_package(pypi_username: str = None, pypi_password: str = None):
     verbose = True
     if verbose:
         print(" ".join(poetry_publish_command))
-    #poetry_publish_results = execute_command(poetry_publish_command)
-    print('exec!/a')
-    os.execv(poetry_command, poetry_publish_command)
-    print('exec!/b')
+    poetry_publish_results = execute_command(poetry_publish_command)
+    #print('exec!/a')
+    #os.execv(poetry_command, poetry_publish_command)
+    #print('exec!/b')
     print('abc')
     print(poetry_publish_results)
     print('def')
     print("\n".join(poetry_publish_results))
+    print('ghi')
 
 
 def verify_untracked_files() -> bool:
@@ -168,7 +169,7 @@ def execute_command(command_argv: list, lines_containing: str = None) -> list:
     result as a list of lines from the output of the command.
     """
     def remove_funny_output(output: str) -> str:
-        return output.replace("('", "").replace("',)", "").replace("\\n\\n", "\n").replace("\\n", "\n"))
+        return output.replace("('", "").replace("',)", "").replace("\\n\\n", "\n").replace("\\n", "\n")
 
     print('exect/a')
     lines = subprocess.run(command_argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode("utf-8").split("\n")
