@@ -51,7 +51,7 @@ def publish_package(pypi_username: str = None, pypi_password: str = None):
         print(" ".join(poetry_publish_command))
     #poetry_publish_results = execute_command(poetry_publish_command)
     print('exec!/a')
-    os.execv(poetry_command, poetry_publish_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    os.execv(poetry_command, poetry_publish_command)
     print('exec!/b')
     print('abc')
     print(poetry_publish_results)
