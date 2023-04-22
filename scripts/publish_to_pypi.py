@@ -62,7 +62,7 @@ def verify_unstaged_changes() -> bool:
     """
     git_diff_results = execute_command(["git", "diff"])
     if git_diff_results:
-        print("You have made changes to this branch that you have not committed.")
+        print("You have made changes to this branch that you have not staged for commit.")
         return False
     return True
 
@@ -86,7 +86,7 @@ def verify_unpushed_changes() -> bool:
     """
     git_uno_results = execute_command(["git", "status", "-uno"], lines_containing="is ahead of")
     if git_uno_results:
-        print("You have committed but unpushed changes.")
+        print("You have committed changes to thi branch that you have not pushed.")
         return False
     return True
 
