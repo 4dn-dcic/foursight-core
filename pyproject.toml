@@ -49,4 +49,3 @@ decrypt-accounts-file = "foursight_core.scripts.decrypt_accounts_file:main"
 [build-system]
 requires = ["poetry_core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
-
