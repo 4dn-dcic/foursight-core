@@ -17,9 +17,8 @@ from typing import Union
 def main() -> None:
 
     argp = argparse.ArgumentParser()
-    argp.add_argument("--noconfirm", required=False, dest="confirm", action="store_false")
+    argp.add_argument("--noconfirm", required=False, dest="noconfirm", action="store_true")
     args = argp.parse_args()
-    print(args.confirm)
 
     if not verify_unstaged_changes():
         exit_with_no_action()
@@ -39,7 +38,7 @@ def main() -> None:
     repo_name = get_repo_name()
     tag_name = get_tag_name()
 
-    if args.confirm:
+    if not args.noconfirm:
         if answered_yes_to_confirmation(f"Do you want to publish {repo_name} {tag_name} to PyPi?"):
             exit_with_no_action()
 
