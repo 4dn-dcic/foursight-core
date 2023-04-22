@@ -75,7 +75,7 @@ def verify_untracked_files() -> bool:
             return False
 
 
-def verify_uncommitted_changes() ->  bool:
+def verify_uncommitted_changes() -> bool:
     """
     If the current git repo has no uncommitted changes then returns True,
     otherwise prints a warning and returns False.
@@ -87,7 +87,7 @@ def verify_uncommitted_changes() ->  bool:
     return True
 
 
-def verify_uncommitted_staged_changes() ->  bool:
+def verify_uncommitted_staged_changes() -> bool:
     """
     If the current git repo has no staged but uncommitted changes then returns True,
     otherwise prints a warning and returns False.
@@ -182,7 +182,8 @@ def execute_command(command_argv: Union[list, str], lines_containing: str = None
 
     if isinstance(command_argv, str):
         command_argv = [arg for arg in command_argv.split(" ") if arg.strip()]
-    lines = subprocess.run(command_argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8").split("\n")
+    lines = subprocess.run(command_argv, stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT).stdout.decode("utf-8").split("\n")
     if lines_containing:
         lines = [line for line in lines if lines_containing in line]
     return [cleanup_funny_output(line.strip()) for line in lines if line.strip()]
@@ -201,7 +202,7 @@ def answered_yes_to_confirmation(message: str) -> bool:
 
 def exit_with_no_action() -> None:
     """
-    Exits this process immediately, but first printing a message saying no action was taken. 
+    Exits this process immediately, but first printing a message saying no action was taken.
     """
     print("Exiting without taking action.")
     exit(1)
