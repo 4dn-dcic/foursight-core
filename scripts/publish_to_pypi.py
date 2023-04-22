@@ -47,6 +47,9 @@ def publish_package(pypi_username: str = None, pypi_password: str = None):
     if verbose:
         print(" ".join(poetry_publish_command))
     poetry_publish_results = execute_command(poetry_publish_command)
+    print('abc')
+    print(poetry_publish_results)
+    print('def')
     print("\n".join(poetry_publish_results))
 
 
