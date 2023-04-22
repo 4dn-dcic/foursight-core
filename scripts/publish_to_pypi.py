@@ -180,7 +180,6 @@ def execute_command(command_argv: Union[list, str], lines_containing: str = None
 
     if isinstance(command_argv, str):
         command_argv = [arg for arg in command_argv.split(" ") if arg.strip()]
-    print(command_argv)
     lines = subprocess.run(command_argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8").split("\n")
     if lines_containing:
         lines = [line for line in lines if lines_containing in line]
