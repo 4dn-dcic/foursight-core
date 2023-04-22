@@ -14,10 +14,6 @@ from typing import Union
 
 
 def main() -> None:
-    repo_name = get_repo_name()
-    tag_name = get_tag_name()
-    print(repo_name)
-    print(tag_name)
 
     if not verify_uncommitted_changes():
         exit_with_no_action()
