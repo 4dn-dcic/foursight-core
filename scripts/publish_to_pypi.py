@@ -162,7 +162,12 @@ def execute_command(command_argv: list, lines_containing: str = None) -> list:
     result as a list of lines from the output of the command.
     """
     print('exect/a')
-    lines = subprocess.run(command_argv, stdout=subprocess.PIPE).stdout.decode("utf-8").split("\n")
+    #lines = subprocess.run(command_argv, stdout=subprocess.PIPE).stdout.decode("utf-8").split("\n")
+    lines = subprocess.run(command_argv, stdout=subprocess.PIPE)
+    print('exect/a1')
+    print(lines)
+    print('exect/a2')
+    lines = lines.stdout.decode("utf-8").split("\n")
     print('exect/b')
     print(lines)
     print('exect/c')
