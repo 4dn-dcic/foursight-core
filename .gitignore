@@ -28,5 +28,3 @@ out/*
 # venv stuff
 .python-version
 .python-cmd
-
-foursight_core/react/api/a
