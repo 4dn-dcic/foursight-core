@@ -16,12 +16,16 @@ from typing import Union
 
 def main() -> None:
 
-    if "GITHUB_ACTIONS" in os.environ:
-        print("Running PyPi publish script in GitHub Actions environment.")
+    def is_github_actions_context():
+        return "GITHUB_ACTIONS" in os.environ
 
     argp = argparse.ArgumentParser()
     argp.add_argument("--noconfirm", required=False, dest="noconfirm", action="store_true")
     args = argp.parse_args()
+
+    if args.noconfirm and not is_github_actions_context():
+        print("The --noconfirm flag is only allowed within GitHub actions!")
+        exit_with_no_action()
 
     if not verify_unstaged_changes():
         exit_with_no_action()
