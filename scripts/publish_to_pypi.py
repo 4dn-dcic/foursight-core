@@ -10,11 +10,14 @@
 import os
 import subprocess
 import toml
+from typing import Union
 
 
 def main() -> None:
-    print(get_repo_name())
-    print(get_tag_name())
+    repo_name = get_repo_name()
+    tag_name = get_tag_name()
+    print(repo_name)
+    print(tag_name)
 
     if not verify_uncommitted_changes():
         exit_with_no_action()
@@ -31,8 +34,12 @@ def main() -> None:
     if not verify_untracked_files():
         exit_with_no_action()
 
-    print(f"Publishing {get_repo_name()} {get_tag_name()} ...")
-    publish_package()
+    repo_name = get_repo_name()
+    tag_name = get_tag_name()
+
+    if answered_yes_to_confirmation("Do you want to publish {repo_name} {tag_name} to PyPi?"):
+        print(f"Publishing {repo_name} {tag_name} PyPi ...")
+        publish_package()
 
 
 def publish_package(pypi_username: str = None, pypi_password: str = None):
@@ -135,8 +142,8 @@ def get_untracked_files() -> list:
 
 
 def get_tag_name() -> str:
-    tag_commit = execute_command(["git",  "rev-list", "--tags", "--max-count=1"])
-    tag_name = execute_command(["git",  "describe", "--tags",  tag_commit[0]])
+    tag_commit = execute_command("git rev-list --tags --max-count=1")
+    tag_name = execute_command(f"git  describe --tags  {tag_commit[0]}")
     return tag_name[0]
 
 
@@ -167,18 +174,21 @@ def get_package_directories() -> list:
     return package_directories
 
 
-def execute_command(command_argv: list, lines_containing: str = None) -> list:
+def execute_command(command_argv: Union[list, str], lines_containing: str = None) -> list:
     """
     Executes the given command as a command-line subprocess, and returns the
     result as a list of lines from the output of the command.
     """
-    def remove_funny_output(output: str) -> str:
+    def cleanup_funny_output(output: str) -> str:
         return output.replace("('", "").replace("',)", "").replace("\\n\\n", "\n").replace("\\n", "\n")
 
+    if isinstance(command_argv, str):
+        command_argv = [arg for arg in command_argv.split(" ") if arg.strip()]
+    print(command_argv)
     lines = subprocess.run(command_argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8").split("\n")
     if lines_containing:
         lines = [line for line in lines if lines_containing in line]
-    return [remove_funny_output(line.strip()) for line in lines if line.strip()]
+    return [cleanup_funny_output(line.strip()) for line in lines if line.strip()]
 
 
 def answered_yes_to_confirmation(message: str) -> bool:
