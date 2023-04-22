@@ -64,7 +64,7 @@ def verify_untracked_files() -> bool:
     """
     untracked_files = get_untracked_files()
     if untracked_files:
-        print(f"WARNING: You are about to PUBLISH the following {len(untracked_files)}"
+        print(f"WARNING: You are about to PUBLISH the following ({len(untracked_files)})"
               f" UNTRACKED file{'' if len(untracked_files) == 1 else 's' } -> SECURITY risk:")
         for untracked_file in untracked_files:
             print(f"-- {untracked_file}")
