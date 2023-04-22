@@ -7,6 +7,7 @@
 # - The git repo package directories MUST contain NO untracked files,
 #   OR if they do you must confirm that this is okay.
 
+import argparse
 import os
 import subprocess
 import toml
@@ -14,6 +15,11 @@ from typing import Union
 
 
 def main() -> None:
+
+    argp = argparse.ArgumentParser()
+    argp.add_argument("--noconfirm", required=False, dest="confirm", action="store_false")
+    args = argp.parse_args()
+    print(args.confirm)
 
     if not verify_unstaged_changes():
         exit_with_no_action()
@@ -33,8 +39,9 @@ def main() -> None:
     repo_name = get_repo_name()
     tag_name = get_tag_name()
 
-    if not answered_yes_to_confirmation(f"Do you want to publish {repo_name} {tag_name} to PyPi?"):
-        exit_with_no_action()
+    if args.confirm:
+        if answered_yes_to_confirmation(f"Do you want to publish {repo_name} {tag_name} to PyPi?"):
+            exit_with_no_action()
 
     print(f"Publishing {repo_name} {tag_name} PyPi ...")
     publish_package()
