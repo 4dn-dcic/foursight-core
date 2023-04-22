@@ -64,4 +64,4 @@ if [ "${do_confirm}" = "yes" ]; then
   fi
 fi
 
-poetry publish  --branch C4-1017-check-certificate-and-access-key-DEBUG --no-interaction --build --username=$PYPI_USER --password=$PYPI_PASSWORD
+poetry publish --no-interaction --build --username=$PYPI_USER --password=$PYPI_PASSWORD
