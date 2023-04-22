@@ -16,6 +16,8 @@ from typing import Union
 
 def main() -> None:
 
+    print(execute_command("uname -a"))
+
     argp = argparse.ArgumentParser()
     argp.add_argument("--noconfirm", required=False, dest="noconfirm", action="store_true")
     args = argp.parse_args()
