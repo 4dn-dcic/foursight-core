@@ -161,7 +161,7 @@ def execute_command(command_argv: list, lines_containing: str = None) -> list:
     Executes the given command as a command-line subprocess, and returns the
     result as a list of lines from the output of the command.
     """
-    lines = subprocess.run(command_argv, stdout=subprocess.PIPE).stdout.decode("utf-8").split("\n")
+    lines = subprocess.run(command_argv, stdout=subprocess.PIPE, text=True).stdout.decode("utf-8").split("\n")
     if lines_containing:
         lines = [line for line in lines if lines_containing in line]
     return [line.strip() for line in lines if line]
