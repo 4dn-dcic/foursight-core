@@ -43,10 +43,16 @@ def publish_package(pypi_username: str = None, pypi_password: str = None):
         "--build",
         f"--username={pypi_username}", f"--password={pypi_password}"
     ]
+    poetry_command = get_poetry_command()
+    print('xyzzy/a')
+    print(poetry_command)
     verbose = True
     if verbose:
         print(" ".join(poetry_publish_command))
-    poetry_publish_results = execute_command(poetry_publish_command)
+    #poetry_publish_results = execute_command(poetry_publish_command)
+    print('exec!/a')
+    os.execv(poetry_command, poetry_publish_command)
+    print('exec!/b')
     print('abc')
     print(poetry_publish_results)
     print('def')
@@ -162,12 +168,7 @@ def execute_command(command_argv: list, lines_containing: str = None) -> list:
     result as a list of lines from the output of the command.
     """
     print('exect/a')
-    #lines = subprocess.run(command_argv, stdout=subprocess.PIPE).stdout.decode("utf-8").split("\n")
-    lines = subprocess.run(command_argv, stdout=subprocess.PIPE)
-    print('exect/a1')
-    print(lines)
-    print('exect/a2')
-    lines = lines.stdout.decode("utf-8").split("\n")
+    lines = subprocess.run(command_argv, stdout=subprocess.PIPE).stdout.decode("utf-8").split("\n")
     print('exect/b')
     print(lines)
     print('exect/c')
@@ -176,6 +177,11 @@ def execute_command(command_argv: list, lines_containing: str = None) -> list:
     print('exect/d')
     print([line.strip() for line in lines if line])
     return [line.strip() for line in lines if line]
+
+
+def get_poetry_command() -> str:
+    response = execute_command(["which", "poetry"])
+    return response[0] if response else "poetry"
 
 
 def answered_yes_to_confirmation(message: str) -> bool:
