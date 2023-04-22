@@ -135,10 +135,9 @@ def verify_untracked_files() -> bool:
         for untracked_file in untracked_files:
             print(f"-- {untracked_file}")
         print("DO NOT continue UNLESS you KNOW what you are doing!")
-        if answered_yes_to_confirmation("Do you really want to continue?"):
-            return True
-        else:
+        if not answered_yes_to_confirmation("Do you really want to continue?"):
             return False
+    return True
 
 
 def get_untracked_files() -> list:
