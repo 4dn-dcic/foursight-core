@@ -6,6 +6,11 @@
 # - The git repo MUST contain NO uncommitted but unpushed changes.
 # - The git repo package directories MUST contain NO untracked files,
 #   OR if they do you must confirm that this is okay.
+#
+# Prompts for yes or no before publish is actually done.
+# There is a --noconfirm option to skip this confimation, however
+# it is only allowed when running in the context of GitHub actions -
+# it checks for the GITHUB_ACTIONS environment variable.
 
 import argparse
 import os
