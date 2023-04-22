@@ -1,11 +1,11 @@
 # Script to publish the Python package in the current git repo to PyPi.
 # Does the following checks before allowing a publish:
 #
-# - The git repo must contain no uncommitted (unstaged) changes.
-# - The git repo must contain no staged but uncommitted changes.
-# - The git repo must contain no uncommitted but unpushed changes.
-# - The git repo package directories must contain no untracked files,
-#   or if they do you must confirm that this is okay.
+# - The git repo MUST contain NO uncommitted (unstaged) changes.
+# - The git repo MUST contain NO staged but uncommitted changes.
+# - The git repo MUST contain NO uncommitted but unpushed changes.
+# - The git repo package directories MUST contain NO untracked files,
+#   OR if they do you must confirm that this is okay.
 
 import os
 import subprocess
@@ -15,13 +15,13 @@ from typing import Union
 
 def main() -> None:
 
+    if not verify_unstaged_changes():
+        exit_with_no_action()
+
     if not verify_uncommitted_changes():
         exit_with_no_action()
 
-    if not verify_uncommitted_staged_changes():
-        exit_with_no_action()
-
-    if not verify_committed_unpushed_changes():
+    if not verify_unpushed_changes():
         exit_with_no_action()
 
     if not verify_tagged():
@@ -55,27 +55,7 @@ def publish_package(pypi_username: str = None, pypi_password: str = None):
     print("\n".join(poetry_publish_results))
 
 
-def verify_untracked_files() -> bool:
-    """
-    If the current git repo has no untracked files then returns True,
-    otherwise prints a warning, and with the list of untraced files,
-    and prompts the user for a yes/no confirmation on whether or to
-    continue, and returns True for a yes response, otherwise returns False.
-    """
-    untracked_files = get_untracked_files()
-    if untracked_files:
-        print(f"WARNING: You are about to PUBLISH the following ({len(untracked_files)})"
-              f" UNTRACKED file{'' if len(untracked_files) == 1 else 's' } -> SECURITY risk:")
-        for untracked_file in untracked_files:
-            print(f"-- {untracked_file}")
-        print("DO NOT continue UNLESS you KNOW what you are doing!")
-        if answered_yes_to_confirmation("Do you really want to continue?"):
-            return True
-        else:
-            return False
-
-
-def verify_uncommitted_changes() -> bool:
+def verify_unstaged_changes() -> bool:
     """
     If the current git repo has no uncommitted changes then returns True,
     otherwise prints a warning and returns False.
@@ -87,7 +67,7 @@ def verify_uncommitted_changes() -> bool:
     return True
 
 
-def verify_uncommitted_staged_changes() -> bool:
+def verify_uncommitted_changes() -> bool:
     """
     If the current git repo has no staged but uncommitted changes then returns True,
     otherwise prints a warning and returns False.
@@ -99,7 +79,7 @@ def verify_uncommitted_staged_changes() -> bool:
     return True
 
 
-def verify_committed_unpushed_changes() -> bool:
+def verify_unpushed_changes() -> bool:
     """
     If the current git repo committed but unpushed changes then returns True,
     otherwise prints a warning and returns False.
@@ -121,6 +101,26 @@ def verify_tagged() -> bool:
         print("You can only publish a tagged commit.")
         return False
     return True
+
+
+def verify_untracked_files() -> bool:
+    """
+    If the current git repo has no untracked files then returns True,
+    otherwise prints a warning, and with the list of untraced files,
+    and prompts the user for a yes/no confirmation on whether or to
+    continue, and returns True for a yes response, otherwise returns False.
+    """
+    untracked_files = get_untracked_files()
+    if untracked_files:
+        print(f"WARNING: You are about to PUBLISH the following ({len(untracked_files)})"
+              f" UNTRACKED file{'' if len(untracked_files) == 1 else 's' } -> SECURITY risk:")
+        for untracked_file in untracked_files:
+            print(f"-- {untracked_file}")
+        print("DO NOT continue UNLESS you KNOW what you are doing!")
+        if answered_yes_to_confirmation("Do you really want to continue?"):
+            return True
+        else:
+            return False
 
 
 def get_untracked_files() -> list:
