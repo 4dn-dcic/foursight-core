@@ -44,20 +44,11 @@ def publish_package(pypi_username: str = None, pypi_password: str = None):
         f"--username={pypi_username}", f"--password={pypi_password}"
     ]
     poetry_command = get_poetry_command()
-    print('xyzzy/a')
-    print(poetry_command)
     verbose = True
     if verbose:
         print(" ".join(poetry_publish_command))
     poetry_publish_results = execute_command(poetry_publish_command)
-    #print('exec!/a')
-    #os.execv(poetry_command, poetry_publish_command)
-    #print('exec!/b')
-    print('abc')
-    print(poetry_publish_results)
-    print('def')
     print("\n".join(poetry_publish_results))
-    print('ghi')
 
 
 def verify_untracked_files() -> bool:
@@ -169,21 +160,12 @@ def execute_command(command_argv: list, lines_containing: str = None) -> list:
     result as a list of lines from the output of the command.
     """
     def remove_funny_output(output: str) -> str:
-        return output
         return output.replace("('", "").replace("',)", "").replace("\\n\\n", "\n").replace("\\n", "\n")
 
-    print('exect/a')
-    #lines = subprocess.run(command_argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode("utf-8").split("\n")
     lines = subprocess.run(command_argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8").split("\n")
-    print('exect/b')
-    print(lines)
-    print('exect/c')
     if lines_containing:
         lines = [line for line in lines if lines_containing in line]
-    print('exect/d')
-    print([line.strip() for line in lines if line])
-    #return [line.strip() for line in lines if line]
-    return [remove_funny_output(line.strip()) for line in lines if line]
+    return [remove_funny_output(line.strip()) for line in lines if line.strip()]
 
 
 def get_poetry_command() -> str:
