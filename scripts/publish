@@ -1,1 +1,2 @@
+pip install toml
 python scripts/publish_to_pypi.py
