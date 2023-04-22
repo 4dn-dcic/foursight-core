@@ -20,39 +20,27 @@ def main() -> None:
     argp.add_argument("--noconfirm", required=False, dest="noconfirm", action="store_true")
     args = argp.parse_args()
 
-    print('a')
     if not verify_unstaged_changes():
-        print('a1')
         exit_with_no_action()
 
     if not verify_uncommitted_changes():
-        print('a2')
         exit_with_no_action()
 
     if not verify_unpushed_changes():
-        print('a3')
         exit_with_no_action()
 
     if not verify_tagged():
-        print('a4')
         exit_with_no_action()
 
     if not verify_untracked_files():
-        print('a5')
         exit_with_no_action()
-    print('b')
 
     repo_name = get_repo_name()
     tag_name = get_tag_name()
 
-    print('c')
     if not args.noconfirm:
-        print('d')
         if answered_yes_to_confirmation(f"Do you want to publish {repo_name} {tag_name} to PyPi?"):
-            print('e')
             exit_with_no_action()
-        print('f')
-    print('g')
 
     print(f"Publishing {repo_name} {tag_name} PyPi ...")
     publish_package()
