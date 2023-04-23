@@ -155,7 +155,7 @@ def verify_not_already_published(package_name: str, package_version: str) -> boo
     if package_version.startswith("v"):
         package_version = package_version[1:]
     response = requests.get(f"https://pypi.org/project/{package_name}/{package_version}/")
-    if response.status_code == 200
+    if response.status_code == 200:
         print(f"Package {package_name} {package_version} has already been published to PyPi.")
         return False
     return True
