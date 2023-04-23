@@ -65,11 +65,11 @@ def main() -> None:
             exit_with_no_action()
 
     print(f"Publishing {package_name} {package_version} to PyPi ...")
+
     if not publish_package():
-        print(f"Publish of {package_name} {package_version} to PyPi failed!")
-    else:
-        print(f"Publishing {package_name} {package_version} to PyPi complete.")
-    exit(0)
+        exit_with_no_action()
+
+    print(f"Publishing {package_name} {package_version} to PyPi complete.")
 
 
 def publish_package(pypi_username: str = None, pypi_password: str = None) -> bool:
@@ -84,7 +84,10 @@ def publish_package(pypi_username: str = None, pypi_password: str = None) -> boo
     ]
     poetry_publish_results, status_code = execute_command(poetry_publish_command)
     print("\n".join(poetry_publish_results))
-    return status_code == 0
+    if status_code != 0:
+        print(f"Publish of {package_name} {package_version} to PyPi failed!")
+        return False
+    return True
 
 
 def verify_unstaged_changes() -> bool:
