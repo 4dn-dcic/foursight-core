@@ -152,6 +152,10 @@ def verify_untracked_files() -> bool:
 
 
 def verify_not_already_published(package_name: str, package_version: str) -> bool:
+    """
+    If the given package and version has not already been published to PyPi then returns True,
+    otherwise prints a warning and returns False.
+    """
     response = requests.get(f"https://pypi.org/project/{package_name}/{package_version}/")
     if response.status_code == 200:
         print(f"Package {package_name} {package_version} has already been published to PyPi.")
