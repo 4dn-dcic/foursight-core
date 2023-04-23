@@ -84,7 +84,7 @@ def publish_package(pypi_username: str = None, pypi_password: str = None) -> boo
     ]
     poetry_publish_results, status_code = execute_command(poetry_publish_command)
     print("\n".join(poetry_publish_results))
-    return status_code == 0:
+    return status_code == 0
 
 
 def verify_unstaged_changes() -> bool:
