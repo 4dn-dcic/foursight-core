@@ -61,7 +61,7 @@ def main() -> None:
 
     print(f"Publishing {repo_name} {tag_name} to PyPi ...")
     publish_package()
-    print(f"Publishing {repo_name} {tag_name} to PyPi complete."
+    print(f"Publishing {repo_name} {tag_name} to PyPi complete.")
     exit(0)
 
 
