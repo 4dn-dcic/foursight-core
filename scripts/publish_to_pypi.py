@@ -26,6 +26,9 @@ import toml
 from typing import Tuple, Union
 
 
+DEBUG = False
+
+
 def main() -> None:
 
     def is_github_actions_context():
@@ -33,7 +36,12 @@ def main() -> None:
 
     argp = argparse.ArgumentParser()
     argp.add_argument("--noconfirm", required=False, dest="noconfirm", action="store_true")
+    argp.add_argument("--debug", required=False, dest="debug", action="store_true")
     args = argp.parse_args()
+
+    if args.debug:
+        global DEBUG
+        DEBUG = True
 
     if args.noconfirm and not is_github_actions_context():
         print("The --noconfirm flag is only allowed within GitHub actions!")
@@ -100,7 +108,7 @@ def verify_unstaged_changes() -> bool:
     """
     git_diff_results, _ = execute_command(["git", "diff"])
     if git_diff_results:
-        print("You have made changes to this branch that you have not staged for commit.")
+        print("You have changes to this branch that you have not staged for commit.")
         return False
     return True
 
@@ -240,9 +248,13 @@ def execute_command(command_argv: Union[list, str], lines_containing: str = None
 
     if isinstance(command_argv, str):
         command_argv = [arg for arg in command_argv.split(" ") if arg.strip()]
+    if DEBUG:
+        print(f"DEBUG: {' '.join(command_argv)}")
     result = subprocess.run(command_argv, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT)
     lines = result.stdout.decode("utf-8").split("\n")
+    if DEBUG:
+        print(f"DEBUG: {lines}")
     if lines_containing:
         lines = [line for line in lines if lines_containing in line]
     return [cleanup_funny_output(line.strip()) for line in lines if line.strip()], result.returncode
