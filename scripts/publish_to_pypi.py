@@ -1,16 +1,21 @@
 # Script to publish the Python package in the current git repo to PyPi.
 # Does the following checks before allowing a publish:
 #
-# - The git repo MUST contain NO uncommitted (unstaged) changes.
-# - The git repo MUST contain NO staged but uncommitted changes.
-# - The git repo MUST contain NO uncommitted but unpushed changes.
-# - The git repo package directories MUST contain NO untracked files,
-#   OR if they do you must confirm that this is okay.
+# 1. The git repo MUST contain NO uncommitted (unstaged) changes.
+# 2. The git repo MUST contain NO staged but uncommitted changes.
+# 3. The git repo MUST contain NO uncommitted but unpushed changes.
+# 4. The git repo package directories MUST contain NO untracked files,
+#    OR if they do you must confirm that this is okay.
 #
 # Prompts for yes or no before publish is actually done.
 # There is a --noconfirm option to skip this confimation, however
 # it is only allowed when running in the context of GitHub actions -
 # it checks for the GITHUB_ACTIONS environment variable.
+#
+# FYI created late April 2023 after a junk file containing development
+# logging output containing passwords was accidentally published to
+# PyPi; item #4 above specifically addresses/prevents this. Perhaps
+# better would be if publishing only happened via GitHub actions.
 
 import argparse
 import os
@@ -54,8 +59,10 @@ def main() -> None:
         if not answered_yes_to_confirmation(f"Do you want to publish {repo_name} {tag_name} to PyPi?"):
             exit_with_no_action()
 
-    print(f"Publishing {repo_name} {tag_name} PyPi ...")
+    print(f"Publishing {repo_name} {tag_name} to PyPi ...")
     publish_package()
+    print(f"Publishing {repo_name} {tag_name} to PyPi complete."
+    exit(0)
 
 
 def publish_package(pypi_username: str = None, pypi_password: str = None):
@@ -65,8 +72,7 @@ def publish_package(pypi_username: str = None, pypi_password: str = None):
         pypi_password = os.environ.get("PYPI_PASSWORD")
     poetry_publish_command = [
         "poetry", "publish",
-        "--no-interaction",
-        "--build",
+        "--no-interaction", "--build",
         f"--username={pypi_username}", f"--password={pypi_password}"
     ]
     poetry_publish_results = execute_command(poetry_publish_command)
@@ -225,7 +231,8 @@ def answered_yes_to_confirmation(message: str) -> bool:
 
 def exit_with_no_action() -> None:
     """
-    Exits this process immediately, but first printing a message saying no action was taken.
+    Exits this process immediately with status 1;
+    first prints a message saying no action was taken.
     """
     print("Exiting without taking action.")
     exit(1)
