@@ -23,7 +23,7 @@ import os
 import requests
 import subprocess
 import toml
-from typing import Union
+from typing import Tuple, Union
 
 
 def main() -> None:
@@ -80,8 +80,10 @@ def publish_package(pypi_username: str = None, pypi_password: str = None):
         "--no-interaction", "--build",
         f"--username={pypi_username}", f"--password={pypi_password}"
     ]
-    poetry_publish_results = execute_command(poetry_publish_command)
+    poetry_publish_results, status_code = execute_command(poetry_publish_command)
     print("\n".join(poetry_publish_results))
+    if status_code != 0:
+        print("Publish command failed!")
 
 
 def verify_unstaged_changes() -> bool:
@@ -89,7 +91,7 @@ def verify_unstaged_changes() -> bool:
     If the current git repo has no unstaged changes then returns True,
     otherwise prints a warning and returns False.
     """
-    git_diff_results = execute_command(["git", "diff"])
+    git_diff_results, _ = execute_command(["git", "diff"])
     if git_diff_results:
         print("You have made changes to this branch that you have not staged for commit.")
         return False
@@ -101,7 +103,7 @@ def verify_uncommitted_changes() -> bool:
     If the current git repo has no staged but uncommitted changes then returns True,
     otherwise prints a warning and returns False.
     """
-    git_diff_staged_results = execute_command(["git", "diff", "--staged"])
+    git_diff_staged_results, _ = execute_command(["git", "diff", "--staged"])
     if git_diff_staged_results:
         print("You have staged changes to this branch that you have not committed.")
         return False
@@ -113,7 +115,7 @@ def verify_unpushed_changes() -> bool:
     If the current git repo committed but unpushed changes then returns True,
     otherwise prints a warning and returns False.
     """
-    git_uno_results = execute_command(["git", "status", "-uno"], lines_containing="is ahead of")
+    git_uno_results, _ = execute_command(["git", "status", "-uno"], lines_containing="is ahead of")
     if git_uno_results:
         print("You have committed changes to this branch that you have not pushed.")
         return False
@@ -125,7 +127,7 @@ def verify_tagged() -> bool:
     If the current git repo has a tag as its most recent commit then returns True,
     otherwise prints a warning and returns False.
     """
-    git_most_recent_commit = execute_command(["git", "log", "-1", "--decorate"], lines_containing="tag:")
+    git_most_recent_commit, _ = execute_command(["git", "log", "-1", "--decorate"], lines_containing="tag:")
     if not git_most_recent_commit:
         print("You can only publish a tagged commit.")
         return False
@@ -170,7 +172,7 @@ def get_untracked_files() -> list:
     package_directories = get_package_directories()
     untracked_files = []
     for package_directory in package_directories:
-        git_status_results = execute_command(["git", "status", "-s", package_directory])
+        git_status_results, _ = execute_command(["git", "status", "-s", package_directory])
         for git_status_result in git_status_results:
             if git_status_result and git_status_result.startswith("??"):
                 untracked_file = git_status_result[2:].strip()
@@ -183,8 +185,8 @@ def get_package_version() -> str:
     """
     Returns the tag name of the most recently created tag in the current git repo.
     """
-    tag_commit = execute_command("git rev-list --tags --max-count=1")
-    tag_name = execute_command(f"git  describe --tags  {tag_commit[0]}")
+    tag_commit, _ = execute_command("git rev-list --tags --max-count=1")
+    tag_name, _ = execute_command(f"git  describe --tags  {tag_commit[0]}")
     package_version = tag_name[0]
     if package_version.startswith("v"):
         package_version = package_version[1:]
@@ -195,7 +197,7 @@ def get_package_name() -> str:
     """
     Returns the base name of the current git repo name.
     """
-    package_name = execute_command("git config --get remote.origin.url".split(" "))
+    package_name, _ = execute_command("git config --get remote.origin.url".split(" "))
     package_name = os.path.basename(package_name[0])
     if package_name.endswith(".git"):
         package_name = package_name[:-4]
@@ -221,10 +223,10 @@ def get_package_directories() -> list:
     return package_directories
 
 
-def execute_command(command_argv: Union[list, str], lines_containing: str = None) -> list:
+def execute_command(command_argv: Union[list, str], lines_containing: str = None) -> Tuple[list, int]:
     """
-    Executes the given command as a command-line subprocess, and returns the
-    result as a list of lines from the output of the command.
+    Executes the given command as a command-line subprocess, and returns a tuple whose first element
+    is the list of lines from the output of the command, and the second element is the status code.
     """
     def cleanup_funny_output(output: str) -> str:
         return output.replace("('", "").replace("',)", "").replace("\\n\\n", "\n").replace("\\n", "\n")
@@ -233,13 +235,10 @@ def execute_command(command_argv: Union[list, str], lines_containing: str = None
         command_argv = [arg for arg in command_argv.split(" ") if arg.strip()]
     result = subprocess.run(command_argv, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT)
-    print('xyzzy')
-    print(result)
-    print(result.returncode)
     lines = result.stdout.decode("utf-8").split("\n")
     if lines_containing:
         lines = [line for line in lines if lines_containing in line]
-    return [cleanup_funny_output(line.strip()) for line in lines if line.strip()]
+    return [cleanup_funny_output(line.strip()) for line in lines if line.strip()], result.returncode
 
 
 def answered_yes_to_confirmation(message: str) -> bool:
