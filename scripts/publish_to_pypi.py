@@ -1,4 +1,4 @@
-# Script to publish the Python package in the current git repo to PyPi.
+# Script to publish the Python package in the CURRENT git repo to PyPi.
 # Does the following checks before allowing a publish:
 #
 # 1. The git repo MUST NOT contain unstaged changes.
@@ -8,15 +8,14 @@
 #    OR if they do contain untracked files then you must confirm this is OK.
 # 5. The version being published must NOT have already been published. 
 #
-# Prompts for yes or no before publish is actually done.
-# There is a --noconfirm option to skip this confimation, however
-# it is only allowed when running in the context of GitHub actions -
-# it checks for the GITHUB_ACTIONS environment variable.
-#
-# This ASSUMES you have these environment variables set for PyPi publishing:
+# ASSUMES you have these environment variables correctly set for PyPi publishing:
 #
 # - PYPI_USER
 # - PYPI_PASSWORD
+#
+# Prompts for yes or no before publish is actually done. There is a --noconfirm
+# option to skip this confimation, however it is only allowed when running in the
+# context of GitHub actions - it checks for the GITHUB_ACTIONS environment variable.
 #
 # FYI: This was created late April 2023 after a junk file containing development
 # logging output containing passwords was accidentally published to PyPi;
