@@ -97,16 +97,22 @@ const SslCertificate = (props) => {
                 <td style={tdstyle}>
                     { showDetails ? <>
                         <span onClick={() => setShowDetails(false)} style={{cursor:"pointer"}}>
-                            Hide {Char.DownArrow}
+                            <u>Hide</u> {Char.DownArrow}
                         </span>
                     </>:<>
                         <span onClick={() => setShowDetails(true)} style={{cursor:"pointer"}}>
-                            Show {Char.UpArrow}
+                            <u>Show</u> {Char.UpArrow}
                         </span>
                     </> }
                 </td>
             </tr>
             { showDetails && <>
+                <tr>
+                    <td style={tdlabel}>Error:</td>
+                    <td style={tdstyle}>
+                        {certificate.exception}
+                    </td>
+                </tr>
                 <tr><td style={tdlabel}>Serial Number:</td><td style={tdstyle}>{certificate.serial_number}</td></tr>
                 <tr>
                     <td style={tdlabel}>

@@ -7,6 +7,7 @@ const PortalAccessKey = (props) => {
     const color = props.error ? "darkred" : "inhert";
     const tdstyle = { fontSize: "11pt", color: color, verticalAlign: "top", paddingBottom: "2pt", paddingRight: "10pt", whiteSpace: "nowrap" };
     const tdlabel = { ...tdstyle, width: "1%" };
+    const [ showDetails, setShowDetails ] = useState(false);
     const [ showJson, setShowJson ] = useState(false);
     if (!accessKey) return <></>
     return <>
@@ -37,24 +38,43 @@ const PortalAccessKey = (props) => {
             <tr>
                 <td style={tdlabel}>Expiration Date:</td>
                 <td style={tdstyle}>
-                    {accessKey.expires_at}
-                    { accessKey.expired ? <>
-                        &nbsp;&nbsp;{Char.RightArrow}&nbsp;&nbsp;<b><u>Expired</u></b>&nbsp;&nbsp;{Char.LeftArrow}
-                        &nbsp;&nbsp;<small>{Time.Ago(accessKey.expires_at, true, false)}</small>
+                    { accessKey.expires_at ? <>
+                        { accessKey.expired ? <>
+                            &nbsp;&nbsp;{Char.RightArrow}&nbsp;&nbsp;<b><u>Expired</u></b>&nbsp;&nbsp;{Char.LeftArrow}
+                            &nbsp;&nbsp;<small>{Time.Ago(accessKey.expires_at, true, false)}</small>
+                        </>:<>
+                            &nbsp;{Char.RightArrow}
+                            &nbsp;<small>{Time.FromNow(accessKey.expires_at, true, false)}</small>
+                        </> }
                     </>:<>
-                        &nbsp;{Char.RightArrow}
-                        &nbsp;<small>{Time.FromNow(accessKey.expires_at, true, false)}</small>
+                        Unknown
                     </> }
                 </td>
             </tr>
-            { accessKey.exception &&
-                <tr>
-                    <td style={tdlabel}>Error:</td>
-                    <td style={tdstyle}>
-                        {accessKey.exception}
-                    </td>
-                </tr>
-            }
+            <tr>
+                <td style={tdlabel}>Details:</td>
+                <td style={tdstyle}>
+                    { showDetails ? <>
+                        <span onClick={() => setShowDetails(false)} style={{cursor:"pointer"}}>
+                            <u>Hide</u> {Char.DownArrow}
+                        </span>
+                    </>:<>
+                        <span onClick={() => setShowDetails(true)} style={{cursor:"pointer"}}>
+                            <u>Show</u> {Char.UpArrow}
+                        </span>
+                    </> }
+                </td>
+            </tr>
+            { showDetails && <>
+                { accessKey.exception &&
+                    <tr>
+                        <td style={tdlabel}>Error:</td>
+                        <td style={{...tdstyle,whiteSpace:"pre-wrap"}}>
+                            {accessKey.exception}
+                        </td>
+                    </tr>
+                }
+            </> }
             { showJson && <>
                 <tr><td style={{height:"2pt"}}></td></tr>
                 <tr>

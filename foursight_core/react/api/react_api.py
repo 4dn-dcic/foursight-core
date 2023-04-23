@@ -312,8 +312,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 portal_url = env_utils_get_portal_url(env)
                 data["portal"]["url"] = portal_url
                 data["portal"]["ssl_certificate"] = get_ssl_certificate_info(portal_url)
-                data["portal"]["ssl_certificate"]["name"] = "Portal"
-                data["portal"]["ssl_certificate"]["exception"] = e
+                if data["portal"]["ssl_certificate"]:
+                    data["portal"]["ssl_certificate"]["name"] = "Portal"
+                    data["portal"]["ssl_certificate"]["exception"] = e
         data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
         test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
         if auth.get("user_exception"): # or test_mode_access_key_simulate_error:
