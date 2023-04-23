@@ -25,6 +25,7 @@ publish:
 	scripts/publish
 
 publish-for-ga:
+	pip install toml
 	scripts/publish --noconfirm
 
 .PHONY: react
