@@ -1,11 +1,12 @@
 # Script to publish the Python package in the current git repo to PyPi.
 # Does the following checks before allowing a publish:
 #
-# 1. The git repo MUST contain NO uncommitted (unstaged) changes.
-# 2. The git repo MUST contain NO staged but uncommitted changes.
-# 3. The git repo MUST contain NO uncommitted but unpushed changes.
-# 4. The git repo package directories MUST contain NO untracked files,
-#    OR if they do you must confirm that this is okay.
+# 1. The git repo MUST NOT contain unstaged changes.
+# 2. The git repo MUST NOT contain staged but uncommitted changes.
+# 3. The git repo MUST NOT contain committed but unpushed changes.
+# 4. The git repo package directories MUST NOT contain untracked files,
+#    OR if they do contain untracked files then you must confirm this is OK.
+# 5. The version being published must NOT have already been published. 
 #
 # Prompts for yes or no before publish is actually done.
 # There is a --noconfirm option to skip this confimation, however
@@ -19,6 +20,7 @@
 
 import argparse
 import os
+import requests
 import subprocess
 import toml
 from typing import Union
@@ -52,16 +54,19 @@ def main() -> None:
     if not verify_untracked_files():
         exit_with_no_action()
 
-    repo_name = get_repo_name()
-    tag_name = get_tag_name()
+    package_name = get_package_name()
+    package_version = get_package_version()
+
+    if not verify_not_already_published(package_name, package_version):
+        exit_with_no_action()
 
     if not args.noconfirm:
-        if not answered_yes_to_confirmation(f"Do you want to publish {repo_name} {tag_name} to PyPi?"):
+        if not answered_yes_to_confirmation(f"Do you want to publish {package_name} {package_version} to PyPi?"):
             exit_with_no_action()
 
-    print(f"Publishing {repo_name} {tag_name} to PyPi ...")
+    print(f"Publishing {package_name} {package_version} to PyPi ...")
     publish_package()
-    print(f"Publishing {repo_name} {tag_name} to PyPi complete.")
+    print(f"Publishing {package_name} {package_version} to PyPi complete.")
     exit(0)
 
 
@@ -146,6 +151,13 @@ def verify_untracked_files() -> bool:
     return True
 
 
+def verify_not_already_published(package_name: str, package_version: str) -> bool:
+    if package_version.startswith("v"):
+        package_version = package_version[1:]
+    response = requests.get(f"https://pypi.org/project/{package_name}/{package_version}/")
+    return response.status_code == 200
+
+
 def get_untracked_files() -> list:
     """
     Returns a list of untracked files for the current git repo; empty list of no untracked changes.
@@ -162,24 +174,27 @@ def get_untracked_files() -> list:
     return untracked_files
 
 
-def get_tag_name() -> str:
+def get_package_version() -> str:
     """
     Returns the tag name of the most recently created tag in the current git repo.
     """
     tag_commit = execute_command("git rev-list --tags --max-count=1")
     tag_name = execute_command(f"git  describe --tags  {tag_commit[0]}")
-    return tag_name[0]
+    package_version = tag_name[0]
+    if package_version.startswith("v"):
+        package_version = package_version[1:]
+    return package_version
 
 
-def get_repo_name() -> str:
+def get_package_name() -> str:
     """
     Returns the base name of the current git repo name.
     """
-    repo_name = execute_command("git config --get remote.origin.url".split(" "))
-    repo_name = os.path.basename(repo_name[0])
-    if repo_name.endswith(".git"):
-        repo_name = repo_name[:-4]
-    return repo_name
+    package_name = execute_command("git config --get remote.origin.url".split(" "))
+    package_name = os.path.basename(package_name[0])
+    if package_name.endswith(".git"):
+        package_name = package_name[:-4]
+    return package_name
 
 
 def get_package_directories() -> list:
