@@ -157,7 +157,7 @@ def verify_not_already_published(package_name: str, package_version: str) -> boo
     response = requests.get(f"https://pypi.org/project/{package_name}/{package_version}/")
     print(response)
     print(response.status_code)
-    return response.status_code == 200
+    return response.status_code != 200
 
 
 def get_untracked_files() -> list:
