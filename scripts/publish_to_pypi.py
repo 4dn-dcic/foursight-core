@@ -258,8 +258,6 @@ def execute_command(command_argv: Union[list, str], lines_containing: str = None
     result = subprocess.run(command_argv, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT)
     lines = result.stdout.decode("utf-8").split("\n")
-    if DEBUG:
-        print(f"DEBUG: {lines}")
     if lines_containing:
         lines = [line for line in lines if lines_containing in line]
     return [cleanup_funny_output(line.strip()) for line in lines if line.strip()], result.returncode
