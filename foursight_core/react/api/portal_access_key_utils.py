@@ -21,7 +21,7 @@ def get_portal_access_key_info(env: str,
         connection_keys = connection.ff_keys
         key = connection_keys.get("key")
         if key and obfuscate:
-            key = key[1] + "*******"
+            key = key[0] + "*******"
         secret = connection_keys.get("secret")
         if secret:
             secret = "********" if obfuscate else secret[1] + "*******"
