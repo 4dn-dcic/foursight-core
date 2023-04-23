@@ -77,6 +77,9 @@ def publish_package(pypi_username: str = None, pypi_password: str = None) -> boo
         pypi_username = os.environ.get("PYPI_USER")
     if not pypi_password:
         pypi_password = os.environ.get("PYPI_PASSWORD")
+    if not pypi_username or not pypi_password:
+        print(f"No PyPi credentials. You must have PYPI_USER and PYPI_PASSWORD environment variables set.")
+        return False
     poetry_publish_command = [
         "poetry", "publish",
         "--no-interaction", "--build",
@@ -85,7 +88,7 @@ def publish_package(pypi_username: str = None, pypi_password: str = None) -> boo
     poetry_publish_results, status_code = execute_command(poetry_publish_command)
     print("\n".join(poetry_publish_results))
     if status_code != 0:
-        print(f"Publish of {package_name} {package_version} to PyPi failed!")
+        print(f"Publish to PyPi failed!")
         return False
     return True
 
