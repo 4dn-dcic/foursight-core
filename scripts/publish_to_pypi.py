@@ -13,10 +13,15 @@
 # it is only allowed when running in the context of GitHub actions -
 # it checks for the GITHUB_ACTIONS environment variable.
 #
-# FYI created late April 2023 after a junk file containing development
-# logging output containing passwords was accidentally published to
-# PyPi; item #4 above specifically addresses/prevents this. Perhaps
-# better would be if publishing only happened via GitHub actions.
+# This ASSUMES you have these environment variables set for PyPi publishing:
+#
+# - PYPI_USER
+# - PYPI_PASSWORD
+#
+# FYI: This was created late April 2023 after a junk file containing development
+# logging output containing passwords was accidentally published to PyPi;
+# item #4 above specifically addresses/prevents this. Perhaps better
+# would be if publishing only happened via GitHub actions.
 
 import argparse
 import os
