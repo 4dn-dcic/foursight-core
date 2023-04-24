@@ -6,7 +6,7 @@
 # 3. The git repo MUST NOT contain committed but unpushed changes.
 # 4. The git repo package directories MUST NOT contain untracked files,
 #    OR if they do contain untracked files then you must confirm this is OK.
-# 5. The version being published must NOT have already been published. 
+# 5. The version being published must NOT have already been published.
 #
 # ASSUMES you have these environment variables correctly set for PyPi publishing:
 #
@@ -245,7 +245,7 @@ def get_package_directories() -> list:
 def execute_command(command_argv: Union[list, str], lines_containing: str = None) -> Tuple[list, int]:
     """
     Executes the given command as a command-line subprocess, and returns a tuple whose first element
-    is the list of lines from the output of the command, and the second element is the status code.
+    is the list of lines from the output of the command, and the second element is the exit status code.
     """
     def cleanup_funny_output(output: str) -> str:
         return output.replace("('", "").replace("',)", "").replace("\\n\\n", "\n").replace("\\n", "\n")
