@@ -156,7 +156,7 @@ def verify_tagged() -> bool:
 def verify_untracked_files() -> bool:
     """
     If the current git repo has no untracked files then returns True,
-    otherwise prints a warning, and with the list of untraced files,
+    otherwise prints a warning, and with the list of untracked files,
     and prompts the user for a yes/no confirmation on whether or to
     continue, and returns True for a yes response, otherwise returns False.
     """
