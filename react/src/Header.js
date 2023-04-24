@@ -42,7 +42,7 @@ const PortalSslCertificateWarning = () => {
     }
 }
 
-const PortalAccessKeyWarning = () => {
+const PortalAccessKeyWarning = ({ header }) => {
     const portalAccessKeyInfo = useFetch(`/portal_access_key`);
     if (portalAccessKeyInfo.loading) return <></>
     if (portalAccessKeyInfo) {
@@ -54,9 +54,9 @@ const PortalAccessKeyWarning = () => {
                 &nbsp;{Char.RightArrow}&nbsp;
                 <Link to={Client.Path("/portal_access_key")} style={{color:"inherit"}}>View</Link>
             </WarningBar>
-        } else if (!portalAccessKeyInfo?.data?.valid) {
+        } else if (portalAccessKeyInfo.data?.invalid) {
             return <WarningBar>
-                <b>Warning: Access key for associated Portal is invalid</b>
+                <b>Warning: Access key for associated Portal {portalAccessKeyInfo.data.expired ? 'has expired' : 'is invalid'}</b>
                 &nbsp;{Char.RightArrow}&nbsp;
                 <Link to={Client.Path("/portal_access_key")} style={{color:"inherit"}}>View</Link>
             </WarningBar>

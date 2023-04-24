@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import Auth from '../utils/Auth';
 import Char from '../utils/Char';
 import Time from '../utils/Time';
+import useHeader from '../hooks/Header';
 
 const PortalAccessKey = (props) => {
+    const header = useHeader();
     const accessKey = props.accessKey;
     const color = props.error ? "darkred" : "inhert";
     const tdstyle = { fontSize: "11pt", color: color, verticalAlign: "top", paddingBottom: "2pt", paddingRight: "10pt", whiteSpace: "nowrap" };
@@ -13,10 +16,19 @@ const PortalAccessKey = (props) => {
     return <>
         <table width="100%"><tbody>
             <tr>
+                <td style={tdlabel}>Portal:</td>
+                <td style={tdstyle}>
+                    <a href={`${accessKey.server}`} target="_blank">{accessKey.server}</a>
+                </td>
+            </tr>
+            <tr>
                 <td style={tdlabel}>Access Key:</td>
                 <td style={tdstyle}>
                     {accessKey.key}
-                    &nbsp;&nbsp;{Char.RightArrow}&nbsp;&nbsp;<a href={`${accessKey.server}/access-keys/${accessKey.key}/`} style={{color:color}} target="_blank">View</a>
+                    { Auth.IsLoggedIn(header) && <>
+                        &nbsp;&nbsp;{Char.RightArrow}&nbsp;&nbsp;
+                        <a href={`${accessKey.server}/access-keys/${accessKey.key}/`} style={{color:color}} target="_blank">View</a>
+                    </> }
                     <small style={{float:"right", marginRight:"-10pt"}}><b>
                         { showJson ? <>
                             <span onClick={() => setShowJson(false)} style={{cursor:"pointer"}}>
@@ -39,6 +51,7 @@ const PortalAccessKey = (props) => {
             <tr>
                 <td style={tdlabel}>Expiration Date:</td>
                 <td style={tdstyle}>
+                    {accessKey.expires_at}
                     { accessKey.expires_at ? <>
                         { accessKey.expired ? <>
                             &nbsp;&nbsp;{Char.RightArrow}&nbsp;&nbsp;<b><u>Expired</u></b>&nbsp;&nbsp;{Char.LeftArrow}
@@ -52,20 +65,22 @@ const PortalAccessKey = (props) => {
                     </> }
                 </td>
             </tr>
-            <tr>
-                <td style={tdlabel}>Details:</td>
-                <td style={tdstyle}>
-                    { showDetails ? <>
-                        <span onClick={() => setShowDetails(false)} style={{cursor:"pointer"}}>
-                            <u>Hide</u> {Char.DownArrow}
-                        </span>
-                    </>:<>
-                        <span onClick={() => setShowDetails(true)} style={{cursor:"pointer"}}>
-                            <u>Show</u> {Char.UpArrow}
-                        </span>
-                    </> }
-                </td>
-            </tr>
+            { accessKey.exception &&
+                <tr>
+                    <td style={tdlabel}>Details:</td>
+                    <td style={tdstyle}>
+                        { showDetails ? <>
+                            <span onClick={() => setShowDetails(false)} style={{cursor:"pointer"}}>
+                                <u>Hide</u> {Char.DownArrow}
+                            </span>
+                        </>:<>
+                            <span onClick={() => setShowDetails(true)} style={{cursor:"pointer"}}>
+                                <u>Show</u> {Char.UpArrow}
+                            </span>
+                        </> }
+                    </td>
+                </tr>
+            }
             { showDetails && <>
                 { accessKey.exception &&
                     <tr>

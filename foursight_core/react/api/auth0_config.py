@@ -91,7 +91,15 @@ class Auth0Config:
         """
         config_raw_data = self.get_config_raw_data()
         domain = config_raw_data.get("auth0Domain") if config_raw_data else None
-        client = config_raw_data.get("auth0Client") if config_raw_data else None
+        # 2023-04-24: Change to get the Auth0 client ID from the GAC rather
+        # that from the Portal /auth0_config endpoint; we still et the other
+        # non-credential info (e.g. domain, scope) from that endpoint though.
+        # This just makes it more consistent, having both those pieces of info
+        # come from the same place. Note FYI that for the non-React code we
+        # also get both pieces of the Auth0 credentials from the GAC but
+        # the other info is currently hardcoded in the Jinja templates.
+        # client = config_raw_data.get("auth0Client") if config_raw_data else None
+        client = os.environ.get("CLIENT_ID", os.environ.get("ENCODED_AUTH0_CLIENT"))
         options = config_raw_data.get("auth0Options") if config_raw_data else None
         options_auth = options.get("auth") if options else None
         options_auth_params = options_auth.get("params") if options_auth else None
@@ -145,7 +153,7 @@ class Auth0Config:
         Returns the Auth0 secret.
         Currently we get this environment variables setup from the GAC; see identity.py.
         """
-        return os.environ.get("CLIENT_SECRET", os.environ.get("ENCODED_AUTH0_CLIENT"))
+        return os.environ.get("CLIENT_SECRET", os.environ.get("ENCODED_AUTH0_SECRET"))
 
     @staticmethod
     def get_callback_url(request: dict) -> str:

@@ -31,7 +31,7 @@ def get_portal_access_key_info(env: str,
         if access_key_expires_date:
             access_key_info["expires_at"] = access_key_expires_date.strftime("%Y-%m-%d %H:%M:%S")
             access_key_info["expired"] = now >= access_key_expires_date
-            access_key_info["valid"] = not access_key_info["expired"]
+            access_key_info["invalid"] = access_key_info["expired"]
             if test_mode_access_key_expiration_warning_days > 0:
                 expires_soon_days = test_mode_access_key_expiration_warning_days
             else:
@@ -41,13 +41,16 @@ def get_portal_access_key_info(env: str,
                                                                                now=now)
             if test_mode_access_key_simulate_error:
                 access_key_info["exception"] = "test_mode_access_key_simulate_error"
-                access_key_info["valid"] = False
+                access_key_info["invalid"] = True
         else:
+            # If we don't get an expires date at all,
+            # from _get_portal_access_key_expires_date,
+            # then we assume there is a problem.
             access_key_info["exception"] = str(access_key_expires_exception)
             e = str(access_key_info["exception"]).lower()
             if "credenti" in e or "expir" in e:
                 access_key_info["probably_expired"] = True
-            access_key_info["valid"] = False
+            access_key_info["invalid"] = True
         access_key_info["timestamp"] = now.strftime("%Y-%m-%d %H:%M:%S")
         return access_key_info
     except Exception as e:

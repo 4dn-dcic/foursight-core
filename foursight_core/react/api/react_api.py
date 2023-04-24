@@ -329,7 +329,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 obfuscate=not is_logged_in,
                 test_mode_access_key_simulate_error=test_mode_access_key_simulate_error,
                 test_mode_access_key_expiration_warning_days=test_mode_access_key_expiration_warning_days)
-            if not data["portal_access_key"].get("valid"):
+            if data["portal_access_key"].get("invalid"):
                 data["portal_access_key_error"] = True
         return self.create_success_response(data)
 
