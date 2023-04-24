@@ -16,6 +16,7 @@ const PortalAccessKey = (props) => {
                 <td style={tdlabel}>Access Key:</td>
                 <td style={tdstyle}>
                     {accessKey.key}
+                    &nbsp;&nbsp;{Char.RightArrow}&nbsp;&nbsp;<a href={`${accessKey.server}/access-keys/${accessKey.key}/`} style={{color:color}} target="_blank">View</a>
                     <small style={{float:"right", marginRight:"-10pt"}}><b>
                         { showJson ? <>
                             <span onClick={() => setShowJson(false)} style={{cursor:"pointer"}}>
