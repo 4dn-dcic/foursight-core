@@ -10,6 +10,7 @@ Change Log
 =====
 
 * Support for catching SSL certificate errors for Portal.
+* Using new dcicutils.scripts.publish_to_pypi for publish.
 
 4.0.0
 =====
