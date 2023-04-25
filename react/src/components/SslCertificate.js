@@ -52,7 +52,7 @@ const SslCertificate = (props) => {
             </tr>
             { certificate.owner &&
                 <tr>
-                    <td style={tdlabel}>Owner:</td>
+                    <td style={tdlabel}>Issuee:</td>
                     <td style={tdstyle}>
                         {certificate.owner}
                         { certificate.owner_entity && (certificate.owner_entity != certificate.owner) && <>
@@ -74,9 +74,12 @@ const SslCertificate = (props) => {
                 <td style={tdlabel}>Activation Date:</td>
                 <td style={tdstyle}>
                     {certificate.active_at}
-                    { certificate.inactive && <b style={{color:color}}>
+                    { certificate.inactive ? <b style={{color:color}}>
                         &nbsp;&nbsp;{Char.RightArrow}&nbsp;&nbsp;<b><u>Inactive</u></b>&nbsp;&nbsp;{Char.LeftArrow}
-                    </b> }
+                    </b>:<>
+                        &nbsp;{Char.RightArrow}
+                        &nbsp;<small>{Time.Ago(certificate.active_at, true, false)}</small>
+                    </>}
                 </td>
             </tr>
             <tr>
@@ -107,12 +110,14 @@ const SslCertificate = (props) => {
                 </td>
             </tr>
             { showDetails && <>
-                <tr>
-                    <td style={tdlabel}>Error:</td>
-                    <td style={tdstyle}>
-                        {certificate.exception}
-                    </td>
-                </tr>
+                { certificate.exception &&
+                    <tr>
+                        <td style={tdlabel}>Error:</td>
+                        <td style={tdstyle}>
+                            {certificate.exception}
+                        </td>
+                    </tr>
+                }
                 <tr><td style={tdlabel}>Serial Number:</td><td style={tdstyle}>{certificate.serial_number}</td></tr>
                 <tr>
                     <td style={tdlabel}>

@@ -14,8 +14,17 @@ class ReactRoutes:
     # Foursight React API routes UNPROTECTED by authorization/authentication.
     # ----------------------------------------------------------------------------------------------
 
+    @route("/{env}/auth0_config", authorize=False)
+    def reactapi_route_auth0_config(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns Auth0 configuration for authentication (from Portal).
+        Note that this in an UNPROTECTED route.
+        """
+        ignored(env)
+        return reactapi_route_auth0_config_noenv()
+
     @route("/auth0_config", authorize=False)
-    def reactapi_route_auth0_config() -> Response:  # noqa: implicit @staticmethod via @route
+    def reactapi_route_auth0_config_noenv() -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns Auth0 configuration for authentication (from Portal).
         Note that this in an UNPROTECTED route.

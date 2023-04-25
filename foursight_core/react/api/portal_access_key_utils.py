@@ -7,7 +7,6 @@ from ...app import app
 
 _PORTAL_ACCESS_KEY_NAME = "access_key_foursight"
 _PORTAL_ACCESS_KEY_USER_EMAIL = "foursight.app@gmail.com"
-_PORTAL_ACCESS_KEY_EXPIRATION_DAYS = 90
 _PORTAL_ACCESS_KEY_EXPIRES_SOON_WARNING_DAYS = 7
 
 
@@ -27,25 +26,31 @@ def get_portal_access_key_info(env: str,
             secret = "********" if obfuscate else secret[1] + "*******"
         server = connection_keys.get("server")
         access_key_info = {"key": key, "secret": secret, "server": server}
-        access_key_expires_date, access_key_expires_exception = _get_portal_access_key_expires_date(connection_keys)
+        access_key_create_date, access_key_expires_date, access_key_expires_exception = \
+            _get_portal_access_key_expires_date(connection_keys)
         if access_key_expires_date:
-            access_key_info["expires_at"] = access_key_expires_date.strftime("%Y-%m-%d %H:%M:%S")
-            access_key_info["expired"] = now >= access_key_expires_date
-            access_key_info["invalid"] = access_key_info["expired"]
-            if test_mode_access_key_expiration_warning_days > 0:
-                expires_soon_days = test_mode_access_key_expiration_warning_days
+            access_key_info["created_at"] = access_key_create_date.strftime("%Y-%m-%d %H:%M:%S")
+            if access_key_expires_date == datetime.max:
+                access_key_info["expires_at"] = None
+                access_key_info["expired"] = False
+                access_key_info["invalid"] = False
+                access_key_info["expires_soon"] = False
             else:
-                expires_soon_days = _PORTAL_ACCESS_KEY_EXPIRES_SOON_WARNING_DAYS
-            access_key_info["expires_soon"] = _is_datetime_within_future_ndays(access_key_expires_date,
-                                                                               ndays=expires_soon_days,
-                                                                               now=now)
+                access_key_info["expires_at"] = access_key_expires_date.strftime("%Y-%m-%d %H:%M:%S")
+                access_key_info["expired"] = now >= access_key_expires_date
+                access_key_info["invalid"] = access_key_info["expired"]
+                if test_mode_access_key_expiration_warning_days > 0:
+                    expires_soon_days = test_mode_access_key_expiration_warning_days
+                else:
+                    expires_soon_days = _PORTAL_ACCESS_KEY_EXPIRES_SOON_WARNING_DAYS
+                access_key_info["expires_soon"] = _is_datetime_within_future_ndays(access_key_expires_date,
+                                                                                   ndays=expires_soon_days,
+                                                                                   now=now)
             if test_mode_access_key_simulate_error:
                 access_key_info["exception"] = "test_mode_access_key_simulate_error"
                 access_key_info["invalid"] = True
         else:
-            # If we don't get an expires date at all,
-            # from _get_portal_access_key_expires_date,
-            # then we assume there is a problem.
+            # If we don't get an expires date at all, then assume there is a problem.
             access_key_info["exception"] = str(access_key_expires_exception)
             e = str(access_key_info["exception"]).lower()
             if "credenti" in e or "expir" in e:
@@ -57,17 +62,21 @@ def get_portal_access_key_info(env: str,
         return {}
 
 
-def _get_portal_access_key_expires_date(keys: dict) -> Tuple[Optional[datetime], Optional[Exception]]:
+def _get_portal_access_key_expires_date(keys: dict) -> Tuple[datetime, Optional[datetime], Optional[Exception]]:
     try:
-        #if test_mode_access_key_simulate_error:
-        #    raise Exception("test_mode_access_key_simulate_error")
         query = f"/search/?type=AccessKey&description={_PORTAL_ACCESS_KEY_NAME}&sort=-date_created"
         access_key = ff_utils.search_metadata(query, key=keys)[0]
         access_key_create_date = datetime.fromisoformat(access_key["date_created"])
-        access_key_expires_date = access_key_create_date + timedelta(days=_PORTAL_ACCESS_KEY_EXPIRATION_DAYS)
-        return (access_key_expires_date, None)
+        access_key_expires_date = access_key.get("expiration_date")
+        if access_key_expires_date:
+            access_key_expires_date = datetime.fromisoformat(access_key_expires_date)
+        else:
+            # There may or may not be an expiration date (e.g. for fourfront);
+            # if not then make it the max date which is 9999-12-31.
+            access_key_expires_date = datetime.max
+        return (access_key_create_date, access_key_expires_date, None)
     except Exception as e:
-        return (None, e)
+        return (None, None, e)
 
 
 def _is_datetime_within_future_ndays(d: datetime, ndays: int, now: Optional[datetime] = None) -> bool:
