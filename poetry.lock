@@ -516,14 +516,14 @@ tox = ["tox"]
 
 [[package]]
 name = "dcicutils"
-version = "7.3.0.1b17"
+version = "7.3.0.1b18"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 category = "main"
 optional = false
 python-versions = ">=3.7,<3.10"
 files = [
-    {file = "dcicutils-7.3.0.1b17-py3-none-any.whl", hash = "sha256:96b4daf05eda5afc15f01c18c25d8df31ebdc7061f3c5e03ce0d8ae19bac01b4"},
-    {file = "dcicutils-7.3.0.1b17.tar.gz", hash = "sha256:32e263bc04a5da81db27b098ad3455e86b3ad948f12ed0a3b3d3a8507c68951f"},
+    {file = "dcicutils-7.3.0.1b18-py3-none-any.whl", hash = "sha256:14eb0fe96ac9944d76fcffe685db54f809da039152de558dbfb19741756c4372"},
+    {file = "dcicutils-7.3.0.1b18.tar.gz", hash = "sha256:ff3df80ff4d6f0ac4932122b9c272ad6469375e6e6b6686643a932a65862e421"},
 ]
 
 [package.dependencies]
@@ -1896,4 +1896,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7,<3.10"
-content-hash = "1030e501eb451823f46734f68264f43963ecd6bed160d2e0745d10bb2ddebdf1"
+content-hash = "134268feb95d888f28b11c9be650fd743f7433d9676b2b5ca867e104a330f25f"
