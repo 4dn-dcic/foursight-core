@@ -52,7 +52,7 @@ const PortalAccessKey = (props) => {
                 <td style={tdlabel}>Creation Date:</td>
                 <td style={tdstyle}>
                     {accessKey.created_at}
-                    &nbsp;&nbsp;{Char.RightArrow}&nbsp;
+                    &nbsp;{Char.RightArrow}
                     &nbsp;<small>{Time.Ago(accessKey.created_at, true, false)}</small>
                 </td>
             </tr>
