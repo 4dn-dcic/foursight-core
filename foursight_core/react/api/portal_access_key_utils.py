@@ -58,7 +58,7 @@ def get_portal_access_key_info(env: str,
             access_key_info["invalid"] = True
         access_key_info["timestamp"] = now.strftime("%Y-%m-%d %H:%M:%S")
         return access_key_info
-    except Exception as e:
+    except Exception:
         return {}
 
 
