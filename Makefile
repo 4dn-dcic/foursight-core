@@ -22,11 +22,12 @@ test-for-ga:
 	make test
 
 publish:
-	scripts/publish
+	# New Python based publish script in dcicutils (2023-04-25).
+	poetry run publish
 
 publish-for-ga:
-	pip install toml
-	scripts/publish --noconfirm
+	# New Python based publish script in dcicutils (2023-04-25).
+	poetry run publish --noconfirm
 
 .PHONY: react
 
