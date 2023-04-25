@@ -66,10 +66,10 @@ def _get_portal_access_key_expires_date(keys: dict) -> Tuple[datetime, Optional[
     try:
         query = f"/search/?type=AccessKey&description={_PORTAL_ACCESS_KEY_NAME}&sort=-date_created"
         access_key = ff_utils.search_metadata(query, key=keys)[0]
-        access_key_create_date = datetime.fromisoformat(access_key["date_created"])
+        access_key_create_date = datetime.fromisoformat(access_key["date_created"]).astimezone(pytz.utc)
         access_key_expires_date = access_key.get("expiration_date")
         if access_key_expires_date:
-            access_key_expires_date = datetime.fromisoformat(access_key_expires_date)
+            access_key_expires_date = datetime.fromisoformat(access_key_expires_date).astimezone(pytz.utc)
         else:
             # There may or may not be an expiration date (e.g. for fourfront);
             # if not then make it the max date which is 9999-12-31.
