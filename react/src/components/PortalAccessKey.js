@@ -36,9 +36,11 @@ const PortalAccessKey = (props) => {
                 <td style={tdlabel}>Access Key:</td>
                 <td style={tdstyle}>
                     {accessKey.key}
-                    { Auth.IsLoggedIn(header) && <>
-                        &nbsp;&nbsp;{Char.RightArrow}&nbsp;&nbsp;
+                    &nbsp;&nbsp;{Char.RightArrow}&nbsp;&nbsp;
+                    { Auth.IsLoggedIn(header) ? <>
                         <a href={`${accessKey.server}/access-keys/${accessKey.key}/`} style={{color:color}} target="_blank">View</a>
+                    </>:<>
+                        <a href={`${accessKey.server}/access-keys`} style={{color:color}} target="_blank">View</a>
                     </> }
                 </td>
             </tr>

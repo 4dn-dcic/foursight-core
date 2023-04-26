@@ -23,10 +23,10 @@ def get_portal_access_key_info(env: str,
         key = connection_keys.get("key")
         if key and not logged_in:
             # This logged_in flag is passed from caller (react_api.reactapi_portal_access_key)
-            # and is False iff the user is NOT logged in; so if logged in then we do NOT obfuscate
-            # the access key (ID) but if we ARE not logged in we just see the first letter of it.
-            # And of course we do not return a value for any part of the secret at all, ever.
-            key = key[0] + "*******"
+            # and is False iff the user is NOT logged in; so if logged in then we do NOT
+            # obfuscate the access key (ID) but if we are NOT logged in we do obfuscate it.
+            # And of course we do not return any part of the secret at all, ever.
+            key = "********"
         server = connection_keys.get("server")
         access_key_info = {"key": key, "secret": "********", "server": server, "logged_in": logged_in}
         access_key_create_date, access_key_expires_date, access_key_expires_exception = \
