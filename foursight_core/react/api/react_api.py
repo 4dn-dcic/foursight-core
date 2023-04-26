@@ -383,6 +383,26 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return response
 
     def reactapi_certificates(self, request: dict, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoint: GET /certificates
+        Called from react_routes for endpoint: GET /{env}/certificates
+        Note that this in an UNPROTECTED route.
+
+        Returns a dictionary with pertinent publicly available information about the
+        SSL certificate for this Foursight instance and the associated Portal instance.
+        Of, if a hostname (or hostnames) URL argument is given, then instead returns
+        SSL certificate info for the specified (comma-separated) list of hostnames.
+
+        Here are the data points (properties) of the returned dictionary:
+
+        active_at    issuer           owner_country
+        exception    issuer_city      owner_entity
+        expired      issuer_country   owner_state
+        expires_at   issuer_entity    pem
+        hostname     issuer_state     public_key_pem
+        hostnames    owner            serial_number
+        inactive     owner_city       invalid
+        """
         hostnames = args.get("hostname", args.get("hostnames", None))
         response = []
         if hostnames and hostnames.lower() != "null":

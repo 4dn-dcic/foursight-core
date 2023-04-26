@@ -8,7 +8,7 @@ from foursight_core.react.api.auth import Auth
 from foursight_core.react.api import auth as auth_module
 from foursight_core.react.api.envs import Envs
 from foursight_core.react.api.jwt_utils import jwt_encode
-from foursight_core.react.api.react_api import ReactApi
+from test_mock_chalice_app import MockChaliceApp
 
 AUTH0_CLIENT_ID = str(uuid.uuid4())
 AUTH0_SECRET = str(uuid.uuid4())
@@ -60,38 +60,8 @@ ENVS.get_user_auth_info = lambda email, raise_exception: (ALLOWED_ENVS, FIRST_NA
 AUTH = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
 
 
-class MockChaliceApp:
-
-    class MockReactApi:
-        def __init__(self):
-            self.react_authorize = AUTH.authorize
-            self.create_success_response = ReactApi.create_success_response
-            self.create_response = ReactApi.create_response
-            self.get_site_name = lambda: "some-site-name"
-            self.APP_PACKAGE_NAME = "foursight"
-
-    class MockChaliceRequest:
-        def __init__(self, request: dict) -> None:
-            self._request = request
-
-        def to_dict(self) -> dict:
-            return self._request
-
-    def __init__(self, current_request: Optional[dict] = None):
-        self._current_request = MockChaliceApp.MockChaliceRequest(current_request)
-
-    @property
-    def current_request(self) -> MockChaliceRequest:
-        return self._current_request
-
-    @property
-    def core(self) -> MockReactApi:
-        return MockChaliceApp.MockReactApi()
-
-    def route(self, path: str, **kwargs):
-        def route_registration(wrapped_route_function):
-            return wrapped_route_function
-        return route_registration
+def get_mock_chalice_app(current_request: Optional[dict] = None) -> MockChaliceApp:
+    return MockChaliceApp(AUTH, current_request)
 
 
 def create_test_jwt_unencoded():
@@ -118,22 +88,22 @@ def create_test_authtoken(expires_or_expired_at: int = EXPIRES_AT, use_invalid_a
 
 
 def create_test_authtoken_good():
-    with mock.patch.object(auth_module, "app", MockChaliceApp()):
+    with mock.patch.object(auth_module, "app", get_mock_chalice_app()):
         return create_test_authtoken(EXPIRES_AT)
 
 
 def create_test_authtoken_expired():
-    with mock.patch.object(auth_module, "app", MockChaliceApp()):
+    with mock.patch.object(auth_module, "app", get_mock_chalice_app()):
         return create_test_authtoken(EXPIRED_AT)
 
 
 def create_test_authtoken_invalid_auth0_secret():
-    with mock.patch.object(auth_module, "app", MockChaliceApp()):
+    with mock.patch.object(auth_module, "app", get_mock_chalice_app()):
         return create_test_authtoken(EXPIRES_AT, use_invalid_auth0_secret=True)
 
 
 def create_test_authtoken_munged():
-    with mock.patch.object(auth_module, "app", MockChaliceApp()):
+    with mock.patch.object(auth_module, "app", get_mock_chalice_app()):
         authtoken = create_test_authtoken_good()
         authtoken = _change_random_character_within_string_ntimes(authtoken, 3)
         return authtoken

@@ -23,10 +23,21 @@ def read_cookie(request: dict, cookie_name: str) -> Optional[str]:
 
 
 def read_cookie_bool(request: dict, cookie_name: str) -> bool:
-    return str_to_bool(read_cookie(request, cookie_name))
+    """
+    Returns the value of the cookie of the given name from within the given request,
+    as a bool (per dcicutils.str_to_bool), or False if the cookie does not exist
+    or is not a value True specifier.
+    """
+    result = str_to_bool(read_cookie(request, cookie_name))
+    return if result True else False
 
 
 def read_cookie_int(request: dict, cookie_name: str, default: int = 0) -> int:
+    """
+    Returns the value of the cookie of the given name from within the given request,
+    as an integer, or the given default value (which defaults to 0) if the cookie
+    does not exist or is not a value a valid integer.
+    """
     value = read_cookie(request, cookie_name)
     if not value:
         return default

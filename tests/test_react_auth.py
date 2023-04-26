@@ -25,9 +25,9 @@ from test_react_auth_defs import (
     create_test_jwt,
     create_test_jwt_unencoded,
     create_test_request,
+    get_mock_chalice_app,
     mock_foursight_env_name,
-    mock_short_env_name,
-    MockChaliceApp
+    mock_short_env_name
 )
 
 
@@ -98,7 +98,7 @@ def test_react_authorize_expired():
 
 
 def test_react_authorize_invalid_auth0_secret():
-    with mock.patch.object(auth, "app", MockChaliceApp()):
+    with mock.patch.object(auth, "app", get_mock_chalice_app()):
         with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
             with mock.patch.object(gac, "short_env_name", mock_short_env_name):
                 authtoken = create_test_authtoken_invalid_auth0_secret()
@@ -108,7 +108,7 @@ def test_react_authorize_invalid_auth0_secret():
 
 
 def test_react_authorize_munged():
-    with mock.patch.object(auth, "app", MockChaliceApp()):
+    with mock.patch.object(auth, "app", get_mock_chalice_app()):
         with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
             with mock.patch.object(gac, "short_env_name", mock_short_env_name):
                 authtoken = create_test_authtoken_munged()

@@ -12,9 +12,9 @@ from test_react_auth_defs import (
     create_test_authtoken_invalid_auth0_secret,
     create_test_authtoken_munged,
     create_test_request,
+    get_mock_chalice_app,
     mock_foursight_env_name,
-    mock_short_env_name,
-    MockChaliceApp
+    mock_short_env_name
 )
 
 
@@ -23,7 +23,7 @@ def create_test_route_response_body(env: str):
 
 
 def create_test_route_response(env: str):
-    with mock.patch.object(auth_module, "app", MockChaliceApp()):
+    with mock.patch.object(auth_module, "app", get_mock_chalice_app()):
         response = ReactApi.create_success_response()
         response.body = create_test_route_response_body(env)
         return response
@@ -50,7 +50,7 @@ def test_react_authentication_decorator_good():
     with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
         with mock.patch.object(gac, "short_env_name", mock_short_env_name):
             request = create_test_request(create_test_authtoken_good())
-            with mock.patch.object(react_route_decorator, "app", MockChaliceApp(request)):
+            with mock.patch.object(react_route_decorator, "app", get_mock_chalice_app(request)):
 
                 @react_route_decorator.route("/{env}/dummy", authorize=True)
                 def test_react_route(env: str):
@@ -64,7 +64,7 @@ def test_react_authentication_decorator_unauthorized():
     with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
         with mock.patch.object(gac, "short_env_name", mock_short_env_name):
             request = create_test_request(create_test_authtoken_good())
-            with mock.patch.object(react_route_decorator, "app", MockChaliceApp(request)):
+            with mock.patch.object(react_route_decorator, "app", get_mock_chalice_app(request)):
 
                 @react_route_decorator.route("/{env}/dummy", authorize=True)
                 def test_react_route(env: str):
@@ -78,7 +78,7 @@ def test_react_authentication_decorator_unauthenticated_expired():
     with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
         with mock.patch.object(gac, "short_env_name", mock_short_env_name):
             request = create_test_request(create_test_authtoken_expired())
-            with mock.patch.object(react_route_decorator, "app", MockChaliceApp(request)):
+            with mock.patch.object(react_route_decorator, "app", get_mock_chalice_app(request)):
 
                 @react_route_decorator.route("/{env}/dummy", authorize=True)
                 def test_react_route(env: str):
@@ -97,18 +97,18 @@ def test_react_authentication_decorator_unauthenticated_invalid_auth0_secret():
             def test_react_route(env: str):
                 return create_test_route_response(env)
 
-            with mock.patch.object(react_route_decorator, "app", MockChaliceApp(request)):
-                with mock.patch.object(auth_module, "app", MockChaliceApp()):
+            with mock.patch.object(react_route_decorator, "app", get_mock_chalice_app(request)):
+                with mock.patch.object(auth_module, "app", get_mock_chalice_app()):
                     response = test_react_route(env=ALLOWED_ENV)
                     assert_unauthenticated_response(response)
 
 
 def test_react_authentication_decorator_unauthenticated_munged():
-    with mock.patch.object(auth_module, "app", MockChaliceApp()):
+    with mock.patch.object(auth_module, "app", get_mock_chalice_app()):
         with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
             with mock.patch.object(gac, "short_env_name", mock_short_env_name):
                 request = create_test_request(create_test_authtoken_munged())
-                with mock.patch.object(react_route_decorator, "app", MockChaliceApp(request)):
+                with mock.patch.object(react_route_decorator, "app", get_mock_chalice_app(request)):
                     @react_route_decorator.route("/{env}/dummy", authorize=True)
                     def test_react_route(env: str):
                         return create_test_route_response(env)
