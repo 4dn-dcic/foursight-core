@@ -30,7 +30,7 @@ publish-for-ga:
 	# New Python based publish script in dcicutils (2023-04-25).
 	# pip install dcicutils==7.3.0.1b17
 	# python -m dcicutils.scripts.publish_to_pypi --noconfirm
-	pip install dcicutils==7.3.0.1b21
+	# pip install dcicutils==7.3.0.1b21
 	poetry run publish-to-pypi --noconfirm
 
 .PHONY: react
