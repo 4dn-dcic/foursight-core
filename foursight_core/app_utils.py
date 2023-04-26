@@ -283,7 +283,7 @@ class AppUtilsCore(ReactApi, Routes):
                 self._cached_portal_url[env_name] = portal_url
             except Exception as e:
                 if raise_exception:
-                    raise e
+                    raise
                 message = f"Error getting portal URL: {get_error_message(e)}"
                 logger.error(message)
                 return None

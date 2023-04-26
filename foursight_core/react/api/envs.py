@@ -92,7 +92,7 @@ class Envs:
                     allowed_envs.append(known_env["full_name"])
             except Exception as e:
                 if raise_exception:
-                    raise e
+                    raise
                 logger.warning(f"Exception getting allowed envs for {email}: {e}")
         return allowed_envs, first_name, last_name
 
