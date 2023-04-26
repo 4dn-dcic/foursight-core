@@ -29,7 +29,7 @@ def read_cookie_bool(request: dict, cookie_name: str) -> bool:
     or is not a value True specifier.
     """
     result = str_to_bool(read_cookie(request, cookie_name))
-    return if result True else False
+    return True if result else False
 
 
 def read_cookie_int(request: dict, cookie_name: str, default: int = 0) -> int:
