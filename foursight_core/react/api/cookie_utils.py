@@ -26,17 +26,17 @@ def read_cookie_bool(request: dict, cookie_name: str) -> bool:
     return str_to_bool(read_cookie(request, cookie_name))
 
 
-def read_cookie_int(request: dict, cookie_name: str, fallback: int = 0) -> int:
+def read_cookie_int(request: dict, cookie_name: str, default: int = 0) -> int:
     value = read_cookie(request, cookie_name)
     if not value:
-        return fallback
+        return default
     if value.startswith("-"):
         value = value[1:]
         multiplier = -1
     else:
         multiplier = 1
     if not value.isdigit():
-        return fallback
+        return default
     return int(value) * multiplier
 
 

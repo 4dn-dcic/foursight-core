@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
 import pytz
 from dcicutils import ff_utils
+from dcicutils.misc_utils import future_datetime
 from typing import Optional, Tuple
 from ...app import app
+from .datetime_utils import convert_iso_datetime_string_to_datetime
 
 
 _PORTAL_ACCESS_KEY_NAME = "access_key_foursight"
@@ -11,7 +13,7 @@ _PORTAL_ACCESS_KEY_EXPIRES_SOON_WARNING_DAYS = 10
 
 
 def get_portal_access_key_info(env: str,
-                               obfuscate: bool = False,
+                               logged_in: bool = False,
                                test_mode_access_key_simulate_error: bool = False,
                                test_mode_access_key_expiration_warning_days: int = 0) -> dict:
     try:
@@ -19,13 +21,14 @@ def get_portal_access_key_info(env: str,
         connection = app.core.init_connection(env)
         connection_keys = connection.ff_keys
         key = connection_keys.get("key")
-        if key and obfuscate:
+        if key and not logged_in:
+            # This logged_in flag is passed from caller (react_api.reactapi_portal_access_key)
+            # and is False iff the user is NOT logged in; so if logged in then we do NOT obfuscate
+            # the access key (ID) but if we ARE not logged in we just see the first letter of it.
+            # And of course we do not return a value for any part of the secret at all, ever.
             key = key[0] + "*******"
-        secret = connection_keys.get("secret")
-        if secret:
-            secret = "********" if obfuscate else secret[1] + "*******"
         server = connection_keys.get("server")
-        access_key_info = {"key": key, "secret": secret, "server": server}
+        access_key_info = {"key": key, "secret": "********", "server": server, "logged_in": logged_in}
         access_key_create_date, access_key_expires_date, access_key_expires_exception = \
             _get_portal_access_key_expires_date(connection_keys)
         if access_key_expires_date:
@@ -39,6 +42,8 @@ def get_portal_access_key_info(env: str,
                 access_key_info["expires_at"] = access_key_expires_date.strftime("%Y-%m-%d %H:%M:%S")
                 access_key_info["expired"] = now >= access_key_expires_date
                 access_key_info["invalid"] = access_key_info["expired"]
+                # Note that these "test_mode_xyz" variables are for testing only and are set
+                # via cookies and if used must be manually set, e.g. via Chrome Developer Tools.
                 if test_mode_access_key_expiration_warning_days > 0:
                     expires_soon_days = test_mode_access_key_expiration_warning_days
                 else:
@@ -66,13 +71,13 @@ def _get_portal_access_key_expires_date(keys: dict) -> Tuple[datetime, Optional[
     try:
         query = f"/search/?type=AccessKey&description={_PORTAL_ACCESS_KEY_NAME}&sort=-date_created"
         access_key = ff_utils.search_metadata(query, key=keys)[0]
-        access_key_create_date = datetime.fromisoformat(access_key["date_created"]).astimezone(pytz.utc)
+        access_key_create_date = convert_iso_datetime_string_to_datetime(access_key["date_created"])
         access_key_expires_date = access_key.get("expiration_date")
         if access_key_expires_date:
-            access_key_expires_date = datetime.fromisoformat(access_key_expires_date).astimezone(pytz.utc)
+            access_key_expires_date = convert_iso_datetime_string_to_datetime(access_key_expires_date)
         else:
             # There may or may not be an expiration date (e.g. for fourfront);
-            # if not then make it the max date which is 9999-12-31.
+            # if not then make it the max date which is 9999-12-31 23:59:59.999999.
             access_key_expires_date = datetime.max
         return (access_key_create_date, access_key_expires_date, None)
     except Exception as e:
@@ -87,4 +92,4 @@ def _is_datetime_within_future_ndays(d: datetime, ndays: int, now: Optional[date
     """
     if not now:
         now = datetime.now(pytz.utc)
-    return (d - now) <= timedelta(days=ndays) if d >= now else False
+    return d <= future_datetime(now=now, days=ndays)

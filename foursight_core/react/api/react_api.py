@@ -282,17 +282,20 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # in this case also include (as an FYI for the UI) the real number of known-envs.
         if auth["authenticated"]:
             data["auth"]["known_envs"] = self._envs.get_known_envs_with_gac_names()
-            is_logged_in = True
+            logged_in = True
         else:
-            is_logged_in = False
+            logged_in = False
             known_envs_default = self._envs.find_known_env(self._envs.get_default_env())
             known_envs_actual_count = self._envs.get_known_envs_count()
             data["auth"]["known_envs"] = [known_envs_default]
             data["auth"]["known_envs_actual_count"] = known_envs_actual_count
         data["auth"]["default_env"] = self._envs.get_default_env()
+        # Note that these "test_mode_xyz" cookies are for testing only
+        # and if used must be manually set, e.g. via Chrome Developer Tools.
         test_mode_certificate_simulate_error = read_cookie_bool(request, "test_mode_certificate_simulate_error")
         if test_mode_certificate_simulate_error:
             data["portal"]["url"] = None
+        # Note that we know that data["portal"]["url"] is explicitly set via _reactapi_header_nocache.
         if not data["portal"]["url"]:
             # Here we did not get a Portal URL from the to app.core.get_portal_url (via _reactapi_header_nocache).
             # That call ends up ultimately calling the Portal health endpoint (via s3Utils.get_synthetic_env_config
@@ -306,15 +309,16 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 data["portal"]["url"] = portal_url
             except Exception as e:
                 e = str(e)
-                data["portal"]["exception"] = e
+                data_portal = data["portal"]
+                data_portal["exception"] = e
                 if "certifi" in e.lower():
-                    data["portal"]["ssl_certificate_error"] = True
+                    data_portal["ssl_certificate_error"] = True
                 portal_url = env_utils_get_portal_url(env)
-                data["portal"]["url"] = portal_url
-                data["portal"]["ssl_certificate"] = get_ssl_certificate_info(portal_url)
-                if data["portal"]["ssl_certificate"]:
-                    data["portal"]["ssl_certificate"]["name"] = "Portal"
-                    data["portal"]["ssl_certificate"]["exception"] = e
+                data_portal["url"] = portal_url
+                data_portal["ssl_certificate"] = get_ssl_certificate_info(portal_url)
+                if data_portal["ssl_certificate"]:
+                    data_portal["ssl_certificate"]["name"] = "Portal"
+                    data_portal["ssl_certificate"]["exception"] = e
         data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
         test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
         if auth.get("user_exception"): # or test_mode_access_key_simulate_error:
@@ -326,7 +330,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 read_cookie_int(request, "test_mode_access_key_expiration_warning_days")
             data["portal_access_key"] = get_portal_access_key_info(
                 env,
-                obfuscate=not is_logged_in,
+                logged_in=logged_in,
                 test_mode_access_key_simulate_error=test_mode_access_key_simulate_error,
                 test_mode_access_key_expiration_warning_days=test_mode_access_key_expiration_warning_days)
             if data["portal_access_key"].get("invalid"):
@@ -406,13 +410,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def reactapi_portal_access_key(self, request: dict, args: Optional[dict] = None) -> Response:
         env = self._envs.get_default_env()
         auth = self._auth.authorize(request, env)
-        is_logged_in = auth.get("authenticated")
+        logged_in = auth.get("authenticated")
         test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
         test_mode_access_key_expiration_warning_days = read_cookie_int(
                 request, "test_mode_access_key_expiration_warning_days")
         response = get_portal_access_key_info(
             env,
-            obfuscate=not is_logged_in,
+            logged_in=logged_in,
             test_mode_access_key_simulate_error=test_mode_access_key_simulate_error,
             test_mode_access_key_expiration_warning_days=test_mode_access_key_expiration_warning_days)
         return self.create_success_response(response)

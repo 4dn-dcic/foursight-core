@@ -157,10 +157,12 @@ class Auth:
                 authenticator = "github"
         try:
             if request:
+                # Note that these "test_mode_xyz" cookies are for testing only
+                # and if used must be manually set, e.g. via Chrome Developer Tools.
                 test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
                 if test_mode_access_key_simulate_error:
                     # For testing only, we simulate a portal access key error (e.g. due to expiration),
-                    # which would manifest itselft, most importantly, here, on login.
+                    # which would manifest itself, primarily and most importantly, here, on login.
                     raise Exception("test_mode_access_key_simulate_error")
             allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email, raise_exception=True)
             user_exception = False

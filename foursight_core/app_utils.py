@@ -277,8 +277,8 @@ class AppUtilsCore(ReactApi, Routes):
         portal_url = self._cached_portal_url.get(env_name)
         if not portal_url:
             try:
-                environment_and_bucket_info = \
-                    self.environment.get_environment_and_bucket_info(env_name, self.stage.get_stage())
+                environment_and_bucket_info = (
+                    self.environment.get_environment_and_bucket_info(env_name, self.stage.get_stage()))
                 portal_url = environment_and_bucket_info.get("fourfront")
                 self._cached_portal_url[env_name] = portal_url
             except Exception as e:

@@ -19,16 +19,6 @@ const PortalAccessKey = (props) => {
                 <td style={tdlabel}>Portal:</td>
                 <td style={tdstyle}>
                     <a href={`${accessKey.server}`} target="_blank">{accessKey.server}</a>
-                </td>
-            </tr>
-            <tr>
-                <td style={tdlabel}>Access Key:</td>
-                <td style={tdstyle}>
-                    {accessKey.key}
-                    { Auth.IsLoggedIn(header) && <>
-                        &nbsp;&nbsp;{Char.RightArrow}&nbsp;&nbsp;
-                        <a href={`${accessKey.server}/access-keys/${accessKey.key}/`} style={{color:color}} target="_blank">View</a>
-                    </> }
                     <small style={{float:"right", marginRight:"-10pt"}}><b>
                         { showJson ? <>
                             <span onClick={() => setShowJson(false)} style={{cursor:"pointer"}}>
@@ -43,9 +33,13 @@ const PortalAccessKey = (props) => {
                 </td>
             </tr>
             <tr>
-                <td style={tdlabel}>Access Key Secret:</td>
+                <td style={tdlabel}>Access Key:</td>
                 <td style={tdstyle}>
-                    {accessKey.secret}
+                    {accessKey.key}
+                    { Auth.IsLoggedIn(header) && <>
+                        &nbsp;&nbsp;{Char.RightArrow}&nbsp;&nbsp;
+                        <a href={`${accessKey.server}/access-keys/${accessKey.key}/`} style={{color:color}} target="_blank">View</a>
+                    </> }
                 </td>
             </tr>
             <tr>
