@@ -33,5 +33,4 @@ jobs:
           PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: | 
           make configure
-	      pip install dcicutils==7.3.0.1b21
           make publish-for-ga
