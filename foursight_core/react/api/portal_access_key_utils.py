@@ -9,7 +9,7 @@ from .datetime_utils import convert_iso_datetime_string_to_datetime
 
 _PORTAL_ACCESS_KEY_NAME = "access_key_foursight"
 _PORTAL_ACCESS_KEY_USER_EMAIL = "foursight.app@gmail.com"
-_PORTAL_ACCESS_KEY_EXPIRES_SOON_WARNING_DAYS = 10
+_PORTAL_ACCESS_KEY_EXPIRES_SOON_WARNING_DAYS = 12
 
 
 def get_portal_access_key_info(env: str,
