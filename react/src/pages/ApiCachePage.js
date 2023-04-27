@@ -7,25 +7,26 @@ import Json from '../utils/Json';
 import Yaml from '../utils/Yaml';
 
 const tdstyle = { fontSize: "11pt", verticalAlign: "top", paddingBottom: "2pt", paddingRight: "10pt", whiteSpace: "nowrap" };
+const tdstyler = { ...tdstyle, textAlign: "right" };
 
 const ApiCache = (props) => {
     const cache = props.cache
     return <>
         <tr>
             <td style={tdstyle}>{cache.function}</td>
-            <td style={tdstyle}>{cache.hits}</td>
-            <td style={tdstyle}>{cache.misses}</td>
-            <td style={tdstyle}>{cache.size}</td>
+            <td style={tdstyler}>{cache.hits}</td>
+            <td style={tdstyler}>{cache.misses}</td>
+            <td style={tdstyler}>{cache.size}</td>
             <td style={tdstyle}>{cache.updated}</td>
-            <td style={tdstyle}>
+            <td style={tdstyler}>
                 { cache.maxsize >= Number.MAX_SAFE_INTEGER ? <>
                     &#x221E;
                 </>:<>
                     {cache.maxsize}
                 </> }
             </td>
-            <td style={tdstyle}>{cache.ttl || <>&ndash;</>}</td>
-            <td style={tdstyle}>{cache.ttl_none || <>&ndash;</>}</td>
+            <td style={tdstyler}>{cache.ttl || <>&ndash;</>}</td>
+            <td style={tdstyler}>{cache.ttl_none || <>&ndash;</>}</td>
             <td style={tdstyle}>{cache.nocache_none ? <>Yes</> : <>No</>}</td>
         </tr>
     </>

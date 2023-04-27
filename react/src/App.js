@@ -143,9 +143,9 @@ const App = () => {
                         </Page.KnownEnvRequired>
                     }/>
                     <Route path="/api/react/:environ/apicache" element={
-                        <Page.KnownEnvRequired>
+                        <Page.AuthorizationRequired>
                             <ApiCachePage />
-                        </Page.KnownEnvRequired>
+                        </Page.AuthorizationRequired>
                     }/>
                     <Route path="/api/react/:environ/forbidden" element={
                         <ForbiddenPage />

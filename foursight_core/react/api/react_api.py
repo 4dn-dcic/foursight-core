@@ -14,7 +14,7 @@ import urllib.parse
 from itertools import chain
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils.env_utils import get_portal_url as env_utils_get_portal_url
-from dcicutils.function_cache_decorator import function_cache, function_cache_info
+from dcicutils.function_cache_decorator import function_cache, function_cache_info, function_cache_clear
 from dcicutils import ff_utils
 from dcicutils.misc_utils import ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
@@ -1554,8 +1554,28 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response({"status": "Lambda reloaded."})
 
     def reactapi_function_cache(self, request: dict) -> Response:
-        info = function_cache_info()
-        return self.create_success_response(json.dumps(info, default=str))
+        """
+        Called from react_routes for endpoint: GET /__reloadlambda__
+        Kicks off a reload of the given lambda name. For troubleshooting only.
+        """
+        ignored(request)
+        return self.create_success_response(json.dumps(function_cache_info(), default=str))
+
+    def reactapi_function_cache_clear(self, request: dict, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoint: GET /__reloadlambda__
+        Kicks off a reload of the given lambda name. For troubleshooting only.
+        """
+        names = args.get("name", args.get("names", None))
+        cache_cleared = []
+        if names and names.lower() != "null":
+            for name in names.split(","):
+                if function_cache_clear(name):
+                    cache_cleared.append(name)
+        else:
+            function_cache_clear()
+            cache_cleared.append("<all>")
+        return self.create_success_response({"cache_cleared": cache_cleared})
 
     def reactapi_clear_cache(self, request: dict) -> Response:
         """
