@@ -570,6 +570,13 @@ class ReactRoutes:
         """
         return app.core.reactapi_aws_stack_template(app.current_request.to_dict(), env, stack)
 
+    @route("/__functioncache__", authorize=True)
+    def reactapi_route_function_cache() -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        For troubleshooting only. Return function cache info.
+        """
+        return app.core.reactapi_function_cache(app.current_request.to_dict())
+
     @route("/__reloadlambda__", authorize=True)
     def reactapi_route_reload_lambda() -> Response:  # noqa: implicit @staticmethod via @route
         """

@@ -1,5 +1,6 @@
 import { Navigate, BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import AccountsPage from './pages/AccountsPage';
+import ApiCachePage from './pages/ApiCachePage';
 import AwsS3Page from './pages/aws/AwsS3Page';
 import ChecksPage from './pages/ChecksPage';
 import CheckHistoryPage from './pages/CheckHistoryPage';
@@ -139,6 +140,11 @@ const App = () => {
                     <Route path="/api/react/:environ/portal_access_key" element={
                         <Page.KnownEnvRequired>
                             <PortalAccessKeyPage />
+                        </Page.KnownEnvRequired>
+                    }/>
+                    <Route path="/api/react/:environ/apicache" element={
+                        <Page.KnownEnvRequired>
+                            <ApiCachePage />
                         </Page.KnownEnvRequired>
                     }/>
                     <Route path="/api/react/:environ/forbidden" element={

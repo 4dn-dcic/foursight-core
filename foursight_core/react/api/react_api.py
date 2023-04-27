@@ -14,6 +14,7 @@ import urllib.parse
 from itertools import chain
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils.env_utils import get_portal_url as env_utils_get_portal_url
+from dcicutils.function_cache_decorator import function_cache, function_cache_info
 from dcicutils import ff_utils
 from dcicutils.misc_utils import ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
@@ -59,8 +60,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         super(ReactApi, self).__init__()
         self._react_ui = ReactUi(self)
         self._checks = Checks(app.core.check_handler.CHECK_SETUP, self._envs)
-        self._cached_header = {}
-        self._cached_sqs_queue_url = None
+        # self._cached_header = {}  # migrating to @function_cache
+        # self._cached_sqs_queue_url = None  # migrating to @function_cache
         self._cached_accounts = None
         self._cached_accounts_from_s3 = None
         self._cached_elasticsearch_server_version = None
@@ -72,10 +73,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         return os.environ.get("STACK_NAME")
 
+    @function_cache(nocache_none=True)
     def _get_sqs_queue_url(self):
-        if not self._cached_sqs_queue_url:
-            self._cached_sqs_queue_url = app.core.sqs.get_sqs_queue().url
-        return self._cached_sqs_queue_url
+        # Leave just commented of for now short term as migrating to use of @function_cache.
+        # if not self._cached_sqs_queue_url:
+        #     self._cached_sqs_queue_url = app.core.sqs.get_sqs_queue().url
+        # return self._cached_sqs_queue_url
+        return app.core.sqs.get_sqs_queue().url
 
     def _get_versions_object(self) -> dict:
         def get_package_version(package_name: str) -> Optional[str]:
@@ -270,10 +274,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         # Note that this route is not protected but/and we return the results from authorize.
         auth = self._auth.authorize(request, env)
-        data = self._cached_header.get(env)
-        if not data:
-            data = self._reactapi_header_nocache(request, env)
-            self._cached_header[env] = data
+        data = self._reactapi_header_cache(request, env)
+        # Leave just commented of for now short term as migrating to use of @function_cache.
+        # data = self._cached_header.get(env)
+        # if not data:
+        #     data = self._reactapi_header_cache(request, env)
+        #     self._cached_header[env] = data
         data = copy.deepcopy(data)
         data["auth"] = auth
         # 2022-10-18
@@ -295,9 +301,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         test_mode_certificate_simulate_error = read_cookie_bool(request, "test_mode_certificate_simulate_error")
         if test_mode_certificate_simulate_error:
             data["portal"]["url"] = None
-        # Note that we know that data["portal"]["url"] is explicitly set via _reactapi_header_nocache.
+        # Note that we know that data["portal"]["url"] is explicitly set via _reactapi_header_cache.
         if not data["portal"]["url"]:
-            # Here we did not get a Portal URL from the to app.core.get_portal_url (via _reactapi_header_nocache).
+            # Here we did not get a Portal URL from the to app.core.get_portal_url (via _reactapi_header_cache).
             # That call ends up ultimately calling the Portal health endpoint (via s3Utils.get_synthetic_env_config
             # via environment.get_environment_and_bucket_info). So there may have been a problem with the Portal,
             # e.g. bad SSL certificate; we will get the Portal URL by other means, and from get get its SSL
@@ -337,7 +343,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 data["portal_access_key_error"] = True
         return self.create_success_response(data)
 
-    def _reactapi_header_nocache(self, request: dict, env: str) -> dict:
+    @function_cache(key=lambda self, request, env: env)  # new as of 2023-04-27
+    def _reactapi_header_cache(self, request: dict, env: str) -> dict:
         """
         No-cache version of above reactapi_header function.
         """
@@ -1546,6 +1553,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         time.sleep(3)
         return self.create_success_response({"status": "Lambda reloaded."})
 
+    def reactapi_function_cache(self, request: dict) -> Response:
+        info = function_cache_info()
+        return self.create_success_response(json.dumps(info, default=str))
+
     def reactapi_clear_cache(self, request: dict) -> Response:
         """
         Called from react_routes for endpoint: GET /__clearcache___
@@ -1557,8 +1568,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         self._checks.cache_clear()
         self._react_ui.cache_clear()
         Gac.cache_clear()
-        self._cached_header = {}
-        self._cached_sqs_queue_url = None
+        # self._cached_header = {}  # migrating to @function_cache
+        # self._cached_sqs_queue_url = None  # migrating to @function_cache
+        ReactApi._reactapi_header_cache.cache_clear()  # migrating to @function_cache
+        ReactApi._get_sqs_queue_url.cache_clear()  # migrating to @function_cache
         self._cached_elasticsearch_server_version = None
         self._cached_accounts = None
         self._cached_accounts_from_s3 = None
