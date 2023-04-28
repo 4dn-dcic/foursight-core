@@ -48,7 +48,7 @@ const InfoBox = ({title, show = true, info, children}) => {
 const InfoRow = ({name, value, monospace = false, copy = true, size = "4",
                   pypi = null, github = null, elasticsearch = false, python = false, chalice = null,
                   check = false, link = null, optional = false,
-                  portalCertificate = null, portalAccessKey = null}) => {
+                  portalCertificate = false, portalAccessKey = false, apiCache = false}) => {
     function removeMinorVersion(version) {
         let components = version?.split(".")
         return (components?.length >= 2) ? components[0] + "." + components[1] : version;
@@ -129,6 +129,9 @@ const InfoRow = ({name, value, monospace = false, copy = true, size = "4",
                             </> }
                             { portalCertificate && <>
                                 &nbsp;{Char.RightArrow}&nbsp;<Link to={Client.Path("/certificates")}>View Certificate</Link>
+                            </> }
+                            { apiCache && <>
+                                &nbsp;{Char.RightArrow}&nbsp;<Link to={Client.Path("/apicache")}>View API Cache</Link>
                             </> }
                         </span>)}
                         {checkElement}
@@ -272,7 +275,7 @@ const InfoPage = () => {
             <InfoRow name={"Path"} value={info.get("page.path")} monospace={true} size="2" />
             <InfoRow name={"Endpoint"} value={info.get("page.endpoint")} monospace={true} size="2" />
             <InfoRow name={"Client (React UI)"} value={Client.BaseUrl()} monospace={true} size="2" />
-            <InfoRow name={"Server (React API)"} value={Server.BaseUrl()} monospace={true} size="2" />
+            <InfoRow name={"Server (React API)"} value={Server.BaseUrl()} monospace={true} size="2" apiCache={true} />
             <InfoRow name={"Checks File"} value={info.data?.checks?.file} monospace={true} size="2" />
             { header.app?.accounts_file &&
                 <InfoRow name={"Accounts File"} value={header.app?.accounts_file} monospace={true} size="2" />
