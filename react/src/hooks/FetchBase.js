@@ -654,7 +654,12 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
         delete args.nofetch;
     }
     if (Str.HasValue(args.url) && !args.url.startsWith("https://") && !args.url.startsWith("http://")) {
-        args.url = Server.Url(args.url);
+        if (args.url.startsWith("//")) {
+            args.url = Server.Url(args.url.substring(1), false);
+        }
+        else {
+            args.url = Server.Url(args.url);
+        }
     }
     return args;
 }

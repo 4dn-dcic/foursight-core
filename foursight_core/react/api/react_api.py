@@ -13,27 +13,29 @@ from typing import Optional
 import urllib.parse
 from itertools import chain
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
+from dcicutils.env_utils import get_portal_url as env_utils_get_portal_url
+from dcicutils.function_cache_decorator import function_cache, function_cache_info, function_cache_clear
 from dcicutils import ff_utils
-from dcicutils.misc_utils import ignored
+from dcicutils.misc_utils import get_error_message, ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.redis_tools import RedisSessionToken, SESSION_TOKEN_COOKIE
+from dcicutils.ssl_certificate_utils import get_ssl_certificate_info
 from ...app import app
 from .auth import AUTH_TOKEN_COOKIE
 from .auth import Auth
 from .aws_network import (
     aws_get_network, aws_get_security_groups,
-    aws_get_security_group_rules, aws_get_subnets, aws_get_vpcs, aws_network_cache_clear
+    aws_get_security_group_rules, aws_get_subnets, aws_get_vpcs
 )
 from .aws_s3 import AwsS3
 from .aws_stacks import (
     aws_get_stack, aws_get_stacks,
     aws_get_stack_outputs, aws_get_stack_parameters,
     aws_get_stack_resources, aws_get_stack_template,
-    aws_stacks_cache_clear
 )
 from .checks import Checks
-from .cognito import clear_cognito_cache, get_cognito_oauth_config, handle_cognito_oauth_callback
-from .cookie_utils import create_delete_cookie_string, read_cookie
+from .cognito import get_cognito_oauth_config, handle_cognito_oauth_callback
+from .cookie_utils import create_delete_cookie_string, read_cookie, read_cookie_bool, read_cookie_int
 from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
 from .encryption import Encryption
 from .encoding_utils import base64_decode_to_json
@@ -41,9 +43,9 @@ from .gac import Gac
 from .misc_utils import (
     get_base_url,
     is_running_locally,
-    memoize,
     sort_dictionary_by_case_insensitive_keys
 )
+from .portal_access_key_utils import get_portal_access_key_info
 from .react_routes import ReactRoutes
 from .react_api_base import ReactApiBase
 from .react_ui import ReactUi
@@ -56,11 +58,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
         super(ReactApi, self).__init__()
         self._react_ui = ReactUi(self)
         self._checks = Checks(app.core.check_handler.CHECK_SETUP, self._envs)
-        self._cached_header = {}
-        self._cached_sqs_queue_url = None
-        self._cached_accounts = None
-        self._cached_accounts_from_s3 = None
-        self._cached_elasticsearch_server_version = None
 
     @staticmethod
     def _get_stack_name() -> str:
@@ -69,10 +66,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         return os.environ.get("STACK_NAME")
 
+    @function_cache(nocache=None)
     def _get_sqs_queue_url(self):
-        if not self._cached_sqs_queue_url:
-            self._cached_sqs_queue_url = app.core.sqs.get_sqs_queue().url
-        return self._cached_sqs_queue_url
+        return app.core.sqs.get_sqs_queue().url
 
     def _get_versions_object(self) -> dict:
         def get_package_version(package_name: str) -> Optional[str]:
@@ -93,18 +89,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "elasticsearch_dsl": get_package_version("elasticsearch-dsl")
             }
 
+    @function_cache(nokey=True, nocache=None)
     def _get_elasticsearch_server_version(self) -> Optional[str]:
-        if not self._cached_elasticsearch_server_version:
-            try:
-                connection = app.core.init_connection(self._envs.get_default_env())
-                es_info = connection.es_info()
-                elasticsearch_server_version = es_info["version"]["number"]
-                self._cached_elasticsearch_server_version = elasticsearch_server_version
-            except Exception:
-                pass
-        return self._cached_elasticsearch_server_version
+        connection = app.core.init_connection(self._envs.get_default_env())
+        es_info = connection.es_info()
+        return es_info.get("version", {}).get("number")
 
-    @memoize
+    @function_cache
     def _get_user_projects(self, env: str, raw: bool = False) -> list:
         """
         Returns the list of available user projects.
@@ -124,7 +115,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             ]
         return projects
 
-    @memoize
+    @function_cache
     def _get_user_institutions(self, env: str, raw: bool = False) -> list:
         """
         Returns the list of available user institutions.
@@ -149,7 +140,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             ]
         return institutions
 
-    @memoize
+    @function_cache
     def _get_user_roles(self, env: str) -> list:
         ignored(env)
         #
@@ -168,14 +159,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ]
         return [{"id": role, "name": role, "title": role.replace("_", " ").title()} for role in roles]
 
-    @memoize
+    @function_cache
     def _get_user_schema(self, env: str) -> dict:
         portal_url = get_base_url(app.core.get_portal_url(env))
         user_schema_url = f"{portal_url}/profiles/User.json?format=json"
         user_schema = requests.get(user_schema_url).json()
         return user_schema
 
-    @memoize
+    @function_cache
     def _get_user_statuses(self, env: str) -> list:
         user_schema = self._get_user_schema(env)
         user_schema_properties = user_schema.get("properties") if user_schema else None
@@ -267,10 +258,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         # Note that this route is not protected but/and we return the results from authorize.
         auth = self._auth.authorize(request, env)
-        data = self._cached_header.get(env)
-        if not data:
-            data = self._reactapi_header_nocache(request, env)
-            self._cached_header[env] = data
+        data = self._reactapi_header_cache(request, env)
         data = copy.deepcopy(data)
         data["auth"] = auth
         # 2022-10-18
@@ -279,16 +267,63 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # in this case also include (as an FYI for the UI) the real number of known-envs.
         if auth["authenticated"]:
             data["auth"]["known_envs"] = self._envs.get_known_envs_with_gac_names()
+            logged_in = True
         else:
+            logged_in = False
             known_envs_default = self._envs.find_known_env(self._envs.get_default_env())
             known_envs_actual_count = self._envs.get_known_envs_count()
             data["auth"]["known_envs"] = [known_envs_default]
             data["auth"]["known_envs_actual_count"] = known_envs_actual_count
         data["auth"]["default_env"] = self._envs.get_default_env()
+        # Note that these "test_mode_xyz" cookies are for testing only
+        # and if used must be manually set, e.g. via Chrome Developer Tools.
+        test_mode_certificate_simulate_error = read_cookie_bool(request, "test_mode_certificate_simulate_error")
+        if test_mode_certificate_simulate_error:
+            data["portal"]["url"] = None
+        # Note that we know that data["portal"]["url"] is explicitly set via _reactapi_header_cache.
+        if not data["portal"].get("url"):
+            # Here we did not get a Portal URL from the to app.core.get_portal_url (via _reactapi_header_cache).
+            # That call ends up ultimately calling the Portal health endpoint (via s3Utils.get_synthetic_env_config
+            # via environment.get_environment_and_bucket_info). So there may have been a problem with the Portal,
+            # e.g. bad SSL certificate; we will get the Portal URL by other means, and from get get its SSL
+            # certificate to help diagnose any problem with that. C4-1017 (April 2023).
+            try:
+                if test_mode_certificate_simulate_error:
+                    raise Exception("test_mode_certificate_simulate_error")
+                portal_url = app.core.get_portal_url(env or default_env, raise_exception=True)
+                data["portal"]["url"] = portal_url
+            except Exception as e:
+                e = str(e)
+                data_portal = data["portal"]
+                data_portal["exception"] = e
+                if "certifi" in e.lower():
+                    data_portal["ssl_certificate_error"] = True
+                portal_url = env_utils_get_portal_url(env)
+                data_portal["url"] = portal_url
+                data_portal["ssl_certificate"] = get_ssl_certificate_info(portal_url)
+                if data_portal["ssl_certificate"]:
+                    data_portal["ssl_certificate"]["name"] = "Portal"
+                    data_portal["ssl_certificate"]["exception"] = e
         data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
+        test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
+        if auth.get("user_exception"): # or test_mode_access_key_simulate_error:
+            # Since this call to get the Portal access key info can be relatively expensive, we don't want to
+            # do it on every /header API call; so we only call it if, according to the user's authtoken cookie,
+            # an exception was experienced when trying to authorize the user (via envs.get_user_auth_info) on
+            # login, which if so, would indicate that the is likely a problem with the Portal access key.
+            test_mode_access_key_expiration_warning_days = \
+                read_cookie_int(request, "test_mode_access_key_expiration_warning_days")
+            data["portal_access_key"] = get_portal_access_key_info(
+                env,
+                logged_in=logged_in,
+                test_mode_access_key_simulate_error=test_mode_access_key_simulate_error,
+                test_mode_access_key_expiration_warning_days=test_mode_access_key_expiration_warning_days)
+            if data["portal_access_key"].get("invalid"):
+                data["portal_access_key_error"] = True
         return self.create_success_response(data)
 
-    def _reactapi_header_nocache(self, request: dict, env: str) -> dict:
+    @function_cache(key=lambda self, request, env: env)  # new as of 2023-04-27
+    def _reactapi_header_cache(self, request: dict, env: str) -> dict:
         """
         No-cache version of above reactapi_header function.
         """
@@ -296,7 +331,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         stage_name = app.core.stage.get_stage()
         default_env = self._envs.get_default_env()
         aws_credentials = self._auth.get_aws_credentials(env or default_env)
-        portal_url = get_base_url(app.core.get_portal_url(env or default_env))
+        portal_url = app.core.get_portal_url(env or default_env)
+        portal_base_url = get_base_url(portal_url)
         response = {
             "app": {
                 "title": app.core.html_main_title,
@@ -308,8 +344,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "stack": self._get_stack_name(),
                 "local": is_running_locally(request),
                 "credentials": {
-                    "aws_account_number": aws_credentials["aws_account_number"],
+                    "aws_account_number": aws_credentials.get("aws_account_number"),
                     "aws_account_name": aws_credentials.get("aws_account_name"),
+                    "aws_access_key_id": aws_credentials.get("aws_access_key_id"),
                     "re_captcha_key": os.environ.get("reCaptchaKey", None)
                 },
                 "launched": app.core.init_load_time,
@@ -320,8 +357,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "versions": self._get_versions_object(),
             "portal": {
                 "url": app.core.get_portal_url(env or default_env),
-                "health_url": portal_url + "/health?format=json",
-                "health_ui_url": portal_url + "/health"
+                "health_url": portal_base_url + "/health?format=json",
+                "health_ui_url": portal_base_url + "/health"
             },
             "s3": {
                 "bucket_org": os.environ.get("ENCODED_S3_BUCKET_ORG", os.environ.get("S3_BUCKET_ORG", None)),
@@ -331,12 +368,77 @@ class ReactApi(ReactApiBase, ReactRoutes):
         }
         return response
 
-    @memoize
+    def reactapi_certificates(self, request: dict, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoint: GET /certificates
+        Called from react_routes for endpoint: GET /{env}/certificates
+        Note that this in an UNPROTECTED route.
+
+        Returns a dictionary with pertinent publicly available information about the
+        SSL certificate for this Foursight instance and the associated Portal instance.
+        Of, if a hostname (or hostnames) URL argument is given, then instead returns
+        SSL certificate info for the specified (comma-separated) list of hostnames.
+
+        Here are the data points (properties) of the returned dictionary:
+
+        active_at    issuer           owner_country
+        exception    issuer_city      owner_entity
+        expired      issuer_country   owner_state
+        expires_at   issuer_entity    pem
+        hostname     issuer_state     public_key_pem
+        hostnames    owner            serial_number
+        inactive     owner_city       invalid
+        """
+        hostnames = args.get("hostname", args.get("hostnames", None))
+        response = []
+        if hostnames and hostnames.lower() != "null":
+            for hostname in hostnames.split(","):
+                certificate = get_ssl_certificate_info(hostname.strip())
+                if certificate:
+                    response.append(certificate)
+        else:
+            test_mode_certificate_expiration_warning_days = \
+                read_cookie_int(request, "test_mode_certificate_expiration_warning_days")
+            foursight_url = self.foursight_instance_url(request)
+            portal_url = env_utils_get_portal_url(self._envs.get_default_env())
+            foursight_ssl_certificate_info = get_ssl_certificate_info(
+                foursight_url, test_mode_certificate_expiration_warning_days=test_mode_certificate_expiration_warning_days)
+            if foursight_ssl_certificate_info:
+                foursight_ssl_certificate_info["name"] = "Foursight"
+                response.append(foursight_ssl_certificate_info)
+            portal_ssl_certificate_info = get_ssl_certificate_info(
+                portal_url, test_mode_certificate_expiration_warning_days=test_mode_certificate_expiration_warning_days)
+            if portal_ssl_certificate_info:
+                portal_ssl_certificate_info["name"] = "Portal"
+                response.append(portal_ssl_certificate_info)
+        return self.create_success_response(response)
+
+    def reactapi_portal_access_key(self, request: dict, args: Optional[dict] = None) -> Response:
+        env = self._envs.get_default_env()
+        auth = self._auth.authorize(request, env)
+        logged_in = auth.get("authenticated")
+        test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
+        test_mode_access_key_expiration_warning_days = read_cookie_int(
+                request, "test_mode_access_key_expiration_warning_days")
+        response = get_portal_access_key_info(
+            env,
+            logged_in=logged_in,
+            test_mode_access_key_simulate_error=test_mode_access_key_simulate_error,
+            test_mode_access_key_expiration_warning_days=test_mode_access_key_expiration_warning_days)
+        return self.create_success_response(response)
+
+    def reactapi_elasticsearch(self) -> Response:
+        try:
+            return self.create_success_response(self._get_elasticsearch_server_version())
+        except Exception as e:
+            return self.create_error_response(get_error_message(e))
+
+    @function_cache
     def _get_env_and_bucket_info(self, env: str, stage_name: str) -> dict:
         return sort_dictionary_by_case_insensitive_keys(
             obfuscate_dict(app.core.environment.get_environment_and_bucket_info(env, stage_name)))
 
-    @memoize
+    @function_cache
     def _get_check_result_bucket_name(self, env: str) -> Optional[str]:
         envs = app.core.init_environments(env=env)
         if not envs:
@@ -1082,19 +1184,17 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def _get_accounts_from_s3(self, request: dict) -> Optional[dict]:
         # Let's not cache this for now, maybe change mind later, thus the OR True clause below.
-        if True or not self._cached_accounts_from_s3:
-            s3_uri = self._get_accounts_file_from_s3()
-            if not s3_uri:
-                return self._get_accounts_only_for_current_account(request)
-            s3_uri = s3_uri.replace("s3://", "")
-            s3_uri_components = s3_uri.split("/")
-            if len(s3_uri_components) != 2:
-                return self._get_accounts_only_for_current_account(request)
-            bucket = s3_uri_components[0]
-            key = s3_uri_components[1]
-            accounts_json_content = AwsS3.get_bucket_key_contents(bucket, key)
-            self._cached_accounts_from_s3 = self._read_accounts_json(accounts_json_content)
-        return self._cached_accounts_from_s3
+        s3_uri = self._get_accounts_file_from_s3()
+        if not s3_uri:
+            return self._get_accounts_only_for_current_account(request)
+        s3_uri = s3_uri.replace("s3://", "")
+        s3_uri_components = s3_uri.split("/")
+        if len(s3_uri_components) != 2:
+            return self._get_accounts_only_for_current_account(request)
+        bucket = s3_uri_components[0]
+        key = s3_uri_components[1]
+        accounts_json_content = AwsS3.get_bucket_key_contents(bucket, key)
+        return self._read_accounts_json(accounts_json_content)
 
     def _get_accounts_only_for_current_account(self, request: dict) -> Optional[list]:
         aws_credentials = self._auth.get_aws_credentials(self._envs.get_default_env())
@@ -1126,19 +1226,18 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     account["id"] = account_name
         return accounts_json
 
+    @function_cache(nocache=None)
     def _get_accounts(self) -> Optional[dict]:
         accounts_file = self._get_accounts_file()
         if not accounts_file:
             return None
-        if not self._cached_accounts:
-            try:
-                with io.open(self._get_accounts_file(), "r") as accounts_json_f:
-                    accounts_json_content_encrypted = accounts_json_f.read()
-                    accounts_json = self._read_accounts_json(accounts_json_content_encrypted)
-                    self._cached_accounts = accounts_json
-            except Exception:
-                return None
-        return self._cached_accounts
+        try:
+            with io.open(self._get_accounts_file(), "r") as accounts_json_f:
+                accounts_json_content_encrypted = accounts_json_f.read()
+                accounts_json = self._read_accounts_json(accounts_json_content_encrypted)
+                return accounts_json
+        except Exception:
+            return None
 
     def reactapi_accounts(self, request: dict, env: str, from_s3: bool = False) -> Response:
         ignored(env)
@@ -1436,30 +1535,29 @@ class ReactApi(ReactApiBase, ReactRoutes):
         time.sleep(3)
         return self.create_success_response({"status": "Lambda reloaded."})
 
-    def reactapi_clear_cache(self, request: dict) -> Response:
+    def reactapi_function_cache(self, request: dict) -> Response:
         """
-        Called from react_routes for endpoint: GET /__clearcache___
-        Not yet implemented.
+        Called from react_routes for endpoint: GET /__reloadlambda__
+        Kicks off a reload of the given lambda name. For troubleshooting only.
         """
         ignored(request)
-        app.core.cache_clear()
-        super().cache_clear()
-        self._checks.cache_clear()
-        self._react_ui.cache_clear()
-        Gac.cache_clear()
-        self._cached_header = {}
-        self._cached_sqs_queue_url = None
-        self._cached_elasticsearch_server_version = None
-        self._cached_accounts = None
-        self._cached_accounts_from_s3 = None
-        self._get_env_and_bucket_info.cache_clear()
-        self._get_check_result_bucket_name.cache_clear()
-        self._get_user_projects.cache_clear()
-        self._get_user_institutions.cache_clear()
-        aws_network_cache_clear()
-        aws_stacks_cache_clear()
-        clear_cognito_cache()
-        return self.create_success_response({"status": "Caches cleared."})
+        return self.create_success_response(json.dumps(function_cache_info(), default=str))
+
+    def reactapi_function_cache_clear(self, request: dict, args: Optional[dict] = None) -> Response:
+        """
+        Called from react_routes for endpoint: GET /__reloadlambda__
+        Kicks off a reload of the given lambda name. For troubleshooting only.
+        """
+        names = args.get("name", args.get("names", None))
+        cache_cleared = []
+        if names and names.lower() != "null":
+            for name in names.split(","):
+                if function_cache_clear(name):
+                    cache_cleared.append(name)
+        else:
+            function_cache_clear()
+            cache_cleared.append("<all>")
+        return self.create_success_response({"cache_cleared": cache_cleared})
 
     @staticmethod
     def reactapi_testsize(n: int) -> Response:

@@ -4,12 +4,13 @@ import logging
 import time
 import redis
 from typing import Optional
-from dcicutils.redis_utils import create_redis_client
-from dcicutils.redis_tools import RedisBase, RedisSessionToken, SESSION_TOKEN_COOKIE
 from dcicutils.env_utils import full_env_name
+from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import ignored, PRINT
+from dcicutils.redis_tools import RedisBase, RedisSessionToken, SESSION_TOKEN_COOKIE
+from dcicutils.redis_utils import create_redis_client
 from ...app import app
-from .cookie_utils import read_cookie
+from .cookie_utils import read_cookie, read_cookie_bool
 from .envs import Envs
 from .jwt_utils import JWT_AUDIENCE_PROPERTY_NAME, JWT_SUBJECT_PROPERTY_NAME, jwt_decode, jwt_encode
 from .misc_utils import get_request_domain
@@ -38,8 +39,6 @@ class Auth:
             PRINT('Cannot connect to Redis')
             PRINT('This error is expected when deploying with remote (ElastiCache) Redis')
             self._redis = None
-
-    _cached_aws_credentials = {}
 
     def get_redis_handler(self):
         """
@@ -125,7 +124,7 @@ class Auth:
             logger.error(f"Authorization exception: {e}")
             return self._create_unauthenticated_response(request, "exception: " + str(e))
 
-    def create_authtoken(self, jwt: str, jwt_expires_at: int, domain: str) -> str:
+    def create_authtoken(self, jwt: str, jwt_expires_at: int, domain: str, request: Optional[dict] = None) -> str:
         """
         Creates and returns a new signed JWT, to be used as the login authtoken (cookie), from
         the given AUTHENTICATED and signed and encoded JWT, which will contain the following:
@@ -155,7 +154,49 @@ class Auth:
                 authenticator = "google"
             elif "github" in authenticator:
                 authenticator = "github"
-        allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email)
+        try:
+            if request:
+                # Note that these "test_mode_xyz" cookies are for testing only
+                # and if used must be manually set, e.g. via Chrome Developer Tools.
+                test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
+                if test_mode_access_key_simulate_error:
+                    # For testing only, we simulate a portal access key error (e.g. due to expiration),
+                    # which would manifest itself, primarily and most importantly, here, on login.
+                    raise Exception("test_mode_access_key_simulate_error")
+            allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email, raise_exception=True)
+            user_exception = False
+        except Exception as e:
+            #
+            # Here there was a problem getting the user info via Portal (e.g. due to expired or otherwise bad
+            # Portal acesss key); this will NOT prevent the user from being logged in BUT it WILL prevent the
+            # user from doing anything because there will be no allowed environments. We note this particular
+            # error with a flag (user_exception) in the authtoken JWT cookie; we catch this case in the /header
+            # endpoint to send back information about the portal access key (via get_portal_access_key_info) in
+            # its response, so an appropriate error can be shown in the UI. We do NOT want to ALWAYS get this
+            # information (via get_portal_access_key_info) in the /header endpoint (like in the normal case
+            # where there is no error) because it would impact performance (the /header endpoint should be as
+            # fast as possible), so we only do it if looks like there is a problem, i.e. as there is here.
+            #
+            # There is also a separate /portal_access_key endpoint to be called asynchronously by the UI to
+            # display any error (e.g. acesss key expired) or warning (e.g. access key expiring soon), but
+            # the UI does not use that to redirect to an error page (on error) because, being asynchronous,
+            # it could be a jarring UX (i.e. to all of a sudden be redirected to an error page after the
+            # current page looks like it is stable), so the UI uses this /portal_access_key endpoint to
+            # just display a (red) bar across the top of the page indicating that the accesss key is
+            # invalid (e.g. expired) or will expire soon.
+            #
+            # This is in contrast the the analogous behavior of the Portal SSL certicifcate checking.
+            # In that case, since the /header endpoint indirectly and synchronously calls the Portal
+            # health endpoint ANYWAYS, we will know at that point if the certificate is problematic,
+            # and in that case we can return from the /header endpoint information about the certificate,
+            # which the UI can use to redirect to an error, without a jarring UX, i.e. since this the
+            # /header endpoint is the first and primary API called by the UI before it can do anything.
+            #
+            allowed_envs = []
+            first_name = None
+            last_name = None
+            user_exception = True
+
         authtoken_decoded = {
             "authentication": "auth0",
             "authenticator": authenticator,
@@ -172,6 +213,8 @@ class Auth:
             "domain": domain,
             "site": app.core.get_site_name()
         }
+        if user_exception:
+            authtoken_decoded["user_exception"] = True
         # JWT-sign-encode the authtoken using our Auth0 client ID (aka audience aka "aud") and
         # secret. This *required* audience is added to the JWT before encoding (done in the
         # jwt_encode function), set to the value we pass here, namely, self._auth0_client;
@@ -221,6 +264,7 @@ class Auth:
         """
         return self._create_unauthorized_response(request, status, authtoken_decoded, is_authenticated=False)
 
+    @function_cache(nocache=None)
     def get_aws_credentials(self, env: str) -> dict:
         """
         Returns basic AWS credentials info (NOT the secret).
@@ -228,43 +272,38 @@ class Auth:
         This has nothing to do with the rest of the authentication
         and authorization stuff here but vaguely related so here seems fine.
         """
-        aws_credentials = Auth._cached_aws_credentials.get(env)
-        if not aws_credentials:
+        aws_credentials = None
+        try:
+            session = boto3.session.Session()
+            credentials = session.get_credentials()
+            access_key_id = credentials.access_key
+            region_name = session.region_name
+            caller_identity = boto3.client("sts").get_caller_identity()
+            user_arn = caller_identity["Arn"]
+            account_number = caller_identity["Account"]
+            aws_credentials = {
+                "aws_account_number": account_number,
+                "aws_user_arn": user_arn,
+                "aws_access_key_id": access_key_id,
+                "aws_region": region_name,
+                "auth0_client_id": self._auth0_client
+            }
+            # Try getting the account name though probably no permission at the moment.
+            aws_account_name = None
             try:
-                session = boto3.session.Session()
-                credentials = session.get_credentials()
-                access_key_id = credentials.access_key
-                region_name = session.region_name
-                caller_identity = boto3.client("sts").get_caller_identity()
-                user_arn = caller_identity["Arn"]
-                account_number = caller_identity["Account"]
-                aws_credentials = {
-                    "aws_account_number": account_number,
-                    "aws_user_arn": user_arn,
-                    "aws_access_key_id": access_key_id,
-                    "aws_region": region_name,
-                    "auth0_client_id": self._auth0_client
-                }
-                # Try getting the account name though probably no permission at the moment.
-                aws_account_name = None
+                aws_credentials["aws_account_name"] = (
+                    boto3.client('iam').list_account_aliases()['AccountAliases'][0])
+            except Exception as e:
+                logger.warning(f"Exception (not fatal) getting AWS account alias: {e}")
+            if not aws_account_name:
                 try:
                     aws_credentials["aws_account_name"] = (
-                        boto3.client('iam').list_account_aliases()['AccountAliases'][0])
+                        boto3.client('organizations').
+                        describe_account(AccountId=account_number).get('Account').get('Name')
+                    )
                 except Exception as e:
-                    logger.warning(f"Exception (not fatal) getting AWS account alias: {e}")
-                if not aws_account_name:
-                    try:
-                        aws_credentials["aws_account_name"] = (
-                            boto3.client('organizations').
-                            describe_account(AccountId=account_number).get('Account').get('Name')
-                        )
-                    except Exception as e:
-                        logger.warning(f"Exception (not fatal) getting AWS account name: {e}")
-                Auth._cached_aws_credentials[env] = aws_credentials
-            except Exception as e:
-                logger.warning(f"Exception (not fatal) getting AWS account info: {e}")
-                return {}
+                    logger.warning(f"Exception (not fatal) getting AWS account name: {e}")
+        except Exception as e:
+            logger.warning(f"Exception (not fatal) getting AWS account info: {e}")
+            return None
         return aws_credentials
-
-    def cache_clear(self) -> None:
-        self._cached_aws_credentials = {}

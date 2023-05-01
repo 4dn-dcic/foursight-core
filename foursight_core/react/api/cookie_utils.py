@@ -1,6 +1,7 @@
 import datetime
 from typing import Any, Optional
 from http.cookies import SimpleCookie
+from dcicutils.misc_utils import str_to_bool
 from .datetime_utils import (
     convert_time_t_to_datetime,
     convert_utc_datetime_to_cookie_expires_format,
@@ -19,6 +20,35 @@ def read_cookie(request: dict, cookie_name: str) -> Optional[str]:
     simple_cookies = _read_cookies(request)
     cookie_morsel = simple_cookies.get(cookie_name) if simple_cookies else None
     return cookie_morsel.value if cookie_morsel else None
+
+
+def read_cookie_bool(request: dict, cookie_name: str) -> bool:
+    """
+    Returns the value of the cookie of the given name from within the given request,
+    as a bool (per dcicutils.str_to_bool), or False if the cookie does not exist
+    or is not a value True specifier.
+    """
+    result = str_to_bool(read_cookie(request, cookie_name))
+    return True if result else False
+
+
+def read_cookie_int(request: dict, cookie_name: str, default: int = 0) -> int:
+    """
+    Returns the value of the cookie of the given name from within the given request,
+    as an integer, or the given default value (which defaults to 0) if the cookie
+    does not exist or is not a value a valid integer.
+    """
+    value = read_cookie(request, cookie_name)
+    if not value:
+        return default
+    if value.startswith("-"):
+        value = value[1:]
+        multiplier = -1
+    else:
+        multiplier = 1
+    if not value.isdigit():
+        return default
+    return int(value) * multiplier
 
 
 def _read_cookies(request: dict) -> Optional[SimpleCookie]:

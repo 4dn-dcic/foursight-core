@@ -14,8 +14,17 @@ class ReactRoutes:
     # Foursight React API routes UNPROTECTED by authorization/authentication.
     # ----------------------------------------------------------------------------------------------
 
+    @route("/{env}/auth0_config", authorize=False)
+    def reactapi_route_auth0_config(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns Auth0 configuration for authentication (from Portal).
+        Note that this in an UNPROTECTED route.
+        """
+        ignored(env)
+        return reactapi_route_auth0_config_noenv()
+
     @route("/auth0_config", authorize=False)
-    def reactapi_route_auth0_config() -> Response:  # noqa: implicit @staticmethod via @route
+    def reactapi_route_auth0_config_noenv() -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns Auth0 configuration for authentication (from Portal).
         Note that this in an UNPROTECTED route.
@@ -75,6 +84,61 @@ class ReactRoutes:
         No-env version of above /{env}/header route.
         """
         return app.core.reactapi_header(app.current_request.to_dict(), app.core.get_default_env())
+
+    @route("/{env}/certificates", authorize=False)
+    def reactapi_route_certificates(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Note that this in an UNPROTECTED route.
+        Returns SSL certificate info about this Foursight instance and its associated Portal instance.
+        """
+        ignored(env)
+        return ReactRoutes.reactapi_route_certificates_noenv()
+
+    @route("/certificates", authorize=False)
+    def reactapi_route_certificates_noenv() -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Note that this in an UNPROTECTED route.
+        Returns SSL certificate info about this Foursight instance and its associated Portal instance.
+        """
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_certificates(request_dict, args)
+
+    @route("/{env}/portal_access_key", authorize=False)
+    def reactapi_route_portal_access_key(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Note that this in an UNPROTECTED route.
+        Returns Portal access key info about this Foursight instance.
+        """
+        ignored(env)
+        return ReactRoutes.reactapi_route_portal_access_key_noenv()
+
+    @route("/portal_access_key", authorize=False)
+    def reactapi_route_portal_access_key_noenv() -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Note that this in an UNPROTECTED route.
+        Returns Portal access key info about this Foursight instance.
+        """
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_portal_access_key(request_dict, args)
+
+    @route("/{env}/elasticsearch", authorize=False)
+    def reactapi_route_elasticsearch_noenv(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Note that this in an UNPROTECTED route.
+        Pings the Elasticsearch associated with this Foursight instance and returns related info.
+        """
+        ignored(env)
+        return ReactRoutes.reactapi_route_elasticsearch_noenv()
+
+    @route("/elasticsearch", authorize=False)
+    def reactapi_route_elasticsearch_noenv() -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Note that this in an UNPROTECTED route.
+        Pings the Elasticsearch associated with this Foursight instance and returns related info.
+        """
+        return app.core.reactapi_elasticsearch()
 
     # ----------------------------------------------------------------------------------------------
     # Foursight React API routes PROTECTED by authorization/authentication.
@@ -523,19 +587,28 @@ class ReactRoutes:
         """
         return app.core.reactapi_aws_stack_template(app.current_request.to_dict(), env, stack)
 
+    @route("/__functioncache__", authorize=True)
+    def reactapi_route_function_cache() -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        For troubleshooting only. Returns function cache info.
+        """
+        return app.core.reactapi_function_cache(app.current_request.to_dict())
+
+    @route("/__functioncacheclear__", authorize=True)
+    def reactapi_route_function_cache() -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        For troubleshooting only. Clears function cache.
+        """
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_function_cache_clear(request_dict, args)
+
     @route("/__reloadlambda__", authorize=True)
     def reactapi_route_reload_lambda() -> Response:  # noqa: implicit @staticmethod via @route
         """
         For troubleshooting only. Reload the lambda code.
         """
         return app.core.reactapi_reload_lambda(app.current_request.to_dict())
-
-    @route("/__clearcache__", authorize=True)
-    def reactapi_route_clear_cache() -> Response:  # noqa: implicit @staticmethod via @route
-        """
-        For troubleshooting only. Clear any/all internal caches.
-        """
-        return app.core.reactapi_clear_cache(app.current_request.to_dict())
 
     @route("/__testsize__/{n}", authorize=True)
     def reactapi_route_testsize(n: int) -> Response:  # noqa: implicit @staticmethod via @route

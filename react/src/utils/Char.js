@@ -13,6 +13,8 @@ const exports = {
     DownArrowFat:     String.fromCodePoint(0x25BC),  // ▼
     DownArrowHollow:  String.fromCodePoint(0x1401),  // ᐁ
     EmptySet:         String.fromCodePoint(0x2205),  // ∅
+    Infinity:         String.fromCodePoint(0x221E),  // ∞
+    LeftArrow:        String.fromCodePoint(0x2190),  // ←
     RightArrow:       String.fromCodePoint(0x2192),  // →
     RightArrowFat:    String.fromCodePoint(0x25BA),  // ►
     RightArrowHollow: String.fromCodePoint(0x1405),  // ᐅ

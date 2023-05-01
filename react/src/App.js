@@ -1,10 +1,12 @@
 import { Navigate, BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import AccountsPage from './pages/AccountsPage';
+import ApiCachePage from './pages/ApiCachePage';
 import AwsS3Page from './pages/aws/AwsS3Page';
 import ChecksPage from './pages/ChecksPage';
 import CheckHistoryPage from './pages/CheckHistoryPage';
 import Env from './utils/Env';
 import EnvPage from './pages/EnvPage';
+import FatalErrorPage from './pages/FatalErrorPage';
 import Footer from './Footer';
 import ForbiddenPage from './pages/ForbiddenPage';
 import Header from './Header';
@@ -18,6 +20,8 @@ import InfrastructurePage from './pages/aws/InfrastructurePage';
 import NotFoundPage from './pages/NotFoundPage';
 import Page from './Page';
 import RedirectPage from './pages/RedirectPage';
+import SslCertificatesPage from './pages/SslCertificatesPage';
+import PortalAccessKeyPage from './pages/PortalAccessKeyPage';
 import UserPage from './pages/UserPage';
 import UserCreatePage from './pages/UserCreatePage';
 import UserEditPage from './pages/UserEditPage';
@@ -128,8 +132,29 @@ const App = () => {
                             <InfrastructurePage />
                         </Page.AuthorizationRequired>
                     }/>
+                    <Route path="/api/react/:environ/certificates" element={
+                        <Page.KnownEnvRequired>
+                            <SslCertificatesPage />
+                        </Page.KnownEnvRequired>
+                    }/>
+                    <Route path="/api/react/:environ/portal_access_key" element={
+                        <Page.KnownEnvRequired>
+                            <PortalAccessKeyPage />
+                        </Page.KnownEnvRequired>
+                    }/>
+                    <Route path="/api/react/:environ/apicache" element={
+                        <Page.AuthorizationRequired>
+                            <ApiCachePage />
+                        </Page.AuthorizationRequired>
+                    }/>
                     <Route path="/api/react/:environ/forbidden" element={
                         <ForbiddenPage />
+                    }/>
+                    <Route path="/api/react/:environ/error" element={
+                        <FatalErrorPage />
+                    }/>
+                    <Route path="/api/react/error" element={
+                        <FatalErrorPage />
                     }/>
                     <Route path="/redirect" element={
                         <RedirectPage />

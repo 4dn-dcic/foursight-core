@@ -173,7 +173,7 @@ const LoginPage = (props) => {
                 </div>
                 { !Env.IsAllowed(Env.Current(), header) && <>
                     <div className="box warning" style={{marginTop:"10pt",padding:"9pt",color:"darkred"}}>
-                        Note that though you are logged in, you do not have permission to access the currently selected environment: <b style={{color:"red"}}>{Env.Current()}</b> <br />
+                        Note that though you are logged in, you do not have permission to access the currently selected environment: <b style={{color:"red"}}>{Env.PreferredName(Env.Current(), header)}</b> <br />
                         <small>Click <Link to="/env"><u>here</u></Link> to go the the <Link to="/env">Environments Page</Link> to select another environment.</small>
                     </div>
                 </>}

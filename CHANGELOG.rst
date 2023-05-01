@@ -6,6 +6,13 @@ foursight-core
 Change Log
 ----------
 
+4.1.0
+=====
+
+* Support for catching SSL certificate errors for Portal.
+* Using new dcicutils.scripts.publish_to_pypi for publish.
+* Using new dcicutils.function_cache decorator for API function caching.
+
 4.0.0
 =====
 

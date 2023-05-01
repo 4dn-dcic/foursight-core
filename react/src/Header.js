@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import useHeader from './hooks/Header';
 import useHeaderRefresh from './hooks/HeaderRefresh';
 import { BarSpinner, StandardSpinner } from './Spinners';
@@ -16,6 +17,64 @@ import Styles from './Styles';
 import Tooltip from './components/Tooltip';
 import ReadOnlyModeComponent from './hooks/ReadOnlyModeComponent';
 import useFetching from './hooks/Fetching';
+import useFetch from './hooks/Fetch';
+
+const Warnings = ({ header }) => {
+    return <>
+        <PortalSslCertificateWarning header={header} />
+        <PortalAccessKeyWarning header={header} />
+    </>
+}
+
+const PortalSslCertificateWarning = () => {
+    const [ args ] = useSearchParams();
+    const sslCertificateInfo = useFetch(`/certificates`);
+    if (sslCertificateInfo.loading) return <></>
+    const sslCertificateInfoPortal = sslCertificateInfo.find(certificate => certificate.name === "Portal");
+    if (sslCertificateInfoPortal && sslCertificateInfoPortal.expires_soon) {
+        return <WarningBar>
+            <b>Warning: SSL certificate for associated Portal will expire soon</b>
+            &nbsp;{Char.RightArrow}&nbsp; {sslCertificateInfoPortal.expires_at} &nbsp;{Char.RightArrow}&nbsp;
+            {Time.FromNow(sslCertificateInfoPortal.expires_at, true, false)}
+            &nbsp;{Char.RightArrow}&nbsp;
+            <Link to={Client.Path("/certificates")} style={{color:"inherit"}}>View</Link>
+        </WarningBar>
+    }
+}
+
+const PortalAccessKeyWarning = ({ header }) => {
+    const portalAccessKeyInfo = useFetch(`/portal_access_key`);
+    if (portalAccessKeyInfo.loading) return <></>
+    if (portalAccessKeyInfo) {
+        if (portalAccessKeyInfo?.data?.expires_soon) {
+            return <WarningBar>
+                <b>Warning: Access key for associated Portal will expire soon</b>
+                &nbsp;{Char.RightArrow}&nbsp; {portalAccessKeyInfo.data.expires_at} &nbsp;{Char.RightArrow}&nbsp;
+                {Time.FromNow(portalAccessKeyInfo.data.expires_at, true, false)}
+                &nbsp;{Char.RightArrow}&nbsp;
+                <Link to={Client.Path("/portal_access_key")} style={{color:"inherit"}}>View</Link>
+            </WarningBar>
+        } else if (portalAccessKeyInfo.data?.invalid) {
+            return <WarningBar>
+                <b>Warning: Access key for associated Portal {portalAccessKeyInfo.data.expired ? 'has expired' : 'is invalid'}</b>
+                &nbsp;{Char.RightArrow}&nbsp;
+                <Link to={Client.Path("/portal_access_key")} style={{color:"inherit"}}>View</Link>
+            </WarningBar>
+        }
+    }
+}
+
+const WarningBar = ({ children }) => {
+    return <>
+        <tr><td style={{background:"black",height:"2px"}} colSpan="3"></td></tr>
+        <tr>
+            <td style={{background:"darkred",color:"#FFF4F3",padding:"3pt",fontSize:"9pt"}} colSpan="3">
+                {children}
+            </td>
+        </tr>
+        <tr><td style={{background:"black",height:"1px"}} colSpan="3"></td></tr>
+    </>
+}
 
 const MainMenu = ({ header }) => {
 
@@ -308,9 +367,8 @@ const Header = (props) => {
                         </tr></tbody></table>
                     </td>
                 </tr>
-                <tr>
-                    <td style={{height:"1px",background:"darkblue"}}></td>
-                </tr>
+                <Warnings header={header} />
+                <tr><td style={{height:"1px",background:"darkblue"}}></td></tr>
             </tbody></table>
             </div>
             <div style={{float:"right",marginRight:"7pt",marginTop:"6pt"}}>

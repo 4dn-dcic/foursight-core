@@ -4,6 +4,7 @@ import Env from './utils/Env';
 import Client from './utils/Client';
 import Cookie from './utils/Cookie';
 import useHeader from './hooks/Header';
+import FatalErrorPage from './pages/FatalErrorPage';
 
 // -------------------------------------------------------------------------------------------------
 // Page guards.
@@ -15,7 +16,11 @@ import useHeader from './hooks/Header';
 //
 function KnownEnvRequired({ children }) {
     const header = useHeader();
-    if (SanityCheckPath()) {
+    if (FatalErrorPage.IsFatalError(header)) {
+        const env = Env.PreferredName(Env.Default(header), header);
+        return <Navigate to={Client.Path("/error", env)} replace />
+    }
+    else if (SanityCheckPath()) {
         return;
     }
     //
@@ -83,7 +88,10 @@ function SanityCheckPath() {
 //
 function AuthorizationRequired({ children }) {
     const header = useHeader();
-    if (SanityCheckPath()) {
+    if (FatalErrorPage.IsFatalError(header)) {
+        return <Navigate to={Client.Path("/error")} replace />
+    }
+    else if (SanityCheckPath()) {
         return;
     }
     else if (!Auth.IsLoggedIn(header)) {
@@ -99,6 +107,10 @@ function AuthorizationRequired({ children }) {
         NoteLastUrl();
         return children;
     }
+}
+
+function Unprotected({ children }) {
+    return children;
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -133,6 +145,7 @@ const Exports = {
     KnownEnvRequired:      KnownEnvRequired,
     LastPath:              GetLastPath,
     LastUrl:               GetLastUrl,
-    NoteLastUrl:           NoteLastUrl
+    NoteLastUrl:           NoteLastUrl,
+    Unprotected:           Unprotected
 };
 export default Exports;

@@ -1,6 +1,7 @@
 import logging
 import os
 import requests
+from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import get_error_message
 from .misc_utils import get_request_domain, is_running_locally
 
@@ -62,8 +63,6 @@ class Auth0Config:
             raise ValueError("Portal URL required for Auth0Config usage.")
         self._portal_url = portal_url
         self._config_url = f"{portal_url}{'/' if not portal_url.endswith('/') else ''}auth0_config?format=json"
-        self._config_data = {}
-        self._config_raw_data = {}
 
     def get_portal_url(self) -> str:
         return self._portal_url
@@ -71,25 +70,23 @@ class Auth0Config:
     def get_config_url(self) -> str:
         return self._config_url
 
+    @function_cache(nocache={})
     def get_config_data(self) -> dict:
         """
         Returns relevant info (dictionary) from the Auth0 config URL in canonical form.
         It contains these properties: domain, client, sso, scope, prompt, connections.
-        This caches its data.
-        """
-        if not self._config_data:
-            self._config_data = self._get_config_data_nocache() or {}
-        return self._config_data
-
-    def _get_config_data_nocache(self) -> dict:
-        """
-        Returns relevant info (dictionary) from the Auth0 config URL in canonical form.
-        It contains these properties: domain, client, sso, scope, prompt, connections.
-        This does NOT cache its data.
         """
         config_raw_data = self.get_config_raw_data()
         domain = config_raw_data.get("auth0Domain") if config_raw_data else None
-        client = config_raw_data.get("auth0Client") if config_raw_data else None
+        # 2023-04-24: Change to get the Auth0 client ID from the GAC rather
+        # that from the Portal /auth0_config endpoint; we still et the other
+        # non-credential info (e.g. domain, scope) from that endpoint though.
+        # This just makes it more consistent, having both those pieces of info
+        # come from the same place. Note FYI that for the non-React code we
+        # also get both pieces of the Auth0 credentials from the GAC but
+        # the other info is currently hardcoded in the Jinja templates.
+        # client = config_raw_data.get("auth0Client") if config_raw_data else None
+        client = os.environ.get("CLIENT_ID", os.environ.get("ENCODED_AUTH0_CLIENT"))
         options = config_raw_data.get("auth0Options") if config_raw_data else None
         options_auth = options.get("auth") if options else None
         options_auth_params = options_auth.get("params") if options_auth else None
@@ -111,19 +108,10 @@ class Auth0Config:
             "connections": connections or Auth0Config.FALLBACK_VALUES["connections"]
         }
 
+    @function_cache(nocache={})
     def get_config_raw_data(self) -> dict:
         """
         Returns raw data (dictionary) from the Auth0 config URL.
-        This caches its data.
-        """
-        if not self._config_raw_data:
-            self._config_raw_data = self._get_config_raw_data_nocache() or {}
-        return self._config_raw_data
-
-    def _get_config_raw_data_nocache(self) -> dict:
-        """
-        Returns raw data (dictionary) from the Auth0 config URL.
-        This does NOT caches its data.
         """
         try:
             return requests.get(self.get_config_url()).json() or {}
@@ -143,7 +131,7 @@ class Auth0Config:
         Returns the Auth0 secret.
         Currently we get this environment variables setup from the GAC; see identity.py.
         """
-        return os.environ.get("CLIENT_SECRET", os.environ.get("ENCODED_AUTH0_CLIENT"))
+        return os.environ.get("CLIENT_SECRET", os.environ.get("ENCODED_AUTH0_SECRET"))
 
     @staticmethod
     def get_callback_url(request: dict) -> str:
@@ -158,9 +146,3 @@ class Auth0Config:
         headers = request.get("headers", {})
         scheme = headers.get("x-forwarded-proto", "http")
         return f"{scheme}://{domain}{context}callback/?react"
-
-    def cache_clear(self) -> None:
-        """
-        Clears out the caches, so next call to get_config_data() and get_config_raw_data() get fresh data.
-        """
-        self._config_data = self._config_raw_data = {}

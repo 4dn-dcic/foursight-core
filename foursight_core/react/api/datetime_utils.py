@@ -67,6 +67,18 @@ def convert_time_t_to_useastern_datetime_string(time_t: int) -> Optional[str]:
     return convert_time_t_to_datetime_string(time_t, TIMEZONE_USEASTERN)
 
 
+def convert_iso_datetime_string_to_datetime(value: str) -> Optional[datetime.datetime]:
+    """
+    Returns a datetime object, in the UTC timezone, for the given (assumed)
+    ISO 8601 conforming datetime string; if an error occurs (e.g. if the
+    given value is not ISO 8601 conforming) then returns None.
+    """
+    try:
+        return datetime.datetime.fromisoformat(value).astimezone(pytz.utc)
+    except Exception:
+        return None
+
+
 def convert_time_t_to_datetime(time_t: int) -> datetime.datetime:
     """
     Converts the given "epoch" time (seconds since 1970-01-01T00:00:00Z)

@@ -45,7 +45,10 @@ const InfoBox = ({title, show = true, info, children}) => {
     </>
 }
 
-const InfoRow = ({name, value, monospace = false, copy = true, size = "4", pypi = null, github = null, elasticsearch = false, python = false, chalice = null, check = false, link = null, optional = false}) => {
+const InfoRow = ({name, value, monospace = false, copy = true, size = "4",
+                  pypi = null, github = null, elasticsearch = false, python = false, chalice = null,
+                  check = false, link = null, optional = false,
+                  portalCertificate = false, portalAccessKey = false, apiCache = false}) => {
     function removeMinorVersion(version) {
         let components = version?.split(".")
         return (components?.length >= 2) ? components[0] + "." + components[1] : version;
@@ -121,6 +124,15 @@ const InfoRow = ({name, value, monospace = false, copy = true, size = "4", pypi 
                             </>:<>
                                 {value || <span>{Char.EmptySet}</span>}
                             </>}
+                            { portalAccessKey && <>
+                                &nbsp;{Char.RightArrow}&nbsp;<Link to={Client.Path("/portal_access_key")}>View Details</Link>
+                            </> }
+                            { portalCertificate && <>
+                                &nbsp;{Char.RightArrow}&nbsp;<Link to={Client.Path("/certificates")}>View Certificate</Link>
+                            </> }
+                            { apiCache && <>
+                                &nbsp;{Char.RightArrow}&nbsp;<Link to={Client.Path("/apicache")}>View API Cache</Link>
+                            </> }
                         </span>)}
                         {checkElement}
                     </div>
@@ -137,6 +149,7 @@ const InfoPage = () => {
     const [ showingAuthToken, setShowAuthToken ] = useState(false);
     const [ showingAccounts, setShowingAccounts ] = useState(false);
     const [ reloadingApp, setReloadingApp ] = useState(false);
+    const accessKey = useFetch("/portal_access_key");
     const fetch = useFetchFunction();
 
     function initiateAppReload() {
@@ -145,7 +158,7 @@ const InfoPage = () => {
     }
 
     function clearCache() {
-        fetch(Server.Url("/__clearcache__", false));
+        fetch(Server.Url("/__functioncacheclear__", false));
     }
 
     if (info.error) return <FetchErrorBox error={info.error} message="Error loading info from Foursight API" />
@@ -164,14 +177,18 @@ const InfoPage = () => {
         </InfoBox>
         <InfoBox info={info} title="Credentials Info">
             <InfoRow name={"AWS Account Number"} value={info.get("app.credentials.aws_account_number")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"AWS Region Name"} value={info.get("app.credentials.aws_region")} monospace={true} copy={true} size="2" />
             <InfoRow name={"AWS User ARN"} value={info.get("app.credentials.aws_user_arn")} monospace={true} copy={true} size="2" />
             <InfoRow name={"AWS Access Key ID"} value={info.get("app.credentials.aws_access_key_id")} monospace={true} copy={true} size="2" />
-            <InfoRow name={"AWS Region Name"} value={info.get("app.credentials.aws_region")} monospace={true} copy={true} size="2" />
+            { info.get("environ.S3_AWS_ACCESS_KEY_ID") &&
+                <InfoRow name={"AWS S3 Access Key ID"} value={info.get("environ.S3_AWS_ACCESS_KEY_ID")} monospace={true} copy={true} size="2" />
+            }
+            <InfoRow name={"Portal Access Key"} value={accessKey.get("key")} monospace={true} copy={true} size="2" portalAccessKey={true} />
             <InfoRow name={"Auth0 Client ID"} value={info.get("app.credentials.auth0_client_id")} monospace={true} copy={true} size="2" />
         </InfoBox>
         <InfoBox info={info} title="Resources">
             <InfoRow name={"Foursight Server"} value={info.get("server.foursight")} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Portal Server"} value={info.get("server.portal")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Portal Server"} value={info.get("server.portal")} monospace={true} copy={true} size="2" portalCertificate={true} />
             <InfoRow name={"ElasticSearch Server"} value={info.get("server.es")} monospace={true} copy={true} size="2" />
             <InfoRow name={"RDS Server"} value={info.get("server.rds")} monospace={true} copy={true} size="2" />
             <InfoRow name={"SQS Server"} value={info.get("server.sqs")} monospace={true} copy={true} size="2" />
@@ -258,7 +275,7 @@ const InfoPage = () => {
             <InfoRow name={"Path"} value={info.get("page.path")} monospace={true} size="2" />
             <InfoRow name={"Endpoint"} value={info.get("page.endpoint")} monospace={true} size="2" />
             <InfoRow name={"Client (React UI)"} value={Client.BaseUrl()} monospace={true} size="2" />
-            <InfoRow name={"Server (React API)"} value={Server.BaseUrl()} monospace={true} size="2" />
+            <InfoRow name={"Server (React API)"} value={Server.BaseUrl()} monospace={true} size="2" apiCache={true} />
             <InfoRow name={"Checks File"} value={info.data?.checks?.file} monospace={true} size="2" />
             { header.app?.accounts_file &&
                 <InfoRow name={"Accounts File"} value={header.app?.accounts_file} monospace={true} size="2" />

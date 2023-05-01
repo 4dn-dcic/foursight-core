@@ -3,6 +3,7 @@ import io
 import logging
 import os
 from typing import Optional
+from dcicutils.function_cache_decorator import function_cache
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -53,8 +54,6 @@ class ReactUi:
     def __init__(self, react_api):
         self._react_api = react_api
 
-    _cached_static_files = {}
-
     @staticmethod
     def _is_known_file_suffix(file: str) -> bool:
         return any(file.endswith(file_info["suffix"]) for file_info in _REACT_STATIC_FILE_TYPES)
@@ -67,7 +66,6 @@ class ReactUi:
         return None
 
     @staticmethod
-    
     def _is_file_type_whitelisted(file: str) -> bool:
         """
         To be as restrictive as possible we ONLY allow the above whitelisted file types.
@@ -117,19 +115,17 @@ class ReactUi:
         if not self._is_file_type_whitelisted(file):
             return self._react_api.create_forbidden_response()
 
-        response = ReactUi._cached_static_files.get(file)
-        if not response:
-            response = self._react_api.create_success_response(content_type=content_type)
-            try:
-                with io.open(file, open_mode) as f:
-                    response.body = f.read()
-            except Exception as e:
-                message = f"Exception serving static React file ({file} | {content_type}): {e}"
-                logger.error(message)
-                return self._react_api.create_error_response(message)
-            ReactUi._cached_static_files[file] = response = self._react_api.process_response(response)
-        return response
+        try:
+            return self._get_file_content_response(file, open_mode, content_type)
+        except Exception as e:
+            message = f"Exception serving static React file ({file} | {content_type}): {e}"
+            logger.error(message)
+            return self._react_api.create_error_response(message)
 
-    @staticmethod
-    def cache_clear() -> None:
-        ReactUi._cached_static_files = {}
+    @function_cache
+    def _get_file_content_response(self, file: str, open_mode: str, content_type: str) -> str:
+        with io.open(file, open_mode) as f:
+            content = f.read()
+            response = self._react_api.create_success_response(content_type=content_type)
+            response.body = content
+            return response
