@@ -1,5 +1,4 @@
 from chalice.app import Request
-from functools import lru_cache
 import inspect
 import json
 import os
@@ -7,8 +6,6 @@ import pkg_resources
 import sys
 from typing import Callable, Optional, Tuple, Union
 from urllib.parse import urlparse
-
-memoize = lru_cache(100)
 
 
 def sort_dictionary_by_case_insensitive_keys(dictionary: dict) -> dict:

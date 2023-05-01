@@ -1,8 +1,8 @@
 import boto3
 from .datetime_utils import convert_utc_datetime_to_useastern_datetime_string
-from .misc_utils import memoize
 from .yaml_utils import load_yaml
 from collections import OrderedDict
+from dcicutils.function_cache_decorator import function_cache
 from dcicutils.obfuscation_utils import obfuscate_dict
 from typing import Optional, Union
 
@@ -10,7 +10,7 @@ from typing import Optional, Union
 _STACK_NAME_PREFIX = "c4-"
 
 
-@memoize
+@function_cache
 def aws_get_stacks() -> list:
     """
     Returns the list of all known AWS CloudFormation stacks with various metadata.
@@ -40,7 +40,7 @@ def _create_aws_stack_info(stack: object):
     }
 
 
-@memoize
+@function_cache
 def aws_get_stack(stack_name_or_object: Union[str, object]) -> dict:
     """
     Returns all detailed info for the given AWS CloudFormation stack name,
@@ -60,7 +60,7 @@ def aws_get_stack(stack_name_or_object: Union[str, object]) -> dict:
     return result
 
 
-@memoize
+@function_cache
 def aws_get_stack_outputs(stack_name_or_object: Union[str, object]) -> dict:
     """
     Returns the name/value outputs for the given AWS CloudFormation stack name.
@@ -76,7 +76,7 @@ def aws_get_stack_outputs(stack_name_or_object: Union[str, object]) -> dict:
     return _obfuscate(result)
 
 
-@memoize
+@function_cache
 def aws_get_stack_parameters(stack_name_or_object: Union[str, object]) -> dict:
     """
     Returns a name/value dictionary of the parameters for the given AWS CloudFormation stack name.
@@ -92,7 +92,7 @@ def aws_get_stack_parameters(stack_name_or_object: Union[str, object]) -> dict:
     return _obfuscate(result)
 
 
-@memoize
+@function_cache
 def aws_get_stack_resources(stack_name_or_object: Union[str, object]) -> dict:
     """
     Returns a name/value dictionary of the resources for the given AWS CloudFormation stack name.
@@ -130,7 +130,7 @@ def get_single_item_list_value(any_list: list) -> object:
     return any_list[0]
 
 
-@memoize
+@function_cache
 def aws_get_stack_template(stack_name: str) -> dict:
     """
     Returns the AWS Cloudformation template as a dictionary for the given stack name.
@@ -152,15 +152,6 @@ def aws_get_stack_template(stack_name: str) -> dict:
         #
         stack_template_dict = load_yaml(stack_template_body)
     return _obfuscate(stack_template_dict)
-
-
-def aws_stacks_cache_clear() -> None:
-    aws_get_stacks.cache_clear()
-    aws_get_stack.cache_clear()
-    aws_get_stack_outputs.cache_clear()
-    aws_get_stack_parameters.cache_clear()
-    aws_get_stack_resources.cache_clear()
-    aws_get_stack_template.cache_clear()
 
 
 def _obfuscate(value: dict) -> dict:

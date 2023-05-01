@@ -31,8 +31,9 @@ from dcicutils.env_utils import (
     short_env_name,
     public_env_name
 )
-from dcicutils import ff_utils
 from dcicutils.exceptions import InvalidParameterError
+from dcicutils import ff_utils
+from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import disjoined_list
 from dcicutils.misc_utils import get_error_message, ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
@@ -138,8 +139,6 @@ class AppUtilsCore(ReactApi, Routes):
         # self.user_record = None
         # self.user_record_error = None
         # self.user_record_error_email = None
-        self._cached_lambda_last_modified = None
-        self._cached_portal_url = {}
         super(AppUtilsCore, self).__init__()
 
     @classmethod
@@ -273,21 +272,18 @@ class AppUtilsCore(ReactApi, Routes):
         user_record["error"] = error
         user_record["exception"] = exception
 
+    @function_cache(key=lambda self, env_name, raise_exception = False: env_name, nocache=None)
     def get_portal_url(self, env_name: str, raise_exception: bool = False) -> Optional[str]:
-        portal_url = self._cached_portal_url.get(env_name)
-        if not portal_url:
-            try:
-                environment_and_bucket_info = (
-                    self.environment.get_environment_and_bucket_info(env_name, self.stage.get_stage()))
-                portal_url = environment_and_bucket_info.get("fourfront")
-                self._cached_portal_url[env_name] = portal_url
-            except Exception as e:
-                if raise_exception:
-                    raise
-                message = f"Error getting portal URL: {get_error_message(e)}"
-                logger.error(message)
-                return None
-        return self._cached_portal_url[env_name]
+        try:
+            environment_and_bucket_info = (
+                self.environment.get_environment_and_bucket_info(env_name, self.stage.get_stage()))
+            return environment_and_bucket_info.get("fourfront")
+        except Exception as e:
+            if raise_exception:
+                raise
+            message = f"Error getting portal URL: {get_error_message(e)}"
+            logger.error(message)
+            return None
 
     def get_auth0_client_id(self, env_name: str) -> str:
         auth0_client_id = os.environ.get("CLIENT_ID")
@@ -800,26 +796,21 @@ class AppUtilsCore(ReactApi, Routes):
                 logger.warning(f"Reloading lambda: {lambda_name}")
                 boto_lambda.update_function_configuration(FunctionName=lambda_name, Description=lambda_description)
                 logger.warning(f"Reloaded lambda: {lambda_name}")
-                self._cached_lambda_last_modified = None
                 return True
         except Exception as e:
             logger.warning(f"Error reloading lambda ({lambda_name}): {e}")
         return False
 
+    @function_cache(nocache=None)
     def get_lambda_last_modified(self, lambda_name: str = None) -> Optional[str]:
         """
         Returns the last modified time for the given lambda name.
         See comments in reload_lambda on this.
         """
-        lambda_current = False
         if not lambda_name or lambda_name.lower() == "current" or lambda_name.lower() == "current":
             lambda_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
             if not lambda_name:
                 return None
-            lambda_current = True
-        if lambda_current:
-            if self._cached_lambda_last_modified:
-                return self._cached_lambda_last_modified
         try:
             boto_lambda = boto3.client("lambda")
             lambda_info = boto_lambda.get_function(FunctionName=lambda_name)
@@ -832,8 +823,6 @@ class AppUtilsCore(ReactApi, Routes):
                 else:
                     lambda_last_modified = lambda_info["Configuration"]["LastModified"]
                     lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified)
-                if lambda_current:
-                    self._cached_lambda_last_modified = lambda_last_modified
                 return lambda_last_modified
         except Exception as e:
             logger.warning(f"Error getting lambda ({lambda_name}) last modified time: {e}")
@@ -2136,10 +2125,6 @@ class AppUtilsCore(ReactApi, Routes):
         if not AppUtilsCore._singleton:
             AppUtilsCore._singleton = specific_class() if specific_class else AppUtilsCore()
         return AppUtilsCore._singleton
-
-    def cache_clear(self) -> None:
-        self._cached_lambda_last_modified = None
-        self._cached_portal_url = {}
 
 
 class AppUtils(AppUtilsCore):  # for compatibility with older imports

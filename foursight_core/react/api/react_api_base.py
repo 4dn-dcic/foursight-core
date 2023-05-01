@@ -230,8 +230,3 @@ class ReactApiBase:
 
     def get_default_env(self) -> str:
         return self._envs.get_default_env()
-
-    def cache_clear(self) -> None:
-        self._auth.cache_clear()
-        self._auth0_config.cache_clear()
-        self._envs.cache_clear()

@@ -5,9 +5,9 @@ import cron_descriptor
 import logging
 import os
 from typing import Callable, Optional
+from dcicutils.function_cache_decorator import function_cache
 from ...decorators import Decorators
 from .envs import Envs
-from .misc_utils import memoize
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class Checks:
         """
         return self._check_setup_raw
 
-    @memoize
+    @function_cache
     def _get_checks(self) -> dict:
         checks = self._check_setup
         for check_key in checks.keys():
@@ -38,7 +38,7 @@ class Checks:
         self._annotate_checks_with_kwargs_from_decorators(checks)
         return checks
 
-    @memoize
+    @function_cache
     def get_checks(self, env: str) -> dict:
         """
         Returns a dictionary containing all checks, annotated with various info,
@@ -48,7 +48,7 @@ class Checks:
         """
         return self._filter_checks_by_env(self._get_checks(), env)
 
-    @memoize
+    @function_cache
     def get_checks_grouped(self, env: str) -> list:
         """
         Like get_checks but returns the checks grouped by their group names.
@@ -68,7 +68,7 @@ class Checks:
                 grouped_checks.append({"group": check_item_group, "checks": [check_item]})
         return grouped_checks
 
-    @memoize
+    @function_cache
     def get_checks_grouped_by_schedule(self, env: str) -> list:
         """
         Like get_checks_grouped but groups by schedule (i.e. by scheduling lambdas).
@@ -113,7 +113,7 @@ class Checks:
                         group["checks"].append(check)
         return grouped_checks
 
-    @memoize
+    @function_cache
     def get_check(self, env: str, check: str) -> Optional[dict]:
         """
         Returns the check for the given check name; filtered by the given env name.
@@ -381,7 +381,7 @@ class Checks:
                 lambda_item["lambda_checks"].sort(key=lambda item: f"{item['check_group']}.{item['check_name']}")
         return lambdas
 
-    @memoize
+    @function_cache
     def _get_annotated_lambdas(self) -> dict:
         stack_name = self._get_stack_name()
         stack_template = self._get_stack_template(stack_name)
@@ -391,7 +391,7 @@ class Checks:
         lambdas = self._annotate_lambdas_with_check_setup(lambdas, self._check_setup)
         return lambdas
 
-    @memoize
+    @function_cache
     def get_annotated_lambdas(self, env: Optional[str] = None) -> dict:
         """
         Returns the dictionary of all AWS lambdas for our defined stack.
@@ -436,7 +436,7 @@ class Checks:
                             check_schedule[check_schedule_name]["cron"] = la["lambda_schedule"]
                             check_schedule[check_schedule_name]["cron_description"] = la["lambda_schedule_description"]
 
-    @memoize
+    @function_cache
     def get_registry(self) -> dict:
         """
         Returns the checks registry dictionary which was set up by the @check_function
@@ -540,13 +540,3 @@ class Checks:
             if not marker:
                 break
         return results
-
-    def cache_clear(self) -> None:
-        self._get_checks.cache_clear()
-        self.get_checks.cache_clear()
-        self.get_checks_grouped.cache_clear()
-        self.get_checks_grouped_by_schedule.cache_clear()
-        self.get_check.cache_clear()
-        self._get_annotated_lambdas.cache_clear()
-        self.get_annotated_lambdas.cache_clear()
-        self.get_registry.cache_clear()

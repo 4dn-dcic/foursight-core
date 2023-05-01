@@ -4,9 +4,9 @@ import os
 from typing import Optional, Tuple
 from dcicutils import ff_utils
 from dcicutils.env_utils import foursight_env_name
+from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import find_association
 from .gac import Gac
-from .misc_utils import memoize
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class Envs:
     def get_known_envs_count(self) -> int:
         return len(self._known_envs)
 
-    @memoize
+    @function_cache
     def get_known_envs_with_gac_names(self) -> list:
         known_envs = copy.deepcopy(self._known_envs)
         for known_env in known_envs:
@@ -46,11 +46,11 @@ class Envs:
     def get_default_env() -> str:
         return os.environ.get("ENV_NAME", Envs._DEFAULT_ENV_PLACHOLDER)
 
-    @memoize
+    @function_cache
     def is_known_env(self, env: str) -> bool:
         return self.find_known_env(env) is not None
 
-    @memoize
+    @function_cache
     def find_known_env(self, env: str) -> Optional[dict]:
         known_envs = self.get_known_envs_with_gac_names()
         return find_association(known_envs, foursight_name=foursight_env_name(env))
@@ -63,7 +63,7 @@ class Envs:
                 return True
         return False
 
-    @memoize
+    @function_cache
     def is_same_env(self, env_a: str, env_b: str) -> bool:
         return foursight_env_name(env_a) == foursight_env_name(env_b)
 
@@ -104,9 +104,3 @@ class Envs:
     def _is_user_in_one_or_more_groups(user: Optional[dict], allowed_groups: list) -> bool:
         user_groups = user.get("groups") if user else None
         return user_groups and any(allowed_group in user_groups for allowed_group in allowed_groups or [])
-
-    def cache_clear(self) -> None:
-        self.get_known_envs_with_gac_names.cache_clear()
-        self.is_known_env.cache_clear()
-        self.find_known_env.cache_clear()
-        self.is_same_env.cache_clear()

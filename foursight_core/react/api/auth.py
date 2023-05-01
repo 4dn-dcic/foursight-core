@@ -4,10 +4,11 @@ import logging
 import time
 import redis
 from typing import Optional
-from dcicutils.redis_utils import create_redis_client
-from dcicutils.redis_tools import RedisBase, RedisSessionToken, SESSION_TOKEN_COOKIE
 from dcicutils.env_utils import full_env_name
+from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import ignored, PRINT
+from dcicutils.redis_tools import RedisBase, RedisSessionToken, SESSION_TOKEN_COOKIE
+from dcicutils.redis_utils import create_redis_client
 from ...app import app
 from .cookie_utils import read_cookie, read_cookie_bool
 from .envs import Envs
@@ -38,8 +39,6 @@ class Auth:
             PRINT('Cannot connect to Redis')
             PRINT('This error is expected when deploying with remote (ElastiCache) Redis')
             self._redis = None
-
-    _cached_aws_credentials = {}
 
     def get_redis_handler(self):
         """
@@ -265,6 +264,7 @@ class Auth:
         """
         return self._create_unauthorized_response(request, status, authtoken_decoded, is_authenticated=False)
 
+    @function_cache(nocache=None)
     def get_aws_credentials(self, env: str) -> dict:
         """
         Returns basic AWS credentials info (NOT the secret).
@@ -272,43 +272,38 @@ class Auth:
         This has nothing to do with the rest of the authentication
         and authorization stuff here but vaguely related so here seems fine.
         """
-        aws_credentials = Auth._cached_aws_credentials.get(env)
-        if not aws_credentials:
+        aws_credentials = None
+        try:
+            session = boto3.session.Session()
+            credentials = session.get_credentials()
+            access_key_id = credentials.access_key
+            region_name = session.region_name
+            caller_identity = boto3.client("sts").get_caller_identity()
+            user_arn = caller_identity["Arn"]
+            account_number = caller_identity["Account"]
+            aws_credentials = {
+                "aws_account_number": account_number,
+                "aws_user_arn": user_arn,
+                "aws_access_key_id": access_key_id,
+                "aws_region": region_name,
+                "auth0_client_id": self._auth0_client
+            }
+            # Try getting the account name though probably no permission at the moment.
+            aws_account_name = None
             try:
-                session = boto3.session.Session()
-                credentials = session.get_credentials()
-                access_key_id = credentials.access_key
-                region_name = session.region_name
-                caller_identity = boto3.client("sts").get_caller_identity()
-                user_arn = caller_identity["Arn"]
-                account_number = caller_identity["Account"]
-                aws_credentials = {
-                    "aws_account_number": account_number,
-                    "aws_user_arn": user_arn,
-                    "aws_access_key_id": access_key_id,
-                    "aws_region": region_name,
-                    "auth0_client_id": self._auth0_client
-                }
-                # Try getting the account name though probably no permission at the moment.
-                aws_account_name = None
+                aws_credentials["aws_account_name"] = (
+                    boto3.client('iam').list_account_aliases()['AccountAliases'][0])
+            except Exception as e:
+                logger.warning(f"Exception (not fatal) getting AWS account alias: {e}")
+            if not aws_account_name:
                 try:
                     aws_credentials["aws_account_name"] = (
-                        boto3.client('iam').list_account_aliases()['AccountAliases'][0])
+                        boto3.client('organizations').
+                        describe_account(AccountId=account_number).get('Account').get('Name')
+                    )
                 except Exception as e:
-                    logger.warning(f"Exception (not fatal) getting AWS account alias: {e}")
-                if not aws_account_name:
-                    try:
-                        aws_credentials["aws_account_name"] = (
-                            boto3.client('organizations').
-                            describe_account(AccountId=account_number).get('Account').get('Name')
-                        )
-                    except Exception as e:
-                        logger.warning(f"Exception (not fatal) getting AWS account name: {e}")
-                Auth._cached_aws_credentials[env] = aws_credentials
-            except Exception as e:
-                logger.warning(f"Exception (not fatal) getting AWS account info: {e}")
-                return {}
+                    logger.warning(f"Exception (not fatal) getting AWS account name: {e}")
+        except Exception as e:
+            logger.warning(f"Exception (not fatal) getting AWS account info: {e}")
+            return None
         return aws_credentials
-
-    def cache_clear(self) -> None:
-        self._cached_aws_credentials = {}

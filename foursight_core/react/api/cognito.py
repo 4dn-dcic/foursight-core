@@ -8,11 +8,12 @@ import os
 from typing import Tuple
 from typing_extensions import TypedDict
 from dcicutils.common import REGION as AWS_REGION
+from dcicutils.function_cache_decorator import function_cache
 from foursight_core.react.api.encoding_utils import base64_encode
 from foursight_core.react.api.envs import Envs
 from foursight_core.react.api.gac import Gac
 from foursight_core.react.api.jwt_utils import jwt_encode
-from foursight_core.react.api.misc_utils import get_request_domain, get_request_origin, memoize
+from foursight_core.react.api.misc_utils import get_request_domain, get_request_origin
 
 
 AWS_COGNITO_SERVICE_BASE_URL = f"https://cognito-idp.{AWS_REGION}.amazonaws.com"
@@ -58,17 +59,14 @@ def get_cognito_oauth_config(request: dict) -> CognitoConfig:
     return config
 
 
-@memoize
+@function_cache
 def _get_cognito_oauth_config_basic() -> CognitoConfig:
     """
     Returns basic configuration info for our AWS Cognito authentication server.
     Retrieved via either environment variables of AWS Secrets Manager.
     :returns: Dictionary with basic AWS Cognito configuration info.
     """
-    #
-    # This is separated from get_cognito_oauth_config just so we can memoize these most commonly used
-    # configuration values (as the dictionary argument required for that function is not memoize-able).
-    #
+    # This is separated from get_cognito_oauth_config just so we can cache these most commonly used
     domain = os.environ.get("FOURSIGHT_COGNITO_DOMAIN")
     if not domain:
         domain = Gac.get_secret_value("COGNITO_DOMAIN")
@@ -90,7 +88,7 @@ def _get_cognito_oauth_config_basic() -> CognitoConfig:
     }
 
 
-@memoize
+@function_cache
 def _get_cognito_oauth_config_client_secret() -> str:
     """
     Returns the Cognito user pool client secret value.
@@ -411,8 +409,3 @@ def _create_cognito_authtoken(token: dict, envs: Envs, domain: str, site: str) -
         "site": site
     }
     return authtoken, expires
-
-
-def clear_cognito_cache():
-    _get_cognito_oauth_config_basic.cache_clear()
-    _get_cognito_oauth_config_client_secret.cache_clear()

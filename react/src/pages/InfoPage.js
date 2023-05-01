@@ -158,7 +158,7 @@ const InfoPage = () => {
     }
 
     function clearCache() {
-        fetch(Server.Url("/__clearcache__", false));
+        fetch(Server.Url("/__functioncacheclear__", false));
     }
 
     if (info.error) return <FetchErrorBox error={info.error} message="Error loading info from Foursight API" />

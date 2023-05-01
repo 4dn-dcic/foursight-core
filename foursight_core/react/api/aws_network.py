@@ -5,8 +5,9 @@ from typing import Callable, Optional, Union
 # TODO: Included here until we get utils PR-236 approved/merged/pushed
 # from dcicutils.misc_utils import keys_and_values_to_dict
 from .misc_utils import keys_and_values_to_dict
+from dcicutils.function_cache_decorator import function_cache
 from dcicutils.obfuscation_utils import obfuscate_dict
-from .misc_utils import memoize, sort_dictionary_by_case_insensitive_keys
+from .misc_utils import sort_dictionary_by_case_insensitive_keys
 
 
 def _filter_boto_description_list(description: dict,
@@ -125,7 +126,7 @@ def _create_tags_dictionary(tags: list) -> dict:
     return sort_dictionary_by_case_insensitive_keys(obfuscate_dict(keys_and_values_to_dict(tags)))
 
 
-@memoize
+@function_cache
 def aws_get_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: bool = False) -> list:
     """
     Returns the list of AWS VPCs which have tags names matching the given tag predicate.
@@ -214,7 +215,7 @@ def aws_get_vpcs(predicate: Optional[Union[str, re.Pattern, Callable]] = None, r
     return vpcs
 
 
-@memoize
+@function_cache
 def aws_get_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None,
                     vpc_id: Optional[str] = None, raw: bool = False) -> list:
     """
@@ -319,7 +320,7 @@ def aws_get_subnets(predicate: Optional[Union[str, re.Pattern, Callable]] = None
     return subnets
 
 
-@memoize
+@function_cache
 def aws_get_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]] = None,
                             vpc_id: Optional[str] = None, raw: bool = False) -> list:
     """
@@ -436,7 +437,7 @@ def aws_get_security_groups(predicate: Optional[Union[str, re.Pattern, Callable]
     return security_groups
 
 
-@memoize
+@function_cache
 def aws_get_security_group_rules(security_group_id: str, direction: Optional[str] = None, raw: bool = False) -> list:
     """
     Returns list of AWS Security Group Rules for the given Security Group ID in our own canonical form.
@@ -486,7 +487,7 @@ def aws_get_security_group_rules(security_group_id: str, direction: Optional[str
     return security_group_rules
 
 
-@memoize
+@function_cache
 def aws_get_network(predicate: Optional[Union[str, re.Pattern, Callable]] = None, raw: bool = False) -> list:
     """
     Returns AWS network info, i.e. WRT VPCs, Subnets, and Security Groups, whose tags match the given predicate
@@ -500,7 +501,7 @@ def aws_get_network(predicate: Optional[Union[str, re.Pattern, Callable]] = None
     :raises Exception: On any error.
     """
     vpcs = aws_get_vpcs(predicate, raw)
-    vpcs = copy.deepcopy(vpcs)  # Copy because we're going to modify and it's memoized.
+    vpcs = copy.deepcopy(vpcs)  # Copy because we're going to modify and it's cached.
     subnets = aws_get_subnets(predicate, None, raw)
     sgs = aws_get_security_groups(predicate, None, raw)
     vpc_property = "vpc" if not raw else "VpcId"
@@ -509,14 +510,3 @@ def aws_get_network(predicate: Optional[Union[str, re.Pattern, Callable]] = None
         vpc["subnets"] = [subnet for subnet in subnets if subnet[vpc_property] == vpc[id_property]]
         vpc["security_groups"] = [sg for sg in sgs if sg[vpc_property] == vpc[id_property]]
     return vpcs
-
-
-def aws_network_cache_clear():
-    """
-    Clears any cached info herein, i.e. based on memoize.
-    """
-    aws_get_vpcs.cache_clear()
-    aws_get_subnets.cache_clear()
-    aws_get_security_groups.cache_clear()
-    aws_get_security_group_rules.cache_clear()
-    aws_get_network.cache_clear()

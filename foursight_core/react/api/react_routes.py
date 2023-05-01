@@ -123,6 +123,23 @@ class ReactRoutes:
         args = get_request_args(request_dict)
         return app.core.reactapi_portal_access_key(request_dict, args)
 
+    @route("/{env}/elasticsearch", authorize=False)
+    def reactapi_route_elasticsearch_noenv(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Note that this in an UNPROTECTED route.
+        Pings the Elasticsearch associated with this Foursight instance and returns related info.
+        """
+        ignored(env)
+        return ReactRoutes.reactapi_route_elasticsearch_noenv()
+
+    @route("/elasticsearch", authorize=False)
+    def reactapi_route_elasticsearch_noenv() -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Note that this in an UNPROTECTED route.
+        Pings the Elasticsearch associated with this Foursight instance and returns related info.
+        """
+        return app.core.reactapi_elasticsearch()
+
     # ----------------------------------------------------------------------------------------------
     # Foursight React API routes PROTECTED by authorization/authentication.
     # ----------------------------------------------------------------------------------------------
@@ -592,13 +609,6 @@ class ReactRoutes:
         For troubleshooting only. Reload the lambda code.
         """
         return app.core.reactapi_reload_lambda(app.current_request.to_dict())
-
-    @route("/__clearcache__", authorize=True)
-    def reactapi_route_clear_cache() -> Response:  # noqa: implicit @staticmethod via @route
-        """
-        For troubleshooting only. Clear any/all internal caches.
-        """
-        return app.core.reactapi_clear_cache(app.current_request.to_dict())
 
     @route("/__testsize__/{n}", authorize=True)
     def reactapi_route_testsize(n: int) -> Response:  # noqa: implicit @staticmethod via @route
