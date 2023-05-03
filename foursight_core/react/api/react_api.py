@@ -1062,6 +1062,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         ignored(request)
         args = base64_decode_to_json(args) if args else None
+        # This turns strings into ints/floats/etc appropriately.
+        args = app.core.query_params_to_literals(args)
         queued_uuid = app.core.queue_check(env, check, args)
         return self.create_success_response({"check": check, "env": env, "uuid": queued_uuid})
 
@@ -1075,6 +1077,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         ignored(request)
         args = base64_decode_to_json(args) if args else {}
+        args = app.core.query_params_to_literals(args)
         queued_uuid = app.core.queue_action(env, action, args)
         return self.create_success_response({"action": action, "env": env, "uuid": queued_uuid})
 
