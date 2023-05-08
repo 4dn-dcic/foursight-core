@@ -1,6 +1,7 @@
 from .helpers.confchecks import (
     check_function, CheckResult, action_function, ActionResult
 )
+import json
 from datetime import datetime, timedelta
 from dcicutils import s3_utils
 from dcicutils.ff_utils import get_metadata, search_metadata, patch_metadata, post_metadata
@@ -72,7 +73,7 @@ def refresh_access_keys(connection, **kwargs):
         s3_obj = {'secret': access_key_res['secret_access_key'],
                   'key': access_key_res['access_key_id'],
                   'server': s3.url}
-        s3.s3_put_secret(s3_obj, kp_name)
+        s3.s3_put_secret(json.dumps(s3_obj), kp_name)
         full_output['successfully_generated'].append(email)
         # clear out old keys after generating new one
         for access_key in access_keys:  # note this search result was computed before the new key was added
