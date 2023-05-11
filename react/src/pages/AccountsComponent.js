@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BarSpinner, StandardSpinner } from '../Spinners';
 import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
+import Client from '../utils/Client';
 import useFetch from '../hooks/Fetch';
 import useFetching from '../hooks/Fetching';
 import Time from '../utils/Time';
@@ -9,7 +10,26 @@ import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
 
-const AccountInfoLeft = ({ info, foursightUrl }) => {
+function isCurrentAccount(header, info) {
+    if (!Type.IsNull(header?.app?.credentials?.aws_account_number) &&
+        !Type.IsNull(info?.data?.foursight?.aws_account_number) &&
+        (header?.app?.credentials?.aws_account_number === info?.data?.foursight?.aws_account_number)) {
+        return true;
+    }
+    return false;
+}
+
+const AccountInfoLeft = ({ header, info, foursightUrl }) => {
+
+    const SslCertificateLink = ({ url }) => {
+        return url && url.startsWith("https://") && <small>
+          &nbsp;| <a style={{color:"inherit"}} href={Client.Path("certificates") + "/?hostname=" + url} rel="noreferrer" target="_blank"><b>SSL</b></a>&nbsp;
+          <a style={{color:"inherit"}} href={Client.Path("certificates") + "/?hostname=" + url} rel="noreferrer" target="_blank"><span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span></a>
+        </small>
+    }
+
+    const portalAccessKey = useFetch("/portal_access_key");
+
     return <table style={{width:"100%"}}><tbody style={{whiteSpace:"nowrap"}}>
         <tr>
             <td style={{paddingRight:"10pt",width:"10%"}}>
@@ -29,6 +49,7 @@ const AccountInfoLeft = ({ info, foursightUrl }) => {
                 <a style={{color:"inherit"}} href={info.get("foursight.url") || foursightUrl} rel="noreferrer" target="_blank">
                     <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span>
                 </a>
+                <SslCertificateLink url={info.get("foursight.url")} />
             </td>
         </tr>
         <tr>
@@ -45,10 +66,9 @@ const AccountInfoLeft = ({ info, foursightUrl }) => {
                     &nbsp;|&nbsp;
                     <a style={{color:"inherit"}} href={info.get("portal.health_ui_url")} rel="noreferrer" target="_blank">Health</a>&nbsp;
                     <a style={{color:"inherit"}} href={info.get("portal.health_ui_url")} rel="noreferrer" target="_blank"><span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span></a>
-                        &nbsp;
-                        <small>
-                            (<a style={{color:"inherit"}} href={info.get("portal.health_url")} rel="noreferrer" target="_blank">JSON</a>)&nbsp;
-                        </small>
+                    &nbsp;
+                    <small>(<a style={{color:"inherit"}} href={info.get("portal.health_url")} rel="noreferrer" target="_blank">JSON</a>)</small>
+                    <SslCertificateLink url={info.get("portal.url")} />
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -175,6 +195,10 @@ const AccountInfoLeft = ({ info, foursightUrl }) => {
                 </>:<> &ndash; </>}
             </td>
         </tr>
+        { isCurrentAccount(header, info) && <tr style={{fontSize:"small"}}>
+            <td style={{paddingRight:"10pt"}}> Portal Access Key: </td>
+            <td> {portalAccessKey.get("key")} </td>
+        </tr> }
         <tr><td style={{paddingTop:"4pt"}} /></tr>
         <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -382,23 +406,14 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
         info.refresh();
     }
 
-    function isCurrentAccount(info) {
-        if (!Type.IsNull(header?.app?.credentials?.aws_account_number) &&
-            !Type.IsNull(info?.data?.foursight?.aws_account_number) &&
-            (header?.app?.credentials?.aws_account_number === info?.data?.foursight?.aws_account_number)) {
-            return true;
-        }
-        return false;
+    function isCurrentAccountAndStage(header, info) {
+        return isCurrentAccount(header, info) && (header?.app?.stage === info?.data?.stage);
     }
 
-    function isCurrentAccountAndStage(info) {
-        return isCurrentAccount(info) && (header?.app?.stage === info?.data?.stage);
-    }
-
-    if (!all && !isCurrentAccount(info)) return null;
+    if (!all && !isCurrentAccount(header, info)) return null;
     return <>
-        <div className={isCurrentAccountAndStage(info) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt",filter:brighten ? "brightness(1.1)" : ""}}>
-            {isCurrentAccount(info) ? <>
+        <div className={isCurrentAccountAndStage(header, info) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt",filter:brighten ? "brightness(1.1)" : ""}}>
+            {isCurrentAccount(header, info) ? <>
                 <b id={`tooltip-current-${account.name}-${info?.data?.stage}`}>{info.data?.name || account.name}</b>
                 <Tooltip id={`tooltip-current-${account.name}-${info?.data?.stage}`} text={`This is your current account: ${info.get("foursight.aws_account_number")}`} position="top" />
             </>:<>
@@ -432,7 +447,7 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
             <table><tbody>
                 <tr style={{verticalAlign:"top"}}>
                     <td style={{width:"70%"}}>
-                        <AccountInfoLeft info={info} header={header} foursightUrl={foursightUrl} />
+                        <AccountInfoLeft header={header} info={info} foursightUrl={foursightUrl} />
                     </td>
                     <td style={{paddingLeft:"10pt",width:"12pt"}} />
                     <td style={{marginLeft:"12pt",borderLeft:"1px solid"}} />
