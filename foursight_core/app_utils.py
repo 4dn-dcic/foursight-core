@@ -585,7 +585,7 @@ class AppUtilsCore(ReactApi, Routes):
         """
         to_delete = []
         for key, value in params.items():
-            if not value:
+            if isinstance(value, str) and not value:
                 # handles empty strings
                 to_delete.append(key)
                 continue
