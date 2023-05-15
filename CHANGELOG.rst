@@ -6,7 +6,7 @@ foursight-core
 Change Log
 ----------
 
-4.1.1
+4.1.2
 =====
 * Fix for check arguments not being converted (from string) to int/float/etc as
   appropriate in the React version only (was not calling query_params_to_literals).
