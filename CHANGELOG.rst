@@ -6,6 +6,10 @@ foursight-core
 Change Log
 ----------
 
+4.2.0
+=====
+* Minor UI fixes for display of status text for checks/actions.
+
 4.1.2
 =====
 * Fix for check arguments not being converted (from string) to int/float/etc as
