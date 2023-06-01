@@ -11,6 +11,7 @@ import { FetchErrorBox } from '../Components';
 import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
+import ChecksValidation from '../components/ChecksValidation';
 import DisplayStatusText from '../components/DisplayStatusText';
 import Env from '../utils/Env';
 import Image from '../utils/Image';
@@ -1749,6 +1750,7 @@ const ChecksPage = (props) => {
         </>
     }
     return <>
+        <ChecksValidation />
         <div>
             <table><tbody>
                 <tr>
