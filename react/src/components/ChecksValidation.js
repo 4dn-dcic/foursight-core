@@ -11,7 +11,7 @@ const ChecksValidation = () => {
         return <></>
     }
     return <>
-        <div className="box error thickborder" style={{width:"80%",fontSize:"small"}}>
+        <div className="box error thickborder" style={{width:"60%",fontSize:"small"}}>
             <b>The following defined action functions have no assocated check</b>: <br />
             <HorizontalLine top="6" bottom="6" color="darkred" thick={true} />
             { actionsWithNoAssociatedCheck.map(item => <>
