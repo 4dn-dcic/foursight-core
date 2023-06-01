@@ -9,6 +9,7 @@ Change Log
 4.2.0
 =====
 * Minor UI fixes for display of status text for checks/actions.
+* Added UI warning for registered action functions with no associated check.
 
 4.1.2
 =====
