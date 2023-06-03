@@ -333,6 +333,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         aws_credentials = self._auth.get_aws_credentials(env or default_env)
         portal_url = app.core.get_portal_url(env or default_env)
         portal_base_url = get_base_url(portal_url)
+        connection = app.core.init_connection(env)
+        redis_url = connection.redis_url
+        redis = connection.redis
         response = {
             "app": {
                 "title": app.core.html_main_title,
@@ -356,9 +359,18 @@ class ReactApi(ReactApiBase, ReactRoutes):
             },
             "versions": self._get_versions_object(),
             "portal": {
-                "url": app.core.get_portal_url(env or default_env),
+                "url": portal_url,
                 "health_url": portal_base_url + "/health?format=json",
                 "health_ui_url": portal_base_url + "/health"
+            },
+            "resources": {
+                "es": app.core.host,
+                "foursight": self.foursight_instance_url(request),
+                "portal": portal_url,
+                "rds": os.environ["RDS_HOSTNAME"],
+                "redis": redis_url,
+                "redis_running": redis is not None,
+                "sqs": self._get_sqs_queue_url(),
             },
             "s3": {
                 "bucket_org": os.environ.get("ENCODED_S3_BUCKET_ORG", os.environ.get("S3_BUCKET_ORG", None)),
