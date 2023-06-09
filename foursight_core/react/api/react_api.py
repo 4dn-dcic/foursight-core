@@ -86,7 +86,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "chalice": chalice_version,
                 "elasticsearch_server": self._get_elasticsearch_server_version(),
                 "elasticsearch": get_package_version("elasticsearch"),
-                "elasticsearch_dsl": get_package_version("elasticsearch-dsl")
+                "elasticsearch_dsl": get_package_version("elasticsearch-dsl"),
+                "redis": get_package_version("redis"),
+                "redis_server": self._get_redis_server_version()
             }
 
     @function_cache(nokey=True, nocache=None)
@@ -94,6 +96,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         connection = app.core.init_connection(self._envs.get_default_env())
         es_info = connection.es_info()
         return es_info.get("version", {}).get("number")
+
+    @function_cache(nokey=True, nocache=None)
+    def _get_redis_server_version(self) -> Optional[str]:
+        connection = app.core.init_connection(self._envs.get_default_env())
+        redis_info = connection.redis_info()
+        return redis_info.get("redis_version") if redis_info else None
 
     @function_cache
     def _get_user_projects(self, env: str, raw: bool = False) -> list:
@@ -367,6 +375,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "es": app.core.host,
                 "foursight": self.foursight_instance_url(request),
                 "portal": portal_url,
+                # TODO: May later want to rds_username and/or such.
                 "rds": os.environ["RDS_HOSTNAME"],
                 "redis": redis_url,
                 "redis_running": redis is not None,
@@ -1128,17 +1137,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Returns information about any problems with the checks setup.
         """
         ignored(request, env)
-        checks_actions_registry = self._checks.get_registry()
-        actions_with_no_assocated_check = [name for name in checks_actions_registry
-                                           if checks_actions_registry[name].get("kind") == "action"
-                                           and not checks_actions_registry[name].get("checks")]
         response = {}
-        if actions_with_no_assocated_check:
-            response["actions_with_no_associated_check"] = [
-                checks_actions_registry[item]
-                for item in checks_actions_registry
-                if checks_actions_registry[item]["kind"] == "action" and item in actions_with_no_assocated_check
-            ]
+        checks_actions_registry = self._checks.get_registry()
+        actions_with_no_associated_check = [item for _, item in checks_actions_registry.items()
+                                            if item.get("kind") == "action" and not item.get("checks")]
+        if actions_with_no_associated_check:
+            response["actions_with_no_associated_check"] = actions_with_no_associated_check
         return self.create_success_response(response)
 
     def reactapi_lambdas(self, request: dict, env: str) -> Response:

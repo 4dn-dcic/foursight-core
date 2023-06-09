@@ -387,6 +387,16 @@ const AccountInfoRight = ({ info }) => {
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                redis-server:
+            </td>
+            <td>
+                {info.get("foursight.versions.redis_server") ? <>
+                    <b>{info.get("foursight.versions.redis_server")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
     </tbody></table>
 }
 

@@ -46,7 +46,7 @@ const InfoBox = ({title, show = true, info, children}) => {
 }
 
 const InfoRow = ({name, value, monospace = false, copy = true, size = "4",
-                  pypi = null, github = null, elasticsearch = false, python = false, chalice = null,
+                  pypi = null, github = null, elasticsearch = false, redis = false, python = false, chalice = null,
                   check = false, nocheck = false, link = null, optional = false,
                   portalCertificate = false, portalAccessKey = false, apiCache = false}) => {
     function removeMinorVersion(version) {
@@ -95,6 +95,11 @@ const InfoRow = ({name, value, monospace = false, copy = true, size = "4",
         <a target="_blank" rel="noreferrer" href={`https://www.elastic.co/guide/en/elasticsearch/reference/${removeMinorVersion(value)}/release-notes-${value}.html`} style={{marginLeft:"-2px"}}>
             <img alt="github" src={Image.ElasticsearchLogo()} height="18" />
         </a>&nbsp;</span> : <span/>
+    const redisElement = redis ?
+        <span>
+        <a target="_blank" rel="noreferrer" href={`https://raw.githubusercontent.com/redis/redis/${value}/00-RELEASENOTES`} style={{marginLeft:"-2px"}}>
+            <img alt="github" src="https://1000logos.net/wp-content/uploads/2020/08/Redis-Logo-1280x800.png" height="21" style={{marginLeft: "3pt"}}/>
+        </a>&nbsp;</span> : <span/>
     const pythonElement = python ?
         <span>
             <a target="_blank" rel="noreferrer" href={"https://docs.python.org/release/" + value + "/"}>
@@ -118,6 +123,7 @@ const InfoRow = ({name, value, monospace = false, copy = true, size = "4",
                         {pypiElement}
                         {githubElement}
                         {elasticsearchElement}
+                        {redisElement}
                         {pythonElement}
                         {chaliceElement}
                         { link && value ? (<span>
@@ -179,6 +185,8 @@ const InfoPage = () => {
             <InfoRow name={"elasticsearch-server"} value={header.versions?.elasticsearch_server || info.data?.versions?.elasticsearch_server} monospace={true} copy={true} size="2" elasticsearch={true} />
             <InfoRow name={"elasticsearch"} value={header.versions?.elasticsearch} monospace={true} copy={true} size="2" pypi={true} />
             <InfoRow name={"elasticsearch-dsl"} value={header.versions?.elasticsearch_dsl} monospace={true} copy={true} size="2" pypi={true} />
+            <InfoRow name={"redis-server"} value={header.versions?.redis_server || info.data?.versions?.redis_server} monospace={true} copy={true} size="2" redis={true} />
+            <InfoRow name={"redis"} value={header.versions?.redis} monospace={true} copy={true} size="2" pypi={true} />
         </InfoBox>
         <InfoBox info={info} title="Credentials Info">
             <InfoRow name={"AWS Account Number"} value={info.get("app.credentials.aws_account_number")} monospace={true} copy={true} size="2" />

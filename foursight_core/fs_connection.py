@@ -51,15 +51,20 @@ class FSConnection(object):
         try:
             if 'redis' in fs_environ_info:
                 self.redis_url = fs_environ_info['redis']
-                self.redis = RedisBase(create_redis_client(url=self.redis_url))
             elif 'REDIS_HOST' in os.environ:  # temporary patch in until env config is fully sorted - Will
                 self.redis_url = os.environ['REDIS_HOST']
+            if self.redis_url:
                 self.redis = RedisBase(create_redis_client(url=self.redis_url))
+            else:
+                PRINT("Redis URL was not specified in any way so running without Redis.")
         except redis.exceptions.ConnectionError:
-            PRINT('Cannot connect to Redis')
-            PRINT('This error is expected when deploying with remote (ElastiCache) Redis')
-        PRINT(self.redis)
-        PRINT(self.redis_url)
+            PRINT(f"Cannot connect to Redis ({self.redis_url}); but can run without it so continuing.")
+            self.redis = None
+            self.redis_url = None
+        if self.redis:
+            PRINT(f"Redis server is being used: {self.redis_url}")
+        else:
+            PRINT(f"Redis server is not being used.")
         if not test:
             self.ff_s3 = s3Utils(env=self.ff_env)
             try:  # TODO: make this configurable from env variables?
