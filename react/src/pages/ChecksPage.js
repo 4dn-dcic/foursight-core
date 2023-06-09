@@ -11,6 +11,8 @@ import { FetchErrorBox } from '../Components';
 import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
+import ChecksValidation from '../components/ChecksValidation';
+import DisplayStatusText from '../components/DisplayStatusText';
 import Env from '../utils/Env';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
@@ -1079,11 +1081,7 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
                             {extractStatus(history) === "PASS" ? (<>
                                 <b style={{color:"inherit"}}>OK</b>
                             </>):(<>
-                                {extractStatus(history) === "WARN" ? (<>
-                                    <b style={{color:"black"}}>WARNING</b>
-                                </>):(<>
-                                    <b style={{color:"darkred"}}>ERROR</b>
-                                </>)}
+                                <DisplayStatusText status={extractStatus(history)} />
                             </>)}
                         &nbsp;&nbsp;</td>
                         <td style={{textAlign:"right"}}>
@@ -1547,11 +1545,7 @@ const ChecksPage = (props) => {
                                         <i><small style={{cursor:"pointer"}} onClick={() => toggleShowGroup(findGroup(run.group), environ, groupList, historyList)}>{run.group}</small></i>&nbsp;
                                     &nbsp;&nbsp;</td>
                                     <td style={{width:"10%"}}>&nbsp;
-                                        {run.status === "PASS" ? (<>
-                                            <b style={{color:Styles.GetForegroundColor()}}>OK</b>
-                                        </>):(<>
-                                            <b style={{color:"darkred"}}>ERROR</b>
-                                        </>)}
+                                        <DisplayStatusText status={run.status} />
                                     &nbsp;&nbsp;</td>
                                     <td align="right" style={{width:"10%"}}>
                                         {run.duration}
@@ -1756,6 +1750,7 @@ const ChecksPage = (props) => {
         </>
     }
     return <>
+        <ChecksValidation />
         <div>
             <table><tbody>
                 <tr>

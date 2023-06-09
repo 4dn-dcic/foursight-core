@@ -6,6 +6,14 @@ foursight-core
 Change Log
 ----------
 
+4.2.0
+=====
+* Minor UI fixes for display of status text for checks/actions.
+* Added UI warning for registered action functions with no associated check.
+* Minor fix to not crash of Redis is enabled, i.e the REDIS_HOST environment
+  variable is set (e.g. to redis://localhost:6379) but Redis is not actually running.
+* Display Redis info on INFO page.
+
 4.1.2
 =====
 * Fix for check arguments not being converted (from string) to int/float/etc as

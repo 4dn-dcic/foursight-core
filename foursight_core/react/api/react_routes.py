@@ -365,6 +365,13 @@ class ReactRoutes:
         """
         return app.core.reactapi_checks_registry(app.current_request.to_dict(), env)
 
+    @route("/{env}/checks_validation", authorize=True)
+    def reactapi_route_checks_validation(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns information about any problems with the checks setup.
+        """
+        return app.core.reactapi_checks_validation(app.current_request.to_dict(), env)
+
     @route("/{env}/lambdas", authorize=True)
     def reactapi_route_lambdas(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """

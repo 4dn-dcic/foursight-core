@@ -46,8 +46,8 @@ const InfoBox = ({title, show = true, info, children}) => {
 }
 
 const InfoRow = ({name, value, monospace = false, copy = true, size = "4",
-                  pypi = null, github = null, elasticsearch = false, python = false, chalice = null,
-                  check = false, link = null, optional = false,
+                  pypi = null, github = null, elasticsearch = false, redis = false, python = false, chalice = null,
+                  check = false, nocheck = false, link = null, optional = false,
                   portalCertificate = false, portalAccessKey = false, apiCache = false}) => {
     function removeMinorVersion(version) {
         let components = version?.split(".")
@@ -76,6 +76,10 @@ const InfoRow = ({name, value, monospace = false, copy = true, size = "4",
         <span>
             &nbsp;<b style={{fontSize:"13pt",color:"green"}}>{Char.Check}</b>
         </span> : <span/>
+    let nocheckElement = nocheck ?
+        <span>
+            &nbsp;<b style={{fontSize:"13pt",color:"red"}}>{Char.X}</b>
+        </span> : <span/>
     const pypiElement = pypi ?
         <span>
             <a target="_blank" rel="noreferrer" href={"https://pypi.org/project/" + name + "/" + value + "/"}>
@@ -90,6 +94,11 @@ const InfoRow = ({name, value, monospace = false, copy = true, size = "4",
         <span>
         <a target="_blank" rel="noreferrer" href={`https://www.elastic.co/guide/en/elasticsearch/reference/${removeMinorVersion(value)}/release-notes-${value}.html`} style={{marginLeft:"-2px"}}>
             <img alt="github" src={Image.ElasticsearchLogo()} height="18" />
+        </a>&nbsp;</span> : <span/>
+    const redisElement = redis ?
+        <span>
+        <a target="_blank" rel="noreferrer" href={`https://raw.githubusercontent.com/redis/redis/${value}/00-RELEASENOTES`} style={{marginLeft:"-2px"}}>
+            <img alt="github" src="https://1000logos.net/wp-content/uploads/2020/08/Redis-Logo-1280x800.png" height="21" style={{marginLeft: "3pt"}}/>
         </a>&nbsp;</span> : <span/>
     const pythonElement = python ?
         <span>
@@ -114,6 +123,7 @@ const InfoRow = ({name, value, monospace = false, copy = true, size = "4",
                         {pypiElement}
                         {githubElement}
                         {elasticsearchElement}
+                        {redisElement}
                         {pythonElement}
                         {chaliceElement}
                         { link && value ? (<span>
@@ -135,6 +145,7 @@ const InfoRow = ({name, value, monospace = false, copy = true, size = "4",
                             </> }
                         </span>)}
                         {checkElement}
+                        {nocheckElement}
                     </div>
                 </div>
             ):(<span/>)}
@@ -174,6 +185,8 @@ const InfoPage = () => {
             <InfoRow name={"elasticsearch-server"} value={header.versions?.elasticsearch_server || info.data?.versions?.elasticsearch_server} monospace={true} copy={true} size="2" elasticsearch={true} />
             <InfoRow name={"elasticsearch"} value={header.versions?.elasticsearch} monospace={true} copy={true} size="2" pypi={true} />
             <InfoRow name={"elasticsearch-dsl"} value={header.versions?.elasticsearch_dsl} monospace={true} copy={true} size="2" pypi={true} />
+            <InfoRow name={"redis-server"} value={header.versions?.redis_server || info.data?.versions?.redis_server} monospace={true} copy={true} size="2" redis={true} />
+            <InfoRow name={"redis"} value={header.versions?.redis} monospace={true} copy={true} size="2" pypi={true} />
         </InfoBox>
         <InfoBox info={info} title="Credentials Info">
             <InfoRow name={"AWS Account Number"} value={info.get("app.credentials.aws_account_number")} monospace={true} copy={true} size="2" />
@@ -188,10 +201,34 @@ const InfoPage = () => {
         </InfoBox>
         <InfoBox info={info} title="Resources">
             <InfoRow name={"Foursight Server"} value={info.get("server.foursight")} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Portal Server"} value={info.get("server.portal")} monospace={true} copy={true} size="2" portalCertificate={true} />
-            <InfoRow name={"ElasticSearch Server"} value={info.get("server.es")} monospace={true} copy={true} size="2" />
-            <InfoRow name={"RDS Server"} value={info.get("server.rds")} monospace={true} copy={true} size="2" />
-            <InfoRow name={"SQS Server"} value={info.get("server.sqs")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Foursight"} value={header.resources?.foursight} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Portal"} value={header.resources?.portal} monospace={true} copy={true} size="2" portalCertificate={true} />
+            <InfoRow name={"ElasticSearch"} value={header.resources?.es} monospace={true} copy={true} size="2" />
+            <InfoRow name={"RDS"} value={header.resources?.rds} monospace={true} copy={true} size="2" />
+            <InfoRow name={"SQS"} value={header.resources?.sqs} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Redis"} value={header.resources?.redis} nocheck={!header.resources?.redis_running} check={header.resources?.redis_running} monospace={true} copy={true} size="2" />
+        </InfoBox>
+        <InfoBox info={info} title="Authentication/Authorization Info" show={true}>
+            <InfoRow name={"Email"} value={Auth.Token()?.user} monospace={true} copy={true} check={Auth.Token()?.user_verified} link={Client.Path("/users/" + Auth.LoggedInUser(header), true)} size="2" />
+            <InfoRow name={"First Name"} value={Auth.Token()?.first_name} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Last Name"} value={Auth.Token()?.last_name} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Environments"} value={Auth.Token()?.allowed_envs.join(", ")} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Audience"} value={Auth.Token()?.aud} monospace={true} copy={true} size="2" />
+            <InfoRow name={"Issued At"} monospace={true} copy={true} size="2" value={<LiveTime.FormatDuration start={Auth.Token()?.authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} prefix="datetime" />} />
+            <InfoRow name={"Expires At"} monospace={true} copy={true} size="2" value={<LiveTime.FormatDuration end={Auth.Token()?.authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} prefix="datetime"/>} />
+            <InfoRow name={"Using Redis"} monospace={true} size="2" value={header.resources?.redis_running ? "Yes" : "No"} />
+            <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
+                { showingAuthToken ? (<>
+                    <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"inherit"}}><b><u>AuthToken</u>&nbsp;{Char.DownArrow}</b></small>
+                    <pre style={{filter:"brightness(1.05)",background:"inherit",color:"inherit",fontWeight:"bold",marginTop:"6pt"}}>
+                        <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{Json.Str(Auth.Token())}</span>
+                        <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken")} style={{float:"right",height:"20px",cursor:"copy"}} />
+                        {Yaml.Format(Auth.Token())}
+                    </pre>
+                </>):(<>
+                    <small onClick={() => setShowAuthToken(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>AuthToken</u>&nbsp;{Char.UpArrow}</b></small>
+                    <br />
+                </>)}
         </InfoBox>
         <InfoBox info={info} title="Environment Names">
             <InfoRow name={"Environment Name"} value={Env.RegularName(Env.Current(), header)} monospace={true} copy={true} size="3" />
@@ -215,27 +252,6 @@ const InfoPage = () => {
             <pre className="box" style={{border:"0",margin:"0",paddingTop:"8",paddingBottom:"8",marginTop:"0"}}>
                 {Yaml.Format(info.get("buckets.ecosystem"))}
             </pre>
-        </InfoBox>
-        <InfoBox info={info} title="Authentication/Authorization Info" show={false}>
-            <InfoRow name={"Email"} value={Auth.Token()?.user} monospace={true} copy={true} check={Auth.Token()?.user_verified} link={Client.Path("/users/" + Auth.LoggedInUser(header), true)} size="2" />
-            <InfoRow name={"First Name"} value={Auth.Token()?.first_name} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Last Name"} value={Auth.Token()?.last_name} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Environments"} value={Auth.Token()?.allowed_envs.join(", ")} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Audience"} value={Auth.Token()?.aud} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Issued At"} monospace={true} copy={true} size="2" value={<LiveTime.FormatDuration start={Auth.Token()?.authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} prefix="datetime" />} />
-            <InfoRow name={"Expires At"} monospace={true} copy={true} size="2" value={<LiveTime.FormatDuration end={Auth.Token()?.authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} prefix="datetime"/>} />
-            <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
-                { showingAuthToken ? (<>
-                    <small onClick={() => setShowAuthToken(false)} style={{cursor:"pointer",color:"inherit"}}><b><u>AuthToken</u>&nbsp;{Char.DownArrow}</b></small>
-                    <pre style={{filter:"brightness(1.05)",background:"inherit",color:"inherit",fontWeight:"bold",marginTop:"6pt"}}>
-                        <span style={{fontSize:"0",opacity:"0"}} id={"authtoken"}>{Json.Str(Auth.Token())}</span>
-                        <img src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("authtoken")} style={{float:"right",height:"20px",cursor:"copy"}} />
-                        {Yaml.Format(Auth.Token())}
-                    </pre>
-                </>):(<>
-                    <small onClick={() => setShowAuthToken(true)} style={{cursor:"pointer",color:"darkblue"}}><b><u>AuthToken</u>&nbsp;{Char.UpArrow}</b></small>
-                    <br />
-                </>)}
         </InfoBox>
         { info.get("environ.AWS_LAMBDA_LOG_GROUP_NAME") && info.get("environ.AWS_LAMBDA_LOG_STREAM_NAME") && <>
             <InfoBox info={info} title="Logs">

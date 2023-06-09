@@ -8,6 +8,7 @@ import PaginationComponent from '../PaginationComponent';
 import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
+import DisplayStatusText from '../components/DisplayStatusText';
 import Env from '../utils/Env';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
@@ -212,16 +213,7 @@ const CheckHistoryPage = (props) => {
                                 {extractUUID(history)}
                             &nbsp;&nbsp;</td>
                             <td id={`tooltip-status-${index}`} style={{verticalAlign:"top",whiteSpace:"break-spaces"}}>
-                                {extractStatus(history) === "PASS" ? (<>
-                                    <b>OK</b>
-                                </>):(<>
-                                    {extractStatus(history) === "FAIL" ? (<>
-                                        <b style={{color:"darkred"}}>FAILURE</b>
-                                    </>):(<>
-                                        <b style={{color:"darkred"}}>ERROR</b>
-                                    </>)}
-                                </>)}
-                                {/* <br/> <small> {extractSummary(history)} </small> */}
+                                <DisplayStatusText status={extractStatus(history)} />
                                 <Tooltip id={`tooltip-status-${index}`} text={extractStatus(history)} position="right" shape="squared" offset={-12} />
                             &nbsp;&nbsp;</td>
                             <td style={{verticalAlign:"top",textAlign:"right"}}>

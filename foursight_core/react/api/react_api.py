@@ -86,7 +86,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "chalice": chalice_version,
                 "elasticsearch_server": self._get_elasticsearch_server_version(),
                 "elasticsearch": get_package_version("elasticsearch"),
-                "elasticsearch_dsl": get_package_version("elasticsearch-dsl")
+                "elasticsearch_dsl": get_package_version("elasticsearch-dsl"),
+                "redis": get_package_version("redis"),
+                "redis_server": self._get_redis_server_version()
             }
 
     @function_cache(nokey=True, nocache=None)
@@ -94,6 +96,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         connection = app.core.init_connection(self._envs.get_default_env())
         es_info = connection.es_info()
         return es_info.get("version", {}).get("number")
+
+    @function_cache(nokey=True, nocache=None)
+    def _get_redis_server_version(self) -> Optional[str]:
+        connection = app.core.init_connection(self._envs.get_default_env())
+        redis_info = connection.redis_info()
+        return redis_info.get("redis_version") if redis_info else None
 
     @function_cache
     def _get_user_projects(self, env: str, raw: bool = False) -> list:
@@ -333,6 +341,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         aws_credentials = self._auth.get_aws_credentials(env or default_env)
         portal_url = app.core.get_portal_url(env or default_env)
         portal_base_url = get_base_url(portal_url)
+        connection = app.core.init_connection(env)
+        redis_url = connection.redis_url
+        redis = connection.redis
         response = {
             "app": {
                 "title": app.core.html_main_title,
@@ -356,9 +367,19 @@ class ReactApi(ReactApiBase, ReactRoutes):
             },
             "versions": self._get_versions_object(),
             "portal": {
-                "url": app.core.get_portal_url(env or default_env),
+                "url": portal_url,
                 "health_url": portal_base_url + "/health?format=json",
                 "health_ui_url": portal_base_url + "/health"
+            },
+            "resources": {
+                "es": app.core.host,
+                "foursight": self.foursight_instance_url(request),
+                "portal": portal_url,
+                # TODO: May later want to rds_username and/or such.
+                "rds": os.environ["RDS_HOSTNAME"],
+                "redis": redis_url,
+                "redis_running": redis is not None,
+                "sqs": self._get_sqs_queue_url(),
             },
             "s3": {
                 "bucket_org": os.environ.get("ENCODED_S3_BUCKET_ORG", os.environ.get("S3_BUCKET_ORG", None)),
@@ -1109,6 +1130,20 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         ignored(request, env)
         return self.create_success_response(self._checks.get_registry())
+
+    def reactapi_checks_validation(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/checks_validation
+        Returns information about any problems with the checks setup.
+        """
+        ignored(request, env)
+        response = {}
+        checks_actions_registry = self._checks.get_registry()
+        actions_with_no_associated_check = [item for _, item in checks_actions_registry.items()
+                                            if item.get("kind") == "action" and not item.get("checks")]
+        if actions_with_no_associated_check:
+            response["actions_with_no_associated_check"] = actions_with_no_associated_check
+        return self.create_success_response(response)
 
     def reactapi_lambdas(self, request: dict, env: str) -> Response:
         """
