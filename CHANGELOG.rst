@@ -13,6 +13,7 @@ Change Log
   access_key_foursight, and access_key_tibanna in bucket gap-msa-main-application-cgap-msa-system).
 * Minor UI updates related to:
   - Invalid/expired portal access key.
+  - Checks search.
 
 4.2.0
 =====

@@ -1140,7 +1140,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         response = {}
         checks_actions_registry = self._checks.get_registry()
         actions_with_no_associated_check = [item for _, item in checks_actions_registry.items()
-                                            if item.get("kind") == "action" and not item.get("checks")]
+                                            if item.get("kind") == "action" and not item.get("checks")
+                                            and not item.get("name", "").startswith("test_")]
         if actions_with_no_associated_check:
             response["actions_with_no_associated_check"] = actions_with_no_associated_check
         return self.create_success_response(response)
