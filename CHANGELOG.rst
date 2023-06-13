@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+4.2.1
+=====
+* Minor UI updates related to:
+  - Invalid/expired portal access key.
+
 4.2.0
 =====
 * Minor UI fixes for display of status text for checks/actions.
