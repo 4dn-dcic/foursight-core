@@ -69,10 +69,18 @@ def refresh_access_keys(connection, **kwargs):
                                       f'&sort=-date_created', key=connection.ff_keys)
         # generate new key
         access_key_req = {'user': user_uuid, 'description': kp_name}
-        access_key_res = post_metadata(access_key_req, 'access-keys', key=connection.ff_keys)['@graph'][0]
-        s3_obj = {'secret': access_key_res['secret_access_key'],
-                  'key': access_key_res['access_key_id'],
-                  'server': s3.url}
+        # 2020-06-13/dmichaels: The actual result returned by the portal for this POST is not what
+        # seems to be expected; the access_key_id and secret_access_key are not within the @graph
+        # array; but handle both cases just in case; maybe that as an older (or newer) API.
+        # access_key_res = post_metadata(access_key_req, 'access-keys', key=connection.ff_keys)['@graph'][0]
+        access_key_res = post_metadata(access_key_req, 'access-keys', key=connection.ff_keys)
+        access_key_id = access_key_res['access_key_id'] if 'access_key_id' in access_key_res else None
+        secret_access_key = access_key_res['secret_access_key'] if 'secret_access_key' in access_key_res else None
+        if not access_key_id:
+            access_key_id = access_key_res['@graph'][0]['access_key_id']
+        if not secret_access_key:
+            secret_access_key = access_key_res['@graph'][0]['secret_access_key']
+        s3_obj = {'secret': secret_access_key, 'key': access_key_id, 'server': s3.url}
         s3.s3_put_secret(json.dumps(s3_obj), kp_name)
         full_output['successfully_generated'].append(email)
         # clear out old keys after generating new one
@@ -83,6 +91,3 @@ def refresh_access_keys(connection, **kwargs):
     action.full_output = full_output
     action.status = 'DONE'
     return action
-
-
-

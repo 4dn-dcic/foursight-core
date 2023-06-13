@@ -56,7 +56,8 @@ const PortalAccessKeyWarning = ({ header }) => {
             </WarningBar>
         } else if (portalAccessKeyInfo.data?.invalid) {
             return <WarningBar>
-                <b>Warning: Access key for associated Portal {portalAccessKeyInfo.data.expired ? 'has expired' : 'is invalid'}</b>
+                <Tooltip id="alert-access-key-invalid" position="bottom" text={`Portal access key: ${portalAccessKeyInfo.data.key}`} />
+                <b>Alert: <span id="alert-access-key-invalid">Access key</span> for associated Portal {portalAccessKeyInfo.data.expired ? 'has expired' : (portalAccessKeyInfo.data.probably_expired ? 'has probably expired' : 'is invalid')}</b>
                 &nbsp;{Char.RightArrow}&nbsp;
                 <Link to={Client.Path("/portal_access_key")} style={{color:"inherit"}}>View</Link>
             </WarningBar>

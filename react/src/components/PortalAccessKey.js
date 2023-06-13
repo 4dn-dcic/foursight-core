@@ -47,9 +47,13 @@ const PortalAccessKey = (props) => {
             <tr>
                 <td style={tdlabel}>Creation Date:</td>
                 <td style={tdstyle}>
-                    {accessKey.created_at}
-                    &nbsp;{Char.RightArrow}
-                    &nbsp;<small>{Time.Ago(accessKey.created_at, true, false)}</small>
+                    { accessKey.created_at ? <>
+                        {accessKey.created_at}
+                        &nbsp;{Char.RightArrow}
+                        &nbsp;<small>{Time.Ago(accessKey.created_at, true, false)}</small>
+                    </>:<>
+                        Not available
+                    </> }
                 </td>
             </tr>
             <tr>
@@ -65,7 +69,11 @@ const PortalAccessKey = (props) => {
                             &nbsp;<small>{Time.FromNow(accessKey.expires_at, true, false)}</small>
                         </> }
                     </>:<>
-                        None
+                        Not available
+                        { accessKey.probably_expired ? <>
+                            &nbsp;(probably expired)
+                        </>:<>
+                        </> }
                     </> }
                 </td>
             </tr>
