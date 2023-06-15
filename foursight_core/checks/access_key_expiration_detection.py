@@ -15,6 +15,8 @@ def access_key_status(connection, **kwargs):
     """
     check = CheckResult(connection, 'access_key_status')
     check.action = 'refresh_access_keys'
+    # TOOD: Figure this out ... Seems like, both from this code and what we are seeing in the actual action history,
+    # that the refresh action is running everday; we only want to run a refresh if the access is expiring very soon.
     check.allow_action = True  # always allow refresh
     fs_user_email, fs_user_kp = 'foursight.app@gmail.com', 'access_key_foursight'
     user_props = get_metadata(f'/users/{fs_user_email}?datastore=database', key=connection.ff_keys)
@@ -69,10 +71,20 @@ def refresh_access_keys(connection, **kwargs):
                                       f'&sort=-date_created', key=connection.ff_keys)
         # generate new key
         access_key_req = {'user': user_uuid, 'description': kp_name}
-        access_key_res = post_metadata(access_key_req, 'access-keys', key=connection.ff_keys)['@graph'][0]
-        s3_obj = {'secret': access_key_res['secret_access_key'],
-                  'key': access_key_res['access_key_id'],
-                  'server': s3.url}
+        # 2020-06-13/dmichaels: The actual result returned by the portal for this POST is not what
+        # seems to be expected; the access_key_id and secret_access_key are not within the @graph
+        # array; but handle both cases just in case; maybe that as an older (or newer) API.
+        # access_key_res = post_metadata(access_key_req, 'access-keys', key=connection.ff_keys)['@graph'][0]
+        access_key_res = post_metadata(access_key_req, 'access-keys', key=connection.ff_keys)
+        access_key_id = access_key_res.get('access_key_id')
+        secret_access_key = access_key_res.get('secret_access_key')
+        import pdb ; pdb.set_trace()
+        if not access_key_id or not secret_access_key:
+            # We will say these must occur in pairs; both at the top level or both within the @graph array.
+            graph_item = access_key_res.get('@graph', [{}])[0]
+            access_key_id = graph_item.get('access_key_id')
+            secret_access_key = graph_item.get('secret_access_key')
+        s3_obj = {'secret': secret_access_key, 'key': access_key_id, 'server': s3.url}
         s3.s3_put_secret(json.dumps(s3_obj), kp_name)
         full_output['successfully_generated'].append(email)
         # clear out old keys after generating new one
@@ -83,6 +95,3 @@ def refresh_access_keys(connection, **kwargs):
     action.full_output = full_output
     action.status = 'DONE'
     return action
-
-
-

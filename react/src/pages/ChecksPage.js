@@ -1229,7 +1229,22 @@ const ChecksSearchBox = (props) => {
                                     <Tooltip id={`tooltip-search-${check.name}`} text="Click to view source code for this check (in new tab)." position="bottom" />
                                 </>}
                                 <br />
-                                <small className="pointer" onClick={() => props.toggleShowGroup(props.findGroup(check.group), props.environ, props.groupList)}><i>{check.group}</i></small> (<small>{check.name}</small>)
+                                <small>
+                                    <i>Group</i>:&nbsp;
+                                    <span className="pointer" onClick={() => props.toggleShowGroup(props.findGroup(check.group), props.environ, props.groupList)}>{check.group.replace(/ checks$/i, "")}</span> <br />
+                                    <i>Function:</i>&nbsp;
+                                    { check.registered_github_url ? <>
+                                        <a rel="noreferrer" target="_blank" href={check.registered_github_url}>
+                                            <span style={{color:"darkblue"}}>{check.module}<b style={{marginLeft:"2px",marginRight:"2px"}}>.</b>{check.name}</span>
+                                        </a>
+                                    </>:<>
+                                        {check.module}<b style={{marginLeft:"2px",marginRight:"2px"}}>.</b>{check.name}
+                                    </>}
+                                    { Object.keys(check?.schedule)?.length == 1 && <>
+                                        <br />
+                                        <small><i>Schedule:</i> {check.schedule[Object.keys(check.schedule)[0]]?.cron_description}</small>
+                                    </> }
+                                </small>
                             </td>
                         </tr>
                     </tbody></table>)}

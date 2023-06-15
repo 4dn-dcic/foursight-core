@@ -184,6 +184,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
             return []
         return [{"id": status, "name": status, "title": status.title()} for status in user_schema_status_enum]
 
+    @classmethod
+    def _is_test_name(cls, name):
+        return isinstance(name, str) and name.startswith("test_")
+
+    @classmethod
+    def _is_test_name_item(cls, item, property_name = "name"):
+        return isinstance(item, dict) and cls._is_test_name(item.get(property_name))
+
     def react_serve_static_file(self, env: str, paths: list) -> Response:
         """
         Called from react_routes for static endpoints: /{env}/{path}/{etc}
@@ -1140,7 +1148,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         response = {}
         checks_actions_registry = self._checks.get_registry()
         actions_with_no_associated_check = [item for _, item in checks_actions_registry.items()
-                                            if item.get("kind") == "action" and not item.get("checks")]
+                                            if item.get("kind") == "action" and not item.get("checks")
+                                            and not self._is_test_name_item(item)]
         if actions_with_no_associated_check:
             response["actions_with_no_associated_check"] = actions_with_no_associated_check
         return self.create_success_response(response)

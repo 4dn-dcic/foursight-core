@@ -6,6 +6,15 @@ foursight-core
 Change Log
 ----------
 
+4.3.0
+=====
+* Fix to checks.access_key_expiration_detection.refresh_access_keys bug (key exception) which
+  was preventing the portal access key from being updated in S3 (e.g. the keys access_key_admin,
+  access_key_foursight, and access_key_tibanna in bucket gap-msa-main-application-cgap-msa-system).
+* Minor UI updates related to:
+  - Invalid/expired portal access key.
+  - Checks search.
+
 4.2.0
 =====
 * Minor UI fixes for display of status text for checks/actions.
