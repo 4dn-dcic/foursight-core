@@ -15,6 +15,8 @@ def access_key_status(connection, **kwargs):
     """
     check = CheckResult(connection, 'access_key_status')
     check.action = 'refresh_access_keys'
+    # TOOD: Figure this out ... Seems like, both from this code and what we are seeing in the actual action history,
+    # that the refresh action is running everday; we only want to run a refresh if the access is expiring very soon.
     check.allow_action = True  # always allow refresh
     fs_user_email, fs_user_kp = 'foursight.app@gmail.com', 'access_key_foursight'
     user_props = get_metadata(f'/users/{fs_user_email}?datastore=database', key=connection.ff_keys)
@@ -74,12 +76,14 @@ def refresh_access_keys(connection, **kwargs):
         # array; but handle both cases just in case; maybe that as an older (or newer) API.
         # access_key_res = post_metadata(access_key_req, 'access-keys', key=connection.ff_keys)['@graph'][0]
         access_key_res = post_metadata(access_key_req, 'access-keys', key=connection.ff_keys)
-        access_key_id = access_key_res['access_key_id'] if 'access_key_id' in access_key_res else None
-        secret_access_key = access_key_res['secret_access_key'] if 'secret_access_key' in access_key_res else None
-        if not access_key_id:
-            access_key_id = access_key_res['@graph'][0]['access_key_id']
-        if not secret_access_key:
-            secret_access_key = access_key_res['@graph'][0]['secret_access_key']
+        access_key_id = access_key_res.get('access_key_id')
+        secret_access_key = access_key_res.get('secret_access_key')
+        import pdb ; pdb.set_trace()
+        if not access_key_id or not secret_access_key:
+            # We will say these must occur in pairs; both at the top level or both within the @graph array.
+            graph_item = access_key_res.get('@graph', [{}])[0]
+            access_key_id = graph_item.get('access_key_id')
+            secret_access_key = graph_item.get('secret_access_key')
         s3_obj = {'secret': secret_access_key, 'key': access_key_id, 'server': s3.url}
         s3.s3_put_secret(json.dumps(s3_obj), kp_name)
         full_output['successfully_generated'].append(email)
