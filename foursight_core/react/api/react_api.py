@@ -186,7 +186,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     @classmethod
     def _is_test_name(cls, name):
-        return isinstance(name, str) and name.startswith("test_x")
+        return isinstance(name, str) and name.startswith("test_")
 
     @classmethod
     def _is_test_name_item(cls, item, property_name = "name"):
