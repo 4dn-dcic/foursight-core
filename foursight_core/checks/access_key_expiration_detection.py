@@ -93,7 +93,11 @@ def refresh_access_keys(connection, **kwargs):
         # clear out old keys after generating new one
         for access_key in access_keys:  # note this search result was computed before the new key was added
             if access_key['status'] != 'deleted':
-                patch_metadata(patch_item={'status': 'deleted'}, obj_id=access_key['uuid'], key=connection.ff_keys)
+                try:
+                    patch_metadata(patch_item={'status': 'deleted'}, obj_id=access_key['uuid'], key=connection.ff_keys)
+                except Exception as e:
+                    print(f"Exception while trying to delete old access key ({access_key['uuid']})")
+                    print(e)
 
     action.full_output = full_output
     action.status = 'DONE'
