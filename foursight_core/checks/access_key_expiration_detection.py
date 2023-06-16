@@ -22,6 +22,7 @@ def access_key_status(connection, **kwargs):
     # But I think if we do not want the action to run automatically then set check.action to "" (cannot be None). 
     # No nevermind that does not work because then no action is shown at all.
     # Try setting allow_action to False ...
+    # Works but then not always enabled ... need another bit ...
     check.allow_action = True
     fs_user_email, fs_user_kp = 'foursight.app@gmail.com', 'access_key_foursight'
     user_props = get_metadata(f'/users/{fs_user_email}?datastore=database', key=connection.ff_keys)
@@ -35,7 +36,7 @@ def access_key_status(connection, **kwargs):
     one_week_to_expiration = expiration_date - timedelta(days=7)
     three_weeks_to_expiration = expiration_date - timedelta(days=21)
     now = datetime.now(most_recent_key_creation_date.tzinfo)
-    if True or (now > one_week_to_expiration):
+    if now > one_week_to_expiration:
         check.status = 'FAIL'
         check.summary = (f'Application access keys will expire in less than 7 days! Please run'
                          f' the deployment action ASAP')
