@@ -17,7 +17,9 @@ def access_key_status(connection, **kwargs):
     check.action = 'refresh_access_keys'
     # TOOD: Figure this out ... Seems like, both from this code and what we are seeing in the actual action history,
     # that the refresh action is running everday; we only want to run a refresh if the access is expiring very soon.
-    check.allow_action = True  # always allow refresh
+    # Always allow refresh
+    # TODO: But I think if we do not want the action to run automatically then set check.action to None. 
+    check.allow_action = True
     fs_user_email, fs_user_kp = 'foursight.app@gmail.com', 'access_key_foursight'
     user_props = get_metadata(f'/users/{fs_user_email}?datastore=database', key=connection.ff_keys)
     user_uuid = user_props['uuid']
@@ -41,11 +43,13 @@ def access_key_status(connection, **kwargs):
         check.summary = (f'Application access keys will expire in less than 21 days! Please run'
                          f' the deployment action soon')
         check.brief_output = check.full_output = check.summary
+        check.action = None
         return check
     else:
         check.status = 'PASS'
         check.summary = (f'Application access keys expiration is more than 3 weeks away. All good.'
                          f' Expiration date: {expiration_date}')
+        check.action = None
         return check
 
 
@@ -78,7 +82,6 @@ def refresh_access_keys(connection, **kwargs):
         access_key_res = post_metadata(access_key_req, 'access-keys', key=connection.ff_keys)
         access_key_id = access_key_res.get('access_key_id')
         secret_access_key = access_key_res.get('secret_access_key')
-        # import pdb ; pdb.set_trace()
         if not access_key_id or not secret_access_key:
             # We will say these must occur in pairs; both at the top level or both within the @graph array.
             graph_item = access_key_res.get('@graph', [{}])[0]

@@ -4,6 +4,7 @@ import boto3
 import datetime
 import logging
 from foursight_core.abstract_connection import AbstractConnection
+from dcicutils.boto_s3 import boto_s3_client, boto_s3_resource
 from dcicutils.misc_utils import full_class_name
 
 
@@ -13,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 class S3Connection(AbstractConnection):
     def __init__(self, bucket_name):
-        self.client = boto3.client('s3')
-        self.resource = boto3.resource('s3')
+        self.client = boto_s3_client()
+        self.resource = boto_s3_resource()
         self.cw = boto3.client('cloudwatch')  # for s3 bucket stats
         self.bucket = bucket_name
         self.location = 'us-east-1'

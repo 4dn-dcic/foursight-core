@@ -1868,10 +1868,14 @@ class AppUtilsCore(ReactApi, Routes):
         Returns:
             dict: run result if something was run, else None
         """
+        # FYI the runner_input argument is a dict that looks something like this (2023-06-16):
+        # {'sqs_url': 'https://sqs.us-east-1.amazonaws.com/466564410312/foursight-cgap-prod-check_queue'}
+        # and the propogate arguments is a bootstrap.LambdaContext that instance.
         sqs_url = runner_input.get('sqs_url')
         if not sqs_url:
             return
-        client = boto3.client('sqs')
+        client = SQS.get_sqs_boto_client()
+        # import pdb ; pdb.set_trace()
         response = client.receive_message(
             QueueUrl=sqs_url,
             AttributeNames=['MessageGroupId'],

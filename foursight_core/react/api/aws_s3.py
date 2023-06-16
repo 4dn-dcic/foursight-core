@@ -2,6 +2,7 @@ import boto3
 import logging
 from typing import Optional
 from .datetime_utils import convert_utc_datetime_to_useastern_datetime_string
+from dcicutils.boto_s3 import boto_s3_client, boto_s3_resource
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -13,7 +14,7 @@ class AwsS3:
     def get_buckets(cls) -> list:
         results = []
         try:
-            s3 = boto3.resource("s3")
+            s3 = boto_s3_resource()
             results = sorted([bucket.name for bucket in s3.buckets.all()])
         except Exception as e:
             logger.error(f"Exception getting S3 bucket list: {e}")
@@ -23,7 +24,7 @@ class AwsS3:
     def get_bucket_keys(cls, bucket_name: str) -> list:
         results = []
         try:
-            s3 = boto3.client("s3")
+            s3 = boto_s3_client()
             bucket_keys = s3.list_objects(Bucket=bucket_name)
             if bucket_keys:
                 bucket_keys = bucket_keys.get("Contents")
@@ -54,7 +55,7 @@ class AwsS3:
     @classmethod
     def _get_bucket_key_content_size(cls, bucket_name: str, bucket_key_name) -> int:
         try:
-            s3 = boto3.client('s3')
+            s3 = boto_s3_client()
             response = s3.head_object(Bucket=bucket_name, Key=bucket_key_name)
             size = response['ContentLength']
             return size
@@ -77,7 +78,7 @@ class AwsS3:
             size = cls._get_bucket_key_content_size(bucket_name, bucket_key_name)
             if size <= 0 or not cls._may_look_at_key_content(bucket_name, bucket_key_name, size):
                 return None
-            s3 = boto3.resource("s3")
+            s3 = boto_s3_resource()
             s3_object = s3.Object(bucket_name, bucket_key_name)
             return s3_object.get()["Body"].read().decode("utf-8")
         except Exception as e:

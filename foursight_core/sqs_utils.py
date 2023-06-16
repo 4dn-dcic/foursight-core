@@ -1,7 +1,7 @@
 import boto3
-import json
-
 from datetime import datetime
+import json
+import os
 from dcicutils.misc_utils import ignored
 from foursight_core.stage import Stage
 
@@ -13,6 +13,20 @@ class SQS(object):
 
     def __init__(self, foursight_prefix):
         self.stage = Stage(foursight_prefix)
+
+    @staticmethod
+    def get_sqs_boto_client():
+        sqs_url_from_env = os.environ.get("SQS_URL")
+        if sqs_url_from_env:
+            return boto3.client("sqs", endpoint_url=sqs_url_from_env)
+        return boto3.client("sqs")
+
+    @staticmethod
+    def get_sqs_boto_resource():
+        sqs_url_from_env = os.environ.get("SQS_URL")
+        if sqs_url_from_env:
+            return boto3.resource("sqs", endpoint_url=sqs_url_from_env)
+        return boto3.resource("sqs")
 
     def invoke_check_runner(self, runner_input):
         """
@@ -51,7 +65,7 @@ class SQS(object):
         sqs_url = runner_input.get('sqs_url')
         if not sqs_url or not receipt:
             return
-        client = boto3.client('sqs')
+        client = self.get_sqs_boto_client()
         client.delete_message(
             QueueUrl=sqs_url,
             ReceiptHandle=receipt
@@ -80,7 +94,7 @@ class SQS(object):
         sqs_url = runner_input.get('sqs_url')
         if not sqs_url or not receipt:
             return
-        client = boto3.client('sqs')
+        client = self.get_sqs_boto_client()
         client.change_message_visibility(
             QueueUrl=sqs_url,
             ReceiptHandle=receipt,
@@ -94,7 +108,7 @@ class SQS(object):
         Returns boto3 sqs resource
         """
         queue_name = self.stage.get_queue_name()
-        sqs = boto3.resource('sqs')
+        sqs = self.get_sqs_boto_resource()
         try:
             queue = sqs.get_queue_by_name(QueueName=queue_name)
         except Exception:
@@ -143,7 +157,7 @@ class SQS(object):
             'ApproximateNumberOfMessages': 'ERROR',
             'ApproximateNumberOfMessagesNotVisible': 'ERROR'
         }
-        client = boto3.client('sqs')
+        client = cls.get_sqs_boto_client()
         try:
             result = client.get_queue_attributes(
                 QueueUrl=sqs_url,

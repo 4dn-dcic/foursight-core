@@ -61,21 +61,6 @@ tests = ["attrs[tests-no-zope]", "zope-interface"]
 tests-no-zope = ["cloudpickle", "hypothesis", "mypy (>=1.1.1)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
 
 [[package]]
-name = "aws-requests-auth"
-version = "0.4.3"
-description = "AWS signature version 4 signing process for the python requests module"
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "aws-requests-auth-0.4.3.tar.gz", hash = "sha256:33593372018b960a31dbbe236f89421678b885c35f0b6a7abfae35bb77e069b2"},
-    {file = "aws_requests_auth-0.4.3-py2.py3-none-any.whl", hash = "sha256:646bc37d62140ea1c709d20148f5d43197e6bd2d63909eb36fa4bb2345759977"},
-]
-
-[package.dependencies]
-requests = ">=0.14.0"
-
-[[package]]
 name = "beautifulsoup4"
 version = "4.12.2"
 description = "Screen-scraping library"
@@ -112,30 +97,10 @@ six = ">=1.9.0"
 wcwidth = ">=0.1.4"
 
 [[package]]
-name = "boto3"
-version = "1.26.119"
-description = "The AWS SDK for Python"
-category = "main"
-optional = false
-python-versions = ">= 3.7"
-files = [
-    {file = "boto3-1.26.119-py3-none-any.whl", hash = "sha256:c7104f4f805df011dd5528aff63d712ff5261294e547724d03a3b5639bd164ac"},
-    {file = "boto3-1.26.119.tar.gz", hash = "sha256:13a041885068d0bfc2104255f2bcb06a1e0c036bcd009ef018f9953b31c20dde"},
-]
-
-[package.dependencies]
-botocore = ">=1.29.119,<1.30.0"
-jmespath = ">=0.7.1,<2.0.0"
-s3transfer = ">=0.6.0,<0.7.0"
-
-[package.extras]
-crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
-
-[[package]]
 name = "botocore"
 version = "1.29.119"
 description = "Low-level, data-driven core of boto 3."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">= 3.7"
 files = [
@@ -382,7 +347,7 @@ files = [
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
-category = "main"
+category = "dev"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 files = [
@@ -516,37 +481,17 @@ tox = ["tox"]
 
 [[package]]
 name = "dcicutils"
-version = "7.5.1"
+version = "7.5.1.1b1"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 category = "main"
 optional = false
-python-versions = ">=3.7,<3.10"
-files = [
-    {file = "dcicutils-7.5.1-py3-none-any.whl", hash = "sha256:5c77b00116c3d1f9f413b30aa66865a9c50d88d02ea20349a4bb25e1e45eea85"},
-    {file = "dcicutils-7.5.1.tar.gz", hash = "sha256:c4211161f48ce727e9cd3e2b52f66336949c5a6ce6d518c908dfee9153f7b121"},
-]
+python-versions = "*"
+files = []
+develop = true
 
-[package.dependencies]
-aws-requests-auth = ">=0.4.2,<1"
-boto3 = ">=1.17.39,<2.0.0"
-botocore = ">=1.20.39,<2.0.0"
-docker = ">=4.4.4,<5.0.0"
-elasticsearch = "7.13.4"
-gitpython = ">=3.1.2,<4.0.0"
-opensearch-py = ">=2.0.1,<3.0.0"
-PyJWT = ">=2.6.0,<3.0.0"
-pyOpenSSL = ">=23.1.1,<24.0.0"
-pytz = ">=2020.4"
-PyYAML = ">=5.1,<5.5"
-redis = ">=4.5.1,<5.0.0"
-requests = ">=2.21.0,<3.0.0"
-rfc3986 = ">=1.4.0,<2.0.0"
-structlog = ">=19.2.0,<20.0.0"
-toml = ">=0.10.1,<1"
-tqdm = ">=4.65.0,<5.0.0"
-typing-extensions = ">=3.8"
-urllib3 = ">=1.26.6,<2.0.0"
-webtest = ">=2.0.34,<3.0.0"
+[package.source]
+type = "directory"
+url = "../../utils"
 
 [[package]]
 name = "decorator"
@@ -559,28 +504,6 @@ files = [
     {file = "decorator-5.1.1-py3-none-any.whl", hash = "sha256:b8c3f85900b9dc423225913c5aace94729fe1fa9763b38939a95226f02d37186"},
     {file = "decorator-5.1.1.tar.gz", hash = "sha256:637996211036b6385ef91435e4fae22989472f9d571faba8927ba8253acbc330"},
 ]
-
-[[package]]
-name = "docker"
-version = "4.4.4"
-description = "A Python library for the Docker Engine API."
-category = "main"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-files = [
-    {file = "docker-4.4.4-py2.py3-none-any.whl", hash = "sha256:f3607d5695be025fa405a12aca2e5df702a57db63790c73b927eb6a94aac60af"},
-    {file = "docker-4.4.4.tar.gz", hash = "sha256:d3393c878f575d3a9ca3b94471a3c89a6d960b35feb92f033c0de36cc9d934db"},
-]
-
-[package.dependencies]
-pywin32 = {version = "227", markers = "sys_platform == \"win32\""}
-requests = ">=2.14.2,<2.18.0 || >2.18.0"
-six = ">=1.4.0"
-websocket-client = ">=0.32.0"
-
-[package.extras]
-ssh = ["paramiko (>=2.4.2)"]
-tls = ["cryptography (>=1.3.4)", "idna (>=2.0.0)", "pyOpenSSL (>=17.5.0)"]
 
 [[package]]
 name = "elasticsearch"
@@ -953,7 +876,7 @@ ansicon = {version = "*", markers = "platform_system == \"Windows\""}
 name = "jmespath"
 version = "1.0.1"
 description = "JSON Matching Expressions"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -1078,31 +1001,6 @@ files = [
 rsa = ["cryptography (>=3.0.0)"]
 signals = ["blinker (>=1.4.0)"]
 signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
-
-[[package]]
-name = "opensearch-py"
-version = "2.2.0"
-description = "Python client for OpenSearch"
-category = "main"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, <4"
-files = [
-    {file = "opensearch-py-2.2.0.tar.gz", hash = "sha256:109fe8d2e1e8f419a22358eb901025f51e6ad2f50014c8962e23796b2a23cb67"},
-    {file = "opensearch_py-2.2.0-py2.py3-none-any.whl", hash = "sha256:595dcebe42e21cdf945add0b5dbaecccace1a8a5ba65d60314813767b564263c"},
-]
-
-[package.dependencies]
-certifi = ">=2022.12.07"
-python-dateutil = "*"
-requests = ">=2.4.0,<3.0.0"
-six = "*"
-urllib3 = ">=1.21.1,<2"
-
-[package.extras]
-async = ["aiohttp (>=3,<4)"]
-develop = ["black", "botocore", "coverage (<7.0.0)", "jinja2", "mock", "myst-parser", "pytest (>=3.0.0)", "pytest-cov", "pytest-mock (<4.0.0)", "pytz", "pyyaml", "requests (>=2.0.0,<3.0.0)", "sphinx", "sphinx-copybutton", "sphinx-rtd-theme"]
-docs = ["myst-parser", "sphinx", "sphinx-copybutton", "sphinx-rtd-theme"]
-kerberos = ["requests-kerberos"]
 
 [[package]]
 name = "packaging"
@@ -1313,25 +1211,6 @@ docs = ["sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
 tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
-name = "pyopenssl"
-version = "23.1.1"
-description = "Python wrapper module around the OpenSSL library"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "pyOpenSSL-23.1.1-py3-none-any.whl", hash = "sha256:9e0c526404a210df9d2b18cd33364beadb0dc858a739b885677bc65e105d4a4c"},
-    {file = "pyOpenSSL-23.1.1.tar.gz", hash = "sha256:841498b9bec61623b1b6c47ebbc02367c07d60e0e195f19790817f10cc8db0b7"},
-]
-
-[package.dependencies]
-cryptography = ">=38.0.0,<41"
-
-[package.extras]
-docs = ["sphinx (!=5.2.0,!=5.2.0.post0)", "sphinx-rtd-theme"]
-test = ["flaky", "pretend", "pytest (>=3.0.1)"]
-
-[[package]]
 name = "pyparsing"
 version = "3.0.9"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
@@ -1453,32 +1332,10 @@ files = [
 ]
 
 [[package]]
-name = "pywin32"
-version = "227"
-description = "Python for Window Extensions"
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "pywin32-227-cp27-cp27m-win32.whl", hash = "sha256:371fcc39416d736401f0274dd64c2302728c9e034808e37381b5e1b22be4a6b0"},
-    {file = "pywin32-227-cp27-cp27m-win_amd64.whl", hash = "sha256:4cdad3e84191194ea6d0dd1b1b9bdda574ff563177d2adf2b4efec2a244fa116"},
-    {file = "pywin32-227-cp35-cp35m-win32.whl", hash = "sha256:f4c5be1a293bae0076d93c88f37ee8da68136744588bc5e2be2f299a34ceb7aa"},
-    {file = "pywin32-227-cp35-cp35m-win_amd64.whl", hash = "sha256:a929a4af626e530383a579431b70e512e736e9588106715215bf685a3ea508d4"},
-    {file = "pywin32-227-cp36-cp36m-win32.whl", hash = "sha256:300a2db938e98c3e7e2093e4491439e62287d0d493fe07cce110db070b54c0be"},
-    {file = "pywin32-227-cp36-cp36m-win_amd64.whl", hash = "sha256:9b31e009564fb95db160f154e2aa195ed66bcc4c058ed72850d047141b36f3a2"},
-    {file = "pywin32-227-cp37-cp37m-win32.whl", hash = "sha256:47a3c7551376a865dd8d095a98deba954a98f326c6fe3c72d8726ca6e6b15507"},
-    {file = "pywin32-227-cp37-cp37m-win_amd64.whl", hash = "sha256:31f88a89139cb2adc40f8f0e65ee56a8c585f629974f9e07622ba80199057511"},
-    {file = "pywin32-227-cp38-cp38-win32.whl", hash = "sha256:7f18199fbf29ca99dff10e1f09451582ae9e372a892ff03a28528a24d55875bc"},
-    {file = "pywin32-227-cp38-cp38-win_amd64.whl", hash = "sha256:7c1ae32c489dc012930787f06244426f8356e129184a02c25aef163917ce158e"},
-    {file = "pywin32-227-cp39-cp39-win32.whl", hash = "sha256:c054c52ba46e7eb6b7d7dfae4dbd987a1bb48ee86debe3f245a2884ece46e295"},
-    {file = "pywin32-227-cp39-cp39-win_amd64.whl", hash = "sha256:f27cec5e7f588c3d1051651830ecc00294f90728d19c3bf6916e6dba93ea357c"},
-]
-
-[[package]]
 name = "pyyaml"
 version = "5.4.1"
 description = "YAML parser and emitter for Python"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
 files = [
@@ -1606,21 +1463,6 @@ requests = ">=2.0.0"
 rsa = ["oauthlib[signedtoken] (>=3.0.0)"]
 
 [[package]]
-name = "rfc3986"
-version = "1.5.0"
-description = "Validating URI References per RFC 3986"
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "rfc3986-1.5.0-py2.py3-none-any.whl", hash = "sha256:a86d6e1f5b1dc238b218b012df0aa79409667bb209e58da56d0b94704e712a97"},
-    {file = "rfc3986-1.5.0.tar.gz", hash = "sha256:270aaf10d87d0d4e095063c65bf3ddbc6ee3d0b226328ce21e036f946e421835"},
-]
-
-[package.extras]
-idna2008 = ["idna"]
-
-[[package]]
 name = "rsa"
 version = "4.9"
 description = "Pure-Python RSA implementation"
@@ -1634,24 +1476,6 @@ files = [
 
 [package.dependencies]
 pyasn1 = ">=0.1.3"
-
-[[package]]
-name = "s3transfer"
-version = "0.6.0"
-description = "An Amazon S3 Transfer Manager"
-category = "main"
-optional = false
-python-versions = ">= 3.7"
-files = [
-    {file = "s3transfer-0.6.0-py3-none-any.whl", hash = "sha256:06176b74f3a15f61f1b4f25a1fc29a4429040b7647133a463da8fa5bd28d5ecd"},
-    {file = "s3transfer-0.6.0.tar.gz", hash = "sha256:2ed07d3866f523cc561bf4a00fc5535827981b117dd7876f036b0c1aca42c947"},
-]
-
-[package.dependencies]
-botocore = ">=1.12.36,<2.0a.0"
-
-[package.extras]
-crt = ["botocore[crt] (>=1.20.29,<2.0a.0)"]
 
 [[package]]
 name = "setuptools"
@@ -1707,27 +1531,6 @@ files = [
 ]
 
 [[package]]
-name = "structlog"
-version = "19.2.0"
-description = "Structured Logging for Python"
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "structlog-19.2.0-py2.py3-none-any.whl", hash = "sha256:6640e6690fc31d5949bc614c1a630464d3aaa625284aeb7c6e486c3010d73e12"},
-    {file = "structlog-19.2.0.tar.gz", hash = "sha256:4287058cf4ce1a59bc5dea290d6386d37f29a37529c9a51cdf7387e51710152b"},
-]
-
-[package.dependencies]
-six = "*"
-
-[package.extras]
-azure-pipelines = ["coverage", "freezegun (>=0.2.8)", "pretend", "pytest (>=3.3.0)", "pytest-azurepipelines", "python-rapidjson", "simplejson"]
-dev = ["coverage", "freezegun (>=0.2.8)", "pre-commit", "pretend", "pytest (>=3.3.0)", "python-rapidjson", "simplejson", "sphinx", "twisted"]
-docs = ["sphinx", "twisted"]
-tests = ["coverage", "freezegun (>=0.2.8)", "pretend", "pytest (>=3.3.0)", "python-rapidjson", "simplejson"]
-
-[[package]]
 name = "toml"
 version = "0.10.2"
 description = "Python Library for Tom's Obvious, Minimal Language"
@@ -1738,27 +1541,6 @@ files = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
     {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},
 ]
-
-[[package]]
-name = "tqdm"
-version = "4.65.0"
-description = "Fast, Extensible Progress Meter"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "tqdm-4.65.0-py3-none-any.whl", hash = "sha256:c4f53a17fe37e132815abceec022631be8ffe1b9381c2e6e30aa70edc99e9671"},
-    {file = "tqdm-4.65.0.tar.gz", hash = "sha256:1871fb68a86b8fb3b59ca4cdd3dcccbc7e6d613eeed31f4c332531977b89beb5"},
-]
-
-[package.dependencies]
-colorama = {version = "*", markers = "platform_system == \"Windows\""}
-
-[package.extras]
-dev = ["py-make (>=0.1.0)", "twine", "wheel"]
-notebook = ["ipywidgets (>=6)"]
-slack = ["slack-sdk"]
-telegram = ["requests"]
 
 [[package]]
 name = "typing-extensions"
@@ -1802,22 +1584,6 @@ secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "ipaddress", "p
 socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
-name = "waitress"
-version = "2.1.2"
-description = "Waitress WSGI server"
-category = "main"
-optional = false
-python-versions = ">=3.7.0"
-files = [
-    {file = "waitress-2.1.2-py3-none-any.whl", hash = "sha256:7500c9625927c8ec60f54377d590f67b30c8e70ef4b8894214ac6e4cad233d2a"},
-    {file = "waitress-2.1.2.tar.gz", hash = "sha256:780a4082c5fbc0fde6a2fcfe5e26e6efc1e8f425730863c04085769781f51eba"},
-]
-
-[package.extras]
-docs = ["Sphinx (>=1.8.1)", "docutils", "pylons-sphinx-themes (>=1.0.9)"]
-testing = ["coverage (>=5.0)", "pytest", "pytest-cover"]
-
-[[package]]
 name = "wcwidth"
 version = "0.2.6"
 description = "Measures the displayed width of unicode strings in a terminal"
@@ -1828,61 +1594,6 @@ files = [
     {file = "wcwidth-0.2.6-py2.py3-none-any.whl", hash = "sha256:795b138f6875577cd91bba52baf9e445cd5118fd32723b460e30a0af30ea230e"},
     {file = "wcwidth-0.2.6.tar.gz", hash = "sha256:a5220780a404dbe3353789870978e472cfe477761f06ee55077256e509b156d0"},
 ]
-
-[[package]]
-name = "webob"
-version = "1.8.7"
-description = "WSGI request and response object"
-category = "main"
-optional = false
-python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*"
-files = [
-    {file = "WebOb-1.8.7-py2.py3-none-any.whl", hash = "sha256:73aae30359291c14fa3b956f8b5ca31960e420c28c1bec002547fb04928cf89b"},
-    {file = "WebOb-1.8.7.tar.gz", hash = "sha256:b64ef5141be559cfade448f044fa45c2260351edcb6a8ef6b7e00c7dcef0c323"},
-]
-
-[package.extras]
-docs = ["Sphinx (>=1.7.5)", "pylons-sphinx-themes"]
-testing = ["coverage", "pytest (>=3.1.0)", "pytest-cov", "pytest-xdist"]
-
-[[package]]
-name = "websocket-client"
-version = "1.5.1"
-description = "WebSocket client for Python with low level API options"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "websocket-client-1.5.1.tar.gz", hash = "sha256:3f09e6d8230892547132177f575a4e3e73cfdf06526e20cc02aa1c3b47184d40"},
-    {file = "websocket_client-1.5.1-py3-none-any.whl", hash = "sha256:cdf5877568b7e83aa7cf2244ab56a3213de587bbe0ce9d8b9600fc77b455d89e"},
-]
-
-[package.extras]
-docs = ["Sphinx (>=3.4)", "sphinx-rtd-theme (>=0.5)"]
-optional = ["python-socks", "wsaccel"]
-test = ["websockets"]
-
-[[package]]
-name = "webtest"
-version = "2.0.35"
-description = "Helper to test WSGI applications"
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "WebTest-2.0.35-py2.py3-none-any.whl", hash = "sha256:44ddfe99b5eca4cf07675e7222c81dd624d22f9a26035d2b93dc8862dc1153c6"},
-    {file = "WebTest-2.0.35.tar.gz", hash = "sha256:aac168b5b2b4f200af4e35867cf316712210e3d5db81c1cbdff38722647bb087"},
-]
-
-[package.dependencies]
-beautifulsoup4 = "*"
-six = "*"
-waitress = ">=0.8.5"
-WebOb = ">=1.2"
-
-[package.extras]
-docs = ["Sphinx (>=1.8.1)", "docutils", "pylons-sphinx-themes (>=1.0.8)"]
-tests = ["PasteDeploy", "WSGIProxy2", "coverage", "mock", "nose (<1.3.0)", "pyquery"]
 
 [[package]]
 name = "wheel"
@@ -1918,4 +1629,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7,<3.10"
-content-hash = "99b0d1d76343d96beeb1cbc7062239e79a23d0f4be6460889f3edf1a4395f92b"
+content-hash = "a606a30f3a0230afdd7e6bd08d06d6633294235ca1c69a0939baca004a60a842"

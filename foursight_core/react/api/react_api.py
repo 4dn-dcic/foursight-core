@@ -941,6 +941,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Analogous legacy function is app_utils.view_foursight_check.
         TODO: No need to return array.
         """
+        # import pdb ; pdb.set_trace()
         ignored(request)
         body = {}
         # import pdb ; pdb.set_trace()
