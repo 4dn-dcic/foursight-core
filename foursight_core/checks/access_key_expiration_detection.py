@@ -78,7 +78,7 @@ def refresh_access_keys(connection, **kwargs):
         access_key_res = post_metadata(access_key_req, 'access-keys', key=connection.ff_keys)
         access_key_id = access_key_res.get('access_key_id')
         secret_access_key = access_key_res.get('secret_access_key')
-        import pdb ; pdb.set_trace()
+        # import pdb ; pdb.set_trace()
         if not access_key_id or not secret_access_key:
             # We will say these must occur in pairs; both at the top level or both within the @graph array.
             graph_item = access_key_res.get('@graph', [{}])[0]

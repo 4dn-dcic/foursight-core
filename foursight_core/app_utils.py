@@ -1834,6 +1834,12 @@ class AppUtilsCore(ReactApi, Routes):
         return queued_uuid
 
     def run_check_runner(self, runner_input, propogate=True):
+        print('xyzzy/run_check_runner/enter')
+        print(type(runner_input))
+        print(runner_input)
+        print(type(propogate))
+        print(propogate)
+        # import pdb ; pdb.set_trace()
         """
         Run logic for a check runner. Used to run checks and actions.
 
@@ -1876,7 +1882,7 @@ class AppUtilsCore(ReactApi, Routes):
         message = response.get('Messages', [{}])[0]
 
         # TODO/2022-12-01/dmichaels: Issue with check not running because not detecting that
-        # dependency # has already run; for example with expset_opf_unique_files_in_experiments
+        # dependency has already run; for example with expset_opf_unique_files_in_experiments
         # depending on expset_opfsets_unique_titles; seems not checking the result in S3 of the
         # depdendency correctly. This is what seems to be returned here if the check has a dependency, e.g.:
         #

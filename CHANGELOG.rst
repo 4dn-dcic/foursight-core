@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+4.4.0
+=====
+* IN PROGRESS ...
+* Changes to the access key check; making sure the action does not run every single day.
+
 4.3.0
 =====
 * Fix to checks.access_key_expiration_detection.refresh_access_keys bug (key exception) which

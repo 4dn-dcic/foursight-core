@@ -936,13 +936,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_history_uuid(self, request: dict, env: str, check: str, uuid: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks/{check}/{uuid}
+        Called from react_routes for endpoint: GET /{env}/checks/{check}/history/{uuid}
         Returns the check result for the given check (name) and uuid.
         Analogous legacy function is app_utils.view_foursight_check.
         TODO: No need to return array.
         """
         ignored(request)
         body = {}
+        # import pdb ; pdb.set_trace()
         try:
             connection = app.core.init_connection(env)
         except Exception:
@@ -950,6 +951,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if connection:
             check_result = app.core.CheckResult(connection, check)
             if check_result:
+                # This gets the result from S3, for example:
+                # s3://cgap-kmp-main-foursight-cgap-supertest-results/access_key_status/2023-06-15T10:00:21.205768.json
+                # where access_key_status is the check (name) and 2023-06-15T10:00:21.205768 is the uuid;
+                # and cgap-kmp-main-foursight-cgap-supertest-results is the bucket name which is from our environment.
+                # import pdb ; pdb.set_trace()
                 data = check_result.get_result_by_uuid(uuid)
                 if data is None:
                     # the check hasn't run. Return a placeholder view
@@ -1089,6 +1095,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Arguments (args) for the request are any of:
         - args: Base-64 encode JSON object containing fields/values appropriate for the check run.
         """
+        # import pdb ; pdb.set_trace()
         ignored(request)
         args = base64_decode_to_json(args) if args else None
         # This turns strings into ints/floats/etc appropriately.
@@ -1104,6 +1111,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Arguments (args) for the request are any of:
         - args: Base-64 encode JSON object containing fields/values appropriate for the action run.
         """
+        # import pdb ; pdb.set_trace()
         ignored(request)
         args = base64_decode_to_json(args) if args else {}
         # This turns strings into ints/floats/etc appropriately.
