@@ -43,13 +43,13 @@ def access_key_status(connection, **kwargs):
         check.summary = (f'Application access keys will expire in less than 21 days! Please run'
                          f' the deployment action soon')
         check.brief_output = check.full_output = check.summary
-        check.action = None
+        check.action = ""
         return check
     else:
         check.status = 'PASS'
         check.summary = (f'Application access keys expiration is more than 3 weeks away. All good.'
                          f' Expiration date: {expiration_date}')
-        check.action = None
+        check.action = ""
         return check
 
 
