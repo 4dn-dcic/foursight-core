@@ -2006,7 +2006,7 @@ class AppUtilsCore(ReactApi, Routes):
             stage = self.stage.get_stage()
             if run_result['type'] == 'check' and run_result['kwargs']['queue_action'] == stage:
                 # must also have check.action and check.allow_action set
-                if run_result['allow_action'] and run_result['action']:
+                if run_result['allow_action'] and run_result['action'] and not run_result.get('prevent_action'):
                     action_params = {'check_name': run_result['name'],
                                      'called_by': run_result['kwargs']['uuid']}
                     try:

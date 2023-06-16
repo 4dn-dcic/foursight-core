@@ -371,6 +371,11 @@ class CheckResult(RunResult):
         # self.action_name is the function name of the action to link to check
         self.action = ''
         self.allow_action = False  # by default do not allow the action to be run
+        # Added prevent_action to allow the allow_action flag to be True, so action *may* *always*
+        # be run, but does not automatically run after check; this came up with the access_key_status
+        # check, where we always want to allow the action to be manually run, but want to prevent it from
+        # running after the check run, unless it is expiring soon; see: access_key_expiration_detection.
+        self.prevent_action = False
         self.action_message = 'Are you sure you want to run this action?'
 
     def format_result(self, uuid):
@@ -391,6 +396,7 @@ class CheckResult(RunResult):
             'ff_link': self.ff_link,
             'action': self.action,
             'allow_action': self.allow_action,
+            'prevent_action': self.prevent_action,
             'action_message': self.action_message,
             'kwargs': self.kwargs,
             'type': 'check'
