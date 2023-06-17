@@ -3,6 +3,7 @@ import AccountsPage from './pages/AccountsPage';
 import ApiCachePage from './pages/ApiCachePage';
 import AwsS3Page from './pages/aws/AwsS3Page';
 import ChecksPage from './pages/ChecksPage';
+import ChecksPageNew from './pages/checks/ChecksPageNew';
 import CheckHistoryPage from './pages/CheckHistoryPage';
 import Env from './utils/Env';
 import EnvPage from './pages/EnvPage';
@@ -79,6 +80,11 @@ const App = () => {
                     <Route path="/api/react/:environ/checks" element={
                         <Page.AuthorizationRequired>
                             <ChecksPage />
+                        </Page.AuthorizationRequired>
+                    }/>
+                    <Route path="/api/react/:environ/checksnew" element={
+                        <Page.AuthorizationRequired>
+                            <ChecksPageNew />
                         </Page.AuthorizationRequired>
                     }/>
                     <Route path="/api/react/:environ/checks/:check/history" element={

@@ -376,7 +376,7 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
                                         noteChangedCheckBox(groupList);
                                             setShowDependenciesBox(true);
                                     }}>
-                                    <span style={{fontSize:"small"}}></span>&nbsp;Configure Run ...
+                                    <span style={{fontSize:"small"}}></span>&nbsp;Run ...
                                 </div>
                                 <Tooltip id={`tooltip-configure ${check.name}`} position="top" text={"Configure check run below."} />
                             </>}
