@@ -1345,7 +1345,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
             response["foursight"]["default_env"] = foursight_header_json["auth"]["known_envs"][0]
             response["foursight"]["env_count"] = foursight_header_json["auth"]["known_envs_actual_count"]
             response["foursight"]["identity"] = foursight_header_json["auth"]["known_envs"][0].get("gac_name")
+            response["foursight"]["redis_url"] = foursight_header_json.get("resources",{}).get("redis")
             foursight_header_json_s3 = foursight_header_json.get("s3")
+            portal_access_key_url = response["foursight"]["url"] + f"/reactapi/portal_access_key"
+            portal_access_key_response = requests.get(portal_access_key_url)
+            if portal_access_key_response and portal_access_key_response.status_code == 200:
+                response["foursight"]["portal_access_key"] = portal_access_key_response.json()
             # Older versions of the /header API might not have this s3 element so check.
             if foursight_header_json_s3:
                 response["foursight"]["s3"] = {}

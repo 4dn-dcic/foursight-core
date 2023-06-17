@@ -8,8 +8,8 @@ Change Log
 
 4.4.0
 =====
-* IN PROGRESS ...
 * Changes to the access key check; making sure the action does not run every single day.
+* Miscellaneous minor UI improvements.
 
 4.3.0
 =====

@@ -19,11 +19,34 @@ function isCurrentAccount(header, info) {
     return false;
 }
 
+const PortalAccessKeyStatus = ({ portalAccessKeyResponse }) => {
+    if (!portalAccessKeyResponse) {
+        return <>&ndash;</>
+    }
+    else if (portalAccessKeyResponse.invalid) {
+        return <b style={{color:"red"}}>Invalid</b>
+    }
+    else if (portalAccessKeyResponse.expired) {
+        return <b style={{color:"red"}}>Expired</b>
+    }
+    else if (portalAccessKeyResponse.expires_at) {
+        if (portalAccessKeyResponse.expires_soon) {
+            return <span style={{color:"red"}}>Expires {Time.FromNow(portalAccessKeyResponse.expires_at)} ({portalAccessKeyResponse.expires_at})</span>
+        }
+        else {
+            return <>Expires {Time.FromNow(portalAccessKeyResponse.expires_at)} ({portalAccessKeyResponse.expires_at})</>
+        }
+    }
+    else {
+        return <>OK (no expiration)</>
+    }
+}
+
 const AccountInfoLeft = ({ header, info, foursightUrl }) => {
 
     const SslCertificateLink = ({ url }) => {
         return url && url.startsWith("https://") && <small>
-          &nbsp;| <a style={{color:"inherit"}} href={Client.Path("certificates") + "/?hostname=" + url} rel="noreferrer" target="_blank"><b>SSL</b></a>&nbsp;
+          &nbsp;| <a style={{color:"inherit"}} href={Client.Path("certificates") + "/?hostname=" + url} rel="noreferrer" target="_blank">SSL</a>&nbsp;
           <a style={{color:"inherit"}} href={Client.Path("certificates") + "/?hostname=" + url} rel="noreferrer" target="_blank"><span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span></a>
         </small>
     }
@@ -65,9 +88,9 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                     </a>
                     &nbsp;|&nbsp;
                     <a style={{color:"inherit"}} href={info.get("portal.health_ui_url")} rel="noreferrer" target="_blank">Health</a>&nbsp;
-                    <a style={{color:"inherit"}} href={info.get("portal.health_ui_url")} rel="noreferrer" target="_blank"><span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span></a>
-                    &nbsp;
                     <small>(<a style={{color:"inherit"}} href={info.get("portal.health_url")} rel="noreferrer" target="_blank">JSON</a>)</small>
+                    &nbsp;
+                    <a style={{color:"inherit"}} href={info.get("portal.health_ui_url")} rel="noreferrer" target="_blank"><span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span></a>
                     <SslCertificateLink url={info.get("portal.url")} />
                 </>:<>{Char.EmptySet}</>}
             </td>
@@ -87,7 +110,7 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
         </tr>
         <tr style={{fontSize:"small"}}>
             <td style={{paddingRight:"10pt"}}>
-                Database:
+                RDS:
             </td>
             <td>
                 { info.get("portal.health.database") ? <>
@@ -95,6 +118,16 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
+        { info.get("foursight.redis_url") &&
+            <tr style={{fontSize:"small"}}>
+                <td style={{paddingRight:"10pt"}}>
+                    Redis:
+                </td>
+                <td>
+                    {info.get("foursight.redis_url")}
+                </td>
+            </tr>
+        }
         <tr><td style={{paddingTop:"4pt"}} /></tr>
         <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -195,10 +228,20 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                 </>:<> &ndash; </>}
             </td>
         </tr>
-        { isCurrentAccount(header, info) && <tr style={{fontSize:"small"}}>
-            <td style={{paddingRight:"10pt"}}> Portal Access Key: </td>
-            <td> {portalAccessKey.get("key")} </td>
-        </tr> }
+        <tr style={{fontSize:"small"}}>
+            <td style={{paddingRight:"10pt"}}>
+                Portal Access Key:
+            </td>
+            <td>
+                { isCurrentAccount(header, info) && !portalAccessKey.loading && <>
+                    {portalAccessKey.get("key")}&nbsp;{Char.RightArrow}&nbsp;
+                </> }
+                <PortalAccessKeyStatus portalAccessKeyResponse={info.get("foursight.portal_access_key")} />
+                <a href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/portal_access_key`} style={{color:"inherit"}} rel="noreferrer" target="_blank">
+                    <span className="fa fa-external-link" style={{position:"relative",left:"6pt",bottom:"-1px"}} />
+                </a>
+            </td>
+        </tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
         <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -387,16 +430,28 @@ const AccountInfoRight = ({ info }) => {
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                redis-server:
-            </td>
-            <td>
-                {info.get("foursight.versions.redis_server") ? <>
-                    <b>{info.get("foursight.versions.redis_server")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
+        { info.get("foursight.versions.redis_server") && <>
+            <tr>
+                <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                    redis:
+                </td>
+                <td>
+                    {info.get("foursight.versions.redis") ? <>
+                        <b>{info.get("foursight.versions.redis")}</b>
+                    </>:<>{Char.EmptySet}</>}
+                </td>
+            </tr>
+            <tr>
+                <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                    redis-server:
+                </td>
+                <td>
+                    {info.get("foursight.versions.redis_server") ? <>
+                        <b>{info.get("foursight.versions.redis_server")}</b>
+                    </>:<>{Char.EmptySet}</>}
+                </td>
+            </tr>
+        </>}
     </tbody></table>
 }
 
