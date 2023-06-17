@@ -182,6 +182,9 @@ class AppUtilsCore(ReactApi, Routes):
         Returns an FSConnection object or raises an error.
         """
         environments = self.init_environments(environ) if _environments is None else _environments
+        if not environments:
+            environ = self.get_default_env();
+            environments = self.init_environments(environ) if _environments is None else _environments
         logger.warning("environments = %s" % str(environments))
         # if still not there, return an error
         if environ not in environments:
