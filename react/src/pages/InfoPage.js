@@ -185,8 +185,10 @@ const InfoPage = () => {
             <InfoRow name={"elasticsearch-server"} value={header.versions?.elasticsearch_server || info.data?.versions?.elasticsearch_server} monospace={true} copy={true} size="2" elasticsearch={true} />
             <InfoRow name={"elasticsearch"} value={header.versions?.elasticsearch} monospace={true} copy={true} size="2" pypi={true} />
             <InfoRow name={"elasticsearch-dsl"} value={header.versions?.elasticsearch_dsl} monospace={true} copy={true} size="2" pypi={true} />
-            <InfoRow name={"redis-server"} value={header.versions?.redis_server || info.data?.versions?.redis_server} monospace={true} copy={true} size="2" redis={true} />
-            <InfoRow name={"redis"} value={header.versions?.redis} monospace={true} copy={true} size="2" pypi={true} />
+           { info.data?.versions?.redis_server && <>
+               <InfoRow name={"redis-server"} value={header.versions?.redis_server || info.data?.versions?.redis_server} monospace={true} copy={true} size="2" redis={true} />
+               <InfoRow name={"redis"} value={header.versions?.redis} monospace={true} copy={true} size="2" pypi={true} />
+           </>}
         </InfoBox>
         <InfoBox info={info} title="Credentials Info">
             <InfoRow name={"AWS Account Number"} value={info.get("app.credentials.aws_account_number")} monospace={true} copy={true} size="2" />
@@ -206,7 +208,9 @@ const InfoPage = () => {
             <InfoRow name={"ElasticSearch"} value={header.resources?.es} monospace={true} copy={true} size="2" />
             <InfoRow name={"RDS"} value={header.resources?.rds} monospace={true} copy={true} size="2" />
             <InfoRow name={"SQS"} value={header.resources?.sqs} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Redis"} value={header.resources?.redis} nocheck={!header.resources?.redis_running} check={header.resources?.redis_running} monospace={true} copy={true} size="2" />
+            { header.resources?.redis_running &&
+                <InfoRow name={"Redis"} value={header.resources?.redis} nocheck={!header.resources?.redis_running} check={header.resources?.redis_running} monospace={true} copy={true} size="2" />
+            }
         </InfoBox>
         <InfoBox info={info} title="Authentication/Authorization Info" show={true}>
             <InfoRow name={"Email"} value={Auth.Token()?.user} monospace={true} copy={true} check={Auth.Token()?.user_verified} link={Client.Path("/users/" + Auth.LoggedInUser(header), true)} size="2" />

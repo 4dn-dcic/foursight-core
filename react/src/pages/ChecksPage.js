@@ -376,7 +376,7 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
                                         noteChangedCheckBox(groupList);
                                             setShowDependenciesBox(true);
                                     }}>
-                                    <span style={{fontSize:"small"}}>{Char.DownArrowFat}</span>&nbsp;Configure
+                                    <span style={{fontSize:"small"}}></span>&nbsp;Configure Run ...
                                 </div>
                                 <Tooltip id={`tooltip-configure ${check.name}`} position="top" text={"Configure check run below."} />
                             </>}
@@ -1875,10 +1875,7 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
                     <div style={{float:"right",marginTop:"-2pt"}}>
                         {(runActionAllowedState[0] && !readOnlyMode) ?<>
                             { runActionConfirm ? <>
-                                <span id={`tooltip-action-run-${check.name}`}>
-                                    <button className="check-run-button red" onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
-                                </span>
-                                <Tooltip id={`tooltip-action-run-${check.name}`} text="Click to actually run this action." position="top" />
+                                <span className="check-action-confirm-button" style={{float:"right"}} onClick={onClickRunActionCancel}>&nbsp;<b>Cancel</b></span>
                             </>:<>
                                 <button className="check-run-button" onClick={onClickRunAction}> Run Action <b>...</b></button>
                             </>}
@@ -1892,7 +1889,7 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
                     </div>
                     { (!readOnlyMode && !runActionAllowedState[0] && !check.__result.loading && !check.__resultByUuid.loading && !check.__resultByAction.loading) && <>
                         <div id={`tooltip-result-refresh-${check.name}`} style={{float:"right",marginRight:"8pt",marginTop:"0pt",cursor:"pointer",color:"black"}} onClick={() => fetchResult(check, env, groupList, true)}>
-                            <big><b>{Char.Refresh}</b></big>
+                            <div style={{display:"inline-block",fontWeight:"bold",fontSize:"large",marginTop:"-2pt"}}>{Char.Refresh}</div>
                         </div>
                         <Tooltip id={`tooltip-result-refresh-${check.name}`} text="Click to refresh latest result." position="bottom" />
                     </>}
@@ -1900,7 +1897,10 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
                 { runActionConfirm && <>
                     <div style={{borderTop:"1px solid",marginTop:"8pt",marginBottom:"8pt"}}/>
                     <b style={{color:"red"}}>{Char.RightArrow}&nbsp;<i>Are you sure you want to run this action?</i></b>
-                    <span className="check-action-confirm-button" style={{float:"right",marginTop:"-3pt"}} onClick={onClickRunActionCancel}>&nbsp;<b>Cancel</b></span>
+                    <span id={`tooltip-action-run-${check.name}`} style={{float:"right",marginTop:"-3pt"}}>
+                        <button className="check-run-button red" onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
+                    </span>
+                    <Tooltip id={`tooltip-action-run-${check.name}`} text="Click to actually run this action." position="top" />
                 </>}
             </div>
         </>}
