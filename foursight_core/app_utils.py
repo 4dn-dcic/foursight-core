@@ -1834,12 +1834,6 @@ class AppUtilsCore(ReactApi, Routes):
         return queued_uuid
 
     def run_check_runner(self, runner_input, propogate=True):
-        print('xyzzy/run_check_runner/enter')
-        print(type(runner_input))
-        print(runner_input)
-        print(type(propogate))
-        print(propogate)
-        # import pdb ; pdb.set_trace()
         """
         Run logic for a check runner. Used to run checks and actions.
 
@@ -1875,7 +1869,6 @@ class AppUtilsCore(ReactApi, Routes):
         if not sqs_url:
             return
         client = SQS.get_sqs_boto_client()
-        # import pdb ; pdb.set_trace()
         response = client.receive_message(
             QueueUrl=sqs_url,
             AttributeNames=['MessageGroupId'],

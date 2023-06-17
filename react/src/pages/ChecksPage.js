@@ -1178,6 +1178,21 @@ const ChecksSearchBox = (props) => {
         return matches;
     }
 
+    function getGroupName(check) {
+        return getByScheduleGroupName(check);
+    }
+
+    function getByScheduleGroupName(check) {
+        let checkName = check.name;
+        for (let datum of props.checks.data) {
+            for (let check of datum.checks) {
+                if (check.name == checkName) {
+                    return datum.group;
+                }
+            }
+        }
+    }
+
     const inputStyle = {
         outline: "none",
         paddingLeft: "2pt",
@@ -1231,7 +1246,7 @@ const ChecksSearchBox = (props) => {
                                 <br />
                                 <small>
                                     <i>Group</i>:&nbsp;
-                                    <span className="pointer" onClick={() => props.toggleShowGroup(props.findGroup(check.group), props.environ, props.groupList)}>{check.group.replace(/ checks$/i, "")}</span> <br />
+                                    <span className="pointer" onClick={() => props.toggleShowGroup(props.findGroup(getGroupName(check)), props.environ, props.groupList)}>{getGroupName(check).replace(/ checks$/i, "")}</span> <br />
                                     <i>Function:</i>&nbsp;
                                     { check.registered_github_url ? <>
                                         <a rel="noreferrer" target="_blank" href={check.registered_github_url}>

@@ -250,7 +250,6 @@ class RunResult(object):
         results after that point will be returned.
         Returns a list of lists (inner lists: [status, kwargs])
         """
-        # import pdb ; pdb.set_trace()
         if self.es:
             history, total = self.connections['es'].get_result_history(self.name, start, limit, sort)
 
