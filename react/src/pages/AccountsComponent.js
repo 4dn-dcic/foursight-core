@@ -1,14 +1,44 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { BarSpinner, StandardSpinner } from '../Spinners';
 import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
+import Server from '../utils/Server';
 import useFetch from '../hooks/Fetch';
 import useFetching from '../hooks/Fetching';
 import Time from '../utils/Time';
 import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
+
+function handleFileUpload(event, accountsUploader) {
+    const file = event.target.files[0]
+    const reader = new window.FileReader();
+    reader.onload = () => {
+      const content = reader.result;
+        window.alert(content)
+        window.alert(typeof(content))
+        const contentJson = JSON.parse(content);
+        window.alert(JSON.stringify(contentJson))
+        window.alert(typeof(contentJson))
+        accountsUploader.refresh({
+            url: Server.Url("/accounts"),
+            method: "POST",
+            payload: contentJson
+        });
+            /*
+      axios.post("http://localhost:8000/api/reactapi/accounts", { content: fileContent })
+        .then(response => {
+          console.log(response.data);
+        })
+        .catch(error => {
+          console.error(error);
+        });
+        */
+    };
+    reader.readAsText(file);
+}
 
 function isCurrentAccount(header, info) {
     if (!Type.IsNull(header?.app?.credentials?.aws_account_number) &&
@@ -533,6 +563,8 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
 
 const AccountsComponent = ({ header }) => {
 
+    const accountsUploader = useFetch(Server.Url("/accounts"), { method: "POST", nofetch: true });
+
     const [ args, setArgs ] = useSearchParams();
     const argsAll = args.get("all");
     const [ all, setAll ] = useState(argsAll?.toLowerCase() === "true" || argsAll === "1" ? true : false);
@@ -571,6 +603,12 @@ const AccountsComponent = ({ header }) => {
             <div style={{marginTop:"0pt"}}><b id={`tooltip-known-accounts`}>Known Accounts</b>
                 <Tooltip id={`tooltip-known-accounts`} text={`This info from: ${header?.app?.accounts_file_from_s3}`} position="top" />
                 <div style={{float:"right",display:"inline",fontSize:"small",marginRight:"4pt",marginTop:"0pt"}}>
+                <span id="tooltip-upload">
+                    <label for="accounts-file-upload"><span style={{position:"relative",bottom:"1pt",right:"1pt",cursor:"pointer"}}>&#x2630;</span></label>
+                    <input id="accounts-file-upload" type="file" onChange={(event) => handleFileUpload(event, accountsUploader)}></input>
+                </span>
+                <Tooltip id="tooltip-upload" text="Click to upload accounts files." position="top" />
+                &nbsp;|&nbsp;
                 { (all)  ? <>
                     <span id={`tooltip-show-local`} style={{cursor:"pointer"}} onClick={toggleAll}>Local</span>&nbsp;|&nbsp;
                     <Tooltip id={`tooltip-show-local`} text={`Click to show accounts within AWS account: ${header?.app?.credentials?.aws_account_number} (${header?.app?.credentials?.aws_account_name})`} position="top" />

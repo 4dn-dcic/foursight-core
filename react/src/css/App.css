@@ -610,3 +610,7 @@ form {
 .signin-as-button:active {
     background: yellow;
 }
+
+#accounts-file-upload {
+  display: none;
+}

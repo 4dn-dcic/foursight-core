@@ -30,6 +30,10 @@ function IsNonEmptyArray(value) {
     return Array.isArray(value) && value.length > 0;
 }
 
+function IsJson(value) {
+    return IsObject(value) || IsArray(value);
+}
+
 function IsDateTime(value) {
     return value instanceof Date;
 }
@@ -92,6 +96,7 @@ const exports = {
     IsDateTime:          IsDateTime,
     IsFunction:          IsFunction,
     IsInteger:           IsInteger,
+    IsJson:              IsJson,
     IsNonEmptyArray:     IsNonEmptyArray,
     IsNonEmptyObject:    IsNonEmptyObject,
     IsNull:              IsNull,

@@ -629,7 +629,7 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
     args = {
         url:        Type.First([ urlOverride, argsOverride?.url, url, args?.url, "" ], Str.HasValue),
         method:     Type.First([ argsOverride?.method, args?.method, DEFAULT_METHOD ], Str.HasValue),
-        payload:    Type.First([ argsOverride?.payload, args?.payload, null ], Type.IsObject),
+        payload:    Type.First([ argsOverride?.payload, args?.payload, null ], Type.IsJson),
         timeout:    Type.First([ argsOverride?.timeout, args?.timeout, DEFAULT_TIMEOUT ], Type.IsInteger),
         initial:    Type.First([ argsOverride?.initial, args?.initial, null ], (value) => !Type.IsNull(value)),
         nofetch:    Type.First([ argsOverride?.nofetch, args?.nofetch, false ], Type.IsBoolean),

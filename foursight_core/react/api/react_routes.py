@@ -624,6 +624,13 @@ class ReactRoutes:
         """
         return app.core.reactapi_testsize(n)
 
+    @route("/{env}/accounts", methods=["POST"], authorize=True)
+    def reactapi_route_accounts_file_upload(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        import pdb ; pdb.set_trace()
+        accounts_data = get_request_body(app.current_request)
+        print('xyzzy/reactapi_route_accounts_file_upload')
+        print(accounts_data)
+
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes, serving the HTML/CSS/JavaScript/React files.
     # Note that ALL of these are UNPROTECTED routes.
