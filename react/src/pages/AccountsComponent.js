@@ -18,11 +18,7 @@ function handleFileUpload(event, accountsUploader) {
     const reader = new window.FileReader();
     reader.onload = () => {
       const content = reader.result;
-        window.alert(content)
-        window.alert(typeof(content))
         const contentJson = JSON.parse(content);
-        window.alert(JSON.stringify(contentJson))
-        window.alert(typeof(contentJson))
         accountsUploader.refresh({
             url: Server.Url("/accounts_file"),
             method: "POST",
