@@ -5,10 +5,14 @@ import { BarSpinner, StandardSpinner } from '../Spinners';
 import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
+import Clipboard from '../utils/Clipboard';
+import Image from '../utils/Image';
+import Json from '../utils/Json';
 import Server from '../utils/Server';
 import useFetch from '../hooks/Fetch';
 import useFetching from '../hooks/Fetching';
 import Time from '../utils/Time';
+import Styles from '../Styles';
 import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
@@ -24,6 +28,7 @@ function handleFileUpload(event, accountsUploader) {
             method: "POST",
             payload: contentJson
         });
+        window.location.reload();
     };
     reader.readAsText(file);
 }
@@ -577,6 +582,7 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
 const AccountsComponent = ({ header }) => {
 
     const accountsUploader = useFetch(Server.Url("/accounts"), { method: "POST", nofetch: true });
+    const accountsFileData = useFetch(Server.Url("/accounts_file"), { nocache: true });
 
     const [ args, setArgs ] = useSearchParams();
     const argsAll = args.get("all");
@@ -619,19 +625,13 @@ const AccountsComponent = ({ header }) => {
     return <>
         <div style={{borderBottom:"2px solid black",marginBottom:"8pt"}}>
             <div style={{marginTop:"0pt"}}><b id={`tooltip-known-accounts`}>Known Accounts</b>
-                &nbsp;
-                { showAccountsFileContent ? <>
-                    <span onClick={toggleShowAccountsFileContent} className="pointer">{Char.DownArrow}</span>
-                </>:<>
-                    <span onClick={toggleShowAccountsFileContent} className="pointer">{Char.UpArrow}</span>
-                </> }
                 <Tooltip id={`tooltip-known-accounts`} text={`This info from: ${header?.app?.accounts_file}`} position="top" />
                 <div style={{float:"right",display:"inline",fontSize:"small",marginRight:"4pt",marginTop:"0pt"}}>
-                    <span id="tooltip-upload">
-                        <label htmlFor="accounts-file-upload"><span style={{position:"relative",bottom:"1pt",right:"1pt",cursor:"pointer"}}>{Char.Trigram}</span></label>
-                        <input id="accounts-file-upload" type="file" onChange={(event) => handleFileUpload(event, accountsUploader)}></input>
-                    </span>
-                    <Tooltip id="tooltip-upload" text="Click to upload accounts files." position="top" />
+                { showAccountsFileContent ? <>
+                    <b onClick={toggleShowAccountsFileContent} className="pointer">{Char.DownArrow} Help</b>
+                </>:<>
+                    <span onClick={toggleShowAccountsFileContent} className="pointer">{Char.UpArrow} Help</span>
+                </> }
                     &nbsp;|&nbsp;
                     { (all)  ? <>
                         <span id={`tooltip-show-local`} style={{cursor:"pointer"}} onClick={toggleAll}>Local</span>&nbsp;|&nbsp;
@@ -648,13 +648,32 @@ const AccountsComponent = ({ header }) => {
             </div>
         </div>
         { showAccountsFileContent &&
-            <pre style={{background:"inherit",marginTop:"2pt"}}>
-                <div style={{fontFamily:"tahoma",borderBottom:"2px black solid",paddingBottom:"6pt"}}>
-                    This account info is stored in: <b>{header?.app?.accounts_file}</b> <br />
-                    Click the <b>{Char.Trigram}</b> icon at top right to upload this info from a file in JSON format.
+            <pre style={{background:"#FCF8E3",marginTop:"2pt"}}>
+                <div style={{fontFamily:"tahoma",borderBottom:"1px black solid",paddingBottom:"6pt"}}>
+                <span style={{float:"right",cursor:"pointer"}} onClick={toggleShowAccountsFileContent}>X&nbsp;</span>
+                    Known account info is stored in: <b>{header?.app?.accounts_file}</b> <br />
+                    { accounts.status == 404 && <>
+                        This file does not currently exist. <br />
+                    </> }
+                    Click
+                    <span id="tooltip-upload">&nbsp;
+                        <label htmlFor="accounts-file-upload"><span style={{cursor:"pointer"}}><u>here</u></span></label>
+                        <input id="accounts-file-upload" type="file" onChange={(event) => handleFileUpload(event, accountsUploader)}></input>
+                    &nbsp;</span>
+                    <Tooltip id="tooltip-upload" text="Click to upload accounts files." position="top" />
+                    to upload this info from a file in JSON format.
                 </div>
                 <div style={{paddingTop:"6pt"}}>
-                    {Yaml.Format(accounts.data)}
+                    <span style={{float:"right"}}>
+                        <span style={{fontSize:"0",opacity:"0"}} id={"accounts_json"}>{JSON.stringify(accounts.data)}</span>
+                        <span id="tooltip-copy"><img id="tooltip-copy" src={Image.Clipboard()} alt="copy" onClick={() => Clipboard.Copy("accounts_json")} style={{float:"right",height:"20px",cursor:"copy"}} /></span>
+                        <Tooltip id="tooltip-copy" text="Click to copy this accounts info JSON data to the clipboard." position="left" />
+                    </span>
+                    { accounts.status == 200 ? <>
+                        {Yaml.Format(accountsFileData.data)}
+                    </>:<>
+                        {Yaml.Format({})}
+                    </>}
                 </div>
             </pre>
         }

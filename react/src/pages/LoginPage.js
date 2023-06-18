@@ -143,7 +143,7 @@ const LoginPage = (props) => {
                 {Auth.LoggedInUserName(header) && <b>Hello, {Auth.LoggedInUserName(header)}</b>} ...
                 <div style={{float:"right",marginRight:"8pt",fontSize:"small",cursor:"pointer"}}>
                     { (header.app?.accounts_file) && <>
-                        <Link to="/accounts">Accounts</Link>&nbsp;|&nbsp;
+                        <Link to="/accounts?all=true">Accounts</Link>&nbsp;|&nbsp;
                     </>}
                     <Link to="/env">Environments</Link>&nbsp;|&nbsp;
                     { showingAuthToken ? <>

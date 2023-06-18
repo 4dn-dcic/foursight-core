@@ -1,4 +1,5 @@
 from chalice import Response, __version__ as chalice_version
+from botocore.errorfactory import ClientError as BotoClientError
 import copy
 import datetime
 import io
@@ -1221,10 +1222,15 @@ class ReactApi(ReactApiBase, ReactRoutes):
         s3.s3_put_secret(accounts_file_data, self._accounts_file_name)
         return self.create_success_response(accounts_data)
 
-    def _get_accounts_file_data(self) -> list:
-        s3 = s3_utils.s3Utils(env=self._envs.get_default_env())
-        accounts_file_data = s3.get_key(self._accounts_file_name)
-        return accounts_file_data.get("data") if accounts_file_data else {}
+    def _get_accounts_file_data(self) -> Optional[list]:
+        try:
+            s3 = s3_utils.s3Utils(env=self._envs.get_default_env())
+            accounts_file_data = s3.get_key(self._accounts_file_name)
+            return accounts_file_data.get("data") if accounts_file_data else {}
+        except BotoClientError as e:
+            if e.response.get("Error", {}).get("Code") == "NoSuchKey":
+                return None
+            raise e
 
     def _get_accounts_file_name(self) -> Optional[str]:
         """
@@ -1232,21 +1238,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         s3 = s3_utils.s3Utils(env=self._envs.get_default_env())
         return f"s3://{s3.sys_bucket}/{self._accounts_file_name}"
-
-    def _get_accounts_only_for_current_account(self, request: dict) -> Optional[list]:
-        aws_credentials = self._auth.get_aws_credentials(self._envs.get_default_env())
-        if aws_credentials:
-            account_name = aws_credentials.get("aws_account_name")
-            if account_name:
-                account_stage = app.core.stage.get_stage()
-                account_id = account_name + ":" + account_stage
-                return [{
-                    "id": account_id,
-                    "name": account_name,
-                    "stage": account_stage,
-                    "foursight_url": self.foursight_instance_url(request)
-                }]
-        return None
 
     @staticmethod
     def _read_accounts_json(accounts_json) -> dict:
@@ -1260,26 +1251,38 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     account["id"] = account_name
         return accounts_json
 
-    def _get_accounts(self, request) -> Optional[dict]:
+    def _get_accounts(self, request) -> Optional[list]:
         accounts_file_data = self._get_accounts_file_data()
+        if not accounts_file_data:
+            return accounts_file_data
+        env = self._envs.get_default_env()
+        stage = app.core.stage.get_stage()
+        aws_credentials = self._auth.get_aws_credentials(env) or {}
+        aws_account_name = aws_credentials.get("aws_account_name")
         if self.is_running_locally(request):
-            env = self._envs.get_default_env()
-            stage = app.core.stage.get_stage()
-            aws_credentials = self._auth.get_aws_credentials(env) or {}
-            aws_account_name = aws_credentials.get("aws_account_name")
+            # For running locally put this account first.
             account = [account for account in accounts_file_data
                        if account.get("name") == aws_account_name and account.get("stage") == stage]
             if not account:
-                accounts_file_data.append({
+                accounts_file_data.insert(0, {
                     "name": aws_account_name,
                     "stage": stage,
                     "foursight_url": "http://localhost:8000/api"
                 })
+        else:
+            # Put this account at first.
+            for account in accounts_file_data:
+                if account.get("name") == aws_account_name and account.get("stage") == stage:
+                    accounts_file_data.remove(account)
+                    accounts_file_data.insert(0, account)
+                    break
         return self._read_accounts_json(accounts_file_data)
 
     def reactapi_accounts(self, request: dict, env: str) -> Response:
         ignored(env)
         accounts = self._get_accounts(request)
+        if accounts is None:
+            return self.create_response(404, {"message": f"Account file not found: {self._get_accounts_file_name()}"})
         return self.create_success_response(accounts)
 
     def reactapi_account(self, request: dict, env: str, name: str) -> Response:
@@ -1570,6 +1573,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(self._put_accounts_file_data(accounts_file_data))
 
     def reactapi_accounts_file_download(self) -> Response:
+        accounts_file_data = self._get_accounts_file_data()
+        if accounts_file_data is None:
+            return self.create_response(404, {"message": f"Account file not found: {self._get_accounts_file_name()}"})
         return self.create_success_response(self._get_accounts_file_data())
 
     # ----------------------------------------------------------------------------------------------
