@@ -1,7 +1,6 @@
-import boto3
 import json
-from dcicutils.boto_s3 import boto_s3_client
 from dcicutils.misc_utils import ignored
+from .boto_s3 import boto_s3_client
 
 
 class Buckets(object):

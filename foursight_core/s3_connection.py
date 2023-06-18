@@ -4,8 +4,8 @@ import boto3
 import datetime
 import logging
 from foursight_core.abstract_connection import AbstractConnection
-from dcicutils.boto_s3 import boto_s3_client, boto_s3_resource
 from dcicutils.misc_utils import full_class_name
+from .boto_s3 import boto_s3_client, boto_s3_resource
 
 
 logging.basicConfig()

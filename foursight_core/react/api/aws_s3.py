@@ -1,8 +1,7 @@
-import boto3
 import logging
 from typing import Optional
 from .datetime_utils import convert_utc_datetime_to_useastern_datetime_string
-from dcicutils.boto_s3 import boto_s3_client, boto_s3_resource
+from ...boto_s3 import boto_s3_client, boto_s3_resource
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
