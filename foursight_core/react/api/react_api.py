@@ -1260,13 +1260,26 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     account["id"] = account_name
         return accounts_json
 
-    def _get_accounts(self) -> Optional[dict]:
+    def _get_accounts(self, request) -> Optional[dict]:
         accounts_file_data = self._get_accounts_file_data()
+        if self.is_running_locally(request):
+            env = self._envs.get_default_env()
+            stage = app.core.stage.get_stage()
+            aws_credentials = self._auth.get_aws_credentials(env) or {}
+            aws_account_name = aws_credentials.get("aws_account_name")
+            account = [account for account in accounts_file_data
+                       if account.get("name") == aws_account_name and account.get("stage") == stage]
+            if not account:
+                accounts_file_data.append({
+                    "name": aws_account_name,
+                    "stage": stage,
+                    "foursight_url": "http://localhost:8000/api"
+                })
         return self._read_accounts_json(accounts_file_data)
 
     def reactapi_accounts(self, request: dict, env: str) -> Response:
         ignored(env)
-        accounts = self._get_accounts()
+        accounts = self._get_accounts(request)
         return self.create_success_response(accounts)
 
     def reactapi_account(self, request: dict, env: str, name: str) -> Response:
@@ -1320,6 +1333,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             response["foursight"]["identity"] = foursight_header_json["auth"]["known_envs"][0].get("gac_name")
             response["foursight"]["redis_url"] = foursight_header_json.get("resources",{}).get("redis")
             foursight_header_json_s3 = foursight_header_json.get("s3")
+            # TODO: Maybe eventually make separate API call (to get Portal Access Key info for any account)
+            # so that we do not have to wait here within this API call for this synchronous API call.
             portal_access_key_url = response["foursight"]["url"] + f"/reactapi/portal_access_key"
             portal_access_key_response = requests.get(portal_access_key_url)
             if portal_access_key_response and portal_access_key_response.status_code == 200:
@@ -1376,7 +1391,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
         ignored(request)
         response = {"accounts_file": self._get_accounts_file_name()}
-        accounts = self._get_accounts()
+        accounts = self._get_accounts(request)
         if not accounts:
             return self.create_success_response({"status": "No accounts file support."})
         account = [account for account in accounts if is_account_name_match(account, name)] if accounts else None

@@ -585,6 +585,7 @@ const AccountsComponent = ({ header }) => {
     const [ accountCount, setAccountCount ] = useState(0);
     const [ startup, setStartup ] = useState(true);
     const [ fetching ] = useFetching();
+    const [ showAccountsFileContent, setShowAccountsFileContent ] = useState(false);
 
     useEffect(() => {
         refreshAll();
@@ -611,31 +612,52 @@ const AccountsComponent = ({ header }) => {
         }
     }
 
+    function toggleShowAccountsFileContent() {
+        setShowAccountsFileContent(!showAccountsFileContent);
+    }
+
     return <>
         <div style={{borderBottom:"2px solid black",marginBottom:"8pt"}}>
             <div style={{marginTop:"0pt"}}><b id={`tooltip-known-accounts`}>Known Accounts</b>
+                &nbsp;
+                { showAccountsFileContent ? <>
+                    <span onClick={toggleShowAccountsFileContent} className="pointer">{Char.DownArrow}</span>
+                </>:<>
+                    <span onClick={toggleShowAccountsFileContent} className="pointer">{Char.UpArrow}</span>
+                </> }
                 <Tooltip id={`tooltip-known-accounts`} text={`This info from: ${header?.app?.accounts_file}`} position="top" />
                 <div style={{float:"right",display:"inline",fontSize:"small",marginRight:"4pt",marginTop:"0pt"}}>
-                <span id="tooltip-upload">
-                    <label for="accounts-file-upload"><span style={{position:"relative",bottom:"1pt",right:"1pt",cursor:"pointer"}}>&#x2630;</span></label>
-                    <input id="accounts-file-upload" type="file" onChange={(event) => handleFileUpload(event, accountsUploader)}></input>
-                </span>
-                <Tooltip id="tooltip-upload" text="Click to upload accounts files." position="top" />
-                &nbsp;|&nbsp;
-                { (all)  ? <>
-                    <span id={`tooltip-show-local`} style={{cursor:"pointer"}} onClick={toggleAll}>Local</span>&nbsp;|&nbsp;
-                    <Tooltip id={`tooltip-show-local`} text={`Click to show accounts within AWS account: ${header?.app?.credentials?.aws_account_number} (${header?.app?.credentials?.aws_account_name})`} position="top" />
-                    <b id={`tooltip-showing-all`} style={{cursor:"pointer"}} onClick={toggleAll}>All</b>
-                    <Tooltip id={`tooltip-showing-all`} text={"Showing all known accounts."} position="top" />
-                </>:<>
-                    <b id={`tooltip-showing-local`} style={{cursor:"pointer"}} onClick={toggleAll}>Local</b>&nbsp;|&nbsp;
-                    <Tooltip id={`tooltip-showing-local`} text={`Showing accounts within AWS account: ${header?.app?.credentials?.aws_account_number} (${header?.app?.credentials?.aws_account_name})`} position="top" />
-                    <span id={`tooltip-show-all`} style={{cursor:"pointer"}} onClick={toggleAll}>All</span>
-                    <Tooltip id={`tooltip-show-all`} text={"Click to show all known accounts."} position="top" />
-                </>}
+                    <span id="tooltip-upload">
+                        <label htmlFor="accounts-file-upload"><span style={{position:"relative",bottom:"1pt",right:"1pt",cursor:"pointer"}}>{Char.Trigram}</span></label>
+                        <input id="accounts-file-upload" type="file" onChange={(event) => handleFileUpload(event, accountsUploader)}></input>
+                    </span>
+                    <Tooltip id="tooltip-upload" text="Click to upload accounts files." position="top" />
+                    &nbsp;|&nbsp;
+                    { (all)  ? <>
+                        <span id={`tooltip-show-local`} style={{cursor:"pointer"}} onClick={toggleAll}>Local</span>&nbsp;|&nbsp;
+                        <Tooltip id={`tooltip-show-local`} text={`Click to show accounts within AWS account: ${header?.app?.credentials?.aws_account_number} (${header?.app?.credentials?.aws_account_name})`} position="top" />
+                        <b id={`tooltip-showing-all`} style={{cursor:"pointer"}} onClick={toggleAll}>All</b>
+                        <Tooltip id={`tooltip-showing-all`} text={"Showing all known accounts."} position="top" />
+                    </>:<>
+                        <b id={`tooltip-showing-local`} style={{cursor:"pointer"}} onClick={toggleAll}>Local</b>&nbsp;|&nbsp;
+                        <Tooltip id={`tooltip-showing-local`} text={`Showing accounts within AWS account: ${header?.app?.credentials?.aws_account_number} (${header?.app?.credentials?.aws_account_name})`} position="top" />
+                        <span id={`tooltip-show-all`} style={{cursor:"pointer"}} onClick={toggleAll}>All</span>
+                        <Tooltip id={`tooltip-show-all`} text={"Click to show all known accounts."} position="top" />
+                    </>}
                 </div>
             </div>
         </div>
+        { showAccountsFileContent &&
+            <pre style={{background:"inherit",marginTop:"2pt"}}>
+                <div style={{fontFamily:"tahoma",borderBottom:"2px black solid",paddingBottom:"6pt"}}>
+                    This account info is stored in: <b>{header?.app?.accounts_file}</b> <br />
+                    Click the <b>{Char.Trigram}</b> icon at top right to upload this info from a file in JSON format.
+                </div>
+                <div style={{paddingTop:"6pt"}}>
+                    {Yaml.Format(accounts.data)}
+                </div>
+            </pre>
+        }
         { accounts.length > 0 ? <>
             { accounts?.map((account, index) => <React.Fragment key={account.id}>
                 <AccountInfo account={account} header={header} all={all} decrementAccountCount={decrementAccountCount} foursightUrl={account.foursight_url} />
