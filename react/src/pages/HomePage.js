@@ -65,7 +65,7 @@ const HomePage = (props) => {
                 To view your <b><Link to="/login">session</Link></b> info click <b><Link to="/login"><u>here</u></Link></b>. <br />
                 To <b onClick={Logout}><Link>logout</Link></b> click <b onClick={Logout}><Link><u>here</u></Link></b>.
             </div>
-            { (true || header.app?.accounts_file || header.app?.accounts_file_from_s3) && <>
+            { (true || header.app?.accounts_file) && <>
                 <div className="box lighten" style={{fontSize:"small",margin:"20pt",padding:"5pt 10pt 5pt 10pt",marginTop:"-10pt"}}>
                     {/* Click <Link to="/accounts?all=true">here</Link> to view all <Link to="/accounts?all=true" bold={false}>known accounts</Link>. */}
                     Click <a href={Client.Path("/accounts?all=true")} rel="noreferrer" target="_blank" style={{color:"var(--box-fg)"}}><b>here</b></a> to view all <a href={Client.Path("/accounts?all=true")} style={{color:"var(--box-fg)"}} rel="noreferrer" target="_blank"><b>known accounts</b></a>.

@@ -15,7 +15,7 @@ from itertools import chain
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils.env_utils import get_portal_url as env_utils_get_portal_url
 from dcicutils.function_cache_decorator import function_cache, function_cache_info, function_cache_clear
-from dcicutils import ff_utils
+from dcicutils import ff_utils, s3_utils
 from dcicutils.misc_utils import get_error_message, ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.redis_tools import RedisSessionToken, SESSION_TOKEN_COOKIE
@@ -58,6 +58,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         super(ReactApi, self).__init__()
         self._react_ui = ReactUi(self)
         self._checks = Checks(app.core.check_handler.CHECK_SETUP, self._envs)
+        self._accounts_file_name = "known_accounts"
 
     @staticmethod
     def _get_stack_name() -> str:
@@ -370,8 +371,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 },
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified(),
-                "accounts_file": self._get_accounts_file(),
-                "accounts_file_from_s3": self._get_accounts_file_from_s3()
+                "accounts_file": self._get_accounts_file_name()
             },
             "versions": self._get_versions_object(),
             "portal": {
@@ -1215,38 +1215,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
     # We use the ENCODED_AUTH0_SECRET in the GAC as the encryption password.
     # ----------------------------------------------------------------------------------------------
 
-    @staticmethod
-    def _get_accounts_file() -> Optional[str]:
-        """
-        Returns the full path name to the accounts.json file if one was found or None if not.
-        The search for this file happens at startup in AppUtilsCore construction time via its
-        _locate_accounts_file function.
-        """
-        return app.core.accounts_file
+    def _put_accounts_file_data(self, accounts_file_data: list) -> list:
+        accounts_file_data = {"data": accounts_file_data}
+        s3 = s3_utils.s3Utils(env=self._envs.get_default_env())
+        s3.s3_put_secret(accounts_file_data, self._accounts_file_name)
+        return self.create_success_response(accounts_data)
 
-    @staticmethod
-    def _get_accounts_file_from_s3() -> Optional[str]:
-        bucket = os.environ.get("GLOBAL_ENV_BUCKET", os.environ.get("GLOBAL_BUCKET_ENV", None))
-        if not bucket:
-            return None
-        key = app.core.ACCOUNTS_FILE_NAME
-        if not AwsS3.bucket_key_exists(bucket, key):
-            return None
-        return f"s3://{bucket}/{key}"
+    def _get_accounts_file_data(self) -> list:
+        s3 = s3_utils.s3Utils(env=self._envs.get_default_env())
+        accounts_file_data = s3.get_key(self._accounts_file_name)
+        return accounts_file_data.get("data") if accounts_file_data else {}
 
-    def _get_accounts_from_s3(self, request: dict) -> Optional[dict]:
-        # Let's not cache this for now, maybe change mind later, thus the OR True clause below.
-        s3_uri = self._get_accounts_file_from_s3()
-        if not s3_uri:
-            return self._get_accounts_only_for_current_account(request)
-        s3_uri = s3_uri.replace("s3://", "")
-        s3_uri_components = s3_uri.split("/")
-        if len(s3_uri_components) != 2:
-            return self._get_accounts_only_for_current_account(request)
-        bucket = s3_uri_components[0]
-        key = s3_uri_components[1]
-        accounts_json_content = AwsS3.get_bucket_key_contents(bucket, key)
-        return self._read_accounts_json(accounts_json_content)
+    def _get_accounts_file_name(self) -> Optional[str]:
+        """
+        Returns the full path name to the accounts.json file name is S3.
+        """
+        s3 = s3_utils.s3Utils(env=self._envs.get_default_env())
+        return f"s3://{s3.sys_bucket}/{self._accounts_file_name}"
 
     def _get_accounts_only_for_current_account(self, request: dict) -> Optional[list]:
         aws_credentials = self._auth.get_aws_credentials(self._envs.get_default_env())
@@ -1264,10 +1249,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return None
 
     @staticmethod
-    def _read_accounts_json(accounts_json_content) -> dict:
-        encryption = Encryption()
-        accounts_json_content = encryption.decrypt(accounts_json_content)
-        accounts_json = json.loads(accounts_json_content)
+    def _read_accounts_json(accounts_json) -> dict:
         for account in accounts_json:
             account_name = account.get("name")
             if account_name:
@@ -1278,25 +1260,16 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     account["id"] = account_name
         return accounts_json
 
-    @function_cache(nocache=None)
     def _get_accounts(self) -> Optional[dict]:
-        accounts_file = self._get_accounts_file()
-        if not accounts_file:
-            return None
-        try:
-            with io.open(self._get_accounts_file(), "r") as accounts_json_f:
-                accounts_json_content_encrypted = accounts_json_f.read()
-                accounts_json = self._read_accounts_json(accounts_json_content_encrypted)
-                return accounts_json
-        except Exception:
-            return None
+        accounts_file_data = self._get_accounts_file_data()
+        return self._read_accounts_json(accounts_file_data)
 
-    def reactapi_accounts(self, request: dict, env: str, from_s3: bool = False) -> Response:
+    def reactapi_accounts(self, request: dict, env: str) -> Response:
         ignored(env)
-        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3(request)
+        accounts = self._get_accounts()
         return self.create_success_response(accounts)
 
-    def reactapi_account(self, request: dict, env: str, name: str, from_s3: bool = False) -> Response:
+    def reactapi_account(self, request: dict, env: str, name: str) -> Response:
 
         def is_account_name_match(account: dict, name: str) -> bool:
             account_name = account.get("name")
@@ -1402,8 +1375,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             return foursight_url
 
         ignored(request)
-        response = {"accounts_file": self._get_accounts_file(), "accounts_file_from_s3": self._get_accounts_file_from_s3()}
-        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3(request)
+        response = {"accounts_file": self._get_accounts_file_name()}
+        accounts = self._get_accounts()
         if not accounts:
             return self.create_success_response({"status": "No accounts file support."})
         account = [account for account in accounts if is_account_name_match(account, name)] if accounts else None
@@ -1577,6 +1550,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         ignored(request, env)
         return self.create_success_response(aws_get_stack_template(stack))
+
+    def reactapi_accounts_file_upload(self, accounts_file_data: list) -> Response:
+        return self.create_success_response(self._put_accounts_file_data(accounts_file_data))
+
+    def reactapi_accounts_file_download(self) -> Response:
+        return self.create_success_response(self._get_accounts_file_data())
 
     # ----------------------------------------------------------------------------------------------
     # END OF EXPERIMENTAL - /accounts page

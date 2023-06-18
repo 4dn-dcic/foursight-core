@@ -300,9 +300,6 @@ const InfoPage = () => {
             { header.app?.accounts_file &&
                 <InfoRow name={"Accounts File"} value={header.app?.accounts_file} monospace={true} size="2" />
             }
-            { header.app?.accounts_file_from_s3 &&
-                <InfoRow name={"Accounts File (S3)"} value={header.app?.accounts_file_from_s3} monospace={true} size="2" />
-            }
         </InfoBox>
         <InfoBox info={info} title={`GAC: ${info.get("gac.name")}`} show={false}>
             { info.get("gac.values") ? (<span>

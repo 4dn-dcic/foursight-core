@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import Uuid from 'react-uuid';
 import { BarSpinner, StandardSpinner } from '../Spinners';
 import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
@@ -23,19 +24,10 @@ function handleFileUpload(event, accountsUploader) {
         window.alert(JSON.stringify(contentJson))
         window.alert(typeof(contentJson))
         accountsUploader.refresh({
-            url: Server.Url("/accounts"),
+            url: Server.Url("/accounts_file"),
             method: "POST",
             payload: contentJson
         });
-            /*
-      axios.post("http://localhost:8000/api/reactapi/accounts", { content: fileContent })
-        .then(response => {
-          console.log(response.data);
-        })
-        .catch(error => {
-          console.error(error);
-        });
-        */
     };
     reader.readAsText(file);
 }
@@ -68,18 +60,43 @@ const PortalAccessKeyStatus = ({ portalAccessKeyResponse }) => {
         }
     }
     else {
-        return <>OK (no expiration)</>
+        return <>OK {Char.RightArrow} No expiration</>
     }
 }
 
-const AccountInfoLeft = ({ header, info, foursightUrl }) => {
-
-    const SslCertificateLink = ({ url }) => {
-        return url && url.startsWith("https://") && <small>
-          &nbsp;| <a style={{color:"inherit"}} href={Client.Path("certificates") + "/?hostname=" + url} rel="noreferrer" target="_blank">SSL</a>&nbsp;
-          <a style={{color:"inherit"}} href={Client.Path("certificates") + "/?hostname=" + url} rel="noreferrer" target="_blank"><span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span></a>
-        </small>
+const SslCertificateLink = ({ url }) => {
+    const sslCertificate = useFetch(url ? `/certificates?hostname=${url}` : null);
+    function sslCertificateExpiresSoon() {
+        return Type.IsArray(sslCertificate.data) ? sslCertificate.data[0]?.expires_soon : null;
     }
+    function sslCertificateExpiresMessage() {
+        if (!Type.IsArray(sslCertificate.data)) return "";
+        const invalid = sslCertificate.data[0]?.invalid;
+        const expired = sslCertificate.data[0]?.expired;
+        const expiresSoon = sslCertificate.data[0]?.expired;
+        const expiresAt = sslCertificate.data[0]?.expires_at;
+        if (invalid) {
+            return `SSL certificate is invalid!`;
+        }
+        else if (expired) {
+            return `SSL certificate expired ${Time.Ago(expiresAt)} (${expiresAt})`;
+        }
+        else if (expiresSoon) {
+            return `SSL certificate expires ${Time.FromNow(expiresAt)} (${expiresAt}) -> Soon!`;
+        }
+        else {
+            return `SSL certificate expires ${Time.FromNow(expiresAt)} (${expiresAt})`;
+        }
+    }
+    const uuid = Uuid();
+    return url && url.startsWith("https://") && <small>
+        &nbsp;| <a style={{color:sslCertificateExpiresSoon() ? "red" : "inherit"}} href={Client.Path("certificates") + "/?hostname=" + url} id={`tooltip-ssl-expires-${url}`} rel="noreferrer" target="_blank">SSL</a>&nbsp;
+        <a style={{color:"inherit"}} href={Client.Path("certificates") + "/?hostname=" + url} rel="noreferrer" target="_blank"><span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span></a>
+        <Tooltip id={`tooltip-ssl-expires-${url}`} text={`${sslCertificateExpiresMessage()}`} position="top" />
+    </small>
+}
+
+const AccountInfoLeft = ({ header, info, foursightUrl }) => {
 
     const portalAccessKey = useFetch("/portal_access_key");
 
@@ -487,7 +504,7 @@ const AccountInfoRight = ({ info }) => {
 
 export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount, brighten }) => {
 
-    const info = useFetch(`/accounts_from_s3/${account.id}`, { onDone: () => decrementAccountCount(), cache: true, nofetch: true });
+    const info = useFetch(`/accounts/${account.id}`, { onDone: () => decrementAccountCount(), cache: true, nofetch: true });
 
     useEffect(() => {
         fetchData();
@@ -568,7 +585,7 @@ const AccountsComponent = ({ header }) => {
     const [ args, setArgs ] = useSearchParams();
     const argsAll = args.get("all");
     const [ all, setAll ] = useState(argsAll?.toLowerCase() === "true" || argsAll === "1" ? true : false);
-    const accounts = useFetch("/accounts_from_s3", { cache: true });
+    const accounts = useFetch("/accounts", { cache: true });
     const [ accountCount, setAccountCount ] = useState(0);
     const [ startup, setStartup ] = useState(true);
     const [ fetching ] = useFetching();
@@ -578,7 +595,7 @@ const AccountsComponent = ({ header }) => {
     }, []);
 
     function refreshAll() {
-        accounts.refresh("/accounts_from_s3", { cache: true, onDone: (response) => { setAccountCount(response.data?.length) }});
+        accounts.refresh("/accounts", { cache: true, onDone: (response) => { setAccountCount(response.data?.length) }});
     }
 
     function decrementAccountCount() {
@@ -601,7 +618,7 @@ const AccountsComponent = ({ header }) => {
     return <>
         <div style={{borderBottom:"2px solid black",marginBottom:"8pt"}}>
             <div style={{marginTop:"0pt"}}><b id={`tooltip-known-accounts`}>Known Accounts</b>
-                <Tooltip id={`tooltip-known-accounts`} text={`This info from: ${header?.app?.accounts_file_from_s3}`} position="top" />
+                <Tooltip id={`tooltip-known-accounts`} text={`This info from: ${header?.app?.accounts_file}`} position="top" />
                 <div style={{float:"right",display:"inline",fontSize:"small",marginRight:"4pt",marginTop:"0pt"}}>
                 <span id="tooltip-upload">
                     <label for="accounts-file-upload"><span style={{position:"relative",bottom:"1pt",right:"1pt",cursor:"pointer"}}>&#x2630;</span></label>

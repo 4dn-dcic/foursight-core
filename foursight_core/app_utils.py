@@ -70,7 +70,6 @@ class AppUtilsCore(ReactApi, Routes):
     """
 
     CHECK_SETUP_FILE_NAME = "check_setup.json"
-    ACCOUNTS_FILE_NAME = "accounts.json.encrypted"
 
     # Define in subclass.
     APP_PACKAGE_NAME = None
@@ -119,9 +118,6 @@ class AppUtilsCore(ReactApi, Routes):
         self.sqs = SQS(self.prefix)
         self.check_setup_file = self._locate_check_setup_file()
         logger.info(f"Using check_setup file: {self.check_setup_file}")
-        self.accounts_file = self._locate_accounts_file()
-        if self.accounts_file:
-            logger.info(f"Using accounts file: {self.accounts_file}")
         self.check_handler = CheckHandler(self.prefix, self.package_name, self.check_setup_file, self.get_default_env())
         self.CheckResult = self.check_handler.CheckResult
         self.ActionResult = self.check_handler.ActionResult
@@ -2037,12 +2033,9 @@ class AppUtilsCore(ReactApi, Routes):
     def _locate_check_setup_file(self) -> Optional[str]:
         return self._locate_config_file(AppUtilsCore.CHECK_SETUP_FILE_NAME)
 
-    def _locate_accounts_file(self) -> Optional[str]:
-        return self._locate_config_file(AppUtilsCore.ACCOUNTS_FILE_NAME)
-
     def _locate_config_file(self, file_name: str) -> Optional[str]:
         """
-        Returns the full path to the given named file (e.g. check_setup.json or accounts.json),
+        Returns the full path to the given named file (e.g. check_setup.json),
         looking for the first NON-EMPTY file within these directories, in the following order;
         if not found then returns None.
 
