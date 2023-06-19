@@ -185,7 +185,10 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             </td>
             <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>
                 { info.get("foursight.identity") ? <>
-                    {info.get("foursight.identity")}
+                    <a href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("foursight.identity")}`} style={{color:"black"}} rel="noreferrer" target="_blank">
+                        {info.get("foursight.identity")}
+                        <span className="fa fa-external-link" style={{position:"relative",left:"4pt",bottom:"-1px"}} />
+                    </a>
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
