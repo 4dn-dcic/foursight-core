@@ -40,6 +40,7 @@ from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from dcicutils.redis_tools import RedisSessionToken, RedisException, SESSION_TOKEN_COOKIE
 from .app import app
+from .boto_sqs import boto_sqs_client
 from .check_utils import CheckHandler
 from .deploy import Deploy
 from .environment import Environment
@@ -1867,7 +1868,7 @@ class AppUtilsCore(ReactApi, Routes):
         sqs_url = runner_input.get('sqs_url')
         if not sqs_url:
             return
-        client = SQS.get_sqs_boto_client()
+        client = boto_sqs_client()
         response = client.receive_message(
             QueueUrl=sqs_url,
             AttributeNames=['MessageGroupId'],
