@@ -364,6 +364,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "domain": domain,
                 "context": context,
                 "stack": self._get_stack_name(),
+                "identity": Gac.get_identity_name(),
                 "local": is_running_locally(request),
                 "credentials": {
                     "aws_account_number": aws_credentials.get("aws_account_number"),
@@ -515,6 +516,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "domain": domain,
                 "context": context,
                 "stack": self._get_stack_name(),
+                "identity": Gac.get_identity_name(),
                 "local": is_running_locally(request),
                 "credentials": self._auth.get_aws_credentials(env or default_env),
                 "launched": app.core.init_load_time,
@@ -1334,7 +1336,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
             response["foursight"]["deployed"] = foursight_app.get("deployed")
             response["foursight"]["default_env"] = foursight_header_json["auth"]["known_envs"][0]
             response["foursight"]["env_count"] = foursight_header_json["auth"]["known_envs_actual_count"]
-            response["foursight"]["identity"] = foursight_header_json["auth"]["known_envs"][0].get("gac_name")
+            response["foursight"]["identity"] = foursight_app.get("identity")
+            if not response["foursight"]["identity"]:
+                response["foursight"]["identity"] = foursight_header_json["auth"]["known_envs"][0].get("gac_name")
             response["foursight"]["redis_url"] = foursight_header_json.get("resources",{}).get("redis")
             foursight_header_json_s3 = foursight_header_json.get("s3")
             # TODO: Maybe eventually make separate API call (to get Portal Access Key info for any account)
@@ -1584,10 +1588,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
     # ----------------------------------------------------------------------------------------------
 
     def reactapi_aws_secret_names(self) -> Response:
-        secrets_manager = boto3.client("secretsmanager")
-        secret_names = [secret_name["Name"] for secret_name in secrets_manager.list_secrets()["SecretList"]]
-        secret_names.sort()
-        return self.create_success_response(secret_names)
+        return self.create_success_response(Gac.get_secret_names())
 
     def reactapi_aws_secrets(self, secrets_name: str) -> Response:
         return self.create_success_response(Gac.get_secrets(secrets_name))

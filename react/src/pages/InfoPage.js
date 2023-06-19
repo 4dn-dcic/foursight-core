@@ -301,7 +301,7 @@ const InfoPage = () => {
                 <InfoRow name={"Accounts File"} value={header.app?.accounts_file} monospace={true} size="2" />
             }
         </InfoBox>
-        <InfoBox info={info} title={`GAC: ${info.get("gac.name")}`} show={false}>
+        <InfoBox info={info} title={`GAC: ${info.get("app.identity")}`} show={false}>
             { info.get("gac.values") ? (<span>
                 { Object.keys(info.get("gac.values")).map((key) => {
                     return <InfoRow key={key} name={key} value={info.get("gac.values")[key]} monospace={true} copy={true} />
