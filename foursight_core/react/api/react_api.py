@@ -1,4 +1,5 @@
 from chalice import Response, __version__ as chalice_version
+import boto3
 from botocore.errorfactory import ClientError as BotoClientError
 import copy
 import datetime
@@ -1581,6 +1582,15 @@ class ReactApi(ReactApiBase, ReactRoutes):
     # ----------------------------------------------------------------------------------------------
     # END OF EXPERIMENTAL - /accounts page
     # ----------------------------------------------------------------------------------------------
+
+    def reactapi_aws_secret_names(self) -> Response:
+        secrets_manager = boto3.client("secretsmanager")
+        secret_names = [secret_name["Name"] for secret_name in secrets_manager.list_secrets()["SecretList"]]
+        secret_names.sort()
+        return self.create_success_response(secret_names)
+
+    def reactapi_aws_secrets(self, secrets_name: str) -> Response:
+        return self.create_success_response(Gac.get_secrets(secrets_name))
 
     def reactapi_reload_lambda(self, request: dict) -> Response:
         """

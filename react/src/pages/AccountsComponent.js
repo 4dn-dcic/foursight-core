@@ -670,7 +670,7 @@ const AccountsComponent = ({ header }) => {
                         <Tooltip id="tooltip-copy" text="Click to copy this accounts info JSON data to the clipboard." position="left" />
                     </span>
                     { accounts.status == 200 ? <>
-                        {Yaml.Format(accountsFileData.data)}
+                        &nbsp;&nbsp;{Yaml.Format(accountsFileData.data)}
                     </>:<>
                         {Yaml.Format({})}
                     </>}

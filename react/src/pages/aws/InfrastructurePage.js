@@ -23,6 +23,10 @@ const tdContentStyle = {
     verticalAlign: "top",
 }
 
+function isRedacted(s) {
+    return /^\*+$/.test(s);
+}
+
 const InfrastructurePage = () => {
 
     const keyedState = useKeyedState();
@@ -34,6 +38,7 @@ const InfrastructurePage = () => {
          { type: "subnets-private", create: createSubnetsPrivate },
          { type: "security-groups", create: createSecurityGroups },
          { type: "gac",             create: createGac            },
+         { type: "secrets",         create: createSecrets        },
          { type: "ecosystem",       create: createEcosystem      }
     ];
 
@@ -53,7 +58,6 @@ const InfrastructurePage = () => {
     function createSubnetsPublic(name, key, unselect, args) {
         const { keyedState } = args;
         return <Subnets type="public" keyedState={keyedState.keyed(key)} hide={unselect} />;
-            
     }
 
     function createSecurityGroups(name, key, unselect, args) {
@@ -63,6 +67,10 @@ const InfrastructurePage = () => {
 
     function createGac(name, key, unselect, args) {
         return <Gac hide={unselect} />;
+    }
+
+    function createSecrets(name, key, unselect, args) {
+        return <Secrets name={name} hide={unselect} />;
     }
 
     function createEcosystem(name, key, unselect, args) {
@@ -95,9 +103,12 @@ const InfrastructurePage = () => {
     const selectedSecurityGroups = () => componentsRight.selected("security-groups");
     const toggleSecurityGroups   = () => componentsRight.toggle("security-groups");
 
+    const selectedSecretName     = (secretName) => componentsLeft.selected("secrets", secretName);
+    const toggleSecretName       = (secretName) => componentsLeft.toggle("secrets", secretName);
+
     useEffect(() => {
-        toggleEcosystem();
         toggleVpcs();
+        toggleEcosystem();
     }, []);
 
     return <table><tbody><tr>
@@ -112,6 +123,10 @@ const InfrastructurePage = () => {
             <ConfigList
                 showGac={selectedGac} toggleGac={toggleGac}
                 showEcosystem={selectedEcosystem} toggleEcosystem={toggleEcosystem} />
+            <SecretNameList
+                toggleSecretName={toggleSecretName}
+                selectedSecretName={selectedSecretName}
+            />
             <StackList
                 toggleStack={toggleStack}
                 selectedStack={selectedStack}
@@ -147,7 +162,8 @@ const NetworkList = (props) => {
 const ConfigList = (props) => {
     const { showGac, toggleGac, showEcosystem, toggleEcosystem } = props;
     return <>
-        <div className="box margin thickborder" style={{width:"100%",marginBottom:"6pt"}}>
+        <div><b>AWS Configuration</b></div>
+        <div className="box margin" style={{width:"100%",marginBottom:"6pt"}}>
             <div className="pointer" style={{fontWeight:showGac() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleGac}>Global Application Configuration</div>
             <div className="pointer" style={{fontWeight:showEcosystem() ? "bold" : "normal"}} onClick={toggleEcosystem}>Ecosystem Definition</div>
         </div>
@@ -308,7 +324,7 @@ const Subnets = (props) => {
             <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
         </div> }
         <div style={{minWidth:"400pt"}}>
-            { subnets.loading && <div className="box lighten" style={{marginTop:"2pt"}}><StandardSpinner label="Loading Subnets" /></div> }
+            { subnets.loading && <div className="box lighten" style={{marginTop:"2pt"}}><StandardSpinner label="Loading subnets" /></div> }
             { subnets.filter(subnet => type ? subnet.type === type : true)?.map(subnet => <div key={subnet.id}>
                 <Subnet subnet={subnet} keyedState={keyedState?.keyed(subnet.id)} />
                 <div style={{height:"4pt"}} />
@@ -650,7 +666,7 @@ const Tags = (props) => {
                     { props.tags && Object.keys(props.tags)?.map(key => <li key={key}>
                         <b>{key}</b> <br />
                         <div style={{wordBreak:"break-all"}}>
-                            { props.tags[key] === "********" ? <>
+                            { isRedacted(props.tags[key]) ? <>
                                 <span style={{color:"red"}}>REDACTED</span>
                             </>:<>
                                 {props.tags[key]}
@@ -669,7 +685,7 @@ const StackList = (props) => {
     const styleNotLast = { ...styleLast, borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt" };
     return <>
         <div><b>AWS Stacks</b></div>
-        <div className="box" style={{whiteSpace:"nowrap"}}>
+        <div className="box" style={{whiteSpace:"nowrap",marginBottom:"6pt"}}>
             { stacks.loading && <StandardSpinner label="Loading stacks" /> }
             {stacks.map((stack, i) => {
                 const toggleStack = () => props.toggleStack(stack.name);
@@ -859,7 +875,7 @@ const StackOutputs = (props) => {
                     { outputs.data && Object.keys(outputs.data)?.map(output => <li key={output}>
                         <b>{output}</b> <br />
                         <div style={{wordBreak:"break-all"}}>
-                            { outputs.data[output] === "********" ? <>
+                            { isRedacted(outputs.data[output]) ? <>
                                 <span style={{color:"red"}}>REDACTED</span>
                             </>:<>
                                 {outputs.data[output]}
@@ -887,7 +903,7 @@ const StackParameters = (props) => {
                     { parameters.data && Object.keys(parameters.data)?.map(parameter => <li key={parameter}>
                         <b>{parameter}</b> <br />
                         <div style={{wordBreak:"break-all"}}>
-                            { parameters.data[parameter] === "********" ? <>
+                            { isRedacted(parameters.data[parameter]) ? <>
                                 <span style={{color:"red"}}>REDACTED</span>
                             </>:<>
                                 {parameters.data[parameter]}
@@ -915,7 +931,7 @@ const StackResources = (props) => {
                     { resources.data && Object.keys(resources.data)?.map(resource => <li key={resource}>
                         <b style={{wordBreak:"break-all"}}>{resource}</b> <br />
                         <div style={{wordBreak:"break-all"}}>
-                            { resources.data[resource] === "********" ? <>
+                            { isRedacted(resources.data[resource]) ? <>
                                 <span style={{color:"red"}}>REDACTED</span>
                             </>:<>
                                 {resources.data[resource]}
@@ -949,25 +965,54 @@ const StackTemplate = (props) => {
     </div>
 }
 
+const SecretNameList = (props) => {
+    const secretNames = useFetch("/aws/secrets", { cache: true });
+    const styleLast = { cursor: "pointer" };
+    const styleNotLast = { ...styleLast, borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt" };
+    return <>
+        <div><b>AWS Secrets</b></div>
+        <div className="box" style={{whiteSpace:"nowrap",marginBottom:"6pt"}}>
+            { secretNames.loading && <StandardSpinner label="Loading secrets" /> }
+            {secretNames.map((secretName, i) => {
+                const toggleSecretName = () => props.toggleSecretName(secretName);
+                const selectedSecretName = () => props.selectedSecretName(secretName);
+                const style = {...(i + 1 < secretNames.length ? styleNotLast : styleLast), ...(selectedSecretName(secretName) ? {fontWeight:"bold"} : {})};
+                return <div key={secretName} style={style} onClick={toggleSecretName}>{secretName}</div>
+            })}
+        </div>
+    </>
+}
+
 const Gac = (props) => {
-    const { hide } = props;
     const info = useFetch("/info", { cache: true });
+    return <SecretsView name={info.data?.gac?.name} values={info.data?.gac?.values} hide={props.hide} />
+}
+
+const Secrets = (props) => {
+    const values = useFetch(`/aws/secrets/${props.name}`, { cache: false });
+    return <SecretsView name={props.name} values={values?.data} hide={props.hide} />
+}
+
+const SecretsView = (props) => {
     return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
-        <div style={{wordBreak:"break-all"}}><b>GAC</b>:&nbsp;<b>{info.data?.gac?.name}</b>&nbsp;
+        <div style={{wordBreak:"break-all"}}><b>Secrets</b>:&nbsp;<b>{props.name}</b>&nbsp;
             <ExternalLink
-                href={`https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=${info.data?.gac?.name}&region=us-east-1`}
+                href={`https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=${props.name}&region=us-east-1`}
                 bold={true}
                 style={{marginLeft:"6pt"}} />
-                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
+                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={props.hide}>{Char.X}</b>
         </div>
         <div className="box margin">
-            { info.loading && <StandardSpinner label="Loading GAC" /> }
-            <ul style={{marginBottom:"1pt"}}>
-                { info.data?.gac && Object.keys(info.data.gac.values)?.map(name => <li key={name}>
-                    <b>{name}</b> <br />
-                    { info.data.gac.values[name] === "********" ? <span style={{color:"red"}}>REDACTED</span> : info.data.gac.values[name] }
-                </li>)}
-            </ul>
+            { !props.values ?
+                <div style={{marginTop:"-1pt"}} ><StandardSpinner label="Loading secrets" /></div>
+            : 
+                <ul style={{marginBottom:"1pt"}}>
+                    { Object.keys(props.values)?.map(name => <li key={name}>
+                        <b>{name}</b> <br />
+                        { isRedacted(props.values[name]) ? <span style={{color:"red"}}>REDACTED</span> : props.values[name] }
+                    </li>)}
+                </ul>
+            }
         </div>
     </div>
 }

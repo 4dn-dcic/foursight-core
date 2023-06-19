@@ -1,6 +1,7 @@
 import re
 import boto3
 import logging
+from typing import Optional
 from dcicutils.diff_utils import DiffManager
 from dcicutils.env_utils import short_env_name
 from dcicutils.function_cache_decorator import function_cache
@@ -77,3 +78,8 @@ class Gac:
     @staticmethod
     def get_secret_value(name: str) -> str:
         return get_identity_secrets().get(name)
+
+    @staticmethod
+    def get_secrets(secrets_name: str) -> Optional[str]:
+        with override_environ(IDENTITY=secrets_name):
+            return sort_dictionary_by_case_insensitive_keys(obfuscate_dict(get_identity_secrets()))

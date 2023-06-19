@@ -629,6 +629,24 @@ class ReactRoutes:
     def reactapi_route_accounts_file_download_noenv() -> Response:  # noqa: implicit @staticmethod via @route
         return app.core.reactapi_accounts_file_download()
 
+    @route("/{env}/aws/secrets/{secrets_name}", authorize=True)
+    def reactapi_route_aws_secrets(env: str, secrets_name: str) -> Response:  # noqa: implicit @staticmethod via @route
+        ignored(env)
+        return ReactRoutes.reactapi_route_aws_secrets_noenv(secrets_name)
+
+    @route("/aws/secrets/{secrets_name}", authorize=True)
+    def reactapi_route_aws_secrets_noenv(secrets_name: str) -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_secrets(secrets_name)
+
+    @route("/{env}/aws/secrets", authorize=True)
+    def reactapi_route_aws_secret_names(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        ignored(env)
+        return ReactRoutes.reactapi_route_aws_secret_names_noenv()
+
+    @route("/aws/secrets", authorize=True)
+    def reactapi_route_aws_secret_names_noenv() -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_secret_names()
+
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes, serving the HTML/CSS/JavaScript/React files.
     # Note that ALL of these are UNPROTECTED routes.
