@@ -8,6 +8,7 @@ Change Log
 
 4.4.0
 =====
+* 2023-06-20
 * Changes to the access key check; making sure the action does not run every single day.
   This the primary/necessary change for this release; required since 4.3.0 where the access
   key check itself was fixed to work; without this new access keys would be created daily.
