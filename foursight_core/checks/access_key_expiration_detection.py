@@ -15,15 +15,8 @@ def access_key_status(connection, **kwargs):
     """
     check = CheckResult(connection, 'access_key_status')
     check.action = 'refresh_access_keys'
-    # TOOD: Figure this out ... Seems like, both from this code and what we are seeing in the actual action history,
-    # that the refresh action is running everday; we only want to run a refresh if the access is expiring very soon.
-    # Always allow refresh
-    # TODO/INPROGRESS/2023-06-16/dmichaels:
-    # But I think if we do not want the action to run automatically then set check.action to "" (cannot be None). 
-    # No nevermind that does not work because then no action is shown at all.
-    # Try setting allow_action to False ...
-    # Works but then not always enabled ... need another bit ...
     check.allow_action = True
+    check.prevent_action = False
     fs_user_email, fs_user_kp = 'foursight.app@gmail.com', 'access_key_foursight'
     user_props = get_metadata(f'/users/{fs_user_email}?datastore=database', key=connection.ff_keys)
     user_uuid = user_props['uuid']
@@ -47,12 +40,16 @@ def access_key_status(connection, **kwargs):
         check.summary = (f'Application access keys will expire in less than 21 days! Please run'
                          f' the deployment action soon')
         check.brief_output = check.full_output = check.summary
+        # This prevents the from running automatically after the check;
+        # though the use is still allowed to run it manually in any case.
         check.prevent_action = True
         return check
     else:
         check.status = 'PASS'
         check.summary = (f'Application access keys expiration is more than 3 weeks away. All good.'
                          f' Expiration date: {expiration_date}')
+        # This prevents the from running automatically after the check;
+        # though the use is still allowed to run it manually in any case.
         check.prevent_action = True
         return check
 
