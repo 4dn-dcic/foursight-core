@@ -6,9 +6,11 @@ import useFetch from '../../hooks/Fetch';
 import { ExternalLink } from '../../Components';
 import Char from '../../utils/Char';
 import Type from '../../utils/Type';
+import Str from '../../utils/Str';
 import Yaml from '../../utils/Yaml';
 import useSelectedComponents from '../../hooks/SelectedComponents';
 import useKeyedState from '../../hooks/KeyedState';
+import useUrlArgs from '../../hooks/UrlArgs';
 
 const tdLabelStyle = {
     color: "var(--box-fg)",
@@ -30,6 +32,7 @@ function isRedacted(s) {
 const InfrastructurePage = () => {
 
     const keyedState = useKeyedState();
+    const urlArgs = useUrlArgs()
 
     const componentDefinitions = [
          { type: "stack",           create: createStack          },
@@ -70,7 +73,11 @@ const InfrastructurePage = () => {
     }
 
     function createSecrets(name, key, unselect, args) {
-        return <Secrets name={name} hide={unselect} />;
+        function hide() {
+            urlArgs.unset("secrets", name);
+            return unselect();
+        }
+        return <Secrets name={name} hide={hide} />;
     }
 
     function createEcosystem(name, key, unselect, args) {
@@ -91,8 +98,8 @@ const InfrastructurePage = () => {
     const selectedEcosystem      = () => componentsLeft.selected("ecosystem");
     const toggleEcosystem        = () => componentsLeft.toggle("ecosystem");
 
-    const selectedStack = (stackName) => componentsLeft.selected("stack", stackName);
-    const toggleStack   = (stackName) => componentsLeft.toggle("stack", stackName);
+    const selectedStack          = (stackName) => componentsLeft.selected("stack", stackName);
+    const toggleStack            = (stackName) => componentsLeft.toggle("stack", stackName);
 
     const selectedSubnetsPublic  = () => componentsRight.selected("subnets-public");
     const toggleSubnetsPublic    = () => componentsRight.toggle("subnets-public");
@@ -103,12 +110,13 @@ const InfrastructurePage = () => {
     const selectedSecurityGroups = () => componentsRight.selected("security-groups");
     const toggleSecurityGroups   = () => componentsRight.toggle("security-groups");
 
-    const selectedSecretName     = (secretName) => componentsLeft.selected("secrets", secretName);
-    const toggleSecretName       = (secretName) => componentsLeft.toggle("secrets", secretName);
+    const selectedSecrets        = (secretName) => componentsLeft.selected("secrets", secretName);
+    const toggleSecrets          = (secretName) => urlArgs.set("secrets", componentsLeft.toggle("secrets", secretName) ? secretName : undefined);
 
     useEffect(() => {
         toggleVpcs();
         toggleEcosystem();
+        toggleSecrets(urlArgs.get("secrets"));
     }, []);
 
     return <table><tbody><tr>
@@ -124,8 +132,8 @@ const InfrastructurePage = () => {
                 showGac={selectedGac} toggleGac={toggleGac}
                 showEcosystem={selectedEcosystem} toggleEcosystem={toggleEcosystem} />
             <SecretNameList
-                toggleSecretName={toggleSecretName}
-                selectedSecretName={selectedSecretName}
+                toggleSecrets={toggleSecrets}
+                selectedSecrets={selectedSecrets}
             />
             <StackList
                 toggleStack={toggleStack}
@@ -974,10 +982,10 @@ const SecretNameList = (props) => {
         <div className="box" style={{whiteSpace:"nowrap",marginBottom:"6pt"}}>
             { secretNames.loading && <StandardSpinner label="Loading secrets" /> }
             {secretNames.map((secretName, i) => {
-                const toggleSecretName = () => props.toggleSecretName(secretName);
-                const selectedSecretName = () => props.selectedSecretName(secretName);
-                const style = {...(i + 1 < secretNames.length ? styleNotLast : styleLast), ...(selectedSecretName(secretName) ? {fontWeight:"bold"} : {})};
-                return <div key={secretName} style={style} onClick={toggleSecretName}>{secretName}</div>
+                const toggleSecrets = () => props.toggleSecrets(secretName);
+                const selectedSecrets = () => props.selectedSecrets(secretName);
+                const style = {...(i + 1 < secretNames.length ? styleNotLast : styleLast), ...(selectedSecrets(secretName) ? {fontWeight:"bold"} : {})};
+                return <div key={secretName} style={style} onClick={toggleSecrets}>{secretName}</div>
             })}
         </div>
     </>
@@ -989,8 +997,8 @@ const Gac = (props) => {
 }
 
 const Secrets = (props) => {
-    const values = useFetch(`/aws/secrets/${props.name}`, { cache: false });
-    return <SecretsView name={props.name} values={values?.data} hide={props.hide} />
+    const values = useFetch(props.name ? `/aws/secrets/${props.name}` : null, { cache: false });
+    return props.name ? <SecretsView name={props.name} values={values?.data} hide={props.hide} /> : null;
 }
 
 const SecretsView = (props) => {

@@ -648,12 +648,12 @@ const AccountsComponent = ({ header }) => {
             </div>
         </div>
         { showAccountsFileContent &&
-            <pre style={{background:"#FCF8E3",marginTop:"2pt"}}>
+            <pre className="box" style={{background:"#FCF8E3",color:"black",marginTop:"2pt"}}>
                 <div style={{fontFamily:"tahoma",borderBottom:"1px black solid",paddingBottom:"6pt"}}>
                 <span style={{float:"right",cursor:"pointer"}} onClick={toggleShowAccountsFileContent}>X&nbsp;</span>
                     Known account info is stored in: <b>{header?.app?.accounts_file}</b> <br />
                     { accounts.status == 404 && <>
-                        This file does not currently exist. <br />
+                        This file does <b>not</b> currently exist. <br />
                     </> }
                     Click
                     <span id="tooltip-upload">&nbsp;
@@ -661,7 +661,7 @@ const AccountsComponent = ({ header }) => {
                         <input id="accounts-file-upload" type="file" onChange={(event) => handleFileUpload(event, accountsUploader)}></input>
                     &nbsp;</span>
                     <Tooltip id="tooltip-upload" text="Click to upload accounts files." position="top" />
-                    to upload this info from a file in JSON format.
+                    to upload this info from a file in JSON format. Example below.
                 </div>
                 <div style={{paddingTop:"6pt"}}>
                     <span style={{float:"right"}}>
@@ -672,7 +672,11 @@ const AccountsComponent = ({ header }) => {
                     { accounts.status == 200 ? <>
                         &nbsp;&nbsp;{Yaml.Format(accountsFileData.data)}
                     </>:<>
-                        {Yaml.Format({})}
+                        { accounts.status == 404 ? <>
+                            {Json.Format([{name: "example-account-name", foursight_url: "https://example-foursight-url/api", stage: "dev-or-prod"}])}
+                        </>:<>
+                            {Yaml.Format({})}
+                        </> }
                     </>}
                 </div>
             </pre>
