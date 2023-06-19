@@ -654,9 +654,13 @@ const AccountsComponent = ({ header }) => {
             <pre className="box" style={{background:"#FCF8E3",color:"black",marginTop:"2pt"}}>
                 <div style={{fontFamily:"tahoma",borderBottom:"1px black solid",paddingBottom:"6pt"}}>
                 <span style={{float:"right",cursor:"pointer"}} onClick={toggleShowAccountsFileContent}>X&nbsp;</span>
-                    Known account info is stored in: <b>{header?.app?.accounts_file}</b> <br />
+                    Known account info is stored in:&nbsp;
+                    <a href={`https://s3.console.aws.amazon.com/s3/object/${header?.app?.accounts_file?.replace("s3://", "")}`} style={{color:"inherit"}} rel="noreferrer"target="_blank">
+                        <b>{header?.app?.accounts_file}</b>
+                        <span className="fa fa-external-link" style={{position:"relative",left:"4pt",bottom:"-1px"}}></span>
+                    </a><br />
                     { accounts.status == 404 && <>
-                        This file does <b>not</b> currently exist. <br />
+                        This file does <b>not</b> currently exist. Example below. <br />
                     </> }
                     Click
                     <span id="tooltip-upload">&nbsp;
@@ -664,7 +668,7 @@ const AccountsComponent = ({ header }) => {
                         <input id="accounts-file-upload" type="file" onChange={(event) => handleFileUpload(event, accountsUploader)}></input>
                     &nbsp;</span>
                     <Tooltip id="tooltip-upload" text="Click to upload accounts files." position="top" />
-                    to upload this info from a file in JSON format. Example below.
+                    to upload new account info like below from a file in JSON format into this S3 location.
                 </div>
                 <div style={{paddingTop:"6pt"}}>
                     <span style={{float:"right"}}>
