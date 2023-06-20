@@ -253,12 +253,12 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
         </tr>
         <tr style={{fontSize:"small"}}>
             <td style={{paddingRight:"10pt"}}>
-                Bucket Encryption Key ID:
+                Bucket Encryption:
             </td>
             <td>
                 { info.get("foursight.s3.encrypt_key_id") ? <>
                     <span id={`tooltip-encryption-key-${info.get("foursight.aws_account_number")}`}>{info.get("foursight.s3.encrypt_key_id")}</span>
-                    <Tooltip id={`tooltip-encryption-key-${info.get("foursight.aws_account_number")}`} text={`S3 Encryption Key ID`} position="top" />
+                    <Tooltip id={`tooltip-encryption-key-${info.get("foursight.aws_account_number")}`} text={`S3 Bucket Encryption Key ID`} position="top" />
                     <ExternalLink
                         href={`https://us-east-1.console.aws.amazon.com/kms/home?region=us-east-1#/kms/keys/${info.get("foursight.s3.encrypt_key_id")}`}
                         style={{marginLeft:"6pt"}} />
@@ -315,6 +315,16 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                     { info.get("foursight.auth0_client") && <>
                         {info.get("foursight.auth0_client")}
                     </>}
+                    <ExternalLink
+                        href={`${info.get("foursight.url")}/reactapi/auth0_config`}
+                        style={{marginLeft:"5pt"}} />
+                    &nbsp;|&nbsp;
+                    <a style={{color:"inherit"}} href={`${info.get("portal.url")}/auth0_config`} rel="noreferrer"target="_blank">
+                        Portal
+                    </a>
+                    <ExternalLink
+                        href={`${info.get("portal.url")}/auth0_config?format=json`}
+                        style={{marginLeft:"4pt"}} />
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -616,9 +626,9 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
                     <td style={{width:"70%"}}>
                         <AccountInfoLeft header={header} info={info} foursightUrl={foursightUrl} />
                     </td>
-                    <td style={{paddingLeft:"10pt",width:"12pt"}} />
+                    <td style={{paddingLeft:"6pt",width:"12pt"}} />
                     <td style={{marginLeft:"12pt",borderLeft:"1px solid"}} />
-                    <td style={{width:"30%",paddingLeft:"12pt",textAlign:"top",verticalAlign:"top"}}>
+                    <td style={{width:"30%",paddingLeft:"8pt",textAlign:"top",verticalAlign:"top"}}>
                         <AccountInfoRight info={info} header={header} />
                     </td>
                 </tr>
