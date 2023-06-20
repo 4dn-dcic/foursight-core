@@ -160,11 +160,14 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             </td>
             <td>
                 { info.get("portal.elasticsearch") ? <>
-                    {info.get("portal.elasticsearch")}
+                    {info.get("portal.elasticsearch").replace(/:443$/,"")}
+                    { info.get("foursight.es_cluster") && <>
+                        <small style={{marginLeft:"2pt",marginRight:"2pt"}}>|</small>{info.get("foursight.es_cluster")}
+                        <ExternalLink
+                            href={`https://us-east-1.console.aws.amazon.com/aos/home?region=us-east-1#opensearch/domains/${info.get("foursight.es_cluster")}`}
+                            style={{marginLeft:"4pt"}} />
+                        </> }
                 </>:<>{Char.EmptySet}</>}
-                {info.data?.foursight?.versions?.elasticsearch_server && <>
-                    &nbsp;(<b>{info.data?.foursight?.versions?.elasticsearch_server}</b>)
-                </>}
             </td>
         </tr>
         <tr style={{fontSize:"small"}}>
@@ -253,7 +256,7 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
         </tr>
         <tr style={{fontSize:"small"}}>
             <td style={{paddingRight:"10pt"}}>
-                Bucket Encryption:
+                Bucket Encryption ID:
             </td>
             <td>
                 { info.get("foursight.s3.encrypt_key_id") ? <>

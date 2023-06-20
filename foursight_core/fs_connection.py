@@ -110,6 +110,11 @@ class FSConnection(object):
         if self.connections['es']:
             return self.connections['es'].info()
 
+    def es_health(self):
+        """ Returns basic health about the Elasticsearch server cluster. """
+        if self.connections['es']:
+            return self.connections['es'].health()
+
     def redis_info(self):
         """ Returns basic info about the Redis server """
         return self.redis.info() if self.redis else None

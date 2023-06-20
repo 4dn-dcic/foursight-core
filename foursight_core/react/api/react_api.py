@@ -94,11 +94,30 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "redis_server": self._get_redis_server_version()
             }
 
+    def _get_elasticsearch_server_status(self) -> Optional[dict]:
+        response = {}
+        try:
+            connection = app.core.init_connection(self._envs.get_default_env())
+            response["url"] = app.core.host
+            response["info"] = connection.es_info()
+            response["health"] = connection.es_health()
+        except Exception:
+            pass
+        return response
+
     @function_cache(nokey=True, nocache=None)
     def _get_elasticsearch_server_version(self) -> Optional[str]:
         connection = app.core.init_connection(self._envs.get_default_env())
         es_info = connection.es_info()
         return es_info.get("version", {}).get("number")
+
+    @function_cache(nokey=True, nocache=None)
+    def _get_elasticsearch_server_cluster(self) -> Optional[str]:
+        status = self._get_elasticsearch_server_status()
+        cluster = status.get("health", {}).get("cluster_name")
+        cluster_parts = cluster.split(":", 1)
+        cluster_name = cluster_parts[1] if len(cluster_parts) > 1 else cluster
+        return cluster_name
 
     @function_cache(nokey=True, nocache=None)
     def _get_redis_server_version(self) -> Optional[str]:
@@ -384,6 +403,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             },
             "resources": {
                 "es": app.core.host,
+                "es_cluster": self._get_elasticsearch_server_cluster(),
                 "foursight": self.foursight_instance_url(request),
                 "portal": portal_url,
                 # TODO: May later want to rds_username and/or such.
@@ -461,7 +481,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_elasticsearch(self) -> Response:
         try:
-            return self.create_success_response(self._get_elasticsearch_server_version())
+            return self.create_success_response(self._get_elasticsearch_server_status())
         except Exception as e:
             return self.create_error_response(get_error_message(e))
 
@@ -528,6 +548,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "foursight": socket.gethostname(),
                 "portal": portal_url,
                 "es": app.core.host,
+                "es_cluster": self._get_elasticsearch_server_cluster(),
                 "rds": os.environ["RDS_HOSTNAME"],
                 "sqs": self._get_sqs_queue_url(),
             },
@@ -1263,15 +1284,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         aws_credentials = self._auth.get_aws_credentials(env) or {}
         aws_account_name = aws_credentials.get("aws_account_name")
         if self.is_running_locally(request):
-            # For running locally put this account first.
-            account = [account for account in accounts_file_data
-                       if account.get("name") == aws_account_name and account.get("stage") == stage]
-            if not account:
-                accounts_file_data.insert(0, {
-                    "name": aws_account_name,
-                    "stage": stage,
-                    "foursight_url": "http://localhost:8000/api"
-                })
+            # For running locally put this localhost account first.
+            accounts_file_data.insert(0, {
+                "name": "localhost",
+                "stage": stage,
+                "foursight_url": "http://localhost:8000/api"
+            })
         else:
             # Put this account at first.
             for account in accounts_file_data:
@@ -1340,6 +1358,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             if not response["foursight"]["identity"]:
                 response["foursight"]["identity"] = foursight_header_json["auth"]["known_envs"][0].get("gac_name")
             response["foursight"]["redis_url"] = foursight_header_json.get("resources",{}).get("redis")
+            response["foursight"]["es_url"] = foursight_header_json.get("resources",{}).get("es")
+            response["foursight"]["es_cluster"] = foursight_header_json.get("resources",{}).get("es_cluster")
             foursight_header_json_s3 = foursight_header_json.get("s3")
             # TODO: Maybe eventually make separate API call (to get Portal Access Key info for any account)
             # so that we do not have to wait here within this API call for this synchronous API call.

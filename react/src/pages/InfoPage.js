@@ -205,7 +205,7 @@ const InfoPage = () => {
             <InfoRow name={"Foursight Server"} value={info.get("server.foursight")} monospace={true} copy={true} size="2" />
             <InfoRow name={"Foursight"} value={header.resources?.foursight} monospace={true} copy={true} size="2" />
             <InfoRow name={"Portal"} value={header.resources?.portal} monospace={true} copy={true} size="2" portalCertificate={true} />
-            <InfoRow name={"ElasticSearch"} value={header.resources?.es} monospace={true} copy={true} size="2" />
+            <InfoRow name={"ElasticSearch"} value={`${header.resources?.es} (${header.resources?.es_cluster})`} monospace={true} copy={true} size="2" />
             <InfoRow name={"RDS"} value={header.resources?.rds} monospace={true} copy={true} size="2" />
             <InfoRow name={"SQS"} value={header.resources?.sqs} monospace={true} copy={true} size="2" />
             { header.resources?.redis_running &&

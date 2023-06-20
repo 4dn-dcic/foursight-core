@@ -356,3 +356,9 @@ class ESConnection(AbstractConnection):
         Returns basic info about the Elasticsearch server. 
         """
         return self.es.info()
+
+    def health(self):
+        """
+        Returns basic health about the Elasticsearch server cluster.
+        """
+        return self.es.cluster.health()
