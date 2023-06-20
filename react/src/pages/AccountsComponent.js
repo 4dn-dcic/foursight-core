@@ -124,9 +124,6 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                     href={info.get("foursight.url") || foursightUrl}
                     style={{marginLeft:"1pt"}} />
                 <SslCertificateLink url={info.get("foursight.url")} />
-                {info.get("portal.health.indexer") == "true" && <small title={info.get("portal.health.indexer_server")}>
-                    &nbsp;| Indexer {Char.Check}
-                </small> }
             </td>
         </tr>
         <tr>
@@ -141,12 +138,18 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                         href={info.get("portal.url")}
                         style={{marginLeft:"1pt"}} />
                     &nbsp;|&nbsp;
-                    <a style={{color:"inherit"}} href={info.get("portal.health_ui_url")} rel="noreferrer" target="_blank">Health</a>&nbsp;
+                    <small><a style={{color:"inherit"}} href={info.get("portal.health_ui_url")} rel="noreferrer" target="_blank">Health</a>&nbsp;</small>
                     <small>(<a style={{color:"inherit"}} href={info.get("portal.health_url")} rel="noreferrer" target="_blank">JSON</a>)</small>
                     &nbsp;
                     <ExternalLink
                         href={info.get("portal.health_ui_url")}
                         style={{marginLeft:"1pt"}} />
+                    {info.get("portal.health.indexer") == "true" && <small title={info.get("portal.health.indexer_server")}>
+                        &nbsp;| <a style={{color:"inherit"}} href={`${info.get("portal.url")}/indexing_status`} rel="noreferrer" target="_blank">Indexer</a>&nbsp;
+                        <ExternalLink
+                            href={`${info.get("portal.url")}/indexing_status`}
+                            style={{marginLeft:"1pt"}} />
+                    </small> }
                     <SslCertificateLink url={info.get("portal.url")} />
                 </>:<>{Char.EmptySet}</>}
             </td>
