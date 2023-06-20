@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
+import { ExternalLink } from '../Components';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
 import Server from '../utils/Server';
@@ -92,7 +93,9 @@ const SslCertificateLink = ({ url }) => {
     const uuid = Uuid();
     return url && url.startsWith("https://") && <small>
         &nbsp;| <a style={{color:sslCertificateExpiresSoon() ? "red" : "inherit"}} href={Client.Path("certificates") + "/?hostname=" + url} id={`tooltip-ssl-expires-${url}`} rel="noreferrer" target="_blank">SSL</a>&nbsp;
-        <a style={{color:"inherit"}} href={Client.Path("certificates") + "/?hostname=" + url} rel="noreferrer" target="_blank"><span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span></a>
+        <ExternalLink
+            href={Client.Path("certificates") + "/?hostname=" + url}
+            style={{marginLeft:"1pt"}} />
         <Tooltip id={`tooltip-ssl-expires-${url}`} text={`${sslCertificateExpiresMessage()}`} position="top" />
     </small>
 }
@@ -117,10 +120,13 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             <td>
                 <a style={{color:"inherit"}} href={info.get("foursight.url") || foursightUrl} rel="noreferrer" target="_blank">{info.get("foursight.url") || foursightUrl}</a>
                 &nbsp;
-                <a style={{color:"inherit"}} href={info.get("foursight.url") || foursightUrl} rel="noreferrer" target="_blank">
-                    <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span>
-                </a>
+                <ExternalLink
+                    href={info.get("foursight.url") || foursightUrl}
+                    style={{marginLeft:"1pt"}} />
                 <SslCertificateLink url={info.get("foursight.url")} />
+                {info.get("portal.health.indexer") == "true" && <small title={info.get("portal.health.indexer_server")}>
+                    &nbsp;| Indexer {Char.Check}
+                </small> }
             </td>
         </tr>
         <tr>
@@ -131,14 +137,16 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                 { info.get("portal.url") ? <>
                     <a style={{color:"inherit"}} href={info.get("portal.url")} rel="noreferrer" target="_blank">{info.get("portal.url")}</a>
                     &nbsp;
-                    <a style={{color:"inherit"}} href={info.get("portal.url")} rel="noreferrer" target="_blank">
-                        <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span>
-                    </a>
+                    <ExternalLink
+                        href={info.get("portal.url")}
+                        style={{marginLeft:"1pt"}} />
                     &nbsp;|&nbsp;
                     <a style={{color:"inherit"}} href={info.get("portal.health_ui_url")} rel="noreferrer" target="_blank">Health</a>&nbsp;
                     <small>(<a style={{color:"inherit"}} href={info.get("portal.health_url")} rel="noreferrer" target="_blank">JSON</a>)</small>
                     &nbsp;
-                    <a style={{color:"inherit"}} href={info.get("portal.health_ui_url")} rel="noreferrer" target="_blank"><span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span></a>
+                    <ExternalLink
+                        href={info.get("portal.health_ui_url")}
+                        style={{marginLeft:"1pt"}} />
                     <SslCertificateLink url={info.get("portal.url")} />
                 </>:<>{Char.EmptySet}</>}
             </td>
@@ -187,10 +195,10 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             </td>
             <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>
                 { info.get("foursight.identity") ? <>
-                    <a href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("foursight.identity")}`} style={{color:"black"}} rel="noreferrer" target="_blank">
-                        {info.get("foursight.identity")}
-                        <span className="fa fa-external-link" style={{position:"relative",left:"4pt",bottom:"-1px"}} />
-                    </a>
+                    {info.get("foursight.identity")}
+                    <ExternalLink
+                        href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("foursight.identity")}`}
+                        style={{marginLeft:"6pt"}} />
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -201,10 +209,10 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             </td>
             <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>
                 { info.get("foursight.identity") ? <>
-                    <a href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("foursight.identity")}`} style={{color:"black"}} rel="noreferrer" target="_blank">
-                        {info.get("foursight.identity")}
-                        <span className="fa fa-external-link" style={{position:"relative",left:"4pt",bottom:"-1px"}} />
-                    </a>
+                    {info.get("foursight.identity")}
+                    <ExternalLink
+                        href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("foursight.identity")}`}
+                        style={{marginLeft:"6pt"}} />
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -214,10 +222,10 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             </td>
             <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>
                 { info.get("portal.identity") ? <>
-                    <a href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("portal.identity")}`} style={{color:"black"}} rel="noreferrer" target="_blank">
-                        {info.get("portal.identity")}
-                        <span className="fa fa-external-link" style={{position:"relative",left:"4pt",bottom:"-1px"}} />
-                    </a>
+                    {info.get("portal.identity")}
+                    <ExternalLink
+                        href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("portal.identity")}`}
+                        style={{marginLeft:"6pt"}} />
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -230,8 +238,11 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             <td>
                 { info.get("foursight.s3.global_env_bucket") ? <>
                     {info.get("foursight.s3.global_env_bucket")}
+                    <ExternalLink
+                        href={`https://s3.console.aws.amazon.com/s3/buckets/${info.get("foursight.s3.global_env_bucket")}?region=us-east-1&tab=objects`}
+                        style={{marginLeft:"6pt"}} />
                     { info.get("foursight.s3.bucket_org") && <>
-                        &nbsp;(<span id={`tooltip-bucket-org-${info.get("foursight.aws_account_number")}`}>{info.get("foursight.s3.bucket_org")}</span>)
+                        &nbsp;&nbsp;(<span id={`tooltip-bucket-org-${info.get("foursight.aws_account_number")}`}>{info.get("foursight.s3.bucket_org")}</span>)
                         <Tooltip id={`tooltip-bucket-org-${info.get("foursight.aws_account_number")}`} text={`S3 Bucket Org: ${info.get("foursight.s3.bucket_org")}`} position="top" />
                     </>}
                 </>:<>{Char.EmptySet}</>}
@@ -245,6 +256,9 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                 { info.get("foursight.s3.encrypt_key_id") ? <>
                     <span id={`tooltip-encryption-key-${info.get("foursight.aws_account_number")}`}>{info.get("foursight.s3.encrypt_key_id")}</span>
                     <Tooltip id={`tooltip-encryption-key-${info.get("foursight.aws_account_number")}`} text={`S3 Encryption Key ID`} position="top" />
+                    <ExternalLink
+                        href={`https://us-east-1.console.aws.amazon.com/kms/home?region=us-east-1#/kms/keys/${info.get("foursight.s3.encrypt_key_id")}`}
+                        style={{marginLeft:"6pt"}} />
                 </>:<> &ndash; </>}
             </td>
         </tr>
@@ -254,6 +268,9 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             </td>
             <td>
                 {info.get("foursight.stack")}
+                <ExternalLink
+                    href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/stackinfo?filteringStatus=active&viewNested=true&stackId=${info.get("foursight.stack")}`}
+                    style={{marginLeft:"6pt"}} />
             </td>
         </tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -319,9 +336,9 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                     {portalAccessKey.get("key")}&nbsp;{Char.RightArrow}&nbsp;
                 </> }
                 <PortalAccessKeyStatus portalAccessKeyResponse={info.get("foursight.portal_access_key")} />
-                <a href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/portal_access_key`} style={{color:"inherit"}} rel="noreferrer" target="_blank">
-                    <span className="fa fa-external-link" style={{position:"relative",left:"6pt",bottom:"-1px"}} />
-                </a>
+                <ExternalLink
+                    href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/portal_access_key`}
+                    style={{marginLeft:"6pt"}} />
             </td>
         </tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -688,7 +705,10 @@ const AccountsComponent = ({ header }) => {
                     Known account info is stored in:&nbsp;
                     <a href={`https://s3.console.aws.amazon.com/s3/object/${header?.app?.accounts_file?.replace("s3://", "")}`} style={{color:"inherit"}} rel="noreferrer"target="_blank">
                         <b>{header?.app?.accounts_file}</b>
-                        <span className="fa fa-external-link" style={{position:"relative",left:"4pt",bottom:"-1px"}}></span>
+                        <ExternalLink
+                            href={`https://s3.console.aws.amazon.com/s3/object/${header?.app?.accounts_file?.replace("s3://", "")}`}
+                            bold={true}
+                            style={{marginLeft:"6pt"}} />
                     </a><br />
                     { accounts.status == 404 && <>
                         This file does <b>not</b> currently exist. Example below. <br />
@@ -699,7 +719,7 @@ const AccountsComponent = ({ header }) => {
                         <input id="accounts-file-upload" type="file" onChange={(event) => handleFileUpload(event, accountsUploader)}></input>
                     &nbsp;</span>
                     <Tooltip id="tooltip-upload" text="Click to upload accounts files." position="top" />
-                    to upload new account info like below from a file in JSON format into this S3 location.
+                    to upload new account info like the below from a file in JSON format into this S3 location.
                 </div>
                 <div style={{paddingTop:"6pt"}}>
                     <span style={{float:"right"}}>
