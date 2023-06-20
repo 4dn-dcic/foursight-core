@@ -147,7 +147,7 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                     {info.get("portal.health.indexer") == "true" && <small title={info.get("portal.health.indexer_server")}>
                         &nbsp;| <a style={{color:"inherit"}} href={`${info.get("portal.url")}/indexing_status`} rel="noreferrer" target="_blank">Indexer</a>&nbsp;
                         <ExternalLink
-                            href={`${info.get("portal.url")}/indexing_status`}
+                            href={`${info.get("portal.url")}/indexing_status?format=json`}
                             style={{marginLeft:"1pt"}} />
                     </small> }
                     <SslCertificateLink url={info.get("portal.url")} />
