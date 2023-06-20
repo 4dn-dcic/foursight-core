@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Env from '../utils/Env';
 import { ExternalLink } from '../Components';
@@ -60,11 +61,10 @@ const HomePage = (props) => {
                 </ul>
             </div>
             <div className="box thickborder" style={{margin:"20pt",padding:"10pt",marginTop:"-10pt"}}>
-                You are logged in as: <LoggedInUser />
+                You are logged in as: <LoggedInUser /> <small>&nbsp;{Char.RightArrow}&nbsp;<Link to="/login" bold={false}>View session</Link></small>
                 <HorizontalLine top="6pt" bottom="7pt" />
                 <small>
                 To <b onClick={Logout}><Link>logout</Link></b> click <b onClick={Logout}><Link><u>here</u></Link></b>.
-                To view your <b><Link to="/login">session</Link></b> info click <b><Link to="/login"><u>here</u></Link></b>.
                 </small>
             </div>
             { (true || header.app?.accounts_file) && <>
