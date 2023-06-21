@@ -4,7 +4,7 @@ import json
 import os
 from dcicutils.misc_utils import ignored
 from foursight_core.stage import Stage
-from .boto_sqs import boto_sqs_client, boto_sqs_resource
+from foursight_core.boto_sqs import boto_sqs_client, boto_sqs_resource
 
 
 class SQS(object):
