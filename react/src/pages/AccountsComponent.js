@@ -55,14 +55,14 @@ const PortalAccessKeyStatus = ({ portalAccessKeyResponse }) => {
     }
     else if (portalAccessKeyResponse.expires_at) {
         if (portalAccessKeyResponse.expires_soon) {
-            return <span style={{color:"red"}}>Expires {Time.FromNow(portalAccessKeyResponse.expires_at)} ({portalAccessKeyResponse.expires_at})</span>
+            return <span style={{color:"red"}}>Expires {Time.FromNow(portalAccessKeyResponse.expires_at)} {Char.RightArrow} {portalAccessKeyResponse.expires_at}</span>
         }
         else {
-            return <>Expires {Time.FromNow(portalAccessKeyResponse.expires_at)} ({portalAccessKeyResponse.expires_at})</>
+            return <>Expires {Time.FromNow(portalAccessKeyResponse.expires_at)} {Char.RightArrow} {portalAccessKeyResponse.expires_at}</>
         }
     }
     else {
-        return <>OK {Char.RightArrow} No expiration</>
+        return <>No expiration</>
     }
 }
 
@@ -177,12 +177,30 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             <td>
                 { info.get("portal.health.database") ? <>
                     {info.get("portal.health.database")}
-                    <ExternalLink
-                        href={`https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#databases:`}
-                        style={{marginLeft:"4pt"}} />
+                    { info.get("foursight.rds_name") && <>
+                        <small style={{marginLeft:"2pt",marginRight:"2pt"}}>|</small>{info.get("foursight.rds_name")}
+                        <ExternalLink
+                            href={`https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#database:id=${info.get("foursight.rds_name")};is-cluster=false`}
+                            style={{marginLeft:"4pt"}} />
+                    </> }
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
+        { !info.get("portal.health.database").startsWith(info.get("foursight.rds")) &&
+            <tr style={{fontSize:"small"}}>
+                <td style={{paddingRight:"10pt"}}>
+                    Foursight RDS:
+                </td>
+                <td>
+                    { info.get("foursight.rds") ? <>
+                        {info.get("foursight.rds")}
+                        <ExternalLink
+                            href={`https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#databases:`}
+                            style={{marginLeft:"4pt"}} />
+                    </>:<>{Char.EmptySet}</>}
+                </td>
+            </tr>
+        }
         { info.get("foursight.redis_url") &&
             <tr style={{fontSize:"small"}}>
                 <td style={{paddingRight:"10pt"}}>
@@ -245,6 +263,17 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
 
         <tr style={{fontSize:"small"}}>
             <td style={{paddingRight:"10pt"}}>
+                Stack Name:
+            </td>
+            <td>
+                {info.get("foursight.stack")}
+                <ExternalLink
+                    href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/stackinfo?filteringStatus=active&viewNested=true&stackId=${info.get("foursight.stack")}`}
+                    style={{marginLeft:"6pt"}} />
+            </td>
+        </tr>
+        <tr style={{fontSize:"small"}}>
+            <td style={{paddingRight:"10pt"}}>
                 Global Env Bucket:
             </td>
             <td>
@@ -272,17 +301,6 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                         href={`https://us-east-1.console.aws.amazon.com/kms/home?region=us-east-1#/kms/keys/${info.get("foursight.s3.encrypt_key_id")}`}
                         style={{marginLeft:"6pt"}} />
                 </>:<> &ndash; </>}
-            </td>
-        </tr>
-        <tr style={{fontSize:"small"}}>
-            <td style={{paddingRight:"10pt"}}>
-                Stack Name:
-            </td>
-            <td>
-                {info.get("foursight.stack")}
-                <ExternalLink
-                    href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/stackinfo?filteringStatus=active&viewNested=true&stackId=${info.get("foursight.stack")}`}
-                    style={{marginLeft:"6pt"}} />
             </td>
         </tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -326,7 +344,7 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                     </>}
                     <ExternalLink
                         href={`${info.get("foursight.url")}/reactapi/auth0_config`}
-                        style={{marginLeft:"5pt"}} />
+                        style={{marginLeft:"4pt"}} />
                     &nbsp;|&nbsp;
                     <a style={{color:"inherit"}} href={`${info.get("portal.url")}/auth0_config`} rel="noreferrer"target="_blank">
                         Portal
@@ -355,7 +373,7 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             </td>
             <td>
                 { isCurrentAccount(header, info) && !portalAccessKey.loading && <>
-                    {portalAccessKey.get("key")}&nbsp;{Char.RightArrow}&nbsp;
+                    {portalAccessKey.get("key")}&nbsp;|&nbsp;
                 </> }
                 <PortalAccessKeyStatus portalAccessKeyResponse={info.get("foursight.portal_access_key")} />
                 <ExternalLink
@@ -607,11 +625,11 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
                 <Tooltip id={`tooltip-account-${account.name}-${account.stage}`} text={`AWS Account: ${info.get("foursight.aws_account_number")}.`} position="top" />
             </>}
             { info.get("foursight.stage") ? <>
-                &nbsp;&nbsp;&mdash;&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${info.get("foursight.stage")}`}>{info.get("foursight.stage")}</span>
+                &nbsp;&nbsp;<b>&ndash;</b>&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${info.get("foursight.stage")}`}>{info.get("foursight.stage")}</span>
                 <Tooltip id={`tooltip-stage-${account.id}-${info.get("foursight.stage")}`} text={`Stage: ${info.get("foursight.stage")}`} position="top" />
             </>:<>
                 { account.stage && <>
-                    &nbsp;&nbsp;&mdash;&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${account.stage}`}>{account.stage}</span>
+                    &nbsp;&nbsp;<b>&ndash;</b>&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${account.stage}`}>{account.stage}</span>
                     <Tooltip id={`tooltip-stage-${account.id}-${account.stage}`} text={`Stage: ${account.state}`} position="top" />
                 </>}
             </>}
@@ -632,7 +650,7 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
             <div style={{marginTop:"3pt",marginBottom:"4pt",border:"1px",borderTop:"dotted"}}></div>
             <table><tbody>
                 <tr style={{verticalAlign:"top"}}>
-                    <td style={{width:"70%"}}>
+                    <td style={{width:"80%"}}>
                         <AccountInfoLeft header={header} info={info} foursightUrl={foursightUrl} />
                     </td>
                     <td style={{paddingLeft:"6pt",width:"12pt"}} />

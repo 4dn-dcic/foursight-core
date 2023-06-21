@@ -120,6 +120,17 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return cluster_name
 
     @function_cache(nokey=True, nocache=None)
+    def _get_rds_server(self) -> Optional[str]:
+        return os.environ.get("RDS_HOSTNAME")
+
+    @function_cache(nokey=True, nocache=None)
+    def _get_rds_name(self) -> Optional[str]:
+        server = self._get_rds_server()
+        name_parts = server.split(".", 1) if server else None
+        name = name_parts[0] if len(name_parts) > 0 else ""
+        return name
+
+    @function_cache(nokey=True, nocache=None)
     def _get_redis_server_version(self) -> Optional[str]:
         connection = app.core.init_connection(self._envs.get_default_env())
         redis_info = connection.redis_info()
@@ -407,7 +418,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "foursight": self.foursight_instance_url(request),
                 "portal": portal_url,
                 # TODO: May later want to rds_username and/or such.
-                "rds": os.environ["RDS_HOSTNAME"],
+                "rds": self._get_rds_server(),
+                "rds_name": self._get_rds_name(),
                 "redis": redis_url,
                 "redis_running": redis is not None,
                 "sqs": self._get_sqs_queue_url(),
@@ -549,7 +561,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "portal": portal_url,
                 "es": app.core.host,
                 "es_cluster": self._get_elasticsearch_server_cluster(),
-                "rds": os.environ["RDS_HOSTNAME"],
+                "rds": self._get_rds_server(),
+                "rds_name": self._get_rds_name(),
                 "sqs": self._get_sqs_queue_url(),
             },
             "buckets": {
@@ -1360,6 +1373,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             response["foursight"]["redis_url"] = foursight_header_json.get("resources",{}).get("redis")
             response["foursight"]["es_url"] = foursight_header_json.get("resources",{}).get("es")
             response["foursight"]["es_cluster"] = foursight_header_json.get("resources",{}).get("es_cluster")
+            response["foursight"]["rds"] = foursight_header_json.get("resources",{}).get("rds")
+            response["foursight"]["rds_name"] = foursight_header_json.get("resources",{}).get("rds_name")
             foursight_header_json_s3 = foursight_header_json.get("s3")
             # TODO: Maybe eventually make separate API call (to get Portal Access Key info for any account)
             # so that we do not have to wait here within this API call for this synchronous API call.
