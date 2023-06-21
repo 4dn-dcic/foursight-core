@@ -177,6 +177,9 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             <td>
                 { info.get("portal.health.database") ? <>
                     {info.get("portal.health.database")}
+                    <ExternalLink
+                        href={`https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#databases:`}
+                        style={{marginLeft:"4pt"}} />
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -187,6 +190,9 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                 </td>
                 <td>
                     {info.get("foursight.redis_url")}
+                    <ExternalLink
+                        href={`https://us-east-1.console.aws.amazon.com/memorydb/home?region=us-east-1#/clusters`}
+                        style={{marginLeft:"4pt"}} />
                 </td>
             </tr>
         }
@@ -691,7 +697,7 @@ const AccountsComponent = ({ header }) => {
 
     return <>
         <div style={{borderBottom:"2px solid black",marginBottom:"8pt"}}>
-            <div style={{marginTop:"0pt"}}><b id={`tooltip-known-accounts`}>Known Accounts</b>
+            <div style={{marginTop:"0pt",cursor:"pointer"}}><b id={`tooltip-known-accounts`} onClick={toggleShowAccountsFileContent}>Known Accounts</b>
                 <Tooltip id={`tooltip-known-accounts`} text={`This info from: ${header?.app?.accounts_file}`} position="top" />
                 <div style={{float:"right",display:"inline",fontSize:"small",marginRight:"4pt",marginTop:"0pt"}}>
                 { showAccountsFileContent ? <>
