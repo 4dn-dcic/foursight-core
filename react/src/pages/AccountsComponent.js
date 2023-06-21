@@ -186,7 +186,7 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
-        { !info.get("portal.health.database").startsWith(info.get("foursight.rds")) &&
+        { !info.get("portal.health.database")?.startsWith(info.get("foursight.rds")) &&
             <tr style={{fontSize:"small"}}>
                 <td style={{paddingRight:"10pt"}}>
                     Foursight RDS:
