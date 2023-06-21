@@ -214,6 +214,19 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                 </td>
             </tr>
         }
+        { info.get("foursight.sqs_url") &&
+            <tr style={{fontSize:"small"}}>
+                <td style={{paddingRight:"10pt"}}>
+                    SQS:
+                </td>
+                <td>
+                    {info.get("foursight.sqs_url")}
+                    <ExternalLink
+                        href={`https://us-east-1.console.aws.amazon.com/sqs/v2/home?region=us-east-1#/queues/${encodeURIComponent(info.get('foursight.sqs_url'))}`}
+                        style={{marginLeft:"4pt"}} />
+                </td>
+            </tr>
+        }
         <tr><td style={{paddingTop:"4pt"}} /></tr>
         <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -435,7 +448,7 @@ const AccountInfoRight = ({ info }) => {
         </tr>
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                foursight-dcicutils:
+                dcicutils:
             </td>
             <td>
                 {info.get("foursight.versions.dcicutils") ? <>
@@ -465,11 +478,21 @@ const AccountInfoRight = ({ info }) => {
         </tr>
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                foursight-python:
+                boto3:
             </td>
             <td>
-                {info.get("foursight.versions.python") ? <>
-                    <b>{info.get("foursight.versions.python")}</b>
+                {info.get("foursight.versions.boto3") ? <>
+                    <b>{info.get("foursight.versions.boto3")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                botocore:
+            </td>
+            <td>
+                {info.get("foursight.versions.botocore") ? <>
+                    <b>{info.get("foursight.versions.botocore")}</b>
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -480,6 +503,26 @@ const AccountInfoRight = ({ info }) => {
             <td>
                 {info.get("foursight.versions.chalice") ? <>
                     <b>{info.get("foursight.versions.chalice")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                redis:
+            </td>
+            <td>
+                {info.get("foursight.versions.redis") ? <>
+                    <b>{info.get("foursight.versions.redis")}</b>
+                </>:<>{Char.EmptySet}</>}
+            </td>
+        </tr>
+        <tr>
+            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                python:
+            </td>
+            <td>
+                {info.get("foursight.versions.python") ? <>
+                    <b>{info.get("foursight.versions.python")}</b>
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -496,19 +539,31 @@ const AccountInfoRight = ({ info }) => {
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
+        { info.get("portal.health.project_version") != info.get("portal.versions.portal") &&
+            <tr>
+                <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
+                    portal-project:
+                </td>
+                <td>
+                    {info.get("portal.health.project_version") ? <>
+                        <b>{info.get("portal.health.project_version")}</b>
+                    </>:<>{Char.EmptySet}</>}
+                </td>
+            </tr>
+        }
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                portal-project:
+                snovault:
             </td>
             <td>
-                {info.get("portal.health.project_version") ? <>
-                    <b>{info.get("portal.health.project_version")}</b>
+                {info.get("portal.versions.snovault") ? <>
+                    <b>{info.get("portal.versions.snovault")}</b>
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                portal-dcicutils:
+                dcicutils:
             </td>
             <td>
                 {info.get("portal.versions.dcicutils") ? <>
@@ -518,21 +573,11 @@ const AccountInfoRight = ({ info }) => {
         </tr>
         <tr>
             <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                portal-python:
+                python:
             </td>
             <td>
                 {info.get("portal.health.python_version") ? <>
                     <b>{info.get("portal.health.python_version")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                snovault:
-            </td>
-            <td>
-                {info.get("portal.versions.snovault") ? <>
-                    <b>{info.get("portal.versions.snovault")}</b>
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -570,16 +615,6 @@ const AccountInfoRight = ({ info }) => {
             </td>
         </tr>
         { info.get("foursight.versions.redis_server") && <>
-            <tr>
-                <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                    redis:
-                </td>
-                <td>
-                    {info.get("foursight.versions.redis") ? <>
-                        <b>{info.get("foursight.versions.redis")}</b>
-                    </>:<>{Char.EmptySet}</>}
-                </td>
-            </tr>
             <tr>
                 <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
                     redis-server:

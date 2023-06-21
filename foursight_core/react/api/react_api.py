@@ -86,6 +86,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "tibanna": get_package_version("tibanna"),
                 "tibanna_ff": get_package_version("tibanna-ff"),
                 "python": platform.python_version(),
+                "boto3": get_package_version("boto3"),
+                "botocore": get_package_version("botocore"),
                 "chalice": chalice_version,
                 "elasticsearch_server": self._get_elasticsearch_server_version(),
                 "elasticsearch": get_package_version("elasticsearch"),
@@ -1375,6 +1377,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             response["foursight"]["es_cluster"] = foursight_header_json.get("resources",{}).get("es_cluster")
             response["foursight"]["rds"] = foursight_header_json.get("resources",{}).get("rds")
             response["foursight"]["rds_name"] = foursight_header_json.get("resources",{}).get("rds_name")
+            response["foursight"]["sqs_url"] = foursight_header_json.get("resources",{}).get("sqs")
             foursight_header_json_s3 = foursight_header_json.get("s3")
             # TODO: Maybe eventually make separate API call (to get Portal Access Key info for any account)
             # so that we do not have to wait here within this API call for this synchronous API call.
