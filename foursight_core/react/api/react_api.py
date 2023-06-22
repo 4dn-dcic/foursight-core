@@ -96,6 +96,19 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "redis_server": self._get_redis_server_version()
             }
 
+    @function_cache
+    def _get_known_buckets(self, env: str = None) -> dict:
+        s3 = s3_utils.s3Utils(env=env if env else self._envs.get_default_env())
+        return {
+            "blob_bucket": s3.blob_bucket,
+            "metadata_bucket": s3.metadata_bucket,
+            "outfile_bucket": s3.outfile_bucket,
+            "raw_file_bucket": s3.raw_file_bucket,
+            "sys_bucket": s3.sys_bucket,
+            "tibanna_cwls_bucket": s3.tibanna_cwls_bucket,
+            "tibanna_output_bucket": s3.tibanna_output_bucket
+        }
+
     def _get_elasticsearch_server_status(self) -> Optional[dict]:
         response = {}
         try:
@@ -429,7 +442,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "s3": {
                 "bucket_org": os.environ.get("ENCODED_S3_BUCKET_ORG", os.environ.get("S3_BUCKET_ORG", None)),
                 "global_env_bucket": os.environ.get("GLOBAL_ENV_BUCKET", os.environ.get("GLOBAL_BUCKET_ENV", None)),
-                "encrypt_key_id": os.environ.get("S3_ENCRYPT_KEY_ID", None)
+                "encrypt_key_id": os.environ.get("S3_ENCRYPT_KEY_ID", None),
+                "buckets": self._get_known_buckets()
             }
         }
         return response
@@ -1391,6 +1405,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 response["foursight"]["s3"]["bucket_org"] = foursight_header_json_s3.get("bucket_org")
                 response["foursight"]["s3"]["global_env_bucket"] = foursight_header_json_s3.get("global_env_bucket")
                 response["foursight"]["s3"]["encrypt_key_id"] = foursight_header_json_s3.get("encrypt_key_id")
+                response["foursight"]["s3"]["buckets"] = foursight_header_json_s3.get("buckets")
             response["foursight"]["aws_account_number"] = foursight_app["credentials"].get("aws_account_number")
             response["foursight"]["aws_account_name"] = foursight_app["credentials"].get("aws_account_name")
             response["foursight"]["re_captcha_key"] = foursight_app["credentials"].get("re_captcha_key")

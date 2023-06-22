@@ -92,7 +92,8 @@ const SslCertificateLink = ({ url }) => {
     }
     const uuid = Uuid();
     return url && url.startsWith("https://") && <small>
-        &nbsp;| <a style={{color:sslCertificateExpiresSoon() ? "red" : "inherit"}} href={Client.Path("certificates") + "/?hostname=" + url} id={`tooltip-ssl-expires-${url}`} rel="noreferrer" target="_blank">SSL</a>&nbsp;
+        <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
+        <a style={{color:sslCertificateExpiresSoon() ? "red" : "inherit"}} href={Client.Path("certificates") + "/?hostname=" + url} id={`tooltip-ssl-expires-${url}`} rel="noreferrer" target="_blank">SSL</a>&nbsp;
         <ExternalLink
             href={Client.Path("certificates") + "/?hostname=" + url}
             style={{marginLeft:"1pt"}} />
@@ -100,9 +101,58 @@ const SslCertificateLink = ({ url }) => {
     </small>
 }
 
+const S3BucketLink = ({ bucket, name, line = true }) => {
+    if (!bucket) return <></>
+    return <>
+        { name && <>
+            <b>{name}</b>:&nbsp;&nbsp;
+        </> }
+        <a href={`https://s3.console.aws.amazon.com/s3/buckets/${bucket}`} style={{color:"inherit"}} rel="noreferrer" target="_blank">{bucket}</a>
+        <ExternalLink
+            href={`https://s3.console.aws.amazon.com/s3/buckets/${bucket}`}
+            style={{marginLeft:"4pt"}} />
+        { line && <br /> }
+    </>
+}
+
+const Row = ({ title, value, additionalValue, externalLink, show = true }) => { 
+    if (!show || !value) return <></>
+    return <tr style={{fontSize:"small"}}>
+        <td style={{paddingRight:"10pt"}}>
+            {title}:
+        </td>
+        <td>
+            { value ? <>
+                {value}
+                { additionalValue && <>
+                    <small style={{marginLeft:"2pt",marginRight:"2pt"}}>|</small>{additionalValue}
+                </> }
+                { externalLink &&
+                    <ExternalLink
+                        href={externalLink}
+                        style={{marginLeft:"4pt"}} />
+                }
+            </>:<>{Char.EmptySet}</>}
+        </td>
+    </tr>
+}
+
+const Separator = () => {
+    return <>
+        <tr><td style={{paddingTop:"4pt"}} /></tr>
+        <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
+        <tr><td style={{paddingTop:"4pt"}} /></tr>
+    </>
+}
+
 const AccountInfoLeft = ({ header, info, foursightUrl }) => {
 
     const portalAccessKey = useFetch("/portal_access_key");
+    const [ showBuckets, setShowBuckets ] = useState(false);
+
+    function toggleShowBuckets() {
+        setShowBuckets(!showBuckets);
+    }
 
     return <table style={{width:"100%"}}><tbody style={{whiteSpace:"nowrap"}}>
         <tr>
@@ -123,12 +173,23 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                 <ExternalLink
                     href={info.get("foursight.url") || foursightUrl}
                     style={{marginLeft:"1pt"}} />
+                <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
+                <small>
+                    <a href={`${info.get("foursight.url")}/reactapi/header`} style={{color:"inherit"}} rel="noreferrer" target="_blank">API</a>
+                    <ExternalLink
+                        href={`${info.get("foursight.url")}/reactapi/header`}
+                        style={{marginLeft:"4pt"}} />
+                </small>
                 <SslCertificateLink url={info.get("foursight.url")} />
             </td>
         </tr>
         <tr>
             <td style={{paddingRight:"10pt"}}>
-                Portal:
+                { info.get("foursight.package") === "foursight" ? <>
+                    Fourfront:
+                </>:<>
+                    CGAP-Portal:
+                </> }
             </td>
             <td>
                 { info.get("portal.url") ? <>
@@ -170,123 +231,30 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
-        <tr style={{fontSize:"small"}}>
-            <td style={{paddingRight:"10pt"}}>
-                RDS:
-            </td>
-            <td>
-                { info.get("portal.health.database") ? <>
-                    {info.get("portal.health.database")}
-                    { info.get("foursight.rds_name") && <>
-                        <small style={{marginLeft:"2pt",marginRight:"2pt"}}>|</small>{info.get("foursight.rds_name")}
-                        <ExternalLink
-                            href={`https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#database:id=${info.get("foursight.rds_name")};is-cluster=false`}
-                            style={{marginLeft:"4pt"}} />
-                    </> }
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        { !info.get("portal.health.database")?.startsWith(info.get("foursight.rds")) &&
-            <tr style={{fontSize:"small"}}>
-                <td style={{paddingRight:"10pt"}}>
-                    Foursight RDS:
-                </td>
-                <td>
-                    { info.get("foursight.rds") ? <>
-                        {info.get("foursight.rds")}
-                        <ExternalLink
-                            href={`https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#databases:`}
-                            style={{marginLeft:"4pt"}} />
-                    </>:<>{Char.EmptySet}</>}
-                </td>
-            </tr>
-        }
-        { info.get("foursight.redis_url") &&
-            <tr style={{fontSize:"small"}}>
-                <td style={{paddingRight:"10pt"}}>
-                    Redis:
-                </td>
-                <td>
-                    {info.get("foursight.redis_url")}
-                    <ExternalLink
-                        href={`https://us-east-1.console.aws.amazon.com/memorydb/home?region=us-east-1#/clusters`}
-                        style={{marginLeft:"4pt"}} />
-                </td>
-            </tr>
-        }
-        { info.get("foursight.sqs_url") &&
-            <tr style={{fontSize:"small"}}>
-                <td style={{paddingRight:"10pt"}}>
-                    SQS:
-                </td>
-                <td>
-                    {info.get("foursight.sqs_url")}
-                    <ExternalLink
-                        href={`https://us-east-1.console.aws.amazon.com/sqs/v2/home?region=us-east-1#/queues/${encodeURIComponent(info.get('foursight.sqs_url'))}`}
-                        style={{marginLeft:"4pt"}} />
-                </td>
-            </tr>
-        }
-        <tr><td style={{paddingTop:"4pt"}} /></tr>
-        <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
-        <tr><td style={{paddingTop:"4pt"}} /></tr>
-
+        <Row title="RDS (Foursight)" value={info.get("foursight.rds")}
+             externalLink={`https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#databases:`}
+             show={!info.get("portal.health.database")?.startsWith(info.get("foursight.rds"))} />
+        <Row title="RDS" value={info.get("portal.health.database")}
+             additionalValue={info.get("foursight.rds_name")}
+             externalLink={`https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#database:id=${info.get("foursight.rds_name")};is-cluster=false`} />
+        <Row title="Redis" value={info.get("foursight.redis_url")}
+             externalLink={`https://us-east-1.console.aws.amazon.com/memorydb/home?region=us-east-1#/clusters`} />
+        <Row title="SQS" value={info.get("foursight.sqs_url")}
+             externalLink={`https://us-east-1.console.aws.amazon.com/sqs/v2/home?region=us-east-1#/queues/${encodeURIComponent(info.get('foursight.sqs_url'))}`} />
+        <Separator />
         { info.get("foursight.identity") == info.get("portal.identity") ? <>
-        <tr style={{fontSize:"small"}}>
-            <td style={{paddingRight:"10pt"}}>
-                Identity:
-            </td>
-            <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>
-                { info.get("foursight.identity") ? <>
-                    {info.get("foursight.identity")}
-                    <ExternalLink
-                        href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("foursight.identity")}`}
-                        style={{marginLeft:"6pt"}} />
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
+            <Row title="Identity" value={info.get("foursight.identity")}
+                 externalLink={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("foursight.identity")}`} />
         </>:<>
-        <tr style={{fontSize:"small"}}>
-            <td style={{paddingRight:"10pt"}}>
-                Foursight Identity:
-            </td>
-            <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>
-                { info.get("foursight.identity") ? <>
-                    {info.get("foursight.identity")}
-                    <ExternalLink
-                        href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("foursight.identity")}`}
-                        style={{marginLeft:"6pt"}} />
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr style={{fontSize:"small"}}>
-            <td style={{paddingRight:"10pt"}}>
-                Portal Identity:
-            </td>
-            <td style={{whiteSpace:"break-spaces",wordBreak:"break-all"}}>
-                { info.get("portal.identity") ? <>
-                    {info.get("portal.identity")}
-                    <ExternalLink
-                        href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("portal.identity")}`}
-                        style={{marginLeft:"6pt"}} />
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
+            <Row title="Foursight Identity" value={info.get("foursight.identity")}
+                 externalLink={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("foursight.identity")}`} />
+            <Row title="Portal Identity" value={info.get("portal.identity")}
+                 externalLink={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("portal.identity")}`} />
         </> }
-
+        <Row title="Stack Name" value={info.get("foursight.stack")}
+             externalLink={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/stackinfo?filteringStatus=active&viewNested=true&stackId=${info.get("foursight.stack")}`} />
         <tr style={{fontSize:"small"}}>
-            <td style={{paddingRight:"10pt"}}>
-                Stack Name:
-            </td>
-            <td>
-                {info.get("foursight.stack")}
-                <ExternalLink
-                    href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/stackinfo?filteringStatus=active&viewNested=true&stackId=${info.get("foursight.stack")}`}
-                    style={{marginLeft:"6pt"}} />
-            </td>
-        </tr>
-        <tr style={{fontSize:"small"}}>
-            <td style={{paddingRight:"10pt"}}>
+            <td style={{paddingRight:"10pt",verticalAlign:"top"}}>
                 Global Env Bucket:
             </td>
             <td>
@@ -299,6 +267,21 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                         &nbsp;&nbsp;(<span id={`tooltip-bucket-org-${info.get("foursight.aws_account_number")}`}>{info.get("foursight.s3.bucket_org")}</span>)
                         <Tooltip id={`tooltip-bucket-org-${info.get("foursight.aws_account_number")}`} text={`S3 Bucket Org: ${info.get("foursight.s3.bucket_org")}`} position="top" />
                     </>}
+                    <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
+                    { showBuckets ? <>
+                        <span onClick={toggleShowBuckets} className="pointer">Buckets {Char.UpArrow}</span>
+                    </>:<>
+                        <b onClick={toggleShowBuckets} className="pointer">Buckets {Char.DownArrow}</b>
+                         <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",padding:"4pt"}}>
+                            <S3BucketLink name="System" bucket={info.get("foursight.s3.buckets.sys_bucket")} /> 
+                            <S3BucketLink name="Output" bucket={info.get("foursight.s3.buckets.outfile_bucket")} />
+                            <S3BucketLink name="Raw" bucket={info.get("foursight.s3.buckets.raw_file_bucket")} />
+                            <S3BucketLink name="Metadata" bucket={info.get("foursight.s3.buckets.metadata_bucket")} />
+                            <S3BucketLink name="Blobs" bucket={info.get("foursight.s3.buckets.blob_bucket")} />
+                            <S3BucketLink name="Tibanna CWLs" bucket={info.get("foursight.s3.buckets.tibanna_cwls_bucket")} />
+                            <S3BucketLink name="Tibanna Output" bucket={info.get("foursight.s3.buckets.tibanna_output_bucket")} />
+                         </div>
+                    </> }
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
@@ -359,7 +342,7 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                         href={`${info.get("foursight.url")}/reactapi/auth0_config`}
                         style={{marginLeft:"4pt"}} />
                     &nbsp;|&nbsp;
-                    <a style={{color:"inherit"}} href={`${info.get("portal.url")}/auth0_config`} rel="noreferrer"target="_blank">
+                    <a style={{color:"inherit"}} href={`${info.get("portal.url")}/auth0_config`} rel="noreferrer" target="_blank">
                         Portal
                     </a>
                     <ExternalLink
@@ -392,6 +375,14 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                 <ExternalLink
                     href={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/portal_access_key`}
                     style={{marginLeft:"6pt"}} />
+                <span id={`tooltip-s3-access-key`}>
+                    <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
+                    <a href={`https://s3.console.aws.amazon.com/s3/object/${header?.app?.accounts_file?.replace("s3://", "").replace("known_accounts", "access_key_foursight")}`} style={{color:"inherit"}} rel="noreferrer" target="_blank">S3</a>
+                    <ExternalLink
+                        href={`https://s3.console.aws.amazon.com/s3/object/${header?.app?.accounts_file?.replace("s3://", "").replace("known_accounts", "access_key_foursight")}`}
+                        style={{marginLeft:"4pt"}} />
+                        <Tooltip id={`tooltip-s3-access-ke`} text={`Location of Portal access key in AWS S3.`} position="bottom" />
+                </span>
             </td>
         </tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -420,6 +411,17 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
     </tbody></table>
 }
 
+const VersionRow = ({ title, version }) => {
+    return <tr>
+        <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}> {title} </td>
+        <td>
+            { version ? <>
+                <b>{version}</b>
+            </>:<>{Char.EmptySet}</>}
+        </td>
+    </tr>
+}
+
 const AccountInfoRight = ({ info }) => {
     return <table style={{width:"100%",margin:"0",padding:"0"}}><tbody style={{fontSize:"small",verticalAlign:"top",whiteSpace:"nowrap"}}>
         <tr>
@@ -436,195 +438,33 @@ const AccountInfoRight = ({ info }) => {
                 </>:<>{Char.EmptySet}</>}
             </td>
         </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                foursight-core:
-            </td>
-            <td>
-                {info.get("foursight.versions.foursight_core") ? <>
-                    <b>{info.get("foursight.versions.foursight_core")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                dcicutils:
-            </td>
-            <td>
-                {info.get("foursight.versions.dcicutils") ? <>
-                    <b>{info.get("foursight.versions.dcicutils")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                tibanna:
-            </td>
-            <td>
-                {info.get("foursight.versions.tibanna") ? <>
-                    <b>{info.get("foursight.versions.tibanna")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                tibanna-ff:
-            </td>
-            <td>
-                {info.get("foursight.versions.tibanna_ff") ? <>
-                    <b>{info.get("foursight.versions.tibanna_ff")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                boto3:
-            </td>
-            <td>
-                {info.get("foursight.versions.boto3") ? <>
-                    <b>{info.get("foursight.versions.boto3")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                botocore:
-            </td>
-            <td>
-                {info.get("foursight.versions.botocore") ? <>
-                    <b>{info.get("foursight.versions.botocore")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                chalice:
-            </td>
-            <td>
-                {info.get("foursight.versions.chalice") ? <>
-                    <b>{info.get("foursight.versions.chalice")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                redis:
-            </td>
-            <td>
-                {info.get("foursight.versions.redis") ? <>
-                    <b>{info.get("foursight.versions.redis")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                python:
-            </td>
-            <td>
-                {info.get("foursight.versions.python") ? <>
-                    <b>{info.get("foursight.versions.python")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
+        <VersionRow title="foursight-core" version={info.get("foursight.versions.foursight_core")} />
+        <VersionRow title="dcicutils" version={info.get("foursight.versions.dcicutils")} />
+        <VersionRow title="tibanna" version={info.get("foursight.versions.tibanna")} />
+        <VersionRow title="tibanna_ff" version={info.get("foursight.versions.tibanna_ff")} />
+        <VersionRow title="boto3" version={info.get("foursight.versions.boto3")} />
+        <VersionRow title="botocore" version={info.get("foursight.versions.botocore")} />
+        <VersionRow title="chalice" version={info.get("foursight.versions.chalice")} />
+        <VersionRow title="redis" version={info.get("foursight.versions.redis")} />
+        <VersionRow title="python" version={info.get("foursight.versions.python")} />
         <tr><td style={{paddingTop:"4pt"}} /></tr>
         <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                portal:
-            </td>
-            <td>
-                {info.get("portal.versions.portal") ? <>
-                    <b>{info.get("portal.versions.portal")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        { info.get("portal.health.project_version") != info.get("portal.versions.portal") &&
-            <tr>
-                <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                    portal-project:
-                </td>
-                <td>
-                    {info.get("portal.health.project_version") ? <>
-                        <b>{info.get("portal.health.project_version")}</b>
-                    </>:<>{Char.EmptySet}</>}
-                </td>
-            </tr>
-        }
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                snovault:
-            </td>
-            <td>
-                {info.get("portal.versions.snovault") ? <>
-                    <b>{info.get("portal.versions.snovault")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                dcicutils:
-            </td>
-            <td>
-                {info.get("portal.versions.dcicutils") ? <>
-                    <b>{info.get("portal.versions.dcicutils")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                python:
-            </td>
-            <td>
-                {info.get("portal.health.python_version") ? <>
-                    <b>{info.get("portal.health.python_version")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
+        <VersionRow title="portal" version={info.get("portal.versions.portal")} />
+        { (info.get("portal.health.project_version") != info.get("portal.versions.portal")) && <>
+            <VersionRow title="portal-project" version={info.get("portal.health.project_version")} />
+        </> }
+        <VersionRow title="snovault" version={info.get("portal.versions.snovault")} />
+        <VersionRow title="dcicutils" version={info.get("portal.versions.dcicutils")} />
+        <VersionRow title="python" version={info.get("portal.health.python_version")} />
         <tr><td style={{paddingTop:"4pt"}} /></tr>
         <tr><td colSpan="2" style={{borderTop:"1px dotted"}} /></tr>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                elasticsearch-server:
-            </td>
-            <td>
-                {info.get("foursight.versions.elasticsearch_server") ? <>
-                    <b>{info.get("foursight.versions.elasticsearch_server")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                elasticsearch:
-            </td>
-            <td>
-                {info.get("foursight.versions.elasticsearch") ? <>
-                    <b>{info.get("foursight.versions.elasticsearch")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
-        <tr>
-            <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                elasticsearch-dsl:
-            </td>
-            <td>
-                {info.get("foursight.versions.elasticsearch_dsl") ? <>
-                    <b>{info.get("foursight.versions.elasticsearch_dsl")}</b>
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
+        <VersionRow title="elasticsearch-server" version={info.get("foursight.versions.elasticsearch_server")} />
+        <VersionRow title="elasticsearch" version={info.get("foursight.versions.elasticsearch")} />
+        <VersionRow title="elasticsearch-dsl" version={info.get("foursight.versions.elasticsearch_dsl")} />
         { info.get("foursight.versions.redis_server") && <>
-            <tr>
-                <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>
-                    redis-server:
-                </td>
-                <td>
-                    {info.get("foursight.versions.redis_server") ? <>
-                        <b>{info.get("foursight.versions.redis_server")}</b>
-                    </>:<>{Char.EmptySet}</>}
-                </td>
-            </tr>
+            <VersionRow title="redis-server" version={info.get("foursight.versions.redis_server")} />
         </>}
     </tbody></table>
 }
@@ -778,7 +618,7 @@ const AccountsComponent = ({ header }) => {
                 <div style={{fontFamily:"tahoma",borderBottom:"1px black solid",paddingBottom:"6pt"}}>
                 <span style={{float:"right",cursor:"pointer"}} onClick={toggleShowAccountsFileContent}>X&nbsp;</span>
                     Known account info is stored in:&nbsp;
-                    <a href={`https://s3.console.aws.amazon.com/s3/object/${header?.app?.accounts_file?.replace("s3://", "")}`} style={{color:"inherit"}} rel="noreferrer"target="_blank">
+                    <a href={`https://s3.console.aws.amazon.com/s3/object/${header?.app?.accounts_file?.replace("s3://", "")}`} style={{color:"inherit"}} rel="noreferrer" target="_blank">
                         <b>{header?.app?.accounts_file}</b>
                         <ExternalLink
                             href={`https://s3.console.aws.amazon.com/s3/object/${header?.app?.accounts_file?.replace("s3://", "")}`}
