@@ -121,13 +121,13 @@ const Row = ({ title, value, additionalValue, externalLink, children, tooltip = 
     const tooltipId = Type.IsArray(tooltip) ? tooltip[1] : null;
     return <tr style={{fontSize:small ? "small" : "inherit"}}>
         <td style={{paddingRight:"10pt"}}>
-            {title}
+            {title}:
         </td>
         <td>
             { value ? <>
                 { bold ? <b id={tooltipId}>{value}</b> : <span id={tooltipId}>{value}</span> }
                 { additionalValue && <>
-                    <small style={{marginLeft:"2pt",marginRight:"2pt"}}>|</small>{additionalValue}
+                    <small style={{marginLeft:"3pt",marginRight:"2pt"}}>|</small>{additionalValue}
                 </> }
                 { externalLink &&
                     <ExternalLink
@@ -146,7 +146,7 @@ const Row = ({ title, value, additionalValue, externalLink, children, tooltip = 
 const VersionRow = ({ title, version, show = true }) => {
     if (!show || !version) return <></>
     return <tr>
-        <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}> {title} </td>
+        <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>{title}:</td>
         <td>
             { version ? <>
                 <b>{version}</b>
@@ -226,49 +226,32 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
         </> }
         <Row title="Stack Name" value={info.get("foursight.stack")}
              externalLink={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/stackinfo?filteringStatus=active&viewNested=true&stackId=${info.get("foursight.stack")}`} />
-        <tr style={{fontSize:"small"}}>
-            <td style={{paddingRight:"10pt",verticalAlign:"top"}}>
-                Global Env Bucket:
-            </td>
-            <td>
-                { info.get("foursight.s3.global_env_bucket") ? <>
-                    {info.get("foursight.s3.global_env_bucket")}
-                    <ExternalLink
-                        href={`https://s3.console.aws.amazon.com/s3/buckets/${info.get("foursight.s3.global_env_bucket")}?region=us-east-1&tab=objects`}
-                        style={{marginLeft:"6pt"}} />
-                    { info.get("foursight.s3.bucket_org") && <>
-                        &nbsp;&nbsp;(<span id={`tooltip-bucket-org-${info.get("foursight.aws_account_number")}`}>{info.get("foursight.s3.bucket_org")}</span>)
-                        <Tooltip id={`tooltip-bucket-org-${info.get("foursight.aws_account_number")}`} text={`S3 Bucket Org: ${info.get("foursight.s3.bucket_org")}`} position="top" />
-                    </>}
-                    <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
-                    { !showBuckets ? <>
-                        <span onClick={toggleShowBuckets} className="pointer">Buckets {Char.UpArrow}</span>
-                    </>:<>
-                        <b onClick={toggleShowBuckets} className="pointer">Buckets {Char.DownArrow}</b>
-                         <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",padding:"4pt"}}>
-                            <S3BucketLink name="System" bucket={info.get("foursight.s3.buckets.sys_bucket")} /> 
-                            <S3BucketLink name="Output" bucket={info.get("foursight.s3.buckets.outfile_bucket")} />
-                            <S3BucketLink name="Metadata" bucket={info.get("foursight.s3.buckets.metadata_bucket")} />
-                            <S3BucketLink name="Blobs" bucket={info.get("foursight.s3.buckets.blob_bucket")} />
-                            <S3BucketLink name="Raw" bucket={info.get("foursight.s3.buckets.raw_file_bucket")} />
-                            <S3BucketLink name="Tibanna CWLs" bucket={info.get("foursight.s3.buckets.tibanna_cwls_bucket")} />
-                            <S3BucketLink name="Tibanna Output" bucket={info.get("foursight.s3.buckets.tibanna_output_bucket")} />
-                         </div>
-                    </> }
-                </>:<>{Char.EmptySet}</>}
-            </td>
-        </tr>
+
+        <Row title="Global Env Bucket" value={info.get("foursight.s3.global_env_bucket")}
+             externalLink={`https://s3.console.aws.amazon.com/s3/buckets/${info.get("foursight.s3.global_env_bucket")}?region=us-east-1&tab=objects`}
+             tooltip={[`S3 Bucket Org: ${info.get("foursight.s3.bucket_org")}`,`bucket-org-${info.get("foursight.s3.bucket_org")}`]}>
+            <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
+            { !showBuckets ? <>
+                <span onClick={toggleShowBuckets} className="pointer">Buckets {Char.UpArrow}</span>
+            </>:<>
+                <b onClick={toggleShowBuckets} className="pointer">Buckets {Char.DownArrow}</b>
+                 <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",padding:"4pt"}}>
+                    <S3BucketLink name="System" bucket={info.get("foursight.s3.buckets.sys_bucket")} /> 
+                    <S3BucketLink name="Output" bucket={info.get("foursight.s3.buckets.outfile_bucket")} />
+                    <S3BucketLink name="Metadata" bucket={info.get("foursight.s3.buckets.metadata_bucket")} />
+                    <S3BucketLink name="Blobs" bucket={info.get("foursight.s3.buckets.blob_bucket")} />
+                    <S3BucketLink name="Raw" bucket={info.get("foursight.s3.buckets.raw_file_bucket")} />
+                    <S3BucketLink name="Tibanna CWLs" bucket={info.get("foursight.s3.buckets.tibanna_cwls_bucket")} />
+                    <S3BucketLink name="Tibanna Output" bucket={info.get("foursight.s3.buckets.tibanna_output_bucket")} />
+                 </div>
+            </> }
+        </Row>
         <Row title="Bucket Encryption ID" value={info.get("foursight.s3.encrypt_key_id")}
              externalLink={`https://us-east-1.console.aws.amazon.com/kms/home?region=us-east-1#/kms/keys/${info.get("foursight.s3.encrypt_key_id")}`}
              tooltip={[`S3 Bucket Encryption Key ID`, `tooltip-encryption-key-${info.get("foursight.aws_account_number")}`]} showEmpty={true}>
         </Row>
         <Separator />
-        <Row title="AWS Account" value={info.get("foursight.aws_account_number")} bold={true}>
-            { info.get("foursight.aws_account_name") && <>
-                &nbsp;(<span id={`tooltip-alias-${info.get("foursight.aws_account_name")}-${info?.data?.stage }`}>{info.get("foursight.aws_account_name")}</span>)
-                <Tooltip id={`tooltip-alias-${info.get("foursight.aws_account_name")}-${info?.data?.stage }`} text={`AWS Account Alias: ${info.get("foursight.aws_account_name")}`} position="top" />
-            </>}
-        </Row>
+        <Row title="AWS Account" value={info.get("foursight.aws_account_number")} additionalValue={info.get("foursight.aws_account_name")} externalLink={"https://us-east-1.console.aws.amazon.com/billing/home#/account"} bold={true} />
         <Row title="Default Environment" value={info.get("foursight.default_env.name")} additionalValue={info.get("foursight.env_count") ? `${info.get("foursight.env_count")} total` : ""} />
         <Row title="Auth0 Client ID" value={info.get("foursight.auth0_client")} externalLink={`${info.get("foursight.url")}/reactapi/auth0_config`}>
             &nbsp;|&nbsp;
