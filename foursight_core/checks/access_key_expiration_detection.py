@@ -81,9 +81,10 @@ def refresh_access_keys(connection, **kwargs):
         except Exception:
             continue  # user not found
         user_uuid = user['uuid']
+        # Get list of currently defined access keys.
         access_keys = search_metadata(f'/search/?type=AccessKey&description={kp_name}&user.uuid={user_uuid}'
                                       f'&sort=-date_created', key=connection.ff_keys)
-        # generate new key
+        # Now generate a new access key.
         access_key_req = {'user': user_uuid, 'description': kp_name}
         # 2020-06-13/dmichaels: The actual result returned by the portal for this POST is not what
         # seems to be expected; the access_key_id and secret_access_key are not within the @graph
@@ -98,9 +99,11 @@ def refresh_access_keys(connection, **kwargs):
             access_key_id = graph_item.get('access_key_id')
             secret_access_key = graph_item.get('secret_access_key')
         s3_obj = {'secret': secret_access_key, 'key': access_key_id, 'server': s3.url}
+        # Now we store this newly generated access key in a (secure bucket) in S3,
+        # e.g. s3://elasticbeanstalk-fourfront-mastertest-system/access_key_foursight
         s3.s3_put_secret(json.dumps(s3_obj), kp_name)
         full_output['successfully_generated'].append(email)
-        # clear out old keys after generating new one
+        # Delete any old access keys after generating a new one (see VERY IMPORTANT comment above).
         for access_key in access_keys:  # note this search result was computed before the new key was added
             if access_key['status'] != 'deleted':
                 try:
