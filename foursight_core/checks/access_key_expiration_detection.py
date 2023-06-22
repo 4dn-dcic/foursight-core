@@ -41,7 +41,7 @@ def access_key_status(connection, **kwargs):
                          f' the deployment action soon')
         check.brief_output = check.full_output = check.summary
         # This prevents the from running automatically after the check;
-        # though the use is still allowed to run it manually in any case.
+        # though the user is still allowed to run it manually in any case.
         check.prevent_action = True
         return check
     else:
@@ -49,7 +49,7 @@ def access_key_status(connection, **kwargs):
         check.summary = (f'Application access keys expiration is more than 3 weeks away. All good.'
                          f' Expiration date: {expiration_date}')
         # This prevents the from running automatically after the check;
-        # though the use is still allowed to run it manually in any case.
+        # though the user is still allowed to run it manually in any case.
         check.prevent_action = True
         return check
 
@@ -66,6 +66,15 @@ def refresh_access_keys(connection, **kwargs):
     full_output = {
         'successfully_generated': []
     }
+    # N.B. The ordering of the admin_keys (above) in this loop is actually VERY IMPORTANT,
+    # the one for Foursight itself (access_key_foursight) being LAST. This is because unless
+    # this is the case (i.e. access_key_foursight being last), we would loose access to the
+    # very Portal calls we are making below, via the current Foursight access key which is
+    # being refreshed, i.e. where this current Foursight access key is in the process of
+    # being decommissioned (i.e. deleted). FYI this (ordering requirement) would not be
+    # the case if we were to re-initialize the (given) connection (via init_connection)
+    # on each iteration of the loop (but since that is passed it, and since we don't need
+    # to do this, so long as we are careful about the ordering here, we don't do this).
     for email, kp_name in admin_keys:
         try:
             user = get_metadata(f'/users/{email}?datastore=database', key=connection.ff_keys)
