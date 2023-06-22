@@ -17,11 +17,11 @@ Change Log
   to really do this we need similar changes in dcicutils.
 * Miscellaneous minor UI improvements, including:
   * Allow viewing of list of secrets and values (obfuscated if senstive) in Infrastucture page.
-  * Link to Infrastructure page for GAC itemization on accounts page.
-  * Allow accounts file to be uploaded; this now live in, for example:
+  * Allow accounts file to be uploaded; this now lives in, for example:
     s3://cgap-kmp-main-application-cgap-supertest-system/known_accounts
     No longer need to encrypt this file as it resides in a protected area in S3,
     i.e. the same place as the Portal access keys files (e.g. access_key_foursight).
+  * New info and convenience links to associated AWS resources on accounts page.
 
 4.3.0
 =====
