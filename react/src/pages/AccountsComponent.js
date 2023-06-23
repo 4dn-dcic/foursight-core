@@ -9,11 +9,12 @@ import Clipboard from '../utils/Clipboard';
 import { ExternalLink } from '../Components';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
-import Server from '../utils/Server';
 import useFetch from '../hooks/Fetch';
 import useFetching from '../hooks/Fetching';
-import Time from '../utils/Time';
+import { Secrets } from './aws/Secrets';
+import Server from '../utils/Server';
 import Styles from '../Styles';
+import Time from '../utils/Time';
 import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
@@ -155,6 +156,22 @@ const VersionRow = ({ title, version, show = true }) => {
     </tr>
 }
 
+const SecretsDropdown = ({ header, info, name }) => {
+    const [ showIdentity, setShowIdentity ] = useState(false);
+    function toggleShowIdentity() { setShowIdentity(!showIdentity); }
+    return <>
+        { isCurrentAccount(header, info) && <>
+            <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
+            { showIdentity ? <>
+                <b onClick={toggleShowIdentity} className="pointer">Secrets {Char.DownArrow}</b>
+            </>:<>
+                <span onClick={toggleShowIdentity} className="pointer">Secrets <b>{Char.UpArrow}</b></span>
+            </> }
+            { showIdentity && <Secrets name={info.get("foursight.identity")} embedded={true} /> }
+        </> }
+    </>
+}
+
 const Separator = () => {
     return <>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -167,12 +184,12 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
 
     const portalAccessKey = useFetch("/portal_access_key");
     const [ showBuckets, setShowBuckets ] = useState(false);
+    const [ showIdentity, setShowIdentity ] = useState(false);
 
     if (!info || info.loading) return <small><i>Loading ...</i></small>
 
-    function toggleShowBuckets() {
-        setShowBuckets(!showBuckets);
-    }
+    function toggleShowBuckets() { setShowBuckets(!showBuckets); }
+    function toggleShowIdentity() { setShowIdentity(!showIdentity); }
 
     return <table style={{width:"100%"}}><tbody style={{whiteSpace:"nowrap"}}>
         <Row title={info.get("foursight.package") === "foursight" ? "Foursight-Fourfront" : "Foursight-CGAP"} value={info.get("foursight.url")} externalLink={info.get("foursight.url")} small={false}>
@@ -215,18 +232,22 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
         <Row title="SQS" value={info.get("foursight.sqs_url")}
              externalLink={`https://us-east-1.console.aws.amazon.com/sqs/v2/home?region=us-east-1#/queues/${encodeURIComponent(info.get('foursight.sqs_url'))}`} />
         <Separator />
-        { info.get("foursight.identity") == info.get("portal.identity") ? <>
-            <Row title="Identity" value={info.get("foursight.identity")}
-                 externalLink={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("foursight.identity")}`} />
-        </>:<>
-            <Row title="Foursight Identity" value={info.get("foursight.identity")}
-                 externalLink={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("foursight.identity")}`} />
+        <Row title={info.get("foursight.identity") == info.get("portal.identity") ? "Identity" : "Foursight Identity"} value={info.get("foursight.identity")}
+             externalLink={!isCurrentAccount(header, info) ?
+                           `${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("foursight.identity")}` :
+                           `https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=${info.get("foursight.identity")}&region=us-east-1#`}>
+            <SecretsDropdown header={header} info={info} name={info.get("foursight.identity")} embedded={true} />
+        </Row>
+        { info.get("foursight.identity") != info.get("portal.identity") && <>
             <Row title="Portal Identity" value={info.get("portal.identity")}
-                 externalLink={`${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("portal.identity")}`} />
+                 externalLink={!isCurrentAccount(header, info) ?
+                               `${info.get("foursight.url")}/react/${info.get("foursight.default_env.name")}/aws/infrastructure?secrets=${info.get("portal.identity")}` :
+                               `https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=${info.get("portal.identity")}&region=us-east-1#`}>
+                <SecretsDropdown header={header} info={info} name={info.get("portal.identity")} embedded={true} />
+            </Row>
         </> }
         <Row title="Stack Name" value={info.get("foursight.stack")}
              externalLink={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/stackinfo?filteringStatus=active&viewNested=true&stackId=${info.get("foursight.stack")}`} />
-
         <Row title="Global Env Bucket" value={info.get("foursight.s3.global_env_bucket")}
              externalLink={`https://s3.console.aws.amazon.com/s3/buckets/${info.get("foursight.s3.global_env_bucket")}?region=us-east-1&tab=objects`}
              tooltip={[`S3 Bucket Org: ${info.get("foursight.s3.bucket_org")}`,`bucket-org-${info.get("foursight.s3.bucket_org")}`]}>

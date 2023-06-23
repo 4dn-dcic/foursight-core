@@ -11,6 +11,7 @@ import Yaml from '../../utils/Yaml';
 import useSelectedComponents from '../../hooks/SelectedComponents';
 import useKeyedState from '../../hooks/KeyedState';
 import useUrlArgs from '../../hooks/UrlArgs';
+import { SecretNameList, Secrets, SecretView, Gac } from './Secrets';
 
 const tdLabelStyle = {
     color: "var(--box-fg)",
@@ -969,58 +970,6 @@ const StackTemplate = (props) => {
                     </pre>
                 }
             </>}
-        </div>
-    </div>
-}
-
-const SecretNameList = (props) => {
-    const secretNames = useFetch("/aws/secrets", { cache: true });
-    const styleLast = { cursor: "pointer" };
-    const styleNotLast = { ...styleLast, borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt" };
-    return <>
-        <div><b>AWS Secrets</b></div>
-        <div className="box" style={{whiteSpace:"nowrap",marginBottom:"6pt"}}>
-            { secretNames.loading && <StandardSpinner label="Loading secrets" /> }
-            {secretNames.map((secretName, i) => {
-                const toggleSecrets = () => props.toggleSecrets(secretName);
-                const selectedSecrets = () => props.selectedSecrets(secretName);
-                const style = {...(i + 1 < secretNames.length ? styleNotLast : styleLast), ...(selectedSecrets(secretName) ? {fontWeight:"bold"} : {})};
-                return <div key={secretName} style={style} onClick={toggleSecrets}>{secretName}</div>
-            })}
-        </div>
-    </>
-}
-
-const Gac = (props) => {
-    const info = useFetch("/info", { cache: true });
-    return <SecretsView name={info.data?.gac?.name} values={info.data?.gac?.values} hide={props.hide} />
-}
-
-const Secrets = (props) => {
-    const values = useFetch(props.name ? `/aws/secrets/${props.name}` : null, { cache: false });
-    return props.name ? <SecretsView name={props.name} values={values?.data} hide={props.hide} /> : null;
-}
-
-const SecretsView = (props) => {
-    return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
-        <div style={{wordBreak:"break-all"}}><b>Secrets</b>:&nbsp;<b>{props.name}</b>&nbsp;
-            <ExternalLink
-                href={`https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=${props.name}&region=us-east-1`}
-                bold={true}
-                style={{marginLeft:"6pt"}} />
-                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={props.hide}>{Char.X}</b>
-        </div>
-        <div className="box margin">
-            { !props.values ?
-                <div style={{marginTop:"-1pt"}} ><StandardSpinner label="Loading secrets" /></div>
-            : 
-                <ul style={{marginBottom:"1pt"}}>
-                    { Object.keys(props.values)?.map(name => <li key={name}>
-                        <b>{name}</b> <br />
-                        { isRedacted(props.values[name]) ? <span style={{color:"red"}}>REDACTED</span> : props.values[name] }
-                    </li>)}
-                </ul>
-            }
         </div>
     </div>
 }
