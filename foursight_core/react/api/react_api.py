@@ -98,13 +98,16 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     @function_cache
     def _get_known_buckets(self, env: str = None) -> dict:
-        s3 = s3_utils.s3Utils(env=env if env else self._envs.get_default_env())
+        if not env:
+            env = self._envs.get_default_env()
+        s3 = s3_utils.s3Utils(env=env)
         return {
             "blob_bucket": s3.blob_bucket,
             "metadata_bucket": s3.metadata_bucket,
             "outfile_bucket": s3.outfile_bucket,
             "raw_file_bucket": s3.raw_file_bucket,
             "sys_bucket": s3.sys_bucket,
+            "results_bucket": get_foursight_bucket(envname=env, stage=app.core.stage.get_stage()),
             "tibanna_cwls_bucket": s3.tibanna_cwls_bucket,
             "tibanna_output_bucket": s3.tibanna_output_bucket
         }

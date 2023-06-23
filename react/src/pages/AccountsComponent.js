@@ -232,7 +232,7 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
              tooltip={[`S3 Bucket Org: ${info.get("foursight.s3.bucket_org")}`,`bucket-org-${info.get("foursight.s3.bucket_org")}`]}>
             <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
             { !showBuckets ? <>
-                <span onClick={toggleShowBuckets} className="pointer">Buckets {Char.UpArrow}</span>
+                <span onClick={toggleShowBuckets} className="pointer">Buckets <b>{Char.UpArrow}</b></span>
             </>:<>
                 <b onClick={toggleShowBuckets} className="pointer">Buckets {Char.DownArrow}</b>
                  <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",padding:"4pt"}}>
@@ -241,6 +241,7 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                     <S3BucketLink name="Metadata" bucket={info.get("foursight.s3.buckets.metadata_bucket")} />
                     <S3BucketLink name="Blobs" bucket={info.get("foursight.s3.buckets.blob_bucket")} />
                     <S3BucketLink name="Raw" bucket={info.get("foursight.s3.buckets.raw_file_bucket")} />
+                    <S3BucketLink name="Results" bucket={info.get("foursight.s3.buckets.results_bucket")} /> 
                     <S3BucketLink name="Tibanna CWLs" bucket={info.get("foursight.s3.buckets.tibanna_cwls_bucket")} />
                     <S3BucketLink name="Tibanna Output" bucket={info.get("foursight.s3.buckets.tibanna_output_bucket")} />
                  </div>
