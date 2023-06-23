@@ -172,6 +172,30 @@ const SecretsDropdown = ({ header, info, name }) => {
     </>
 }
 
+const KnownEnvsDropdown = ({ header, info }) => {
+    const [ showKnownEnvs, setShowKnownEnvs ] = useState(false);
+    function toggleShowKnownEnvs() { setShowKnownEnvs(!showKnownEnvs); }
+    let knownEnvs = isCurrentAccount(header, info) ? header?.auth?.known_envs?.sort((a, b) => a.full_name > b.full_name ? 1 : -1) : null;
+    return <>
+        { isCurrentAccount(header, info) && <>
+            <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
+            { showKnownEnvs ? <>
+                <b onClick={toggleShowKnownEnvs} className="pointer">Environments {Char.DownArrow}</b>
+            </>:<>
+                <span onClick={toggleShowKnownEnvs} className="pointer">Environments <b>{Char.UpArrow}</b></span>
+            </> }
+            { showKnownEnvs && <>
+                <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",marginBottom:"2pt",padding:"4pt",color:"inherit"}}>
+                    {knownEnvs?.map(env => <>
+                        <b>{env.full_name}</b> (<span id={`tooltip-env-${env.full_name}`}>{env.public_name}</span>)<br />
+                        <Tooltip id={`tooltip-env-${env.full_name}`} text={`Public name of environment.`} position="right" shape="squared" />
+                    </> )}
+                </div>
+            </> }
+        </> }
+    </>
+}
+
 const Separator = () => {
     return <>
         <tr><td style={{paddingTop:"4pt"}} /></tr>
@@ -274,7 +298,9 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
         </Row>
         <Separator />
         <Row title="AWS Account" value={info.get("foursight.aws_account_number")} additionalValue={info.get("foursight.aws_account_name")} externalLink={"https://us-east-1.console.aws.amazon.com/billing/home#/account"} bold={true} />
-        <Row title="Default Environment" value={info.get("foursight.default_env.name")} additionalValue={info.get("foursight.env_count") ? `${info.get("foursight.env_count")} total` : ""} />
+        <Row title="Default Environment" value={info.get("foursight.default_env.full_name")} additionalValue={info.get("foursight.env_count") ? `${info.get("foursight.env_count")} total` : ""}>
+            <KnownEnvsDropdown header={header} info={info} />
+        </Row>
         <Row title="Auth0 Client ID" value={info.get("foursight.auth0_client")} externalLink={`${info.get("foursight.url")}/reactapi/auth0_config`}>
             &nbsp;|&nbsp;
             <a style={{color:"inherit"}} href={`${info.get("portal.url")}/auth0_config`} rel="noreferrer" target="_blank">Portal</a>
