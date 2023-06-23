@@ -120,7 +120,7 @@ const Row = ({ title, value, additionalValue, externalLink, children, tooltip = 
     const tooltipText = Type.IsArray(tooltip) ? tooltip[0] : null;
     const tooltipId = Type.IsArray(tooltip) ? tooltip[1] : null;
     return <tr style={{fontSize:small ? "small" : "inherit"}}>
-        <td style={{paddingRight:"10pt"}}>
+        <td style={{paddingRight:"10pt",verticalAlign:"top"}}>
             {title}:
         </td>
         <td>
@@ -235,7 +235,7 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                 <span onClick={toggleShowBuckets} className="pointer">Buckets <b>{Char.UpArrow}</b></span>
             </>:<>
                 <b onClick={toggleShowBuckets} className="pointer">Buckets {Char.DownArrow}</b>
-                 <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",padding:"4pt"}}>
+                 <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",marginBottom:"2pt",padding:"4pt",color:"inherit"}}>
                     <S3BucketLink name="System" bucket={info.get("foursight.s3.buckets.sys_bucket")} /> 
                     <S3BucketLink name="Output" bucket={info.get("foursight.s3.buckets.outfile_bucket")} />
                     <S3BucketLink name="Metadata" bucket={info.get("foursight.s3.buckets.metadata_bucket")} />
