@@ -647,6 +647,15 @@ class ReactRoutes:
     def reactapi_route_aws_secret_names_noenv() -> Response:  # noqa: implicit @staticmethod via @route
         return app.core.reactapi_aws_secret_names()
 
+    @route("/aws/ecs/clusters", authorize=True)
+    def reactapi_route_aws_ecs_clusters() -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_ecs_clusters()
+
+    @route("/aws/ecs/clusters/{cluster_name}", authorize=True)
+    def reactapi_route_aws_ecs_cluster(cluster_name: str) -> Response:  # noqa: implicit @staticmethod via @route
+        cluster_name = "arn:aws:ecs:us-east-1:643366669028:cluster/c4-ecs-fourfront-webdev-stack-FourfrontWebdev-rSLwZBbdVTtx"
+        return app.core.reactapi_aws_ecs_cluster(cluster_name=cluster_name)
+
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes, serving the HTML/CSS/JavaScript/React files.
     # Note that ALL of these are UNPROTECTED routes.

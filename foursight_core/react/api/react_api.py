@@ -14,6 +14,7 @@ import time
 from typing import Optional
 import urllib.parse
 from itertools import chain
+from dcicutils.ecs_utils import ECSUtils 
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils.env_utils import get_portal_url as env_utils_get_portal_url
 from dcicutils.function_cache_decorator import function_cache, function_cache_info, function_cache_clear
@@ -1648,6 +1649,49 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_aws_secrets(self, secrets_name: str) -> Response:
         return self.create_success_response(Gac.get_secrets(secrets_name))
+
+    def reactapi_aws_ecs_clusters(self) -> Response:
+        ecs = ECSUtils()
+        response = ecs.list_ecs_clusters()
+        return self.create_success_response(response)
+
+    def reactapi_aws_ecs_cluster(self, cluster_name: str) -> Response:
+        # Given cluster_name may be either cluster name or ARN.
+        ecs = ECSUtils()
+        cluster = ecs.client.describe_clusters(clusters=[cluster_name])["clusters"][0]
+        response = {
+            "arn": cluster["clusterArn"],
+            "name": cluster["clusterName"],
+            "status": cluster["status"],
+            "services": []
+        }
+        most_recent_deployment_at = None
+        service_arns = ecs.list_ecs_services(cluster_name=cluster_name)
+        for service_arn in service_arns:
+            service = ecs.client.describe_services(cluster=cluster_name, services=[service_arn])["services"][0]
+            deployments = []
+            most_recent_update_at = None
+            for deployment in service.get("deployments", []):
+                if (not most_recent_update_at or
+                    (deployment.get("updatedAt") and deployment.get("updatedAt") > most_recent_update_at)):
+                    most_recent_update_at = deployment.get("updatedAt")
+                deployments.append({
+                    "id": deployment.get("id"),
+                    "task": deployment.get("taskDefinition"),
+                    "created": convert_utc_datetime_to_useastern_datetime_string(deployment.get("createdAt")),
+                    "updated": convert_utc_datetime_to_useastern_datetime_string(deployment.get("updatedAt"))
+                })
+            if (not most_recent_deployment_at or
+                (most_recent_update_at and most_recent_update_at > most_recent_deployment_at)):
+                most_recent_deployment_at = most_recent_update_at
+            response["services"].append({
+                "arn": service_arn,
+                "name": service.get("serviceName"),
+                "deployments": deployments
+            })
+        if most_recent_deployment_at:
+            response["most_recent_deployed"] = convert_utc_datetime_to_useastern_datetime_string(most_recent_deployment_at)
+        return self.create_success_response(response)
 
     def reactapi_reload_lambda(self, request: dict) -> Response:
         """
