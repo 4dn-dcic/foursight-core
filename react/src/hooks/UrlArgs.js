@@ -12,26 +12,64 @@ const useUrlArgs = () => {
         // accessing window.location.search directly works for now.
         // return urlArgs.get("secrets");
         //
-        return new URLSearchParams(window.location.search).get(arg);
+        const args = new URLSearchParams(window.location.search);
+        return Str.HasValue(arg) ? args.get(arg) : args.toString();
     }
     function setArg(arg, value) {
+        if (!Str.HasValue(arg)) return;
         if (Str.HasValue(value)) {
             setUrlArgs({...urlArgs, [arg]: value});
         }
-        else if (value === undefined) {
+        else {
             unsetArg(arg);
         }
     }
     function unsetArg(arg, value = null) {
+        if (!Str.HasValue(arg)) return;
         if (!Str.HasValue(value) || getArg(arg) == value) {
             delete urlArgs[arg];
             setUrlArgs({...urlArgs});
         }
     }
+    function getListArg(arg) {
+        return urlArgs?.get(arg)?.split(",") || [];
+    }
+    function setListArg(arg, value = null) {
+        if (!Str.HasValue(arg)) return;
+        if (Str.HasValue(value)) {
+            const argValue = getArg(arg)
+            const argValues = argValue?.split(",") || [];
+            if (!argValues.includes(value)) {
+                argValues.push(value);
+                setArg(arg, argValues.join(","));
+            }
+        }
+        else {
+            unsetArg(arg);
+        }
+    }
+    function unsetListArg(arg, value = null) {
+        if (!Str.HasValue(arg)) return;
+        if (Str.HasValue(value)) {
+            const argValue = getArg(arg);
+            const argValues = argValue?.split(",") || [];
+            const argValueIndex = argValues.indexOf(value);
+            if (argValueIndex !== -1) {
+                argValues.splice(argValueIndex, 1);
+                setArg(arg, argValues.join(","));
+            }
+        }
+        else {
+            unsetArg(arg);
+        }
+    }
     return {
-        get: (arg) => getArg(arg),
+        get: (arg = null) => getArg(arg),
         set: (arg, value) => setArg(arg, value),
-        unset: (arg, value = null) => unsetArg(arg, value)
+        unset: (arg, value = null) => unsetArg(arg, value),
+        getList: (arg = null) => getListArg(arg),
+        setList: (arg, value = null) => setListArg(arg, value),
+        unsetList: (arg, value = null) => unsetListArg(arg, value)
     }
 }
 

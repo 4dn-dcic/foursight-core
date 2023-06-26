@@ -654,6 +654,7 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
         delete args.nofetch;
     }
     if (Str.HasValue(args.url) && !args.url.startsWith("https://") && !args.url.startsWith("http://")) {
+        // As a shortcut to define an API URL which should NOT contain the environment start it with a double slash.
         if (args.url.startsWith("//")) {
             args.url = Server.Url(args.url.substring(1), false);
         }

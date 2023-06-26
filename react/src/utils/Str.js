@@ -12,11 +12,30 @@ function FormatBytes(bytes, decimals = 2) {
     return parseFloat(bytes.toFixed(decimals)) + ' ' + units[i];
 }
 
+function FindLongestCommonInitialSubstring(stringArray) {
+    if (!Array.isArray(stringArray) ||(stringArray.length === 0)) {
+		return "";
+	}
+    const first = stringArray[0];
+    let longest = "";
+    for (let i = 0 ; i < first.length ; i++) {
+      const c = first[i];
+      for (let j = 1 ; j < stringArray.length ; j++) {
+        if (stringArray[j][i] !== c) {
+          return longest;
+        }
+      }
+      longest += c;
+    }
+    return longest;
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
     HasValue: IsNonEmptyString,
-    FormatBytes: FormatBytes
+    FormatBytes: FormatBytes,
+	LongestCommonInitialSubstring: FindLongestCommonInitialSubstring
 }; export default exports;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { StandardSpinner } from '../../Spinners';
 import useFetch from '../../hooks/Fetch';
@@ -43,7 +43,8 @@ const InfrastructurePage = () => {
          { type: "security-groups", create: createSecurityGroups },
          { type: "gac",             create: createGac            },
          { type: "secrets",         create: createSecrets        },
-         { type: "ecosystem",       create: createEcosystem      }
+         { type: "ecosystem",       create: createEcosystem      },
+         { type: "ecs-clusters",    create: createEcsClusters    }
     ];
 
     const componentsLeft = useSelectedComponents(componentDefinitions);
@@ -75,7 +76,7 @@ const InfrastructurePage = () => {
 
     function createSecrets(name, key, unselect, args) {
         function hide() {
-            urlArgs.unset("secrets", name);
+            urlArgs.unsetList("secrets", name);
             return unselect();
         }
         return <Secrets name={name} hide={hide} />;
@@ -88,6 +89,11 @@ const InfrastructurePage = () => {
     function createStack(name, key, unselect, args) {
         const { keyedState } = args;
         return <Stack stackName={name} keyedState={keyedState.keyed(key)} hide={unselect} />;
+    }
+
+    function createEcsClusters(name, key, unselect, args) {
+        const { keyedState } = args;
+        return <EcsClusters keyedState={keyedState.keyed(key)} hide={unselect} />;
     }
 
     const selectedVpcs           = () => componentsLeft.selected("vpcs");
@@ -112,16 +118,25 @@ const InfrastructurePage = () => {
     const toggleSecurityGroups   = () => componentsRight.toggle("security-groups");
 
     const selectedSecrets        = (secretName) => componentsLeft.selected("secrets", secretName);
-    const toggleSecrets          = (secretName) => urlArgs.set("secrets", componentsLeft.toggle("secrets", secretName) ? secretName : undefined);
+    const toggleSecrets          = (secretName) => componentsLeft.toggle("secrets", secretName) ? urlArgs.setList("secrets", secretName) : urlArgs.unsetList("secrets", secretName);
+    const selectSecrets          = (secretName) => { componentsLeft.select("secrets", secretName) ; urlArgs.setList("secrets", secretName) };
+
+    const selectedEcsClusters    = () => componentsLeft.selected("ecs-clusters");
+    const toggleEcsClusters      = () => componentsLeft.toggle("ecs-clusters");
 
     useEffect(() => {
         toggleVpcs();
         toggleEcosystem();
-        toggleSecrets(urlArgs.get("secrets"));
+        for (let secretsName of urlArgs.getList("secrets")) {
+            selectSecrets(secretsName);
+        }
     }, []);
 
     return <table><tbody><tr>
         <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
+            <ConfigList
+                showGac={selectedGac} toggleGac={toggleGac}
+                showEcosystem={selectedEcosystem} toggleEcosystem={toggleEcosystem} />
             <NetworkList
                 keyedState={keyedState}
                 showVpcs={selectedVpcs} toggleVpcs={toggleVpcs}
@@ -129,9 +144,9 @@ const InfrastructurePage = () => {
                 showSubnetsPrivate={selectedSubnetsPrivate} toggleSubnetsPrivate={toggleSubnetsPrivate}
                 showSecurityGroups={selectedSecurityGroups} toggleSecurityGroups={toggleSecurityGroups}
             />
-            <ConfigList
-                showGac={selectedGac} toggleGac={toggleGac}
-                showEcosystem={selectedEcosystem} toggleEcosystem={toggleEcosystem} />
+            <EcsList
+                showEcsClusters={selectedEcsClusters} toggleEcsClusters={toggleEcsClusters}
+            />
             <SecretNameList
                 toggleSecrets={toggleSecrets}
                 selectedSecrets={selectedSecrets}
@@ -164,6 +179,16 @@ const NetworkList = (props) => {
             <div className="pointer" style={{fontWeight:showSubnetsPublic() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleSubnetsPublic}>Public Subnets</div>
             <div className="pointer" style={{fontWeight:showSubnetsPrivate() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleSubnetsPrivate}>Private Subnets</div>
             <div className="pointer" style={{fontWeight:showSecurityGroups() ? "bold" : "normal"}} onClick={toggleSecurityGroups}>Security Groups</div>
+        </div>
+    </>
+}
+
+const EcsList = (props) => {
+    const { showEcsClusters, toggleEcsClusters } = props;
+    return <>
+        <div><b>AWS Elastic Container Service</b></div>
+        <div className="box margin" style={{width:"100%",marginBottom:"6pt"}}>
+            <div className="pointer" style={{fontWeight:showEcsClusters() ? "bold" : "normal"}} onClick={toggleEcsClusters}>Clusters</div>
         </div>
     </>
 }
@@ -219,7 +244,7 @@ const Vpc = (props) => {
     const toggleTags           = () => toggleShow("showTags");
 
     return <>
-        <div className="box margin" style={{marginBottom:"8pt",minWidth:"350pt",maxWidth:"500pt"}}>
+        <div className="box margin" style={{marginBottom:"8pt",width:"100%",minWidth:"350pt",maxWidth:"800pt"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <b>VPC</b>: <b style={{color:"black"}}>{vpc.name}</b>
                 <ExternalLink
@@ -451,7 +476,7 @@ const SecurityGroup = (props) => {
     const toggleTags          = () => toggleShow("showTags");
 
     return <>
-        <div className="box margin lighten" style={{width:"100%",maxWidth:"500pt"}}>
+        <div className="box margin lighten" style={{width:"100%",maxWidth:"800pt"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <b>Security Group</b>: <b style={{color:"black"}}>{securityGroup?.name}</b>
                 <ExternalLink
@@ -725,7 +750,7 @@ const Stack = (props) => {
     const isShowTemplate   = () => isShow    ("showTemplate");
     const toggleTemplate   = () => toggleShow("showTemplate");
 
-    return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
+    return <div style={{width:"100%",maxWidth:"800pt",marginBottom:"8pt"}}>
         <div>
             <b>AWS Stack: {stackName}</b>
             <ExternalLink
@@ -977,7 +1002,7 @@ const StackTemplate = (props) => {
 const Ecosystem = (props) => {
     const { hide } = props;
     const info = useFetch("/info", { cache: true });
-    return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
+    return <div style={{width:"100%",maxWidth:"800pt",marginBottom:"8pt"}}>
         <div>
             <b>Ecosystem</b>:&nbsp;<b>{info.data?.buckets?.env}</b>
             <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
@@ -986,6 +1011,62 @@ const Ecosystem = (props) => {
             { info.loading && <StandardSpinner label="Loading Ecosystem" /> }
             {!info.loading && Yaml.Format(info.data?.buckets?.ecosystem) }
         </pre>
+    </div>
+}
+
+const EcsClusterDetail = (props) => {
+    const cluster = useFetch(`//aws/ecs/clusters/${encodeURIComponent(props.cluster)}`);
+    return <div className="box" style={{background:"inherit",marginTop:"2pt",marginBottom:"3pt"}}>
+		<table><tbody>
+		<tr><td><b>Name</b>:&nbsp;</td><td>{cluster.data?.name}</td></tr>
+        <tr><td><small><b>ARN</b></small>:&nbsp;</td><td><small>{cluster.data?.arn}</small></td></tr>
+        <tr><td><small><b>Deployed</b></small>:&nbsp;</td><td><small>{cluster.data?.most_recent_deployed}</small></td></tr>
+		</tbody></table>
+    </div>
+}
+
+const EcsCluster = (props) => {
+
+    const [ state, setState ] = useKeyedState(props.keyedState);
+    const isShow = (property) => state[property];
+    const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
+
+    const toggleShowDetail = () => toggleShow("detail");
+    const isShowDetail = () => isShow("detail");
+
+    return <div>
+        { isShowDetail() ? <>
+            <b onClick={toggleShowDetail} className="pointer">{props.commonInitialSubstring ? props.cluster?.replace(props.commonInitialSubstring, "") : props.cluster}</b>
+            <EcsClusterDetail
+				cluster={props.cluster}
+				commonInitialSubstring={props.commonInitialSubstring}
+				keyedState={props.keyedState} />
+        </>:<>
+            <span onClick={toggleShowDetail} className="pointer">{props.cluster}</span>
+        </> }
+    </div>
+}
+
+const EcsClusters = (props) => {
+
+    const { keyedState, hide } = props;
+    const clusters = useFetch("//aws/ecs/clusters");
+
+	const commonInitialSubstring = Str.LongestCommonInitialSubstring(clusters.data);
+
+    return <div style={{marginBottom:"8pt"}}>
+        <div>
+           <b>AWS ESC Clusters</b>&nbsp;&nbsp;{!clusters.loading && <small>({clusters?.length})</small>}
+           <div style={{float:"right",marginRight:"3pt"}}>
+                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
+           </div>
+        </div>
+        <div style={{width:"100%"}} className="box lighten nomargin">
+            { clusters.loading && <div><StandardSpinner label="Loading ECS clusters" /></div> }
+            { clusters.map(cluster => <div key={cluster}>
+                <EcsCluster cluster={cluster} commonInitialSubstring={commonInitialSubstring} keyedState={keyedState?.keyed(cluster)} />
+            </div>)}
+        </div>
     </div>
 }
 

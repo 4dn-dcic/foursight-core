@@ -653,7 +653,6 @@ class ReactRoutes:
 
     @route("/aws/ecs/clusters/{cluster_name}", authorize=True)
     def reactapi_route_aws_ecs_cluster(cluster_name: str) -> Response:  # noqa: implicit @staticmethod via @route
-        cluster_name = "arn:aws:ecs:us-east-1:643366669028:cluster/c4-ecs-fourfront-webdev-stack-FourfrontWebdev-rSLwZBbdVTtx"
         return app.core.reactapi_aws_ecs_cluster(cluster_name=cluster_name)
 
     # ----------------------------------------------------------------------------------------------

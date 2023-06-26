@@ -1652,11 +1652,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_aws_ecs_clusters(self) -> Response:
         ecs = ECSUtils()
-        response = ecs.list_ecs_clusters()
-        return self.create_success_response(response)
+        clusters = ecs.list_ecs_clusters()
+        clusters.sort()
+        return self.create_success_response(clusters)
 
     def reactapi_aws_ecs_cluster(self, cluster_name: str) -> Response:
         # Given cluster_name may be either cluster name or ARN.
+        # We URL-decode because it is not uncommon for the cluster name to contain a slash.
+        cluster_name = urllib.parse.unquote(cluster_name)
         ecs = ECSUtils()
         cluster = ecs.client.describe_clusters(clusters=[cluster_name])["clusters"][0]
         response = {
