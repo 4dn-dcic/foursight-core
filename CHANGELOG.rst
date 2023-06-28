@@ -22,7 +22,7 @@ Change Log
     No longer need to encrypt this file as it resides in a protected area in S3,
     i.e. the same place as the Portal access keys files (e.g. access_key_foursight).
   * New info and convenience links to associated AWS resources on accounts page.
-  * Allow specifying UUID when creating a new user.
+  * Allow specifying UUID when creating a new user (C4-1050).
   * Started adding ECS info to Infrastructure page.
 
 4.3.0
