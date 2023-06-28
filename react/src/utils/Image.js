@@ -98,6 +98,10 @@ function GetCognitoLogoImage() {
     return "https://miro.medium.com/max/600/1*aWDf6UyKfk7sdSMiq9sGJA.png";
 }
 
+function GetEditIcon() {
+    return "https://cdn-icons-png.flaticon.com/512/32/32355.png";
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
@@ -113,6 +117,7 @@ const exports = {
     Harvard:                   GetHarvardImage,
     History:                   GetHistoryImage,
     HierarchyIcon:             GetHierarchyIcon,
+    EditIcon:                  GetEditIcon,
     ElasticsearchLogo:         GetElasticsearchLogoImage,
     FoursightCgapFavicon:      GetFoursightCgapFaviconImage,
     FoursightFourfrontFavicon: GetFoursightFourfrontFaviconImage,

@@ -13,7 +13,7 @@ function FormatBytes(bytes, decimals = 2) {
 }
 
 function FindLongestCommonInitialSubstring(stringArray) {
-    if (!Array.isArray(stringArray) ||(stringArray.length === 0)) {
+    if (!Array.isArray(stringArray) || (stringArray.length <= 1)) {
 		return "";
 	}
     const first = stringArray[0];

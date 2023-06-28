@@ -50,7 +50,7 @@ const UsersPage = () => {
         { label: "Created", key: "date_created" }
     ];
 
-    const tdStyle = { verticalAlign: "top", paddingRight: "1pt", paddingTop: "4pt", paddingBottom: "8pt" };
+    const tdStyle = { verticalAlign: "top", paddingRight: "6pt", paddingTop: "4pt", paddingBottom: "8pt" };
 
     function toggleSearch() {
         if (showSearch) {
@@ -174,15 +174,15 @@ const UsersPage = () => {
                                 <span id={`tooltip-users-status-${user.status}`}>{userMetadata.statusTitle(user.status) || Char.EmptySet}</span>
                                 <Tooltip id={`tooltip-users-status-${user.status}`} position="bottom" size="small" text={`Status: ${user.status}`} />
                             </td>
-                            <td style={tdStyle}>
+                            <td style={{...tdStyle,whiteSpace:"nowrap"}}>
                                 {user.updated ? Time.FormatDate(user.updated) : Time.FormatDate(user.created)} <br />
                                 <small>{user.updated ? Time.FormatTime(user.updated) : Time.FormatTime(user.created)}</small>
                             </td>
-                            <td style={tdStyle}>
+                            <td style={{...tdStyle,whiteSpace:"nowrap"}}>
                                 {Time.FormatDate(user.created)} <br />
                                 <small>{Time.FormatTime(user.created)}</small>
                             </td>
-                            <td style={tdStyle}>
+                            <td style={{...tdStyle,whiteSpace:"nowrap"}}>
                                 &nbsp;&nbsp;<button><Link to={`/users/edit/${user.uuid}`}>Edit</Link></button>
                             </td>
                         </tr>

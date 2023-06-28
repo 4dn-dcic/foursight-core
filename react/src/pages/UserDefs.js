@@ -69,7 +69,9 @@ const _UserInputs = [
     {
         name: "uuid",
         label: "UUID",
-        readonly: true
+        readonly: true,
+        readonlyOverridableOnCreate: true,
+        readonlyOverridableOnCreateMessage: "Warning: Only set UUID if you know what you are doing."
     }
 ];
 
@@ -80,7 +82,7 @@ const useUserInputs = () => {
                                                (input.name !== "role") &&
                                                (input.name !== "institution"))
                  : _UserInputs;
-    return useState(Json.Clone(Json.Clone(inputs)));
+    return useState(Json.Clone(inputs));
 }
 
 const PrincipalInvestigatorLine = (props) => {

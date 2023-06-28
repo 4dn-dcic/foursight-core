@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { StandardSpinner } from '../Spinners';
 import useFetch from '../hooks/Fetch';
 import Char from '../utils/Char';
+import Image from '../utils/Image';
+import Str from '../utils/Str';
+import Type from '../utils/Type';
 import Tooltip from '../components/Tooltip';
 import Uuid from 'react-uuid';
 
@@ -35,6 +38,41 @@ const DynamicSelect = (props) => {
         </select>
         { props.subComponent && <>
             {props.subComponent(selected)}
+        </> }
+    </>
+}
+
+const InputLine = (props) => {
+    const input = props.input;
+    const valueOf = props.valueOf;
+    const handleChange = props.handleChange;
+    const isDisabled = props.isDisabled;
+    let [ readonly, setReadonly ] = useState(input.readonly);
+    return <>
+        <input
+            className="input icon-rtl"
+            placeholder={input.placeholder || input.label}
+            id={input.name}
+            defaultValue={valueOf(input)}
+            onChange={handleChange}
+            readOnly={readonly}
+            disabled={isDisabled()}
+            autoFocus={input.focus ? true : false} />
+        {  (input.readonlyOverridableOnCreate && props.isCreate) && <>
+            <small id={`tooltip-${input.name}`} className="pointer">&nbsp;&nbsp;
+                { readonly ? <>
+                    <span onClick={() => setReadonly(false)}><img src={Image.EditIcon()} style={{height:"22px",marginBottom:"6px"}} /></span>
+                </>:<>
+                    <span onClick={() => setReadonly(true)}><img src={Image.EditIcon()} style={{height:"22px",marginBottom:"6px",marginRight:"-8px"}} /></span>
+                &nbsp;&nbsp;</> }
+            </small>
+            <Tooltip id={`tooltip-${input.name}`} position="top" text={`Click to ${readonly ? "allow" : "disallow"} setting of this field.`} />
+        { (input.readonlyOverridableOnCreate && !readonly && input.readonlyOverridableOnCreateMessage) && <>
+            <br />
+            <small><b style={{color:"red"}}>
+                {input.readonlyOverridableOnCreateMessage}
+            </b></small>
+        </> }
         </> }
     </>
 }
@@ -211,8 +249,8 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
     function gatherCurrentInputValues() {
         const values = {}
         for (const input of inputs) {
-            if (!input.readonly) {
-                let value = document.getElementById(input.name).value;
+            let value = document.getElementById(input.name).value;
+            if (!input.readonly || (input.readonlyOverridableOnCreate && Str.HasValue(value))) {
                 if (input.type === "boolean") {
                     value = (value.toString().toLowerCase() === "true") ? true : false;
                 }
@@ -307,6 +345,8 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                                         reset={reset}
                                     />
                                 </>:<>
+                                    <InputLine input={input} valueOf={valueOf} handleChange={handleChange} isDisabled={isDisabled} isCreate={!Type.IsNull(onCreate)} />
+{/*
                                     <input
                                         className="input icon-rtl"
                                         placeholder={input.placeholder || input.label}
@@ -316,6 +356,7 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                                         readOnly={input.readonly}
                                         disabled={isDisabled()}
                                         autoFocus={input.focus ? true : false} />
+*/}
                                 </>}
                             </>}
                             { input.required &&

@@ -12,6 +12,7 @@ import useSelectedComponents from '../../hooks/SelectedComponents';
 import useKeyedState from '../../hooks/KeyedState';
 import useUrlArgs from '../../hooks/UrlArgs';
 import { SecretNameList, Secrets, SecretView, Gac } from './Secrets';
+import { HorizontalLine } from '../../Components';
 
 const tdLabelStyle = {
     color: "var(--box-fg)",
@@ -198,8 +199,9 @@ const ConfigList = (props) => {
     return <>
         <div><b>AWS Configuration</b></div>
         <div className="box margin" style={{width:"100%",marginBottom:"6pt"}}>
-            <div className="pointer" style={{fontWeight:showGac() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleGac}>Global Application Configuration</div>
             <div className="pointer" style={{fontWeight:showEcosystem() ? "bold" : "normal"}} onClick={toggleEcosystem}>Ecosystem Definition</div>
+			<HorizontalLine top="3pt" bottom="3pt" />
+            <div className="pointer" style={{fontWeight:showGac() ? "bold" : "normal"}} onClick={toggleGac}>Global Application Configuration</div>
         </div>
     </>
 }
@@ -210,7 +212,7 @@ const Vpcs = (props) => {
     const all = useSearchParams()[0]?.get("all")?.toLowerCase() === "true";
     const vpcs = useFetch(`/aws/vpcs${all ? "/all" : ""}`, { cache: true });
 
-    return <div style={{marginBottom:"8pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",marginBottom:"8pt"}}>
         <div>
            <b>AWS VPCs</b>&nbsp;&nbsp;{!vpcs.loading && <small>({vpcs?.length})</small>}
            <div style={{float:"right",marginRight:"3pt"}}>
@@ -244,7 +246,7 @@ const Vpc = (props) => {
     const toggleTags           = () => toggleShow("showTags");
 
     return <>
-        <div className="box margin" style={{marginBottom:"8pt",width:"100%",minWidth:"350pt",maxWidth:"800pt"}}>
+        <div className="box margin" style={{marginBottom:"8pt",width:"100%",minWidth:"350pt",maxWidth:"100%"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <b>VPC</b>: <b style={{color:"black"}}>{vpc.name}</b>
                 <ExternalLink
@@ -443,7 +445,7 @@ const SecurityGroups = (props) => {
     const all = useSearchParams()[0].get("all")?.toLowerCase() === "true";
     const args = vpcId ? `?vpc=${vpcId}` : ""
     const securityGroups = useFetch(`/aws/security_groups${all ? "/all" : ""}${args}`, { cache: true });
-    return <div style={{marginBottom:"8pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",marginBottom:"8pt"}}>
         { !notitle &&
             <div>
                 <b>AWS Security Groups</b>&nbsp;&nbsp;<small>({securityGroups?.length})</small>
@@ -476,7 +478,7 @@ const SecurityGroup = (props) => {
     const toggleTags          = () => toggleShow("showTags");
 
     return <>
-        <div className="box margin lighten" style={{width:"100%",maxWidth:"800pt"}}>
+        <div className="box margin lighten" style={{width:"100%",maxWidth:"100%"}}>
             <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
                 <b>Security Group</b>: <b style={{color:"black"}}>{securityGroup?.name}</b>
                 <ExternalLink
@@ -691,7 +693,7 @@ const SecurityGroupRule = (props) => {
 }
 
 const Tags = (props) => {
-    return <div style={{maxWidth:"480pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%"}}>
         <div className="box lighten">
             { !props.tags ? <>
                 <li>No tags.</li>
@@ -750,9 +752,10 @@ const Stack = (props) => {
     const isShowTemplate   = () => isShow    ("showTemplate");
     const toggleTemplate   = () => toggleShow("showTemplate");
 
-    return <div style={{width:"100%",maxWidth:"800pt",marginBottom:"8pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",marginBottom:"8pt"}}> {/* xyzzy */}
         <div>
             <b>AWS Stack: {stackName}</b>
+            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
             <ExternalLink
                 href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/stackinfo?filteringStatus=active&filteringText=&viewNested=true&stackId=${stack.data?.id}`}
                 bold={true}
@@ -766,7 +769,7 @@ const Stack = (props) => {
                 <tr>
                     <td style={tdLabelStyle}>Name:</td>
                     <td style={{...tdContentStyle,wordBreak:"break-all"}}>
-                        <b style={{float:"right",cursor:"pointer",marginTop:"-2pt"}} onClick={hide}>{Char.X}</b>
+                        {/* <b style={{float:"right",cursor:"pointer",marginTop:"-2pt"}} onClick={hide}>{Char.X}</b> */}
                         {stackName}
                     </td>
                 </tr>
@@ -896,7 +899,7 @@ const Stack = (props) => {
 
 const StackOutputs = (props) => {
     const outputs = useFetch(`/aws/stacks/${props.stackName}/outputs`, { cache: true });
-    return <div style={{maxWidth:"480pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",wordBreak:"break-all"}}>
         <div className="box lighten">
             { outputs.empty ? <>
                 { outputs.loading ? <>
@@ -924,7 +927,7 @@ const StackOutputs = (props) => {
 
 const StackParameters = (props) => {
     const parameters = useFetch(`/aws/stacks/${props.stackName}/parameters`, { cache: true });
-    return <div style={{maxWidth:"480pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",wordBreak:"break-all"}}>
         <div className="box lighten">
             { parameters.empty ? <>
                 { parameters.loading ? <>
@@ -952,7 +955,7 @@ const StackParameters = (props) => {
 
 const StackResources = (props) => {
     const resources = useFetch(`/aws/stacks/${props.stackName}/resources`, { cache: true });
-    return <div style={{maxWidth:"480pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",wordBreak:"break-all"}}>
         <div className="box lighten">
             { resources.empty ? <>
                 { resources.loading ? <>
@@ -980,7 +983,7 @@ const StackResources = (props) => {
 
 const StackTemplate = (props) => {
     const template = useFetch(`/aws/stacks/${props.stackName}/template`, { cache: true });
-    return <div style={{maxWidth:"480pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%"}}>
         <div className="box lighten nomargin">
             { template.empty ? <>
                 { template.loading ? <>
@@ -990,7 +993,7 @@ const StackTemplate = (props) => {
                 </>}
             </>:<>
                 { template.data &&
-                    <pre style={{border:"0",background:"var(--box-bg-lighten)",marginLeft:"-6pt",marginTop:"-6pt",marginBottom:"-6pt"}}>
+                    <pre style={{width:"100%",maxWidth:"100%",border:"0",background:"var(--box-bg-lighten)",marginLeft:"-6pt",marginTop:"-6pt",marginBottom:"-6pt"}}>
                         {Type.IsObject(template.data) ? Yaml.Format(template.data) : template.data}
                     </pre>
                 }
@@ -1002,7 +1005,7 @@ const StackTemplate = (props) => {
 const Ecosystem = (props) => {
     const { hide } = props;
     const info = useFetch("/info", { cache: true });
-    return <div style={{width:"100%",maxWidth:"800pt",marginBottom:"8pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",marginBottom:"8pt"}}>
         <div>
             <b>Ecosystem</b>:&nbsp;<b>{info.data?.buckets?.env}</b>
             <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
@@ -1015,16 +1018,19 @@ const Ecosystem = (props) => {
 }
 
 const EcsClusterDetail = (props) => {
-    const cluster = useFetch(`//aws/ecs/clusters/${encodeURIComponent(props.cluster)}`);
+    const cluster = useFetch(`//aws/ecs/clusters/${encodeURIComponent(props.cluster)}`, { cache: true });
     return <div className="box" style={{background:"inherit",marginTop:"2pt",marginBottom:"3pt"}}>
-		<table><tbody>
-		<tr><td><b>Name</b>:&nbsp;</td><td>{cluster.data?.name}</td></tr>
-        <tr><td><small><b>ARN</b></small>:&nbsp;</td><td><small>{cluster.data?.arn}</small></td></tr>
-        <tr><td><small><b>Deployed</b></small>:&nbsp;</td><td><small>{cluster.data?.most_recent_deployed}</small></td></tr>
-		</tbody></table>
+        <small>
+        { props.clusterDisplayName != cluster.data?.name && <>
+            <b>Name</b>: {cluster.data?.name} <br />
+        </> }
+        <b>ARN</b>: {cluster.data?.arn} <br />
+        <b>Deployed</b>: {cluster.data?.most_recent_deployed}
+        </small>
     </div>
 }
 
+// IN PROGESS ...
 const EcsCluster = (props) => {
 
     const [ state, setState ] = useKeyedState(props.keyedState);
@@ -1034,15 +1040,19 @@ const EcsCluster = (props) => {
     const toggleShowDetail = () => toggleShow("detail");
     const isShowDetail = () => isShow("detail");
 
+    const clusterDisplayName = props.commonInitialSubstring ? props.cluster?.replace(props.commonInitialSubstring, "") : props.cluster
+
     return <div>
+        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{clusterDisplayName}</span>
+        <ExternalLink
+            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${clusterDisplayName}/services?region=us-east-1`}
+            style={{marginLeft:"6pt"}} />
         { isShowDetail() ? <>
-            <b onClick={toggleShowDetail} className="pointer">{props.commonInitialSubstring ? props.cluster?.replace(props.commonInitialSubstring, "") : props.cluster}</b>
             <EcsClusterDetail
-				cluster={props.cluster}
-				commonInitialSubstring={props.commonInitialSubstring}
-				keyedState={props.keyedState} />
+                cluster={props.cluster}
+                clusterDisplayName={clusterDisplayName}
+                keyedState={props.keyedState} />
         </>:<>
-            <span onClick={toggleShowDetail} className="pointer">{props.cluster}</span>
         </> }
     </div>
 }
@@ -1052,19 +1062,20 @@ const EcsClusters = (props) => {
     const { keyedState, hide } = props;
     const clusters = useFetch("//aws/ecs/clusters");
 
-	const commonInitialSubstring = Str.LongestCommonInitialSubstring(clusters.data);
+    const commonInitialSubstring = Str.LongestCommonInitialSubstring(clusters.data);
 
     return <div style={{marginBottom:"8pt"}}>
         <div>
            <b>AWS ESC Clusters</b>&nbsp;&nbsp;{!clusters.loading && <small>({clusters?.length})</small>}
-           <div style={{float:"right",marginRight:"3pt"}}>
-                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
-           </div>
+            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
         </div>
         <div style={{width:"100%"}} className="box lighten nomargin">
             { clusters.loading && <div><StandardSpinner label="Loading ECS clusters" /></div> }
-            { clusters.map(cluster => <div key={cluster}>
+            { clusters.map((cluster, index) => <div key={cluster}>
                 <EcsCluster cluster={cluster} commonInitialSubstring={commonInitialSubstring} keyedState={keyedState?.keyed(cluster)} />
+				{ index < clusters.length - 1 &&
+					<HorizontalLine top="2pt" bottom="2pt" dotted={true} />
+				}
             </div>)}
         </div>
     </div>
