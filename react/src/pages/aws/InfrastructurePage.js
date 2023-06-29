@@ -5,6 +5,7 @@ import { StandardSpinner } from '../../Spinners';
 import useFetch from '../../hooks/Fetch';
 import { ExternalLink } from '../../Components';
 import Char from '../../utils/Char';
+import Json from '../../utils/Json';
 import Type from '../../utils/Type';
 import Str from '../../utils/Str';
 import Yaml from '../../utils/Yaml';
@@ -1017,16 +1018,52 @@ const Ecosystem = (props) => {
     </div>
 }
 
+const JsonToggleDiv = (props) => {
+    const [ showJson, setShowJson ] = useState(false);
+    const toggleJson = () => setShowJson(!showJson);
+
+    return <>
+        <b style={{fontFamily:"monospace",fontSize:"10pt",border:"1pt black solid",borderRadius:"3px",padding:"0px 2px 2px 2px",marginTop:"-1px",marginRight:"-4px",float:"right",cursor:"pointer"}} onClick={toggleJson}>&#x7B;&#x7D;</b>
+        {props.children}
+        { showJson && <>
+            <HorizontalLine top="4pt" bottom="4pt" dotted={true} />
+            <div style={{whiteSpace:"pre",fontFamily:"monospace",background:"inherit",width:"100%",maxWidth:"400pt",padding:"0",border:"0"}}>
+                { props.yaml ? <>
+                    {Yaml.Format(props.data)}
+                </>:<>
+                    {Json.Format(props.data)}
+                </> }
+            </div>
+        </> }
+    </>
+    return <>
+        <b style={{fontFamily:"monospace",fontSize:"10pt",border:"1pt black solid",borderRadius:"2px",padding:"0px 2px 2px 2px",float:"right",cursor:"pointer"}} onClick={toggleJson}>&#x7B;&#x7D;</b>
+        { showJson ? <>
+            <pre style={{background:"inherit", width:"100%", maxWidth:"765pt", overflowX:"auto", padding:"0", border:"0"}}>
+                { props.yaml ? <>
+                    {Yaml.Format(props.data)}
+                </>:<>
+                    {Json.Format(props.data)}
+                </> }
+            </pre>
+        </>:<>
+            {props.children}
+        </> }
+    </>
+}
+
 const EcsClusterDetail = (props) => {
     const cluster = useFetch(`//aws/ecs/clusters/${encodeURIComponent(props.cluster)}`, { cache: true });
-    return <div className="box" style={{background:"inherit",marginTop:"2pt",marginBottom:"3pt"}}>
-        <small>
-        { props.clusterDisplayName != cluster.data?.name && <>
-            <b>Name</b>: {cluster.data?.name} <br />
-        </> }
-        <b>ARN</b>: {cluster.data?.arn} <br />
-        <b>Deployed</b>: {cluster.data?.most_recent_deployed}
-        </small>
+    return <div className="box" style={{background:"inherit",marginTop:"2pt",marginBottom:"3pt",overflow:"auto"}}>
+        <JsonToggleDiv data={cluster.data} yaml={true}>
+            <small>
+                { props.clusterDisplayName != cluster.data?.name && <>
+                    <b>Name</b>: {cluster.data?.name} <br />
+                </> }
+                <b>ARN</b>: {cluster.data?.arn} <br />
+                <b>Deployed</b>: {cluster.data?.most_recent_deployed}
+            </small>
+        </JsonToggleDiv>
     </div>
 }
 
@@ -1043,7 +1080,7 @@ const EcsCluster = (props) => {
     const clusterDisplayName = props.commonInitialSubstring ? props.cluster?.replace(props.commonInitialSubstring, "") : props.cluster
 
     return <div>
-        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{clusterDisplayName}</span>
+        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{clusterDisplayName.substring(1,55)}</span>
         <ExternalLink
             href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${clusterDisplayName}/services?region=us-east-1`}
             style={{marginLeft:"6pt"}} />

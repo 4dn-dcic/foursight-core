@@ -376,7 +376,9 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                         </td>
                     </>:<>
                         <td style={{verticalAlign:"bottom",fontSize:"large"}}>
-                            <span style={{padding:"1px 5px", borderRadius:"4px", border:"1px solid gray", cursor:loading ? "not-allowed" : "pointer"}} onClick={handleRefresh}>{Char.Refresh}</span><>&nbsp;</>
+                            { !onCreate && <>
+                                <span style={{padding:"1px 5px", borderRadius:"4px", border:"1px solid gray", cursor:loading ? "not-allowed" : "pointer"}} onClick={handleRefresh}>{Char.Refresh}</span><>&nbsp;</>
+                            </> }
                         </td>
                         <td align="right" style={{paddingTop:"0.8em"}}>
                             { isLoading() ? <>

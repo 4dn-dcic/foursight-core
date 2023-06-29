@@ -516,14 +516,14 @@ tox = ["tox"]
 
 [[package]]
 name = "dcicutils"
-version = "7.5.1"
+version = "7.6.0.1b4"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 category = "main"
 optional = false
 python-versions = ">=3.7,<3.10"
 files = [
-    {file = "dcicutils-7.5.1-py3-none-any.whl", hash = "sha256:5c77b00116c3d1f9f413b30aa66865a9c50d88d02ea20349a4bb25e1e45eea85"},
-    {file = "dcicutils-7.5.1.tar.gz", hash = "sha256:c4211161f48ce727e9cd3e2b52f66336949c5a6ce6d518c908dfee9153f7b121"},
+    {file = "dcicutils-7.6.0.1b4-py3-none-any.whl", hash = "sha256:9b81ca9ca3196ba1eff67c24d44b8dfe158f2a9542f752e281b0e4dbbb3b32d0"},
+    {file = "dcicutils-7.6.0.1b4.tar.gz", hash = "sha256:1c883c0060bc9fdac56d26a15d1493afa0bd4172e81e35c06ec003da8a08ae04"},
 ]
 
 [package.dependencies]
@@ -1847,14 +1847,14 @@ testing = ["coverage", "pytest (>=3.1.0)", "pytest-cov", "pytest-xdist"]
 
 [[package]]
 name = "websocket-client"
-version = "1.5.3"
+version = "1.6.1"
 description = "WebSocket client for Python with low level API options"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "websocket-client-1.5.3.tar.gz", hash = "sha256:b96f3bce3e54e3486ebe6504bc22bd4c140392bd2eb71764db29be8f2639aa65"},
-    {file = "websocket_client-1.5.3-py3-none-any.whl", hash = "sha256:3566f8467cd350874c4913816355642a4942f6c1ed1e9406e3d42fae6d6c072a"},
+    {file = "websocket-client-1.6.1.tar.gz", hash = "sha256:c951af98631d24f8df89ab1019fc365f2227c0892f12fd150e935607c79dd0dd"},
+    {file = "websocket_client-1.6.1-py3-none-any.whl", hash = "sha256:f1f9f2ad5291f0225a49efad77abf9e700b6fef553900623060dad6e26503b9d"},
 ]
 
 [package.extras]
@@ -1918,4 +1918,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7,<3.10"
-content-hash = "6597c3a31ec52557801da7b32cbe070076bba973ee438f2eda7ae8e29fb824d1"
+content-hash = "e30fac066113582ffc0806ed6bca5d529d25336135ebef33b82168f41b9206e7"
