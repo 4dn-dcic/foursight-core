@@ -92,7 +92,8 @@ class Deploy(object):
     def build_config(cls, stage, identity=None, stack_name=None,
                      trial_creds=None, trial_global_env_bucket=False, global_env_bucket=None,
                      security_group_ids=None, subnet_ids=None, check_runner=None,
-                     lambda_timeout=DEFAULT_LAMBDA_TIMEOUT, is_foursight_fourfront=False):
+                     lambda_timeout=DEFAULT_LAMBDA_TIMEOUT, is_foursight_fourfront=False,
+                     is_foursight_smaht=False):
         """ Builds the chalice config json file. See: https://aws.github.io/chalice/topics/configfile"""
         # dmichaels/2022-07-22/C4-826:
         # Removed value from the Foursight CloudFormation template; get from GAC/etc at runtime.
@@ -189,6 +190,10 @@ class Deploy(object):
         if is_foursight_fourfront:
             subprocess_call(
                 ['poetry', 'export', '-f', 'requirements.txt', '--without-hashes', '--with', 'foursight_fourfront', '-o', 'requirements.txt'], verbose=True)
+        elif is_foursight_smaht:
+            subprocess_call(
+                ['poetry', 'export', '-f', 'requirements.txt', '--without-hashes', '--with', 'foursight_smaht',
+                 '-o', 'requirements.txt'], verbose=True)
         else:
             subprocess_call(
                 ['poetry', 'export', '-f', 'requirements.txt', '--without-hashes', '--with', 'foursight_cgap', '-o', 'requirements.txt'], verbose=True)
@@ -216,8 +221,17 @@ class Deploy(object):
         # the provision stack name setup in 4dn-cloud-infra/stack.py. This is used to
         # conditionally include the appropriate library (foursight-cgap or foursight)
         # in the Chalice package. dmichaels/2022-11-01.
+        # Added smaht to this to minimally perturb existing structure, but should be
+        # refactored at a later time to clean up and use EnvUtils
         _4DN_CLOUD_INFRA_FOURSIGHT_FOURFRONT_PROVISION_TARGETS = ["foursight-development", "foursight-production"]
-        is_foursight_fourfront = args.stack in _4DN_CLOUD_INFRA_FOURSIGHT_FOURFRONT_PROVISION_TARGETS
+        _4DN_CLOUD_INFRA_FOURSIGHT_SMAHT_PROVISION_TARGETS = ["foursight-smaht"]
+        is_foursight_fourfront = False
+        is_foursight_smaht = False
+        if args.stack in _4DN_CLOUD_INFRA_FOURSIGHT_FOURFRONT_PROVISION_TARGETS:
+            is_foursight_fourfront = True
+        elif args.stack in _4DN_CLOUD_INFRA_FOURSIGHT_SMAHT_PROVISION_TARGETS:
+            is_foursight_smaht = True
+
         # For compatibility during transition, we allow these argument to be passed in lieu of args.
         if merge_template is None:
             merge_template = args.merge_template
@@ -238,7 +252,8 @@ class Deploy(object):
                 cls.build_config(stage, identity=identity, stack_name=stack_name, trial_creds=trial_creds,
                                  trial_global_env_bucket=True,
                                  global_env_bucket=global_env_bucket, lambda_timeout=lambda_timeout,
-                                 security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner, is_foursight_fourfront=is_foursight_fourfront)
+                                 security_group_ids=security_ids, subnet_ids=subnet_ids, check_runner=check_runner,
+                                 is_foursight_fourfront=is_foursight_fourfront, is_foursight_smaht=is_foursight_smaht)
             else:
                 raise Exception('Build config requires trial_creds, sg id, and subnet ids to run in trial account')
         else:
