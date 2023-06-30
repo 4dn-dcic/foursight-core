@@ -39,7 +39,11 @@ from .aws_stacks import (
 from .checks import Checks
 from .cognito import get_cognito_oauth_config, handle_cognito_oauth_callback
 from .cookie_utils import create_delete_cookie_string, read_cookie, read_cookie_bool, read_cookie_int
-from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_local_datetime_string
+from .datetime_utils import (
+    convert_uptime_to_datetime,
+    convert_utc_datetime_to_local_datetime_string,
+    LOCAL_TIMEZONE_NAME
+)
 from .encryption import Encryption
 from .encoding_utils import base64_decode_to_json
 from .gac import Gac
@@ -373,6 +377,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     data_portal["ssl_certificate"]["name"] = "Portal"
                     data_portal["ssl_certificate"]["exception"] = e
         data["timestamp"] = convert_utc_datetime_to_local_datetime_string(datetime.datetime.utcnow())
+        import tzlocal # xyzzy temporary
+        data["timezone"] = tzlocal.get_localzone_name()
         test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
         if auth.get("user_exception"): # or test_mode_access_key_simulate_error:
             # Since this call to get the Portal access key info can be relatively expensive, we don't want to
@@ -423,6 +429,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 },
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified(),
+                "timezone": LOCAL_TIMEZONE_NAME,
                 "accounts_file": self._get_accounts_file_name()
             },
             "versions": self._get_versions_object(),

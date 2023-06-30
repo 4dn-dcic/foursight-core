@@ -120,6 +120,5 @@ def refresh_access_keys(connection, **kwargs):
 
 
 def _sanity_check_newly_created_access_key(name: str, user_uuid: str):
-    import pdb ; pdb.set_trace()
     connection = app.core.init_connection(app.core.get_default_env())
     _ = search_metadata(f'/search/?type=AccessKey&description={name}&user.uuid={user_uuid}', key=connection.ff_keys)
