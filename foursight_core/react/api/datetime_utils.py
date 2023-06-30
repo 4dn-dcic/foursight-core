@@ -2,10 +2,11 @@ import datetime
 import dateutil.parser as dateutil_parser
 import pytz
 from typing import Optional, Union
+import tzlocal
 
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)  # I.e.: 1970-01-01 00:00:00 UTC
-TIMEZONE_USEASTERN = "US/Eastern"
+LOCAL_TIMEZONE_NAME = tzlocal.get_localzone_name()
 
 
 def convert_utc_datetime_to_datetime_string(t: Union[datetime.datetime, str], tzname: str) -> Optional[str]:
@@ -41,11 +42,11 @@ def convert_utc_datetime_to_datetime_string(t: Union[datetime.datetime, str], tz
         return None
 
 
-def convert_utc_datetime_to_useastern_datetime_string(t: Union[datetime.datetime, str]) -> Optional[str]:
+def convert_utc_datetime_to_local_datetime_string(t: Union[datetime.datetime, str]) -> Optional[str]:
     """
-    Same as convert_utc_datetime_to_datetime_string (above) but specifically for US/Eastern timezone.
+    Same as convert_utc_datetime_to_datetime_string (above) but specifically for the local timezone.
     """
-    return convert_utc_datetime_to_datetime_string(t, TIMEZONE_USEASTERN)
+    return convert_utc_datetime_to_datetime_string(t, LOCAL_TIMEZONE_NAME)
 
 
 def convert_time_t_to_datetime_string(time_t: int, tzname: str) -> Optional[str]:
@@ -60,11 +61,11 @@ def convert_time_t_to_datetime_string(time_t: int, tzname: str) -> Optional[str]
     return convert_utc_datetime_to_datetime_string(convert_time_t_to_datetime(time_t), tzname)
 
 
-def convert_time_t_to_useastern_datetime_string(time_t: int) -> Optional[str]:
+def convert_time_t_to_local_datetime_string(time_t: int) -> Optional[str]:
     """
-    Same as convert_time_t_to_datetime_string (above) but specifically for US/Eastern timezone.
+    Same as convert_time_t_to_datetime_string (above) but specifically for the local timezone.
     """
-    return convert_time_t_to_datetime_string(time_t, TIMEZONE_USEASTERN)
+    return convert_time_t_to_datetime_string(time_t, LOCAL_TIMEZONE_NAME)
 
 
 def convert_iso_datetime_string_to_datetime(value: str) -> Optional[datetime.datetime]:

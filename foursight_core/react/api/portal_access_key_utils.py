@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 from ...app import app
 from .datetime_utils import (
     convert_iso_datetime_string_to_datetime as normalize_portal_datetime,
-    convert_utc_datetime_to_useastern_datetime_string as datetime_to_string
+    convert_utc_datetime_to_local_datetime_string as datetime_to_string
 )
 
 
@@ -64,7 +64,7 @@ def get_portal_access_key_info(env: str,
             if "credenti" in e or "expir" in e:
                 access_key_info["probably_expired"] = True
             access_key_info["invalid"] = True
-        access_key_info["timestamp"] = datetime_to_string(now.strftime("%Y-%m-%d %H:%M:%S"))
+        access_key_info["timestamp"] = datetime_to_string(now)
         return access_key_info
     except Exception:
         return {}

@@ -103,6 +103,7 @@ const MainMenu = ({ header }) => {
                 <MenuItem path="/users" label="Users" />
                 <MenuSeparator />
                 <MenuItem path="/env" label="Environments" />
+                {/* The all=true arg to /accounts means show all known accounts not just onece related to the current account */}
                 <MenuItem path="/accounts?all=true" label="Accounts" />
                 <MenuItem path="/login" label={Auth.IsLoggedIn(header) ? "Session" : "Login"} />
             </div>

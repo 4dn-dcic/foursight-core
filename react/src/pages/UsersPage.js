@@ -51,6 +51,7 @@ const UsersPage = () => {
     ];
 
     const tdStyle = { verticalAlign: "top", paddingRight: "6pt", paddingTop: "4pt", paddingBottom: "8pt" };
+    const tdStyleNowrap = { ...tdStyle, whiteSpace: "nowrap" };
 
     function toggleSearch() {
         if (showSearch) {

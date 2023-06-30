@@ -182,9 +182,12 @@ const NetworkList = (props) => {
     return <>
         <div><b>AWS Network</b></div>
         <div className="box margin" style={{width:"100%",marginBottom:"6pt"}}>
-            <div className="pointer" style={{fontWeight:showVpcs() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleVpcs}>VPCs</div>
-            <div className="pointer" style={{fontWeight:showSubnetsPublic() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleSubnetsPublic}>Public Subnets</div>
-            <div className="pointer" style={{fontWeight:showSubnetsPrivate() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleSubnetsPrivate}>Private Subnets</div>
+            <div className="pointer" style={{fontWeight:showVpcs() ? "bold" : "normal"}} onClick={toggleVpcs}>VPCs</div>
+			<HorizontalLine top="2pt" bottom="2pt" />
+            <div className="pointer" style={{fontWeight:showSubnetsPublic() ? "bold" : "normal"}} onClick={toggleSubnetsPublic}>Public Subnets</div>
+			<HorizontalLine top="2pt" bottom="2pt" />
+            <div className="pointer" style={{fontWeight:showSubnetsPrivate() ? "bold" : "normal"}} onClick={toggleSubnetsPrivate}>Private Subnets</div>
+			<HorizontalLine top="2pt" bottom="2pt" />
             <div className="pointer" style={{fontWeight:showSecurityGroups() ? "bold" : "normal"}} onClick={toggleSecurityGroups}>Security Groups</div>
         </div>
     </>
@@ -253,12 +256,13 @@ const Vpc = (props) => {
 
     return <>
         <div className="box margin" style={{marginBottom:"8pt",width:"100%",minWidth:"350pt",maxWidth:"100%"}}>
-            <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
+            <div>
                 <b>VPC</b>: <b style={{color:"black"}}>{vpc.name}</b>
                 <ExternalLink
                     href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#VpcDetails:VpcId=${vpc.id}`}
                     bold={true}
                     style={{marginLeft:"6pt"}} />
+                <HorizontalLine top="2pt" bottom="2pt" />
             </div>
             <table width="100%"><tbody>
                 <tr>
@@ -279,9 +283,7 @@ const Vpc = (props) => {
                     <td style={tdLabelStyle}>Status:</td>
                     <td style={tdContentStyle}>{vpc?.status}</td>
                 </tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <HorizontalLine top="2pt" bottom="2pt" table={2} />
                 <tr onClick={() => toggleSubnetsPublic(vpc.id)} className="pointer">
                     <td style={tdLabelStyle}>Public Subnets:</td>
                     <td>
@@ -384,7 +386,7 @@ const Subnet = (props) => {
     const toggleTags = () => toggleShow("showTags");
     return <>
         <div className={"box margin" + (subnet?.type === "private" ? " darken" : " lighten")} style={{width:"100%"}}>
-            <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
+            <div>
                 <b>Subnet</b>: <b style={{color:"black"}}>{subnet?.name}</b>
                 <ExternalLink
                     href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#SubnetDetails:subnetId=${subnet?.id}`}
@@ -392,7 +394,8 @@ const Subnet = (props) => {
                     style={{marginLeft:"6pt"}} />
                 <small style={{float:"right"}}>
                     {subnet?.type === "private" ? <> <b style={{color:"red"}}>PRIVATE</b> </>:<> <b style={{color:"green"}}>PUBLIC</b> </>}
-                 </small>
+                </small>
+                <HorizontalLine top="2pt" bottom="2pt" />
             </div>
             <table width="100%"><tbody>
                 <tr>
@@ -421,9 +424,7 @@ const Subnet = (props) => {
                     <td style={tdLabelStyle}>Status:</td>
                     <td style={tdContentStyle}>{subnet?.status}</td>
                 </tr>
-                <tr><td style={{height:"4pt"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <HorizontalLine top="4pt" bottom="2pt" table={2} />
                 <tr onClick={toggleTags} className="pointer">
                     <td style={tdLabelStyle}>Tags:</td>
                     <td>
@@ -485,12 +486,13 @@ const SecurityGroup = (props) => {
 
     return <>
         <div className="box margin lighten" style={{width:"100%",maxWidth:"100%"}}>
-            <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
+            <div>
                 <b>Security Group</b>: <b style={{color:"black"}}>{securityGroup?.name}</b>
                 <ExternalLink
                     href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#SecurityGroup:groupId=${securityGroup?.id}`}
                     bold={true}
                     style={{marginLeft:"6pt"}} />
+                <HorizontalLine top="2pt" bottom="2pt" />
             </div>
             <table width="100%"><tbody>
                 <tr>
@@ -511,9 +513,7 @@ const SecurityGroup = (props) => {
                     <td style={tdLabelStyle}>VPC:</td>
                     <td style={tdContentStyle}>{securityGroup?.vpc}</td>
                 </tr>
-                <tr><td style={{height:"4pt"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <HorizontalLine top="4pt" bottom="2pt" table={2} />
                 <tr onClick={toggleInboundRules} className="pointer">
                     <td style={tdLabelStyle}>Inbound Rules:</td>
                     <td>
@@ -646,7 +646,7 @@ const SecurityGroupRule = (props) => {
 
     return <>
         <div className="box" style={{background:"#FEFEFE",width:"100%"}}>
-            <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
+            <div>
                 <b>Security Group Rule</b>: <b style={{color:"black"}}>{securityGroupRule?.id}</b>
                 <small style={{float:"right"}}>
                     <b style={{color:securityGroupRule?.egress ? "var(--box-fg)" : "red"}}>{securityGroupRule?.egress ? "OUTBOUND" : "INBOUND"}</b>
@@ -655,6 +655,7 @@ const SecurityGroupRule = (props) => {
                     href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#ModifyInboundSecurityGroupRules:securityGroupId=${securityGroupRule?.security_group}`}
                     bold={true}
                     style={{marginLeft:"6pt"}} />
+                <HorizontalLine top="2pt" bottom="2pt" />
             </div>
             <table width="100%"><tbody>
                 <tr>
@@ -723,8 +724,6 @@ const Tags = (props) => {
 
 const StackList = (props) => {
     const stacks = useFetch("/aws/stacks", { cache: true });
-    const styleLast = { cursor: "pointer" };
-    const styleNotLast = { ...styleLast, borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt" };
     return <>
         <div><b>AWS Stacks</b></div>
         <div className="box" style={{whiteSpace:"nowrap",marginBottom:"6pt"}}>
@@ -732,8 +731,11 @@ const StackList = (props) => {
             {stacks.map((stack, i) => {
                 const toggleStack = () => props.toggleStack(stack.name);
                 const selectedStack = () => props.selectedStack(stack.name);
-                const style = {...(i + 1 < stacks.length ? styleNotLast : styleLast), ...(selectedStack(stack.name) ? {fontWeight:"bold"} : {})};
-                return <div key={stack.name} style={style} onClick={toggleStack}>{stack.name}</div>
+                const style = {...(selectedStack(stack.name) ? {fontWeight:"bold"} : {})};
+                return <>
+                    <div key={stack.name} style={style} className="pointer" onClick={toggleStack}>{stack.name}</div>
+                    <HorizontalLine top="2pt" bottom="2pt" iff={i + 1 < stacks.length}/>
+                </>
             })}
         </div>
     </>
@@ -795,9 +797,7 @@ const Stack = (props) => {
                     <td style={tdLabelStyle}>Description:</td>
                     <td style={tdContentStyle}>{stack.data?.description}</td>
                 </tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <HorizontalLine top="2pt" bottom="2pt" table={2} />
                 <tr>
                     <td style={tdLabelStyle}>Status:</td>
                     <td style={tdContentStyle}>{stack.data?.status}</td>
@@ -810,9 +810,7 @@ const Stack = (props) => {
                     <td style={tdLabelStyle}>Updated:</td>
                     <td style={tdContentStyle}>{stack.data?.updated}</td>
                 </tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <HorizontalLine top="2pt" bottom="2pt" table={2} />
                 <tr>
                     <td style={tdLabelStyle}>Outputs:</td>
                     <td style={tdContentStyle}>
@@ -1081,9 +1079,7 @@ const EcsClusters = (props) => {
             { clusters.loading && <div><StandardSpinner label="Loading ECS clusters" /></div> }
             { clusters.map((cluster, index) => <div key={cluster}>
                 <EcsCluster cluster={cluster} commonInitialSubstring={commonInitialSubstring} keyedState={keyedState?.keyed(cluster)} />
-				{ index < clusters.length - 1 &&
-					<HorizontalLine top="2pt" bottom="2pt" dotted={true} />
-				}
+				{ index < clusters.length - 1 && <HorizontalLine top="2pt" bottom="2pt" dotted={true} /> }
             </div>)}
         </div>
     </div>

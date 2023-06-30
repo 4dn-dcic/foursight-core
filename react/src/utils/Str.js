@@ -2,7 +2,7 @@
 // Miscellaneous string related functions.
 // -------------------------------------------------------------------------------------------------
 
-function IsNonEmptyString(value) {
+function HasValue(value) {
     return value !== undefined && value !== null && value.constructor === String && value.length > 0;
 }
 
@@ -12,7 +12,7 @@ function FormatBytes(bytes, decimals = 2) {
     return parseFloat(bytes.toFixed(decimals)) + ' ' + units[i];
 }
 
-function FindLongestCommonInitialSubstring(stringArray) {
+function LongestCommonInitialSubstring(stringArray) {
     if (!Array.isArray(stringArray) || (stringArray.length <= 1)) {
 		return "";
 	}
@@ -35,7 +35,7 @@ function FindLongestCommonInitialSubstring(stringArray) {
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
-    HasValue: IsNonEmptyString,
+    HasValue: HasValue,
     FormatBytes: FormatBytes,
-	LongestCommonInitialSubstring: FindLongestCommonInitialSubstring
+	LongestCommonInitialSubstring: LongestCommonInitialSubstring
 }; export default exports;

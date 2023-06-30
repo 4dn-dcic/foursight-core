@@ -48,6 +48,10 @@ from .fs_connection import FSConnection
 from .s3_connection import S3Connection
 from .react.api.auth import Auth
 from .react.api.react_api import ReactApi
+from .react.api.datetime_utils import (
+    convert_time_t_to_local_datetime_string,
+    convert_utc_datetime_to_local_datetime_string
+)
 from .routes import Routes
 from .route_prefixes import CHALICE_LOCAL
 from .sqs_utils import SQS
@@ -235,8 +239,8 @@ class AppUtilsCore(ReactApi, Routes):
                         last_name = name.get("name_last")
                 subject = jwt_decoded.get("sub")
                 audience = jwt_decoded.get("aud")
-                issued_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("iat"))
-                expiration_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("exp"))
+                issued_time = convert_time_t_to_local_datetime_string(jwt_decoded.get("iat"))
+                expiration_time = convert_time_t_to_local_datetime_string(jwt_decoded.get("exp"))
         except Exception as e:
             self.note_non_fatal_error_for_ui_info(e, 'get_logged_in_user_info')
         return {"email_address": email_address,
@@ -688,44 +692,6 @@ class AppUtilsCore(ReactApi, Routes):
             self.note_non_fatal_error_for_ui_info(e, 'get_obfuscated_credentials_info')
             return {}
 
-    def convert_utc_datetime_to_useastern_datetime(self, t) -> str:
-        """
-        Converts the given UTC datetime object or string into a US/Eastern datetime string
-        and returns its value in a form that looks like 2022-08-22 13:25:34 EDT.
-        If the argument is a string it is ASSUMED to have a value which looks
-        like 2022-08-22T14:24:49.000+0000; this is the datetime string format
-        we get from AWS via boto3 (e.g. for a lambda last-modified value).
-
-        :param t: UTC datetime object or string value.
-        :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
-        """
-        try:
-            if isinstance(t, str):
-                t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
-            t = t.replace(tzinfo=pytz.UTC).astimezone(pytz.timezone("US/Eastern"))
-            return t.strftime("%Y-%m-%d %H:%M:%S %Z")
-        except Exception as e:
-            self.note_non_fatal_error_for_ui_info(e, 'convert_utc_datetime_to_useastern_datetime')
-            return ""
-
-    def convert_time_t_to_useastern_datetime(self, time_t: int) -> str:
-        """
-        Converts the given "epoch" time (seconds since 1970-01-01T00:00:00Z)
-        integer value to a US/Eastern datetime string and returns its value
-        in a form that looks like 2022-08-22 13:25:34 EDT.
-
-        :param time_t: Epoch time value (i.e. seconds since 1970-01-01T00:00:00Z)
-        :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
-        """
-        try:
-            if not isinstance(time_t, int):
-                return ""
-            t = datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
-            return self.convert_utc_datetime_to_useastern_datetime(t)
-        except Exception as e:
-            self.note_non_fatal_error_for_ui_info(e, 'convert_time_t_to_useastern_datetime')
-            return ""
-
     def ping_elasticsearch(self, env_name: str) -> bool:
         logger.warning(f"foursight_core: Pinging ElasticSearch: {self.host}")
         try:
@@ -819,10 +785,10 @@ class AppUtilsCore(ReactApi, Routes):
                 lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
                 lambda_last_modified_tag = lambda_tags.get("last_modified")
                 if lambda_last_modified_tag:
-                    lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified_tag)
+                    lambda_last_modified = convert_utc_datetime_to_local_datetime_string(lambda_last_modified_tag)
                 else:
                     lambda_last_modified = lambda_info["Configuration"]["LastModified"]
-                    lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified)
+                    lambda_last_modified = convert_utc_datetime_to_local_datetime_string(lambda_last_modified)
                 return lambda_last_modified
         except Exception as e:
             logger.warning(f"Error getting lambda ({lambda_name}) last modified time: {e}")
@@ -1173,7 +1139,7 @@ class AppUtilsCore(ReactApi, Routes):
                 "first_name": user_record.get("first_name"),
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
-                "modified": self.convert_utc_datetime_to_useastern_datetime(last_modified)})
+                "modified": convert_utc_datetime_to_local_datetime_string(last_modified)})
         users = sorted(users, key=lambda key: key["email_address"])
         template = self.jin_env.get_template('users.html')
         html_resp.body = template.render(
@@ -1997,6 +1963,7 @@ class AppUtilsCore(ReactApi, Routes):
             logger.warning('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))
             # invoke action if running a check and kwargs['queue_action'] matches stage
             stage = self.stage.get_stage()
+            # TODO: Factor out this (et.al.) for better testing.
             if run_result['type'] == 'check' and run_result['kwargs']['queue_action'] == stage:
                 # must also have check.action and check.allow_action set
                 if run_result['allow_action'] and run_result['action'] and not run_result.get('prevent_action'):

@@ -19,19 +19,23 @@ logger = logging.getLogger(__name__)
 class Gac:
 
     @staticmethod
+    def _all_secret_names():
+        secrets_manager = boto3.client('secretsmanager')
+        pagination_next_token = None
+        while True:
+            kwargs = {"NextToken": pagination_next_token} if pagination_next_token else {}
+            response = secrets_manager.list_secrets(**kwargs)
+            for secret in response["SecretList"]:
+                yield secret["Name"]
+            if "NextToken" in response:
+                pagination_next_token = response['NextToken']
+            else:
+                break
+
+    @staticmethod
     def get_secret_names() -> list:
         try:
-            secrets_manager = boto3.client("secretsmanager")
-            secret_names = []
-            pagination_token = None
-            response = secrets_manager.list_secrets(MaxResults=100)
-            while True:
-                secret_names.extend([secrets["Name"] for secrets in response["SecretList"]])
-                if "NextToken" in response:
-                    pagination_token = response["NextToken"]
-                    response = secrets_manager.list_secrets(MaxResults=100, NextToken=pagination_token)
-                else:
-                    break
+            secret_names = [secret_name for secret_name in Gac._all_secret_names()]
             secret_names.sort()
             return secret_names
         except Exception as e:

@@ -1,3 +1,4 @@
+from ..app import app
 from .helpers.confchecks import (
     check_function, CheckResult, action_function, ActionResult
 )
@@ -103,6 +104,7 @@ def refresh_access_keys(connection, **kwargs):
         # e.g. s3://elasticbeanstalk-fourfront-mastertest-system/access_key_foursight
         s3.s3_put_secret(json.dumps(s3_obj), kp_name)
         full_output['successfully_generated'].append(email)
+        _sanity_check_newly_created_access_key(name=kp_name, user_uuid=user_uuid)
         # Delete any old access keys after generating a new one (see VERY IMPORTANT comment above).
         for access_key in access_keys:  # note this search result was computed before the new key was added
             if access_key['status'] != 'deleted':
@@ -115,3 +117,9 @@ def refresh_access_keys(connection, **kwargs):
     action.full_output = full_output
     action.status = 'DONE'
     return action
+
+
+def _sanity_check_newly_created_access_key(name: str, user_uuid: str):
+    import pdb ; pdb.set_trace()
+    connection = app.core.init_connection(app.core.get_default_env())
+    _ = search_metadata(f'/search/?type=AccessKey&description={name}&user.uuid={user_uuid}', key=connection.ff_keys)

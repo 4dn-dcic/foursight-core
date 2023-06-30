@@ -5,6 +5,7 @@ import { StandardSpinner } from '../../Spinners';
 import useFetch from '../../hooks/Fetch';
 import { ExternalLink } from '../../Components';
 import Char from '../../utils/Char';
+import { HorizontalLine } from '../../Components';
 import Type from '../../utils/Type';
 import Str from '../../utils/Str';
 import Yaml from '../../utils/Yaml';
@@ -31,18 +32,19 @@ function isRedacted(s) {
 
 export const SecretNameList = (props) => {
     const secretNames = useFetch("/aws/secrets", { cache: true });
-    const styleLast = { cursor: "pointer" };
-    const styleNotLast = { ...styleLast, borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt" };
     return <>
         <div><b>AWS Secrets</b></div>
         <div className="box" style={{whiteSpace:"nowrap",marginBottom:"6pt"}}>
             { secretNames.loading && <StandardSpinner label="Loading secrets" /> }
-            {secretNames.map((secretName, i) => {
+            { secretNames.map((secretName, i) => {
                 const toggleSecrets = () => props.toggleSecrets(secretName);
                 const selectedSecrets = () => props.selectedSecrets(secretName);
-                const style = {...(i + 1 < secretNames.length ? styleNotLast : styleLast), ...(selectedSecrets(secretName) ? {fontWeight:"bold"} : {})};
-                return <div key={secretName} style={style} onClick={toggleSecrets}>{secretName}</div>
-            })}
+                const style = {...(selectedSecrets(secretName) ? {fontWeight:"bold"} : {})};
+                return <>
+                    <div key={secretName} style={style} className="pointer" onClick={toggleSecrets}>{secretName}</div>
+                    <HorizontalLine top="2pt" bottom="2pt" iff={i + 1 < secretNames.length} />
+                </>
+            }) }
         </div>
     </>
 }
