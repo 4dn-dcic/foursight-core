@@ -1075,7 +1075,7 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
                         &nbsp;&nbsp;</td>
                         <td style={{whiteSpace:"nowrap"}}>
                             <span id={`tooltip-history-timestamp-${check.name}-${index}`} onClick={() => {toggleHistoryResult(check, history, extractUuid(history), historyList); }} style={{cursor:"pointer"}}>
-                                {extractTimestamp(history)}
+                                {DateTime.Format(extractTimestamp(history))}
                             </span>
                             <Tooltip id={`tooltip-history-timestamp-${check.name}-${index}`} text={Time.Ago(extractTimestamp(history))} position="right" shape="squared" />
                         &nbsp;&nbsp;</td>
