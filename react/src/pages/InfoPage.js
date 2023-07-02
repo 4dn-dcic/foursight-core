@@ -9,6 +9,8 @@ import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
 import Char from '../utils/Char';
 import Context from '../utils/Context';
+import DateTime from '../utils/DateTime';
+import Duration from '../utils/Duration';
 import Env from '../utils/Env';
 import useFetch from '../hooks/Fetch';
 import useFetchFunction from '../hooks/FetchFunction';
@@ -218,8 +220,8 @@ const InfoPage = () => {
             <InfoRow name={"Last Name"} value={Auth.Token()?.last_name} monospace={true} copy={true} size="2" />
             <InfoRow name={"Environments"} value={Auth.Token()?.allowed_envs.join(", ")} monospace={true} copy={true} size="2" />
             <InfoRow name={"Audience"} value={Auth.Token()?.aud} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Issued At"} monospace={true} copy={true} size="2" value={<LiveTime.FormatDuration start={Auth.Token()?.authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} prefix="datetime" />} />
-            <InfoRow name={"Expires At"} monospace={true} copy={true} size="2" value={<LiveTime.FormatDuration end={Auth.Token()?.authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} prefix="datetime"/>} />
+            <InfoRow name={"Issued At"} monospace={true} copy={true} size="2" value={<Duration.Live start={Auth.Token()?.authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} prefix="datetime" />} />
+            <InfoRow name={"Expires At"} monospace={true} copy={true} size="2" value={<Duration.Live end={Auth.Token()?.authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} prefix="datetime"/>} />
             <InfoRow name={"Using Redis"} monospace={true} size="2" value={header.resources?.redis_running ? "Yes" : "No"} />
             <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
                 { showingAuthToken ? (<>
@@ -270,7 +272,7 @@ const InfoPage = () => {
                 <InfoRow name={"ARN"} value={info.get("app.lambda.lambda_function_arn")} monospace={true} size="2" />
                 <InfoRow name={"S3 Location"} value={info.get("app.lambda.lambda_code_s3_bucket") + "/" + info.get("app.lambda.lambda_code_s3_bucket_key")} monospace={true} size="2" />
                 <InfoRow name={"Size"} value={info.get("app.lambda.lambda_code_size")} monospace={true} size="2" />
-                <InfoRow name={"Modified"} value={Time.FormatDateTime(info.get("app.lambda.lambda_modified"))} monospace={true} size="2" />
+                <InfoRow name={"Modified"} value={DateTime.Format(info.get("app.lambda.lambda_modified"))} monospace={true} size="2" />
                 <InfoRow name={"Role"} value={info.get("app.lambda.lambda_role")} monospace={true} size="2" />
             </InfoBox>
         }
@@ -284,9 +286,9 @@ const InfoPage = () => {
             </>}
             <div id="tooltip-info-clear" style={{float:"right",marginTop:"-1px",marginRight:"4pt",cursor:"pointer"}}>&nbsp;&nbsp;<img alt="Clear Cache" src={Image.ClearCache()} height="19" onClick={clearCache}/></div>
             <Tooltip id="tooltip-info-clear" position="bottom" size="small" text="Click to clear any server-side caches." />
-            <InfoRow name={"App Deployed At"} value={Server.IsLocal() ? "running locally" + (Context.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + Time.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
-            <InfoRow name={"App Launched At"} value={header.app?.launched + Time.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
-            <InfoRow name={"Page Loaded At"} value={info.get("page.loaded") + Time.FormatDuration(info.get("page.loaded"), new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
+            <InfoRow name={"App Deployed At"} value={Server.IsLocal() ? "running locally" + (Context.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + Duration.Format(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
+            <InfoRow name={"App Launched At"} value={header.app?.launched + Duration.Format(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
+            <InfoRow name={"Page Loaded At"} value={info.get("page.loaded") + Duration.Format(info.get("page.loaded"), new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Package"} value={header.app?.package} monospace={true} size="2" />
             <InfoRow name={"Stage"} value={header.app?.stage} monospace={true} size="2" />
             <InfoRow name={"Environment"} value={Env.Current()} monospace={true} size="2" />

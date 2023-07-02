@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from '../Components';
 import useFetch from '../hooks/Fetch';
 import Client from '../utils/Client';
+import DateTime from '../utils/DateTime';
 import EditBox from './EditBox';
 import Time from '../utils/Time';
 import UserDefs from './UserDefs';
@@ -53,8 +54,8 @@ const UserEditPage = () => {
                                                                                     return userMetadata.userRole(user, project || user?.project) || "-"; }
                 else if (input.name === "institution") input.value = user.institution;
                 else if (input.name === "status")      input.value = user.status;
-                else if (input.name === "created")     input.value = Time.FormatDateTime(user.created);
-                else if (input.name === "updated")     input.value = Time.FormatDateTime(user.updated);
+                else if (input.name === "created")     input.value = DateTime.Format(user.created);
+                else if (input.name === "updated")     input.value = DateTime.Format(user.updated);
                 else if (input.name === "uuid")        input.value = user.uuid;
             }
             return [...inputs];

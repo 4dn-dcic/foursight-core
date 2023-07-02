@@ -12,7 +12,9 @@ import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import ChecksValidation from '../components/ChecksValidation';
+import DateTime from '../utils/DateTime';
 import DisplayStatusText from '../components/DisplayStatusText';
+import Duration from '../utils/Duration';
 import Env from '../utils/Env';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
@@ -22,7 +24,6 @@ import TableHead from '../TableHead';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
-import LiveTime from '../LiveTime';
 import Styles from '../Styles';
 import Tooltip from '../components/Tooltip';
 
@@ -522,7 +523,7 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
                         </span>
                         <span id={`tooltip-latest-result-timestamp ${check.name}`}>{check.__result.get("timestamp")}</span>
                         <Tooltip id={`tooltip-latest-result ${check.name}`} text={"Click to " + (check.__showingResultDetails ? "hide" : "show") + " latest result."} />
-                        <Tooltip id={`tooltip-latest-result-timestamp ${check.name}`} text={Time.FormatDuration(check.__result.get("timestamp"), new Date(), true, null, null, "ago")} />
+                        <Tooltip id={`tooltip-latest-result-timestamp ${check.name}`} text={Duration.Format(check.__result.get("timestamp"), new Date(), true, null, null, "ago")} />
                     </span>
                     { check.__showingResultDetails && <>
                             {/**/}
@@ -886,7 +887,7 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
                 { (check.__queuedCheckRun) &&
                     <small><b>
                         <span id={`tooltip-view-run-uuid-1 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued check run</span>:&nbsp;
-                        <span id={`tooltip-view-run-uuid-2 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.__queuedCheckRun + "+00:00")}</span>
+                        <span id={`tooltip-view-run-uuid-2 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{DateTime.Format(check.__queuedCheckRun + "+00:00")}</span>
                         <Tooltip id={`tooltip-view-run-uuid-1 ${check.name}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this check run."} position="bottom" />
                         <Tooltip id={`tooltip-view-run-uuid-2 ${check.name}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this check run."} position="bottom" />
                         &nbsp;{Char.RightArrow}&nbsp;
@@ -913,7 +914,7 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
                 {  check.__queuedActionRun &&
                     <small><b>
                         <span id={`tooltip-view-run-action-uuid-1 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued action run</span>:&nbsp;
-                        <span id={`tooltip-view-run-action-uuid-2 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.__queuedActionRun + "+00:00")}</span>
+                        <span id={`tooltip-view-run-action-uuid-2 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{DateTime.Format(check.__queuedActionRun + "+00:00")}</span>
                         <Tooltip id={`tooltip-view-run-action-uuid-1 ${check.name}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this action run."} position="bottom" />
                         <Tooltip id={`tooltip-view-run-action-uuid-2 ${check.name}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this action run."} position="bottom" />
                         &nbsp;{Char.RightArrow}&nbsp;
@@ -1533,7 +1534,7 @@ const ChecksPage = (props) => {
                         </>:<>
                             <b>Top</b>:&nbsp;
                         </>}
-                        <LiveTime.FormatDuration start={recentRuns?.data[0]?.timestamp} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />
+                        <Duration.Live start={recentRuns?.data[0]?.timestamp} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />
                     </small>}
                     <b style={{float:"right",paddingBottom:"4pt",cursor:"pointer"}} onClick={hideRecentRuns}>{Char.X}</b>
                     <table style={{width:"100%"}} border="0">
@@ -1561,9 +1562,9 @@ const ChecksPage = (props) => {
                                         :   <span style={{color:"darkred"}}>{Char.X}</span> }
                                     &nbsp;</td>
                                     <td  id={`recent-runs-timestamp ${index}`} style={{width:"20%"}}>
-                                        {Time.FormatDate(run.timestamp)} <br />
-                                        <small>{Time.FormatTime(run.timestamp)}</small>
-                                        <Tooltip id={`recent-runs-timestamp ${index}`} text={Time.FormatDuration(run.timestamp, new Date(), true, null, null, "agoy")} />
+                                        {Date.Format(run.timestamp)} <br />
+                                        <small>{Time.Format(run.timestamp)}</small>
+                                        <Tooltip id={`recent-runs-timestamp ${index}`} text={Duration.Format(run.timestamp, new Date(), true, null, null, "agoy")} />
                                     &nbsp;&nbsp;</td>
                                     <td style={{width:"45%"}}>
                                         <b style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(run.check, run.group), environ, historyList)}>{run.title}</b>
@@ -1723,7 +1724,7 @@ const ChecksPage = (props) => {
                     </tr>
                     <tr>
                         <td style={tdLabelStyle}>Updated:</td>
-                        <td style={tdContentStyle}><span id={`tooltip-lambda-updated-${lambda.lambda_name}`}>{Time.FormatDateTime(lambda.lambda_modified)}</span></td>
+                        <td style={tdContentStyle}><span id={`tooltip-lambda-updated-${lambda.lambda_name}`}>{DateTime.Format(lambda.lambda_modified)}</span></td>
                         <Tooltip id={`tooltip-lambda-updated-${lambda.lambda_name}`} text={Time.Ago(lambda.lambda_modified)} position="right" shape="squared" />
                     </tr>
                     <tr style={{fontSize:"small"}}>

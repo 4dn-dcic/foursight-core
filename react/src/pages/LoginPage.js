@@ -10,10 +10,10 @@ import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
 import { FetchErrorBox, HorizontalLine } from '../Components';
 import Cookie from '../utils/Cookie';
+import Duration from '../utils/Duration';
 import Env from '../utils/Env';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
-import LiveTime from '../LiveTime';
 import { LoggedInUser, Link } from '../Components';
 import { LoginCognitoBox } from './LoginCognitoBox';
 import Logout from '../utils/Logout';
@@ -158,9 +158,9 @@ const LoginPage = (props) => {
                             Logged in as:&nbsp;
                             <LoggedInUser link="user" />
                             <div style={{fontSize:"small",marginTop:"6pt",paddingTop:"5pt",borderTop:"1px solid"}}>
-                                Session started: <LiveTime.FormatDuration start={Auth.Token().authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
+                                Session started: <Duration.Live start={Auth.Token().authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />&nbsp;
                                 <br />
-                                Session expires: <LiveTime.FormatDuration end={Auth.Token().authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
+                                Session expires: <Duration.Live end={Auth.Token().authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} />&nbsp;
                                 <br />
                                 Click <span style={{textDecoration:"underline",fontWeight:"bold",cursor:"pointer"}}
                                     onClick={()=> Logout()}>here</span> to <span style={{cursor:"pointer"}} onClick={()=> Logout()}>logout</span>.
@@ -227,7 +227,7 @@ const LoginPage = (props) => {
             <div className="box warning" style={{marginTop:"15pt",marginLeft:"90pt",marginRight:"90pt",padding:"10pt"}}>
                 <b id="tooltip-nologin" className="pointer" onClick={login} style={{fontSize:"large"}}>{Char.Warning}&nbsp;&nbsp;Not Logged In</b>
                 { (Cookie.HasAuthToken() && Auth.SessionExpired()) && <small>
-                   <Tooltip id="tooltip-nologin" position="bottom" text={`${Time.FormatDuration(Auth.Token().authenticated_until, new Date(), true, "", "Login expired:", "ago")}`} />
+                   <Tooltip id="tooltip-nologin" position="bottom" text={`${Duration.Format(Auth.Token().authenticated_until, new Date(), true, "", "Login expired:", "ago")}`} />
                 </small> }
                 <HorizontalLine top="6pt" bottom="6pt" />
                 Click <u style={{cursor:"pointer"}} onClick={login}><b>here</b></u> to <span style={{cursor:"pointer"}} onClick={() => login()}><b>login</b></span>.

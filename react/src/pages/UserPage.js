@@ -6,6 +6,7 @@ import useFetch from '../hooks/Fetch';
 import { FetchErrorBox } from '../Components';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
+import DateTime from '../utils/DateTime';
 import Env from '../utils/Env';
 import Styles from '../Styles';
 import Time from '../utils/Time';
@@ -98,8 +99,8 @@ const UserBox = (props) => {
         { label: "Institution", name: "institution", map: value => userMetadata.institutionTitle(value),
                                 subComponent: (institution) => <UserDefs.PrincipalInvestigatorLine institution={institution} /> },
         { label: "Status", name: "status", map: value => userMetadata.statusTitle(value) },
-        { label: "Created", name: "created", map: value => Time.FormatDateTime(value) },
-        { label: "Updated", name: "updated", map: value => Time.FormatDateTime(value) },
+        { label: "Created", name: "created", map: value => DateTime.Format(value) },
+        { label: "Updated", name: "updated", map: value => DateTime.Format(value) },
         { label: "UUID", name: "uuid" }
     ]
 

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link } from '../Components';
 import useFetch from '../hooks/Fetch';
 import Char from '../utils/Char';
+import Date from '../utils/Date';
 import { FetchErrorBox } from '../Components';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
@@ -176,12 +177,12 @@ const UsersPage = () => {
                                 <Tooltip id={`tooltip-users-status-${user.status}`} position="bottom" size="small" text={`Status: ${user.status}`} />
                             </td>
                             <td style={{...tdStyle,whiteSpace:"nowrap"}}>
-                                {user.updated ? Time.FormatDate(user.updated) : Time.FormatDate(user.created)} <br />
-                                <small>{user.updated ? Time.FormatTime(user.updated) : Time.FormatTime(user.created)}</small>
+                                {user.updated ? Date.Format(user.updated) : Date.Format(user.created)} <br />
+                                <small>{user.updated ? Time.Format(user.updated) : Time.Format(user.created)}</small>
                             </td>
                             <td style={{...tdStyle,whiteSpace:"nowrap"}}>
-                                {Time.FormatDate(user.created)} <br />
-                                <small>{Time.FormatTime(user.created)}</small>
+                                {Date.Format(user.created)} <br />
+                                <small>{Time.Format(user.created)}</small>
                             </td>
                             <td style={{...tdStyle,whiteSpace:"nowrap"}}>
                                 &nbsp;&nbsp;<button><Link to={`/users/edit/${user.uuid}`}>Edit</Link></button>
