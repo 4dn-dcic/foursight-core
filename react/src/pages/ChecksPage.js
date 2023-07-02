@@ -12,6 +12,7 @@ import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import ChecksValidation from '../components/ChecksValidation';
+import Date from '../utils/Date';
 import DateTime from '../utils/DateTime';
 import DisplayStatusText from '../components/DisplayStatusText';
 import Duration from '../utils/Duration';
@@ -523,7 +524,7 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
                         </span>
                         <span id={`tooltip-latest-result-timestamp ${check.name}`}>{check.__result.get("timestamp")}</span>
                         <Tooltip id={`tooltip-latest-result ${check.name}`} text={"Click to " + (check.__showingResultDetails ? "hide" : "show") + " latest result."} />
-                        <Tooltip id={`tooltip-latest-result-timestamp ${check.name}`} text={Duration.Format(check.__result.get("timestamp"), new Date(), true, null, null, "ago")} />
+                        <Tooltip id={`tooltip-latest-result-timestamp ${check.name}`} text={Duration.Format(check.__result.get("timestamp"), DateTime.Now(), true, null, null, "ago")} />
                     </span>
                     { check.__showingResultDetails && <>
                             {/**/}
@@ -1564,7 +1565,7 @@ const ChecksPage = (props) => {
                                     <td  id={`recent-runs-timestamp ${index}`} style={{width:"20%"}}>
                                         {Date.Format(run.timestamp)} <br />
                                         <small>{Time.Format(run.timestamp)}</small>
-                                        <Tooltip id={`recent-runs-timestamp ${index}`} text={Duration.Format(run.timestamp, new Date(), true, null, null, "agoy")} />
+                                        <Tooltip id={`recent-runs-timestamp ${index}`} text={Duration.Format(run.timestamp, DateTime.Now(), true, null, null, "agoy")} />
                                     &nbsp;&nbsp;</td>
                                     <td style={{width:"45%"}}>
                                         <b style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(run.check, run.group), environ, historyList)}>{run.title}</b>
