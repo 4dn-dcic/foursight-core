@@ -8,6 +8,7 @@ import PaginationComponent from '../PaginationComponent';
 import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
+import DateTime from '../utils/DateTime';
 import DisplayStatusText from '../components/DisplayStatusText';
 import Env from '../utils/Env';
 import Image from '../utils/Image';
@@ -205,7 +206,7 @@ const CheckHistoryPage = (props) => {
                             &nbsp;</td>
                             <td style={{verticalAlign:"top",whiteSpace:"nowrap"}}>
                                 <span id={`tooltip-timestamp-${index}`} onClick={() => toggleResult(check, history, extractUUID(history))} style={{cursor:"pointer"}}>
-                                    {extractTimestamp(history)}
+                                    {DateTime.Format(extractTimestamp(history))}
                                 </span>
                                 <Tooltip id={`tooltip-timestamp-${index}`} text={Time.Ago(extractTimestamp(history))} position="right" shape="squared" />
                             &nbsp;&nbsp;</td>

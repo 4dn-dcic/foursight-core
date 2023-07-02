@@ -4,8 +4,9 @@ import { useParams } from 'react-router-dom';
 import { BarSpinner } from '../../Spinners';
 import Clipboard from '../../utils/Clipboard';
 import useFetch from '../../hooks/Fetch';
-import { FetchErrorBox } from '../../Components';
 import Char from '../../utils/Char';
+import DateTime from '../../utils/DateTime';
+import { FetchErrorBox } from '../../Components';
 import Image from '../../utils/Image';
 import Json from '../../utils/Json';
 import Server from '../../utils/Server';
@@ -256,7 +257,7 @@ const AwsS3Page = (props) => {
                                 {bucketKey.size}
                             &nbsp;&nbsp;</td>
                             <td style={{whiteSpace:"nowrap"}}>
-                                {bucketKey.modified}
+                                {DateTime.Format(bucketKey.modified)}
                             &nbsp;&nbsp;</td>
                             </tr>
                             { i < bucketKeys.keys.length - 1 && <> 
