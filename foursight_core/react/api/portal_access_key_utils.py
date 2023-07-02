@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 from ...app import app
 from .datetime_utils import (
     convert_iso_datetime_string_to_datetime as normalize_portal_datetime,
-    convert_utc_datetime_to_local_datetime_string as datetime_to_string
+    convert_utc_datetime_to_utc_datetime_string as datetime_to_string
 )
 
 

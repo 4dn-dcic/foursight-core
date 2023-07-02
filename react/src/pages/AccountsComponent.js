@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
+import DateTime from '../utils/DateTime';
 import { ExternalLink } from '../Components';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
@@ -56,10 +57,10 @@ const PortalAccessKeyStatus = ({ portalAccessKeyResponse }) => {
     }
     else if (portalAccessKeyResponse.expires_at) {
         if (portalAccessKeyResponse.expires_soon) {
-            return <span style={{color:"red"}}>Expires {Time.FromNow(portalAccessKeyResponse.expires_at)} {Char.RightArrow} {portalAccessKeyResponse.expires_at}</span>
+            return <span style={{color:"red"}}>Expires {Time.FromNow(portalAccessKeyResponse.expires_at)} {Char.RightArrow} {DateTime.Format(portalAccessKeyResponse.expires_at)}</span>
         }
         else {
-            return <>Expires {Time.FromNow(portalAccessKeyResponse.expires_at)} {Char.RightArrow} {portalAccessKeyResponse.expires_at}</>
+            return <>Expires {Time.FromNow(portalAccessKeyResponse.expires_at)} {Char.RightArrow} {DateTime.Format(portalAccessKeyResponse.expires_at)}</>
         }
     }
     else {
@@ -332,8 +333,8 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             </td>
         </tr>
         <Separator />
-        <Row title="Foursight Deployed" value={`${info.get("foursight.deployed")} ${Char.RightArrow} ${Time.Ago(info.get("foursight.deployed"))}`} show={info.get("foursight.deployed") ? true : false} />
-        <Row title="Portal Deployed" value={`${info.get("portal.started")} ${Char.RightArrow} ${Time.Ago(info.get("portal.started"))}`} />
+        <Row title="Foursight Deployed" value={`${DateTime.Format(info.get("foursight.deployed"))} ${Char.RightArrow} ${Time.Ago(info.get("foursight.deployed"))}`} show={info.get("foursight.deployed") ? true : false} />
+        <Row title="Portal Deployed" value={`${DateTime.Format(info.get("portal.started"))} ${Char.RightArrow} ${Time.Ago(info.get("portal.started"))}`} />
     </tbody></table>
 }
 

@@ -41,8 +41,7 @@ from .cognito import get_cognito_oauth_config, handle_cognito_oauth_callback
 from .cookie_utils import create_delete_cookie_string, read_cookie, read_cookie_bool, read_cookie_int
 from .datetime_utils import (
     convert_uptime_to_datetime,
-    convert_utc_datetime_to_local_datetime_string,
-    LOCAL_TIMEZONE_NAME
+    convert_utc_datetime_to_utc_datetime_string
 )
 from .encryption import Encryption
 from .encoding_utils import base64_decode_to_json
@@ -376,7 +375,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 if data_portal["ssl_certificate"]:
                     data_portal["ssl_certificate"]["name"] = "Portal"
                     data_portal["ssl_certificate"]["exception"] = e
-        data["timestamp"] = convert_utc_datetime_to_local_datetime_string(datetime.datetime.utcnow())
+        data["timestamp"] = convert_utc_datetime_to_utc_datetime_string(datetime.datetime.utcnow())
         import tzlocal # xyzzy temporary
         data["timezone"] = tzlocal.get_localzone_name()
         test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
@@ -429,7 +428,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 },
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified(),
-                "timezone": LOCAL_TIMEZONE_NAME,
                 "accounts_file": self._get_accounts_file_name()
             },
             "versions": self._get_versions_object(),
@@ -645,8 +643,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "institution": user.get("user_institution"),
             "roles": user.get("project_roles"),
             "status": user.get("status"),
-            "updated": convert_utc_datetime_to_local_datetime_string(updated),
-            "created": convert_utc_datetime_to_local_datetime_string(user.get("date_created"))
+            "updated": convert_utc_datetime_to_utc_datetime_string(updated),
+            "created": convert_utc_datetime_to_utc_datetime_string(user.get("date_created"))
         }
 
     def _create_user_record_from_input(self, user: dict, include_deletes: bool = False) -> dict:
@@ -996,7 +994,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if check_results.get("action"):
             check_results["action_title"] = " ".join(check_results["action"].split("_")).title()
         check_datetime = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-        check_datetime = convert_utc_datetime_to_local_datetime_string(check_datetime)
+        check_datetime = convert_utc_datetime_to_utc_datetime_string(check_datetime)
         check_results["timestamp"] = check_datetime
         return self.create_success_response(check_results)
 
@@ -1090,7 +1088,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                         break
                 if uuid:
                     timestamp = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-                    timestamp = convert_utc_datetime_to_local_datetime_string(timestamp)
+                    timestamp = convert_utc_datetime_to_utc_datetime_string(timestamp)
                     results.append({
                         "check": check_name,
                         "title": check_title,
@@ -1135,7 +1133,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     uuid = subitem.get("uuid")
                     if uuid:
                         timestamp = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-                        timestamp = convert_utc_datetime_to_local_datetime_string(timestamp)
+                        timestamp = convert_utc_datetime_to_utc_datetime_string(timestamp)
                         subitem["timestamp"] = timestamp
         body = {
             "env": env,
@@ -1453,7 +1451,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             }
             portal_uptime = portal_health_json.get("uptime")
             portal_started = convert_uptime_to_datetime(portal_uptime)
-            response["portal"]["started"] = convert_utc_datetime_to_local_datetime_string(portal_started)
+            response["portal"]["started"] = convert_utc_datetime_to_utc_datetime_string(portal_started)
             response["portal"]["identity"] = portal_health_json.get("identity")
             response["portal"]["elasticsearch"] = portal_health_json.get("elasticsearch")
             response["portal"]["database"] = portal_health_json.get("database")
@@ -1689,8 +1687,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 deployments.append({
                     "id": deployment.get("id"),
                     "task": deployment.get("taskDefinition"),
-                    "created": convert_utc_datetime_to_local_datetime_string(deployment.get("createdAt")),
-                    "updated": convert_utc_datetime_to_local_datetime_string(deployment.get("updatedAt"))
+                    "created": convert_utc_datetime_to_utc_datetime_string(deployment.get("createdAt")),
+                    "updated": convert_utc_datetime_to_utc_datetime_string(deployment.get("updatedAt"))
                 })
             if (not most_recent_deployment_at or
                 (most_recent_update_at and most_recent_update_at > most_recent_deployment_at)):
@@ -1701,7 +1699,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "deployments": deployments
             })
         if most_recent_deployment_at:
-            response["most_recent_deployed"] = convert_utc_datetime_to_local_datetime_string(most_recent_deployment_at)
+            response["most_recent_deployed"] = convert_utc_datetime_to_utc_datetime_string(most_recent_deployment_at)
         return self.create_success_response(response)
 
     def reactapi_reload_lambda(self, request: dict) -> Response:

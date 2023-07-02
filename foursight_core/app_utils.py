@@ -49,8 +49,8 @@ from .s3_connection import S3Connection
 from .react.api.auth import Auth
 from .react.api.react_api import ReactApi
 from .react.api.datetime_utils import (
-    convert_time_t_to_local_datetime_string,
-    convert_utc_datetime_to_local_datetime_string
+    convert_time_t_to_utc_datetime_string,
+    convert_utc_datetime_to_utc_datetime_string
 )
 from .routes import Routes
 from .route_prefixes import CHALICE_LOCAL
@@ -239,8 +239,8 @@ class AppUtilsCore(ReactApi, Routes):
                         last_name = name.get("name_last")
                 subject = jwt_decoded.get("sub")
                 audience = jwt_decoded.get("aud")
-                issued_time = convert_time_t_to_local_datetime_string(jwt_decoded.get("iat"))
-                expiration_time = convert_time_t_to_local_datetime_string(jwt_decoded.get("exp"))
+                issued_time = convert_time_t_to_utc_datetime_string(jwt_decoded.get("iat"))
+                expiration_time = convert_time_t_to_utc_datetime_string(jwt_decoded.get("exp"))
         except Exception as e:
             self.note_non_fatal_error_for_ui_info(e, 'get_logged_in_user_info')
         return {"email_address": email_address,
@@ -785,10 +785,10 @@ class AppUtilsCore(ReactApi, Routes):
                 lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
                 lambda_last_modified_tag = lambda_tags.get("last_modified")
                 if lambda_last_modified_tag:
-                    lambda_last_modified = convert_utc_datetime_to_local_datetime_string(lambda_last_modified_tag)
+                    lambda_last_modified = convert_utc_datetime_to_utc_datetime_string(lambda_last_modified_tag)
                 else:
                     lambda_last_modified = lambda_info["Configuration"]["LastModified"]
-                    lambda_last_modified = convert_utc_datetime_to_local_datetime_string(lambda_last_modified)
+                    lambda_last_modified = convert_utc_datetime_to_utc_datetime_string(lambda_last_modified)
                 return lambda_last_modified
         except Exception as e:
             logger.warning(f"Error getting lambda ({lambda_name}) last modified time: {e}")
@@ -1139,7 +1139,7 @@ class AppUtilsCore(ReactApi, Routes):
                 "first_name": user_record.get("first_name"),
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
-                "modified": convert_utc_datetime_to_local_datetime_string(last_modified)})
+                "modified": convert_utc_datetime_to_utc_datetime_string(last_modified)})
         users = sorted(users, key=lambda key: key["email_address"])
         template = self.jin_env.get_template('users.html')
         html_resp.body = template.render(

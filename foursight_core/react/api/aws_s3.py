@@ -1,6 +1,6 @@
 import logging
 from typing import Optional
-from .datetime_utils import convert_utc_datetime_to_local_datetime_string
+from .datetime_utils import convert_utc_datetime_to_utc_datetime_string
 from ...boto_s3 import boto_s3_client, boto_s3_resource
 
 logging.basicConfig()
@@ -32,7 +32,7 @@ class AwsS3:
                         results.append({
                             "key": bucket_key["Key"],
                             "size": bucket_key["Size"],
-                            "modified": convert_utc_datetime_to_local_datetime_string(bucket_key["LastModified"])
+                            "modified": convert_utc_datetime_to_utc_datetime_string(bucket_key["LastModified"])
                         })
 
         except Exception as e:

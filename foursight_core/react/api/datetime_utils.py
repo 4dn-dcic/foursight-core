@@ -2,14 +2,13 @@ import datetime
 import dateutil.parser as dateutil_parser
 import pytz
 from typing import Optional, Union
-import tzlocal
 
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)  # I.e.: 1970-01-01 00:00:00 UTC
-LOCAL_TIMEZONE_NAME = tzlocal.get_localzone_name()
 
 
-def convert_utc_datetime_to_datetime_string(t: Union[datetime.datetime, str], tzname: str) -> Optional[str]:
+def _convert_utc_datetime_to_datetime_string(t: Union[datetime.datetime, str],
+                                             tzname: Optional[str] = None) -> Optional[str]:
     """
     Converts the given datetime object OR string, which is ASSUMED to by in the UTC timezone,
     into a datetime string in the given/named timezone, and returns its value in a form that looks
@@ -18,6 +17,7 @@ def convert_utc_datetime_to_datetime_string(t: Union[datetime.datetime, str], tz
     boto3 (e.g. for a lambda last-modified value) or from values in ElasticSearch.
 
     :param t: A datetime object or string value ASSUMED to be in the UTC timezone.
+    :param tzname: A timezone name (string); default to UTC if unspecified.
     :return: A datetime string in the given timezone formatted like: 2022-08-22 13:25:34 EDT
     """
     def make_utc_aware_datetime(t: datetime) -> datetime:
@@ -36,36 +36,38 @@ def convert_utc_datetime_to_datetime_string(t: Union[datetime.datetime, str], tz
             # t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
             #
             t = dateutil_parser.parse(t)
-        t = make_utc_aware_datetime(t).astimezone(pytz.timezone(tzname))
+        tz = pytz.timezone(tzname) if tzname else pytz.UTC
+        t = make_utc_aware_datetime(t).astimezone(tz)
         return t.strftime("%Y-%m-%d %H:%M:%S %Z")
-    except Exception:
+    except Exception as e:
         return None
 
 
-def convert_utc_datetime_to_local_datetime_string(t: Union[datetime.datetime, str]) -> Optional[str]:
+def convert_utc_datetime_to_utc_datetime_string(t: Union[datetime.datetime, str]) -> Optional[str]:
     """
-    Same as convert_utc_datetime_to_datetime_string (above) but specifically for the local timezone.
+    Same as _convert_utc_datetime_to_datetime_string (above) but explicitly for the UTC timezone.
     """
-    return convert_utc_datetime_to_datetime_string(t, LOCAL_TIMEZONE_NAME)
+    return _convert_utc_datetime_to_datetime_string(t)
 
 
-def convert_time_t_to_datetime_string(time_t: int, tzname: str) -> Optional[str]:
+def convert_time_t_to_datetime_string(time_t: int, tzname: Optional[str] = None) -> Optional[str]:
     """
     Converts the given "epoch" time (seconds since 1970-01-01T00:00:00Z)
     integer value to a datetime string in the given/named timezone,
     and returns its value in a form that looks like 2022-08-22 13:25:34 EDT.
 
     :param time_t: Epoch time value (i.e. seconds since 1970-01-01T00:00:00Z)
+    :param tzname: A timezone name (string); default to UTC if unspecified.
     :return: A datetime string in the given timezone formatted like: 2022-08-22 13:25:34 EDT
     """
-    return convert_utc_datetime_to_datetime_string(convert_time_t_to_datetime(time_t), tzname)
+    return _convert_utc_datetime_to_datetime_string(convert_time_t_to_datetime(time_t), tzname)
 
 
-def convert_time_t_to_local_datetime_string(time_t: int) -> Optional[str]:
+def convert_time_t_to_utc_datetime_string(time_t: int) -> Optional[str]:
     """
-    Same as convert_time_t_to_datetime_string (above) but specifically for the local timezone.
+    Same as convert_time_t_to_datetime_string (above) but explicitly for the UTC timezone.
     """
-    return convert_time_t_to_datetime_string(time_t, LOCAL_TIMEZONE_NAME)
+    return convert_time_t_to_datetime_string(time_t)
 
 
 def convert_iso_datetime_string_to_datetime(value: str) -> Optional[datetime.datetime]:
