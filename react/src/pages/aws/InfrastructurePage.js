@@ -1022,13 +1022,11 @@ const Ecosystem = (props) => {
 }
 
 const EcsClusterDetail = (props) => {
-    const cluster = useFetch(`//aws/ecs/clusters/${encodeURIComponent(props.cluster)}`, { cache: true });
+    const cluster = useFetch(`//aws/ecs/clusters/${encodeURIComponent(props.cluster?.name)}`, { cache: true });
     return <div className="box" style={{background:"inherit",marginTop:"2pt",marginBottom:"3pt",overflow:"auto"}}>
         <JsonToggleDiv data={cluster.data} yaml={true} both={true}>
             <small>
-                { props.clusterDisplayName != cluster.data?.name && <>
-                    <b>Name</b>: {cluster.data?.name}<br />
-                </> }
+                <b>Name</b>: {cluster.data?.name}<br />
                 <b>ARN</b>: {cluster.data?.arn} <br />
                 <b>Deployed</b>: {cluster.data?.most_recent_deployed}
             </small>
@@ -1046,17 +1044,15 @@ const EcsCluster = (props) => {
     const toggleShowDetail = () => toggleShow("detail");
     const isShowDetail = () => isShow("detail");
 
-    const clusterDisplayName = props.commonInitialSubstring ? props.cluster?.replace(props.commonInitialSubstring, "") : props.cluster
-
     return <div>
-        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{clusterDisplayName}</span>
+        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{props.cluster?.name}</span>
         <ExternalLink
-            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${clusterDisplayName}/services?region=us-east-1`}
+            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${props.cluster?.name}/services?region=us-east-1`}
             style={{marginLeft:"6pt"}} />
         { isShowDetail() ? <>
             <EcsClusterDetail
                 cluster={props.cluster}
-                clusterDisplayName={clusterDisplayName}
+                clusterDisplayName={props.cluster?.name}
                 keyedState={props.keyedState} />
         </>:<>
         </> }
@@ -1068,8 +1064,6 @@ const EcsClusters = (props) => {
     const { keyedState, hide } = props;
     const clusters = useFetch("//aws/ecs/clusters");
 
-    const commonInitialSubstring = Str.LongestCommonInitialSubstring(clusters.data);
-
     return <div style={{marginBottom:"8pt"}}>
         <div>
            <b>AWS ESC Clusters</b>&nbsp;&nbsp;{!clusters.loading && <small>({clusters?.length})</small>}
@@ -1077,8 +1071,8 @@ const EcsClusters = (props) => {
         </div>
         <div style={{width:"100%"}} className="box lighten nomargin">
             { clusters.loading && <div><StandardSpinner label="Loading ECS clusters" /></div> }
-            { clusters.map((cluster, index) => <div key={cluster}>
-                <EcsCluster cluster={cluster} commonInitialSubstring={commonInitialSubstring} keyedState={keyedState?.keyed(cluster)} />
+            { clusters.map((cluster, index) => <div key={cluster?.name}>
+                <EcsCluster cluster={cluster} keyedState={keyedState?.keyed(cluster?.name)} />
 				{ index < clusters.length - 1 && <HorizontalLine top="2pt" bottom="2pt" dotted={true} /> }
             </div>)}
         </div>

@@ -1659,7 +1659,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def reactapi_aws_ecs_clusters(self) -> Response:
         ecs = ECSUtils()
         clusters = ecs.list_ecs_clusters()
-        clusters.sort()
+        def ecs_cluster_arn_to_name(cluster_arn: str) -> str:
+            cluster_arn_parts = cluster_arn.split("/", 1)
+            return cluster_arn_parts[1] if len(cluster_arn_parts) > 1 else cluster_arn
+        clusters = [{"name": ecs_cluster_arn_to_name(arn), "arn": arn} for arn in clusters]
+        clusters = sorted(clusters, key=lambda item: item["name"])
         return self.create_success_response(clusters)
 
     def reactapi_aws_ecs_cluster(self, cluster_name: str) -> Response:
