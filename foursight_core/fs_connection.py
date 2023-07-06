@@ -57,8 +57,9 @@ class FSConnection(object):
                 self.redis = RedisBase(create_redis_client(url=self.redis_url))
             else:
                 PRINT("Redis URL was not specified in any way so running without Redis.")
-        except redis.exceptions.ConnectionError:
-            PRINT(f"Cannot connect to Redis ({self.redis_url}); but can run without it so continuing.")
+        except redis.exceptions.ConnectionError as e:
+            PRINT(f"Error {str(e)} \n"
+                  f"Cannot connect to Redis ({self.redis_url}); but can run without it so continuing.")
             self.redis = None
             self.redis_url = None
         if self.redis:
