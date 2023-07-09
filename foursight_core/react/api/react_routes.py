@@ -662,7 +662,9 @@ class ReactRoutes:
     @route("/aws/ecs/tasks/{task_definition_arn}", authorize=True)
     def reactapi_route_aws_ecs_task(task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
         if task_definition_arn.lower() == "all":
-            return app.core.reactapi_aws_ecs_tasks()
+            return app.core.reactapi_aws_ecs_tasks(latest=False)
+        if task_definition_arn.lower() == "latest":
+            return app.core.reactapi_aws_ecs_tasks(latest=True)
         return app.core.reactapi_aws_ecs_task(task_definition_arn)
 
     # ----------------------------------------------------------------------------------------------

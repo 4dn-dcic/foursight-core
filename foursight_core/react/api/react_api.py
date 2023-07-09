@@ -1673,7 +1673,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # Given cluster_name may actually be either a cluster name or its ARN,
         # e.g. either c4-ecs-cgap-supertest-stack-CGAPDockerClusterForCgapSupertest-YZMGi06YOoSh or
         # arn:aws:ecs:us-east-1:466564410312:cluster/c4-ecs-cgap-supertest-stack-CGAPDockerClusterForCgapSupertest-YZMGi06YOoSh
-        # We URL-decode because it is not uncommon for the cluster ARN to contain a slash.
+        # URL-decode because the ARN may contain a slash.
         cluster_arn = urllib.parse.unquote(cluster_arn)
         ecs = ECSUtils()
         cluster = ecs.client.describe_clusters(clusters=[cluster_arn])["clusters"][0]
@@ -1754,10 +1754,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
         task_definition_arns.sort()
         return task_definition_arns
 
-    def reactapi_aws_ecs_tasks(self) -> Response:
+    def reactapi_aws_ecs_tasks(self, latest: bool = True) -> Response:
         task_definitions = []
         ecs = boto3.client('ecs')
-        for task_definition_arn in ecs.list_task_definitions()['taskDefinitionArns']:
+        task_definition_arns = ecs.list_task_definitions()['taskDefinitionArns']
+        if latest:
+            task_definition_arns = list(set([self._ecs_task_definition_arn_to_name(task_definition_arn)
+                                             for task_definition_arn in task_definition_arns]))
+        for task_definition_arn in task_definition_arns:
             task_definition = self._reactapi_aws_ecs_task(task_definition_arn)
             task_containers = task_definition["task_containers"]
             task_container_names = [task_container["task_container_name"] for task_container in task_containers]
@@ -1794,8 +1798,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # Note that the task_definition_arn can be either the specific task definition revision ARN,
         # i.e. the one with the trailing ":<revision-number>", or the plain task definition ARN,
         # i.e. without that trailing revision suffix. If it is the without the revision suffix,
-        # then the latest (most recent, i.e. the revision with the highest number) is returned.
-        # We URL-decode because it is not uncommon for the task definition ARN to contain a slash.
+        # then the latest (most recent, i.e. the revision with the highest number) is returned;
+        # and the ARN prefix, e.g. "arn:aws:ecs:us-east-1:643366669028:task-definition", may be
+        # also be omitted. URL-decode because the ARN may contain a slash.
         task_definition_arn = urllib.parse.unquote(task_definition_arn)
         ecs = boto3.client('ecs')
         task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)["taskDefinition"]
