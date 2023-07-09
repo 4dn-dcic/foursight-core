@@ -14,7 +14,7 @@ import Yaml from '../utils/Yaml';
 import { HorizontalLine } from '../Components';
 
 const JsonToggleDiv = (props) => {
-    const [ showJson, setShowJson ] = useState(false);
+    const [ showJson, setShowJson ] = useState(props.showJson);
     const toggleJson = () => setShowJson(!showJson);
     const childrenRef = useRef(null);
     return props.disabled ? <>{props.children}</> : <div>

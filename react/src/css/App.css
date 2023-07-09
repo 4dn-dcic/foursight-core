@@ -395,6 +395,9 @@
 .box.bigmargin {
     margin-top: 3.6pt;
 }
+.box.smallpadding {
+    padding: 0.40em 0.4em 0 0.4em;
+}
 .box.noborder {
     border: 0;
 }
@@ -406,6 +409,9 @@
 }
 .box.darken {
     background: var(--box-bg-darken);
+}
+.box.nobackground {
+    background: inherit;
 }
 .box.warning {
     background-color: #FCF8E3;

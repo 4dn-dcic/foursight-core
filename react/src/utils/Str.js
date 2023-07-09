@@ -12,10 +12,13 @@ function FormatBytes(bytes, decimals = 2) {
     return parseFloat(bytes.toFixed(decimals)) + ' ' + units[i];
 }
 
-function LongestCommonInitialSubstring(stringArray) {
+function LongestCommonInitialSubstring(stringArray, f = null) {
     if (!Array.isArray(stringArray) || (stringArray.length <= 1)) {
 		return "";
 	}
+    if (typeof f == 'function') {
+        stringArray = stringArray.map(element => f(element));
+    }
     const first = stringArray[0];
     let longest = "";
     for (let i = 0 ; i < first.length ; i++) {

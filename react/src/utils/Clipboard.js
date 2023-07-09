@@ -21,10 +21,15 @@ function CopyToClipboard(id) {
     }
 }
 
+function CopyTextToClipboard(text) {
+    navigator.clipboard.writeText(text);
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
-    Copy: CopyToClipboard
+    Copy: CopyToClipboard,
+    CopyText: CopyTextToClipboard
 }; export default exports;

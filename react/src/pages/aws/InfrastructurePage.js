@@ -6,6 +6,7 @@ import useFetch from '../../hooks/Fetch';
 import { ExternalLink } from '../../Components';
 import Char from '../../utils/Char';
 import Clipboard from '../../utils/Clipboard';
+import DateTime from '../../utils/DateTime';
 import Image from '../../utils/Image';
 import Json from '../../utils/Json';
 import JsonToggleDiv from '../../components/JsonToggleDiv';
@@ -137,6 +138,7 @@ const InfrastructurePage = () => {
         for (let secretsName of urlArgs.getList("secrets")) {
             selectSecrets(secretsName);
         }
+        toggleEcsClusters();
     }, []);
 
     return <table><tbody><tr>
@@ -804,11 +806,11 @@ const Stack = (props) => {
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Created:</td>
-                    <td style={tdContentStyle}>{stack.data?.created}</td>
+                    <td style={tdContentStyle}>{DateTime.Format(stack.data?.created)}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Updated:</td>
-                    <td style={tdContentStyle}>{stack.data?.updated}</td>
+                    <td style={tdContentStyle}>{DateTime.Format(stack.data?.updated)}</td>
                 </tr>
                 <HorizontalLine top="2pt" bottom="2pt" table={2} />
                 <tr>
@@ -1021,14 +1023,69 @@ const Ecosystem = (props) => {
     </div>
 }
 
+const EcsClusterServices = (props) => {
+    const longestCommonInitialSubstring = Str.LongestCommonInitialSubstring(props.services, service => service.service_name);
+    return <div className="box bigmargin smallpadding nobackground"><ul>
+        { props.services?.map((service, index) => <>
+            <li>
+                <b>
+                    { service.service_name == service.service_display_name ? <>
+                        <span onClick={() => {Clipboard.CopyText(service.service_name);}} style={{cursor:"copy"}}>
+                            <b id={`tooltip-${service.service_name}`}>{service.service_name.substring(longestCommonInitialSubstring.length)}</b>
+                            <Tooltip id={`tooltip-${service.service_name}`} text={service.service_name} position="right" shape="squared" />
+                        </span>
+                    </>:<>
+                        {service.service_name}
+                    </> }
+                </b>
+                <ExternalLink
+                    href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${props.cluster}/services/${service.service_name}/health?region=us-east-1`}
+                    style={{marginLeft:"6pt"}} />
+                <br />
+                <small>
+                    <b>Service ARN</b>: {service.service_arn} <br />
+                    { service.service_name == service.service_display_name && <>
+                        <b>Service Name</b>: Service: {service.service_display_name} <br />
+                    </> }
+                    <b>Task Definition</b>: {service.task_display_name}
+                        <ExternalLink
+                            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/${service.task_name}?region=us-east-1`}
+                            style={{marginLeft:"6pt"}} /> <br />
+                    <b>Task</b>: {service.task_arn}
+                        <ExternalLink
+                            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/${service.task_name}/1/containers?region=us-east-1`}
+                            style={{marginLeft:"6pt"}} />
+                </small>
+                { index < props.services.length - 1 && <><br /><br /></> }
+            </li>
+        </>) }
+    </ul></div>
+}
+
 const EcsClusterDetail = (props) => {
-    const cluster = useFetch(`//aws/ecs/clusters/${encodeURIComponent(props.cluster?.name)}`, { cache: true });
+    const [ state, setState ] = useKeyedState(props.keyedState);
+    const isShowServices = () => state["show-services"]
+    const toggleShowServices = () => setState({ "show-services": !isShowServices() });
+    const cluster = useFetch(`//aws/ecs/clusters/${encodeURIComponent(props.cluster?.cluster_name)}`, { cache: true });
+    useEffect(() => {
+        toggleShowServices();
+    }, []);
     return <div className="box" style={{background:"inherit",marginTop:"2pt",marginBottom:"3pt",overflow:"auto"}}>
         <JsonToggleDiv data={cluster.data} yaml={true} both={true}>
             <small>
-                <b>Name</b>: {cluster.data?.name}<br />
-                <b>ARN</b>: {cluster.data?.arn} <br />
-                <b>Deployed</b>: {cluster.data?.most_recent_deployed}
+                <b>Cluster ARN</b>: {cluster.data?.cluster_arn} <br />
+                <b>Status</b>: {cluster.data?.status} <br />
+                <b>Deployed</b>: {DateTime.Format(cluster.data?.most_recent_deployment_at)} <br />
+                <b>Services</b>: {cluster.data?.services?.length}
+                { cluster.data?.services?.length > 0 && <>
+                    &nbsp;
+                    { isShowServices() ? <>
+                        <span onClick={toggleShowServices} className="pointer">{Char.DownArrow}</span>
+                        <EcsClusterServices cluster={cluster.data?.cluster_name} services={cluster.data?.services} />
+                    </>:<>
+                        <span onClick={toggleShowServices} className="pointer">{Char.UpArrow}</span>
+                    </> }
+                </> }
             </small>
         </JsonToggleDiv>
     </div>
@@ -1045,14 +1102,14 @@ const EcsCluster = (props) => {
     const isShowDetail = () => isShow("detail");
 
     return <div>
-        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{props.cluster?.name}</span>
+        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{props.cluster?.cluster_name}</span>
         <ExternalLink
-            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${props.cluster?.name}/services?region=us-east-1`}
+            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${props.cluster?.cluster_name}/services?region=us-east-1`}
             style={{marginLeft:"6pt"}} />
         { isShowDetail() ? <>
             <EcsClusterDetail
                 cluster={props.cluster}
-                clusterDisplayName={props.cluster?.name}
+                clusterDisplayName={props.cluster?.cluster_name}
                 keyedState={props.keyedState} />
         </>:<>
         </> }
@@ -1071,8 +1128,8 @@ const EcsClusters = (props) => {
         </div>
         <div style={{width:"100%"}} className="box lighten nomargin">
             { clusters.loading && <div><StandardSpinner label="Loading ECS clusters" /></div> }
-            { clusters.map((cluster, index) => <div key={cluster?.name}>
-                <EcsCluster cluster={cluster} keyedState={keyedState?.keyed(cluster?.name)} />
+            { clusters.map((cluster, index) => <div key={cluster?.cluster_name}>
+                <EcsCluster cluster={cluster} keyedState={keyedState?.keyed(cluster?.cluster_name)} />
 				{ index < clusters.length - 1 && <HorizontalLine top="2pt" bottom="2pt" dotted={true} /> }
             </div>)}
         </div>

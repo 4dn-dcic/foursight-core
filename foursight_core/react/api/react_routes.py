@@ -655,6 +655,10 @@ class ReactRoutes:
     def reactapi_route_aws_ecs_cluster(cluster_name: str) -> Response:  # noqa: implicit @staticmethod via @route
         return app.core.reactapi_aws_ecs_cluster(cluster_name=cluster_name)
 
+    @route("/aws/ecs/tasks", authorize=True)
+    def reactapi_route_aws_ecs_tasks() -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_ecs_tasks()
+
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes, serving the HTML/CSS/JavaScript/React files.
     # Note that ALL of these are UNPROTECTED routes.

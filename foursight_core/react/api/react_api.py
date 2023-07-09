@@ -49,6 +49,8 @@ from .gac import Gac
 from .misc_utils import (
     get_base_url,
     is_running_locally,
+    longest_common_initial_substring,
+    name_value_list_to_dict,
     sort_dictionary_by_case_insensitive_keys
 )
 from .portal_access_key_utils import get_portal_access_key_info
@@ -1662,19 +1664,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
         def ecs_cluster_arn_to_name(cluster_arn: str) -> str:
             cluster_arn_parts = cluster_arn.split("/", 1)
             return cluster_arn_parts[1] if len(cluster_arn_parts) > 1 else cluster_arn
-        clusters = [{"name": ecs_cluster_arn_to_name(arn), "arn": arn} for arn in clusters]
-        clusters = sorted(clusters, key=lambda item: item["name"])
+
+        clusters = [{"cluster_name": ecs_cluster_arn_to_name(arn), "cluster_arn": arn} for arn in clusters]
+        clusters = sorted(clusters, key=lambda item: item["cluster_name"])
         return self.create_success_response(clusters)
 
     def reactapi_aws_ecs_cluster(self, cluster_name: str) -> Response:
-        # Given cluster_name may be either cluster name or ARN.
+        # Given cluster_name may be either cluster name or ARN,
+        # e.g. either c4-ecs-cgap-supertest-stack-CGAPDockerClusterForCgapSupertest-YZMGi06YOoSh or
+        # arn:aws:ecs:us-east-1:466564410312:cluster/c4-ecs-cgap-supertest-stack-CGAPDockerClusterForCgapSupertest-YZMGi06YOoSh
         # We URL-decode because it is not uncommon for the cluster name to contain a slash.
+
         cluster_name = urllib.parse.unquote(cluster_name)
         ecs = ECSUtils()
         cluster = ecs.client.describe_clusters(clusters=[cluster_name])["clusters"][0]
         response = {
-            "arn": cluster["clusterArn"],
-            "name": cluster["clusterName"],
+            "cluster_arn": cluster["clusterArn"],
+            "cluster_name": cluster["clusterName"],
             "status": cluster["status"],
             "services": []
         }
@@ -1684,27 +1690,130 @@ class ReactApi(ReactApiBase, ReactRoutes):
             service = ecs.client.describe_services(cluster=cluster_name, services=[service_arn])["services"][0]
             deployments = []
             most_recent_update_at = None
+            # Typically we have just one deployment record, but if there are more than one, then the
+            # one with a status of PRIMARY (of which there should be at most one), is the active one,
+            # and we will place that first in the list; all others will go after that.
             for deployment in service.get("deployments", []):
                 if (not most_recent_update_at or
                     (deployment.get("updatedAt") and deployment.get("updatedAt") > most_recent_update_at)):
                     most_recent_update_at = deployment.get("updatedAt")
-                deployments.append({
-                    "id": deployment.get("id"),
-                    "task": deployment.get("taskDefinition"),
+                deployment_status = deployment.get("status")
+                deployment_info = {
+                    "deployment_id": deployment.get("id"),
+                    "task_arn": deployment.get("taskDefinition"),
+                    "task_name": self._ecs_task_definition_arn_to_name(deployment.get("taskDefinition")),
+                    "task_display_name": self._ecs_task_definition_arn_to_name(deployment.get("taskDefinition")),
+                    "status": deployment_status,
+                    "counts": {"running": deployment.get("runningCount"),
+                               "pending": deployment.get("pendingCount"),
+                               "expected": deployment.get("desiredCount")},
+                    "rollout": {"state": deployment.get("rolloutState"),
+                                "reason": deployment.get("rolloutStateReason")},
                     "created": convert_utc_datetime_to_utc_datetime_string(deployment.get("createdAt")),
                     "updated": convert_utc_datetime_to_utc_datetime_string(deployment.get("updatedAt"))
-                })
+                }
+                if deployment_status and deployment_status.upper() == "PRIMARY":
+                    deployments.insert(0, deployment_info)
+                else:
+                    deployments.append(deployment_info)
             if (not most_recent_deployment_at or
                 (most_recent_update_at and most_recent_update_at > most_recent_deployment_at)):
                 most_recent_deployment_at = most_recent_update_at
+            if len(deployments) > 1:
+                task_name_common_prefix = longest_common_initial_substring([deployment["task_name"] for deployment in deployments])
+                if task_name_common_prefix:
+                    for deployment in deployments:
+                        deployment["task_display_name"] = deployment["task_name"][len(task_name_common_prefix):]
             response["services"].append({
-                "arn": service_arn,
-                "name": service.get("serviceName"),
+                "service_arn": service_arn,
+                "service_name": service.get("serviceName"),
+                "service_display_name": service.get("serviceName"),
+                "task_arn": service.get("taskDefinition"),
+                "task_name": self._ecs_task_definition_arn_to_name(service.get("taskDefinition")),
+                "task_display_name": self._ecs_task_definition_arn_to_name(service.get("taskDefinition")),
                 "deployments": deployments
             })
+        if len(response["services"]) > 1:
+            service_name_common_prefix = (
+                longest_common_initial_substring([service["service_name"] for service in response["services"]]))
+            if service_name_common_prefix:
+                for service in response["services"]:
+                    service["service_display_name"] = service["service_name"][len(service_name_common_prefix):]
+            task_name_common_prefix = (
+                longest_common_initial_substring([service["task_name"] for service in response["services"]]))
+            if task_name_common_prefix:
+                for service in response["services"]:
+                    service["task_display_name"] = service["task_name"][len(task_name_common_prefix):]
+
         if most_recent_deployment_at:
-            response["most_recent_deployed"] = convert_utc_datetime_to_utc_datetime_string(most_recent_deployment_at)
+            response["most_recent_deployment_at"] = convert_utc_datetime_to_utc_datetime_string(most_recent_deployment_at)
         return self.create_success_response(response)
+
+    def reactapi_aws_ecs_tasks(self) -> Response:
+        task_definitions = []
+        ecs = boto3.client('ecs')
+        for task_definition_arn in ecs.list_task_definitions()['taskDefinitionArns']:
+            task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)["taskDefinition"]
+            task_containers = []
+            for task_container in task_definition.get("containerDefinitions", []):
+                task_container_log = task_container.get("logConfiguration", {}).get("options", {})
+                task_containers.append({
+                    "task_container_name": task_container["name"],
+                    "task_container_image": task_container["image"],
+                    "task_container_env": obfuscate_dict(name_value_list_to_dict(task_container["environment"])),
+                    "task_container_log_group": task_container_log.get("awslogs-group"),
+                    "task_container_log_region": task_container_log.get("awslogs-region"),
+                    "task_container_log_stream_prefix": task_container_log.get("awslogs-stream-prefix")
+                })
+            task_definition = {
+                "task_arn": task_definition_arn,
+                # The values of the task_family and task_name below should be exactly the same.
+                "task_family": task_definition["family"],
+                "task_name": self._ecs_task_definition_arn_to_name(task_definition_arn),
+                "task_display_name": task_definition["family"],
+                "task_containers": task_containers
+            }
+            task_container_names = [task_container["task_container_name"] for task_container in task_containers]
+            if task_container_names:
+                # If the "name" value of all of the task containers are then same then we
+                # will take this to be the the task display name, e.g. "DeploymentAction".
+                if all(task_container_name == task_container_names[0] for task_container_name in task_container_names):
+                    task_definition["task_display_name"] = task_container_names[0]
+            task_definitions.append(task_definition)
+        # Here we have the flattened out list of task definitions, by revisions,
+        # but we want them (the revisions) to be grouped by task_family, so do that now.
+        response = []
+        for task_definition in task_definitions:
+            task_family = task_definition["task_family"]
+            task_definition_response = [td for td in response if td["task_family"] == task_family]
+            if not task_definition_response:
+                task_definition_response = {
+                    "task_family": task_family,
+                    "task_name": task_definition["task_name"],
+                    "task_display_name": task_definition["task_display_name"],
+                    "task_revisions": []
+                }
+                response.append(task_definition_response)
+            else:
+                task_definition_response = task_definition_response[0]
+            task_definition_response["task_revisions"].append(task_definition)
+        response.sort(key=lambda value: value["task_family"])
+        return self.create_success_response(response)
+
+    @staticmethod
+    def _ecs_task_definition_arn_to_name(task_definition_arn: str) -> str:
+        """
+        Given something like this:
+        - arn:aws:ecs:us-east-1:466564410312:task-definition/c4-ecs-cgap-supertest-stack-CGAPDeployment-of2dr96JX1ds:1
+        this function would return this: 
+        - c4-ecs-cgap-supertest-stack-CGAPDeployment-of2dr96JX1ds
+        """
+        if not task_definition_arn:
+            return ""
+        task_definition_arn_parts = task_definition_arn.split("/", 1)
+        task_definition_name = task_definition_arn_parts[1] if len(task_definition_arn_parts) > 1 else task_definition_arn
+        task_definition_name_parts = task_definition_name.rsplit(":", 1)
+        return task_definition_name_parts[0] if len(task_definition_name_parts) > 1 else task_definition_name
 
     def reactapi_reload_lambda(self, request: dict) -> Response:
         """
