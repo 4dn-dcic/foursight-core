@@ -52,7 +52,8 @@ const InfrastructurePage = () => {
          { type: "gac",             create: createGac            },
          { type: "secrets",         create: createSecrets        },
          { type: "ecosystem",       create: createEcosystem      },
-         { type: "ecs-clusters",    create: createEcsClusters    }
+         { type: "ecs-clusters",    create: createEcsClusters    },
+         { type: "ecs-tasks",       create: createEcsTasks       }
     ];
 
     const componentsLeft = useSelectedComponents(componentDefinitions);
@@ -104,6 +105,11 @@ const InfrastructurePage = () => {
         return <EcsClusters keyedState={keyedState.keyed(key)} hide={unselect} />;
     }
 
+    function createEcsTasks(name, key, unselect, args) {
+        const { keyedState } = args;
+        return <EcsTasks keyedState={keyedState.keyed(key)} hide={unselect} />;
+    }
+
     const selectedVpcs           = () => componentsLeft.selected("vpcs");
     const toggleVpcs             = () => componentsLeft.toggle("vpcs");
 
@@ -132,6 +138,9 @@ const InfrastructurePage = () => {
     const selectedEcsClusters    = () => componentsLeft.selected("ecs-clusters");
     const toggleEcsClusters      = () => componentsLeft.toggle("ecs-clusters");
 
+    const selectedEcsTasks       = () => componentsLeft.selected("ecs-tasks");
+    const toggleEcsTasks         = () => componentsLeft.toggle("ecs-tasks");
+
     useEffect(() => {
         toggleVpcs();
         toggleEcosystem();
@@ -139,6 +148,7 @@ const InfrastructurePage = () => {
             selectSecrets(secretsName);
         }
         toggleEcsClusters();
+        toggleEcsTasks();
     }, []);
 
     return <table><tbody><tr>
@@ -155,6 +165,7 @@ const InfrastructurePage = () => {
             />
             <EcsList
                 showEcsClusters={selectedEcsClusters} toggleEcsClusters={toggleEcsClusters}
+                showEcsTasks={selectedEcsTasks} toggleEcsTasks={toggleEcsTasks}
             />
             <SecretNameList
                 toggleSecrets={toggleSecrets}
@@ -197,10 +208,12 @@ const NetworkList = (props) => {
 
 const EcsList = (props) => {
     const { showEcsClusters, toggleEcsClusters } = props;
+    const { showEcsTasks, toggleEcsTasks } = props;
     return <>
         <div><b>AWS Elastic Container Service</b></div>
         <div className="box margin" style={{width:"100%",marginBottom:"6pt"}}>
             <div className="pointer" style={{fontWeight:showEcsClusters() ? "bold" : "normal"}} onClick={toggleEcsClusters}>Clusters</div>
+            <div className="pointer" style={{fontWeight:showEcsTasks() ? "bold" : "normal"}} onClick={toggleEcsTasks}>Tasks</div>
         </div>
     </>
 }
@@ -1023,6 +1036,79 @@ const Ecosystem = (props) => {
     </div>
 }
 
+const EcsClusters = (props) => {
+
+    const { keyedState, hide } = props;
+    const clusters = useFetch("//aws/ecs/clusters");
+
+    return <div style={{marginBottom:"8pt"}}>
+        <div>
+           <b>AWS ESC Clusters</b>&nbsp;&nbsp;{!clusters.loading && <small>({clusters?.length})</small>}
+            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
+        </div>
+        <div style={{width:"100%"}} className="box lighten nomargin">
+            { clusters.loading && <div><StandardSpinner label="Loading ECS clusters" /></div> }
+            { clusters.map((cluster, index) => <div key={cluster?.cluster_name}>
+                <EcsCluster cluster={cluster} keyedState={keyedState?.keyed(cluster?.cluster_name)} />
+				{ index < clusters.length - 1 && <HorizontalLine top="2pt" bottom="2pt" dotted={true} /> }
+            </div>)}
+        </div>
+    </div>
+}
+
+const EcsCluster = (props) => {
+
+    const [ state, setState ] = useKeyedState(props.keyedState);
+    const isShow = (property) => state[property];
+    const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
+
+    const toggleShowDetail = () => toggleShow("detail");
+    const isShowDetail = () => isShow("detail");
+
+    return <div>
+        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{props.cluster?.cluster_name}</span>
+        <ExternalLink
+            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${props.cluster?.cluster_name}/services?region=us-east-1`}
+            style={{marginLeft:"6pt"}} />
+        { isShowDetail() ? <>
+            <EcsClusterDetail
+                cluster={props.cluster}
+                clusterDisplayName={props.cluster?.cluster_name}
+                keyedState={props.keyedState} />
+        </>:<>
+        </> }
+    </div>
+}
+
+const EcsClusterDetail = (props) => {
+    const [ state, setState ] = useKeyedState(props.keyedState);
+    const isShowServices = () => state["show-services"]
+    const toggleShowServices = () => setState({ "show-services": !isShowServices() });
+    const cluster = useFetch(`//aws/ecs/clusters/${encodeURIComponent(props.cluster?.cluster_name)}`, { cache: true });
+    useEffect(() => {
+        toggleShowServices();
+    }, []);
+    return <div className="box" style={{background:"inherit",marginTop:"2pt",marginBottom:"3pt",overflow:"auto"}}>
+        <JsonToggleDiv data={cluster.data} yaml={true} both={true}>
+            <small>
+                <b>Cluster ARN</b>: {cluster.data?.cluster_arn} <br />
+                <b>Status</b>: {cluster.data?.status} <br />
+                <b>Deployed</b>: {DateTime.Format(cluster.data?.most_recent_deployment_at)} <br />
+                <b>Services</b>: {cluster.data?.services?.length}
+                { cluster.data?.services?.length > 0 && <>
+                    &nbsp;
+                    { isShowServices() ? <>
+                        <span onClick={toggleShowServices} className="pointer">{Char.DownArrow}</span>
+                        <EcsClusterServices cluster={cluster.data?.cluster_name} services={cluster.data?.services} />
+                    </>:<>
+                        <span onClick={toggleShowServices} className="pointer">{Char.UpArrow}</span>
+                    </> }
+                </> }
+            </small>
+        </JsonToggleDiv>
+    </div>
+}
+
 const EcsClusterServices = (props) => {
     const longestCommonInitialSubstring = Str.LongestCommonInitialSubstring(props.services, service => service.service_name);
     return <div className="box bigmargin smallpadding nobackground"><ul>
@@ -1062,78 +1148,50 @@ const EcsClusterServices = (props) => {
     </ul></div>
 }
 
-const EcsClusterDetail = (props) => {
-    const [ state, setState ] = useKeyedState(props.keyedState);
-    const isShowServices = () => state["show-services"]
-    const toggleShowServices = () => setState({ "show-services": !isShowServices() });
-    const cluster = useFetch(`//aws/ecs/clusters/${encodeURIComponent(props.cluster?.cluster_name)}`, { cache: true });
-    useEffect(() => {
-        toggleShowServices();
-    }, []);
-    return <div className="box" style={{background:"inherit",marginTop:"2pt",marginBottom:"3pt",overflow:"auto"}}>
-        <JsonToggleDiv data={cluster.data} yaml={true} both={true}>
-            <small>
-                <b>Cluster ARN</b>: {cluster.data?.cluster_arn} <br />
-                <b>Status</b>: {cluster.data?.status} <br />
-                <b>Deployed</b>: {DateTime.Format(cluster.data?.most_recent_deployment_at)} <br />
-                <b>Services</b>: {cluster.data?.services?.length}
-                { cluster.data?.services?.length > 0 && <>
-                    &nbsp;
-                    { isShowServices() ? <>
-                        <span onClick={toggleShowServices} className="pointer">{Char.DownArrow}</span>
-                        <EcsClusterServices cluster={cluster.data?.cluster_name} services={cluster.data?.services} />
-                    </>:<>
-                        <span onClick={toggleShowServices} className="pointer">{Char.UpArrow}</span>
-                    </> }
-                </> }
-            </small>
-        </JsonToggleDiv>
+const EcsTasks = (props) => {
+    const { keyedState, hide } = props;
+    const tasks = useFetch("//aws/ecs/tasks");
+    return <div style={{marginBottom:"8pt"}}>
+        <div>
+           <b>AWS ESC Tasks</b>&nbsp;&nbsp;{!tasks.loading && <small>({tasks?.length})</small>}
+            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
+        </div>
+        <div style={{width:"100%"}} className="box lighten nomargin">
+            { tasks.loading && <div><StandardSpinner label="Loading ECS tasks" /></div> }
+            { tasks.map((task, index) => <div key={task?.task_name}>
+                <EcsTask task={task} keyedState={keyedState?.keyed(task?.task_name)} />
+				{ index < tasks.length - 1 && <HorizontalLine top="2pt" bottom="2pt" dotted={true} /> }
+            </div>)}
+        </div>
     </div>
 }
 
-// IN PROGESS ...
-const EcsCluster = (props) => {
-
+const EcsTask = (props) => {
     const [ state, setState ] = useKeyedState(props.keyedState);
     const isShow = (property) => state[property];
     const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
-
     const toggleShowDetail = () => toggleShow("detail");
     const isShowDetail = () => isShow("detail");
-
     return <div>
-        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{props.cluster?.cluster_name}</span>
+        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{props.task?.task_name}</span>
         <ExternalLink
-            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${props.cluster?.cluster_name}/services?region=us-east-1`}
+            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/tasks/${props.task?.task_name}/services?region=us-east-1`}
             style={{marginLeft:"6pt"}} />
         { isShowDetail() ? <>
-            <EcsClusterDetail
-                cluster={props.cluster}
-                clusterDisplayName={props.cluster?.cluster_name}
+            <EcsTaskDetail
+                task={props.task}
+                taskDisplayName={props.task?.task_name}
                 keyedState={props.keyedState} />
         </>:<>
         </> }
     </div>
 }
 
-const EcsClusters = (props) => {
-
-    const { keyedState, hide } = props;
-    const clusters = useFetch("//aws/ecs/clusters");
-
-    return <div style={{marginBottom:"8pt"}}>
-        <div>
-           <b>AWS ESC Clusters</b>&nbsp;&nbsp;{!clusters.loading && <small>({clusters?.length})</small>}
-            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
-        </div>
-        <div style={{width:"100%"}} className="box lighten nomargin">
-            { clusters.loading && <div><StandardSpinner label="Loading ECS clusters" /></div> }
-            { clusters.map((cluster, index) => <div key={cluster?.cluster_name}>
-                <EcsCluster cluster={cluster} keyedState={keyedState?.keyed(cluster?.cluster_name)} />
-				{ index < clusters.length - 1 && <HorizontalLine top="2pt" bottom="2pt" dotted={true} /> }
-            </div>)}
-        </div>
-    </div>
+const EcsTaskDetail = (props) => {
+    return <>
+        ECS Task Detail
+        {JSON.stringify(props)}
+    </>
 }
 
 export default InfrastructurePage;

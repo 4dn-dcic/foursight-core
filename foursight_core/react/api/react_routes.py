@@ -651,13 +651,19 @@ class ReactRoutes:
     def reactapi_route_aws_ecs_clusters() -> Response:  # noqa: implicit @staticmethod via @route
         return app.core.reactapi_aws_ecs_clusters()
 
-    @route("/aws/ecs/clusters/{cluster_name}", authorize=True)
-    def reactapi_route_aws_ecs_cluster(cluster_name: str) -> Response:  # noqa: implicit @staticmethod via @route
-        return app.core.reactapi_aws_ecs_cluster(cluster_name=cluster_name)
+    @route("/aws/ecs/clusters/{cluster_arn}", authorize=True)
+    def reactapi_route_aws_ecs_cluster(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_ecs_cluster(cluster_arn=cluster_arn)
 
     @route("/aws/ecs/tasks", authorize=True)
     def reactapi_route_aws_ecs_tasks() -> Response:  # noqa: implicit @staticmethod via @route
-        return app.core.reactapi_aws_ecs_tasks()
+        return app.core.reactapi_aws_ecs_task_arns()
+
+    @route("/aws/ecs/tasks/{task_definition_arn}", authorize=True)
+    def reactapi_route_aws_ecs_task(task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+        if task_definition_arn.lower() == "all":
+            return app.core.reactapi_aws_ecs_tasks()
+        return app.core.reactapi_aws_ecs_task(task_definition_arn)
 
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes, serving the HTML/CSS/JavaScript/React files.

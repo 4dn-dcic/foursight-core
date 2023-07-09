@@ -1669,15 +1669,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
         clusters = sorted(clusters, key=lambda item: item["cluster_name"])
         return self.create_success_response(clusters)
 
-    def reactapi_aws_ecs_cluster(self, cluster_name: str) -> Response:
-        # Given cluster_name may be either cluster name or ARN,
+    def reactapi_aws_ecs_cluster(self, cluster_arn: str) -> Response:
+        # Given cluster_name may actually be either a cluster name or its ARN,
         # e.g. either c4-ecs-cgap-supertest-stack-CGAPDockerClusterForCgapSupertest-YZMGi06YOoSh or
         # arn:aws:ecs:us-east-1:466564410312:cluster/c4-ecs-cgap-supertest-stack-CGAPDockerClusterForCgapSupertest-YZMGi06YOoSh
-        # We URL-decode because it is not uncommon for the cluster name to contain a slash.
-
-        cluster_name = urllib.parse.unquote(cluster_name)
+        # We URL-decode because it is not uncommon for the cluster ARN to contain a slash.
+        cluster_arn = urllib.parse.unquote(cluster_arn)
         ecs = ECSUtils()
-        cluster = ecs.client.describe_clusters(clusters=[cluster_name])["clusters"][0]
+        cluster = ecs.client.describe_clusters(clusters=[cluster_arn])["clusters"][0]
         response = {
             "cluster_arn": cluster["clusterArn"],
             "cluster_name": cluster["clusterName"],
@@ -1685,9 +1684,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "services": []
         }
         most_recent_deployment_at = None
-        service_arns = ecs.list_ecs_services(cluster_name=cluster_name)
+        service_arns = ecs.list_ecs_services(cluster_name=cluster_arn)
         for service_arn in service_arns:
-            service = ecs.client.describe_services(cluster=cluster_name, services=[service_arn])["services"][0]
+            service = ecs.client.describe_services(cluster=cluster_arn, services=[service_arn])["services"][0]
             deployments = []
             most_recent_update_at = None
             # Typically we have just one deployment record, but if there are more than one, then the
@@ -1749,30 +1748,18 @@ class ReactApi(ReactApiBase, ReactRoutes):
             response["most_recent_deployment_at"] = convert_utc_datetime_to_utc_datetime_string(most_recent_deployment_at)
         return self.create_success_response(response)
 
+    def reactapi_aws_ecs_task_arns(self) -> Response:
+        ecs = boto3.client('ecs')
+        task_definition_arns = ecs.list_task_definitions()['taskDefinitionArns'] # ecs_utils.list_ecs_tasks
+        task_definition_arns.sort()
+        return task_definition_arns
+
     def reactapi_aws_ecs_tasks(self) -> Response:
         task_definitions = []
         ecs = boto3.client('ecs')
         for task_definition_arn in ecs.list_task_definitions()['taskDefinitionArns']:
-            task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)["taskDefinition"]
-            task_containers = []
-            for task_container in task_definition.get("containerDefinitions", []):
-                task_container_log = task_container.get("logConfiguration", {}).get("options", {})
-                task_containers.append({
-                    "task_container_name": task_container["name"],
-                    "task_container_image": task_container["image"],
-                    "task_container_env": obfuscate_dict(name_value_list_to_dict(task_container["environment"])),
-                    "task_container_log_group": task_container_log.get("awslogs-group"),
-                    "task_container_log_region": task_container_log.get("awslogs-region"),
-                    "task_container_log_stream_prefix": task_container_log.get("awslogs-stream-prefix")
-                })
-            task_definition = {
-                "task_arn": task_definition_arn,
-                # The values of the task_family and task_name below should be exactly the same.
-                "task_family": task_definition["family"],
-                "task_name": self._ecs_task_definition_arn_to_name(task_definition_arn),
-                "task_display_name": task_definition["family"],
-                "task_containers": task_containers
-            }
+            task_definition = self._reactapi_aws_ecs_task(task_definition_arn)
+            task_containers = task_definition["task_containers"]
             task_container_names = [task_container["task_container_name"] for task_container in task_containers]
             if task_container_names:
                 # If the "name" value of all of the task containers are then same then we
@@ -1799,6 +1786,45 @@ class ReactApi(ReactApiBase, ReactRoutes):
             task_definition_response["task_revisions"].append(task_definition)
         response.sort(key=lambda value: value["task_family"])
         return self.create_success_response(response)
+
+    def reactapi_aws_ecs_task(self, task_definition_arn: str) -> Response:
+        return self.create_success_response(self._reactapi_aws_ecs_task(task_definition_arn))
+
+    def _reactapi_aws_ecs_task(self, task_definition_arn: str) -> Response:
+        # Note that the task_definition_arn can be either the specific task definition revision ARN,
+        # i.e. the one with the trailing ":<revision-number>", or the plain task definition ARN,
+        # i.e. without that trailing revision suffix. If it is the without the revision suffix,
+        # then the latest (most recent, i.e. the revision with the highest number) is returned.
+        # We URL-decode because it is not uncommon for the task definition ARN to contain a slash.
+        task_definition_arn = urllib.parse.unquote(task_definition_arn)
+        ecs = boto3.client('ecs')
+        task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)["taskDefinition"]
+        task_containers = []
+        for task_container in task_definition.get("containerDefinitions", []):
+            task_container_log = task_container.get("logConfiguration", {}).get("options", {})
+            task_containers.append({
+                "task_container_name": task_container["name"],
+                "task_container_image": task_container["image"],
+                "task_container_env": obfuscate_dict(name_value_list_to_dict(task_container["environment"])),
+                "task_container_log_group": task_container_log.get("awslogs-group"),
+                "task_container_log_region": task_container_log.get("awslogs-region"),
+                "task_container_log_stream_prefix": task_container_log.get("awslogs-stream-prefix")
+            })
+        task_definition = {
+            "task_arn": task_definition["taskDefinitionArn"],
+            # The values of the task_family and task_name below should be exactly the same.
+            "task_family": task_definition["family"],
+            "task_name": self._ecs_task_definition_arn_to_name(task_definition_arn),
+            "task_display_name": task_definition["family"],
+            "task_containers": task_containers
+        }
+        task_container_names = [task_container["task_container_name"] for task_container in task_containers]
+        if task_container_names:
+            # If the "name" value of all of the task containers are then same then we
+            # will take this to be the the task display name, e.g. "DeploymentAction".
+            if all(task_container_name == task_container_names[0] for task_container_name in task_container_names):
+                task_definition["task_display_name"] = task_container_names[0]
+        return task_definition
 
     @staticmethod
     def _ecs_task_definition_arn_to_name(task_definition_arn: str) -> str:
