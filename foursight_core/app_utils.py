@@ -197,7 +197,7 @@ class AppUtilsCore(ReactApi, Routes):
                 'checks': {}
             }
             raise Exception(str(error_res))
-        connection = FSConnection(environ, environments[environ], host=self.host)
+        connection = FSConnection(environ, environments[environ], host=self.host, use_es=False)
         return connection
 
     def init_response(self, environ):
@@ -373,8 +373,8 @@ class AppUtilsCore(ReactApi, Routes):
             try:
                 if env is None:
                     return False  # we have no env to check auth
-                envs = self.init_environments(env).values()
-                for env_info in self.init_environments(env).values():
+                envs = self.init_environments(env)
+                for env_info in envs.values():
                     connection = self.init_connection(env, envs)
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
                                                      key=connection.ff_keys,
