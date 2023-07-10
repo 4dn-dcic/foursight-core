@@ -197,7 +197,7 @@ class AppUtilsCore(ReactApi, Routes):
                 'checks': {}
             }
             raise Exception(str(error_res))
-        connection = FSConnection(environ, environments[environ], host=self.host, use_es=False)
+        connection = FSConnection(environ, environments[environ], host=self.host)
         return connection
 
     def init_response(self, environ):
