@@ -57,6 +57,7 @@ const JsonToggleButton = (props) => {
             border:"1pt black solid",
             borderRadius:"3px",
             padding: "0px 1px 2px 1px",
+            marginLeft:"2pt",
             marginTop:"-1px",
             marginRight:"-4px",
             float:"right",

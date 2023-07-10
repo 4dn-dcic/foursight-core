@@ -1748,9 +1748,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
             response["most_recent_deployment_at"] = convert_utc_datetime_to_utc_datetime_string(most_recent_deployment_at)
         return self.create_success_response(response)
 
-    def reactapi_aws_ecs_task_arns(self) -> Response:
+    def reactapi_aws_ecs_task_arns(self, latest: bool = True) -> Response:
+        # If latest is True then only looks for the non-revisioned task ARNs.
         ecs = boto3.client('ecs')
-        task_definition_arns = ecs.list_task_definitions()['taskDefinitionArns'] # ecs_utils.list_ecs_tasks
+        task_definition_arns = ecs.list_task_definitions()['taskDefinitionArns'] # TODO: ecs_utils.list_ecs_tasks
+        if latest:
+            task_definition_arns = list(set([self._ecs_task_definition_arn_to_name(task_definition_arn)
+                                             for task_definition_arn in task_definition_arns]))
         task_definition_arns.sort()
         return task_definition_arns
 
@@ -1821,6 +1825,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "task_family": task_definition["family"],
             "task_name": self._ecs_task_definition_arn_to_name(task_definition_arn),
             "task_display_name": task_definition["family"],
+            "task_revision": self._ecs_task_definition_revision(task_definition["taskDefinitionArn"]),
             "task_containers": task_containers
         }
         task_container_names = [task_container["task_container_name"] for task_container in task_containers]
@@ -1845,6 +1850,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
         task_definition_name = task_definition_arn_parts[1] if len(task_definition_arn_parts) > 1 else task_definition_arn
         task_definition_name_parts = task_definition_name.rsplit(":", 1)
         return task_definition_name_parts[0] if len(task_definition_name_parts) > 1 else task_definition_name
+
+    @staticmethod
+    def _ecs_task_definition_revision(task_definition_arn: str) -> str:
+        task_definition_arn_parts = task_definition_arn.rsplit(":", 1)
+        return task_definition_arn_parts[0] if len(task_definition_arn_parts) > 1 else task_definition_arn
 
     def reactapi_reload_lambda(self, request: dict) -> Response:
         """

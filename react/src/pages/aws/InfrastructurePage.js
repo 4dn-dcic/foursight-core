@@ -213,7 +213,8 @@ const EcsList = (props) => {
         <div><b>AWS Elastic Container Service</b></div>
         <div className="box margin" style={{width:"100%",marginBottom:"6pt"}}>
             <div className="pointer" style={{fontWeight:showEcsClusters() ? "bold" : "normal"}} onClick={toggleEcsClusters}>Clusters</div>
-            <div className="pointer" style={{fontWeight:showEcsTasks() ? "bold" : "normal"}} onClick={toggleEcsTasks}>Tasks</div>
+			<HorizontalLine top="2pt" bottom="2pt" />
+            <div className="pointer" style={{fontWeight:showEcsTasks() ? "bold" : "normal"}} onClick={toggleEcsTasks}>Task Definitions</div>
         </div>
     </>
 }
@@ -1150,10 +1151,10 @@ const EcsClusterServices = (props) => {
 
 const EcsTasks = (props) => {
     const { keyedState, hide } = props;
-    const tasks = useFetch("//aws/ecs/tasks");
+    const tasks = useFetch("//aws/ecs/tasks/latest");
     return <div style={{marginBottom:"8pt"}}>
         <div>
-           <b>AWS ESC Tasks</b>&nbsp;&nbsp;{!tasks.loading && <small>({tasks?.length})</small>}
+           <b>AWS ECS Tasks Definitions</b>&nbsp;&nbsp;{!tasks.loading && <small>({tasks?.length})</small>}
             <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
         </div>
         <div style={{width:"100%"}} className="box lighten nomargin">
@@ -1173,25 +1174,49 @@ const EcsTask = (props) => {
     const toggleShowDetail = () => toggleShow("detail");
     const isShowDetail = () => isShow("detail");
     return <div>
-        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{props.task?.task_name}</span>
+        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{props.task}</span>
         <ExternalLink
-            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/tasks/${props.task?.task_name}/services?region=us-east-1`}
+            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/${props.task}?region=us-east-1`}
             style={{marginLeft:"6pt"}} />
-        { isShowDetail() ? <>
+        { isShowDetail() && <>
             <EcsTaskDetail
                 task={props.task}
-                taskDisplayName={props.task?.task_name}
                 keyedState={props.keyedState} />
-        </>:<>
         </> }
     </div>
 }
 
 const EcsTaskDetail = (props) => {
-    return <>
-        ECS Task Detail
-        {JSON.stringify(props)}
-    </>
+    const [ state, setState ] = useKeyedState(props.keyedState);
+    const task = useFetch(`//aws/ecs/tasks/${encodeURIComponent(props.task)}`, { cache: true });
+    useEffect(() => {
+    }, []);
+    const tdRight = { fontSize: "small", verticalAlign: "top" };
+    const tdLeft = { ...tdRight, paddingRight: "3pt", whiteSpace: "nowrap" };
+    function lastColonToSlash(s) {
+        if (Str.HasValue(s)) {
+            const index = s?.lastIndexOf(":");
+            if (index !== -1) {
+                return s.substring(0, index) + "/" + s.substring(index + 1);
+            }
+        }
+        return s;
+    }
+    return <div className="box" style={{background:"inherit",marginTop:"2pt",marginBottom:"3pt",overflow:"auto"}}>
+        <JsonToggleDiv data={task.data} yaml={true} both={true}>
+            <small>
+            <table><tbody>
+            <tr><td style={tdLeft}><b>Task Name</b>:</td><td style={tdRight}>{task.data?.task_display_name}</td></tr>
+            <tr><td style={tdLeft}><b>Task ARN</b>:</td><td style={tdRight}>
+                {task.data?.task_arn}
+                <ExternalLink
+                    href={`https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/${lastColonToSlash(task.data?.task_arn)}/containers?region=us-east-1`}
+                    style={{marginLeft:"6pt"}} />
+                </td></tr>
+            </tbody></table>
+            </small>
+        </JsonToggleDiv>
+    </div>
 }
 
 export default InfrastructurePage;
