@@ -173,6 +173,7 @@ class AppUtilsCore(ReactApi, Routes):
         :param env: allows you to specify a single env to be initialized
         :param envs: allows you to specify multiple envs to be initialized
         """
+        logger.warning(f'In init_environments with args {env} {envs}')
         stage_name = self.stage.get_stage()
         return self.environment.get_environment_and_bucket_info_in_batch(stage=stage_name, env=env, envs=envs)
 
@@ -184,7 +185,7 @@ class AppUtilsCore(ReactApi, Routes):
         """
         environments = self.init_environments(environ) if _environments is None else _environments
         if not environments:
-            environ = self.get_default_env();
+            environ = self.get_default_env()
             environments = self.init_environments(environ) if _environments is None else _environments
         logger.warning("environments = %s" % str(environments))
         # if still not there, return an error
@@ -372,9 +373,11 @@ class AppUtilsCore(ReactApi, Routes):
             try:
                 if env is None:
                     return False  # we have no env to check auth
+                envs = self.init_environments(env).values()
                 for env_info in self.init_environments(env).values():
+                    connection = self.init_connection(env, envs)
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
-                                                     ff_env=env_info['ff_env'],
+                                                     key=connection.ff_keys,
                                                      add_on='frame=object&datastore=database')
                     logger.warning("foursight_core.check_authorization: env_info ...")
                     logger.warning(env_info)
@@ -1069,10 +1072,11 @@ class AppUtilsCore(ReactApi, Routes):
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         users = []
+        connection = self.init_connection(environ)
         for this_email in email.split(","):
             try:
                 this_user = ff_utils.get_metadata('users/' + this_email.lower(),
-                                                  ff_env=full_env_name(environ),
+                                                  key=connection.ff_keys,
                                                   add_on='frame=object&datastore=database')
                 users.append({"email": this_email, "record": this_user})
             except Exception as e:
@@ -1118,7 +1122,9 @@ class AppUtilsCore(ReactApi, Routes):
         stage_name = self.stage.get_stage()
         users = []
         # TODO: Support paging.
-        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000&datastore=database')
+        connection = self.init_connection(environ)
+        user_records = ff_utils.get_metadata('users/', key=connection.ff_keys,
+                                             add_on='frame=object&limit=10000&datastore=database')
         for user_record in user_records["@graph"]:
             last_modified = user_record.get("last_modified")
             if last_modified:
