@@ -111,7 +111,7 @@ class Environment(object):
         return s3Utils.get_synthetic_env_config(env_name)
 
     def get_environment_and_bucket_info(self, env_name: EnvName, stage: ChaliceStage) -> dict:
-
+        logger.warning(f'Getting env info from s3 for {env_name}')
         env_info = self.get_environment_info_from_s3(env_name)
 
         portal_url = env_info['fourfront']
