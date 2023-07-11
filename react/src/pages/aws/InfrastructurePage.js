@@ -1191,26 +1191,18 @@ const EcsTaskDetail = (props) => {
     const task = useFetch(`//aws/ecs/tasks/${encodeURIComponent(props.task)}`, { cache: true });
     useEffect(() => {
     }, []);
-    const tdRight = { fontSize: "small", verticalAlign: "top" };
-    const tdLeft = { ...tdRight, paddingRight: "3pt", whiteSpace: "nowrap" };
-    function lastColonToSlash(s) {
-        if (Str.HasValue(s)) {
-            const index = s?.lastIndexOf(":");
-            if (index !== -1) {
-                return s.substring(0, index) + "/" + s.substring(index + 1);
-            }
-        }
-        return s;
-    }
+    const td = { fontSize: "small", verticalAlign: "top" };
+    const tdl = { ...td, paddingRight: "3pt", whiteSpace: "nowrap" };
+    const tdr = { ...td, whiteSpace: "break-spaces", wordBreak: "break-all" };
     return <div className="box" style={{background:"inherit",marginTop:"2pt",marginBottom:"3pt",overflow:"auto"}}>
         <JsonToggleDiv data={task.data} yaml={true} both={true}>
             <small>
             <table><tbody>
-            <tr><td style={tdLeft}><b>Task Name</b>:</td><td style={tdRight}>{task.data?.task_display_name}</td></tr>
-            <tr><td style={tdLeft}><b>Task ARN</b>:</td><td style={tdRight}>
+            <tr><td style={tdl}><b>Task Name</b>:</td><td style={tdr}>{task.data?.task_display_name}</td></tr>
+            <tr><td style={tdl}><b>Task ARN</b>:</td><td style={tdr}>
                 {task.data?.task_arn}
                 <ExternalLink
-                    href={`https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/${lastColonToSlash(task.data?.task_arn)}/containers?region=us-east-1`}
+                    href={`https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/${task.data?.task_name}${task.data?.task_revision ? "/" + task.data.task_revision : ""}/containers?region=us-east-1`}
                     style={{marginLeft:"6pt"}} />
                 </td></tr>
             </tbody></table>

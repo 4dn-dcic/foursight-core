@@ -1854,7 +1854,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
     @staticmethod
     def _ecs_task_definition_revision(task_definition_arn: str) -> str:
         task_definition_arn_parts = task_definition_arn.rsplit(":", 1)
-        return task_definition_arn_parts[0] if len(task_definition_arn_parts) > 1 else task_definition_arn
+        return task_definition_arn_parts[1] if len(task_definition_arn_parts) > 1 else task_definition_arn
 
     def reactapi_reload_lambda(self, request: dict) -> Response:
         """
