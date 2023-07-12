@@ -1128,6 +1128,12 @@ const EcsClusterServices = (props) => {
                 <ExternalLink
                     href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${props.cluster}/services/${service.service_name}/health?region=us-east-1`}
                     style={{marginLeft:"6pt"}} />
+                &nbsp;|&nbsp;
+                <small><b>Logs</b>
+                    <ExternalLink
+                        href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${props.cluster}/services/${service.service_name}/logs?region=us-east-1`}
+                        style={{marginLeft:"4pt"}} />
+                </small>
                 <br />
                 <small>
                     <b>Service ARN</b>: {service.service_arn} <br />
@@ -1137,11 +1143,11 @@ const EcsClusterServices = (props) => {
                     <b>Task Definition</b>: {service.task_display_name}
                         <ExternalLink
                             href={`https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/${service.task_name}?region=us-east-1`}
-                            style={{marginLeft:"6pt"}} /> <br />
-                    <b>Task</b>: {service.task_arn}
+                            style={{marginLeft:"4pt"}} /> <br />
+                    <b>Task Definition ARN</b>: {service.task_arn}
                         <ExternalLink
                             href={`https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/${service.task_name}/1/containers?region=us-east-1`}
-                            style={{marginLeft:"6pt"}} />
+                            style={{marginLeft:"4pt"}} />
                 </small>
                 { index < props.services.length - 1 && <><br /><br /></> }
             </li>
@@ -1198,7 +1204,7 @@ const EcsTaskDetail = (props) => {
         <JsonToggleDiv data={task.data} yaml={true} both={true}>
             <small>
             <table><tbody>
-            <tr><td style={tdl}><b>Task Name</b>:</td><td style={tdr}>{task.data?.task_display_name}</td></tr>
+            <tr><td style={tdl}><b>Task Name</b>:</td><td style={tdr}><u>{task.data?.task_display_name}</u></td></tr>
             <tr><td style={tdl}><b>Task ARN</b>:</td><td style={tdr}>
                 {task.data?.task_arn}
                 <ExternalLink
