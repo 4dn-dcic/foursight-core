@@ -1204,13 +1204,14 @@ const EcsTaskDetail = (props) => {
         <JsonToggleDiv data={task.data} yaml={true} both={true}>
             <small>
             <table><tbody>
-            <tr><td style={tdl}><b>Task Name</b>:</td><td style={tdr}><u>{task.data?.task_display_name}</u></td></tr>
-            <tr><td style={tdl}><b>Task ARN</b>:</td><td style={tdr}>
+            <tr><td style={tdl}><b>Task Definition Name</b>:</td><td style={tdr}><u>{task.data?.task_display_name}</u></td></tr>
+            <tr><td style={tdl}><b>Task Definition ARN</b>:</td><td style={tdr}>
                 {task.data?.task_arn}
                 <ExternalLink
                     href={`https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/${task.data?.task_name}${task.data?.task_revision ? "/" + task.data.task_revision : ""}/containers?region=us-east-1`}
                     style={{marginLeft:"6pt"}} />
                 </td></tr>
+            <tr><td style={tdl}><b>Task Definition Revision</b>:</td><td style={tdr}>{task.data?.task_revision}</td></tr>
             </tbody></table>
             </small>
         </JsonToggleDiv>
