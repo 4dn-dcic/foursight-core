@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Auth from '../utils/Auth';
 import Char from '../utils/Char';
+import DateTime from '../utils/DateTime';
 import Time from '../utils/Time';
 import useHeader from '../hooks/Header';
 
@@ -48,7 +49,7 @@ const PortalAccessKey = (props) => {
                 <td style={tdlabel}>Creation Date:</td>
                 <td style={tdstyle}>
                     { accessKey.created_at ? <>
-                        {accessKey.created_at}
+                        {DateTime.Format(accessKey.created_at)}
                         &nbsp;{Char.RightArrow}
                         &nbsp;<small>{Time.Ago(accessKey.created_at, true, false)}</small>
                     </>:<>
@@ -59,7 +60,7 @@ const PortalAccessKey = (props) => {
             <tr>
                 <td style={tdlabel}>Expiration Date:</td>
                 <td style={tdstyle}>
-                    {accessKey.expires_at}
+                    {DateTime.Format(accessKey.expires_at)}
                     { accessKey.expires_at ? <>
                         { accessKey.expired ? <>
                             &nbsp;&nbsp;{Char.RightArrow}&nbsp;&nbsp;<b><u>Expired</u></b>&nbsp;&nbsp;{Char.LeftArrow}

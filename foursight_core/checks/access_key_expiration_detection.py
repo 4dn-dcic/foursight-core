@@ -10,7 +10,6 @@ from dcicutils.ff_utils import get_metadata, search_metadata, patch_metadata, po
 
 @check_function(action="refresh_access_keys")
 def access_key_status(connection, **kwargs):
-    import pdb ; pdb.set_trace()
     """ Checks the creation date of the admin access keys and if expiration is soon
         emit warning and error eventually as it gets closer. Once these keys expire
         (every 90 days), foursight and tibanna will no longer function.

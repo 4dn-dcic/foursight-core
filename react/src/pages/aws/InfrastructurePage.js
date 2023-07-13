@@ -147,8 +147,6 @@ const InfrastructurePage = () => {
         for (let secretsName of urlArgs.getList("secrets")) {
             selectSecrets(secretsName);
         }
-        toggleEcsClusters();
-        toggleEcsTasks();
     }, []);
 
     return <table><tbody><tr>
