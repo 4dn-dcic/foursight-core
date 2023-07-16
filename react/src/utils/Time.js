@@ -15,29 +15,31 @@ function now() {
 
 // Returns a formatted date/time string based on the given date/time value (local timezone).
 //
-function FormatDateTime(value, verbose = false, timezone = true) {
+function FormatDateTime(value, verbose = false, timezone = true, military = true) {
     if (!(value = ToDateTime(value))) return "";
     if (verbose) {
-        let format = { weekday:"long",
-                       year:"numeric",
-                       month:"long",
-                       day:"numeric",
-                       hour12: true,
-                       hour: "numeric",
-                       minute: "2-digit",
-                       second: "numeric" };
-        if (timezone) {
-            format = { ...format, timeZoneName: "short" };
-        }
+        const format = { weekday:"long",
+                         year:"numeric",
+                         month:"long",
+                         day:"numeric",
+                         hour12: military ? false : true,
+                         hour: "numeric",
+                         minute: "2-digit",
+                         second: "numeric",
+                         timeZoneName: timezone ? "short" : undefined }
         return value.toLocaleDateString('en-us', format).replace(" at ", " | ");
     }
-    const tz = now().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
+    const hours = military ? value.getHours() : value.getHours() % 12 || 12;
+    const ampm = military ? "" : (value.getHours() >= 12 ? "PM" : "AM");
+    const tz = timezone ? now().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3) : null; // timezone hack (TODO)
     return value.getFullYear() + "-" +
            ("0" + (value.getMonth() + 1)).slice(-2) + "-" +
            ("0" + value.getDate()).slice(-2) + " " +
-           ("0" + value.getHours()).slice(-2) + ":" +
+           ("0" + hours).slice(-2) + ":" +
            ("0" + value.getMinutes()).slice(-2) + ":" +
-           ("0" + value.getSeconds()).slice(-2) + " " + tz;
+           ("0" + value.getSeconds()).slice(-2) +
+           (ampm ? " " + ampm : "") +
+           (tz ? " " + tz : "");
 }
 
 // Returns the duration between the given to date/time values.
@@ -141,23 +143,16 @@ function FormatDate(value, verbose = false) {
            ("0" + value.getDate()).slice(-2);
 }
 
-function FormatTime(value, verbose = false) {
+function FormatTime(value, military = true) {
     if (!(value = ToDateTime(value))) return "";
-    if (verbose) {
-        return value.toLocaleDateString('en-us', { weekday:"long",
-                                                   year:"numeric",
-                                                   month:"long",
-                                                   day:"numeric",
-                                                   hour12: true,
-                                                   hour: "numeric",
-                                                   minute: "2-digit",
-                                                   second: "numeric",
-                                                   timeZoneName: "short"}).replace(" at ", " | ");
-    }
+    const hours = military ? value.getHours() : value.getHours() % 12 || 12;
+    const ampm = military ? "" : (value.getHours() >= 12 ? " PM" : " AM");
     const tz = now().toLocaleDateString(undefined, {timeZoneName: "short"}).slice(-3); // timezone hack (TODO)
-    return ("0" + value.getHours()).slice(-2) + ":" +
+    return ("0" + hours).slice(-2) + ":" +
            ("0" + value.getMinutes()).slice(-2) + ":" +
-           ("0" + value.getSeconds()).slice(-2) + " " + tz;
+           ("0" + value.getSeconds()).slice(-2) + " " +
+           (ampm ? " " + ampm : "") +
+           (tz ? " " + tz : "");
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -172,5 +167,8 @@ const exports = {
     FormatTime:     FormatTime,
     FromNow:        FromNow,
     ToDateTime:     ToDateTime,
+    Format:         (value) => FormatTime(value, true),
+    Format24:       (value) => FormatTime(value, true),
+    Format12:       (value) => FormatTime(value, false),
     Now:            () => now()
 }; export default exports;

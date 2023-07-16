@@ -1,7 +1,6 @@
-import boto3
 import json
-
 from dcicutils.misc_utils import ignored
+from .boto_s3 import boto_s3_client
 
 
 class Buckets(object):
@@ -46,7 +45,7 @@ class Buckets(object):
         return 'https://placeholder_url'
 
     def create_buckets(self):
-        s3 = boto3.client('s3')
+        s3 = boto_s3_client()
         for bucket in self.bucket_names:
             param = {'Bucket': bucket, 'ACL': self.default_acl}
             if self.region != 'us-east-1':
@@ -54,7 +53,7 @@ class Buckets(object):
             s3.create_bucket(**param)
 
     def configure_env_bucket(self):
-        s3 = boto3.client('s3')
+        s3 = boto_s3_client()
         try:
             s3.head_bucket(self.env_bucket)  # check if bucket exists
         except Exception as e:

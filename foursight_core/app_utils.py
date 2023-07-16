@@ -40,6 +40,7 @@ from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.secrets_utils import (get_identity_name, get_identity_secrets)
 from dcicutils.redis_tools import RedisSessionToken, RedisException, SESSION_TOKEN_COOKIE
 from .app import app
+from .boto_sqs import boto_sqs_client
 from .check_utils import CheckHandler
 from .deploy import Deploy
 from .environment import Environment
@@ -47,6 +48,10 @@ from .fs_connection import FSConnection
 from .s3_connection import S3Connection
 from .react.api.auth import Auth
 from .react.api.react_api import ReactApi
+from .react.api.datetime_utils import (
+    convert_time_t_to_utc_datetime_string,
+    convert_utc_datetime_to_utc_datetime_string
+)
 from .routes import Routes
 from .route_prefixes import CHALICE_LOCAL
 from .sqs_utils import SQS
@@ -70,7 +75,6 @@ class AppUtilsCore(ReactApi, Routes):
     """
 
     CHECK_SETUP_FILE_NAME = "check_setup.json"
-    ACCOUNTS_FILE_NAME = "accounts.json.encrypted"
 
     # Define in subclass.
     APP_PACKAGE_NAME = None
@@ -119,9 +123,6 @@ class AppUtilsCore(ReactApi, Routes):
         self.sqs = SQS(self.prefix)
         self.check_setup_file = self._locate_check_setup_file()
         logger.info(f"Using check_setup file: {self.check_setup_file}")
-        self.accounts_file = self._locate_accounts_file()
-        if self.accounts_file:
-            logger.info(f"Using accounts file: {self.accounts_file}")
         self.check_handler = CheckHandler(self.prefix, self.package_name, self.check_setup_file, self.get_default_env())
         self.CheckResult = self.check_handler.CheckResult
         self.ActionResult = self.check_handler.ActionResult
@@ -172,6 +173,7 @@ class AppUtilsCore(ReactApi, Routes):
         :param env: allows you to specify a single env to be initialized
         :param envs: allows you to specify multiple envs to be initialized
         """
+        logger.warning(f'In init_environments with args {env} {envs}')
         stage_name = self.stage.get_stage()
         return self.environment.get_environment_and_bucket_info_in_batch(stage=stage_name, env=env, envs=envs)
 
@@ -182,6 +184,9 @@ class AppUtilsCore(ReactApi, Routes):
         Returns an FSConnection object or raises an error.
         """
         environments = self.init_environments(environ) if _environments is None else _environments
+        if not environments:
+            environ = self.get_default_env()
+            environments = self.init_environments(environ) if _environments is None else _environments
         logger.warning("environments = %s" % str(environments))
         # if still not there, return an error
         if environ not in environments:
@@ -235,8 +240,8 @@ class AppUtilsCore(ReactApi, Routes):
                         last_name = name.get("name_last")
                 subject = jwt_decoded.get("sub")
                 audience = jwt_decoded.get("aud")
-                issued_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("iat"))
-                expiration_time = self.convert_time_t_to_useastern_datetime(jwt_decoded.get("exp"))
+                issued_time = convert_time_t_to_utc_datetime_string(jwt_decoded.get("iat"))
+                expiration_time = convert_time_t_to_utc_datetime_string(jwt_decoded.get("exp"))
         except Exception as e:
             self.note_non_fatal_error_for_ui_info(e, 'get_logged_in_user_info')
         return {"email_address": email_address,
@@ -368,9 +373,11 @@ class AppUtilsCore(ReactApi, Routes):
             try:
                 if env is None:
                     return False  # we have no env to check auth
-                for env_info in self.init_environments(env).values():
+                envs = self.init_environments(env)
+                for env_info in envs.values():
+                    connection = self.init_connection(env, envs)
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
-                                                     ff_env=env_info['ff_env'],
+                                                     key=connection.ff_keys,
                                                      add_on='frame=object&datastore=database')
                     logger.warning("foursight_core.check_authorization: env_info ...")
                     logger.warning(env_info)
@@ -688,44 +695,6 @@ class AppUtilsCore(ReactApi, Routes):
             self.note_non_fatal_error_for_ui_info(e, 'get_obfuscated_credentials_info')
             return {}
 
-    def convert_utc_datetime_to_useastern_datetime(self, t) -> str:
-        """
-        Converts the given UTC datetime object or string into a US/Eastern datetime string
-        and returns its value in a form that looks like 2022-08-22 13:25:34 EDT.
-        If the argument is a string it is ASSUMED to have a value which looks
-        like 2022-08-22T14:24:49.000+0000; this is the datetime string format
-        we get from AWS via boto3 (e.g. for a lambda last-modified value).
-
-        :param t: UTC datetime object or string value.
-        :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
-        """
-        try:
-            if isinstance(t, str):
-                t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
-            t = t.replace(tzinfo=pytz.UTC).astimezone(pytz.timezone("US/Eastern"))
-            return t.strftime("%Y-%m-%d %H:%M:%S %Z")
-        except Exception as e:
-            self.note_non_fatal_error_for_ui_info(e, 'convert_utc_datetime_to_useastern_datetime')
-            return ""
-
-    def convert_time_t_to_useastern_datetime(self, time_t: int) -> str:
-        """
-        Converts the given "epoch" time (seconds since 1970-01-01T00:00:00Z)
-        integer value to a US/Eastern datetime string and returns its value
-        in a form that looks like 2022-08-22 13:25:34 EDT.
-
-        :param time_t: Epoch time value (i.e. seconds since 1970-01-01T00:00:00Z)
-        :return: US/Eastern datetime string (e.g.: 2022-08-22 13:25:34 EDT).
-        """
-        try:
-            if not isinstance(time_t, int):
-                return ""
-            t = datetime.datetime.fromtimestamp(time_t, tz=pytz.UTC)
-            return self.convert_utc_datetime_to_useastern_datetime(t)
-        except Exception as e:
-            self.note_non_fatal_error_for_ui_info(e, 'convert_time_t_to_useastern_datetime')
-            return ""
-
     def ping_elasticsearch(self, env_name: str) -> bool:
         logger.warning(f"foursight_core: Pinging ElasticSearch: {self.host}")
         try:
@@ -819,10 +788,10 @@ class AppUtilsCore(ReactApi, Routes):
                 lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
                 lambda_last_modified_tag = lambda_tags.get("last_modified")
                 if lambda_last_modified_tag:
-                    lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified_tag)
+                    lambda_last_modified = convert_utc_datetime_to_utc_datetime_string(lambda_last_modified_tag)
                 else:
                     lambda_last_modified = lambda_info["Configuration"]["LastModified"]
-                    lambda_last_modified = self.convert_utc_datetime_to_useastern_datetime(lambda_last_modified)
+                    lambda_last_modified = convert_utc_datetime_to_utc_datetime_string(lambda_last_modified)
                 return lambda_last_modified
         except Exception as e:
             logger.warning(f"Error getting lambda ({lambda_name}) last modified time: {e}")
@@ -1103,10 +1072,11 @@ class AppUtilsCore(ReactApi, Routes):
         request_dict = request.to_dict()
         stage_name = self.stage.get_stage()
         users = []
+        connection = self.init_connection(environ)
         for this_email in email.split(","):
             try:
                 this_user = ff_utils.get_metadata('users/' + this_email.lower(),
-                                                  ff_env=full_env_name(environ),
+                                                  key=connection.ff_keys,
                                                   add_on='frame=object&datastore=database')
                 users.append({"email": this_email, "record": this_user})
             except Exception as e:
@@ -1152,7 +1122,9 @@ class AppUtilsCore(ReactApi, Routes):
         stage_name = self.stage.get_stage()
         users = []
         # TODO: Support paging.
-        user_records = ff_utils.get_metadata('users/', ff_env=full_env_name(environ), add_on='frame=object&limit=10000&datastore=database')
+        connection = self.init_connection(environ)
+        user_records = ff_utils.get_metadata('users/', key=connection.ff_keys,
+                                             add_on='frame=object&limit=10000&datastore=database')
         for user_record in user_records["@graph"]:
             last_modified = user_record.get("last_modified")
             if last_modified:
@@ -1173,7 +1145,7 @@ class AppUtilsCore(ReactApi, Routes):
                 "first_name": user_record.get("first_name"),
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
-                "modified": self.convert_utc_datetime_to_useastern_datetime(last_modified)})
+                "modified": convert_utc_datetime_to_utc_datetime_string(last_modified)})
         users = sorted(users, key=lambda key: key["email_address"])
         template = self.jin_env.get_template('users.html')
         html_resp.body = template.render(
@@ -1862,10 +1834,13 @@ class AppUtilsCore(ReactApi, Routes):
         Returns:
             dict: run result if something was run, else None
         """
+        # FYI the runner_input argument is a dict that looks something like this (2023-06-16):
+        # {'sqs_url': 'https://sqs.us-east-1.amazonaws.com/466564410312/foursight-cgap-prod-check_queue'}
+        # and the propogate arguments is a bootstrap.LambdaContext that instance.
         sqs_url = runner_input.get('sqs_url')
         if not sqs_url:
             return
-        client = boto3.client('sqs')
+        client = boto_sqs_client()
         response = client.receive_message(
             QueueUrl=sqs_url,
             AttributeNames=['MessageGroupId'],
@@ -1876,7 +1851,7 @@ class AppUtilsCore(ReactApi, Routes):
         message = response.get('Messages', [{}])[0]
 
         # TODO/2022-12-01/dmichaels: Issue with check not running because not detecting that
-        # dependency # has already run; for example with expset_opf_unique_files_in_experiments
+        # dependency has already run; for example with expset_opf_unique_files_in_experiments
         # depending on expset_opfsets_unique_titles; seems not checking the result in S3 of the
         # depdendency correctly. This is what seems to be returned here if the check has a dependency, e.g.:
         #
@@ -1994,9 +1969,10 @@ class AppUtilsCore(ReactApi, Routes):
             logger.warning('-RUN-> RESULT:  %s (uuid)' % str(run_result.get('uuid')))
             # invoke action if running a check and kwargs['queue_action'] matches stage
             stage = self.stage.get_stage()
+            # TODO: Factor out this (et.al.) for better testing.
             if run_result['type'] == 'check' and run_result['kwargs']['queue_action'] == stage:
                 # must also have check.action and check.allow_action set
-                if run_result['allow_action'] and run_result['action']:
+                if run_result['allow_action'] and run_result['action'] and not run_result.get('prevent_action'):
                     action_params = {'check_name': run_result['name'],
                                      'called_by': run_result['kwargs']['uuid']}
                     try:
@@ -2031,12 +2007,9 @@ class AppUtilsCore(ReactApi, Routes):
     def _locate_check_setup_file(self) -> Optional[str]:
         return self._locate_config_file(AppUtilsCore.CHECK_SETUP_FILE_NAME)
 
-    def _locate_accounts_file(self) -> Optional[str]:
-        return self._locate_config_file(AppUtilsCore.ACCOUNTS_FILE_NAME)
-
     def _locate_config_file(self, file_name: str) -> Optional[str]:
         """
-        Returns the full path to the given named file (e.g. check_setup.json or accounts.json),
+        Returns the full path to the given named file (e.g. check_setup.json),
         looking for the first NON-EMPTY file within these directories, in the following order;
         if not found then returns None.
 

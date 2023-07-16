@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import requests
@@ -114,7 +115,14 @@ class Auth0Config:
         Returns raw data (dictionary) from the Auth0 config URL.
         """
         try:
-            return requests.get(self.get_config_url()).json() or {}
+            auth0_config_response = requests.get(self.get_config_url()).json() or {}
+            allowed_connections = auth0_config_response.get("auth0Options", {}).get("allowedConnections")
+            if isinstance(allowed_connections, str):
+                # Slight temporary hack to deal with fact that at some points in
+                # time the allowedConnections property from the /auth0_config Portal
+                # endpoint returned a JSON-ized string of a ist rather than a list.
+                auth0_config_response["auth0Options"]["allowedConnections"] = json.loads(allowed_connections)
+            return auth0_config_response
         except Exception as e:
             logger.error(f"Exception fetching Auth0 config ({self.get_config_url()}): {get_error_message(e)}")
             return {}

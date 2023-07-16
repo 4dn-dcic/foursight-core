@@ -9,6 +9,8 @@ import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
 import Char from '../utils/Char';
 import Context from '../utils/Context';
+import DateTime from '../utils/DateTime';
+import Duration from '../utils/Duration';
 import Env from '../utils/Env';
 import useFetch from '../hooks/Fetch';
 import useFetchFunction from '../hooks/FetchFunction';
@@ -185,8 +187,10 @@ const InfoPage = () => {
             <InfoRow name={"elasticsearch-server"} value={header.versions?.elasticsearch_server || info.data?.versions?.elasticsearch_server} monospace={true} copy={true} size="2" elasticsearch={true} />
             <InfoRow name={"elasticsearch"} value={header.versions?.elasticsearch} monospace={true} copy={true} size="2" pypi={true} />
             <InfoRow name={"elasticsearch-dsl"} value={header.versions?.elasticsearch_dsl} monospace={true} copy={true} size="2" pypi={true} />
-            <InfoRow name={"redis-server"} value={header.versions?.redis_server || info.data?.versions?.redis_server} monospace={true} copy={true} size="2" redis={true} />
-            <InfoRow name={"redis"} value={header.versions?.redis} monospace={true} copy={true} size="2" pypi={true} />
+           { info.data?.versions?.redis_server && <>
+               <InfoRow name={"redis-server"} value={header.versions?.redis_server || info.data?.versions?.redis_server} monospace={true} copy={true} size="2" redis={true} />
+               <InfoRow name={"redis"} value={header.versions?.redis} monospace={true} copy={true} size="2" pypi={true} />
+           </>}
         </InfoBox>
         <InfoBox info={info} title="Credentials Info">
             <InfoRow name={"AWS Account Number"} value={info.get("app.credentials.aws_account_number")} monospace={true} copy={true} size="2" />
@@ -203,10 +207,12 @@ const InfoPage = () => {
             <InfoRow name={"Foursight Server"} value={info.get("server.foursight")} monospace={true} copy={true} size="2" />
             <InfoRow name={"Foursight"} value={header.resources?.foursight} monospace={true} copy={true} size="2" />
             <InfoRow name={"Portal"} value={header.resources?.portal} monospace={true} copy={true} size="2" portalCertificate={true} />
-            <InfoRow name={"ElasticSearch"} value={header.resources?.es} monospace={true} copy={true} size="2" />
+            <InfoRow name={"ElasticSearch"} value={`${header.resources?.es} (${header.resources?.es_cluster})`} monospace={true} copy={true} size="2" />
             <InfoRow name={"RDS"} value={header.resources?.rds} monospace={true} copy={true} size="2" />
             <InfoRow name={"SQS"} value={header.resources?.sqs} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Redis"} value={header.resources?.redis} nocheck={!header.resources?.redis_running} check={header.resources?.redis_running} monospace={true} copy={true} size="2" />
+            { header.resources?.redis_running &&
+                <InfoRow name={"Redis"} value={header.resources?.redis} nocheck={!header.resources?.redis_running} check={header.resources?.redis_running} monospace={true} copy={true} size="2" />
+            }
         </InfoBox>
         <InfoBox info={info} title="Authentication/Authorization Info" show={true}>
             <InfoRow name={"Email"} value={Auth.Token()?.user} monospace={true} copy={true} check={Auth.Token()?.user_verified} link={Client.Path("/users/" + Auth.LoggedInUser(header), true)} size="2" />
@@ -214,8 +220,8 @@ const InfoPage = () => {
             <InfoRow name={"Last Name"} value={Auth.Token()?.last_name} monospace={true} copy={true} size="2" />
             <InfoRow name={"Environments"} value={Auth.Token()?.allowed_envs.join(", ")} monospace={true} copy={true} size="2" />
             <InfoRow name={"Audience"} value={Auth.Token()?.aud} monospace={true} copy={true} size="2" />
-            <InfoRow name={"Issued At"} monospace={true} copy={true} size="2" value={<LiveTime.FormatDuration start={Auth.Token()?.authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} prefix="datetime" />} />
-            <InfoRow name={"Expires At"} monospace={true} copy={true} size="2" value={<LiveTime.FormatDuration end={Auth.Token()?.authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} prefix="datetime"/>} />
+            <InfoRow name={"Issued At"} monospace={true} copy={true} size="2" value={<Duration.Live start={Auth.Token()?.authenticated_at} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} prefix="datetime" />} />
+            <InfoRow name={"Expires At"} monospace={true} copy={true} size="2" value={<Duration.Live end={Auth.Token()?.authenticated_until} verbose={true} fallback={"now"} suffix={"from now"} tooltip={true} prefix="datetime"/>} />
             <InfoRow name={"Using Redis"} monospace={true} size="2" value={header.resources?.redis_running ? "Yes" : "No"} />
             <hr style={{borderTop:"1px solid darkblue",marginTop:"8",marginBottom:"8"}}/>
                 { showingAuthToken ? (<>
@@ -266,7 +272,7 @@ const InfoPage = () => {
                 <InfoRow name={"ARN"} value={info.get("app.lambda.lambda_function_arn")} monospace={true} size="2" />
                 <InfoRow name={"S3 Location"} value={info.get("app.lambda.lambda_code_s3_bucket") + "/" + info.get("app.lambda.lambda_code_s3_bucket_key")} monospace={true} size="2" />
                 <InfoRow name={"Size"} value={info.get("app.lambda.lambda_code_size")} monospace={true} size="2" />
-                <InfoRow name={"Modified"} value={Time.FormatDateTime(info.get("app.lambda.lambda_modified"))} monospace={true} size="2" />
+                <InfoRow name={"Modified"} value={DateTime.Format(info.get("app.lambda.lambda_modified"))} monospace={true} size="2" />
                 <InfoRow name={"Role"} value={info.get("app.lambda.lambda_role")} monospace={true} size="2" />
             </InfoBox>
         }
@@ -280,9 +286,9 @@ const InfoPage = () => {
             </>}
             <div id="tooltip-info-clear" style={{float:"right",marginTop:"-1px",marginRight:"4pt",cursor:"pointer"}}>&nbsp;&nbsp;<img alt="Clear Cache" src={Image.ClearCache()} height="19" onClick={clearCache}/></div>
             <Tooltip id="tooltip-info-clear" position="bottom" size="small" text="Click to clear any server-side caches." />
-            <InfoRow name={"App Deployed At"} value={Server.IsLocal() ? "running locally" + (Context.IsLocalCrossOrigin() ? " (cross-origin)" : "") : header.app?.deployed + Time.FormatDuration(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
-            <InfoRow name={"App Launched At"} value={header.app?.launched + Time.FormatDuration(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
-            <InfoRow name={"Page Loaded At"} value={info.get("page.loaded") + Time.FormatDuration(info.get("page.loaded"), new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
+            <InfoRow name={"App Deployed At"} value={Server.IsLocal() ? "running locally" + (Context.IsLocalCrossOrigin() ? " (cross-origin)" : "") : DateTime.Format(header.app?.deployed) + Duration.Format(header.app?.deployed, new Date(), true, "just now", "|", "ago")} monospace={true} copy={true} optional={true} size="2" />
+            <InfoRow name={"App Launched At"} value={header.app?.launched + Duration.Format(header.app?.launched, new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
+            <InfoRow name={"Page Loaded At"} value={info.get("page.loaded") + Duration.Format(info.get("page.loaded"), new Date(), true, "just now", "|", "ago")} monospace={true} size="2" />
             <InfoRow name={"Package"} value={header.app?.package} monospace={true} size="2" />
             <InfoRow name={"Stage"} value={header.app?.stage} monospace={true} size="2" />
             <InfoRow name={"Environment"} value={Env.Current()} monospace={true} size="2" />
@@ -296,11 +302,8 @@ const InfoPage = () => {
             { header.app?.accounts_file &&
                 <InfoRow name={"Accounts File"} value={header.app?.accounts_file} monospace={true} size="2" />
             }
-            { header.app?.accounts_file_from_s3 &&
-                <InfoRow name={"Accounts File (S3)"} value={header.app?.accounts_file_from_s3} monospace={true} size="2" />
-            }
         </InfoBox>
-        <InfoBox info={info} title={`GAC: ${info.get("gac.name")}`} show={false}>
+        <InfoBox info={info} title={`GAC: ${info.get("app.identity")}`} show={false}>
             { info.get("gac.values") ? (<span>
                 { Object.keys(info.get("gac.values")).map((key) => {
                     return <InfoRow key={key} name={key} value={info.get("gac.values")[key]} monospace={true} copy={true} />

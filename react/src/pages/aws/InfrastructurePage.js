@@ -1,14 +1,25 @@
 import React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { StandardSpinner } from '../../Spinners';
 import useFetch from '../../hooks/Fetch';
 import { ExternalLink } from '../../Components';
 import Char from '../../utils/Char';
+import Clipboard from '../../utils/Clipboard';
+import DateTime from '../../utils/DateTime';
+import Image from '../../utils/Image';
+import Json from '../../utils/Json';
+import JsonToggleDiv from '../../components/JsonToggleDiv';
+import Str from '../../utils/Str';
+import Tooltip from '../../components/Tooltip';
 import Type from '../../utils/Type';
+import Uuid from 'react-uuid';
 import Yaml from '../../utils/Yaml';
 import useSelectedComponents from '../../hooks/SelectedComponents';
 import useKeyedState from '../../hooks/KeyedState';
+import useUrlArgs from '../../hooks/UrlArgs';
+import { SecretNameList, Secrets, SecretView, Gac } from './Secrets';
+import { HorizontalLine } from '../../Components';
 
 const tdLabelStyle = {
     color: "var(--box-fg)",
@@ -23,9 +34,14 @@ const tdContentStyle = {
     verticalAlign: "top",
 }
 
+function isRedacted(s) {
+    return /^\*+$/.test(s);
+}
+
 const InfrastructurePage = () => {
 
     const keyedState = useKeyedState();
+    const urlArgs = useUrlArgs()
 
     const componentDefinitions = [
          { type: "stack",           create: createStack          },
@@ -34,7 +50,10 @@ const InfrastructurePage = () => {
          { type: "subnets-private", create: createSubnetsPrivate },
          { type: "security-groups", create: createSecurityGroups },
          { type: "gac",             create: createGac            },
-         { type: "ecosystem",       create: createEcosystem      }
+         { type: "secrets",         create: createSecrets        },
+         { type: "ecosystem",       create: createEcosystem      },
+         { type: "ecs-clusters",    create: createEcsClusters    },
+         { type: "ecs-tasks",       create: createEcsTasks       }
     ];
 
     const componentsLeft = useSelectedComponents(componentDefinitions);
@@ -53,7 +72,6 @@ const InfrastructurePage = () => {
     function createSubnetsPublic(name, key, unselect, args) {
         const { keyedState } = args;
         return <Subnets type="public" keyedState={keyedState.keyed(key)} hide={unselect} />;
-            
     }
 
     function createSecurityGroups(name, key, unselect, args) {
@@ -65,6 +83,14 @@ const InfrastructurePage = () => {
         return <Gac hide={unselect} />;
     }
 
+    function createSecrets(name, key, unselect, args) {
+        function hide() {
+            urlArgs.unsetList("secrets", name);
+            return unselect();
+        }
+        return <Secrets name={name} hide={hide} />;
+    }
+
     function createEcosystem(name, key, unselect, args) {
         return <Ecosystem hide={unselect} />;
     }
@@ -72,6 +98,16 @@ const InfrastructurePage = () => {
     function createStack(name, key, unselect, args) {
         const { keyedState } = args;
         return <Stack stackName={name} keyedState={keyedState.keyed(key)} hide={unselect} />;
+    }
+
+    function createEcsClusters(name, key, unselect, args) {
+        const { keyedState } = args;
+        return <EcsClusters keyedState={keyedState.keyed(key)} hide={unselect} />;
+    }
+
+    function createEcsTasks(name, key, unselect, args) {
+        const { keyedState } = args;
+        return <EcsTasks keyedState={keyedState.keyed(key)} hide={unselect} />;
     }
 
     const selectedVpcs           = () => componentsLeft.selected("vpcs");
@@ -83,8 +119,8 @@ const InfrastructurePage = () => {
     const selectedEcosystem      = () => componentsLeft.selected("ecosystem");
     const toggleEcosystem        = () => componentsLeft.toggle("ecosystem");
 
-    const selectedStack = (stackName) => componentsLeft.selected("stack", stackName);
-    const toggleStack   = (stackName) => componentsLeft.toggle("stack", stackName);
+    const selectedStack          = (stackName) => componentsLeft.selected("stack", stackName);
+    const toggleStack            = (stackName) => componentsLeft.toggle("stack", stackName);
 
     const selectedSubnetsPublic  = () => componentsRight.selected("subnets-public");
     const toggleSubnetsPublic    = () => componentsRight.toggle("subnets-public");
@@ -95,13 +131,29 @@ const InfrastructurePage = () => {
     const selectedSecurityGroups = () => componentsRight.selected("security-groups");
     const toggleSecurityGroups   = () => componentsRight.toggle("security-groups");
 
+    const selectedSecrets        = (secretName) => componentsLeft.selected("secrets", secretName);
+    const toggleSecrets          = (secretName) => componentsLeft.toggle("secrets", secretName) ? urlArgs.setList("secrets", secretName) : urlArgs.unsetList("secrets", secretName);
+    const selectSecrets          = (secretName) => { componentsLeft.select("secrets", secretName) ; urlArgs.setList("secrets", secretName) };
+
+    const selectedEcsClusters    = () => componentsLeft.selected("ecs-clusters");
+    const toggleEcsClusters      = () => componentsLeft.toggle("ecs-clusters");
+
+    const selectedEcsTasks       = () => componentsLeft.selected("ecs-tasks");
+    const toggleEcsTasks         = () => componentsLeft.toggle("ecs-tasks");
+
     useEffect(() => {
-        toggleEcosystem();
         toggleVpcs();
+        toggleEcosystem();
+        for (let secretsName of urlArgs.getList("secrets")) {
+            selectSecrets(secretsName);
+        }
     }, []);
 
     return <table><tbody><tr>
         <td style={{verticalAlign:"top", paddingRight:"8pt"}}>
+            <ConfigList
+                showGac={selectedGac} toggleGac={toggleGac}
+                showEcosystem={selectedEcosystem} toggleEcosystem={toggleEcosystem} />
             <NetworkList
                 keyedState={keyedState}
                 showVpcs={selectedVpcs} toggleVpcs={toggleVpcs}
@@ -109,9 +161,14 @@ const InfrastructurePage = () => {
                 showSubnetsPrivate={selectedSubnetsPrivate} toggleSubnetsPrivate={toggleSubnetsPrivate}
                 showSecurityGroups={selectedSecurityGroups} toggleSecurityGroups={toggleSecurityGroups}
             />
-            <ConfigList
-                showGac={selectedGac} toggleGac={toggleGac}
-                showEcosystem={selectedEcosystem} toggleEcosystem={toggleEcosystem} />
+            <EcsList
+                showEcsClusters={selectedEcsClusters} toggleEcsClusters={toggleEcsClusters}
+                showEcsTasks={selectedEcsTasks} toggleEcsTasks={toggleEcsTasks}
+            />
+            <SecretNameList
+                toggleSecrets={toggleSecrets}
+                selectedSecrets={selectedSecrets}
+            />
             <StackList
                 toggleStack={toggleStack}
                 selectedStack={selectedStack}
@@ -136,10 +193,26 @@ const NetworkList = (props) => {
     return <>
         <div><b>AWS Network</b></div>
         <div className="box margin" style={{width:"100%",marginBottom:"6pt"}}>
-            <div className="pointer" style={{fontWeight:showVpcs() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleVpcs}>VPCs</div>
-            <div className="pointer" style={{fontWeight:showSubnetsPublic() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleSubnetsPublic}>Public Subnets</div>
-            <div className="pointer" style={{fontWeight:showSubnetsPrivate() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleSubnetsPrivate}>Private Subnets</div>
+            <div className="pointer" style={{fontWeight:showVpcs() ? "bold" : "normal"}} onClick={toggleVpcs}>VPCs</div>
+			<HorizontalLine top="2pt" bottom="2pt" />
+            <div className="pointer" style={{fontWeight:showSubnetsPublic() ? "bold" : "normal"}} onClick={toggleSubnetsPublic}>Public Subnets</div>
+			<HorizontalLine top="2pt" bottom="2pt" />
+            <div className="pointer" style={{fontWeight:showSubnetsPrivate() ? "bold" : "normal"}} onClick={toggleSubnetsPrivate}>Private Subnets</div>
+			<HorizontalLine top="2pt" bottom="2pt" />
             <div className="pointer" style={{fontWeight:showSecurityGroups() ? "bold" : "normal"}} onClick={toggleSecurityGroups}>Security Groups</div>
+        </div>
+    </>
+}
+
+const EcsList = (props) => {
+    const { showEcsClusters, toggleEcsClusters } = props;
+    const { showEcsTasks, toggleEcsTasks } = props;
+    return <>
+        <div><b>AWS Elastic Container Service</b></div>
+        <div className="box margin" style={{width:"100%",marginBottom:"6pt"}}>
+            <div className="pointer" style={{fontWeight:showEcsClusters() ? "bold" : "normal"}} onClick={toggleEcsClusters}>Clusters</div>
+			<HorizontalLine top="2pt" bottom="2pt" />
+            <div className="pointer" style={{fontWeight:showEcsTasks() ? "bold" : "normal"}} onClick={toggleEcsTasks}>Task Definitions</div>
         </div>
     </>
 }
@@ -147,9 +220,11 @@ const NetworkList = (props) => {
 const ConfigList = (props) => {
     const { showGac, toggleGac, showEcosystem, toggleEcosystem } = props;
     return <>
-        <div className="box margin thickborder" style={{width:"100%",marginBottom:"6pt"}}>
-            <div className="pointer" style={{fontWeight:showGac() ? "bold" : "normal",borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt"}} onClick={toggleGac}>Global Application Configuration</div>
+        <div><b>AWS Configuration</b></div>
+        <div className="box margin" style={{width:"100%",marginBottom:"6pt"}}>
             <div className="pointer" style={{fontWeight:showEcosystem() ? "bold" : "normal"}} onClick={toggleEcosystem}>Ecosystem Definition</div>
+			<HorizontalLine top="3pt" bottom="3pt" />
+            <div className="pointer" style={{fontWeight:showGac() ? "bold" : "normal"}} onClick={toggleGac}>Global Application Configuration</div>
         </div>
     </>
 }
@@ -160,7 +235,7 @@ const Vpcs = (props) => {
     const all = useSearchParams()[0]?.get("all")?.toLowerCase() === "true";
     const vpcs = useFetch(`/aws/vpcs${all ? "/all" : ""}`, { cache: true });
 
-    return <div style={{marginBottom:"8pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",marginBottom:"8pt"}}>
         <div>
            <b>AWS VPCs</b>&nbsp;&nbsp;{!vpcs.loading && <small>({vpcs?.length})</small>}
            <div style={{float:"right",marginRight:"3pt"}}>
@@ -194,13 +269,14 @@ const Vpc = (props) => {
     const toggleTags           = () => toggleShow("showTags");
 
     return <>
-        <div className="box margin" style={{marginBottom:"8pt",minWidth:"350pt",maxWidth:"500pt"}}>
-            <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
+        <div className="box margin" style={{marginBottom:"8pt",width:"100%",minWidth:"350pt",maxWidth:"100%"}}>
+            <div>
                 <b>VPC</b>: <b style={{color:"black"}}>{vpc.name}</b>
                 <ExternalLink
                     href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#VpcDetails:VpcId=${vpc.id}`}
                     bold={true}
                     style={{marginLeft:"6pt"}} />
+                <HorizontalLine top="2pt" bottom="2pt" />
             </div>
             <table width="100%"><tbody>
                 <tr>
@@ -221,9 +297,7 @@ const Vpc = (props) => {
                     <td style={tdLabelStyle}>Status:</td>
                     <td style={tdContentStyle}>{vpc?.status}</td>
                 </tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <HorizontalLine top="2pt" bottom="2pt" table={2} />
                 <tr onClick={() => toggleSubnetsPublic(vpc.id)} className="pointer">
                     <td style={tdLabelStyle}>Public Subnets:</td>
                     <td>
@@ -308,7 +382,7 @@ const Subnets = (props) => {
             <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
         </div> }
         <div style={{minWidth:"400pt"}}>
-            { subnets.loading && <div className="box lighten" style={{marginTop:"2pt"}}><StandardSpinner label="Loading Subnets" /></div> }
+            { subnets.loading && <div className="box lighten" style={{marginTop:"2pt"}}><StandardSpinner label="Loading subnets" /></div> }
             { subnets.filter(subnet => type ? subnet.type === type : true)?.map(subnet => <div key={subnet.id}>
                 <Subnet subnet={subnet} keyedState={keyedState?.keyed(subnet.id)} />
                 <div style={{height:"4pt"}} />
@@ -326,7 +400,7 @@ const Subnet = (props) => {
     const toggleTags = () => toggleShow("showTags");
     return <>
         <div className={"box margin" + (subnet?.type === "private" ? " darken" : " lighten")} style={{width:"100%"}}>
-            <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
+            <div>
                 <b>Subnet</b>: <b style={{color:"black"}}>{subnet?.name}</b>
                 <ExternalLink
                     href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#SubnetDetails:subnetId=${subnet?.id}`}
@@ -334,7 +408,8 @@ const Subnet = (props) => {
                     style={{marginLeft:"6pt"}} />
                 <small style={{float:"right"}}>
                     {subnet?.type === "private" ? <> <b style={{color:"red"}}>PRIVATE</b> </>:<> <b style={{color:"green"}}>PUBLIC</b> </>}
-                 </small>
+                </small>
+                <HorizontalLine top="2pt" bottom="2pt" />
             </div>
             <table width="100%"><tbody>
                 <tr>
@@ -363,9 +438,7 @@ const Subnet = (props) => {
                     <td style={tdLabelStyle}>Status:</td>
                     <td style={tdContentStyle}>{subnet?.status}</td>
                 </tr>
-                <tr><td style={{height:"4pt"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <HorizontalLine top="4pt" bottom="2pt" table={2} />
                 <tr onClick={toggleTags} className="pointer">
                     <td style={tdLabelStyle}>Tags:</td>
                     <td>
@@ -393,7 +466,7 @@ const SecurityGroups = (props) => {
     const all = useSearchParams()[0].get("all")?.toLowerCase() === "true";
     const args = vpcId ? `?vpc=${vpcId}` : ""
     const securityGroups = useFetch(`/aws/security_groups${all ? "/all" : ""}${args}`, { cache: true });
-    return <div style={{marginBottom:"8pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",marginBottom:"8pt"}}>
         { !notitle &&
             <div>
                 <b>AWS Security Groups</b>&nbsp;&nbsp;<small>({securityGroups?.length})</small>
@@ -426,13 +499,14 @@ const SecurityGroup = (props) => {
     const toggleTags          = () => toggleShow("showTags");
 
     return <>
-        <div className="box margin lighten" style={{width:"100%",maxWidth:"500pt"}}>
-            <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
+        <div className="box margin lighten" style={{width:"100%",maxWidth:"100%"}}>
+            <div>
                 <b>Security Group</b>: <b style={{color:"black"}}>{securityGroup?.name}</b>
                 <ExternalLink
                     href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#SecurityGroup:groupId=${securityGroup?.id}`}
                     bold={true}
                     style={{marginLeft:"6pt"}} />
+                <HorizontalLine top="2pt" bottom="2pt" />
             </div>
             <table width="100%"><tbody>
                 <tr>
@@ -453,9 +527,7 @@ const SecurityGroup = (props) => {
                     <td style={tdLabelStyle}>VPC:</td>
                     <td style={tdContentStyle}>{securityGroup?.vpc}</td>
                 </tr>
-                <tr><td style={{height:"4pt"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <HorizontalLine top="4pt" bottom="2pt" table={2} />
                 <tr onClick={toggleInboundRules} className="pointer">
                     <td style={tdLabelStyle}>Inbound Rules:</td>
                     <td>
@@ -588,7 +660,7 @@ const SecurityGroupRule = (props) => {
 
     return <>
         <div className="box" style={{background:"#FEFEFE",width:"100%"}}>
-            <div style={{borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"4pt"}}>
+            <div>
                 <b>Security Group Rule</b>: <b style={{color:"black"}}>{securityGroupRule?.id}</b>
                 <small style={{float:"right"}}>
                     <b style={{color:securityGroupRule?.egress ? "var(--box-fg)" : "red"}}>{securityGroupRule?.egress ? "OUTBOUND" : "INBOUND"}</b>
@@ -597,6 +669,7 @@ const SecurityGroupRule = (props) => {
                     href={`https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#ModifyInboundSecurityGroupRules:securityGroupId=${securityGroupRule?.security_group}`}
                     bold={true}
                     style={{marginLeft:"6pt"}} />
+                <HorizontalLine top="2pt" bottom="2pt" />
             </div>
             <table width="100%"><tbody>
                 <tr>
@@ -641,7 +714,7 @@ const SecurityGroupRule = (props) => {
 }
 
 const Tags = (props) => {
-    return <div style={{maxWidth:"480pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%"}}>
         <div className="box lighten">
             { !props.tags ? <>
                 <li>No tags.</li>
@@ -650,7 +723,7 @@ const Tags = (props) => {
                     { props.tags && Object.keys(props.tags)?.map(key => <li key={key}>
                         <b>{key}</b> <br />
                         <div style={{wordBreak:"break-all"}}>
-                            { props.tags[key] === "********" ? <>
+                            { isRedacted(props.tags[key]) ? <>
                                 <span style={{color:"red"}}>REDACTED</span>
                             </>:<>
                                 {props.tags[key]}
@@ -665,17 +738,18 @@ const Tags = (props) => {
 
 const StackList = (props) => {
     const stacks = useFetch("/aws/stacks", { cache: true });
-    const styleLast = { cursor: "pointer" };
-    const styleNotLast = { ...styleLast, borderBottom:"1px solid var(--box-fg)",paddingBottom:"2pt",marginBottom:"2pt" };
     return <>
         <div><b>AWS Stacks</b></div>
-        <div className="box" style={{whiteSpace:"nowrap"}}>
+        <div className="box" style={{whiteSpace:"nowrap",marginBottom:"6pt"}}>
             { stacks.loading && <StandardSpinner label="Loading stacks" /> }
             {stacks.map((stack, i) => {
                 const toggleStack = () => props.toggleStack(stack.name);
                 const selectedStack = () => props.selectedStack(stack.name);
-                const style = {...(i + 1 < stacks.length ? styleNotLast : styleLast), ...(selectedStack(stack.name) ? {fontWeight:"bold"} : {})};
-                return <div key={stack.name} style={style} onClick={toggleStack}>{stack.name}</div>
+                const style = {...(selectedStack(stack.name) ? {fontWeight:"bold"} : {})};
+                return <>
+                    <div key={stack.name} style={style} className="pointer" onClick={toggleStack}>{stack.name}</div>
+                    <HorizontalLine top="2pt" bottom="2pt" iff={i + 1 < stacks.length}/>
+                </>
             })}
         </div>
     </>
@@ -700,9 +774,10 @@ const Stack = (props) => {
     const isShowTemplate   = () => isShow    ("showTemplate");
     const toggleTemplate   = () => toggleShow("showTemplate");
 
-    return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",marginBottom:"8pt"}}> {/* xyzzy */}
         <div>
             <b>AWS Stack: {stackName}</b>
+            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
             <ExternalLink
                 href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/stackinfo?filteringStatus=active&filteringText=&viewNested=true&stackId=${stack.data?.id}`}
                 bold={true}
@@ -716,7 +791,7 @@ const Stack = (props) => {
                 <tr>
                     <td style={tdLabelStyle}>Name:</td>
                     <td style={{...tdContentStyle,wordBreak:"break-all"}}>
-                        <b style={{float:"right",cursor:"pointer",marginTop:"-2pt"}} onClick={hide}>{Char.X}</b>
+                        {/* <b style={{float:"right",cursor:"pointer",marginTop:"-2pt"}} onClick={hide}>{Char.X}</b> */}
                         {stackName}
                     </td>
                 </tr>
@@ -736,24 +811,20 @@ const Stack = (props) => {
                     <td style={tdLabelStyle}>Description:</td>
                     <td style={tdContentStyle}>{stack.data?.description}</td>
                 </tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <HorizontalLine top="2pt" bottom="2pt" table={2} />
                 <tr>
                     <td style={tdLabelStyle}>Status:</td>
                     <td style={tdContentStyle}>{stack.data?.status}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Created:</td>
-                    <td style={tdContentStyle}>{stack.data?.created}</td>
+                    <td style={tdContentStyle}>{DateTime.Format(stack.data?.created)}</td>
                 </tr>
                 <tr>
                     <td style={tdLabelStyle}>Updated:</td>
-                    <td style={tdContentStyle}>{stack.data?.updated}</td>
+                    <td style={tdContentStyle}>{DateTime.Format(stack.data?.updated)}</td>
                 </tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2"></td></tr>
-                <tr><td style={{height:"2pt"}} colSpan="2"></td></tr>
+                <HorizontalLine top="2pt" bottom="2pt" table={2} />
                 <tr>
                     <td style={tdLabelStyle}>Outputs:</td>
                     <td style={tdContentStyle}>
@@ -846,7 +917,7 @@ const Stack = (props) => {
 
 const StackOutputs = (props) => {
     const outputs = useFetch(`/aws/stacks/${props.stackName}/outputs`, { cache: true });
-    return <div style={{maxWidth:"480pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",wordBreak:"break-all"}}>
         <div className="box lighten">
             { outputs.empty ? <>
                 { outputs.loading ? <>
@@ -859,7 +930,7 @@ const StackOutputs = (props) => {
                     { outputs.data && Object.keys(outputs.data)?.map(output => <li key={output}>
                         <b>{output}</b> <br />
                         <div style={{wordBreak:"break-all"}}>
-                            { outputs.data[output] === "********" ? <>
+                            { isRedacted(outputs.data[output]) ? <>
                                 <span style={{color:"red"}}>REDACTED</span>
                             </>:<>
                                 {outputs.data[output]}
@@ -874,7 +945,7 @@ const StackOutputs = (props) => {
 
 const StackParameters = (props) => {
     const parameters = useFetch(`/aws/stacks/${props.stackName}/parameters`, { cache: true });
-    return <div style={{maxWidth:"480pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",wordBreak:"break-all"}}>
         <div className="box lighten">
             { parameters.empty ? <>
                 { parameters.loading ? <>
@@ -887,7 +958,7 @@ const StackParameters = (props) => {
                     { parameters.data && Object.keys(parameters.data)?.map(parameter => <li key={parameter}>
                         <b>{parameter}</b> <br />
                         <div style={{wordBreak:"break-all"}}>
-                            { parameters.data[parameter] === "********" ? <>
+                            { isRedacted(parameters.data[parameter]) ? <>
                                 <span style={{color:"red"}}>REDACTED</span>
                             </>:<>
                                 {parameters.data[parameter]}
@@ -902,7 +973,7 @@ const StackParameters = (props) => {
 
 const StackResources = (props) => {
     const resources = useFetch(`/aws/stacks/${props.stackName}/resources`, { cache: true });
-    return <div style={{maxWidth:"480pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",wordBreak:"break-all"}}>
         <div className="box lighten">
             { resources.empty ? <>
                 { resources.loading ? <>
@@ -915,7 +986,7 @@ const StackResources = (props) => {
                     { resources.data && Object.keys(resources.data)?.map(resource => <li key={resource}>
                         <b style={{wordBreak:"break-all"}}>{resource}</b> <br />
                         <div style={{wordBreak:"break-all"}}>
-                            { resources.data[resource] === "********" ? <>
+                            { isRedacted(resources.data[resource]) ? <>
                                 <span style={{color:"red"}}>REDACTED</span>
                             </>:<>
                                 {resources.data[resource]}
@@ -930,7 +1001,7 @@ const StackResources = (props) => {
 
 const StackTemplate = (props) => {
     const template = useFetch(`/aws/stacks/${props.stackName}/template`, { cache: true });
-    return <div style={{maxWidth:"480pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%"}}>
         <div className="box lighten nomargin">
             { template.empty ? <>
                 { template.loading ? <>
@@ -940,7 +1011,7 @@ const StackTemplate = (props) => {
                 </>}
             </>:<>
                 { template.data &&
-                    <pre style={{border:"0",background:"var(--box-bg-lighten)",marginLeft:"-6pt",marginTop:"-6pt",marginBottom:"-6pt"}}>
+                    <pre style={{width:"100%",maxWidth:"100%",border:"0",background:"var(--box-bg-lighten)",marginLeft:"-6pt",marginTop:"-6pt",marginBottom:"-6pt"}}>
                         {Type.IsObject(template.data) ? Yaml.Format(template.data) : template.data}
                     </pre>
                 }
@@ -949,33 +1020,10 @@ const StackTemplate = (props) => {
     </div>
 }
 
-const Gac = (props) => {
-    const { hide } = props;
-    const info = useFetch("/info", { cache: true });
-    return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
-        <div style={{wordBreak:"break-all"}}><b>GAC</b>:&nbsp;<b>{info.data?.gac?.name}</b>&nbsp;
-            <ExternalLink
-                href={`https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=${info.data?.gac?.name}&region=us-east-1`}
-                bold={true}
-                style={{marginLeft:"6pt"}} />
-                <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
-        </div>
-        <div className="box margin">
-            { info.loading && <StandardSpinner label="Loading GAC" /> }
-            <ul style={{marginBottom:"1pt"}}>
-                { info.data?.gac && Object.keys(info.data.gac.values)?.map(name => <li key={name}>
-                    <b>{name}</b> <br />
-                    { info.data.gac.values[name] === "********" ? <span style={{color:"red"}}>REDACTED</span> : info.data.gac.values[name] }
-                </li>)}
-            </ul>
-        </div>
-    </div>
-}
-
 const Ecosystem = (props) => {
     const { hide } = props;
     const info = useFetch("/info", { cache: true });
-    return <div style={{maxWidth:"500pt",marginBottom:"8pt"}}>
+    return <div style={{width:"100%",maxWidth:"100%",marginBottom:"8pt"}}>
         <div>
             <b>Ecosystem</b>:&nbsp;<b>{info.data?.buckets?.env}</b>
             <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
@@ -984,6 +1032,187 @@ const Ecosystem = (props) => {
             { info.loading && <StandardSpinner label="Loading Ecosystem" /> }
             {!info.loading && Yaml.Format(info.data?.buckets?.ecosystem) }
         </pre>
+    </div>
+}
+
+const EcsClusters = (props) => {
+
+    const { keyedState, hide } = props;
+    const clusters = useFetch("//aws/ecs/clusters");
+
+    return <div style={{marginBottom:"8pt"}}>
+        <div>
+           <b>AWS ESC Clusters</b>&nbsp;&nbsp;{!clusters.loading && <small>({clusters?.length})</small>}
+            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
+        </div>
+        <div style={{width:"100%"}} className="box lighten nomargin">
+            { clusters.loading && <div><StandardSpinner label="Loading ECS clusters" /></div> }
+            { clusters.map((cluster, index) => <div key={cluster?.cluster_name}>
+                <EcsCluster cluster={cluster} keyedState={keyedState?.keyed(cluster?.cluster_name)} />
+				{ index < clusters.length - 1 && <HorizontalLine top="2pt" bottom="2pt" dotted={true} /> }
+            </div>)}
+        </div>
+    </div>
+}
+
+const EcsCluster = (props) => {
+
+    const [ state, setState ] = useKeyedState(props.keyedState);
+    const isShow = (property) => state[property];
+    const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
+
+    const toggleShowDetail = () => toggleShow("detail");
+    const isShowDetail = () => isShow("detail");
+
+    return <div>
+        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{props.cluster?.cluster_name}</span>
+        <ExternalLink
+            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${props.cluster?.cluster_name}/services?region=us-east-1`}
+            style={{marginLeft:"6pt"}} />
+        { isShowDetail() ? <>
+            <EcsClusterDetail
+                cluster={props.cluster}
+                clusterDisplayName={props.cluster?.cluster_name}
+                keyedState={props.keyedState} />
+        </>:<>
+        </> }
+    </div>
+}
+
+const EcsClusterDetail = (props) => {
+    const [ state, setState ] = useKeyedState(props.keyedState);
+    const isShowServices = () => state["show-services"]
+    const toggleShowServices = () => setState({ "show-services": !isShowServices() });
+    const cluster = useFetch(`//aws/ecs/clusters/${encodeURIComponent(props.cluster?.cluster_name)}`, { cache: true });
+    useEffect(() => {
+        toggleShowServices();
+    }, []);
+    return <div className="box" style={{background:"inherit",marginTop:"2pt",marginBottom:"3pt",overflow:"auto"}}>
+        <JsonToggleDiv data={cluster.data} yaml={true} both={true}>
+            <small>
+                <b>Cluster ARN</b>: {cluster.data?.cluster_arn} <br />
+                <b>Status</b>: {cluster.data?.status} <br />
+                <b>Deployed</b>: {DateTime.Format(cluster.data?.most_recent_deployment_at)} <br />
+                <b>Services</b>: {cluster.data?.services?.length}
+                { cluster.data?.services?.length > 0 && <>
+                    &nbsp;
+                    { isShowServices() ? <>
+                        <span onClick={toggleShowServices} className="pointer">{Char.DownArrow}</span>
+                        <EcsClusterServices cluster={cluster.data?.cluster_name} services={cluster.data?.services} />
+                    </>:<>
+                        <span onClick={toggleShowServices} className="pointer">{Char.UpArrow}</span>
+                    </> }
+                </> }
+            </small>
+        </JsonToggleDiv>
+    </div>
+}
+
+const EcsClusterServices = (props) => {
+    const longestCommonInitialSubstring = Str.LongestCommonInitialSubstring(props.services, service => service.service_name);
+    return <div className="box bigmargin smallpadding nobackground"><ul>
+        { props.services?.map((service, index) => <>
+            <li>
+                <b>
+                    { service.service_name == service.service_display_name ? <>
+                        <span onClick={() => {Clipboard.CopyText(service.service_name);}} style={{cursor:"copy"}}>
+                            <b id={`tooltip-${service.service_name}`}>{service.service_name.substring(longestCommonInitialSubstring.length)}</b>
+                            <Tooltip id={`tooltip-${service.service_name}`} text={service.service_name} position="right" shape="squared" />
+                        </span>
+                    </>:<>
+                        {service.service_name}
+                    </> }
+                </b>
+                <ExternalLink
+                    href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${props.cluster}/services/${service.service_name}/health?region=us-east-1`}
+                    style={{marginLeft:"6pt"}} />
+                &nbsp;|&nbsp;
+                <small><b>Logs</b>
+                    <ExternalLink
+                        href={`https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/${props.cluster}/services/${service.service_name}/logs?region=us-east-1`}
+                        style={{marginLeft:"4pt"}} />
+                </small>
+                <br />
+                <small>
+                    <b>Service ARN</b>: {service.service_arn} <br />
+                    { service.service_name == service.service_display_name && <>
+                        <b>Service Name</b>: Service: {service.service_display_name} <br />
+                    </> }
+                    <b>Task Definition</b>: {service.task_display_name}
+                        <ExternalLink
+                            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/${service.task_name}?region=us-east-1`}
+                            style={{marginLeft:"4pt"}} /> <br />
+                    <b>Task Definition ARN</b>: {service.task_arn}
+                        <ExternalLink
+                            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/${service.task_name}/1/containers?region=us-east-1`}
+                            style={{marginLeft:"4pt"}} />
+                </small>
+                { index < props.services.length - 1 && <><br /><br /></> }
+            </li>
+        </>) }
+    </ul></div>
+}
+
+const EcsTasks = (props) => {
+    const { keyedState, hide } = props;
+    const tasks = useFetch("//aws/ecs/tasks/latest");
+    return <div style={{marginBottom:"8pt"}}>
+        <div>
+           <b>AWS ECS Tasks Definitions</b>&nbsp;&nbsp;{!tasks.loading && <small>({tasks?.length})</small>}
+            <b style={{float:"right",fontSize:"small",marginTop:"2pt",marginRight:"4pt",cursor:"pointer"}} onClick={hide}>{Char.X}</b>
+        </div>
+        <div style={{width:"100%"}} className="box lighten nomargin">
+            { tasks.loading && <div><StandardSpinner label="Loading ECS tasks" /></div> }
+            { tasks.map((task, index) => <div key={task?.task_name}>
+                <EcsTask task={task} keyedState={keyedState?.keyed(task?.task_name)} />
+				{ index < tasks.length - 1 && <HorizontalLine top="2pt" bottom="2pt" dotted={true} /> }
+            </div>)}
+        </div>
+    </div>
+}
+
+const EcsTask = (props) => {
+    const [ state, setState ] = useKeyedState(props.keyedState);
+    const isShow = (property) => state[property];
+    const toggleShow = (property) => setState({ [property]: state[property] ? false : true });
+    const toggleShowDetail = () => toggleShow("detail");
+    const isShowDetail = () => isShow("detail");
+    return <div>
+        <span onClick={toggleShowDetail} className="pointer" style={{fontWeight: isShowDetail() ? "bold" : "inherit"}}>{props.task}</span>
+        <ExternalLink
+            href={`https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/${props.task}?region=us-east-1`}
+            style={{marginLeft:"6pt"}} />
+        { isShowDetail() && <>
+            <EcsTaskDetail
+                task={props.task}
+                keyedState={props.keyedState} />
+        </> }
+    </div>
+}
+
+const EcsTaskDetail = (props) => {
+    const [ state, setState ] = useKeyedState(props.keyedState);
+    const task = useFetch(`//aws/ecs/tasks/${encodeURIComponent(props.task)}`, { cache: true });
+    useEffect(() => {
+    }, []);
+    const td = { fontSize: "small", verticalAlign: "top" };
+    const tdl = { ...td, paddingRight: "3pt", whiteSpace: "nowrap" };
+    const tdr = { ...td, whiteSpace: "break-spaces", wordBreak: "break-all" };
+    return <div className="box" style={{background:"inherit",marginTop:"2pt",marginBottom:"3pt",overflow:"auto"}}>
+        <JsonToggleDiv data={task.data} yaml={true} both={true}>
+            <small>
+            <table><tbody>
+            <tr><td style={tdl}><b>Task Definition Name</b>:</td><td style={tdr}><u>{task.data?.task_display_name}</u></td></tr>
+            <tr><td style={tdl}><b>Task Definition ARN</b>:</td><td style={tdr}>
+                {task.data?.task_arn}
+                <ExternalLink
+                    href={`https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/${task.data?.task_name}${task.data?.task_revision ? "/" + task.data.task_revision : ""}/containers?region=us-east-1`}
+                    style={{marginLeft:"6pt"}} />
+                </td></tr>
+            <tr><td style={tdl}><b>Task Definition Revision</b>:</td><td style={tdr}>{task.data?.task_revision}</td></tr>
+            </tbody></table>
+            </small>
+        </JsonToggleDiv>
     </div>
 }
 

@@ -1,6 +1,8 @@
 import re
 import boto3
 import logging
+import os
+from typing import Optional
 from dcicutils.diff_utils import DiffManager
 from dcicutils.env_utils import short_env_name
 from dcicutils.function_cache_decorator import function_cache
@@ -17,17 +19,32 @@ logger = logging.getLogger(__name__)
 class Gac:
 
     @staticmethod
-    def get_secrets_names() -> list:
+    def _all_secret_names():
+        secrets_manager = boto3.client('secretsmanager')
+        pagination_next_token = None
+        while True:
+            kwargs = {"NextToken": pagination_next_token} if pagination_next_token else {}
+            response = secrets_manager.list_secrets(**kwargs)
+            for secret in response["SecretList"]:
+                yield secret["Name"]
+            if "NextToken" in response:
+                pagination_next_token = response['NextToken']
+            else:
+                break
+
+    @staticmethod
+    def get_secret_names() -> list:
         try:
-            boto_secrets_manager = boto3.client('secretsmanager')
-            return [secrets['Name'] for secrets in boto_secrets_manager.list_secrets()['SecretList']]
+            secret_names = [secret_name for secret_name in Gac._all_secret_names()]
+            secret_names.sort()
+            return secret_names
         except Exception as e:
             logger.error(f"Exception getting secrets: {get_error_message(e)}")
             return []
 
     @staticmethod
     def get_gac_names() -> list:
-        secrets_names = Gac.get_secrets_names()
+        secrets_names = Gac.get_secret_names()
         pattern = ".*App(lication)?Config(uration)?.*"
         return [secret_name for secret_name in secrets_names if re.match(pattern, secret_name, re.IGNORECASE)]
 
@@ -75,5 +92,15 @@ class Gac:
         }
 
     @staticmethod
+    @function_cache
+    def get_identity_name() -> str:
+        return get_identity_name()
+
+    @staticmethod
     def get_secret_value(name: str) -> str:
         return get_identity_secrets().get(name)
+
+    @staticmethod
+    def get_secrets(secrets_name: str) -> Optional[str]:
+        with override_environ(IDENTITY=secrets_name):
+            return sort_dictionary_by_case_insensitive_keys(obfuscate_dict(get_identity_secrets()))

@@ -629,7 +629,7 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
     args = {
         url:        Type.First([ urlOverride, argsOverride?.url, url, args?.url, "" ], Str.HasValue),
         method:     Type.First([ argsOverride?.method, args?.method, DEFAULT_METHOD ], Str.HasValue),
-        payload:    Type.First([ argsOverride?.payload, args?.payload, null ], Type.IsObject),
+        payload:    Type.First([ argsOverride?.payload, args?.payload, null ], Type.IsJson),
         timeout:    Type.First([ argsOverride?.timeout, args?.timeout, DEFAULT_TIMEOUT ], Type.IsInteger),
         initial:    Type.First([ argsOverride?.initial, args?.initial, null ], (value) => !Type.IsNull(value)),
         nofetch:    Type.First([ argsOverride?.nofetch, args?.nofetch, false ], Type.IsBoolean),
@@ -654,6 +654,7 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
         delete args.nofetch;
     }
     if (Str.HasValue(args.url) && !args.url.startsWith("https://") && !args.url.startsWith("http://")) {
+        // As a shortcut to define an API URL which should NOT contain the environment start it with a double slash.
         if (args.url.startsWith("//")) {
             args.url = Server.Url(args.url.substring(1), false);
         }

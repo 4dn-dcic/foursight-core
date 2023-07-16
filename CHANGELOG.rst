@@ -6,6 +6,25 @@ foursight-core
 Change Log
 ----------
 
+4.4.0
+=====
+* 2023-06-20
+* Changes to the access key check; making sure the action does not run every single day.
+  This the primary/necessary change for this release; required since 4.3.0 where the access
+  key check itself was fixed to work; without this new access keys would be created daily.
+* Replaced calls to boto3.client/resource("sqs"/"s3") to boto_sqs/s3_client/resource;
+  this in preparation to allow using localstack to run SQS and S3 locally for testing;
+  to really do this we need similar changes in dcicutils.
+* Miscellaneous minor UI improvements, including:
+  * Allow viewing of list of secrets and values (obfuscated if senstive) in Infrastucture page.
+  * Allow accounts file to be uploaded; this now lives in, for example:
+    s3://cgap-kmp-main-application-cgap-supertest-system/known_accounts
+    No longer need to encrypt this file as it resides in a protected area in S3,
+    i.e. the same place as the Portal access keys files (e.g. access_key_foursight).
+  * New info and convenience links to associated AWS resources on accounts page.
+  * Allow specifying UUID when creating a new user (C4-1050).
+  * Started adding ECS info to Infrastructure page.
+
 4.3.0
 =====
 * Fix to checks.access_key_expiration_detection.refresh_access_keys bug (key exception) which

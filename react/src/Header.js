@@ -8,7 +8,7 @@ import Auth from './utils/Auth';
 import Char from './utils/Char';
 import Client from './utils/Client';
 import Context from './utils/Context';
-import LiveTime from './LiveTime';
+import DateTime from './utils/DateTime';
 import Time from './utils/Time';
 import Env from './utils/Env';
 import Image from './utils/Image';
@@ -103,7 +103,8 @@ const MainMenu = ({ header }) => {
                 <MenuItem path="/users" label="Users" />
                 <MenuSeparator />
                 <MenuItem path="/env" label="Environments" />
-                <MenuItem path="/accounts" label="Accounts" />
+                {/* The all=true arg to /accounts means show all known accounts not just onece related to the current account */}
+                <MenuItem path="/accounts?all=true" label="Accounts" />
                 <MenuItem path="/login" label={Auth.IsLoggedIn(header) ? "Session" : "Login"} />
             </div>
         </span>
@@ -243,7 +244,7 @@ const Header = (props) => {
                     </div>
                 </td>
                 <td width="38%" style={{paddingRight:"10pt",whiteSpace:"nowrap",color:"#D6EAF8"}} align="right">
-                    <small><LiveTime.FormatDateTime verbose={true} timezone={false} /></small>
+                    <small><DateTime.Live verbose={true} timezone={false} /></small>
                     { (header.app?.credentials?.aws_account_name) && <>
                         &nbsp;|&nbsp;<Link id="tooltip-header-account" to={Client.Path("/login")} style={{textDecoration:"none",color:"inherit"}}><b>{header.app?.credentials?.aws_account_name?.replace(/^cgap-/, "")}</b></Link>
                         <Tooltip id="tooltip-header-account" position="bottom" text={`AWS account number: ${header.app?.credentials?.aws_account_number}`} />

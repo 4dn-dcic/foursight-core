@@ -12,7 +12,10 @@ import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
 import Client from '../utils/Client';
 import ChecksValidation from '../components/ChecksValidation';
+import Date from '../utils/Date';
+import DateTime from '../utils/DateTime';
 import DisplayStatusText from '../components/DisplayStatusText';
+import Duration from '../utils/Duration';
 import Env from '../utils/Env';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
@@ -22,7 +25,6 @@ import TableHead from '../TableHead';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
-import LiveTime from '../LiveTime';
 import Styles from '../Styles';
 import Tooltip from '../components/Tooltip';
 
@@ -376,7 +378,7 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
                                         noteChangedCheckBox(groupList);
                                             setShowDependenciesBox(true);
                                     }}>
-                                    <span style={{fontSize:"small"}}>{Char.DownArrowFat}</span>&nbsp;Configure
+                                    <span style={{fontSize:"small"}}></span>&nbsp;Run ...
                                 </div>
                                 <Tooltip id={`tooltip-configure ${check.name}`} position="top" text={"Configure check run below."} />
                             </>}
@@ -522,7 +524,7 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
                         </span>
                         <span id={`tooltip-latest-result-timestamp ${check.name}`}>{check.__result.get("timestamp")}</span>
                         <Tooltip id={`tooltip-latest-result ${check.name}`} text={"Click to " + (check.__showingResultDetails ? "hide" : "show") + " latest result."} />
-                        <Tooltip id={`tooltip-latest-result-timestamp ${check.name}`} text={Time.FormatDuration(check.__result.get("timestamp"), new Date(), true, null, null, "ago")} />
+                        <Tooltip id={`tooltip-latest-result-timestamp ${check.name}`} text={Duration.Format(check.__result.get("timestamp"), DateTime.Now(), true, null, null, "ago")} />
                     </span>
                     { check.__showingResultDetails && <>
                             {/**/}
@@ -886,7 +888,7 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
                 { (check.__queuedCheckRun) &&
                     <small><b>
                         <span id={`tooltip-view-run-uuid-1 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued check run</span>:&nbsp;
-                        <span id={`tooltip-view-run-uuid-2 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.__queuedCheckRun + "+00:00")}</span>
+                        <span id={`tooltip-view-run-uuid-2 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{DateTime.Format(check.__queuedCheckRun + "+00:00")}</span>
                         <Tooltip id={`tooltip-view-run-uuid-1 ${check.name}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this check run."} position="bottom" />
                         <Tooltip id={`tooltip-view-run-uuid-2 ${check.name}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this check run."} position="bottom" />
                         &nbsp;{Char.RightArrow}&nbsp;
@@ -913,7 +915,7 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
                 {  check.__queuedActionRun &&
                     <small><b>
                         <span id={`tooltip-view-run-action-uuid-1 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>Queued action run</span>:&nbsp;
-                        <span id={`tooltip-view-run-action-uuid-2 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{Time.FormatDateTime(check.__queuedActionRun + "+00:00")}</span>
+                        <span id={`tooltip-view-run-action-uuid-2 ${check.name}`} onClick={() => setShowUuid(!showUuid)} style={{cursor:"pointer"}}>{DateTime.Format(check.__queuedActionRun + "+00:00")}</span>
                         <Tooltip id={`tooltip-view-run-action-uuid-1 ${check.name}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this action run."} position="bottom" />
                         <Tooltip id={`tooltip-view-run-action-uuid-2 ${check.name}`} text={"Click to " + (showUuid ? "hide" : "show") + " UUID for this action run."} position="bottom" />
                         &nbsp;{Char.RightArrow}&nbsp;
@@ -1073,7 +1075,7 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
                         &nbsp;&nbsp;</td>
                         <td style={{whiteSpace:"nowrap"}}>
                             <span id={`tooltip-history-timestamp-${check.name}-${index}`} onClick={() => {toggleHistoryResult(check, history, extractUuid(history), historyList); }} style={{cursor:"pointer"}}>
-                                {extractTimestamp(history)}
+                                {DateTime.Format(extractTimestamp(history))}
                             </span>
                             <Tooltip id={`tooltip-history-timestamp-${check.name}-${index}`} text={Time.Ago(extractTimestamp(history))} position="right" shape="squared" />
                         &nbsp;&nbsp;</td>
@@ -1178,6 +1180,21 @@ const ChecksSearchBox = (props) => {
         return matches;
     }
 
+    function getGroupName(check) {
+        return getByScheduleGroupName(check);
+    }
+
+    function getByScheduleGroupName(check) {
+        let checkName = check.name;
+        for (let datum of props.checks.data) {
+            for (let check of datum.checks) {
+                if (check.name == checkName) {
+                    return datum.group;
+                }
+            }
+        }
+    }
+
     const inputStyle = {
         outline: "none",
         paddingLeft: "2pt",
@@ -1231,7 +1248,7 @@ const ChecksSearchBox = (props) => {
                                 <br />
                                 <small>
                                     <i>Group</i>:&nbsp;
-                                    <span className="pointer" onClick={() => props.toggleShowGroup(props.findGroup(check.group), props.environ, props.groupList)}>{check.group.replace(/ checks$/i, "")}</span> <br />
+                                    <span className="pointer" onClick={() => props.toggleShowGroup(props.findGroup(getGroupName(check)), props.environ, props.groupList)}>{getGroupName(check).replace(/ checks$/i, "")}</span> <br />
                                     <i>Function:</i>&nbsp;
                                     { check.registered_github_url ? <>
                                         <a rel="noreferrer" target="_blank" href={check.registered_github_url}>
@@ -1518,7 +1535,7 @@ const ChecksPage = (props) => {
                         </>:<>
                             <b>Top</b>:&nbsp;
                         </>}
-                        <LiveTime.FormatDuration start={recentRuns?.data[0]?.timestamp} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />
+                        <Duration.Live start={recentRuns?.data[0]?.timestamp} verbose={true} fallback={"just now"} suffix={"ago"} tooltip={true} />
                     </small>}
                     <b style={{float:"right",paddingBottom:"4pt",cursor:"pointer"}} onClick={hideRecentRuns}>{Char.X}</b>
                     <table style={{width:"100%"}} border="0">
@@ -1546,9 +1563,9 @@ const ChecksPage = (props) => {
                                         :   <span style={{color:"darkred"}}>{Char.X}</span> }
                                     &nbsp;</td>
                                     <td  id={`recent-runs-timestamp ${index}`} style={{width:"20%"}}>
-                                        {Time.FormatDate(run.timestamp)} <br />
-                                        <small>{Time.FormatTime(run.timestamp)}</small>
-                                        <Tooltip id={`recent-runs-timestamp ${index}`} text={Time.FormatDuration(run.timestamp, new Date(), true, null, null, "agoy")} />
+                                        {Date.Format(run.timestamp)} <br />
+                                        <small>{Time.Format(run.timestamp)}</small>
+                                        <Tooltip id={`recent-runs-timestamp ${index}`} text={Duration.Format(run.timestamp, DateTime.Now(), true, null, null, "agoy")} />
                                     &nbsp;&nbsp;</td>
                                     <td style={{width:"45%"}}>
                                         <b style={{cursor:"pointer"}} onClick={() => onClickShowHistory(findCheck(run.check, run.group), environ, historyList)}>{run.title}</b>
@@ -1708,7 +1725,7 @@ const ChecksPage = (props) => {
                     </tr>
                     <tr>
                         <td style={tdLabelStyle}>Updated:</td>
-                        <td style={tdContentStyle}><span id={`tooltip-lambda-updated-${lambda.lambda_name}`}>{Time.FormatDateTime(lambda.lambda_modified)}</span></td>
+                        <td style={tdContentStyle}><span id={`tooltip-lambda-updated-${lambda.lambda_name}`}>{DateTime.Format(lambda.lambda_modified)}</span></td>
                         <Tooltip id={`tooltip-lambda-updated-${lambda.lambda_name}`} text={Time.Ago(lambda.lambda_modified)} position="right" shape="squared" />
                     </tr>
                     <tr style={{fontSize:"small"}}>
@@ -1860,10 +1877,7 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
                     <div style={{float:"right",marginTop:"-2pt"}}>
                         {(runActionAllowedState[0] && !readOnlyMode) ?<>
                             { runActionConfirm ? <>
-                                <span id={`tooltip-action-run-${check.name}`}>
-                                    <button className="check-run-button red" onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
-                                </span>
-                                <Tooltip id={`tooltip-action-run-${check.name}`} text="Click to actually run this action." position="top" />
+                                <span className="check-action-confirm-button" style={{float:"right"}} onClick={onClickRunActionCancel}>&nbsp;<b>Cancel</b></span>
                             </>:<>
                                 <button className="check-run-button" onClick={onClickRunAction}> Run Action <b>...</b></button>
                             </>}
@@ -1877,7 +1891,7 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
                     </div>
                     { (!readOnlyMode && !runActionAllowedState[0] && !check.__result.loading && !check.__resultByUuid.loading && !check.__resultByAction.loading) && <>
                         <div id={`tooltip-result-refresh-${check.name}`} style={{float:"right",marginRight:"8pt",marginTop:"0pt",cursor:"pointer",color:"black"}} onClick={() => fetchResult(check, env, groupList, true)}>
-                            <big><b>{Char.Refresh}</b></big>
+                            <div style={{display:"inline-block",fontWeight:"bold",fontSize:"large",marginTop:"-2pt"}}>{Char.Refresh}</div>
                         </div>
                         <Tooltip id={`tooltip-result-refresh-${check.name}`} text="Click to refresh latest result." position="bottom" />
                     </>}
@@ -1885,7 +1899,10 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
                 { runActionConfirm && <>
                     <div style={{borderTop:"1px solid",marginTop:"8pt",marginBottom:"8pt"}}/>
                     <b style={{color:"red"}}>{Char.RightArrow}&nbsp;<i>Are you sure you want to run this action?</i></b>
-                    <span className="check-action-confirm-button" style={{float:"right",marginTop:"-3pt"}} onClick={onClickRunActionCancel}>&nbsp;<b>Cancel</b></span>
+                    <span id={`tooltip-action-run-${check.name}`} style={{float:"right",marginTop:"-3pt"}}>
+                        <button className="check-run-button red" onClick={onClickRunAction}>{Char.RightArrowFat} Run Action</button>
+                    </span>
+                    <Tooltip id={`tooltip-action-run-${check.name}`} text="Click to actually run this action." position="top" />
                 </>}
             </div>
         </>}

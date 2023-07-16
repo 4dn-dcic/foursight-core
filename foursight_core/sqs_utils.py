@@ -1,9 +1,10 @@
 import boto3
-import json
-
 from datetime import datetime
+import json
+import os
 from dcicutils.misc_utils import ignored
 from foursight_core.stage import Stage
+from foursight_core.boto_sqs import boto_sqs_client, boto_sqs_resource
 
 
 class SQS(object):
@@ -51,7 +52,7 @@ class SQS(object):
         sqs_url = runner_input.get('sqs_url')
         if not sqs_url or not receipt:
             return
-        client = boto3.client('sqs')
+        client = boto_sqs_client()
         client.delete_message(
             QueueUrl=sqs_url,
             ReceiptHandle=receipt
@@ -80,7 +81,7 @@ class SQS(object):
         sqs_url = runner_input.get('sqs_url')
         if not sqs_url or not receipt:
             return
-        client = boto3.client('sqs')
+        client = boto_sqs_client()
         client.change_message_visibility(
             QueueUrl=sqs_url,
             ReceiptHandle=receipt,
@@ -94,7 +95,7 @@ class SQS(object):
         Returns boto3 sqs resource
         """
         queue_name = self.stage.get_queue_name()
-        sqs = boto3.resource('sqs')
+        sqs = boto_sqs_resource()
         try:
             queue = sqs.get_queue_by_name(QueueName=queue_name)
         except Exception:
@@ -143,7 +144,7 @@ class SQS(object):
             'ApproximateNumberOfMessages': 'ERROR',
             'ApproximateNumberOfMessagesNotVisible': 'ERROR'
         }
-        client = boto3.client('sqs')
+        client = boto_sqs_client()
         try:
             result = client.get_queue_attributes(
                 QueueUrl=sqs_url,

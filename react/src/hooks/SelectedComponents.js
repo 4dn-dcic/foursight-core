@@ -22,9 +22,11 @@ const useSelectedComponents = (componentDefinitions) => {
             const index = this.__lookup(type, name);
             if (index >= 0) {
                 this.__unselect(type, name, index);
+                return false;
             }
             else {
                 this.__select(type, name, index, args);
+                return true;
             }
         },
         __lookup: (type, name) => components.findIndex(item => item.type === type && item.name === name),

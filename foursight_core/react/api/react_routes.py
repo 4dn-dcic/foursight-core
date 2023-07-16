@@ -21,7 +21,7 @@ class ReactRoutes:
         Note that this in an UNPROTECTED route.
         """
         ignored(env)
-        return reactapi_route_auth0_config_noenv()
+        return ReactRoutes.reactapi_route_auth0_config_noenv()
 
     @route("/auth0_config", authorize=False)
     def reactapi_route_auth0_config_noenv() -> Response:  # noqa: implicit @staticmethod via @route
@@ -439,20 +439,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_account(app.current_request.to_dict(), env, name)
 
-    @route("/{env}/accounts_from_s3", authorize=True)
-    def reactapi_route_accounts_from_s3(env: str) -> Response:  # noqa: implicit @staticmethod via @route
-        """
-        Returns info on known accounts/environments as defined in an accounts.json file in S3 if present.
-        """
-        return app.core.reactapi_accounts(app.current_request.to_dict(), env, from_s3=True)
-
-    @route("/{env}/accounts_from_s3/{name}", authorize=True)
-    def reactapi_route_account_from_s3(env: str, name: str) -> Response:  # noqa: implicit @staticmethod via @route
-        """
-        Returns info on known accounts/environments as defined in an accounts.json file in S3 if present.
-        """
-        return app.core.reactapi_account(app.current_request.to_dict(), env, name, from_s3=True)
-
     @route("/{env}/aws/vpcs", authorize=True)
     def reactapi_route_aws_vpcs(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
@@ -623,6 +609,67 @@ class ReactRoutes:
         For troubleshooting only. Test response size capabilities of AWS Lamdas.
         """
         return app.core.reactapi_testsize(n)
+
+    @route("/{env}/accounts_file", methods=["POST"], authorize=True)
+    def reactapi_route_accounts_file_upload(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        ignored(env)
+        return ReactRoutes.reactapi_route_accounts_file_upload_noenv()
+
+    @route("/accounts_file", methods=["POST"], authorize=True)
+    def reactapi_route_accounts_file_upload_noenv() -> Response:  # noqa: implicit @staticmethod via @route
+        accounts_file_data = get_request_body(app.current_request)
+        return app.core.reactapi_accounts_file_upload(accounts_file_data)
+
+    @route("/{env}/accounts_file", authorize=True)
+    def reactapi_route_accounts_file_download(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        ignored(env)
+        return ReactRoutes.reactapi_route_accounts_file_download_noenv()
+
+    @route("/accounts_file", authorize=True)
+    def reactapi_route_accounts_file_download_noenv() -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_accounts_file_download()
+
+    @route("/{env}/aws/secrets/{secrets_name}", authorize=True)
+    def reactapi_route_aws_secrets(env: str, secrets_name: str) -> Response:  # noqa: implicit @staticmethod via @route
+        ignored(env)
+        return ReactRoutes.reactapi_route_aws_secrets_noenv(secrets_name)
+
+    @route("/aws/secrets/{secrets_name}", authorize=True)
+    def reactapi_route_aws_secrets_noenv(secrets_name: str) -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_secrets(secrets_name)
+
+    @route("/{env}/aws/secrets", authorize=True)
+    def reactapi_route_aws_secret_names(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        ignored(env)
+        return ReactRoutes.reactapi_route_aws_secret_names_noenv()
+
+    @route("/aws/secrets", authorize=True)
+    def reactapi_route_aws_secret_names_noenv() -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_secret_names()
+
+    @route("/aws/ecs/clusters", authorize=True)
+    def reactapi_route_aws_ecs_clusters() -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_ecs_clusters()
+
+    @route("/aws/ecs/clusters/{cluster_arn}", authorize=True)
+    def reactapi_route_aws_ecs_cluster(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_ecs_cluster(cluster_arn=cluster_arn)
+
+    @route("/aws/ecs/tasks", authorize=True)
+    def reactapi_route_aws_ecs_tasks() -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_ecs_task_arns(latest=False)
+
+    @route("/aws/ecs/tasks/{task_definition_arn}", authorize=True)
+    def reactapi_route_aws_ecs_task(task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+        if task_definition_arn.lower() == "latest":
+            return app.core.reactapi_aws_ecs_task_arns(latest=True)
+        elif task_definition_arn.lower() == "details":
+            return app.core.reactapi_aws_ecs_tasks(latest=False)
+        return app.core.reactapi_aws_ecs_task(task_definition_arn)
+
+    @route("/aws/ecs/tasks/latest/details", authorize=True)
+    def reactapi_route_aws_ecs_task() -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_ecs_tasks(latest=True)
 
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes, serving the HTML/CSS/JavaScript/React files.

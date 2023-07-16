@@ -1,5 +1,5 @@
 import boto3
-from .datetime_utils import convert_utc_datetime_to_useastern_datetime_string
+from .datetime_utils import convert_utc_datetime_to_utc_datetime_string
 from .yaml_utils import load_yaml
 from collections import OrderedDict
 from dcicutils.function_cache_decorator import function_cache
@@ -35,8 +35,8 @@ def _create_aws_stack_info(stack: object):
         "description": stack.description,
         "role_arn": stack.role_arn,
         "status": stack.stack_status,
-        "updated": convert_utc_datetime_to_useastern_datetime_string(stack.last_updated_time),
-        "created": convert_utc_datetime_to_useastern_datetime_string(stack.creation_time)
+        "updated": convert_utc_datetime_to_utc_datetime_string(stack.last_updated_time),
+        "created": convert_utc_datetime_to_utc_datetime_string(stack.creation_time)
     }
 
 

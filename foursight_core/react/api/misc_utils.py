@@ -239,3 +239,40 @@ def dict_to_keys_and_values(dictionary: dict, key_name: str = "Key", value_name:
     for key in dictionary:
         result.append({key_name: key, value_name: dictionary[key]})
     return result
+
+
+def longest_common_initial_substring(string_list: list) -> str:
+    """
+    Returns the longest common initial substring among all of the strings in the given list.
+    """
+    if not string_list:
+        return ""
+    min_length = min(len(s) for s in string_list)
+    for i in range(min_length):
+        if any(string_list[j][i] != string_list[0][i] for j in range(1, len(string_list))):
+            return string_list[0][:i]
+    return string_list[0][:min_length]
+
+
+def name_value_list_to_dict(items: list,
+                            name_property_name: str = "name",
+                            value_property_name: str = "value"):
+    """
+    Give a list that looks like this:
+
+      [ { "name": "abc", "value": 123 },
+        { "name": "def", "value": 456 } ]
+
+    Returns a dictionary that looks like this:
+
+      { "abc": 123, "def": 456 }
+
+    If there are duplicate names then takes the value of the last one in the list.
+    """
+    result = {}
+    for item in items:
+        name = item.get(name_property_name)
+        if name:
+            value = item.get(value_property_name)
+            result[name] = value
+    return result

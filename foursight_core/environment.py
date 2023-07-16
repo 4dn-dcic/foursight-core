@@ -2,6 +2,7 @@ import logging
 
 from dcicutils.common import EnvName, ChaliceStage
 from dcicutils.env_manager import EnvManager
+from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import full_class_name
 from dcicutils.s3_utils import s3Utils
 from typing import Optional, List
@@ -40,7 +41,6 @@ class Environment(object):
 
         self.prefix = prefix
         self.s3_connection = S3Connection(self.get_env_bucket_name())
-        self.cached_list_environment_names = None
 
     def get_env_bucket_name(self) -> Optional[str]:
 
@@ -62,15 +62,13 @@ class Environment(object):
             result.add(infer_foursight_from_env(envname=env))
         return sorted(result)  # a list and sorted
 
+    @function_cache
     def list_environment_names(self) -> List[EnvName]:
         """
         Lists all environments in the foursight-envs s3.
 
         Returns: a list of names
         """
-        if self.cached_list_environment_names:
-            return self.cached_list_environment_names
-
         environment_names = [infer_foursight_from_env(envname=env)
                              for env in sorted(EnvManager.get_all_environments(env_bucket=self.get_env_bucket_name()))]
 
@@ -83,7 +81,6 @@ class Environment(object):
         if modern_full_names != legacy_full_names:
             logger.warning(f"{full_class_name(self)}.list_environment_names has consistency problems.")
 
-        self.cached_list_environment_names = environment_names
         return environment_names
 
     def list_valid_schedule_environment_names(self) -> List[EnvName]:
@@ -114,7 +111,7 @@ class Environment(object):
         return s3Utils.get_synthetic_env_config(env_name)
 
     def get_environment_and_bucket_info(self, env_name: EnvName, stage: ChaliceStage) -> dict:
-
+        logger.warning(f'Getting env info from s3 for {env_name}')
         env_info = self.get_environment_info_from_s3(env_name)
 
         portal_url = env_info['fourfront']

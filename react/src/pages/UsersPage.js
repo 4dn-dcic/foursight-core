@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link } from '../Components';
 import useFetch from '../hooks/Fetch';
 import Char from '../utils/Char';
+import Date from '../utils/Date';
 import { FetchErrorBox } from '../Components';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
@@ -50,7 +51,8 @@ const UsersPage = () => {
         { label: "Created", key: "date_created" }
     ];
 
-    const tdStyle = { verticalAlign: "top", paddingRight: "1pt", paddingTop: "4pt", paddingBottom: "8pt" };
+    const tdStyle = { verticalAlign: "top", paddingRight: "6pt", paddingTop: "4pt", paddingBottom: "8pt" };
+    const tdStyleNowrap = { ...tdStyle, whiteSpace: "nowrap" };
 
     function toggleSearch() {
         if (showSearch) {
@@ -174,15 +176,15 @@ const UsersPage = () => {
                                 <span id={`tooltip-users-status-${user.status}`}>{userMetadata.statusTitle(user.status) || Char.EmptySet}</span>
                                 <Tooltip id={`tooltip-users-status-${user.status}`} position="bottom" size="small" text={`Status: ${user.status}`} />
                             </td>
-                            <td style={tdStyle}>
-                                {user.updated ? Time.FormatDate(user.updated) : Time.FormatDate(user.created)} <br />
-                                <small>{user.updated ? Time.FormatTime(user.updated) : Time.FormatTime(user.created)}</small>
+                            <td style={{...tdStyle,whiteSpace:"nowrap"}}>
+                                {user.updated ? Date.Format(user.updated) : Date.Format(user.created)} <br />
+                                <small>{user.updated ? Time.Format(user.updated) : Time.Format(user.created)}</small>
                             </td>
-                            <td style={tdStyle}>
-                                {Time.FormatDate(user.created)} <br />
-                                <small>{Time.FormatTime(user.created)}</small>
+                            <td style={{...tdStyle,whiteSpace:"nowrap"}}>
+                                {Date.Format(user.created)} <br />
+                                <small>{Time.Format(user.created)}</small>
                             </td>
-                            <td style={tdStyle}>
+                            <td style={{...tdStyle,whiteSpace:"nowrap"}}>
                                 &nbsp;&nbsp;<button><Link to={`/users/edit/${user.uuid}`}>Edit</Link></button>
                             </td>
                         </tr>

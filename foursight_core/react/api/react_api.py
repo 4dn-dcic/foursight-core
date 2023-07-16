@@ -1,4 +1,6 @@
 from chalice import Response, __version__ as chalice_version
+import boto3
+from botocore.errorfactory import ClientError as BotoClientError
 import copy
 import datetime
 import io
@@ -12,10 +14,11 @@ import time
 from typing import Optional
 import urllib.parse
 from itertools import chain
+from dcicutils.ecs_utils import ECSUtils 
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils.env_utils import get_portal_url as env_utils_get_portal_url
 from dcicutils.function_cache_decorator import function_cache, function_cache_info, function_cache_clear
-from dcicutils import ff_utils
+from dcicutils import ff_utils, s3_utils
 from dcicutils.misc_utils import get_error_message, ignored
 from dcicutils.obfuscation_utils import obfuscate_dict
 from dcicutils.redis_tools import RedisSessionToken, SESSION_TOKEN_COOKIE
@@ -36,13 +39,18 @@ from .aws_stacks import (
 from .checks import Checks
 from .cognito import get_cognito_oauth_config, handle_cognito_oauth_callback
 from .cookie_utils import create_delete_cookie_string, read_cookie, read_cookie_bool, read_cookie_int
-from .datetime_utils import convert_uptime_to_datetime, convert_utc_datetime_to_useastern_datetime_string
+from .datetime_utils import (
+    convert_uptime_to_datetime,
+    convert_utc_datetime_to_utc_datetime_string
+)
 from .encryption import Encryption
 from .encoding_utils import base64_decode_to_json
 from .gac import Gac
 from .misc_utils import (
     get_base_url,
     is_running_locally,
+    longest_common_initial_substring,
+    name_value_list_to_dict,
     sort_dictionary_by_case_insensitive_keys
 )
 from .portal_access_key_utils import get_portal_access_key_info
@@ -58,6 +66,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         super(ReactApi, self).__init__()
         self._react_ui = ReactUi(self)
         self._checks = Checks(app.core.check_handler.CHECK_SETUP, self._envs)
+        self._accounts_file_name = "known_accounts"
 
     @staticmethod
     def _get_stack_name() -> str:
@@ -83,6 +92,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "tibanna": get_package_version("tibanna"),
                 "tibanna_ff": get_package_version("tibanna-ff"),
                 "python": platform.python_version(),
+                "boto3": get_package_version("boto3"),
+                "botocore": get_package_version("botocore"),
                 "chalice": chalice_version,
                 "elasticsearch_server": self._get_elasticsearch_server_version(),
                 "elasticsearch": get_package_version("elasticsearch"),
@@ -91,11 +102,57 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "redis_server": self._get_redis_server_version()
             }
 
+    @function_cache
+    def _get_known_buckets(self, env: str = None) -> dict:
+        if not env:
+            env = self._envs.get_default_env()
+        s3 = s3_utils.s3Utils(env=env)
+        return {
+            "blob_bucket": s3.blob_bucket,
+            "metadata_bucket": s3.metadata_bucket,
+            "outfile_bucket": s3.outfile_bucket,
+            "raw_file_bucket": s3.raw_file_bucket,
+            "sys_bucket": s3.sys_bucket,
+            "results_bucket": get_foursight_bucket(envname=env, stage=app.core.stage.get_stage()),
+            "tibanna_cwls_bucket": s3.tibanna_cwls_bucket,
+            "tibanna_output_bucket": s3.tibanna_output_bucket
+        }
+
+    def _get_elasticsearch_server_status(self) -> Optional[dict]:
+        response = {}
+        try:
+            connection = app.core.init_connection(self._envs.get_default_env())
+            response["url"] = app.core.host
+            response["info"] = connection.es_info()
+            response["health"] = connection.es_health()
+        except Exception:
+            pass
+        return response
+
     @function_cache(nokey=True, nocache=None)
     def _get_elasticsearch_server_version(self) -> Optional[str]:
         connection = app.core.init_connection(self._envs.get_default_env())
         es_info = connection.es_info()
         return es_info.get("version", {}).get("number")
+
+    @function_cache(nokey=True, nocache=None)
+    def _get_elasticsearch_server_cluster(self) -> Optional[str]:
+        status = self._get_elasticsearch_server_status()
+        cluster = status.get("health", {}).get("cluster_name")
+        cluster_parts = cluster.split(":", 1)
+        cluster_name = cluster_parts[1] if len(cluster_parts) > 1 else cluster
+        return cluster_name
+
+    @function_cache(nokey=True, nocache=None)
+    def _get_rds_server(self) -> Optional[str]:
+        return os.environ.get("RDS_HOSTNAME")
+
+    @function_cache(nokey=True, nocache=None)
+    def _get_rds_name(self) -> Optional[str]:
+        server = self._get_rds_server()
+        name_parts = server.split(".", 1) if server else None
+        name = name_parts[0] if len(name_parts) > 0 else ""
+        return name
 
     @function_cache(nokey=True, nocache=None)
     def _get_redis_server_version(self) -> Optional[str]:
@@ -320,7 +377,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 if data_portal["ssl_certificate"]:
                     data_portal["ssl_certificate"]["name"] = "Portal"
                     data_portal["ssl_certificate"]["exception"] = e
-        data["timestamp"] = convert_utc_datetime_to_useastern_datetime_string(datetime.datetime.utcnow())
+        data["timestamp"] = convert_utc_datetime_to_utc_datetime_string(datetime.datetime.utcnow())
+        import tzlocal # xyzzy temporary
+        data["timezone"] = tzlocal.get_localzone_name()
         test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
         if auth.get("user_exception"): # or test_mode_access_key_simulate_error:
             # Since this call to get the Portal access key info can be relatively expensive, we don't want to
@@ -361,6 +420,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "domain": domain,
                 "context": context,
                 "stack": self._get_stack_name(),
+                "identity": Gac.get_identity_name(),
                 "local": is_running_locally(request),
                 "credentials": {
                     "aws_account_number": aws_credentials.get("aws_account_number"),
@@ -370,8 +430,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 },
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified(),
-                "accounts_file": self._get_accounts_file(),
-                "accounts_file_from_s3": self._get_accounts_file_from_s3()
+                "accounts_file": self._get_accounts_file_name()
             },
             "versions": self._get_versions_object(),
             "portal": {
@@ -381,10 +440,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
             },
             "resources": {
                 "es": app.core.host,
+                "es_cluster": self._get_elasticsearch_server_cluster(),
                 "foursight": self.foursight_instance_url(request),
                 "portal": portal_url,
                 # TODO: May later want to rds_username and/or such.
-                "rds": os.environ["RDS_HOSTNAME"],
+                "rds": self._get_rds_server(),
+                "rds_name": self._get_rds_name(),
                 "redis": redis_url,
                 "redis_running": redis is not None,
                 "sqs": self._get_sqs_queue_url(),
@@ -392,7 +453,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "s3": {
                 "bucket_org": os.environ.get("ENCODED_S3_BUCKET_ORG", os.environ.get("S3_BUCKET_ORG", None)),
                 "global_env_bucket": os.environ.get("GLOBAL_ENV_BUCKET", os.environ.get("GLOBAL_BUCKET_ENV", None)),
-                "encrypt_key_id": os.environ.get("S3_ENCRYPT_KEY_ID", None)
+                "encrypt_key_id": os.environ.get("S3_ENCRYPT_KEY_ID", None),
+                "buckets": self._get_known_buckets()
             }
         }
         return response
@@ -458,7 +520,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_elasticsearch(self) -> Response:
         try:
-            return self.create_success_response(self._get_elasticsearch_server_version())
+            return self.create_success_response(self._get_elasticsearch_server_status())
         except Exception as e:
             return self.create_error_response(get_error_message(e))
 
@@ -513,6 +575,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "domain": domain,
                 "context": context,
                 "stack": self._get_stack_name(),
+                "identity": Gac.get_identity_name(),
                 "local": is_running_locally(request),
                 "credentials": self._auth.get_aws_credentials(env or default_env),
                 "launched": app.core.init_load_time,
@@ -524,7 +587,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "foursight": socket.gethostname(),
                 "portal": portal_url,
                 "es": app.core.host,
-                "rds": os.environ["RDS_HOSTNAME"],
+                "es_cluster": self._get_elasticsearch_server_cluster(),
+                "rds": self._get_rds_server(),
+                "rds_name": self._get_rds_name(),
                 "sqs": self._get_sqs_queue_url(),
             },
             "buckets": {
@@ -580,8 +645,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "institution": user.get("user_institution"),
             "roles": user.get("project_roles"),
             "status": user.get("status"),
-            "updated": convert_utc_datetime_to_useastern_datetime_string(updated),
-            "created": convert_utc_datetime_to_useastern_datetime_string(user.get("date_created"))
+            "updated": convert_utc_datetime_to_utc_datetime_string(updated),
+            "created": convert_utc_datetime_to_utc_datetime_string(user.get("date_created"))
         }
 
     def _create_user_record_from_input(self, user: dict, include_deletes: bool = False) -> dict:
@@ -749,6 +814,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if other_error_count > 0:
             return self.create_response(500, users[0] if len(items) == 1 else users)
         elif not_found_count > 0:
+            # TODO: Maybe raise special 404 exception and have common handler (e.g. in the @route decorator).
             return self.create_response(404, users[0] if len(items) == 1 else users)
         else:
             return self.create_success_response(users[0] if len(items) == 1 else users)
@@ -930,13 +996,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if check_results.get("action"):
             check_results["action_title"] = " ".join(check_results["action"].split("_")).title()
         check_datetime = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-        check_datetime = convert_utc_datetime_to_useastern_datetime_string(check_datetime)
+        check_datetime = convert_utc_datetime_to_utc_datetime_string(check_datetime)
         check_results["timestamp"] = check_datetime
         return self.create_success_response(check_results)
 
     def reactapi_checks_history_uuid(self, request: dict, env: str, check: str, uuid: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks/{check}/{uuid}
+        Called from react_routes for endpoint: GET /{env}/checks/{check}/history/{uuid}
         Returns the check result for the given check (name) and uuid.
         Analogous legacy function is app_utils.view_foursight_check.
         TODO: No need to return array.
@@ -950,6 +1016,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if connection:
             check_result = app.core.CheckResult(connection, check)
             if check_result:
+                # This gets the result from S3, for example:
+                # s3://cgap-kmp-main-foursight-cgap-supertest-results/access_key_status/2023-06-15T10:00:21.205768.json
+                # where access_key_status is the check (name) and 2023-06-15T10:00:21.205768 is the uuid;
+                # and cgap-kmp-main-foursight-cgap-supertest-results is the bucket name which is from our environment.
                 data = check_result.get_result_by_uuid(uuid)
                 if data is None:
                     # the check hasn't run. Return a placeholder view
@@ -1020,7 +1090,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                         break
                 if uuid:
                     timestamp = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-                    timestamp = convert_utc_datetime_to_useastern_datetime_string(timestamp)
+                    timestamp = convert_utc_datetime_to_utc_datetime_string(timestamp)
                     results.append({
                         "check": check_name,
                         "title": check_title,
@@ -1065,7 +1135,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     uuid = subitem.get("uuid")
                     if uuid:
                         timestamp = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-                        timestamp = convert_utc_datetime_to_useastern_datetime_string(timestamp)
+                        timestamp = convert_utc_datetime_to_utc_datetime_string(timestamp)
                         subitem["timestamp"] = timestamp
         body = {
             "env": env,
@@ -1211,59 +1281,31 @@ class ReactApi(ReactApiBase, ReactRoutes):
     # We use the ENCODED_AUTH0_SECRET in the GAC as the encryption password.
     # ----------------------------------------------------------------------------------------------
 
-    @staticmethod
-    def _get_accounts_file() -> Optional[str]:
+    def _put_accounts_file_data(self, accounts_file_data: list) -> list:
+        accounts_file_data = {"data": accounts_file_data}
+        s3 = s3_utils.s3Utils(env=self._envs.get_default_env())
+        s3.s3_put_secret(accounts_file_data, self._accounts_file_name)
+        return self.create_success_response(accounts_data)
+
+    def _get_accounts_file_data(self) -> Optional[list]:
+        try:
+            s3 = s3_utils.s3Utils(env=self._envs.get_default_env())
+            accounts_file_data = s3.get_key(self._accounts_file_name)
+            return accounts_file_data.get("data") if accounts_file_data else {}
+        except BotoClientError as e:
+            if e.response.get("Error", {}).get("Code") == "NoSuchKey":
+                return None
+            raise e
+
+    def _get_accounts_file_name(self) -> Optional[str]:
         """
-        Returns the full path name to the accounts.json file if one was found or None if not.
-        The search for this file happens at startup in AppUtilsCore construction time via its
-        _locate_accounts_file function.
+        Returns the full path name to the accounts.json file name is S3.
         """
-        return app.core.accounts_file
+        s3 = s3_utils.s3Utils(env=self._envs.get_default_env())
+        return f"s3://{s3.sys_bucket}/{self._accounts_file_name}"
 
     @staticmethod
-    def _get_accounts_file_from_s3() -> Optional[str]:
-        bucket = os.environ.get("GLOBAL_ENV_BUCKET", os.environ.get("GLOBAL_BUCKET_ENV", None))
-        if not bucket:
-            return None
-        key = app.core.ACCOUNTS_FILE_NAME
-        if not AwsS3.bucket_key_exists(bucket, key):
-            return None
-        return f"s3://{bucket}/{key}"
-
-    def _get_accounts_from_s3(self, request: dict) -> Optional[dict]:
-        # Let's not cache this for now, maybe change mind later, thus the OR True clause below.
-        s3_uri = self._get_accounts_file_from_s3()
-        if not s3_uri:
-            return self._get_accounts_only_for_current_account(request)
-        s3_uri = s3_uri.replace("s3://", "")
-        s3_uri_components = s3_uri.split("/")
-        if len(s3_uri_components) != 2:
-            return self._get_accounts_only_for_current_account(request)
-        bucket = s3_uri_components[0]
-        key = s3_uri_components[1]
-        accounts_json_content = AwsS3.get_bucket_key_contents(bucket, key)
-        return self._read_accounts_json(accounts_json_content)
-
-    def _get_accounts_only_for_current_account(self, request: dict) -> Optional[list]:
-        aws_credentials = self._auth.get_aws_credentials(self._envs.get_default_env())
-        if aws_credentials:
-            account_name = aws_credentials.get("aws_account_name")
-            if account_name:
-                account_stage = app.core.stage.get_stage()
-                account_id = account_name + ":" + account_stage
-                return [{
-                    "id": account_id,
-                    "name": account_name,
-                    "stage": account_stage,
-                    "foursight_url": self.foursight_instance_url(request)
-                }]
-        return None
-
-    @staticmethod
-    def _read_accounts_json(accounts_json_content) -> dict:
-        encryption = Encryption()
-        accounts_json_content = encryption.decrypt(accounts_json_content)
-        accounts_json = json.loads(accounts_json_content)
+    def _read_accounts_json(accounts_json) -> dict:
         for account in accounts_json:
             account_name = account.get("name")
             if account_name:
@@ -1274,25 +1316,38 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     account["id"] = account_name
         return accounts_json
 
-    @function_cache(nocache=None)
-    def _get_accounts(self) -> Optional[dict]:
-        accounts_file = self._get_accounts_file()
-        if not accounts_file:
-            return None
-        try:
-            with io.open(self._get_accounts_file(), "r") as accounts_json_f:
-                accounts_json_content_encrypted = accounts_json_f.read()
-                accounts_json = self._read_accounts_json(accounts_json_content_encrypted)
-                return accounts_json
-        except Exception:
-            return None
+    def _get_accounts(self, request) -> Optional[list]:
+        accounts_file_data = self._get_accounts_file_data()
+        if not accounts_file_data:
+            return accounts_file_data
+        env = self._envs.get_default_env()
+        stage = app.core.stage.get_stage()
+        aws_credentials = self._auth.get_aws_credentials(env) or {}
+        aws_account_name = aws_credentials.get("aws_account_name")
+        if self.is_running_locally(request):
+            # For running locally put this localhost account first.
+            accounts_file_data.insert(0, {
+                "name": "localhost",
+                "stage": stage,
+                "foursight_url": "http://localhost:8000/api"
+            })
+        else:
+            # Put this account at first.
+            for account in accounts_file_data:
+                if account.get("name") == aws_account_name and account.get("stage") == stage:
+                    accounts_file_data.remove(account)
+                    accounts_file_data.insert(0, account)
+                    break
+        return self._read_accounts_json(accounts_file_data)
 
-    def reactapi_accounts(self, request: dict, env: str, from_s3: bool = False) -> Response:
+    def reactapi_accounts(self, request: dict, env: str) -> Response:
         ignored(env)
-        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3(request)
+        accounts = self._get_accounts(request)
+        if accounts is None:
+            return self.create_response(404, {"message": f"Account file not found: {self._get_accounts_file_name()}"})
         return self.create_success_response(accounts)
 
-    def reactapi_account(self, request: dict, env: str, name: str, from_s3: bool = False) -> Response:
+    def reactapi_account(self, request: dict, env: str, name: str) -> Response:
 
         def is_account_name_match(account: dict, name: str) -> bool:
             account_name = account.get("name")
@@ -1340,14 +1395,29 @@ class ReactApi(ReactApiBase, ReactRoutes):
             response["foursight"]["deployed"] = foursight_app.get("deployed")
             response["foursight"]["default_env"] = foursight_header_json["auth"]["known_envs"][0]
             response["foursight"]["env_count"] = foursight_header_json["auth"]["known_envs_actual_count"]
-            response["foursight"]["identity"] = foursight_header_json["auth"]["known_envs"][0].get("gac_name")
+            response["foursight"]["identity"] = foursight_app.get("identity")
+            if not response["foursight"]["identity"]:
+                response["foursight"]["identity"] = foursight_header_json["auth"]["known_envs"][0].get("gac_name")
+            response["foursight"]["redis_url"] = foursight_header_json.get("resources",{}).get("redis")
+            response["foursight"]["es_url"] = foursight_header_json.get("resources",{}).get("es")
+            response["foursight"]["es_cluster"] = foursight_header_json.get("resources",{}).get("es_cluster")
+            response["foursight"]["rds"] = foursight_header_json.get("resources",{}).get("rds")
+            response["foursight"]["rds_name"] = foursight_header_json.get("resources",{}).get("rds_name")
+            response["foursight"]["sqs_url"] = foursight_header_json.get("resources",{}).get("sqs")
             foursight_header_json_s3 = foursight_header_json.get("s3")
+            # TODO: Maybe eventually make separate API call (to get Portal Access Key info for any account)
+            # so that we do not have to wait here within this API call for this synchronous API call.
+            portal_access_key_url = response["foursight"]["url"] + f"/reactapi/portal_access_key"
+            portal_access_key_response = requests.get(portal_access_key_url)
+            if portal_access_key_response and portal_access_key_response.status_code == 200:
+                response["foursight"]["portal_access_key"] = portal_access_key_response.json()
             # Older versions of the /header API might not have this s3 element so check.
             if foursight_header_json_s3:
                 response["foursight"]["s3"] = {}
                 response["foursight"]["s3"]["bucket_org"] = foursight_header_json_s3.get("bucket_org")
                 response["foursight"]["s3"]["global_env_bucket"] = foursight_header_json_s3.get("global_env_bucket")
                 response["foursight"]["s3"]["encrypt_key_id"] = foursight_header_json_s3.get("encrypt_key_id")
+                response["foursight"]["s3"]["buckets"] = foursight_header_json_s3.get("buckets")
             response["foursight"]["aws_account_number"] = foursight_app["credentials"].get("aws_account_number")
             response["foursight"]["aws_account_name"] = foursight_app["credentials"].get("aws_account_name")
             response["foursight"]["re_captcha_key"] = foursight_app["credentials"].get("re_captcha_key")
@@ -1383,7 +1453,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             }
             portal_uptime = portal_health_json.get("uptime")
             portal_started = convert_uptime_to_datetime(portal_uptime)
-            response["portal"]["started"] = convert_utc_datetime_to_useastern_datetime_string(portal_started)
+            response["portal"]["started"] = convert_utc_datetime_to_utc_datetime_string(portal_started)
             response["portal"]["identity"] = portal_health_json.get("identity")
             response["portal"]["elasticsearch"] = portal_health_json.get("elasticsearch")
             response["portal"]["database"] = portal_health_json.get("database")
@@ -1393,8 +1463,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             return foursight_url
 
         ignored(request)
-        response = {"accounts_file": self._get_accounts_file(), "accounts_file_from_s3": self._get_accounts_file_from_s3()}
-        accounts = self._get_accounts() if not from_s3 else self._get_accounts_from_s3(request)
+        response = {"accounts_file": self._get_accounts_file_name()}
+        accounts = self._get_accounts(request)
         if not accounts:
             return self.create_success_response({"status": "No accounts file support."})
         account = [account for account in accounts if is_account_name_match(account, name)] if accounts else None
@@ -1569,9 +1639,222 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ignored(request, env)
         return self.create_success_response(aws_get_stack_template(stack))
 
+    def reactapi_accounts_file_upload(self, accounts_file_data: list) -> Response:
+        return self.create_success_response(self._put_accounts_file_data(accounts_file_data))
+
+    def reactapi_accounts_file_download(self) -> Response:
+        accounts_file_data = self._get_accounts_file_data()
+        if accounts_file_data is None:
+            return self.create_response(404, {"message": f"Account file not found: {self._get_accounts_file_name()}"})
+        return self.create_success_response(self._get_accounts_file_data())
+
     # ----------------------------------------------------------------------------------------------
     # END OF EXPERIMENTAL - /accounts page
     # ----------------------------------------------------------------------------------------------
+
+    def reactapi_aws_secret_names(self) -> Response:
+        return self.create_success_response(Gac.get_secret_names())
+
+    def reactapi_aws_secrets(self, secrets_name: str) -> Response:
+        return self.create_success_response(Gac.get_secrets(secrets_name))
+
+    def reactapi_aws_ecs_clusters(self) -> Response:
+        ecs = ECSUtils()
+        clusters = ecs.list_ecs_clusters()
+        def ecs_cluster_arn_to_name(cluster_arn: str) -> str:
+            cluster_arn_parts = cluster_arn.split("/", 1)
+            return cluster_arn_parts[1] if len(cluster_arn_parts) > 1 else cluster_arn
+
+        clusters = [{"cluster_name": ecs_cluster_arn_to_name(arn), "cluster_arn": arn} for arn in clusters]
+        clusters = sorted(clusters, key=lambda item: item["cluster_name"])
+        return self.create_success_response(clusters)
+
+    def reactapi_aws_ecs_cluster(self, cluster_arn: str) -> Response:
+        # Given cluster_name may actually be either a cluster name or its ARN,
+        # e.g. either c4-ecs-cgap-supertest-stack-CGAPDockerClusterForCgapSupertest-YZMGi06YOoSh or
+        # arn:aws:ecs:us-east-1:466564410312:cluster/c4-ecs-cgap-supertest-stack-CGAPDockerClusterForCgapSupertest-YZMGi06YOoSh
+        # URL-decode because the ARN may contain a slash.
+        cluster_arn = urllib.parse.unquote(cluster_arn)
+        ecs = ECSUtils()
+        cluster = ecs.client.describe_clusters(clusters=[cluster_arn])["clusters"][0]
+        response = {
+            "cluster_arn": cluster["clusterArn"],
+            "cluster_name": cluster["clusterName"],
+            "status": cluster["status"],
+            "services": []
+        }
+        most_recent_deployment_at = None
+        service_arns = ecs.list_ecs_services(cluster_name=cluster_arn)
+        for service_arn in service_arns:
+            service = ecs.client.describe_services(cluster=cluster_arn, services=[service_arn])["services"][0]
+            deployments = []
+            most_recent_update_at = None
+            # Typically we have just one deployment record, but if there are more than one, then the
+            # one with a status of PRIMARY (of which there should be at most one), is the active one,
+            # and we will place that first in the list; all others will go after that.
+            for deployment in service.get("deployments", []):
+                if (not most_recent_update_at or
+                    (deployment.get("updatedAt") and deployment.get("updatedAt") > most_recent_update_at)):
+                    most_recent_update_at = deployment.get("updatedAt")
+                deployment_status = deployment.get("status")
+                deployment_info = {
+                    "deployment_id": deployment.get("id"),
+                    "task_arn": deployment.get("taskDefinition"),
+                    "task_name": self._ecs_task_definition_arn_to_name(deployment.get("taskDefinition")),
+                    "task_display_name": self._ecs_task_definition_arn_to_name(deployment.get("taskDefinition")),
+                    "status": deployment_status,
+                    "counts": {"running": deployment.get("runningCount"),
+                               "pending": deployment.get("pendingCount"),
+                               "expected": deployment.get("desiredCount")},
+                    "rollout": {"state": deployment.get("rolloutState"),
+                                "reason": deployment.get("rolloutStateReason")},
+                    "created": convert_utc_datetime_to_utc_datetime_string(deployment.get("createdAt")),
+                    "updated": convert_utc_datetime_to_utc_datetime_string(deployment.get("updatedAt"))
+                }
+                if deployment_status and deployment_status.upper() == "PRIMARY":
+                    deployments.insert(0, deployment_info)
+                else:
+                    deployments.append(deployment_info)
+            if (not most_recent_deployment_at or
+                (most_recent_update_at and most_recent_update_at > most_recent_deployment_at)):
+                most_recent_deployment_at = most_recent_update_at
+            if len(deployments) > 1:
+                task_name_common_prefix = longest_common_initial_substring([deployment["task_name"] for deployment in deployments])
+                if task_name_common_prefix:
+                    for deployment in deployments:
+                        deployment["task_display_name"] = deployment["task_name"][len(task_name_common_prefix):]
+            response["services"].append({
+                "service_arn": service_arn,
+                "service_name": service.get("serviceName"),
+                "service_display_name": service.get("serviceName"),
+                "task_arn": service.get("taskDefinition"),
+                "task_name": self._ecs_task_definition_arn_to_name(service.get("taskDefinition")),
+                "task_display_name": self._ecs_task_definition_arn_to_name(service.get("taskDefinition")),
+                "deployments": deployments
+            })
+        if len(response["services"]) > 1:
+            service_name_common_prefix = (
+                longest_common_initial_substring([service["service_name"] for service in response["services"]]))
+            if service_name_common_prefix:
+                for service in response["services"]:
+                    service["service_display_name"] = service["service_name"][len(service_name_common_prefix):]
+            task_name_common_prefix = (
+                longest_common_initial_substring([service["task_name"] for service in response["services"]]))
+            if task_name_common_prefix:
+                for service in response["services"]:
+                    service["task_display_name"] = service["task_name"][len(task_name_common_prefix):]
+
+        if most_recent_deployment_at:
+            response["most_recent_deployment_at"] = convert_utc_datetime_to_utc_datetime_string(most_recent_deployment_at)
+        return self.create_success_response(response)
+
+    def reactapi_aws_ecs_task_arns(self, latest: bool = True) -> Response:
+        # If latest is True then only looks for the non-revisioned task ARNs.
+        ecs = boto3.client('ecs')
+        task_definition_arns = ecs.list_task_definitions()['taskDefinitionArns'] # TODO: ecs_utils.list_ecs_tasks
+        if latest:
+            task_definition_arns = list(set([self._ecs_task_definition_arn_to_name(task_definition_arn)
+                                             for task_definition_arn in task_definition_arns]))
+        task_definition_arns.sort()
+        return task_definition_arns
+
+    def reactapi_aws_ecs_tasks(self, latest: bool = True) -> Response:
+        task_definitions = []
+        ecs = boto3.client('ecs')
+        task_definition_arns = ecs.list_task_definitions()['taskDefinitionArns']
+        if latest:
+            task_definition_arns = list(set([self._ecs_task_definition_arn_to_name(task_definition_arn)
+                                             for task_definition_arn in task_definition_arns]))
+        for task_definition_arn in task_definition_arns:
+            task_definition = self._reactapi_aws_ecs_task(task_definition_arn)
+            task_containers = task_definition["task_containers"]
+            task_container_names = [task_container["task_container_name"] for task_container in task_containers]
+            if task_container_names:
+                # If the "name" value of all of the task containers are then same then we
+                # will take this to be the the task display name, e.g. "DeploymentAction".
+                if all(task_container_name == task_container_names[0] for task_container_name in task_container_names):
+                    task_definition["task_display_name"] = task_container_names[0]
+            task_definitions.append(task_definition)
+        # Here we have the flattened out list of task definitions, by revisions,
+        # but we want them (the revisions) to be grouped by task_family, so do that now.
+        response = []
+        for task_definition in task_definitions:
+            task_family = task_definition["task_family"]
+            task_definition_response = [td for td in response if td["task_family"] == task_family]
+            if not task_definition_response:
+                task_definition_response = {
+                    "task_family": task_family,
+                    "task_name": task_definition["task_name"],
+                    "task_display_name": task_definition["task_display_name"],
+                    "task_revisions": []
+                }
+                response.append(task_definition_response)
+            else:
+                task_definition_response = task_definition_response[0]
+            task_definition_response["task_revisions"].append(task_definition)
+        response.sort(key=lambda value: value["task_family"])
+        return self.create_success_response(response)
+
+    def reactapi_aws_ecs_task(self, task_definition_arn: str) -> Response:
+        return self.create_success_response(self._reactapi_aws_ecs_task(task_definition_arn))
+
+    def _reactapi_aws_ecs_task(self, task_definition_arn: str) -> Response:
+        # Note that the task_definition_arn can be either the specific task definition revision ARN,
+        # i.e. the one with the trailing ":<revision-number>", or the plain task definition ARN,
+        # i.e. without that trailing revision suffix. If it is the without the revision suffix,
+        # then the latest (most recent, i.e. the revision with the highest number) is returned;
+        # and the ARN prefix, e.g. "arn:aws:ecs:us-east-1:643366669028:task-definition", may be
+        # also be omitted. URL-decode because the ARN may contain a slash.
+        task_definition_arn = urllib.parse.unquote(task_definition_arn)
+        ecs = boto3.client('ecs')
+        task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)["taskDefinition"]
+        task_containers = []
+        for task_container in task_definition.get("containerDefinitions", []):
+            task_container_log = task_container.get("logConfiguration", {}).get("options", {})
+            task_containers.append({
+                "task_container_name": task_container["name"],
+                "task_container_image": task_container["image"],
+                "task_container_env": obfuscate_dict(name_value_list_to_dict(task_container["environment"])),
+                "task_container_log_group": task_container_log.get("awslogs-group"),
+                "task_container_log_region": task_container_log.get("awslogs-region"),
+                "task_container_log_stream_prefix": task_container_log.get("awslogs-stream-prefix")
+            })
+        task_definition = {
+            "task_arn": task_definition["taskDefinitionArn"],
+            # The values of the task_family and task_name below should be exactly the same.
+            "task_family": task_definition["family"],
+            "task_name": self._ecs_task_definition_arn_to_name(task_definition_arn),
+            "task_display_name": task_definition["family"],
+            "task_revision": self._ecs_task_definition_revision(task_definition["taskDefinitionArn"]),
+            "task_containers": task_containers
+        }
+        task_container_names = [task_container["task_container_name"] for task_container in task_containers]
+        if task_container_names:
+            # If the "name" value of all of the task containers are then same then we
+            # will take this to be the the task display name, e.g. "DeploymentAction".
+            if all(task_container_name == task_container_names[0] for task_container_name in task_container_names):
+                task_definition["task_display_name"] = task_container_names[0]
+        return task_definition
+
+    @staticmethod
+    def _ecs_task_definition_arn_to_name(task_definition_arn: str) -> str:
+        """
+        Given something like this:
+        - arn:aws:ecs:us-east-1:466564410312:task-definition/c4-ecs-cgap-supertest-stack-CGAPDeployment-of2dr96JX1ds:1
+        this function would return this: 
+        - c4-ecs-cgap-supertest-stack-CGAPDeployment-of2dr96JX1ds
+        """
+        if not task_definition_arn:
+            return ""
+        task_definition_arn_parts = task_definition_arn.split("/", 1)
+        task_definition_name = task_definition_arn_parts[1] if len(task_definition_arn_parts) > 1 else task_definition_arn
+        task_definition_name_parts = task_definition_name.rsplit(":", 1)
+        return task_definition_name_parts[0] if len(task_definition_name_parts) > 1 else task_definition_name
+
+    @staticmethod
+    def _ecs_task_definition_revision(task_definition_arn: str) -> str:
+        task_definition_arn_parts = task_definition_arn.rsplit(":", 1)
+        return task_definition_arn_parts[1] if len(task_definition_arn_parts) > 1 else task_definition_arn
 
     def reactapi_reload_lambda(self, request: dict) -> Response:
         """
