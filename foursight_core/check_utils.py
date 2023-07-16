@@ -463,9 +463,19 @@ class CheckHandler(object):
                                   module_name: str = None, kind: str = None) -> Optional[namedtuple]:
 
         def create_info(info: dict) -> Optional[namedtuple]:
-            Info = namedtuple("CheckInfo", ["is_check",
+
+            def unqualified_module_name(module_name: str) -> str:
+                return module_name.rsplit(".", 1)[-1] if "." in module_name else module_name
+
+            def qualified_check_or_action_name(check_or_action_name: str, module_name: str) -> str:
+                unqualified_module = unqualified_module_name(module_name)
+                return f"{unqualified_module}/{check_or_action_name}" if unqualified_module else check_or_action_name
+
+            Info = namedtuple("CheckInfo", ["kind",
+                                            "is_check",
                                             "is_action",
                                             "name",
+                                            "qualified_name",
                                             "file",
                                             "line",
                                             "module",
@@ -477,13 +487,15 @@ class CheckHandler(object):
                                             "function",
                                             "associated_action",
                                             "associated_check"])
-            return Info(info["kind"] == "check",
+            return Info(info["kind"],
+                        info["kind"] == "check",
                         info["kind"] == "action",
                         info["name"],
+                        qualified_check_or_action_name(info["name"], info["module"]),
                         info["file"],
                         info["line"],
                         info["module"],
-                        info["module"].rsplit(".", 1)[-1] if "." in info["module"] else info["module"],
+                        unqualified_module_name(info["module"]),
                         info["package"],
                         info["github_url"],
                         info["args"],

@@ -5,6 +5,10 @@ import io
 import sys
 from typing import Optional
 
+_original_print = builtins.print
+_original_stdout = sys.stdout
+_original_stderr = sys.stderr
+
 @contextmanager
 def captured_output(capture: bool = True):
     """
@@ -19,9 +23,9 @@ def captured_output(capture: bool = True):
     of the with-clause with this context manager, pass False as an argument to this context manager. 
     """
 
-    original_print = builtins.print
-    original_stdout = sys.stdout
-    original_stderr = sys.stderr
+    save_print = _original_print
+    save_stdout = _original_stdout
+    save_stderr = _original_stderr
     captured_output = io.StringIO()
 
     def captured_print(*args, **kwargs) -> None:
@@ -29,9 +33,9 @@ def captured_output(capture: bool = True):
         captured_output.write("\n")
 
     def uncaptured_print(*args, **kwargs) -> None:
-        builtins.print = original_print
-        sys.stdout = original_stdout
-        sys.stderr = original_stderr
+        builtins.print = save_print
+        sys.stdout = save_stdout
+        sys.stderr = save_stderr
         print(*args, **kwargs)
         if capture:
             builtins.print = captured_print
@@ -39,9 +43,9 @@ def captured_output(capture: bool = True):
             sys.stderr = captured_output
 
     def uncaptured_input(message: str) -> str:
-        builtins.print = original_print
-        sys.stdout = original_stdout
-        sys.stderr = original_stderr
+        builtins.print = save_print
+        sys.stdout = save_stdout
+        sys.stderr = save_stderr
         value = input(message)
         if capture:
             builtins.print = captured_print
@@ -62,6 +66,22 @@ def captured_output(capture: bool = True):
     try:
         yield Result(get_captured_output, uncaptured_print, uncaptured_input)
     finally:
-        sys.stdout = original_stdout
-        sys.stderr = original_stderr
-        builtins.print = original_print
+        builtins.print = save_print
+        sys.stdout = save_stdout
+        sys.stderr = save_stderr
+
+
+@contextmanager
+def uncaptured_output():
+    save_print = builtins.print
+    save_stdout = sys.stdout
+    save_stderr = sys.stderr
+    builtins.print = _original_print
+    sys.stdout = _original_stdout
+    sys.stderr = _original_stderr
+    try:
+        yield
+    finally:
+        builtins.print = save_print
+        sys.stdout = save_stdout
+        sys.stderr = save_stderr
