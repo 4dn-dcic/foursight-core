@@ -6,7 +6,7 @@ from foursight_core.captured_output import captured_output, uncaptured_output
 
 def main():
     args_parser = argparse.ArgumentParser('local_check_runner')
-    args_parser.add_argument("check_or_action", type=str)
+    args_parser.add_argument("check_or_action", nargs="?", type=str)
     args_parser.add_argument("--env", type=str, default="cgap-supertest")
     args_parser.add_argument("--stage", type=str, choices=["dev", "prod"],
                              default="dev",
@@ -15,13 +15,16 @@ def main():
     args_parser.add_argument("--notimeout", action="store_true")
     args_parser.add_argument("--primary", action="store_true")
     args_parser.add_argument("--action", action="store_true")
-    args_parser.add_argument("--list", nargs="?")
+    args_parser.add_argument("--list", nargs="?", const="all")
     args_parser.add_argument("--verbose", action="store_true")
     args_parser.add_argument("--quiet", action="store_true")
     args_parser.add_argument("--debug", action="store_true")
     args = args_parser.parse_args()
     if args.notimeout:
         args.timeout = 0
+    if not args.list and not args.check_or_action:
+        print("A check or action name is required unless the --list option is given.")
+        exit(1)
 
     # es_checks/elasticsearch_s3_count_diff
     # ecs_checks/update_ecs_application_versions
@@ -37,18 +40,25 @@ def run(args):
     # This captured_output thing is just to suppress the mass of (stdout
     # and stderr) output from running Foursight; we'd prefer not to have
     # this come out of this command-line utility.
-    with captured_output(False) as captured:
+    with captured_output() as captured:
 
         PRINT = captured.uncaptured_print
 
         import app
         from chalicelib_cgap.app_utils import app_utils_obj as app_utils
 
-        # Setup.
         handler = app_utils.check_handler
+
+        if args.list:
+            checks = handler.get_checks_info(args.list)
+            for check in checks:
+                PRINT(check.qualified_name)
+            return
+
+        # Setup.
         app.set_stage(args.stage)
-        connection = app_utils.init_connection(args.env)
         app.set_timeout(args.timeout)
+        connection = app_utils.init_connection(args.env)
 
         # Run the check.
         check_info = handler.get_check_info(args.check_or_action)

@@ -451,6 +451,18 @@ class CheckHandler(object):
         return function
 
     @staticmethod
+    def get_checks_info(search: str = None) -> list:
+        checks = []
+        registry = Decorators.get_registry()
+        for item in registry:
+            info = CheckHandler._create_check_or_action_info(registry[item])
+            if search and search not in info.qualified_name.lower():
+                continue
+            if info.is_check:
+                checks.append(info)
+        return sorted(checks, key=lambda item: item.qualified_name)
+
+    @staticmethod
     def get_check_info(check_function_name: str, check_module_name: str = None) -> Optional[namedtuple]:
         return CheckHandler._get_check_or_action_info(check_function_name, check_module_name, "check")
 
@@ -461,48 +473,6 @@ class CheckHandler(object):
     @staticmethod
     def _get_check_or_action_info(function_name: str,
                                   module_name: str = None, kind: str = None) -> Optional[namedtuple]:
-
-        def create_info(info: dict) -> Optional[namedtuple]:
-
-            def unqualified_module_name(module_name: str) -> str:
-                return module_name.rsplit(".", 1)[-1] if "." in module_name else module_name
-
-            def qualified_check_or_action_name(check_or_action_name: str, module_name: str) -> str:
-                unqualified_module = unqualified_module_name(module_name)
-                return f"{unqualified_module}/{check_or_action_name}" if unqualified_module else check_or_action_name
-
-            Info = namedtuple("CheckInfo", ["kind",
-                                            "is_check",
-                                            "is_action",
-                                            "name",
-                                            "qualified_name",
-                                            "file",
-                                            "line",
-                                            "module",
-                                            "unqualified_module",
-                                            "package",
-                                            "github_url",
-                                            "args",
-                                            "kwargs",
-                                            "function",
-                                            "associated_action",
-                                            "associated_check"])
-            return Info(info["kind"],
-                        info["kind"] == "check",
-                        info["kind"] == "action",
-                        info["name"],
-                        qualified_check_or_action_name(info["name"], info["module"]),
-                        info["file"],
-                        info["line"],
-                        info["module"],
-                        unqualified_module_name(info["module"]),
-                        info["package"],
-                        info["github_url"],
-                        info["args"],
-                        info["kwargs"],
-                        info["function"],
-                        info.get("action"),
-                        info.get("check"))
 
         function_name = function_name.strip();
         if module_name:
@@ -520,9 +490,52 @@ class CheckHandler(object):
                 item = registry[name]
                 if item["name"] == function_name:
                     if not module_name:
-                        return create_info(item)
+                        return CheckHandler._create_check_or_action_info(item)
                     if item["module"].endswith("." + module_name):
-                        return create_info(item)
+                        return CheckHandler._create_check_or_action_info(item)
+
+    @staticmethod
+    def _create_check_or_action_info(info: dict) -> Optional[namedtuple]:
+
+        def unqualified_module_name(module_name: str) -> str:
+            return module_name.rsplit(".", 1)[-1] if "." in module_name else module_name
+
+        def qualified_check_or_action_name(check_or_action_name: str, module_name: str) -> str:
+            unqualified_module = unqualified_module_name(module_name)
+            return f"{unqualified_module}/{check_or_action_name}" if unqualified_module else check_or_action_name
+
+        Info = namedtuple("CheckInfo", ["kind",
+                                        "is_check",
+                                        "is_action",
+                                        "name",
+                                        "qualified_name",
+                                        "file",
+                                        "line",
+                                        "module",
+                                        "unqualified_module",
+                                        "package",
+                                        "github_url",
+                                        "args",
+                                        "kwargs",
+                                        "function",
+                                        "associated_action",
+                                        "associated_check"])
+        return Info(info["kind"],
+                    info["kind"] == "check",
+                    info["kind"] == "action",
+                    info["name"],
+                    qualified_check_or_action_name(info["name"], info["module"]),
+                    info["file"],
+                    info["line"],
+                    info["module"],
+                    unqualified_module_name(info["module"]),
+                    info["package"],
+                    info["github_url"],
+                    info["args"],
+                    info["kwargs"],
+                    info["function"],
+                    info.get("action"),
+                    info.get("check"))
 
     def init_check_or_action_res(self, connection, check):
         """
