@@ -425,12 +425,6 @@ class CheckHandler(object):
             return "ERROR: Check kwargs must be a dictionary: {check_str}"
         return check_method(connection, **check_kwargs)
 
-    def get_check_info(self, check_name: str, module_name: str = None) -> Optional[namedtuple]:
-        return self.decorators.get_check_info(check_name, module_name)
-
-    def get_action_info(self, action_name: str, module_name: str = None) -> Optional[namedtuple]:
-        return self.decorators.get_action_info(action_name, module_name)
-
     def _get_check_or_action_function(self, check_or_action_string: str, check_or_action: str = "check") -> Callable:
         if len(check_or_action_string.strip().split('/')) != 2:
             raise Exception(f"{check_or_action.title()} string must be of form"
@@ -455,6 +449,68 @@ class CheckHandler(object):
             raise Exception(f"{check_or_action.title()} function must use"
                             "@{check_or_action}_function decorator: {module_name}/{function_name}")
         return function
+
+    @staticmethod
+    def get_check_info(check_function_name: str, check_module_name: str = None) -> Optional[namedtuple]:
+        return CheckHandler._get_check_or_action_info(check_function_name, check_module_name, "check")
+
+    @staticmethod
+    def get_action_info(action_function_name: str, action_module_name: str = None) -> Optional[namedtuple]:
+        return CheckHandler._get_check_or_action_info(action_function_name, action_module_name, "action")
+
+    @staticmethod
+    def _get_check_or_action_info(function_name: str,
+                                  module_name: str = None, kind: str = None) -> Optional[namedtuple]:
+
+        def create_info(info: dict) -> Optional[namedtuple]:
+            Info = namedtuple("CheckInfo", ["is_check",
+                                            "is_action",
+                                            "name",
+                                            "file",
+                                            "line",
+                                            "module",
+                                            "unqualified_module",
+                                            "package",
+                                            "github_url",
+                                            "args",
+                                            "kwargs",
+                                            "function",
+                                            "associated_action",
+                                            "associated_check"])
+            return Info(info["kind"] == "check",
+                        info["kind"] == "action",
+                        info["name"],
+                        info["file"],
+                        info["line"],
+                        info["module"],
+                        info["module"].rsplit(".", 1)[-1] if "." in info["module"] else info["module"],
+                        info["package"],
+                        info["github_url"],
+                        info["args"],
+                        info["kwargs"],
+                        info["function"],
+                        info.get("action"),
+                        info.get("check"))
+
+        function_name = function_name.strip();
+        if module_name:
+            module_name = module_name.strip();
+        if not module_name:
+            if len(function_name.split("/")) == 2:
+                module_name = function_name.split("/")[0].strip()
+                function_name = function_name.split("/")[1].strip()
+            elif len(function_name.split(".")) == 2:
+                module_name = function_name.split(".")[0].strip()
+                function_name = function_name.split(".")[1].strip()
+        registry = Decorators.get_registry()
+        for name in registry:
+            if not kind or registry[name]["kind"] == kind:
+                item = registry[name]
+                if item["name"] == function_name:
+                    if not module_name:
+                        return create_info(item)
+                    if item["module"].endswith("." + module_name):
+                        return create_info(item)
 
     def init_check_or_action_res(self, connection, check):
         """

@@ -6,6 +6,12 @@ foursight-core
 Change Log
 ----------
 
+4.4.1
+=====
+* 2023-07-17
+* Support local-check-runner utility.
+
+
 4.4.0
 =====
 * 2023-06-20
