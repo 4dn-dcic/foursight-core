@@ -1,8 +1,10 @@
-import os
-import importlib
+from collections import namedtuple
 import copy
+import importlib
 import json
 import logging
+import os
+from typing import Callable, Optional
 from dcicutils.env_base import EnvBase
 from dcicutils.env_utils import infer_foursight_from_env
 from dcicutils.misc_utils import json_leaf_subst
@@ -39,7 +41,7 @@ class CheckHandler(object):
         # which calls back to the locate_check_setup_file function AppUtilsCore here in foursight-core).
         if not os.path.exists(check_setup_file):
             raise BadCheckSetup(f"Did not locate the specified check setup file: {check_setup_file}")
-        self.CHECK_SETUP_FILE = check_setup_file # for display/troubleshooting
+        self.CHECK_SETUP_FILE = check_setup_file  # for display/troubleshooting
         with open(check_setup_file, 'r') as jfile:
             self.CHECK_SETUP = json.load(jfile)
         logger.debug(f"foursight_core/CheckHandler: Loaded check_setup.json file: {check_setup_file} ...")
@@ -360,7 +362,7 @@ class CheckHandler(object):
         grouped_list = [group for group in grouped_results.values()]
         return sorted(grouped_list, key=lambda v: v['_name'])
 
-    def run_check_or_action(self, connection, check_str, check_kwargs):
+    def obsolete_run_check_or_action(self, connection, check_str, check_kwargs):
         """
         Does validation of provided check_str, it's module, and kwargs.
         Determines by decorator whether the method is a check or action, then runs
@@ -399,6 +401,60 @@ class CheckHandler(object):
            not self.check_method_deco(check_method, self.ACTION_DECO):
             return ' '.join(['ERROR. Check or action must use a decorator.', error_str])
         return check_method(connection, **check_kwargs)
+
+    def run_check_or_action(self, connection, check_str, check_kwargs):
+        """
+        Does validation of provided check_str, it's module, and kwargs.
+        Determines by decorator whether the method is a check or action, then runs
+        it. All errors are taken care of within the running of the check/action.
+
+        Takes a FS_connection object, a check string formatted as: <str check module/name>
+        and a dictionary of check arguments.
+        For example:
+        check_str: 'system_checks/my_check'
+        check_kwargs: '{"foo":123}'
+        Fetches the check function and runs it (returning whatever it returns)
+        Return a string for failed results, CheckResult/ActionResult object otherwise.
+        """
+        check_method = None
+        try:
+            check_method = self._get_check_or_action_function(check_str)
+        except Exception as e:
+            return f"ERROR: {str(e)}"
+        if not isinstance(check_kwargs, dict):
+            return "ERROR: Check kwargs must be a dictionary: {check_str}"
+        return check_method(connection, **check_kwargs)
+
+    def get_check_info(self, check_name: str, module_name: str = None) -> Optional[namedtuple]:
+        return self.decorators.get_check_info(check_name, module_name)
+
+    def get_action_info(self, action_name: str, module_name: str = None) -> Optional[namedtuple]:
+        return self.decorators.get_action_info(action_name, module_name)
+
+    def _get_check_or_action_function(self, check_or_action_string: str, check_or_action: str = "check") -> Callable:
+        if len(check_or_action_string.strip().split('/')) != 2:
+            raise Exception(f"{check_or_action.title()} string must be of form"
+                            "module_name/{check_or_action}_function_name: {check_or_action_string}")
+        module_name = check_or_action_string.strip().split('/')[0]
+        function_name = check_or_action_string.strip().split('/')[1]
+        module = None
+        for package_name in [self.check_package_name, 'foursight_core']:
+            try:
+                module = self.import_check_module(package_name, module_name)
+            except ModuleNotFoundError:
+                continue
+            except Exception as e:
+                raise e
+        if not module:
+            raise Exception(f"Cannot find check module: {module_name}")
+        function = module.__dict__.get(function_name)
+        if not function:
+            raise Exception(f"Cannot find check function: {module_name}/{function_name}")
+        if not self.check_method_deco(function, self.CHECK_DECO) and \
+           not self.check_method_deco(function, self.ACTION_DECO):
+            raise Exception(f"{check_or_action.title()} function must use"
+                            "@{check_or_action}_function decorator: {module_name}/{function_name}")
+        return function
 
     def init_check_or_action_res(self, connection, check):
         """

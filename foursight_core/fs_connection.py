@@ -44,7 +44,7 @@ class FSConnection(object):
         # FOURFRONT information
         self.ff_server = fs_environ_info['fourfront']
         self.ff_env = fs_environ_info['ff_env']
-        self.ff_es = fs_environ_info['es']
+        self.ff_es = fs_environ_info['es'] if not host else host
         self.ff_bucket = fs_environ_info['bucket']
         self.redis = None
         self.redis_url = None

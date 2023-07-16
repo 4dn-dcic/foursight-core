@@ -1,3 +1,4 @@
+from collections import namedtuple
 import inspect
 import json
 import os
@@ -5,7 +6,7 @@ import signal
 import sys
 import time
 import traceback
-from typing import Tuple
+from typing import Optional, Tuple
 from dcicutils.misc_utils import ignored, get_error_message, PRINT
 from functools import wraps
 from foursight_core.check_schema import CheckSchema
@@ -87,11 +88,76 @@ class Decorators(object):
             "package": func_package,
             "github_url": get_github_url(func_package, func_file, func_line),
             "args": default_args,
-            "kwargs": default_kwargs
+            "kwargs": default_kwargs,
+            "function": func
         }
         if associated_action:
             registry_record["action"] = associated_action
+        elif kind == "action":
+            for name in _decorator_registry:
+                item = _decorator_registry[name]
+                if item.get("action") == func_name:
+                    registry_record["check"] = item["name"] 
+        # TODO: Should probably store by function name and module name.
         _decorator_registry[func_name] = registry_record
+
+    @staticmethod
+    def get_check_info(check_function_name: str, check_module_name: str = None) -> Optional[namedtuple]:
+        return Decorators._get_check_or_action_info(check_function_name, check_module_name, "check")
+
+    @staticmethod
+    def get_action_info(action_function_name: str, action_module_name: str = None) -> Optional[namedtuple]:
+        return Decorators._get_check_or_action_info(action_function_name, action_module_name, "action")
+
+    @staticmethod
+    def _get_check_or_action_info(function_name: str,
+                                   module_name: str = None, kind: str = None) -> Optional[namedtuple]:
+        function_name = function_name.strip();
+        if module_name:
+            module_name = module_name.strip();
+        if not module_name:
+            if len(function_name.split("/")) == 2:
+                module_name = function_name.split("/")[0].strip()
+                function_name = function_name.split("/")[1].strip()
+            elif len(function_name.split(".")) == 2:
+                module_name = function_name.split(".")[0].strip()
+                function_name = function_name.split(".")[1].strip()
+        Result = namedtuple("Result", ["is_check",
+                                       "is_action",
+                                       "name",
+                                       "file",
+                                       "line",
+                                       "module",
+                                       "unqualified_module",
+                                       "package",
+                                       "github_url",
+                                       "args",
+                                       "kwargs",
+                                       "function",
+                                       "associated_action",
+                                       "associated_check"])
+        for name in _decorator_registry:
+            if not kind or _decorator_registry[name]["kind"] == kind:
+                item = _decorator_registry[name]
+                if item["name"] == function_name:
+                    if not module_name:
+                        return item
+                    if item["module"].endswith("." + module_name):
+                        return Result(item["kind"] == "check",
+                                      item["kind"] == "action",
+                                      item["name"],
+                                      item["file"],
+                                      item["line"],
+                                      item["module"],
+                                      item["module"].rsplit(".", 1)[-1] if "." in item["module"] else item["module"],
+                                      item["package"],
+                                      item["github_url"],
+                                      item["args"],
+                                      item["kwargs"],
+                                      item["function"],
+                                      item.get("action"),
+                                      item.get("check"))
+                        return item
 
     def check_function(self, *default_args, **default_kwargs):
         """
