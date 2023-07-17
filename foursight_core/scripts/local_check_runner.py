@@ -33,7 +33,6 @@ def main():
     # lifecycle_checks/check_file_lifecycle_status
     # system_checks/elastic_search_space
 
-    print(args)
     run(args)
 
 
@@ -52,7 +51,7 @@ def run(args):
         handler = app_utils.check_handler
 
         if args.list:
-            checks = handler.get_checks_info(args.list)
+            checks = handler.get_checks_info(args.list if args.list != "all" else None)
             for check in checks:
                 PRINT(check.qualified_name)
             return
@@ -72,11 +71,11 @@ def run(args):
         check_result = handler.run_check_or_action(connection, args.check_or_action, check_args)
         PRINT(json.dumps(check_result, indent=4))
 
-        # Rutn the action if desired.
+        # Run any associated action if desired (i.e. if --action option given).
         if args.action:
             if check_info.associated_action:
                 uuid = check_result["kwargs"]["uuid"]
-                # if there is an action, you can run it on the check you run above
+                # If there is an action, you can run it on the check you run above.
                 action_info = handler.get_action_info(check_info.associated_action)
                 if not action_info:
                     raise Exception(f"Action not found: {check_info.associated_action}")
@@ -99,9 +98,9 @@ def collect_args(check_or_action_info, initial_args: Optional[dict] = None, verb
                               f"{arg_name} [default: {arg_default}]: ")
                 args[arg_name] = value
         if verbose:
-            print(f"Check arguments for {name}:")
-            for check_arg in args:
-                print(f"=> {check_arg}: {args[check_arg]}")
+            print(f"{kind.title()} arguments for {name}:")
+            for arg in args:
+                print(f"=> {arg}: {args[arg]}")
     return args
 
 
