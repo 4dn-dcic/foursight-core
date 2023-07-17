@@ -4,6 +4,8 @@ import os
 from typing import Optional
 import yaml
 from foursight_core.captured_output import captured_output, uncaptured_output
+# This captured_output thing is to suppress the mass of (stdout and stderr) output from
+# running Foursight; we'd prefer not to have this come out of this command-line utility.
 with captured_output():
     import app
     from dcicutils.command_utils import yes_or_no
@@ -74,20 +76,9 @@ def list_checks(app_utils, text: str) -> None:
 
 def run_check_and_or_action(app_utils, args) -> None:
 
-    # This captured_output thing is just to suppress the mass of (stdout
-    # and stderr) output from running Foursight; we'd prefer not to have
-    # this come out of this command-line utility.
     with captured_output() as captured:
 
         PRINT = captured.uncaptured_print
-
-        handler = app_utils.check_handler
-
-        if args.list:
-            checks = handler.get_checks_info(args.list if args.list != "all" else None)
-            for check in checks:
-                PRINT(check.qualified_name)
-            return
 
         # Setup.
         app.set_stage(args.stage)
@@ -95,6 +86,7 @@ def run_check_and_or_action(app_utils, args) -> None:
         connection = app_utils.init_connection(args.env)
 
         # Run the check.
+        handler = app_utils.check_handler
         check_info = handler.get_check_info(args.check_or_action)
         if not check_info:
             raise Exception(f"Check not found: {args.check_or_action}")
@@ -131,9 +123,10 @@ def collect_args(check_or_action_info, initial_args: Optional[dict] = None, verb
                               f"{arg_name} [default: {arg_default}]: ")
                 args[arg_name] = value
         if verbose:
-            print(f"{kind.title()} arguments for {name}:")
-            for arg in args:
-                print(f"=> {arg}: {args[arg]}")
+            if args:
+                print(f"{kind.title()} arguments for {name}:")
+                for arg in args:
+                    print(f"=> {arg}: {args[arg]}")
     return args
 
 
