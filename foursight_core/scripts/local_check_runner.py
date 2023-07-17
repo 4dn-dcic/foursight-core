@@ -1,17 +1,37 @@
 import argparse
 import json
+import os
 from typing import Optional
 import yaml
 from foursight_core.captured_output import captured_output, uncaptured_output
+with captured_output():
+    import app
+    from dcicutils.command_utils import yes_or_no
 
 
-def main():
+def local_check_runner(app_utils):
+
+    args = parse_args()
+
+    if args.list:
+        list_checks(app_utils, args.list)
+        return
+
+    run_check_and_or_action(app_utils, args)
+
+    # es_checks/elasticsearch_s3_count_diff
+    # ecs_checks/update_ecs_application_versions
+    # access_key_expiration_detection/access_key_status
+    # lifecycle_checks/check_file_lifecycle_status
+    # system_checks/elastic_search_space
+
+
+def parse_args():
     args_parser = argparse.ArgumentParser('local_check_runner')
-    args_parser.add_argument("check_or_action", nargs="?", type=str)
-    args_parser.add_argument("--env", type=str, default="cgap-supertest")
-    args_parser.add_argument("--stage", type=str, choices=["dev", "prod"],
-                             default="dev",
-                             help="Chalice deployment stage (dev or prod)")
+    args_parser.add_argument("check_or_action", nargs="?", type=str,
+                             help="Name of check or action to run.")
+    args_parser.add_argument("--env", type=str)
+    args_parser.add_argument("--stage", type=str, choices=["dev", "prod"], default="dev", help="Chalice deployment stage (dev or prod)")
     args_parser.add_argument("--timeout", type=int, default=0)
     args_parser.add_argument("--notimeout", action="store_true")
     args_parser.add_argument("--primary", action="store_true")
@@ -23,20 +43,34 @@ def main():
     args = args_parser.parse_args()
     if args.notimeout:
         args.timeout = 0
-    if not args.list and not args.check_or_action:
+
+    if args.list:
+        if args.check_or_action:
+            print("A check or action name is not allowed if the --list option is given.")
+            exit(1)
+
+    elif not args.check_or_action:
         print("A check or action name is required unless the --list option is given.")
         exit(1)
 
-    # es_checks/elasticsearch_s3_count_diff
-    # ecs_checks/update_ecs_application_versions
-    # access_key_expiration_detection/access_key_status
-    # lifecycle_checks/check_file_lifecycle_status
-    # system_checks/elastic_search_space
+    if not args.env:
+        print("Must specified an AWS environment name via --env option.")
+        env = guess_env()
+        if env:
+            confirm_interactively(f"Do you want to use: {env}?", exit_if_no=True)
+            args.env = env
 
-    run(args)
+    return args
 
 
-def run(args):
+def list_checks(app_utils, text: str) -> None:
+    with captured_output() as captured:
+        checks = app_utils.check_handler.get_checks_info(text if text != "all" else None)
+        for check in checks:
+            captured.uncaptured_print(check.qualified_name)
+
+
+def run_check_and_or_action(app_utils, args) -> None:
 
     # This captured_output thing is just to suppress the mass of (stdout
     # and stderr) output from running Foursight; we'd prefer not to have
@@ -44,9 +78,6 @@ def run(args):
     with captured_output() as captured:
 
         PRINT = captured.uncaptured_print
-
-        import app
-        from chalicelib_cgap.app_utils import app_utils_obj as app_utils
 
         handler = app_utils.check_handler
 
@@ -104,18 +135,24 @@ def collect_args(check_or_action_info, initial_args: Optional[dict] = None, verb
     return args
 
 
+def guess_env() -> Optional[str]:
+    aws_test_dir_name = ".aws_test"
+    aws_test_dir_prefix = f"{aws_test_dir_name}."
+    aws_test_dir = os.path.expanduser(f"~/{aws_test_dir_name}")
+    if os.path.islink(aws_test_dir):
+        aws_test_target_dir = os.readlink(aws_test_dir)
+        if os.path.exists(aws_test_target_dir):
+            aws_test_target_dir = os.path.basename(aws_test_target_dir)
+            if aws_test_target_dir.startswith(aws_test_dir_prefix):
+                aws_credentials_name = aws_test_target_dir[len(aws_test_dir_prefix):]
+                return aws_credentials_name
+
+
 def confirm_interactively(message: str, exit_if_no: bool = False) -> bool:
     with uncaptured_output():
-        while True:
-            yes_or_no = input(f"{message} [yes/no] ").lower()
-            if yes_or_no == "yes":
-                return True
-            elif yes_or_no == "no":
-                if exit_if_no:
-                    print("Exiting with no action.")
-                    exit(0)
-                return False
-
-
-if __name__ == "__main__":
-    main()
+        if yes_or_no(message):
+            return True
+        if exit_if_no:
+            print("Exiting with no action.")
+            exit(0)
+        return False
