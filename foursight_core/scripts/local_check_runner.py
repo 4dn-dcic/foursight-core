@@ -96,7 +96,7 @@ def run_check_and_or_action(app_utils, args) -> None:
         if not check_info:
             action_info = handler.get_action_info(args.check_or_action)
             if not action_info:
-                exit_with_no_action(f"Check (or action) not found: {args.check_or_action}")
+                exit_with_no_action(f"No check or action found: {args.check_or_action}")
         else:
             check_args = {"primary": True} if args.primary else None
             check_args = collect_args(check_info, initial_args=check_args, verbose=args.verbose)
@@ -106,8 +106,7 @@ def run_check_and_or_action(app_utils, args) -> None:
 
         # Run any associated action if desired (i.e. if --action option given).
         if (args.action and check_info.associated_action) or action_info:
-            uuid = check_result["kwargs"]["uuid"]
-            # If there is an action, you can run it on the check you run above.
+            uuid = check_result["kwargs"]["uuid"] if check_info else None
             if not action_info:
                 action_info = handler.get_action_info(check_info.associated_action)
                 if not action_info:
@@ -161,7 +160,8 @@ def confirm_interactively(message: str, exit_if_no: bool = False) -> bool:
         return False
 
 def exit_with_no_action(message: Optional[str] = None):
-    if message:
-        print(message)
-    print("Exiting with no action.")
+    with uncaptured_output():
+        if message:
+            print(message)
+        print("Exiting with no action.")
     exit(0)
