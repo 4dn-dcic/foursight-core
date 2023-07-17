@@ -1,7 +1,8 @@
 import argparse
 import json
 import os
-from typing import Optional
+import sys
+from typing import Optional, Tuple
 import yaml
 from foursight_core.captured_output import captured_output, uncaptured_output
 # This captured_output thing is to suppress the mass of (stdout and stderr) output from
@@ -21,12 +22,6 @@ def local_check_runner(app_utils):
 
     run_check_and_or_action(app_utils, args)
 
-    # es_checks/elasticsearch_s3_count_diff
-    # ecs_checks/update_ecs_application_versions
-    # access_key_expiration_detection/access_key_status
-    # lifecycle_checks/check_file_lifecycle_status
-    # system_checks/elastic_search_space
-
 
 def parse_args():
     args_parser = argparse.ArgumentParser('local_check_runner')
@@ -42,6 +37,8 @@ def parse_args():
                              help="Any associated action should also be run.")
     args_parser.add_argument("--list", nargs="?", const="all",
                              help="List checks, containing given value if any.")
+    args_parser.add_argument("--yaml", action="store_true",
+                             help="Output result in YAML rather than JSON.")
     args_parser.add_argument("--verbose", action="store_true",
                              help="Verbose output.")
     args_parser.add_argument("--quiet", action="store_true",
@@ -80,7 +77,7 @@ def list_checks(app_utils, text: str) -> None:
 
 def run_check_and_or_action(app_utils, args) -> None:
 
-    with captured_output() as captured:
+    with captured_output(False) as captured:
 
         PRINT = captured.uncaptured_print
 
@@ -90,19 +87,14 @@ def run_check_and_or_action(app_utils, args) -> None:
         connection = app_utils.init_connection(args.env)
         handler = app_utils.check_handler
 
-        # Run the check.
-        check_info = handler.get_check_info(args.check_or_action)
-        action_info = None
-        if not check_info:
-            action_info = handler.get_action_info(args.check_or_action)
-            if not action_info:
-                exit_with_no_action(f"No check or action found: {args.check_or_action}")
-        else:
+
+        check_info, action_info = find_check_or_action(app_utils, args.check_or_action)
+        if check_info:
             check_args = {"primary": True} if args.primary else None
             check_args = collect_args(check_info, initial_args=check_args, verbose=args.verbose)
             confirm_interactively(f"Run check {check_info.qualified_name}?", exit_if_no=True)
-            check_result = handler.run_check_or_action(connection, args.check_or_action, check_args)
-            PRINT(json.dumps(check_result, indent=4))
+            check_result = handler.run_check_or_action(connection, check_info.qualified_name, check_args)
+            output_result(check_result, args.yaml)
 
         # Run any associated action if desired (i.e. if --action option given).
         if (args.action and check_info.associated_action) or action_info:
@@ -115,7 +107,7 @@ def run_check_and_or_action(app_utils, args) -> None:
             action_args = collect_args(action_info, initial_args=action_args, verbose=args.verbose)
             confirm_interactively(f"Run action {action_info.qualified_name}?", exit_if_no=True)
             action_result = handler.run_check_or_action(connection, action_info.qualified_name, action_args)
-            PRINT(json.dumps(action_result, indent=4))
+            output_result(action_result, args.yaml)
 
 
 def collect_args(check_or_action_info, initial_args: Optional[dict] = None, verbose: bool = False) -> dict:
@@ -138,6 +130,29 @@ def collect_args(check_or_action_info, initial_args: Optional[dict] = None, verb
     return args
 
 
+def find_check_or_action(app_utils, check_or_action) -> Tuple[Optional[str], Optional[str]]:
+    check_info = app_utils.check_handler.get_check_info(check_or_action)
+    action_info = None
+    if not check_info:
+        # Maybe they specified an action instead.
+        action_info = app_utils.check_handler.get_action_info(check_or_action)
+        if not action_info:
+            checks_info = app_utils.check_handler.get_checks_info(check_or_action)
+            if checks_info and len(checks_info) == 1:
+                message = f"Did you mean to specify this check: {checks_info[0].qualified_name}?"
+                if confirm_interactively(message):
+                    check_info = checks_info[0]
+            if not check_info:
+                actions_info = app_utils.check_handler.get_actions_info(check_or_action)
+                if actions_info and len(actions_info) == 1:
+                    message = f"Did you mean to specify this action: {actions_info[0].qualified_name}?"
+                    if confirm_interactively(message):
+                        action_info = actions_info[0]
+        if not check_info and not action_info:
+            exit_with_no_action(f"No check or action found: {check_or_action}")
+    return check_info, action_info
+
+
 def guess_env() -> Optional[str]:
     aws_test_dir_name = ".aws_test"
     aws_test_dir_prefix = f"{aws_test_dir_name}."
@@ -158,6 +173,15 @@ def confirm_interactively(message: str, exit_if_no: bool = False) -> bool:
         if exit_if_no:
             exit_with_no_action()
         return False
+
+
+def output_result(result: dict, format_yaml: bool = False) -> None:
+    with uncaptured_output():
+        if format_yaml:
+            yaml.dump(result, sys.stdout)
+        else:
+            print(json.dumps(result, indent=4))
+
 
 def exit_with_no_action(message: Optional[str] = None):
     with uncaptured_output():

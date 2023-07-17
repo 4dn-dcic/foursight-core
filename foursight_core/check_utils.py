@@ -463,6 +463,18 @@ class CheckHandler(object):
         return sorted(checks, key=lambda item: item.qualified_name)
 
     @staticmethod
+    def get_actions_info(search: str = None) -> list:
+        actions = []
+        registry = Decorators.get_registry()
+        for item in registry:
+            info = CheckHandler._create_check_or_action_info(registry[item])
+            if search and search not in info.qualified_name.lower():
+                continue
+            if info.is_action:
+                actions.append(info)
+        return sorted(actions, key=lambda item: item.qualified_name)
+
+    @staticmethod
     def get_check_info(check_function_name: str, check_module_name: str = None) -> Optional[namedtuple]:
         return CheckHandler._get_check_or_action_info(check_function_name, check_module_name, "check")
 
