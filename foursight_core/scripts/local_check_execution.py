@@ -1,3 +1,8 @@
+# A local-check-runner command-line utility to run checks from local development machine.
+# The real entry points are poetry scripts in foursight-cgap and foursight, so the
+# app_utils from those local repos can be passed in properly.
+# See: https://hms-dbmi.atlassian.net/wiki/spaces/FOURDNDCIC/pages/3004891144/Running+Foursight+Locally
+
 import argparse
 import json
 import os
