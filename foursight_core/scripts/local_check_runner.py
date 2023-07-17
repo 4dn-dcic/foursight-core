@@ -32,19 +32,23 @@ def parse_args():
     args_parser = argparse.ArgumentParser('local_check_runner')
     args_parser.add_argument("check_or_action", nargs="?", type=str,
                              help="Name of check or action to run.")
-    args_parser.add_argument("--env", type=str)
-    args_parser.add_argument("--stage", type=str, choices=["dev", "prod"], default="dev", help="Chalice deployment stage (dev or prod)")
-    args_parser.add_argument("--timeout", type=int, default=0)
-    args_parser.add_argument("--notimeout", action="store_true")
-    args_parser.add_argument("--primary", action="store_true")
-    args_parser.add_argument("--action", action="store_true")
-    args_parser.add_argument("--list", nargs="?", const="all")
-    args_parser.add_argument("--verbose", action="store_true")
-    args_parser.add_argument("--quiet", action="store_true")
-    args_parser.add_argument("--debug", action="store_true")
+    args_parser.add_argument("--env", type=str,
+                             help="AWS environment name.")
+    args_parser.add_argument("--stage", type=str, choices=["dev", "prod"], default="dev",
+                             help="Chalice deployment stage (dev or prod)")
+    args_parser.add_argument("--primary", action="store_true",
+                             help="True if result should be stored (TODO).")
+    args_parser.add_argument("--action", action="store_true",
+                             help="Any associated action should also be run.")
+    args_parser.add_argument("--list", nargs="?", const="all",
+                             help="List checks, containing given value if any.")
+    args_parser.add_argument("--verbose", action="store_true",
+                             help="Verbose output.")
+    args_parser.add_argument("--quiet", action="store_true",
+                             help="Quiet output.")
+    args_parser.add_argument("--debug", action="store_true",
+                             help="Debugging output.")
     args = args_parser.parse_args()
-    if args.notimeout:
-        args.timeout = 0
 
     if args.list:
         if args.check_or_action:
@@ -82,32 +86,37 @@ def run_check_and_or_action(app_utils, args) -> None:
 
         # Setup.
         app.set_stage(args.stage)
-        app.set_timeout(args.timeout)
+        app.set_timeout(0)
         connection = app_utils.init_connection(args.env)
+        handler = app_utils.check_handler
 
         # Run the check.
-        handler = app_utils.check_handler
         check_info = handler.get_check_info(args.check_or_action)
+        action_info = None
         if not check_info:
-            raise Exception(f"Check not found: {args.check_or_action}")
-        check_args = {"primary": True} if args.primary else None
-        check_args = collect_args(check_info, initial_args=check_args, verbose=args.verbose)
-        confirm_interactively(f"Run check {args.check_or_action}?", exit_if_no=True)
-        check_result = handler.run_check_or_action(connection, args.check_or_action, check_args)
-        PRINT(json.dumps(check_result, indent=4))
+            action_info = handler.get_action_info(args.check_or_action)
+            if not action_info:
+                exit_with_no_action(f"Check (or action) not found: {args.check_or_action}")
+        else:
+            check_args = {"primary": True} if args.primary else None
+            check_args = collect_args(check_info, initial_args=check_args, verbose=args.verbose)
+            confirm_interactively(f"Run check {check_info.qualified_name}?", exit_if_no=True)
+            check_result = handler.run_check_or_action(connection, args.check_or_action, check_args)
+            PRINT(json.dumps(check_result, indent=4))
 
         # Run any associated action if desired (i.e. if --action option given).
-        if args.action:
-            if check_info.associated_action:
-                uuid = check_result["kwargs"]["uuid"]
-                # If there is an action, you can run it on the check you run above.
+        if (args.action and check_info.associated_action) or action_info:
+            uuid = check_result["kwargs"]["uuid"]
+            # If there is an action, you can run it on the check you run above.
+            if not action_info:
                 action_info = handler.get_action_info(check_info.associated_action)
                 if not action_info:
-                    raise Exception(f"Action not found: {check_info.associated_action}")
-                action_args = {"check_name": check_info.name, "called_by": uuid}
-                action_args = collect_args(check_info, initial_args=action_args, verbose=args.verbose)
-                action_result = handler.run_check_or_action(connection, action_info.qualified_name, action_args)
-                PRINT(json.dumps(action_result, indent=4))
+                    exit_with_no_action(f"Action not found: {check_info.associated_action}")
+            action_args = {"check_name": check_info.name, "called_by": uuid} if check_info else {}
+            action_args = collect_args(action_info, initial_args=action_args, verbose=args.verbose)
+            confirm_interactively(f"Run action {action_info.qualified_name}?", exit_if_no=True)
+            action_result = handler.run_check_or_action(connection, action_info.qualified_name, action_args)
+            PRINT(json.dumps(action_result, indent=4))
 
 
 def collect_args(check_or_action_info, initial_args: Optional[dict] = None, verbose: bool = False) -> dict:
@@ -151,6 +160,8 @@ def confirm_interactively(message: str, exit_if_no: bool = False) -> bool:
             exit_with_no_action()
         return False
 
-def exit_with_no_action():
+def exit_with_no_action(message: Optional[str] = None):
+    if message:
+        print(message)
     print("Exiting with no action.")
     exit(0)
