@@ -18,9 +18,8 @@ def local_check_runner(app_utils):
 
     if args.list:
         list_checks(app_utils, args.list)
-        return
-
-    run_check_and_or_action(app_utils, args)
+    else:
+        run_check_and_or_action(app_utils, args)
 
 
 def parse_args():
@@ -130,7 +129,15 @@ def collect_args(check_or_action_info, initial_args: Optional[dict] = None, verb
     return args
 
 
-def find_check_or_action(app_utils, check_or_action) -> Tuple[Optional[str], Optional[str]]:
+def find_check_or_action(app_utils, check_or_action) -> Tuple[Optional[object], Optional[object]]:
+    """
+    Given a check or action name return the "info" object for one or the other depending
+    on whether a check or action name was specified. These names are meant to be fully
+    qualfied, e.g. "access_key_expiration_detection/access_key_status". First tries
+    to match check and then action exactly, and then if not found then tries an
+    approximate match (if given name is part of the full check/action name),
+    first trying the check name and then the action name.
+    """
     check_info = app_utils.check_handler.get_check_info(check_or_action)
     action_info = None
     if not check_info:
