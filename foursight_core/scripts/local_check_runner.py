@@ -54,11 +54,13 @@ def parse_args():
         exit(1)
 
     if not args.env:
-        print("Must specified an AWS environment name via --env option.")
+        print("An AWS environment name is required; use the --env option.")
         env = guess_env()
         if env:
-            confirm_interactively(f"Do you want to use: {env}?", exit_if_no=True)
+            confirm_interactively(f"Do you want to use this AWS environment name: {env}?", exit_if_no=True)
             args.env = env
+        else:
+            exit_with_no_action()
 
     return args
 
@@ -153,6 +155,9 @@ def confirm_interactively(message: str, exit_if_no: bool = False) -> bool:
         if yes_or_no(message):
             return True
         if exit_if_no:
-            print("Exiting with no action.")
-            exit(0)
+            exit_with_no_action()
         return False
+
+def exit_with_no_action():
+    print("Exiting with no action.")
+    exit(0)
