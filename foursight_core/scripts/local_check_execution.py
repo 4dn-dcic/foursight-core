@@ -17,7 +17,7 @@ with captured_output():
     from dcicutils.command_utils import yes_or_no
 
 
-def local_check_runner(app_utils):
+def local_check_execution(app_utils):
 
     args = parse_args()
 
@@ -28,7 +28,7 @@ def local_check_runner(app_utils):
 
 
 def parse_args():
-    args_parser = argparse.ArgumentParser('local_check_runner')
+    args_parser = argparse.ArgumentParser('local_check_execution')
     args_parser.add_argument("check_or_action", nargs="?", type=str,
                              help="Name of check or action to run.")
     args_parser.add_argument("--env", type=str,
