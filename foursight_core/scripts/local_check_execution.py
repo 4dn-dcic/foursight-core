@@ -45,8 +45,6 @@ def parse_args():
                              help="Output result in YAML rather than JSON.")
     args_parser.add_argument("--verbose", action="store_true",
                              help="Verbose output.")
-    args_parser.add_argument("--quiet", action="store_true",
-                             help="Quiet output.")
     args_parser.add_argument("--debug", action="store_true",
                              help="Debugging output.")
     args = args_parser.parse_args()
