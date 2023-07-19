@@ -35,8 +35,8 @@ class TestFSConnection:
         assert (connection.fs_env == 'fourfront-test')
         assert (connection.connections['s3'].status_code == 404)
         assert (connection.ff_server == 'test1')
-        # The following connection.ff_es was 'test2' but now ES_HOST (setup in conftest)
-        # as fs_connection now respects this environment variable. 2023-07-17.
+        # The following connection.ff_es was 'test2' but now the value of ES_HOST in conftest as
+        # fs_connection now respects this value as it in comes in through AppUtilsCore. 2023-07-17.
         assert (connection.ff_es == ES_HOST)
         assert (connection.ff_env == 'fourfront-mastertest')
         assert (connection.ff_s3 is None)
