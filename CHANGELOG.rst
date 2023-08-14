@@ -10,6 +10,7 @@ Change Log
 =====
 * 2023-07-17
 * Support local-check-runner utility.
+* Minor change to respect REDIS_HOST_LOCAL environment variable (for local dev/testing).
 
 
 4.4.0

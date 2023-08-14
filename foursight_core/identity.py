@@ -143,6 +143,15 @@ def set_elasticsearch_host_environment_variable() -> None:
         logger.info(f"Foursight ES_HOST environment variable value is: {os.environ.get('ES_HOST')}")
 
 
+def set_redis_host_environment_variable() -> None:
+    redis_host_local = os.environ.get("REDIS_HOST_LOCAL")
+    if redis_host_local:
+        os.environ["REDIS_HOST"] = redis_host_local
+        logger.info(f"Foursight REDIS_HOST local environment variable value is: {os.environ.get('REDIS_HOST')}")
+    else:
+        logger.info(f"Foursight REDIS_HOST environment variable value is: {os.environ.get('REDIS_HOST')}")
+
+
 def apply_identity_globally():
 
     # Make sure the IDENTITY (environment variable) is set (via Foursight CloudFormation template);
@@ -173,3 +182,6 @@ def apply_identity_globally():
 
     # Set ES_HOST to proxy for local testing (e.g. http://localhost:9200) via ES_HOST_LOCAL environment variable.
     set_elasticsearch_host_environment_variable()
+
+    # Set REDIS_HOST to proxy for local testing (e.g. redis://localhost:6379) via REDIS_HOST_LOCAL environment variable.
+    set_redis_host_environment_variable()
