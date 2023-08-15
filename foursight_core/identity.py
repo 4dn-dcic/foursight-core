@@ -152,6 +152,21 @@ def set_redis_host_environment_variable() -> None:
         logger.info(f"Foursight REDIS_HOST environment variable value is: {os.environ.get('REDIS_HOST')}")
 
 
+def set_auth0_environment_variable() -> None:
+    auth0_client_local = os.environ.get("AUTH0_CLIENT_LOCAL")
+    if auth0_client_local:
+        os.environ["CLIENT_ID"] = auth0_client_local
+        logger.info(f"Foursight Auth0 CLIENT_ID local environment variable value is: {os.environ.get('CLIENT_ID')}")
+    else:
+        logger.info(f"Foursight Auth0 CLIENT_ID environment variable value is: {os.environ.get('CLIENT_ID')}")
+    auth0_secret_local = os.environ.get("AUTH0_SECRET_LOCAL")
+    if auth0_secret_local:
+        os.environ["CLIENT_SECRET"] = auth0_secret_local
+        logger.info("Foursight Auth0 CLIENT_SECRET local environment variable value is: REDACTED")
+    else:
+        logger.info("Foursight Auth0 CLIENT_SECRET environment variable value is: REDACTED")
+
+
 def apply_identity_globally():
 
     # Make sure the IDENTITY (environment variable) is set (via Foursight CloudFormation template);
@@ -185,3 +200,6 @@ def apply_identity_globally():
 
     # Set REDIS_HOST to proxy for local testing (e.g. redis://localhost:6379) via REDIS_HOST_LOCAL environment variable.
     set_redis_host_environment_variable()
+
+    # Set AUTH0_CLIENT_LOCAL/AUTH0_SECRET_LOCAL for local testing.
+    set_auth0_environment_variable()
