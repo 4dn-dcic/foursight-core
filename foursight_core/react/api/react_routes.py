@@ -227,6 +227,50 @@ class ReactRoutes:
         args = get_request_args(request_dict)
         return app.core.reactapi_users_projects(request_dict, env, args)
 
+    @route("/{env}/users/awards", authorize=True)
+    def reactapi_route_users_awards(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns the list of available user awards.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_users_awards(request_dict, env, args)
+
+    @route("/{env}/users/labs", authorize=True)
+    def reactapi_route_users_labs(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns the list of available user labs.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_users_labs(request_dict, env, args)
+
+    @route("/{env}/users/consortia", authorize=True)
+    def reactapi_route_users_consortia(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns the list of available user consortia.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_users_consortia(request_dict, env, args)
+
+    @route("/{env}/users/submission_centers", authorize=True)
+    def reactapi_route_users_submission_centers(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns the list of available user submission_centers.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_users_submission_centers(request_dict, env, args)
+
     @route("/{env}/users/roles", authorize=True)
     def reactapi_route_users_roles(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """

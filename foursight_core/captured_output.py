@@ -1,13 +1,12 @@
-import builtins
+# TODO: Move to dcicutils.
 from collections import namedtuple
 from contextlib import contextmanager
 import io
 import sys
 from typing import Optional
 
-_original_print = builtins.print
-_original_stdout = sys.stdout
-_original_stderr = sys.stderr
+_real_stdout = sys.stdout
+_real_stderr = sys.stderr
 
 @contextmanager
 def captured_output(capture: bool = True):
@@ -23,65 +22,49 @@ def captured_output(capture: bool = True):
     of the with-clause with this context manager, pass False as an argument to this context manager. 
     """
 
-    save_print = _original_print
-    save_stdout = _original_stdout
-    save_stderr = _original_stderr
+    original_stdout = _real_stdout
+    original_stderr = _real_stderr
     captured_output = io.StringIO()
 
-    def captured_print(*args, **kwargs) -> None:
-        captured_output.write(*args)
-        captured_output.write("\n")
+    def set_original_output() -> None:
+        sys.stdout = original_stdout
+        sys.stderr = original_stderr
+
+    def set_captured_output() -> None:
+        if capture:
+            sys.stdout = captured_output
+            sys.stderr = captured_output
 
     def uncaptured_print(*args, **kwargs) -> None:
-        builtins.print = save_print
-        sys.stdout = save_stdout
-        sys.stderr = save_stderr
+        set_original_output()
         print(*args, **kwargs)
-        if capture:
-            builtins.print = captured_print
-            sys.stdout = captured_output
-            sys.stderr = captured_output
+        set_captured_output()
 
     def uncaptured_input(message: str) -> str:
-        builtins.print = save_print
-        sys.stdout = save_stdout
-        sys.stderr = save_stderr
+        set_original_output()
         value = input(message)
-        if capture:
-            builtins.print = captured_print
-            sys.stdout = captured_output
-            sys.stderr = captured_output
+        set_captured_output()
         return value
 
     def get_captured_output() -> Optional[str]:
         return captured_output.getvalue() if capture else None
 
-    if capture:
-        builtins.print = captured_print
-        sys.stdout = captured_output
-        sys.stderr = captured_output
-
-    Result = namedtuple("Result", ["get_captured_output", "uncaptured_print", "uncaptured_input"])
-
     try:
+        set_captured_output()
+        Result = namedtuple("Result", ["get_captured_output", "uncaptured_print", "uncaptured_input"])
         yield Result(get_captured_output, uncaptured_print, uncaptured_input)
     finally:
-        builtins.print = save_print
-        sys.stdout = save_stdout
-        sys.stderr = save_stderr
+        set_original_output()
 
 
 @contextmanager
 def uncaptured_output():
-    save_print = builtins.print
-    save_stdout = sys.stdout
-    save_stderr = sys.stderr
-    builtins.print = _original_print
-    sys.stdout = _original_stdout
-    sys.stderr = _original_stderr
+    original_stdout = sys.stdout
+    original_stderr = sys.stderr
+    sys.stdout = _real_stdout
+    sys.stderr = _real_stderr
     try:
         yield
     finally:
-        builtins.print = save_print
-        sys.stdout = save_stdout
-        sys.stderr = save_stderr
+        sys.stdout = original_stdout
+        sys.stderr = original_stderr

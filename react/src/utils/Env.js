@@ -218,12 +218,8 @@ function IsFoursightFourfront(header) {
     else if (Cookie.TestMode.HasFoursightCgap()) {
         return false;
     }
-    else if (!header?.loading) {
-        return header?.app?.package !== "foursight-cgap";
-    }
-    else {
-        return Cookie.Site() === "foursight-fourfront";
-    }
+    const site = !header?.loading ? header?.app?.package : Cookie.Site();
+    return site == "foursight-fourfront";
 }
 
 function IsFoursightCgap(header) {
@@ -233,12 +229,8 @@ function IsFoursightCgap(header) {
     else if (Cookie.TestMode.HasFoursightCgap()) {
         return true;
     }
-    else if (!header?.loading) {
-        return header?.app?.package === "foursight-cgap";
-    }
-    else {
-        return Cookie.Site() === "foursight-cgap";
-    }
+    const site = !header?.loading ? header?.app?.package : Cookie.Site();
+    return site === "foursight-cgap" || site === "foursight-smaht";
 }
 
 function GetLegacyFoursightLink(header) {

@@ -10,7 +10,6 @@ from foursight_core import check_schema
 def check_handler(app_utils_obj_conn):
     app_utils_obj, _ = app_utils_obj_conn
     check_handler = app_utils_obj.check_handler
-    #import pdb; pdb.set_trace()
     return check_handler
 
 

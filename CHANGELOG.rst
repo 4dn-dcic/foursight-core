@@ -6,12 +6,16 @@ foursight-core
 Change Log
 ----------
 
-4.4.1
+4.5.0
 =====
-* 2023-07-17
+* 2023-08
 * Support local-check-runner utility.
 * Minor change to respect REDIS_HOST_LOCAL environment variable (for local dev/testing),
   as well as allowing override of Auth0 client/secret (AUTH0_CLIENT_LOCAL, AUTH0_SECRET_LOCAL).
+* Miscellaneous changes to get foursight-smaht working properly.
+  * Support to get consorita/submission_centers, as well as for
+    awards/labs for foursight-fourfront (previous oversight).
+* Added UI warning bar about inability to connect to ElasticSearch.
 
 
 4.4.0

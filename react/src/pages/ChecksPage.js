@@ -447,7 +447,7 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
 const ToggleHistoryButton = ({ check, env, historyList, style }) => {
     return <span style={{...style, cursor:"pointer"}} onClick={() => onClickShowHistory(check, env, historyList)}>
         <span id={`tooltip-recent-history ${check.name}`}>
-            <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"2px",marginRight:"2pt",height:"18"}} />
+            <img alt="history" onClick={(e) => {}} src={Image.History()} style={{marginBottom:"2px",marginLeft:"4pt",marginRight:"2pt",height:"18"}} />
         </span>
         <Tooltip id={`tooltip-recent-history ${check.name}`} text={"Click to " + (check.__showingHistory ? "hide" : "show") + " recent history of check runs."} />
         { check.__showingHistory ? <span>{Char.RightArrow}</span> : <></> }

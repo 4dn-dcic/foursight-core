@@ -79,7 +79,7 @@ def list_checks(app_utils, text: str) -> None:
 
 def run_check_and_or_action(app_utils, args) -> None:
 
-    with captured_output(False) as captured:
+    with captured_output() as captured:
 
         PRINT = captured.uncaptured_print
 

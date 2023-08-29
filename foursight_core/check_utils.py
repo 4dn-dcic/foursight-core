@@ -362,46 +362,6 @@ class CheckHandler(object):
         grouped_list = [group for group in grouped_results.values()]
         return sorted(grouped_list, key=lambda v: v['_name'])
 
-    def obsolete_run_check_or_action(self, connection, check_str, check_kwargs):
-        """
-        Does validation of provided check_str, it's module, and kwargs.
-        Determines by decorator whether the method is a check or action, then runs
-        it. All errors are taken care of within the running of the check/action.
-
-        Takes a FS_connection object, a check string formatted as: <str check module/name>
-        and a dictionary of check arguments.
-        For example:
-        check_str: 'system_checks/my_check'
-        check_kwargs: '{"foo":123}'
-        Fetches the check function and runs it (returning whatever it returns)
-        Return a string for failed results, CheckResult/ActionResult object otherwise.
-        """
-        # make sure parameters are good
-        error_str = ' '.join(['Info: CHECK:', str(check_str), 'KWARGS:', str(check_kwargs)])
-        if len(check_str.strip().split('/')) != 2:
-            return ' '.join(['ERROR. Check string must be of form module/check_name.', error_str])
-        mod_name = check_str.strip().split('/')[0]
-        check_name = check_str.strip().split('/')[1]
-        if not isinstance(check_kwargs, dict):
-            return ' '.join(['ERROR. Check kwargs must be a dict.', error_str])
-        check_mod = None
-        for package_name in [self.check_package_name, 'foursight_core']:
-            try:
-                check_mod = self.import_check_module(package_name, mod_name)
-            except ModuleNotFoundError:
-                continue
-            except Exception as e:
-                raise e
-        if not check_mod:
-            return ' '.join(['ERROR. Check module is not valid.', error_str])
-        check_method = check_mod.__dict__.get(check_name)
-        if not check_method:
-            return ' '.join(['ERROR. Check name is not valid.', error_str])
-        if not self.check_method_deco(check_method, self.CHECK_DECO) and \
-           not self.check_method_deco(check_method, self.ACTION_DECO):
-            return ' '.join(['ERROR. Check or action must use a decorator.', error_str])
-        return check_method(connection, **check_kwargs)
-
     def run_check_or_action(self, connection, check_str, check_kwargs):
         """
         Does validation of provided check_str, it's module, and kwargs.

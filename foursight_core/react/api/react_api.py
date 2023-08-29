@@ -11,7 +11,7 @@ import platform
 import requests
 import socket
 import time
-from typing import Optional
+from typing import Callable, Optional
 import urllib.parse
 from itertools import chain
 from dcicutils.ecs_utils import ECSUtils 
@@ -119,7 +119,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         }
 
     def _get_elasticsearch_server_status(self) -> Optional[dict]:
-        response = {}
+        response = {"url": app.core.host}
         try:
             connection = app.core.init_connection(self._envs.get_default_env())
             response["url"] = app.core.host
@@ -161,49 +161,58 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return redis_info.get("redis_version") if redis_info else None
 
     @function_cache
-    def _get_user_projects(self, env: str, raw: bool = False) -> list:
+    def _get_user_attribution(self, type: str, env: str, raw: bool = False,
+                              additional_info: Optional[Callable] = None) -> list:
         """
         Returns the list of available user projects.
         """
+        results = []
         connection = app.core.init_connection(env)
-        projects = ff_utils.search_metadata(f'/search/?type=Project&datastore=database', key=connection.ff_keys)
-        if projects and not raw:
-            projects = [
-                {
-                    "id": project.get("@id"),
-                    "uuid": project.get("uuid"),
-                    "name": project.get("name"),
-                    "title": project.get("title"),
-                    "description": project.get("description")
+        response = ff_utils.search_metadata(f'/search/?type={type}&datastore=database', key=connection.ff_keys)
+        if response and not raw:
+            for item in response:
+                result = {
+                    "id": item.get("@id"),
+                    "uuid": item.get("uuid"),
+                    "name": item.get("name"),
+                    "title": item.get("title"),
+                    "description": item.get("description")
                 }
-                for project in projects
-            ]
-        return projects
+            if additional_info:
+                result = {**result, **additional_info(item)}
+            results.append(result)
+        return results
 
     @function_cache
     def _get_user_institutions(self, env: str, raw: bool = False) -> list:
         """
         Returns the list of available user institutions.
         """
-        connection = app.core.init_connection(env)
-        institutions = ff_utils.search_metadata(f'/search/?type=Institution', key=connection.ff_keys)
+        def get_principle_investigator(result):
+            pi = result.get("pi")
+            return {"pi": {"name": pi.get("display_title"), "uuid": pi.get("uuid"), "id": pi.get("@id")}} if pi else {}
 
-        def get_principle_investigator(institution):
-            pi = institution.get("pi")
-            return {"name": pi.get("display_title"), "uuid": pi.get("uuid"), "id": pi.get("@id")} if pi else None
+        return self._get_user_attribution("Institution", env, raw, additional_info=get_principle_investigator)
 
-        if institutions and not raw:
-            institutions = [
-                {
-                    "id": institution.get("@id"),
-                    "uuid": institution.get("uuid"),
-                    "name": institution.get("name"),
-                    "title": institution.get("title"),
-                    "pi": get_principle_investigator(institution)
-                }
-                for institution in institutions
-            ]
-        return institutions
+    @function_cache
+    def _get_user_projects(self, env: str, raw: bool = False) -> list:
+        return self._get_user_attribution("Project", env, raw)
+
+    @function_cache
+    def _get_user_awards(self, env: str, raw: bool = False) -> list:
+        return self._get_user_attribution("Award", env, raw)
+
+    @function_cache
+    def _get_user_labs(self, env: str, raw: bool = False) -> list:
+        return self._get_user_attribution("Lab", env, raw)
+
+    @function_cache
+    def _get_user_consortia(self, env: str, raw: bool = False) -> list:
+        return self._get_user_attribution("Consortium", env, raw)
+
+    @function_cache
+    def _get_user_submission_centers(self, env: str, raw: bool = False) -> list:
+        return self._get_user_attribution("SubmissionCenter", env, raw)
 
     @function_cache
     def _get_user_roles(self, env: str) -> list:
@@ -330,6 +339,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Note that this in an UNPROTECTED route.
         """
         # Note that this route is not protected but/and we return the results from authorize.
+        if not self._envs.is_known_env(env):
+            # If we are not given a known env then, at least for
+            # the /header endpoint, coerce it to the default env.
+            env = self._envs.get_default_env()
         auth = self._auth.authorize(request, env)
         data = self._reactapi_header_cache(request, env)
         data = copy.deepcopy(data)
@@ -633,7 +646,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             updated = last_modified.get("date_modified") or user.get("date_created")
         else:
             updated = user.get("date_created")
-        return {
+        user = {
             # Lower case email to avoid any possible issues on lookup later.
             "email": (user.get("email") or "").lower(),
             "first_name": user.get("first_name"),
@@ -641,13 +654,30 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "uuid": user.get("uuid"),
             "title": user.get("title"),
             "groups": user.get("groups"),
-            "project": user.get("project"),
-            "institution": user.get("user_institution"),
             "roles": user.get("project_roles"),
             "status": user.get("status"),
             "updated": convert_utc_datetime_to_utc_datetime_string(updated),
             "created": convert_utc_datetime_to_utc_datetime_string(user.get("date_created"))
         }
+        institution = user.get("user_institution")
+        project = user.get("project"),
+        award = user.get("award")
+        lab = user.get("lab")
+        consortia = user.get("consortia")
+        submission_centers = user.get("submission_centers")
+        if institution:
+            user["institution"] = institution
+        if project:
+            user["project"] = project
+        if award:
+            user["award"] = award
+        if lab:
+            user["lab"] = lab
+        if consortia:
+            user["consortia"] = consortia
+        if submission_centers:
+            user["submission_centers"] = submission_centers
+        return user
 
     def _create_user_record_from_input(self, user: dict, include_deletes: bool = False) -> dict:
         """
@@ -906,7 +936,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         - raw: if true then returns the raw format of the data.
         """
         ignored(request)
-        if self.is_foursight_fourfront():
+        if not self.is_foursight_cgap():
             return self.create_success_response([])
         raw = args.get("raw") == "true"
         return self.create_success_response(self._get_user_institutions(env, raw))
@@ -919,10 +949,62 @@ class ReactApi(ReactApiBase, ReactRoutes):
         - raw: if true then returns the raw format of the data.
         """
         ignored(request)
-        if self.is_foursight_fourfront():
+        if not self.is_foursight_cgap():
             return self.create_success_response([])
         raw = args.get("raw") == "true"
         return self.create_success_response(self._get_user_projects(env, raw))
+
+    def reactapi_users_awards(self, request: dict, env: str, args: dict) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/awards
+        Returns the list of available user awards.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        ignored(request)
+        if not self.is_foursight_fourfront():
+            return self.create_success_response([])
+        raw = args.get("raw") == "true"
+        return self.create_success_response(self._get_user_awards(env, raw))
+
+    def reactapi_users_labs(self, request: dict, env: str, args: dict) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/labs
+        Returns the list of available user labs.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        ignored(request)
+        if not self.is_foursight_fourfront():
+            return self.create_success_response([])
+        raw = args.get("raw") == "true"
+        return self.create_success_response(self._get_user_labs(env, raw))
+
+    def reactapi_users_consortia(self, request: dict, env: str, args: dict) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/consortia
+        Returns the list of available user consortia.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        ignored(request)
+        if not self.is_foursight_smaht():
+            return self.create_success_response([])
+        raw = args.get("raw") == "true"
+        return self.create_success_response(self._get_user_consortia(env, raw))
+
+    def reactapi_users_submission_centers(self, request: dict, env: str, args: dict) -> Response:
+        """
+        Called from react_routes for endpoint: GET /{env}/users/submission_centers
+        Returns the list of available user submission_centers.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        ignored(request)
+        if not self.is_foursight_smaht():
+            return self.create_success_response([])
+        raw = args.get("raw") == "true"
+        return self.create_success_response(self._get_user_submission_centers(env, raw))
 
     def reactapi_users_roles(self, request: dict, env: str) -> Response:
         """

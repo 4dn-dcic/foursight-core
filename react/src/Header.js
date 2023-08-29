@@ -23,30 +23,31 @@ const Warnings = ({ header }) => {
     return <>
         <PortalSslCertificateWarning header={header} />
         <PortalAccessKeyWarning header={header} />
+        <ElasticSearchAccessWarning header={header} />
     </>
 }
 
 const PortalSslCertificateWarning = () => {
     const [ args ] = useSearchParams();
     const sslCertificateInfo = useFetch(`/certificates`);
-    if (sslCertificateInfo.loading) return <></>
-    const sslCertificateInfoPortal = sslCertificateInfo.find(certificate => certificate.name === "Portal");
-    if (sslCertificateInfoPortal && sslCertificateInfoPortal.expires_soon) {
-        return <WarningBar>
-            <b>Warning: SSL certificate for associated Portal will expire soon</b>
-            &nbsp;{Char.RightArrow}&nbsp; {sslCertificateInfoPortal.expires_at} &nbsp;{Char.RightArrow}&nbsp;
-            {Time.FromNow(sslCertificateInfoPortal.expires_at, true, false)}
-            &nbsp;{Char.RightArrow}&nbsp;
-            <Link to={Client.Path("/certificates")} style={{color:"inherit"}}>View</Link>
-        </WarningBar>
+    if (!sslCertificateInfo.loading) {
+        const sslCertificateInfoPortal = sslCertificateInfo.find(certificate => certificate.name === "Portal");
+        if (sslCertificateInfoPortal && sslCertificateInfoPortal.expires_soon) {
+            return <WarningBar>
+                <b>Warning: SSL certificate for associated Portal will expire soon</b>
+                &nbsp;{Char.RightArrow}&nbsp; {sslCertificateInfoPortal.expires_at} &nbsp;{Char.RightArrow}&nbsp;
+                {Time.FromNow(sslCertificateInfoPortal.expires_at, true, false)}
+                &nbsp;{Char.RightArrow}&nbsp;
+                <Link to={Client.Path("/certificates")} style={{color:"inherit"}}>View</Link>
+            </WarningBar>
+        }
     }
 }
 
 const PortalAccessKeyWarning = ({ header }) => {
     const portalAccessKeyInfo = useFetch(`/portal_access_key`);
-    if (portalAccessKeyInfo.loading) return <></>
-    if (portalAccessKeyInfo) {
-        if (portalAccessKeyInfo?.data?.expires_soon) {
+    if (!portalAccessKeyInfo.loading) {
+        if (portalAccessKeyInfo.data?.expires_soon) {
             return <WarningBar>
                 <b>Warning: Access key for associated Portal will expire soon</b>
                 &nbsp;{Char.RightArrow}&nbsp; {portalAccessKeyInfo.data.expires_at} &nbsp;{Char.RightArrow}&nbsp;
@@ -62,6 +63,16 @@ const PortalAccessKeyWarning = ({ header }) => {
                 <Link to={Client.Path("/portal_access_key")} style={{color:"inherit"}}>View</Link>
             </WarningBar>
         }
+    }
+}
+
+const ElasticSearchAccessWarning = ({ header }) => {
+    const info = useFetch(`//elasticsearch`);
+    if (!info.loading && !info.data?.health) {
+        return <WarningBar>
+            <b>Warning: Cannot connect to ElasticSearch server
+                {info.data?.url && <>{Char.RightArrow} {info.data.url} </>}</b>
+        </WarningBar>
     }
 }
 
@@ -198,6 +209,7 @@ const Header = (props) => {
                     <span style={{position:"relative",bottom:"5pt"}}>&nbsp;<BarSpinner loading={header.loading && !header.error} color={'yellow'} size={150} style={{marginRight:"20px"}}/></span>
                 </td>
             </tr>
+            <Warnings header={header} />
             </tbody></table>
             <table style={{width:"100%",height:"22px",background:"lightgray"}}><tbody>
             <tr><td style={{height:"27px",paddingLeft:"2pt",whiteSpace:"nowrap",background:"lightgray"}} /></tr>
