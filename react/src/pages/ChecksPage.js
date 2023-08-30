@@ -284,9 +284,9 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
 
     const runActionAllowedState = useState(false);
 
-    check.__result = useFetch({ cache: true });
-    check.__resultByUuid = useFetch({ cache: true });
-    check.__resultByAction = useFetch({ cache: true });
+    check.__result = useFetch({ cache: true, nofetch: true });
+    check.__resultByUuid = useFetch({ cache: true, nofetch: true });
+    check.__resultByAction = useFetch({ cache: true, nofetch: true });
 
     useEffect(() => {
         fetchResult(check, env, groupList);

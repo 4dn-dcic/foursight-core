@@ -42,12 +42,20 @@ function GetFoursightFourfrontFaviconImage() {
     return "https://data.4dnucleome.org/static/img/favicon-fs.ico";
 }
 
+function GetFoursightSmahtFaviconImage() {
+    return "https://cgap-dbmi.hms.harvard.edu/favicon.ico";
+}
+
 function GetFoursightCgapLogoImage() {
     return "https://github.com/dbmi-bgm/cgap-pipeline/raw/master/docs/images/cgap_logo.png";
 }
 
 function GetFoursightFourfrontLogoImage() {
     return "https://data.4dnucleome.org/static/img/favicon-fs.ico";
+}
+
+function GetFoursightSmahtLogoImage() {
+    return "https://raw.githubusercontent.com/dmichaels/public/master/img/smaht_logo.png"
 }
 
 function GetGitHubLoginLogoImage() {
@@ -120,9 +128,11 @@ const exports = {
     EditIcon:                  GetEditIcon,
     ElasticsearchLogo:         GetElasticsearchLogoImage,
     FoursightCgapFavicon:      GetFoursightCgapFaviconImage,
-    FoursightFourfrontFavicon: GetFoursightFourfrontFaviconImage,
     FoursightCgapLogo:         GetFoursightCgapLogoImage,
+    FoursightFourfrontFavicon: GetFoursightFourfrontFaviconImage,
     FoursightFourfrontLogo:    GetFoursightFourfrontLogoImage,
+    FoursightSmahtFavicon:     GetFoursightSmahtFaviconImage,
+    FoursightSmahtLogo:        GetFoursightSmahtLogoImage,
     GitHubLoginLogo:           GetGitHubLoginLogoImage,
     GoogleLoginLogo:           GetGoogleLoginLogoImage,
     MenuIcon:                  GetMenuIcon,

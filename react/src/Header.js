@@ -174,7 +174,8 @@ const Header = (props) => {
     const navigate = useNavigate();
     const [ fetching ] = useFetching();
 
-    let titleBackgroundColor = Env.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
+    //let titleBackgroundColor = Env.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
+    let titleBackgroundColor = Styles.GetTitleBackgroundColor(header);
     let subTitleBackgroundColor = Styles.LightenDarkenColor(Styles.GetBackgroundColor(), -10);
 
     function getTitleBackgroundColorWhileLoading() {
@@ -223,11 +224,17 @@ const Header = (props) => {
             <tr>
                 <td width="38%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={Client.PortalLink(header)} target="_blank" rel="noreferrer">
-                        { Env.IsFoursightFourfront(header) ? (<span>
-                            <img alt="foursight" style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={Image.FoursightFourfrontLogo()} height="32" width="44" />
-                        </span>):(<span>
+                        { Env.IsFoursightCgap(header) ? (<>
                             <img alt="foursight" src={Image.FoursightCgapLogo()} width="130" />
-                        </span>)}
+                        </>):(<>
+                            { Env.IsFoursightFourfront(header) ? (<>
+                                <img alt="foursight" style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={Image.FoursightFourfrontLogo()} height="32" width="44" />
+                            </>):(<>
+                                <div style={{color:"yellow",fontSize:"18pt",marginTop:"5pt",marginBottom:"5pt",marginLeft:"8pt"}}>
+                                    SMaHT
+                                </div>
+                            </>)}
+                        </>)}
                     </a>
                 </td>
                 <td width="24%" align="center" style={{whiteSpace:"nowrap"}}>

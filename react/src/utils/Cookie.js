@@ -182,12 +182,20 @@ function GetTestModeFetchSleepCookie() {
     return parseInt(GetCookie("test_mode_fetch_sleep"));
 }
 
+function HasTestModeFoursightFlavorCookie(flavor) {
+    return GetCookie("test_mode_foursight_flavor") === flavor;
+}
+
 function HasTestModeFoursightFourfrontCookie() {
-    return GetCookie("test_mode_foursight_fourfront") === "1";
+    return HasTestModeFoursightFlavorCookie("fourfront");
 }
 
 function HasTestModeFoursightCgapCookie() {
-    return GetCookie("test_mode_foursight_fourfront") === "0";
+    return HasTestModeFoursightFlavorCookie("cgap");
+}
+
+function HasTestModeFoursightSmahtCookie() {
+    return HasTestModeFoursightFlavorCookie("smaht");
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -215,7 +223,9 @@ const exports = {
 
     TestMode: {
         FetchSleep:            GetTestModeFetchSleepCookie,
+        HasFoursightCgap:      HasTestModeFoursightCgapCookie,
+        HasFoursightFlavor:     HasTestModeFoursightFlavorCookie,
         HasFoursightFourfront: HasTestModeFoursightFourfrontCookie,
-        HasFoursightCgap:      HasTestModeFoursightCgapCookie
+        HasFoursightSmaht:     HasTestModeFoursightSmahtCookie
     }
 }; export default exports;

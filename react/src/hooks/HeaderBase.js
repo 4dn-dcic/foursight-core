@@ -32,9 +32,18 @@ export const HeaderProvider = ({ children }) => {
             // vs. Foursight-Fourfront, which is determined from the fetched header data;
             // The former is a blue-ish color-schema and green-ish for the latter.
             //
-            Env.IsFoursightFourfront(header)
-                ? Styles.SetFoursightFourfront()
-                : Styles.SetFoursightCgap();
+            if (Env.IsFoursightFourfront(header)) {
+                Styles.SetFoursightFourfront()
+            }
+            else if (Env.IsFoursightCgap(header)) {
+                Styles.SetFoursightCgap()
+            }
+            else if (Env.IsFoursightSmaht(header)) {
+                Styles.SetFoursightSmaht()
+            }
+            else {
+                Styles.SetFoursightCgap()
+            }
         },
         onError: (response) => {
             setHeader(header => ({ ...header, ...{ error: true } }));

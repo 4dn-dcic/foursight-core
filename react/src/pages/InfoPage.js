@@ -177,7 +177,7 @@ const InfoPage = () => {
     if (info.error) return <FetchErrorBox error={info.error} message="Error loading info from Foursight API" />
     return <div className="container">
         <InfoBox info={info} title="Versions">
-            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={Env.IsFoursightFourfront(header) ? "4dn-dcic" : "dbmi-bgm"} size="2" />
+            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={Env.FoursightGitHubBase(header)} size="2" />
             <InfoRow name={"foursight-core"} value={header.versions?.foursight_core} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"dcicutils"} value={header.versions?.dcicutils} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"tibanna"} value={header.versions?.tibanna} monospace={true} copy={true} size="2" pypi={true} />

@@ -211,26 +211,39 @@ function GetPreferredEnvName(env, header) {
 // Foursight-Fourfront vs. Foursight-CGAP and legacy Foursight related functions.
 // -------------------------------------------------------------------------------------------------
 
-function IsFoursightFourfront(header) {
-    if (Cookie.TestMode.HasFoursightFourfront()) {
+function IsFoursightFlavor(header, flavor) {
+    if (Cookie.TestMode.HasFoursightFlavor(flavor)) {
         return true;
     }
-    else if (Cookie.TestMode.HasFoursightCgap()) {
-        return false;
-    }
     const site = !header?.loading ? header?.app?.package : Cookie.Site();
-    return site == "foursight-fourfront";
+    return site == `foursight-${flavor}`;
+}
+
+function IsFoursightFourfront(header) {
+    return IsFoursightFlavor(header, "fourfront");
 }
 
 function IsFoursightCgap(header) {
-    if (Cookie.TestMode.HasFoursightFourfront()) {
-        return false;
+    return IsFoursightFlavor(header, "cgap");
+}
+
+function IsFoursightSmaht(header) {
+    return IsFoursightFlavor(header, "smaht");
+}
+
+function GetFoursightGitHubBaseRepoName(header) {
+    if (IsFoursightCgap(header)) {
+        return "dbmi-bgm";
     }
-    else if (Cookie.TestMode.HasFoursightCgap()) {
-        return true;
+    else if (IsFoursightFourfront(header)) {
+        return "4dn-dcic";
     }
-    const site = !header?.loading ? header?.app?.package : Cookie.Site();
-    return site === "foursight-cgap" || site === "foursight-smaht";
+    else if (IsFoursightSmaht(header)) {
+        return "smaht-dac";
+    }
+    else {
+        return "unknown";
+    }
 }
 
 function GetLegacyFoursightLink(header) {
@@ -263,11 +276,13 @@ const exports = {
     Equals:               AreSameEnvs,
     FoursightName:        GetFoursightEnvName,
     FullName:             GetFullEnvName,
+    FoursightGitHubBase:  GetFoursightGitHubBaseRepoName,
     IsAllowed:            IsAllowedEnv,
     IsCurrent:            IsCurrentEnv,
     IsDefault:            IsDefaultEnv,
-    IsFoursightFourfront: IsFoursightFourfront,
     IsFoursightCgap:      IsFoursightCgap,
+    IsFoursightFourfront: IsFoursightFourfront,
+    IsFoursightSmaht:     IsFoursightSmaht,
     IsKnown:              IsKnownEnv,
     KnownEnvs:            GetKnownEnvs,
     LegacyFoursightLink:  GetLegacyFoursightLink,

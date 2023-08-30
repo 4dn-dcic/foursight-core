@@ -181,9 +181,10 @@ export const useFetch = (url, args) => {
     // want to set the initial value for the data here at definition time.
     //
     const initial = Type.IsObject(url) ? url.initial : (Type.IsObject(args) ? args.initial : null);
+    const nofetch = Type.IsObject(url) ? url.nofetch : (Type.IsObject(args) ? args.nofetch : false);
 
     const [ data, setData ] = useState(initial);
-    const [ loading, setLoading ] = useState(true);
+    const [ loading, setLoading ] = useState(nofetch ? false : true);
     const [ status, setStatus ] = useState(0);
     const [ timeout, setTimeout ] = useState(false);
     const [ error, setError ] = useState(null);
@@ -216,6 +217,10 @@ export const useFetch = (url, args) => {
         // leaving this here for now in case we run into again; see how it's done.
         // get ["loading"]() { return loading; }
     };
+
+    response.setLoading = (function(value) {
+        assembledArgs.setLoading(value)
+    }).bind(response);
 
     response.fetch = (function(url, args) {
         _doFetch(assembleArgs(url, args, true), this && this.__usefetch_response === true ? this.data : undefined, this);
