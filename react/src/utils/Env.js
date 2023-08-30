@@ -216,11 +216,11 @@ function IsFoursightFlavor(header, flavor) {
         return true;
     }
     const site = !header?.loading ? header?.app?.package : Cookie.Site();
-    return site == `foursight-${flavor}`;
+    return site == `foursight-${flavor}` || site == flavor;
 }
 
 function IsFoursightFourfront(header) {
-    return IsFoursightFlavor(header, "fourfront");
+    return IsFoursightFlavor(header, "foursight");
 }
 
 function IsFoursightCgap(header) {
