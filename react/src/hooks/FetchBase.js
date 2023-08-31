@@ -19,8 +19,8 @@ import useGlobal from '../hooks/Global';
 
 const DEFAULT_METHOD = "GET";
 const DEFAULT_TIMEOUT = 30 * 1000;
-const DEFAULT_DELAY = () => { return TEST_MODE_DELAY > 0 ? TEST_MODE_DELAY : 0; };
-const TEST_MODE_DELAY = Cookie.TestMode.FetchSleep();
+const DEFAULT_TEST_MODE_DELAY = Cookie.TestMode.FetchSleep();
+const DEFAULT_DELAY = () => { return DEFAULT_TEST_MODE_DELAY > 0 ? DEFAULT_TEST_MODE_DELAY : 0; };
 const MAX_SAVE = 25;
 
 // This useFetch React hook is used to centrally facilitate all App HTTP fetches.

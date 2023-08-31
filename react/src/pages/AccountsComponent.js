@@ -293,7 +293,10 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                  </div>
             </> }
         </Row>
-        <Row title="Bucket Encryption ID" value={info.get("foursight.s3.encrypt_key_id")}
+        <Row title="S3 Encryption" value={info.get("foursight.s3.has_encryption") ? "Yes" : "No"} showEmpty={true}
+             tooltip={[`This is controlled by the S3_ENCRYPT_KEY environment variable.`, `tooltip-has-encryption}`]} showEmpty={true}>
+        </Row>
+        <Row title="S3 Encryption ID" value={info.get("foursight.s3.encrypt_key_id")}
              externalLink={`https://us-east-1.console.aws.amazon.com/kms/home?region=us-east-1#/kms/keys/${info.get("foursight.s3.encrypt_key_id")}`}
              tooltip={[`S3 Bucket Encryption Key ID`, `tooltip-encryption-key-${info.get("foursight.aws_account_number")}`]} showEmpty={true}>
         </Row>
@@ -425,7 +428,7 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
                         <AccountInfoLeft header={header} info={info} foursightUrl={foursightUrl} />
                     </td>
                     <td style={{paddingLeft:"6pt",width:"12pt"}} />
-                    <td style={{marginLeft:"12pt",borderLeft:"1px solid"}} />
+                    <td style={{marginLeft:"12pt",borderLeft:`${info.loading ? "0" : "1"}px solid`}} />
                     <td style={{width:"30%",paddingLeft:"8pt",textAlign:"top",verticalAlign:"top"}}>
                         <AccountInfoRight info={info} header={header} />
                     </td>

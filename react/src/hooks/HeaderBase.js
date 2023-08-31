@@ -33,16 +33,16 @@ export const HeaderProvider = ({ children }) => {
             // The former is a blue-ish color-schema and green-ish for the latter.
             //
             if (Env.IsFoursightFourfront(header)) {
-                Styles.SetFoursightFourfront()
+                Styles.SetFoursightFourfront();
             }
             else if (Env.IsFoursightCgap(header)) {
-                Styles.SetFoursightCgap()
+                Styles.SetFoursightCgap();
             }
             else if (Env.IsFoursightSmaht(header)) {
-                Styles.SetFoursightSmaht()
+                Styles.SetFoursightSmaht();
             }
             else {
-                Styles.SetFoursightCgap()
+                Styles.SetFoursightCgap();
             }
         },
         onError: (response) => {

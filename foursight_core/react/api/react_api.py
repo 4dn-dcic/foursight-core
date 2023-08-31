@@ -470,6 +470,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "buckets": self._get_known_buckets()
             }
         }
+        if os.environ.get("S3_ENCRYPT_KEY"):
+            response["s3"]["has_encryption"] = True
         return response
 
     def reactapi_certificates(self, request: dict, args: Optional[dict] = None) -> Response:
@@ -1499,6 +1501,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 response["foursight"]["s3"]["bucket_org"] = foursight_header_json_s3.get("bucket_org")
                 response["foursight"]["s3"]["global_env_bucket"] = foursight_header_json_s3.get("global_env_bucket")
                 response["foursight"]["s3"]["encrypt_key_id"] = foursight_header_json_s3.get("encrypt_key_id")
+                response["foursight"]["s3"]["has_encryption"] = foursight_header_json_s3.get("has_encryption")
                 response["foursight"]["s3"]["buckets"] = foursight_header_json_s3.get("buckets")
             response["foursight"]["aws_account_number"] = foursight_app["credentials"].get("aws_account_number")
             response["foursight"]["aws_account_name"] = foursight_app["credentials"].get("aws_account_name")

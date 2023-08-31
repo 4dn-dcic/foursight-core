@@ -246,6 +246,21 @@ function GetFoursightGitHubBaseRepoName(header) {
     }
 }
 
+function GetFoursightFlavorTitle(header) {
+    if (IsFoursightCgap(header)) {
+        return "CGAP";
+    }
+    else if (IsFoursightFourfront(header)) {
+        return "Fourfront";
+    }
+    else if (IsFoursightSmaht(header)) {
+        return "SMaHT";
+    }
+    else {
+        return "Unknown";
+    }
+}
+
 function GetLegacyFoursightLink(header) {
     //
     // For Foursight-CGAP (as opposed to Foursight-Fourfront) going to just,
@@ -276,6 +291,7 @@ const exports = {
     Equals:               AreSameEnvs,
     FoursightName:        GetFoursightEnvName,
     FullName:             GetFullEnvName,
+    FoursightFlavorTitle: GetFoursightFlavorTitle,
     FoursightGitHubBase:  GetFoursightGitHubBaseRepoName,
     IsAllowed:            IsAllowedEnv,
     IsCurrent:            IsCurrentEnv,
