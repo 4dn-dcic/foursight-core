@@ -122,7 +122,7 @@ const Row = ({ title, value, additionalValue, externalLink, children, tooltip = 
     const tooltipText = Type.IsArray(tooltip) ? tooltip[0] : null;
     const tooltipId = Type.IsArray(tooltip) ? tooltip[1] : null;
     return <tr style={{fontSize:small ? "small" : "inherit"}}>
-        <td style={{paddingRight:"10pt",verticalAlign:"top"}}>
+        <td style={{paddingRight:"7pt",verticalAlign:"top"}}>
             {title}:
         </td>
         <td>
@@ -168,7 +168,7 @@ const SecretsDropdown = ({ header, info, name }) => {
             </>:<>
                 <span onClick={toggleShowIdentity} className="pointer">Secrets <b>{Char.UpArrow}</b></span>
             </> }
-            { showIdentity && <Secrets name={info.get("foursight.identity")} embedded={true} /> }
+            { showIdentity && <Secrets name={name} embedded={true} /> }
         </> }
     </>
 }
@@ -299,6 +299,16 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
         <Row title="S3 Encryption ID" value={info.get("foursight.s3.encrypt_key_id")}
              externalLink={`https://us-east-1.console.aws.amazon.com/kms/home?region=us-east-1#/kms/keys/${info.get("foursight.s3.encrypt_key_id")}`}
              tooltip={[`S3 Bucket Encryption Key ID`, `tooltip-encryption-key-${info.get("foursight.aws_account_number")}`]} showEmpty={true}>
+        </Row>
+        <Row title="S3 Access Key" value={info.get("foursight.s3.access_key")}
+             tooltip={[`This is from the S3_AWS_ACCESS_KEY_ID environment variable.`,
+                       `tooltip-s3-aws-access-key-id${info.get("foursight.s3.access_key")}`]}>
+            &nbsp;
+            { info.get("foursight.s3.access_key_error") ? <>
+                <b style={{color:"red"}}>{Char.X}</b>
+            </>:<>
+                <b style={{color:"green"}}>{Char.Check}</b>
+            </> }
         </Row>
         <Separator />
         <Row title="AWS Account" value={info.get("foursight.aws_account_number")} additionalValue={info.get("foursight.aws_account_name")} externalLink={"https://us-east-1.console.aws.amazon.com/billing/home#/account"} bold={true} />

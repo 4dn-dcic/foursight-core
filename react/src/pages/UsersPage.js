@@ -4,6 +4,7 @@ import { Link } from '../Components';
 import useFetch from '../hooks/Fetch';
 import Char from '../utils/Char';
 import Date from '../utils/Date';
+import Env from '../utils/Env';
 import { FetchErrorBox } from '../Components';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
@@ -13,9 +14,11 @@ import Tooltip from '../components/Tooltip';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
 import useUserMetadata from '../hooks/UserMetadata';
+import useHeader from '../hooks/Header';
 
 const UsersPage = () => {
 
+    const header = useHeader();
     const { environ } = useParams();
     const [ args, setArgs ] = useSearchParams();
     const users = useFetch();
@@ -39,12 +42,26 @@ const UsersPage = () => {
 
     if (users.error) return <FetchErrorBox error={users.error} message="Error loading users from Foursight API" center={true} />
 
+    const affiliations = {
+        [Env.FoursightTitleCgap]: [
+            { label: "Project", key: "project" },
+            { label: "Institution", key: "institution" },
+        ],
+        [Env.FoursightTitleFourfront]: [
+            { label: "Award", key: "award" },
+            { label: "Lab", key: "lab" },
+        ],
+        [Env.FoursightTitleSmaht]: [
+            { label: "Consortia", key: "consortia" },
+            { label: "Submission Centers", key: "submission_centers" },
+        ]
+    };
+
     const columns = [
         { label: "" },
         { label: "User", key: "email" },
         { label: "Groups", key: "groups" },
-        { label: "Project", key: "project" },
-        { label: "Institution", key: "institution" },
+        ...affiliations[Env.FoursightFlavorTitle(header)],
         { label: "Role", key: "role" },
         { label: "Status", key: "status" },
         { label: "Updated", key: "data_modified" }, // DOES NOT WORK (nested in last_modified)
@@ -156,14 +173,7 @@ const UsersPage = () => {
                             <td style={tdStyle}>
                                 {user.groups?.length > 0 ? (userMetadata.titles(user.groups) || Char.EmptySet) : Char.EmptySet}
                             </td>
-                            <td style={tdStyle}>
-                                <span id={`tooltip-users-project-${user.email}`}>{userMetadata.projectTitle(user.project) || Char.EmptySet}</span>
-                                <Tooltip id={`tooltip-users-project-${user.email}`} position="bottom" size="small" text={`Project: ${user.project}`} />
-                            </td>
-                            <td style={tdStyle}>
-                                <span id={`tooltip-users-institution-${user.email}`}>{userMetadata.institutionTitle(user.institution) || Char.EmptySet}</span>
-                                <Tooltip id={`tooltip-users-institution-${user.email}`} position="bottom" size="small" text={`Institution: ${user.institution}`} />
-                            </td>
+                            <UserAffiliationItemsSmaht user={user} userMetadata={userMetadata} tdStyle={tdStyle} />
                             <td style={tdStyle}>
                                 <span id={`tooltip-users-role-${user.email}`}>
                                     {userMetadata.userRoleTitle(user, user.project) || Char.EmptySet}
@@ -193,5 +203,50 @@ const UsersPage = () => {
         </div>
     </>
 };
+
+const UserAffiliationItemsCgap = ({user, userMetadata, tdStyle}) => {
+    return <>
+        <td style={tdStyle}>
+            <span id={`tooltip-users-project-${user.email}`}>{userMetadata.projectTitle(user.project) || Char.EmptySet}</span>
+            <Tooltip id={`tooltip-users-project-${user.email}`} position="bottom" size="small" text={`Project: ${user.project}`} />
+        </td>
+        <td style={tdStyle}>
+            <span id={`tooltip-users-institution-${user.email}`}>{userMetadata.institutionTitle(user.institution) || Char.EmptySet}</span>
+            <Tooltip id={`tooltip-users-institution-${user.email}`} position="bottom" size="small" text={`Institution: ${user.institution}`} />
+        </td>
+    </>
+}
+
+const UserAffiliationItemsFourfront = ({user, userMetadata, tdStyle}) => {
+    return <>
+        <td style={tdStyle}>
+            <span id={`tooltip-users-award-${user.email}`}>{userMetadata.awardTitle(user.award) || Char.EmptySet}</span>
+            <Tooltip id={`tooltip-users-award-${user.email}`} position="bottom" size="small" text={`Award: ${user.award}`} />
+        </td>
+        <td style={tdStyle}>
+            <span id={`tooltip-users-lab-${user.email}`}>{userMetadata.labTitle(user.lab) || Char.EmptySet}</span>
+            <Tooltip id={`tooltip-users-lab-${user.email}`} position="bottom" size="small" text={`Lab: ${user.lab}`} />
+        </td>
+    </>
+}
+
+const UserAffiliationItemsSmaht = ({user, userMetadata, tdStyle}) => {
+    if (Type.IsArray(user.submission_centers) && (user.submission_centers.length > 0)) {
+         user.submission_center = user.submission_centers[0];
+    }
+    if (Type.IsArray(user.consortia) && (user.consortia.length > 0)) {
+         user.consortium = user.consortia[0];
+    }
+    return <>
+        <td style={tdStyle}>
+            <span id={`tooltip-users-consortium-${user.email}`}>{userMetadata.consortiumTitle(user.consortium) || Char.EmptySet}</span>
+            <Tooltip id={`tooltip-users-consortium-${user.email}`} position="bottom" size="small" text={`Consortium: ${user.consortium}`} />
+        </td>
+        <td style={tdStyle}>
+            <span id={`tooltip-users-submission-center-${user.email}`}>{userMetadata.submissionCenterTitle(user.submission_center) || Char.EmptySet}</span>
+            <Tooltip id={`tooltip-users-submission-center-${user.email}`} position="bottom" size="small" text={`Submission Center: ${user.submission_center}`} />
+        </td>
+    </>
+}
 
 export default UsersPage;

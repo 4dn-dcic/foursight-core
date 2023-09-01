@@ -407,7 +407,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 test_mode_access_key_simulate_error=test_mode_access_key_simulate_error,
                 test_mode_access_key_expiration_warning_days=test_mode_access_key_expiration_warning_days)
             if data["portal_access_key"].get("invalid"):
-                data["portal_access_key_error"] = True
+                data["portal_access_key_erro"] = True
         return self.create_success_response(data)
 
     @function_cache(key=lambda self, request, env: env)  # new as of 2023-04-27
@@ -648,7 +648,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             updated = last_modified.get("date_modified") or user.get("date_created")
         else:
             updated = user.get("date_created")
-        user = {
+        result = {
             # Lower case email to avoid any possible issues on lookup later.
             "email": (user.get("email") or "").lower(),
             "first_name": user.get("first_name"),
@@ -662,24 +662,28 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "created": convert_utc_datetime_to_utc_datetime_string(user.get("date_created"))
         }
         institution = user.get("user_institution")
-        project = user.get("project"),
+        project = user.get("project")
         award = user.get("award")
         lab = user.get("lab")
         consortia = user.get("consortia")
         submission_centers = user.get("submission_centers")
         if institution:
-            user["institution"] = institution
+            result["institution"] = institution
         if project:
-            user["project"] = project
+            result["project"] = project
         if award:
-            user["award"] = award
+            result["award"] = award
         if lab:
-            user["lab"] = lab
+            result["lab"] = lab
+        # Note that for the affilitiaions, like institution/project for CGAP
+        # and award/institution for Fourfrount, where these are single
+        # values, for SMaHT consortia/submission-centers are arrays;
+        # will let the UI deal with any display issues there.
         if consortia:
-            user["consortia"] = consortia
+            result["consortia"] = consortia
         if submission_centers:
-            user["submission_centers"] = submission_centers
-        return user
+            result["submission_centers"] = submission_centers
+        return result
 
     def _create_user_record_from_input(self, user: dict, include_deletes: bool = False) -> dict:
         """
@@ -1452,9 +1456,21 @@ class ReactApi(ReactApiBase, ReactRoutes):
             try:
                 url_origin = urllib.parse.urlparse(url).netloc
                 this_origin = request.get('headers', {}).get('host')
-                return url_origin == this_origin
+                return url_origin == this_origin or this_origin == "localhost:8000"
             except Exception:
                 return False
+
+        def check_s3_aws_access_key() -> bool:
+            s3_aws_access_key_id = os.environ.get("S3_AWS_ACCESS_KEY_ID")
+            s3_secret_access_key = os.environ.get("S3_SECRET_ACCESS_KEY")
+            global_env_bucket = os.environ.get("GLOBAL_ENV_BUCKET")
+            if s3_aws_access_key_id and s3_secret_access_key and global_env_bucket:
+                s3 = s3.client("s3")
+                try:
+                    s3.list_objects_v2(Bucket=global_env_bucket)
+                except Exception:
+                    return False
+            return True
 
         def get_foursight_info(foursight_url: str, response: dict) -> Optional[str]:
             response["foursight"] = {}
@@ -1503,6 +1519,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 response["foursight"]["s3"]["encrypt_key_id"] = foursight_header_json_s3.get("encrypt_key_id")
                 response["foursight"]["s3"]["has_encryption"] = foursight_header_json_s3.get("has_encryption")
                 response["foursight"]["s3"]["buckets"] = foursight_header_json_s3.get("buckets")
+            response["foursight"]["s3"]["access_key"] = os.environ.get("S3_AWS_ACCESS_KEY_ID")
+            if not check_s3_aws_access_key():
+                response["foursight"]["s3"]["access_key_error"] = True
             response["foursight"]["aws_account_number"] = foursight_app["credentials"].get("aws_account_number")
             response["foursight"]["aws_account_name"] = foursight_app["credentials"].get("aws_account_name")
             response["foursight"]["re_captcha_key"] = foursight_app["credentials"].get("re_captcha_key")

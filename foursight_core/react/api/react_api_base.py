@@ -223,10 +223,10 @@ class ReactApiBase:
             return f"{self.foursight_instance_url(request)}/react/{env}/login"
 
     def is_foursight_cgap(self) -> bool:
-        return app.core.APP_PACKAGE_NAME == "foursight" or app.core.APP_PACKAGE_NAME == "foursight-fourfront"
+        return app.core.APP_PACKAGE_NAME == "foursight-cgap"
 
     def is_foursight_fourfront(self) -> bool:
-        return app.core.APP_PACKAGE_NAME == "foursight-cgap"
+        return app.core.APP_PACKAGE_NAME == "foursight" or app.core.APP_PACKAGE_NAME == "foursight-fourfront"
 
     def is_foursight_smaht(self) -> bool:
         return app.core.APP_PACKAGE_NAME == "foursight-smaht"

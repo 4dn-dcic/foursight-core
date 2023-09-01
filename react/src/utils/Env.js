@@ -8,6 +8,10 @@ import Path from './Path';
 import Str from './Str';
 import Type from './Type';
 
+const FoursightTitleFourfront = "Fourfront"
+const FoursightTitleCgap = "CGAP"
+const FoursightTitleSmaht = "SMaHT"
+
 // -------------------------------------------------------------------------------------------------
 // Known environments related functions.
 // -------------------------------------------------------------------------------------------------
@@ -285,25 +289,28 @@ function GetLegacyFoursightLink(header) {
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
-    AllowedEnvs:          GetAllowedEnvs,
-    Current:              GetCurrentEnv,
-    Default:              GetDefaultEnv,
-    Equals:               AreSameEnvs,
-    FoursightName:        GetFoursightEnvName,
-    FullName:             GetFullEnvName,
-    FoursightFlavorTitle: GetFoursightFlavorTitle,
-    FoursightGitHubBase:  GetFoursightGitHubBaseRepoName,
-    IsAllowed:            IsAllowedEnv,
-    IsCurrent:            IsCurrentEnv,
-    IsDefault:            IsDefaultEnv,
-    IsFoursightCgap:      IsFoursightCgap,
-    IsFoursightFourfront: IsFoursightFourfront,
-    IsFoursightSmaht:     IsFoursightSmaht,
-    IsKnown:              IsKnownEnv,
-    KnownEnvs:            GetKnownEnvs,
-    LegacyFoursightLink:  GetLegacyFoursightLink,
-    PreferredName:        GetPreferredEnvName,
-    PublicName:           GetPublicEnvName,
-    RegularName:          GetRegularEnvName,
-    ShortName:            GetShortEnvName
+    AllowedEnvs:             GetAllowedEnvs,
+    Current:                 GetCurrentEnv,
+    Default:                 GetDefaultEnv,
+    Equals:                  AreSameEnvs,
+    FoursightName:           GetFoursightEnvName,
+    FoursightTitleCgap:      FoursightTitleCgap,
+    FoursightTitleFourfront: FoursightTitleFourfront,
+    FoursightTitleSmaht:     FoursightTitleSmaht,
+    FullName:                GetFullEnvName,
+    FoursightFlavorTitle:    GetFoursightFlavorTitle,
+    FoursightGitHubBase:     GetFoursightGitHubBaseRepoName,
+    IsAllowed:               IsAllowedEnv,
+    IsCurrent:               IsCurrentEnv,
+    IsDefault:               IsDefaultEnv,
+    IsFoursightCgap:         IsFoursightCgap,
+    IsFoursightFourfront:    IsFoursightFourfront,
+    IsFoursightSmaht:        IsFoursightSmaht,
+    IsKnown:                 IsKnownEnv,
+    KnownEnvs:               GetKnownEnvs,
+    LegacyFoursightLink:     GetLegacyFoursightLink,
+    PreferredName:           GetPreferredEnvName,
+    PublicName:              GetPublicEnvName,
+    RegularName:             GetRegularEnvName,
+    ShortName:               GetShortEnvName
 }; export default exports;

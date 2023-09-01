@@ -88,14 +88,36 @@ const UserBox = (props) => {
 
     const userMetadata = useUserMetadata();
 
+    const affiliations = {
+        [Env.FoursightTitleCgap]: [
+            { label: "Institution", name: "institution",
+              map: value => userMetadata.institutionTitle(value),
+              subComponent: (institution) => <UserDefs.PrincipalInvestigatorLine institution={institution} /> },
+            { label: "Project", name: "project",
+              map: value => userMetadata.projectTitle(value) }
+        ],
+        [Env.FoursightTitleFourfront]: [
+            { label: "Award", name: "award",
+               map: value => userMetadata.awardTitle(value) },
+            { label: "Lab", name: "lab",
+               map: value => userMetadata.labTitle(value) }
+        ],
+        [Env.FoursightTitleSmaht]: [
+            { label: "Consortium", name: "consortium",
+               map: value => userMetadata.awardTitle(value) },
+            { label: "Submission Center", name: "submission_center",
+               map: value => userMetadata.labTitle(value) }
+        ]
+    };
+
     let items = [
         { label: "Email", name: "email" },
         { label: "First Name", name: "first_name" },
         { label: "Last Name", name: "last_name" },
         { label: "Groups", name: "groups", map: value => userMetadata.titles(value) },
-        { label: "Project", name: "project", map: value => userMetadata.projectTitle(value) },
         { label: "Role", name: "role", map: value => userMetadata.userRoleTitle(props.user, props.user.project) },
         { label: "Roles", name: "roles", ui: <RolesBox user={props.user} />, toggle: true },
+        { label: "Project", name: "project", map: value => userMetadata.projectTitle(value) },
         { label: "Institution", name: "institution", map: value => userMetadata.institutionTitle(value),
                                 subComponent: (institution) => <UserDefs.PrincipalInvestigatorLine institution={institution} /> },
         { label: "Status", name: "status", map: value => userMetadata.statusTitle(value) },

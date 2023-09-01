@@ -424,7 +424,7 @@ function _doFetch(args, current = undefined, fetcher) {
         if (args.cache) {
             Debug.Info(`FETCH CACHING RESPONSE: ${args.method} ${args.url} -> HTTP ${status}`);
             _fetchCache[args.url] = {
-                data: data,
+                data: fetcher.data,
                 status: status
             }
         }
