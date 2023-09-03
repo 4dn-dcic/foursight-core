@@ -14,15 +14,6 @@ const UserCreatePage = () => {
 
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const institutionInput = inputs.find(input => input.name === "institution");
-        if (institutionInput) {
-            institutionInput.subComponent =
-                (institution) =>
-                    <UserDefs.PrincipalInvestigatorLine institution={institution} />
-        }
-    }, []);
-
     function onCreate(values) {
         if (values.admin) {
             delete values["admin"]

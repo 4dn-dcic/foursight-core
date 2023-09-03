@@ -294,14 +294,15 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             </> }
         </Row>
         <Row title="S3 Encryption" value={info.get("foursight.s3.has_encryption") ? "Yes" : "No"} showEmpty={true}
-             tooltip={[`This is controlled by the S3_ENCRYPT_KEY environment variable.`, `tooltip-has-encryption}`]} showEmpty={true}>
+             tooltip={[`Controlled by the S3_ENCRYPT_KEY environment variable.`, `tooltip-has-encryption}`]} showEmpty={true}>
         </Row>
         <Row title="S3 Encryption ID" value={info.get("foursight.s3.encrypt_key_id")}
              externalLink={`https://us-east-1.console.aws.amazon.com/kms/home?region=us-east-1#/kms/keys/${info.get("foursight.s3.encrypt_key_id")}`}
-             tooltip={[`S3 Bucket Encryption Key ID`, `tooltip-encryption-key-${info.get("foursight.aws_account_number")}`]} showEmpty={true}>
+             tooltip={[`S3 encryption key ID from the ENCODED_S3_ENCRYPT_KEY_ID environment variable.`,
+                       `tooltip-encryption-key-${info.get("foursight.aws_account_number")}`]} showEmpty={true}>
         </Row>
         <Row title="S3 Access Key" value={info.get("foursight.s3.access_key")}
-             tooltip={[`This is from the S3_AWS_ACCESS_KEY_ID environment variable.`,
+             tooltip={[`From the S3_AWS_ACCESS_KEY_ID environment variable.`,
                        `tooltip-s3-aws-access-key-id${info.get("foursight.s3.access_key")}`]}>
             &nbsp;
             { info.get("foursight.s3.access_key_error") ? <>

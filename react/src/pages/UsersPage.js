@@ -13,7 +13,7 @@ import Styles from '../Styles';
 import Tooltip from '../components/Tooltip';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
-import useUserMetadata from '../hooks/UserMetadata';
+import UserDefs from './UserDefs';
 import useHeader from '../hooks/Header';
 
 const UsersPage = () => {
@@ -22,11 +22,12 @@ const UsersPage = () => {
     const { environ } = useParams();
     const [ args, setArgs ] = useSearchParams();
     const users = useFetch();
+    const inputs = UserDefs.useUserInputs();
 
     const [ search, setSearch ] = useState(args.get("search") || "");
     const [ showSearch, setShowSearch ] = useState(Str.HasValue(search));
 
-    const userMetadata = useUserMetadata();
+    const userInfo = UserDefs.useUserInfo();
 
     function update({ limit, offset, sort, search, onDone }) {
         if (!Type.IsInteger(limit)) limit = parseInt(args.get("limit")) || 25;
@@ -36,33 +37,21 @@ const UsersPage = () => {
         if (!Type.IsFunction(onDone)) onDone = () => {}
         users.refresh({
             url: Server.Url(`/users/?limit=${limit}&offset=${offset}&sort=${sort}${search ? `&search=${search}` : ""}`, environ),
+            onData: (data) => {
+                userInfo.normalizeUsers(data.list);
+                return data;
+            },
             onDone: (response) => onDone(response)
         });
     }
 
     if (users.error) return <FetchErrorBox error={users.error} message="Error loading users from Foursight API" center={true} />
 
-    const affiliations = {
-        [Env.FoursightTitleCgap]: [
-            { label: "Project", key: "project" },
-            { label: "Institution", key: "institution" },
-        ],
-        [Env.FoursightTitleFourfront]: [
-            { label: "Award", key: "award" },
-            { label: "Lab", key: "lab" },
-        ],
-        [Env.FoursightTitleSmaht]: [
-            { label: "Consortia", key: "consortia" },
-            { label: "Submission Centers", key: "submission_centers" },
-        ]
-    };
-
     const columns = [
         { label: "" },
         { label: "User", key: "email" },
         { label: "Groups", key: "groups" },
-        ...affiliations[Env.FoursightFlavorTitle(header)],
-        { label: "Role", key: "role" },
+        ...userInfo.affiliations(),
         { label: "Status", key: "status" },
         { label: "Updated", key: "data_modified" }, // DOES NOT WORK (nested in last_modified)
         { label: "Created", key: "date_created" }
@@ -127,6 +116,7 @@ const UsersPage = () => {
         color: "var(--box-fg)",
         width: "100%"
     };
+    //let xyz = userInfo.AffiliationTableRows('asdfa','sadfa');
 
     return <>
         <div className="container fg">
@@ -162,28 +152,16 @@ const UsersPage = () => {
                                 {parseInt(args.get("offset")) + index + 1}.
                             </td>
                             <td style={tdStyle}>
-                                <u>{user["first_name"]} {user["last_name"]}</u>
-                                { (user.title && user.title !== (user.first_name + " " + user.last_name)) && <>
-                                    <small>&nbsp;({user.title})</small>
-                                </>}
-                                <br />
+                                <u>{user.name}</u> <br />
                                 <Link to={"/users/" + user.email}><b>{user.email}</b></Link> <br />
                                 <small id="{user.uuid}" style={{cursor:"copy"}}>{user.uuid}</small>
                             </td>
                             <td style={tdStyle}>
-                                {user.groups?.length > 0 ? (userMetadata.titles(user.groups) || Char.EmptySet) : Char.EmptySet}
+                                {user.group_titles}
                             </td>
-                            <UserAffiliationItemsSmaht user={user} userMetadata={userMetadata} tdStyle={tdStyle} />
+                            <userInfo.AffiliationTableRows user={user} tdStyle={tdStyle} />
                             <td style={tdStyle}>
-                                <span id={`tooltip-users-role-${user.email}`}>
-                                    {userMetadata.userRoleTitle(user, user.project) || Char.EmptySet}
-                                    {user.roles?.length > 1 && <small>&nbsp;({user.roles?.length})</small>}
-                                </span>
-                                <Tooltip id={`tooltip-users-role-${user.email}`} position="bottom" size="small"
-                                    text={`Role: ${userMetadata.userRole(user, user.project)}${user.roles?.length > 1 ? `. Total: ${user.roles.length}` : ""}`} />
-                            </td>
-                            <td style={tdStyle}>
-                                <span id={`tooltip-users-status-${user.status}`}>{userMetadata.statusTitle(user.status) || Char.EmptySet}</span>
+                                <span id={`tooltip-users-status-${user.status}`}>{user.status_title || Char.EmptySet}</span>
                                 <Tooltip id={`tooltip-users-status-${user.status}`} position="bottom" size="small" text={`Status: ${user.status}`} />
                             </td>
                             <td style={{...tdStyle,whiteSpace:"nowrap"}}>
@@ -203,50 +181,5 @@ const UsersPage = () => {
         </div>
     </>
 };
-
-const UserAffiliationItemsCgap = ({user, userMetadata, tdStyle}) => {
-    return <>
-        <td style={tdStyle}>
-            <span id={`tooltip-users-project-${user.email}`}>{userMetadata.projectTitle(user.project) || Char.EmptySet}</span>
-            <Tooltip id={`tooltip-users-project-${user.email}`} position="bottom" size="small" text={`Project: ${user.project}`} />
-        </td>
-        <td style={tdStyle}>
-            <span id={`tooltip-users-institution-${user.email}`}>{userMetadata.institutionTitle(user.institution) || Char.EmptySet}</span>
-            <Tooltip id={`tooltip-users-institution-${user.email}`} position="bottom" size="small" text={`Institution: ${user.institution}`} />
-        </td>
-    </>
-}
-
-const UserAffiliationItemsFourfront = ({user, userMetadata, tdStyle}) => {
-    return <>
-        <td style={tdStyle}>
-            <span id={`tooltip-users-award-${user.email}`}>{userMetadata.awardTitle(user.award) || Char.EmptySet}</span>
-            <Tooltip id={`tooltip-users-award-${user.email}`} position="bottom" size="small" text={`Award: ${user.award}`} />
-        </td>
-        <td style={tdStyle}>
-            <span id={`tooltip-users-lab-${user.email}`}>{userMetadata.labTitle(user.lab) || Char.EmptySet}</span>
-            <Tooltip id={`tooltip-users-lab-${user.email}`} position="bottom" size="small" text={`Lab: ${user.lab}`} />
-        </td>
-    </>
-}
-
-const UserAffiliationItemsSmaht = ({user, userMetadata, tdStyle}) => {
-    if (Type.IsArray(user.submission_centers) && (user.submission_centers.length > 0)) {
-         user.submission_center = user.submission_centers[0];
-    }
-    if (Type.IsArray(user.consortia) && (user.consortia.length > 0)) {
-         user.consortium = user.consortia[0];
-    }
-    return <>
-        <td style={tdStyle}>
-            <span id={`tooltip-users-consortium-${user.email}`}>{userMetadata.consortiumTitle(user.consortium) || Char.EmptySet}</span>
-            <Tooltip id={`tooltip-users-consortium-${user.email}`} position="bottom" size="small" text={`Consortium: ${user.consortium}`} />
-        </td>
-        <td style={tdStyle}>
-            <span id={`tooltip-users-submission-center-${user.email}`}>{userMetadata.submissionCenterTitle(user.submission_center) || Char.EmptySet}</span>
-            <Tooltip id={`tooltip-users-submission-center-${user.email}`} position="bottom" size="small" text={`Submission Center: ${user.submission_center}`} />
-        </td>
-    </>
-}
 
 export default UsersPage;

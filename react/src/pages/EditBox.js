@@ -11,6 +11,11 @@ import Uuid from 'react-uuid';
 // Generic box to edit (create, update, delete) a list of plain input fields representing some data record.
 // If the onCreate argument is specified then assume this is a create.
 
+const useConsortia = () => {
+    const consortia = useFetch("/users/consortia", { nofetch: true, cache: true, onData: (data) => {return data;}  });
+    return consortia;
+}
+
 const DynamicSelect = (props) => {
 
     const values = useFetch(props.url, { nofetch: true, cache: true });

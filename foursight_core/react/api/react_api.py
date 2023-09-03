@@ -162,6 +162,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     @function_cache
     def _get_user_attribution(self, type: str, env: str, raw: bool = False,
+                              map_title: Optional[Callable] = None,
                               additional_info: Optional[Callable] = None) -> list:
         """
         Returns the list of available user projects.
@@ -175,7 +176,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     "id": item.get("@id"),
                     "uuid": item.get("uuid"),
                     "name": item.get("name"),
-                    "title": item.get("title"),
+                    "title": item.get("title") if not map_title else map_title(item.get("title")),
                     "description": item.get("description")
                 }
             if additional_info:
@@ -208,11 +209,21 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     @function_cache
     def _get_user_consortia(self, env: str, raw: bool = False) -> list:
-        return self._get_user_attribution("Consortium", env, raw)
+        def map_title(title: str) -> str:
+            suffix_to_ignore = " Consortium"
+            if title.endswith(suffix_to_ignore):
+                title = title[:-len(suffix_to_ignore)]
+            return title
+        return self._get_user_attribution("Consortium", env, raw, map_title=map_title)
 
     @function_cache
     def _get_user_submission_centers(self, env: str, raw: bool = False) -> list:
-        return self._get_user_attribution("SubmissionCenter", env, raw)
+        def map_title(title: str) -> str:
+            suffix_to_ignore = " Submission Center"
+            if title.endswith(suffix_to_ignore):
+                title = title[:-len(suffix_to_ignore)]
+            return title
+        return self._get_user_attribution("SubmissionCenter", env, raw, map_title=map_title)
 
     @function_cache
     def _get_user_roles(self, env: str) -> list:

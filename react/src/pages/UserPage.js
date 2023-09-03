@@ -15,7 +15,6 @@ import Tooltip from '../components/Tooltip';
 import UserDefs from './UserDefs';
 import Yaml from '../utils/Yaml';
 import useHeader from '../hooks/Header';
-import useUserMetadata from '../hooks/UserMetadata';
 
 const UserRawBox = (props) => {
     const user = useFetch(`/users/${props.email}?raw=true`);
@@ -68,12 +67,16 @@ const KeyValueBox = (props) => {
                         { key.ui ? <>
                             { toggle[key.label] ? <span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: false}))}>
                                 <small><u>Hide</u> {Char.DownArrowHollow}</small>
-                                {key.ui}
+                                {key.ui(props.value)}
                             </span>:<span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: true}))}>
                                 <small><u>Show</u> {Char.UpArrowHollow}</small>
                             </span> }
                         </>:<>
-                            {(Type.IsFunction(key.map) ? key.map(props.value[key.name]) : props.value[key.name]) || Char.EmptySet}
+                            { key.mapWithUser ? <>
+                                {(Type.IsFunction(key.map) ? key.map(props.value, props.value[key.name]) : props.value[key.name]) || Char.EmptySet}
+                            </>:<>
+                                {(Type.IsFunction(key.map) ? key.map(props.value[key.name]) : props.value[key.name]) || Char.EmptySet}
+                            </> }
                         </> }
                         { key.subComponent && <>
                             <br /> {key.subComponent(props.value[key.name])}
@@ -86,86 +89,50 @@ const KeyValueBox = (props) => {
 }
 const UserBox = (props) => {
 
-    const userMetadata = useUserMetadata();
-
-    const affiliations = {
-        [Env.FoursightTitleCgap]: [
-            { label: "Institution", name: "institution",
-              map: value => userMetadata.institutionTitle(value),
-              subComponent: (institution) => <UserDefs.PrincipalInvestigatorLine institution={institution} /> },
-            { label: "Project", name: "project",
-              map: value => userMetadata.projectTitle(value) }
-        ],
-        [Env.FoursightTitleFourfront]: [
-            { label: "Award", name: "award",
-               map: value => userMetadata.awardTitle(value) },
-            { label: "Lab", name: "lab",
-               map: value => userMetadata.labTitle(value) }
-        ],
-        [Env.FoursightTitleSmaht]: [
-            { label: "Consortium", name: "consortium",
-               map: value => userMetadata.awardTitle(value) },
-            { label: "Submission Center", name: "submission_center",
-               map: value => userMetadata.labTitle(value) }
-        ]
-    };
+    const header = useHeader();
+    const user = props.user;
+    const userInfo = UserDefs.useUserInfo();
 
     let items = [
         { label: "Email", name: "email" },
         { label: "First Name", name: "first_name" },
         { label: "Last Name", name: "last_name" },
-        { label: "Groups", name: "groups", map: value => userMetadata.titles(value) },
-        { label: "Role", name: "role", map: value => userMetadata.userRoleTitle(props.user, props.user.project) },
-        { label: "Roles", name: "roles", ui: <RolesBox user={props.user} />, toggle: true },
-        { label: "Project", name: "project", map: value => userMetadata.projectTitle(value) },
-        { label: "Institution", name: "institution", map: value => userMetadata.institutionTitle(value),
-                                subComponent: (institution) => <UserDefs.PrincipalInvestigatorLine institution={institution} /> },
-        { label: "Status", name: "status", map: value => userMetadata.statusTitle(value) },
+        { label: "Groups", name: "group_titles" },
+        ...userInfo.affiliations(),
+        { label: "Status", name: "status_title" },
         { label: "Created", name: "created", map: value => DateTime.Format(value) },
         { label: "Updated", name: "updated", map: value => DateTime.Format(value) },
         { label: "UUID", name: "uuid" }
     ]
 
+/* ... xyzzy ...
     if (Env.IsFoursightFourfront(useHeader())) {
         items = items.filter(item => (item.name !== "institution") && (item.name !== "project") && (item.name !== "roles") && (item.name !== "role"));
     }
+*/
 
-    return <KeyValueBox keys={items} value={props.user} separators={true} />
+    return <>
+                [[{JSON.stringify(props.user)}]]
+        <KeyValueBox keys={items} value={props.user} separators={true} />
+    </>
 }
 
-const RolesBox = (props) => {
-    const userMetadata = useUserMetadata();
-    return <div className="box lighten" style={{marginTop:"2pt",marginBottom:"2pt"}}>
-        <table style={{width:"100%",fontSize:"small",marginTop:"-3pt",marginBottom:"-2pt"}}><tbody>
-            <tr>
-                <td> <b>Project</b> </td>
-                <td style={{paddingLeft:"8pt"}}> <b>Role</b> </td>
-            </tr>
-            <tr><td style={{height:"2pt"}} /></tr>
-            <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2" ></td></tr>
-            <tr><td style={{height:"2pt"}} /></tr>
-            { props.user.roles.sort((a,b) => a.project > b.project ? 1 : (a.project < b.project ? -1 : 0)).map(role => <tr key={role.project}>
-                <td style={{width:"5%",whiteSpace:"nowrap"}}>
-                    {userMetadata.projectTitle(role.project)}
-                </td>
-                <td style={{paddingLeft:"8pt",whiteSpace:"nowrap"}}>
-                    {userMetadata.roleTitle(role.role)}
-                </td>
-            </tr>)}
-        </tbody></table>
-    </div>
-}
 
 const UserPage = (props) => {
 
     const { email } = useParams()
     const [ showRaw, setShowRaw ] = useState(false);
     const navigate = useNavigate();
+    const userInfo = UserDefs.useUserInfo();
 
     function useFetchUser() {
         return useFetch({
             url: `/users/${email}`,
-            onData: (data) => Type.IsObject(data) ? [data] : data,
+            onData: (data) => {
+                data = Type.IsObject(data) ? [data] : data
+                userInfo.normalizeUsers(data);
+                return data;
+            },
             nofetch: true
         });
     }

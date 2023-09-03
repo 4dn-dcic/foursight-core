@@ -6,10 +6,9 @@ import Client from '../utils/Client';
 import DateTime from '../utils/DateTime';
 import EditBox from './EditBox';
 import Time from '../utils/Time';
+import Type from '../utils/Type';
 import UserDefs from './UserDefs';
-//import { useReadOnlyMode } from '../ReadOnlyMode';
 import useReadOnlyMode from '../hooks/ReadOnlyMode';
-import useUserMetadata from '../hooks/UserMetadata';
 
 const UserEditPage = () => {
     
@@ -19,7 +18,6 @@ const UserEditPage = () => {
     const [ readOnlyMode ] = useReadOnlyMode();
     const user = useFetch({
         url: `/users/${uuid}`,
-        nofetch: true,
         onData: updateUserData,
         onError: (response) => {
             if (response.status === 404) {
@@ -28,31 +26,32 @@ const UserEditPage = () => {
         }
     });
 
-    const userMetadata = useUserMetadata();
-
+    const userInfo = UserDefs.useUserInfo();
+    const affiliationInfo = userInfo.useAffiliationInfo();
     const navigate = useNavigate();
 
-    useEffect(() => {
-        user.fetch();
-        const institutionInput = inputs.find(input => input.name === "institution");
-        if (institutionInput) {
-            institutionInput.subComponent =
-                (institution) =>
-                    <UserDefs.PrincipalInvestigatorLine institution={institution} />
-        }
-    }, [uuid]);
-
     function updateUserData(user) {
+            /*
+        if (Type.IsArray(user.consortia) && (user.consortia.length > 0)) {
+            user.consortium = user.consortia[0];
+        }
+        if (Type.IsArray(user.submission_centers) && (user.submission_centers.length > 0)) {
+            user.submission_center = user.submission_centers[0];
+        }
+        */
         setInputs(inputs => {
             for (const input of inputs) {
                 if      (input.name === "email")       input.value = user.email;
                 else if (input.name === "first_name")  input.value = user.first_name;
                 else if (input.name === "last_name")   input.value = user.last_name;
                 else if (input.name === "admin")       input.value = user.groups?.includes("admin") ? true : false;
+                else if (input.name === "role")        input.value = (project) => affiliationInfo.userRole(user, project ||  user?.project);
                 else if (input.name === "project")     input.value = user.project;
-                else if (input.name === "role")        input.value = (project) => { if ((project === undefined) || (project === null)) return "-"
-                                                                                    return userMetadata.userRole(user, project || user?.project) || "-"; }
                 else if (input.name === "institution") input.value = user.institution;
+                else if (input.name === "award")       input.value = user.award;
+                else if (input.name === "lab")         input.value = user.lab;
+                else if (input.name === "consortium")  input.value = user.consortia;
+                else if (input.name === "submission_center") input.value = user.submission_center;
                 else if (input.name === "status")      input.value = user.status;
                 else if (input.name === "created")     input.value = DateTime.Format(user.created);
                 else if (input.name === "updated")     input.value = DateTime.Format(user.updated);
