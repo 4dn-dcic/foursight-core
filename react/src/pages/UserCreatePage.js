@@ -19,16 +19,6 @@ const UserCreatePage = () => {
         if (userInfo.normalizeForUpdate) {
             values = userInfo?.normalizeForUpdate(user, values) || values;
         }
-/*
-        if (values.admin) {
-            delete values["admin"]
-            values = {...values, "groups": [ "admin" ] }
-        }
-        else {
-            delete values["admin"]
-            values = {...values, "groups": [] }
-        }
-*/
         user.refresh({
             url: Server.Url(`/users`),
             method: "POST",

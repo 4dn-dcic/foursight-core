@@ -184,7 +184,7 @@ const _userInfo = {
         inputs: function () {
             const affiliationInfo = _userInfo[Env.FoursightTitleFourfront].useAffiliationInfo();
             const inputs = [
-                { label: "Award", key: "Award", type: "select",
+                { label: "Award", key: "award", type: "select",
                   url: "/users/awards",
                   map: (value, user) => affiliationInfo.awardTitle(value) },
                 { label: "Lab", key: "lab", type: "select",
@@ -205,6 +205,13 @@ const _userInfo = {
         normalize: function (user) {
             user.admin = user.groups?.includes("admin") ? true : false;
         },
+        normalizeForUpdate: function (user, values) {
+            if (values.award === "-") values.award = null;
+            if (values.lab === "-") values.lab = null;
+            // TODO: Award not allowe on update?
+            delete values["award"];
+            return { ...values };
+        }
     },
     [Env.FoursightTitleSmaht]: {
         inputs: function () {
