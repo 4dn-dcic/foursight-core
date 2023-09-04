@@ -41,21 +41,21 @@ const UserEditPage = () => {
         */
         setInputs(inputs => {
             for (const input of inputs) {
-                if      (input.name === "email")       input.value = user.email;
-                else if (input.name === "first_name")  input.value = user.first_name;
-                else if (input.name === "last_name")   input.value = user.last_name;
-                else if (input.name === "admin")       input.value = user.groups?.includes("admin") ? true : false;
-                else if (input.name === "role")        input.value = (project) => affiliationInfo.userRole(user, project ||  user?.project);
-                else if (input.name === "project")     input.value = user.project;
-                else if (input.name === "institution") input.value = user.institution;
-                else if (input.name === "award")       input.value = user.award;
-                else if (input.name === "lab")         input.value = user.lab;
-                else if (input.name === "consortium")  input.value = user.consortia;
-                else if (input.name === "submission_center") input.value = user.submission_center;
-                else if (input.name === "status")      input.value = user.status;
-                else if (input.name === "created")     input.value = DateTime.Format(user.created);
-                else if (input.name === "updated")     input.value = DateTime.Format(user.updated);
-                else if (input.name === "uuid")        input.value = user.uuid;
+                if      (input.key === "email")       input.value = user.email;
+                else if (input.key === "first_name")  input.value = user.first_name;
+                else if (input.key === "last_name")   input.value = user.last_name;
+                else if (input.key === "admin")       input.value = user.groups?.includes("admin") ? true : false;
+                else if (input.key === "role")        input.value = (project) => affiliationInfo.userRole(user, project ||  user?.project);
+                else if (input.key === "project")     input.value = user.project;
+                else if (input.key === "institution") input.value = user.institution;
+                else if (input.key === "award")       input.value = user.award;
+                else if (input.key === "lab")         input.value = user.lab;
+                else if (input.key === "consortium")  input.value = user.consortia;
+                else if (input.key === "submission_center") input.value = user.submission_center;
+                else if (input.key === "status")      input.value = user.status;
+                else if (input.key === "created")     input.value = DateTime.Format(user.created);
+                else if (input.key === "updated")     input.value = DateTime.Format(user.updated);
+                else if (input.key === "uuid")        input.value = user.uuid;
             }
             return [...inputs];
         });

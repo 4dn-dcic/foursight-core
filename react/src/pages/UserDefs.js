@@ -3,6 +3,7 @@ import Char from '../utils/Char';
 import Client from '../utils/Client';
 import DateTime from '../utils/DateTime';
 import Env from '../utils/Env';
+import { Link } from '../Components';
 import useFetch from '../hooks/Fetch';
 import { ExternalLink } from '../Components';
 import Json from '../utils/Json';
@@ -13,56 +14,67 @@ import useHeader from '../hooks/Header';
 
 const _UserInputsCommon = [
     {
-        name: "email",
+        key: "email",
         label: "Email Address",
         type: "email",
         focus: true,
-        required: true
+        required: true,
+        uiList: (user) => <>
+            <u>{user.name}</u> <br />
+            <Link to={"/users/" + user.email}><b>{user.email}</b></Link> <br />
+            <small id="{user.uuid}" style={{cursor:"copy"}}>{user.uuid}</small>
+        </>
     },
     {
-        name: "first_name",
+        key: "first_name",
         label: "First Name",
         required: true,
+        pages: [ "view", "edit", "create" ]
     },
     {
-        name: "last_name",
+        key: "last_name",
         label: "Last Name",
         required: true,
+        pages: [ "view", "edit", "create" ]
     },
     {
-        name: "group_titles",
+        key: "group_titles",
         label: "Groups",
-        pages: [ "view" ]
+        pages: [ "list", "view" ]
     },
     {
-        name: "admin",
+        key: "admin",
         label: "Administrator",
         type: "boolean",
         pages: [ "edit" ]
     },
     {
-        name: "status",
+        key: "status",
         label: "Status",
         type: "select",
         url: "/users/statuses",
+        mapWithUser: true,
+        map: (user) => user.status_title,
         pages: [ "list", "view", "edit" ]
     },
     {
-        name: "created",
+        key: "created",
         label: "Created",
+        type: "datetime",
         readonly: true,
         map: value => DateTime.Format(value),
         pages: [ "list", "view", "edit" ]
     },
     {
-        name: "updated",
+        key: "updated",
         label: "Updated",
+        type: "datetime",
         readonly: true,
         map: value => DateTime.Format(value),
         pages: [ "list", "view", "edit" ]
     },
     {
-        name: "uuid",
+        key: "uuid",
         label: "UUID",
         readonly: true,
         readonlyOverridableOnCreate: true,
@@ -73,35 +85,35 @@ const _UserInputsCommon = [
 
 const _UserInputs = [
     {
-        name: "email",
+        key: "email",
         label: "Email Address",
         type: "email",
         focus: true,
         required: true
     },
     {
-        name: "first_name",
+        key: "first_name",
         label: "First Name",
         required: true,
     },
     {
-        name: "last_name",
+        key: "last_name",
         label: "Last Name",
         required: true,
     },
     {
-        name: "group_titles",
+        key: "group_titles",
         label: "Groups",
         pages: [ "view" ]
     },
     {
-        name: "admin",
+        key: "admin",
         label: "Administrator",
         type: "boolean",
         pages: [ "edit" ]
     },
     {
-        name: "role",
+        key: "role",
         label: "Role",
         type: "select",
         url: "/users/roles",
@@ -110,7 +122,7 @@ const _UserInputs = [
         pages: [ "list", "view", "edit" ]
     },
     {
-        name: "institution",
+        key: "institution",
         label: "Institution",
         type: "select",
         url: "/users/institutions",
@@ -120,7 +132,7 @@ const _UserInputs = [
         pages: [ "list", "view", "edit" ]
     },
     {
-        name: "project",
+        key: "project",
         label: "Project",
         type: "select",
         url: "/users/projects",
@@ -128,7 +140,7 @@ const _UserInputs = [
         pages: [ "list", "view", "edit" ]
     },
     {
-        name: "award",
+        key: "award",
         label: "Award",
         type: "select",
         url: "/users/awards",
@@ -137,7 +149,7 @@ const _UserInputs = [
         pages: [ "list", "view", "edit" ]
     },
     {
-        name: "lab",
+        key: "lab",
         label: "Lab",
         type: "select",
         url: "/users/labs",
@@ -145,7 +157,7 @@ const _UserInputs = [
         pages: [ "list", "view", "edit" ]
     },
     {
-        name: "consortium",
+        key: "consortium",
         label: "Consortium",
         type: "select",
         url: "/users/consortia",
@@ -154,7 +166,7 @@ const _UserInputs = [
         pages: [ "list", "view", "edit" ]
     },
     {
-        name: "submission_center",
+        key: "submission_center",
         label: "Submission Center",
         type: "select",
         url: "/users/submission_centers",
@@ -162,28 +174,28 @@ const _UserInputs = [
         pages: [ "list", "view", "edit" ]
     },
     {
-        name: "status",
+        key: "status",
         label: "Status",
         type: "select",
         url: "/users/statuses",
         pages: [ "list", "view", "edit" ]
     },
     {
-        name: "created",
+        key: "created",
         label: "Created",
         readonly: true,
         map: value => DateTime.Format(value),
         pages: [ "list", "view", "edit" ]
     },
     {
-        name: "updated",
+        key: "updated",
         label: "Updated",
         readonly: true,
         map: value => DateTime.Format(value),
         pages: [ "list", "view", "edit" ]
     },
     {
-        name: "uuid",
+        key: "uuid",
         label: "UUID",
         readonly: true,
         readonlyOverridableOnCreate: true,
@@ -232,40 +244,49 @@ const _userInfo = {
         inputs: function () {
             const affiliationInfo = _userInfo[Env.FoursightTitleCgap].useAffiliationInfo();
             const inputsAdditional = [
-                { label: "Role", name: "role", mapWithUser: true,
+                { label: "Role", key: "role", type: "select",
+                  url: "/users/roles",
+                  dependsOn: "project",
+                  mapWithUser: true,
                   map: (user, value) => affiliationInfo.userRoleTitle(user, user.project) },
-                { label: "Project", name: "project",
+                { label: "Project", key: "project", type: "select",
+                  url: "/users/projects",
+                  dependsOn: "project",
                   map: value => affiliationInfo.projectTitle(value) },
-                { label: "Institution", name: "institution",
+                { label: "Institution", key: "institution", type: "select",
+                  url: "/users/institutions",
+                  dependsOn: "institution",
                   map: value => affiliationInfo.institutionTitle(value),
                   subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> },
-                { label: "Roles", name: "roles",
+                { label: "Roles", key: "roles",
                   ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />,
                   toggle: true,
-                  pages: [ "view", "edit" ] }
+                  pages: [ "view" ] }
             ];
             const inputs = [ ..._UserInputsCommon ];
-            const index = inputs.findIndex((item) => item.name === "status");
+            const index = inputs.findIndex((item) => item.key === "status");
             inputs.splice(index, 0, ...inputsAdditional);
             return inputs;
         },
+/*
         affiliations: function (edit = false) {
             const affiliationInfo = _userInfo[Env.FoursightTitleCgap].useAffiliationInfo();
             return [
-                { label: "Role", name: "project", mapWithUser: true,
+                { label: "Role", key: "project", mapWithUser: true,
                   //map: value => affiliationInfo.roleTitle(value) },
                   map: (user, value) => affiliationInfo.userRoleTitle(user, value) },
-                { label: "Project", name: "project",
+                { label: "Project", key: "project",
                   map: value => affiliationInfo.projectTitle(value) },
-                { label: "Institution", name: "institution",
+                { label: "Institution", key: "institution",
                   map: value => affiliationInfo.institutionTitle(value),
                   subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> },
-                { label: "Roles", name: "roles",
+                { label: "Roles", key: "roles",
                   ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />, toggle: true,
                   flavors: [Env.FoursightTitleCgap],
                   pages: [ "view", "edit" ] }
             ];
         },
+*/
         useAffiliationInfo: function () {
             const projects = useFetch("/users/projects", { cache: true });
             const roles = useFetch("/users/roles", { cache: true });
@@ -275,7 +296,9 @@ const _userInfo = {
                 roleTitle: (id) => roles.data?.find(item => item.id === id)?.title || "",
                 institutionTitle: (id) => institutions.data?.find(item => item.id === id)?.title || "",
                 userRole: (user, projectId) => user.roles?.find(item => item.project === projectId)?.role || "",
-                principleInvestigator: (institutionId) => institutions?.data?.find(item => item.id === institutionId)?.pi
+                principleInvestigator: (institutionId) => {
+                    return institutions?.data?.find(item => item.id === institutionId)?.pi
+                }
             }
             response.userRoleTitle = (user, projectId) => response.roleTitle(response.userRole(user, projectId)) || "";
             return response;
@@ -346,9 +369,9 @@ const _userInfo = {
         affiliations: function (edit = false) {
             const affiliationInfo = _userInfo[Env.FoursightTitleSmaht].useAffiliationInfo();
             return [
-                { label: "Consortium", key: "consortium", name: "consortium",
+                { label: "Consortium", key: "consortium", key: "consortium",
                   map: value => affiliationInfo.consortiumTitle(value) },
-                { label: "Submission Center", key: "submission_center", name: "submission_center",
+                { label: "Submission Center", key: "submission_center", key: "submission_center",
                   map: value => affiliationInfo.submissionCenterTitle(value) }
             ];
         },
@@ -386,7 +409,7 @@ const useUserInfo = () =>  {
     const statuses = useFetch("/users/statuses", { cache: false });
     userInfo.normalizeUser = (user) => {
         user.name = `${user.first_name} ${user.last_name}`.trim();
-        if (Str.HasValue(user.title) && user.title !== user.name) {
+        if (Str.HasValue(user.title) && user.title !== user.key) {
             user.name = user.title;
         }
         user.group_titles = Str.StringArrayToCommaSeparatedListOfTitles(user.groups);

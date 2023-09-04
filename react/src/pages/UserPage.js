@@ -45,7 +45,7 @@ const KeyValueBox = (props) => {
     const [ toggle, setToggle ] = useState({});
     return <div className="box" style={{marginBottom:"8pt"}}>
         <table><tbody>
-            {props.inputs.map((key, i) => <React.Fragment key={key.name}>
+            {props.inputs.map((key, i) => <React.Fragment key={key.key}>
                 { props.separators && i > 0 && <>
                     <tr><td colSpan="2" style={{height:"1pt"}}></td></tr>
                     <tr><td colSpan="2" style={{height:"1px",marginTop:"2pt",marginBottom:"2pt",background:"gray"}}></td></tr>
@@ -71,16 +71,15 @@ const KeyValueBox = (props) => {
                             </span>:<span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: true}))}>
                                 <small><u>Show</u> {Char.UpArrowHollow}</small>
                             </span> }
-                                    foo
                         </>:<>
                             { key.mapWithUser ? <>
-                                {(Type.IsFunction(key.map) ? key.map(props.value, props.value[key.name]) : props.value[key.name]) || Char.EmptySet}
+                                {(Type.IsFunction(key.map) ? key.map(props.value, props.value[key.key]) : props.value[key.key]) || Char.EmptySet}
                             </>:<>
-                                {(Type.IsFunction(key.map) ? key.map(props.value[key.name]) : props.value[key.name]) || Char.EmptySet}
+                                {(Type.IsFunction(key.map) ? key.map(props.value[key.key]) : props.value[key.key]) || Char.EmptySet}
                             </> }
                         </> }
                         { key.subComponent && <>
-                            <br /> {key.subComponent(props.value[key.name])}
+                            <br /> {key.subComponent(props.value[key.key])}
                         </> }
                     </td>
                 </tr>

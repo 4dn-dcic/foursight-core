@@ -47,7 +47,8 @@ const UsersPage = () => {
 
     if (users.error) return <FetchErrorBox error={users.error} message="Error loading users from Foursight API" center={true} />
 
-    let columns = [
+/*
+    let xcolumns = [
         { label: "" },
         { label: "User", key: "email" },
         { label: "Groups", key: "groups" },
@@ -56,7 +57,8 @@ const UsersPage = () => {
         { label: "Updated", key: "data_modified" }, // DOES NOT WORK (nested in last_modified)
         { label: "Created", key: "date_created" }
     ];
-        columns = [ { label: "" }, ...inputs ];
+*/
+        let columns = [ { label: "" }, ...inputs ];
 
     const tdStyle = { verticalAlign: "top", paddingRight: "6pt", paddingTop: "4pt", paddingBottom: "8pt" };
     const tdStyleNowrap = { ...tdStyle, whiteSpace: "nowrap" };
@@ -149,14 +151,32 @@ const UsersPage = () => {
                 initialSort={"email.asc"}>
                     {users.map("list", (user, index) => (
                         <tr key={user.uuid} style={{verticalAlign:"top",borderBottom:index < users?.data?.list?.length - 1 ? "1px solid gray" : "0"}}>
-                            <td style={{...tdStyle, fontSize:"small"}}>
-                                {parseInt(args.get("offset")) + index + 1}.
-                            </td>
-                            <td style={tdStyle}>
-                                <u>{user.name}</u> <br />
-                                <Link to={"/users/" + user.email}><b>{user.email}</b></Link> <br />
-                                <small id="{user.uuid}" style={{cursor:"copy"}}>{user.uuid}</small>
-                            </td>
+                            { columns.map(column => <>
+                                <td style={{...tdStyle, whiteSpace:column.type == "datetime" ? "nowrap" : ""}}>
+                                    { column.uiList ? <>
+                                        {column.uiList(user)}
+                                    </>:<>
+                                        { column.key ? <>
+                                            { column.type === "datetime" ? <>
+                                                {Date.Format(user[column.key])} <br />
+                                                <small>{Time.Format(user[column.key])}</small>
+                                            </>:<>
+                                                { column.map ? <>
+                                                    { column.mapWithUser ? <>
+                                                        {column.map(user)}
+                                                    </>:<>
+                                                        {column.map(user[column.key], userInfo)}
+                                                    </> }
+                                                </>:<>
+                                                    {user[column.key]}
+                                                </> }
+                                            </> }
+                                        </>:<>
+                                            {parseInt(args.get("offset")) + index + 1}.
+                                        </> }
+                                    </> }
+                                </td>
+                            </>)}
                             <td style={tdStyle}>
                                 {user.group_titles}
                             </td>
