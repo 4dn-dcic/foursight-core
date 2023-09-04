@@ -11,6 +11,7 @@ import Type from './Type';
 const FoursightTitleFourfront = "Fourfront"
 const FoursightTitleCgap = "CGAP"
 const FoursightTitleSmaht = "SMaHT"
+const FoursightTitleUnknown = "Unknown"
 
 // -------------------------------------------------------------------------------------------------
 // Known environments related functions.
@@ -250,18 +251,18 @@ function GetFoursightGitHubBaseRepoName(header) {
     }
 }
 
-function GetFoursightFlavorTitle(header) {
+function GetFoursightTitle(header) {
     if (IsFoursightCgap(header)) {
-        return "CGAP";
+        return FoursightTitleCgap;
     }
     else if (IsFoursightFourfront(header)) {
-        return "Fourfront";
+        return FoursightTitleFourfront;
     }
     else if (IsFoursightSmaht(header)) {
-        return "SMaHT";
+        return FoursightTitleSmaht;
     }
     else {
-        return "Unknown";
+        return FoursightTitleUnknown;
     }
 }
 
@@ -294,11 +295,12 @@ const exports = {
     Default:                 GetDefaultEnv,
     Equals:                  AreSameEnvs,
     FoursightName:           GetFoursightEnvName,
+    FoursightTitle:          GetFoursightTitle,
     FoursightTitleCgap:      FoursightTitleCgap,
     FoursightTitleFourfront: FoursightTitleFourfront,
     FoursightTitleSmaht:     FoursightTitleSmaht,
+    FoursightTitleUnknown:   FoursightTitleUnknown,
     FullName:                GetFullEnvName,
-    FoursightFlavorTitle:    GetFoursightFlavorTitle,
     FoursightGitHubBase:     GetFoursightGitHubBaseRepoName,
     IsAllowed:               IsAllowedEnv,
     IsCurrent:               IsCurrentEnv,

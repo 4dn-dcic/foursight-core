@@ -188,10 +188,21 @@ const _userInfo = {
         }
     },
     [Env.FoursightTitleFourfront]: {
-        affiliations: [
-            { label: "Award", key: "award" },
-            { label: "Lab", key: "lab" },
-        ],
+        inputs: function () {
+            const affiliationInfo = _userInfo[Env.FoursightTitleFourfront].useAffiliationInfo();
+            const inputsAdditional = [
+                { label: "Award", key: "Award", type: "select",
+                  url: "/users/awards",
+                  map: (value, user) => affiliationInfo.awardTitle(value) },
+                { label: "Lab", key: "lab", type: "select",
+                  url: "/users/labs",
+                  map: (value, user) => affiliationInfo.labTitle(value) }
+            ];
+            const inputs = [ ..._UserInputsCommon ];
+            const index = inputs.findIndex((item) => item.key === "status");
+            inputs.splice(index, 0, ...inputsAdditional);
+            return inputs;
+        },
         useAffiliationInfo: function () {
             const awards = useFetch("/users/awards", { cache: true });
             const labs = useFetch("/users/labs", { cache: true });
@@ -271,7 +282,11 @@ const _userInfo = {
 
 const useUserInfo = () =>  {
     const header = useHeader();
-    const userInfo = _userInfo[Env.FoursightFlavorTitle(header)];
+    let flavor = Env.FoursightTitle(header);
+    if (flavor == Env.FoursightTitleUnknown) {
+        flavor = Env.FoursightTitleFourfront;
+    }
+    const userInfo = _userInfo[flavor];
     const statuses = useFetch("/users/statuses", { cache: false });
     userInfo.normalizeUser = (user) => {
         user.name = `${user.first_name} ${user.last_name}`.trim();

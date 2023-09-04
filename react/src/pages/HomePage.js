@@ -28,7 +28,7 @@ const HomePage = (props) => {
     return <>
         <div className="container" style={{minWidth:"890pt",marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
-                <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.FoursightFlavorTitle(header)})</span></b>
+                <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.FoursightTitle(header)})</span></b>
                 <div style={{float:"right",fontSize:"x-small",textAlign:"right",marginTop:"-3pt",marginRight:"2pt"}}>
                     <span id="tooltip-home-versions">Foursight Version: <b>{header?.versions?.foursight}</b></span> <br />
                     <Tooltip id="tooltip-home-versions" position="top" size="small" text={versionsToolTip} />

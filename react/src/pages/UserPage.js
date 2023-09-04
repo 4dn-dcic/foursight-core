@@ -112,7 +112,7 @@ const UserPage = (props) => {
             url: `/users/${email}`,
             onData: (data) => {
                 data = Type.IsObject(data) ? [data] : data
-                userInfo.normalizeUsers(data);
+                //xyzzyuserInfo.normalizeUsers(data);
                 return data;
             },
             nofetch: true

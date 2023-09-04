@@ -38,7 +38,15 @@ const DynamicSelect = (props) => {
         <select id={props.id} className="select" value={selected || ""} onChange={onChange} disabled={props.disabled || values.loading}>
             { !props.required && <option key="-" value="-">-</option> }
             { values.map(value => {
-                if (value.id) return <option key={value.id} value={value.id}>{value.title || value.key}</option>; else return null;
+                if (value.id) {
+                    const MAX_TITLE_LENGTH = 30;
+                    let title = value.title;
+                    if (title.length > MAX_TITLE_LENGTH) title = title.substring(0, MAX_TITLE_LENGTH) + " ...";
+                    return <option key={value.id} value={value.id}>{title || value.key}</option>
+                }
+                else {
+                    return null;
+                }
             })}
         </select>
         { props.subComponent && <>

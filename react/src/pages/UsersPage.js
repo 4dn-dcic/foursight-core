@@ -162,9 +162,9 @@ const UsersPage = () => {
                                                 <small>{Time.Format(user[column.key])}</small>
                                             </>:<>
                                                 { column.map ? <>
-                                                    {column.map(user[column.key], user)}
+                                                    {column.map(user[column.key], user) || Char.EmptySet}
                                                 </>:<>
-                                                    {user[column.key]}
+                                                    {user[column.key] || Char.EmptySet}
                                                 </> }
                                             </> }
                                         </>:<>
