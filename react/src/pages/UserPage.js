@@ -75,7 +75,7 @@ const KeyValueBox = (props) => {
                             { key.mapWithUser ? <>
                                 {(Type.IsFunction(key.map) ? key.map(props.value, props.value[key.key]) : props.value[key.key]) || Char.EmptySet}
                             </>:<>
-                                {(Type.IsFunction(key.map) ? key.map(props.value[key.key]) : props.value[key.key]) || Char.EmptySet}
+                                {(Type.IsFunction(key.map) ? key.map(props.value[key.key], props.value) : props.value[key.key]) || Char.EmptySet}
                             </> }
                         </> }
                         { key.subComponent && <>

@@ -151,8 +151,8 @@ const UsersPage = () => {
                 initialSort={"email.asc"}>
                     {users.map("list", (user, index) => (
                         <tr key={user.uuid} style={{verticalAlign:"top",borderBottom:index < users?.data?.list?.length - 1 ? "1px solid gray" : "0"}}>
-                            { columns.map(column => <>
-                                <td style={{...tdStyle, whiteSpace:column.type == "datetime" ? "nowrap" : ""}}>
+                            { columns.map(column =>
+                                <td style={{...tdStyle, whiteSpace:column.type == "datetime" ? "nowrap" : ""}} key={user.uuid + ":" + column.key}>
                                     { column.uiList ? <>
                                         {column.uiList(user)}
                                     </>:<>
@@ -162,11 +162,7 @@ const UsersPage = () => {
                                                 <small>{Time.Format(user[column.key])}</small>
                                             </>:<>
                                                 { column.map ? <>
-                                                    { column.mapWithUser ? <>
-                                                        {column.map(user)}
-                                                    </>:<>
-                                                        {column.map(user[column.key], userInfo)}
-                                                    </> }
+                                                    {column.map(user[column.key], user)}
                                                 </>:<>
                                                     {user[column.key]}
                                                 </> }
@@ -176,7 +172,8 @@ const UsersPage = () => {
                                         </> }
                                     </> }
                                 </td>
-                            </>)}
+                            )}
+                            {/*
                             <td style={tdStyle}>
                                 {user.group_titles}
                             </td>
@@ -193,6 +190,7 @@ const UsersPage = () => {
                                 {Date.Format(user.created)} <br />
                                 <small>{Time.Format(user.created)}</small>
                             </td>
+                            */}
                             <td style={{...tdStyle,whiteSpace:"nowrap"}}>
                                 &nbsp;&nbsp;<button><Link to={`/users/edit/${user.uuid}`}>Edit</Link></button>
                             </td>

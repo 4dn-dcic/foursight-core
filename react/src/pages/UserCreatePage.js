@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useFetch from '../hooks/Fetch';
 import { Link } from '../Components';
@@ -10,7 +10,7 @@ import UserDefs from './UserDefs';
 const UserCreatePage = () => {
     
     const user = useFetch(Server.Url("/users"), { method: "POST", nofetch: true });
-    const [ inputs, _ ] = UserDefs.useUserInputs("create");
+    const [ inputs, setInputs ] = useState(UserDefs.useUserInputs("create"));
 
     const navigate = useNavigate();
 

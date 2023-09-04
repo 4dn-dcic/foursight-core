@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
+import Date from '../utils/Date';
 import DateTime from '../utils/DateTime';
 import Env from '../utils/Env';
 import { Link } from '../Components';
@@ -8,6 +9,7 @@ import useFetch from '../hooks/Fetch';
 import { ExternalLink } from '../Components';
 import Json from '../utils/Json';
 import Str from '../utils/Str';
+import Time from '../utils/Time';
 import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import useHeader from '../hooks/Header';
@@ -53,8 +55,8 @@ const _UserInputsCommon = [
         label: "Status",
         type: "select",
         url: "/users/statuses",
-        mapWithUser: true,
-        map: (user) => user.status_title,
+        xmapWithUser: true,
+        map: (value, user) => user.status_title,
         pages: [ "list", "view", "edit" ]
     },
     {
@@ -62,7 +64,7 @@ const _UserInputsCommon = [
         label: "Created",
         type: "datetime",
         readonly: true,
-        map: value => DateTime.Format(value),
+        map: (value, user) => DateTime.Format(value),
         pages: [ "list", "view", "edit" ]
     },
     {
@@ -70,7 +72,7 @@ const _UserInputsCommon = [
         label: "Updated",
         type: "datetime",
         readonly: true,
-        map: value => DateTime.Format(value),
+        map: (value, user) => DateTime.Format(value),
         pages: [ "list", "view", "edit" ]
     },
     {
@@ -184,14 +186,14 @@ const _UserInputs = [
         key: "created",
         label: "Created",
         readonly: true,
-        map: value => DateTime.Format(value),
+        map: (value, user) => DateTime.Format(value),
         pages: [ "list", "view", "edit" ]
     },
     {
         key: "updated",
         label: "Updated",
         readonly: true,
-        map: value => DateTime.Format(value),
+        map: (value, user) => DateTime.Format(value),
         pages: [ "list", "view", "edit" ]
     },
     {
@@ -247,16 +249,16 @@ const _userInfo = {
                 { label: "Role", key: "role", type: "select",
                   url: "/users/roles",
                   dependsOn: "project",
-                  mapWithUser: true,
-                  map: (user, value) => affiliationInfo.userRoleTitle(user, user.project) },
+                  xmapWithUser: true,
+                  map: (value, user) => affiliationInfo.userRoleTitle(user, user.project) },
                 { label: "Project", key: "project", type: "select",
                   url: "/users/projects",
                   dependsOn: "project",
-                  map: value => affiliationInfo.projectTitle(value) },
+                  map: (value, user) => affiliationInfo.projectTitle(value) },
                 { label: "Institution", key: "institution", type: "select",
                   url: "/users/institutions",
                   dependsOn: "institution",
-                  map: value => affiliationInfo.institutionTitle(value),
+                  map: (value, user) => affiliationInfo.institutionTitle(value),
                   subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> },
                 { label: "Roles", key: "roles",
                   ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />,
@@ -272,7 +274,7 @@ const _userInfo = {
         affiliations: function (edit = false) {
             const affiliationInfo = _userInfo[Env.FoursightTitleCgap].useAffiliationInfo();
             return [
-                { label: "Role", key: "project", mapWithUser: true,
+                { label: "Role", key: "project", xmapWithUser: true,
                   //map: value => affiliationInfo.roleTitle(value) },
                   map: (user, value) => affiliationInfo.userRoleTitle(user, value) },
                 { label: "Project", key: "project",
@@ -370,9 +372,9 @@ const _userInfo = {
             const affiliationInfo = _userInfo[Env.FoursightTitleSmaht].useAffiliationInfo();
             return [
                 { label: "Consortium", key: "consortium", key: "consortium",
-                  map: value => affiliationInfo.consortiumTitle(value) },
+                  map: (value, user) => affiliationInfo.consortiumTitle(value) },
                 { label: "Submission Center", key: "submission_center", key: "submission_center",
-                  map: value => affiliationInfo.submissionCenterTitle(value) }
+                  map: (value, user) => affiliationInfo.submissionCenterTitle(value) }
             ];
         },
         useAffiliationInfo: function () {
