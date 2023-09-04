@@ -14,7 +14,7 @@ import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import useHeader from '../hooks/Header';
 
-const _UserInputsCommon = [
+const _inputsCommon = [
     {
         key: "email",
         label: "Email Address",
@@ -84,6 +84,13 @@ const _UserInputsCommon = [
     }
 ];
 
+function _inputs(additionalInputs) {
+    const inputs = [ ..._inputsCommon ];
+    const index = inputs.findIndex((item) => item.key === "status");
+    inputs.splice(index, 0, ...additionalInputs);
+    return inputs;
+}
+
 const RolesBox = (props) => {
     return <div className="box lighten" style={{marginTop:"2pt",marginBottom:"2pt"}}>
         <table style={{width:"100%",fontSize:"small",marginTop:"-3pt",marginBottom:"-2pt"}}><tbody>
@@ -123,7 +130,7 @@ const _userInfo = {
     [Env.FoursightTitleCgap]: {
         inputs: function () {
             const affiliationInfo = _userInfo[Env.FoursightTitleCgap].useAffiliationInfo();
-            const inputsAdditional = [
+            const inputs = [
                 { label: "Role", key: "role", type: "select",
                   url: "/users/roles",
                   dependsOn: "project",
@@ -142,10 +149,7 @@ const _userInfo = {
                   toggle: true,
                   pages: [ "view" ] }
             ];
-            const inputs = [ ..._UserInputsCommon ];
-            const index = inputs.findIndex((item) => item.key === "status");
-            inputs.splice(index, 0, ...inputsAdditional);
-            return inputs;
+            return _inputs(inputs);
         },
         useAffiliationInfo: function () {
             const projects = useFetch("/users/projects", { cache: true });
@@ -166,11 +170,20 @@ const _userInfo = {
         normalize: function (user) {
             user.admin = user.groups?.includes("admin") ? true : false;
         },
+        normalizeForEdit: function (user, inputs, affiliationInfo) {
+            inputs.find(input => input.key === "role").value = (project) => affiliationInfo.userRole(user, user.project);
+        },
+        normalizeForUpdate: function (user, values) {
+            if (values.project === "-") values.project = null;
+            if (values.institution === "-") values.institution = null;
+            if (values.role === "-") values.role = null;
+            return { ...values, "roles": user.get("roles") };
+        }
     },
     [Env.FoursightTitleFourfront]: {
         inputs: function () {
             const affiliationInfo = _userInfo[Env.FoursightTitleFourfront].useAffiliationInfo();
-            const inputsAdditional = [
+            const inputs = [
                 { label: "Award", key: "Award", type: "select",
                   url: "/users/awards",
                   map: (value, user) => affiliationInfo.awardTitle(value) },
@@ -178,10 +191,7 @@ const _userInfo = {
                   url: "/users/labs",
                   map: (value, user) => affiliationInfo.labTitle(value) }
             ];
-            const inputs = [ ..._UserInputsCommon ];
-            const index = inputs.findIndex((item) => item.key === "status");
-            inputs.splice(index, 0, ...inputsAdditional);
-            return inputs;
+            return _inputs(inputs);
         },
         useAffiliationInfo: function () {
             const awards = useFetch("/users/awards", { cache: true });
@@ -199,7 +209,7 @@ const _userInfo = {
     [Env.FoursightTitleSmaht]: {
         inputs: function () {
             const affiliationInfo = _userInfo[Env.FoursightTitleSmaht].useAffiliationInfo();
-            const inputsAdditional = [
+            const inputs = [
                 { label: "Consortium", key: "consortium", type: "select",
                   url: "/users/consortia",
                   map: (value, user) => affiliationInfo.consortiumTitle(value) },
@@ -207,10 +217,7 @@ const _userInfo = {
                   url: "/users/submission_centers",
                   map: (value, user) => affiliationInfo.submissionCenterTitle(value) }
             ];
-            const inputs = [ ..._UserInputsCommon ];
-            const index = inputs.findIndex((item) => item.key === "status");
-            inputs.splice(index, 0, ...inputsAdditional);
-            return inputs;
+            return _inputs(inputs);
         },
         useAffiliationInfo: function () {
             const consortia = useFetch("/users/consortia", { cache: true });
@@ -230,28 +237,16 @@ const _userInfo = {
             }
         },
         normalizeForUpdate: function (user, values) {
-            let groupsWithoutAdmin = user.get("groups")?.filter(group => group !== "admin") || [];
-            if (values.admin) {
-                values = {...values, "groups": [ ...groupsWithoutAdmin, "admin" ] }
-            }
-            else {
-                values = {...values, "groups": groupsWithoutAdmin }
-            }
-            delete values["admin"]
-            if (values.consortium === "-") {
-                values.consortium = null;
-            }
-            if (values.submission_center === "-") {
-                values.submission_center = null;
-            }
+            if (values.consortium === "-") values.consortium = null;
+            if (values.submission_center === "-") values.submission_center = null;
             values = {
                 ...values,
-                "submission_centers": values.submission_center ? [values.submission_center] : [],
                 "consortia": values.consortium ? [values.consortium] : [],
+                "submission_centers": values.submission_center ? [values.submission_center] : [],
                 "roles": user.get("roles")
             };
-            delete values["submission_center"]
             delete values["consortium"]
+            delete values["submission_center"]
             return values;
         }
     }
@@ -264,6 +259,7 @@ const useUserInfo = () =>  {
         flavor = Env.FoursightTitleFourfront;
     }
     const userInfo = _userInfo[flavor];
+    const affiliationInfo = userInfo.useAffiliationInfo();
     const statuses = useFetch("/users/statuses", { cache: false });
     userInfo.normalizeUser = (user) => {
         user.name = `${user.first_name} ${user.last_name}`.trim();
@@ -281,6 +277,30 @@ const useUserInfo = () =>  {
             userInfo.normalizeUser(user);
         }
     };
+    userInfo.normalizeUserForEdit = (user, inputs) => {
+        userInfo.normalizeUser(user)
+        for (const input of inputs) {
+            input.value = user[input.key];
+        }
+        if (userInfo.normalizeForEdit) {
+            userInfo.normalizeForEdit(user, inputs, affiliationInfo);
+        }
+        return [...inputs];
+    };
+    userInfo.normalizeUserForUpdate = (user, values) => {
+        let groupsWithoutAdmin = user.get("groups")?.filter(group => group !== "admin") || [];
+        if (values.admin) {
+            values = {...values, "groups": [ ...groupsWithoutAdmin, "admin" ] }
+        }
+        else {
+            values = {...values, "groups": groupsWithoutAdmin }
+        }
+        delete values["admin"]
+        if (userInfo.normalizeForUpdate) {
+            values = userInfo.normalizeForUpdate(user, values);
+        }
+        return values;
+    }
     return userInfo;
 }
 

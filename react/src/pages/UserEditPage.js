@@ -27,53 +27,14 @@ const UserEditPage = () => {
     });
 
     const userInfo = UserDefs.useUserInfo();
-    const affiliationInfo = userInfo.useAffiliationInfo();
     const navigate = useNavigate();
 
     function updateUserData(user) {
-        userInfo.normalizeUser(user);
-        setInputs(inputs => {
-            for (const input of inputs) {
-                input.value = user[input.key];
-            }
-            return [...inputs];
-/*
-            for (const input of inputs) {
-                if      (input.key === "email")       input.value = user.email;
-                else if (input.key === "first_name")  input.value = user.first_name;
-                else if (input.key === "last_name")   input.value = user.last_name;
-                else if (input.key === "admin")       input.value = user.groups?.includes("admin") ? true : false;
-                else if (input.key === "role")        input.value = (project) => affiliationInfo.userRole(user, project ||  user?.project);
-                else if (input.key === "project")     input.value = user.project;
-                else if (input.key === "institution") input.value = user.institution;
-                else if (input.key === "award")       input.value = user.award;
-                else if (input.key === "lab")         input.value = user.lab;
-                else if (input.key === "consortium")  input.value = user.consortium;
-                else if (input.key === "submission_center") input.value = user.submission_center;
-                else if (input.key === "status")      input.value = user.status;
-                else if (input.key === "created")     input.value = DateTime.Format(user.created);
-                else if (input.key === "updated")     input.value = DateTime.Format(user.updated);
-                else if (input.key === "uuid")        input.value = user.uuid;
-            }
-            return [...inputs];
-*/
-        });
+        setInputs(inputs => userInfo.normalizeUserForEdit(user, inputs));
     }
 
     function onUpdate(values) {
-        values = userInfo?.normalizeForUpdate(user, values) || values;
-/*
-        let existingGroupsWithoutAnyAdmin = user.get("groups")?.filter(group => group !== "admin") || [];
-        if (values.admin) {
-            delete values["admin"]
-            values = {...values, "groups": [ ...existingGroupsWithoutAnyAdmin, "admin" ] }
-        }
-        else {
-            delete values["admin"]
-            values = {...values, "groups": existingGroupsWithoutAnyAdmin }
-        }
-        values = { ...values, "roles": user.get("roles") };
-*/
+        values = userInfo.normalizeUserForUpdate(user, values);
         user.refresh({
             url: `/users/${uuid}`,
             method: "PATCH",
@@ -98,6 +59,7 @@ const UserEditPage = () => {
     }
 
     return <center>
+                {JSON.stringify(user)}
         <table><tbody><tr><td>
             <b>Edit User</b>{!user.loading && user.data ? ": " + user.data.first_name + " " + user.data.last_name : ""}
             <div style={{float:"right",marginTop:"1pt",marginRight:"4pt",fontSize:"small"}}>

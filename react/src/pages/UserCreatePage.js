@@ -16,7 +16,9 @@ const UserCreatePage = () => {
     const navigate = useNavigate();
 
     function onCreate(values) {
-        values = userInfo?.normalizeForUpdate(user, values) || values;
+        if (userInfo.normalizeForUpdate) {
+            values = userInfo?.normalizeForUpdate(user, values) || values;
+        }
 /*
         if (values.admin) {
             delete values["admin"]
