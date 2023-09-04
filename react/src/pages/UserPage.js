@@ -71,6 +71,7 @@ const KeyValueBox = (props) => {
                             </span>:<span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: true}))}>
                                 <small><u>Show</u> {Char.UpArrowHollow}</small>
                             </span> }
+                                    foo
                         </>:<>
                             { key.mapWithUser ? <>
                                 {(Type.IsFunction(key.map) ? key.map(props.value, props.value[key.name]) : props.value[key.name]) || Char.EmptySet}
@@ -94,26 +95,7 @@ const UserBox = (props) => {
     const userInfo = UserDefs.useUserInfo();
     const inputs = UserDefs.useUserInputs("view");
 
-    let xinputs = [
-        { label: "Email", name: "email" },
-        { label: "First Name", name: "first_name" },
-        { label: "Last Name", name: "last_name" },
-        { label: "Groups", name: "group_titles" },
-        ...userInfo.affiliations(),
-        { label: "Status", name: "status_title" },
-        { label: "Created", name: "created", map: value => DateTime.Format(value) },
-        { label: "Updated", name: "updated", map: value => DateTime.Format(value) },
-        { label: "UUID", name: "uuid" }
-    ]
-
-/* ... xyzzy ...
-    if (Env.IsFoursightFourfront(useHeader())) {
-        items = items.filter(item => (item.name !== "institution") && (item.name !== "project") && (item.name !== "roles") && (item.name !== "role"));
-    }
-*/
-
     return <>
-                [[{JSON.stringify(props.user)}]]
         <KeyValueBox inputs={inputs} value={props.user} separators={true} />
     </>
 }

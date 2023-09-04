@@ -10,7 +10,7 @@ import UserDefs from './UserDefs';
 const UserCreatePage = () => {
     
     const user = useFetch(Server.Url("/users"), { method: "POST", nofetch: true });
-    const [ inputs, _ ] = UserDefs.useUserInputs();
+    const [ inputs, _ ] = UserDefs.useUserInputs("create");
 
     const navigate = useNavigate();
 

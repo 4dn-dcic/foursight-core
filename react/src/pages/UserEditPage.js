@@ -13,7 +13,7 @@ import useReadOnlyMode from '../hooks/ReadOnlyMode';
 const UserEditPage = () => {
     
     const { uuid } = useParams();
-    const [ inputs, setInputs ] = UserDefs.useUserInputs("edit");
+    const [ inputs, setInputs ] = useState(UserDefs.useUserInputs("edit"));
     const [ notFound, setNotFound ] = useState(false);
     const [ readOnlyMode ] = useReadOnlyMode();
     const user = useFetch({

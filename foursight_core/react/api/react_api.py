@@ -170,18 +170,21 @@ class ReactApi(ReactApiBase, ReactRoutes):
         results = []
         connection = app.core.init_connection(env)
         response = ff_utils.search_metadata(f'/search/?type={type}&datastore=database', key=connection.ff_keys)
-        if response and not raw:
-            for item in response:
-                result = {
-                    "id": item.get("@id"),
-                    "uuid": item.get("uuid"),
-                    "name": item.get("name"),
-                    "title": item.get("title") if not map_title else map_title(item.get("title")),
-                    "description": item.get("description")
-                }
-            if additional_info:
-                result = {**result, **additional_info(item)}
-            results.append(result)
+        if response:
+            if not raw:
+                for item in response:
+                    result = {
+                        "id": item.get("@id"),
+                        "uuid": item.get("uuid"),
+                        "name": item.get("name"),
+                        "title": item.get("title") if not map_title else map_title(item.get("title")),
+                        "description": item.get("description")
+                    }
+                    if additional_info:
+                        result = {**result, **additional_info(item)}
+                    results.append(result)
+            else:
+                results = response
         return results
 
     @function_cache

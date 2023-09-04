@@ -47,7 +47,7 @@ const UsersPage = () => {
 
     if (users.error) return <FetchErrorBox error={users.error} message="Error loading users from Foursight API" center={true} />
 
-    const columns = [
+    let columns = [
         { label: "" },
         { label: "User", key: "email" },
         { label: "Groups", key: "groups" },
@@ -56,6 +56,7 @@ const UsersPage = () => {
         { label: "Updated", key: "data_modified" }, // DOES NOT WORK (nested in last_modified)
         { label: "Created", key: "date_created" }
     ];
+        columns = [ { label: "" }, ...inputs ];
 
     const tdStyle = { verticalAlign: "top", paddingRight: "6pt", paddingTop: "4pt", paddingBottom: "8pt" };
     const tdStyleNowrap = { ...tdStyle, whiteSpace: "nowrap" };

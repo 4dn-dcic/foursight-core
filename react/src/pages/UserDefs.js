@@ -11,41 +11,93 @@ import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import useHeader from '../hooks/Header';
 
-const _UserInputs = [
+const _UserInputsCommon = [
     {
         name: "email",
         label: "Email Address",
         type: "email",
         focus: true,
-        required: true,
-        flavors: "all",
-        pages: [ "list", "view", "edit" ]
+        required: true
     },
     {
         name: "first_name",
         label: "First Name",
         required: true,
-        flavors: "all",
-        pages: [ "list", "view", "edit" ]
     },
     {
         name: "last_name",
         label: "Last Name",
         required: true,
-        flavors: "all",
-        pages: [ "list", "view", "edit" ]
     },
     {
         name: "group_titles",
         label: "Groups",
-        flavors: "all",
         pages: [ "view" ]
     },
     {
         name: "admin",
         label: "Administrator",
         type: "boolean",
-        flavors: "all",
+        pages: [ "edit" ]
+    },
+    {
+        name: "status",
+        label: "Status",
+        type: "select",
+        url: "/users/statuses",
+        pages: [ "list", "view", "edit" ]
+    },
+    {
+        name: "created",
+        label: "Created",
+        readonly: true,
+        map: value => DateTime.Format(value),
+        pages: [ "list", "view", "edit" ]
+    },
+    {
+        name: "updated",
+        label: "Updated",
+        readonly: true,
+        map: value => DateTime.Format(value),
+        pages: [ "list", "view", "edit" ]
+    },
+    {
+        name: "uuid",
+        label: "UUID",
+        readonly: true,
+        readonlyOverridableOnCreate: true,
+        readonlyOverridableOnCreateMessage: "Warning: Only set UUID if you know what you are doing.",
+        pages: [ "view", "edit" ]
+    }
+];
+
+const _UserInputs = [
+    {
+        name: "email",
+        label: "Email Address",
+        type: "email",
+        focus: true,
+        required: true
+    },
+    {
+        name: "first_name",
+        label: "First Name",
+        required: true,
+    },
+    {
+        name: "last_name",
+        label: "Last Name",
+        required: true,
+    },
+    {
+        name: "group_titles",
+        label: "Groups",
+        pages: [ "view" ]
+    },
+    {
+        name: "admin",
+        label: "Administrator",
+        type: "boolean",
         pages: [ "edit" ]
     },
     {
@@ -114,7 +166,6 @@ const _UserInputs = [
         label: "Status",
         type: "select",
         url: "/users/statuses",
-        flavors: "all",
         pages: [ "list", "view", "edit" ]
     },
     {
@@ -122,7 +173,6 @@ const _UserInputs = [
         label: "Created",
         readonly: true,
         map: value => DateTime.Format(value),
-        flavors: "all",
         pages: [ "list", "view", "edit" ]
     },
     {
@@ -130,7 +180,6 @@ const _UserInputs = [
         label: "Updated",
         readonly: true,
         map: value => DateTime.Format(value),
-        flavors: "all",
         pages: [ "list", "view", "edit" ]
     },
     {
@@ -139,7 +188,6 @@ const _UserInputs = [
         readonly: true,
         readonlyOverridableOnCreate: true,
         readonlyOverridableOnCreateMessage: "Warning: Only set UUID if you know what you are doing.",
-        flavors: "all",
         pages: [ "list", "view", "edit" ]
     }
 ];
@@ -181,18 +229,38 @@ const PrincipalInvestigatorLine = (props) => {
 
 const _userInfo = {
     [Env.FoursightTitleCgap]: {
+        inputs: function () {
+            const affiliationInfo = _userInfo[Env.FoursightTitleCgap].useAffiliationInfo();
+            const inputsAdditional = [
+                { label: "Role", name: "role", mapWithUser: true,
+                  map: (user, value) => affiliationInfo.userRoleTitle(user, user.project) },
+                { label: "Project", name: "project",
+                  map: value => affiliationInfo.projectTitle(value) },
+                { label: "Institution", name: "institution",
+                  map: value => affiliationInfo.institutionTitle(value),
+                  subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> },
+                { label: "Roles", name: "roles",
+                  ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />,
+                  toggle: true,
+                  pages: [ "view", "edit" ] }
+            ];
+            const inputs = [ ..._UserInputsCommon ];
+            const index = inputs.findIndex((item) => item.name === "status");
+            inputs.splice(index, 0, ...inputsAdditional);
+            return inputs;
+        },
         affiliations: function (edit = false) {
             const affiliationInfo = _userInfo[Env.FoursightTitleCgap].useAffiliationInfo();
             return [
-                { label: "Role", xkey: "roles", name: "project", mapWithUser: true,
+                { label: "Role", name: "project", mapWithUser: true,
                   //map: value => affiliationInfo.roleTitle(value) },
                   map: (user, value) => affiliationInfo.userRoleTitle(user, value) },
-                { label: "Project", xkey: "project", name: "project",
+                { label: "Project", name: "project",
                   map: value => affiliationInfo.projectTitle(value) },
-                { label: "Institution", xkey: "institution", name: "institution",
+                { label: "Institution", name: "institution",
                   map: value => affiliationInfo.institutionTitle(value),
                   subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> },
-                { label: "Roles", xkey: "roles", name: "roles",
+                { label: "Roles", name: "roles",
                   ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />, toggle: true,
                   flavors: [Env.FoursightTitleCgap],
                   pages: [ "view", "edit" ] }
@@ -336,21 +404,15 @@ const useUserInfo = () =>  {
 }
 
 const useUserInputs = (page) => {
-    const header = useHeader();
-    const flavor = Env.FoursightFlavorTitle(header);
-    const inputs = Json.Clone(_UserInputs).filter(input => !input.flavors || input.flavors === "all" || input.flavors == flavor || input.flavors.includes(flavor))
-                                          .filter(input => !input.pages || input.pages === "all" || input.pages == page || input.pages.includes(page))
-    let xyzzy = Json.Clone(inputs);
-    //const xyzzy = inputs.map((item) => ({ ...item }));
-    let foo = xyzzy.find(input => input.name === "institution");
-    foo.subComponent = (institution) => <PrincipalInvestigatorLine institution={institution} />
-    foo = xyzzy.find(input => input.name === "created");
-    foo.map = (value) => DateTime.Format(value)
-    foo = xyzzy.find(input => input.name === "updated");
-    foo.map = (value) => DateTime.Format(value)
-    return xyzzy;
-    return useState(xyzzy)
-    //return useState(Json.Clone(inputs));
+    const info = useUserInfo();
+    let inputs = info.inputs();
+    if (Str.HasValue(page)) {
+        inputs = inputs.filter(item => !item.pages ||
+                               item.pages === "all" ||
+                               item.pages == page ||
+                               item.pages.includes(page));
+    }
+    return inputs;
 }
 
 const exports = {
