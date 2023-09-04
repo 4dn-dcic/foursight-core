@@ -31,15 +31,13 @@ const UserEditPage = () => {
     const navigate = useNavigate();
 
     function updateUserData(user) {
-            /*
-        if (Type.IsArray(user.consortia) && (user.consortia.length > 0)) {
-            user.consortium = user.consortia[0];
-        }
-        if (Type.IsArray(user.submission_centers) && (user.submission_centers.length > 0)) {
-            user.submission_center = user.submission_centers[0];
-        }
-        */
+        userInfo.normalizeUser(user);
         setInputs(inputs => {
+            for (const input of inputs) {
+                input.value = user[input.key];
+            }
+            return [...inputs];
+/*
             for (const input of inputs) {
                 if      (input.key === "email")       input.value = user.email;
                 else if (input.key === "first_name")  input.value = user.first_name;
@@ -50,7 +48,7 @@ const UserEditPage = () => {
                 else if (input.key === "institution") input.value = user.institution;
                 else if (input.key === "award")       input.value = user.award;
                 else if (input.key === "lab")         input.value = user.lab;
-                else if (input.key === "consortium")  input.value = user.consortia;
+                else if (input.key === "consortium")  input.value = user.consortium;
                 else if (input.key === "submission_center") input.value = user.submission_center;
                 else if (input.key === "status")      input.value = user.status;
                 else if (input.key === "created")     input.value = DateTime.Format(user.created);
@@ -58,10 +56,13 @@ const UserEditPage = () => {
                 else if (input.key === "uuid")        input.value = user.uuid;
             }
             return [...inputs];
+*/
         });
     }
 
     function onUpdate(values) {
+        values = userInfo?.normalizeForUpdate(user, values) || values;
+/*
         let existingGroupsWithoutAnyAdmin = user.get("groups")?.filter(group => group !== "admin") || [];
         if (values.admin) {
             delete values["admin"]
@@ -72,6 +73,7 @@ const UserEditPage = () => {
             values = {...values, "groups": existingGroupsWithoutAnyAdmin }
         }
         values = { ...values, "roles": user.get("roles") };
+*/
         user.refresh({
             url: `/users/${uuid}`,
             method: "PATCH",

@@ -708,19 +708,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
         user = copy.deepcopy(user)
         # TODO
         # Handle these "-" checking things in the (React) UI!
-        if self.is_foursight_fourfront():
-            if "institution" in user:
-                del user["institution"]
-            if "project" in user:
-                del user["project"]
-            if "role" in user:
-                del user["role"]
-            if "roles" in user:
-                del user["roles"]
-            if "status" in user:
-                if not user["status"] or user["status"] == "-":
-                    del user["status"]
-            return user
+#       if self.is_foursight_fourfront():
+#           if "institution" in user:
+#               del user["institution"]
+#           if "project" in user:
+#               del user["project"]
+#           if "role" in user:
+#               del user["role"]
+#           if "roles" in user:
+#               del user["roles"]
+#           if "submission_centers" in user:
+#               del user["submission_centers"]
+#           if "consortia" in user:
+#               del user["consortia"]
+#           if "status" in user:
+#               if not user["status"] or user["status"] == "-":
+#                   del user["status"]
+#           return user
 
         deletes = []
         if "status" in user:
@@ -732,7 +736,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             del user["institution"]
         # If project and/or user_institution is present but is empty then remove altogether.
         if "roles" in user:
-            user["project_roles"] = user["roles"]
+            if self.is_foursight_cgap():
+                user["project_roles"] = user["roles"]
         if "user_institution" in user:
             if not user["user_institution"] or user["user_institution"] == "-":
                 deletes.append("user_institution")

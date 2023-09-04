@@ -119,7 +119,6 @@ const UsersPage = () => {
         color: "var(--box-fg)",
         width: "100%"
     };
-    //let xyz = userInfo.AffiliationTableRows('asdfa','sadfa');
 
     return <>
         <div className="container fg">
@@ -173,24 +172,6 @@ const UsersPage = () => {
                                     </> }
                                 </td>
                             )}
-                            {/*
-                            <td style={tdStyle}>
-                                {user.group_titles}
-                            </td>
-                            <userInfo.AffiliationTableRows user={user} tdStyle={tdStyle} />
-                            <td style={tdStyle}>
-                                <span id={`tooltip-users-status-${user.status}`}>{user.status_title || Char.EmptySet}</span>
-                                <Tooltip id={`tooltip-users-status-${user.status}`} position="bottom" size="small" text={`Status: ${user.status}`} />
-                            </td>
-                            <td style={{...tdStyle,whiteSpace:"nowrap"}}>
-                                {user.updated ? Date.Format(user.updated) : Date.Format(user.created)} <br />
-                                <small>{user.updated ? Time.Format(user.updated) : Time.Format(user.created)}</small>
-                            </td>
-                            <td style={{...tdStyle,whiteSpace:"nowrap"}}>
-                                {Date.Format(user.created)} <br />
-                                <small>{Time.Format(user.created)}</small>
-                            </td>
-                            */}
                             <td style={{...tdStyle,whiteSpace:"nowrap"}}>
                                 &nbsp;&nbsp;<button><Link to={`/users/edit/${user.uuid}`}>Edit</Link></button>
                             </td>

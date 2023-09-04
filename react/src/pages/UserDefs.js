@@ -163,29 +163,9 @@ const _userInfo = {
             response.userRoleTitle = (user, projectId) => response.roleTitle(response.userRole(user, projectId)) || "";
             return response;
         },
-        AffiliationTableRows: (props) => {
-            const user = props.user;
-            const tdStyle = props.tdStyle;
-            const affiliationInfo = _userInfo[Env.FoursightTitleCgap].useAffiliationInfo();
-            return <>
-                <td style={tdStyle}>
-                    <span id={`tooltip-users-role-${user.email}`}>
-                        {affiliationInfo.userRoleTitle(user, user.project) || Char.EmptySet}
-                        {user.roles?.length > 1 && <small>&nbsp;({user.roles?.length})</small>}
-                    </span>
-                    <Tooltip id={`tooltip-users-role-${user.email}`} position="bottom" size="small"
-                             text={`Role: ${affiliationInfo.userRole(user, user.project)}${user.roles?.length > 1 ? `. Total: ${user.roles.length}` : ""}`} />
-                </td>
-                <td style={tdStyle}>
-                    <span id={`tooltip-users-project-${user.email}`}>{affiliationInfo.projectTitle(user.project) || Char.EmptySet}</span>
-                    <Tooltip id={`tooltip-users-project-${user.email}`} position="bottom" size="small" text={`Project: ${user.project}`} />
-                </td>
-                <td style={tdStyle}>
-                    <span id={`tooltip-users-institution-${user.email}`}>{affiliationInfo.institutionTitle(user.institution) || Char.EmptySet}</span>
-                    <Tooltip id={`tooltip-users-institution-${user.email}`} position="bottom" size="small" text={`Institution: ${user.institution}`} />
-                </td>
-            </>
-        }
+        normalize: function (user) {
+            user.admin = user.groups?.includes("admin") ? true : false;
+        },
     },
     [Env.FoursightTitleFourfront]: {
         inputs: function () {
@@ -212,21 +192,9 @@ const _userInfo = {
             }
             return response;
         },
-        AffiliationTableRows: function (props) {
-            const user = props.user;
-            const tdStyle = props.tdStyle;
-            const affiliationInfo = _userInfo[Env.FoursightTitleFourfront].useAffiliationInfo();
-            return <>
-                <td style={tdStyle}>
-                    <span id={`tooltip-users-award-${user.email}`}>{affiliationInfo.awardTitle(user.award) || Char.EmptySet}</span>
-                    <Tooltip id={`tooltip-users-award-${user.email}`} position="bottom" size="small" text={`Award: ${user.award}`} />
-                </td>
-                <td style={tdStyle}>
-                    <span id={`tooltip-users-lab-${user.email}`}>{affiliationInfo.labTitle(user.lab) || Char.EmptySet}</span>
-                    <Tooltip id={`tooltip-users-lab-${user.email}`} position="bottom" size="small" text={`Lab: ${user.lab}`} />
-                </td>
-            </>
-        }
+        normalize: function (user) {
+            user.admin = user.groups?.includes("admin") ? true : false;
+        },
     },
     [Env.FoursightTitleSmaht]: {
         inputs: function () {
@@ -244,14 +212,6 @@ const _userInfo = {
             inputs.splice(index, 0, ...inputsAdditional);
             return inputs;
         },
-        normalize: function (user) {
-            if (Type.IsArray(user.submission_centers) && (user.submission_centers.length > 0)) {
-                user.submission_center = user.submission_centers[0];
-            }
-            if (Type.IsArray(user.consortia) && (user.consortia.length > 0)) {
-                user.consortium = user.consortia[0];
-            }
-        },
         useAffiliationInfo: function () {
             const consortia = useFetch("/users/consortia", { cache: true });
             const submissionCenters = useFetch("/users/submission_centers", { cache: true });
@@ -260,22 +220,39 @@ const _userInfo = {
                 submissionCenterTitle: (id) => submissionCenters.data?.find(item => item.id === id)?.title || "",
             }
         },
-        AffiliationTableRows: function (props) {
-            const user = props.user;
-            const tdStyle = props.tdStyle;
-            const affiliationInfo = _userInfo[Env.FoursightTitleSmaht].useAffiliationInfo();
-            return <>
-                <td style={tdStyle}>
-                    <span id={`tooltip-users-consortium-${user.email}`}>{affiliationInfo.consortiumTitle(user.consortium) || Char.EmptySet}</span>
-                    <Tooltip id={`tooltip-users-consortium-${user.email}`} position="bottom" size="small" text={`Consortium: ${user.consortium}`} />
-                </td>
-                <td style={tdStyle}>
-                    <span id={`tooltip-users-submission-center-${user.email}`}>{affiliationInfo.submissionCenterTitle(user.submission_center) || Char.EmptySet}</span>
-                    <Tooltip id={`tooltip-users-submission-center-${user.email}`} position="bottom" size="small" text={`Submission Center: ${user.submission_center}`} />
-                </td>
-            </>
+        normalize: function (user) {
+            user.admin = user.groups?.includes("admin") ? true : false;
+            if (Type.IsArray(user.submission_centers) && (user.submission_centers.length > 0)) {
+                user.submission_center = user.submission_centers[0];
+            }
+            if (Type.IsArray(user.consortia) && (user.consortia.length > 0)) {
+                user.consortium = user.consortia[0];
+            }
         },
-        UserAffiliationTableRows: function (props) {
+        normalizeForUpdate: function (user, values) {
+            let groupsWithoutAdmin = user.get("groups")?.filter(group => group !== "admin") || [];
+            if (values.admin) {
+                values = {...values, "groups": [ ...groupsWithoutAdmin, "admin" ] }
+            }
+            else {
+                values = {...values, "groups": groupsWithoutAdmin }
+            }
+            delete values["admin"]
+            if (values.consortium === "-") {
+                values.consortium = null;
+            }
+            if (values.submission_center === "-") {
+                values.submission_center = null;
+            }
+            values = {
+                ...values,
+                "submission_centers": values.submission_center ? [values.submission_center] : [],
+                "consortia": values.consortium ? [values.consortium] : [],
+                "roles": user.get("roles")
+            };
+            delete values["submission_center"]
+            delete values["consortium"]
+            return values;
         }
     }
 };

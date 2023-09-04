@@ -335,7 +335,7 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                 <table><tbody>
                 { inputs?.map((input, index) =>
                     <tr key={input.label}>
-                        <td align={input.label_align || 'right'} style={{verticalAlign:"top",paddingTop:"0.6em",paddingRight:"0.4em",whiteSpace:"nowrap"}}>
+                        <td align={input.label_align || "right"} style={{verticalAlign:"top",paddingTop:"0.6em",paddingRight:"0.4em",whiteSpace:"nowrap"}}>
                             {input.label}:
                         </td>
                         <td style={{paddingTop: "0.6em",whiteSpace:"nowrap"}}>

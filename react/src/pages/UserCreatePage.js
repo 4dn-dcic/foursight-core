@@ -11,10 +11,13 @@ const UserCreatePage = () => {
     
     const user = useFetch(Server.Url("/users"), { method: "POST", nofetch: true });
     const [ inputs, setInputs ] = useState(UserDefs.useUserInputs("create"));
+    const userInfo = UserDefs.useUserInfo();
 
     const navigate = useNavigate();
 
     function onCreate(values) {
+        values = userInfo?.normalizeForUpdate(user, values) || values;
+/*
         if (values.admin) {
             delete values["admin"]
             values = {...values, "groups": [ "admin" ] }
@@ -23,6 +26,7 @@ const UserCreatePage = () => {
             delete values["admin"]
             values = {...values, "groups": [] }
         }
+*/
         user.refresh({
             url: Server.Url(`/users`),
             method: "POST",
