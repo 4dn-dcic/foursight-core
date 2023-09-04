@@ -55,7 +55,6 @@ const _UserInputsCommon = [
         label: "Status",
         type: "select",
         url: "/users/statuses",
-        xmapWithUser: true,
         map: (value, user) => user.status_title,
         pages: [ "list", "view", "edit" ]
     },
@@ -82,127 +81,6 @@ const _UserInputsCommon = [
         readonlyOverridableOnCreate: true,
         readonlyOverridableOnCreateMessage: "Warning: Only set UUID if you know what you are doing.",
         pages: [ "view", "edit" ]
-    }
-];
-
-const _UserInputs = [
-    {
-        key: "email",
-        label: "Email Address",
-        type: "email",
-        focus: true,
-        required: true
-    },
-    {
-        key: "first_name",
-        label: "First Name",
-        required: true,
-    },
-    {
-        key: "last_name",
-        label: "Last Name",
-        required: true,
-    },
-    {
-        key: "group_titles",
-        label: "Groups",
-        pages: [ "view" ]
-    },
-    {
-        key: "admin",
-        label: "Administrator",
-        type: "boolean",
-        pages: [ "edit" ]
-    },
-    {
-        key: "role",
-        label: "Role",
-        type: "select",
-        url: "/users/roles",
-        dependsOn: "project",
-        flavors: [Env.FoursightTitleCgap],
-        pages: [ "list", "view", "edit" ]
-    },
-    {
-        key: "institution",
-        label: "Institution",
-        type: "select",
-        url: "/users/institutions",
-        dependsOn: "institution",
-        subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} />,
-        flavors: [Env.FoursightTitleCgap],
-        pages: [ "list", "view", "edit" ]
-    },
-    {
-        key: "project",
-        label: "Project",
-        type: "select",
-        url: "/users/projects",
-        flavors: [Env.FoursightTitleCgap],
-        pages: [ "list", "view", "edit" ]
-    },
-    {
-        key: "award",
-        label: "Award",
-        type: "select",
-        url: "/users/awards",
-        dependsOn: "award",
-        flavors: [Env.FoursightTitleFourfront],
-        pages: [ "list", "view", "edit" ]
-    },
-    {
-        key: "lab",
-        label: "Lab",
-        type: "select",
-        url: "/users/labs",
-        flavors: [Env.FoursightTitleFourfront],
-        pages: [ "list", "view", "edit" ]
-    },
-    {
-        key: "consortium",
-        label: "Consortium",
-        type: "select",
-        url: "/users/consortia",
-        dependsOn: "consortia",
-        flavors: [Env.FoursightTitleSmaht],
-        pages: [ "list", "view", "edit" ]
-    },
-    {
-        key: "submission_center",
-        label: "Submission Center",
-        type: "select",
-        url: "/users/submission_centers",
-        flavors: [Env.FoursightTitleSmaht],
-        pages: [ "list", "view", "edit" ]
-    },
-    {
-        key: "status",
-        label: "Status",
-        type: "select",
-        url: "/users/statuses",
-        pages: [ "list", "view", "edit" ]
-    },
-    {
-        key: "created",
-        label: "Created",
-        readonly: true,
-        map: (value, user) => DateTime.Format(value),
-        pages: [ "list", "view", "edit" ]
-    },
-    {
-        key: "updated",
-        label: "Updated",
-        readonly: true,
-        map: (value, user) => DateTime.Format(value),
-        pages: [ "list", "view", "edit" ]
-    },
-    {
-        key: "uuid",
-        label: "UUID",
-        readonly: true,
-        readonlyOverridableOnCreate: true,
-        readonlyOverridableOnCreateMessage: "Warning: Only set UUID if you know what you are doing.",
-        pages: [ "list", "view", "edit" ]
     }
 ];
 
@@ -249,7 +127,6 @@ const _userInfo = {
                 { label: "Role", key: "role", type: "select",
                   url: "/users/roles",
                   dependsOn: "project",
-                  xmapWithUser: true,
                   map: (value, user) => affiliationInfo.userRoleTitle(user, user.project) },
                 { label: "Project", key: "project", type: "select",
                   url: "/users/projects",
@@ -270,25 +147,6 @@ const _userInfo = {
             inputs.splice(index, 0, ...inputsAdditional);
             return inputs;
         },
-/*
-        affiliations: function (edit = false) {
-            const affiliationInfo = _userInfo[Env.FoursightTitleCgap].useAffiliationInfo();
-            return [
-                { label: "Role", key: "project", xmapWithUser: true,
-                  //map: value => affiliationInfo.roleTitle(value) },
-                  map: (user, value) => affiliationInfo.userRoleTitle(user, value) },
-                { label: "Project", key: "project",
-                  map: value => affiliationInfo.projectTitle(value) },
-                { label: "Institution", key: "institution",
-                  map: value => affiliationInfo.institutionTitle(value),
-                  subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> },
-                { label: "Roles", key: "roles",
-                  ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />, toggle: true,
-                  flavors: [Env.FoursightTitleCgap],
-                  pages: [ "view", "edit" ] }
-            ];
-        },
-*/
         useAffiliationInfo: function () {
             const projects = useFetch("/users/projects", { cache: true });
             const roles = useFetch("/users/roles", { cache: true });
@@ -360,6 +218,21 @@ const _userInfo = {
         }
     },
     [Env.FoursightTitleSmaht]: {
+        inputs: function () {
+            const affiliationInfo = _userInfo[Env.FoursightTitleSmaht].useAffiliationInfo();
+            const inputsAdditional = [
+                { label: "Consortium", key: "consortium", type: "select",
+                  url: "/users/consortia",
+                  map: (value, user) => affiliationInfo.consortiumTitle(value) },
+                { label: "Submission Center", key: "submission_center", type: "select",
+                  url: "/users/submission_centers",
+                  map: (value, user) => affiliationInfo.submissionCenterTitle(value) }
+            ];
+            const inputs = [ ..._UserInputsCommon ];
+            const index = inputs.findIndex((item) => item.key === "status");
+            inputs.splice(index, 0, ...inputsAdditional);
+            return inputs;
+        },
         normalize: function (user) {
             if (Type.IsArray(user.submission_centers) && (user.submission_centers.length > 0)) {
                 user.submission_center = user.submission_centers[0];
@@ -367,15 +240,6 @@ const _userInfo = {
             if (Type.IsArray(user.consortia) && (user.consortia.length > 0)) {
                 user.consortium = user.consortia[0];
             }
-        },
-        affiliations: function (edit = false) {
-            const affiliationInfo = _userInfo[Env.FoursightTitleSmaht].useAffiliationInfo();
-            return [
-                { label: "Consortium", key: "consortium", key: "consortium",
-                  map: (value, user) => affiliationInfo.consortiumTitle(value) },
-                { label: "Submission Center", key: "submission_center", key: "submission_center",
-                  map: (value, user) => affiliationInfo.submissionCenterTitle(value) }
-            ];
         },
         useAffiliationInfo: function () {
             const consortia = useFetch("/users/consortia", { cache: true });
