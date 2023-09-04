@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
+import DateTime from '../utils/DateTime';
 import Env from '../utils/Env';
 import useFetch from '../hooks/Fetch';
 import { ExternalLink } from '../Components';
@@ -16,22 +17,36 @@ const _UserInputs = [
         label: "Email Address",
         type: "email",
         focus: true,
-        required: true
+        required: true,
+        flavors: "all",
+        pages: [ "list", "view", "edit" ]
     },
     {
         name: "first_name",
         label: "First Name",
-        required: true
+        required: true,
+        flavors: "all",
+        pages: [ "list", "view", "edit" ]
     },
     {
         name: "last_name",
         label: "Last Name",
-        required: true
+        required: true,
+        flavors: "all",
+        pages: [ "list", "view", "edit" ]
+    },
+    {
+        name: "group_titles",
+        label: "Groups",
+        flavors: "all",
+        pages: [ "view" ]
     },
     {
         name: "admin",
         label: "Administrator",
-        type: "boolean"
+        type: "boolean",
+        flavors: "all",
+        pages: [ "edit" ]
     },
     {
         name: "role",
@@ -39,7 +54,8 @@ const _UserInputs = [
         type: "select",
         url: "/users/roles",
         dependsOn: "project",
-        onlyFor: [Env.FoursightTitleCgap]
+        flavors: [Env.FoursightTitleCgap],
+        pages: [ "list", "view", "edit" ]
     },
     {
         name: "institution",
@@ -47,15 +63,17 @@ const _UserInputs = [
         type: "select",
         url: "/users/institutions",
         dependsOn: "institution",
-        onlyFor: [Env.FoursightTitleCgap],
-        subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} />
+        subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} />,
+        flavors: [Env.FoursightTitleCgap],
+        pages: [ "list", "view", "edit" ]
     },
     {
         name: "project",
         label: "Project",
         type: "select",
         url: "/users/projects",
-        onlyFor: [Env.FoursightTitleCgap]
+        flavors: [Env.FoursightTitleCgap],
+        pages: [ "list", "view", "edit" ]
     },
     {
         name: "award",
@@ -63,14 +81,16 @@ const _UserInputs = [
         type: "select",
         url: "/users/awards",
         dependsOn: "award",
-        onlyFor: [Env.FoursightTitleFourfront]
+        flavors: [Env.FoursightTitleFourfront],
+        pages: [ "list", "view", "edit" ]
     },
     {
         name: "lab",
         label: "Lab",
         type: "select",
         url: "/users/labs",
-        onlyFor: [Env.FoursightTitleFourfront]
+        flavors: [Env.FoursightTitleFourfront],
+        pages: [ "list", "view", "edit" ]
     },
     {
         name: "consortium",
@@ -78,37 +98,49 @@ const _UserInputs = [
         type: "select",
         url: "/users/consortia",
         dependsOn: "consortia",
-        onlyFor: [Env.FoursightTitleSmaht]
+        flavors: [Env.FoursightTitleSmaht],
+        pages: [ "list", "view", "edit" ]
     },
     {
         name: "submission_center",
         label: "Submission Center",
         type: "select",
         url: "/users/submission_centers",
-        onlyFor: [Env.FoursightTitleSmaht]
+        flavors: [Env.FoursightTitleSmaht],
+        pages: [ "list", "view", "edit" ]
     },
     {
         name: "status",
         label: "Status",
         type: "select",
         url: "/users/statuses",
+        flavors: "all",
+        pages: [ "list", "view", "edit" ]
     },
     {
         name: "created",
         label: "Created",
-        readonly: true
+        readonly: true,
+        map: value => DateTime.Format(value),
+        flavors: "all",
+        pages: [ "list", "view", "edit" ]
     },
     {
         name: "updated",
         label: "Updated",
-        readonly: true
+        readonly: true,
+        map: value => DateTime.Format(value),
+        flavors: "all",
+        pages: [ "list", "view", "edit" ]
     },
     {
         name: "uuid",
         label: "UUID",
         readonly: true,
         readonlyOverridableOnCreate: true,
-        readonlyOverridableOnCreateMessage: "Warning: Only set UUID if you know what you are doing."
+        readonlyOverridableOnCreateMessage: "Warning: Only set UUID if you know what you are doing.",
+        flavors: "all",
+        pages: [ "list", "view", "edit" ]
     }
 ];
 
@@ -161,7 +193,9 @@ const _userInfo = {
                   map: value => affiliationInfo.institutionTitle(value),
                   subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> },
                 { label: "Roles", xkey: "roles", name: "roles",
-                  ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />, toggle: true }
+                  ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />, toggle: true,
+                  flavors: [Env.FoursightTitleCgap],
+                  pages: [ "view", "edit" ] }
             ];
         },
         useAffiliationInfo: function () {
@@ -301,14 +335,20 @@ const useUserInfo = () =>  {
     return userInfo;
 }
 
-const useUserInputs = () => {
+const useUserInputs = (page) => {
     const header = useHeader();
     const flavor = Env.FoursightFlavorTitle(header);
-    const inputs = Json.Clone(_UserInputs).filter(input => !input.onlyFor || input.onlyFor.includes(flavor));
-
+    const inputs = Json.Clone(_UserInputs).filter(input => !input.flavors || input.flavors === "all" || input.flavors == flavor || input.flavors.includes(flavor))
+                                          .filter(input => !input.pages || input.pages === "all" || input.pages == page || input.pages.includes(page))
     let xyzzy = Json.Clone(inputs);
-    const institutionInput = xyzzy.find(input => input.name === "institution");
-    institutionInput.subComponent = (institution) => <PrincipalInvestigatorLine institution={institution} />
+    //const xyzzy = inputs.map((item) => ({ ...item }));
+    let foo = xyzzy.find(input => input.name === "institution");
+    foo.subComponent = (institution) => <PrincipalInvestigatorLine institution={institution} />
+    foo = xyzzy.find(input => input.name === "created");
+    foo.map = (value) => DateTime.Format(value)
+    foo = xyzzy.find(input => input.name === "updated");
+    foo.map = (value) => DateTime.Format(value)
+    return xyzzy;
     return useState(xyzzy)
     //return useState(Json.Clone(inputs));
 }

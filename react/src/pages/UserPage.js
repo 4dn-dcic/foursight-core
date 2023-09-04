@@ -45,7 +45,7 @@ const KeyValueBox = (props) => {
     const [ toggle, setToggle ] = useState({});
     return <div className="box" style={{marginBottom:"8pt"}}>
         <table><tbody>
-            {props.keys.map((key, i) => <React.Fragment key={key.name}>
+            {props.inputs.map((key, i) => <React.Fragment key={key.name}>
                 { props.separators && i > 0 && <>
                     <tr><td colSpan="2" style={{height:"1pt"}}></td></tr>
                     <tr><td colSpan="2" style={{height:"1px",marginTop:"2pt",marginBottom:"2pt",background:"gray"}}></td></tr>
@@ -92,8 +92,9 @@ const UserBox = (props) => {
     const header = useHeader();
     const user = props.user;
     const userInfo = UserDefs.useUserInfo();
+    const inputs = UserDefs.useUserInputs("view");
 
-    let items = [
+    let xinputs = [
         { label: "Email", name: "email" },
         { label: "First Name", name: "first_name" },
         { label: "Last Name", name: "last_name" },
@@ -113,7 +114,7 @@ const UserBox = (props) => {
 
     return <>
                 [[{JSON.stringify(props.user)}]]
-        <KeyValueBox keys={items} value={props.user} separators={true} />
+        <KeyValueBox inputs={inputs} value={props.user} separators={true} />
     </>
 }
 

@@ -22,7 +22,7 @@ const UsersPage = () => {
     const { environ } = useParams();
     const [ args, setArgs ] = useSearchParams();
     const users = useFetch();
-    const inputs = UserDefs.useUserInputs();
+    const inputs = UserDefs.useUserInputs("list");
 
     const [ search, setSearch ] = useState(args.get("search") || "");
     const [ showSearch, setShowSearch ] = useState(Str.HasValue(search));
