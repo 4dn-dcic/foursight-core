@@ -14,7 +14,7 @@ import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import useHeader from '../hooks/Header';
 
-const _inputsCommon = [
+const InputsCommon = [
     {
         key: "email",
         label: "Email Address",
@@ -84,12 +84,139 @@ const _inputsCommon = [
     }
 ];
 
-function _inputs(additionalInputs) {
-    const inputs = [ ..._inputsCommon ];
+function Inputs(additionalInputs) {
+    const inputs = [ ...InputsCommon ];
     const index = inputs.findIndex((item) => item.key === "status");
     inputs.splice(index, 0, ...additionalInputs);
     return inputs;
 }
+
+const UserInfo = {
+    [Env.FoursightTitleCgap]: {
+        inputs: function () {
+            const affiliationInfo = UserInfo[Env.FoursightTitleCgap].useAffiliationInfo();
+            const inputs = [
+                { label: "Role", key: "role", type: "select",
+                  url: "/users/roles",
+                  map: (value, user) => affiliationInfo.roleTitle(value) },
+                { label: "Project", key: "project", type: "select",
+                  url: "/users/projects",
+                  map: (value, user) => affiliationInfo.projectTitle(value) },
+                { label: "Institution", key: "institution", type: "select",
+                  url: "/users/institutions",
+                  map: (value, user) => affiliationInfo.institutionTitle(value),
+                  subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> },
+                { label: "Roles", key: "roles",
+                  ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />,
+                  toggle: true,
+                  pages: [ "view" ] }
+            ];
+            return Inputs(inputs);
+        },
+        useAffiliationInfo: function () {
+            const projects = useFetch("/users/projects", { cache: true });
+            const roles = useFetch("/users/roles", { cache: true });
+            const institutions = useFetch("/users/institutions", { cache: true });
+            const response = {
+                projectTitle: (id) => projects.data?.find(item => item.id === id)?.title || "",
+                roleTitle: (id) => roles.data?.find(item => item.id === id)?.title || "",
+                userRole: (user, projectId) => user.roles?.find(item => item.project === projectId)?.role || "",
+                institutionTitle: (id) => institutions.data?.find(item => item.id === id)?.title || "",
+                principleInvestigator: (institutionId) => {
+                    return institutions?.data?.find(item => item.id === institutionId)?.pi
+                }
+            }
+            return response;
+        },
+        normalize: function (user) {
+            user.admin = user.groups?.includes("admin") ? true : false;
+            user.role = user.roles?.find(role => role.project === user.project)?.role || "";
+        },
+        normalizeForUpdate: function (user, values) {
+            if (values.project === "-") values.project = null;
+            if (values.institution === "-") values.institution = null;
+            if (values.role === "-") values.role = null;
+            return { ...values, "roles": user.get("roles") };
+        }
+    },
+    [Env.FoursightTitleFourfront]: {
+        inputs: function () {
+            const affiliationInfo = UserInfo[Env.FoursightTitleFourfront].useAffiliationInfo();
+            const inputs = [
+                { label: "Award", key: "award", type: "select",
+                  url: "/users/awards",
+                  map: (value, user) => affiliationInfo.awardTitle(value) },
+                { label: "Lab", key: "lab", type: "select",
+                  url: "/users/labs",
+                  map: (value, user) => affiliationInfo.labTitle(value) }
+            ];
+            return Inputs(inputs);
+        },
+        useAffiliationInfo: function () {
+            const awards = useFetch("/users/awards", { cache: true });
+            const labs = useFetch("/users/labs", { cache: true });
+            const response = {
+                awardTitle: (id) => awards.data?.find(item => item.id === id)?.title || "",
+                labTitle: (id) => labs.data?.find(item => item.id === id)?.title || "",
+            }
+            return response;
+        },
+        normalize: function (user) {
+            user.admin = user.groups?.includes("admin") ? true : false;
+        },
+        normalizeForUpdate: function (user, values) {
+            if (values.award === "-") values.award = null;
+            if (values.lab === "-") values.lab = null;
+            // TODO: Award not allowed on update?
+            delete values["award"];
+            return { ...values };
+        }
+    },
+    [Env.FoursightTitleSmaht]: {
+        inputs: function () {
+            const affiliationInfo = UserInfo[Env.FoursightTitleSmaht].useAffiliationInfo();
+            const inputs = [
+                { label: "Consortium", key: "consortium", type: "select",
+                  url: "/users/consortia",
+                  map: (value, user) => affiliationInfo.consortiumTitle(value) },
+                { label: "Submission Center", key: "submission_center", type: "select",
+                  url: "/users/submission_centers",
+                  map: (value, user) => affiliationInfo.submissionCenterTitle(value) }
+            ];
+            return Inputs(inputs);
+        },
+        useAffiliationInfo: function () {
+            const consortia = useFetch("/users/consortia", { cache: true });
+            const submissionCenters = useFetch("/users/submission_centers", { cache: true });
+            return {
+                consortiumTitle: (id) => consortia.data?.find(item => item.id === id)?.title || "",
+                submissionCenterTitle: (id) => submissionCenters.data?.find(item => item.id === id)?.title || "",
+            }
+        },
+        normalize: function (user) {
+            user.admin = user.groups?.includes("admin") ? true : false;
+            if (Type.IsArray(user.submission_centers) && (user.submission_centers.length > 0)) {
+                user.submission_center = user.submission_centers[0];
+            }
+            if (Type.IsArray(user.consortia) && (user.consortia.length > 0)) {
+                user.consortium = user.consortia[0];
+            }
+        },
+        normalizeForUpdate: function (user, values) {
+            if (values.consortium === "-") values.consortium = null;
+            if (values.submission_center === "-") values.submission_center = null;
+            values = {
+                ...values,
+                "consortia": values.consortium ? [values.consortium] : [],
+                "submission_centers": values.submission_center ? [values.submission_center] : [],
+                "roles": user.get("roles")
+            };
+            delete values["consortium"]
+            delete values["submission_center"]
+            return values;
+        }
+    }
+};
 
 const RolesBox = (props) => {
     return <div className="box lighten" style={{marginTop:"2pt",marginBottom:"2pt"}}>
@@ -126,149 +253,13 @@ const PrincipalInvestigatorLine = (props) => {
     </div>
 }
 
-const _userInfo = {
-    [Env.FoursightTitleCgap]: {
-        inputs: function () {
-            const affiliationInfo = _userInfo[Env.FoursightTitleCgap].useAffiliationInfo();
-            const inputs = [
-                { label: "Role", key: "role", type: "select",
-                  url: "/users/roles",
-                  dont_think_we_need_this_dependsOn: "project",
-                  map: (value, user) => {
-                      const userRole = user.roles?.find(role => role.project === user.project)?.role || "";
-                      return affiliationInfo.roleTitle(userRole);
-                  } },
-                { label: "Project", key: "project", type: "select",
-                  url: "/users/projects",
-                  dont_think_we_need_this_dependsOn: "project",
-                  map: (value, user) => affiliationInfo.projectTitle(value) },
-                { label: "Institution", key: "institution", type: "select",
-                  url: "/users/institutions",
-                  dont_think_we_need_this_dependsOn: "institution",
-                  map: (value, user) => affiliationInfo.institutionTitle(value),
-                  subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> },
-                { label: "Roles", key: "roles",
-                  ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />,
-                  toggle: true,
-                  pages: [ "view" ] }
-            ];
-            return _inputs(inputs);
-        },
-        useAffiliationInfo: function () {
-            const projects = useFetch("/users/projects", { cache: true });
-            const roles = useFetch("/users/roles", { cache: true });
-            const institutions = useFetch("/users/institutions", { cache: true });
-            const response = {
-                projectTitle: (id) => projects.data?.find(item => item.id === id)?.title || "",
-                roleTitle: (id) => roles.data?.find(item => item.id === id)?.title || "",
-                userRole: (user, projectId) => user.roles?.find(item => item.project === projectId)?.role || "",
-                institutionTitle: (id) => institutions.data?.find(item => item.id === id)?.title || "",
-                principleInvestigator: (institutionId) => {
-                    return institutions?.data?.find(item => item.id === institutionId)?.pi
-                }
-            }
-            return response;
-        },
-        normalize: function (user) {
-            user.admin = user.groups?.includes("admin") ? true : false;
-        },
-        normalizeForEdit: function (user, inputs) {
-            const userRole = user.roles?.find(role => role.project === user.project)?.role || "";
-            inputs.find(input => input.key === "role").value = userRole;
-        },
-        normalizeForUpdate: function (user, values) {
-            if (values.project === "-") values.project = null;
-            if (values.institution === "-") values.institution = null;
-            if (values.role === "-") values.role = null;
-            return { ...values, "roles": user.get("roles") };
-        }
-    },
-    [Env.FoursightTitleFourfront]: {
-        inputs: function () {
-            const affiliationInfo = _userInfo[Env.FoursightTitleFourfront].useAffiliationInfo();
-            const inputs = [
-                { label: "Award", key: "award", type: "select",
-                  url: "/users/awards",
-                  map: (value, user) => affiliationInfo.awardTitle(value) },
-                { label: "Lab", key: "lab", type: "select",
-                  url: "/users/labs",
-                  map: (value, user) => affiliationInfo.labTitle(value) }
-            ];
-            return _inputs(inputs);
-        },
-        useAffiliationInfo: function () {
-            const awards = useFetch("/users/awards", { cache: true });
-            const labs = useFetch("/users/labs", { cache: true });
-            const response = {
-                awardTitle: (id) => awards.data?.find(item => item.id === id)?.title || "",
-                labTitle: (id) => labs.data?.find(item => item.id === id)?.title || "",
-            }
-            return response;
-        },
-        normalize: function (user) {
-            user.admin = user.groups?.includes("admin") ? true : false;
-        },
-        normalizeForUpdate: function (user, values) {
-            if (values.award === "-") values.award = null;
-            if (values.lab === "-") values.lab = null;
-            // TODO: Award not allowe on update?
-            delete values["award"];
-            return { ...values };
-        }
-    },
-    [Env.FoursightTitleSmaht]: {
-        inputs: function () {
-            const affiliationInfo = _userInfo[Env.FoursightTitleSmaht].useAffiliationInfo();
-            const inputs = [
-                { label: "Consortium", key: "consortium", type: "select",
-                  url: "/users/consortia",
-                  map: (value, user) => affiliationInfo.consortiumTitle(value) },
-                { label: "Submission Center", key: "submission_center", type: "select",
-                  url: "/users/submission_centers",
-                  map: (value, user) => affiliationInfo.submissionCenterTitle(value) }
-            ];
-            return _inputs(inputs);
-        },
-        useAffiliationInfo: function () {
-            const consortia = useFetch("/users/consortia", { cache: true });
-            const submissionCenters = useFetch("/users/submission_centers", { cache: true });
-            return {
-                consortiumTitle: (id) => consortia.data?.find(item => item.id === id)?.title || "",
-                submissionCenterTitle: (id) => submissionCenters.data?.find(item => item.id === id)?.title || "",
-            }
-        },
-        normalize: function (user) {
-            user.admin = user.groups?.includes("admin") ? true : false;
-            if (Type.IsArray(user.submission_centers) && (user.submission_centers.length > 0)) {
-                user.submission_center = user.submission_centers[0];
-            }
-            if (Type.IsArray(user.consortia) && (user.consortia.length > 0)) {
-                user.consortium = user.consortia[0];
-            }
-        },
-        normalizeForUpdate: function (user, values) {
-            if (values.consortium === "-") values.consortium = null;
-            if (values.submission_center === "-") values.submission_center = null;
-            values = {
-                ...values,
-                "consortia": values.consortium ? [values.consortium] : [],
-                "submission_centers": values.submission_center ? [values.submission_center] : [],
-                "roles": user.get("roles")
-            };
-            delete values["consortium"]
-            delete values["submission_center"]
-            return values;
-        }
-    }
-};
-
 const useUserInfo = () =>  {
     const header = useHeader();
     let flavor = Env.FoursightTitle(header);
     if (flavor == Env.FoursightTitleUnknown) {
         flavor = Env.FoursightTitleFourfront;
     }
-    const userInfo = _userInfo[flavor];
+    const userInfo = UserInfo[flavor];
     const statuses = useFetch("/users/statuses", { cache: false });
     userInfo.normalizeUser = (user) => {
         user.name = `${user.first_name} ${user.last_name}`.trim();
@@ -291,9 +282,6 @@ const useUserInfo = () =>  {
         for (const input of inputs) {
             input.value = user[input.key];
         }
-        if (userInfo.normalizeForEdit) {
-            userInfo.normalizeForEdit(user, inputs);
-        }
         return [...inputs];
     };
     userInfo.normalizeUserForUpdate = (user, values) => {
@@ -314,8 +302,7 @@ const useUserInfo = () =>  {
 }
 
 const useUserInputs = (page) => {
-    const info = useUserInfo();
-    let inputs = info.inputs();
+    let inputs = useUserInfo().inputs();
     if (Str.HasValue(page)) {
         inputs = inputs.filter(item => !item.pages ||
                                item.pages === "all" ||
