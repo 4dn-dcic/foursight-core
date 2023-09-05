@@ -54,6 +54,7 @@ const CommonInputs = [
         key: "status",
         label: "Status",
         type: "select",
+        required: true,
         url: "/users/statuses",
         map: (value, user) => user.status_title,
         pages: [ "list", "view", "edit" , "create" ]
@@ -77,10 +78,11 @@ const CommonInputs = [
     {
         key: "uuid",
         label: "UUID",
+        type: "uuid",
         readonly: true,
         readonlyOverridableOnCreate: true,
         readonlyOverridableOnCreateMessage: "Warning: Only set UUID if you know what you are doing.",
-        pages: [ "view", "edit" ]
+        pages: [ "view", "edit", "create" ]
     }
 ];
 
@@ -144,7 +146,7 @@ const UserInfo = {
                 { label: "Award", key: "award", type: "select",
                   url: "/users/awards",
                   map: (value, user) => affiliationInfo.awardTitle(value) },
-                { label: "Lab", key: "lab", type: "select",
+                { label: "Lab", key: "lab", type: "select", required: true,
                   url: "/users/labs",
                   map: (value, user) => affiliationInfo.labTitle(value) }
             ];
@@ -276,7 +278,12 @@ const useUserInfo = () =>  {
     userInfo.normalizeUserForEdit = (user, inputs) => {
         userInfo.normalizeUser(user)
         for (const input of inputs) {
-            input.value = user[input.key];
+            if (input.type === "datetime") {
+                input.value = DateTime.Format(user[input.key]);
+            }
+            else {
+                input.value = user[input.key];
+            }
         }
         return [...inputs];
     };
@@ -289,6 +296,7 @@ const useUserInfo = () =>  {
             values = {...values, "groups": groupsWithoutAdmin }
         }
         delete values["admin"]
+        if (values.status === "-") values.status = null;
         if (userInfo.normalizeForUpdate) {
             values = userInfo.normalizeForUpdate(user, values);
         }

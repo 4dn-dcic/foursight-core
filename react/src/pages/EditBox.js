@@ -8,13 +8,11 @@ import Type from '../utils/Type';
 import Tooltip from '../components/Tooltip';
 import Uuid from 'react-uuid';
 
+const EMPTY_SELECT_KEY = "-";
+const EMPTY_SELECT_VALUE = "-";
+
 // Generic box to edit (create, update, delete) a list of plain input fields representing some data record.
 // If the onCreate argument is specified then assume this is a create.
-
-const useConsortia = () => {
-    const consortia = useFetch("/users/consortia", { nofetch: true, cache: true, onData: (data) => {return data;}  });
-    return consortia;
-}
 
 const DynamicSelect = (props) => {
 
@@ -36,7 +34,7 @@ const DynamicSelect = (props) => {
 
     return <>
         <select id={props.id} className="select" value={selected || ""} onChange={onChange} disabled={props.disabled || values.loading}>
-            { !props.required && <option key="-" value="-">-</option> }
+            { (!props.required || true) && <option key={EMPTY_SELECT_KEY} value={EMPTY_SELECT_VALUE}>-</option> }
             { values.map(value => {
                 if (value.id) {
                     const MAX_TITLE_LENGTH = 30;
@@ -76,7 +74,7 @@ const InputLine = (props) => {
                 { readonly ? <>
                     <span onClick={() => setReadonly(false)}><img src={Image.EditIcon()} style={{height:"22px",marginBottom:"6px"}} /></span>
                 </>:<>
-                    <span onClick={() => setReadonly(true)}><img src={Image.EditIcon()} style={{height:"22px",marginBottom:"6px",marginRight:"-8px"}} /></span>
+                    <span onClick={() => { setReadonly(true); }}><img src={Image.EditIcon()} style={{height:"22px",marginBottom:"6px",marginRight:"-8px"}} /></span>
                 &nbsp;&nbsp;</> }
             </small>
             <Tooltip id={`tooltip-${input.key}`} position="top" text={`Click to ${readonly ? "allow" : "disallow"} setting of this field.`} />
@@ -178,12 +176,23 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
         const input = getInputByName(e.target.id);
         if (input.required) {
             const currentValue = e.target.value?.toString();
-            inputsRequiredStatus[input.key] = (currentValue?.toString()?.length > 0);
+            if (input.type == "select") {
+                inputsRequiredStatus[input.key] =
+                    (currentValue?.length > 0) && (currentValue !== EMPTY_SELECT_VALUE);
+            }
+            else {
+                inputsRequiredStatus[input.key] = (currentValue?.length > 0);
+            }
             setInputsRequiredStatus(current => ({...inputsRequiredStatus}));
         }
         if (input.type === "email") {
             const currentValue = e.target.value?.toString();
             inputsRequiredStatus[input.key] = isValidEmail(currentValue);
+            setInputsRequiredStatus(current => ({...inputsRequiredStatus}));
+        }
+        else if (input.type === "uuid") {
+            const currentValue = e.target.value?.toString();
+            inputsRequiredStatus[input.key] = isValidUuid(currentValue);
             setInputsRequiredStatus(current => ({...inputsRequiredStatus}));
         }
         //
@@ -291,8 +300,11 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
     }
 
     function isValidEmail(email) {
-        const valid = /\S+@\S+\.\S+/.test(email);
-        return valid;
+        return /\S+@\S+\.\S+/.test(email);
+    }
+
+    function isValidUuid(uuid) {
+        return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid);
     }
 
     function setCurrentInputsRequiredStatus() {
@@ -310,6 +322,10 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
 
     function inputRequiredIndicatorColor(input) {
         return inputsRequiredStatus[input.key] ? "green" : "red";
+    }
+
+    function inputRequiredIndicatorTooltip(input) {
+        return inputsRequiredStatus[input.key] ? "Required and set." : "Required and NOT set.";
     }
 
     function allowSubmit() {
@@ -359,22 +375,14 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                                     />
                                 </>:<>
                                     <InputLine input={input} valueOf={valueOf} handleChange={handleChange} isDisabled={isDisabled} isCreate={!Type.IsNull(onCreate)} />
-{/*
-                                    <input
-                                        className="input icon-rtl"
-                                        placeholder={input.placeholder || input.label}
-                                        id={input.key}
-                                        defaultValue={valueOf(input)}
-                                        onChange={handleChange}
-                                        readOnly={input.readonly}
-                                        disabled={isDisabled()}
-                                        autoFocus={input.focus ? true : false} />
-*/}
                                 </>}
                             </>}
-                            { input.required &&
-                                <small style={{fontWeight:"bold",paddingLeft:"0.6em",color:inputRequiredIndicatorColor(input)}}>{Char.Check}</small>
-                            }
+                            { input.required && <>
+                                <span id={`tooltip-required-${input.key}`}>
+                                    <small style={{fontSize:"large",fontWeight:"bold",paddingLeft:"0.6em",color:inputRequiredIndicatorColor(input)}}>{Char.Check}</small>
+                                    <Tooltip id={`tooltip-required-${input.key}`} position="bottom" text={inputRequiredIndicatorTooltip(input)} />
+                                </span>
+                            </> }
                         </td>
                     </tr>
                 )}
