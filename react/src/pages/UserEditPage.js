@@ -59,7 +59,6 @@ const UserEditPage = () => {
     }
 
     return <center>
-                {JSON.stringify(user)}
         <table><tbody><tr><td>
             <b>Edit User</b>{!user.loading && user.data ? ": " + user.data.first_name + " " + user.data.last_name : ""}
             <div style={{float:"right",marginTop:"1pt",marginRight:"4pt",fontSize:"small"}}>

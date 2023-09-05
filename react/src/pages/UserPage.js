@@ -156,6 +156,7 @@ const UserPage = (props) => {
             </div>
             {users.length > 0 && users.map(user => (
                 <div key={user.uuid}>
+                {JSON.stringify(user)}
                     <div className="box lighten" style={{fontWeight:"bold",marginBottom:"6px"}}>
                         {user.email} <small style={{fontWeight:"normal"}}>({user.uuid})</small>
                         <button onClick={() => navigate(Client.Path(`/users/edit/${user.uuid}`))} className="button" style={{float:"right",fontSize:"small",marginTop:"-1pt",marginRight:"2pt"}}>

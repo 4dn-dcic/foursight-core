@@ -133,15 +133,18 @@ const _userInfo = {
             const inputs = [
                 { label: "Role", key: "role", type: "select",
                   url: "/users/roles",
-                  dependsOn: "project",
-                  map: (value, user) => affiliationInfo.userRoleTitle(user, user.project) },
+                  dont_think_we_need_this_dependsOn: "project",
+                  map: (value, user) => {
+                      const userRole = user.roles?.find(role => role.project === user.project)?.role || "";
+                      return affiliationInfo.roleTitle(userRole);
+                  } },
                 { label: "Project", key: "project", type: "select",
                   url: "/users/projects",
-                  dependsOn: "project",
+                  dont_think_we_need_this_dependsOn: "project",
                   map: (value, user) => affiliationInfo.projectTitle(value) },
                 { label: "Institution", key: "institution", type: "select",
                   url: "/users/institutions",
-                  dependsOn: "institution",
+                  dont_think_we_need_this_dependsOn: "institution",
                   map: (value, user) => affiliationInfo.institutionTitle(value),
                   subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> },
                 { label: "Roles", key: "roles",
@@ -158,20 +161,20 @@ const _userInfo = {
             const response = {
                 projectTitle: (id) => projects.data?.find(item => item.id === id)?.title || "",
                 roleTitle: (id) => roles.data?.find(item => item.id === id)?.title || "",
-                institutionTitle: (id) => institutions.data?.find(item => item.id === id)?.title || "",
                 userRole: (user, projectId) => user.roles?.find(item => item.project === projectId)?.role || "",
+                institutionTitle: (id) => institutions.data?.find(item => item.id === id)?.title || "",
                 principleInvestigator: (institutionId) => {
                     return institutions?.data?.find(item => item.id === institutionId)?.pi
                 }
             }
-            response.userRoleTitle = (user, projectId) => response.roleTitle(response.userRole(user, projectId)) || "";
             return response;
         },
         normalize: function (user) {
             user.admin = user.groups?.includes("admin") ? true : false;
         },
-        normalizeForEdit: function (user, inputs, affiliationInfo) {
-            inputs.find(input => input.key === "role").value = (project) => affiliationInfo.userRole(user, user.project);
+        normalizeForEdit: function (user, inputs) {
+            const userRole = user.roles?.find(role => role.project === user.project)?.role || "";
+            inputs.find(input => input.key === "role").value = userRole;
         },
         normalizeForUpdate: function (user, values) {
             if (values.project === "-") values.project = null;
@@ -266,7 +269,6 @@ const useUserInfo = () =>  {
         flavor = Env.FoursightTitleFourfront;
     }
     const userInfo = _userInfo[flavor];
-    const affiliationInfo = userInfo.useAffiliationInfo();
     const statuses = useFetch("/users/statuses", { cache: false });
     userInfo.normalizeUser = (user) => {
         user.name = `${user.first_name} ${user.last_name}`.trim();
@@ -290,7 +292,7 @@ const useUserInfo = () =>  {
             input.value = user[input.key];
         }
         if (userInfo.normalizeForEdit) {
-            userInfo.normalizeForEdit(user, inputs, affiliationInfo);
+            userInfo.normalizeForEdit(user, inputs);
         }
         return [...inputs];
     };
@@ -324,7 +326,6 @@ const useUserInputs = (page) => {
 }
 
 const exports = {
-    PrincipalInvestigatorLine: PrincipalInvestigatorLine,
     useUserInputs: useUserInputs,
     useUserInfo: useUserInfo
 }; export default exports;
