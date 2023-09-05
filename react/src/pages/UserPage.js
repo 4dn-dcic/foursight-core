@@ -65,12 +65,16 @@ const KeyValueBox = (props) => {
                     </td>
                     <td style={tdContentStyle}>
                         { key.ui ? <>
-                            { toggle[key.label] ? <span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: false}))}>
-                                <small><u>Hide</u> {Char.DownArrowHollow}</small>
+                            { key.toggle ? <>
+                                { toggle[key.label] ? <span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: false}))}>
+                                    <small><u>Hide</u> {Char.DownArrowHollow}</small>
+                                    {key.ui(props.value)}
+                                </span>:<span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: true}))}>
+                                    <small><u>Show</u> {Char.UpArrowHollow}</small>
+                                </span> }
+                            </>:<>
                                 {key.ui(props.value)}
-                            </span>:<span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: true}))}>
-                                <small><u>Show</u> {Char.UpArrowHollow}</small>
-                            </span> }
+                            </>}
                         </>:<>
                             { key.mapWithUser ? <>
                                 {(Type.IsFunction(key.map) ? key.map(props.value, props.value[key.key]) : props.value[key.key]) || Char.EmptySet}

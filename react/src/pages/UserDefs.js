@@ -14,7 +14,7 @@ import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import useHeader from '../hooks/Header';
 
-const InputsCommon = [
+const CommonInputs = [
     {
         key: "email",
         label: "Email Address",
@@ -85,7 +85,7 @@ const InputsCommon = [
 ];
 
 function Inputs(additionalInputs) {
-    const inputs = [ ...InputsCommon ];
+    const inputs = [ ...CommonInputs ];
     const index = inputs.findIndex((item) => item.key === "status");
     inputs.splice(index, 0, ...additionalInputs);
     return inputs;
@@ -107,8 +107,7 @@ const UserInfo = {
                   map: (value, user) => affiliationInfo.institutionTitle(value),
                   subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> },
                 { label: "Roles", key: "roles",
-                  ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />,
-                  toggle: true,
+                  ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />, toggle: true,
                   pages: [ "view" ] }
             ];
             return Inputs(inputs);
@@ -129,7 +128,6 @@ const UserInfo = {
             return response;
         },
         normalize: function (user) {
-            user.admin = user.groups?.includes("admin") ? true : false;
             user.role = user.roles?.find(role => role.project === user.project)?.role || "";
         },
         normalizeForUpdate: function (user, values) {
@@ -161,9 +159,6 @@ const UserInfo = {
             }
             return response;
         },
-        normalize: function (user) {
-            user.admin = user.groups?.includes("admin") ? true : false;
-        },
         normalizeForUpdate: function (user, values) {
             if (values.award === "-") values.award = null;
             if (values.lab === "-") values.lab = null;
@@ -194,7 +189,6 @@ const UserInfo = {
             }
         },
         normalize: function (user) {
-            user.admin = user.groups?.includes("admin") ? true : false;
             if (Type.IsArray(user.submission_centers) && (user.submission_centers.length > 0)) {
                 user.submission_center = user.submission_centers[0];
             }
@@ -266,6 +260,7 @@ const useUserInfo = () =>  {
         if (Str.HasValue(user.title) && user.title !== user.key) {
             user.name = user.title;
         }
+        user.admin = user.groups?.includes("admin") ? true : false;
         user.group_titles = Str.StringArrayToCommaSeparatedListOfTitles(user.groups);
         user.status_title = statuses.data?.find(item => item.id === user.status)?.title;
         if (userInfo.normalize) {
