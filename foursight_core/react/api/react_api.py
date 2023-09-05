@@ -14,7 +14,7 @@ import time
 from typing import Optional
 import urllib.parse
 from itertools import chain
-from dcicutils.ecs_utils import ECSUtils 
+from dcicutils.ecs_utils import ECSUtils
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils.env_utils import get_portal_url as env_utils_get_portal_url
 from dcicutils.function_cache_decorator import function_cache, function_cache_info, function_cache_clear
@@ -1841,7 +1841,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         Given something like this:
         - arn:aws:ecs:us-east-1:466564410312:task-definition/c4-ecs-cgap-supertest-stack-CGAPDeployment-of2dr96JX1ds:1
-        this function would return this: 
+        this function would return this:
         - c4-ecs-cgap-supertest-stack-CGAPDeployment-of2dr96JX1ds
         """
         if not task_definition_arn:
@@ -1889,6 +1889,48 @@ class ReactApi(ReactApiBase, ReactRoutes):
             function_cache_clear()
             cache_cleared.append("<all>")
         return self.create_success_response({"cache_cleared": cache_cleared})
+
+    def reactapi_patch_status_to_deleted(self, request: dict, env, args: Optional[dict] = None) -> Response:
+        """
+        Intended to be called before reactapi_purge_item to set an item status to deleted
+        """
+        connection = app.core.init_connection(env)
+        resource_paths = args.get("uuid", args.get("uuids"))
+        if not resource_paths or resource_paths == 'null':
+            return self.create_error_response(message="Did not pass uuid or uuids args, so nothing to purge.")
+        else:
+            responses = []
+            for uuid in resource_paths:
+                try:
+                    resp = ff_utils.patch_metadata({'status': 'deleted'}, uuid, key=connection.ff_keys)
+                except Exception as e:
+                    resp = e
+                responses.append(resp)
+        return self.create_success_response({
+            "responses": responses
+        })
+
+    def reactapi_purge_item(self, request: dict, env, args: Optional[dict] = None) -> Response:
+        """
+        Intended to be called after reactapi_patch_status_to_deleted to fully purge an item from
+        the database. Note that this is a permanent operation and removes all revision history so we should
+        take care with appropriate guard rails.
+        """
+        connection = app.core.init_connection(env)
+        resource_paths = args.get("uuid", args.get("uuids"))
+        if not resource_paths or resource_paths == 'null':
+            return self.create_error_response(message="Did not pass uuid or uuids args, so nothing to purge.")
+        else:
+            responses = []
+            for uuid in resource_paths:
+                try:
+                    resp = ff_utils.purge_metadata(uuid, key=connection.ff_keys)
+                except Exception as e:
+                    resp = e
+                responses.append(resp)
+        return self.create_success_response({
+            "responses": responses
+        })
 
     @staticmethod
     def reactapi_testsize(n: int) -> Response:
