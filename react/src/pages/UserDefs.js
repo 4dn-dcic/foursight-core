@@ -48,7 +48,7 @@ const CommonInputs = [
         key: "admin",
         label: "Administrator",
         type: "boolean",
-        pages: [ "edit" ]
+        pages: [ "edit", "create" ]
     },
     {
         key: "status",
@@ -56,7 +56,7 @@ const CommonInputs = [
         type: "select",
         url: "/users/statuses",
         map: (value, user) => user.status_title,
-        pages: [ "list", "view", "edit" ]
+        pages: [ "list", "view", "edit" , "create" ]
     },
     {
         key: "created",
@@ -99,16 +99,16 @@ const UserInfo = {
                 { label: "Role", key: "role", type: "select",
                   url: "/users/roles",
                   map: (value, user) => affiliationInfo.roleTitle(value) },
+                { label: "Roles", key: "roles",
+                  ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />, toggle: true,
+                  pages: [ "view" ] },
                 { label: "Project", key: "project", type: "select",
                   url: "/users/projects",
                   map: (value, user) => affiliationInfo.projectTitle(value) },
                 { label: "Institution", key: "institution", type: "select",
                   url: "/users/institutions",
                   map: (value, user) => affiliationInfo.institutionTitle(value),
-                  subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> },
-                { label: "Roles", key: "roles",
-                  ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />, toggle: true,
-                  pages: [ "view" ] }
+                  subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> }
             ];
             return Inputs(inputs);
         },
@@ -213,6 +213,7 @@ const UserInfo = {
 };
 
 const RolesBox = (props) => {
+    if (!props.user?.roles) return;
     return <div className="box lighten" style={{marginTop:"2pt",marginBottom:"2pt"}}>
         <table style={{width:"100%",fontSize:"small",marginTop:"-3pt",marginBottom:"-2pt"}}><tbody>
             <tr>
