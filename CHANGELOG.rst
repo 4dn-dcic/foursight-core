@@ -15,6 +15,7 @@ Change Log
 * Miscellaneous changes to get foursight-smaht working properly.
   * Support to get consorita/submission_centers, as well as for
     awards/labs for foursight-fourfront (previous oversight).
+  * Fixed up users pages.
 * Added UI warning bar about inability to connect to ElasticSearch.
 
 
