@@ -15,6 +15,7 @@ from typing import Callable, Optional
 import urllib.parse
 from itertools import chain
 from dcicutils.ecs_utils import ECSUtils 
+from dcicutils.env_manager import EnvManager
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils.env_utils import get_portal_url as env_utils_get_portal_url
 from dcicutils.function_cache_decorator import function_cache, function_cache_info, function_cache_clear
@@ -117,6 +118,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "tibanna_cwls_bucket": s3.tibanna_cwls_bucket,
             "tibanna_output_bucket": s3.tibanna_output_bucket
         }
+
+    def get_ecosystem_data(self) -> dict:
+        return sort_dictionary_by_case_insensitive_keys(EnvUtils.declared_data())
 
     def _get_elasticsearch_server_status(self) -> Optional[dict]:
         response = {"url": app.core.host}
@@ -479,7 +483,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             },
             "s3": {
                 "bucket_org": os.environ.get("ENCODED_S3_BUCKET_ORG", os.environ.get("S3_BUCKET_ORG", None)),
-                "global_env_bucket": os.environ.get("GLOBAL_ENV_BUCKET", os.environ.get("GLOBAL_BUCKET_ENV", None)),
+                "global_env_bucket": self.get_global_env_bucket(),
                 "encrypt_key_id": os.environ.get("S3_ENCRYPT_KEY_ID", None),
                 "buckets": self._get_known_buckets()
             }
@@ -626,7 +630,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "foursight": get_foursight_bucket(envname=env or default_env, stage=stage_name),
                 "foursight_prefix": get_foursight_bucket_prefix(),
                 "info": environment_and_bucket_info,
-                "ecosystem": sort_dictionary_by_case_insensitive_keys(EnvUtils.declared_data()),
+                "ecosystem": self.get_ecosystem_data()
             },
             "page": {
                 "path": request.get("context").get("path"),
@@ -642,6 +646,41 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "environ": sort_dictionary_by_case_insensitive_keys(obfuscate_dict(dict(os.environ)))
         }
         return self.create_success_response(body)
+
+    def reactapi_ecosystems(self, request: dict, env: str) -> Response:
+        """
+        Called from react_routes for endpoint:
+        - GET /{env}/envs
+        - GET /envs
+        Return info about all environment "ecosystems", just for informtional purposes.
+        """
+        current_ecosystem_data = self.get_ecosystem_data()
+        current_ecosystem_name = None
+        current_ecosystem_name_cannot_infer = False
+        global_env_bucket = self.get_global_env_bucket()
+        ecosystem_names = EnvManager.get_all_ecosystems(env_bucket=global_env_bucket)
+        results = {}
+        for ecosystem_name in ecosystem_names:
+            if not ecosystem_name.endswith(".ecosystem"):
+                ecosystem_name = f"{ecosystem_name}.ecosystem"
+            s3 = boto3.client("s3")
+            try:
+                ecosystem_data = s3.get_object(Bucket=global_env_bucket, Key=ecosystem_name)
+                ecosystem_data = json.loads(ecosystem_data["Body"].read().decode("utf-8"))
+                ecosystem_data = sort_dictionary_by_case_insensitive_keys(ecosystem_data)
+                if ecosystem_data == current_ecosystem_data:
+                    # No convenient way to get the name of the current
+                    # ecosystem fron EnvManager so infer it from the contents.
+                    if current_ecosystem_name:
+                        current_ecosystem_name_cannot_infer = True
+                    else:
+                        current_ecosystem_name = ecosystem_name
+                results[ecosystem_name] = ecosystem_data
+            except Exception as e:
+                pass
+        if current_ecosystem_name and not current_ecosystem_name_cannot_infer:
+            results = {"current": current_ecosystem_name, **results}
+        return self.create_success_response(results)
 
     def _create_user_record_for_output(self, user: dict) -> dict:
         """
@@ -1483,7 +1522,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         def check_s3_aws_access_key() -> bool:
             s3_aws_access_key_id = os.environ.get("S3_AWS_ACCESS_KEY_ID")
             s3_secret_access_key = os.environ.get("S3_SECRET_ACCESS_KEY")
-            global_env_bucket = os.environ.get("GLOBAL_ENV_BUCKET")
+            global_env_bucket = self.get_global_env_bucket()
             if s3_aws_access_key_id and s3_secret_access_key and global_env_bucket:
                 s3 = s3.client("s3")
                 try:

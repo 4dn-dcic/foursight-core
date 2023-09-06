@@ -14,6 +14,7 @@ import useFetch from '../hooks/Fetch';
 import useFetching from '../hooks/Fetching';
 import { Secrets } from './aws/Secrets';
 import Server from '../utils/Server';
+import Str from '../utils/Str';
 import Styles from '../Styles';
 import Time from '../utils/Time';
 import Tooltip from '../components/Tooltip';
@@ -57,10 +58,12 @@ const PortalAccessKeyStatus = ({ portalAccessKeyResponse }) => {
     }
     else if (portalAccessKeyResponse.expires_at) {
         if (portalAccessKeyResponse.expires_soon) {
-            return <span style={{color:"red"}}>Expires {Time.FromNow(portalAccessKeyResponse.expires_at)} {Char.RightArrow} {DateTime.Format(portalAccessKeyResponse.expires_at)}</span>
+            return <span style={{color:"red"}}>Expires {Time.FromNow(portalAccessKeyResponse.expires_at, true, false)}
+                {Char.RightArrow} {DateTime.Format(portalAccessKeyResponse.expires_at)}</span>
         }
         else {
-            return <>Expires {Time.FromNow(portalAccessKeyResponse.expires_at)} {Char.RightArrow} {DateTime.Format(portalAccessKeyResponse.expires_at)}</>
+            return <>Expires {Time.FromNow(portalAccessKeyResponse.expires_at, true, false)}
+                {Char.RightArrow} {DateTime.Format(portalAccessKeyResponse.expires_at)}</>
         }
     }
     else {
@@ -83,13 +86,13 @@ const SslCertificateLink = ({ url }) => {
             return `SSL certificate is invalid!`;
         }
         else if (expired) {
-            return `SSL certificate expired ${Time.Ago(expiresAt)} (${expiresAt})`;
+            return `SSL certificate expired ${Time.Ago(expiresAt, true, false)} (${expiresAt})`;
         }
         else if (expiresSoon) {
-            return `SSL certificate expires ${Time.FromNow(expiresAt)} (${expiresAt}) -> Soon!`;
+            return `SSL certificate expires ${Time.FromNow(expiresAt, true, false)} (${expiresAt}) -> Soon!`;
         }
         else {
-            return `SSL certificate expires ${Time.FromNow(expiresAt)} (${expiresAt})`;
+            return `SSL certificate expires ${Time.FromNow(expiresAt, true, false)} (${expiresAt})`;
         }
     }
     const uuid = Uuid();
@@ -173,27 +176,15 @@ const SecretsDropdown = ({ header, info, name }) => {
     </>
 }
 
-const KnownEnvsDropdown = ({ header, info }) => {
-    const [ showKnownEnvs, setShowKnownEnvs ] = useState(false);
-    function toggleShowKnownEnvs() { setShowKnownEnvs(!showKnownEnvs); }
+const KnownEnvsBox = ({ header, info }) => {
     let knownEnvs = isCurrentAccount(header, info) ? header?.auth?.known_envs?.sort((a, b) => a.full_name > b.full_name ? 1 : -1) : null;
     return <>
-        { isCurrentAccount(header, info) && <>
-            <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
-            { showKnownEnvs ? <>
-                <b onClick={toggleShowKnownEnvs} className="pointer">Environments {Char.DownArrow}</b>
-            </>:<>
-                <span onClick={toggleShowKnownEnvs} className="pointer">Environments <b>{Char.UpArrow}</b></span>
-            </> }
-            { showKnownEnvs && <>
-                <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",marginBottom:"2pt",padding:"4pt",color:"inherit"}}>
-                    {knownEnvs?.map(env => <>
-                        <b>{env.full_name}</b> (<span id={`tooltip-env-${env.full_name}`}>{env.public_name}</span>)<br />
-                        <Tooltip id={`tooltip-env-${env.full_name}`} text={`Public name of environment.`} position="right" shape="squared" />
-                    </> )}
-                </div>
-            </> }
-        </> }
+        <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",marginBottom:"2pt",padding:"4pt",color:"inherit"}}>
+            {knownEnvs?.map(env => <>
+                <b>{env.full_name}</b> (<span id={`tooltip-env-${env.full_name}`}>{env.public_name}</span>)<br />
+                <Tooltip id={`tooltip-env-${env.full_name}`} text={`Public name of environment.`} position="right" shape="squared" />
+            </> )}
+        </div>
     </>
 }
 
@@ -210,11 +201,18 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
     const portalAccessKey = useFetch("/portal_access_key");
     const [ showBuckets, setShowBuckets ] = useState(false);
     const [ showIdentity, setShowIdentity ] = useState(false);
+    const [ showEcosystem, setShowEcosystem ] = useState(false);
+    const [ showEcosystems, setShowEcosystems ] = useState(false);
+    const [ showKnownEnvs, setShowKnownEnvs ] = useState(false);
+    const ecosystems = useFetch("/ecosystems", { cache: true });
 
     if (!info || info.loading) return <small><i>Loading ...</i></small>
 
     function toggleShowBuckets() { setShowBuckets(!showBuckets); }
+    function toggleShowKnownEnvs() { setShowKnownEnvs(!showKnownEnvs); }
     function toggleShowIdentity() { setShowIdentity(!showIdentity); }
+    function toggleShowEcosystem() { setShowEcosystem(!showEcosystem); }
+    function toggleShowEcosystems() { setShowEcosystems(!showEcosystems); }
 
     return <table style={{width:"100%"}}><tbody style={{whiteSpace:"nowrap"}}>
         <Row title={info.get("foursight.package") === "foursight" ? "Foursight-Fourfront" : "Foursight-CGAP"} value={info.get("foursight.url")} externalLink={info.get("foursight.url")} small={false}>
@@ -281,6 +279,16 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                 <span onClick={toggleShowBuckets} className="pointer">Buckets <b>{Char.UpArrow}</b></span>
             </>:<>
                 <b onClick={toggleShowBuckets} className="pointer">Buckets {Char.DownArrow}</b>
+            </> }
+            { isCurrentAccount(header, info) && <>
+                &nbsp;|&nbsp;
+                { !showEcosystems ? <>
+                    <span onClick={toggleShowEcosystems} className="pointer">Ecosystems <b>{Char.UpArrow}</b></span>
+                </>:<>
+                    <b onClick={toggleShowEcosystems} className="pointer">Ecosystems {Char.DownArrow}</b>
+                </> }
+            </> }
+            { showBuckets && <>
                  <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",marginBottom:"2pt",padding:"4pt",color:"inherit"}}>
                     <S3BucketLink name="System" bucket={info.get("foursight.s3.buckets.sys_bucket")} /> 
                     <S3BucketLink name="Output" bucket={info.get("foursight.s3.buckets.outfile_bucket")} />
@@ -291,6 +299,9 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
                     <S3BucketLink name="Tibanna CWLs" bucket={info.get("foursight.s3.buckets.tibanna_cwls_bucket")} />
                     <S3BucketLink name="Tibanna Output" bucket={info.get("foursight.s3.buckets.tibanna_output_bucket")} />
                  </div>
+            </> }
+            { isCurrentAccount(header, info) && <>
+                { showEcosystems && <EcosystemsBox /> }
             </> }
         </Row>
         <Row title="S3 Encryption" value={info.get("foursight.s3.has_encryption") ? "Yes" : "No"} showEmpty={true}
@@ -314,7 +325,26 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
         <Separator />
         <Row title="AWS Account" value={info.get("foursight.aws_account_number")} additionalValue={info.get("foursight.aws_account_name")} externalLink={"https://us-east-1.console.aws.amazon.com/billing/home#/account"} bold={true} />
         <Row title="Default Environment" value={info.get("foursight.default_env.full_name")} additionalValue={info.get("foursight.env_count") ? `${info.get("foursight.env_count")} total` : ""}>
-            <KnownEnvsDropdown header={header} info={info} />
+            { isCurrentAccount(header, info) && <>
+                &nbsp;|&nbsp;
+                { !showKnownEnvs ? <>
+                    <span onClick={toggleShowKnownEnvs} className="pointer">Environments <b>{Char.UpArrow}</b></span>
+                </>:<>
+                    <b onClick={toggleShowKnownEnvs} className="pointer">Environments {Char.DownArrow}</b>
+                </> }
+                &nbsp;|&nbsp;
+                { !showEcosystem ? <>
+                    { ecosystems.data?.current ?
+                        <span onClick={toggleShowEcosystem} className="pointer">Ecosystem: {ecosystems.data?.current}&nbsp;<b>{Char.UpArrow}</b></span>
+                    :   <span onClick={toggleShowEcosystem} className="pointer">Ecosystem&nbsp;<b>{Char.UpArrow}</b></span> }
+                </>:<>
+                    { ecosystems.data?.current ?
+                        <b onClick={toggleShowEcosystem} className="pointer">Ecosystem: {ecosystems.data?.current}&nbsp;<b>{Char.DownArrow}</b></b>
+                    :   <b onClick={toggleShowEcosystem} className="pointer">Ecosystem&nbsp;<b>{Char.DownArrow}</b></b> }
+                </> }
+                { showKnownEnvs && <> <KnownEnvsBox header={header} info={info} /> </>}
+                { showEcosystem && <EcosystemBox /> }
+            </> }
         </Row>
         <Row title="Auth0 Client ID" value={info.get("foursight.auth0_client")} externalLink={`${info.get("foursight.url")}/reactapi/auth0_config`}>
             &nbsp;|&nbsp;
@@ -347,8 +377,8 @@ const AccountInfoLeft = ({ header, info, foursightUrl }) => {
             </td>
         </tr>
         <Separator />
-        <Row title="Foursight Deployed" value={`${DateTime.Format(info.get("foursight.deployed"))} ${Char.RightArrow} ${Time.Ago(info.get("foursight.deployed"))}`} show={info.get("foursight.deployed") ? true : false} />
-        <Row title="Portal Deployed" value={`${DateTime.Format(info.get("portal.started"))} ${Char.RightArrow} ${Time.Ago(info.get("portal.started"))}`} />
+        <Row title="Foursight Deployed" value={`${DateTime.Format(info.get("foursight.deployed"))} ${Char.RightArrow} ${Time.Ago(info.get("foursight.deployed"), true, false)}`} show={info.get("foursight.deployed") ? true : false} />
+        <Row title="Portal Deployed" value={`${DateTime.Format(info.get("portal.started"))} ${Char.RightArrow} ${Time.Ago(info.get("portal.started"), true, false)}`} />
     </tbody></table>
 }
 
@@ -485,11 +515,11 @@ const AccountsComponent = ({ header }) => {
     function toggleAll() {
         if (all) {
             delete args["all"]
-		    setArgs({...args});
+            setArgs({...args});
             setAll(false);
         }
         else {
-		    setArgs({...args, "all": "true" });
+            setArgs({...args, "all": "true" });
             setAll(true);
         }
     }
@@ -582,6 +612,54 @@ const AccountsComponent = ({ header }) => {
                 </>}
             </div>
         </>}
+    </>
+}
+
+const EcosystemBox = () => {
+    const info = useFetch("/info", { cache: true });
+    const ecosystems = useFetch("/ecosystems", { cache: true });
+    const currentEcosystemName = !ecosystems.loading ? ecosystems?.data["current"] : null;
+    return <>
+        <pre className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",marginBottom:"2pt",padding:"6pt",color:"inherit"}}>
+            { info.loading ? <>
+                <StandardSpinner label="Loading ecosystem info" />
+            </>:<>
+                {Yaml.Format(info.data.buckets.ecosystem)}
+            </> }
+        </pre>
+    </>
+}
+
+const EcosystemsBox = () => {
+    let ecosystems = useFetch("/ecosystems", { cache: true });
+    const style={background:"inherit", border:"1pt gray dotted", marginTop:"2pt", marginBottom:"2pt", padding:"6pt", color:"inherit"};
+    if (ecosystems.loading) {
+        return <pre className="box" style={style}>
+            <StandardSpinner label="Loading ecosystems info" />
+        </pre>
+    }
+    ecosystems.data = { ...ecosystems.data };
+    const currentEcosystemName = ecosystems.data["current"];
+    let currentEcosystemData = null;
+    if (Str.HasValue(currentEcosystemName)) {
+        delete ecosystems.data["current"];
+        currentEcosystemData = ecosystems.data[currentEcosystemName];;
+        delete ecosystems.data[currentEcosystemName];
+    }
+    return <>
+            { currentEcosystemData &&
+                <pre className="box" style={style} key={currentEcosystemName}>
+                    <b><u>{currentEcosystemName}</u></b>&nbsp;(<i>current</i>)<p />
+                    {Yaml.Format(currentEcosystemData)}
+                </pre>
+            }
+            { Object.keys(ecosystems.data).map((ecosystemName, index) => {
+                const ecosystemData = ecosystems.data[ecosystemName];
+                return <pre className="box" style={style} key={ecosystemName}>
+                    <b><u>{ecosystemName}</u></b><p />
+                    {Yaml.Format(ecosystemData)}
+        </pre>
+            })}
     </>
 }
 

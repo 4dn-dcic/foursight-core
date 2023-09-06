@@ -2,6 +2,7 @@ from chalice import Response
 import copy
 import datetime
 import json
+import os
 import requests
 from typing import Optional, Union
 import urllib.parse
@@ -245,3 +246,6 @@ class ReactApiBase:
 
     def get_default_env(self) -> str:
         return self._envs.get_default_env()
+
+    def get_global_env_bucket(self) -> Optional[str]:
+        return os.environ.get("GLOBAL_ENV_BUCKET") or os.environ.get("GLOBAL_BUCKET_ENV")

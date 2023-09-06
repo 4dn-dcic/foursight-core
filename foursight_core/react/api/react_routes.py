@@ -151,6 +151,20 @@ class ReactRoutes:
         """
         return app.core.reactapi_info(app.current_request.to_dict(), env)
 
+    @route("/{env}/ecosystems", authorize=True)
+    def reactapi_route_ecosystems(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns sundry info about the ecosystems.
+        """
+        return app.core.reactapi_ecosystems(app.current_request.to_dict(), env)
+
+    @route("/ecosystems", authorize=True)
+    def reactapi_route_ecosystems_noenv() -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns sundry info about the ecosystems.
+        """
+        return app.core.reactapi_ecosystems(app.current_request.to_dict(), app.core.get_default_env())
+
     @route("/{env}/users", methods=["GET", "POST"], authorize=True)
     def reactapi_route_users_get_or_post(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
