@@ -26,7 +26,7 @@ const HomePage = (props) => {
     const [ showAccountSummary, setShowAccountSummary ] = useState(false);
 
     return <>
-        <div className="container" style={{minWidth:"890pt",marginTop:"-16pt"}}>
+        <div className="container" style={{minWidth:"910pt",marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
                 <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.FoursightTitle(header)})</span></b>
                 <div style={{float:"right",fontSize:"x-small",textAlign:"right",marginTop:"-3pt",marginRight:"2pt"}}>

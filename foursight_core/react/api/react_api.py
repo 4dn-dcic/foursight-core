@@ -657,6 +657,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         current_ecosystem_data = self.get_ecosystem_data()
         current_ecosystem_name = None
         current_ecosystem_name_cannot_infer = False
+        main_ecosystem_name = "main.ecosystem"
+        main_ecosystem_data = None
         global_env_bucket = self.get_global_env_bucket()
         ecosystem_names = EnvManager.get_all_ecosystems(env_bucket=global_env_bucket)
         results = {}
@@ -675,11 +677,16 @@ class ReactApi(ReactApiBase, ReactRoutes):
                         current_ecosystem_name_cannot_infer = True
                     else:
                         current_ecosystem_name = ecosystem_name
+                if ecosystem_name == main_ecosystem_name:
+                    main_ecosystem_data = ecosystem_data
                 results[ecosystem_name] = ecosystem_data
             except Exception as e:
                 pass
-        if current_ecosystem_name and not current_ecosystem_name_cannot_infer:
-            results = {"current": current_ecosystem_name, **results}
+        if current_ecosystem_name:
+            if not current_ecosystem_name_cannot_infer:
+                results = {"current": current_ecosystem_name, **results}
+            elif current_ecosystem_data == main_ecosystem_data:
+                results = {"current": main_ecosystem_name, **results}
         return self.create_success_response(results)
 
     def _create_user_record_for_output(self, user: dict) -> dict:
