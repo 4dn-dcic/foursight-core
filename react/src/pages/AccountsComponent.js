@@ -21,6 +21,7 @@ import Time from '../utils/Time';
 import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import Yaml from '../utils/Yaml';
+import useHeader from '../hooks/Header';
 
 function handleFileUpload(event, accountsUploader) {
     const file = event.target.files[0]
@@ -38,10 +39,10 @@ function handleFileUpload(event, accountsUploader) {
     reader.readAsText(file);
 }
 
-function isCurrentAccount(header, info) {
+function isCurrentAccount(header, account) {
     if (!Type.IsNull(header?.app?.credentials?.aws_account_number) &&
-        !Type.IsNull(info?.data?.foursight?.aws_account_number) &&
-        (header?.app?.credentials?.aws_account_number === info?.data?.foursight?.aws_account_number)) {
+        !Type.IsNull(account?.data?.foursight?.aws_account_number) &&
+        (header?.app?.credentials?.aws_account_number === account?.data?.foursight?.aws_account_number)) {
         return true;
     }
     return false;
@@ -164,11 +165,11 @@ const VersionRow = ({ title, version, show = true, using = null }) => {
     </tr>
 }
 
-const SecretsDropdown = ({ header, info, name }) => {
+const SecretsDropdown = ({ header, account, name }) => {
     const [ showIdentity, setShowIdentity ] = useState(false);
     function toggleShowIdentity() { setShowIdentity(!showIdentity); }
     return <>
-        { isCurrentAccount(header, info) && <>
+        { isCurrentAccount(header, account) && <>
             <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
             { showIdentity ? <>
                 <b onClick={toggleShowIdentity} className="pointer">Secrets {Char.DownArrow}</b>
@@ -180,8 +181,8 @@ const SecretsDropdown = ({ header, info, name }) => {
     </>
 }
 
-const KnownEnvsBox = ({ header, accounts }) => {
-    let knownEnvs = isCurrentAccount(header, accounts) ? header?.auth?.known_envs?.sort((a, b) => a.full_name > b.full_name ? 1 : -1) : null;
+const KnownEnvsBox = ({ header, account }) => {
+    let knownEnvs = isCurrentAccount(header, account) ? header?.auth?.known_envs?.sort((a, b) => a.full_name > b.full_name ? 1 : -1) : null;
     return <>
         <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",marginBottom:"2pt",padding:"4pt",color:"inherit"}}>
             {knownEnvs?.map(env => <span key={`${env.full_name}`}>
@@ -200,7 +201,7 @@ const Separator = () => {
     </>
 }
 
-const AccountInfoLeft = ({ header, accounts, foursightUrl }) => {
+const AccountInfoLeft = ({ header, account, foursightUrl }) => {
 
     const portalAccessKey = useFetch("/portal_access_key");
     const [ showBuckets, setShowBuckets ] = useState(false);
@@ -212,7 +213,7 @@ const AccountInfoLeft = ({ header, accounts, foursightUrl }) => {
     const ecosystems = useFetch("/ecosystems", { cache: true });
     const info = useFetch("/info", { cache: true });
 
-    if (!accounts || accounts.loading) return <small><i>Loading ...</i></small>
+    if (!account || account.loading) return <small><i>Loading ...</i></small>
 
     function toggleShowBuckets() { setShowBuckets(!showBuckets); }
     function toggleShowKnownEnvs() { setShowKnownEnvs(!showKnownEnvs); }
@@ -221,78 +222,87 @@ const AccountInfoLeft = ({ header, accounts, foursightUrl }) => {
     function toggleShowEcosystems() { setShowEcosystems(!showEcosystems); }
     function toggleShowEnvVariables() { setShowEnvVariables(!showEnvVariables); }
 
-    function userArn(arn) {
+    function awsIamLinkFromArn(arn) {
+            arn = "arn:aws:sts::643366669028:assumed-role/c4-foursight-development-stack-ApiHandlerRole-XWBNSE1XMTI8/c4-foursight-development-stack-APIHandler-XDoakzQ1SpAf"
         const parts = arn?.split("/");
-        return parts && parts.length > 0 ? parts[parts.length - 1] : "";
+        if (!parts || parts.length <= 0) return "";
+        if ((parts.length > 2) && parts[0].includes("assumed-role")) {
+            arn = parts[1];
+            return `https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/roles/details/${arn}`;
+        }
+        else {
+            arn = parts[parts.length - 1];
+            return `https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/users/details/${arn}?section=security_credentials`;
+        }
     }
 
     return <table style={{width:"100%"}}><tbody style={{whiteSpace:"nowrap"}}>
-        <Row title={accounts.get("foursight.package") === "foursight" ? "Foursight-Fourfront" : "Foursight-CGAP"} value={accounts.get("foursight.url")} externalLink={accounts.get("foursight.url")} small={false}>
+        <Row title={account.get("foursight.package") === "foursight" ? "Foursight-Fourfront" : "Foursight-CGAP"} value={account.get("foursight.url")} externalLink={account.get("foursight.url")} small={false}>
             <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
             <small>
-                <a href={`${accounts.get("foursight.url")}/reactapi/header`} style={{color:"inherit"}} rel="noreferrer" target="_blank">API</a>
+                <a href={`${account.get("foursight.url")}/reactapi/header`} style={{color:"inherit"}} rel="noreferrer" target="_blank">API</a>
                 <ExternalLink
-                    href={`${accounts.get("foursight.url")}/reactapi/header`}
+                    href={`${account.get("foursight.url")}/reactapi/header`}
                     style={{marginLeft:"4pt"}} />
             </small>
-            <SslCertificateLink url={accounts.get("foursight.url")} />
+            <SslCertificateLink url={account.get("foursight.url")} />
         </Row>
-        <Row title={accounts.get("foursight.package") === "foursight" ? "Fourfront" : "CGAP-Portal"} value={accounts.get("portal.url")} externalLink={accounts.get("portal.url")} small={false}>
+        <Row title={account.get("foursight.package") === "foursight" ? "Fourfront" : "CGAP-Portal"} value={account.get("portal.url")} externalLink={account.get("portal.url")} small={false}>
             &nbsp;|&nbsp;
-            <small><a style={{color:"inherit"}} href={accounts.get("portal.health_ui_url")} rel="noreferrer" target="_blank">Health</a>&nbsp;</small>
-            <small>(<a style={{color:"inherit"}} href={accounts.get("portal.health_url")} rel="noreferrer" target="_blank">JSON</a>)</small>
+            <small><a style={{color:"inherit"}} href={account.get("portal.health_ui_url")} rel="noreferrer" target="_blank">Health</a>&nbsp;</small>
+            <small>(<a style={{color:"inherit"}} href={account.get("portal.health_url")} rel="noreferrer" target="_blank">JSON</a>)</small>
             &nbsp;
             <ExternalLink
-                href={accounts.get("portal.health_ui_url")}
+                href={account.get("portal.health_ui_url")}
                 style={{marginLeft:"1pt"}} />
-            {accounts.get("portal.health.indexer") == "true" && <small title={accounts.get("portal.health.indexer_server")}>
-                &nbsp;| <a style={{color:"inherit"}} href={`${accounts.get("portal.url")}/indexing_status`} rel="noreferrer" target="_blank">Indexer</a>&nbsp;
+            {account.get("portal.health.indexer") == "true" && <small title={account.get("portal.health.indexer_server")}>
+                &nbsp;| <a style={{color:"inherit"}} href={`${account.get("portal.url")}/indexing_status`} rel="noreferrer" target="_blank">Indexer</a>&nbsp;
                 <ExternalLink
-                    href={`${accounts.get("portal.url")}/indexing_status?format=json`}
+                    href={`${account.get("portal.url")}/indexing_status?format=json`}
                     style={{marginLeft:"1pt"}} />
             </small> }
-            <SslCertificateLink url={accounts.get("portal.url")} />
+            <SslCertificateLink url={account.get("portal.url")} />
         </Row>
-        <Row title="Elasticsearch" value={accounts.get("portal.elasticsearch")?.replace(/:443$/,"")}
-             additionalValue={accounts.get("foursight.es_cluster")}
-             externalLink={`https://us-east-1.console.aws.amazon.com/aos/home?region=us-east-1#opensearch/domains/${accounts.get("foursight.es_cluster") ? accounts.get("foursight.es_cluster") : ""}`} />
-        <Row title="RDS (Foursight)" value={accounts.get("foursight.rds")}
+        <Row title="Elasticsearch" value={account.get("portal.elasticsearch")?.replace(/:443$/,"")}
+             additionalValue={account.get("foursight.es_cluster")}
+             externalLink={`https://us-east-1.console.aws.amazon.com/aos/home?region=us-east-1#opensearch/domains/${account.get("foursight.es_cluster") ? account.get("foursight.es_cluster") : ""}`} />
+        <Row title="RDS (Foursight)" value={account.get("foursight.rds")}
              externalLink={`https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#databases:`}
-             show={!accounts.get("portal.health.database")?.startsWith(accounts.get("foursight.rds"))} />
-        <Row title="RDS" value={accounts.get("portal.health.database")}
-             additionalValue={accounts.get("foursight.rds_name")}
-             externalLink={`https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#database:id=${accounts.get("foursight.rds_name")};is-cluster=false`} />
-        <Row title="Redis" value={accounts.get("foursight.redis_url")}
+             show={!account.get("portal.health.database")?.startsWith(account.get("foursight.rds"))} />
+        <Row title="RDS" value={account.get("portal.health.database")}
+             additionalValue={account.get("foursight.rds_name")}
+             externalLink={`https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#database:id=${account.get("foursight.rds_name")};is-cluster=false`} />
+        <Row title="Redis" value={account.get("foursight.redis_url")}
              externalLink={`https://us-east-1.console.aws.amazon.com/memorydb/home?region=us-east-1#/clusters`} />
-        <Row title="SQS" value={accounts.get("foursight.sqs_url")}
-             externalLink={`https://us-east-1.console.aws.amazon.com/sqs/v2/home?region=us-east-1#/queues/${encodeURIComponent(accounts.get('foursight.sqs_url'))}`} />
+        <Row title="SQS" value={account.get("foursight.sqs_url")}
+             externalLink={`https://us-east-1.console.aws.amazon.com/sqs/v2/home?region=us-east-1#/queues/${encodeURIComponent(account.get('foursight.sqs_url'))}`} />
         <Separator />
-        <Row title={accounts.get("foursight.identity") == accounts.get("portal.identity") ? "Identity" : "Foursight Identity"} value={accounts.get("foursight.identity")}
-             externalLink={!isCurrentAccount(header, accounts) ?
-                           `${accounts.get("foursight.url")}/react/${accounts.get("foursight.default_env.name")}/aws/infrastructure?secrets=${accounts.get("foursight.identity")}` :
-                           `https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=${accounts.get("foursight.identity")}&region=us-east-1#`}>
-            <SecretsDropdown header={header} accounts={accounts} name={accounts.get("foursight.identity")} embedded={true} />
+        <Row title={account.get("foursight.identity") == account.get("portal.identity") ? "Identity" : "Foursight Identity"} value={account.get("foursight.identity")}
+             externalLink={!isCurrentAccount(header, account) ?
+                           `${account.get("foursight.url")}/react/${account.get("foursight.default_env.name")}/aws/infrastructure?secrets=${account.get("foursight.identity")}` :
+                           `https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=${account.get("foursight.identity")}&region=us-east-1#`}>
+            <SecretsDropdown header={header} account={account} name={account.get("foursight.identity")} embedded={true} />
         </Row>
-        { accounts.get("foursight.identity") != accounts.get("portal.identity") && <>
-            <Row title="Portal Identity" value={accounts.get("portal.identity")}
-                 externalLink={!isCurrentAccount(header, accounts) ?
-                               `${accounts.get("foursight.url")}/react/${accounts.get("foursight.default_env.name")}/aws/infrastructure?secrets=${accounts.get("portal.identity")}` :
-                               `https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=${accounts.get("portal.identity")}&region=us-east-1#`}>
-                <SecretsDropdown header={header} accounts={accounts} name={accounts.get("portal.identity")} embedded={true} />
+        { account.get("foursight.identity") != account.get("portal.identity") && <>
+            <Row title="Portal Identity" value={account.get("portal.identity")}
+                 externalLink={!isCurrentAccount(header, account) ?
+                               `${account.get("foursight.url")}/react/${account.get("foursight.default_env.name")}/aws/infrastructure?secrets=${account.get("portal.identity")}` :
+                               `https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=${account.get("portal.identity")}&region=us-east-1#`}>
+                <SecretsDropdown header={header} account={account} name={account.get("portal.identity")} embedded={true} />
             </Row>
         </> }
-        <Row title="Stack Name" value={accounts.get("foursight.stack")}
-             externalLink={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/stackinfo?filteringStatus=active&viewNested=true&stackId=${accounts.get("foursight.stack")}`} />
-        <Row title="Global Env Bucket" value={accounts.get("foursight.s3.global_env_bucket")}
-             externalLink={`https://s3.console.aws.amazon.com/s3/buckets/${accounts.get("foursight.s3.global_env_bucket")}?region=us-east-1&tab=objects`}
-             tooltip={[`S3 Bucket Org: ${accounts.get("foursight.s3.bucket_org")}`,`bucket-org-${accounts.get("foursight.s3.bucket_org")}`]}>
+        <Row title="Stack Name" value={account.get("foursight.stack")}
+             externalLink={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/stackinfo?filteringStatus=active&viewNested=true&stackId=${account.get("foursight.stack")}`} />
+        <Row title="Global Env Bucket" value={account.get("foursight.s3.global_env_bucket")}
+             externalLink={`https://s3.console.aws.amazon.com/s3/buckets/${account.get("foursight.s3.global_env_bucket")}?region=us-east-1&tab=objects`}
+             tooltip={[`S3 Bucket Org: ${account.get("foursight.s3.bucket_org")}`,`bucket-org-${account.get("foursight.s3.bucket_org")}`]}>
             <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
             { !showBuckets ? <>
                 <span onClick={toggleShowBuckets} className="pointer">Buckets <b>{Char.UpArrow}</b></span>
             </>:<>
                 <b onClick={toggleShowBuckets} className="pointer">Buckets {Char.DownArrow}</b>
             </> }
-            { isCurrentAccount(header, accounts) && <>
+            { isCurrentAccount(header, account) && <>
                 &nbsp;|&nbsp;
                 { !showEcosystems ? <>
                     <span onClick={toggleShowEcosystems} className="pointer">Ecosystems <b>{Char.UpArrow}</b></span>
@@ -302,51 +312,51 @@ const AccountInfoLeft = ({ header, accounts, foursightUrl }) => {
             </> }
             { showBuckets && <>
                  <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",marginBottom:"2pt",padding:"4pt",color:"inherit"}}>
-                    <S3BucketLink name="System" bucket={accounts.get("foursight.s3.buckets.sys_bucket")} /> 
-                    <S3BucketLink name="Output" bucket={accounts.get("foursight.s3.buckets.outfile_bucket")} />
-                    <S3BucketLink name="Metadata" bucket={accounts.get("foursight.s3.buckets.metadata_bucket")} />
-                    <S3BucketLink name="Blobs" bucket={accounts.get("foursight.s3.buckets.blob_bucket")} />
-                    <S3BucketLink name="Raw" bucket={accounts.get("foursight.s3.buckets.raw_file_bucket")} />
-                    <S3BucketLink name="Results" bucket={accounts.get("foursight.s3.buckets.results_bucket")} /> 
-                    <S3BucketLink name="Tibanna CWLs" bucket={accounts.get("foursight.s3.buckets.tibanna_cwls_bucket")} />
-                    <S3BucketLink name="Tibanna Output" bucket={accounts.get("foursight.s3.buckets.tibanna_output_bucket")} />
+                    <S3BucketLink name="System" bucket={account.get("foursight.s3.buckets.sys_bucket")} /> 
+                    <S3BucketLink name="Output" bucket={account.get("foursight.s3.buckets.outfile_bucket")} />
+                    <S3BucketLink name="Metadata" bucket={account.get("foursight.s3.buckets.metadata_bucket")} />
+                    <S3BucketLink name="Blobs" bucket={account.get("foursight.s3.buckets.blob_bucket")} />
+                    <S3BucketLink name="Raw" bucket={account.get("foursight.s3.buckets.raw_file_bucket")} />
+                    <S3BucketLink name="Results" bucket={account.get("foursight.s3.buckets.results_bucket")} /> 
+                    <S3BucketLink name="Tibanna CWLs" bucket={account.get("foursight.s3.buckets.tibanna_cwls_bucket")} />
+                    <S3BucketLink name="Tibanna Output" bucket={account.get("foursight.s3.buckets.tibanna_output_bucket")} />
                  </div>
             </> }
-            { isCurrentAccount(header, accounts) && <>
+            { isCurrentAccount(header, account) && <>
                 { showEcosystems && <EcosystemsBox /> }
             </> }
         </Row>
-        <Row title="S3 Encryption" value={accounts.get("foursight.s3.has_encryption") ? "Yes" : "No"} showEmpty={true}
+        <Row title="S3 Encryption" value={account.get("foursight.s3.has_encryption") ? "Yes" : "No"} showEmpty={true}
              tooltip={[`Controlled by the S3_ENCRYPT_KEY environment variable.`, `tooltip-has-encryption}`]} showEmpty={true}>
         </Row>
-        <Row title="S3 Encryption ID" value={accounts.get("foursight.s3.encrypt_key_id")}
-             externalLink={`https://us-east-1.console.aws.amazon.com/kms/home?region=us-east-1#/kms/keys/${accounts.get("foursight.s3.encrypt_key_id")}`}
+        <Row title="S3 Encryption ID" value={account.get("foursight.s3.encrypt_key_id")}
+             externalLink={`https://us-east-1.console.aws.amazon.com/kms/home?region=us-east-1#/kms/keys/${account.get("foursight.s3.encrypt_key_id")}`}
              tooltip={[`S3 encryption key ID from the ENCODED_S3_ENCRYPT_KEY_ID environment variable.`,
-                       `tooltip-encryption-key-${accounts.get("foursight.aws_account_number")}`]} showEmpty={true}>
+                       `tooltip-encryption-key-${account.get("foursight.aws_account_number")}`]} showEmpty={true}>
         </Row>
-        <Row title="S3 Access Key" value={accounts.get("foursight.s3.access_key")}
+        <Row title="S3 Access Key" value={account.get("foursight.s3.access_key")}
              tooltip={[`From the S3_AWS_ACCESS_KEY_ID environment variable.`,
-                       `tooltip-s3-aws-access-key-id${accounts.get("foursight.s3.access_key")}`]}>
+                       `tooltip-s3-aws-access-key-id${account.get("foursight.s3.access_key")}`]}>
             &nbsp;
-            { accounts.get("foursight.s3.access_key_error") ? <>
+            { account.get("foursight.s3.access_key_error") ? <>
                 <b style={{color:"red"}}>{Char.X}</b>
             </>:<>
                 <b style={{color:"green"}}>{Char.Check}</b>
             </> }
         </Row>
         <Separator />
-        <Row title="AWS Account" value={accounts.get("foursight.aws_account_number")} additionalValue={accounts.get("foursight.aws_account_name")} externalLink={"https://us-east-1.console.aws.amazon.com/billing/home#/account"} bold={true}>
+        <Row title="AWS Account" value={account.get("foursight.aws_account_number")} additionalValue={account.get("foursight.aws_account_name")} externalLink={"https://us-east-1.console.aws.amazon.com/billing/home#/account"} bold={true}>
             &nbsp;|&nbsp;Access Key: <span id="tooltip-aws-access-key">{header?.app?.credentials?.aws_access_key_id}</span>
                 <Tooltip id={"tooltip-aws-access-key"} text={`From the AWS_ACCESS_KEY_ID environment variable.`} position="bottom" />
                 <span id="tooltip-aws-user-arn">
                 <ExternalLink
-                    href={`https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/users/details/${userArn(info.data?.app?.credentials?.aws_user_arn)}?.app?.credentials?.aws_user_arn}?section=security_credentials`}
+                    href={awsIamLinkFromArn(info.data?.app?.credentials?.aws_user_arn)}
                     style={{marginLeft:"4pt"}} />
                 </span>
                 <Tooltip id={"tooltip-aws-user-arn"} text={`Associated IAM ARN: ${info.data?.app?.credentials?.aws_user_arn}`} position="bottom" />
         </Row>
-        <Row title="Default Environment" value={accounts.get("foursight.default_env.full_name")} additionalValue={accounts.get("foursight.env_count") ? `${accounts.get("foursight.env_count")} total` : ""}>
-            { isCurrentAccount(header, accounts) && <>
+        <Row title="Default Environment" value={account.get("foursight.default_env.full_name")} additionalValue={account.get("foursight.env_count") ? `${account.get("foursight.env_count")} total` : ""}>
+            { isCurrentAccount(header, account) && <>
                 &nbsp;|&nbsp;
                 { !showKnownEnvs ? <>
                     <span onClick={toggleShowKnownEnvs} className="pointer">Environments <b>{Char.UpArrow}</b></span>
@@ -369,30 +379,30 @@ const AccountInfoLeft = ({ header, accounts, foursightUrl }) => {
                         <b onClick={toggleShowEcosystem} className="pointer">Ecosystem: {ecosystems.data?.current?.replace(".ecosystem", "")}&nbsp;<b>{Char.DownArrow}</b></b>
                     :   <b onClick={toggleShowEcosystem} className="pointer">Ecosystem&nbsp;<b>{Char.DownArrow}</b></b> }
                 </> }
-                { showKnownEnvs && <> <KnownEnvsBox header={header} accounts={accounts} /> </>}
+                { showKnownEnvs && <> <KnownEnvsBox header={header} account={account} /> </>}
                 { showEcosystem && <EcosystemBox /> }
-                { showEnvVariables && <> <EnvVariablesBox header={header} accounts={accounts} /> </>}
+                { showEnvVariables && <> <EnvVariablesBox header={header} account={account} /> </>}
             </> }
         </Row>
-        <Row title="Auth0 Client ID" value={accounts.get("foursight.auth0_client")} externalLink={`${accounts.get("foursight.url")}/reactapi/auth0_config`}>
+        <Row title="Auth0 Client ID" value={account.get("foursight.auth0_client")} externalLink={`${account.get("foursight.url")}/reactapi/auth0_config`}>
             &nbsp;|&nbsp;
-            <a style={{color:"inherit"}} href={`${accounts.get("portal.url")}/auth0_config`} rel="noreferrer" target="_blank">Portal</a>
+            <a style={{color:"inherit"}} href={`${account.get("portal.url")}/auth0_config`} rel="noreferrer" target="_blank">Portal</a>
             <ExternalLink
-                href={`${accounts.get("portal.url")}/auth0_config?format=json`}
+                href={`${account.get("portal.url")}/auth0_config?format=json`}
                 style={{marginLeft:"4pt"}} />
         </Row>
-        <Row title="reCAPTCHA Key ID" value={accounts.get("foursight.re_captcha_key")} />
+        <Row title="reCAPTCHA Key ID" value={account.get("foursight.re_captcha_key")} />
         <tr style={{fontSize:"small"}}>
             <td style={{paddingRight:"10pt"}}>
                 Portal Access Key:
             </td>
             <td>
-                { isCurrentAccount(header, accounts) && !portalAccessKey.loading && <>
+                { isCurrentAccount(header, account) && !portalAccessKey.loading && <>
                     {portalAccessKey.get("key")}&nbsp;|&nbsp;
                 </> }
-                <PortalAccessKeyStatus portalAccessKeyResponse={accounts.get("foursight.portal_access_key")} />
+                <PortalAccessKeyStatus portalAccessKeyResponse={account.get("foursight.portal_access_key")} />
                 <ExternalLink
-                    href={`${accounts.get("foursight.url")}/react/${accounts.get("foursight.default_env.name")}/portal_access_key`}
+                    href={`${account.get("foursight.url")}/react/${account.get("foursight.default_env.name")}/portal_access_key`}
                     style={{marginLeft:"6pt"}} />
                 <span id={`tooltip-s3-access-key`}>
                     <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
@@ -405,71 +415,81 @@ const AccountInfoLeft = ({ header, accounts, foursightUrl }) => {
             </td>
         </tr>
         <Separator />
-        <Row title="Foursight Deployed" value={`${DateTime.Format(accounts.get("foursight.deployed"))} ${Char.RightArrow} ${Time.Ago(accounts.get("foursight.deployed"), true, false)}`} show={accounts.get("foursight.deployed") ? true : false} />
-        <Row title="Portal Deployed" value={`${DateTime.Format(accounts.get("portal.started"))} ${Char.RightArrow} ${Time.Ago(accounts.get("portal.started"), true, false)}`} />
+        <Row title="Foursight Deployed" value={`${DateTime.Format(account.get("foursight.deployed"))} ${Char.RightArrow} ${Time.Ago(account.get("foursight.deployed"), true, false)}`} show={account.get("foursight.deployed") ? true : false} />
+        <Row title="Portal Deployed" value={`${DateTime.Format(account.get("portal.started"))} ${Char.RightArrow} ${Time.Ago(account.get("portal.started"), true, false)}`} />
     </tbody></table>
 }
 
-const AccountInfoRight = ({ accounts, header }) => {
-    if (!accounts || accounts.loading) return <></>
+const AccountInfoRight = ({ account, header }) => {
+    if (!account || account.loading) return <></>
     return <table style={{width:"100%",margin:"0",padding:"0"}}><tbody style={{fontSize:"small",verticalAlign:"top",whiteSpace:"nowrap"}}>
-        <VersionRow title={accounts.get("foursight.package")} version={accounts.get("foursight.versions.foursight")} />
-        <VersionRow title="foursight-core" version={accounts.get("foursight.versions.foursight_core")} />
-        <VersionRow title="dcicutils" version={accounts.get("foursight.versions.dcicutils")} />
-        <VersionRow title="tibanna" version={accounts.get("foursight.versions.tibanna")} />
-        <VersionRow title="tibanna_ff" version={accounts.get("foursight.versions.tibanna_ff")} />
-        <VersionRow title="boto3" version={accounts.get("foursight.versions.boto3")} />
-        <VersionRow title="botocore" version={accounts.get("foursight.versions.botocore")} />
-        <VersionRow title="chalice" version={accounts.get("foursight.versions.chalice")} />
-        <VersionRow title="redis" version={accounts.get("foursight.versions.redis")} using={header.resources?.redis_running} />
-        <VersionRow title="python" version={accounts.get("foursight.versions.python")} />
+        <VersionRow title={account.get("foursight.package")} version={account.get("foursight.versions.foursight")} />
+        <VersionRow title="foursight-core" version={account.get("foursight.versions.foursight_core")} />
+        <VersionRow title="dcicutils" version={account.get("foursight.versions.dcicutils")} />
+        <VersionRow title="tibanna" version={account.get("foursight.versions.tibanna")} />
+        <VersionRow title="tibanna_ff" version={account.get("foursight.versions.tibanna_ff")} />
+        <VersionRow title="boto3" version={account.get("foursight.versions.boto3")} />
+        <VersionRow title="botocore" version={account.get("foursight.versions.botocore")} />
+        <VersionRow title="chalice" version={account.get("foursight.versions.chalice")} />
+        <VersionRow title="redis" version={account.get("foursight.versions.redis")} using={header.resources?.redis_running} />
+        <VersionRow title="python" version={account.get("foursight.versions.python")} />
         <Separator />
-        <VersionRow title="portal" version={accounts.get("portal.versions.portal")} />
-        <VersionRow title="portal-project" version={accounts.get("portal.health.project_version")} show={accounts.get("portal.health.project_version") != accounts.get("portal.versions.portal")}/>
-        <VersionRow title="snovault" version={accounts.get("portal.versions.snovault")} />
-        <VersionRow title="dcicutils" version={accounts.get("portal.versions.dcicutils")} />
-        <VersionRow title="python" version={accounts.get("portal.health.python_version")} />
+        <VersionRow title="portal" version={account.get("portal.versions.portal")} />
+        <VersionRow title="portal-project" version={account.get("portal.health.project_version")} show={account.get("portal.health.project_version") != account.get("portal.versions.portal")}/>
+        <VersionRow title="snovault" version={account.get("portal.versions.snovault")} />
+        <VersionRow title="dcicutils" version={account.get("portal.versions.dcicutils")} />
+        <VersionRow title="python" version={account.get("portal.health.python_version")} />
         <Separator />
-        <VersionRow title="elasticsearch-server" version={accounts.get("foursight.versions.elasticsearch_server")} />
-        <VersionRow title="elasticsearch" version={accounts.get("foursight.versions.elasticsearch")} />
-        <VersionRow title="elasticsearch-dsl" version={accounts.get("foursight.versions.elasticsearch_dsl")} />
-        <VersionRow title="redis-server" version={accounts.get("foursight.versions.redis_server")} />
+        <VersionRow title="elasticsearch-server" version={account.get("foursight.versions.elasticsearch_server")} />
+        <VersionRow title="elasticsearch" version={account.get("foursight.versions.elasticsearch")} />
+        <VersionRow title="elasticsearch-dsl" version={account.get("foursight.versions.elasticsearch_dsl")} />
+        <VersionRow title="redis-server" version={account.get("foursight.versions.redis_server")} />
     </tbody></table>
+}
+
+export const AccountInfoCurrent = () => {
+    const header = useHeader();
+    const account = {
+        id: "current",
+        name: "current",
+        stage: header.app?.stage
+    }
+    return <AccountInfo account={account} header={header} decrementAccountCount={() => {}} all={true} brighten={true} />
 }
 
 export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount, brighten }) => {
 
-    const info = useFetch(`/accounts/${account.id}`, { onDone: () => decrementAccountCount(), cache: true, nofetch: true });
+    const accounts = useFetch(`/accounts/${account.id}`, { onDone: () => decrementAccountCount(), cache: true, nofetch: true });
 
     useEffect(() => {
         fetchData();
     }, []);
 
     function fetchData() {
-        info.fetch();
+        accounts.fetch();
     }
 
     function refreshData() {
-        info.refresh();
+        accounts.refresh();
     }
 
-    function isCurrentAccountAndStage(header, info) {
-        return isCurrentAccount(header, info) && (header?.app?.stage === info?.data?.stage);
+    function isCurrentAccountAndStage(header, account) {
+        return isCurrentAccount(header, account) && (header?.app?.stage === account?.data?.stage);
     }
 
-    if (!all && !isCurrentAccount(header, info)) return null;
+    if (!all && !isCurrentAccount(header, account)) return null;
     return <>
-        <div className={isCurrentAccountAndStage(header, info) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt",filter:brighten ? "brightness(1.1)" : ""}}>
-            {isCurrentAccount(header, info) ? <>
-                <b id={`tooltip-current-${account.name}-${info?.data?.stage}`}>{info.data?.name || account.name}</b>
-                <Tooltip id={`tooltip-current-${account.name}-${info?.data?.stage}`} text={`This is your current account: ${info.get("foursight.aws_account_number")}`} position="top" />
+        <div className={isCurrentAccountAndStage(header, account) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt",filter:brighten ? "brightness(1.1)" : ""}}>
+            {isCurrentAccount(header, account) ? <>
+                <b id={`tooltip-current-${account.name}-${accounts?.data?.stage}`}>{accounts.data?.name || account.name}</b>
+                <Tooltip id={`tooltip-current-${account.name}-${accounts?.data?.stage}`} text={`This is your current account: ${accounts.get("foursight.aws_account_number")}`} position="top" />
             </>:<>
-                <b id={`tooltip-account-${account.name}-${account.stage}`}>{info.data?.name || account.name}</b>
-                <Tooltip id={`tooltip-account-${account.name}-${account.stage}`} text={`AWS Account: ${info.get("foursight.aws_account_number")}.`} position="top" />
+                <b id={`tooltip-account-${account.name}-${account.stage}`}>{accounts.data?.name || account.name}</b>
+                <Tooltip id={`tooltip-account-${account.name}-${account.stage}`} text={`AWS Account: ${accounts.get("foursight.aws_account_number")}.`} position="top" />
             </>}
-            { info.get("foursight.stage") ? <>
-                &nbsp;&nbsp;<b>&ndash;</b>&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${info.get("foursight.stage")}`}>{info.get("foursight.stage")}</span>
-                <Tooltip id={`tooltip-stage-${account.id}-${info.get("foursight.stage")}`} text={`Stage: ${info.get("foursight.stage")}`} position="top" />
+            { accounts.get("foursight.stage") ? <>
+                &nbsp;&nbsp;<b>&ndash;</b>&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${accounts.get("foursight.stage")}`}>{accounts.get("foursight.stage")}</span>
+                <Tooltip id={`tooltip-stage-${account.id}-${accounts.get("foursight.stage")}`} text={`Stage: ${accounts.get("foursight.stage")}`} position="top" />
             </>:<>
                 { account.stage && <>
                     &nbsp;&nbsp;<b>&ndash;</b>&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${account.stage}`}>{account.stage}</span>
@@ -477,14 +497,14 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
                 </>}
             </>}
             <div style={{float:"right",marginTop:"-2pt"}}>
-                { info.loading ? <>
+                { accounts.loading ? <>
                     <div style={{paddingTop:"7pt",paddingRight:"2pt"}}><BarSpinner /></div>
                 </>:<>
-                    { info.data?.__showraw ? <>
-                        <span id={`tooltip-hide-raw-${account.id}`} onClick={() => { info.data.__showraw = false; info.update(); }} style={{cursor:"pointer"}}>{Char.DownArrow}</span>
+                    { accounts.data?.__showraw ? <>
+                        <span id={`tooltip-hide-raw-${account.id}`} onClick={() => { accounts.data.__showraw = false; accounts.update(); }} style={{cursor:"pointer"}}>{Char.DownArrow}</span>
                         <Tooltip id={`tooltip-hide-raw-${account.id}`} text={"Click to hide raw result."} position="top" />
                     </>:<>
-                        <span id={`tooltip-show-raw-${account.id}`} onClick={() => {info.data.__showraw = true;info.update(); }} style={{cursor:"pointer"}}>{Char.UpArrow}</span>
+                        <span id={`tooltip-show-raw-${account.id}`} onClick={() => {accounts.data.__showraw = true;accounts.update(); }} style={{cursor:"pointer"}}>{Char.UpArrow}</span>
                         <Tooltip id={`tooltip-show-raw-${account.id}`} text={"Click to show raw result."} position="top" />
                     </>}
                     <span onClick={refreshData} style={{cursor:"pointer"}}>&nbsp;&nbsp;{Char.Refresh}</span>
@@ -494,19 +514,19 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
             <table><tbody>
                 <tr style={{verticalAlign:"top"}}>
                     <td style={{width:"80%"}}>
-                        <AccountInfoLeft header={header} accounts={info} foursightUrl={foursightUrl} />
+                        <AccountInfoLeft header={header} account={accounts} foursightUrl={foursightUrl} />
                     </td>
                     <td style={{paddingLeft:"6pt",width:"12pt"}} />
-                    <td style={{marginLeft:"12pt",borderLeft:`${info.loading ? "0" : "1"}px solid`}} />
+                    <td style={{marginLeft:"12pt",borderLeft:`${accounts.loading ? "0" : "1"}px solid`}} />
                     <td style={{width:"30%",paddingLeft:"8pt",textAlign:"top",verticalAlign:"top"}}>
-                        <AccountInfoRight accounts={info} header={header} />
+                        <AccountInfoRight account={accounts} header={header} />
                     </td>
                 </tr>
             </tbody></table>
-            { info.data?.__showraw && <>
+            { accounts.data?.__showraw && <>
                 <div style={{marginTop:"8pt",marginBottom:"8pt",border:"1px",borderTop:"solid"}}></div>
                 <pre style={{background:"inherit"}}>
-                    {Yaml.Format(info.data)}
+                    {Yaml.Format(accounts.data)}
                 </pre>
             </>}
         </div>
@@ -696,7 +716,7 @@ const EnvVariablesBox = () => {
     function isRedacted(s) { return /^\*+$/.test(s); }
     return <pre style={{background:"inherit",border:"1pt gray dotted",marginTop:"4pt",width:"524pt"}}>
         { info.loading ? <>
-            <b>Loading ...</b>
+            <StandardSpinner label="Loading environment variables" style={{paddingBottom:"0pt"}} />
         </>:<>
             <ul style={{marginBottom:"1pt"}}>
                 { Object.keys(info?.data?.environ)?.map(name => <li key={name}>

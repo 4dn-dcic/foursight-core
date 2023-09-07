@@ -1503,6 +1503,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_account(self, request: dict, env: str, name: str) -> Response:
 
+        if name == "current":
+            aws_credentials = self._auth.get_aws_credentials(env or self._envs.get_default_env())
+            aws_account_name = aws_credentials.get("aws_account_name")
+            stage = app.core.stage.get_stage()
+            name = f"{aws_account_name}:{stage}"
+
         def is_account_name_match(account: dict, name: str) -> bool:
             account_name = account.get("name")
             if account_name == name:
