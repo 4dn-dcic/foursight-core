@@ -3,11 +3,13 @@ import { useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import useHeader from '../hooks/Header';
+import { AccountInfoCurrent } from './AccountsComponent';
 import Auth0Lock from 'auth0-lock';
 import Auth from '../utils/Auth';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
+import { ExternalLink } from '../Components';
 import { FetchErrorBox, HorizontalLine } from '../Components';
 import Cookie from '../utils/Cookie';
 import Duration from '../utils/Duration';
@@ -113,23 +115,21 @@ const LoginPage = (props) => {
             { header?.auth?.default_env && <>
                 Default environment: <Link to="/env" env={Env.PreferredName(header.auth.default_env, header)} bold={false}>{Env.PreferredName(header.auth.default_env, header)}</Link> <br />
             </>}
-            { Env.KnownEnvs(header) && <>
-                Available environments:
-                {Env.KnownEnvs(header).map((env, index) => {
+            { Env.KnownEnvs(header).filter(env => Env.PreferredName(env, header) != Env.PreferredName(Env.Current(), header))?.length > 0 && <>
+                Other environments:
+                {Env.KnownEnvs(header).filter(env => Env.PreferredName(env, header) != Env.PreferredName(Env.Current(), header)).map((env, index) => {
                     return <span key={index}>
                         {index > 0 && <>,</>}
                         &nbsp;{Env.PreferredName(env, header)}
                     </span>
-                })} <br />
+                })}
+                &nbsp;(<Link to="/env" bold={false}>view</Link>) <br />
             </>}
-            { header?.auth?.domain && <>
-                Domain: {header.auth.domain} <br />
-            </>}
+            {/* { header?.auth?.domain && <> Domain: {header.auth.domain} <br /> </>} */}
             {(header?.app?.credentials?.aws_account_number) && <>
                 AWS Account Number: <b>{header?.app?.credentials?.aws_account_number}</b>
                 {(header?.app?.credentials?.aws_account_name) && <>
-                    &nbsp;(<span id="tooltip-login-aws-alias">{header?.app?.credentials?.aws_account_name}</span>)
-                    <Tooltip id="tooltip-login-aws-alias" position="bottom" text={`AWS Account Alias: ${header?.app?.credentials?.aws_account_name}`} />
+                    <br /> AWS Account Alias: {header?.app?.credentials?.aws_account_name}
                 </>}
                 <br />
             </>}
@@ -139,20 +139,16 @@ const LoginPage = (props) => {
     if (showCognitoAuthBox) return <LoginCognitoBox hide={() => setShowCognitoAuthBox(false)} />
     return <>
         { Auth.IsLoggedIn(header) ? (<React.Fragment>
-            <div className="container" style={{width:"800pt"}}>
+            <div className="container" style={{width:"880pt"}}>
                 {Auth.LoggedInUserName(header) && <b>Hello, {Auth.LoggedInUserName(header)}</b>} ...
-                <div style={{float:"right",marginRight:"8pt",fontSize:"small",cursor:"pointer"}}>
-                    { (header.app?.accounts_file) && <>
-                        <Link to="/accounts?all=true">Accounts</Link>&nbsp;|&nbsp;
-                    </>}
-                    <Link to="/env">Environments</Link>&nbsp;|&nbsp;
+                <div style={{float:"right",marginRight:"3pt",bottom:"-4pt",position:"relative",fontSize:"small",cursor:"pointer"}}>
                     { showingAuthToken ? <>
-                        <span onClick={() => setShowAuthToken(false)}><b>Auth</b> {Char.DownArrow}</span>
+                        <span onClick={() => setShowAuthToken(false)}>Auth {Char.DownArrow}</span>
                     </>:<>
-                        <span onClick={() => setShowAuthToken(true)}><b>Auth</b> {Char.UpArrow}</span>
+                        <span onClick={() => setShowAuthToken(true)}>Auth {Char.UpArrow}</span>
                     </>}
                 </div>
-                <div className="box" style={{padding:"10pt"}}>
+                <div className="box" style={{marginTop:"3pt", padding:"10pt"}}>
                     <table style={{color:"inherit"}}><tbody><tr>
                         <td align="top" style={{paddingRight:"14pt",verticalAlign:"top",whiteSpace:"nowrap",width:"40%"}}>
                             Logged in as:&nbsp;
@@ -207,6 +203,15 @@ const LoginPage = (props) => {
                         </div>
                     }
                 </>}
+                <div style={{marginTop:"20pt"}}>
+                    <b>System Summary</b>
+                    <div style={{float:"right",marginRight:"6pt",fontSize:"small",cursor:"pointer"}}>
+                        { (header.app?.accounts_file) && <span style={{bottom:"-4pt",position:"relative"}}>
+                            <ExternalLink text="Accounts" href={Client.Path("/accounts?all=true")} bold={false}>Accounts</ExternalLink>
+                        </span>}
+                    </div>
+                    <AccountInfoCurrent bg={"var(--box-bg)"} />
+                </div>
             </div>
         </React.Fragment>):(<React.Fragment>
         <div className="container" id="login_container">
