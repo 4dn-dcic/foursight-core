@@ -473,7 +473,10 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
     }
 
     function isCurrentAccountAndStage(header, account) {
-        return isCurrentAccount(header, account) && (header?.app?.stage === account?.stage) || account?.name == "localhost";
+        return (isCurrentAccount(header, account) &&
+                ((header?.app?.stage === account?.data?.stage) ||
+                 (header?.app?.stage === account?.stage))) ||
+               (account?.name === "localhost");
     }
 
     let boxStyle = {
