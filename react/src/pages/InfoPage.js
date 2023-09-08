@@ -183,7 +183,7 @@ const InfoPage = () => {
     return <div className="container">
         <div style={{paddingLeft:"12pt",marginRight:"-8pt"}}>
             <b>Summary</b>
-            <AccountInfoCurrent />
+            <AccountInfoCurrent bg="var(--box-bg)" />
         </div>
         <InfoBox info={info} title="Versions">
             <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={Env.FoursightGitHubBase(header)} size="2" />

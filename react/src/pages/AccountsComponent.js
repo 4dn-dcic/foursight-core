@@ -223,7 +223,6 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
     function toggleShowEnvVariables() { setShowEnvVariables(!showEnvVariables); }
 
     function awsIamLinkFromArn(arn) {
-            arn = "arn:aws:sts::643366669028:assumed-role/c4-foursight-development-stack-ApiHandlerRole-XWBNSE1XMTI8/c4-foursight-development-stack-APIHandler-XDoakzQ1SpAf"
         const parts = arn?.split("/");
         if (!parts || parts.length <= 0) return "";
         if ((parts.length > 2) && parts[0].includes("assumed-role")) {
@@ -447,17 +446,18 @@ const AccountInfoRight = ({ account, header }) => {
     </tbody></table>
 }
 
-export const AccountInfoCurrent = () => {
+export const AccountInfoCurrent = (bg = "inherit") => {
+        bg = "var(--box-bg)"
     const header = useHeader();
     const account = {
         id: "current",
         name: "current",
         stage: header.app?.stage
     }
-    return <AccountInfo account={account} header={header} decrementAccountCount={() => {}} all={true} brighten={true} />
+    return <AccountInfo account={account} header={header} decrementAccountCount={() => {}} all={true} bg={bg} brighten={true} />
 }
 
-export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount, brighten }) => {
+export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount, brighten, bg = "inherit" }) => {
 
     const accounts = useFetch(`/accounts/${account.id}`, { onDone: () => decrementAccountCount(), cache: true, nofetch: true });
 
@@ -479,7 +479,7 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
 
     if (!all && !isCurrentAccount(header, account)) return null;
     return <>
-        <div className={isCurrentAccountAndStage(header, account) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt",filter:brighten ? "brightness(1.1)" : ""}}>
+        <div className={isCurrentAccountAndStage(header, account) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt",background:bg,filter:brighten ? "brightness(1.1)" : ""}}>
             {isCurrentAccount(header, account) ? <>
                 <b id={`tooltip-current-${account.name}-${accounts?.data?.stage}`}>{accounts.data?.name || account.name}</b>
                 <Tooltip id={`tooltip-current-${account.name}-${accounts?.data?.stage}`} text={`This is your current account: ${accounts.get("foursight.aws_account_number")}`} position="top" />
