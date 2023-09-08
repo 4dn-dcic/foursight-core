@@ -490,7 +490,7 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
     if (!all && !isCurrentAccount(header, account)) return null;
     return <>
         <div className={isCurrentAccount(header, accounts) ? "box" : "box lighten"} style={boxStyle}>
-            {isCurrentAccountAndStage(header, account) ? <>
+            {isCurrentAccountAndStage(header, accounts) ? <>
                 <b id={`tooltip-current-${account.name}-${accounts?.data?.stage}`}>{accounts.data?.name || account.name}</b>
                 <Tooltip id={`tooltip-current-${account.name}-${accounts?.data?.stage}`} text={`This is your current AWS account: ${accounts.get("foursight.aws_account_number")}`} position="top" />
             </>:<>
@@ -506,7 +506,7 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
                     <Tooltip id={`tooltip-stage-${account.id}-${account.stage}`} text={`Stage: ${account.stage}`} position="top" />
                 </>}
             </>}
-            { isCurrentAccountAndStage(header, accounts) && <b>&nbsp;&nbsp;{Char.Star}</b> }
+            { isCurrentAccountAndStage(header, accounts) && <>&nbsp;&nbsp;{Char.Star}</> }
             <div style={{float:"right",marginTop:"-2pt"}}>
                 { accounts.loading ? <>
                     <div style={{paddingTop:"7pt",paddingRight:"2pt"}}><BarSpinner /></div>
