@@ -446,8 +446,7 @@ const AccountInfoRight = ({ account, header }) => {
     </tbody></table>
 }
 
-export const AccountInfoCurrent = (bg = "inherit") => {
-        bg = "var(--box-bg)"
+export const AccountInfoCurrent = ({ bg = null }) => {
     const header = useHeader();
     const account = {
         id: "current",
@@ -457,7 +456,7 @@ export const AccountInfoCurrent = (bg = "inherit") => {
     return <AccountInfo account={account} header={header} decrementAccountCount={() => {}} all={true} bg={bg} brighten={true} />
 }
 
-export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount, brighten, bg = "inherit" }) => {
+export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount, brighten, bg = null }) => {
 
     const accounts = useFetch(`/accounts/${account.id}`, { onDone: () => decrementAccountCount(), cache: true, nofetch: true });
 
@@ -474,12 +473,19 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
     }
 
     function isCurrentAccountAndStage(header, account) {
-        return isCurrentAccount(header, account) && (header?.app?.stage === account?.data?.stage);
+        return isCurrentAccount(header, account) && (header?.app?.stage === account?.stage) || account?.name == "localhost";
     }
+
+    let boxStyle = {
+        marginTop:"4pt",
+        marginBottom:"8pt",
+        filter:brighten ? "brightness(1.1)" : ""
+    };
+    if (bg) boxStyle = { background: bg, ...boxStyle };
 
     if (!all && !isCurrentAccount(header, account)) return null;
     return <>
-        <div className={isCurrentAccountAndStage(header, account) ? "box" : "box lighten"} style={{marginTop:"4pt",marginBottom:"8pt",background:bg,filter:brighten ? "brightness(1.1)" : ""}}>
+        <div className={isCurrentAccountAndStage(header, account) ? "box" : "box lighten"} style={boxStyle}>
             {isCurrentAccount(header, account) ? <>
                 <b id={`tooltip-current-${account.name}-${accounts?.data?.stage}`}>{accounts.data?.name || account.name}</b>
                 <Tooltip id={`tooltip-current-${account.name}-${accounts?.data?.stage}`} text={`This is your current account: ${accounts.get("foursight.aws_account_number")}`} position="top" />
