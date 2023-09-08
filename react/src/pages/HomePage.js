@@ -7,7 +7,7 @@ import Image from '../utils/Image';
 import Logout from '../utils/Logout';
 import { HorizontalLine, Link, LoggedInUser } from '../Components';
 import Tooltip from '../components/Tooltip';
-import { AccountInfo } from './AccountsComponent';
+import { AccountInfoCurrent } from './AccountsComponent';
 import useHeader from '../hooks/Header';
 
 const HomePage = (props) => {
@@ -48,7 +48,7 @@ const HomePage = (props) => {
                 <Tooltip id="tooltip-account-summary" position="top" size="small" text={"Click to " + (showAccountSummary ? "hide" : "show") + " account summary."} />
                 <HorizontalLine top="4pt" bottom="10pt" />
                 { showAccountSummary && <>
-                    { <div style={{marginBottom:"12pt"}}><AccountInfo account={account} header={header} decrementAccountCount={() => {}} all={true} brighten={true} /></div> }
+                    { <div style={{marginBottom:"12pt"}}><AccountInfoCurrent bg="var(--box-bg-darken)"/></div> }
                 </>}
                 <p />
                 <ul>

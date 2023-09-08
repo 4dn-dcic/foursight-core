@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import { StandardSpinner } from '../Spinners';
 import useHeader from '../hooks/Header';
-import { AccountInfo, AccountInfoCurrent } from './AccountsComponent';
+import { AccountInfoCurrent } from './AccountsComponent';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
@@ -181,7 +181,7 @@ const InfoPage = () => {
 
     if (info.error) return <FetchErrorBox error={info.error} message="Error loading info from Foursight API" />
     return <div className="container">
-        <div style={{paddingLeft:"12pt",marginRight:"-8pt"}}>
+        <div style={{paddingLeft:"11pt",marginRight:"-11pt"}}>
             <b>Summary</b>
             <AccountInfoCurrent bg="var(--box-bg)" />
         </div>

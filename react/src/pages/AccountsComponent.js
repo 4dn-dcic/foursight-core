@@ -40,9 +40,10 @@ function handleFileUpload(event, accountsUploader) {
 }
 
 function isCurrentAccount(header, account) {
-    if (!Type.IsNull(header?.app?.credentials?.aws_account_number) &&
-        !Type.IsNull(account?.data?.foursight?.aws_account_number) &&
-        (header?.app?.credentials?.aws_account_number === account?.data?.foursight?.aws_account_number)) {
+    if ((!Type.IsNull(header?.app?.credentials?.aws_account_number) &&
+         !Type.IsNull(account?.data?.foursight?.aws_account_number) &&
+         (header?.app?.credentials?.aws_account_number === account?.data?.foursight?.aws_account_number)) ||
+        (account?.name === "localhost")) {
         return true;
     }
     return false;
@@ -453,6 +454,7 @@ export const AccountInfoCurrent = ({ bg = null }) => {
         name: "current",
         stage: header.app?.stage
     }
+    const accounts = useFetch("/accounts/current");
     return <AccountInfo account={account} header={header} decrementAccountCount={() => {}} all={true} bg={bg} brighten={true} />
 }
 
@@ -473,10 +475,9 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
     }
 
     function isCurrentAccountAndStage(header, account) {
-        return (isCurrentAccount(header, account) &&
-                ((header?.app?.stage === account?.data?.stage) ||
-                 (header?.app?.stage === account?.stage))) ||
-               (account?.name === "localhost");
+        return isCurrentAccount(header, account) &&
+               ((header?.app?.stage === account?.data?.stage) ||
+                (header?.app?.stage === account?.stage));
     }
 
     let boxStyle = {
@@ -488,21 +489,21 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
 
     if (!all && !isCurrentAccount(header, account)) return null;
     return <>
-        <div className={isCurrentAccountAndStage(header, account) ? "box" : "box lighten"} style={boxStyle}>
-            {isCurrentAccount(header, account) ? <>
-                <b id={`tooltip-current-${account.name}-${accounts?.data?.stage}`}>{accounts.data?.name || account.name}</b>
-                <Tooltip id={`tooltip-current-${account.name}-${accounts?.data?.stage}`} text={`This is your current account: ${accounts.get("foursight.aws_account_number")}`} position="top" />
+        <div className={isCurrentAccount(header, account) ? "box" : "box lighten"} style={boxStyle}>
+            {isCurrentAccountAndStage(header, account) ? <>
+                <b id={`tooltip-current-${account.name}-${accounts?.data?.stage}`} style={{color:"darkred"}}>{accounts.data?.name || account.name}</b>
+                <Tooltip id={`tooltip-current-${account.name}-${accounts?.data?.stage}`} text={`This is your current AWS account: ${accounts.get("foursight.aws_account_number")}`} position="top" />
             </>:<>
                 <b id={`tooltip-account-${account.name}-${account.stage}`}>{accounts.data?.name || account.name}</b>
                 <Tooltip id={`tooltip-account-${account.name}-${account.stage}`} text={`AWS Account: ${accounts.get("foursight.aws_account_number")}.`} position="top" />
             </>}
             { accounts.get("foursight.stage") ? <>
-                &nbsp;&nbsp;<b>&ndash;</b>&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${accounts.get("foursight.stage")}`}>{accounts.get("foursight.stage")}</span>
+                &nbsp;&nbsp;<b>&ndash;</b>&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${accounts.get("foursight.stage")}`} style={{color:isCurrentAccountAndStage(header, account) ? "darkred" : "inherit"}}>{accounts.get("foursight.stage")}</span>
                 <Tooltip id={`tooltip-stage-${account.id}-${accounts.get("foursight.stage")}`} text={`Stage: ${accounts.get("foursight.stage")}`} position="top" />
             </>:<>
                 { account.stage && <>
                     &nbsp;&nbsp;<b>&ndash;</b>&nbsp;&nbsp;<span id={`tooltip-stage-${account.id}-${account.stage}`}>{account.stage}</span>
-                    <Tooltip id={`tooltip-stage-${account.id}-${account.stage}`} text={`Stage: ${account.state}`} position="top" />
+                    <Tooltip id={`tooltip-stage-${account.id}-${account.stage}`} text={`Stage: ${account.stage}`} position="top" />
                 </>}
             </>}
             <div style={{float:"right",marginTop:"-2pt"}}>
