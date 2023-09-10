@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import useHeaderRefresh from '../hooks/HeaderRefresh';
+import { AccountInfoCurrent } from './AccountsComponent';
 import { FetchErrorBox, HorizontalLine } from '../Components';
 import Page from '../Page';
 import Auth from '../utils/Auth';
@@ -164,8 +165,9 @@ const EnvPage = (props) => {
             </tbody></table>
         </div>
         { Auth.IsLoggedIn(header) &&
-            <div style={{marginTop:"8pt"}}>
-                {/* <AccountsComponent header={header} /> */}
+            <div style={{marginTop:"12pt"}}>
+                <b>System Summary</b>
+                <AccountInfoCurrent top="1pt" bg={"var(--box-bg-darken)"} />
             </div>
         }
     </div>

@@ -448,17 +448,17 @@ const AccountInfoRight = ({ account, header }) => {
     </tbody></table>
 }
 
-export const AccountInfoCurrent = ({ bg = null }) => {
+export const AccountInfoCurrent = ({ bg = null, top = null }) => {
     const header = useHeader();
     const account = {
         id: "current",
         name: "current",
         stage: header.app?.stage
     }
-    return <AccountInfo account={account} header={header} decrementAccountCount={() => {}} all={true} bg={bg} brighten={true} />
+    return <AccountInfo account={account} header={header} decrementAccountCount={() => {}} all={true} bg={bg} brighten={true} top={top} />
 }
 
-export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount, brighten, bg = null }) => {
+export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccountCount, brighten, bg = null, top = null }) => {
 
     const accounts = useFetch(`/accounts/${account.id}`, { onDone: () => decrementAccountCount(), cache: true, nofetch: true });
 
@@ -481,8 +481,8 @@ export const AccountInfo = ({ account, header, foursightUrl, all, decrementAccou
     }
 
     let boxStyle = {
-        marginTop:"4pt",
-        marginBottom:"8pt",
+        marginTop: top ? top : "4pt",
+        marginBottom: "8pt",
         filter:brighten ? "brightness(1.1)" : ""
     };
     if (bg) boxStyle = { background: bg, ...boxStyle };
