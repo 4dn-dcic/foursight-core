@@ -729,6 +729,57 @@ class ReactRoutes:
     def reactapi_route_aws_ecs_task() -> Response:  # noqa: implicit @staticmethod via @route
         return app.core.reactapi_aws_ecs_tasks(latest=True)
 
+    @route("/{env}/ingestion_submissions", authorize=True)
+    def reactapi_route_ingestion_submissions(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submissions in S3.
+        - limit: to limit the results to the specified number.
+        - offset: to skip past the first specified number of results.
+        """
+        return app.core.reactapi_ingestion_submissions(app.request(), env, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}", authorize=True)
+    def reactapi_route_ingestion_submission(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/manifest", authorize=True)
+    def reactapi_route_ingestion_submission_manifest(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_manifest(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/resolution", authorize=True)
+    def reactapi_route_ingestion_submission_resolution(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_resolution(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/traceback", authorize=True)
+    def reactapi_route_ingestion_submission_traceback(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_traceback(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/data/info", authorize=True)
+    def reactapi_route_ingestion_submission_data_info(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_data_info(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/data", authorize=True)
+    def reactapi_route_ingestion_submission_data(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_data(app.request(), env, uuid, args=app.request_args())
+
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes, serving the HTML/CSS/JavaScript/React files.
     # Note that ALL of these are UNPROTECTED routes.

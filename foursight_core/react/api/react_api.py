@@ -3,7 +3,6 @@ import boto3
 from botocore.errorfactory import ClientError as BotoClientError
 import copy
 import datetime
-import io
 import json
 import os
 import pkg_resources
@@ -12,9 +11,10 @@ import requests
 import socket
 import time
 from typing import Callable, Optional
+import tzlocal
 import urllib.parse
 from itertools import chain
-from dcicutils.ecs_utils import ECSUtils 
+from dcicutils.ecs_utils import ECSUtils
 from dcicutils.env_manager import EnvManager
 from dcicutils.env_utils import EnvUtils, get_foursight_bucket, get_foursight_bucket_prefix, full_env_name
 from dcicutils.env_utils import get_portal_url as env_utils_get_portal_url
@@ -44,9 +44,17 @@ from .datetime_utils import (
     convert_uptime_to_datetime,
     convert_utc_datetime_to_utc_datetime_string
 )
-from .encryption import Encryption
 from .encoding_utils import base64_decode_to_json
 from .gac import Gac
+from .ingestion_utils import (
+    read_ingestion_submissions,
+    read_ingestion_submission,
+    read_ingestion_submission_data,
+    read_ingestion_submission_data_info,
+    read_ingestion_submission_manifest,
+    read_ingestion_submission_resolution,
+    read_ingestion_submission_traceback
+)
 from .misc_utils import (
     get_base_url,
     is_running_locally,
@@ -273,7 +281,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return isinstance(name, str) and name.startswith("test_")
 
     @classmethod
-    def _is_test_name_item(cls, item, property_name = "name"):
+    def _is_test_name_item(cls, item, property_name="name"):
         return isinstance(item, dict) and cls._is_test_name(item.get(property_name))
 
     def react_serve_static_file(self, env: str, paths: list) -> Response:
@@ -357,10 +365,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Note that this in an UNPROTECTED route.
         """
         # Note that this route is not protected but/and we return the results from authorize.
+        default_env = self._envs.get_default_env()
         if not self._envs.is_known_env(env):
             # If we are not given a known env then, at least for
             # the /header endpoint, coerce it to the default env.
-            env = self._envs.get_default_env()
+            env = default_env
         auth = self._auth.authorize(request, env)
         data = self._reactapi_header_cache(request, env)
         data = copy.deepcopy(data)
@@ -374,11 +383,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
             logged_in = True
         else:
             logged_in = False
-            known_envs_default = self._envs.find_known_env(self._envs.get_default_env())
+            known_envs_default = self._envs.find_known_env(default_env)
             known_envs_actual_count = self._envs.get_known_envs_count()
             data["auth"]["known_envs"] = [known_envs_default]
             data["auth"]["known_envs_actual_count"] = known_envs_actual_count
-        data["auth"]["default_env"] = self._envs.get_default_env()
+        data["auth"]["default_env"] = default_env
         # Note that these "test_mode_xyz" cookies are for testing only
         # and if used must be manually set, e.g. via Chrome Developer Tools.
         test_mode_certificate_simulate_error = read_cookie_bool(request, "test_mode_certificate_simulate_error")
@@ -409,10 +418,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     data_portal["ssl_certificate"]["name"] = "Portal"
                     data_portal["ssl_certificate"]["exception"] = e
         data["timestamp"] = convert_utc_datetime_to_utc_datetime_string(datetime.datetime.utcnow())
-        import tzlocal # xyzzy temporary
         data["timezone"] = tzlocal.get_localzone_name()
         test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
-        if auth.get("user_exception"): # or test_mode_access_key_simulate_error:
+        if auth.get("user_exception"):  # or test_mode_access_key_simulate_error:
             # Since this call to get the Portal access key info can be relatively expensive, we don't want to
             # do it on every /header API call; so we only call it if, according to the user's authtoken cookie,
             # an exception was experienced when trying to authorize the user (via envs.get_user_auth_info) on
@@ -526,7 +534,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             foursight_url = self.foursight_instance_url(request)
             portal_url = env_utils_get_portal_url(self._envs.get_default_env())
             foursight_ssl_certificate_info = get_ssl_certificate_info(
-                foursight_url, test_mode_certificate_expiration_warning_days=test_mode_certificate_expiration_warning_days)
+                foursight_url,
+                test_mode_certificate_expiration_warning_days=test_mode_certificate_expiration_warning_days)
             if foursight_ssl_certificate_info:
                 foursight_ssl_certificate_info["name"] = "Foursight"
                 response.append(foursight_ssl_certificate_info)
@@ -680,7 +689,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 if ecosystem_name == main_ecosystem_name:
                     main_ecosystem_data = ecosystem_data
                 results[ecosystem_name] = ecosystem_data
-            except Exception as e:
+            except Exception:
                 pass
         if current_ecosystem_name:
             if not current_ecosystem_name_cannot_infer:
@@ -853,7 +862,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if search:
             # Though limit and offset (from) are supported by search_metadata, total counts don't seem to be (?);
             # very possibly missing something there; so for now get all results and to paging manually here.
-            # results = ff_utils.search_metadata(f"/search/?type=User&frame=object&q={search}&limit={limit}&from={offset}&sort={sort}", key=connection.ff_keys, is_generator=True)
             results = ff_utils.search_metadata(f"/search/?type=User&frame=object&q={search}&sort={sort}",
                                                key=connection.ff_keys)
             total = len(results)
@@ -868,7 +876,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             total = results["total"]
             results = results["@graph"]
 
-        for user in results: # results["@graph"]:
+        for user in results:  # results["@graph"]:
             users.append(self._create_user_record_for_output(user) if not raw else user)
         return self.create_success_response({
             "paging": {
@@ -993,7 +1001,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # When ES7 has been fully merged/deployed pass this to these calls: skip_indexing=True
         #
         elasticsearch_server_version = self._get_elasticsearch_server_version()
-        #kwargs = {"skip_indexing": True} if elasticsearch_server_version >= "7" else {}
+        # kwargs = {"skip_indexing": True} if elasticsearch_server_version >= "7" else {}
         kwargs = {} if elasticsearch_server_version >= "7" else {}
         connection = app.core.init_connection(env)
         ff_utils.delete_metadata(obj_id=f"users/{uuid}", ff_env=full_env_name(env), key=connection.ff_keys, **kwargs)
@@ -1439,7 +1447,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         accounts_file_data = {"data": accounts_file_data}
         s3 = s3_utils.s3Utils(env=self._envs.get_default_env())
         s3.s3_put_secret(accounts_file_data, self._accounts_file_name)
-        return self.create_success_response(accounts_data)
+        return self.create_success_response(accounts_file_data)
 
     def _get_accounts_file_data(self) -> Optional[list]:
         try:
@@ -1537,7 +1545,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             s3_secret_access_key = os.environ.get("S3_SECRET_ACCESS_KEY")
             global_env_bucket = self.get_global_env_bucket()
             if s3_aws_access_key_id and s3_secret_access_key and global_env_bucket:
-                s3 = s3.client("s3")
+                s3 = boto3.client("s3")
                 try:
                     s3.list_objects_v2(Bucket=global_env_bucket)
                 except Exception:
@@ -1570,12 +1578,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
             response["foursight"]["identity"] = foursight_app.get("identity")
             if not response["foursight"]["identity"]:
                 response["foursight"]["identity"] = foursight_header_json["auth"]["known_envs"][0].get("gac_name")
-            response["foursight"]["redis_url"] = foursight_header_json.get("resources",{}).get("redis")
-            response["foursight"]["es_url"] = foursight_header_json.get("resources",{}).get("es")
-            response["foursight"]["es_cluster"] = foursight_header_json.get("resources",{}).get("es_cluster")
-            response["foursight"]["rds"] = foursight_header_json.get("resources",{}).get("rds")
-            response["foursight"]["rds_name"] = foursight_header_json.get("resources",{}).get("rds_name")
-            response["foursight"]["sqs_url"] = foursight_header_json.get("resources",{}).get("sqs")
+            response["foursight"]["redis_url"] = foursight_header_json.get("resources", {}).get("redis")
+            response["foursight"]["es_url"] = foursight_header_json.get("resources", {}).get("es")
+            response["foursight"]["es_cluster"] = foursight_header_json.get("resources", {}).get("es_cluster")
+            response["foursight"]["rds"] = foursight_header_json.get("resources", {}).get("rds")
+            response["foursight"]["rds_name"] = foursight_header_json.get("resources", {}).get("rds_name")
+            response["foursight"]["sqs_url"] = foursight_header_json.get("resources", {}).get("sqs")
             foursight_header_json_s3 = foursight_header_json.get("s3")
             # TODO: Maybe eventually make separate API call (to get Portal Access Key info for any account)
             # so that we do not have to wait here within this API call for this synchronous API call.
@@ -1683,7 +1691,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
         return self.create_success_response(response)
 
-    def reactapi_aws_vpcs(self, request: dict, env: str, vpc: Optional[str] = None, args: Optional[dict] = None) -> Response:
+    def reactapi_aws_vpcs(self, request: dict, env: str,
+                          vpc: Optional[str] = None, args: Optional[dict] = None) -> Response:
         """
         Called from react_routes for endpoint:
         - GET /{env}/aws/vpcs
@@ -1702,7 +1711,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         raw = args.get("raw") == "true"
         return self.create_success_response(aws_get_vpcs(vpc, raw))
 
-    def reactapi_aws_subnets(self, request: dict, env: str, subnet: Optional[str] = None, args: Optional[dict] = None) -> Response:
+    def reactapi_aws_subnets(self, request: dict, env: str,
+                             subnet: Optional[str] = None, args: Optional[dict] = None) -> Response:
         """
         Called from react_routes for endpoint:
         - GET /{env}/aws/subnets
@@ -1722,14 +1732,15 @@ class ReactApi(ReactApiBase, ReactRoutes):
         vpc = args.get("vpc")
         return self.create_success_response(aws_get_subnets(subnet, vpc, raw))
 
-    def reactapi_aws_security_groups(self, request: dict, env: str, security_group: Optional[str] = None, args: Optional[dict] = None) -> Response:
+    def reactapi_aws_security_groups(self, request: dict, env: str,
+                                     security_group: Optional[str] = None, args: Optional[dict] = None) -> Response:
         """
         Called from react_routes for endpoints:
         - GET /{env}/aws/security_groups
         - GET /{env}/aws/security_groups/{security_group}
         Returns AWS Security Group info. By default returns Security Groups with (tagged) names beginning with "C4".
-        If the security_group argument is "all" then info all Security Groups are matched; or if the security_group is some
-        other value then it is treated as a regular expression against which the Subnet names are matched.
+        If the security_group argument is "all" then info all Security Groups are matched; or if the security_group
+        is some other value then it is treated as a regular expression against which the Subnet names are matched.
         Optional arguments (args) for the request are any of:
         - raw: if true then returns the raw format of the data.
         """
@@ -1742,7 +1753,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         vpc = args.get("vpc")
         return self.create_success_response(aws_get_security_groups(security_group, vpc, raw))
 
-    def reactapi_aws_security_group_rules(self, request: dict, env: str, security_group: Optional[str] = None, args: Optional[dict] = None) -> Response:
+    def reactapi_aws_security_group_rules(self, request: dict, env: str,
+                                          security_group: Optional[str] = None,
+                                          args: Optional[dict] = None) -> Response:
         """
         Called from react_routes for endpoints:
         - GET /{env}/aws/security_groups_rules/{security_group}
@@ -1755,7 +1768,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         direction = args.get("direction")
         return self.create_success_response(aws_get_security_group_rules(security_group, direction, raw))
 
-    def reactapi_aws_network(self, request: dict, env: str, network: Optional[str] = None, args: Optional[dict] = None) -> Response:
+    def reactapi_aws_network(self, request: dict, env: str,
+                             network: Optional[str] = None, args: Optional[dict] = None) -> Response:
         """
         Called from react_routes for endpoints:
         - GET /{env}/aws/network
@@ -1835,12 +1849,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(Gac.get_secrets(secrets_name))
 
     def reactapi_aws_ecs_clusters(self) -> Response:
-        ecs = ECSUtils()
-        clusters = ecs.list_ecs_clusters()
+
         def ecs_cluster_arn_to_name(cluster_arn: str) -> str:
             cluster_arn_parts = cluster_arn.split("/", 1)
             return cluster_arn_parts[1] if len(cluster_arn_parts) > 1 else cluster_arn
 
+        ecs = ECSUtils()
+        clusters = ecs.list_ecs_clusters()
         clusters = [{"cluster_name": ecs_cluster_arn_to_name(arn), "cluster_arn": arn} for arn in clusters]
         clusters = sorted(clusters, key=lambda item: item["cluster_name"])
         return self.create_success_response(clusters)
@@ -1869,8 +1884,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             # one with a status of PRIMARY (of which there should be at most one), is the active one,
             # and we will place that first in the list; all others will go after that.
             for deployment in service.get("deployments", []):
-                if (not most_recent_update_at or
-                    (deployment.get("updatedAt") and deployment.get("updatedAt") > most_recent_update_at)):
+                if (not most_recent_update_at or (deployment.get("updatedAt")
+                                                  and deployment.get("updatedAt") > most_recent_update_at)):
                     most_recent_update_at = deployment.get("updatedAt")
                 deployment_status = deployment.get("status")
                 deployment_info = {
@@ -1891,11 +1906,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     deployments.insert(0, deployment_info)
                 else:
                     deployments.append(deployment_info)
-            if (not most_recent_deployment_at or
-                (most_recent_update_at and most_recent_update_at > most_recent_deployment_at)):
+            if (not most_recent_deployment_at or (most_recent_update_at
+                                                  and most_recent_update_at > most_recent_deployment_at)):
                 most_recent_deployment_at = most_recent_update_at
             if len(deployments) > 1:
-                task_name_common_prefix = longest_common_initial_substring([deployment["task_name"] for deployment in deployments])
+                task_name_common_prefix = longest_common_initial_substring(
+                        [deployment["task_name"] for deployment in deployments])
                 if task_name_common_prefix:
                     for deployment in deployments:
                         deployment["task_display_name"] = deployment["task_name"][len(task_name_common_prefix):]
@@ -1921,13 +1937,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     service["task_display_name"] = service["task_name"][len(task_name_common_prefix):]
 
         if most_recent_deployment_at:
-            response["most_recent_deployment_at"] = convert_utc_datetime_to_utc_datetime_string(most_recent_deployment_at)
+            response["most_recent_deployment_at"] = convert_utc_datetime_to_utc_datetime_string(
+                    most_recent_deployment_at)
         return self.create_success_response(response)
 
     def reactapi_aws_ecs_task_arns(self, latest: bool = True) -> Response:
         # If latest is True then only looks for the non-revisioned task ARNs.
         ecs = boto3.client('ecs')
-        task_definition_arns = ecs.list_task_definitions()['taskDefinitionArns'] # TODO: ecs_utils.list_ecs_tasks
+        task_definition_arns = ecs.list_task_definitions()['taskDefinitionArns']  # TODO: ecs_utils.list_ecs_tasks
         if latest:
             task_definition_arns = list(set([self._ecs_task_definition_arn_to_name(task_definition_arn)
                                              for task_definition_arn in task_definition_arns]))
@@ -2017,20 +2034,65 @@ class ReactApi(ReactApiBase, ReactRoutes):
         """
         Given something like this:
         - arn:aws:ecs:us-east-1:466564410312:task-definition/c4-ecs-cgap-supertest-stack-CGAPDeployment-of2dr96JX1ds:1
-        this function would return this: 
+        this function would return this:
         - c4-ecs-cgap-supertest-stack-CGAPDeployment-of2dr96JX1ds
         """
         if not task_definition_arn:
             return ""
-        task_definition_arn_parts = task_definition_arn.split("/", 1)
-        task_definition_name = task_definition_arn_parts[1] if len(task_definition_arn_parts) > 1 else task_definition_arn
-        task_definition_name_parts = task_definition_name.rsplit(":", 1)
-        return task_definition_name_parts[0] if len(task_definition_name_parts) > 1 else task_definition_name
+        arn_parts = task_definition_arn.split("/", 1)
+        name = arn_parts[1] if len(arn_parts) > 1 else task_definition_arn
+        name_parts = name.rsplit(":", 1)
+        return name_parts[0] if len(name_parts) > 1 else name
 
     @staticmethod
     def _ecs_task_definition_revision(task_definition_arn: str) -> str:
         task_definition_arn_parts = task_definition_arn.rsplit(":", 1)
         return task_definition_arn_parts[1] if len(task_definition_arn_parts) > 1 else task_definition_arn
+
+    def reactapi_ingestion_submissions(self, request: dict, env: str, args: Optional[dict] = None) -> Response:
+        return self.create_success_response(read_ingestion_submissions(
+            self._get_metadata_bundles_bucket(env, args),
+            int(args.get("offset", "0")) if args else 0,
+            int(args.get("limit", "50")) if args else 50,
+            urllib.parse.unquote(args.get("sort", "modified.desc") if args else "modified.desc")))
+
+    def reactapi_ingestion_submission(self, request: dict, env: str,
+                                      uuid: str, args: Optional[dict] = None) -> Response:
+        return self.create_success_response(
+            read_ingestion_submission(self._get_metadata_bundles_bucket(env, args), uuid))
+
+    def reactapi_ingestion_submission_manifest(self, request: dict, env: str,
+                                               uuid: str, args: Optional[dict] = None) -> Response:
+        return self.create_success_response(
+            read_ingestion_submission_manifest(self._get_metadata_bundles_bucket(env, args), uuid))
+
+    def reactapi_ingestion_submission_resolution(self, request: dict, env: str,
+                                                 uuid: str, args: Optional[dict] = None) -> Response:
+        return self.create_success_response(
+            read_ingestion_submission_resolution(self._get_metadata_bundles_bucket(env, args), uuid))
+
+    def reactapi_ingestion_submission_traceback(self, request: dict, env: str,
+                                                uuid: str, args: Optional[dict] = None) -> Response:
+        return self.create_success_response(
+            read_ingestion_submission_traceback(self._get_metadata_bundles_bucket(env, args), uuid))
+
+    def reactapi_ingestion_submission_data_info(self, request: dict, env: str,
+                                           uuid: str, args: Optional[dict] = None) -> Response:
+        return self.create_success_response(
+            read_ingestion_submission_data_info(self._get_metadata_bundles_bucket(env, args), uuid))
+
+    def reactapi_ingestion_submission_data(self, request: dict, env: str,
+                                           uuid: str, args: Optional[dict] = None) -> Response:
+        return self.create_success_response(
+            read_ingestion_submission_data(self._get_metadata_bundles_bucket(env, args), uuid))
+
+    @staticmethod
+    def _get_metadata_bundles_bucket(env: str, args: Optional[dict] = None) -> str:
+        metadata_bundles_bucket = args.get("bucket") if args else None
+        if not metadata_bundles_bucket:
+            s3 = s3_utils.s3Utils(env=env)
+            metadata_bundles_bucket = s3.metadata_bucket
+        return metadata_bundles_bucket
 
     def reactapi_reload_lambda(self, request: dict) -> Response:
         """
