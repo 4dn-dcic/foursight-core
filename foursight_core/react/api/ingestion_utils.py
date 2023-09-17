@@ -134,53 +134,53 @@ def read_ingestion_submissions(bucket: str,
 
 
 def read_ingestion_submission_detail(bucket: str, uuid: str) -> Optional[str]:
-    file =  f"{uuid}/submission.json"
-    contents = _read_s3_key(bucket, file, is_json=True)
+    file = f"submission.json"
+    contents = _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)
     if not contents:
-        file =  f"{uuid}/submission.json.json"
-        contents = _read_s3_key(bucket, file, is_json=True)
+        file = f"submission.json.json"
+        contents = _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)
     return {"file": file, "detail": contents}
 
 
 def read_ingestion_submission_summary(bucket: str, uuid: str) -> Optional[str]:
-    file = f"{uuid}/summary.json"
-    contents = _read_s3_key(bucket, file, is_json=True)
+    file = f"summary.json"
+    contents = _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)
     return {"file": file, "summary": contents, "started": _exists_s3_key(bucket, file)}
 
 
 def read_ingestion_submission_manifest(bucket: str, uuid: str) -> Optional[str]:
-    file = f"{uuid}/manifest.json"
-    return {"file": file, "manifest": _read_s3_key(bucket, file, is_json=True)}
+    file = f"manifest.json"
+    return {"file": file, "manifest": _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)}
 
 
 def read_ingestion_submission_post_output(bucket: str, uuid: str) -> Optional[str]:
-    file = f"{uuid}/post_output.json"
-    return {"file": file, "post_output": _read_s3_key(bucket, file, is_json=True)}
+    file = f"post_output.json"
+    return {"file": file, "post_output": _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)}
 
 
-def read_ingestion_submission_upload_info(bucket: str, uuid: str) -> Optional[str]:
-    file = f"{uuid}/upload_info.txt"
-    return {"file": file, "upload_info": _read_s3_key(bucket, file, is_json=False)}
+def read_ingestion_submission_upload_info(bucket: str, uuid: str) -> Optional[dict]:
+    file = f"upload_info.txt"
+    return {"file": file, "upload_info": _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)}
 
 
 def read_ingestion_submission_resolution(bucket: str, uuid: str) -> Optional[str]:
-    file = f"{uuid}/resolution.json"
-    return {"file": file, "resolution": _read_s3_key(bucket, file, is_json=True)}
+    file = f"resolution.json"
+    return {"file": file, "resolution": _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)}
 
 
 def read_ingestion_submission_submission_response(bucket: str, uuid: str) -> Optional[str]:
-    file = f"{uuid}/submission_response.txt"
-    return {"file": file, "submission_response": _read_s3_key(bucket, file, is_json=False)}
+    file = f"submission_response.txt"
+    return {"file": file, "submission_response": _read_s3_key(bucket, f"{uuid}/{file}", is_json=False)}
 
 
 def read_ingestion_submission_traceback(bucket: str, uuid: str) -> Optional[str]:
-    file = f"{uuid}/traceback.txt"
-    return {"file": file, "traceback": _read_s3_key(bucket, file, is_json=False)}
+    file = f"traceback.txt"
+    return {"file": file, "traceback": _read_s3_key(bucket, f"{uuid}/{file}", is_json=False)}
 
 
 def read_ingestion_submission_validation_report(bucket: str, uuid: str) -> Optional[str]:
-    file = f"{uuid}/validation_report.txt"
-    return {"file": file, "validation_report": _read_s3_key(bucket, file, is_json=False)}
+    file = f"validation_report.txt"
+    return {"file": file, "validation_report": _read_s3_key(bucket, f"{uuid}/{file}", is_json=False)}
 
 
 def read_ingestion_submission_data_info(bucket: str, uuid: str) -> Optional[dict]:

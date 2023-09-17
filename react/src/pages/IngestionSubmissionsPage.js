@@ -224,10 +224,11 @@ const RowDetail = ({ data, uuid, bucket, widthRef, setFileSize }) => {
     const [showDetail, setShowDetail] = useState(false); const toggleDetail = () => setShowDetail(!showDetail);
     const [showManifest, setShowManifest] = useState(false); const toggleManifest = () => setShowManifest(!showManifest);
     const [showResolution, setShowResolution] = useState(false); const toggleResolution = () => setShowResolution(!showResolution);
+    const [showPostOutput, setShowPostOutput] = useState(false); const togglePostOutput = () => setShowPostOutput(!showPostOutput);
     const [showSubmissionResponse, setShowSubmissionResponse] = useState(false); const toggleSubmissionResponse = () => setShowSubmissionResponse(!showSubmissionResponse);
     const [showSummary, setShowSummary] = useState(true); const toggleSummary = () => setShowSummary(!showSummary);
     const [showTraceback, setShowTraceback] = useState(true); const toggleTraceback = () => setShowTraceback(!showTraceback);
-    const [showUploadInfo, setShowUploadInfo] = useState(true); const toggleUploadInfo = () => setShowUploadInfo(!showUploadInfo);
+    const [showUploadInfo, setShowUploadInfo] = useState(false); const toggleUploadInfo = () => setShowUploadInfo(!showUploadInfo);
     const [showValidationReport, setShowValidationReport] = useState(true); const toggleValidationReport = () => setShowValidationReport(!showValidationReport);
     const [showFiles, setShowFiles] = useState(true); const toggleFiles = () => setShowFiles(!showFiles);
 
@@ -294,14 +295,38 @@ const RowDetail = ({ data, uuid, bucket, widthRef, setFileSize }) => {
                         <span onClick={toggleDetail} className="pointer">Click to retreive details ...</span>
                     </>}
                 </pre>
+                {submissionResponse.data?.submission_response && <div>
+                    <b onClick={toggleSubmissionResponse} className="pointer">Submission Response</b> <ExternalLink href={awsDataLink(bucket, uuid, submissionResponse.data?.file)} /> <br />
+                    <pre style={prestyle}>
+                        { showSubmissionResponse ? lines(submissionResponse.data.submission_response).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={toggleSubmissionResponse} className="pointer">Click to show ...</i>}
+                    </pre>
+                </div>}
+                {postOutput.data?.post_output && <div>
+                    <b onClick={togglePostOutput} className="pointer">PostOutput</b> <ExternalLink href={awsDataLink(bucket, uuid, "post_output.txt")} /> <br />
+                    <pre style={prestyle}>
+                        { showPostOutput ? lines(postOutput.data.post_output).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={togglePostOutput} className="pointer">Click to show ...</i>}
+                    </pre>
+                </div>}
+                {uploadInfo.data?.upload_info && <div>
+                    <b onClick={toggleUploadInfo} className="pointer">Upload Info</b> <ExternalLink href={awsDataLink(bucket, uuid, uploadInfo.data?.file)} /> <br />
+                    <pre style={prestyle}>
+                        { showUploadInfo ? Yaml.Format(uploadInfo.data) : <i onClick={toggleUploadInfo} className="pointer">Click to show ...</i>}
+                    </pre>
+                </div>}
+                {validationReport.data?.validation_report && <div>
+                    <b onClick={toggleValidationReport} className="pointer">Validation Report</b> <ExternalLink href={awsDataLink(bucket, uuid, validationReport.data?.file)} /> <br />
+                    <pre style={prestyle}>
+                        { showValidationReport ? lines(validationReport.data.validation_report).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={toggleValidationReport} className="pointer">Click to show ...</i>}
+                    </pre>
+                </div>}
                 {manifest.data?.manifest && <div>
-                    <b onClick={toggleManifest} className="pointer">Manifest</b> <ExternalLink href={awsDataLink(bucket, uuid, "manifest.json")} /> <br />
+                    <b onClick={toggleManifest} className="pointer">Manifest</b> <ExternalLink href={awsDataLink(bucket, uuid, manifest.data?.file)} /> <br />
                     <pre style={prestyle}>
                         { showManifest ? Yaml.Format(manifest.data) : <i onClick={toggleManifest} className="pointer">Click to show ...</i>}
                     </pre>
                 </div>}
                 {resolution.data?.resolution && <div>
-                    <b onClick={toggleResolution} className="pointer">Resolution</b> <ExternalLink href={awsDataLink(bucket, uuid, "resolution.json")} /> <br />
+                    <b onClick={toggleResolution} className="pointer">Resolution</b> <ExternalLink href={awsDataLink(bucket, uuid, resolution.data?.file)} /> <br />
                     <pre style={prestyle}>
                         { showResolution ? Yaml.Format(resolution.data) : <i onClick={toggleResolution} className="pointer">Click to show ...</i>}
                     </pre>
