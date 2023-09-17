@@ -216,6 +216,10 @@ const RowDetail = ({ data, uuid, bucket, widthRef, setFileSize }) => {
     const manifest = useFetch(`/ingestion_submissions/${uuid}/manifest?bucket=${bucket}`);
     const resolution = useFetch(`/ingestion_submissions/${uuid}/resolution?bucket=${bucket}`);
     const traceback = useFetch(`/ingestion_submissions/${uuid}/traceback?bucket=${bucket}`);
+    const postOutput = useFetch(`/ingestion_submissions/${uuid}/post_output?bucket=${bucket}`);
+    const submissionResponse = useFetch(`/ingestion_submissions/${uuid}/submission_response?bucket=${bucket}`);
+    const uploadInfo = useFetch(`/ingestion_submissions/${uuid}/upload_info?bucket=${bucket}`);
+    const validationReport = useFetch(`/ingestion_submissions/${uuid}/validation_report?bucket=${bucket}`);
     const datainfo = useFetch(`/ingestion_submissions/${uuid}/data/info?bucket=${bucket}`, { onDone: (data) => setFileSize(data.data.size) });
 
     const [showSummary, setShowSummary] = useState(true); const toggleSummary = () => setShowSummary(!showSummary);

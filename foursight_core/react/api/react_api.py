@@ -2075,6 +2075,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(
             read_ingestion_submission_manifest(self._get_metadata_bundles_bucket(env, args), uuid))
 
+    def reactapi_ingestion_submission_post_output(self, request: dict, env: str,
+                                                  uuid: str, args: Optional[dict] = None) -> Response:
+        return self.create_success_response(
+            read_ingestion_submission_post_output(self._get_metadata_bundles_bucket(env, args), uuid))
+
     def reactapi_ingestion_submission_resolution(self, request: dict, env: str,
                                                  uuid: str, args: Optional[dict] = None) -> Response:
         return self.create_success_response(
