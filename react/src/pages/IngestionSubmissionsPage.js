@@ -1,19 +1,32 @@
 import Char from '../utils/Char';
 import DateTime from '../utils/DateTime';
 import { ExternalLink } from '../Components';
+import Json from '../utils/Json';
 import PagedTableComponent from '../PagedTableComponent';
+import { StandardSpinner } from '../Spinners';
 import Str from '../utils/Str';
 import Type from '../utils/Type';
 import useHeader from '../hooks/Header';
 import useFetch from '../hooks/Fetch';
-import { useState } from 'react';
-
 import { useParams, useSearchParams } from 'react-router-dom';
+import { useRef, useState } from 'react';
+import Yaml from '../utils/Yaml';
+
+function awsLink(bucket, uuid) {
+    const region = "us-east-1";
+    return `https://s3.console.aws.amazon.com/s3/buckets/${bucket}?region=${region}&prefix=${uuid}/&showversions=false`;
+}
+
+function awsDataLink(bucket, uuid, file) {
+    const region = "us-east-1";
+    return `https://s3.console.aws.amazon.com/s3/object/${bucket}?region=${region}&prefix=${uuid}/${file}`
+}
 
 const IngestionSubmissionPage = (props) => {
 
+    const bucket = "smaht-production-application-metadata-bundles";
     const header = useHeader();
-    const submissions = useFetch("/ingestion_submissions?bucket=smaht-production-application-metadata-bundles");
+    const submissions = useFetch("/ingestion_submissions?bucket=${bucket}");
     const [ args, setArgs ] = useSearchParams();
 
     const columns =  [
@@ -89,19 +102,19 @@ const IngestionSubmissionPage = (props) => {
             data={submissions}
             initialSort={"modified.desc"}>
             { submissions.map("list", (data, index) => (
-                <RowContent data={data} columns={columns}
-                    rowIndex={index} offset={parseInt(args.get("offset"))}
-                    isExpanded={isExpanded} toggleExpanded={toggleExpanded} />
+                    <RowContent data={data} bucket={bucket} columns={columns}
+                        rowIndex={index} offset={parseInt(args.get("offset"))}
+                        isExpanded={isExpanded} toggleExpanded={toggleExpanded} />
             ))}
         </PagedTableComponent>
     </div>
 };
 
-const RowContent = ({ data, columns, rowIndex, offset, isExpanded, toggleExpanded }) => {
+const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggleExpanded }) => {
 
-    const bucket = "smaht-production-application-metadata-bundles";
     const uuid = data?.uuid;
-    const submission = useFetch(`/ingestion_submissions/${uuid}/data/info?bucket=${bucket}`);
+    const widthRef = useRef(null);
+    const [fileSize, setFileSize] = useState(null);
 
     function valueOf(data, column) {
         const column_data = data[column.key];
@@ -135,21 +148,11 @@ const RowContent = ({ data, columns, rowIndex, offset, isExpanded, toggleExpande
             }
         }
         else if (column.key === "size") {
-            return submission.data?.size;
+            return fileSize || "?";
         }
         else {
             return column_data;
         }
-    }
-
-    function awsLink() {
-        const region = "us-east-1";
-        return `https://s3.console.aws.amazon.com/s3/buckets/${bucket}?region=${region}&prefix=${uuid}/&showversions=false`;
-    }
-
-    function awsDataLink(file) {
-        const region = "us-east-1";
-        return `https://s3.console.aws.amazon.com/s3/object/${bucket}?region=${region}&prefix=${uuid}/${file}`
     }
 
     function tdstyle(column) {
@@ -168,66 +171,117 @@ const RowContent = ({ data, columns, rowIndex, offset, isExpanded, toggleExpande
             { columns.map((column, index) => <td style={tdstyle(column)} onClick={() => toggleExpanded(rowIndex)}>
                 {valueOf(data, column)}
                 { column.key === "uuid" && 
-                    <ExternalLink href={awsLink()} style={{marginLeft:"6pt"}} />
+                    <ExternalLink href={awsLink(bucket, uuid)} style={{marginLeft:"6pt"}} />
                 }
                 { column.key === "file" && 
-                    <ExternalLink href={awsDataLink(submission.data?.file)} style={{marginLeft:"6pt"}} />
+                    <ExternalLink href={awsDataLink(bucket, uuid, valueOf(data, column))} style={{marginLeft:"6pt"}} />
                 }
             </td>)}
         </tr>
         { isExpanded(rowIndex) &&
-            <RowDetailContent uuid={uuid} />
+            <RowDetail uuid={uuid} bucket={bucket} widthRef={widthRef} setFileSize={setFileSize} />
         }
     </>
 }
 
-const RowDetailContent = ({ uuid }) => {
-    const bucket = "smaht-production-application-metadata-bundles";
+const RowDetail = ({ uuid, bucket, widthRef, setFileSize }) => {
+
     const summary = useFetch(`/ingestion_submissions/${uuid}?bucket=${bucket}`);
     const detail = useFetch(`/ingestion_submissions/${uuid}/detail?bucket=${bucket}`);
     const manifest = useFetch(`/ingestion_submissions/${uuid}/manifest?bucket=${bucket}`);
     const resolution = useFetch(`/ingestion_submissions/${uuid}/resolution?bucket=${bucket}`);
     const traceback = useFetch(`/ingestion_submissions/${uuid}/traceback?bucket=${bucket}`);
-    const prestyle= {
+    const datainfo = useFetch(`/ingestion_submissions/${uuid}/data/info?bucket=${bucket}`, { onDone: (data) => setFileSize(data.data.size) });
+
+    const [showSummary, setShowSummary] = useState(true); const toggleSummary = () => setShowSummary(!showSummary);
+    const [showManifest, setShowManifest] = useState(false); const toggleManifest = () => setShowManifest(!showManifest);
+    const [showResolution, setShowResolution] = useState(false); const toggleResolution = () => setShowResolution(!showResolution);
+    const [showTraceback, setShowTraceback] = useState(true); const toggleTraceback = () => setShowTraceback(!showTraceback);
+    const [showDetail, setShowDetail] = useState(false); const toggleDetail = () => setShowDetail(!showDetail);
+
+    const prestyle = {
         background:"inherit",
         border:"1pt gray dotted",
-        marginTop:"2pt"
+        marginTop:"2pt",
     };
+    const divstyle = {
+        background:"inherit",
+        wordBreak:"break-all",
+        maxWidth: widthRef?.current?.offsetWidth
+    }
+
+    function lines(lines) {
+        return lines?.split("\n")?.filter(item => item?.length > 0);
+    }
+
+    function tracebacks(traceback) {
+        return lines(traceback?.data?.traceback);
+    }
+
+    function loading() {
+        return summary.loading || detail.loading || manifest.loading || resolution.loading || traceback.loading;
+    }
+
     return <tr>
         <td></td>
-        <td colSpan="5">
-            <div className="box smallpadding margin bigmarginbottom" colSpan="9" style={{}}>
-                {summary.data?.summary && <div>
-                    <b>Summary</b>:<br />
+        <td colSpan="5" ref={widthRef}>
+            <div className="box smallpadding margin bigmarginbottom" colSpan="9" style={divstyle}>
+                {loading() && <>
                     <pre style={prestyle}>
-                        { summary.data?.summary?.map(item => <>
-                            {item} <br />
-                        </>)}
+                        <StandardSpinner condition={loading()} label={"Loading"} style={{paddingBottom:"4pt"}} />
+                    </pre>
+                </>}
+                {summary.data?.summary && <div>
+                    <b onClick={toggleSummary} className="pointer">Summary</b> <ExternalLink href={awsDataLink(bucket, uuid, "summary.json")} /> <br />
+                    <pre style={prestyle}>
+                        { showSummary ? <>
+                            { summary?.data?.summary?.map((item, index) => <>{index > 0 && <br />}{item.trim()}</>)}
+                        </>:<>
+                            <span onClick={toggleSummary} className="pointer">Click to show ...</span>
+                        </>}
                     </pre>
                 </div>}
-                {detail.data?.detail && <div>
-                    <b>Detail</b>:<br />
-                    {JSON.stringify(detail.data)}
-                </div>}
+                <b onClick={toggleDetail} className="pointer">Detail</b> <ExternalLink href={awsDataLink(bucket, uuid, "submission.json")} /> <br />
+                <pre style={{...prestyle}}>
+                    { showDetail ? <>
+                        <RowDetailDetail uuid={uuid} bucket={bucket} prestyle={prestyle} widthRef={widthRef} />
+                    </>:<>
+                        <span onClick={toggleDetail} className="pointer">Click to retreive details ...</span>
+                    </>}
+                </pre>
                 {manifest.data?.manifest && <div>
-                    <b>Manifest</b>:<br />
-                    {JSON.stringify(manifest.data)}
+                    <b onClick={toggleManifest} className="pointer">Manifest</b> <ExternalLink href={awsDataLink(bucket, uuid, "manifest.json")} /> <br />
+                    <pre style={prestyle}>
+                        { showManifest ? Yaml.Format(manifest.data) : <i onClick={toggleManifest} className="pointer">Click to show ...</i>}
+                    </pre>
                 </div>}
                 {resolution.data?.resolution && <div>
-                    <b>Resolution</b>:<br />
-                    {JSON.stringify(resolution.data)}
+                    <b onClick={toggleResolution} className="pointer">Resolution</b> <ExternalLink href={awsDataLink(bucket, uuid, "resolution.json")} /> <br />
+                    <pre style={prestyle}>
+                        { showResolution ? Yaml.Format(resolution.data) : <i onClick={toggleResolution} className="pointer">Click to show ...</i>}
+                    </pre>
                 </div>}
                 {traceback.data?.traceback && <div>
-                    <b>Traceback</b>:<br />
+                    <b onClick={toggleTraceback} className="pointer">Traceback</b> <ExternalLink href={awsDataLink(bucket, uuid, "traceback.txt")} /> <br />
                     <pre style={prestyle}>
-                        { traceback.data?.traceback?.split("\n").map(item => <>
-                            {item}<br/>
-                        </>)}
+                        { showTraceback ? tracebacks(traceback).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={toggleTraceback} className="pointer">Click to show ...</i>}
                     </pre>
                 </div>}
             </div>
         </td>
     </tr>
+}
+
+const RowDetailDetail = ({ uuid, bucket, prestyle, widthRef }) => {
+    const detail = useFetch(`/ingestion_submissions/${uuid}/detail?bucket=${bucket}`);
+    if (detail.loading) return <StandardSpinner condition={detail.loading} label={"Loading"} style={{paddingBottom:"4pt"}} />
+    return <>
+        {detail.data?.detail ? <div>
+            {Yaml.Format(detail.data?.detail)}
+        </div>:<div>
+            No details found.
+        </div>}
+    </>
 }
 
 export default IngestionSubmissionPage;
