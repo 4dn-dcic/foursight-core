@@ -743,7 +743,14 @@ class ReactRoutes:
         """
         Returns info about ingestion submission in S3.
         """
-        return app.core.reactapi_ingestion_submission(app.request(), env, uuid, args=app.request_args())
+        return app.core.reactapi_ingestion_submission_summary(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/detail", authorize=True)
+    def reactapi_route_ingestion_submission_detail(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_detail(app.request(), env, uuid, args=app.request_args())
 
     @route("/{env}/ingestion_submissions/{uuid}/manifest", authorize=True)
     def reactapi_route_ingestion_submission_manifest(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route

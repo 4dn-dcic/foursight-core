@@ -124,9 +124,14 @@ def read_ingestion_submissions(bucket: str,
         }, "list": keys}
 
 
-def read_ingestion_submission(bucket: str, uuid: str) -> Optional[str]:
+def read_ingestion_submission_detail(bucket: str, uuid: str) -> Optional[str]:
     contents = _read_s3_key(bucket, f"{uuid}/submission.json", is_json=True)
-    return {"started": _exists_s3_key(bucket, f"{uuid}/started.txt"), "submission": contents}
+    return {"detail": contents}
+
+
+def read_ingestion_submission_summary(bucket: str, uuid: str) -> Optional[str]:
+    contents = _read_s3_key(bucket, f"{uuid}/summary.json", is_json=True)
+    return { "summary": contents, "started": _exists_s3_key(bucket, f"{uuid}/started.txt")}
 
 
 def read_ingestion_submission_manifest(bucket: str, uuid: str) -> Optional[str]:
@@ -172,12 +177,12 @@ def _read_s3_key(bucket: str, key: str,
         if not is_binary:
             contents = contents.decode("utf-8")
             if is_json:
-                contents = json.loads(contents) or {}
+                contents = json.loads(contents)
         else:
             contents = base64.b64encode(contents).decode("utf-8")
         return contents
     except Exception:
-        return {} if is_json else None
+        return None
 
 
 def _exists_s3_key(bucket: str, key: str) -> Optional[str]:

@@ -48,11 +48,12 @@ from .encoding_utils import base64_decode_to_json
 from .gac import Gac
 from .ingestion_utils import (
     read_ingestion_submissions,
-    read_ingestion_submission,
     read_ingestion_submission_data,
     read_ingestion_submission_data_info,
+    read_ingestion_submission_detail,
     read_ingestion_submission_manifest,
     read_ingestion_submission_resolution,
+    read_ingestion_submission_summary,
     read_ingestion_submission_traceback
 )
 from .misc_utils import (
@@ -2056,10 +2057,15 @@ class ReactApi(ReactApiBase, ReactRoutes):
             int(args.get("limit", "50")) if args else 50,
             urllib.parse.unquote(args.get("sort", "modified.desc") if args else "modified.desc")))
 
-    def reactapi_ingestion_submission(self, request: dict, env: str,
+    def reactapi_ingestion_submission_summary(self, request: dict, env: str,
                                       uuid: str, args: Optional[dict] = None) -> Response:
         return self.create_success_response(
-            read_ingestion_submission(self._get_metadata_bundles_bucket(env, args), uuid))
+            read_ingestion_submission_summary(self._get_metadata_bundles_bucket(env, args), uuid))
+
+    def reactapi_ingestion_submission_detail(self, request: dict, env: str,
+                                      uuid: str, args: Optional[dict] = None) -> Response:
+        return self.create_success_response(
+            read_ingestion_submission_detail(self._get_metadata_bundles_bucket(env, args), uuid))
 
     def reactapi_ingestion_submission_manifest(self, request: dict, env: str,
                                                uuid: str, args: Optional[dict] = None) -> Response:

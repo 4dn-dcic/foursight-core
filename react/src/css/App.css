@@ -395,6 +395,9 @@
 .box.bigmargin {
     margin-top: 3.6pt;
 }
+.box.bigmarginbottom {
+    margin-bottom: 6.6pt;
+}
 .box.smallpadding {
     padding: 0.40em 0.4em 0 0.4em;
 }
