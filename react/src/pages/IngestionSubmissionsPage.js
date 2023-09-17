@@ -211,22 +211,24 @@ const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggl
 
 const RowDetail = ({ data, uuid, bucket, widthRef, setFileSize }) => {
 
-    const summary = useFetch(`/ingestion_submissions/${uuid}?bucket=${bucket}`);
-    const detail = useFetch(`/ingestion_submissions/${uuid}/detail?bucket=${bucket}`);
-    const manifest = useFetch(`/ingestion_submissions/${uuid}/manifest?bucket=${bucket}`);
-    const resolution = useFetch(`/ingestion_submissions/${uuid}/resolution?bucket=${bucket}`);
-    const traceback = useFetch(`/ingestion_submissions/${uuid}/traceback?bucket=${bucket}`);
-    const postOutput = useFetch(`/ingestion_submissions/${uuid}/post_output?bucket=${bucket}`);
+    const detail             = useFetch(`/ingestion_submissions/${uuid}/detail?bucket=${bucket}`);
+    const manifest           = useFetch(`/ingestion_submissions/${uuid}/manifest?bucket=${bucket}`);
+    const resolution         = useFetch(`/ingestion_submissions/${uuid}/resolution?bucket=${bucket}`);
+    const postOutput         = useFetch(`/ingestion_submissions/${uuid}/post_output?bucket=${bucket}`);
     const submissionResponse = useFetch(`/ingestion_submissions/${uuid}/submission_response?bucket=${bucket}`);
-    const uploadInfo = useFetch(`/ingestion_submissions/${uuid}/upload_info?bucket=${bucket}`);
-    const validationReport = useFetch(`/ingestion_submissions/${uuid}/validation_report?bucket=${bucket}`);
-    const datainfo = useFetch(`/ingestion_submissions/${uuid}/data/info?bucket=${bucket}`, { onDone: (data) => setFileSize(data.data.size) });
+    const summary            = useFetch(`/ingestion_submissions/${uuid}?bucket=${bucket}`);
+    const traceback          = useFetch(`/ingestion_submissions/${uuid}/traceback?bucket=${bucket}`);
+    const uploadInfo         = useFetch(`/ingestion_submissions/${uuid}/upload_info?bucket=${bucket}`);
+    const validationReport   = useFetch(`/ingestion_submissions/${uuid}/validation_report?bucket=${bucket}`);
 
-    const [showSummary, setShowSummary] = useState(true); const toggleSummary = () => setShowSummary(!showSummary);
+    const [showDetail, setShowDetail] = useState(false); const toggleDetail = () => setShowDetail(!showDetail);
     const [showManifest, setShowManifest] = useState(false); const toggleManifest = () => setShowManifest(!showManifest);
     const [showResolution, setShowResolution] = useState(false); const toggleResolution = () => setShowResolution(!showResolution);
+    const [showSubmissionResponse, setShowSubmissionResponse] = useState(false); const toggleSubmissionResponse = () => setShowSubmissionResponse(!showSubmissionResponse);
+    const [showSummary, setShowSummary] = useState(true); const toggleSummary = () => setShowSummary(!showSummary);
     const [showTraceback, setShowTraceback] = useState(true); const toggleTraceback = () => setShowTraceback(!showTraceback);
-    const [showDetail, setShowDetail] = useState(false); const toggleDetail = () => setShowDetail(!showDetail);
+    const [showUploadInfo, setShowUploadInfo] = useState(true); const toggleUploadInfo = () => setShowUploadInfo(!showUploadInfo);
+    const [showValidationReport, setShowValidationReport] = useState(true); const toggleValidationReport = () => setShowValidationReport(!showValidationReport);
     const [showFiles, setShowFiles] = useState(true); const toggleFiles = () => setShowFiles(!showFiles);
 
     const prestyle = {
