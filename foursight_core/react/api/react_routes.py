@@ -808,13 +808,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_ingestion_submission_data_info(app.request(), env, uuid, args=app.request_args())
 
-    @route("/{env}/ingestion_submissions/{uuid}/data", authorize=True)
-    def reactapi_route_ingestion_submission_data(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
-        """
-        Returns info about ingestion submission in S3.
-        """
-        return app.core.reactapi_ingestion_submission_data(app.request(), env, uuid, args=app.request_args())
-
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes, serving the HTML/CSS/JavaScript/React files.
     # Note that ALL of these are UNPROTECTED routes.

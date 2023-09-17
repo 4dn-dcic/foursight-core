@@ -48,7 +48,6 @@ from .encoding_utils import base64_decode_to_json
 from .gac import Gac
 from .ingestion_utils import (
     read_ingestion_submissions,
-    read_ingestion_submission_data,
     read_ingestion_submission_data_info,
     read_ingestion_submission_detail,
     read_ingestion_submission_manifest,
@@ -2105,11 +2104,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
                                                 uuid: str, args: Optional[dict] = None) -> Response:
         return self.create_success_response(
             read_ingestion_submission_data_info(self._get_metadata_bundles_bucket(env, args), uuid))
-
-    def reactapi_ingestion_submission_data(self, request: dict, env: str,
-                                           uuid: str, args: Optional[dict] = None) -> Response:
-        return self.create_success_response(
-            read_ingestion_submission_data(self._get_metadata_bundles_bucket(env, args), uuid))
 
     @staticmethod
     def _get_metadata_bundles_bucket(env: str, args: Optional[dict] = None) -> str:
