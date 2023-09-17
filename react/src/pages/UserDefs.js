@@ -98,16 +98,16 @@ const UserInfo = {
         inputs: function () {
             const affiliationInfo = UserInfo[Env.FoursightTitleCgap].useAffiliationInfo();
             const inputs = [
-                { label: "Role", key: "role", type: "select",
+                { label: "Role", key: "role", type: "select", sortable: false,
                   url: "/users/roles",
                   map: (value, user) => affiliationInfo.roleTitle(value) },
-                { label: "Roles", key: "roles",
+                { label: "Roles", key: "roles", sortable: false,
                   ui: (user) => <RolesBox affiliationInfo={affiliationInfo} user={user} />, toggle: true,
                   pages: [ "view" ] },
-                { label: "Project", key: "project", type: "select",
+                { label: "Project", key: "project", type: "select", sortable: false,
                   url: "/users/projects",
                   map: (value, user) => affiliationInfo.projectTitle(value) },
-                { label: "Institution", key: "institution", type: "select",
+                { label: "Institution", key: "institution", type: "select", sortable: false,
                   url: "/users/institutions",
                   map: (value, user) => affiliationInfo.institutionTitle(value),
                   subComponent: (institution) => <PrincipalInvestigatorLine institution={institution} /> }
@@ -143,10 +143,10 @@ const UserInfo = {
         inputs: function () {
             const affiliationInfo = UserInfo[Env.FoursightTitleFourfront].useAffiliationInfo();
             const inputs = [
-                { label: "Award", key: "award", type: "select",
+                { label: "Award", key: "award", type: "select", sortable: false,
                   url: "/users/awards",
                   map: (value, user) => affiliationInfo.awardTitle(value) },
-                { label: "Lab", key: "lab", type: "select", required: true,
+                { label: "Lab", key: "lab", type: "select", required: true, sortable: false,
                   url: "/users/labs",
                   map: (value, user) => affiliationInfo.labTitle(value) }
             ];
@@ -173,10 +173,10 @@ const UserInfo = {
         inputs: function () {
             const affiliationInfo = UserInfo[Env.FoursightTitleSmaht].useAffiliationInfo();
             const inputs = [
-                { label: "Consortium", key: "consortium", type: "select",
+                { label: "Consortium", key: "consortium", type: "select", sortable: false,
                   url: "/users/consortia",
                   map: (value, user) => affiliationInfo.consortiumTitle(value) },
-                { label: "Submission Center", key: "submission_center", type: "select",
+                { label: "Submission Center", key: "submission_center", type: "select", sortable: false,
                   url: "/users/submission_centers",
                   map: (value, user) => affiliationInfo.submissionCenterTitle(value) }
             ];

@@ -146,10 +146,11 @@ def read_ingestion_submission_data_info(bucket: str, uuid: str) -> Optional[dict
     if manifest:
         data_key = manifest.get("manifest", {}).get("object_name")
         if data_key:
+            data_file = data_key[len(f"{uuid}/"):] if data_key.startswith(f"{uuid}/") else data_key
             is_json = data_key.endswith(".json")
             is_binary = not is_json and not data_key.endswith(".txt")
             size = _sizeof_s3_key(bucket, data_key)
-            return {"key": data_key, "size": size, "type": "json" if is_json else ("binary" if is_binary else "text")}
+            return {"key": data_key, "file": data_file, "size": size, "type": "json" if is_json else ("binary" if is_binary else "text")}
     return None
 
 

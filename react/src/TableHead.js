@@ -65,14 +65,14 @@ const TableHead = ({columns, list, update, refresh, sort = null, state = null, l
         <tr>{ columns?.map(column => {
             return <td key={Uuid()} style={{textAlign:column.align || "normal",whiteSpace:"nowrap"}}>
                 { column.key ? (<>
-                    <span style={{...style, cursor: loading ? "not-allowed" : "pointer"}}
+                    <span style={{...style, cursor: loading || column.sortable === false ? "not-allowed" : "pointer"}}
                         onClick={() => {
                             //
                             // TODO
                             // Don't pass anonymous function here, and (lotsa places) elsewhere ...
                             // https://user3141592.medium.com/react-gotchas-and-best-practices-2d47fd67dd22
                             //
-                            if (loading) return;
+                            if (loading || column.sortable === false) return;
                             list.__sort.key = column.key;
                             list.__sort.order = list.__sort.order ? -list.__sort.order : 1;
                             _sort(list, list.__sort.key, list.__sort.order);
@@ -91,8 +91,12 @@ const TableHead = ({columns, list, update, refresh, sort = null, state = null, l
                             </td>
                         </>):(<>
                             <td >
-                                <span style={{...style}}>{column.label}</span>
-                                <div style={{position:"relative",top:"-1pt",display:"inline-block",fontSize:"7pt",opacity:"0.5"}}>&nbsp;{Char.Dot}</div>
+                                { column.sortable === false ? <>
+                                    <span style={{...style}}>{column.label}</span>
+                                </>:<>
+                                    <span style={{...style}}>{column.label}</span>
+                                    <div style={{position:"relative",top:"-1pt",display:"inline-block",fontSize:"7pt",opacity:"0.5"}}>&nbsp;{Char.Dot}</div>
+                                </>}
                             </td>
                         </>)}
                         </tr></tbody></table>
