@@ -62,7 +62,14 @@ def read_ingestion_submissions(bucket: str,
                 existing_key["error"] = True
             if key["file"].startswith("datafile"):
                 existing_key["file"] = key["datafile"]
+            if key["file"] not in existing_key["files"]:
+                existing_key["files"].append(key["file"])
         else:
+            if key.get("files"):
+                if key["file"] not in key["files"]:
+                    key["files"].append(key["file"])
+            else:
+                key["files"] = [key["file"]]
             keys[uuid] = key
 
     # Unfortunately AWS/boto3 does not allow sorting, so we need to read all the keys in the bucket;

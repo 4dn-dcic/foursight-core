@@ -12,10 +12,15 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useRef, useState } from 'react';
 import Yaml from '../utils/Yaml';
 
-function awsLink(bucket, uuid) {
+function awsLink(bucket, uuid, file) {
     const region = "us-east-1";
     if (uuid) {
-        return `https://s3.console.aws.amazon.com/s3/buckets/${bucket}?region=${region}&prefix=${uuid}/&showversions=false`;
+        if (file) {
+            return `https://s3.console.aws.amazon.com/s3/buckets/${bucket}?region=${region}&prefix=${uuid}/${file}&showversions=false`;
+        }
+        else {
+            return `https://s3.console.aws.amazon.com/s3/buckets/${bucket}?region=${region}&prefix=${uuid}/&showversions=false`;
+        }
     }
     else {
         return `https://s3.console.aws.amazon.com/s3/buckets/${bucket}?region=${region}`;
@@ -199,12 +204,12 @@ const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggl
             </td>)}
         </tr>
         { isExpanded(rowIndex) &&
-            <RowDetail uuid={uuid} bucket={bucket()} widthRef={widthRef} setFileSize={setFileSize} />
+            <RowDetail data={data} uuid={uuid} bucket={bucket()} widthRef={widthRef} setFileSize={setFileSize} />
         }
     </>
 }
 
-const RowDetail = ({ uuid, bucket, widthRef, setFileSize }) => {
+const RowDetail = ({ data, uuid, bucket, widthRef, setFileSize }) => {
 
     const summary = useFetch(`/ingestion_submissions/${uuid}?bucket=${bucket}`);
     const detail = useFetch(`/ingestion_submissions/${uuid}/detail?bucket=${bucket}`);
@@ -218,6 +223,7 @@ const RowDetail = ({ uuid, bucket, widthRef, setFileSize }) => {
     const [showResolution, setShowResolution] = useState(false); const toggleResolution = () => setShowResolution(!showResolution);
     const [showTraceback, setShowTraceback] = useState(true); const toggleTraceback = () => setShowTraceback(!showTraceback);
     const [showDetail, setShowDetail] = useState(false); const toggleDetail = () => setShowDetail(!showDetail);
+    const [showFiles, setShowFiles] = useState(false); const toggleFiles = () => setShowFiles(!showFiles);
 
     const prestyle = {
         background:"inherit",
@@ -251,6 +257,19 @@ const RowDetail = ({ uuid, bucket, widthRef, setFileSize }) => {
                         <StandardSpinner condition={loading()} label={"Loading"} style={{paddingBottom:"4pt"}} />
                     </pre>
                 </>}
+                {data?.files && <div>
+                    <b onClick={toggleFiles} className="pointer">Files</b>  <ExternalLink href={awsLink(bucket, uuid)} style={{marginLeft: "4pt"}}/> <br />
+                    <pre style={prestyle}>
+                        { showFiles ? <>
+                             { data.files.map((file, index) => <>
+                                 {index > 0 && <br />}
+                                 {file} <ExternalLink href={awsLink(bucket, uuid, file)} style={{marginLeft: "4pt"}}/>
+                             </>)}
+                        </>:<>
+                            <i onClick={toggleFiles} className="pointer">Click to show ...</i>
+                        </>}
+                    </pre>
+                </div>}
                 {summary.data?.summary && <div>
                     <b onClick={toggleSummary} className="pointer">Summary</b> <ExternalLink href={awsDataLink(bucket, uuid, "summary.json")} /> <br />
                     <pre style={prestyle}>
