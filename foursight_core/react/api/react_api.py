@@ -52,9 +52,13 @@ from .ingestion_utils import (
     read_ingestion_submission_data_info,
     read_ingestion_submission_detail,
     read_ingestion_submission_manifest,
+    read_ingestion_submission_post_output,
     read_ingestion_submission_resolution,
     read_ingestion_submission_summary,
-    read_ingestion_submission_traceback
+    read_ingestion_submission_submission_response,
+    read_ingestion_submission_traceback,
+    read_ingestion_submission_upload_info,
+    read_ingestion_submission_validation_report
 )
 from .misc_utils import (
     get_base_url,
@@ -2077,13 +2081,28 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(
             read_ingestion_submission_resolution(self._get_metadata_bundles_bucket(env, args), uuid))
 
+    def reactapi_ingestion_submission_submission_response(self, request: dict, env: str,
+                                                          uuid: str, args: Optional[dict] = None) -> Response:
+        return self.create_success_response(
+            read_ingestion_submission_submission_response(self._get_metadata_bundles_bucket(env, args), uuid))
+
     def reactapi_ingestion_submission_traceback(self, request: dict, env: str,
                                                 uuid: str, args: Optional[dict] = None) -> Response:
         return self.create_success_response(
             read_ingestion_submission_traceback(self._get_metadata_bundles_bucket(env, args), uuid))
 
+    def reactapi_ingestion_submission_upload_info(self, request: dict, env: str,
+                                                  uuid: str, args: Optional[dict] = None) -> Response:
+        return self.create_success_response(
+            read_ingestion_submission_upload_info(self._get_metadata_bundles_bucket(env, args), uuid))
+
+    def reactapi_ingestion_submission_validation_report(self, request: dict, env: str,
+                                                        uuid: str, args: Optional[dict] = None) -> Response:
+        return self.create_success_response(
+            read_ingestion_submission_validation_report(self._get_metadata_bundles_bucket(env, args), uuid))
+
     def reactapi_ingestion_submission_data_info(self, request: dict, env: str,
-                                           uuid: str, args: Optional[dict] = None) -> Response:
+                                                uuid: str, args: Optional[dict] = None) -> Response:
         return self.create_success_response(
             read_ingestion_submission_data_info(self._get_metadata_bundles_bucket(env, args), uuid))
 

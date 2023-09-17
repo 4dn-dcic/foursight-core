@@ -223,7 +223,7 @@ const RowDetail = ({ data, uuid, bucket, widthRef, setFileSize }) => {
     const [showResolution, setShowResolution] = useState(false); const toggleResolution = () => setShowResolution(!showResolution);
     const [showTraceback, setShowTraceback] = useState(true); const toggleTraceback = () => setShowTraceback(!showTraceback);
     const [showDetail, setShowDetail] = useState(false); const toggleDetail = () => setShowDetail(!showDetail);
-    const [showFiles, setShowFiles] = useState(false); const toggleFiles = () => setShowFiles(!showFiles);
+    const [showFiles, setShowFiles] = useState(true); const toggleFiles = () => setShowFiles(!showFiles);
 
     const prestyle = {
         background:"inherit",

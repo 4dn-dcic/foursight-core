@@ -759,6 +759,13 @@ class ReactRoutes:
         """
         return app.core.reactapi_ingestion_submission_manifest(app.request(), env, uuid, args=app.request_args())
 
+    @route("/{env}/ingestion_submissions/{uuid}/post_output", authorize=True)
+    def reactapi_route_ingestion_submission_post_output(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_post_output(app.request(), env, uuid, args=app.request_args())
+
     @route("/{env}/ingestion_submissions/{uuid}/resolution", authorize=True)
     def reactapi_route_ingestion_submission_resolution(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
@@ -766,12 +773,33 @@ class ReactRoutes:
         """
         return app.core.reactapi_ingestion_submission_resolution(app.request(), env, uuid, args=app.request_args())
 
+    @route("/{env}/ingestion_submissions/{uuid}/submission_response", authorize=True)
+    def reactapi_route_ingestion_submission_submission_response(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_submission_response(app.request(), env, uuid, args=app.request_args())
+
     @route("/{env}/ingestion_submissions/{uuid}/traceback", authorize=True)
     def reactapi_route_ingestion_submission_traceback(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Returns info about ingestion submission in S3.
         """
         return app.core.reactapi_ingestion_submission_traceback(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/validation_report", authorize=True)
+    def reactapi_route_ingestion_submission_validation_report(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_validation_report(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/upload_info", authorize=True)
+    def reactapi_route_ingestion_submission_upload_info(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_upload_info(app.request(), env, uuid, args=app.request_args())
 
     @route("/{env}/ingestion_submissions/{uuid}/data/info", authorize=True)
     def reactapi_route_ingestion_submission_data_info(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route

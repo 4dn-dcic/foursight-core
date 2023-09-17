@@ -90,7 +90,7 @@ def read_ingestion_submissions(bucket: str,
             key = {"uuid": uuid, "modified": item["LastModified"],
                    "file": file,
                    "started": file.endswith("started.txt"),
-                   "done": file.endswith("submission.json"),
+                   "done": file.endswith("submission.json") or file.endswith("submission.json.json"),
                    "error": file.endswith("traceback.txt")}
             add_key_to_keys(uuid, key, keys)
         return (keys, response.get("NextContinuationToken"))
@@ -135,6 +135,8 @@ def read_ingestion_submissions(bucket: str,
 
 def read_ingestion_submission_detail(bucket: str, uuid: str) -> Optional[str]:
     contents = _read_s3_key(bucket, f"{uuid}/submission.json", is_json=True)
+    if not contents:
+        contents = _read_s3_key(bucket, f"{uuid}/submission.json.json", is_json=True)
     return {"detail": contents}
 
 
@@ -147,12 +149,28 @@ def read_ingestion_submission_manifest(bucket: str, uuid: str) -> Optional[str]:
     return {"manifest": _read_s3_key(bucket, f"{uuid}/manifest.json", is_json=True)}
 
 
+def read_ingestion_submission_post_output(bucket: str, uuid: str) -> Optional[str]:
+    return {"post_output": _read_s3_key(bucket, f"{uuid}/post_output.json", is_json=True)}
+
+
+def read_ingestion_submission_upload_info(bucket: str, uuid: str) -> Optional[str]:
+    return {"upload_info": _read_s3_key(bucket, f"{uuid}/upload_info.json", is_json=True)}
+
+
 def read_ingestion_submission_resolution(bucket: str, uuid: str) -> Optional[str]:
     return {"resolution": _read_s3_key(bucket, f"{uuid}/resolution.json", is_json=True)}
 
 
+def read_ingestion_submission_submission_response(bucket: str, uuid: str) -> Optional[str]:
+    return {"submission_response": _read_s3_key(bucket, f"{uuid}/submission_response.txt", is_json=False)}
+
+
 def read_ingestion_submission_traceback(bucket: str, uuid: str) -> Optional[str]:
     return {"traceback": _read_s3_key(bucket, f"{uuid}/traceback.txt", is_json=False)}
+
+
+def read_ingestion_submission_validation_report(bucket: str, uuid: str) -> Optional[str]:
+    return {"validation_report": _read_s3_key(bucket, f"{uuid}/validation_report.txt", is_json=False)}
 
 
 def read_ingestion_submission_data_info(bucket: str, uuid: str) -> Optional[dict]:
