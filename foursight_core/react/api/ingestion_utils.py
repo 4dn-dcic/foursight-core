@@ -60,6 +60,8 @@ def read_ingestion_submissions(bucket: str,
                 existing_key["done"] = True
             if key["error"]:
                 existing_key["error"] = True
+            if key["file"].startswith("datafile"):
+                existing_key["file"] = key["datafile"]
         else:
             keys[uuid] = key
 

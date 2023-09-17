@@ -2095,7 +2095,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
     @staticmethod
     def _get_metadata_bundles_bucket(env: str, args: Optional[dict] = None) -> str:
         metadata_bundles_bucket = args.get("bucket") if args else None
-        if not metadata_bundles_bucket:
+        if not metadata_bundles_bucket or metadata_bundles_bucket == "null" or metadata_bundles_bucket == "undefined":
             s3 = s3_utils.s3Utils(env=env)
             metadata_bundles_bucket = s3.metadata_bucket
         return metadata_bundles_bucket

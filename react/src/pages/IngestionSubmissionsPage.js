@@ -14,7 +14,12 @@ import Yaml from '../utils/Yaml';
 
 function awsLink(bucket, uuid) {
     const region = "us-east-1";
-    return `https://s3.console.aws.amazon.com/s3/buckets/${bucket}?region=${region}&prefix=${uuid}/&showversions=false`;
+    if (uuid) {
+        return `https://s3.console.aws.amazon.com/s3/buckets/${bucket}?region=${region}&prefix=${uuid}/&showversions=false`;
+    }
+    else {
+        return `https://s3.console.aws.amazon.com/s3/buckets/${bucket}?region=${region}`;
+    }
 }
 
 function awsDataLink(bucket, uuid, file) {
@@ -24,10 +29,10 @@ function awsDataLink(bucket, uuid, file) {
 
 const IngestionSubmissionPage = (props) => {
 
-    const bucket = "smaht-production-application-metadata-bundles";
     const header = useHeader();
-    const submissions = useFetch("/ingestion_submissions?bucket=${bucket}");
     const [ args, setArgs ] = useSearchParams();
+    const bucket = () => args.get("bucket") || header?.s3?.buckets?.metadata_bucket;
+    const submissions = useFetch(`/ingestion_submissions?bucket=${bucket()}`);
 
     const columns =  [
         {
@@ -64,6 +69,12 @@ const IngestionSubmissionPage = (props) => {
         {
             key: "size",
             label: "Size",
+            width: "10%",
+            sortable: false
+        },
+        {
+            key: "portal",
+            label: "Portal",
             width: "70%",
             sortable: false
         }
@@ -75,7 +86,7 @@ const IngestionSubmissionPage = (props) => {
         if (!Str.HasValue(sort)) sort = args.get("sort") || "email.asc";
         if (!Type.IsFunction(onDone)) onDone = () => {}
         submissions.refresh({
-            url: `/ingestion_submissions?bucket=smaht-production-application-metadata-bundles&limit=${limit}&offset=${offset}&sort=${sort}`,
+            url: `/ingestion_submissions?bucket=${bucket()}&limit=${limit}&offset=${offset}&sort=${sort}`,
             onDone: (response) => onDone(response)
         });
     }
@@ -95,7 +106,12 @@ const IngestionSubmissionPage = (props) => {
     }
 
     return <div className="container">
-        <b style={{position:"relative", left:"2pt",bottom:"4pt"}}>Ingestion Submissions</b>
+        <span style={{position:"relative", left:"2pt",bottom:"4pt"}}>
+            <b>Ingestion Submissions</b>
+            <ExternalLink href={`${header?.portal?.url}/search/?type=IngestionSubmission`} style={{marginLeft: "4pt"}}/>
+            &nbsp;| {bucket()}
+            <ExternalLink href={awsLink(bucket())} style={{marginLeft: "4pt"}}/>
+        </span>
         <PagedTableComponent
             columns={columns}
             update={update}
@@ -104,13 +120,14 @@ const IngestionSubmissionPage = (props) => {
             { submissions.map("list", (data, index) => (
                     <RowContent data={data} bucket={bucket} columns={columns}
                         rowIndex={index} offset={parseInt(args.get("offset"))}
-                        isExpanded={isExpanded} toggleExpanded={toggleExpanded} />
+                        isExpanded={isExpanded} toggleExpanded={toggleExpanded}
+                        header={header} />
             ))}
         </PagedTableComponent>
     </div>
 };
 
-const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggleExpanded }) => {
+const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggleExpanded, header }) => {
 
     const uuid = data?.uuid;
     const widthRef = useRef(null);
@@ -125,11 +142,11 @@ const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggl
             return column_data ? "Yes" : "No";
         }
         else if (column.key === "status") {
-            if (data?.done) {
-                return "Completed";
+            if (data?.error) {
+                return "ERROR";
             }
-            else if (data?.error) {
-                return "Error";
+            else if (data?.done) {
+                return "Completed";
             }
             else if (data?.started) {
                 return "Started";
@@ -171,15 +188,18 @@ const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggl
             { columns.map((column, index) => <td style={tdstyle(column)} onClick={() => toggleExpanded(rowIndex)}>
                 {valueOf(data, column)}
                 { column.key === "uuid" && 
-                    <ExternalLink href={awsLink(bucket, uuid)} style={{marginLeft:"6pt"}} />
+                    <ExternalLink href={awsLink(bucket(), uuid)} style={{marginLeft:"6pt"}} />
                 }
                 { column.key === "file" && 
-                    <ExternalLink href={awsDataLink(bucket, uuid, valueOf(data, column))} style={{marginLeft:"6pt"}} />
+                    <ExternalLink href={awsDataLink(bucket(), uuid, valueOf(data, column))} style={{marginLeft:"6pt"}} />
+                }
+                { column.key === "portal" && 
+                    <ExternalLink href={`${header?.portal?.url}/ingestion-submissions/${uuid}/`} />
                 }
             </td>)}
         </tr>
         { isExpanded(rowIndex) &&
-            <RowDetail uuid={uuid} bucket={bucket} widthRef={widthRef} setFileSize={setFileSize} />
+            <RowDetail uuid={uuid} bucket={bucket()} widthRef={widthRef} setFileSize={setFileSize} />
         }
     </>
 }
@@ -224,7 +244,7 @@ const RowDetail = ({ uuid, bucket, widthRef, setFileSize }) => {
 
     return <tr>
         <td></td>
-        <td colSpan="5" ref={widthRef}>
+        <td colSpan="6" ref={widthRef}>
             <div className="box smallpadding margin bigmarginbottom" colSpan="9" style={divstyle}>
                 {loading() && <>
                     <pre style={prestyle}>
