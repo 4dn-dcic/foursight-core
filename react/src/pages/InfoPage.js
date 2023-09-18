@@ -182,7 +182,7 @@ const InfoPage = () => {
     if (info.error) return <FetchErrorBox error={info.error} message="Error loading info from Foursight API" />
     return <div className="container">
         <div style={{paddingLeft:"11pt",marginRight:"-11pt"}}>
-            <b>Summary</b>
+            <big><b>Summary</b></big>
             <AccountInfoCurrent bg="var(--box-bg)" />
         </div>
         <InfoBox info={info} title="Versions">

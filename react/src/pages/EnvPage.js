@@ -84,7 +84,7 @@ const EnvPage = (props) => {
                 </small>
                 </div>
         ):(<span/>)}
-        <b>Environment</b>
+        <big><b>Environment</b></big>
         { !IsKnownCurrentEnv() ? (<>
             <div className="box warning" style={{marginBottom:"8pt",padding:"10pt"}}>
                 { (Env.Current() && Env.Current() !== 'env') ? (<>

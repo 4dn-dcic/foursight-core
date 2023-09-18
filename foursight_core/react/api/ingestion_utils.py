@@ -143,7 +143,7 @@ def read_ingestion_submission_detail(bucket: str, uuid: str) -> Optional[str]:
     contents = _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)
     if not contents:
         alternative_file = f"submission.json.json"
-        contents = _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)
+        contents = _read_s3_key(bucket, f"{uuid}/{alternative_file}", is_json=True)
         if contents:
             file = alternative_file
     return {"file": file, "detail": contents}

@@ -106,10 +106,11 @@ const MainMenu = ({ header }) => {
             <span className="dropdown-button"><img alt="menu" style={{marginLeft:"-4px",marginTop:"-1px"}} src={Image.MenuIcon()} height="20"/></span>
             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                 <MenuItem path="/home" label="Home" />
-                <MenuItem path="/info" label="General Info" />
+                <MenuItem path="/info" label="Info" />
                 <MenuItem path="/checks" label="Checks" />
                 <MenuSeparator />
                 <MenuItem path="/aws/infrastructure" label="Infrastructure" />
+                <MenuItem path="/ingestion/submissions" label="Ingestion" />
                 <MenuItem path="/aws/s3" label="S3" />
                 <MenuItem path="/users" label="Users" />
                 <MenuSeparator />

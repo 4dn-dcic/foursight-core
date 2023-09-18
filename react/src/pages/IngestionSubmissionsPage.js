@@ -122,22 +122,24 @@ const IngestionSubmissionPage = (props) => {
     }
 
     return <div className="container">
-        <span style={{position:"relative", left:"2pt",bottom:"4pt"}}>
+        <big style={{position:"relative", bottom:"6pt"}}>
             <b>Ingestion Submissions</b>
-            <ExternalLink href={`${header?.portal?.url}/search/?type=IngestionSubmission`} style={{marginLeft: "4pt"}}/>
-            &nbsp;| {bucket()}
-            <ExternalLink href={awsLink(bucket())} style={{marginLeft: "4pt"}}/>
-        </span>
+            <small>
+            <ExternalLink href={`${header?.portal?.url}/search/?type=IngestionSubmission`} style={{marginLeft: "4pt"}} tooltip="Click to view in Portal." />
+            &nbsp;&nbsp;|&nbsp;&nbsp;{bucket()}
+            <ExternalLink href={awsLink(bucket())} style={{marginLeft: "4pt"}} tooltip="Click to view in AWS S3." />
+            </small>
+        </big>
         <PagedTableComponent
             columns={columns}
             update={update}
             data={submissions}
             initialSort={"modified.desc"}>
             { submissions.map("list", (data, index) => (
-                    <RowContent data={data} bucket={bucket} columns={columns}
-                        rowIndex={index} offset={parseInt(args.get("offset"))}
-                        isExpanded={isExpanded} toggleExpanded={toggleExpanded}
-                        header={header} />
+                <RowContent data={data} bucket={bucket} columns={columns}
+                    rowIndex={index} offset={parseInt(args.get("offset"))}
+                    isExpanded={isExpanded} toggleExpanded={toggleExpanded}
+                    header={header} />
             ))}
         </PagedTableComponent>
     </div>
@@ -179,6 +181,27 @@ const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggl
                 return `${i}. ${Char.UpArrow}`;
             }
         }
+        else if (column.key === "file") {
+            const file = data[column.key];
+            if (file.endsWith(".json")) {
+                return "JSON";
+            }
+            else if (file.endsWith(".txt")) {
+                return "Text";
+            }
+            else if (file.endsWith(".xlsx")) {
+                return "Excel";
+            }
+            else if (file.endsWith(".zip")) {
+                return "ZIP";
+            }
+            else if (file.endsWith(".tar.gz")) {
+                return "Tarball";
+            }
+            else {
+                return file;
+            }
+        }
         else if (column.key === "size") {
             const file = data.files.find(item => item.file == data.file);
             return formatFileSize(file?.size);
@@ -208,13 +231,13 @@ const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggl
                     </small>}
                 </span>
                 { column.key === "uuid" && 
-                    <ExternalLink href={awsLink(bucket(), uuid)} style={{marginLeft:"6pt"}} />
+                    <ExternalLink href={awsLink(bucket(), uuid)} style={{marginLeft:"6pt"}} tooltip="Click to view in AWS S3." />
                 }
                 { column.key === "file" && 
-                    <ExternalLink href={awsDataLink(bucket(), uuid, valueOf(data, column))} style={{marginLeft:"6pt"}} />
+                    <ExternalLink href={awsDataLink(bucket(), uuid, data[column.key])} style={{marginLeft:"6pt"}} tooltip="Click to view in AWS S3." />
                 }
                 { column.key === "portal" && <>
-                    View <ExternalLink href={`${header?.portal?.url}/ingestion-submissions/${uuid}/`} />
+                    View <ExternalLink href={`${header?.portal?.url}/ingestion-submissions/${uuid}/`} tooltip="Click to view in Portal." />
                 </>}
             </td>)}
         </tr>
@@ -285,12 +308,12 @@ const RowDetail = ({ data, uuid, bucket, widthRef }) => {
                 </>}
                 {data?.files && <div>
                     <b onClick={toggleFiles} className="pointer">Files</b>&nbsp;
-                    <ExternalLink href={awsLink(bucket, uuid)} style={{marginLeft: "4pt"}}/> <br />
+                    <ExternalLink href={awsLink(bucket, uuid)} style={{marginLeft: "4pt"}} tooltip="Click to view in AWS S3." /> <br />
                     <pre style={prestyle}>
                         { showFiles ? <>
                              { data.files.map((file, index) => <>
                                  {index > 0 && <br />}
-                                 {file.file} ({formatFileSize(file.size)}) <ExternalLink href={awsLink(bucket, uuid, file.file)} style={{marginLeft: "4pt"}}/>
+                                 {file.file} ({formatFileSize(file.size)})<ExternalLink href={awsLink(bucket, uuid, file.file)} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
                              </>)}
                         </>:<>
                             <i onClick={toggleFiles} className="pointer">Click to show ...</i>
@@ -299,7 +322,7 @@ const RowDetail = ({ data, uuid, bucket, widthRef }) => {
                 </div>}
                 {summary.data?.summary && <div>
                     <b onClick={toggleSummary} className="pointer">Summary</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, summary.data?.file)} />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{summary.data?.file}</i></small><br />
+                    <ExternalLink href={awsDataLink(bucket, uuid, summary.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{summary.data?.file}</i></small><br />
                     <pre style={prestyle}>
                         { showSummary ? <>
                             { summary?.data?.summary?.map((item, index) => <>{index > 0 && <br />}{item.trim()}</>)}
@@ -311,7 +334,7 @@ const RowDetail = ({ data, uuid, bucket, widthRef }) => {
                 { detailFileName() && <>
                     <b onClick={toggleDetail} className="pointer">Detail</b>&nbsp;
                     { detailFileName() && <>
-                        <ExternalLink href={awsDataLink(bucket, uuid, detailFileName())} />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{detailFileName()}</i></small><br />
+                        <ExternalLink href={awsDataLink(bucket, uuid, detailFileName())} tooltip="Click to view in AWS S3."/>&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{detailFileName()}</i></small><br />
                     </>}
                     <pre style={{...prestyle}}>
                         { showDetail ? <>
@@ -323,42 +346,42 @@ const RowDetail = ({ data, uuid, bucket, widthRef }) => {
                 </>}
                 {submissionResponse.data?.submission_response && <div>
                     <b onClick={toggleSubmissionResponse} className="pointer">Submission Response</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, submissionResponse.data?.file)} />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{submissionResponse.data?.file}</i></small><br />
+                    <ExternalLink href={awsDataLink(bucket, uuid, submissionResponse.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{submissionResponse.data?.file}</i></small><br />
                     <pre style={prestyle}>
                         { showSubmissionResponse ? lines(submissionResponse.data.submission_response).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={toggleSubmissionResponse} className="pointer">Click to show ...</i>}
                     </pre>
                 </div>}
                 {uploadInfo.data?.upload_info && <div>
                     <b onClick={toggleUploadInfo} className="pointer">Upload Info</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, uploadInfo.data?.file)} />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{uploadInfo.data?.file}</i></small><br />
+                    <ExternalLink href={awsDataLink(bucket, uuid, uploadInfo.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{uploadInfo.data?.file}</i></small><br />
                     <pre style={prestyle}>
-                        { showUploadInfo ? Yaml.Format(uploadInfo.data) : <i onClick={toggleUploadInfo} className="pointer">Click to show ...</i>}
+                        { showUploadInfo ? Yaml.Format(uploadInfo.data.upload_info) : <i onClick={toggleUploadInfo} className="pointer">Click to show ...</i>}
                     </pre>
                 </div>}
                 {validationReport.data?.validation_report && <div>
                     <b onClick={toggleValidationReport} className="pointer">Validation Report</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, validationReport.data?.file)} />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{validationReport.data?.file}</i></small><br />
+                    <ExternalLink href={awsDataLink(bucket, uuid, validationReport.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{validationReport.data?.file}</i></small><br />
                     <pre style={prestyle}>
                         { showValidationReport ? lines(validationReport.data.validation_report).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={toggleValidationReport} className="pointer">Click to show ...</i>}
                     </pre>
                 </div>}
                 {manifest.data?.manifest && <div>
                     <b onClick={toggleManifest} className="pointer">Manifest</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, manifest.data?.file)} />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{manifest.data?.file}</i></small><br />
+                    <ExternalLink href={awsDataLink(bucket, uuid, manifest.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{manifest.data?.file}</i></small><br />
                     <pre style={prestyle}>
-                        { showManifest ? Yaml.Format(manifest.data) : <i onClick={toggleManifest} className="pointer">Click to show ...</i>}
+                        { showManifest ? Yaml.Format(manifest.data.manifest) : <i onClick={toggleManifest} className="pointer">Click to show ...</i>}
                     </pre>
                 </div>}
                 {resolution.data?.resolution && <div>
                     <b onClick={toggleResolution} className="pointer">Resolution</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, resolution.data?.file)} />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{resolution.data?.file}</i></small><br />
+                    <ExternalLink href={awsDataLink(bucket, uuid, resolution.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{resolution.data?.file}</i></small><br />
                     <pre style={prestyle}>
-                        { showResolution ? Yaml.Format(resolution.data) : <i onClick={toggleResolution} className="pointer">Click to show ...</i>}
+                        { showResolution ? Yaml.Format(resolution.data.resolution) : <i onClick={toggleResolution} className="pointer">Click to show ...</i>}
                     </pre>
                 </div>}
                 {traceback.data?.traceback && <div>
                     <b onClick={toggleTraceback} className="pointer">Traceback</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, traceback.data?.file)} />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{traceback.data?.file}</i></small><br />
+                    <ExternalLink href={awsDataLink(bucket, uuid, traceback.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{traceback.data?.file}</i></small><br />
                     <pre style={prestyle}>
                         { showTraceback ? tracebacks(traceback).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={toggleTraceback} className="pointer">Click to show ...</i>}
                     </pre>

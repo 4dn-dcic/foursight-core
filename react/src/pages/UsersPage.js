@@ -113,7 +113,7 @@ const UsersPage = () => {
            <div>
                 <table width="100%" border="0"><tbody><tr>
                     <td style={{width:"2%"}}>
-                        <div style={{marginBottom:"2pt"}}><b>Users</b></div>
+                        <div style={{marginBottom:"2pt"}}><big><b>Users</b></big></div>
                     </td>
                     <td style={{whiteSpace:"nowrap"}}>
                         <span className="pointer" onClick={toggleSearch}>&nbsp;&nbsp;{Char.Search}</span>&nbsp;&nbsp;

@@ -1538,7 +1538,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             try:
                 url_origin = urllib.parse.urlparse(url).netloc
                 this_origin = request.get('headers', {}).get('host')
-                return url_origin == this_origin or this_origin == "localhost:8000"
+                return url_origin == this_origin or url_origin == "localhost:8000"
             except Exception:
                 return False
 
