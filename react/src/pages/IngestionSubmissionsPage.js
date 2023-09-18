@@ -45,7 +45,7 @@ const IngestionSubmissionPage = (props) => {
     const header = useHeader();
     const [ args, setArgs ] = useSearchParams();
     const bucket = () => args.get("bucket") || header?.s3?.buckets?.metadata_bucket;
-    const submissions = useFetch(`/ingestion_submissions?bucket=${bucket()}`);
+    const submissions = useFetch();
     const offset = parseInt(args.get("offset")) || 0;
 
     const columns =  [
