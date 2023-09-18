@@ -32,6 +32,14 @@ function awsDataLink(bucket, uuid, file) {
     return `https://s3.console.aws.amazon.com/s3/object/${bucket}?region=${region}&prefix=${uuid}/${file}`
 }
 
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return "0B";
+    const sizes = ["", "K", "M", "G", "T"];
+    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    return (Math.round((bytes / Math.pow(1024, i)) * 100) / 100).toFixed(1) + sizes[i];
+}
+
 const IngestionSubmissionPage = (props) => {
 
     const header = useHeader();
@@ -136,7 +144,6 @@ const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggl
 
     const uuid = data?.uuid;
     const widthRef = useRef(null);
-    const [fileSize, setFileSize] = useState(null);
 
     function valueOf(data, column) {
         const column_data = data[column.key];
@@ -170,7 +177,8 @@ const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggl
             }
         }
         else if (column.key === "size") {
-            return fileSize || "?";
+            const file = data.files.find(item => item.file == data.file);
+            return formatFileSize(file?.size);
         }
         else {
             return column_data;
@@ -205,18 +213,15 @@ const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggl
             </td>)}
         </tr>
         { isExpanded(rowIndex) &&
-            <RowDetail data={data} uuid={uuid} bucket={bucket()} widthRef={widthRef} setFileSize={setFileSize} />
+            <RowDetail data={data} uuid={uuid} bucket={bucket()} widthRef={widthRef} />
         }
     </>
 }
 
-const RowDetail = ({ data, uuid, bucket, widthRef, setFileSize }) => {
+const RowDetail = ({ data, uuid, bucket, widthRef }) => {
 
-    const datainfo           = useFetch(`/ingestion_submissions/${uuid}/data/info?bucket=${bucket}`, {onDone: (data) => setFileSize(data.data?.size) });
-    const detail             = useFetch(`/ingestion_submissions/${uuid}/detail?bucket=${bucket}`);
     const manifest           = useFetch(`/ingestion_submissions/${uuid}/manifest?bucket=${bucket}`);
     const resolution         = useFetch(`/ingestion_submissions/${uuid}/resolution?bucket=${bucket}`);
-    const postOutput         = useFetch(`/ingestion_submissions/${uuid}/post_output?bucket=${bucket}`);
     const submissionResponse = useFetch(`/ingestion_submissions/${uuid}/submission_response?bucket=${bucket}`);
     const summary            = useFetch(`/ingestion_submissions/${uuid}?bucket=${bucket}`);
     const traceback          = useFetch(`/ingestion_submissions/${uuid}/traceback?bucket=${bucket}`);
@@ -226,13 +231,13 @@ const RowDetail = ({ data, uuid, bucket, widthRef, setFileSize }) => {
     const [showDetail, setShowDetail] = useState(false); const toggleDetail = () => setShowDetail(!showDetail);
     const [showManifest, setShowManifest] = useState(false); const toggleManifest = () => setShowManifest(!showManifest);
     const [showResolution, setShowResolution] = useState(false); const toggleResolution = () => setShowResolution(!showResolution);
-    const [showPostOutput, setShowPostOutput] = useState(false); const togglePostOutput = () => setShowPostOutput(!showPostOutput);
     const [showSubmissionResponse, setShowSubmissionResponse] = useState(false); const toggleSubmissionResponse = () => setShowSubmissionResponse(!showSubmissionResponse);
     const [showSummary, setShowSummary] = useState(true); const toggleSummary = () => setShowSummary(!showSummary);
     const [showTraceback, setShowTraceback] = useState(true); const toggleTraceback = () => setShowTraceback(!showTraceback);
     const [showUploadInfo, setShowUploadInfo] = useState(false); const toggleUploadInfo = () => setShowUploadInfo(!showUploadInfo);
     const [showValidationReport, setShowValidationReport] = useState(true); const toggleValidationReport = () => setShowValidationReport(!showValidationReport);
     const [showFiles, setShowFiles] = useState(true); const toggleFiles = () => setShowFiles(!showFiles);
+    const [detailFile, setDetailFile] = useState(null);
 
     const prestyle = {
         background:"inherit",
@@ -254,7 +259,7 @@ const RowDetail = ({ data, uuid, bucket, widthRef, setFileSize }) => {
     }
 
     function loading() {
-        return summary.loading || detail.loading || manifest.loading || resolution.loading || traceback.loading;
+        return summary.loading || manifest.loading || resolution.loading || traceback.loading;
     }
 
     return <tr>
@@ -273,7 +278,7 @@ const RowDetail = ({ data, uuid, bucket, widthRef, setFileSize }) => {
                         { showFiles ? <>
                              { data.files.map((file, index) => <>
                                  {index > 0 && <br />}
-                                 {file} <ExternalLink href={awsLink(bucket, uuid, file)} style={{marginLeft: "4pt"}}/>
+                                 {file.file} ({formatFileSize(file.size)}) <ExternalLink href={awsLink(bucket, uuid, file.file)} style={{marginLeft: "4pt"}}/>
                              </>)}
                         </>:<>
                             <i onClick={toggleFiles} className="pointer">Click to show ...</i>
@@ -292,10 +297,12 @@ const RowDetail = ({ data, uuid, bucket, widthRef, setFileSize }) => {
                     </pre>
                 </div>}
                 <b onClick={toggleDetail} className="pointer">Detail</b>&nbsp;
-                <ExternalLink href={awsDataLink(bucket, uuid, detail.data?.file)} />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{detail.data?.file}</i></small><br />
+                { detailFile && <>
+                    <ExternalLink href={awsDataLink(bucket, uuid, detailFile)} />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{detailFile}</i></small><br />
+                </>}
                 <pre style={{...prestyle}}>
                     { showDetail ? <>
-                        <RowDetailDetail uuid={uuid} bucket={bucket} prestyle={prestyle} widthRef={widthRef} />
+                        <RowDetailDetail uuid={uuid} bucket={bucket} prestyle={prestyle} setDetailFile={setDetailFile} widthRef={widthRef} />
                     </>:<>
                         <span onClick={toggleDetail} className="pointer">Click to retreive details ...</span>
                     </>}
@@ -305,12 +312,6 @@ const RowDetail = ({ data, uuid, bucket, widthRef, setFileSize }) => {
                     <ExternalLink href={awsDataLink(bucket, uuid, submissionResponse.data?.file)} />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{submissionResponse.data?.file}</i></small><br />
                     <pre style={prestyle}>
                         { showSubmissionResponse ? lines(submissionResponse.data.submission_response).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={toggleSubmissionResponse} className="pointer">Click to show ...</i>}
-                    </pre>
-                </div>}
-                {postOutput.data?.post_output && <div>
-                    <b onClick={togglePostOutput} className="pointer">PostOutput</b> <ExternalLink href={awsDataLink(bucket, uuid, "post_output.txt")} /> <br />
-                    <pre style={prestyle}>
-                        { showPostOutput ? lines(postOutput.data.post_output).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={togglePostOutput} className="pointer">Click to show ...</i>}
                     </pre>
                 </div>}
                 {uploadInfo.data?.upload_info && <div>
@@ -353,8 +354,8 @@ const RowDetail = ({ data, uuid, bucket, widthRef, setFileSize }) => {
     </tr>
 }
 
-const RowDetailDetail = ({ uuid, bucket, prestyle, widthRef }) => {
-    const detail = useFetch(`/ingestion_submissions/${uuid}/detail?bucket=${bucket}`);
+const RowDetailDetail = ({ uuid, bucket, prestyle, setDetailFile, widthRef }) => {
+    const detail = useFetch(`/ingestion_submissions/${uuid}/detail?bucket=${bucket}`, {onDone: data => setDetailFile(data.data?.file)});
     if (detail.loading) return <StandardSpinner condition={detail.loading} label={"Loading"} style={{paddingBottom:"4pt"}} />
     return <>
         {detail.data?.detail ? <div>

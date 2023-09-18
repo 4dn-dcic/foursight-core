@@ -48,6 +48,8 @@ def read_ingestion_submissions(bucket: str,
         return (parts[0], parts[1])
 
     def add_key_to_keys(uuid: str, key: dict, keys: dict) -> None:
+        if not key.get("files"):
+            key["files"] = [{"file": key["file"], "modified": key["modified"], "size": key["size"]}]
         existing_key = keys.get(uuid)
         if existing_key:
             # We take the most recently modified date within the
@@ -62,14 +64,9 @@ def read_ingestion_submissions(bucket: str,
                 existing_key["error"] = True
             if key["file"].startswith("datafile"):
                 existing_key["file"] = key["datafile"]
-            if key["file"] not in existing_key["files"]:
-                existing_key["files"].append(key["file"])
+            if not [file for file in existing_key["files"] if file["file"] == key["file"]]:
+                existing_key["files"].extend(key["files"])
         else:
-            if key.get("files"):
-                if key["file"] not in key["files"]:
-                    key["files"].append(key["file"])
-            else:
-                key["files"] = [key["file"]]
             keys[uuid] = key
 
     # Unfortunately AWS/boto3 does not allow sorting, so we need to read all the keys in the bucket;
@@ -87,8 +84,7 @@ def read_ingestion_submissions(bucket: str,
             uuid, file = get_uuid_and_file_from_key(key)
             if not uuid or not file:
                 continue
-            key = {"uuid": uuid, "modified": item["LastModified"],
-                   "file": file,
+            key = {"uuid": uuid, "file": file, "modified": item["LastModified"], "size": item["Size"],
                    "started": file.endswith("started.txt"),
                    "done": file.endswith("submission.json") or file.endswith("submission.json.json"),
                    "error": file.endswith("traceback.txt")}
@@ -122,23 +118,31 @@ def read_ingestion_submissions(bucket: str,
     end_offset = offset + limit if offset + limit <= total else total
     keys = keys[offset:end_offset]
 
+    # Convert datatime objects to strings, here just for minor performance reason,
+    # rather than doing it for all keys, just do the ones we are returning.
     for key in keys:
         key["modified"] = convert_utc_datetime_to_utc_datetime_string(key["modified"])
+        for file in key["files"]:
+            file["modified"] = convert_utc_datetime_to_utc_datetime_string(file["modified"])
 
     return {
         "paging": {
             "total": total, "count": end_offset - offset,
-            "limit": limit, "offset": offset,
-            "more": max(total - offset - limit, 0)
-        }, "list": keys}
+            "limit": limit, "offset": offset, "more": max(total - offset - limit, 0)
+        },
+        "list": keys
+    }
 
 
 def read_ingestion_submission_detail(bucket: str, uuid: str) -> Optional[str]:
     file = f"submission.json"
     contents = _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)
     if not contents:
-        file = f"submission.json.json"
+        # Files like these exist; probably a (hopefully past) mistake; but handle it.
+        alternative_file = f"submission.json.json"
         contents = _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)
+        if contents:
+            file = alternative_file
     return {"file": file, "detail": contents}
 
 
@@ -151,11 +155,6 @@ def read_ingestion_submission_summary(bucket: str, uuid: str) -> Optional[str]:
 def read_ingestion_submission_manifest(bucket: str, uuid: str) -> Optional[str]:
     file = f"manifest.json"
     return {"file": file, "manifest": _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)}
-
-
-def read_ingestion_submission_post_output(bucket: str, uuid: str) -> Optional[str]:
-    file = f"post_output.json"
-    return {"file": file, "post_output": _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)}
 
 
 def read_ingestion_submission_upload_info(bucket: str, uuid: str) -> Optional[dict]:
@@ -181,28 +180,6 @@ def read_ingestion_submission_traceback(bucket: str, uuid: str) -> Optional[str]
 def read_ingestion_submission_validation_report(bucket: str, uuid: str) -> Optional[str]:
     file = f"validation_report.txt"
     return {"file": file, "validation_report": _read_s3_key(bucket, f"{uuid}/{file}", is_json=False)}
-
-
-def read_ingestion_submission_data_info(bucket: str, uuid: str) -> Optional[dict]:
-    manifest = read_ingestion_submission_manifest(bucket, uuid)
-    if manifest:
-        data_key = manifest.get("manifest", {}).get("object_name")
-        if data_key:
-            data_file = data_key[len(f"{uuid}/"):] if data_key.startswith(f"{uuid}/") else data_key
-            is_json = data_key.endswith(".json")
-            is_binary = not is_json and not data_key.endswith(".txt")
-            size = _sizeof_s3_key(bucket, data_key)
-            return {"key": data_key, "file": data_file, "size": size, "type": "json" if is_json else ("binary" if is_binary else "text")}
-    return None
-
-
-def read_ingestion_submission_data(bucket: str, uuid: str) -> Optional[Union[dict, str, bytes]]:
-    info = read_ingestion_submission_data_info(bucket, uuid)
-    if info:
-        key = info["key"]
-        is_json = info["type"] == "json"
-        is_binary = info["type"] == "binary"
-        return _read_s3_key(bucket, key, is_json=is_json, is_binary=is_binary)
 
 
 def _read_s3_key(bucket: str, key: str,

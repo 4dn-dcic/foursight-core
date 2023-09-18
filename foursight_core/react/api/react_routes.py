@@ -759,13 +759,6 @@ class ReactRoutes:
         """
         return app.core.reactapi_ingestion_submission_manifest(app.request(), env, uuid, args=app.request_args())
 
-    @route("/{env}/ingestion_submissions/{uuid}/post_output", authorize=True)
-    def reactapi_route_ingestion_submission_post_output(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
-        """
-        Returns info about ingestion submission in S3.
-        """
-        return app.core.reactapi_ingestion_submission_post_output(app.request(), env, uuid, args=app.request_args())
-
     @route("/{env}/ingestion_submissions/{uuid}/resolution", authorize=True)
     def reactapi_route_ingestion_submission_resolution(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
@@ -800,13 +793,6 @@ class ReactRoutes:
         Returns info about ingestion submission in S3.
         """
         return app.core.reactapi_ingestion_submission_upload_info(app.request(), env, uuid, args=app.request_args())
-
-    @route("/{env}/ingestion_submissions/{uuid}/data/info", authorize=True)
-    def reactapi_route_ingestion_submission_data_info(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
-        """
-        Returns info about ingestion submission in S3.
-        """
-        return app.core.reactapi_ingestion_submission_data_info(app.request(), env, uuid, args=app.request_args())
 
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes, serving the HTML/CSS/JavaScript/React files.

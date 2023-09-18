@@ -48,10 +48,8 @@ from .encoding_utils import base64_decode_to_json
 from .gac import Gac
 from .ingestion_utils import (
     read_ingestion_submissions,
-    read_ingestion_submission_data_info,
     read_ingestion_submission_detail,
     read_ingestion_submission_manifest,
-    read_ingestion_submission_post_output,
     read_ingestion_submission_resolution,
     read_ingestion_submission_summary,
     read_ingestion_submission_submission_response,
@@ -2075,11 +2073,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(
             read_ingestion_submission_manifest(self._get_metadata_bundles_bucket(env, args), uuid))
 
-    def reactapi_ingestion_submission_post_output(self, request: dict, env: str,
-                                                  uuid: str, args: Optional[dict] = None) -> Response:
-        return self.create_success_response(
-            read_ingestion_submission_post_output(self._get_metadata_bundles_bucket(env, args), uuid))
-
     def reactapi_ingestion_submission_resolution(self, request: dict, env: str,
                                                  uuid: str, args: Optional[dict] = None) -> Response:
         return self.create_success_response(
@@ -2104,11 +2097,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
                                                         uuid: str, args: Optional[dict] = None) -> Response:
         return self.create_success_response(
             read_ingestion_submission_validation_report(self._get_metadata_bundles_bucket(env, args), uuid))
-
-    def reactapi_ingestion_submission_data_info(self, request: dict, env: str,
-                                                uuid: str, args: Optional[dict] = None) -> Response:
-        return self.create_success_response(
-            read_ingestion_submission_data_info(self._get_metadata_bundles_bucket(env, args), uuid))
 
     @staticmethod
     def _get_metadata_bundles_bucket(env: str, args: Optional[dict] = None) -> str:
