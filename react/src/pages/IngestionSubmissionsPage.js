@@ -46,6 +46,7 @@ const IngestionSubmissionPage = (props) => {
     const [ args, setArgs ] = useSearchParams();
     const bucket = () => args.get("bucket") || header?.s3?.buckets?.metadata_bucket;
     const submissions = useFetch(`/ingestion_submissions?bucket=${bucket()}`);
+    const offset = parseInt(args.get("offset")) || 0;
 
     const columns =  [
         {
@@ -107,6 +108,7 @@ const IngestionSubmissionPage = (props) => {
     const [expanded, setExpanded] = useState([]);
 
     const toggleExpanded = (toggledIndex) => {
+        toggledIndex += offset;
         if (expanded.includes(toggledIndex)) {
             setExpanded(expanded.filter((index) => index !== toggledIndex));
         } else {
@@ -115,6 +117,7 @@ const IngestionSubmissionPage = (props) => {
     }
 
     const isExpanded = (index) => {
+        index += offset;
         return expanded.includes(index);
     }
 
@@ -201,7 +204,7 @@ const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggl
                 <span onClick={() => toggleExpanded(rowIndex)} className="pointer">
                     {valueOf(data, column)}
                     { column.key === "status" && data.started && <small>&nbsp;
-                        { data.error ? <> {Char.X} </>:<> {Char.Check} </>}
+                        { data.error ? <> {Char.X} </>:<> { data.done && <> {Char.Check} </>} </>}
                     </small>}
                 </span>
                 { column.key === "uuid" && 
@@ -310,14 +313,14 @@ const RowDetail = ({ data, uuid, bucket, widthRef }) => {
                     { detailFileName() && <>
                         <ExternalLink href={awsDataLink(bucket, uuid, detailFileName())} />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{detailFileName()}</i></small><br />
                     </>}
+                    <pre style={{...prestyle}}>
+                        { showDetail ? <>
+                            <RowDetailDetail uuid={uuid} bucket={bucket} prestyle={prestyle} widthRef={widthRef} />
+                        </>:<>
+                            <span onClick={toggleDetail} className="pointer">Click to retreive details ... {detailFileSize() && `(${formatFileSize(detailFileSize())})`} </span>
+                        </>}
+                    </pre>
                 </>}
-                <pre style={{...prestyle}}>
-                    { showDetail ? <>
-                        <RowDetailDetail uuid={uuid} bucket={bucket} prestyle={prestyle} widthRef={widthRef} />
-                    </>:<>
-                        <span onClick={toggleDetail} className="pointer">Click to retreive details ... {detailFileSize() && `(${formatFileSize(detailFileSize())})`} </span>
-                    </>}
-                </pre>
                 {submissionResponse.data?.submission_response && <div>
                     <b onClick={toggleSubmissionResponse} className="pointer">Submission Response</b>&nbsp;
                     <ExternalLink href={awsDataLink(bucket, uuid, submissionResponse.data?.file)} />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{submissionResponse.data?.file}</i></small><br />
