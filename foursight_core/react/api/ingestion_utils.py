@@ -38,7 +38,7 @@ def read_ingestion_submissions(bucket: str,
     def is_uuid(value: str) -> bool:
         try:
             return str(uuid.UUID(value)).lower() == value.lower()
-        except Exception:
+        except Exception as e:
             return False
 
     def get_uuid_and_file_from_key(key: str) -> Tuple[Optional[str], Optional[str]]:
@@ -47,27 +47,33 @@ def read_ingestion_submissions(bucket: str,
             return (None, None)
         return (parts[0], parts[1])
 
-    def add_key_to_keys(uuid: str, key: dict, keys: dict) -> None:
-        if not key.get("files"):
-            key["files"] = [{"file": key["file"], "modified": key["modified"], "size": key["size"]}]
-        existing_key = keys.get(uuid)
+    def add_key_to_keys(key: dict, key_size: int, keys: dict) -> None:
+        key_uuid = key["uuid"]
+        key_file = key["file"]
+        existing_key = keys.get(key_uuid)
         if existing_key:
             # We take the most recently modified date within the
             # bucket amont the keys with the same (prefix) uuid.
             if key["modified"] > existing_key["modified"]:
                 existing_key["modified"] = key["modified"]
-            if key["started"]:
-                existing_key["started"] = True
-            if key["done"]:
-                existing_key["done"] = True
-            if key["error"]:
-                existing_key["error"] = True
-            if key["file"].startswith("datafile"):
-                existing_key["file"] = key["datafile"]
-            if not [file for file in existing_key["files"] if file["file"] == key["file"]]:
-                existing_key["files"].extend(key["files"])
+            if key_file.startswith("datafile"):
+                existing_key["file"] = key_file
+            key = existing_key
         else:
-            keys[uuid] = key
+            keys[key_uuid] = key
+        if _is_started_file(key_file):
+            key["started"] = True
+        if _is_done_file(key_file):
+            key["done"] = True
+        if _is_error_file(key_file):
+            key["error"] = True
+        if not key.get("files"):
+            key["files"] = []
+        if not [file for file in key["files"] if file["file"] == key_file]:
+            file = {"file": key_file, "modified": key["modified"], "size": key_size}
+            if _is_detail_file(key_file):
+                file["detail"] = True
+            key["files"].append(file)
 
     # Unfortunately AWS/boto3 does not allow sorting, so we need to read all the keys in the bucket;
     # this may be slow, but it's quicker than manually rummaging around when you need to find something.
@@ -84,11 +90,8 @@ def read_ingestion_submissions(bucket: str,
             uuid, file = get_uuid_and_file_from_key(key)
             if not uuid or not file:
                 continue
-            key = {"uuid": uuid, "file": file, "modified": item["LastModified"], "size": item["Size"],
-                   "started": file.endswith("started.txt"),
-                   "done": file.endswith("submission.json") or file.endswith("submission.json.json"),
-                   "error": file.endswith("traceback.txt")}
-            add_key_to_keys(uuid, key, keys)
+            key = {"uuid": uuid, "file": file, "modified": item["LastModified"]}
+            add_key_to_keys(key, item["Size"], keys)
         return (keys, response.get("NextContinuationToken"))
 
     keys = {}
@@ -96,10 +99,11 @@ def read_ingestion_submissions(bucket: str,
     while True:
         chunk_of_keys, next_token = get_chunk_of_keys(bucket, next_token)
         if chunk_of_keys:
-            [add_key_to_keys(uuid, chunk_of_keys[uuid], keys) for uuid in chunk_of_keys]
+           for key in chunk_of_keys:
+               keys[key] = chunk_of_keys[key]
         if not next_token:
             break
-    keys = [keys[uuid] for uuid in keys]
+    keys = [keys[key] for key in keys]
     total = len(keys)
 
     sort_key = None
@@ -138,7 +142,6 @@ def read_ingestion_submission_detail(bucket: str, uuid: str) -> Optional[str]:
     file = f"submission.json"
     contents = _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)
     if not contents:
-        # Files like these exist; probably a (hopefully past) mistake; but handle it.
         alternative_file = f"submission.json.json"
         contents = _read_s3_key(bucket, f"{uuid}/{file}", is_json=True)
         if contents:
@@ -211,3 +214,22 @@ def _sizeof_s3_key(bucket: str, key: str) -> Optional[int]:
         return boto_s3_client().head_object(Bucket=bucket, Key=key).get("ContentLength")
     except Exception:
         return None
+
+
+def _is_started_file(file: str) -> bool:
+    return file == "started.txt"
+
+
+def _is_done_file(file: str) -> bool:
+    return _is_detail_file(file)
+
+
+def _is_error_file(file: str) -> bool:
+    return file == "traceback.txt"
+
+
+def _is_detail_file(file: str) -> bool:
+    # We note this file in particular because it could be very large;
+    # it contains an itemization (by uuid) of every object processed.
+    # Files like submission.json.json exist; probably a (hopefully past) mistake; but handle it.
+    return file == "submission.json" or file == "submission.json.json"
