@@ -34,6 +34,7 @@ function awsDataLink(bucket, uuid, file) {
 
 
 function formatFileSize(bytes) {
+    if (!Type.IsInteger(bytes)) return "-";
     if (bytes <= 1000) return `${bytes} bytes`;
     const sizes = ["b", "K", "M", "G", "T"];
     const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
@@ -59,32 +60,56 @@ const IngestionSubmissionPage = (props) => {
         },
         {
             key: "uuid",
-            label: "UUID",
+            label: "Ingestion ID",
             width: "10%"
         },
         {
             key: "modified",
             label: "Modified",
-            type: "datetime",
-            width: "10%"
+            width: "10%",
+            value: (data, columnData) => DateTime.Format(columnData)
         },
         {
             key: "status",
             label: "Status",
             width: "10%",
-            sortable: false
+            sortable: false,
+            value: (data) => {
+                let value;
+                if      (data?.error)   value = "ERROR";
+                else if (data?.done)    value = "Completed";
+                else if (data?.started) value = "Started";
+                else                    value = "Unknown";
+                return <>{value}
+                    { data.started && <small>
+                        &nbsp;{ data.error ? <> {Char.X} </>:<> { data.done && <> {Char.Check} </>} </>}
+                    </small>}
+                </>
+            }
         },
         {
             key: "file",
             label: "File",
             width: "10%",
-            sortable: false
+            sortable: false,
+            value: (data, columnData) => {
+                if      (columnData?.endsWith(".json"))   return "JSON";
+                else if (columnData?.endsWith(".txt"))    return "Text";
+                else if (columnData?.endsWith(".xlsx"))   return "Excel";
+                else if (columnData?.endsWith(".zip"))    return "ZIP";
+                else if (columnData?.endsWith(".tar.gz")) return "Tarball";
+                else                                      return columnData || "Unknown";
+            }
         },
         {
             key: "size",
             label: "Size",
             width: "10%",
-            sortable: false
+            sortable: false,
+            value: (data, columnData) => {
+                const file = data.files?.find(item => item.file == data.file);
+                return formatFileSize(file?.size);
+            }
         },
         {
             key: "portal",
@@ -136,7 +161,7 @@ const IngestionSubmissionPage = (props) => {
             data={submissions}
             initialSort={"modified.desc"}>
             { submissions.map("list", (data, index) => (
-                <RowContent data={data} bucket={bucket} columns={columns}
+                <IngestionSubmissionRow data={data} bucket={bucket} columns={columns}
                     rowIndex={index} offset={parseInt(args.get("offset"))}
                     isExpanded={isExpanded} toggleExpanded={toggleExpanded}
                     header={header} />
@@ -145,69 +170,20 @@ const IngestionSubmissionPage = (props) => {
     </div>
 };
 
-const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggleExpanded, header }) => {
+const IngestionSubmissionRow = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggleExpanded, header }) => {
 
     const uuid = data?.uuid;
     const widthRef = useRef(null);
 
-    function valueOf(data, column) {
-        const column_data = data[column.key];
-        if (column.type === "datetime") {
-            return DateTime.Format(column_data);
-        }
-        else if (column.type === "boolean") {
-            return column_data ? "Yes" : "No";
-        }
-        else if (column.key === "status") {
-            if (data?.error) {
-                return "ERROR";
-            }
-            else if (data?.done) {
-                return "Completed";
-            }
-            else if (data?.started) {
-                return "Started";
-            }
-            else {
-                return "Unknown";
-            }
-        }
+    function value(data, column) {
+        if (column.value) return column.value(data, data[column.key]);
         else if (column.key === "index") {
-            const i = rowIndex + offset + 1;
-            if (isExpanded(rowIndex)) {
-                return `${i}. ${Char.DownArrow}`;
-            }
-            else {
-                return `${i}. ${Char.UpArrow}`;
-            }
-        }
-        else if (column.key === "file") {
-            const file = data[column.key];
-            if (file.endsWith(".json")) {
-                return "JSON";
-            }
-            else if (file.endsWith(".txt")) {
-                return "Text";
-            }
-            else if (file.endsWith(".xlsx")) {
-                return "Excel";
-            }
-            else if (file.endsWith(".zip")) {
-                return "ZIP";
-            }
-            else if (file.endsWith(".tar.gz")) {
-                return "Tarball";
-            }
-            else {
-                return file;
-            }
-        }
-        else if (column.key === "size") {
-            const file = data.files.find(item => item.file == data.file);
-            return formatFileSize(file?.size);
+            const index = rowIndex + offset + 1;
+            if (isExpanded(rowIndex)) return `${index}. ${Char.DownArrow}`;
+            else                      return `${index}. ${Char.UpArrow}`;
         }
         else {
-            return column_data;
+            return data[column.key];
         }
     }
 
@@ -225,15 +201,12 @@ const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggl
         <tr>
             { columns.map((column, index) => <td style={tdstyle(column)}>
                 <span onClick={() => toggleExpanded(rowIndex)} className="pointer">
-                    {valueOf(data, column)}
-                    { column.key === "status" && data.started && <small>&nbsp;
-                        { data.error ? <> {Char.X} </>:<> { data.done && <> {Char.Check} </>} </>}
-                    </small>}
+                    {value(data, column)}
                 </span>
                 { column.key === "uuid" && 
                     <ExternalLink href={awsLink(bucket(), uuid)} style={{marginLeft:"6pt"}} tooltip="Click to view in AWS S3." />
                 }
-                { column.key === "file" && 
+                { column.key === "file" && data[column.key] &&
                     <ExternalLink href={awsDataLink(bucket(), uuid, data[column.key])} style={{marginLeft:"6pt"}} tooltip="Click to view in AWS S3." />
                 }
                 { column.key === "portal" && <>
@@ -242,12 +215,12 @@ const RowContent = ({ data, bucket, columns, rowIndex, offset, isExpanded, toggl
             </td>)}
         </tr>
         { isExpanded(rowIndex) &&
-            <RowDetail data={data} uuid={uuid} bucket={bucket()} widthRef={widthRef} />
+            <IngestionSubmissionBox data={data} uuid={uuid} bucket={bucket()} widthRef={widthRef} />
         }
     </>
 }
 
-const RowDetail = ({ data, uuid, bucket, widthRef }) => {
+const IngestionSubmissionBox = ({ data, uuid, bucket, widthRef }) => {
 
     const manifest           = useFetch(`/ingestion_submissions/${uuid}/manifest?bucket=${bucket}`);
     const resolution         = useFetch(`/ingestion_submissions/${uuid}/resolution?bucket=${bucket}`);
@@ -257,23 +230,12 @@ const RowDetail = ({ data, uuid, bucket, widthRef }) => {
     const uploadInfo         = useFetch(`/ingestion_submissions/${uuid}/upload_info?bucket=${bucket}`);
     const validationReport   = useFetch(`/ingestion_submissions/${uuid}/validation_report?bucket=${bucket}`);
 
-    const [showDetail, setShowDetail] = useState(false); const toggleDetail = () => setShowDetail(!showDetail);
-    const [showManifest, setShowManifest] = useState(false); const toggleManifest = () => setShowManifest(!showManifest);
-    const [showResolution, setShowResolution] = useState(false); const toggleResolution = () => setShowResolution(!showResolution);
-    const [showSubmissionResponse, setShowSubmissionResponse] = useState(false); const toggleSubmissionResponse = () => setShowSubmissionResponse(!showSubmissionResponse);
-    const [showSummary, setShowSummary] = useState(true); const toggleSummary = () => setShowSummary(!showSummary);
-    const [showTraceback, setShowTraceback] = useState(true); const toggleTraceback = () => setShowTraceback(!showTraceback);
-    const [showUploadInfo, setShowUploadInfo] = useState(false); const toggleUploadInfo = () => setShowUploadInfo(!showUploadInfo);
-    const [showValidationReport, setShowValidationReport] = useState(true); const toggleValidationReport = () => setShowValidationReport(!showValidationReport);
-    const [showFiles, setShowFiles] = useState(true); const toggleFiles = () => setShowFiles(!showFiles);
-
     const prestyle = {
         background:"inherit",
         border:"1pt gray dotted",
         marginTop:"2pt",
     };
     const divstyle = {
-        background:"inherit",
         wordBreak:"break-all",
         maxWidth: widthRef?.current?.offsetWidth
     }
@@ -282,116 +244,156 @@ const RowDetail = ({ data, uuid, bucket, widthRef }) => {
         return lines?.split("\n")?.filter(item => item?.length > 0);
     }
 
-    function tracebacks(traceback) {
-        return lines(traceback?.data?.traceback);
-    }
-
     function loading() {
         return summary.loading || manifest.loading || resolution.loading || traceback.loading;
     }
 
-    function detailFileName() {
-        return data?.files?.find(item => item.detail)?.file;
-    }
-
-    function detailFileSize() {
-        return data?.files?.find(item => item.detail)?.size;
-    }
-
     return <tr>
         <td colSpan="7" ref={widthRef}>
-            <div className="box smallpadding margin bigmarginbottom" colSpan="9" style={divstyle}>
-                {loading() && <>
-                    <pre style={prestyle}>
-                        <StandardSpinner condition={loading()} label={"Loading"} style={{paddingBottom:"4pt"}} />
-                    </pre>
-                </>}
-                {data?.files && <div>
-                    <b onClick={toggleFiles} className="pointer">Files</b>&nbsp;
-                    <ExternalLink href={awsLink(bucket, uuid)} style={{marginLeft: "4pt"}} tooltip="Click to view in AWS S3." /> <br />
-                    <pre style={prestyle}>
-                        { showFiles ? <>
-                             { data.files.map((file, index) => <>
-                                 {index > 0 && <br />}
-                                 {file.file} ({formatFileSize(file.size)})<ExternalLink href={awsLink(bucket, uuid, file.file)} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
-                             </>)}
-                        </>:<>
-                            <i onClick={toggleFiles} className="pointer">Click to show ...</i>
-                        </>}
-                    </pre>
-                </div>}
-                {summary.data?.summary && <div>
-                    <b onClick={toggleSummary} className="pointer">Summary</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, summary.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{summary.data?.file}</i></small><br />
-                    <pre style={prestyle}>
-                        { showSummary ? <>
-                            { summary?.data?.summary?.map((item, index) => <>{index > 0 && <br />}{item.trim()}</>)}
-                        </>:<>
-                            <span onClick={toggleSummary} className="pointer">Click to show ...</span>
-                        </>}
-                    </pre>
-                </div>}
-                { detailFileName() && <>
-                    <b onClick={toggleDetail} className="pointer">Detail</b>&nbsp;
-                    { detailFileName() && <>
-                        <ExternalLink href={awsDataLink(bucket, uuid, detailFileName())} tooltip="Click to view in AWS S3."/>&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{detailFileName()}</i></small><br />
-                    </>}
-                    <pre style={{...prestyle}}>
-                        { showDetail ? <>
-                            <RowDetailDetail uuid={uuid} bucket={bucket} prestyle={prestyle} widthRef={widthRef} />
-                        </>:<>
-                            <span onClick={toggleDetail} className="pointer">Click to retreive details ... {detailFileSize() && `(${formatFileSize(detailFileSize())})`} </span>
-                        </>}
-                    </pre>
-                </>}
-                {submissionResponse.data?.submission_response && <div>
-                    <b onClick={toggleSubmissionResponse} className="pointer">Submission Response</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, submissionResponse.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{submissionResponse.data?.file}</i></small><br />
-                    <pre style={prestyle}>
-                        { showSubmissionResponse ? lines(submissionResponse.data.submission_response).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={toggleSubmissionResponse} className="pointer">Click to show ...</i>}
-                    </pre>
-                </div>}
-                {uploadInfo.data?.upload_info && <div>
-                    <b onClick={toggleUploadInfo} className="pointer">Upload Info</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, uploadInfo.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{uploadInfo.data?.file}</i></small><br />
-                    <pre style={prestyle}>
-                        { showUploadInfo ? Yaml.Format(uploadInfo.data.upload_info) : <i onClick={toggleUploadInfo} className="pointer">Click to show ...</i>}
-                    </pre>
-                </div>}
-                {validationReport.data?.validation_report && <div>
-                    <b onClick={toggleValidationReport} className="pointer">Validation Report</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, validationReport.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{validationReport.data?.file}</i></small><br />
-                    <pre style={prestyle}>
-                        { showValidationReport ? lines(validationReport.data.validation_report).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={toggleValidationReport} className="pointer">Click to show ...</i>}
-                    </pre>
-                </div>}
-                {manifest.data?.manifest && <div>
-                    <b onClick={toggleManifest} className="pointer">Manifest</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, manifest.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{manifest.data?.file}</i></small><br />
-                    <pre style={prestyle}>
-                        { showManifest ? Yaml.Format(manifest.data.manifest) : <i onClick={toggleManifest} className="pointer">Click to show ...</i>}
-                    </pre>
-                </div>}
-                {resolution.data?.resolution && <div>
-                    <b onClick={toggleResolution} className="pointer">Resolution</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, resolution.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{resolution.data?.file}</i></small><br />
-                    <pre style={prestyle}>
-                        { showResolution ? Yaml.Format(resolution.data.resolution) : <i onClick={toggleResolution} className="pointer">Click to show ...</i>}
-                    </pre>
-                </div>}
-                {traceback.data?.traceback && <div>
-                    <b onClick={toggleTraceback} className="pointer">Traceback</b>&nbsp;
-                    <ExternalLink href={awsDataLink(bucket, uuid, traceback.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{traceback.data?.file}</i></small><br />
-                    <pre style={prestyle}>
-                        { showTraceback ? tracebacks(traceback).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={toggleTraceback} className="pointer">Click to show ...</i>}
-                    </pre>
-                </div>}
+            <div className="box lighten smallpadding margin bigmarginbottom" colSpan="9" style={divstyle}>
+                <FileInfoRow data={data} uuid={uuid} bucket={bucket} manifest={manifest} traceback={traceback} loading={loading} prestyle={prestyle} />
+                <SummaryRow summary={summary} uuid={uuid} bucket={bucket} prestyle={prestyle} />
+                <DetailRow data={data} uuid={uuid} bucket={bucket} prestyle={prestyle} widthRef={widthRef} />
+                <SubmissionResponseRow submissionResponse={submissionResponse} uuid={uuid} bucket={bucket} lines={lines} prestyle={prestyle} />
+                <UploadInfoRow uploadInfo={uploadInfo} uuid={uuid} bucket={bucket} prestyle={prestyle} />
+                <ValidationReportRow validationReport={validationReport} uuid={uuid} bucket={bucket} lines={lines} prestyle={prestyle} />
+                <ManifestRow manifest={manifest} uuid={uuid} bucket={bucket} prestyle={prestyle} />
+                <ResolutionRow resolution={resolution} uuid={uuid} bucket={bucket} prestyle={prestyle} />
+                <TracebackRow traceback={traceback} uuid={uuid} bucket={bucket} lines={lines} prestyle={prestyle} />
             </div>
         </td>
     </tr>
 }
 
-const RowDetailDetail = ({ uuid, bucket, prestyle, widthRef }) => {
+const FileInfoRow = ({ data, uuid, bucket, manifest, traceback, loading, prestyle }) => {
+    const heightRef = useRef(null);
+    const minRows = data.files?.length + 1;
+
+    function dataExists() {
+        return manifest.data?.manifest?.parameters?.datafile_bucket &&
+               manifest.data?.manifest?.parameters?.datafile_key;
+    }
+
+    function dataBucket(path) {
+        return manifest.data?.manifest?.parameters?.datafile_bucket;
+    }
+
+    function dataUuid(path) {
+        const parts = manifest.data?.manifest?.parameters?.datafile_key?.split("/");
+        return parts[0];
+    }
+
+    function dataPath(path) {
+        const parts = manifest.data?.manifest?.parameters?.datafile_key?.split("/");
+        return parts[1];
+    }
+
+    return <>
+        <table style={{width:"100%"}}><tr><td valign="top" width="35%">
+            <b>Files</b>&nbsp;
+            <ExternalLink href={awsLink(bucket, uuid)} style={{marginLeft: "4pt"}} tooltip="Click to view in AWS S3." /> <br />
+            <pre style={prestyle} ref={heightRef}>
+                { data.files.map((file, index) => <>
+                    {index > 0 && <br />}
+                    {file.file} ({formatFileSize(file.size)})<ExternalLink href={awsLink(bucket, uuid, file.file)} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
+                </>)}
+                { (data.files && data.files.length < minRows) && <>
+                    {Array.from({length: minRows - data.files.length + 1}, (_, i) => i).map(() => <br/>)}
+                </>}
+            </pre>
+        </td><td valign="top" style={{paddingLeft:"4pt"}}>
+            <b>Info</b>&nbsp;
+            <pre style={{...prestyle,height: heightRef?.current?.offsetHeight}}>
+                { loading() ? <StandardSpinner condition={loading()} label={"Loading"} style={{paddingBottom:"4pt"}} /> : <>
+                    <table style={{width:"100%",fontSize:"inherit"}}>
+                        <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Source File:</td><td><b>{manifest.data?.manifest?.filename}</b></td></tr>
+                        { dataExists() && <>
+                            <tr>
+                                <td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}> Target Bucket:</td>
+                                <td><b>{dataBucket()}</b>
+                                    <ExternalLink href={awsLink(dataBucket())} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Target UUID:</td>
+                                <td><b>{dataUuid()}</b>
+                                    <ExternalLink href={awsLink(dataBucket(), dataUuid())} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Target File:</td>
+                                <td><b>{dataPath()}</b>
+                                    <ExternalLink href={awsLink(dataBucket(), dataUuid(), dataPath())} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
+                                </td>
+                            </tr>
+                        </>}
+                        <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Submitter:</td><td><b>{manifest.data?.manifest?.email}</b></td></tr>
+                        { manifest.data?.manifest?.parameters?.consortium && 
+                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Consortium:</td><td><b>{manifest.data?.manifest?.parameters.consortium}</b></td></tr>
+                        }
+                        { manifest.data?.manifest?.parameters?.submission_center && 
+                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Submission Center:</td><td><b>{manifest.data?.manifest?.parameters.submission_center}</b></td></tr>
+                        }
+                        { manifest.data?.manifest?.parameters?.project && 
+                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Project:</td><td><b>{manifest.data?.manifest?.parameters.project}</b></td></tr>
+                        }
+                        { manifest.data?.manifest?.parameters?.institution && 
+                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Institution:</td><td><b>{manifest.data?.manifest?.parameters.institution}</b></td></tr>
+                        }
+                        { manifest.data?.manifest?.parameters?.award && 
+                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Award:</td><td><b>{manifest.data?.manifest?.parameters.award}</b></td></tr>
+                        }
+                        { manifest.data?.manifest?.parameters?.lab && 
+                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Lab:</td><td><b>{manifest.data?.manifest?.parameters.lab}</b></td></tr>
+                        }
+                        <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Validate Only:</td><td><b>{manifest.data?.manifest?.parameters.validate_onlye ? "Yes" : "No"}</b></td></tr>
+                        <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Exceptions:</td><td><b style={{color:traceback.data?.traceback ? "red" : ""}}>{traceback.data?.traceback ? "Yes" : "No"}</b></td></tr>
+                    </table>
+                </> }
+            </pre>
+        </td></tr></table>
+    </>
+}
+
+const SummaryRow = ({ summary, uuid, bucket, prestyle }) => {
+    const [showSummary, setShowSummary] = useState(true); const toggleSummary = () => setShowSummary(!showSummary);
+    return  <>
+        {summary.data?.summary && <div>
+            <b onClick={toggleSummary} className="pointer">Summary</b>&nbsp;
+            <ExternalLink href={awsDataLink(bucket, uuid, summary.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{summary.data?.file}</i></small><br />
+            <pre style={prestyle}>
+                { showSummary ? <>
+                    { summary?.data?.summary?.map((item, index) => <>{index > 0 && <br />}{item.trim()}</>)}
+                </>:<>
+                    <span onClick={toggleSummary} className="pointer">Click to show ...</span>
+                </>}
+            </pre>
+        </div>}
+    </>
+}
+
+const DetailRow = ({ data, uuid, bucket, prestyle, widthRef }) => {
+    const [showDetail, setShowDetail] = useState(false); const toggleDetail = () => setShowDetail(!showDetail);
+    const detailFileName = () => data?.files?.find(item => item.detail)?.file;
+    const detailFileSize = ()  => data?.files?.find(item => item.detail)?.size;
+    return <>
+        { detailFileName() && <>
+            <b onClick={toggleDetail} className="pointer">Detail</b>&nbsp;
+            { detailFileName() && <>
+                <ExternalLink href={awsDataLink(bucket, uuid, detailFileName())} tooltip="Click to view in AWS S3."/>&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{detailFileName()}</i></small><br />
+            </>}
+            <pre style={{...prestyle}}>
+                { showDetail ? <>
+                    <DetailRowDetail uuid={uuid} bucket={bucket} prestyle={prestyle} widthRef={widthRef} />
+                </>:<>
+                    <span onClick={toggleDetail} className="pointer">Click to retreive details ... {detailFileSize() && `(${formatFileSize(detailFileSize())})`} </span>
+                </>}
+            </pre>
+        </>}
+    </>
+}
+
+const DetailRowDetail = ({ uuid, bucket, prestyle }) => {
     const detail = useFetch(`/ingestion_submissions/${uuid}/detail?bucket=${bucket}`);
     if (detail.loading) return <StandardSpinner condition={detail.loading} label={"Loading"} style={{paddingBottom:"4pt"}} />
     return <>
@@ -399,6 +401,88 @@ const RowDetailDetail = ({ uuid, bucket, prestyle, widthRef }) => {
             {Yaml.Format(detail.data?.detail)}
         </div>:<div>
             No details found.
+        </div>}
+    </>
+}
+
+const SubmissionResponseRow = ({ submissionResponse, uuid, bucket, lines, prestyle }) => {
+    const [showSubmissionResponse, setShowSubmissionResponse] = useState(false);
+    const toggleSubmissionResponse = () => setShowSubmissionResponse(!showSubmissionResponse);
+    return <>
+        {submissionResponse.data?.submission_response && <div>
+            <b onClick={toggleSubmissionResponse} className="pointer">Submission Response</b>&nbsp;
+            <ExternalLink href={awsDataLink(bucket, uuid, submissionResponse.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{submissionResponse.data?.file}</i></small><br />
+            <pre style={prestyle}>
+                { showSubmissionResponse ? lines(submissionResponse.data.submission_response).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={toggleSubmissionResponse} className="pointer">Click to show ...</i>}
+            </pre>
+        </div>}
+    </>
+}
+
+const UploadInfoRow = ({ uploadInfo, uuid, bucket, prestyle }) => {
+    const [showUploadInfo, setShowUploadInfo] = useState(false); const toggleUploadInfo = () => setShowUploadInfo(!showUploadInfo);
+    return <>
+        {uploadInfo.data?.upload_info && <div>
+            <b onClick={toggleUploadInfo} className="pointer">Upload Info</b>&nbsp;
+            <ExternalLink href={awsDataLink(bucket, uuid, uploadInfo.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{uploadInfo.data?.file}</i></small><br />
+            <pre style={prestyle}>
+                { showUploadInfo ? Yaml.Format(uploadInfo.data.upload_info) : <i onClick={toggleUploadInfo} className="pointer">Click to show ...</i>}
+            </pre>
+        </div>}
+    </>
+}
+
+const ValidationReportRow = ({ validationReport, uuid, bucket, lines, prestyle }) => {
+    const [showValidationReport, setShowValidationReport] = useState(true);
+    const toggleValidationReport = () => setShowValidationReport(!showValidationReport);
+    return <>
+        {validationReport.data?.validation_report && <div>
+            <b onClick={toggleValidationReport} className="pointer">Validation Report</b>&nbsp;
+            <ExternalLink href={awsDataLink(bucket, uuid, validationReport.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{validationReport.data?.file}</i></small><br />
+            <pre style={prestyle}>
+                { showValidationReport ? lines(validationReport.data.validation_report).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={toggleValidationReport} className="pointer">Click to show ...</i>}
+            </pre>
+        </div>}
+    </>
+}
+
+const ManifestRow = ({ manifest, uuid, bucket, prestyle }) => {
+    const [showManifest, setShowManifest] = useState(false);
+    const toggleManifest = () => setShowManifest(!showManifest);
+    return <>
+        {manifest.data?.manifest && <div>
+            <b onClick={toggleManifest} className="pointer">Manifest</b>&nbsp;
+            <ExternalLink href={awsDataLink(bucket, uuid, manifest.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{manifest.data?.file}</i></small><br />
+            <pre style={prestyle}>
+                { showManifest ? Yaml.Format(manifest.data.manifest) : <i onClick={toggleManifest} className="pointer">Click to show ...</i>}
+            </pre>
+        </div>}
+    </>
+}
+
+const ResolutionRow = ({ resolution, uuid, bucket, prestyle }) => {
+    const [showResolution, setShowResolution] = useState(false); const toggleResolution = () => setShowResolution(!showResolution);
+    return <>
+        {resolution.data?.resolution && <div>
+            <b onClick={toggleResolution} className="pointer">Resolution</b>&nbsp;
+            <ExternalLink href={awsDataLink(bucket, uuid, resolution.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{resolution.data?.file}</i></small><br />
+            <pre style={prestyle}>
+                { showResolution ? Yaml.Format(resolution.data.resolution) : <i onClick={toggleResolution} className="pointer">Click to show ...</i>}
+            </pre>
+        </div>}
+    </>
+}
+
+const TracebackRow = ({ traceback, uuid, bucket, lines, prestyle }) => {
+    const [showTraceback, setShowTraceback] = useState(true); const toggleTraceback = () => setShowTraceback(!showTraceback);
+    const tracebacks = (traceback) => lines(traceback?.data?.traceback);
+    return <>
+        {traceback.data?.traceback && <div>
+            <b onClick={toggleTraceback} className="pointer">Traceback</b>&nbsp;
+            <ExternalLink href={awsDataLink(bucket, uuid, traceback.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{traceback.data?.file}</i></small><br />
+            <pre style={prestyle}>
+                { showTraceback ? tracebacks(traceback).map((item, index) => <>{index > 0 && <br />} {item}</>) : <i onClick={toggleTraceback} className="pointer">Click to show ...</i>}
+            </pre>
         </div>}
     </>
 }

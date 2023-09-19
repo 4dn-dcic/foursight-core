@@ -74,6 +74,8 @@ def read_ingestion_submissions(bucket: str,
             if _is_detail_file(key_file):
                 file["detail"] = True
             key["files"].append(file)
+        if key["file"] and not key["file"].startswith("datafile"):
+            key["file"] = None
 
     # Unfortunately AWS/boto3 does not allow sorting, so we need to read all the keys in the bucket;
     # this may be slow, but it's quicker than manually rummaging around when you need to find something.
