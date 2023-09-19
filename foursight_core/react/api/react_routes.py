@@ -151,6 +151,20 @@ class ReactRoutes:
         """
         return app.core.reactapi_info(app.current_request.to_dict(), env)
 
+    @route("/{env}/ecosystems", authorize=True)
+    def reactapi_route_ecosystems(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns sundry info about the ecosystems.
+        """
+        return app.core.reactapi_ecosystems(app.current_request.to_dict(), env)
+
+    @route("/ecosystems", authorize=True)
+    def reactapi_route_ecosystems_noenv() -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns sundry info about the ecosystems.
+        """
+        return app.core.reactapi_ecosystems(app.current_request.to_dict(), app.core.get_default_env())
+
     @route("/{env}/users", methods=["GET", "POST"], authorize=True)
     def reactapi_route_users_get_or_post(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
@@ -226,6 +240,50 @@ class ReactRoutes:
         request_dict = app.current_request.to_dict()
         args = get_request_args(request_dict)
         return app.core.reactapi_users_projects(request_dict, env, args)
+
+    @route("/{env}/users/awards", authorize=True)
+    def reactapi_route_users_awards(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns the list of available user awards.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_users_awards(request_dict, env, args)
+
+    @route("/{env}/users/labs", authorize=True)
+    def reactapi_route_users_labs(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns the list of available user labs.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_users_labs(request_dict, env, args)
+
+    @route("/{env}/users/consortia", authorize=True)
+    def reactapi_route_users_consortia(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns the list of available user consortia.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_users_consortia(request_dict, env, args)
+
+    @route("/{env}/users/submission_centers", authorize=True)
+    def reactapi_route_users_submission_centers(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns the list of available user submission_centers.
+        Optional arguments (args) for the request are any of:
+        - raw: if true then returns the raw format of the data.
+        """
+        request_dict = app.current_request.to_dict()
+        args = get_request_args(request_dict)
+        return app.core.reactapi_users_submission_centers(request_dict, env, args)
 
     @route("/{env}/users/roles", authorize=True)
     def reactapi_route_users_roles(env: str) -> Response:  # noqa: implicit @staticmethod via @route
@@ -670,6 +728,71 @@ class ReactRoutes:
     @route("/aws/ecs/tasks/latest/details", authorize=True)
     def reactapi_route_aws_ecs_task() -> Response:  # noqa: implicit @staticmethod via @route
         return app.core.reactapi_aws_ecs_tasks(latest=True)
+
+    @route("/{env}/ingestion_submissions", authorize=True)
+    def reactapi_route_ingestion_submissions(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submissions in S3.
+        - limit: to limit the results to the specified number.
+        - offset: to skip past the first specified number of results.
+        """
+        return app.core.reactapi_ingestion_submissions(app.request(), env, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}", authorize=True)
+    def reactapi_route_ingestion_submission(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_summary(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/detail", authorize=True)
+    def reactapi_route_ingestion_submission_detail(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_detail(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/manifest", authorize=True)
+    def reactapi_route_ingestion_submission_manifest(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_manifest(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/resolution", authorize=True)
+    def reactapi_route_ingestion_submission_resolution(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_resolution(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/submission_response", authorize=True)
+    def reactapi_route_ingestion_submission_submission_response(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_submission_response(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/traceback", authorize=True)
+    def reactapi_route_ingestion_submission_traceback(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_traceback(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/validation_report", authorize=True)
+    def reactapi_route_ingestion_submission_validation_report(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_validation_report(app.request(), env, uuid, args=app.request_args())
+
+    @route("/{env}/ingestion_submissions/{uuid}/upload_info", authorize=True)
+    def reactapi_route_ingestion_submission_upload_info(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
+        """
+        Returns info about ingestion submission in S3.
+        """
+        return app.core.reactapi_ingestion_submission_upload_info(app.request(), env, uuid, args=app.request_args())
 
     # ----------------------------------------------------------------------------------------------
     # Foursight React UI (static file) routes, serving the HTML/CSS/JavaScript/React files.

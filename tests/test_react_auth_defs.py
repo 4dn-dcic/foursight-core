@@ -55,7 +55,7 @@ LAST_NAME = "Melville"
 DOMAIN = "some-domain"
 # Mock out the call which create_authtoken makes Envs.get_user_auth_info
 # to get the allowed environments and first/last name for the user.
-ENVS.get_user_auth_info = lambda email, raise_exception: (ALLOWED_ENVS, FIRST_NAME, LAST_NAME)
+ENVS.get_user_auth_info = lambda email, raise_exception = True: (ALLOWED_ENVS, FIRST_NAME, LAST_NAME)
 
 AUTH = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET, ENVS)
 

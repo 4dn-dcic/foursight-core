@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Uuid from 'react-uuid';
 import { StandardSpinner } from '../Spinners';
 import useHeader from '../hooks/Header';
-import AccountsComponent from './AccountsComponent';
+import { AccountInfoCurrent } from './AccountsComponent';
 import Auth from '../utils/Auth';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
@@ -173,11 +173,20 @@ const InfoPage = () => {
     function clearCache() {
         fetch(Server.Url("/__functioncacheclear__", false));
     }
+        const account = {
+            id: `${header.app?.credentials?.aws_account_name}:${header?.app?.stage}`,
+            name: header.app?.credentials?.aws_account_name,
+            stage: header.app?.stage
+        }
 
     if (info.error) return <FetchErrorBox error={info.error} message="Error loading info from Foursight API" />
     return <div className="container">
+        <div style={{paddingLeft:"11pt",marginRight:"-11pt"}}>
+            <big><b>Summary</b></big>
+            <AccountInfoCurrent bg="var(--box-bg)" />
+        </div>
         <InfoBox info={info} title="Versions">
-            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={Env.IsFoursightFourfront(header) ? "4dn-dcic" : "dbmi-bgm"} size="2" />
+            <InfoRow name={header.app?.package} value={header.versions?.foursight} monospace={true} copy={true} pypi={true} github={Env.FoursightGitHubBase(header)} size="2" />
             <InfoRow name={"foursight-core"} value={header.versions?.foursight_core} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"dcicutils"} value={header.versions?.dcicutils} monospace={true} copy={true} pypi={true} github={"4dn-dcic"} size="2" />
             <InfoRow name={"tibanna"} value={header.versions?.tibanna} monospace={true} copy={true} size="2" pypi={true} />
@@ -317,18 +326,6 @@ const InfoPage = () => {
                 })}
             </span>):(<span/>)}
         </InfoBox>
-        { header.app?.accounts &&
-            <div className="container" style={{marginTop:"4pt"}}>
-                { showingAccounts ? <>
-                    <AccountsComponent />
-                </>:<>
-                    <b onClick={() => setShowingAccounts(true)} style={{cursor:"pointer"}}>Show Accounts</b>
-                    <div className="box">
-                        Click <b onClick={() => setShowingAccounts(true)} style={{cursor:"pointer"}}>here</b> to <span onClick={() => setShowingAccounts(true)} style={{cursor:"pointer"}}>show</span>.
-                    </div>
-                </>}
-            </div>
-        }
     </div>
 };
 

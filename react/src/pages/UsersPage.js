@@ -4,6 +4,7 @@ import { Link } from '../Components';
 import useFetch from '../hooks/Fetch';
 import Char from '../utils/Char';
 import Date from '../utils/Date';
+import Env from '../utils/Env';
 import { FetchErrorBox } from '../Components';
 import Server from '../utils/Server';
 import Str from '../utils/Str';
@@ -12,18 +13,21 @@ import Styles from '../Styles';
 import Tooltip from '../components/Tooltip';
 import Time from '../utils/Time';
 import Type from '../utils/Type';
-import useUserMetadata from '../hooks/UserMetadata';
+import UserDefs from './UserDefs';
+import useHeader from '../hooks/Header';
 
 const UsersPage = () => {
 
+    const header = useHeader();
     const { environ } = useParams();
     const [ args, setArgs ] = useSearchParams();
     const users = useFetch();
+    const inputs = UserDefs.useUserInputs("list");
 
     const [ search, setSearch ] = useState(args.get("search") || "");
     const [ showSearch, setShowSearch ] = useState(Str.HasValue(search));
 
-    const userMetadata = useUserMetadata();
+    const userInfo = UserDefs.useUserInfo();
 
     function update({ limit, offset, sort, search, onDone }) {
         if (!Type.IsInteger(limit)) limit = parseInt(args.get("limit")) || 25;
@@ -33,24 +37,17 @@ const UsersPage = () => {
         if (!Type.IsFunction(onDone)) onDone = () => {}
         users.refresh({
             url: Server.Url(`/users/?limit=${limit}&offset=${offset}&sort=${sort}${search ? `&search=${search}` : ""}`, environ),
+            onData: (data) => {
+                userInfo.normalizeUsers(data.list);
+                return data;
+            },
             onDone: (response) => onDone(response)
         });
     }
 
     if (users.error) return <FetchErrorBox error={users.error} message="Error loading users from Foursight API" center={true} />
 
-    const columns = [
-        { label: "" },
-        { label: "User", key: "email" },
-        { label: "Groups", key: "groups" },
-        { label: "Project", key: "project" },
-        { label: "Institution", key: "institution" },
-        { label: "Role", key: "role" },
-        { label: "Status", key: "status" },
-        { label: "Updated", key: "data_modified" }, // DOES NOT WORK (nested in last_modified)
-        { label: "Created", key: "date_created" }
-    ];
-
+    const columns = [ { label: "" }, ...inputs ];
     const tdStyle = { verticalAlign: "top", paddingRight: "6pt", paddingTop: "4pt", paddingBottom: "8pt" };
     const tdStyleNowrap = { ...tdStyle, whiteSpace: "nowrap" };
 
@@ -116,7 +113,7 @@ const UsersPage = () => {
            <div>
                 <table width="100%" border="0"><tbody><tr>
                     <td style={{width:"2%"}}>
-                        <div style={{marginBottom:"2pt"}}><b>Users</b></div>
+                        <div style={{marginBottom:"2pt"}}><big><b>Users</b></big></div>
                     </td>
                     <td style={{whiteSpace:"nowrap"}}>
                         <span className="pointer" onClick={toggleSearch}>&nbsp;&nbsp;{Char.Search}</span>&nbsp;&nbsp;
@@ -141,49 +138,28 @@ const UsersPage = () => {
                 initialSort={"email.asc"}>
                     {users.map("list", (user, index) => (
                         <tr key={user.uuid} style={{verticalAlign:"top",borderBottom:index < users?.data?.list?.length - 1 ? "1px solid gray" : "0"}}>
-                            <td style={{...tdStyle, fontSize:"small"}}>
-                                {parseInt(args.get("offset")) + index + 1}.
-                            </td>
-                            <td style={tdStyle}>
-                                <u>{user["first_name"]} {user["last_name"]}</u>
-                                { (user.title && user.title !== (user.first_name + " " + user.last_name)) && <>
-                                    <small>&nbsp;({user.title})</small>
-                                </>}
-                                <br />
-                                <Link to={"/users/" + user.email}><b>{user.email}</b></Link> <br />
-                                <small id="{user.uuid}" style={{cursor:"copy"}}>{user.uuid}</small>
-                            </td>
-                            <td style={tdStyle}>
-                                {user.groups?.length > 0 ? (userMetadata.titles(user.groups) || Char.EmptySet) : Char.EmptySet}
-                            </td>
-                            <td style={tdStyle}>
-                                <span id={`tooltip-users-project-${user.email}`}>{userMetadata.projectTitle(user.project) || Char.EmptySet}</span>
-                                <Tooltip id={`tooltip-users-project-${user.email}`} position="bottom" size="small" text={`Project: ${user.project}`} />
-                            </td>
-                            <td style={tdStyle}>
-                                <span id={`tooltip-users-institution-${user.email}`}>{userMetadata.institutionTitle(user.institution) || Char.EmptySet}</span>
-                                <Tooltip id={`tooltip-users-institution-${user.email}`} position="bottom" size="small" text={`Institution: ${user.institution}`} />
-                            </td>
-                            <td style={tdStyle}>
-                                <span id={`tooltip-users-role-${user.email}`}>
-                                    {userMetadata.userRoleTitle(user, user.project) || Char.EmptySet}
-                                    {user.roles?.length > 1 && <small>&nbsp;({user.roles?.length})</small>}
-                                </span>
-                                <Tooltip id={`tooltip-users-role-${user.email}`} position="bottom" size="small"
-                                    text={`Role: ${userMetadata.userRole(user, user.project)}${user.roles?.length > 1 ? `. Total: ${user.roles.length}` : ""}`} />
-                            </td>
-                            <td style={tdStyle}>
-                                <span id={`tooltip-users-status-${user.status}`}>{userMetadata.statusTitle(user.status) || Char.EmptySet}</span>
-                                <Tooltip id={`tooltip-users-status-${user.status}`} position="bottom" size="small" text={`Status: ${user.status}`} />
-                            </td>
-                            <td style={{...tdStyle,whiteSpace:"nowrap"}}>
-                                {user.updated ? Date.Format(user.updated) : Date.Format(user.created)} <br />
-                                <small>{user.updated ? Time.Format(user.updated) : Time.Format(user.created)}</small>
-                            </td>
-                            <td style={{...tdStyle,whiteSpace:"nowrap"}}>
-                                {Date.Format(user.created)} <br />
-                                <small>{Time.Format(user.created)}</small>
-                            </td>
+                            { columns.map(column =>
+                                <td style={{...tdStyle, whiteSpace:column.type == "datetime" ? "nowrap" : ""}} key={user.uuid + ":" + column.key}>
+                                    { column.uiList ? <>
+                                        {column.uiList(user)}
+                                    </>:<>
+                                        { column.key ? <>
+                                            { column.type === "datetime" ? <>
+                                                {Date.Format(user[column.key])} <br />
+                                                <small>{Time.Format(user[column.key])}</small>
+                                            </>:<>
+                                                { column.map ? <>
+                                                    {column.map(user[column.key], user) || Char.EmptySet}
+                                                </>:<>
+                                                    {user[column.key] || Char.EmptySet}
+                                                </> }
+                                            </> }
+                                        </>:<>
+                                            {parseInt(args.get("offset")) + index + 1}.
+                                        </> }
+                                    </> }
+                                </td>
+                            )}
                             <td style={{...tdStyle,whiteSpace:"nowrap"}}>
                                 &nbsp;&nbsp;<button><Link to={`/users/edit/${user.uuid}`}>Edit</Link></button>
                             </td>

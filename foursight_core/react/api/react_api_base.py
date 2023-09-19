@@ -2,6 +2,7 @@ from chalice import Response
 import copy
 import datetime
 import json
+import os
 import requests
 from typing import Optional, Union
 import urllib.parse
@@ -222,11 +223,29 @@ class ReactApiBase:
         else:
             return f"{self.foursight_instance_url(request)}/react/{env}/login"
 
+    def is_foursight_cgap(self) -> bool:
+        return app.core.APP_PACKAGE_NAME == "foursight-cgap"
+
     def is_foursight_fourfront(self) -> bool:
-        return app.core.APP_PACKAGE_NAME == "foursight"
+        return app.core.APP_PACKAGE_NAME == "foursight" or app.core.APP_PACKAGE_NAME == "foursight-fourfront"
+
+    def is_foursight_smaht(self) -> bool:
+        return app.core.APP_PACKAGE_NAME == "foursight-smaht"
 
     def get_site_name(self) -> str:
-        return "foursight-cgap" if app.core.APP_PACKAGE_NAME == "foursight-cgap" else "foursight-fourfront"
+        # FYI known site name (APP_PACKAGE_NAME value) are:
+        # - foursight
+        # - foursight-cgap
+        # - foursight-smaht
+        if app.core.APP_PACKAGE_NAME == "foursight":
+            # For React, change foursight to foursight-fourfront,
+            # just to be more explicit and reduce possible confusion.
+            return "foursight-fourfront"
+        else:
+            return app.core.APP_PACKAGE_NAME
 
     def get_default_env(self) -> str:
         return self._envs.get_default_env()
+
+    def get_global_env_bucket(self) -> Optional[str]:
+        return os.environ.get("GLOBAL_ENV_BUCKET") or os.environ.get("GLOBAL_BUCKET_ENV")

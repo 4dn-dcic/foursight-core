@@ -15,7 +15,6 @@ import Tooltip from '../components/Tooltip';
 import UserDefs from './UserDefs';
 import Yaml from '../utils/Yaml';
 import useHeader from '../hooks/Header';
-import useUserMetadata from '../hooks/UserMetadata';
 
 const UserRawBox = (props) => {
     const user = useFetch(`/users/${props.email}?raw=true`);
@@ -46,7 +45,7 @@ const KeyValueBox = (props) => {
     const [ toggle, setToggle ] = useState({});
     return <div className="box" style={{marginBottom:"8pt"}}>
         <table><tbody>
-            {props.keys.map((key, i) => <React.Fragment key={key.name}>
+            {props.inputs.map((key, i) => <React.Fragment key={key.key}>
                 { props.separators && i > 0 && <>
                     <tr><td colSpan="2" style={{height:"1pt"}}></td></tr>
                     <tr><td colSpan="2" style={{height:"1px",marginTop:"2pt",marginBottom:"2pt",background:"gray"}}></td></tr>
@@ -66,17 +65,25 @@ const KeyValueBox = (props) => {
                     </td>
                     <td style={tdContentStyle}>
                         { key.ui ? <>
-                            { toggle[key.label] ? <span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: false}))}>
-                                <small><u>Hide</u> {Char.DownArrowHollow}</small>
-                                {key.ui}
-                            </span>:<span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: true}))}>
-                                <small><u>Show</u> {Char.UpArrowHollow}</small>
-                            </span> }
+                            { key.toggle ? <>
+                                { toggle[key.label] ? <span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: false}))}>
+                                    <small><u>Hide</u> {Char.DownArrowHollow}</small>
+                                    {key.ui(props.value)}
+                                </span>:<span className="pointer" onClick={() => setToggle(value => ({...value, [key.label]: true}))}>
+                                    <small><u>Show</u> {Char.UpArrowHollow}</small>
+                                </span> }
+                            </>:<>
+                                {key.ui(props.value)}
+                            </>}
                         </>:<>
-                            {(Type.IsFunction(key.map) ? key.map(props.value[key.name]) : props.value[key.name]) || Char.EmptySet}
+                            { key.mapWithUser ? <>
+                                {(Type.IsFunction(key.map) ? key.map(props.value, props.value[key.key]) : props.value[key.key]) || Char.EmptySet}
+                            </>:<>
+                                {(Type.IsFunction(key.map) ? key.map(props.value[key.key], props.value) : props.value[key.key]) || Char.EmptySet}
+                            </> }
                         </> }
                         { key.subComponent && <>
-                            <br /> {key.subComponent(props.value[key.name])}
+                            <br /> {key.subComponent(props.value[key.key])}
                         </> }
                     </td>
                 </tr>
@@ -86,64 +93,32 @@ const KeyValueBox = (props) => {
 }
 const UserBox = (props) => {
 
-    const userMetadata = useUserMetadata();
+    const header = useHeader();
+    const user = props.user;
+    const userInfo = UserDefs.useUserInfo();
+    const inputs = UserDefs.useUserInputs("view");
 
-    let items = [
-        { label: "Email", name: "email" },
-        { label: "First Name", name: "first_name" },
-        { label: "Last Name", name: "last_name" },
-        { label: "Groups", name: "groups", map: value => userMetadata.titles(value) },
-        { label: "Project", name: "project", map: value => userMetadata.projectTitle(value) },
-        { label: "Role", name: "role", map: value => userMetadata.userRoleTitle(props.user, props.user.project) },
-        { label: "Roles", name: "roles", ui: <RolesBox user={props.user} />, toggle: true },
-        { label: "Institution", name: "institution", map: value => userMetadata.institutionTitle(value),
-                                subComponent: (institution) => <UserDefs.PrincipalInvestigatorLine institution={institution} /> },
-        { label: "Status", name: "status", map: value => userMetadata.statusTitle(value) },
-        { label: "Created", name: "created", map: value => DateTime.Format(value) },
-        { label: "Updated", name: "updated", map: value => DateTime.Format(value) },
-        { label: "UUID", name: "uuid" }
-    ]
-
-    if (Env.IsFoursightFourfront(useHeader())) {
-        items = items.filter(item => (item.name !== "institution") && (item.name !== "project") && (item.name !== "roles") && (item.name !== "role"));
-    }
-
-    return <KeyValueBox keys={items} value={props.user} separators={true} />
+    return <>
+        <KeyValueBox inputs={inputs} value={props.user} separators={true} />
+    </>
 }
 
-const RolesBox = (props) => {
-    const userMetadata = useUserMetadata();
-    return <div className="box lighten" style={{marginTop:"2pt",marginBottom:"2pt"}}>
-        <table style={{width:"100%",fontSize:"small",marginTop:"-3pt",marginBottom:"-2pt"}}><tbody>
-            <tr>
-                <td> <b>Project</b> </td>
-                <td style={{paddingLeft:"8pt"}}> <b>Role</b> </td>
-            </tr>
-            <tr><td style={{height:"2pt"}} /></tr>
-            <tr><td style={{height:"1px",background:"var(--box-fg)"}} colSpan="2" ></td></tr>
-            <tr><td style={{height:"2pt"}} /></tr>
-            { props.user.roles.sort((a,b) => a.project > b.project ? 1 : (a.project < b.project ? -1 : 0)).map(role => <tr key={role.project}>
-                <td style={{width:"5%",whiteSpace:"nowrap"}}>
-                    {userMetadata.projectTitle(role.project)}
-                </td>
-                <td style={{paddingLeft:"8pt",whiteSpace:"nowrap"}}>
-                    {userMetadata.roleTitle(role.role)}
-                </td>
-            </tr>)}
-        </tbody></table>
-    </div>
-}
 
 const UserPage = (props) => {
 
     const { email } = useParams()
     const [ showRaw, setShowRaw ] = useState(false);
     const navigate = useNavigate();
+    const userInfo = UserDefs.useUserInfo();
 
     function useFetchUser() {
         return useFetch({
             url: `/users/${email}`,
-            onData: (data) => Type.IsObject(data) ? [data] : data,
+            onData: (data) => {
+                data = Type.IsObject(data) ? [data] : data
+                userInfo.normalizeUsers(data);
+                return data;
+            },
             nofetch: true
         });
     }

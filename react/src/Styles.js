@@ -15,30 +15,49 @@ import Image from './utils/Image';
 // const foursightFourfrontBoxBackground = styles.getPropertyValue("--foursight-fourfront-box-bg");
 // const foursightCgapBoxColor           = styles.getPropertyValue("--foursight-cgap-box-fg");
 // const foursightCgapBoxBackground      = styles.getPropertyValue("--foursight-cgap-box-bg");
-const foursightFourfrontBoxColor      = "#09430C";
-const foursightFourfrontBoxBackground = "#DDFFEE";
-const foursightCgapBoxColor           = "#000069";
-const foursightCgapBoxBackground      = "#DDEEFF";
-
-function SetFoursightFourfrontStyles() {
-    document.documentElement.style.setProperty("--box-fg", foursightFourfrontBoxColor);
-    document.documentElement.style.setProperty("--box-bg", foursightFourfrontBoxBackground);
-    document.documentElement.style.setProperty("--box-bg-lighten", LightenDarkenColor(foursightFourfrontBoxBackground, 20));
-    document.documentElement.style.setProperty("--box-bg-darken", LightenDarkenColor(foursightFourfrontBoxBackground, -20));
-    let faviconElement = document.getElementById("favicon");
-    if (faviconElement) {
-        faviconElement.href = Image.FoursightFourfrontFavicon();
-    }
-}
+const foursightFourfrontBoxColor                = "#09430C";
+const foursightFourfrontBoxBackground           = "#DDFFEE";
+const foursightFourfrontTitleBackgroundColor    = "#14533C";
+const foursightCgapBoxColor                     = "#000066";
+const foursightCgapBoxBackground                = "#DDEEFF";
+const foursightCgapTitleBackgroundColor         = "#143C53";
+const foursightSmahtBoxColor                    = "#221100";
+const foursightSmahtBoxBackground               = "#FFEEDD";
+const foursightSmahtTitleBackgroundColor        = "#553322";
 
 function SetFoursightCgapStyles() {
     document.documentElement.style.setProperty("--box-fg", foursightCgapBoxColor);
     document.documentElement.style.setProperty("--box-bg", foursightCgapBoxBackground);
     document.documentElement.style.setProperty("--box-bg-lighten", LightenDarkenColor(foursightCgapBoxBackground, 20));
     document.documentElement.style.setProperty("--box-bg-darken", LightenDarkenColor(foursightCgapBoxBackground, -20));
+    document.documentElement.style.setProperty("--title-bg", foursightCgapTitleBackgroundColor);
     let faviconElement = document.getElementById("favicon");
     if (faviconElement) {
         faviconElement.href = Image.FoursightCgapFavicon();
+    }
+}
+
+function SetFoursightFourfrontStyles() {
+    document.documentElement.style.setProperty("--box-fg", foursightFourfrontBoxColor);
+    document.documentElement.style.setProperty("--box-bg", foursightFourfrontBoxBackground);
+    document.documentElement.style.setProperty("--box-bg-lighten", LightenDarkenColor(foursightFourfrontBoxBackground, 20));
+    document.documentElement.style.setProperty("--box-bg-darken", LightenDarkenColor(foursightFourfrontBoxBackground, -20));
+    document.documentElement.style.setProperty("--title-bg", foursightFourfrontTitleBackgroundColor);
+    let faviconElement = document.getElementById("favicon");
+    if (faviconElement) {
+        faviconElement.href = Image.FoursightFourfrontFavicon();
+    }
+}
+
+function SetFoursightSmahtStyles() {
+    document.documentElement.style.setProperty("--box-fg", foursightSmahtBoxColor);
+    document.documentElement.style.setProperty("--box-bg", foursightSmahtBoxBackground);
+    document.documentElement.style.setProperty("--box-bg-lighten", LightenDarkenColor(foursightSmahtBoxBackground, 20));
+    document.documentElement.style.setProperty("--box-bg-darken", LightenDarkenColor(foursightSmahtBoxBackground, -20));
+    document.documentElement.style.setProperty("--title-bg", foursightSmahtTitleBackgroundColor);
+    let faviconElement = document.getElementById("favicon");
+    if (faviconElement) {
+        faviconElement.href = Image.FoursightSmahtFavicon();
     }
 }
 
@@ -76,15 +95,21 @@ function GetBackgroundColor() {
     return document.documentElement.style.getPropertyValue("--box-bg");
 }
 
+function GetTitleBackgroundColor() {
+    return document.documentElement.style.getPropertyValue("--title-bg");
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
 
 const Exports = {
-    SetFoursightFourfront: SetFoursightFourfrontStyles, 
     SetFoursightCgap: SetFoursightCgapStyles,
+    SetFoursightFourfront: SetFoursightFourfrontStyles, 
+    SetFoursightSmaht: SetFoursightSmahtStyles, 
     GetForegroundColor: GetForegroundColor,
     GetBackgroundColor: GetBackgroundColor,
+    GetTitleBackgroundColor: GetTitleBackgroundColor,
     LightenDarkenColor: LightenDarkenColor
 };
 export default Exports;

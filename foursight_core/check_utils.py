@@ -1,8 +1,10 @@
-import os
-import importlib
+from collections import namedtuple
 import copy
+import importlib
 import json
 import logging
+import os
+from typing import Callable, Optional
 from dcicutils.env_base import EnvBase
 from dcicutils.env_utils import infer_foursight_from_env
 from dcicutils.misc_utils import json_leaf_subst
@@ -39,7 +41,7 @@ class CheckHandler(object):
         # which calls back to the locate_check_setup_file function AppUtilsCore here in foursight-core).
         if not os.path.exists(check_setup_file):
             raise BadCheckSetup(f"Did not locate the specified check setup file: {check_setup_file}")
-        self.CHECK_SETUP_FILE = check_setup_file # for display/troubleshooting
+        self.CHECK_SETUP_FILE = check_setup_file  # for display/troubleshooting
         with open(check_setup_file, 'r') as jfile:
             self.CHECK_SETUP = json.load(jfile)
         logger.debug(f"foursight_core/CheckHandler: Loaded check_setup.json file: {check_setup_file} ...")
@@ -374,31 +376,138 @@ class CheckHandler(object):
         Fetches the check function and runs it (returning whatever it returns)
         Return a string for failed results, CheckResult/ActionResult object otherwise.
         """
-        # make sure parameters are good
-        error_str = ' '.join(['Info: CHECK:', str(check_str), 'KWARGS:', str(check_kwargs)])
-        if len(check_str.strip().split('/')) != 2:
-            return ' '.join(['ERROR. Check string must be of form module/check_name.', error_str])
-        mod_name = check_str.strip().split('/')[0]
-        check_name = check_str.strip().split('/')[1]
+        check_method = None
+        try:
+            check_method = self._get_check_or_action_function(check_str)
+        except Exception as e:
+            return f"ERROR: {str(e)}"
         if not isinstance(check_kwargs, dict):
-            return ' '.join(['ERROR. Check kwargs must be a dict.', error_str])
-        check_mod = None
+            return "ERROR: Check kwargs must be a dictionary: {check_str}"
+        return check_method(connection, **check_kwargs)
+
+    def _get_check_or_action_function(self, check_or_action_string: str, check_or_action: str = "check") -> Callable:
+        if len(check_or_action_string.strip().split('/')) != 2:
+            raise Exception(f"{check_or_action.title()} string must be of form"
+                            "module_name/{check_or_action}_function_name: {check_or_action_string}")
+        module_name = check_or_action_string.strip().split('/')[0]
+        function_name = check_or_action_string.strip().split('/')[1]
+        module = None
         for package_name in [self.check_package_name, 'foursight_core']:
             try:
-                check_mod = self.import_check_module(package_name, mod_name)
+                module = self.import_check_module(package_name, module_name)
             except ModuleNotFoundError:
                 continue
             except Exception as e:
                 raise e
-        if not check_mod:
-            return ' '.join(['ERROR. Check module is not valid.', error_str])
-        check_method = check_mod.__dict__.get(check_name)
-        if not check_method:
-            return ' '.join(['ERROR. Check name is not valid.', error_str])
-        if not self.check_method_deco(check_method, self.CHECK_DECO) and \
-           not self.check_method_deco(check_method, self.ACTION_DECO):
-            return ' '.join(['ERROR. Check or action must use a decorator.', error_str])
-        return check_method(connection, **check_kwargs)
+        if not module:
+            raise Exception(f"Cannot find check module: {module_name}")
+        function = module.__dict__.get(function_name)
+        if not function:
+            raise Exception(f"Cannot find check function: {module_name}/{function_name}")
+        if not self.check_method_deco(function, self.CHECK_DECO) and \
+           not self.check_method_deco(function, self.ACTION_DECO):
+            raise Exception(f"{check_or_action.title()} function must use"
+                            "@{check_or_action}_function decorator: {module_name}/{function_name}")
+        return function
+
+    @staticmethod
+    def get_checks_info(search: str = None) -> list:
+        checks = []
+        registry = Decorators.get_registry()
+        for item in registry:
+            info = CheckHandler._create_check_or_action_info(registry[item])
+            if search and search not in info.qualified_name.lower():
+                continue
+            if info.is_check:
+                checks.append(info)
+        return sorted(checks, key=lambda item: item.qualified_name)
+
+    @staticmethod
+    def get_actions_info(search: str = None) -> list:
+        actions = []
+        registry = Decorators.get_registry()
+        for item in registry:
+            info = CheckHandler._create_check_or_action_info(registry[item])
+            if search and search not in info.qualified_name.lower():
+                continue
+            if info.is_action:
+                actions.append(info)
+        return sorted(actions, key=lambda item: item.qualified_name)
+
+    @staticmethod
+    def get_check_info(check_function_name: str, check_module_name: str = None) -> Optional[namedtuple]:
+        return CheckHandler._get_check_or_action_info(check_function_name, check_module_name, "check")
+
+    @staticmethod
+    def get_action_info(action_function_name: str, action_module_name: str = None) -> Optional[namedtuple]:
+        return CheckHandler._get_check_or_action_info(action_function_name, action_module_name, "action")
+
+    @staticmethod
+    def _get_check_or_action_info(function_name: str,
+                                  module_name: str = None, kind: str = None) -> Optional[namedtuple]:
+
+        function_name = function_name.strip();
+        if module_name:
+            module_name = module_name.strip();
+        if not module_name:
+            if len(function_name.split("/")) == 2:
+                module_name = function_name.split("/")[0].strip()
+                function_name = function_name.split("/")[1].strip()
+            elif len(function_name.split(".")) == 2:
+                module_name = function_name.split(".")[0].strip()
+                function_name = function_name.split(".")[1].strip()
+        registry = Decorators.get_registry()
+        for name in registry:
+            if not kind or registry[name]["kind"] == kind:
+                item = registry[name]
+                if item["name"] == function_name:
+                    if not module_name:
+                        return CheckHandler._create_check_or_action_info(item)
+                    if item["module"].endswith("." + module_name):
+                        return CheckHandler._create_check_or_action_info(item)
+
+    @staticmethod
+    def _create_check_or_action_info(info: dict) -> Optional[namedtuple]:
+
+        def unqualified_module_name(module_name: str) -> str:
+            return module_name.rsplit(".", 1)[-1] if "." in module_name else module_name
+
+        def qualified_check_or_action_name(check_or_action_name: str, module_name: str) -> str:
+            unqualified_module = unqualified_module_name(module_name)
+            return f"{unqualified_module}/{check_or_action_name}" if unqualified_module else check_or_action_name
+
+        Info = namedtuple("CheckInfo", ["kind",
+                                        "is_check",
+                                        "is_action",
+                                        "name",
+                                        "qualified_name",
+                                        "file",
+                                        "line",
+                                        "module",
+                                        "unqualified_module",
+                                        "package",
+                                        "github_url",
+                                        "args",
+                                        "kwargs",
+                                        "function",
+                                        "associated_action",
+                                        "associated_check"])
+        return Info(info["kind"],
+                    info["kind"] == "check",
+                    info["kind"] == "action",
+                    info["name"],
+                    qualified_check_or_action_name(info["name"], info["module"]),
+                    info["file"],
+                    info["line"],
+                    info["module"],
+                    unqualified_module_name(info["module"]),
+                    info["package"],
+                    info["github_url"],
+                    info["args"],
+                    info["kwargs"],
+                    info["function"],
+                    info.get("action"),
+                    info.get("check"))
 
     def init_check_or_action_res(self, connection, check):
         """

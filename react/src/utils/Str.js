@@ -33,6 +33,10 @@ function LongestCommonInitialSubstring(stringArray, f = null) {
     return longest;
 }
 
+function StringArrayToCommaSeparatedListOfTitles(sa) {
+    return sa?.map(s => s.replace(/\w\S*/g, (s) => s.charAt(0).toUpperCase() + s.substr(1).toLowerCase())).join(", ") || "";
+}
+
 // -------------------------------------------------------------------------------------------------
 // Exported functions.
 // -------------------------------------------------------------------------------------------------
@@ -40,5 +44,6 @@ function LongestCommonInitialSubstring(stringArray, f = null) {
 const exports = {
     HasValue: HasValue,
     FormatBytes: FormatBytes,
-	LongestCommonInitialSubstring: LongestCommonInitialSubstring
+	LongestCommonInitialSubstring: LongestCommonInitialSubstring,
+    StringArrayToCommaSeparatedListOfTitles: StringArrayToCommaSeparatedListOfTitles
 }; export default exports;

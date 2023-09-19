@@ -8,6 +8,11 @@ import Path from './Path';
 import Str from './Str';
 import Type from './Type';
 
+const FoursightTitleFourfront = "Fourfront"
+const FoursightTitleCgap = "CGAP"
+const FoursightTitleSmaht = "SMaHT"
+const FoursightTitleUnknown = "Unknown"
+
 // -------------------------------------------------------------------------------------------------
 // Known environments related functions.
 // -------------------------------------------------------------------------------------------------
@@ -211,33 +216,53 @@ function GetPreferredEnvName(env, header) {
 // Foursight-Fourfront vs. Foursight-CGAP and legacy Foursight related functions.
 // -------------------------------------------------------------------------------------------------
 
-function IsFoursightFourfront(header) {
-    if (Cookie.TestMode.HasFoursightFourfront()) {
+function IsFoursightFlavor(header, flavor) {
+    if (Cookie.TestMode.HasFoursightFlavor(flavor)) {
         return true;
     }
-    else if (Cookie.TestMode.HasFoursightCgap()) {
-        return false;
-    }
-    else if (!header?.loading) {
-        return header?.app?.package !== "foursight-cgap";
-    }
-    else {
-        return Cookie.Site() === "foursight-fourfront";
-    }
+    const site = !header?.loading ? header?.app?.package : Cookie.Site();
+    return site == `foursight-${flavor}` || site == flavor;
+}
+
+function IsFoursightFourfront(header) {
+    return IsFoursightFlavor(header, "foursight");
 }
 
 function IsFoursightCgap(header) {
-    if (Cookie.TestMode.HasFoursightFourfront()) {
-        return false;
+    return IsFoursightFlavor(header, "cgap");
+}
+
+function IsFoursightSmaht(header) {
+    return IsFoursightFlavor(header, "smaht");
+}
+
+function GetFoursightGitHubBaseRepoName(header) {
+    if (IsFoursightCgap(header)) {
+        return "dbmi-bgm";
     }
-    else if (Cookie.TestMode.HasFoursightCgap()) {
-        return true;
+    else if (IsFoursightFourfront(header)) {
+        return "4dn-dcic";
     }
-    else if (!header?.loading) {
-        return header?.app?.package === "foursight-cgap";
+    else if (IsFoursightSmaht(header)) {
+        return "smaht-dac";
     }
     else {
-        return Cookie.Site() === "foursight-cgap";
+        return "unknown";
+    }
+}
+
+function GetFoursightTitle(header) {
+    if (IsFoursightCgap(header)) {
+        return FoursightTitleCgap;
+    }
+    else if (IsFoursightFourfront(header)) {
+        return FoursightTitleFourfront;
+    }
+    else if (IsFoursightSmaht(header)) {
+        return FoursightTitleSmaht;
+    }
+    else {
+        return FoursightTitleUnknown;
     }
 }
 
@@ -265,22 +290,29 @@ function GetLegacyFoursightLink(header) {
 // -------------------------------------------------------------------------------------------------
 
 const exports = {
-    AllowedEnvs:          GetAllowedEnvs,
-    Current:              GetCurrentEnv,
-    Default:              GetDefaultEnv,
-    Equals:               AreSameEnvs,
-    FoursightName:        GetFoursightEnvName,
-    FullName:             GetFullEnvName,
-    IsAllowed:            IsAllowedEnv,
-    IsCurrent:            IsCurrentEnv,
-    IsDefault:            IsDefaultEnv,
-    IsFoursightFourfront: IsFoursightFourfront,
-    IsFoursightCgap:      IsFoursightCgap,
-    IsKnown:              IsKnownEnv,
-    KnownEnvs:            GetKnownEnvs,
-    LegacyFoursightLink:  GetLegacyFoursightLink,
-    PreferredName:        GetPreferredEnvName,
-    PublicName:           GetPublicEnvName,
-    RegularName:          GetRegularEnvName,
-    ShortName:            GetShortEnvName
+    AllowedEnvs:             GetAllowedEnvs,
+    Current:                 GetCurrentEnv,
+    Default:                 GetDefaultEnv,
+    Equals:                  AreSameEnvs,
+    FoursightName:           GetFoursightEnvName,
+    FoursightTitle:          GetFoursightTitle,
+    FoursightTitleCgap:      FoursightTitleCgap,
+    FoursightTitleFourfront: FoursightTitleFourfront,
+    FoursightTitleSmaht:     FoursightTitleSmaht,
+    FoursightTitleUnknown:   FoursightTitleUnknown,
+    FullName:                GetFullEnvName,
+    FoursightGitHubBase:     GetFoursightGitHubBaseRepoName,
+    IsAllowed:               IsAllowedEnv,
+    IsCurrent:               IsCurrentEnv,
+    IsDefault:               IsDefaultEnv,
+    IsFoursightCgap:         IsFoursightCgap,
+    IsFoursightFourfront:    IsFoursightFourfront,
+    IsFoursightSmaht:        IsFoursightSmaht,
+    IsKnown:                 IsKnownEnv,
+    KnownEnvs:               GetKnownEnvs,
+    LegacyFoursightLink:     GetLegacyFoursightLink,
+    PreferredName:           GetPreferredEnvName,
+    PublicName:              GetPublicEnvName,
+    RegularName:             GetRegularEnvName,
+    ShortName:               GetShortEnvName
 }; export default exports;

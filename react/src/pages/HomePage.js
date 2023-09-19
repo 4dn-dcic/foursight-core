@@ -7,7 +7,7 @@ import Image from '../utils/Image';
 import Logout from '../utils/Logout';
 import { HorizontalLine, Link, LoggedInUser } from '../Components';
 import Tooltip from '../components/Tooltip';
-import { AccountInfo } from './AccountsComponent';
+import { AccountInfoCurrent } from './AccountsComponent';
 import useHeader from '../hooks/Header';
 
 const HomePage = (props) => {
@@ -26,9 +26,9 @@ const HomePage = (props) => {
     const [ showAccountSummary, setShowAccountSummary ] = useState(false);
 
     return <>
-        <div className="container" style={{marginTop:"-16pt"}}>
+        <div className="container" style={{minWidth:"910pt",marginTop:"-16pt"}}>
             <div className="box lighten" style={{margin:"20pt",padding:"10pt"}}>
-                <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.IsFoursightFourfront(header) ? 'Fourfront' : 'CGAP'})</span></b>
+                <b style={{fontSize:"x-large"}}>Welcome to Foursight &nbsp;<span style={{fontWeight:"normal"}}>({Env.FoursightTitle(header)})</span></b>
                 <div style={{float:"right",fontSize:"x-small",textAlign:"right",marginTop:"-3pt",marginRight:"2pt"}}>
                     <span id="tooltip-home-versions">Foursight Version: <b>{header?.versions?.foursight}</b></span> <br />
                     <Tooltip id="tooltip-home-versions" position="top" size="small" text={versionsToolTip} />
@@ -48,7 +48,7 @@ const HomePage = (props) => {
                 <Tooltip id="tooltip-account-summary" position="top" size="small" text={"Click to " + (showAccountSummary ? "hide" : "show") + " account summary."} />
                 <HorizontalLine top="4pt" bottom="10pt" />
                 { showAccountSummary && <>
-                    { <div style={{marginBottom:"12pt"}}><AccountInfo account={account} header={header} decrementAccountCount={() => {}} all={true} brighten={true} /></div> }
+                    { <div style={{marginBottom:"12pt"}}><AccountInfoCurrent bg="var(--box-bg-darken)"/></div> }
                 </>}
                 <p />
                 <ul>

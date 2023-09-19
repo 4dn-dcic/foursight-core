@@ -18,6 +18,7 @@ import LoginCognitoCallback from './pages/LoginCognitoCallback';
 import LoginPage from './pages/LoginPage';
 import GacComparePage from './pages/GacComparePage';
 import InfrastructurePage from './pages/aws/InfrastructurePage';
+import IngestionSubmissionsPage from './pages/IngestionSubmissionsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import Page from './Page';
 import RedirectPage from './pages/RedirectPage';
@@ -147,6 +148,11 @@ const App = () => {
                         <Page.KnownEnvRequired>
                             <PortalAccessKeyPage />
                         </Page.KnownEnvRequired>
+                    }/>
+                    <Route path="/api/react/:environ/ingestion/submissions" element={
+                        <Page.AuthorizationRequired>
+                            <IngestionSubmissionsPage />
+                        </Page.AuthorizationRequired>
                     }/>
                     <Route path="/api/react/:environ/apicache" element={
                         <Page.AuthorizationRequired>

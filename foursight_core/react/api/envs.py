@@ -6,6 +6,7 @@ from dcicutils import ff_utils
 from dcicutils.env_utils import foursight_env_name
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import find_association
+from ...app import app
 from .gac import Gac
 
 logging.basicConfig()
@@ -81,15 +82,19 @@ class Envs:
             try:
                 # Note we must lower case the email to find the user. This is because all emails
                 # in the database are lowercased; it causes issues with OAuth if we don't do this.
+                known_env_name = known_env["full_name"]
+                envs = app.core.init_environments(known_env_name)
+                connection = app.core.init_connection(known_env_name, envs)
                 user = ff_utils.get_metadata('users/' + email.lower(),
-                                             ff_env=known_env["full_name"], add_on="frame=object&datastore=database")
+                                             key=connection.ff_keys,
+                                             add_on="frame=object&datastore=database")
                 if self._is_user_allowed_access(user):
                     # Since this is in a loop, for each env, this setup here will end up getting first/last name
                     # from the last env in the loop; doesn't really matter, just pick one set; this is just for
                     # informational/display purposes in the UI.
                     first_name = user.get("first_name")
                     last_name = user.get("last_name")
-                    allowed_envs.append(known_env["full_name"])
+                    allowed_envs.append(known_env_name)
             except Exception as e:
                 if raise_exception:
                     raise

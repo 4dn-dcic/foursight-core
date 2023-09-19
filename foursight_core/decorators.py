@@ -87,10 +87,16 @@ class Decorators(object):
             "package": func_package,
             "github_url": get_github_url(func_package, func_file, func_line),
             "args": default_args,
-            "kwargs": default_kwargs
+            "kwargs": default_kwargs,
+            "function": func
         }
         if associated_action:
             registry_record["action"] = associated_action
+        elif kind == "action":
+            for name in _decorator_registry:
+                item = _decorator_registry[name]
+                if item.get("action") == func_name:
+                    registry_record["check"] = item["name"] 
         _decorator_registry[func_name] = registry_record
 
     def check_function(self, *default_args, **default_kwargs):

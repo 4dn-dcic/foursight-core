@@ -163,7 +163,7 @@ class Auth:
                     # For testing only, we simulate a portal access key error (e.g. due to expiration),
                     # which would manifest itself, primarily and most importantly, here, on login.
                     raise Exception("test_mode_access_key_simulate_error")
-            allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email, raise_exception=True)
+            allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email)
             user_exception = False
         except Exception as e:
             #

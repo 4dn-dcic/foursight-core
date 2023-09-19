@@ -160,7 +160,7 @@
       cursor: default;
     }
     .dropdown-content a:hover {background-color: #365e75; color:yellow; cursor:pointer;}
-    .dropdown-content span:hover {color:blue;}
+    .dropdown-content span:hover {color:var(--box-fg-darken);}
     .dropdown:hover .dropdown-content {display: block;}
     .dropdown:hover .dropdown-button {color: black;}
 
@@ -362,8 +362,8 @@
   }
 }
 @font-face {
-   font-family: 'Sansation Bold';
-   src: url(https://allfont.ru/cache/fonts/sansation-bold_1ed7ffb329f73655e972f658a6514075.ttf);
+    font-family: "Sansation Bold";
+    src:url("https://db.onlinewebfonts.com/t/a95ede42168248621cd7c0bcc5e9dd6c.ttf")format("truetype");
 }
 .title-font {
    font-family: 'Sansation Bold', 'Arial';
@@ -394,6 +394,9 @@
 }
 .box.bigmargin {
     margin-top: 3.6pt;
+}
+.box.bigmarginbottom {
+    margin-bottom: 6.6pt;
 }
 .box.smallpadding {
     padding: 0.40em 0.4em 0 0.4em;

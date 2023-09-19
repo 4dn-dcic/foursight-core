@@ -8,6 +8,9 @@ import Type from '../utils/Type';
 import Tooltip from '../components/Tooltip';
 import Uuid from 'react-uuid';
 
+const EMPTY_SELECT_KEY = "-";
+const EMPTY_SELECT_VALUE = "-";
+
 // Generic box to edit (create, update, delete) a list of plain input fields representing some data record.
 // If the onCreate argument is specified then assume this is a create.
 
@@ -31,9 +34,17 @@ const DynamicSelect = (props) => {
 
     return <>
         <select id={props.id} className="select" value={selected || ""} onChange={onChange} disabled={props.disabled || values.loading}>
-            { !props.required && <option key="-" value="-">-</option> }
+            { (!props.required || true) && <option key={EMPTY_SELECT_KEY} value={EMPTY_SELECT_VALUE}>-</option> }
             { values.map(value => {
-                if (value.id) return <option key={value.id} value={value.id}>{value.title || value.name}</option>; else return null;
+                if (value.id) {
+                    const MAX_TITLE_LENGTH = 30;
+                    let title = value.title;
+                    if (title.length > MAX_TITLE_LENGTH) title = title.substring(0, MAX_TITLE_LENGTH) + " ...";
+                    return <option key={value.id} value={value.id}>{title || value.key}</option>
+                }
+                else {
+                    return null;
+                }
             })}
         </select>
         { props.subComponent && <>
@@ -52,21 +63,21 @@ const InputLine = (props) => {
         <input
             className="input icon-rtl"
             placeholder={input.placeholder || input.label}
-            id={input.name}
+            id={input.key}
             defaultValue={valueOf(input)}
             onChange={handleChange}
             readOnly={readonly}
             disabled={isDisabled()}
             autoFocus={input.focus ? true : false} />
         {  (input.readonlyOverridableOnCreate && props.isCreate) && <>
-            <small id={`tooltip-${input.name}`} className="pointer">&nbsp;&nbsp;
+            <small id={`tooltip-${input.key}`} className="pointer">&nbsp;&nbsp;
                 { readonly ? <>
                     <span onClick={() => setReadonly(false)}><img src={Image.EditIcon()} style={{height:"22px",marginBottom:"6px"}} /></span>
                 </>:<>
-                    <span onClick={() => setReadonly(true)}><img src={Image.EditIcon()} style={{height:"22px",marginBottom:"6px",marginRight:"-8px"}} /></span>
+                    <span onClick={() => { setReadonly(true); }}><img src={Image.EditIcon()} style={{height:"22px",marginBottom:"6px",marginRight:"-8px"}} /></span>
                 &nbsp;&nbsp;</> }
             </small>
-            <Tooltip id={`tooltip-${input.name}`} position="top" text={`Click to ${readonly ? "allow" : "disallow"} setting of this field.`} />
+            <Tooltip id={`tooltip-${input.key}`} position="top" text={`Click to ${readonly ? "allow" : "disallow"} setting of this field.`} />
         { (input.readonlyOverridableOnCreate && !readonly && input.readonlyOverridableOnCreateMessage) && <>
             <br />
             <small><b style={{color:"red"}}>
@@ -138,7 +149,7 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
 
     function setFocus() {
         for (const input of inputs) {
-            const element = document.getElementById(input.name);
+            const element = document.getElementById(input.key);
             if (input.focus) {
                 element.focus();
             }
@@ -165,12 +176,23 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
         const input = getInputByName(e.target.id);
         if (input.required) {
             const currentValue = e.target.value?.toString();
-            inputsRequiredStatus[input.name] = (currentValue?.toString()?.length > 0);
+            if (input.type == "select") {
+                inputsRequiredStatus[input.key] =
+                    (currentValue?.length > 0) && (currentValue !== EMPTY_SELECT_VALUE);
+            }
+            else {
+                inputsRequiredStatus[input.key] = (currentValue?.length > 0);
+            }
             setInputsRequiredStatus(current => ({...inputsRequiredStatus}));
         }
         if (input.type === "email") {
             const currentValue = e.target.value?.toString();
-            inputsRequiredStatus[input.name] = isValidEmail(currentValue);
+            inputsRequiredStatus[input.key] = isValidEmail(currentValue);
+            setInputsRequiredStatus(current => ({...inputsRequiredStatus}));
+        }
+        else if (input.type === "uuid") {
+            const currentValue = e.target.value?.toString();
+            inputsRequiredStatus[input.key] = isValidUuid(currentValue);
             setInputsRequiredStatus(current => ({...inputsRequiredStatus}));
         }
         //
@@ -186,7 +208,7 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
         const dependentInputs = getInputDependencies(input); 
         for (const dependentInput of dependentInputs) {
             if (typeof(dependentInput.value) === "function") {
-                const dependentElement = document.getElementById(dependentInput.name);
+                const dependentElement = document.getElementById(dependentInput.key);
                 if (dependentElement) {
                     const dependentValue = dependentInput.value(e.target.value?.toString());
                     if (dependentValue !== undefined) {
@@ -202,7 +224,7 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
     function getInputDependencies(input) {
         const results = [];
         if (input) {
-            const inputName = input.name;
+            const inputName = input.key;
             for (const input of inputs) {
                 if (input.dependsOn === inputName) {
                     results.push(input);
@@ -212,9 +234,9 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
         return results;
     }
 
-    function getInputByName(name) {
+    function getInputByName(key) {
         for (const input of inputs) {
-            if (input.name === name) {
+            if (input.key === key) {
                 return input;
             }
         }
@@ -227,7 +249,7 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                 continue;
             }
             const originalValue = valueOf(input);
-            const element = document.getElementById(input.name);
+            const element = document.getElementById(input.key);
             const currentValue = element.value?.toString();
             if (originalValue?.toString() !== currentValue?.toString()) {
                 return true;
@@ -238,7 +260,7 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
 
     function resetInputValuesToOriginal() {
         for (const input of inputs) {
-            const element = document.getElementById(input.name);
+            const element = document.getElementById(input.key);
             if (element) {
                 element.value = valueOf(input);
             }
@@ -249,12 +271,12 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
     function gatherCurrentInputValues() {
         const values = {}
         for (const input of inputs) {
-            let value = document.getElementById(input.name).value;
+            let value = document.getElementById(input.key).value;
             if (!input.readonly || (input.readonlyOverridableOnCreate && Str.HasValue(value))) {
                 if (input.type === "boolean") {
                     value = (value.toString().toLowerCase() === "true") ? true : false;
                 }
-                values[input.name] = value;
+                values[input.key] = value;
             }
         }
         return values;
@@ -278,25 +300,32 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
     }
 
     function isValidEmail(email) {
-        const valid = /\S+@\S+\.\S+/.test(email);
-        return valid;
+        return /\S+@\S+\.\S+/.test(email);
+    }
+
+    function isValidUuid(uuid) {
+        return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid);
     }
 
     function setCurrentInputsRequiredStatus() {
         const inputsRequiredStatus = {};
         for (const input of inputs) {
             if (input.required) {
-                inputsRequiredStatus[input.name] = document.getElementById(input.name)?.value?.toString()?.length > 0;
+                inputsRequiredStatus[input.key] = document.getElementById(input.key)?.value?.toString()?.length > 0;
             }
             if (input.type === "email") {
-                inputsRequiredStatus[input.name] = isValidEmail(document.getElementById(input.name)?.value?.toString());
+                inputsRequiredStatus[input.key] = isValidEmail(document.getElementById(input.key)?.value?.toString());
             }
         }
         setInputsRequiredStatus(inputsRequiredStatus);
     }
 
     function inputRequiredIndicatorColor(input) {
-        return inputsRequiredStatus[input.name] ? "green" : "red";
+        return inputsRequiredStatus[input.key] ? "green" : "red";
+    }
+
+    function inputRequiredIndicatorTooltip(input) {
+        return inputsRequiredStatus[input.key] ? "Required and set." : "Required and NOT set.";
     }
 
     function allowSubmit() {
@@ -322,19 +351,19 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                 <table><tbody>
                 { inputs?.map((input, index) =>
                     <tr key={input.label}>
-                        <td align={input.label_align || 'right'} style={{verticalAlign:"top",paddingTop:"0.6em",paddingRight:"0.4em",whiteSpace:"nowrap"}}>
+                        <td align={input.label_align || "right"} style={{verticalAlign:"top",paddingTop:"0.6em",paddingRight:"0.4em",whiteSpace:"nowrap"}}>
                             {input.label}:
                         </td>
                         <td style={{paddingTop: "0.6em",whiteSpace:"nowrap"}}>
                             { input.type === "boolean" ? <>
-                                <select className="select" id={input.name} defaultValue={valueOf(input)} onChange={handleChange} disabled={isDisabled() || input.readonly}>
+                                <select className="select" id={input.key} defaultValue={valueOf(input)} onChange={handleChange} disabled={isDisabled() || input.readonly}>
                                     <option value={false}>False</option>
                                     <option value={true}>True</option>
                                 </select>
                             </>:<>
                                 { input.type === "select" ? <>
                                     <DynamicSelect
-                                        id={input.name}
+                                        id={input.key}
                                         url={input.url}
                                         required={input.required}
                                         selected={valueOf(input)}
@@ -346,22 +375,14 @@ const EditBox = ({ inputs, setInputs, title, loading, onCreate, onUpdate, onDele
                                     />
                                 </>:<>
                                     <InputLine input={input} valueOf={valueOf} handleChange={handleChange} isDisabled={isDisabled} isCreate={!Type.IsNull(onCreate)} />
-{/*
-                                    <input
-                                        className="input icon-rtl"
-                                        placeholder={input.placeholder || input.label}
-                                        id={input.name}
-                                        defaultValue={valueOf(input)}
-                                        onChange={handleChange}
-                                        readOnly={input.readonly}
-                                        disabled={isDisabled()}
-                                        autoFocus={input.focus ? true : false} />
-*/}
                                 </>}
                             </>}
-                            { input.required &&
-                                <small style={{fontWeight:"bold",paddingLeft:"0.6em",color:inputRequiredIndicatorColor(input)}}>{Char.Check}</small>
-                            }
+                            { input.required && <>
+                                <span id={`tooltip-required-${input.key}`}>
+                                    <small style={{fontSize:"large",fontWeight:"bold",paddingLeft:"0.6em",color:inputRequiredIndicatorColor(input)}}>{Char.Check}</small>
+                                    <Tooltip id={`tooltip-required-${input.key}`} position="bottom" text={inputRequiredIndicatorTooltip(input)} />
+                                </span>
+                            </> }
                         </td>
                     </tr>
                 )}

@@ -23,30 +23,31 @@ const Warnings = ({ header }) => {
     return <>
         <PortalSslCertificateWarning header={header} />
         <PortalAccessKeyWarning header={header} />
+        <ElasticSearchAccessWarning header={header} />
     </>
 }
 
 const PortalSslCertificateWarning = () => {
     const [ args ] = useSearchParams();
     const sslCertificateInfo = useFetch(`/certificates`);
-    if (sslCertificateInfo.loading) return <></>
-    const sslCertificateInfoPortal = sslCertificateInfo.find(certificate => certificate.name === "Portal");
-    if (sslCertificateInfoPortal && sslCertificateInfoPortal.expires_soon) {
-        return <WarningBar>
-            <b>Warning: SSL certificate for associated Portal will expire soon</b>
-            &nbsp;{Char.RightArrow}&nbsp; {sslCertificateInfoPortal.expires_at} &nbsp;{Char.RightArrow}&nbsp;
-            {Time.FromNow(sslCertificateInfoPortal.expires_at, true, false)}
-            &nbsp;{Char.RightArrow}&nbsp;
-            <Link to={Client.Path("/certificates")} style={{color:"inherit"}}>View</Link>
-        </WarningBar>
+    if (!sslCertificateInfo.loading) {
+        const sslCertificateInfoPortal = sslCertificateInfo.find(certificate => certificate.name === "Portal");
+        if (sslCertificateInfoPortal && sslCertificateInfoPortal.expires_soon) {
+            return <WarningBar>
+                <b>Warning: SSL certificate for associated Portal will expire soon</b>
+                &nbsp;{Char.RightArrow}&nbsp; {sslCertificateInfoPortal.expires_at} &nbsp;{Char.RightArrow}&nbsp;
+                {Time.FromNow(sslCertificateInfoPortal.expires_at, true, false)}
+                &nbsp;{Char.RightArrow}&nbsp;
+                <Link to={Client.Path("/certificates")} style={{color:"inherit"}}>View</Link>
+            </WarningBar>
+        }
     }
 }
 
 const PortalAccessKeyWarning = ({ header }) => {
     const portalAccessKeyInfo = useFetch(`/portal_access_key`);
-    if (portalAccessKeyInfo.loading) return <></>
-    if (portalAccessKeyInfo) {
-        if (portalAccessKeyInfo?.data?.expires_soon) {
+    if (!portalAccessKeyInfo.loading) {
+        if (portalAccessKeyInfo.data?.expires_soon) {
             return <WarningBar>
                 <b>Warning: Access key for associated Portal will expire soon</b>
                 &nbsp;{Char.RightArrow}&nbsp; {portalAccessKeyInfo.data.expires_at} &nbsp;{Char.RightArrow}&nbsp;
@@ -62,6 +63,16 @@ const PortalAccessKeyWarning = ({ header }) => {
                 <Link to={Client.Path("/portal_access_key")} style={{color:"inherit"}}>View</Link>
             </WarningBar>
         }
+    }
+}
+
+const ElasticSearchAccessWarning = ({ header }) => {
+    const info = useFetch(`//elasticsearch`);
+    if (!info.loading && !info.data?.health) {
+        return <WarningBar>
+            <b>Warning: Cannot connect to ElasticSearch server
+                {info.data?.url && <>{Char.RightArrow} {info.data.url} </>}</b>
+        </WarningBar>
     }
 }
 
@@ -95,10 +106,11 @@ const MainMenu = ({ header }) => {
             <span className="dropdown-button"><img alt="menu" style={{marginLeft:"-4px",marginTop:"-1px"}} src={Image.MenuIcon()} height="20"/></span>
             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                 <MenuItem path="/home" label="Home" />
-                <MenuItem path="/info" label="General Info" />
+                <MenuItem path="/info" label="Info" />
                 <MenuItem path="/checks" label="Checks" />
                 <MenuSeparator />
                 <MenuItem path="/aws/infrastructure" label="Infrastructure" />
+                <MenuItem path="/ingestion/submissions" label="Ingestion" />
                 <MenuItem path="/aws/s3" label="S3" />
                 <MenuItem path="/users" label="Users" />
                 <MenuSeparator />
@@ -163,22 +175,13 @@ const Header = (props) => {
     const navigate = useNavigate();
     const [ fetching ] = useFetching();
 
-    let titleBackgroundColor = Env.IsFoursightFourfront(header) ? "#14533C" : "#143C53";
+    let titleBackgroundColor = Styles.GetTitleBackgroundColor(header);
     let subTitleBackgroundColor = Styles.LightenDarkenColor(Styles.GetBackgroundColor(), -10);
-
-    function getTitleBackgroundColorWhileLoading() {
-        if (Auth.IsLoggedIn(header)) {
-            return titleBackgroundColor;
-        }
-        else {
-            return "#444444";
-        }
-    }
 
     return <>
         { header.loading ? (
             <div style={{width:"100%"}}>
-            <table style={{width:"100%",height:"42px",background:getTitleBackgroundColorWhileLoading()}}><tbody>
+            <table style={{width:"100%",height:"42px",background:"#444444"}}><tbody>
             <tr>
                 <td width="1%" style={{height:"42px",paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <div style={{width:"200px"}} />
@@ -198,6 +201,7 @@ const Header = (props) => {
                     <span style={{position:"relative",bottom:"5pt"}}>&nbsp;<BarSpinner loading={header.loading && !header.error} color={'yellow'} size={150} style={{marginRight:"20px"}}/></span>
                 </td>
             </tr>
+            <Warnings header={header} />
             </tbody></table>
             <table style={{width:"100%",height:"22px",background:"lightgray"}}><tbody>
             <tr><td style={{height:"27px",paddingLeft:"2pt",whiteSpace:"nowrap",background:"lightgray"}} /></tr>
@@ -211,11 +215,17 @@ const Header = (props) => {
             <tr>
                 <td width="38%" style={{paddingLeft:"2pt",whiteSpace:"nowrap"}}>
                     <a href={Client.PortalLink(header)} target="_blank" rel="noreferrer">
-                        { Env.IsFoursightFourfront(header) ? (<span>
-                            <img alt="foursight" style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={Image.FoursightFourfrontLogo()} height="32" width="44" />
-                        </span>):(<span>
+                        { Env.IsFoursightCgap(header) ? (<>
                             <img alt="foursight" src={Image.FoursightCgapLogo()} width="130" />
-                        </span>)}
+                        </>):(<>
+                            { Env.IsFoursightFourfront(header) ? (<>
+                                <img alt="foursight" style={{marginLeft:"14px",marginTop:"5px",marginBottom:"5px"}} src={Image.FoursightFourfrontLogo()} height="32" width="44" />
+                            </>):(<>
+                                <div style={{color:"yellow",fontSize:"18pt",marginTop:"5pt",marginBottom:"5pt",marginLeft:"8pt"}}>
+                                    SMaHT
+                                </div>
+                            </>)}
+                        </>)}
                     </a>
                 </td>
                 <td width="24%" align="center" style={{whiteSpace:"nowrap"}}>

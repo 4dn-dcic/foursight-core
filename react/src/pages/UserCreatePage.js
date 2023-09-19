@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useFetch from '../hooks/Fetch';
 import { Link } from '../Components';
@@ -10,28 +10,13 @@ import UserDefs from './UserDefs';
 const UserCreatePage = () => {
     
     const user = useFetch(Server.Url("/users"), { method: "POST", nofetch: true });
-    const [ inputs, _ ] = UserDefs.useUserInputs();
+    const [ inputs, setInputs ] = useState(UserDefs.useUserInputs("create"));
+    const userInfo = UserDefs.useUserInfo();
 
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const institutionInput = inputs.find(input => input.name === "institution");
-        if (institutionInput) {
-            institutionInput.subComponent =
-                (institution) =>
-                    <UserDefs.PrincipalInvestigatorLine institution={institution} />
-        }
-    }, []);
-
     function onCreate(values) {
-        if (values.admin) {
-            delete values["admin"]
-            values = {...values, "groups": [ "admin" ] }
-        }
-        else {
-            delete values["admin"]
-            values = {...values, "groups": [] }
-        }
+        values = userInfo?.normalizeUserForUpdate(user, values);
         user.refresh({
             url: Server.Url(`/users`),
             method: "POST",

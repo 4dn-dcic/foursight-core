@@ -35,7 +35,7 @@ export const PaginationComponent = ({ pages, page, onChange, refresh, loading, s
             </div>
         </div>
         </td>
-        { refresh &&
+        { refresh && !loading &&
             <td>
                 <span style={{cursor:"pointer"}} onClick={refresh}>
                     <span style={{border:"1px solid lightgray",borderRadius:"3px",marginLeft:"6pt",padding:"1pt 4pt 1pt 4pt",fontSize:"14pt",cursor:"pointer"}}>
@@ -45,7 +45,7 @@ export const PaginationComponent = ({ pages, page, onChange, refresh, loading, s
             </td>
         }
         { spinner &&
-           <td style={{whiteSpace:"nowrap",paddingLeft:"6pt",paddingBottom:"2pt"}}>
+           <td style={{whiteSpace:"nowrap",paddingLeft:"2pt",paddingBottom:"2pt"}}>
                 { loading && <ScaleSpinner label="" condition={true||loading} width="3px" height="20px" color={Styles.GetForegroundColor()} /> }
            </td>
        }

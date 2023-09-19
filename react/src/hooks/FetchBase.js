@@ -19,8 +19,8 @@ import useGlobal from '../hooks/Global';
 
 const DEFAULT_METHOD = "GET";
 const DEFAULT_TIMEOUT = 30 * 1000;
-const DEFAULT_DELAY = () => { return TEST_MODE_DELAY > 0 ? TEST_MODE_DELAY : 0; };
-const TEST_MODE_DELAY = Cookie.TestMode.FetchSleep();
+const DEFAULT_TEST_MODE_DELAY = Cookie.TestMode.FetchSleep();
+const DEFAULT_DELAY = () => { return DEFAULT_TEST_MODE_DELAY > 0 ? DEFAULT_TEST_MODE_DELAY : 0; };
 const MAX_SAVE = 25;
 
 // This useFetch React hook is used to centrally facilitate all App HTTP fetches.
@@ -181,9 +181,10 @@ export const useFetch = (url, args) => {
     // want to set the initial value for the data here at definition time.
     //
     const initial = Type.IsObject(url) ? url.initial : (Type.IsObject(args) ? args.initial : null);
+    const nofetch = Type.IsObject(url) ? url.nofetch : (Type.IsObject(args) ? args.nofetch : false);
 
     const [ data, setData ] = useState(initial);
-    const [ loading, setLoading ] = useState(false);
+    const [ loading, setLoading ] = useState(nofetch ? false : true);
     const [ status, setStatus ] = useState(0);
     const [ timeout, setTimeout ] = useState(false);
     const [ error, setError ] = useState(null);
@@ -216,6 +217,10 @@ export const useFetch = (url, args) => {
         // leaving this here for now in case we run into again; see how it's done.
         // get ["loading"]() { return loading; }
     };
+
+    response.setLoading = (function(value) {
+        assembledArgs.setLoading(value)
+    }).bind(response);
 
     response.fetch = (function(url, args) {
         _doFetch(assembleArgs(url, args, true), this && this.__usefetch_response === true ? this.data : undefined, this);
@@ -419,7 +424,7 @@ function _doFetch(args, current = undefined, fetcher) {
         if (args.cache) {
             Debug.Info(`FETCH CACHING RESPONSE: ${args.method} ${args.url} -> HTTP ${status}`);
             _fetchCache[args.url] = {
-                data: data,
+                data: fetcher.data,
                 status: status
             }
         }
