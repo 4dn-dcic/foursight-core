@@ -501,7 +501,7 @@ tox = ["tox"]
 
 [[package]]
 name = "dcicutils"
-version = "8.0.0"
+version = "7.12.0.1b1"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 optional = false
 python-versions = "*"
@@ -1626,4 +1626,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7,<3.12"
-content-hash = "e4eefec6d27bb2207c60270fefe0f0fd86d75933d919cbc770aec878f1a3211e"
+content-hash = "d62789f891bb7d25ac93bed8d99ea3fa95625cfde7afc07f35f07dc216b930bf"
