@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+5.0.0
+=====
+* Update to Python 3.11.
+
+
 4.5.0
 =====
 * 2023-08
