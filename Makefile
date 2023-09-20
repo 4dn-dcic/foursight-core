@@ -12,6 +12,10 @@ build:  react
 	make configure
 	poetry install
 
+build-noreact:
+	make configure
+	poetry install
+
 update:
 	poetry update
 
