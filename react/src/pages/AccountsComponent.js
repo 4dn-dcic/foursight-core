@@ -174,9 +174,9 @@ const SecretsDropdown = ({ header, account, name }) => {
         { isCurrentAccount(header, account) && <>
             <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
             { showIdentity ? <>
-                <b onClick={toggleShowIdentity} className="pointer">Secrets {Char.DownArrow}</b>
+                <b onClick={toggleShowIdentity} className="pointer">GAC {Char.DownArrow}</b>
             </>:<>
-                <span onClick={toggleShowIdentity} className="pointer">Secrets <b>{Char.UpArrow}</b></span>
+                <span onClick={toggleShowIdentity} className="pointer">GAC <b>{Char.UpArrow}</b></span>
             </> }
             { showIdentity && <Secrets name={name} embedded={true} /> }
         </> }
