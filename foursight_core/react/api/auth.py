@@ -35,7 +35,7 @@ class Auth:
             self._redis = RedisBase(create_redis_client(
                 url=os.environ['REDIS_HOST'])
             ) if 'REDIS_HOST' in os.environ else None
-        except redis.exceptions.ConnectionError:
+        except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
             PRINT('Cannot connect to Redis')
             PRINT('This error is expected when deploying with remote (ElastiCache) Redis')
             self._redis = None
