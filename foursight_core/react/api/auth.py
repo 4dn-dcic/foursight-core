@@ -38,7 +38,7 @@ class Auth:
         """
         if not self._redis:
             # 2023-09-21: Moved this from __init__ to here;
-            # it speeds up provision/deploy from 4dn-cloud-infra immensely.
+            # it speeds up provision/deploy from 4dn-cloud-infra.
             try:
                 self._redis = RedisBase(create_redis_client(
                     url=os.environ['REDIS_HOST'])
