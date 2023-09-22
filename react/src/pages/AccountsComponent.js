@@ -325,7 +325,7 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
                  </div>
             </> }
             { isCurrentAccount(header, account) && <>
-                { showEcosystems && <EcosystemsBox /> }
+                { showEcosystems && <EcosystemsBox bucket={account.get("foursight.s3.global_env_bucket")} /> }
             </> }
         </Row>
         <Row title="S3 Encryption" value={account.get("foursight.s3.has_encryption") ? "Yes" : "No"} showEmpty={true}
@@ -357,7 +357,7 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
                 </span>
                 <Tooltip id={"tooltip-aws-user-arn"} text={`Associated IAM ARN: ${info.data?.app?.credentials?.aws_user_arn}`} position="bottom" />
         </Row>
-        <Row title="Default Environment" value={account.get("foursight.default_env.full_name")} additionalValue={account.get("foursight.env_count") ? `${account.get("foursight.env_count")} total` : ""}>
+        <Row title="Environment" value={`Default: ${account.get("foursight.default_env.full_name")}`} additionalValue={account.get("foursight.env_count") ? `${account.get("foursight.env_count")} total` : ""}>
             { isCurrentAccount(header, account) && <>
                 &nbsp;|&nbsp;
                 { !showKnownEnvs ? <>
@@ -382,8 +382,9 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
                         <b onClick={toggleShowEcosystem} className="pointer">Ecosystem: {ecosystems.data?.current?.replace(".ecosystem", "")}&nbsp;<b>{Char.DownArrow}</b></b>
                     :   <b onClick={toggleShowEcosystem} className="pointer">Ecosystem&nbsp;<b>{Char.DownArrow}</b></b> }
                 </> }
+                <ExternalLink href={`https://s3.console.aws.amazon.com/s3/object/${account.get('foursight.s3.global_env_bucket')}?region=us-east-1&prefix=${ecosystems.data?.current}`} style={{marginLeft:"4pt",position:"relative",bottom:"-1px"}} />
                 { showKnownEnvs && <> <KnownEnvsBox header={header} account={account} /> </>}
-                { showEcosystem && <EcosystemBox /> }
+                { showEcosystem && <EcosystemBox bucket={account.get("foursight.s3.global_env_bucket")} /> }
                 { showEnvVariables && <> <EnvVariablesBox header={header} account={account} /> </>}
             </> }
         </Row>
@@ -434,7 +435,7 @@ const AccountInfoRight = ({ account, header }) => {
         <VersionRow title="boto3" version={account.get("foursight.versions.boto3")} />
         <VersionRow title="botocore" version={account.get("foursight.versions.botocore")} />
         <VersionRow title="chalice" version={account.get("foursight.versions.chalice")} />
-        <VersionRow title="redis" version={account.get("foursight.versions.redis")} using={header.resources?.redis_running} />
+        <VersionRow title="redis" version={account.get("foursight.versions.redis")} using={account.get("foursight.resources.redis_running")} />
         <VersionRow title="python" version={account.get("foursight.versions.python")} />
         <Separator />
         <VersionRow title="portal" version={account.get("portal.versions.portal")} />
@@ -691,7 +692,7 @@ const EcosystemBox = () => {
     </>
 }
 
-const EcosystemsBox = () => {
+const EcosystemsBox = ({ bucket }) => {
     let ecosystems = useFetch("/ecosystems", { cache: true });
     const style={background:"inherit", border:"1pt gray dotted", marginTop:"2pt", marginBottom:"2pt", padding:"6pt", color:"inherit"};
     if (ecosystems.loading) {
@@ -710,16 +711,16 @@ const EcosystemsBox = () => {
     return <>
             { currentEcosystemData &&
                 <pre className="box" style={style} key={currentEcosystemName}>
-                    <b><u>{currentEcosystemName}</u></b>&nbsp;(<i>current</i>)<p />
+                    <b><u>{currentEcosystemName}</u></b><ExternalLink href={`https://s3.console.aws.amazon.com/s3/object/${bucket}?region=us-east-1&prefix=${currentEcosystemName}`} style={{marginLeft:"6pt"}} />&nbsp;(<i>current</i>)<p />
                     {Yaml.Format(currentEcosystemData)}
                 </pre>
             }
             { Object.keys(ecosystems.data).map((ecosystemName, index) => {
                 const ecosystemData = ecosystems.data[ecosystemName];
                 return <pre className="box" style={style} key={ecosystemName}>
-                    <b><u>{ecosystemName}</u></b><p />
+                    <b><u>{ecosystemName}</u></b><ExternalLink href={`https://s3.console.aws.amazon.com/s3/object/${bucket}?region=us-east-1&prefix=${ecosystemName}`} style={{marginLeft:"6pt"}} /><p />
                     {Yaml.Format(ecosystemData)}
-        </pre>
+                </pre>
             })}
     </>
 }

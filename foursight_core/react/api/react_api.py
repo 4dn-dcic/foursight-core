@@ -1586,6 +1586,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             response["foursight"]["rds"] = foursight_header_json.get("resources", {}).get("rds")
             response["foursight"]["rds_name"] = foursight_header_json.get("resources", {}).get("rds_name")
             response["foursight"]["sqs_url"] = foursight_header_json.get("resources", {}).get("sqs")
+            response["foursight"]["redis_running"] = foursight_header_json.get("resources", {}).get("redis_running")
             foursight_header_json_s3 = foursight_header_json.get("s3")
             # TODO: Maybe eventually make separate API call (to get Portal Access Key info for any account)
             # so that we do not have to wait here within this API call for this synchronous API call.
