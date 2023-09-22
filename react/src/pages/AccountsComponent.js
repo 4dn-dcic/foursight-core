@@ -171,7 +171,7 @@ const SecretsDropdown = ({ header, account, name }) => {
     const [ showIdentity, setShowIdentity ] = useState(false);
     function toggleShowIdentity() { setShowIdentity(!showIdentity); }
     return <>
-        { isCurrentAccount(header, account) && <>
+        { isCurrentAccount(header, account) && <span id={`tooltip-gac-${name}`}>
             <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
             { showIdentity ? <>
                 <b onClick={toggleShowIdentity} className="pointer">GAC {Char.DownArrow}</b>
@@ -179,7 +179,8 @@ const SecretsDropdown = ({ header, account, name }) => {
                 <span onClick={toggleShowIdentity} className="pointer">GAC <b>{Char.UpArrow}</b></span>
             </> }
             { showIdentity && <Secrets name={name} embedded={true} /> }
-        </> }
+        </span> }
+        <Tooltip id={`tooltip-gac-${name}`} text={`Global Application Configuration (AWS Secrets): ${name}`} position="right" shape="squared" />
     </>
 }
 
@@ -365,11 +366,12 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
                     <b onClick={toggleShowKnownEnvs} className="pointer">Environments {Char.DownArrow}</b>
                 </> }
                 &nbsp;|&nbsp;
-                { !showEnvVariables ? <>
+                { !showEnvVariables ? <span id={`tooltip-envvar`}>
                     <span onClick={toggleShowEnvVariables} className="pointer">Variables <b>{Char.UpArrow}</b></span>
-                </>:<>
+                </span>:<span>
                     <b onClick={toggleShowEnvVariables} className="pointer">Variables {Char.DownArrow}</b>
-                </> }
+                </span> }
+                <Tooltip id={`tooltip-envvar`} text={`Environment variable values.`} position="top" />
                 &nbsp;|&nbsp;
                 { !showEcosystem ? <>
                     { ecosystems.data?.current ?
