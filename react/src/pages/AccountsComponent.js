@@ -435,7 +435,7 @@ const AccountInfoRight = ({ account, header }) => {
         <VersionRow title="boto3" version={account.get("foursight.versions.boto3")} />
         <VersionRow title="botocore" version={account.get("foursight.versions.botocore")} />
         <VersionRow title="chalice" version={account.get("foursight.versions.chalice")} />
-        <VersionRow title="redis" version={account.get("foursight.versions.redis")} using={account.get("foursight.resources.redis_running")} />
+        <VersionRow title="redis" version={account.get("foursight.versions.redis")} using={account.get("foursight.redis_running")} />
         <VersionRow title="python" version={account.get("foursight.versions.python")} />
         <Separator />
         <VersionRow title="portal" version={account.get("portal.versions.portal")} />
