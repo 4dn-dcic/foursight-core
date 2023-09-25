@@ -22,6 +22,7 @@ Change Log
     awards/labs for foursight-fourfront (previous oversight).
   * Fixed up users pages.
 * Added UI warning bar about inability to connect to ElasticSearch.
+* A few minor UI tweaks; one WRT showing ff_link (like pre-React version) for check results.
 
 
 4.4.0
