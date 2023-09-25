@@ -71,7 +71,7 @@ const PortalAccessKeyStatus = ({ portalAccessKeyResponse }) => {
         }
     }
     else {
-        return <>No expiration</>
+        return <>Never expires</>
     }
 }
 

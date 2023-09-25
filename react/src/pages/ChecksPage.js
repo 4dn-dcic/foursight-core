@@ -7,6 +7,7 @@ import { RingSpinner, PuffSpinnerInline, StandardSpinner } from '../Spinners';
 import useReadOnlyMode from '../hooks/ReadOnlyMode';
 import useFetch from '../hooks/Fetch';
 import useFetchFunction from '../hooks/FetchFunction';
+import { ExternalLink } from '../Components';
 import { FetchErrorBox } from '../Components';
 import Char from '../utils/Char';
 import Clipboard from '../utils/Clipboard';
@@ -645,23 +646,33 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
                 </>:<>{Yaml.Format(check.__resultByAction.get())}</>}
             </pre>
         }
-        return <pre className="box lighten" style={{color:check.__result.get("status")?.toUpperCase() === "PASS" ? "inherit" : "darkred",wordWrap:"break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
-            <div style={{float:"right",marginTop:"-10px"}}>
-            <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{Json.Str(check.showingResultDetailsFull ? check.__result.get("full_output") : check.__result.get())}</span>
-            <img alt="copy" onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
-            &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(groupList); } }>{check.showingResultDetailsFull ? <span title="Show full result output.">{Char.UpArrow}</span> : <span>{Char.DownArrow}</span>}</span>
-            &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.__showingResultDetails = false ; noteChangedResults(groupList); }}>X</span>
-            </div>
-            { (check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading) ?
-                <StandardSpinner condition={check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading} color={Styles.GetForegroundColor()} label={"Loading latest result "}/>
-            :
-                ( !check.__result.empty ?
-                    (Yaml.Format(check.showingResultDetailsFull ? check.__result.get("full_output") : check.__result.get()))
-                :
-                    <div style={{marginTop:"1pt"}}>No result.</div>
-                )
+        return <>
+            {  !check?.__result?.loading && check.__result?.data?.ff_link &&
+                <div className="box lighten" style={{marginTop:"4pt", marginRight:"5pt", whiteSpace:"break-spaces"}}><small>
+                    <b>Portal</b>:
+                    <ExternalLink
+                        href={check.__result?.data?.ff_link}
+                        text={check.__result?.data?.ff_link} />
+                </small></div>
             }
-        </pre>
+            <pre className="box lighten" style={{color:check.__result.get("status")?.toUpperCase() === "PASS" ? "inherit" : "darkred",wordWrap:"break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
+                <div style={{float:"right",marginTop:"-10px"}}>
+                <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{Json.Str(check.showingResultDetailsFull ? check.__result.get("full_output") : check.__result.get())}</span>
+                <img alt="copy" onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
+                &nbsp;<span style={{fontSize:"x-large",cursor:"pointer",color:"black"}} onClick={() => {check.showingResultDetailsFull = !check.showingResultDetailsFull; noteChangedResults(groupList); } }>{check.showingResultDetailsFull ? <span title="Show full result output.">{Char.UpArrow}</span> : <span>{Char.DownArrow}</span>}</span>
+                &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.__showingResultDetails = false ; noteChangedResults(groupList); }}>X</span>
+                </div>
+                { (check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading) ?
+                    <StandardSpinner condition={check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading} color={Styles.GetForegroundColor()} label={"Loading latest result "}/>
+                :
+                    ( !check.__result.empty ?
+                        (Yaml.Format(check.showingResultDetailsFull ? check.__result.get("full_output") : check.__result.get()))
+                    :
+                        <div style={{marginTop:"1pt"}}>No result.</div>
+                    )
+                }
+            </pre>
+        </>
     }
 
     // This RunButton is context sensitive. As it first appears clicking on it will
@@ -1101,6 +1112,13 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
                     { (history.__resultShowing) &&
                         <tr>
                             <td colSpan="6">
+                                { !history.__resultLoading && history.__result?.checks[check.title]?.ff_link &&
+                                    <div className="box lighten" style={{marginTop:"4pt", marginRight:"5pt"}}><small>
+                                        <b>Portal</b>: <ExternalLink
+                                        href={history.__result?.checks[check.title]?.ff_link}
+                                        text={history.__result?.checks[check.title]?.ff_link} />
+                                    </small></div>
+                                }
                                 <pre className="box lighten" style={{wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",width:"fit-content",minWidth:"360pt",maxWidth:"500pt"}}>
                                     { history.__resultLoading ? <>
                                         <StandardSpinner condition={history.__resultLoading} color={Styles.GetForegroundColor()} label="Loading result"/>
