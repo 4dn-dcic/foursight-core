@@ -599,8 +599,8 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
                             </span>
                         </>}
                         { (check.__result.get("ff_link")) && <>
-                            &nbsp;<a style={{color:"inherit"}} href={check.__result.get("ff_link")} rel="noreferrer" target="_blank">
-                                <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px"}}></span>
+                            &nbsp;&nbsp;<a style={{color:"inherit"}} href={check.__result.get("ff_link")} rel="noreferrer" target="_blank">
+                                <ExternalLink href={check.__result.get("ff_link")} />
                             </a>
                         </>}
                     </span>
@@ -621,18 +621,28 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
     const ResultDetailsBox = ({check, groupList, showResultByUuid, showResultByAction, style}) => {
         if (!check.__showingResults) return <></>
         if (showResultByUuid) {
-            return <pre className="box lighten" style={{wordWrap:"break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
-                <div style={{float:"right",marginTop:"0px"}}>
-                    <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{Json.Str(check.__resultByUuid.get())}</span>
-                    <img alt="copy" onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
-                    &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.__showingResultDetails = false ; noteChangedResults(groupList); }}>X</span>
-                </div>
-                { (check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading) ? <>
-                    <StandardSpinner condition={check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading} color={Styles.GetForegroundColor()} label={"Loading latest result "}/>
-                </>:<>
-                    {Yaml.Format(check.__resultByUuid.get())}
-                </>}
-            </pre>
+            return <>
+                {  !check?.__result?.loading && check.__result?.data?.ff_link &&
+                    <div className="box lighten" style={{marginTop:"4pt", marginRight:"5pt", whiteSpace:"break-spaces"}}><small>
+                        <b>Portal</b>:&nbsp;
+                        <ExternalLink
+                            href={check.__result?.data?.ff_link}
+                            text={check.__result?.data?.ff_link} />
+                    </small></div>
+                }
+                <pre className="box lighten" style={{wordWrap:"break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
+                    <div style={{float:"right",marginTop:"0px"}}>
+                        <span style={{fontSize:"0",opacity:"0"}} id={check.name}>{Json.Str(check.__resultByUuid.get())}</span>
+                        <img alt="copy" onClick={() => Clipboard.Copy(check.name)} style={{cursor:"copy",fontFamily:"monospace",position:"relative",bottom:"2pt"}} src={Image.Clipboard()} height="19" />
+                        &nbsp;<span style={{fontSize:"large",cursor:"pointer",color:"black"}} onClick={() => { check.__showingResultDetails = false ; noteChangedResults(groupList); }}>X</span>
+                    </div>
+                    { (check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading) ? <>
+                        <StandardSpinner condition={check.__result.loading || check.__resultByUuid.loading || check.__resultByAction.loading} color={Styles.GetForegroundColor()} label={"Loading latest result "}/>
+                    </>:<>
+                        {Yaml.Format(check.__resultByUuid.get())}
+                    </>}
+                </pre>
+            </>
         }
         if (showResultByAction) {
             return <pre className="box lighten" style={{wordWrap:"break-word",paddingBottom:"4pt",marginBottom:"3px",marginTop:"3px",marginRight:"5pt",minWidth:"360pt",maxWidth:"100%"}}>
@@ -649,7 +659,15 @@ const ToggleHistoryButton = ({ check, env, historyList, style }) => {
         return <>
             {  !check?.__result?.loading && check.__result?.data?.ff_link &&
                 <div className="box lighten" style={{marginTop:"4pt", marginRight:"5pt", whiteSpace:"break-spaces"}}><small>
-                    <b>Portal</b>:
+                    <b>Portal</b>:&nbsp;
+                    <ExternalLink
+                        href={check.__result?.data?.ff_link}
+                        text={check.__result?.data?.ff_link} />
+                </small></div>
+            }
+            {  !check?.__result?.loading && check.__result?.data?.ff_link &&
+                <div className="box lighten" style={{marginTop:"4pt", marginRight:"5pt", whiteSpace:"break-spaces"}}><small>
+                    <b>Portal</b>:&nbsp;
                     <ExternalLink
                         href={check.__result?.data?.ff_link}
                         text={check.__result?.data?.ff_link} />
@@ -1114,9 +1132,10 @@ const ResultsHistoryBox = ({ check, env, historyList }) => {
                             <td colSpan="6">
                                 { !history.__resultLoading && history.__result?.checks[check.title]?.ff_link &&
                                     <div className="box lighten" style={{marginTop:"4pt", marginRight:"5pt"}}><small>
-                                        <b>Portal</b>: <ExternalLink
-                                        href={history.__result?.checks[check.title]?.ff_link}
-                                        text={history.__result?.checks[check.title]?.ff_link} />
+                                        <b>Portal</b>:&nbsp;
+                                        <ExternalLink
+                                            href={history.__result?.checks[check.title]?.ff_link}
+                                            text={history.__result?.checks[check.title]?.ff_link} />
                                     </small></div>
                                 }
                                 <pre className="box lighten" style={{wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",width:"fit-content",minWidth:"360pt",maxWidth:"500pt"}}>

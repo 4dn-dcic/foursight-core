@@ -230,9 +230,10 @@ const CheckHistoryPage = (props) => {
                                     <td colSpan="9">
                                         { !history.__resultLoading && history.__result?.checks[checkInfo.get("title")]?.ff_link &&
                                             <div className="box lighten" style={{marginTop:"4pt", marginRight:"5pt"}}><small>
-                                                <b>Portal</b>: <ExternalLink
-                                                href={history.__result?.checks[checkInfo.get("title")]?.ff_link}
-                                                text={history.__result?.checks[checkInfo.get("title")]?.ff_link} />
+                                                <b>Portal</b>:&nbsp;
+                                                <ExternalLink
+                                                    href={history.__result?.checks[checkInfo.get("title")]?.ff_link}
+                                                    text={history.__result?.checks[checkInfo.get("title")]?.ff_link} />
                                             </small></div>
                                         }
                                         <pre className="box lighten" style={{borderWidth:"1",wordWrap: "break-word",paddingTop:"6pt",paddingBottom:"6pt",marginBottom:"4pt",marginTop:"4pt",marginRight:"5pt",minWidth:"360pt",maxWidth:"600pt"}}>

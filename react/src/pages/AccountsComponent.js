@@ -7,6 +7,7 @@ import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
 import DateTime from '../utils/DateTime';
+import Env from '../utils/Env';
 import { ExternalLink } from '../Components';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
@@ -189,7 +190,11 @@ const KnownEnvsBox = ({ header, account }) => {
     return <>
         <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",marginBottom:"2pt",padding:"4pt",color:"inherit"}}>
             {knownEnvs?.map(env => <span key={`${env.full_name}`}>
-                <b>{env.full_name}</b> (<span id={`tooltip-env-${env.full_name}`}>{env.public_name}</span>)<br />
+                <b>{env.full_name}</b>
+                   &nbsp;(<span id={`tooltip-env-${env.full_name}`}>{env.public_name}</span>)
+                   {Env.IsCurrent(env) && <>&nbsp;{Char.RightArrow}&nbsp;Current</>}
+                   {Env.IsDefault(env) && <>&nbsp;{Char.RightArrow}&nbsp;Default</>}
+                   <br />
                 <Tooltip id={`tooltip-env-${env.full_name}`} text={`Public name of environment.`} position="right" shape="squared" />
             </span> )}
         </div>
