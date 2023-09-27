@@ -1,3 +1,4 @@
+import React from 'react';
 import Styles from '../Styles';
 import Str from '../utils/Str';
 import Char from '../utils/Char';
@@ -14,9 +15,9 @@ const ChecksValidation = () => {
         <div className="box error thickborder" style={{width:"60%",fontSize:"small"}}>
             <b>The following defined action functions have no assocated check</b>: <br />
             <HorizontalLine top="6" bottom="6" color="darkred" thick={true} />
-            { actionsWithNoAssociatedCheck.map(item => <>
+            { actionsWithNoAssociatedCheck.map((item, index) => <React.Fragment key={index}>
                 {Char.RightArrow} <a href={item.github_url} target="_blank"><span style={{color:"darkred"}}>{item.name}</span></a><br />
-            </>)}
+            </React.Fragment>)}
         </div>
         <br />
     </>

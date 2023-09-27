@@ -89,6 +89,14 @@ def route(*args, **kwargs):
     else:
         path = ROUTE_PREFIX + REACT_API_PATH_COMPONENT + path
 
+    # This "define_noenv_route" is for defining a version of the route which does not contain /{env}.
+    if "define_noenv_route" in kwargs:
+        if kwargs["define_noenv_route"] is True:
+            define_noenv_route = True
+        del kwargs["define_noenv_route"]
+    else:
+        define_noenv_route = False
+
     if path.endswith("/"):
         path = path[:-1]
     if not path.startswith("/"):
@@ -131,6 +139,8 @@ def route(*args, **kwargs):
                     if unauthorized_response:
                         return unauthorized_response
                 # Here we are authenticated and authorized and so we call the actual route function.
+                if define_noenv_route and "env" not in kwargs:
+                    kwargs["env"] = app.core.get_default_env()
                 return wrapped_route_function(*args, **kwargs)
             except Exception as e:
                 # Common endpoint exception handling here.
@@ -141,6 +151,10 @@ def route(*args, **kwargs):
             kwargs["cors"] = _CORS
         PRINT(f"Registering Chalice endpoint: {' '.join(kwargs['methods'])} {path} -> {wrapped_route_function.__name__}")
         # This is the call that actually registers the Chalice route/endpoint.
+        if define_noenv_route:
+            noenv_path = path.replace("/{env}", "")
+            if noenv_path != path:
+                app.route(noenv_path, **kwargs)(route_function)
         return app.route(path, **kwargs)(route_function)
     return route_registration
 

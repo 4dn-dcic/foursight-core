@@ -192,8 +192,8 @@ const KnownEnvsBox = ({ header, account }) => {
             {knownEnvs?.map(env => <span key={`${env.full_name}`}>
                 <b>{env.full_name}</b>
                    &nbsp;(<span id={`tooltip-env-${env.full_name}`}>{env.public_name}</span>)
-                   {Env.IsCurrent(env) && <>&nbsp;{Char.RightArrow}&nbsp;Current</>}
                    {Env.IsDefault(env) && <>&nbsp;{Char.RightArrow}&nbsp;Default</>}
+                   {Env.IsCurrent(env) && <>&nbsp;{Char.RightArrow}&nbsp;Current</>}
                    <br />
                 <Tooltip id={`tooltip-env-${env.full_name}`} text={`Public name of environment.`} position="right" shape="squared" />
             </span> )}
@@ -218,6 +218,7 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
     const [ showEcosystems, setShowEcosystems ] = useState(false);
     const [ showKnownEnvs, setShowKnownEnvs ] = useState(false);
     const [ showEnvVariables, setShowEnvVariables ] = useState(false);
+    const [ showHealth, setShowHealth ] = useState(false);
     const ecosystems = useFetch("/ecosystems", { cache: true });
     const info = useFetch("/info", { cache: true });
 
@@ -229,6 +230,7 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
     function toggleShowEcosystem() { setShowEcosystem(!showEcosystem); }
     function toggleShowEcosystems() { setShowEcosystems(!showEcosystems); }
     function toggleShowEnvVariables() { setShowEnvVariables(!showEnvVariables); }
+    function toggleShowHealth() { setShowHealth(!showHealth); }
 
     function awsIamLinkFromArn(arn) {
         const parts = arn?.split("/");
@@ -256,12 +258,18 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
         </Row>
         <Row title={account.get("foursight.package") === "foursight" ? "Fourfront" : "CGAP-Portal"} value={account.get("portal.url")} externalLink={account.get("portal.url")} small={false}>
             &nbsp;|&nbsp;
-            <small><a style={{color:"inherit"}} href={account.get("portal.health_ui_url")} rel="noreferrer" target="_blank">Health</a>&nbsp;</small>
-            <small>(<a style={{color:"inherit"}} href={account.get("portal.health_url")} rel="noreferrer" target="_blank">JSON</a>)</small>
-            &nbsp;
-            <ExternalLink
-                href={account.get("portal.health_ui_url")}
-                style={{marginLeft:"1pt"}} />
+            <small>
+                { !showHealth ? <span id={`tooltip-health`}>
+                    <span onClick={toggleShowHealth} className="pointer">Health<b style={{marginLeft:"1px"}}>{Char.UpArrow}</b></span>
+                </span>:<span>
+                    <b onClick={toggleShowHealth} className="pointer">Health {Char.DownArrow}</b>
+                </span> }
+                <Tooltip id={`tooltip-health`} text={`Environment variable values.`} position="top" />
+                <ExternalLink
+                    href={account.get("portal.health_ui_url")}
+                    style={{marginLeft:"4pt"}} />
+            </small>
+
             {account.get("portal.health.indexer") == "true" && <small title={account.get("portal.health.indexer_server")}>
                 &nbsp;| <a style={{color:"inherit"}} href={`${account.get("portal.url")}/indexing_status`} rel="noreferrer" target="_blank">Indexer</a>&nbsp;
                 <ExternalLink
@@ -269,6 +277,7 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
                     style={{marginLeft:"1pt"}} />
             </small> }
             <SslCertificateLink url={account.get("portal.url")} />
+            { showHealth && <PortalHealthBox account={account} /> }
         </Row>
         <Row title="Elasticsearch" value={account.get("portal.elasticsearch")?.replace(/:443$/,"")}
              additionalValue={account.get("foursight.es_cluster")}
@@ -744,6 +753,12 @@ const EnvVariablesBox = () => {
                 </li>)}
             </ul>
         </> }
+    </pre>
+}
+
+const PortalHealthBox = ({ account }) => {
+    return <pre style={{fontSize:"small",background:"inherit",border:"1pt gray dotted",marginTop:"4pt",width:"524pt"}}>
+        {Yaml.Format(account?.data?.portal?.health)}
     </pre>
 }
 
