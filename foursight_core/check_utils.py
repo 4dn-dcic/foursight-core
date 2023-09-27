@@ -505,7 +505,7 @@ class CheckHandler(object):
                     info["github_url"],
                     info["args"],
                     info["kwargs"],
-                    str(info["function"]),
+                    info["function"],
                     info.get("action"),
                     info.get("check"))
 
