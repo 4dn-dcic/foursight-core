@@ -78,15 +78,6 @@ class ReactRoutes:
         ignored(env)
         return app.core.reactapi_portal_access_key(app.request(), app.request_args())
 
-    @route("/{env}/elasticsearch", authorize=False, define_noenv_route=True)
-    def reactapi_route_elasticsearch_noenv(env: str) -> Response:  # noqa: implicit @staticmethod via @route
-        """
-        Note that this in an UNPROTECTED route.
-        Pings the Elasticsearch associated with this Foursight instance and returns related info.
-        """
-        ignored(env)
-        return app.core.reactapi_elasticsearch()
-
     # ----------------------------------------------------------------------------------------------
     # Foursight React API routes PROTECTED by authorization/authentication.
     # ----------------------------------------------------------------------------------------------
