@@ -313,7 +313,7 @@ const FileInfoRow = ({ data, uuid, bucket, manifest, traceback, loading, prestyl
             <pre style={{...prestyle}}>
                 { loading() ? <StandardSpinner condition={loading()} label={"Loading"} style={{paddingBottom:"4pt"}} /> : <>
                     <table style={{width:"100%",fontSize:"inherit"}}><tbody><tr>
-                        <td style={{whiteSpace:"nowrap",width:"10%"}}>
+                        <td style={{whiteSpace:"nowrap",width:"10%"}} valign="top">
                             <FileInfoRowLeft
                                 dataBucket={dataBucket}
                                 dataUuid={dataUuid}
