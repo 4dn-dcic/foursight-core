@@ -132,7 +132,7 @@ def route(*args, **kwargs):
             """
             try:
                 env = kwargs.get("env")
-                if env and env != "static" and not app.core._envs.is_known_env(env):
+                if env and env != "static" and app.core._envs and not app.core._envs.is_known_env(env):
                     env = app.core.get_default_env()
                 if authorize:
                     # Note that the "env" argument in the kwargs is the environment name from the endpoint

@@ -10,6 +10,7 @@ class _MockReactApi:
         self.create_response = ReactApi.create_response
         self.get_site_name = lambda: "some-site-name"
         self.APP_PACKAGE_NAME = "foursight"
+        self._envs = {}
 
 
 class _MockChaliceRequest:
