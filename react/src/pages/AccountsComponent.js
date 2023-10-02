@@ -373,7 +373,7 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
                 </span>
                 <Tooltip id={"tooltip-aws-user-arn"} text={`Associated IAM ARN: ${info.data?.app?.credentials?.aws_user_arn}`} position="bottom" />
         </Row>
-        <Row title="Environment" value={`Default: ${account.get("foursight.default_env.short_name")}`} xadditionalValue={account.get("foursight.env_count") ? `${account.get("foursight.env_count")} total` : ""}>
+        <Row title="Environments" value={`Default: ${account.get("foursight.default_env.short_name")}`} xadditionalValue={account.get("foursight.env_count") ? `${account.get("foursight.env_count")} total` : ""}>
             &nbsp;|&nbsp;Current: {Env.Current(header)}
             { isCurrentAccount(header, account) && <>
                 &nbsp;|&nbsp;
