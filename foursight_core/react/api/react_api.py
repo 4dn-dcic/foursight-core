@@ -477,7 +477,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "portal": {
                 "url": portal_url,
                 "health_url": portal_base_url + "/health?format=json",
-                "health_ui_url": portal_base_url + "/health"
+                "health_ui_url": portal_base_url + "/health",
             },
             "resources": {
                 "es": app.core.host,
@@ -498,6 +498,16 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "buckets": self._get_known_buckets()
             }
         }
+        portal_production_color, portal_production_env = self._envs.get_portal_production_color()
+        portal_staging_color, portal_staging_env = self._envs.get_portal_staging_color()
+        if portal_production_color:
+            response["portal"]["production_color"] = portal_production_color
+            response["portal"]["production_env"] = portal_production_env
+            response["portal"]["production_url"] = app.core.get_portal_url(portal_production_env.get("full_name"))
+        if portal_staging_color:
+            response["portal"]["staging_color"] = portal_staging_color
+            response["portal"]["staging_env"] = portal_staging_env
+            response["portal"]["staging_url"] = app.core.get_portal_url(portal_staging_env.get("full_name"))
         if os.environ.get("S3_ENCRYPT_KEY"):
             response["s3"]["has_encryption"] = True
         return response
@@ -1555,7 +1565,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
             return True
 
         def get_foursight_info(foursight_url: str, response: dict) -> Optional[str]:
-            response["foursight"] = {}
+            if not response.get("foursight"):
+                response["foursight"] = {}
+            if not response.get("portal"):
+                response["portal"] = {}
             if not foursight_url:
                 return None
             response["foursight"]["url"] = get_foursight_base_url(foursight_url)
@@ -1617,10 +1630,19 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 return None
             portal_url = get_portal_base_url(foursight_header_json_portal.get("url"))
             response["foursight"]["portal_url"] = portal_url
+            if foursight_header_json_portal.get("production_color"):
+                response["portal"]["production_color"] = foursight_header_json_portal["production_color"]
+                response["portal"]["production_env"] = foursight_header_json_portal["production_env"]
+                response["portal"]["production_url"] = foursight_header_json_portal["production_url"]
+            if foursight_header_json_portal.get("staging_color"):
+                response["portal"]["staging_color"] = foursight_header_json_portal["staging_color"]
+                response["portal"]["staging_env"] = foursight_header_json_portal["staging_env"]
+                response["portal"]["staging_url"] = foursight_header_json_portal["staging_url"]
             return portal_url
 
         def get_portal_info(portal_url: str, response: dict) -> Optional[str]:
-            response["portal"] = {}
+            if not response.get("portal"):
+                response["portal"] = {}
             if not portal_url:
                 return None
             response["portal"]["url"] = get_portal_base_url(portal_url)

@@ -131,15 +131,18 @@ def route(*args, **kwargs):
             This is the function called on each actual route/endpoint (API) call.
             """
             try:
+                env = kwargs.get("env")
+                if env and env != "static" and not app.core._envs.is_known_env(env):
+                    env = app.core.get_default_env()
                 if authorize:
                     # Note that the "env" argument in the kwargs is the environment name from the endpoint
                     # path; this does NOT have to be present in the endpoint path, BUT if it IS then it
                     # MUST be exactly named "env", otherwise we won't properly do per-env authorization.
-                    unauthorized_response = _authorize(app.current_request.to_dict(), kwargs.get("env"))
+                    unauthorized_response = _authorize(app.current_request.to_dict(), env)
                     if unauthorized_response:
                         return unauthorized_response
                 # Here we are authenticated and authorized and so we call the actual route function.
-                if define_noenv_route and "env" not in kwargs:
+                if define_noenv_route and not env:
                     kwargs["env"] = app.core.get_default_env()
                 return wrapped_route_function(*args, **kwargs)
             except Exception as e:

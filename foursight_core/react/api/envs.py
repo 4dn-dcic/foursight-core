@@ -109,3 +109,29 @@ class Envs:
     def _is_user_in_one_or_more_groups(user: Optional[dict], allowed_groups: list) -> bool:
         user_groups = user.get("groups") if user else None
         return user_groups and any(allowed_group in user_groups for allowed_group in allowed_groups or [])
+
+    @staticmethod
+    def _env_contains(env: dict, value: str) -> bool:
+        value = value.lower()
+        return (value in env["full_name"].lower() or
+                value in env["short_name"].lower() or
+                value in env["public_name"].lower() or
+                value in env["foursight_name"].lower())
+
+    def get_portal_production_color(self) -> Tuple[Optional[str], Optional[str]]:
+        for env in self._known_envs:
+            if not (self._env_contains(env, "stage") or self._env_contains(env, "staging")):
+                if self._env_contains(env, "blue"):
+                    return ("blue", env)
+                elif self._env_contains(env, "green"):
+                    return ("green", env)
+        return (None, None)
+
+    def get_portal_staging_color(self) -> Tuple[Optional[str], Optional[str]]:
+        for env in self._known_envs:
+            if self._env_contains(env, "stage") or self._env_contains(env, "staging"):
+                if self._env_contains(env, "blue"):
+                    return ("blue", env)
+                elif self._env_contains(env, "green"):
+                    return ("green", env)
+        return (None, None)

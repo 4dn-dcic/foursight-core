@@ -153,17 +153,19 @@ const Row = ({ title, value, additionalValue, externalLink, children, tooltip = 
     </tr>
 }
 
-const VersionRow = ({ title, version, show = true, using = null }) => {
+const VersionRow = ({ title, version, show = true, using = null, tooltip = null, children = null }) => {
     if (!show || !version) return <></>
     return <tr>
         <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>{title}:</td>
-        <td>
+        <td id={tooltip}>
             { version ? <>
                 <b>{version}</b>
                 { using && <>
                     &nbsp;<b>{Char.Check}</b>
                 </> }
             </>:<>{Char.EmptySet}</>}
+            {children}
+            { tooltip && <Tooltip id={tooltip} text={tooltip} position="top" /> }
         </td>
     </tr>
 }
@@ -371,13 +373,14 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
                 </span>
                 <Tooltip id={"tooltip-aws-user-arn"} text={`Associated IAM ARN: ${info.data?.app?.credentials?.aws_user_arn}`} position="bottom" />
         </Row>
-        <Row title="Environment" value={`Default: ${account.get("foursight.default_env.full_name")}`} additionalValue={account.get("foursight.env_count") ? `${account.get("foursight.env_count")} total` : ""}>
+        <Row title="Environment" value={`Default: ${account.get("foursight.default_env.short_name")}`} xadditionalValue={account.get("foursight.env_count") ? `${account.get("foursight.env_count")} total` : ""}>
+            &nbsp;|&nbsp;Current: {Env.Current(header)}
             { isCurrentAccount(header, account) && <>
                 &nbsp;|&nbsp;
                 { !showKnownEnvs ? <>
-                    <span onClick={toggleShowKnownEnvs} className="pointer">Environments <b>{Char.UpArrow}</b></span>
+                    <span onClick={toggleShowKnownEnvs} className="pointer">All ({account.get("foursight.env_count")}) <b>{Char.UpArrow}</b></span>
                 </>:<>
-                    <b onClick={toggleShowKnownEnvs} className="pointer">Environments {Char.DownArrow}</b>
+                    <b onClick={toggleShowKnownEnvs} className="pointer">All ({account.get("foursight.env_count")}) {Char.DownArrow}</b>
                 </> }
                 &nbsp;|&nbsp;
                 { !showEnvVariables ? <span id={`tooltip-envvar`}>
@@ -462,6 +465,15 @@ const AccountInfoRight = ({ account, header }) => {
         <VersionRow title="elasticsearch" version={account.get("foursight.versions.elasticsearch")} />
         <VersionRow title="elasticsearch-dsl" version={account.get("foursight.versions.elasticsearch_dsl")} />
         <VersionRow title="redis-server" version={account.get("foursight.versions.redis_server")} />
+        { (account.get("portal.production_color") || account.get("portal.staging_color")) && <>
+            <Separator />
+            <VersionRow title="Portal Production" version={account.get("portal.production_color")} tooltip={account.get("portal.production_env.full_name")}>
+                &nbsp;&nbsp;<ExternalLink href={account.get("portal.production_url")} />
+            </VersionRow>
+            <VersionRow title="Portal Staging" version={account.get("portal.staging_color")} tooltip={account.get("portal.staging_env.full_name")}>
+                &nbsp;&nbsp;<ExternalLink href={account.get("portal.staging_url")} />
+            </VersionRow>
+        </> }
     </tbody></table>
 }
 
