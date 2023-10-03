@@ -1883,8 +1883,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ecs = ECSUtils()
         clusters = ecs.list_ecs_clusters()
         clusters = [{"cluster_name": ecs_cluster_arn_to_name(arn), "cluster_arn": arn} for arn in clusters]
-        clusters = sorted(clusters, key=lambda item: item["cluster_name"])
-        return self.create_success_response(clusters)
+        return sorted(clusters, key=lambda item: item["cluster_name"])
 
     def reactapi_aws_ecs_cluster(self, cluster_arn: str) -> Response:
         # Given cluster_name may actually be either a cluster name or its ARN,
@@ -1978,6 +1977,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return task_definition_arns
 
     def reactapi_aws_ecs_task_arns_parsed(self) -> Response:
+
         task_definition_arns = self.reactapi_aws_ecs_task_arns(latest=True)
         task_definition_arns_parsed = []
         def get_task_name(task_definition_arn: str) -> str:
@@ -1994,12 +1994,48 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 return "Portal"
             else:
                 return task_definition_arn
+
+        # Get the AWS cluster to use for any task run. 
+        clusters = self.reactapi_aws_ecs_clusters()
+
+        # Get the VPC to use for any task run. 
+        vpcs = aws_get_vpcs()
+        vpcs = [vpc for vpc in vpcs if "main" in (vpc.get("name") or "").lower()]
+        vpc = vpcs[0] if len(vpcs) == 1 else None
+
+        # Get the AWS subnets to use for any task run. 
+        subnets = aws_get_subnets()
+        subnets = [subnet for subnet in subnets if subnet.get("type") == "private" and "main" in (subnet.get("name") or "").lower()]
+        subnets = [{"id": subnet["id"], "name": subnet["name"]} for subnet in subnets]
+
+        # Get the AWS security groups to use for any task run. 
+        security_groups = aws_get_security_groups(vpc_id=vpc["id"]) if vpc else []
+        security_groups = [security_group for security_group in security_groups if "container" in (security_group.get("name") or "").lower()]
+        security_groups = [{"id": security_group["id"], "name": security_group["name"]} for security_group in security_groups]
+
         for task_definition_arn in task_definition_arns:
-            task_definition_arns_parsed.append({
+            task_env = self._envs.get_associated_env(task_definition_arn)
+            task_definition_arn_parsed = {
                 "task_arn": task_definition_arn,
                 "task_name": get_task_name(task_definition_arn),
-                "task_env": self._envs.get_associated_env(task_definition_arn)
-            })
+                "task_env": task_env,
+            }
+            task_definition_arns_parsed.append(task_definition_arn_parsed)
+            if task_env:
+                for cluster in clusters:
+                    if Envs._env_within(task_env, cluster["cluster_name"]):
+                        task_definition_arn_parsed["task_cluster"] = cluster["cluster_arn"]
+                for security_group in security_groups:
+                    if Envs._env_within(task_env, security_group["name"]):
+                        task_definition_arn_parsed["task_security_group"] = security_group
+                if not task_definition_arn_parsed.get("task_security_group"):
+                    for security_group in security_groups:
+                        if "production" in security_group["name"].lower():
+                            task_definition_arn_parsed["task_security_group"] = security_group
+            if vpc:
+                task_definition_arn_parsed["task_vpc"] = {"id": vpc["id"], "name": vpc["name"]}
+            if subnets:
+                task_definition_arn_parsed["task_subnets"] = subnets
         return task_definition_arns_parsed
 
     def reactapi_aws_ecs_tasks(self, latest: bool = True) -> Response:

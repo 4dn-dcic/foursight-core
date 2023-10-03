@@ -2,16 +2,18 @@ import useHeader from '../hooks/Header';
 import { useState } from 'react';
 import Char from '../utils/Char'; 
 import { ExternalLink } from '../Components'; 
+import React from 'react';
 import { StandardSpinner } from '../Spinners';
+import Tooltip from '../components/Tooltip';
 import useFetch from '../hooks/Fetch';
 
 function awsTaskLink(arn) {
     const region = "us-east-1";
-    return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${arn}?status=ACTIVE&region=${region}`;
+    return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${arn}/run-task`;
+    return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${arn}?status=ACTIVE&region=${region}/run-task`;
 }
 
 const PortalReindexPage = (props) => {
-    const header = useHeader();
     const tasks = useFetch("//aws/ecs/tasks/parsed");
     const deployTasks = () => tasks?.data?.filter(task => task.task_name == "Deploy");
     return <>
@@ -59,7 +61,7 @@ const PortalReindexBox = (props) => {
     const [showEnvs, setShowEnvs] = useState(false);
     const toggleEnv = (e) => { setShowEnvs(!showEnvs); e.stopPropagation(); e.preventDefault(); }
 
-    return <div onClick={() => props.selectTask(props.task?.task_arn)} style={{marginTop:"4pt"}}>
+    return <div onClick={() => props.selectTask(props.task?.task_arn)} style={{marginTop:"4pt"}} className="hover-lighten">
         <table style={{width: "100%"}}><tbody><tr><td style={{verticalAlign: "top", paddingRight:"10pt", width: "1%"}}>
             <input
                 name="radio"
@@ -85,8 +87,9 @@ const PortalReindexBox = (props) => {
                     </small>
                 }
                 <br />
-                { showEnvs && <PortalReindexEnvBox env={props.task?.task_env} /> }
-                { props.task?.task_arn } <small>&nbsp;<ExternalLink href={awsTaskLink(props.task?.task_arn)} /></small>
+                { showEnvs && <PortalReindexEnvBox env={props.task?.task_env} task={props.task} /> }
+                <small id={`tooltip-${props.task.task_arn}`}> { props.task?.task_arn } &nbsp;<ExternalLink href={awsTaskLink(props.task?.task_arn)} /> </small>
+                <Tooltip id={`tooltip-${props.task.task_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run for the reindex."} />
                 { props.selectedTask === props.task?.task_arn && <PortalReindexButtons task={props.task} /> }
             </div>
         </td></tr></tbody></table>
@@ -128,12 +131,71 @@ const PortalReindexButtons = (props) => {
 }
 
 const PortalReindexEnvBox = (props) => {
-    const uniqueEnvNames = Array.from(new Set(Object.values(props.env))).sort();
+    const header = useHeader();
+    const uniqueEnvNames = () => {
+        const env = {};
+        ["name", "full_name", "short_name", "public_name", "foursight_name"].forEach(name => {
+             env[name] = props.env[name];
+        });
+        return Array.from(new Set(Object.values(env)))?.sort();
+    }
+    const vseparator = <><td style={{width: "10pt"}}></td><td style={{verticalAlign: "top", width: "1px", background: "black"}}></td><td style={{width: "10pt"}}></td></>
     return <div className="box bigmargin marginbottom"><small>
-        <u>Environment Aliases</u>: <br />
-        {uniqueEnvNames.map((env, index) => <>
-            {index > 0 && <br />} {env}
-        </> )}
+        <table style={{fontSize: "inherit"}}><tbody><tr><td style={{verticalAlign: "top"}}>
+            <table style={{fontSize: "inherit"}}><tbody>
+                <tr>
+                    <td colspan="2">
+                        AWS Account
+                    </td>
+                </tr>
+                <tr><td colspan="2" style={{background: "gray", height: "1px"}}></td></tr>
+                <tr>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Account Number: </td>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_number} </td>
+                </tr>
+                <tr>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Account Name: </td>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_name} </td>
+                </tr>
+            </tbody></table>
+        </td>
+        {vseparator}
+        <td style={{verticalAlign: "top"}}>
+            <table style={{fontSize: "inherit"}}><tbody>
+                <tr>
+                    <td colspan="2">
+                        AWS Networking
+                    </td>
+                </tr>
+                <tr><td colspan="2" style={{background: "gray", height: "1px"}}></td></tr>
+                <tr>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> VPC: </td>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}><span id={`tooltip-vpc-${props.task?.task_arn}`}>{props.task?.task_vpc?.id}</span> </td>
+                    <Tooltip id={`tooltip-vpc-${props.task.task_arn}`} position="top" shape="squared" size="small" text={props.task?.task_vpc?.name} />
+                </tr>
+                <tr>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Security Group: </td>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> <span id={`tooltip-sg-${props.task?.task_arn}`}>{props.task?.task_security_group?.id}</span> </td>
+                    <Tooltip id={`tooltip-sg-${props.task.task_arn}`} position="top" shape="squared" size="small" text={props.task?.task_security_group?.name} />
+                </tr>
+                <tr>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Subnets: </td>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
+                        { props.task?.task_subnets?.map(subnet => <>
+                            <span id={`tooltip-${subnet.id}`}>{subnet.id}</span> <br />
+                            <Tooltip id={`tooltip-${subnet.id}`} position="top" shape="squared" size="small" text={subnet.name} />
+                        </>) }
+                    </td>
+                </tr>
+            </tbody></table>
+        </td>
+        {vseparator}
+        <td style={{verticalAlign: "top"}}>
+            <u>Environment Aliases</u> <br />
+            {uniqueEnvNames().map((env, index) => <>
+                {index > 0 && <br />} {env}
+            </> )}
+        </td></tr></tbody></table>
     </small></div>
 }
 

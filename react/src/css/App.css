@@ -172,7 +172,9 @@
 .check-box:hover {
     filter: brightness(1.05);
 }
-
+.hover-lighten:hover {
+    filter: brightness(1.05);
+}
 .check-run-button {
    border: 1px solid var(--box-fg-darken);
    border-radius: 12px;
