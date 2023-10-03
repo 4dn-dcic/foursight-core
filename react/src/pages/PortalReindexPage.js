@@ -1,5 +1,5 @@
 import useHeader from '../hooks/Header';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Char from '../utils/Char'; 
 import { ExternalLink } from '../Components'; 
 import React from 'react';
@@ -14,8 +14,32 @@ function awsTaskLink(arn) {
 }
 
 const PortalReindexPage = (props) => {
-    const tasks = useFetch("//aws/ecs/tasks/parsed");
-    const deployTasks = () => tasks?.data?.filter(task => task.task_name == "Deploy");
+
+    const tasks = useFetch("//aws/ecs/tasks/parsed", {
+        onData: (data) => {
+            data = data?.filter(task => task.task_name == "Deploy");
+            setShowEnvs(data.reduce((result, task) => {
+                result[task.task_arn] = false;
+                return result;
+            }, {}));
+            return data;
+        }
+    });
+
+    // The top-level up/down arrow toggle can be used to expand/collapse task ("env") details;
+    // if ANY of the task details are expanded, then the top-level toggle collapses all of them;
+    // if NONE of the task details are expanded, then the top-level toggle expands all of them.
+
+    const [showEnvs, setShowEnvs] = useState({});
+    const isShowEnvs = () => { for (const key of Object.keys(showEnvs)) if (showEnvs[key]) return true; return false; }
+    const toggleShowEnvs = () => {
+        const showEnv = isShowEnvs();
+        for (const key of Object.keys(showEnvs)) showEnvs[key] = !showEnv;
+        setShowEnvs({...showEnvs});
+    }
+    const toggleShowEnv = (task) => { showEnvs[task.task_arn] = !showEnvs[task.task_arn]; setShowEnvs({...showEnvs}); }
+    const isShowEnv = (task) => showEnvs[task.task_arn];
+
     return <>
         <div className="container">
             <b style={{fontSize: "x-large"}}>Portal Reindex</b>
@@ -24,8 +48,11 @@ const PortalReindexPage = (props) => {
             : <>
                 <div className="box thickborder" style={{marginTop: "2pt", marginBottom: "10pt"}}>
                     Select the Portal environment below to reindex.
+                    <span style={{float: "right"}} className="pointer" onClick={toggleShowEnvs}>
+                        { isShowEnvs() ? Char.DownArrow : Char.UpArrow }
+                    </span>
                 </div>
-                <PortalReindexContent tasks={deployTasks()} />
+                <PortalReindexContent tasks={tasks.data} isShowEnv={isShowEnv} toggleShowEnv={toggleShowEnv} />
             </> }
         </div>
     </>
@@ -51,15 +78,27 @@ const PortalReindexContent = (props) => {
 
     return <div className="box" style={{paddingTop: "12pt"}}>
         { sortedTasks.map(task =>
-            <PortalReindexBox task={task} selectedTask={selectedTask} selectTask={selectTask} isSelectedTask={isSelectedTask} />
+            <PortalReindexBox
+                task={task}
+                selectedTask={selectedTask}
+                selectTask={selectTask}
+                isSelectedTask={isSelectedTask}
+                isShowEnv={props.isShowEnv}
+                toggleShowEnv={props.toggleShowEnv} />
         )}
     </div>
 }
 
 const PortalReindexBox = (props) => {
 
-    const [showEnvs, setShowEnvs] = useState(false);
-    const toggleEnv = (e) => { setShowEnvs(!showEnvs); e.stopPropagation(); e.preventDefault(); }
+    const [ showEnv, setShowEnv ] = useState(false);
+    const isShowEnv = () => {
+        return props.isShowEnv(props.task);
+    }
+    const toggleShowEnv = (e) => {
+        props.toggleShowEnv(props.task);
+        e.stopPropagation(); e.preventDefault();
+    }
 
     return <div onClick={() => props.selectTask(props.task?.task_arn)} style={{marginTop:"4pt"}} className="hover-lighten">
         <table style={{width: "100%"}}><tbody><tr><td style={{verticalAlign: "top", paddingRight:"10pt", width: "1%"}}>
@@ -73,9 +112,9 @@ const PortalReindexBox = (props) => {
         </td><td style={{verticalAlign: "top"}}>
             <div className="box bigmarginbottom lighten" style={{cursor:"default"}}>
                 <u><b onClick={() => props.selectTask(props.task?.task_arn)} style={{color: "black"}}>{props.task?.task_env?.name}</b></u>
-                <small onClick={toggleEnv} className="pointer" style={{marginLeft:"4pt"}}>{showEnvs ? Char.DownArrow : Char.UpArrow}</small>
+                <small onClick={toggleShowEnv} className="pointer" style={{marginLeft:"4pt"}}>{isShowEnv() ? Char.DownArrow : Char.UpArrow}</small>
                 <small style={{float: "right"}}>
-                    &nbsp;&nbsp;<ExternalLink href={props.task.task_env.portal_url} />
+                    &nbsp;&nbsp;<ExternalLink href={props.task.task_env?.portal_url} />
                 </small>
                 { (props.task?.task_env?.is_production || props.task?.task_env?.is_staging || props.task?.task_env?.color) &&
                     <small style={{float: "right", color: props.task?.task_env?.color == "blue" ? "blue" : (props.task?.task_env?.color == "green" ? "green" : "")}}>
@@ -87,7 +126,7 @@ const PortalReindexBox = (props) => {
                     </small>
                 }
                 <br />
-                { showEnvs && <PortalReindexEnvBox env={props.task?.task_env} task={props.task} /> }
+                { isShowEnv() && <PortalReindexEnvBox env={props.task?.task_env} task={props.task} /> }
                 <small id={`tooltip-${props.task.task_arn}`}> { props.task?.task_arn } &nbsp;<ExternalLink href={awsTaskLink(props.task?.task_arn)} /> </small>
                 <Tooltip id={`tooltip-${props.task.task_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run for the reindex."} />
                 { props.selectedTask === props.task?.task_arn && <PortalReindexButtons task={props.task} /> }
@@ -143,12 +182,8 @@ const PortalReindexEnvBox = (props) => {
     return <div className="box bigmargin marginbottom"><small>
         <table style={{fontSize: "inherit"}}><tbody><tr><td style={{verticalAlign: "top"}}>
             <table style={{fontSize: "inherit"}}><tbody>
-                <tr>
-                    <td colspan="2">
-                        AWS Account
-                    </td>
-                </tr>
-                <tr><td colspan="2" style={{background: "gray", height: "1px"}}></td></tr>
+                <tr><td colSpan="2"> AWS Account </td></tr>
+                <tr><td colSpan="2" style={{background: "gray", height: "1px"}}></td></tr>
                 <tr>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Account Number: </td>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_number} </td>
@@ -157,17 +192,31 @@ const PortalReindexEnvBox = (props) => {
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Account Name: </td>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_name} </td>
                 </tr>
+                <tr>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Environment: </td>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {props.task?.task_env?.full_name} </td>
+                </tr>
             </tbody></table>
         </td>
         {vseparator}
         <td style={{verticalAlign: "top"}}>
             <table style={{fontSize: "inherit"}}><tbody>
+                <tr><td colSpan="2"> Environment Aliases </td></tr>
+                <tr><td colSpan="2" style={{background: "gray", height: "1px"}}></td></tr>
                 <tr>
-                    <td colspan="2">
-                        AWS Networking
+                    <td colSpan="2">
+                        {uniqueEnvNames().map((env, index) => <>
+                            {index > 0 && <br />} {env}
+                        </> )}
                     </td>
                 </tr>
-                <tr><td colspan="2" style={{background: "gray", height: "1px"}}></td></tr>
+            </tbody></table>
+        </td>
+        {vseparator}
+        <td style={{verticalAlign: "top"}}>
+            <table style={{fontSize: "inherit"}}><tbody>
+                <tr><td colSpan="2"> AWS Network </td></tr>
+                <tr><td colSpan="2" style={{background: "gray", height: "1px"}}></td></tr>
                 <tr>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> VPC: </td>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}><span id={`tooltip-vpc-${props.task?.task_arn}`}>{props.task?.task_vpc?.id}</span> </td>
@@ -190,12 +239,7 @@ const PortalReindexEnvBox = (props) => {
             </tbody></table>
         </td>
         {vseparator}
-        <td style={{verticalAlign: "top"}}>
-            <u>Environment Aliases</u> <br />
-            {uniqueEnvNames().map((env, index) => <>
-                {index > 0 && <br />} {env}
-            </> )}
-        </td></tr></tbody></table>
+        </tr></tbody></table>
     </small></div>
 }
 
