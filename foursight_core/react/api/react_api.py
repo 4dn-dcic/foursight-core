@@ -45,6 +45,7 @@ from .datetime_utils import (
     convert_utc_datetime_to_utc_datetime_string
 )
 from .encoding_utils import base64_decode_to_json
+from .envs import Envs
 from .gac import Gac
 from .ingestion_utils import (
     read_ingestion_submissions,
@@ -498,8 +499,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "buckets": self._get_known_buckets()
             }
         }
-        portal_production_color, portal_production_env = self._envs.get_portal_production_color()
-        portal_staging_color, portal_staging_env = self._envs.get_portal_staging_color()
+        portal_production_color, portal_production_env = self._envs.get_production_color()
+        portal_staging_color, portal_staging_env = self._envs.get_staging_color()
         if portal_production_color:
             response["portal"]["production_color"] = portal_production_color
             response["portal"]["production_env"] = portal_production_env
@@ -1975,6 +1976,31 @@ class ReactApi(ReactApiBase, ReactRoutes):
                                              for task_definition_arn in task_definition_arns]))
         task_definition_arns.sort()
         return task_definition_arns
+
+    def reactapi_aws_ecs_task_arns_parsed(self) -> Response:
+        task_definition_arns = self.reactapi_aws_ecs_task_arns(latest=True)
+        task_definition_arns_parsed = []
+        def get_task_name(task_definition_arn: str) -> str:
+            if "deploy" in task_definition_arn.lower():
+                if "initial" in task_definition_arn.lower():
+                    return "Initial Deploy"
+                else:
+                    return "Deploy"
+            elif "index" in task_definition_arn.lower():
+                return "Indexer"
+            elif "ingest" in task_definition_arn.lower():
+                return "Ingester"
+            elif "portal" in task_definition_arn.lower():
+                return "Portal"
+            else:
+                return task_definition_arn
+        for task_definition_arn in task_definition_arns:
+            task_definition_arns_parsed.append({
+                "task_arn": task_definition_arn,
+                "task_name": get_task_name(task_definition_arn),
+                "task_env": self._envs.get_associated_env(task_definition_arn)
+            })
+        return task_definition_arns_parsed
 
     def reactapi_aws_ecs_tasks(self, latest: bool = True) -> Response:
         task_definitions = []

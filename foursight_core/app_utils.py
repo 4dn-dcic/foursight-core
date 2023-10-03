@@ -868,7 +868,9 @@ class AppUtilsCore(ReactApi, Routes):
              "short_name": short_env_name(env),
              "full_name": full_env_name(env),
              "public_name": public_env_name(env) if public_env_name(env) else short_env_name(env),
-             "foursight_name": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
+             "foursight_name": infer_foursight_from_env(envname=env),
+             "portal_url": self.get_portal_url(env)}
+            for env in unique_environment_names]
         return sorted(unique_annotated_environment_names, key=lambda key: key["public_name"])
 
     def view_foursight(self, request, environ, is_admin=False, domain="", context="/"):

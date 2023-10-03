@@ -600,7 +600,10 @@ class ReactRoutes:
             return app.core.reactapi_aws_ecs_task_arns(latest=True)
         elif task_definition_arn.lower() == "details":
             return app.core.reactapi_aws_ecs_tasks(latest=False)
-        return app.core.reactapi_aws_ecs_task(task_definition_arn)
+        elif task_definition_arn.lower() == "parsed":
+            return app.core.reactapi_aws_ecs_task_arns_parsed()
+        else:
+            return app.core.reactapi_aws_ecs_task(task_definition_arn)
 
     @route("/aws/ecs/tasks/latest/details", authorize=True)
     def reactapi_route_aws_ecs_task() -> Response:  # noqa: implicit @staticmethod via @route

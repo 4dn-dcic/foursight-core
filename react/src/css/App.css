@@ -231,6 +231,8 @@
 .check-run-button:active {
     color: darkred !important;
     background: yellow;
+   border: 1px solid darkgreen;
+   margin-bottom: -2px;
 }
 .check-run-wait-button {
    border-radius: 12px;
@@ -394,6 +396,9 @@
 }
 .box.bigmargin {
     margin-top: 3.6pt;
+}
+.box.marginbottom {
+    margin-bottom: 3.6pt;
 }
 .box.bigmarginbottom {
     margin-bottom: 6.6pt;

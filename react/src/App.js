@@ -24,6 +24,7 @@ import Page from './Page';
 import RedirectPage from './pages/RedirectPage';
 import SslCertificatesPage from './pages/SslCertificatesPage';
 import PortalAccessKeyPage from './pages/PortalAccessKeyPage';
+import PortalReindexPage from './pages/PortalReindexPage';
 import UserPage from './pages/UserPage';
 import UserCreatePage from './pages/UserCreatePage';
 import UserEditPage from './pages/UserEditPage';
@@ -147,6 +148,11 @@ const App = () => {
                     <Route path="/api/react/:environ/portal_access_key" element={
                         <Page.KnownEnvRequired>
                             <PortalAccessKeyPage />
+                        </Page.KnownEnvRequired>
+                    }/>
+                    <Route path="/api/react/:environ/portal/reindex" element={
+                        <Page.KnownEnvRequired>
+                            <PortalReindexPage />
                         </Page.KnownEnvRequired>
                     }/>
                     <Route path="/api/react/:environ/ingestion/submissions" element={

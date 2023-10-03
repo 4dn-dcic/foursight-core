@@ -27,6 +27,17 @@ class Envs:
         # as returned by app_utils.get_unique_annotated_environment_names, where each
         # object contains these fields: name, short_name, full_name, public_name, foursight_name
         self._known_envs = known_envs
+        # Set any green/blue production/staging info.
+        for known_env in self._known_envs:
+            if self._env_contains(known_env, "green"):
+                known_env["color"] = "green"
+            elif self._env_contains(known_env, "blue"):
+                known_env["color"] = "blue"
+            if known_env.get("color"):
+                if self._env_contains(known_env, "stage") or self._env_contains(known_env, "staging"):
+                    known_env["is_staging"] = True
+                else:
+                    known_env["is_production"] = True
 
     def get_known_envs(self) -> list:
         return self._known_envs
@@ -118,20 +129,48 @@ class Envs:
                 value in env["public_name"].lower() or
                 value in env["foursight_name"].lower())
 
-    def get_portal_production_color(self) -> Tuple[Optional[str], Optional[str]]:
-        for env in self._known_envs:
-            if not (self._env_contains(env, "stage") or self._env_contains(env, "staging")):
-                if self._env_contains(env, "blue"):
-                    return ("blue", env)
-                elif self._env_contains(env, "green"):
-                    return ("green", env)
+    @staticmethod
+    def _env_within(env: dict, value: str) -> bool:
+        value = value.lower()
+        return (env["full_name"].lower() in value or
+                env["short_name"].lower() in value or
+                env["public_name"].lower() in value or
+                env["foursight_name"].lower() in value)
+
+    def get_production_color(self) -> Tuple[Optional[str], Optional[str]]:
+        for known_env in self._known_envs:
+            if known_env.get("is_production"):
+                return (known_env["color"], known_env)
         return (None, None)
 
-    def get_portal_staging_color(self) -> Tuple[Optional[str], Optional[str]]:
-        for env in self._known_envs:
-            if self._env_contains(env, "stage") or self._env_contains(env, "staging"):
-                if self._env_contains(env, "blue"):
-                    return ("blue", env)
-                elif self._env_contains(env, "green"):
-                    return ("green", env)
+    def get_staging_color(self) -> Tuple[Optional[str], Optional[str]]:
+        for known_env in self._known_envs:
+            if known_env.get("is_staging"):
+                return (known_env["color"], known_env)
         return (None, None)
+
+    def _get_green_env(self) -> Optional[dict]:
+        for known_env in self._known_envs:
+            if self._env_contains(known_env, "green"):
+                return known_env
+        return None
+
+    def _get_blue_env(self) -> Optional[dict]:
+        for known_env in self._known_envs:
+            if self._env_contains(known_env, "blue"):
+                return known_env
+        return None
+
+    def get_associated_env(self, name: str) -> Optional[str]:
+        for known_env in self._known_envs:
+            if self._env_within(known_env, name):
+                return known_env
+            elif "green" in name:
+                env = self._get_green_env()
+                if env:
+                    return env
+            elif "blue" in name:
+                env = self._get_blue_env()
+                if env:
+                    return env
+        return None
