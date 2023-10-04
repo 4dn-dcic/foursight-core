@@ -58,6 +58,7 @@ const HomePage = (props) => {
                     <li> To view Foursight <b><Link to="/users">users</Link></b> click <b><Link to="/users"><u>here</u></Link></b>.  </li>
                     <li> To view <b><Link to="/aws/s3">AWS S3</Link></b> info click <b><Link to="/aws/s3"><u>here</u></Link></b>.  </li>
                     <li> To view <b><Link to="/aws/infrastructure">AWS infrastructure</Link></b> info click <b><Link to="/aws/infrastructure"><u>here</u></Link></b>.  </li>
+                    <li> To view <b><Link to="/portal/reindex">Reindex Portal</Link></b> info click <b><Link to="/portal/reindex"><u>here</u></Link></b>.  </li>
                 </ul>
             </div>
             <div className="box thickborder" style={{margin:"20pt",padding:"10pt",marginTop:"-10pt"}}>
