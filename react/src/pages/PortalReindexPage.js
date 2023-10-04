@@ -304,6 +304,15 @@ const PortalReindexEnvBox = (props) => {
 
 const PortalReindexWarnings = (props) => {
     return <>
+        <WarningMultipleTasks task={props.task} />
+        <WarningNoVpc task={props.task} />
+        <WarningNoSecurityGroup task={props.task} />
+        <WarningNoSubnets task={props.task} />
+    </>
+}
+
+const WarningMultipleTasks = (props) => {
+    return <>
         { props.task?.duplicate_tasks &&
             <div className="box bigmargin error"><small>
                 <b>Warning</b>: Multiple task definitions found for this environment.
@@ -334,6 +343,36 @@ const PortalReindexWarnings = (props) => {
                         </tr>
                     </> )}
                 </tbody></table>
+            </small></div>
+        }
+    </>
+}
+
+const WarningNoSubnets = (props) => {
+    return <>
+        { !props.task?.task_subnets &&
+            <div className="box bigmargin error"><small>
+                <b>Warning</b>: No subnets found.
+            </small></div>
+        }
+    </>
+}
+
+const WarningNoSecurityGroup = (props) => {
+    return <>
+        { !props.task?.task_security_group &&
+            <div className="box bigmargin error"><small>
+                <b>Warning</b>: No security group found.
+            </small></div>
+        }
+    </>
+}
+
+const WarningNoVpc = (props) => {
+    return <>
+        { !props.task?.task_vpc &&
+            <div className="box bigmargin error"><small>
+                <b>Warning</b>: No VPC found.
             </small></div>
         }
     </>
