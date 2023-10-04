@@ -170,6 +170,8 @@ const PortalReindexButtons = (props) => {
 }
 
 const PortalReindexEnvBox = (props) => {
+    const [showNetworkNames, setShowNetworkNames] = useState(false);
+    const toggleShowNetworkNames = (e) => { setShowNetworkNames(!showNetworkNames); e.stopPropagation() }
     const header = useHeader();
     const uniqueEnvNames = () => {
         const env = {};
@@ -201,10 +203,10 @@ const PortalReindexEnvBox = (props) => {
         {vseparator}
         <td style={{verticalAlign: "top"}}>
             <table style={{fontSize: "inherit"}}><tbody>
-                <tr><td colSpan="2"> Environment Aliases </td></tr>
+                <tr><td colSpan="2" style={{whiteSpace: "nowrap"}}> Environment Aliases </td></tr>
                 <tr><td colSpan="2" style={{background: "gray", height: "1px"}}></td></tr>
                 <tr>
-                    <td colSpan="2">
+                    <td colSpan="2" style={{whiteSpace: "nowrap"}}>
                         {uniqueEnvNames().map((env, index) => <>
                             {index > 0 && <br />} {env}
                         </> )}
@@ -215,30 +217,44 @@ const PortalReindexEnvBox = (props) => {
         {vseparator}
         <td style={{verticalAlign: "top"}}>
             <table style={{fontSize: "inherit"}}><tbody>
-                <tr><td colSpan="2"> AWS Network </td></tr>
+                <tr><td colSpan="2"> AWS Network <span onClick={toggleShowNetworkNames} className="pointer">
+                    {showNetworkNames ? Char.DownArrow : Char.UpArrow}</span>
+                </td></tr>
                 <tr><td colSpan="2" style={{background: "gray", height: "1px"}}></td></tr>
                 <tr>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> VPC: </td>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}><span id={`tooltip-vpc-${props.task?.task_arn}`}>{props.task?.task_vpc?.id}</span> </td>
-                    <Tooltip id={`tooltip-vpc-${props.task.task_arn}`} position="top" shape="squared" size="small" text={props.task?.task_vpc?.name} />
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
+                        <span id={`tooltip-vpc-${props.task?.task_arn}`}>
+                            {showNetworkNames ? props.task?.task_vpc?.name : props.task?.task_vpc?.id}
+                        </span>
+                    </td>
+                    <Tooltip id={`tooltip-vpc-${props.task.task_arn}`} position="top" shape="squared" size="small"
+                        text={showNetworkNames ? props.task?.task_vpc?.id : props.task?.task_vpc?.name} />
                 </tr>
                 <tr>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Security Group: </td>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> <span id={`tooltip-sg-${props.task?.task_arn}`}>{props.task?.task_security_group?.id}</span> </td>
-                    <Tooltip id={`tooltip-sg-${props.task.task_arn}`} position="top" shape="squared" size="small" text={props.task?.task_security_group?.name} />
+                    <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
+                        <span id={`tooltip-sg-${props.task?.task_arn}`}>
+                            {showNetworkNames ? props.task?.task_security_group?.name : props.task?.task_security_group?.id}
+                        </span>
+                    </td>
+                    <Tooltip id={`tooltip-sg-${props.task.task_arn}`} position="top" shape="squared" size="small"
+                        text={showNetworkNames ? props.task?.task_security_group?.id : props.task?.task_security_group?.id} />
                 </tr>
                 <tr>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Subnets: </td>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
                         { props.task?.task_subnets?.map(subnet => <>
-                            <span id={`tooltip-${subnet.id}`}>{subnet.id}</span> <br />
-                            <Tooltip id={`tooltip-${subnet.id}`} position="top" shape="squared" size="small" text={subnet.name} />
+                            <span id={`tooltip-subnet-${props.task?.task_arn}-${subnet.id}`}>
+                                {showNetworkNames ? subnet.name : subnet.id}
+                            </span> <br />
+                            <Tooltip id={`tooltip-subnet-${props.task?.task_arn}-${subnet.id}`} position="top" shape="squared" size="small"
+                                text={showNetworkNames ? subnet.id : subnet.name} />
                         </>) }
                     </td>
                 </tr>
             </tbody></table>
         </td>
-        {vseparator}
         </tr></tbody></table>
     </small></div>
 }

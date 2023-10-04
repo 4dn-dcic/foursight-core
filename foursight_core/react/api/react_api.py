@@ -1998,7 +1998,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         # Get the AWS cluster to use for any task run. 
         clusters = self.reactapi_aws_ecs_clusters()
 
-        # Get the VPC to use for any task run. 
+        # Get the AWS VPC to use for any task run. 
         vpcs = aws_get_vpcs()
         vpcs = [vpc for vpc in vpcs if "main" in (vpc.get("name") or "").lower()]
         vpc = vpcs[0] if len(vpcs) == 1 else None
@@ -2022,12 +2022,15 @@ class ReactApi(ReactApiBase, ReactRoutes):
             }
             task_definition_arns_parsed.append(task_definition_arn_parsed)
             if task_env:
+                # Get the AWS cluster to use for any task run for this particular environment.
                 for cluster in clusters:
                     if Envs._env_within(task_env, cluster["cluster_name"]):
                         task_definition_arn_parsed["task_cluster"] = cluster["cluster_arn"]
+                # Get the AWS security groups to use for any task run for this particular environment.
                 for security_group in security_groups:
                     if Envs._env_within(task_env, security_group["name"]):
                         task_definition_arn_parsed["task_security_group"] = security_group
+                # Get the AWS subnets to use for any task run for this particular environment.
                 if not task_definition_arn_parsed.get("task_security_group"):
                     for security_group in security_groups:
                         if "production" in security_group["name"].lower():
