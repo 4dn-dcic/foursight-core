@@ -49,6 +49,7 @@ const PortalReindexPage = (props) => {
         setShowEnvs({...showEnvs});
     }
     const toggleShowEnv = (task) => { showEnvs[task.task_arn] = !showEnvs[task.task_arn]; setShowEnvs({...showEnvs}); }
+    const setShowEnv = (task) => { showEnvs[task.task_arn] = true; setShowEnvs({...showEnvs}); }
     const isShowEnv = (task) => showEnvs[task.task_arn];
 
     return <>
@@ -65,7 +66,11 @@ const PortalReindexPage = (props) => {
                             text={`Click to ${isShowEnvs() ? "hide" : "show"} details for task run.`} />
                     </span>
                 </div>
-                <PortalReindexContent tasks={tasks.data} isShowEnv={isShowEnv} toggleShowEnv={toggleShowEnv} />
+                <PortalReindexContent
+                    tasks={tasks.data}
+                    isShowEnv={isShowEnv}
+                    toggleShowEnv={toggleShowEnv}
+                    setShowEnv={setShowEnv} />
             </> }
         </div>
     </>
@@ -97,7 +102,8 @@ const PortalReindexContent = (props) => {
                 selectTask={selectTask}
                 isSelectedTask={isSelectedTask}
                 isShowEnv={props.isShowEnv}
-                toggleShowEnv={props.toggleShowEnv} />
+                toggleShowEnv={props.toggleShowEnv}
+                setShowEnv={props.setShowEnv} />
         )}
     </div>
 }
@@ -112,19 +118,23 @@ const PortalReindexBox = (props) => {
         props.toggleShowEnv(props.task);
         e.stopPropagation(); e.preventDefault();
     }
+    const selectTask = () =>  {
+        props.selectTask(props.task?.task_arn);
+        props.setShowEnv(props.task);
+    }
 
-    return <div onClick={() => props.selectTask(props.task?.task_arn)} style={{marginTop:"4pt"}} className="hover-lighten">
+    return <div onClick={selectTask} style={{marginTop:"4pt"}} className="hover-lighten">
         <table style={{width: "100%"}}><tbody><tr><td style={{verticalAlign: "top", paddingRight:"10pt", width: "1%"}}>
             <input
                 name="radio"
                 type="radio"
                 value={props.task?.task_arn}
                 checked={props.selectedTask == props.task?.task_arn}
-                onChange={() => props.selectTask(props.task?.task_arn)}
+                onChange={selectTask}
                 style={{marginTop:"10pt"}} />
         </td><td style={{verticalAlign: "top"}}>
             <div className="box bigmarginbottom lighten" style={{cursor:"default"}}>
-                <u><b onClick={() => props.selectTask(props.task?.task_arn)} style={{color: "black"}}>{props.task?.task_env?.name}</b></u>
+                <u><b onClick={selectTask} style={{color: "black"}}>{props.task?.task_env?.name}</b></u>
                 <small onClick={toggleShowEnv} className="pointer" style={{marginLeft:"4pt"}} id={`tooltip-show-env-${props.task?.task_arn}`}>
                     {isShowEnv() ? Char.DownArrow : Char.UpArrow}
                 </small>
