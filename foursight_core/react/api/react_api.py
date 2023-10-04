@@ -2121,10 +2121,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "task_name": task_name,
                 "task_env": task_env
             }
-            if clusters:  # TODO: XYZZY/DEBUG
-                task_for_run["task_clusters"] = clusters
-            if security_groups:  # TODO: XYZZY/DEBUG
-                task_for_run["task_security_groups"] = security_groups
             if vpc:
                 task_for_run["task_vpc"] = vpc
             # Get the AWS cluster to use for any task run for this particular environment.

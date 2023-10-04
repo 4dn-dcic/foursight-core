@@ -306,7 +306,7 @@ const PortalReindexWarnings = (props) => {
     return <>
         { props.task?.duplicate_tasks &&
             <div className="box bigmargin error"><small>
-                <b>Warning</b>: Duplicate task definitions found for this environment.
+                <b>Warning</b>: Multiple task definitions found for this environment.
                 <div style={{background: "darkred", height:"1px", marginTop: "4pt", marginBottom: "4pt"}} />
                 <table style={{fontSize: "inherit", color: "inherit"}}><tbody>
                     <tr>
