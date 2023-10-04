@@ -600,8 +600,8 @@ class ReactRoutes:
             return app.core.reactapi_aws_ecs_task_arns(latest=True)
         elif task_definition_arn.lower() == "details":
             return app.core.reactapi_aws_ecs_tasks(latest=False)
-        elif task_definition_arn.lower() == "parsed":
-            return app.core.reactapi_aws_ecs_task_arns_parsed()
+        elif task_definition_arn.lower() == "run":
+            return app.core.reactapi_aws_ecs_task_arns_for_run(task=app.request_arg("task"))
         else:
             return app.core.reactapi_aws_ecs_task(task_definition_arn)
 

@@ -59,9 +59,9 @@ from .ingestion_utils import (
     read_ingestion_submission_validation_report
 )
 from .misc_utils import (
+    find_common_prefix,
     get_base_url,
     is_running_locally,
-    longest_common_initial_substring,
     name_value_list_to_dict,
     sort_dictionary_by_case_insensitive_keys
 )
@@ -1935,7 +1935,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                                                   and most_recent_update_at > most_recent_deployment_at)):
                 most_recent_deployment_at = most_recent_update_at
             if len(deployments) > 1:
-                task_name_common_prefix = longest_common_initial_substring(
+                task_name_common_prefix = find_common_prefix(
                         [deployment["task_name"] for deployment in deployments])
                 if task_name_common_prefix:
                     for deployment in deployments:
@@ -1951,12 +1951,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
             })
         if len(response["services"]) > 1:
             service_name_common_prefix = (
-                longest_common_initial_substring([service["service_name"] for service in response["services"]]))
+                find_common_prefix([service["service_name"] for service in response["services"]]))
             if service_name_common_prefix:
                 for service in response["services"]:
                     service["service_display_name"] = service["service_name"][len(service_name_common_prefix):]
             task_name_common_prefix = (
-                longest_common_initial_substring([service["task_name"] for service in response["services"]]))
+                find_common_prefix([service["task_name"] for service in response["services"]]))
             if task_name_common_prefix:
                 for service in response["services"]:
                     service["task_display_name"] = service["task_name"][len(task_name_common_prefix):]
@@ -1969,77 +1969,102 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def reactapi_aws_ecs_task_arns(self, latest: bool = True) -> Response:
         # If latest is True then only looks for the non-revisioned task ARNs.
         ecs = boto3.client('ecs')
-        task_definition_arns = ecs.list_task_definitions()['taskDefinitionArns']  # TODO: ecs_utils.list_ecs_tasks
+        task_arns = ecs.list_task_definitions()['taskDefinitionArns']  # TODO: ecs_utils.list_ecs_tasks
         if latest:
-            task_definition_arns = list(set([self._ecs_task_definition_arn_to_name(task_definition_arn)
-                                             for task_definition_arn in task_definition_arns]))
-        task_definition_arns.sort()
-        return task_definition_arns
+            task_arns = list(set([self._ecs_task_definition_arn_to_name(task_arn) for task_arn in task_arns]))
+        task_arns.sort()
+        return task_arns
 
-    def reactapi_aws_ecs_task_arns_parsed(self) -> Response:
+    def reactapi_aws_ecs_task_arns_for_run(self, task: Optional[str] = None) -> Response:
 
-        task_definition_arns = self.reactapi_aws_ecs_task_arns(latest=True)
-        task_definition_arns_parsed = []
-        def get_task_name(task_definition_arn: str) -> str:
-            if "deploy" in task_definition_arn.lower():
-                if "initial" in task_definition_arn.lower():
-                    return "Initial Deploy"
+        task_arns = self.reactapi_aws_ecs_task_arns(latest=True)
+        task_arns_for_run = []
+
+        def get_task_name(task_arn: str) -> str:
+            if "deploy" in task_arn.lower():
+                if "initial" in task_arn.lower():
+                    return "deploy_initial"
                 else:
-                    return "Deploy"
-            elif "index" in task_definition_arn.lower():
-                return "Indexer"
-            elif "ingest" in task_definition_arn.lower():
-                return "Ingester"
-            elif "portal" in task_definition_arn.lower():
-                return "Portal"
+                    return "deploy"
+            elif "index" in task_arn.lower():
+                return "indexer"
+            elif "ingest" in task_arn.lower():
+                return "ingester"
+            elif "portal" in task_arn.lower():
+                return "portal"
             else:
-                return task_definition_arn
+                return task_arn
 
-        # Get the AWS cluster to use for any task run. 
+        def get_vpc() -> Optional[dict]:
+            vpcs = aws_get_vpcs()
+            vpcs = [vpc for vpc in vpcs if "main" in (vpc.get("name") or "").lower()]
+            return vpcs[0] if len(vpcs) == 1 else None
+
+        def get_subnets() -> list[dict]:
+            subnets = aws_get_subnets()
+            subnets = [subnet for subnet in subnets
+                       if subnet.get("type") == "private" and "main" in (subnet.get("name") or "").lower()]
+            subnets = [{"id": subnet["id"], "name": subnet["name"]} for subnet in subnets]
+            return subnets
+
+        def get_security_groups(vpc_id: str) -> dict:
+            security_groups = aws_get_security_groups(vpc_id=vpc["id"]) if vpc else []
+            security_groups = [security_group for security_group in security_groups
+                               if "container" in (security_group.get("name") or "").lower()]
+            security_groups = [
+                {
+                    "id": security_group["id"],
+                    "name": security_group["name"],
+                    "stack": security_group["stack"]
+                }
+                for security_group in security_groups
+            ]
+            return security_groups
+
+        # Get the AWS cluster to use for any task run.
         clusters = self.reactapi_aws_ecs_clusters()
 
-        # Get the AWS VPC to use for any task run. 
-        vpcs = aws_get_vpcs()
-        vpcs = [vpc for vpc in vpcs if "main" in (vpc.get("name") or "").lower()]
-        vpc = vpcs[0] if len(vpcs) == 1 else None
+        # Get the AWS VPC to use for any task run.
+        vpc = get_vpc()
 
-        # Get the AWS subnets to use for any task run. 
-        subnets = aws_get_subnets()
-        subnets = [subnet for subnet in subnets if subnet.get("type") == "private" and "main" in (subnet.get("name") or "").lower()]
-        subnets = [{"id": subnet["id"], "name": subnet["name"]} for subnet in subnets]
+        # Get the AWS security groups to use for any task run.
+        security_groups = get_security_groups(vpc["id"]) if vpc else None
 
-        # Get the AWS security groups to use for any task run. 
-        security_groups = aws_get_security_groups(vpc_id=vpc["id"]) if vpc else []
-        security_groups = [security_group for security_group in security_groups if "container" in (security_group.get("name") or "").lower()]
-        security_groups = [{"id": security_group["id"], "name": security_group["name"]} for security_group in security_groups]
+        # Get the AWS subnets to use for any task run.
+        subnets = get_subnets()
 
-        for task_definition_arn in task_definition_arns:
-            task_env = self._envs.get_associated_env(task_definition_arn)
-            task_definition_arn_parsed = {
-                "task_arn": task_definition_arn,
-                "task_name": get_task_name(task_definition_arn),
+        for task_arn in task_arns:
+            task_name = get_task_name(task_arn)
+            if task and task.lower() != task_name.lower():
+                continue
+            task_env = self._envs.get_associated_env(task_arn)
+            task_arn_for_run = {
+                "task_arn": task_arn,
+                "task_name": task_name,
                 "task_env": task_env,
             }
-            task_definition_arns_parsed.append(task_definition_arn_parsed)
+            task_arns_for_run.append(task_arn_for_run)
             if task_env:
                 # Get the AWS cluster to use for any task run for this particular environment.
                 for cluster in clusters:
                     if Envs._env_within(task_env, cluster["cluster_name"]):
-                        task_definition_arn_parsed["task_cluster"] = cluster["cluster_arn"]
+                        task_arn_for_run["task_cluster"] = cluster["cluster_arn"]
                 # Get the AWS security groups to use for any task run for this particular environment.
                 for security_group in security_groups:
-                    if Envs._env_within(task_env, security_group["name"]):
-                        task_definition_arn_parsed["task_security_group"] = security_group
-                # Get the AWS subnets to use for any task run for this particular environment.
-                if not task_definition_arn_parsed.get("task_security_group"):
+                    prefix = find_common_prefix([task_arn, security_group["name"], security_group["stack"]])
+                    if prefix == security_group["stack"]:
+                        task_arn_for_run["task_security_group"] = security_group
+                    elif Envs._env_within(task_env, security_group["name"]):
+                        task_arn_for_run["task_security_group"] = security_group
+                if not task_arn_for_run.get("task_security_group"):
                     for security_group in security_groups:
                         if "production" in security_group["name"].lower():
-                            task_definition_arn_parsed["task_security_group"] = security_group
+                            task_arn_for_run["task_security_group"] = security_group
             if vpc:
-                task_definition_arn_parsed["task_vpc"] = {"id": vpc["id"], "name": vpc["name"]}
+                task_arn_for_run["task_vpc"] = {"id": vpc["id"], "name": vpc["name"]}
             if subnets:
-                task_definition_arn_parsed["task_subnets"] = subnets
-        return task_definition_arns_parsed
+                task_arn_for_run["task_subnets"] = subnets
+        return task_arns_for_run
 
     def reactapi_aws_ecs_tasks(self, latest: bool = True) -> Response:
         task_definitions = []
@@ -2147,12 +2172,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
             urllib.parse.unquote(args.get("sort", "modified.desc") if args else "modified.desc")))
 
     def reactapi_ingestion_submission_summary(self, request: dict, env: str,
-                                      uuid: str, args: Optional[dict] = None) -> Response:
+                                              uuid: str, args: Optional[dict] = None) -> Response:
         return self.create_success_response(
             read_ingestion_submission_summary(self._get_metadata_bundles_bucket(env, args), uuid))
 
     def reactapi_ingestion_submission_detail(self, request: dict, env: str,
-                                      uuid: str, args: Optional[dict] = None) -> Response:
+                                             uuid: str, args: Optional[dict] = None) -> Response:
         return self.create_success_response(
             read_ingestion_submission_detail(self._get_metadata_bundles_bucket(env, args), uuid))
 

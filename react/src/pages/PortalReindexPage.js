@@ -7,17 +7,28 @@ import { StandardSpinner } from '../Spinners';
 import Tooltip from '../components/Tooltip';
 import useFetch from '../hooks/Fetch';
 
-function awsTaskLink(arn) {
-    const region = "us-east-1";
-    return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${arn}/run-task`;
-    return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${arn}?status=ACTIVE&region=${region}/run-task`;
+const region = "us-east-1";
+
+function awsTaskLink(id) {
+    return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${id}/run-task`;
+}
+
+function awsVpcLink(id) {
+    return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#VpcDetails:VpcId=${id}`;
+}
+
+function awsSecurityGroupLink(id) {
+    return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#SecurityGroup:groupId=${id}`;
+}
+
+function awsSubnetLink(id) {
+    return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#SubnetDetails:subnetId=${id}`;
 }
 
 const PortalReindexPage = (props) => {
 
-    const tasks = useFetch("//aws/ecs/tasks/parsed", {
+    const tasks = useFetch("//aws/ecs/tasks/run?task=deploy", {
         onData: (data) => {
-            data = data?.filter(task => task.task_name == "Deploy");
             setShowEnvs(data.reduce((result, task) => {
                 result[task.task_arn] = false;
                 return result;
@@ -48,8 +59,10 @@ const PortalReindexPage = (props) => {
             : <>
                 <div className="box thickborder" style={{marginTop: "2pt", marginBottom: "10pt"}}>
                     Select the Portal environment below to reindex.
-                    <span style={{float: "right"}} className="pointer" onClick={toggleShowEnvs}>
+                    <span style={{float: "right"}} className="pointer" onClick={toggleShowEnvs} id="tooltip-show-envs">
                         { isShowEnvs() ? Char.DownArrow : Char.UpArrow }
+                        <Tooltip id="tooltip-show-envs" position="top" size="small"
+                            text={`Click to ${isShowEnvs() ? "hide" : "show"} details for task run.`} />
                     </span>
                 </div>
                 <PortalReindexContent tasks={tasks.data} isShowEnv={isShowEnv} toggleShowEnv={toggleShowEnv} />
@@ -112,7 +125,11 @@ const PortalReindexBox = (props) => {
         </td><td style={{verticalAlign: "top"}}>
             <div className="box bigmarginbottom lighten" style={{cursor:"default"}}>
                 <u><b onClick={() => props.selectTask(props.task?.task_arn)} style={{color: "black"}}>{props.task?.task_env?.name}</b></u>
-                <small onClick={toggleShowEnv} className="pointer" style={{marginLeft:"4pt"}}>{isShowEnv() ? Char.DownArrow : Char.UpArrow}</small>
+                <small onClick={toggleShowEnv} className="pointer" style={{marginLeft:"4pt"}} id={`tooltip-show-env-${props.task?.task_arn}`}>
+                    {isShowEnv() ? Char.DownArrow : Char.UpArrow}
+                </small>
+                <Tooltip id={`tooltip-show-env-${props.task?.task_arn}`} position="top" size="small"
+                    text={`Click to ${isShowEnv() ? "hide" : "show"} details for task run.`} />
                 <small style={{float: "right"}}>
                     &nbsp;&nbsp;<ExternalLink href={props.task.task_env?.portal_url} />
                 </small>
@@ -226,6 +243,7 @@ const PortalReindexEnvBox = (props) => {
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
                         <span id={`tooltip-vpc-${props.task?.task_arn}`}>
                             {showNetworkNames ? props.task?.task_vpc?.name : props.task?.task_vpc?.id}
+                            &nbsp;<small><ExternalLink href={awsVpcLink(props.task?.task_vpc?.id)} /></small>
                         </span>
                     </td>
                     <Tooltip id={`tooltip-vpc-${props.task.task_arn}`} position="top" shape="squared" size="small"
@@ -236,6 +254,7 @@ const PortalReindexEnvBox = (props) => {
                     <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
                         <span id={`tooltip-sg-${props.task?.task_arn}`}>
                             {showNetworkNames ? props.task?.task_security_group?.name : props.task?.task_security_group?.id}
+                            &nbsp;<small><ExternalLink href={awsSecurityGroupLink(props.task?.task_security_group?.id)} /></small>
                         </span>
                     </td>
                     <Tooltip id={`tooltip-sg-${props.task.task_arn}`} position="top" shape="squared" size="small"
@@ -247,6 +266,7 @@ const PortalReindexEnvBox = (props) => {
                         { props.task?.task_subnets?.map(subnet => <>
                             <span id={`tooltip-subnet-${props.task?.task_arn}-${subnet.id}`}>
                                 {showNetworkNames ? subnet.name : subnet.id}
+                                &nbsp;<small><ExternalLink href={awsSubnetLink(subnet.id)} /></small>
                             </span> <br />
                             <Tooltip id={`tooltip-subnet-${props.task?.task_arn}-${subnet.id}`} position="top" shape="squared" size="small"
                                 text={showNetworkNames ? subnet.id : subnet.name} />
