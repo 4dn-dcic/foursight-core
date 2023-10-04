@@ -85,8 +85,8 @@ const PortalReindexContentLoading = (props) => {
 const PortalReindexContent = (props) => {
 
     const [selectedTask, setSelectedTask] = useState();
-    const selectTask = (task) => isSelectedTask(task) ? setSelectedTask(null) : setSelectedTask(task);
-    const isSelectedTask = (task) => selectedTask == task;
+    const selectTask = (task) => { isSelectedTask(task) ? setSelectedTask(null) : setSelectedTask(task.task_arn); }
+    const isSelectedTask = (task) => selectedTask == task.task_arn;
 
     const sortedTasks = props.tasks?.sort((a, b) => {
         a = a.task_env?.name?.toLowerCase();
@@ -110,6 +110,7 @@ const PortalReindexContent = (props) => {
 
 const PortalReindexBox = (props) => {
 
+    const showEnvOnSelect = false;
     const [ showEnv, setShowEnv ] = useState(false);
     const isShowEnv = () => {
         return props.isShowEnv(props.task);
@@ -119,8 +120,11 @@ const PortalReindexBox = (props) => {
         e.stopPropagation(); e.preventDefault();
     }
     const selectTask = () =>  {
-        props.selectTask(props.task?.task_arn);
-        props.setShowEnv(props.task);
+        props.selectTask(props.task);
+        if (showEnvOnSelect) props.setShowEnv(props.task);
+    }
+    const isSelectedTask = () =>  {
+        return props.isSelectTask(props.task);
     }
 
     return <div onClick={selectTask} style={{marginTop:"4pt"}} className="hover-lighten">
@@ -134,7 +138,7 @@ const PortalReindexBox = (props) => {
                 style={{marginTop:"10pt"}} />
         </td><td style={{verticalAlign: "top"}}>
             <div className="box bigmarginbottom lighten" style={{cursor:"default"}}>
-                <u><b onClick={selectTask} style={{color: "black"}}>{props.task?.task_env?.name}</b></u>
+                <b onClick={selectTask} className="pointer" style={{color: "black", textDecoration: isShowEnv() ? "" : "underline"}}>{props.task?.task_env?.name}</b>
                 <small onClick={toggleShowEnv} className="pointer" style={{marginLeft:"4pt"}} id={`tooltip-show-env-${props.task?.task_arn}`}>
                     {isShowEnv() ? Char.DownArrow : Char.UpArrow}
                 </small>
