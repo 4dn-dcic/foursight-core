@@ -1,6 +1,7 @@
 import useHeader from '../hooks/Header';
 import { useEffect, useState } from 'react';
 import Char from '../utils/Char'; 
+import DateTime from '../utils/DateTime';
 import { ExternalLink } from '../Components'; 
 import React from 'react';
 import { StandardSpinner } from '../Spinners';
@@ -9,8 +10,12 @@ import useFetch from '../hooks/Fetch';
 
 const region = "us-east-1";
 
-function awsTaskLink(id) {
+function awsTaskRunLink(id) {
     return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${id}/run-task`;
+}
+
+function awsTaskLink(id) {
+    return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${id}`;
 }
 
 function awsVpcLink(id) {
@@ -61,7 +66,7 @@ const PortalReindexPage = (props) => {
                 <div className="box thickborder" style={{marginTop: "2pt", marginBottom: "10pt"}}>
                     Select the Portal environment below to reindex.
                     <span style={{float: "right"}} className="pointer" onClick={toggleShowEnvs} id="tooltip-show-envs">
-                        { isShowEnvs() ? Char.DownArrow : Char.UpArrow }
+                        { isShowEnvs() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b> }
                         <Tooltip id="tooltip-show-envs" position="top" size="small"
                             text={`Click to ${isShowEnvs() ? "hide" : "show"} details for task run.`} />
                     </span>
@@ -140,7 +145,7 @@ const PortalReindexBox = (props) => {
             <div className="box bigmarginbottom lighten" style={{cursor:"default"}}>
                 <b onClick={selectTask} className="pointer" style={{color: "black", textDecoration: isShowEnv() ? "" : "underline"}}>{props.task?.task_env?.name}</b>
                 <small onClick={toggleShowEnv} className="pointer" style={{marginLeft:"4pt"}} id={`tooltip-show-env-${props.task?.task_arn}`}>
-                    {isShowEnv() ? Char.DownArrow : Char.UpArrow}
+                    {isShowEnv() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b>}
                 </small>
                 <Tooltip id={`tooltip-show-env-${props.task?.task_arn}`} position="top" size="small"
                     text={`Click to ${isShowEnv() ? "hide" : "show"} details for task run.`} />
@@ -158,7 +163,8 @@ const PortalReindexBox = (props) => {
                 }
                 <br />
                 { isShowEnv() && <PortalReindexEnvBox env={props.task?.task_env} task={props.task} /> }
-                <small id={`tooltip-${props.task.task_arn}`}> { props.task?.task_arn } &nbsp;<ExternalLink href={awsTaskLink(props.task?.task_arn)} /> </small>
+                <small id={`tooltip-${props.task.task_arn}`}> { props.task?.task_arn } &nbsp;<ExternalLink href={awsTaskRunLink(props.task?.task_arn)} /> </small>
+                <PortalReindexWarnings task={props.task} />
                 <Tooltip id={`tooltip-${props.task.task_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run for the reindex."} />
                 { props.selectedTask === props.task?.task_arn && <PortalReindexButtons task={props.task} /> }
             </div>
@@ -211,7 +217,7 @@ const PortalReindexEnvBox = (props) => {
         });
         return Array.from(new Set(Object.values(env)))?.sort();
     }
-    const vseparator = <><td style={{width: "10pt"}}></td><td style={{verticalAlign: "top", width: "1px", background: "black"}}></td><td style={{width: "10pt"}}></td></>
+    const vseparator = <><td style={{width: "8pt"}}></td><td style={{verticalAlign: "top", width: "1px", background: "black"}}></td><td style={{width: "8pt"}}></td></>
     return <div className="box bigmargin marginbottom"><small>
         <table style={{fontSize: "inherit"}}><tbody><tr><td style={{verticalAlign: "top"}}>
             <table style={{fontSize: "inherit"}}><tbody>
@@ -248,8 +254,11 @@ const PortalReindexEnvBox = (props) => {
         {vseparator}
         <td style={{verticalAlign: "top"}}>
             <table style={{fontSize: "inherit"}}><tbody>
-                <tr><td colSpan="2"> AWS Network <span onClick={toggleShowNetworkNames} className="pointer">
-                    {showNetworkNames ? Char.DownArrow : Char.UpArrow}</span>
+                <tr><td colSpan="2"> AWS Network
+                    <span onClick={toggleShowNetworkNames} className="pointer" id={`tooltip-network-${props.task.task_arn}`} >
+                        &nbsp;{showNetworkNames ? <b>{Char.Diamond}</b> : <b>{Char.Trigram}</b>}
+                        <Tooltip id={`tooltip-network-${props.task.task_arn}`} position="top" size="small" text={`Click to view ${showNetworkNames ? "IDs" : "names"}.`}/>
+                    </span>
                 </td></tr>
                 <tr><td colSpan="2" style={{background: "gray", height: "1px"}}></td></tr>
                 <tr>
@@ -272,7 +281,7 @@ const PortalReindexEnvBox = (props) => {
                         </span>
                     </td>
                     <Tooltip id={`tooltip-sg-${props.task.task_arn}`} position="top" shape="squared" size="small"
-                        text={showNetworkNames ? props.task?.task_security_group?.id : props.task?.task_security_group?.id} />
+                        text={showNetworkNames ? props.task?.task_security_group?.id : props.task?.task_security_group?.name} />
                 </tr>
                 <tr>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Subnets: </td>
@@ -291,6 +300,43 @@ const PortalReindexEnvBox = (props) => {
         </td>
         </tr></tbody></table>
     </small></div>
+}
+
+const PortalReindexWarnings = (props) => {
+    return <>
+        { props.task?.duplicate_tasks &&
+            <div className="box bigmargin error"><small>
+                <b>Warning</b>: Duplicate task definitions found for this environment.
+                <div style={{background: "darkred", height:"1px", marginTop: "4pt", marginBottom: "4pt"}} />
+                <table style={{fontSize: "inherit", color: "inherit"}}><tbody>
+                    <tr>
+                        <td style={{paddingRight: "4pt"}}><b>{Char.RightArrow}</b></td>
+                        <td><u><b>{props.task.task_arn}</b></u>&nbsp;<small><ExternalLink href={awsTaskLink(props.task.task_arn)} color={"inherit"} /></small></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><small>Registered At: {DateTime.Format(props.task?.task_registered_at)}</small></td>
+                    </tr>
+                    { props.task?.duplicate_tasks.map((task, index) => <>
+                        <tr>
+                            <td>{Char.RightArrow}</td>
+                            <td>
+                                <u>{task.task_arn}</u>&nbsp;<small><ExternalLink href={awsTaskLink(task.task_arn)} color={"darkred"} /></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td>
+                                <small>
+                                    Registered At: {DateTime.Format(task?.task_registered_at)}
+                                </small>
+                            </td>
+                        </tr>
+                    </> )}
+                </tbody></table>
+            </small></div>
+        }
+    </>
 }
 
 export default PortalReindexPage;

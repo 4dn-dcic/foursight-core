@@ -151,9 +151,9 @@ const App = () => {
                         </Page.KnownEnvRequired>
                     }/>
                     <Route path="/api/react/:environ/portal/reindex" element={
-                        <Page.KnownEnvRequired>
+                        <Page.AuthorizationRequired>
                             <PortalReindexPage />
-                        </Page.KnownEnvRequired>
+                        </Page.AuthorizationRequired>
                     }/>
                     <Route path="/api/react/:environ/ingestion/submissions" element={
                         <Page.AuthorizationRequired>

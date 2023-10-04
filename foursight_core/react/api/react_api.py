@@ -1978,7 +1978,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def reactapi_aws_ecs_task_arns_for_run(self, task: Optional[str] = None) -> Response:
 
         task_arns = self.reactapi_aws_ecs_task_arns(latest=True)
-        task_arns_for_run = []
+        tasks_for_run = []
 
         def get_task_name(task_arn: str) -> str:
             if "deploy" in task_arn.lower():
@@ -1995,19 +1995,30 @@ class ReactApi(ReactApiBase, ReactRoutes):
             else:
                 return task_arn
 
+        def get_clusters() -> list[dict]:
+            return self.reactapi_aws_ecs_clusters()
+
+        def get_cluster_for_env(clusters: list[dict], task_env: Optional[dict]) -> Optional[dict]:
+            if not task_env:
+                return None
+            for cluster in clusters:
+                if Envs._env_contained_within(task_env, cluster["cluster_name"], strict=False):
+                    task_for_run["task_cluster"] = cluster["cluster_arn"]
+
         def get_vpc() -> Optional[dict]:
             vpcs = aws_get_vpcs()
-            vpcs = [vpc for vpc in vpcs if "main" in (vpc.get("name") or "").lower()]
-            return vpcs[0] if len(vpcs) == 1 else None
+            if len(vpcs) == 1:
+                vpc = vpcs[0]
+            else:
+                vpcs = [vpc for vpc in vpcs if "main" in (vpc.get("name") or "").lower()]
+                vpc = vpcs[0] if len(vpcs) == 1 else None
+            if vpc:
+                vpc = {"id": vpc["id"], "name": vpc["name"]}
+            return vpc
 
-        def get_subnets() -> list[dict]:
-            subnets = aws_get_subnets()
-            subnets = [subnet for subnet in subnets
-                       if subnet.get("type") == "private" and "main" in (subnet.get("name") or "").lower()]
-            subnets = [{"id": subnet["id"], "name": subnet["name"]} for subnet in subnets]
-            return subnets
-
-        def get_security_groups(vpc_id: str) -> dict:
+        def get_security_groups(vpc: Optional[dict]) -> list[dict]:
+            if not vpc:
+                return []
             security_groups = aws_get_security_groups(vpc_id=vpc["id"]) if vpc else []
             security_groups = [security_group for security_group in security_groups
                                if "container" in (security_group.get("name") or "").lower()]
@@ -2021,14 +2032,81 @@ class ReactApi(ReactApiBase, ReactRoutes):
             ]
             return security_groups
 
+        def get_security_group_for_env(security_groups: list[dict], task_env: Optional[dict]) -> Optional[dict]:
+            if not task_env:
+                return None
+            env_specific_security_group = None
+            for security_group in security_groups:
+                prefix = find_common_prefix([task_arn, security_group["name"], security_group["stack"]])
+                if prefix == security_group["stack"]:
+                    env_specific_security_group = security_group
+                    break
+                elif Envs._env_contained_within(task_env, security_group["name"], strict=False):
+                    env_specific_security_group = security_group
+                    break
+            return env_specific_security_group
+
+        def get_subnets() -> list[dict]:
+            subnets = aws_get_subnets()
+            subnets = [subnet for subnet in subnets if subnet.get("type") == "private"]
+            return [{"id": subnet["id"], "name": subnet["name"]} for subnet in subnets]
+
+        def get_subnets_for_env(subnets: list[dict], env: Optional[dict]) -> list[dict]:
+            subnets_for_env = [subnet for subnet in subnets if "main" in (subnet.get("name") or "").lower()]
+            if not subnets_for_env:
+                for subnet in subnets:
+                    if Envs._env_contained_within(task_env, subnet["name"], strict=False):
+                        subnets_for_env.append(subnet)
+            if not subnets_for_env:
+                # If none just take all of the (private) subnets.
+                subnets_for_env = subnets
+            return subnets_for_env
+
+        def add_task(tasks: list[dict], task: dict) -> None:
+            duplicate_tasks = [existing_task for existing_task in tasks
+                               if existing_task["task_name"] == task["task_name"]
+                               and existing_task["task_env"] == task["task_env"]]
+            if duplicate_tasks:
+                existing_task = duplicate_tasks[0]  # since doing this as we go we will only get at most one of these
+                ecs = boto3.client('ecs')
+                existing_task_definition = (
+                    ecs.describe_task_definition(taskDefinition=existing_task["task_arn"])["taskDefinition"])
+                this_task_definition = ecs.describe_task_definition(taskDefinition=task["task_arn"])["taskDefinition"]
+                existing_task_registered_at = existing_task_definition.get("registeredAt")
+                this_task_registered_at = this_task_definition.get("registeredAt")
+                if existing_task_registered_at and this_task_registered_at:
+                    if existing_task_registered_at > this_task_registered_at:
+                        # The existing task is newer than this task; skip this one.
+                        existing_task["task_registered_at"] = (
+                            convert_utc_datetime_to_utc_datetime_string(existing_task_registered_at))
+                        if not existing_task.get("duplicate_tasks"):
+                            existing_task["duplicate_tasks"] = []
+                        existing_task["duplicate_tasks"].append({
+                            "task_arn": task["task_arn"],
+                            "task_registered_at": convert_utc_datetime_to_utc_datetime_string(this_task_registered_at)
+                         })
+                        return
+                    else:
+                        # This task is newer than the existing task; remove the existing one.
+                        task["task_registered_at"] = (
+                            convert_utc_datetime_to_utc_datetime_string(this_task_registered_at))
+                        task["duplicate_tasks"] = existing_task.get("duplicate_tasks") or []
+                        task["duplicate_tasks"].append({
+                            "task_arn": existing_task["task_arn"],
+                            "task_registered_at": (
+                                convert_utc_datetime_to_utc_datetime_string(existing_task_registered_at))
+                         })
+                        tasks.remove(existing_task)
+            tasks.append(task)
+
         # Get the AWS cluster to use for any task run.
-        clusters = self.reactapi_aws_ecs_clusters()
+        clusters = get_clusters()
 
         # Get the AWS VPC to use for any task run.
         vpc = get_vpc()
 
         # Get the AWS security groups to use for any task run.
-        security_groups = get_security_groups(vpc["id"]) if vpc else None
+        security_groups = get_security_groups(vpc)
 
         # Get the AWS subnets to use for any task run.
         subnets = get_subnets()
@@ -2038,33 +2116,31 @@ class ReactApi(ReactApiBase, ReactRoutes):
             if task and task.lower() != task_name.lower():
                 continue
             task_env = self._envs.get_associated_env(task_arn)
-            task_arn_for_run = {
+            task_for_run = {
                 "task_arn": task_arn,
                 "task_name": task_name,
-                "task_env": task_env,
+                "task_env": task_env
             }
-            task_arns_for_run.append(task_arn_for_run)
-            if task_env:
-                # Get the AWS cluster to use for any task run for this particular environment.
-                for cluster in clusters:
-                    if Envs._env_within(task_env, cluster["cluster_name"]):
-                        task_arn_for_run["task_cluster"] = cluster["cluster_arn"]
-                # Get the AWS security groups to use for any task run for this particular environment.
-                for security_group in security_groups:
-                    prefix = find_common_prefix([task_arn, security_group["name"], security_group["stack"]])
-                    if prefix == security_group["stack"]:
-                        task_arn_for_run["task_security_group"] = security_group
-                    elif Envs._env_within(task_env, security_group["name"]):
-                        task_arn_for_run["task_security_group"] = security_group
-                if not task_arn_for_run.get("task_security_group"):
-                    for security_group in security_groups:
-                        if "production" in security_group["name"].lower():
-                            task_arn_for_run["task_security_group"] = security_group
+            if clusters:  # TODO: XYZZY/DEBUG
+                task_for_run["task_clusters"] = clusters
+            if security_groups:  # TODO: XYZZY/DEBUG
+                task_for_run["task_security_groups"] = security_groups
             if vpc:
-                task_arn_for_run["task_vpc"] = {"id": vpc["id"], "name": vpc["name"]}
-            if subnets:
-                task_arn_for_run["task_subnets"] = subnets
-        return task_arns_for_run
+                task_for_run["task_vpc"] = vpc
+            # Get the AWS cluster to use for any task run for this particular environment.
+            cluster_for_env = get_cluster_for_env(clusters, task_env)
+            if cluster_for_env:
+                task_for_run["task_cluster"] = cluster_for_env
+            # Get the AWS security groups to use for any task run for this particular environment.
+            security_group_for_env = get_security_group_for_env(security_groups, task_env)
+            if security_group_for_env:
+                task_for_run["task_security_group"] = security_group_for_env
+            subnets_for_env = get_subnets_for_env(subnets, task_env)
+            if subnets_for_env:
+                task_for_run["task_subnets"] = subnets_for_env
+            # Check if we already have a task for this environment.
+            add_task(tasks_for_run, task_for_run)
+        return tasks_for_run
 
     def reactapi_aws_ecs_task_arns_run(self, task_arn: str) -> Response:
         # TODO
