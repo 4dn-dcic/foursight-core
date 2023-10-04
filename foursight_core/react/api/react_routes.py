@@ -594,16 +594,21 @@ class ReactRoutes:
     def reactapi_route_aws_ecs_tasks() -> Response:  # noqa: implicit @staticmethod via @route
         return app.core.reactapi_aws_ecs_task_arns(latest=False)
 
-    @route("/aws/ecs/tasks/{task_definition_arn}", authorize=True)
+    @route("/aws/ecs/tasks/{task_definition_arn}", methods=["GET", "POST"], authorize=True)
     def reactapi_route_aws_ecs_task(task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
-        if task_definition_arn.lower() == "latest":
-            return app.core.reactapi_aws_ecs_task_arns(latest=True)
-        elif task_definition_arn.lower() == "details":
-            return app.core.reactapi_aws_ecs_tasks(latest=False)
-        elif task_definition_arn.lower() == "run":
-            return app.core.reactapi_aws_ecs_task_arns_for_run(task=app.request_arg("task"))
-        else:
-            return app.core.reactapi_aws_ecs_task(task_definition_arn)
+        if app.request_method() == "GET":
+            if task_definition_arn.lower() == "latest":
+                return app.core.reactapi_aws_ecs_task_arns(latest=True)
+            elif task_definition_arn.lower() == "details":
+                return app.core.reactapi_aws_ecs_tasks(latest=False)
+            elif task_definition_arn.lower() == "run":
+                return app.core.reactapi_aws_ecs_task_arns_for_run(task=app.request_arg("task"))
+            else:
+                return app.core.reactapi_aws_ecs_task(task_definition_arn)
+        elif app.request_method() == "POST":
+            if task_definition_arn.lower() == "run":
+                return app.core.reactapi_aws_ecs_task_run(task_definition_arn)
+        return app.core.create_forbidden_response()
 
     @route("/aws/ecs/tasks/latest/details", authorize=True)
     def reactapi_route_aws_ecs_task() -> Response:  # noqa: implicit @staticmethod via @route

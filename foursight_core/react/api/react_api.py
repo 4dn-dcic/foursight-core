@@ -2066,6 +2066,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 task_arn_for_run["task_subnets"] = subnets
         return task_arns_for_run
 
+    def reactapi_aws_ecs_task_arns_run(self, task_arn: str) -> Response:
+        # TODO
+        pass
+
     def reactapi_aws_ecs_tasks(self, latest: bool = True) -> Response:
         task_definitions = []
         ecs = boto3.client('ecs')
