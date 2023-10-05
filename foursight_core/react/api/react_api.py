@@ -2063,11 +2063,17 @@ class ReactApi(ReactApiBase, ReactRoutes):
             return subnets_for_env
 
         def add_task(tasks: list[dict], task: dict) -> None:
+            # Add the given task to the given task list, but make sure we don't have a duplicate,
+            # meaning more than one task with the same "name" (i.e. e.g. "deploy") as determined
+            # by the get_task_name function definition, above); and for the same environment,
+            # as determined by the get_assocated_env function call, below.
             duplicate_tasks = [existing_task for existing_task in tasks
                                if existing_task["task_name"] == task["task_name"]
                                and existing_task["task_env"] == task["task_env"]]
             if duplicate_tasks:
-                existing_task = duplicate_tasks[0]  # since doing this as we go we will only get at most one of these
+                # Since we are doing this as we go we are
+                # guaranteed to get at most only one of these.
+                existing_task = duplicate_tasks[0]
                 ecs = boto3.client('ecs')
                 existing_task_definition = (
                     ecs.describe_task_definition(taskDefinition=existing_task["task_arn"])["taskDefinition"])
@@ -2131,10 +2137,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
             security_group_for_env = get_security_group_for_env(security_groups, task_env)
             if security_group_for_env:
                 task_for_run["task_security_group"] = security_group_for_env
+            # Get the AWS subnets to use for any task run for this particular environment.
             subnets_for_env = get_subnets_for_env(subnets, task_env)
             if subnets_for_env:
                 task_for_run["task_subnets"] = subnets_for_env
-            # Check if we already have a task for this environment.
+            # Add this task to the results (handles "duplicates").
             add_task(tasks_for_run, task_for_run)
         return tasks_for_run
 
