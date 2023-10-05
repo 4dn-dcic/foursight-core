@@ -259,6 +259,7 @@ const PortalReindexEnvBox = (props) => {
         {vseparator}
         <td style={{verticalAlign: "top"}}>
             <table style={{fontSize: "inherit"}}><tbody>
+                <tr><td /><td width="800pt"/></tr> {/* dummy to make it expand to right */}
                 <tr><td colSpan="2"> AWS Network
                     <span onClick={toggleShowNetworkNames} className="pointer" id={`tooltip-network-${props.task.task_arn}`} >
                         &nbsp;{showNetworkNames ? <b>{Char.Diamond}</b> : <b>{Char.Trigram}</b>}
