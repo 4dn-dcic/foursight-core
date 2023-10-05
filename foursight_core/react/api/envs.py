@@ -130,7 +130,7 @@ class Envs:
                 value in env["foursight_name"].lower())
 
     @staticmethod
-    def _env_contained_within(env: dict, value: str, strict: bool = True) -> bool:
+    def _env_contained_within(env: dict, value: str, strict: bool = False) -> bool:
         value = value.lower()
         if not strict:
             if "color" in env and env["color"]:
@@ -148,10 +148,6 @@ class Envs:
                   env["public_name"].lower() in value or
                   env["foursight_name"].lower() in value)
         return result
-
-#       return (("color" in env and env["color"].lower() in value) or
-#               ("is_production" in env and env["is_production"] and "production" in value) or
-#               ("is_staging" in env and env["is_staging"] and ("staging" in value or "stage" in value)))
 
     def get_production_color(self) -> Tuple[Optional[str], Optional[str]]:
         for known_env in self._known_envs:
@@ -181,10 +177,10 @@ class Envs:
         known_envs_with_colors = [env for env in self._known_envs if env.get("color")]
         known_envs_sans_colors = [env for env in self._known_envs if not env.get("color")]
         for known_env in known_envs_with_colors:
-            if self._env_contained_within(known_env, name, strict=False):
+            if self._env_contained_within(known_env, name):
                 return known_env
         for known_env in known_envs_sans_colors:
-            if self._env_contained_within(known_env, name, strict=False):
+            if self._env_contained_within(known_env, name):
                 return known_env
 #           elif "green" in name:
 #               env = self._get_green_env()

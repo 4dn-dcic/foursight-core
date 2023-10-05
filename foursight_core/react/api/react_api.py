@@ -2002,8 +2002,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             if not task_env:
                 return None
             for cluster in clusters:
-                if Envs._env_contained_within(task_env, cluster["cluster_name"], strict=False):
-                    task_for_run["task_cluster"] = cluster["cluster_arn"]
+                if Envs._env_contained_within(task_env, cluster["cluster_name"]):
+                    return {"id": cluster["cluster_arn"], "name": cluster["cluster_name"]}
 
         def get_vpc() -> Optional[dict]:
             vpcs = aws_get_vpcs()
@@ -2041,7 +2041,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 if prefix == security_group["stack"]:
                     env_specific_security_group = security_group
                     break
-                elif Envs._env_contained_within(task_env, security_group["name"], strict=False):
+                elif Envs._env_contained_within(task_env, security_group["name"]):
                     env_specific_security_group = security_group
                     break
             return env_specific_security_group
@@ -2055,7 +2055,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             subnets_for_env = [subnet for subnet in subnets if "main" in (subnet.get("name") or "").lower()]
             if not subnets_for_env:
                 for subnet in subnets:
-                    if Envs._env_contained_within(task_env, subnet["name"], strict=False):
+                    if Envs._env_contained_within(task_env, subnet["name"]):
                         subnets_for_env.append(subnet)
             if not subnets_for_env:
                 # If none just take all of the (private) subnets.

@@ -18,6 +18,10 @@ function awsTaskLink(id) {
     return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${id}`;
 }
 
+function awsClusterLink(id) {
+    return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${id}/services?region=${region}`;
+}
+
 function awsVpcLink(id) {
     return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#VpcDetails:VpcId=${id}`;
 }
@@ -163,7 +167,7 @@ const PortalReindexBox = (props) => {
                 }
                 <br />
                 { isShowEnv() && <PortalReindexEnvBox env={props.task?.task_env} task={props.task} /> }
-                <small id={`tooltip-${props.task.task_arn}`}> { props.task?.task_arn } &nbsp;<ExternalLink href={awsTaskRunLink(props.task?.task_arn)} /> </small>
+                <small id={`tooltip-${props.task.task_arn}`}> { props.task?.task_arn }&nbsp;<ExternalLink href={awsTaskRunLink(props.task?.task_arn)} /> </small>
                 <PortalReindexWarnings task={props.task} />
                 <Tooltip id={`tooltip-${props.task.task_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run for the reindex."} />
                 { props.selectedTask === props.task?.task_arn && <PortalReindexButtons task={props.task} /> }
@@ -218,17 +222,18 @@ const PortalReindexEnvBox = (props) => {
         return Array.from(new Set(Object.values(env)))?.sort();
     }
     const vseparator = <><td style={{width: "8pt"}}></td><td style={{verticalAlign: "top", width: "1px", background: "black"}}></td><td style={{width: "8pt"}}></td></>
+    const hseparator = <><tr><td colSpan="2" style={{height: "1pt"}}></td></tr><tr><td colSpan="2" style={{background: "gray", height: "1px"}}></td></tr><tr><td colSpan="2" style={{height: "1pt"}}></td></tr><tr><td colSpan="2" style={{background: "gray", height: "1px"}}></td></tr><tr><td colSpan="2" style={{height: "1pt"}}></td></tr></>
     return <div className="box bigmargin marginbottom"><small>
         <table style={{fontSize: "inherit"}}><tbody><tr><td style={{verticalAlign: "top"}}>
             <table style={{fontSize: "inherit"}}><tbody>
                 <tr><td colSpan="2"> AWS Account </td></tr>
-                <tr><td colSpan="2" style={{background: "gray", height: "1px"}}></td></tr>
+                {hseparator}
                 <tr>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Account Number: </td>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Number: </td>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_number} </td>
                 </tr>
                 <tr>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Account Name: </td>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Name: </td>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_name} </td>
                 </tr>
                 <tr>
@@ -241,7 +246,7 @@ const PortalReindexEnvBox = (props) => {
         <td style={{verticalAlign: "top"}}>
             <table style={{fontSize: "inherit"}}><tbody>
                 <tr><td colSpan="2" style={{whiteSpace: "nowrap"}}> Environment Aliases </td></tr>
-                <tr><td colSpan="2" style={{background: "gray", height: "1px"}}></td></tr>
+                {hseparator}
                 <tr>
                     <td colSpan="2" style={{whiteSpace: "nowrap"}}>
                         {uniqueEnvNames().map((env, index) => <>
@@ -260,7 +265,18 @@ const PortalReindexEnvBox = (props) => {
                         <Tooltip id={`tooltip-network-${props.task.task_arn}`} position="top" size="small" text={`Click to view ${showNetworkNames ? "IDs" : "names"}.`}/>
                     </span>
                 </td></tr>
-                <tr><td colSpan="2" style={{background: "gray", height: "1px"}}></td></tr>
+                {hseparator}
+                <tr>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Cluster: </td>
+                    <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
+                        <span id={`tooltip-cluster-${props.task?.task_arn}`}>
+                            {showNetworkNames ? props.task?.task_cluster?.name : props.task?.task_cluster?.name}
+                            &nbsp;<small><ExternalLink href={awsClusterLink(props.task?.task_cluster?.name)} /></small>
+                        </span>
+                    </td>
+                    <Tooltip id={`tooltip-cluster-${props.task.task_arn}`} position="top" shape="squared" size="small"
+                        text={showNetworkNames ? props.task?.task_cluster?.name : props.task?.task_cluster?.name} />
+                </tr>
                 <tr>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> VPC: </td>
                     <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
@@ -273,7 +289,7 @@ const PortalReindexEnvBox = (props) => {
                         text={showNetworkNames ? props.task?.task_vpc?.id : props.task?.task_vpc?.name} />
                 </tr>
                 <tr>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Security Group: </td>
+                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Security: </td>
                     <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
                         <span id={`tooltip-sg-${props.task?.task_arn}`}>
                             {showNetworkNames ? props.task?.task_security_group?.name : props.task?.task_security_group?.id}
