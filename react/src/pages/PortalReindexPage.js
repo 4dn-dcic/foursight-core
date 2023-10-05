@@ -204,7 +204,7 @@ const Buttons = (props) => {
             : <>
                 <ReindexButton task={props.task} onClickReindex={onClickReindex} onClickCancel={onClickCancel} running={running} />
             </> }
-            { !running.loading && !running.data?.task_running && <span style={{color: "red"}}>
+            { !running.loading && running.data?.task_running && <span style={{color: "red"}}>
                 <div style={{width: "100%", height: "2px", marginTop: "8pt", marginBottom: "8pt", background:"red"}} />
                 <b>Warning</b>: This task appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
             </span> }
@@ -403,7 +403,7 @@ const TaskStatusLine = (props) => {
             <span style={{position: "relative", top: "1px"}}>&nbsp;<PuffSpinnerInline size="16" /></span>
         </> : <span className="pointer" onClick={onRefresh}>
             <b>Task Status</b>:&nbsp;
-            <u>{running.data?.task_running ? "Running" : "Idle"}</u>
+            <u>{running.data?.task_running ? <b style={{color: "red"}}>Running</b> : <>Idle</>}</u>
             { running.data?.task_last_ran_at && <>
                 &nbsp;<b>|</b>&nbsp;<b>Approximate Last Run Time</b>: {DateTime.Format(running.data?.task_last_ran_at)}
             </> }
