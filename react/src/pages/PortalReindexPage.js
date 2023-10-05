@@ -184,13 +184,14 @@ const PortalReindexBox = (props) => {
 
 const Buttons = (props) => {
 
+    const running = useTaskStatusNoCache(props.task);
     const [reindex, setReindex] = useState(false);
     const onClickReindex = (e) => { setReindex(true); e.stopPropagation(); e.preventDefault(); }
     const onClickCancel = (e) => { setReindex(false); e.stopPropagation(); e.preventDefault(); }
     const onClickIgnore = (e) => { e.stopPropagation(); e.preventDefault(); }
 
     if (errorsExist(props.task)) {
-            return <ButtonsDisabled />
+        return <ButtonsDisabled />
     }
     return <>
         <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt"}} onClick={onClickIgnore}>
@@ -200,29 +201,37 @@ const Buttons = (props) => {
                         &nbsp;Reindex&nbsp;
                     </div>
                 </div>
-            :
-                <div>
-                    <table><tbody><tr><td valign="top">
-                        <div className="check-action-confirm-button" style={{width: "fit-content", marginBottom: "-1pt"}} onClick={onClickCancel}>
-                            &nbsp;<b>Cancel</b>&nbsp;
-                        </div>
-                    </td><td valign="top">
-                        <div className="check-run-button" style={{width: "fit-content", border: "1px solid inherit", marginLeft:"8pt"}} onClick={onClickReindex}>
-                            &nbsp;Yes: Reindex&nbsp;
-                        </div>
-                    </td><td valign="top">
-                        <b style={{position: "relative", bottom: "-3pt"}}>&nbsp;&nbsp;&nbsp;{Char.LeftArrow} Are you sure you want to reindex <u>{props.task.task_env.name}</u>?</b>
-                    </td></tr></tbody></table>
-                </div>
-            }
+            : <>
+                <ReindexButton task={props.task} onClickReindex={onClickReindex} onClickCancel={onClickCancel} running={running} />
+            </> }
+            { !running.loading && !running.data?.task_running && <span style={{color: "red"}}>
+                <div style={{width: "100%", height: "2px", marginTop: "8pt", marginBottom: "8pt", background:"red"}} />
+                <b>Warning</b>: This task appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
+            </span> }
         </div>
     </>
 }
 
+const ReindexButton = (props) => {
+    return <table><tbody><tr>
+        <td valign="top">
+            <div className="check-action-confirm-button" style={{width: "fit-content", marginBottom: "-1pt"}} onClick={props.onClickCancel}>
+                &nbsp;<b>Cancel</b>&nbsp;
+            </div>
+        </td><td valign="top">
+            <div className="check-run-button" style={{width: "fit-content", border: "1px solid inherit", marginLeft:"8pt"}} onClick={props.onClickReindex}>
+                &nbsp;Yes: Reindex&nbsp;
+            </div>
+        </td><td valign="top">
+            <b style={{position: "relative", bottom: "-3pt"}}>&nbsp;&nbsp;&nbsp;{Char.LeftArrow} Are you sure you want to reindex <u>{props.task.task_env.name}</u>?</b>
+        </td>
+    </tr></tbody></table>
+}
+
 const ButtonsDisabled = (props) => {
     return <>
-        <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt"}}>
-            <b><i>Reindexing disabled due to errors.</i></b>
+        <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt", color: "red"}}>
+            <b>Reindexing disabled due to errors.</b>
         </div>
     </>
 }
@@ -230,16 +239,16 @@ const ButtonsDisabled = (props) => {
 // Table horizontal/vertical spacing/lines.
 const TSpaceV = ({size = "6pt"}) => <td style={{width: size, whiteSpace: "nowrap"}} />
 const TLineV = ({size = "1px", color = "black"}) => <td style={{width: size, background: color}} />
-const TSeparatorV = () => <><TSpaceV size="8pt" /><TLineV /><TSpaceV size="8pt" /></>
+const TSeparatorV = ({ size = "1px"}) => <><TSpaceV size="8pt" /><TLineV size={size} /><TSpaceV size="8pt" /></>
 const TSpaceH = ({size = "6pt"}) => <tr><td style={{height: size}}></td></tr>
 const TLineH = ({size = "1px", color = "black", span = "2"}) => <tr><td style={{height: size, background: color, whiteSpace: "nowrap"}} colSpan={span == "max" ? "100" : span}></td></tr>
-const TSeparatorH = ({span = "2", top = "1pt", bottom = "1pt", double = false}) => {
+const TSeparatorH = ({size = "1px", color = "black", span = "2", double = false, top = "1pt", bottom = "1pt"}) => {
     return <>
         <TSpaceH size={top} />
-        <TLineH color="gray" span={span} />
+        <TLineH size={size} color={color} span={span} />
         { double && <>
             <TSpaceH size="1pt" />
-            <TLineH color="gray" span={span} />
+            <TLineH size={size} color={color} span={span} />
         </> }
         <TSpaceH size={bottom} />
     </>
@@ -265,7 +274,7 @@ const DetailsBox = (props) => {
             <TSeparatorH span="max" top="6pt" bottom={"8pt"} />
             <tr>
                 <td colSpan="18">
-                    <TaskStatus task={props.task} />
+                    <TaskStatusLine task={props.task} />
                 </td>
             </tr>
         </tbody></table>
@@ -374,9 +383,16 @@ const NetworkDetails = (props) => {
     </tbody></table>
 }
 
-const TaskStatus = (props) => {
-    const running = useFetch(`//aws/ecs/task_running/${props.task.task_cluster.name}/${props.task.task_arn}`, {delay: 2000});
-    //return running.loading ? <>&nbsp;<StandardSpinner text={"adsfadf"} /></> : (running.data?.task_running ? "Running" : "Idle");
+const useTaskStatus = (task, refresh) => {
+    return useFetch(`//aws/ecs/task_running/${task.task_cluster.name}/${task.task_arn}`, {cache: true});
+}
+
+const useTaskStatusNoCache = (task, refresh) => {
+    return useFetch(`//aws/ecs/task_running/${task.task_cluster.name}/${task.task_arn}`);
+}
+
+const TaskStatusLine = (props) => {
+    const running = useTaskStatus(props.task);
     const onRefresh = (e) => {
         running.refresh();
         e.stopPropagation();
