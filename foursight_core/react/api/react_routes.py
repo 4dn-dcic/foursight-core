@@ -610,6 +610,10 @@ class ReactRoutes:
                 return app.core.reactapi_aws_ecs_task_run(task_definition_arn)
         return app.core.create_forbidden_response()
 
+    @route("/aws/ecs/task_running/{cluster_arn}/{task_definition_arn}", authorize=True)
+    def reactapi_route_aws_ecs_task(cluster_arn: str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_ecs_task_running(cluster_arn, task_definition_arn)
+
     @route("/aws/ecs/tasks/latest/details", authorize=True)
     def reactapi_route_aws_ecs_task() -> Response:  # noqa: implicit @staticmethod via @route
         return app.core.reactapi_aws_ecs_tasks(latest=True)

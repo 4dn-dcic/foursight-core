@@ -1975,25 +1975,53 @@ class ReactApi(ReactApiBase, ReactRoutes):
         task_arns.sort()
         return task_arns
 
+    @staticmethod
+    def get_task_name(task_arn: str) -> str:
+        if "deploy" in task_arn.lower():
+            if "initial" in task_arn.lower():
+                return "deploy_initial"
+            else:
+                return "deploy"
+        elif "index" in task_arn.lower():
+            return "indexer"
+        elif "ingest" in task_arn.lower():
+            return "ingester"
+        elif "portal" in task_arn.lower():
+            return "portal"
+        else:
+            return task_arn
+
+    def reactapi_aws_ecs_task_running(self, cluster_arn, task_definition_arn: str) -> Response:
+        """
+        Returns an indication of if the given task definition is currently running.
+        """
+        ecs = boto3.client("ecs")
+        response = ecs.list_tasks(cluster=cluster_arn, family=task_definition_arn)
+        task_arns = response.get("taskArns")
+        is_running = isinstance(task_arns, list) and len(task_arns) > 0
+        task_name = self.get_task_name(task_definition_arn)
+        response = {
+            "cluster_arn": cluster_arn,
+            "task_arn": task_definition_arn,
+            "task_name": task_name,
+            "task_running": is_running
+        }
+        # If this is the deploy task the approximate that last time it was run
+        # by using the the create date of the Portal Access Key as a proxy for
+        # when this task last ran since the entrypoint_deployment.bash script
+        # creates this as its last step.
+        if task_name == "deploy":
+            task_env = self._envs.get_associated_env(task_definition_arn)
+            if task_env:
+                portal_access_key_info = get_portal_access_key_info(task_env["full_name"])
+                if portal_access_key_info:
+                    response["task_last_ran_at"] = portal_access_key_info["created_at"]
+        return response
+
     def reactapi_aws_ecs_task_arns_for_run(self, task: Optional[str] = None) -> Response:
 
         task_arns = self.reactapi_aws_ecs_task_arns(latest=True)
         tasks_for_run = []
-
-        def get_task_name(task_arn: str) -> str:
-            if "deploy" in task_arn.lower():
-                if "initial" in task_arn.lower():
-                    return "deploy_initial"
-                else:
-                    return "deploy"
-            elif "index" in task_arn.lower():
-                return "indexer"
-            elif "ingest" in task_arn.lower():
-                return "ingester"
-            elif "portal" in task_arn.lower():
-                return "portal"
-            else:
-                return task_arn
 
         def get_clusters() -> list[dict]:
             return self.reactapi_aws_ecs_clusters()
@@ -2118,7 +2146,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         subnets = get_subnets()
 
         for task_arn in task_arns:
-            task_name = get_task_name(task_arn)
+            task_name = self.get_task_name(task_arn)
             if task and task.lower() != task_name.lower():
                 continue
             task_env = self._envs.get_associated_env(task_arn)

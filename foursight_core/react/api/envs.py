@@ -29,10 +29,10 @@ class Envs:
         self._known_envs = known_envs
         # Set any green/blue production/staging info.
         for known_env in self._known_envs:
-            if self._env_contains(known_env, "green"):
-                known_env["color"] = "green"
-            elif self._env_contains(known_env, "blue"):
+            if self._env_contains(known_env, "blue"):
                 known_env["color"] = "blue"
+            elif self._env_contains(known_env, "green"):
+                known_env["color"] = "green"
             if known_env.get("color"):
                 if self._env_contains(known_env, "stage") or self._env_contains(known_env, "staging"):
                     known_env["is_staging"] = True
@@ -122,27 +122,41 @@ class Envs:
         return user_groups and any(allowed_group in user_groups for allowed_group in allowed_groups or [])
 
     @staticmethod
-    def _env_contains(env: dict, value: str) -> bool:
-        value = value.lower()
-        return (value in env["full_name"].lower() or
-                value in env["short_name"].lower() or
-                value in env["public_name"].lower() or
-                value in env["foursight_name"].lower())
+    def _env_contains(env: dict, value: str, ignore_case: bool = True) -> bool:
+        if ignore_case:
+            value = value.lower()
+            return (value in env["full_name"].lower() or
+                    value in env["short_name"].lower() or
+                    value in env["public_name"].lower() or
+                    value in env["foursight_name"].lower())
+        else:
+            return (value in env["full_name"] or
+                    value in env["short_name"] or
+                    value in env["public_name"] or
+                    value in env["foursight_name"])
 
     @staticmethod
     def _env_contained_within(env: dict, value: str, strict: bool = False) -> bool:
+        """
+        Returns True iff the given environment (dictionary) is contained or somehow represented
+        within the given string value. Originally created for determinining (sort of heuristically)
+        the environment to which an AWS task definition name should be associated. For example,
+        the name "c4-ecs-fourfront-hotseat-stack-FourfrontDeployment-xTDwbIYxIZh7" would belong
+        to the "hotseat" environment.
+        """
         value = value.lower()
         if not strict:
-            if "color" in env and env["color"]:
-                if env["color"] in value and env["color"] in ["blue", "green"]:
-                    blue_count = value.count("blue")
-                    green_count = value.count("green")
-                    if env["color"] == "blue":
-                        if blue_count > green_count:
-                            return True
-                    elif env["color"] == "green":
-                        if green_count > blue_count:
-                            return True
+            if "color" in env and env["color"] in ["blue", "green"] and env["color"] in value:
+                # Handle situations like this:
+                # c4-ecs-blue-green-smaht-production-stack-SmahtgreenDeployment-mIHBLXIQ1pok
+                blue_count = value.count("blue")
+                green_count = value.count("green")
+                if env["color"] == "blue":
+                    if blue_count > green_count:
+                        return True
+                elif env["color"] == "green":
+                    if green_count > blue_count:
+                        return True
         result = (env["full_name"].lower() in value or
                   env["short_name"].lower() in value or
                   env["public_name"].lower() in value or

@@ -4,7 +4,7 @@ import Char from '../utils/Char';
 import DateTime from '../utils/DateTime';
 import { ExternalLink } from '../Components'; 
 import React from 'react';
-import { StandardSpinner } from '../Spinners';
+import { StandardSpinner, PuffSpinnerInline } from '../Spinners';
 import Tooltip from '../components/Tooltip';
 import useFetch from '../hooks/Fetch';
 
@@ -34,11 +34,21 @@ function awsSubnetLink(id) {
     return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#SubnetDetails:subnetId=${id}`;
 }
 
+function errorsExist(task) {
+    if (!task?.task_cluster ||
+        !task?.task_vpc ||
+        !task?.task_subnets ||
+        !task?.task_security_group) {
+        return true;
+    }
+    return false;
+}
+
 const PortalReindexPage = (props) => {
 
     const tasks = useFetch("//aws/ecs/tasks/run?task=deploy", {
         onData: (data) => {
-            setShowEnvs(data.reduce((result, task) => {
+            setShowDetails(data.reduce((result, task) => {
                 result[task.task_arn] = false;
                 return result;
             }, {}));
@@ -50,48 +60,48 @@ const PortalReindexPage = (props) => {
     // if ANY of the task details are expanded, then the top-level toggle collapses all of them;
     // if NONE of the task details are expanded, then the top-level toggle expands all of them.
 
-    const [showEnvs, setShowEnvs] = useState({});
-    const isShowEnvs = () => { for (const key of Object.keys(showEnvs)) if (showEnvs[key]) return true; return false; }
-    const toggleShowEnvs = () => {
-        const showEnv = isShowEnvs();
-        for (const key of Object.keys(showEnvs)) showEnvs[key] = !showEnv;
-        setShowEnvs({...showEnvs});
+    const [showDetails, setShowDetails] = useState({});
+    const isShowDetails = () => { for (const key of Object.keys(showDetails)) if (showDetails[key]) return true; return false; }
+    const toggleShowDetails = () => {
+        const showDetail = isShowDetails();
+        for (const key of Object.keys(showDetails)) showDetails[key] = !showDetail;
+        setShowDetails({...showDetails});
     }
-    const toggleShowEnv = (task) => { showEnvs[task.task_arn] = !showEnvs[task.task_arn]; setShowEnvs({...showEnvs}); }
-    const setShowEnv = (task) => { showEnvs[task.task_arn] = true; setShowEnvs({...showEnvs}); }
-    const isShowEnv = (task) => showEnvs[task.task_arn];
+    const toggleShowDetail = (task) => { showDetails[task.task_arn] = !showDetails[task.task_arn]; setShowDetails({...showDetails}); }
+    const setShowDetail = (task) => { showDetails[task.task_arn] = true; setShowDetails({...showDetails}); }
+    const isShowDetail = (task) => showDetails[task.task_arn];
 
     return <>
         <div className="container">
             <b style={{fontSize: "x-large"}}>Portal Reindex</b>
             { tasks.loading ?
-                <PortalReindexContentLoading />
+                <ContentLoading />
             : <>
                 <div className="box thickborder" style={{marginTop: "2pt", marginBottom: "10pt"}}>
                     Select the Portal environment below to reindex.
-                    <span style={{float: "right"}} className="pointer" onClick={toggleShowEnvs} id="tooltip-show-envs">
-                        { isShowEnvs() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b> }
+                    <span style={{float: "right"}} className="pointer" onClick={toggleShowDetails} id="tooltip-show-envs">
+                        { isShowDetails() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b> }
                         <Tooltip id="tooltip-show-envs" position="top" size="small"
-                            text={`Click to ${isShowEnvs() ? "hide" : "show"} details for task run.`} />
+                            text={`Click to ${isShowDetails() ? "hide" : "show"} details for task run.`} />
                     </span>
                 </div>
-                <PortalReindexContent
+                <Content
                     tasks={tasks.data}
-                    isShowEnv={isShowEnv}
-                    toggleShowEnv={toggleShowEnv}
-                    setShowEnv={setShowEnv} />
+                    isShowDetail={isShowDetail}
+                    toggleShowDetail={toggleShowDetail}
+                    setShowDetail={setShowDetail} />
             </> }
         </div>
     </>
 }
 
-const PortalReindexContentLoading = (props) => {
+const ContentLoading = (props) => {
     return <div className="box thickborder" style={{marginTop: "2pt", marginBottom: "10pt"}}>
         <StandardSpinner />
     </div>
 }
 
-const PortalReindexContent = (props) => {
+const Content = (props) => {
 
     const [selectedTask, setSelectedTask] = useState();
     const selectTask = (task) => { isSelectedTask(task) ? setSelectedTask(null) : setSelectedTask(task.task_arn); }
@@ -110,30 +120,26 @@ const PortalReindexContent = (props) => {
                 selectedTask={selectedTask}
                 selectTask={selectTask}
                 isSelectedTask={isSelectedTask}
-                isShowEnv={props.isShowEnv}
-                toggleShowEnv={props.toggleShowEnv}
-                setShowEnv={props.setShowEnv} />
+                isShowDetail={props.isShowDetail}
+                toggleShowDetail={props.toggleShowDetail}
+                setShowDetail={props.setShowDetail} />
         )}
     </div>
 }
 
 const PortalReindexBox = (props) => {
 
-    const showEnvOnSelect = false;
-    const [ showEnv, setShowEnv ] = useState(false);
-    const isShowEnv = () => {
-        return props.isShowEnv(props.task);
-    }
-    const toggleShowEnv = (e) => {
-        props.toggleShowEnv(props.task);
+    const showDetailOnSelect = false;
+    const [ showDetail, setShowDetail ] = useState(false);
+    const isShowDetail = () => props.isShowDetail(props.task);
+    const toggleShowDetail = (e) => {
+        props.toggleShowDetail(props.task);
         e.stopPropagation(); e.preventDefault();
     }
+    const isSelectedTask = () => props.isSelectedTask(props.task);
     const selectTask = () =>  {
         props.selectTask(props.task);
-        if (showEnvOnSelect) props.setShowEnv(props.task);
-    }
-    const isSelectedTask = () =>  {
-        return props.isSelectTask(props.task);
+        if (showDetailOnSelect) props.setShowDetail(props.task);
     }
 
     return <div onClick={selectTask} style={{marginTop:"4pt"}} className="hover-lighten">
@@ -142,17 +148,17 @@ const PortalReindexBox = (props) => {
                 name="radio"
                 type="radio"
                 value={props.task?.task_arn}
-                checked={props.selectedTask == props.task?.task_arn}
+                checked={isSelectedTask()}
                 onChange={selectTask}
                 style={{marginTop:"10pt"}} />
         </td><td style={{verticalAlign: "top"}}>
             <div className="box bigmarginbottom lighten" style={{cursor:"default"}}>
-                <b onClick={selectTask} className="pointer" style={{color: "black", textDecoration: isShowEnv() ? "" : "underline"}}>{props.task?.task_env?.name}</b>
-                <small onClick={toggleShowEnv} className="pointer" style={{marginLeft:"4pt"}} id={`tooltip-show-env-${props.task?.task_arn}`}>
-                    {isShowEnv() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b>}
+                <b onClick={selectTask} className="pointer" style={{color: "black", textDecoration: isShowDetail() ? "" : "underline"}}>{props.task?.task_env?.name}</b>
+                <small onClick={toggleShowDetail} className="pointer" style={{marginLeft:"4pt"}} id={`tooltip-show-env-${props.task?.task_arn}`}>
+                    {isShowDetail() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b>}
                 </small>
                 <Tooltip id={`tooltip-show-env-${props.task?.task_arn}`} position="top" size="small"
-                    text={`Click to ${isShowEnv() ? "hide" : "show"} details for task run.`} />
+                    text={`Click to ${isShowDetail() ? "hide" : "show"} details for task run.`} />
                 <small style={{float: "right"}}>
                     &nbsp;&nbsp;<ExternalLink href={props.task.task_env?.portal_url} />
                 </small>
@@ -166,23 +172,26 @@ const PortalReindexBox = (props) => {
                     </small>
                 }
                 <br />
-                { isShowEnv() && <PortalReindexEnvBox env={props.task?.task_env} task={props.task} /> }
-                <small id={`tooltip-${props.task.task_arn}`}> { props.task?.task_arn }&nbsp;<ExternalLink href={awsTaskRunLink(props.task?.task_arn)} /> </small>
-                <PortalReindexWarnings task={props.task} />
+                { isShowDetail() && <DetailsBox env={props.task?.task_env} task={props.task} /> }
+                <small id={`tooltip-${props.task.task_arn}`} style={{fontWeight: isSelectedTask() ? "bold" : "inherit"}}> { props.task?.task_arn }&nbsp;<ExternalLink href={awsTaskRunLink(props.task?.task_arn)} /> </small>
+                <Warnings task={props.task} />
                 <Tooltip id={`tooltip-${props.task.task_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run for the reindex."} />
-                { props.selectedTask === props.task?.task_arn && <PortalReindexButtons task={props.task} /> }
+                { isSelectedTask() && <Buttons task={props.task} /> }
             </div>
         </td></tr></tbody></table>
     </div>
 }
 
-const PortalReindexButtons = (props) => {
+const Buttons = (props) => {
 
     const [reindex, setReindex] = useState(false);
     const onClickReindex = (e) => { setReindex(true); e.stopPropagation(); e.preventDefault(); }
     const onClickCancel = (e) => { setReindex(false); e.stopPropagation(); e.preventDefault(); }
     const onClickIgnore = (e) => { e.stopPropagation(); e.preventDefault(); }
 
+    if (errorsExist(props.task)) {
+            return <ButtonsDisabled />
+    }
     return <>
         <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt"}} onClick={onClickIgnore}>
             { !reindex ?
@@ -210,10 +219,80 @@ const PortalReindexButtons = (props) => {
     </>
 }
 
-const PortalReindexEnvBox = (props) => {
-    const [showNetworkNames, setShowNetworkNames] = useState(false);
-    const toggleShowNetworkNames = (e) => { setShowNetworkNames(!showNetworkNames); e.stopPropagation() }
+const ButtonsDisabled = (props) => {
+    return <>
+        <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt"}}>
+            <b><i>Reindexing disabled due to errors.</i></b>
+        </div>
+    </>
+}
+
+// Table horizontal/vertical spacing/lines.
+const TSpaceV = ({size = "6pt"}) => <td style={{width: size, whiteSpace: "nowrap"}} />
+const TLineV = ({size = "1px", color = "black"}) => <td style={{width: size, background: color}} />
+const TSeparatorV = () => <><TSpaceV size="8pt" /><TLineV /><TSpaceV size="8pt" /></>
+const TSpaceH = ({size = "6pt"}) => <tr><td style={{height: size}}></td></tr>
+const TLineH = ({size = "1px", color = "black", span = "2"}) => <tr><td style={{height: size, background: color, whiteSpace: "nowrap"}} colSpan={span == "max" ? "100" : span}></td></tr>
+const TSeparatorH = ({span = "2", top = "1pt", bottom = "1pt", double = false}) => {
+    return <>
+        <TSpaceH size={top} />
+        <TLineH color="gray" span={span} />
+        { double && <>
+            <TSpaceH size="1pt" />
+            <TLineH color="gray" span={span} />
+        </> }
+        <TSpaceH size={bottom} />
+    </>
+}
+
+const DetailsBox = (props) => {
     const header = useHeader();
+    return <div className="box bigmargin marginbottom"><small>
+        <table style={{fontSize: "inherit"}}><tbody>
+            <tr>
+                <td style={{verticalAlign: "top"}}>
+                    <AccountDetails task={props.task} />
+                </td>
+                <TSeparatorV />
+                <td style={{verticalAlign: "top"}}>
+                    <EnvNamesDetails env={props.env} />
+                </td>
+                <TSeparatorV />
+                <td style={{verticalAlign: "top"}}>
+                    <NetworkDetails task={props.task} />
+                </td>
+            </tr>
+            <TSeparatorH span="max" top="6pt" bottom={"8pt"} />
+            <tr>
+                <td colSpan="18">
+                    <TaskStatus task={props.task} />
+                </td>
+            </tr>
+        </tbody></table>
+    </small></div>
+}
+
+const AccountDetails = (props) => {
+    const header = useHeader();
+    return <table style={{fontSize: "inherit"}}><tbody>
+        <tr><td colSpan="2"> AWS Account </td></tr>
+        <TSeparatorH double={true} />
+        <tr>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Number: </td>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_number} </td>
+        </tr>
+        <tr>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Name: </td>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_name} </td>
+        </tr>
+        <tr>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Environment: </td>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {props.task?.task_env?.full_name} </td>
+        </tr>
+    </tbody></table>
+}
+
+const EnvNamesDetails = (props) => {
     const uniqueEnvNames = () => {
         const env = {};
         ["name", "full_name", "short_name", "public_name", "foursight_name"].forEach(name => {
@@ -221,107 +300,106 @@ const PortalReindexEnvBox = (props) => {
         });
         return Array.from(new Set(Object.values(env)))?.sort();
     }
-    const vseparator = <><td style={{width: "8pt"}}></td><td style={{verticalAlign: "top", width: "1px", background: "black"}}></td><td style={{width: "8pt"}}></td></>
-    const hseparator = <><tr><td colSpan="2" style={{height: "1pt"}}></td></tr><tr><td colSpan="2" style={{background: "gray", height: "1px"}}></td></tr><tr><td colSpan="2" style={{height: "1pt"}}></td></tr><tr><td colSpan="2" style={{background: "gray", height: "1px"}}></td></tr><tr><td colSpan="2" style={{height: "1pt"}}></td></tr></>
-    return <div className="box bigmargin marginbottom"><small>
-        <table style={{fontSize: "inherit"}}><tbody><tr><td style={{verticalAlign: "top"}}>
-            <table style={{fontSize: "inherit"}}><tbody>
-                <tr><td colSpan="2"> AWS Account </td></tr>
-                {hseparator}
-                <tr>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Number: </td>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_number} </td>
-                </tr>
-                <tr>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Name: </td>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_name} </td>
-                </tr>
-                <tr>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Environment: </td>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {props.task?.task_env?.full_name} </td>
-                </tr>
-            </tbody></table>
-        </td>
-        {vseparator}
-        <td style={{verticalAlign: "top"}}>
-            <table style={{fontSize: "inherit"}}><tbody>
-                <tr><td colSpan="2" style={{whiteSpace: "nowrap"}}> Environment Aliases </td></tr>
-                {hseparator}
-                <tr>
-                    <td colSpan="2" style={{whiteSpace: "nowrap"}}>
-                        {uniqueEnvNames().map((env, index) => <>
-                            {index > 0 && <br />} {env}
-                        </> )}
-                    </td>
-                </tr>
-            </tbody></table>
-        </td>
-        {vseparator}
-        <td style={{verticalAlign: "top"}}>
-            <table style={{fontSize: "inherit"}}><tbody>
-                <tr><td /><td width="800pt"/></tr> {/* dummy to make it expand to right */}
-                <tr><td colSpan="2"> AWS Network
-                    <span onClick={toggleShowNetworkNames} className="pointer" id={`tooltip-network-${props.task.task_arn}`} >
-                        &nbsp;{showNetworkNames ? <b>{Char.Diamond}</b> : <b>{Char.Trigram}</b>}
-                        <Tooltip id={`tooltip-network-${props.task.task_arn}`} position="top" size="small" text={`Click to view ${showNetworkNames ? "IDs" : "names"}.`}/>
-                    </span>
-                </td></tr>
-                {hseparator}
-                <tr>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Cluster: </td>
-                    <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
-                        <span id={`tooltip-cluster-${props.task?.task_arn}`}>
-                            {showNetworkNames ? props.task?.task_cluster?.name : props.task?.task_cluster?.name}
-                            &nbsp;<small><ExternalLink href={awsClusterLink(props.task?.task_cluster?.name)} /></small>
-                        </span>
-                    </td>
-                    <Tooltip id={`tooltip-cluster-${props.task.task_arn}`} position="top" shape="squared" size="small"
-                        text={showNetworkNames ? props.task?.task_cluster?.name : props.task?.task_cluster?.name} />
-                </tr>
-                <tr>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> VPC: </td>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
-                        <span id={`tooltip-vpc-${props.task?.task_arn}`}>
-                            {showNetworkNames ? props.task?.task_vpc?.name : props.task?.task_vpc?.id}
-                            &nbsp;<small><ExternalLink href={awsVpcLink(props.task?.task_vpc?.id)} /></small>
-                        </span>
-                    </td>
-                    <Tooltip id={`tooltip-vpc-${props.task.task_arn}`} position="top" shape="squared" size="small"
-                        text={showNetworkNames ? props.task?.task_vpc?.id : props.task?.task_vpc?.name} />
-                </tr>
-                <tr>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Security: </td>
-                    <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
-                        <span id={`tooltip-sg-${props.task?.task_arn}`}>
-                            {showNetworkNames ? props.task?.task_security_group?.name : props.task?.task_security_group?.id}
-                            &nbsp;<small><ExternalLink href={awsSecurityGroupLink(props.task?.task_security_group?.id)} /></small>
-                        </span>
-                    </td>
-                    <Tooltip id={`tooltip-sg-${props.task.task_arn}`} position="top" shape="squared" size="small"
-                        text={showNetworkNames ? props.task?.task_security_group?.id : props.task?.task_security_group?.name} />
-                </tr>
-                <tr>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Subnets: </td>
-                    <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
-                        { props.task?.task_subnets?.map(subnet => <>
-                            <span id={`tooltip-subnet-${props.task?.task_arn}-${subnet.id}`}>
-                                {showNetworkNames ? subnet.name : subnet.id}
-                                &nbsp;<small><ExternalLink href={awsSubnetLink(subnet.id)} /></small>
-                            </span> <br />
-                            <Tooltip id={`tooltip-subnet-${props.task?.task_arn}-${subnet.id}`} position="top" shape="squared" size="small"
-                                text={showNetworkNames ? subnet.id : subnet.name} />
-                        </>) }
-                    </td>
-                </tr>
-            </tbody></table>
-        </td>
-        </tr></tbody></table>
-    </small></div>
+    return <table style={{fontSize: "inherit"}}><tbody>
+        <tr><td colSpan="2" style={{whiteSpace: "nowrap"}}> Environment Aliases </td></tr>
+        <TSeparatorH double={true} />
+        <tr>
+            <td colSpan="2" style={{whiteSpace: "nowrap"}}>
+                {uniqueEnvNames().map((env, index) => <>
+                    {index > 0 && <br />} {env}
+                </> )}
+            </td>
+        </tr>
+    </tbody></table>
 }
 
-const PortalReindexWarnings = (props) => {
+const NetworkDetails = (props) => {
+    const [showNetworkNames, setShowNetworkNames] = useState(false);
+    const toggleShowNetworkNames = (e) => { setShowNetworkNames(!showNetworkNames); e.stopPropagation() }
+    return <table style={{fontSize: "inherit"}}><tbody>
+        <tr><td /><td width="800pt"/></tr> {/* dummy to make it expand to right */}
+        <tr><td colSpan="2"> AWS Network
+            <span onClick={toggleShowNetworkNames} className="pointer" id={`tooltip-network-${props.task.task_arn}`} >
+                &nbsp;{showNetworkNames ? <b>{Char.Diamond}</b> : <b>{Char.Trigram}</b>}
+                <Tooltip id={`tooltip-network-${props.task.task_arn}`} position="top" size="small" text={`Click to view ${showNetworkNames ? "IDs" : "names"}.`}/>
+            </span>
+        </td></tr>
+        <TSeparatorH double={true} />
+        <tr>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Cluster: </td>
+            <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
+                <span id={`tooltip-cluster-${props.task?.task_arn}`}>
+                    {showNetworkNames ? props.task?.task_cluster?.name : props.task?.task_cluster?.name}
+                    &nbsp;<small><ExternalLink href={awsClusterLink(props.task?.task_cluster?.name)} /></small>
+                </span>
+            </td>
+            <Tooltip id={`tooltip-cluster-${props.task.task_arn}`} position="top" shape="squared" size="small"
+                text={showNetworkNames ? props.task?.task_cluster?.name : props.task?.task_cluster?.name} />
+        </tr>
+        <tr>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> VPC: </td>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
+                <span id={`tooltip-vpc-${props.task?.task_arn}`}>
+                    {showNetworkNames ? props.task?.task_vpc?.name : props.task?.task_vpc?.id}
+                    &nbsp;<small><ExternalLink href={awsVpcLink(props.task?.task_vpc?.id)} /></small>
+                </span>
+            </td>
+            <Tooltip id={`tooltip-vpc-${props.task.task_arn}`} position="top" shape="squared" size="small"
+                text={showNetworkNames ? props.task?.task_vpc?.id : props.task?.task_vpc?.name} />
+        </tr>
+        <tr>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Security: </td>
+            <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
+                <span id={`tooltip-sg-${props.task?.task_arn}`}>
+                    {showNetworkNames ? props.task?.task_security_group?.name : props.task?.task_security_group?.id}
+                    &nbsp;<small><ExternalLink href={awsSecurityGroupLink(props.task?.task_security_group?.id)} /></small>
+                </span>
+            </td>
+            <Tooltip id={`tooltip-sg-${props.task.task_arn}`} position="top" shape="squared" size="small"
+                text={showNetworkNames ? props.task?.task_security_group?.id : props.task?.task_security_group?.name} />
+        </tr>
+        <tr>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Subnets: </td>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
+                { props.task?.task_subnets?.map(subnet => <>
+                    <span id={`tooltip-subnet-${props.task?.task_arn}-${subnet.id}`}>
+                        {showNetworkNames ? subnet.name : subnet.id}
+                        &nbsp;<small><ExternalLink href={awsSubnetLink(subnet.id)} /></small>
+                    </span> <br />
+                    <Tooltip id={`tooltip-subnet-${props.task?.task_arn}-${subnet.id}`} position="top" shape="squared" size="small"
+                        text={showNetworkNames ? subnet.id : subnet.name} />
+                </>) }
+            </td>
+        </tr>
+    </tbody></table>
+}
+
+const TaskStatus = (props) => {
+    const running = useFetch(`//aws/ecs/task_running/${props.task.task_cluster.name}/${props.task.task_arn}`, {delay: 2000});
+    //return running.loading ? <>&nbsp;<StandardSpinner text={"adsfadf"} /></> : (running.data?.task_running ? "Running" : "Idle");
+    const onRefresh = (e) => {
+        running.refresh();
+        e.stopPropagation();
+    }
+    return <>
+        { running.loading ? <>
+            <b>Task Status</b>:&nbsp;
+            <span style={{position: "relative", top: "1px"}}>&nbsp;<PuffSpinnerInline size="16" /></span>
+        </> : <span className="pointer" onClick={onRefresh}>
+            <b>Task Status</b>:&nbsp;
+            <u>{running.data?.task_running ? "Running" : "Idle"}</u>
+            { running.data?.task_last_ran_at && <>
+                &nbsp;<b>|</b>&nbsp;<b>Approximate Last Run Time</b>: {DateTime.Format(running.data?.task_last_ran_at)}
+            </> }
+                &nbsp;<b>|</b>&nbsp;Refresh&nbsp;<b style={{position: "relative", top: "1px"}}>{Char.Refresh}</b>
+        </span> }
+    </>
+}
+
+const Warnings = (props) => {
     return <>
         <WarningMultipleTasks task={props.task} />
+        <WarningNoCluster task={props.task} />
         <WarningNoVpc task={props.task} />
         <WarningNoSecurityGroup task={props.task} />
         <WarningNoSubnets task={props.task} />
@@ -365,6 +443,26 @@ const WarningMultipleTasks = (props) => {
     </>
 }
 
+const WarningNoCluster = (props) => {
+    return <>
+        { !props.task?.task_cluster &&
+            <div className="box bigmargin error"><small>
+                <b>Warning</b>: No cluster found.
+            </small></div>
+        }
+    </>
+}
+
+const WarningNoVpc = (props) => {
+    return <>
+        { !props.task?.task_vpc &&
+            <div className="box bigmargin error"><small>
+                <b>Warning</b>: No VPC found.
+            </small></div>
+        }
+    </>
+}
+
 const WarningNoSubnets = (props) => {
     return <>
         { !props.task?.task_subnets &&
@@ -380,16 +478,6 @@ const WarningNoSecurityGroup = (props) => {
         { !props.task?.task_security_group &&
             <div className="box bigmargin error"><small>
                 <b>Warning</b>: No security group found.
-            </small></div>
-        }
-    </>
-}
-
-const WarningNoVpc = (props) => {
-    return <>
-        { !props.task?.task_vpc &&
-            <div className="box bigmargin error"><small>
-                <b>Warning</b>: No VPC found.
             </small></div>
         }
     </>
