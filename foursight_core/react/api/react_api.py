@@ -1998,11 +1998,11 @@ class ReactApi(ReactApiBase, ReactRoutes):
         def get_clusters() -> list[dict]:
             return self.reactapi_aws_ecs_clusters()
 
-        def get_cluster_for_env(clusters: list[dict], task_env: Optional[dict]) -> Optional[dict]:
-            if not task_env:
+        def get_cluster_for_env(clusters: list[dict], env: Optional[dict]) -> Optional[dict]:
+            if not env:
                 return None
             for cluster in clusters:
-                if Envs._env_contained_within(task_env, cluster["cluster_name"]):
+                if Envs._env_contained_within(env, cluster["cluster_name"]):
                     return {"id": cluster["cluster_arn"], "name": cluster["cluster_name"]}
 
         def get_vpc() -> Optional[dict]:
@@ -2032,8 +2032,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             ]
             return security_groups
 
-        def get_security_group_for_env(security_groups: list[dict], task_env: Optional[dict]) -> Optional[dict]:
-            if not task_env:
+        def get_security_group_for_env(security_groups: list[dict], env: Optional[dict]) -> Optional[dict]:
+            if not env:
                 return None
             env_specific_security_group = None
             for security_group in security_groups:
@@ -2041,7 +2041,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 if prefix == security_group["stack"]:
                     env_specific_security_group = security_group
                     break
-                elif Envs._env_contained_within(task_env, security_group["name"]):
+                elif Envs._env_contained_within(env, security_group["name"]):
                     env_specific_security_group = security_group
                     break
             return env_specific_security_group
@@ -2055,7 +2055,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             subnets_for_env = [subnet for subnet in subnets if "main" in (subnet.get("name") or "").lower()]
             if not subnets_for_env:
                 for subnet in subnets:
-                    if Envs._env_contained_within(task_env, subnet["name"]):
+                    if Envs._env_contained_within(env, subnet["name"]):
                         subnets_for_env.append(subnet)
             if not subnets_for_env:
                 # If none just take all of the (private) subnets.
