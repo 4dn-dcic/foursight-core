@@ -161,18 +161,6 @@ class Envs:
                 return (known_env["color"], known_env)
         return (None, None)
 
-    def _get_green_env(self) -> Optional[dict]:
-        for known_env in self._known_envs:
-            if self._env_contains(known_env, "green"):
-                return known_env
-        return None
-
-    def _get_blue_env(self) -> Optional[dict]:
-        for known_env in self._known_envs:
-            if self._env_contains(known_env, "blue"):
-                return known_env
-        return None
-
     def get_associated_env(self, name: str) -> Optional[dict]:
         known_envs_with_colors = [env for env in self._known_envs if env.get("color")]
         known_envs_sans_colors = [env for env in self._known_envs if not env.get("color")]
@@ -182,12 +170,4 @@ class Envs:
         for known_env in known_envs_sans_colors:
             if self._env_contained_within(known_env, name):
                 return known_env
-#           elif "green" in name:
-#               env = self._get_green_env()
-#               if env:
-#                   return env
-#           elif "blue" in name:
-#               env = self._get_blue_env()
-#               if env:
-#                   return env
         return None
