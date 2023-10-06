@@ -601,8 +601,6 @@ class ReactRoutes:
                 return app.core.reactapi_aws_ecs_task_arns(latest=True)
             elif task_definition_arn.lower() == "details":
                 return app.core.reactapi_aws_ecs_tasks(latest=False)
-            elif task_definition_arn.lower() == "run":
-                return app.core.reactapi_aws_ecs_task_arns_for_run(task=app.request_arg("task"))
             else:
                 return app.core.reactapi_aws_ecs_task(task_definition_arn)
         elif app.request_method() == "POST":
@@ -610,8 +608,12 @@ class ReactRoutes:
                 return app.core.reactapi_aws_ecs_task_run(task_definition_arn)
         return app.core.create_forbidden_response()
 
+    @route("/aws/ecs/tasks_for_run", authorize=True)
+    def reactapi_route_aws_ecs_tasks_for_run() -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_ecs_task_arns_for_run(task=app.request_arg("task"))
+
     @route("/aws/ecs/task_running/{cluster_arn}/{task_definition_arn}", authorize=True)
-    def reactapi_route_aws_ecs_task(cluster_arn: str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+    def reactapi_route_aws_ecs_task_running(cluster_arn: str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
         return app.core.reactapi_aws_ecs_task_running(cluster_arn, task_definition_arn)
 
     @route("/aws/ecs/tasks/latest/details", authorize=True)

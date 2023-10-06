@@ -19,6 +19,10 @@ function awsTaskLink(id) {
     return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${id}`;
 }
 
+function awsTaskRunningLink(cluster, id) {
+    return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${cluster}/tasks/${id}/logs`;
+}
+
 function awsClusterLink(id) {
     return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${id}/services?region=${region}`;
 }
@@ -57,7 +61,7 @@ const PortalReindexPage = (props) => {
 
     const [ args ] = useSearchParams();
 
-    const tasks = useFetch(`//aws/ecs/tasks/run?task=${args.get("task") || "deploy"}`, {
+    const tasks = useFetch(`//aws/ecs/tasks_for_run?task=${args.get("task") || "deploy"}`, {
         onData: (data) => {
             setShowDetails(data.reduce((result, task) => {
                 result[task.task_arn] = false;
@@ -125,7 +129,7 @@ const Content = (props) => {
     });
 
     return <div className="box" style={{paddingTop: "12pt"}}>
-        { sortedTasks.map(task =>
+        { sortedTasks?.map(task =>
             <PortalReindexBox
                 task={task}
                 selectedTask={selectedTask}
@@ -286,11 +290,11 @@ const TSeparatorH = ({size = "1px", color = "black", span = "2", double = false,
         <TSpaceH size={bottom} />
     </>
 }
-const SeparatorH = ({size = "1px", color = "black", top = "8pt", bottom = "8pt"}) => <div style={{width: "100%", height: size, marginTop: top, marginBottom: bottom, background:"red"}} />
+const SeparatorH = ({size = "1px", color = "black", top = "8pt", bottom = "8pt"}) => <div style={{width: "100%", height: size, marginTop: top, marginBottom: bottom, background: color}} />
 
 const DetailsBox = (props) => {
     const header = useHeader();
-    return <div className="box bigmargin marginbottom"><small>
+    return <div className="box bigmargin marginbottom" onClick={(e) => e.stopPropagation()}><small>
         <table style={{fontSize: "inherit"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}}>
@@ -348,7 +352,7 @@ const EnvNamesDetails = (props) => {
         <TSeparatorH double={true} />
         <tr>
             <td colSpan="2" style={{whiteSpace: "nowrap"}}>
-                {uniqueEnvNames().map((env, index) => <>
+                {uniqueEnvNames()?.map((env, index) => <>
                     {index > 0 && <br />} {env}
                 </> )}
             </td>
@@ -371,13 +375,13 @@ const NetworkDetails = (props) => {
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Cluster: </td>
             <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
-                <span id={`tooltip-cluster-${props.task?.task_arn}`}>
-                    {showNetworkNames ? props.task?.task_cluster?.name : props.task?.task_cluster?.name}
+                <span id={`tooltip-cluster-${props.task.task_arn}`} >
+                    {showNetworkNames ? props.task?.task_cluster?.id : props.task?.task_cluster?.name}
                     &nbsp;<small><ExternalLink href={awsClusterLink(props.task?.task_cluster?.name)} /></small>
                 </span>
-            </td>
             <Tooltip id={`tooltip-cluster-${props.task.task_arn}`} position="top" shape="squared" size="small"
-                text={showNetworkNames ? props.task?.task_cluster?.name : props.task?.task_cluster?.name} />
+                text={showNetworkNames ? props.task?.task_cluster?.name : props.task?.task_cluster?.id} />
+            </td>
         </tr>
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> VPC: </td>
@@ -423,29 +427,47 @@ const TaskStatusLine = (props) => {
         running.refresh();
         e.stopPropagation();
     }
+    const [showRunningIds, setShowRunningIds] = useState(false);
+    const onClickRunning = (e) => {
+        setShowRunningIds(!showRunningIds);
+        e.stopPropagation();
+    }
     return <div onClick={(e) => e.stopPropagation()}>
         { running.loading ? <>
             <b>Task Status</b>:&nbsp;
             <span style={{position: "relative", top: "2px"}}>&nbsp;<PuffSpinnerInline size="18" /></span>
         </> : <span className="pointer" onClick={onRefresh}>
             <b>Task Status</b>:&nbsp;
-            <u>{running.data?.task_running ? <b style={{color: "red"}}>Running</b> : <>Idle</>}</u>
+            <>
+                {running.data?.task_running ? <>
+                    <span style={{color: "red"}} onClick={onClickRunning}><b>Running</b>&nbsp;{showRunningIds ? Char.DownArrow : Char.UpArrow}</span>
+                </>:<>
+                    <b style={{color: "black"}}>Idle</b>
+                </> }
+            </>
             { running.data?.task_last_ran_at && <>
                 &nbsp;<b>|</b>&nbsp;<b>Approximate Last Run Time</b>: {DateTime.Format(running.data?.task_last_ran_at)}
             </> }
                 &nbsp;<b>|</b>&nbsp;Refresh&nbsp;<b style={{position: "relative", top: "1px"}}>{Char.Refresh}</b>
         </span> }
+        { showRunningIds && <small style={{ whiteSpace: "break-all"}}>
+            <SeparatorH color="lightgray" top="3pt" bottom="3pt" />
+            <b>Running Task IDs:</b>
+            { running.data?.task_running_ids?.map(id => <>
+                  &nbsp;&nbsp;{id}&nbsp;<ExternalLink href={awsTaskRunningLink(props.task?.task_cluster?.name, id)} />
+            </> )}
+        </small> }
     </div>
 }
 
 const Warnings = (props) => {
-    return <>
+    return <span onClick={(e) => e.stopPropagation()}>
         <WarningMultipleTasks task={props.task} />
         <WarningNoCluster task={props.task} />
         <WarningNoVpc task={props.task} />
         <WarningNoSecurityGroup task={props.task} />
         <WarningNoSubnets task={props.task} />
-    </>
+    </span>
 }
 
 const WarningMultipleTasks = (props) => {
@@ -463,7 +485,7 @@ const WarningMultipleTasks = (props) => {
                         <td></td>
                         <td><small>Registered At: {DateTime.Format(props.task?.task_registered_at)}</small></td>
                     </tr>
-                    { props.task?.duplicate_tasks.map((task, index) => <>
+                    { props.task?.duplicate_tasks?.map((task, index) => <>
                         <tr>
                             <td>{Char.RightArrow}</td>
                             <td>
