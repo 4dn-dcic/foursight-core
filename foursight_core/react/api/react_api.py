@@ -1994,6 +1994,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def reactapi_aws_ecs_task_running(self, cluster_arn, task_definition_arn: str) -> Response:
         """
         Returns an indication of if the given task definition is currently running.
+        Note that if the given task definition ARN is not valid or does not exist,
+        then NO indication of this is given; it will just say it is not running.
         """
         ecs = boto3.client("ecs")
         response = ecs.list_tasks(cluster=cluster_arn, family=task_definition_arn)
@@ -2006,6 +2008,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "task_name": task_name,
             "task_running": is_running
         }
+        if is_running:
+            def get_task_running_id(task_arn: str) -> str:
+                return task_arn.split("/")[-1] if "/" in task_arn else task_arn
+            response["task_running_ids"] = [get_task_running_id(task_arn) for task_arn in task_arns]
         # If this is the deploy task the approximate that last time it was run
         # by using the the create date of the Portal Access Key as a proxy for
         # when this task last ran since the entrypoint_deployment.bash script

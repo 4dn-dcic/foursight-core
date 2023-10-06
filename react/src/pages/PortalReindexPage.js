@@ -1,12 +1,13 @@
-import useHeader from '../hooks/Header';
+import React from 'react';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char'; 
 import DateTime from '../utils/DateTime';
 import { ExternalLink } from '../Components'; 
-import React from 'react';
-import { StandardSpinner, PuffSpinnerInline } from '../Spinners';
+import { PuffSpinnerInline, StandardSpinner } from '../Spinners';
 import Tooltip from '../components/Tooltip';
 import useFetch from '../hooks/Fetch';
+import useHeader from '../hooks/Header';
 
 const region = "us-east-1";
 
@@ -44,9 +45,19 @@ function errorsExist(task) {
     return false;
 }
 
+const useTaskStatus = (task, refresh) => {
+    return useFetch(`//aws/ecs/task_running/${task.task_cluster.name}/${task.task_arn}`, {cache: true});
+}
+
+const useTaskStatusNoCache = (task, refresh) => {
+    return useFetch(`//aws/ecs/task_running/${task.task_cluster.name}/${task.task_arn}`);
+}
+
 const PortalReindexPage = (props) => {
 
-    const tasks = useFetch("//aws/ecs/tasks/run?task=deploy", {
+    const [ args ] = useSearchParams();
+
+    const tasks = useFetch(`//aws/ecs/tasks/run?task=${args.get("task") || "deploy"}`, {
         onData: (data) => {
             setShowDetails(data.reduce((result, task) => {
                 result[task.task_arn] = false;
@@ -183,10 +194,8 @@ const PortalReindexBox = (props) => {
 }
 
 const ReindexButtonsBox = (props) => {
-
     const running = useTaskStatusNoCache(props.task);
     const onClickIgnore = (e) => { e.stopPropagation(); e.preventDefault(); }
-
     if (errorsExist(props.task)) {
         return <ReindexButtonsBoxDisabled />
     }
@@ -197,6 +206,14 @@ const ReindexButtonsBox = (props) => {
             </>:<>
                  <ReindexButtonsTaskStatusLoaded task={props.task} running={running} />
             </> }
+        </div>
+    </>
+}
+
+const ReindexButtonsBoxDisabled = (props) => {
+    return <>
+        <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt", color: "red"}}>
+            <b>Reindexing disabled due to errors.</b>
         </div>
     </>
 }
@@ -252,15 +269,7 @@ const CancelButton = (props) => {
     </div>
 }
 
-const ReindexButtonsBoxDisabled = (props) => {
-    return <>
-        <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt", color: "red"}}>
-            <b>Reindexing disabled due to errors.</b>
-        </div>
-    </>
-}
-
-// Table horizontal/vertical spacing/lines.
+// Spacing and separtor line, horizontal/vertical, for div and table.
 const TSpaceV = ({size = "6pt"}) => <td style={{width: size, whiteSpace: "nowrap"}} />
 const TLineV = ({size = "1px", color = "black"}) => <td style={{width: size, background: color}} />
 const TSeparatorV = ({ size = "1px"}) => <><TSpaceV size="8pt" /><TLineV size={size} /><TSpaceV size="8pt" /></>
@@ -277,6 +286,7 @@ const TSeparatorH = ({size = "1px", color = "black", span = "2", double = false,
         <TSpaceH size={bottom} />
     </>
 }
+const SeparatorH = ({size = "1px", color = "black", top = "8pt", bottom = "8pt"}) => <div style={{width: "100%", height: size, marginTop: top, marginBottom: bottom, background:"red"}} />
 
 const DetailsBox = (props) => {
     const header = useHeader();
@@ -407,24 +417,16 @@ const NetworkDetails = (props) => {
     </tbody></table>
 }
 
-const useTaskStatus = (task, refresh) => {
-    return useFetch(`//aws/ecs/task_running/${task.task_cluster.name}/${task.task_arn}`, {cache: true});
-}
-
-const useTaskStatusNoCache = (task, refresh) => {
-    return useFetch(`//aws/ecs/task_running/${task.task_cluster.name}/${task.task_arn}`);
-}
-
 const TaskStatusLine = (props) => {
     const running = useTaskStatus(props.task);
     const onRefresh = (e) => {
         running.refresh();
         e.stopPropagation();
     }
-    return <>
+    return <div onClick={(e) => e.stopPropagation()}>
         { running.loading ? <>
             <b>Task Status</b>:&nbsp;
-            <span style={{position: "relative", top: "2px"}}>&nbsp;<PuffSpinnerInline size="18" color="red" /></span>
+            <span style={{position: "relative", top: "2px"}}>&nbsp;<PuffSpinnerInline size="18" /></span>
         </> : <span className="pointer" onClick={onRefresh}>
             <b>Task Status</b>:&nbsp;
             <u>{running.data?.task_running ? <b style={{color: "red"}}>Running</b> : <>Idle</>}</u>
@@ -433,7 +435,7 @@ const TaskStatusLine = (props) => {
             </> }
                 &nbsp;<b>|</b>&nbsp;Refresh&nbsp;<b style={{position: "relative", top: "1px"}}>{Char.Refresh}</b>
         </span> }
-    </>
+    </div>
 }
 
 const Warnings = (props) => {
@@ -451,7 +453,7 @@ const WarningMultipleTasks = (props) => {
         { props.task?.duplicate_tasks &&
             <div className="box bigmargin error"><small>
                 <b>Warning</b>: Multiple task definitions found for this environment.
-                <div style={{background: "darkred", height:"1px", marginTop: "4pt", marginBottom: "4pt"}} />
+                <div style={{background: "darkred", height: "1px", marginTop: "4pt", marginBottom: "4pt"}} />
                 <table style={{fontSize: "inherit", color: "inherit"}}><tbody>
                     <tr>
                         <td style={{paddingRight: "4pt"}}><b>{Char.RightArrow}</b></td>
