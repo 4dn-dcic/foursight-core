@@ -220,10 +220,10 @@ const ReindexButton = (props) => {
             </div>
         </td><td valign="top">
             <div className="check-run-button" style={{width: "fit-content", border: "1px solid inherit", marginLeft:"8pt"}} onClick={props.onClickReindex}>
-                &nbsp;Yes: Reindex&nbsp;
+                &nbsp;Yes:&nbsp;Reindex&nbsp;
             </div>
         </td><td valign="top">
-            <b style={{position: "relative", bottom: "-3pt"}}>&nbsp;&nbsp;&nbsp;{Char.LeftArrow} Are you sure you want to reindex <u>{props.task.task_env.name}</u>?</b>
+            <b style={{position: "relative", bottom: "-3pt", whiteSpace: "nowrap"}}>&nbsp;&nbsp;&nbsp;{Char.LeftArrow} Are you sure you want to reindex <u>{props.task.task_env.name}</u>?</b>
         </td>
     </tr></tbody></table>
 }
@@ -400,7 +400,7 @@ const TaskStatusLine = (props) => {
     return <>
         { running.loading ? <>
             <b>Task Status</b>:&nbsp;
-            <span style={{position: "relative", top: "1px"}}>&nbsp;<PuffSpinnerInline size="16" /></span>
+            <span style={{position: "relative", top: "2px"}}>&nbsp;<PuffSpinnerInline size="18" color="red" /></span>
         </> : <span className="pointer" onClick={onRefresh}>
             <b>Task Status</b>:&nbsp;
             <u>{running.data?.task_running ? <b style={{color: "red"}}>Running</b> : <>Idle</>}</u>
