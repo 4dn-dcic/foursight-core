@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char'; 
 import DateTime from '../utils/DateTime';
 import { ExternalLink } from '../Components'; 
+import Image from '../utils/Image';
 import { PuffSpinnerInline, StandardSpinner } from '../Spinners';
 import Tooltip from '../components/Tooltip';
 import useFetch from '../hooks/Fetch';
@@ -57,11 +58,22 @@ const useTaskStatusNoCache = (task, refresh) => {
     return useFetch(`//aws/ecs/task_running/${task.task_cluster.name}/${task.task_arn}`);
 }
 
+const taskNames = [
+    { name: "deploy",         label: "Reindex" },
+    { name: "deploy_initial", label: "Initial Deploy" },
+    { name: "indexer",        label: "Indexer" },
+    { name: "ingester",       label: "Ingester" },
+    { name: "portal",         label: "Instance" }
+];
+
+const getTaskLabel = (taskName) => taskNames.find(task => task.name == taskName).label;
+
 const PortalReindexPage = (props) => {
 
-    const [ args ] = useSearchParams();
+    const [args, setArgs] = useSearchParams();
+    const [taskName, setTaskName] = useState(args.get("task") || "deploy");
 
-    const tasks = useFetch(`//aws/ecs/tasks_for_run?task=${args.get("task") || "deploy"}`, {
+    const tasks = useFetch(`//aws/ecs/tasks_for_run?task=${taskName}`, {
         onData: (data) => {
             setShowDetails(data.reduce((result, task) => {
                 result[task.task_arn] = false;
@@ -86,9 +98,19 @@ const PortalReindexPage = (props) => {
     const setShowDetail = (task) => { showDetails[task.task_arn] = true; setShowDetails({...showDetails}); }
     const isShowDetail = (task) => showDetails[task.task_arn];
 
+    const onTaskChange = (taskName) => {
+        setTaskName(taskName);
+        setArgs({...args, "task": taskName});
+    }
+
     return <>
         <div className="container">
-            <b style={{fontSize: "x-large"}}>Portal Reindex</b>
+            <div>
+                <b style={{fontSize: "x-large"}}>Portal {getTaskLabel(taskName)}</b>
+                <div style={{float: "right", marginRight: "4pt"}}>
+                    <TaskSelector onTaskChange={onTaskChange} taskName={taskName} />
+                </div>
+            </div>
             { tasks.loading ?
                 <ContentLoading />
             : <>
@@ -108,6 +130,24 @@ const PortalReindexPage = (props) => {
             </> }
         </div>
     </>
+}
+
+const TaskSelector = (props) => {
+    const [showTaskSelector, setShowTaskSelector] = useState(false);
+    const onChange = (e) => {
+        props.onTaskChange(e.target.value);
+    }
+    return <div style={{marginTop: "6pt"}}>
+        { showTaskSelector ? <div onMouseLeave={() => setShowTaskSelector(false)}>
+            <select style={{fontSize: "small", fontWeight: "bold"}} onChange={onChange}>
+                { taskNames.map(item => item.name).map(taskName => <>
+                    <option value={taskName} selected={taskName == props.taskName}>Portal {taskNames.find(task => task.name == taskName)?.label}</option>
+                </> )}
+            </select>
+        </div>:<div onMouseOver={() => setShowTaskSelector(true)}>
+            <img src={Image.SettingsIcon()} style={{height: "18px"}} />
+        </div> }
+    </div>
 }
 
 const ContentLoading = (props) => {
