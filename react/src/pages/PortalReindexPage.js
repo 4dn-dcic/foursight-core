@@ -176,59 +176,85 @@ const PortalReindexBox = (props) => {
                 <small id={`tooltip-${props.task.task_arn}`} style={{fontWeight: isSelectedTask() ? "bold" : "inherit"}}> { props.task?.task_arn }&nbsp;<ExternalLink href={awsTaskRunLink(props.task?.task_arn)} /> </small>
                 <Warnings task={props.task} />
                 <Tooltip id={`tooltip-${props.task.task_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run for the reindex."} />
-                { isSelectedTask() && <Buttons task={props.task} /> }
+                { isSelectedTask() && <ReindexButtonsBox task={props.task} /> }
             </div>
         </td></tr></tbody></table>
     </div>
 }
 
-const Buttons = (props) => {
+const ReindexButtonsBox = (props) => {
 
     const running = useTaskStatusNoCache(props.task);
-    const [reindex, setReindex] = useState(false);
-    const onClickReindex = (e) => { setReindex(true); e.stopPropagation(); e.preventDefault(); }
-    const onClickCancel = (e) => { setReindex(false); e.stopPropagation(); e.preventDefault(); }
     const onClickIgnore = (e) => { e.stopPropagation(); e.preventDefault(); }
 
     if (errorsExist(props.task)) {
-        return <ButtonsDisabled />
+        return <ReindexButtonsBoxDisabled />
     }
     return <>
         <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt"}} onClick={onClickIgnore}>
-            { !reindex ?
-                <div>
-                    <div className="check-run-button" style={{width: "fit-content"}} onClick={onClickReindex}>
-                        &nbsp;Reindex&nbsp;
-                    </div>
-                </div>
-            : <>
-                <ReindexButton task={props.task} onClickReindex={onClickReindex} onClickCancel={onClickCancel} running={running} />
+            { running.loading ? <>
+                 <ReindexButtonsTaskStatusLoading task={props.task} />
+            </>:<>
+                 <ReindexButtonsTaskStatusLoaded task={props.task} running={running} />
             </> }
-            { !running.loading && running.data?.task_running && <span style={{color: "red"}}>
-                <div style={{width: "100%", height: "2px", marginTop: "8pt", marginBottom: "8pt", background:"red"}} />
-                <b>Warning</b>: This task appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
-            </span> }
         </div>
     </>
 }
 
-const ReindexButton = (props) => {
+const ReindexButtonsTaskStatusLoading = (props) => {
+    return <>
+        <table><tbody><tr><td>
+            <div className="check-run-button disabled" style={{width: "fit-content", border: "1px solid inherit"}}>
+                Reindex
+            </div>
+        </td><td style={{paddingLeft: "8pt"}}>
+            <StandardSpinner label="Fetching task status ..." />
+        </td></tr></tbody></table>
+    </>
+}
+
+const ReindexButtonsTaskStatusLoaded = (props) => {
+    const [confirmed, setConfirmed] = useState(false);
+    const onClickReindex = (e) => { setConfirmed(true); e.stopPropagation(); }
+    const onClickCancel = (e) => { setConfirmed(false); e.stopPropagation(); }
+        return <>
+            { confirmed ?
+                <ReindexButtonConfirmed task={props.task} onClickReindex={onClickReindex} onClickCancel={onClickCancel} running={props.running} />
+            : <>
+                <ReindexButton onClickReindex={onClickReindex} />
+            </> }
+            { !props.running.loading && props.running.data?.task_running && <span style={{color: "red"}}>
+                <div style={{width: "100%", height: "2px", marginTop: "8pt", marginBottom: "8pt", background:"red"}} />
+                <b>Warning</b>: This task appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
+            </span> }
+        </>
+}
+
+const ReindexButtonConfirmed = (props) => {
     return <table><tbody><tr>
-        <td valign="top">
-            <div className="check-action-confirm-button" style={{width: "fit-content", marginBottom: "-1pt"}} onClick={props.onClickCancel}>
-                &nbsp;<b>Cancel</b>&nbsp;
-            </div>
-        </td><td valign="top">
-            <div className="check-run-button" style={{width: "fit-content", border: "1px solid inherit", marginLeft:"8pt"}} onClick={props.onClickReindex}>
-                &nbsp;Yes:&nbsp;Reindex&nbsp;
-            </div>
-        </td><td valign="top">
+        <td style={{verticalAlign: "top"}}>
+            <CancelButton onClickCancel={props.onClickCancel} />
+        </td><td style={{verticalAlign: "top", paddingLeft: "8pt"}}>
+            <ReindexButton onClickReindex={props.onClickReindex} confirmed={true} />
+        </td><td style={{verticalAlign: "top", paddingLeft: "0pt"}}>
             <b style={{position: "relative", bottom: "-3pt", whiteSpace: "nowrap"}}>&nbsp;&nbsp;&nbsp;{Char.LeftArrow} Are you sure you want to reindex <u>{props.task.task_env.name}</u>?</b>
         </td>
     </tr></tbody></table>
 }
 
-const ButtonsDisabled = (props) => {
+const ReindexButton = (props) => {
+    return <div className={`check-run-button ${props.disabled && "disabled"}`} style={{width: "fit-content", border: "1px solid inherit"}} onClick={props?.onClickReindex}>
+        { props.confirmed && <>&nbsp;Yes:</> }&nbsp;Reindex&nbsp;
+    </div>
+}
+
+const CancelButton = (props) => {
+    return <div className="check-action-confirm-button" style={{width: "fit-content", marginBottom: "-1pt"}} onClick={props.onClickCancel}>
+        &nbsp;<b>Cancel</b>&nbsp;
+    </div>
+}
+
+const ReindexButtonsBoxDisabled = (props) => {
     return <>
         <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt", color: "red"}}>
             <b>Reindexing disabled due to errors.</b>
