@@ -136,27 +136,25 @@ class Envs:
                     value in env["foursight_name"])
 
     @staticmethod
-    def _env_contained_within(env: dict, value: str, strict: bool = False) -> bool:
+    def _env_contained_within(env: dict, value: str) -> bool:
         """
         Returns True iff the given environment (dictionary) is contained or somehow represented
-        within the given string value. Originally created for determinining (sort of heuristically)
+        within the given string value. Originally created for determining (sort of heuristically)
         the environment to which an AWS task definition name should be associated. For example,
         the name "c4-ecs-fourfront-hotseat-stack-FourfrontDeployment-xTDwbIYxIZh7" would belong
         to the "hotseat" environment.
         """
         value = value.lower()
-        if not strict:
-            if "color" in env and env["color"] in ["blue", "green"] and env["color"] in value:
-                # Handle situations like this:
-                # c4-ecs-blue-green-smaht-production-stack-SmahtgreenDeployment-mIHBLXIQ1pok
-                blue_count = value.count("blue")
-                green_count = value.count("green")
-                if env["color"] == "blue":
-                    if blue_count > green_count:
-                        return True
-                elif env["color"] == "green":
-                    if green_count > blue_count:
-                        return True
+        if "color" in env and env["color"] in ["blue", "green"] and env["color"] in value:
+            # Handle situations like this where both blue and green appear, but green appears twice:
+            # c4-ecs-blue-green-smaht-production-stack-SmahtgreenDeployment-mIHBLXIQ1pok
+            blue_count = value.count("blue")
+            green_count = value.count("green")
+            if env["color"] == "blue":
+                if blue_count > green_count:
+                    return True
+            elif green_count > blue_count:
+                return True
         result = (env["full_name"].lower() in value or
                   env["short_name"].lower() in value or
                   env["public_name"].lower() in value or
