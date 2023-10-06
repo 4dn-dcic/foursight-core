@@ -204,11 +204,9 @@ const ReindexButtonsBox = (props) => {
 const ReindexButtonsTaskStatusLoading = (props) => {
     return <>
         <table><tbody><tr><td>
-            <div className="check-run-button disabled" style={{width: "fit-content", border: "1px solid inherit"}}>
-                Reindex
-            </div>
+            <ReindexButton disabled={true} />
         </td><td style={{paddingLeft: "8pt"}}>
-            <StandardSpinner label="Fetching task status ..." />
+            <StandardSpinner label="Fetching task status" />
         </td></tr></tbody></table>
     </>
 }
@@ -223,7 +221,7 @@ const ReindexButtonsTaskStatusLoaded = (props) => {
             : <>
                 <ReindexButton onClickReindex={onClickReindex} />
             </> }
-            { !props.running.loading && props.running.data?.task_running && <span style={{color: "red"}}>
+            { (!props.running.loading && props.running.data?.task_running) && <span style={{color: "red"}}>
                 <div style={{width: "100%", height: "2px", marginTop: "8pt", marginBottom: "8pt", background:"red"}} />
                 <b>Warning</b>: This task appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
             </span> }
