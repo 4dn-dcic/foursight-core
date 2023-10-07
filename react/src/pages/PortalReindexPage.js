@@ -492,9 +492,11 @@ const TaskStatusLine = (props) => {
         </span> }
         { showRunningIds && <small style={{ whiteSpace: "break-all"}}>
             <SeparatorH color="lightgray" top="3pt" bottom="3pt" />
-            <b>Running Task IDs:</b>
+            <b>Running Task Cluster</b>:&nbsp;&nbsp;{props.task.task_arn}&nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster.name)} /><br />
+            <b>Running Task Definition</b>:&nbsp;&nbsp;{props.task.task_arn}&nbsp;<ExternalLink href={awsTaskLink(props.task.task_arn)} /><br />
+            <b>Running Tasks</b>:
             { running.data?.task_running_ids?.map(id => <>
-                  &nbsp;&nbsp;{id}&nbsp;<ExternalLink href={awsTaskRunningLink(props.task?.task_cluster?.name, id)} />
+                &nbsp;&nbsp;{id}&nbsp;<ExternalLink href={awsTaskRunningLink(props.task?.task_cluster?.name, id)} />
             </> )}
         </small> }
     </div>

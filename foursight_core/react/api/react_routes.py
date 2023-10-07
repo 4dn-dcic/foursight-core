@@ -610,11 +610,19 @@ class ReactRoutes:
 
     @route("/aws/ecs/tasks_for_run", authorize=True)
     def reactapi_route_aws_ecs_tasks_for_run() -> Response:  # noqa: implicit @staticmethod via @route
-        return app.core.reactapi_aws_ecs_task_arns_for_run(task=app.request_arg("task"))
+        return app.core.reactapi_aws_ecs_tasks_for_run(task=app.request_arg("task"))
 
     @route("/aws/ecs/task_running/{cluster_arn}/{task_definition_arn}", authorize=True)
     def reactapi_route_aws_ecs_task_running(cluster_arn: str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
         return app.core.reactapi_aws_ecs_task_running(cluster_arn, task_definition_arn)
+
+    @route("/aws/ecs/tasks_running/{cluster_arn}", authorize=True)
+    def reactapi_route_aws_ecs_tasks_running(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_ecs_tasks_running(cluster_arn)
+
+    @route("/aws/ecs/task_run/{cluster_arn}/{task_definition_arn}", method="POST", authorize=True)
+    def reactapi_route_aws_ecs_task_run(cluster_arn: str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_ecs_task_run(cluster_arn, task_definition_arn, app.request_body())
 
     @route("/aws/ecs/tasks/latest/details", authorize=True)
     def reactapi_route_aws_ecs_task() -> Response:  # noqa: implicit @staticmethod via @route

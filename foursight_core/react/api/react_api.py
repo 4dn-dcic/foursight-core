@@ -1991,40 +1991,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         else:
             return task_arn
 
-    def reactapi_aws_ecs_task_running(self, cluster_arn, task_definition_arn: str) -> Response:
-        """
-        Returns an indication of if the given task definition is currently running.
-        Note that if the given task definition ARN is not valid or does not exist,
-        then NO indication of this is given; it will just say it is not running.
-        """
-        ecs = boto3.client("ecs")
-        response = ecs.list_tasks(cluster=cluster_arn, family=task_definition_arn)
-        task_arns = response.get("taskArns")
-        is_running = isinstance(task_arns, list) and len(task_arns) > 0
-        task_name = self.get_task_name(task_definition_arn)
-        response = {
-            "cluster_arn": cluster_arn,
-            "task_arn": task_definition_arn,
-            "task_name": task_name,
-            "task_running": is_running
-        }
-        if is_running:
-            def get_task_running_id(task_arn: str) -> str:
-                return task_arn.split("/")[-1] if "/" in task_arn else task_arn
-            response["task_running_ids"] = [get_task_running_id(task_arn) for task_arn in task_arns]
-        # If this is the deploy task the approximate that last time it was run
-        # by using the the create date of the Portal Access Key as a proxy for
-        # when this task last ran since the entrypoint_deployment.bash script
-        # creates this as its last step.
-        if task_name == "deploy":
-            task_env = self._envs.get_associated_env(task_definition_arn)
-            if task_env:
-                portal_access_key_info = get_portal_access_key_info(task_env["full_name"])
-                if portal_access_key_info:
-                    response["task_last_ran_at"] = portal_access_key_info["created_at"]
-        return response
-
-    def reactapi_aws_ecs_task_arns_for_run(self, task: Optional[str] = None) -> Response:
+    def reactapi_aws_ecs_tasks_for_run(self, task: Optional[str] = None) -> Response:
 
         task_arns = self.reactapi_aws_ecs_task_arns(latest=True)
         tasks_for_run = []
@@ -2178,6 +2145,72 @@ class ReactApi(ReactApiBase, ReactRoutes):
             # Add this task to the results (handles "duplicates").
             add_task(tasks_for_run, task_for_run)
         return tasks_for_run
+
+    def reactapi_aws_ecs_task_running(self, cluster_arn, task_definition_arn: str) -> Response:
+        """
+        Returns an indication of if the given task definition is currently running.
+        Note that if the given task definition ARN is not valid or does not exist,
+        then NO indication of this is given; it will just say it is not running.
+        """
+        ecs = boto3.client("ecs")
+        response = ecs.list_tasks(cluster=cluster_arn, family=task_definition_arn)
+        task_arns = response.get("taskArns")
+        is_running = isinstance(task_arns, list) and len(task_arns) > 0
+        task_name = self.get_task_name(task_definition_arn)
+        response = {
+            "cluster_arn": cluster_arn,
+            "task_arn": task_definition_arn,
+            "task_name": task_name,
+            "task_running": is_running
+        }
+        if is_running:
+            def get_task_running_id(task_arn: str) -> str:
+                return task_arn.split("/")[-1] if "/" in task_arn else task_arn
+            response["task_running_ids"] = [get_task_running_id(task_arn) for task_arn in task_arns]
+        # If this is the deploy task the approximate that last time it was run
+        # by using the the create date of the Portal Access Key as a proxy for
+        # when this task last ran since the entrypoint_deployment.bash script
+        # creates this as its last step.
+        if task_name == "deploy":
+            task_env = self._envs.get_associated_env(task_definition_arn)
+            if task_env:
+                portal_access_key_info = get_portal_access_key_info(task_env["full_name"])
+                if portal_access_key_info:
+                    response["task_last_ran_at"] = portal_access_key_info["created_at"]
+        return response
+
+    def reactapi_aws_ecs_tasks_running(self, cluster_arn) -> Response:
+        """
+        Returns a list of all tasks running within the given cluster (ARN).
+        This list is groups by task definition (ARN), which each containing
+        the list of task IDs of associated tasks running.
+        """
+        ecs = boto3.client("ecs")
+        response = ecs.list_tasks(cluster=cluster_arn)
+        task_arns = response.get("taskArns")
+        if task_arns:
+            for task_arn in task_arns:
+                pass
+        pass
+
+    def reactapi_aws_ecs_task_run(self, cluster_arn: str, task_definition_arn: str, args: dict) -> Response:
+        subnets = args.get("subnets")
+        security_group = args.get("security_group")
+        ecs = ECSUtils()
+        import pdb ; pdb.set_trace()
+        response = self.client.run_task(
+            cluster=cluster_arn,
+            count=1,
+            taskDefinition=task_definition_arn,
+            networkConfiguration={
+                "awsvpcConfiguration": {
+                    "subnets": subnets,
+                    "securityGroups": [security_group]
+                }
+            }
+        )
+        import pdb ; pdb.set_trace()
+        return response
 
     def reactapi_aws_ecs_task_arns_run(self, task_arn: str) -> Response:
         # TODO
