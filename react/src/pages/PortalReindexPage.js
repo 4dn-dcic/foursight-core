@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char'; 
 import DateTime from '../utils/DateTime';
+import Duration from '../utils/Duration';
 import { ExternalLink } from '../Components'; 
 import Image from '../utils/Image';
 import { PuffSpinnerInline, StandardSpinner } from '../Spinners';
@@ -362,10 +363,10 @@ const TLineH = ({size = "1px", color = "black", span = "2"}) => <tr><td style={{
 const TSeparatorH = ({size = "1px", color = "black", span = "2", double = false, top = "1pt", bottom = "1pt"}) => {
     return <>
         <TSpaceH size={top} />
-        <TLineH size={size} color={color} span={span} />
+        <TLineH size={size} color={color} span={span == "max" ? "100" : span} />
         { double && <>
             <TSpaceH size="1pt" />
-            <TLineH size={size} color={color} span={span} />
+            <TLineH size={size} color={color} span={span == "max" ? "100" : span} />
         </> }
         <TSpaceH size={bottom} />
     </>
@@ -374,6 +375,8 @@ const SeparatorH = ({size = "1px", color = "black", top = "8pt", bottom = "8pt"}
 
 const DetailsBox = (props) => {
     const header = useHeader();
+    const [showTasks, setShowTasks] = useState(false);
+    const toggleShowTasks = () => setShowTasks(!showTasks);
     return <div className="box bigmargin marginbottom" onClick={(e) => e.stopPropagation()}><small>
         <table style={{fontSize: "inherit"}}><tbody>
             <tr>
@@ -386,15 +389,19 @@ const DetailsBox = (props) => {
                 </td>
                 <TSeparatorV />
                 <td style={{verticalAlign: "top"}}>
-                    <NetworkDetails task={props.task} />
+                    <NetworkDetails task={props.task} showTasks={showTasks} toggleShowTasks={toggleShowTasks} />
                 </td>
             </tr>
             <TSeparatorH span="max" top="6pt" bottom={"8pt"} />
-            <tr>
-                <td colSpan="18">
-                    <TaskStatusLine task={props.task} />
-                </td>
-            </tr>
+            <tr><td colSpan="18">
+                <TaskStatusLine task={props.task} />
+            </td></tr>
+            { showTasks && <>
+               <TSeparatorH span="max" top="6pt" bottom={"8pt"} />
+                <tr><td colSpan="18">
+                    <TasksRunning task={props.task} />
+                </td></tr>
+            </> }
         </tbody></table>
     </small></div>
 }
@@ -453,7 +460,9 @@ const NetworkDetails = (props) => {
         </td></tr>
         <TSeparatorH double={true} />
         <tr>
-            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Cluster: </td>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}} className="pointer" onClick={props.toggleShowTasks}>
+                { props.showTasks ? <b>Cluster<small>&nbsp;</small>{Char.DownArrow}</b> : <>Cluster<small>&nbsp;</small>{Char.UpArrow}</> }
+            </td>
             <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
                 <span id={`tooltip-cluster-${props.task.task_arn}`} >
                     {showNetworkNames ? props.task?.task_cluster?.id : props.task?.task_cluster?.name}
@@ -626,6 +635,48 @@ const WarningNoSecurityGroup = (props) => {
                 <b>Warning</b>: No security group found.
             </small></div>
         }
+    </>
+}
+
+const TasksRunning = (props) => {
+    const tasks = useFetch(`//aws/ecs/tasks_running/${props.task.task_cluster.name}`);
+    const sortedTasks = tasks.data?.sort((a, b) => {
+        a = a.task_arn?.toLowerCase();
+        b = b.task_arn?.toLowerCase();
+        return (a < b) ? -1 : ((a > b) ? 1 : 0);
+    });
+    return <>
+        <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+            <tr>
+                <td colSpan="2">
+                    <i>Tasks running in cluster</i>: <small>{props.task.task_cluster.name}</small>
+                </td>
+            </tr>
+            { tasks.loading ? <>
+                <TSeparatorH color="gray" top="7pt" bottom="4pt" />
+                <StandardSpinner label="Loading running tasks" />
+            </>:<>
+                { sortedTasks?.map((task, index) => <>
+                    { index == 0 ?
+                        <TSeparatorH color="gray" top="7pt" bottom="4pt" />
+                    :
+                        <TSeparatorH color="lightgray" />
+                    }
+                    <tr style={{fontSize: "x-small"}}>
+                        <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> <b>Task Definition ARN</b>: </td>
+                        <td> {task.task_arn} <ExternalLink href={awsTaskLink(task.task_arn)} /></td>
+                    </tr>
+                    <tr style={{fontSize: "x-small"}}>
+                        <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> <b>Task Running ID</b>: </td>
+                        <td> {task.task_running_id} <ExternalLink href={awsTaskRunningLink(props.task.task_cluster.name, task.task_running_id)} /></td>
+                    </tr>
+                    <tr style={{fontSize: "x-small"}}>
+                        <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> <b>Task Started At</b>: </td>
+                        <td> {DateTime.Format(task.started_at)} <b>{Char.RightArrow}</b> {Duration.Ago(task.started_at, true, false)} </td>
+                    </tr>
+                </> )}
+            </> }
+        </tbody></table>
     </>
 }
 
