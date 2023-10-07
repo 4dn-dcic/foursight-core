@@ -2188,13 +2188,21 @@ class ReactApi(ReactApiBase, ReactRoutes):
         This list is groups by task definition (ARN), which each containing
         the list of task IDs of associated tasks running.
         """
+        #import pdb ; pdb.set_trace()
+        response = []
         ecs = boto3.client("ecs")
-        response = ecs.list_tasks(cluster=cluster_arn)
-        task_arns = response.get("taskArns")
+        task_arns = ecs.list_tasks(cluster=cluster_arn).get("taskArns")
         if task_arns:
-            for task_arn in task_arns:
-                pass
-        pass
+            tasks = ecs.describe_tasks(cluster=cluster_arn, tasks=task_arns).get("tasks")
+            for task in tasks:
+                response.append({
+                    "cluster_arn": cluster_arn,
+                    "task_arn": self._ecs_task_definition_arn_to_name(task.get("taskDefinitionArn")),
+                    "task_running_id": self.get_task_running_id(task.get("taskArn")),
+                    "status": task.get("lastStatus"),
+                    "started_at": convert_utc_datetime_to_utc_datetime_string(task.get("startedAt"))
+                })
+        return response
 
     def reactapi_aws_ecs_task_run(self, cluster_arn: str, task_definition_arn: str, args: dict) -> Response:
         subnets = args.get("subnets")
