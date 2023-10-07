@@ -662,16 +662,16 @@ const TasksRunning = (props) => {
                     :
                         <TSeparatorH color="lightgray" />
                     }
-                    <tr style={{fontSize: "x-small"}}>
-                        <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> <b>Task Definition ARN</b>: </td>
+                    <tr style={{fontSize: "small"}}>
+                        <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> <b>Task Definition</b>: </td>
                         <td> {task.task_arn} <ExternalLink href={awsTaskLink(task.task_arn)} /></td>
                     </tr>
-                    <tr style={{fontSize: "x-small"}}>
-                        <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> <b>Task Running ID</b>: </td>
+                    <tr style={{fontSize: "small"}}>
+                        <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> Task Running ID: </td>
                         <td> {task.task_running_id} <ExternalLink href={awsTaskRunningLink(props.task.task_cluster.name, task.task_running_id)} /></td>
                     </tr>
-                    <tr style={{fontSize: "x-small"}}>
-                        <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> <b>Task Started At</b>: </td>
+                    <tr style={{fontSize: "small"}}>
+                        <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> Task Started At: </td>
                         <td> {DateTime.Format(task.started_at)} <b>{Char.RightArrow}</b> {Duration.Ago(task.started_at, true, false)} </td>
                     </tr>
                 </> )}
