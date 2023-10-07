@@ -301,7 +301,7 @@ export const useFetchFunction = (url = null, args = null) => {
                                   () => {}, () => {}, () => {}, () => {}, () => {},
                                   fetching, fetched, true);
     }
-    return (url, args) => _doFetch(assembleArgs(url, args));
+    return (url, args) => _doFetch(assembleArgs(url, args), undefined, {});
 }
 
 // Readonly exported hook to get the list of currently fetching.

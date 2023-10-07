@@ -1991,6 +1991,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
         else:
             return task_arn
 
+    @staticmethod
+    def get_task_running_id(task_arn: str) -> str:
+        return task_arn.split("/")[-1] if "/" in task_arn else task_arn
+
     def reactapi_aws_ecs_tasks_for_run(self, task: Optional[str] = None) -> Response:
 
         task_arns = self.reactapi_aws_ecs_task_arns(latest=True)
@@ -2079,6 +2083,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 existing_task_definition = (
                     ecs.describe_task_definition(taskDefinition=existing_task["task_arn"])["taskDefinition"])
                 this_task_definition = ecs.describe_task_definition(taskDefinition=task["task_arn"])["taskDefinition"]
+                # import pdb ; pdb.set_trace()
                 existing_task_registered_at = existing_task_definition.get("registeredAt")
                 this_task_registered_at = this_task_definition.get("registeredAt")
                 if existing_task_registered_at and this_task_registered_at:
@@ -2164,9 +2169,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "task_running": is_running
         }
         if is_running:
-            def get_task_running_id(task_arn: str) -> str:
-                return task_arn.split("/")[-1] if "/" in task_arn else task_arn
-            response["task_running_ids"] = [get_task_running_id(task_arn) for task_arn in task_arns]
+            response["task_running_ids"] = [self.get_task_running_id(task_arn) for task_arn in task_arns]
         # If this is the deploy task the approximate that last time it was run
         # by using the the create date of the Portal Access Key as a proxy for
         # when this task last ran since the entrypoint_deployment.bash script
@@ -2196,20 +2199,32 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def reactapi_aws_ecs_task_run(self, cluster_arn: str, task_definition_arn: str, args: dict) -> Response:
         subnets = args.get("subnets")
         security_group = args.get("security_group")
-        ecs = ECSUtils()
-        import pdb ; pdb.set_trace()
-        response = self.client.run_task(
-            cluster=cluster_arn,
+        subnets = [subnet["id"] for subnet in subnets]
+        security_group = security_group["id"]
+        # import pdb ; pdb.set_trace()
+        # TODO: The dcicutils.ecs_utils.run_ecs_task function does not specify specify
+        # container launchType (FARGATE), for some reason, one of which is required.
+        # ecs = ECSUtils()
+        # response = ecs.run_ecs_task(
+        #     cluster_name=cluster_arn,
+        #     task_name=task_definition_arn,
+        #     subnet=subnets,  # TODO
+        #     security_group=security_group
+        # )
+        ecs = boto3.client("ecs")
+        response = ecs.run_task(
+            launchType="FARGATE",
             count=1,
+            cluster=cluster_arn,
             taskDefinition=task_definition_arn,
-            networkConfiguration={
-                "awsvpcConfiguration": {
-                    "subnets": subnets,
-                    "securityGroups": [security_group]
-                }
-            }
+            networkConfiguration={"awsvpcConfiguration": {"subnets": subnets,"securityGroups": [security_group]}}
         )
-        import pdb ; pdb.set_trace()
+        response = {
+            "task_cluster_arn": cluster_arn,
+            "task_arn": task_definition_arn,
+            "task_running_id": self.get_task_running_id(response.get("tasks", [{}])[0].get("taskArn"))
+        }
+        # import pdb ; pdb.set_trace()
         return response
 
     def reactapi_aws_ecs_task_arns_run(self, task_arn: str) -> Response:

@@ -8,6 +8,7 @@ import Image from '../utils/Image';
 import { PuffSpinnerInline, StandardSpinner } from '../Spinners';
 import Tooltip from '../components/Tooltip';
 import useFetch from '../hooks/Fetch';
+import useFetchFunction from '../hooks/FetchFunction';
 import useHeader from '../hooks/Header';
 
 const region = "us-east-1";
@@ -161,6 +162,7 @@ const Content = (props) => {
     const [selectedTask, setSelectedTask] = useState();
     const selectTask = (task) => { isSelectedTask(task) ? setSelectedTask(null) : setSelectedTask(task.task_arn); }
     const isSelectedTask = (task) => selectedTask == task.task_arn;
+    const unselectTask = () => setSelectedTask(null);
 
     const sortedTasks = props.tasks?.sort((a, b) => {
         a = a.task_env?.name?.toLowerCase();
@@ -174,6 +176,7 @@ const Content = (props) => {
                 task={task}
                 selectedTask={selectedTask}
                 selectTask={selectTask}
+                unselectTask={unselectTask}
                 isSelectedTask={isSelectedTask}
                 isShowDetail={props.isShowDetail}
                 toggleShowDetail={props.toggleShowDetail}
@@ -231,7 +234,7 @@ const PortalReindexBox = (props) => {
                 <small id={`tooltip-${props.task.task_arn}`} style={{fontWeight: isSelectedTask() ? "bold" : "inherit"}}> { props.task?.task_arn }&nbsp;<ExternalLink href={awsTaskRunLink(props.task?.task_arn)} /> </small>
                 <Warnings task={props.task} />
                 <Tooltip id={`tooltip-${props.task.task_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run for the reindex."} />
-                { isSelectedTask() && <ReindexButtonsBox task={props.task} /> }
+                { isSelectedTask() && <ReindexButtonsBox task={props.task} unselectTask={props.unselectTask} /> }
             </div>
         </td></tr></tbody></table>
     </div>
@@ -248,7 +251,7 @@ const ReindexButtonsBox = (props) => {
             { running.loading ? <>
                  <ReindexButtonsTaskStatusLoading task={props.task} />
             </>:<>
-                 <ReindexButtonsTaskStatusLoaded task={props.task} running={running} />
+                 <ReindexButtonsTaskStatusLoaded task={props.task} running={running} unselectTask={props.unselectTask} />
             </> }
         </div>
     </>
@@ -274,19 +277,56 @@ const ReindexButtonsTaskStatusLoading = (props) => {
 
 const ReindexButtonsTaskStatusLoaded = (props) => {
     const [confirmed, setConfirmed] = useState(false);
-    const onClickReindex = (e) => { setConfirmed(true); e.stopPropagation(); }
+    const [running, setRunning] = useState(false);
+    const [runDone, setRunDone] = useState(false);
+    const [runResult, setRunResult] = useState(false);
+    const fetch = useFetchFunction();
     const onClickCancel = (e) => { setConfirmed(false); e.stopPropagation(); }
-        return <>
-            { confirmed ?
-                <ReindexButtonConfirmed task={props.task} onClickReindex={onClickReindex} onClickCancel={onClickCancel} running={props.running} />
-            : <>
-                <ReindexButton onClickReindex={onClickReindex} />
+    const onClickReindex = (e) => {
+        if (confirmed) {
+            setRunning(true);
+            const url = `//aws/ecs/task_run/${props.task.task_cluster.name}/${props.task.task_arn}`;
+            const payload = {
+                subnets: props.task.task_subnets,
+                security_group: props.task.task_security_group
+            }
+            fetch(url, { delay: 3000, method: "POST", payload: payload, onDone: (result) => {
+                setRunning(false);
+                setRunResult(result);
+                setRunDone(true);
+            } });
+        }
+        else {
+            setConfirmed(true);
+        }
+        e.stopPropagation();
+    }
+    const onClickRunDoneX = (e) => {
+        setRunDone(false);
+        setConfirmed(false);
+        props.unselectTask();
+    }
+    return <>
+        { confirmed ? <>
+            { running ? <>
+                <StandardSpinner label="Kicking off task" />
+            </>:<>
+                { runDone ? <>
+                    <b>Kicked off task {Char.RightArrow}</b> <small><u>{runResult?.data?.task_running_id}</u></small>&nbsp;
+                    <small><ExternalLink href={awsTaskRunningLink(props.task.task_cluster.name, runResult?.data?.task_running_id)} /></small>
+                    <div className="pointer" onClick={onClickRunDoneX} style={{float: "right", marginRight: "4pt"}}>{Char.X}</div>
+                </>:<>
+                    <ReindexButtonConfirmed task={props.task} onClickReindex={onClickReindex} onClickCancel={onClickCancel} running={props.running} />
+                </> }
             </> }
-            { (!props.running.loading && props.running.data?.task_running) && <span style={{color: "red"}}>
-                <div style={{width: "100%", height: "2px", marginTop: "8pt", marginBottom: "8pt", background:"red"}} />
-                <b>Warning</b>: This task appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
-            </span> }
-        </>
+        </>: <>
+            <ReindexButton onClickReindex={onClickReindex} />
+        </> }
+        { (!props.running.loading && props.running.data?.task_running) && <span style={{color: "red"}}>
+            <div style={{width: "100%", height: "2px", marginTop: "8pt", marginBottom: "8pt", background:"red"}} />
+            <b>Warning</b>: This task appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
+        </span> }
+    </>
 }
 
 const ReindexButtonConfirmed = (props) => {
