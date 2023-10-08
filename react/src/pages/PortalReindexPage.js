@@ -43,7 +43,7 @@ function awsSubnetLink(id) {
 }
 
 function errorsExist(task) {
-    if (!task?.task_cluster ||
+    if (!task?.task_cluster_arn ||
         !task?.task_vpc ||
         !task?.task_subnets ||
         !task?.task_security_group) {
@@ -53,11 +53,11 @@ function errorsExist(task) {
 }
 
 const useTaskStatus = (task, refresh) => {
-    return useFetch(`//aws/ecs/task_running/${task.task_cluster.name}/${task.task_arn}`, {cache: true});
+    return useFetch(`//aws/ecs/task_running/${task.task_cluster_arn}/${task.task_arn}`, {cache: true});
 }
 
 const useTaskStatusNoCache = (task, refresh) => {
-    return useFetch(`//aws/ecs/task_running/${task.task_cluster.name}/${task.task_arn}`);
+    return useFetch(`//aws/ecs/task_running/${task.task_cluster_arn}/${task.task_arn}`);
 }
 
 const taskNames = [
@@ -286,7 +286,7 @@ const ReindexButtonsTaskStatusLoaded = (props) => {
     const onClickReindex = (e) => {
         if (confirmed) {
             setRunning(true);
-            const url = `//aws/ecs/task_run/${props.task.task_cluster.name}/${props.task.task_arn}`;
+            const url = `//aws/ecs/task_run/${props.task.task_cluster_arn}/${props.task.task_arn}`;
             const payload = {
                 subnets: props.task.task_subnets,
                 security_group: props.task.task_security_group
@@ -314,7 +314,7 @@ const ReindexButtonsTaskStatusLoaded = (props) => {
             </>:<>
                 { runDone ? <>
                     <b>Kicked off task {Char.RightArrow}</b> <small><u>{runResult?.data?.task_running_id}</u></small>&nbsp;
-                    <small><ExternalLink href={awsTaskRunningLink(props.task.task_cluster.name, runResult?.data?.task_running_id)} /></small>
+                    <small><ExternalLink href={awsTaskRunningLink(props.task.task_cluster_arn, runResult?.data?.task_running_id)} /></small>
                     <div className="pointer" onClick={onClickRunDoneX} style={{float: "right", marginRight: "4pt"}}>{Char.X}</div>
                 </>:<>
                     <ReindexButtonConfirmed task={props.task} onClickReindex={onClickReindex} onClickCancel={onClickCancel} running={props.running} />
@@ -464,12 +464,10 @@ const NetworkDetails = (props) => {
                 { props.showTasks ? <b>Cluster<small>&nbsp;</small>{Char.DownArrow}</b> : <>Cluster<small>&nbsp;</small>{Char.UpArrow}</> }
             </td>
             <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
-                <span id={`tooltip-cluster-${props.task.task_arn}`} >
-                    {showNetworkNames ? props.task?.task_cluster?.id : props.task?.task_cluster?.name}
-                    &nbsp;<small><ExternalLink href={awsClusterLink(props.task?.task_cluster?.name)} /></small>
+                <span>
+                    {props.task?.task_cluster_arn}
+                    &nbsp;<small><ExternalLink href={awsClusterLink(props.task?.task_cluster_arn)} /></small>
                 </span>
-            <Tooltip id={`tooltip-cluster-${props.task.task_arn}`} position="top" shape="squared" size="small"
-                text={showNetworkNames ? props.task?.task_cluster?.name : props.task?.task_cluster?.id} />
             </td>
         </tr>
         <tr>
@@ -541,11 +539,11 @@ const TaskStatusLine = (props) => {
         </span> }
         { showRunningIds && <small style={{ whiteSpace: "break-all"}}>
             <SeparatorH color="lightgray" top="3pt" bottom="3pt" />
-            <b>Running Task Cluster</b>:&nbsp;&nbsp;{props.task.task_arn}&nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster.name)} /><br />
+            <b>Running Task Cluster</b>:&nbsp;&nbsp;{props.task.task_arn}&nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster_arn)} /><br />
             <b>Running Task Definition</b>:&nbsp;&nbsp;{props.task.task_arn}&nbsp;<ExternalLink href={awsTaskLink(props.task.task_arn)} /><br />
             <b>Running Tasks</b>:
             { running.data?.task_running_ids?.map(id => <>
-                &nbsp;&nbsp;{id}&nbsp;<ExternalLink href={awsTaskRunningLink(props.task?.task_cluster?.name, id)} />
+                &nbsp;&nbsp;{id}&nbsp;<ExternalLink href={awsTaskRunningLink(props.task?.task_cluster_arn, id)} />
             </> )}
         </small> }
     </div>
@@ -600,7 +598,7 @@ const WarningMultipleTasks = (props) => {
 
 const WarningNoCluster = (props) => {
     return <>
-        { !props.task?.task_cluster &&
+        { !props.task?.task_cluster_arn &&
             <div className="box bigmargin error"><small>
                 <b>Warning</b>: No cluster found.
             </small></div>
@@ -639,7 +637,7 @@ const WarningNoSecurityGroup = (props) => {
 }
 
 const TasksRunning = (props) => {
-    const tasks = useFetch(`//aws/ecs/tasks_running/${props.task.task_cluster.name}`);
+    const tasks = useFetch(`//aws/ecs/tasks_running/${props.task.task_cluster_arn}`);
     const sortedTasks = tasks.data?.sort((a, b) => {
         a = a.task_arn?.toLowerCase();
         b = b.task_arn?.toLowerCase();
@@ -651,8 +649,8 @@ const TasksRunning = (props) => {
                 <td colSpan="2">
                     <i>Tasks running in cluster</i>:
                     <small>
-                        <b>&nbsp;{props.task.task_cluster.name}</b>
-                        &nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster.name)} />
+                        <b>&nbsp;{props.task.task_cluster_arn}</b>
+                        &nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster_arn)} />
                     </small>
                 </td>
             </tr>
@@ -690,7 +688,7 @@ const TasksRunning = (props) => {
                         {/*
                     <tr style={{fontSize: "small"}}>
                         <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> Task Running ID: </td>
-                        <td> {task.task_running_id} <ExternalLink href={awsTaskRunningLink(props.task.task_cluster.name, task.task_running_id)} /></td>
+                        <td> {task.task_running_id} <ExternalLink href={awsTaskRunningLink(props.task.task_cluster_arn, task.task_running_id)} /></td>
                     </tr>
                     <tr style={{fontSize: "small"}}>
                         <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> Task Started At: </td>

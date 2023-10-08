@@ -2003,12 +2003,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         def get_clusters() -> list[dict]:
             return self.reactapi_aws_ecs_clusters()
 
-        def get_cluster_for_env(clusters: list[dict], env: Optional[dict]) -> Optional[dict]:
+        def get_cluster_for_env(clusters: list[dict], env: Optional[dict]) -> Optional[str]:
             if not env:
                 return None
             for cluster in clusters:
                 if Envs._env_contained_within(env, cluster["cluster_name"]):
-                    return {"id": cluster["cluster_arn"], "name": cluster["cluster_name"]}
+                    return cluster["cluster_name"]
 
         def get_vpc() -> Optional[dict]:
             vpcs = aws_get_vpcs()
@@ -2083,7 +2083,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 existing_task_definition = (
                     ecs.describe_task_definition(taskDefinition=existing_task["task_arn"])["taskDefinition"])
                 this_task_definition = ecs.describe_task_definition(taskDefinition=task["task_arn"])["taskDefinition"]
-                # import pdb ; pdb.set_trace()
                 existing_task_registered_at = existing_task_definition.get("registeredAt")
                 this_task_registered_at = this_task_definition.get("registeredAt")
                 if existing_task_registered_at and this_task_registered_at:
@@ -2138,7 +2137,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             # Get the AWS cluster to use for any task run for this particular environment.
             cluster_for_env = get_cluster_for_env(clusters, task_env)
             if cluster_for_env:
-                task_for_run["task_cluster"] = cluster_for_env
+                task_for_run["task_cluster_arn"] = cluster_for_env
             # Get the AWS security groups to use for any task run for this particular environment.
             security_group_for_env = get_security_group_for_env(security_groups, task_env)
             if security_group_for_env:
@@ -2182,36 +2181,46 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     response["task_last_ran_at"] = portal_access_key_info["created_at"]
         return response
 
-    def reactapi_aws_ecs_tasks_running(self, cluster_arn) -> Response:
+    def reactapi_aws_ecs_tasks_running(self, cluster_arn: str, task_name: Optional[str] = None) -> Response:
         """
         Returns a list of all tasks running within the given cluster (ARN).
         This list is groups by task definition (ARN), which each containing
         the list of task IDs of associated tasks running.
         """
-        #import pdb ; pdb.set_trace()
         response = []
         ecs = boto3.client("ecs")
         task_arns = ecs.list_tasks(cluster=cluster_arn).get("taskArns")
         if task_arns:
+            given_task_name = task_name
             tasks = ecs.describe_tasks(cluster=cluster_arn, tasks=task_arns).get("tasks")
             for task in tasks:
-                response.append({
+                task_arn = self._ecs_task_definition_arn_to_name(task.get("taskDefinitionArn"))
+                task_name = self.get_task_name(task_arn)
+                if given_task_name and given_task_name != task_name:
+                    continue
+                item = {
                     "cluster_arn": cluster_arn,
-                    "task_arn": self._ecs_task_definition_arn_to_name(task.get("taskDefinitionArn")),
-                    "task_running_id": self.get_task_running_id(task.get("taskArn")),
-                    "status": task.get("lastStatus"),
+                    "id": self.get_task_running_id(task.get("taskArn")),
                     "started_at": convert_utc_datetime_to_utc_datetime_string(task.get("startedAt"))
-                })
-        grouped_response = {}
-        for item in response:
-            task_arn = item["task_arn"]
-            if task_arn not in grouped_response:
-                grouped_response[task_arn] = {"task_arn": task_arn, "cluster_arn": item["cluster_arn"], "tasks": []}
-            grouped_response[task_arn]["tasks"].append({
-                "id": item["task_running_id"],
-                "started_at": item["started_at"]
-            })
-        response = list(grouped_response.values())
+                }
+                existing_item = [item for item in response if item["task_arn"] == task_arn]
+                if existing_item:
+                    existing_item[0]["tasks"].append(item)
+                else:
+                    response.append({"task_arn": task_arn, "tasks": [item]})
+        return response
+
+    def reactapi_aws_ecs_tasks_running_across_clusters(self, task_name: Optional[str] = None) -> Response:
+        response = []
+        cluster_arns = [cluster["cluster_name"] for cluster in self.reactapi_aws_ecs_clusters()]
+        for cluster_arn in cluster_arns:
+            tasks_running = self.reactapi_aws_ecs_tasks_running(cluster_arn, task_name)
+            for task_running in tasks_running:
+                existing_item = [item for item in response if item["task_arn"] == task_running["task_arn"]]
+                if existing_item:
+                    existing_item[0]["tasks"].extend(task_running["tasks"])
+                else:
+                    response.append(task_running)
         return response
 
     def reactapi_aws_ecs_task_run(self, cluster_arn: str, task_definition_arn: str, args: dict) -> Response:
@@ -2219,7 +2228,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
         security_group = args.get("security_group")
         subnets = [subnet["id"] for subnet in subnets]
         security_group = security_group["id"]
-        # import pdb ; pdb.set_trace()
         # TODO: The dcicutils.ecs_utils.run_ecs_task function does not specify specify
         # container launchType (FARGATE), for some reason, one of which is required.
         # ecs = ECSUtils()
@@ -2242,7 +2250,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "task_arn": task_definition_arn,
             "task_running_id": self.get_task_running_id(response.get("tasks", [{}])[0].get("taskArn"))
         }
-        # import pdb ; pdb.set_trace()
         return response
 
     def reactapi_aws_ecs_task_arns_run(self, task_arn: str) -> Response:

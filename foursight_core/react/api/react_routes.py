@@ -619,7 +619,11 @@ class ReactRoutes:
 
     @route("/aws/ecs/tasks_running/{cluster_arn}", authorize=True)
     def reactapi_route_aws_ecs_tasks_running(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
-        return app.core.reactapi_aws_ecs_tasks_running(cluster_arn)
+        return app.core.reactapi_aws_ecs_tasks_running(cluster_arn, task_name=app.request_arg("task"))
+
+    @route("/aws/ecs/tasks_running_across_clusters", authorize=True)
+    def reactapi_route_aws_ecs_tasks_running_across_clusters() -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_aws_ecs_tasks_running_across_clusters(task_name=app.request_arg("task"))
 
     @route("/aws/ecs/task_run/{cluster_arn}/{task_definition_arn}", method="POST", authorize=True)
     def reactapi_route_aws_ecs_task_run(cluster_arn: str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
