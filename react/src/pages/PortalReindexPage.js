@@ -323,8 +323,8 @@ const ReindexButtons = (props) => {
         </>: <>
             <ReindexButton onClickReindex={onClickReindex} />
         </> }
-        { (!props.running.loading && props.running.data?.task_running) && <small style={{color: "darkred"}}>
-            <div style={{width: "100%", height: "2px", marginTop: "8pt", marginBottom: "8pt", background:"darkred"}} />
+        { (!props.running.loading && props.running.data?.task_running) && <small style={{color: "red"}}>
+            <div style={{width: "100%", height: "2px", marginTop: "8pt", marginBottom: "8pt", background:"red"}} />
             <b>Warning</b>: This task appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
         </small> }
     </>
