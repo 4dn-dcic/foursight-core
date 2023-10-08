@@ -232,10 +232,10 @@ const PortalReindexBox = (props) => {
                 }
                 <br />
                 { true && <small id={`tooltip-${props.task.task_arn}`}> {props.task?.task_arn}&nbsp;<ExternalLink href={awsTaskRunLink(props.task?.task_arn)} /> </small> }
+                { isSelectedTask() && <ReindexButtonsBox task={props.task} unselectTask={props.unselectTask} /> }
                 { isShowDetail() && <DetailsBox env={props.task?.task_env} task={props.task} /> }
                 <Warnings task={props.task} />
                 <Tooltip id={`tooltip-${props.task.task_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run for the reindex."} />
-                { isSelectedTask() && <ReindexButtonsBox task={props.task} unselectTask={props.unselectTask} /> }
             </div>
         </td></tr></tbody></table>
     </div>
@@ -657,7 +657,7 @@ const TasksRunning = (props) => {
         b = b.task_arn?.toLowerCase();
         return (a < b) ? -1 : ((a > b) ? 1 : 0);
     });
-    return <div className="box">
+    return <div className="box darken">
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td colSpan="2">
@@ -712,7 +712,7 @@ const TasksRunningAcrossClusters = (props) => {
         b = b.task_arn?.toLowerCase();
         return (a < b) ? -1 : ((a > b) ? 1 : 0);
     });
-    return <div className="box">
+    return <div className="box darken">
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td colSpan="2">
@@ -744,7 +744,6 @@ const TasksRunningAcrossClusters = (props) => {
                                         </td>
                                         <td>
                                             | Started: {DateTime.Format(task.started_at)} {Char.RightArrow} {Duration.Ago(task.started_at, true, false)}
-                                            | Cluster: {task.cluster_arn}
                                         </td>
                                     </tr>
                                 </>)}
