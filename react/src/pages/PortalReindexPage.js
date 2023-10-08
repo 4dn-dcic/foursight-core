@@ -392,7 +392,7 @@ const DetailsBox = (props) => {
                     <NetworkDetails task={props.task} showTasks={showTasks} toggleShowTasks={toggleShowTasks} />
                 </td>
             </tr>
-            <TSeparatorH span="max" top="6pt" bottom={"8pt"} />
+            <TSeparatorH span="max" top="6pt" bottom={"6pt"} />
             <tr><td colSpan="18">
                 <TaskStatusLine task={props.task} />
             </td></tr>
@@ -649,7 +649,11 @@ const TasksRunning = (props) => {
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td colSpan="2">
-                    <i>Tasks running in cluster</i>: <small>{props.task.task_cluster.name}</small>
+                    <i>Tasks running in cluster</i>:
+                    <small>
+                        <b>&nbsp;{props.task.task_cluster.name}</b>
+                        &nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster.name)} />
+                    </small>
                 </td>
             </tr>
             { tasks.loading ? <>
@@ -664,8 +668,26 @@ const TasksRunning = (props) => {
                     }
                     <tr style={{fontSize: "small"}}>
                         <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> <b>Task Definition</b>: </td>
-                        <td> {task.task_arn} <ExternalLink href={awsTaskLink(task.task_arn)} /></td>
+                        <td> <u>{task.task_arn}</u> <ExternalLink href={awsTaskLink(task.task_arn)} /></td>
                     </tr>
+                    <tr style={{fontSize: "small"}}>
+                        <td style={{verticalAlign: "top", whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> Tasks Running: </td>
+                        <td>
+                            <table style={{fontSize: "inherit"}}><tbody>
+                                { task?.tasks?.map((task, index) => <>
+                                    <tr>
+                                        <td style={{paddingRight: "4pt"}}>
+                                            {task.id} <ExternalLink href={awsTaskRunningLink(task.id)} />
+                                        </td>
+                                        <td>
+                                            | Started: {DateTime.Format(task.started_at)} {Char.RightArrow} {Duration.Ago(task.started_at, true, false)}
+                                        </td>
+                                    </tr>
+                                </>)}
+                            </tbody></table>
+                        </td>
+                    </tr>
+                        {/*
                     <tr style={{fontSize: "small"}}>
                         <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> Task Running ID: </td>
                         <td> {task.task_running_id} <ExternalLink href={awsTaskRunningLink(props.task.task_cluster.name, task.task_running_id)} /></td>
@@ -674,6 +696,7 @@ const TasksRunning = (props) => {
                         <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> Task Started At: </td>
                         <td> {DateTime.Format(task.started_at)} <b>{Char.RightArrow}</b> {Duration.Ago(task.started_at, true, false)} </td>
                     </tr>
+                    */}
                 </> )}
             </> }
         </tbody></table>

@@ -2202,6 +2202,16 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     "status": task.get("lastStatus"),
                     "started_at": convert_utc_datetime_to_utc_datetime_string(task.get("startedAt"))
                 })
+        grouped_response = {}
+        for item in response:
+            task_arn = item["task_arn"]
+            if task_arn not in grouped_response:
+                grouped_response[task_arn] = {"task_arn": task_arn, "cluster_arn": item["cluster_arn"], "tasks": []}
+            grouped_response[task_arn]["tasks"].append({
+                "id": item["task_running_id"],
+                "started_at": item["started_at"]
+            })
+        response = list(grouped_response.values())
         return response
 
     def reactapi_aws_ecs_task_run(self, cluster_arn: str, task_definition_arn: str, args: dict) -> Response:

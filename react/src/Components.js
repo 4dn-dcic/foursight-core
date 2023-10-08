@@ -106,7 +106,11 @@ export const RefreshButton = (props) => {
 }
 
 export const ExternalLink = (props) => {
-    return <span style={{...props.style}}>
+    let style = {...props.style};
+    if (props.nudgedown) {
+        style = {...style, position: "relative", bottom: `-${props.nudgedown}`};
+    }
+    return <span style={style}>
         <a id={props.href} href={props.href} style={{color:props.color || "var(--box-fg)"}} rel="noreferrer" target="_blank" onClick={(e) => e.stopPropagation()}>
             {props.text && <span style={{fontWeight:props.bold ? "bold" : "normal",marginRight:"5pt"}}>{props.text}</span>}
             <span className="fa fa-external-link" style={{fontWeight:props.bold ? "bold" : "normal",position:"relative",bottom:"-0.5pt"}} />
