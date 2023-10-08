@@ -1976,23 +1976,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return task_arns
 
     @staticmethod
-    def get_task_name(task_arn: str) -> str:
-        if "deploy" in task_arn.lower():
-            if "initial" in task_arn.lower():
+    def get_task_definition_name(task_definition_arn: str) -> str:
+        if "deploy" in task_definition_arn.lower():
+            if "initial" in task_definition_arn.lower():
                 return "deploy_initial"
             else:
                 return "deploy"
-        elif "index" in task_arn.lower():
+        elif "index" in task_definition_arn.lower():
             return "indexer"
-        elif "ingest" in task_arn.lower():
+        elif "ingest" in task_definition_arn.lower():
             return "ingester"
-        elif "portal" in task_arn.lower():
+        elif "portal" in task_definition_arn.lower():
             return "portal"
         else:
-            return task_arn
+            return task_definition_arn
 
     @staticmethod
-    def get_task_running_id(task_arn: str) -> str:
+    def get_task_id(task_arn: str) -> str:
         return task_arn.split("/")[-1] if "/" in task_arn else task_arn
 
     def reactapi_aws_ecs_tasks_for_run(self, task: Optional[str] = None) -> Response:
@@ -2070,8 +2070,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
         def add_task(tasks: list[dict], task: dict) -> None:
             # Add the given task to the given task list, but make sure we don't have a duplicate,
             # meaning more than one task with the same "name" (i.e. e.g. "deploy") as determined
-            # by the get_task_name function definition, above); and for the same environment,
-            # as determined by the get_assocated_env function call, below.
+            # by the get_task_definition_name function definition, above); and for the same
+            # environment, as determined by the get_assocated_env function call, below.
             duplicate_tasks = [existing_task for existing_task in tasks
                                if existing_task["task_name"] == task["task_name"]
                                and existing_task["task_env"] == task["task_env"]]
@@ -2123,7 +2123,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         subnets = get_subnets()
 
         for task_arn in task_arns:
-            task_name = self.get_task_name(task_arn)
+            task_name = self.get_task_definition_name(task_arn)
             if task and task.lower() != task_name.lower():
                 continue
             task_env = self._envs.get_associated_env(task_arn)
@@ -2160,7 +2160,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         response = ecs.list_tasks(cluster=cluster_arn, family=task_definition_arn)
         task_arns = response.get("taskArns")
         is_running = isinstance(task_arns, list) and len(task_arns) > 0
-        task_name = self.get_task_name(task_definition_arn)
+        task_name = self.get_task_definition_name(task_definition_arn)
         response = {
             "cluster_arn": cluster_arn,
             "task_arn": task_definition_arn,
@@ -2168,7 +2168,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "task_running": is_running
         }
         if is_running:
-            response["task_running_ids"] = [self.get_task_running_id(task_arn) for task_arn in task_arns]
+            response["task_running_ids"] = [self.get_task_id(task_arn) for task_arn in task_arns]
         # If this is the deploy task the approximate that last time it was run
         # by using the the create date of the Portal Access Key as a proxy for
         # when this task last ran since the entrypoint_deployment.bash script
@@ -2181,7 +2181,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     response["task_last_ran_at"] = portal_access_key_info["created_at"]
         return response
 
-    def reactapi_aws_ecs_tasks_running(self, cluster_arn: str, task_name: Optional[str] = None) -> Response:
+    def reactapi_aws_ecs_tasks_running(self, cluster_arn: str,
+                                       task_name: Optional[str] = None,
+                                       task_definition_arn: Optional[str] = None) -> Response:
         """
         Returns a list of all tasks running within the given cluster (ARN).
         This list is groups by task definition (ARN), which each containing
@@ -2192,35 +2194,55 @@ class ReactApi(ReactApiBase, ReactRoutes):
         task_arns = ecs.list_tasks(cluster=cluster_arn).get("taskArns")
         if task_arns:
             given_task_name = task_name
+            given_task_definition_arn = task_definition_arn
             tasks = ecs.describe_tasks(cluster=cluster_arn, tasks=task_arns).get("tasks")
             for task in tasks:
-                task_arn = self._ecs_task_definition_arn_to_name(task.get("taskDefinitionArn"))
-                task_name = self.get_task_name(task_arn)
+                task_definition_arn = self._ecs_task_definition_arn_to_name(task.get("taskDefinitionArn"))
+                if given_task_definition_arn and given_task_definition_arn != task_definition_arn:
+                    continue
+                task_name = self.get_task_definition_name(task_definition_arn)
                 if given_task_name and given_task_name != task_name:
                     continue
-                item = {
-                    "cluster_arn": cluster_arn,
-                    "id": self.get_task_running_id(task.get("taskArn")),
+                task = {
+                    "id": self.get_task_id(task.get("taskArn")),
                     "started_at": convert_utc_datetime_to_utc_datetime_string(task.get("startedAt"))
                 }
-                existing_item = [item for item in response if item["task_arn"] == task_arn]
-                if existing_item:
-                    existing_item[0]["tasks"].append(item)
+                if not given_task_definition_arn:
+                    task["cluster_arn"] = cluster_arn
+                    existing_task = [task for task in response if task["task_arn"] == task_definition_arn]
                 else:
-                    response.append({"task_arn": task_arn, "tasks": [item]})
+                    existing_task = [task for task in response if task["cluster_arn"] == cluster_arn]
+                if existing_task:
+                    existing_task[0]["tasks"].append(task)
+                elif not given_task_definition_arn:
+                    response.append({"task_arn": task_definition_arn, "tasks": [task]})
+                else:
+                    response.append({"cluster_arn": cluster_arn,
+                                     "task_definition_arn": given_task_definition_arn,
+                                     "tasks": [task]})
         return response
 
-    def reactapi_aws_ecs_tasks_running_across_clusters(self, task_name: Optional[str] = None) -> Response:
+    def reactapi_aws_ecs_tasks_running_across_clusters(self, task_name: Optional[str] = None,
+                                                       task_definition_arn: Optional[str] = None) -> Response:
+        """
+        Returns tasks running across any/all clusters.
+        If a task_definition_arn is given the the response is will contain only tasks which are
+        instances of that task_definition_arn grouped, and the response is grouped by by cluster_arn.
+        If a task_definition_arn is not given the the response is grouped by task_definition_arn.
+        """
         response = []
         cluster_arns = [cluster["cluster_name"] for cluster in self.reactapi_aws_ecs_clusters()]
         for cluster_arn in cluster_arns:
-            tasks_running = self.reactapi_aws_ecs_tasks_running(cluster_arn, task_name)
-            for task_running in tasks_running:
-                existing_item = [item for item in response if item["task_arn"] == task_running["task_arn"]]
-                if existing_item:
-                    existing_item[0]["tasks"].extend(task_running["tasks"])
+            tasks = self.reactapi_aws_ecs_tasks_running(cluster_arn, task_name, task_definition_arn)
+            for task in tasks:
+                if not task_definition_arn:
+                    existing_task = [item for item in response if item["task_arn"] == task["task_arn"]]
                 else:
-                    response.append(task_running)
+                    existing_task = [item for item in response if item["cluster_arn"] == task["cluster_arn"]]
+                if existing_task:
+                    existing_task[0]["tasks"].extend(task["tasks"])
+                else:
+                    response.append(task)
         return response
 
     def reactapi_aws_ecs_task_run(self, cluster_arn: str, task_definition_arn: str, args: dict) -> Response:
@@ -2248,7 +2270,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         response = {
             "task_cluster_arn": cluster_arn,
             "task_arn": task_definition_arn,
-            "task_running_id": self.get_task_running_id(response.get("tasks", [{}])[0].get("taskArn"))
+            "task_running_id": self.get_task_id(response.get("tasks", [{}])[0].get("taskArn"))
         }
         return response
 
