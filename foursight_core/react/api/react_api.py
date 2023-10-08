@@ -2150,7 +2150,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
             add_task(tasks_for_run, task_for_run)
         return tasks_for_run
 
-    def reactapi_aws_ecs_task_running(self, cluster_arn, task_definition_arn: str) -> Response:
+    def reactapi_aws_ecs_task_running(self, cluster_arn,
+                                      task_definition_arn: str,
+                                      check_other_clusters: bool = True) -> Response:
         """
         Returns an indication of if the given task definition is currently running.
         Note that if the given task definition ARN is not valid or does not exist,
@@ -2160,6 +2162,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         response = ecs.list_tasks(cluster=cluster_arn, family=task_definition_arn)
         task_arns = response.get("taskArns")
         is_running = isinstance(task_arns, list) and len(task_arns) > 0
+        # TODO: See if the given task is running in any other cluser
         task_name = self.get_task_definition_name(task_definition_arn)
         response = {
             "cluster_arn": cluster_arn,
@@ -2167,6 +2170,16 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "task_name": task_name,
             "task_running": is_running
         }
+        if not is_running and check_other_clusters:
+            for cluster_arn in [cluster["cluster_name"]
+                                for cluster in self.reactapi_aws_ecs_clusters()
+                                if cluster["cluster_name"] != cluster_arn]:
+                sub_response = self.reactapi_aws_ecs_task_running(cluster_arn=cluster_arn,
+                                                                  task_definition_arn=task_definition_arn,
+                                                                  check_other_clusters=False)
+                if sub_response["task_running"]:
+                    sub_response["other_cluster"] = True
+                    return sub_response
         if is_running:
             response["task_running_ids"] = [self.get_task_id(task_arn) for task_arn in task_arns]
         # If this is the deploy task the approximate that last time it was run

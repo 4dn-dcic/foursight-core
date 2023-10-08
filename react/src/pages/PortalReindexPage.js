@@ -323,8 +323,8 @@ const ReindexButtons = (props) => {
         </>: <>
             <ReindexButton onClickReindex={onClickReindex} />
         </> }
-        { (!props.running.loading && props.running.data?.task_running) && <small style={{color: "red"}}>
-            <div style={{width: "100%", height: "2px", marginTop: "8pt", marginBottom: "8pt", background:"red"}} />
+        { (!props.running.loading && props.running.data?.task_running) && <small style={{color: "darkred"}}>
+            <div style={{width: "100%", height: "2px", marginTop: "8pt", marginBottom: "8pt", background:"darkred"}} />
             <b>Warning</b>: This task appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
         </small> }
     </>
@@ -548,6 +548,12 @@ const TaskStatusLine = (props) => {
                 &nbsp;<b>|</b>&nbsp;<b>Approximate Last Run Time</b>: {DateTime.Format(running.data?.task_last_ran_at)}
             </> }
                 &nbsp;<b>|</b>&nbsp;Refresh&nbsp;<b style={{position: "relative", top: "1px"}}>{Char.Refresh}</b>
+                { running.data?.other_cluster && <>
+                    <div className="box error" style={{color: "darkred", fontSize: "small", marginTop: "6pt"}}>
+                        <b>Warning</b>: Task running in different cluster <b>{Char.RightArrow} {running.data?.cluster_arn}</b>
+                        &nbsp;<ExternalLink href={awsClusterLink(running.data?.cluster_arn)} color="darkred" />
+                    </div>
+                </> }
         </span> }
         {/*
         { showRunningIds && <small style={{ whiteSpace: "break-all"}}>
@@ -661,7 +667,7 @@ const TasksRunning = (props) => {
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td colSpan="2">
-                    <b>Tasks running</b> in cluster:
+                    <b>Tasks running</b> in cluster <b>{Char.RightArrow}</b>
                     <small>
                         <b>&nbsp;{props.task.task_cluster_arn}</b>
                         &nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster_arn)} />
@@ -716,7 +722,7 @@ const TasksRunningAcrossClusters = (props) => {
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td colSpan="2">
-                    <b>Tasks running</b> across clusters for task definition:
+                    <b>Tasks running</b> across clusters for task definition <b>{Char.RightArrow}</b>
                     <small>
                         <b>&nbsp;{props.task.task_arn}</b>
                         &nbsp;<ExternalLink href={awsTaskLink(props.task.task_arn)} />
@@ -727,30 +733,40 @@ const TasksRunningAcrossClusters = (props) => {
                 <TSeparatorH color="gray" top="7pt" bottom="4pt" />
                 <StandardSpinner label="Loading running tasks" />
             </>:<>
-                { sortedTasks?.map((task, index) => <>
-                    { index == 0 ?
-                        <TSeparatorH color="gray" top="7pt" bottom="4pt" />
-                    :
-                        <TSeparatorH color="lightgray" />
-                    }
-                    <tr style={{fontSize: "small"}}>
-                        <td style={{verticalAlign: "top", whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> Tasks: </td>
-                        <td>
-                            <table style={{fontSize: "inherit"}}><tbody>
-                                { task?.tasks?.map((task, index) => <>
-                                    <tr>
-                                        <td style={{paddingRight: "4pt"}}>
-                                            {task.id} <ExternalLink href={awsTaskRunningLink(task.cluster_arn, task.id)} />
-                                        </td>
-                                        <td>
-                                            | Started: {DateTime.Format(task.started_at)} {Char.RightArrow} {Duration.Ago(task.started_at, true, false)}
-                                        </td>
-                                    </tr>
-                                </>)}
-                            </tbody></table>
-                        </td>
-                    </tr>
-                </> )}
+                <TSeparatorH color="gray" top="7pt" bottom="4pt" />
+                { sortedTasks?.length > 0 ? <>
+                    { sortedTasks?.map((task, index) => <>
+                        { index > 0 && <TSeparatorH color="lightgray" /> }
+                        <tr>
+                            <td style={{paddingRight: "4pt"}}>
+                                <b>Cluster</b>:
+                            </td>
+                            <td style={{color: props.task.task_cluster_arn != task.cluster_arn ? "darkred" : "inherit"}}>
+                                <u>{task.cluster_arn}</u>
+                                &nbsp;<ExternalLink href={awsClusterLink(task.cluster_arn)} />
+                            </td>
+                        </tr>
+                        <tr style={{fontSize: "small"}}>
+                            <td style={{verticalAlign: "top", whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> Tasks: </td>
+                            <td>
+                                <table style={{fontSize: "inherit"}}><tbody>
+                                    { task?.tasks?.map((task, index) => <>
+                                        <tr>
+                                            <td style={{paddingRight: "4pt"}}>
+                                                {task.id} <ExternalLink href={awsTaskRunningLink(task.cluster_arn, task.id)} />
+                                            </td>
+                                            <td>
+                                                | Started: {DateTime.Format(task.started_at)} {Char.RightArrow} {Duration.Ago(task.started_at, true, false)}
+                                            </td>
+                                        </tr>
+                                    </>)}
+                                </tbody></table>
+                            </td>
+                        </tr>
+                    </> )}
+                </>:<>
+                    <i>None</i>
+                </> }
             </> }
         </tbody></table>
     </div>
