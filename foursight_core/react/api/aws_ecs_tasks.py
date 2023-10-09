@@ -2,7 +2,7 @@ import boto3
 from typing import Optional
 from dcicutils.ecs_utils import ECSUtils
 from .aws_network import aws_get_security_groups, aws_get_subnets, aws_get_vpcs
-from .datetime_utils import convert_utc_datetime_to_utc_datetime_string as datetime_string
+from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
 from .misc_utils import find_common_prefix
 from .portal_access_key_utils import get_portal_access_key_info

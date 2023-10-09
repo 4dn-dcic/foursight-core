@@ -42,7 +42,7 @@ from .cognito import get_cognito_oauth_config, handle_cognito_oauth_callback
 from .cookie_utils import create_delete_cookie_string, read_cookie, read_cookie_bool, read_cookie_int
 from .datetime_utils import (
     convert_uptime_to_datetime,
-    convert_utc_datetime_to_utc_datetime_string
+    convert_datetime_to_utc_datetime_string
 )
 from .encoding_utils import base64_decode_to_json
 from .envs import Envs
@@ -420,7 +420,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 if data_portal["ssl_certificate"]:
                     data_portal["ssl_certificate"]["name"] = "Portal"
                     data_portal["ssl_certificate"]["exception"] = e
-        data["timestamp"] = convert_utc_datetime_to_utc_datetime_string(datetime.datetime.utcnow())
+        data["timestamp"] = convert_datetime_to_utc_datetime_string(datetime.datetime.utcnow())
         data["timezone"] = tzlocal.get_localzone_name()
         test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
         if auth.get("user_exception"):  # or test_mode_access_key_simulate_error:
@@ -740,8 +740,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "groups": user.get("groups"),
             "roles": user.get("project_roles"),
             "status": user.get("status"),
-            "updated": convert_utc_datetime_to_utc_datetime_string(updated),
-            "created": convert_utc_datetime_to_utc_datetime_string(user.get("date_created"))
+            "updated": convert_datetime_to_utc_datetime_string(updated),
+            "created": convert_datetime_to_utc_datetime_string(user.get("date_created"))
         }
         institution = user.get("user_institution")
         project = user.get("project")
@@ -1171,7 +1171,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if check_results.get("action"):
             check_results["action_title"] = " ".join(check_results["action"].split("_")).title()
         check_datetime = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-        check_datetime = convert_utc_datetime_to_utc_datetime_string(check_datetime)
+        check_datetime = convert_datetime_to_utc_datetime_string(check_datetime)
         check_results["timestamp"] = check_datetime
         return self.create_success_response(check_results)
 
@@ -1265,7 +1265,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                         break
                 if uuid:
                     timestamp = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-                    timestamp = convert_utc_datetime_to_utc_datetime_string(timestamp)
+                    timestamp = convert_datetime_to_utc_datetime_string(timestamp)
                     results.append({
                         "check": check_name,
                         "title": check_title,
@@ -1310,7 +1310,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     uuid = subitem.get("uuid")
                     if uuid:
                         timestamp = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-                        timestamp = convert_utc_datetime_to_utc_datetime_string(timestamp)
+                        timestamp = convert_datetime_to_utc_datetime_string(timestamp)
                         subitem["timestamp"] = timestamp
         body = {
             "env": env,
@@ -1663,7 +1663,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             }
             portal_uptime = portal_health_json.get("uptime")
             portal_started = convert_uptime_to_datetime(portal_uptime)
-            response["portal"]["started"] = convert_utc_datetime_to_utc_datetime_string(portal_started)
+            response["portal"]["started"] = convert_datetime_to_utc_datetime_string(portal_started)
             response["portal"]["identity"] = portal_health_json.get("identity")
             response["portal"]["elasticsearch"] = portal_health_json.get("elasticsearch")
             response["portal"]["database"] = portal_health_json.get("database")
@@ -1924,8 +1924,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                                "expected": deployment.get("desiredCount")},
                     "rollout": {"state": deployment.get("rolloutState"),
                                 "reason": deployment.get("rolloutStateReason")},
-                    "created": convert_utc_datetime_to_utc_datetime_string(deployment.get("createdAt")),
-                    "updated": convert_utc_datetime_to_utc_datetime_string(deployment.get("updatedAt"))
+                    "created": convert_datetime_to_utc_datetime_string(deployment.get("createdAt")),
+                    "updated": convert_datetime_to_utc_datetime_string(deployment.get("updatedAt"))
                 }
                 if deployment_status and deployment_status.upper() == "PRIMARY":
                     deployments.insert(0, deployment_info)
@@ -1962,7 +1962,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     service["task_display_name"] = service["task_name"][len(task_name_common_prefix):]
 
         if most_recent_deployment_at:
-            response["most_recent_deployment_at"] = convert_utc_datetime_to_utc_datetime_string(
+            response["most_recent_deployment_at"] = convert_datetime_to_utc_datetime_string(
                     most_recent_deployment_at)
         return self.create_success_response(response)
 
@@ -2090,23 +2090,23 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     if existing_task_registered_at > this_task_registered_at:
                         # The existing task is newer than this task; skip this one.
                         existing_task["task_registered_at"] = (
-                            convert_utc_datetime_to_utc_datetime_string(existing_task_registered_at))
+                            convert_datetime_to_utc_datetime_string(existing_task_registered_at))
                         if not existing_task.get("duplicate_tasks"):
                             existing_task["duplicate_tasks"] = []
                         existing_task["duplicate_tasks"].append({
                             "task_arn": task["task_arn"],
-                            "task_registered_at": convert_utc_datetime_to_utc_datetime_string(this_task_registered_at)
+                            "task_registered_at": convert_datetime_to_utc_datetime_string(this_task_registered_at)
                          })
                         return
                     else:
                         # This task is newer than the existing task; remove the existing one.
                         task["task_registered_at"] = (
-                            convert_utc_datetime_to_utc_datetime_string(this_task_registered_at))
+                            convert_datetime_to_utc_datetime_string(this_task_registered_at))
                         task["duplicate_tasks"] = existing_task.get("duplicate_tasks") or []
                         task["duplicate_tasks"].append({
                             "task_arn": existing_task["task_arn"],
                             "task_registered_at": (
-                                convert_utc_datetime_to_utc_datetime_string(existing_task_registered_at))
+                                convert_datetime_to_utc_datetime_string(existing_task_registered_at))
                          })
                         tasks.remove(existing_task)
             tasks.append(task)
@@ -2222,7 +2222,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     continue
                 task = {
                     "id": self.get_task_id(task.get("taskArn")),
-                    "started_at": convert_utc_datetime_to_utc_datetime_string(task.get("startedAt"))
+                    "started_at": convert_datetime_to_utc_datetime_string(task.get("startedAt"))
                 }
                 if not given_task_definition_arn:
                     task["cluster_arn"] = cluster_arn

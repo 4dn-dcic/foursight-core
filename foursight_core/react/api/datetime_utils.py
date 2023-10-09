@@ -7,8 +7,7 @@ from typing import Optional, Union
 EPOCH = datetime.datetime.utcfromtimestamp(0)  # I.e.: 1970-01-01 00:00:00 UTC
 
 
-def _convert_utc_datetime_to_datetime_string(t: Union[datetime.datetime, str],
-                                             tzname: Optional[str] = None) -> Optional[str]:
+def convert_datetime_to_string(t: Union[datetime.datetime, str], tzname: Optional[str] = None) -> Optional[str]:
     """
     Converts the given datetime object OR string, which is ASSUMED to by in the UTC timezone,
     into a datetime string in the given/named timezone, and returns its value in a form that looks
@@ -20,34 +19,24 @@ def _convert_utc_datetime_to_datetime_string(t: Union[datetime.datetime, str],
     :param tzname: A timezone name (string); default to UTC if unspecified.
     :return: A datetime string in the given timezone formatted like: 2022-08-22 13:25:34 EDT
     """
-    def make_utc_aware_datetime(t: datetime) -> datetime:
-        return t.replace(tzinfo=pytz.UTC)
+    def make_aware_datetime(t: datetime) -> datetime:
+        return pytz.UTC.localize(t) if t.tzinfo is None else t
     try:
+        if not t:
+            return None
         if isinstance(t, str):
-            #
-            # Can sometimes get dates (from user ElasticSearch index)
-            # which look like this: 2019-06-20T00:00:00.0000000+00:00
-            # i.e. with 7-digits for ms which does not parse (up to 6).
-            # Was doing this hack below but found that the Python
-            # dateutil.parser is more forgiving so using that now.
-            #
-            # if ".0000000" in t:
-            #     t = t.replace(".0000000", ".000000")
-            # t = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f%z")
-            #
             t = dateutil_parser.parse(t)
+        t = make_aware_datetime(t)
         tz = pytz.timezone(tzname) if tzname else pytz.UTC
-        t = make_utc_aware_datetime(t).astimezone(tz)
+        if t.tzinfo != tz:
+            t = t.astimezone(tz)
         return t.strftime("%Y-%m-%d %H:%M:%S %Z")
-    except Exception as e:
+    except Exception:
         return None
 
 
-def convert_utc_datetime_to_utc_datetime_string(t: Union[datetime.datetime, str]) -> Optional[str]:
-    """
-    Same as _convert_utc_datetime_to_datetime_string (above) but explicitly for the UTC timezone.
-    """
-    return _convert_utc_datetime_to_datetime_string(t)
+def convert_datetime_to_utc_datetime_string(t: Union[datetime.datetime, str]):
+    return convert_datetime_to_string(t)
 
 
 def convert_time_t_to_datetime_string(time_t: int, tzname: Optional[str] = None) -> Optional[str]:
@@ -60,7 +49,7 @@ def convert_time_t_to_datetime_string(time_t: int, tzname: Optional[str] = None)
     :param tzname: A timezone name (string); default to UTC if unspecified.
     :return: A datetime string in the given timezone formatted like: 2022-08-22 13:25:34 EDT
     """
-    return _convert_utc_datetime_to_datetime_string(convert_time_t_to_datetime(time_t), tzname)
+    return convert_datetime_to_datetime_string(convert_time_t_to_datetime(time_t), tzname)
 
 
 def convert_time_t_to_utc_datetime_string(time_t: int) -> Optional[str]:
