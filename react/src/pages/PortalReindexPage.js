@@ -232,7 +232,12 @@ const PortalReindexBox = (props) => {
                 }
                 <br />
                 { true && <small id={`tooltip-${props.task.task_arn}`}> {props.task?.task_arn}&nbsp;<ExternalLink href={awsTaskRunLink(props.task?.task_arn)} /> </small> }
-                { isSelectedTask() && <ReindexButtonsBox task={props.task} unselectTask={props.unselectTask} /> }
+                { isSelectedTask() &&
+                    <ReindexButtonsBox task={props.task}
+                        unselectTask={props.unselectTask}
+                        isShowDetail={isShowDetail}
+                        toggleShowDetail={toggleShowDetail} />
+                }
                 { isShowDetail() && <DetailsBox env={props.task?.task_env} task={props.task} /> }
                 <Warnings task={props.task} />
                 <Tooltip id={`tooltip-${props.task.task_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run for the reindex."} />
@@ -252,7 +257,12 @@ const ReindexButtonsBox = (props) => {
             { running.loading ? <>
                  <ReindexButtonsTaskStatusLoading task={props.task} />
             </>:<>
-                 <ReindexButtons task={props.task} running={running} unselectTask={props.unselectTask} />
+                <ReindexButtons
+                    task={props.task}
+                    running={running}
+                    unselectTask={props.unselectTask}
+                    isShowDetail={props.isShowDetail}
+                    toggleShowDetail={props.toggleShowDetail} />
             </> }
         </div>
     </>
@@ -326,6 +336,14 @@ const ReindexButtons = (props) => {
         { (!props.running.loading && props.running.data?.task_running) && <small style={{color: "red"}}>
             <div style={{width: "100%", height: "2px", marginTop: "8pt", marginBottom: "8pt", background:"red"}} />
             <b>Warning</b>: This task appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
+                <small className="pointer" onClick={props.toggleShowDetail}><b>
+                    &nbsp;&nbsp;{Char.RightArrow}&nbsp;
+                    { props.isShowDetail(props.task) ? <>
+                        Hide Details {Char.DownArrow}
+                    </>:<>
+                        Show Details {Char.UpArrow}
+                    </> }
+                </b></small>
         </small> }
     </>
 }
@@ -549,23 +567,13 @@ const TaskStatusLine = (props) => {
             </> }
                 &nbsp;<b>|</b>&nbsp;Refresh&nbsp;<b style={{position: "relative", top: "1px"}}>{Char.Refresh}</b>
                 { running.data?.other_cluster && <>
-                    <div className="box error" style={{color: "darkred", fontSize: "small", marginTop: "6pt"}}>
+                    <div className="box error" style={{color: "darkred", fontSize: "small", marginTop: "6pt"}} id={`tooltip-other-cluster-${props.task?.task_arn}`}>
                         <b>Warning</b>: Task running in different cluster <b>{Char.RightArrow} {running.data?.cluster_arn}</b>
                         &nbsp;<ExternalLink href={awsClusterLink(running.data?.cluster_arn)} color="darkred" />
+                        <Tooltip id={`tooltip-other-cluster-${props.task?.task_arn}`} position="top" size="small" text={`Different than ${props.task.cluster_arn}`}/>
                     </div>
                 </> }
         </span> }
-        {/*
-        { showRunningIds && <small style={{ whiteSpace: "break-all"}}>
-            <SeparatorH color="lightgray" top="3pt" bottom="3pt" />
-            <b>Running Task Cluster</b>:&nbsp;&nbsp;{props.task.task_arn}&nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster_arn)} /><br />
-            <b>Running Task Definition</b>:&nbsp;&nbsp;{props.task.task_arn}&nbsp;<ExternalLink href={awsTaskLink(props.task.task_arn)} /><br />
-            <b>Running Tasks</b>:
-            { running.data?.task_running_ids?.map(id => <>
-                &nbsp;&nbsp;{id}&nbsp;<ExternalLink href={awsTaskRunningLink(props.task?.task_cluster_arn, id)} />
-            </> )}
-        </small> }
-        */}
     </div>
 }
 
