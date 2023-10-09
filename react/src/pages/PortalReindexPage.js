@@ -326,7 +326,7 @@ const ReindexButtons = (props) => {
                 { runDone ? <>
                     <b>Kicked off task {Char.RightArrow}</b> <small><u>{runResult?.data?.task_running_id}</u></small>&nbsp;
                     <small><ExternalLink href={awsTaskRunningLink(props.task.task_cluster_arn, runResult?.data?.task_running_id)} /></small>
-                    <div className="pointer" onClick={onClickRunDoneX} style={{float: "right", marginRight: "4pt"}}>{Char.X}</div>
+                    <div className="pointer" onClick={onClickRunDoneX} style={{float: "right", marginRight: "4pt"}}><b>{Char.X}</b></div>
                 </>:<>
                     <ReindexButtonConfirmed task={props.task} onClickReindex={onClickReindex} onClickCancel={onClickCancel} running={props.running} />
                 </> }
@@ -395,9 +395,7 @@ const SeparatorH = ({size = "1px", color = "black", top = "8pt", bottom = "8pt"}
 const DetailBox = (props) => {
     const header = useHeader();
     const [showRunningTasks, setShowRunningTasks] = useState(false);
-    const [showRunningTasksAcrossClusters, setShowRunningTasksAcrossClusters] = useState(false);
     const toggleShowRunningTasks = () => setShowRunningTasks(!showRunningTasks);
-    const toggleShowRunningTasksAcrossClusters = () => setShowRunningTasksAcrossClusters(!showRunningTasksAcrossClusters);
     return <div className="box bigmargin marginbottom" onClick={(e) => e.stopPropagation()}><small>
         <table style={{fontSize: "inherit"}}><tbody>
             <tr>
@@ -410,25 +408,27 @@ const DetailBox = (props) => {
                 </td>
                 <TSeparatorV />
                 <td style={{verticalAlign: "top"}}>
-                    <NetworkDetails task={props.task} />
+                    <NetworkDetails task={props.task}
+                        showRunningTasks={showRunningTasks}
+                        toggleShowRunningTasks={toggleShowRunningTasks} />
                 </td>
             </tr>
             <TSeparatorH span="max" top="6pt" bottom="6pt" />
             <tr><td colSpan="18">
                 <TaskStatusLine task={props.task}
-                    toggleShowRunningTasks={toggleShowRunningTasks}
-                    toggleShowRunningTasksAcrossClusters={toggleShowRunningTasksAcrossClusters} />
+                    showRunningTasks={showRunningTasks}
+                    toggleShowRunningTasks={toggleShowRunningTasks} />
             </td></tr>
             { showRunningTasks && <>
                 <TSpaceH span="max" top="6pt" bottom="8pt" />
                 <tr><td colSpan="18">
-                    <TasksRunning task={props.task} />
+                    <TasksRunningAcrossClusters task={props.task} />
                 </td></tr>
             </> }
-            { showRunningTasksAcrossClusters && <>
+            { showRunningTasks && <>
                 <TSpaceH span="max" top="6pt" bottom="8pt" />
                 <tr><td colSpan="18">
-                    <TasksRunningAcrossClusters task={props.task} />
+                    <TasksRunning task={props.task} />
                 </td></tr>
             </> }
         </tbody></table>
@@ -479,6 +479,9 @@ const EnvNamesDetails = (props) => {
 const NetworkDetails = (props) => {
     const [showNetworkNames, setShowNetworkNames] = useState(false);
     const toggleShowNetworkNames = (e) => { setShowNetworkNames(!showNetworkNames); e.stopPropagation() }
+    const toggleShowRunningTasks = () => {
+        props.toggleShowRunningTasks();
+    }
     return <table style={{fontSize: "inherit"}}><tbody>
         <tr><td /><td width="800pt"/></tr> {/* dummy to make it expand to right */}
         <tr><td colSpan="2"> AWS Network
@@ -486,6 +489,9 @@ const NetworkDetails = (props) => {
                 &nbsp;{showNetworkNames ? <b>{Char.Diamond}</b> : <b>{Char.Trigram}</b>}
                 <Tooltip id={`tooltip-network-${props.task.task_arn}`} position="top" size="small" text={`Click to view ${showNetworkNames ? "IDs" : "names"}.`}/>
             </span>
+            <small style={{float: "right"}} className="pointer" onClick={toggleShowRunningTasks}>
+                {props.showRunningTasks ? <>Hide details {Char.DownArrow}</> : <b>More details {Char.UpArrow}</b>}
+            </small>
         </td></tr>
         <TSeparatorH double={true} />
         <tr>
@@ -543,11 +549,8 @@ const TaskStatusLine = (props) => {
         running.refresh();
         e.stopPropagation();
     }
-    const [showRunningTasks, setShowRunningTasks] = useState(false);
     const toggleShowRunningTasks = (e) => {
         props.toggleShowRunningTasks();
-        props.toggleShowRunningTasksAcrossClusters();
-        setShowRunningTasks(!showRunningTasks);
         e.stopPropagation();
     }
     return <div onClick={(e) => e.stopPropagation()}>
@@ -558,15 +561,15 @@ const TaskStatusLine = (props) => {
             <b>Task Status</b>:&nbsp;
             <span onClick={toggleShowRunningTasks}>
                 {running.data?.task_running ? <>
-                    <b style={{color: "red"}}>Running<small>&nbsp;</small>{showRunningTasks ? Char.DownArrow : Char.UpArrow}</b>
+                    <b style={{color: "red"}}>Running<small>&nbsp;</small>{props.showRunningTasks ? Char.DownArrow : Char.UpArrow}</b>
                 </>:<>
-                    <b style={{color: "blue"}}>Idle<small>&nbsp;</small>{showRunningTasks ? Char.DownArrow : Char.UpArrow}</b>
+                    <b style={{color: "blue"}}>Idle<small>&nbsp;</small>{props.showRunningTasks ? Char.DownArrow : Char.UpArrow}</b>
                 </> }
             </span>
             { running.data?.task_last_ran_at && <>
                 &nbsp;<b>|</b>&nbsp;<b>Approximate Last Run Time</b>: {DateTime.Format(running.data?.task_last_ran_at)}
             </> }
-                &nbsp;<b>|</b>&nbsp;Refresh&nbsp;<b style={{position: "relative", top: "1px"}}>{Char.Refresh}</b>
+                &nbsp;<b>|</b>&nbsp;<b>Refresh</b>&nbsp;<b style={{position: "relative", top: "1px"}}>{Char.Refresh}</b>
                 { running.data?.other_cluster && <>
                     <div className="box error" style={{color: "darkred", fontSize: "small", marginTop: "6pt"}} id={`tooltip-other-cluster-${props.task?.task_arn}`}>
                         <b>Warning</b>: Task running in different cluster <b>{Char.RightArrow} {running.data?.cluster_arn}</b>
@@ -665,59 +668,6 @@ const WarningNoSecurityGroup = (props) => {
     </>
 }
 
-const TasksRunning = (props) => {
-    const tasks = useFetch(`//aws/ecs/tasks_running?cluster_arn=${props.task.task_cluster_arn}`);
-    const sortedTasks = tasks.data?.sort((a, b) => {
-        a = a.task_arn?.toLowerCase();
-        b = b.task_arn?.toLowerCase();
-        return (a < b) ? -1 : ((a > b) ? 1 : 0);
-    });
-    return <div className="box darken">
-        <table style={{fontSize: "inherit", width: "100%"}}><tbody>
-            <tr>
-                <td colSpan="2">
-                    <i><b>Tasks running</b> in cluster:</i>
-                    <b>&nbsp;&nbsp;{props.task.task_cluster_arn}</b>
-                    &nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster_arn)} />
-                </td>
-            </tr>
-            { tasks.loading ? <>
-                <TSeparatorH color="gray" top="7pt" bottom="4pt" />
-                <StandardSpinner label="Loading running tasks" />
-            </>:<>
-                { sortedTasks?.map((task, index) => <>
-                    { index == 0 ?
-                        <TSeparatorH color="gray" top="7pt" bottom="4pt" />
-                    :
-                        <TSeparatorH color="lightgray" />
-                    }
-                    <tr style={{fontSize: "small"}}>
-                        <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> <b>Task Definition</b>: </td>
-                        <td> <u style={{fontWeight: task.task_arn === props.task.task_arn ? "bold" : "inherit" }}>{task.task_arn}</u> <ExternalLink href={awsTaskLink(task.task_arn)} /></td>
-                    </tr>
-                    <tr style={{fontSize: "small"}}>
-                        <td style={{verticalAlign: "top", whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> Tasks: </td>
-                        <td>
-                            <table style={{fontSize: "inherit"}}><tbody>
-                                { task?.tasks?.map((task, index) => <>
-                                    <tr>
-                                        <td style={{paddingRight: "4pt"}}>
-                                            {task.id} <ExternalLink href={awsTaskRunningLink(task.id)} />
-                                        </td>
-                                        <td>
-                                            | Started: {DateTime.Format(task.started_at)} {Char.RightArrow} {Duration.Ago(task.started_at, true, false)}
-                                        </td>
-                                    </tr>
-                                </>)}
-                            </tbody></table>
-                        </td>
-                    </tr>
-                </> )}
-            </> }
-        </tbody></table>
-    </div>
-}
-
 const TasksRunningAcrossClusters = (props) => {
     const tasks = useFetch(`//aws/ecs/tasks_running?task_definition_arn=${props.task.task_arn}`);
     const sortedTasks = tasks.data?.sort((a, b) => {
@@ -732,6 +682,7 @@ const TasksRunningAcrossClusters = (props) => {
                     <i><b>Tasks running</b> across clusters for task definition:</i>
                     <b>&nbsp;&nbsp;{props.task.task_arn}</b>
                     &nbsp;<ExternalLink href={awsTaskLink(props.task.task_arn)} />
+                    <div style={{float: "right", verticalAlign: "top"}} className="pointer" onClick={tasks.refresh}>{Char.Refresh}</div>
                 </td>
             </tr>
             { tasks.loading ? <>
@@ -772,6 +723,60 @@ const TasksRunningAcrossClusters = (props) => {
                 </>:<>
                     None
                 </> }
+            </> }
+        </tbody></table>
+    </div>
+}
+
+const TasksRunning = (props) => {
+    const tasks = useFetch(`//aws/ecs/tasks_running?cluster_arn=${props.task.task_cluster_arn}`);
+    const sortedTasks = tasks.data?.sort((a, b) => {
+        a = a.task_arn?.toLowerCase();
+        b = b.task_arn?.toLowerCase();
+        return (a < b) ? -1 : ((a > b) ? 1 : 0);
+    });
+    return <div className="box darken">
+        <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+            <tr>
+                <td colSpan="2">
+                    <i><b>Tasks running</b> in cluster:</i>
+                    <b>&nbsp;&nbsp;{props.task.task_cluster_arn}</b>
+                    &nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster_arn)} />
+                    <div style={{float: "right", verticalAlign: "top"}} className="pointer" onClick={tasks.refresh}>{Char.Refresh}</div>
+                </td>
+            </tr>
+            { tasks.loading ? <>
+                <TSeparatorH color="gray" top="7pt" bottom="4pt" />
+                <StandardSpinner label="Loading running tasks" />
+            </>:<>
+                { sortedTasks?.map((task, index) => <>
+                    { index == 0 ?
+                        <TSeparatorH color="gray" top="7pt" bottom="4pt" />
+                    :
+                        <TSeparatorH color="lightgray" />
+                    }
+                    <tr style={{fontSize: "small"}}>
+                        <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> <b>Task Definition</b>: </td>
+                        <td> <u style={{fontWeight: task.task_arn === props.task.task_arn ? "bold" : "inherit" }}>{task.task_arn}</u> <ExternalLink href={awsTaskLink(task.task_arn)} /></td>
+                    </tr>
+                    <tr style={{fontSize: "small"}}>
+                        <td style={{verticalAlign: "top", whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> Tasks: </td>
+                        <td>
+                            <table style={{fontSize: "inherit"}}><tbody>
+                                { task?.tasks?.map((task, index) => <>
+                                    <tr>
+                                        <td style={{paddingRight: "4pt"}}>
+                                            {task.id} <ExternalLink href={awsTaskRunningLink(task.id)} />
+                                        </td>
+                                        <td>
+                                            | Started: {DateTime.Format(task.started_at)} {Char.RightArrow} {Duration.Ago(task.started_at, true, false)}
+                                        </td>
+                                    </tr>
+                                </>)}
+                            </tbody></table>
+                        </td>
+                    </tr>
+                </> )}
             </> }
         </tbody></table>
     </div>

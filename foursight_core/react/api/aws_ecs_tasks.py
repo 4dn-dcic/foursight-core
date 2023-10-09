@@ -228,7 +228,7 @@ def get_aws_ecs_tasks_running(cluster_arn: Optional[str] = None,
                 continue
             task = {
                 "id": _get_task_id(task.get("taskArn")),
-                "started_at": datetime_string(task.get("startedAt"))
+                "started_at": datetime_string(task.get("startedAt") or task.get("createdAt"))
             }
             if not given_task_definition_arn:
                 task["cluster_arn"] = cluster_arn
