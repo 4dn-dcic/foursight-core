@@ -667,11 +667,9 @@ const TasksRunning = (props) => {
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td colSpan="2">
-                    <b>Tasks running</b> in cluster <b>{Char.RightArrow}</b>
-                    <small>
-                        <b>&nbsp;{props.task.task_cluster_arn}</b>
-                        &nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster_arn)} />
-                    </small>
+                    <i><b>Tasks running</b> in cluster:</i>
+                    <b>&nbsp;&nbsp;{props.task.task_cluster_arn}</b>
+                    &nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster_arn)} />
                 </td>
             </tr>
             { tasks.loading ? <>
@@ -686,7 +684,7 @@ const TasksRunning = (props) => {
                     }
                     <tr style={{fontSize: "small"}}>
                         <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> <b>Task Definition</b>: </td>
-                        <td> <u>{task.task_arn}</u> <ExternalLink href={awsTaskLink(task.task_arn)} /></td>
+                        <td> <u style={{fontWeight: task.task_arn === props.task.task_arn ? "bold" : "inherit" }}>{task.task_arn}</u> <ExternalLink href={awsTaskLink(task.task_arn)} /></td>
                     </tr>
                     <tr style={{fontSize: "small"}}>
                         <td style={{verticalAlign: "top", whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> Tasks: </td>
@@ -722,11 +720,9 @@ const TasksRunningAcrossClusters = (props) => {
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td colSpan="2">
-                    <b>Tasks running</b> across clusters for task definition <b>{Char.RightArrow}</b>
-                    <small>
-                        <b>&nbsp;{props.task.task_arn}</b>
-                        &nbsp;<ExternalLink href={awsTaskLink(props.task.task_arn)} />
-                    </small>
+                    <i><b>Tasks running</b> across clusters for task definition:</i>
+                    <b>&nbsp;&nbsp;{props.task.task_arn}</b>
+                    &nbsp;<ExternalLink href={awsTaskLink(props.task.task_arn)} />
                 </td>
             </tr>
             { tasks.loading ? <>
@@ -742,8 +738,8 @@ const TasksRunningAcrossClusters = (props) => {
                                 <b>Cluster</b>:
                             </td>
                             <td style={{color: props.task.task_cluster_arn != task.cluster_arn ? "darkred" : "inherit"}}>
-                                <u>{task.cluster_arn}</u>
-                                &nbsp;<ExternalLink href={awsClusterLink(task.cluster_arn)} />
+                                <u style={{fontWeight: "bold"}}>{task.cluster_arn}</u>
+                                &nbsp;<ExternalLink href={awsClusterLink(task.cluster_arn)} color={props.task.task_cluster_arn != task.cluster_arn ? "darkred" : "inherit"}/>
                             </td>
                         </tr>
                         <tr style={{fontSize: "small"}}>
