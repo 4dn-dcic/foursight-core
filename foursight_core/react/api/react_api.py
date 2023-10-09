@@ -1995,8 +1995,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
     def get_task_id(task_arn: str) -> str:
         return task_arn.split("/")[-1] if "/" in task_arn else task_arn
 
-    def reactapi_aws_ecs_tasks_for_run(self, task: Optional[str] = None) -> Response:
+    def reactapi_aws_ecs_tasks_for_run(self, task_name: Optional[str] = None) -> Response:
 
+        given_task_name = task_name.lower() if task_name else None
         task_arns = self.reactapi_aws_ecs_task_arns(latest=True)
         tasks_for_run = []
 
@@ -2124,7 +2125,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
         for task_arn in task_arns:
             task_name = self.get_task_definition_name(task_arn)
-            if task and task.lower() != task_name.lower():
+            if given_task_name and given_task_name != task_name:
                 continue
             task_env = self._envs.get_associated_env(task_arn)
             task_for_run = {
@@ -2194,7 +2195,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     response["task_last_ran_at"] = portal_access_key_info["created_at"]
         return response
 
-    def reactapi_aws_ecs_tasks_running(self, cluster_arn: str,
+    def reactapi_aws_ecs_tasks_running(self, cluster_arn: Optional[str] = None,
                                        task_name: Optional[str] = None,
                                        task_definition_arn: Optional[str] = None) -> Response:
         """
@@ -2202,6 +2203,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         This list is groups by task definition (ARN), which each containing
         the list of task IDs of associated tasks running.
         """
+        if not cluster_arn:
+            return self.reactapi_aws_ecs_tasks_running_across_clusters(task_name=task_name,
+                                                                       task_definition_arn=task_definition_arn)
         response = []
         ecs = boto3.client("ecs")
         task_arns = ecs.list_tasks(cluster=cluster_arn).get("taskArns")
@@ -2278,7 +2282,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             count=1,
             cluster=cluster_arn,
             taskDefinition=task_definition_arn,
-            networkConfiguration={"awsvpcConfiguration": {"subnets": subnets,"securityGroups": [security_group]}}
+            networkConfiguration={"awsvpcConfiguration": {"subnets": subnets, "securityGroups": [security_group]}}
         )
         response = {
             "task_cluster_arn": cluster_arn,
@@ -2286,10 +2290,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "task_running_id": self.get_task_id(response.get("tasks", [{}])[0].get("taskArn"))
         }
         return response
-
-    def reactapi_aws_ecs_task_arns_run(self, task_arn: str) -> Response:
-        # TODO
-        pass
 
     def reactapi_aws_ecs_tasks(self, latest: bool = True) -> Response:
         task_definitions = []

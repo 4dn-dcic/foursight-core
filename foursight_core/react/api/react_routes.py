@@ -609,37 +609,37 @@ class ReactRoutes:
                 return app.core.reactapi_aws_ecs_task_run(task_definition_arn)
         return app.core.create_forbidden_response()
 
-    @route("/aws/ecs/tasks_for_run", authorize=True)
-    def reactapi_route_aws_ecs_tasks_for_run() -> Response:  # noqa: implicit @staticmethod via @route
-        return app.core.reactapi_aws_ecs_tasks_for_run(task=app.request_arg("task"))
+    @route("/aws/ecs/tasks_for_run/{task_name}", authorize=True)
+    def reactapi_route_aws_ecs_tasks_for_run(task_name: str) -> Response:  # noqa: implicit @staticmethod via @route
+        from .aws_ecs_tasks import get_aws_ecs_tasks_for_running
+        return get_aws_ecs_tasks_for_running(app.core._envs, task_definition_type=task_name)
+        return app.core.reactapi_aws_ecs_tasks_for_run(task_name)
+        # xyzzy return app.core.reactapi_aws_ecs_tasks_for_run(task_name)
 
     @route("/aws/ecs/task_running/{cluster_arn}/{task_definition_arn}", authorize=True)
     def reactapi_route_aws_ecs_task_running(cluster_arn: str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
-        return app.core.reactapi_aws_ecs_task_running(cluster_arn, task_definition_arn)
-
-    @route("/aws/ecs/task_running/{task_definition_arn}", authorize=True)
-    def reactapi_route_aws_ecs_task_running_across_clusters(str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
-        # TODO
-        pass
-
-    @route("/aws/ecs/tasks_running/{cluster_arn}", authorize=True)
-    def reactapi_route_aws_ecs_tasks_running(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
-        task_name = app.request_arg("task")
-        task_definition_arn = app.request_arg("task_definition_arn")
-        return app.core.reactapi_aws_ecs_tasks_running(cluster_arn,
-                                                       task_name=task_name,
-                                                       task_definition_arn=task_definition_arn)
+        from .aws_ecs_tasks import get_aws_ecs_task_running
+        return get_aws_ecs_task_running(app.core._envs,
+                                        cluster_arn=cluster_arn,
+                                        task_definition_arn=task_definition_arn,
+                                        check_other_clusters=True)
+        # xyzzy return app.core.reactapi_aws_ecs_task_running(cluster_arn, task_definition_arn, check_other_clusters=True)
 
     @route("/aws/ecs/tasks_running", authorize=True)
-    def reactapi_route_aws_ecs_tasks_running_across_clusters() -> Response:  # noqa: implicit @staticmethod via @route
-        task_name = app.request_arg("task_name")
-        task_definition_arn = app.request_arg("task_definition_arn")
-        return app.core.reactapi_aws_ecs_tasks_running_across_clusters(task_name=task_name,
-                                                                       task_definition_arn=task_definition_arn)
+    def reactapi_route_aws_ecs_tasks_running() -> Response:  # noqa: implicit @staticmethod via @route
+        from .aws_ecs_tasks import get_aws_ecs_tasks_running
+        return get_aws_ecs_tasks_running(cluster_arn=app.request_arg("cluster_arn"),
+                                         task_definition_type=app.request_arg("task_name"),
+                                         task_definition_arn=app.request_arg("task_definition_arn"))
+        # xyzzy return app.core.reactapi_aws_ecs_tasks_running(cluster_arn=app.request_arg("cluster_arn"),
+               #                                        task_name=app.request_arg("task_name"),
+               #                                        task_definition_arn=app.request_arg("task_definition_arn"))
 
     @route("/aws/ecs/task_run/{cluster_arn}/{task_definition_arn}", method="POST", authorize=True)
     def reactapi_route_aws_ecs_task_run(cluster_arn: str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
-        return app.core.reactapi_aws_ecs_task_run(cluster_arn, task_definition_arn, app.request_body())
+        from .aws_ecs_tasks import aws_ecs_run_task
+        return aws_ecs_run_task(cluster_arn, task_definition_arn, app.request_body())
+        # xyzzy return app.core.reactapi_aws_ecs_task_run(cluster_arn, task_definition_arn, app.request_body())
 
     @route("/aws/ecs/tasks/latest/details", authorize=True)
     def reactapi_route_aws_ecs_task() -> Response:  # noqa: implicit @staticmethod via @route
@@ -687,7 +687,8 @@ class ReactRoutes:
         """
         Returns info about ingestion submission in S3.
         """
-        return app.core.reactapi_ingestion_submission_submission_response(app.request(), env, uuid, args=app.request_args())
+        return app.core.reactapi_ingestion_submission_submission_response(app.request(),
+                                                                          env, uuid, args=app.request_args())
 
     @route("/{env}/ingestion_submissions/{uuid}/traceback", authorize=True)
     def reactapi_route_ingestion_submission_traceback(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route
@@ -701,7 +702,8 @@ class ReactRoutes:
         """
         Returns info about ingestion submission in S3.
         """
-        return app.core.reactapi_ingestion_submission_validation_report(app.request(), env, uuid, args=app.request_args())
+        return app.core.reactapi_ingestion_submission_validation_report(app.request(),
+                                                                        env, uuid, args=app.request_args())
 
     @route("/{env}/ingestion_submissions/{uuid}/upload_info", authorize=True)
     def reactapi_route_ingestion_submission_upload_info(env: str, uuid: str) -> Response:  # noqa: implicit @staticmethod via @route

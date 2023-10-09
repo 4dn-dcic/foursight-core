@@ -75,7 +75,7 @@ const PortalReindexPage = (props) => {
     const [args, setArgs] = useSearchParams();
     const [taskName, setTaskName] = useState(args.get("task") || "deploy");
 
-    const tasks = useFetch(`//aws/ecs/tasks_for_run?task=${taskName}`, {
+    const tasks = useFetch(`//aws/ecs/tasks_for_run/${taskName}`, {
         onData: (data) => {
             setShowDetails(data.reduce((result, task) => {
                 result[task.task_arn] = false;
@@ -666,7 +666,7 @@ const WarningNoSecurityGroup = (props) => {
 }
 
 const TasksRunning = (props) => {
-    const tasks = useFetch(`//aws/ecs/tasks_running/${props.task.task_cluster_arn}`);
+    const tasks = useFetch(`//aws/ecs/tasks_running?cluster_arn=${props.task.task_cluster_arn}`);
     const sortedTasks = tasks.data?.sort((a, b) => {
         a = a.task_arn?.toLowerCase();
         b = b.task_arn?.toLowerCase();
