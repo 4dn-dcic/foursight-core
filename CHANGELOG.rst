@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+5.1.0
+=====
+* New reindex task page.
+
+
 5.0.0
 =====
 * Update to Python 3.11.
