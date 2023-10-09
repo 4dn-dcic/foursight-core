@@ -117,11 +117,11 @@ const PortalReindexPage = (props) => {
                 <ContentLoading />
             : <>
                 <div className="box thickborder" style={{marginTop: "2pt", marginBottom: "10pt"}}>
-                    Select the Portal environment below to reindex.
+                    <b>Select the Portal environment below to run this task for</b>.
                     <span style={{float: "right"}} className="pointer" onClick={toggleShowDetails} id="tooltip-show-envs">
                         { isShowDetails() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b> }
                         <Tooltip id="tooltip-show-envs" position="top" size="small"
-                            text={`Click to ${isShowDetails() ? "hide" : "show"} details for task run.`} />
+                            text={`Click to ${isShowDetails() ? "hide" : "show"} details for task runs.`} />
                     </span>
                 </div>
                 <Content
@@ -201,21 +201,27 @@ const PortalReindexBox = (props) => {
         if (showDetailOnSelect) props.setShowDetail(props.task);
     }
 
-    return <div onClick={selectTask} style={{marginTop:"4pt"}} className="hover-lighten">
-        <table style={{width: "100%"}}><tbody><tr><td style={{verticalAlign: "top", paddingRight:"10pt", width: "1%"}}>
+    return <div xonClick={selectTask} style={{marginTop:"4pt"}} className="hover-lighten">
+        <table style={{width: "100%"}}><tbody><tr>
+        <td style={{verticalAlign: "top", paddingRight:"10pt", width: "1%"}} onClick={selectTask}>
             <input
                 name="radio"
                 type="radio"
                 value={props.task?.task_arn}
                 checked={isSelectedTask()}
                 onChange={selectTask}
-                style={{marginTop:"10pt"}} />
-        </td><td style={{verticalAlign: "top"}}>
+                style={{marginTop:"10pt"}}
+                id={`tooltip-run-${props.task?.task_arn}`} />
+                <Tooltip id={`tooltip-run-${props.task?.task_arn}`} position="left" shape="squared" bold={true} size="small" text={"Click to run ..."} />
+        </td>
+        <td style={{verticalAlign: "top"}} onClick={selectTask}>
             <div className="box bigmarginbottom lighten" style={{cursor:"default"}}>
-                <b onClick={selectTask} className="pointer" style={{color: "black", textDecoration: "underline"}}>{props.task?.task_env?.name}</b>
-                <small onClick={toggleShowDetail} className="pointer" style={{marginLeft:"4pt"}} id={`tooltip-show-env-${props.task?.task_arn}`}>
-                    {isShowDetail() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b>}
-                </small>
+                <span id={`tooltip-show-env-${props.task?.task_arn}`}>
+                    <b onClick={toggleShowDetail} className="pointer" style={{color: "black", textDecoration: "underline"}}>{props.task?.task_env?.name}</b>
+                    <small onClick={toggleShowDetail} className="pointer" style={{marginLeft:"4pt"}}>
+                        {isShowDetail() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b>}
+                    </small>
+                </span>
                 <Tooltip id={`tooltip-show-env-${props.task?.task_arn}`} position="top" size="small"
                     text={`Click to ${isShowDetail() ? "hide" : "show"} details for task run.`} />
                 <small style={{float: "right"}}>
@@ -240,7 +246,7 @@ const PortalReindexBox = (props) => {
                 }
                 { isShowDetail() && <DetailBox env={props.task?.task_env} task={props.task} /> }
                 <Warnings task={props.task} />
-                <Tooltip id={`tooltip-${props.task.task_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run for the reindex."} />
+                <Tooltip id={`tooltip-${props.task.task_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run."} />
             </div>
         </td></tr></tbody></table>
     </div>
