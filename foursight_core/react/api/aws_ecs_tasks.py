@@ -89,7 +89,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
             # Since we are doing this as we go we are
             # guaranteed to get at most only one of these.
             existing_task = duplicate_tasks[0]
-            ecs = boto3.client('ecs')
+            ecs = boto3.client("ecs")
             existing_task_definition = (
                 ecs.describe_task_definition(taskDefinition=existing_task["task_arn"])["taskDefinition"])
             this_task_definition = ecs.describe_task_definition(taskDefinition=task["task_arn"])["taskDefinition"]
@@ -117,16 +117,9 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
                     tasks_for_running.remove(existing_task)
         tasks_for_running.append(task)
 
-    # Get the AWS cluster to use for any task run.
     clusters = _get_cluster_arns()
-
-    # Get the AWS VPC to use for any task run.
     vpc = get_vpc()
-
-    # Get the AWS security groups to use for any task run.
     security_groups = get_security_groups(vpc)
-
-    # Get the AWS subnets to use for any task run.
     subnets = get_subnets()
 
     for task_arn in task_arns:

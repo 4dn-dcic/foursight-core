@@ -75,7 +75,7 @@ const PortalReindexPage = (props) => {
     const [args, setArgs] = useSearchParams();
     const [taskName, setTaskName] = useState(args.get("task") || "deploy");
 
-    const tasks = useFetch(`//aws/ecs/tasks_for_run/${taskName}`, {
+    const tasks = useFetch(`//aws/ecs/tasks_for_running/${taskName}`, {
         onData: (data) => {
             setShowDetails(data.reduce((result, task) => {
                 result[task.task_arn] = false;
