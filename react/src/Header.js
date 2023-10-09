@@ -108,7 +108,6 @@ const MainMenu = ({ header }) => {
                 <MenuItem path="/home" label="Home" />
                 <MenuItem path="/info" label="Info" />
                 <MenuItem path="/checks" label="Checks" />
-                <MenuSeparator />
                 <MenuItem path="/portal/reindex" label="Reindex" />
                 <MenuSeparator />
                 <MenuItem path="/aws/infrastructure" label="Infrastructure" />

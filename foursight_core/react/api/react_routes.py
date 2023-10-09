@@ -609,31 +609,6 @@ class ReactRoutes:
                 return app.core.reactapi_aws_ecs_task_run(task_definition_arn)
         return app.core.create_forbidden_response()
 
-    @route("/aws/ecs/tasks_for_running/{task_name}", authorize=True)
-    def reactapi_route_aws_ecs_tasks_for_runing(task_name: str) -> Response:  # noqa: implicit @staticmethod via @route
-        from .aws_ecs_tasks import get_aws_ecs_tasks_for_running
-        return get_aws_ecs_tasks_for_running(app.core._envs, task_definition_type=task_name)
-
-    @route("/aws/ecs/task_running/{cluster_arn}/{task_definition_arn}", authorize=True)
-    def reactapi_route_aws_ecs_task_running(cluster_arn: str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
-        from .aws_ecs_tasks import get_aws_ecs_task_running
-        return get_aws_ecs_task_running(app.core._envs,
-                                        cluster_arn=cluster_arn,
-                                        task_definition_arn=task_definition_arn,
-                                        check_other_clusters=True)
-
-    @route("/aws/ecs/tasks_running", authorize=True)
-    def reactapi_route_aws_ecs_tasks_running() -> Response:  # noqa: implicit @staticmethod via @route
-        from .aws_ecs_tasks import get_aws_ecs_tasks_running
-        return get_aws_ecs_tasks_running(cluster_arn=app.request_arg("cluster_arn"),
-                                         task_definition_type=app.request_arg("task_name"),
-                                         task_definition_arn=app.request_arg("task_definition_arn"))
-
-    @route("/aws/ecs/task_run/{cluster_arn}/{task_definition_arn}", method="POST", authorize=True)
-    def reactapi_route_aws_ecs_task_run(cluster_arn: str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
-        from .aws_ecs_tasks import aws_ecs_run_task
-        return aws_ecs_run_task(cluster_arn, task_definition_arn, app.request_body())
-
     @route("/aws/ecs/tasks/latest/details", authorize=True)
     def reactapi_route_aws_ecs_task() -> Response:  # noqa: implicit @staticmethod via @route
         return app.core.reactapi_aws_ecs_tasks(latest=True)
