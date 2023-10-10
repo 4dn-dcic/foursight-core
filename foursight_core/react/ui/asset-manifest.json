@@ -1,0 +1,11 @@
+{
+  "files": {
+    "main.css": "/api/react/static/css/main.css",
+    "main.js": "/api/react/static/js/main.js",
+    "index.html": "/api/react/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.css",
+    "static/js/main.js"
+  ]
+}
