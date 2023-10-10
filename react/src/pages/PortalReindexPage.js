@@ -45,9 +45,9 @@ function awsSubnetLink(id) {
 
 function errorsExist(task) {
     if (!task?.cluster_arn ||
-        !task?.task_vpc ||
-        !task?.task_subnets ||
-        !task?.task_security_group) {
+        !task?.vpc ||
+        !task?.subnets ||
+        !task?.security_group) {
         return true;
     }
     return false;
@@ -221,9 +221,9 @@ const PortalReindexBox = (props) => {
         </td>
         <td style={{verticalAlign: "top"}} onClick={selectTask}>
             <div className="box bigmarginbottom lighten" style={{cursor:"default"}}>
-                <span id={`tooltip-show-env-${props.task?.task_definition_arn}`}>
-                    <b onClick={toggleShowDetail} className="pointer" style={{color: "black", textDecoration: "underline"}}>{props.task?.task_env?.name}</b>
-                    <small onClick={toggleShowDetail} className="pointer" style={{marginLeft:"4pt"}}>
+                <span id={`tooltip-show-env-${props.task?.task_definition_arn}`} className="pointer" onClick={toggleShowDetail}>
+                    <b style={{color: "black", textDecoration: "underline"}}>{props.task?.task_env?.name}</b>
+                    <small style={{marginLeft:"4pt"}}>
                         {isShowDetail() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b>}
                     </small>
                 </span>
@@ -309,8 +309,8 @@ const ReindexButtons = (props) => {
             setRunning(true);
             const url = `//aws/ecs/task_run/${props.task.cluster_arn}/${props.task.task_definition_arn}`;
             const payload = {
-                subnets: props.task.task_subnets,
-                security_group: props.task.task_security_group
+                subnets: props.task.subnets,
+                security_group: props.task.security_group
             }
             fetch(url, { method: "POST", payload: payload, onDone: (result) => {
                 setRunning(false);
@@ -556,28 +556,28 @@ const NetworkDetails = (props) => {
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> VPC: </td>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
                 <span id={`tooltip-vpc-${props.task?.task_definition_arn}`}>
-                    {showNetworkNames ? props.task?.task_vpc?.name : props.task?.task_vpc?.id}
-                    &nbsp;<small><ExternalLink href={awsVpcLink(props.task?.task_vpc?.id)} /></small>
+                    {showNetworkNames ? props.task?.vpc?.name : props.task?.vpc?.id}
+                    &nbsp;<small><ExternalLink href={awsVpcLink(props.task?.vpc?.id)} /></small>
                 </span>
             </td>
             <Tooltip id={`tooltip-vpc-${props.task.task_definition_arn}`} position="top" shape="squared" size="small"
-                text={showNetworkNames ? props.task?.task_vpc?.id : props.task?.task_vpc?.name} />
+                text={showNetworkNames ? props.task?.vpc?.id : props.task?.vpc?.name} />
         </tr>
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Security: </td>
             <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
                 <span id={`tooltip-sg-${props.task?.task_definition_arn}`}>
-                    {showNetworkNames ? props.task?.task_security_group?.name : props.task?.task_security_group?.id}
-                    &nbsp;<small><ExternalLink href={awsSecurityGroupLink(props.task?.task_security_group?.id)} /></small>
+                    {showNetworkNames ? props.task?.security_group?.name : props.task?.security_group?.id}
+                    &nbsp;<small><ExternalLink href={awsSecurityGroupLink(props.task?.security_group?.id)} /></small>
                 </span>
             </td>
             <Tooltip id={`tooltip-sg-${props.task.task_definition_arn}`} position="top" shape="squared" size="small"
-                text={showNetworkNames ? props.task?.task_security_group?.id : props.task?.task_security_group?.name} />
+                text={showNetworkNames ? props.task?.security_group?.id : props.task?.security_group?.name} />
         </tr>
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Subnets: </td>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
-                { props.task?.task_subnets?.map(subnet => <>
+                { props.task?.subnets?.map(subnet => <>
                     <span id={`tooltip-subnet-${props.task?.task_definition_arn}-${subnet.id}`}>
                         {showNetworkNames ? subnet.name : subnet.id}
                         &nbsp;<small><ExternalLink href={awsSubnetLink(subnet.id)} /></small>
@@ -615,9 +615,10 @@ const TaskStatusLine = (props) => {
                     <b style={{color: "blue"}}>Idle<small>&nbsp;</small>{props.showRunningTasks ? Char.DownArrow : Char.UpArrow}</b>
                 </> }
             </span>
-            { ran.data?.task_last_ran_at && <>
+            { ran.data?.task_last_ran_at && <span id={`tooltip-last-run-time-${props.task?.task_definition_arn}`}>
                 &nbsp;<b>|</b>&nbsp;<b>Approximate Last Run Time</b>: {DateTime.Format(ran.data?.task_last_ran_at)}
-            </> }
+                <Tooltip id={`tooltip-last-run-time-${props.task?.task_definition_arn}`} position="top" size="small" text={`Based on last portal access key (${ran.data?.portal_access_key}) update.`}/>
+            </span> }
             &nbsp;<b>|</b>&nbsp;<b>Refresh</b>&nbsp;<b style={{position: "relative", top: "1px"}}>{Char.Refresh}</b>
             { running.data?.other_cluster && <>
                 <div className="box error" style={{color: "darkred", fontSize: "small", marginTop: "6pt"}} id={`tooltip-other-cluster-${props.task?.task_definition_arn}`}>
@@ -642,7 +643,7 @@ const Warnings = (props) => {
 
 const WarningMultipleTasks = (props) => {
     return <>
-        { props.task?.duplicate_tasks &&
+        { props.task?.duplicates &&
             <div className="box bigmargin error"><small>
                 <b>Warning</b>: Multiple task definitions found for this environment.
                 <div style={{background: "darkred", height: "1px", marginTop: "4pt", marginBottom: "4pt"}} />
@@ -653,9 +654,9 @@ const WarningMultipleTasks = (props) => {
                     </tr>
                     <tr>
                         <td></td>
-                        <td><small>Registered At: {DateTime.Format(props.task?.task_registered_at)}</small></td>
+                        <td><small>Registered At: {DateTime.Format(props.task?.registered_at)}</small></td>
                     </tr>
-                    { props.task?.duplicate_tasks?.map((task, index) => <>
+                    { props.task?.duplicates?.map((task, index) => <>
                         <tr>
                             <td>{Char.RightArrow}</td>
                             <td>
@@ -666,7 +667,7 @@ const WarningMultipleTasks = (props) => {
                             <td></td>
                             <td>
                                 <small>
-                                    Registered At: {DateTime.Format(task?.task_registered_at)}
+                                    Registered At: {DateTime.Format(task?.registered_at)}
                                 </small>
                             </td>
                         </tr>
@@ -689,7 +690,7 @@ const WarningNoCluster = (props) => {
 
 const WarningNoVpc = (props) => {
     return <>
-        { !props.task?.task_vpc &&
+        { !props.task?.vpc &&
             <div className="box bigmargin error"><small>
                 <b>Warning</b>: No VPC found.
             </small></div>
@@ -699,7 +700,7 @@ const WarningNoVpc = (props) => {
 
 const WarningNoSubnets = (props) => {
     return <>
-        { !props.task?.task_subnets &&
+        { !props.task?.subnets &&
             <div className="box bigmargin error"><small>
                 <b>Warning</b>: No subnets found.
             </small></div>
@@ -709,7 +710,7 @@ const WarningNoSubnets = (props) => {
 
 const WarningNoSecurityGroup = (props) => {
     return <>
-        { !props.task?.task_security_group &&
+        { !props.task?.security_group &&
             <div className="box bigmargin error"><small>
                 <b>Warning</b>: No security group found.
             </small></div>

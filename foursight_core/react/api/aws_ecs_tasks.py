@@ -101,21 +101,21 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
             if existing_task_registered_at and this_task_registered_at:
                 if existing_task_registered_at > this_task_registered_at:
                     # The existing task is newer than this task; skip this one.
-                    existing_task["task_registered_at"] = datetime_string(existing_task_registered_at)
-                    if not existing_task.get("duplicate_tasks"):
-                        existing_task["duplicate_tasks"] = []
-                    existing_task["duplicate_tasks"].append({
+                    existing_task["registered_at"] = datetime_string(existing_task_registered_at)
+                    if not existing_task.get("duplicates"):
+                        existing_task["duplicates"] = []
+                    existing_task["duplicates"].append({
                         "task_definition_arn": task["task_definition_arn"],
-                        "task_registered_at": datetime_string(this_task_registered_at)
+                        "registered_at": datetime_string(this_task_registered_at)
                      })
                     return
                 else:
                     # This task is newer than the existing task; remove the existing one.
-                    task["task_registered_at"] = datetime_string(this_task_registered_at)
-                    task["duplicate_tasks"] = existing_task.get("duplicate_tasks") or []
-                    task["duplicate_tasks"].append({
+                    task["registered_at"] = datetime_string(this_task_registered_at)
+                    task["duplicates"] = existing_task.get("duplicates") or []
+                    task["duplicates"].append({
                         "task_definition_arn": existing_task["task_definition_arn"],
-                        "task_registered_at": datetime_string(existing_task_registered_at)
+                        "registered_at": datetime_string(existing_task_registered_at)
                      })
                     tasks_for_running.remove(existing_task)
         tasks_for_running.append(task)
@@ -136,7 +136,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
             "task_env": task_env
         }
         if vpc:
-            task_for_running["task_vpc"] = vpc
+            task_for_running["vpc"] = vpc
         # Get the AWS cluster to use for any task run for this particular environment.
         cluster_for_env = get_cluster_for_env(clusters, task_env)
         if cluster_for_env:
@@ -144,11 +144,11 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
         # Get the AWS security groups to use for any task run for this particular environment.
         security_group_for_env = get_security_group_for_env(security_groups, task_env)
         if security_group_for_env:
-            task_for_running["task_security_group"] = security_group_for_env
+            task_for_running["security_group"] = security_group_for_env
         # Get the AWS subnets to use for any task run for this particular environment.
         subnets_for_env = get_subnets_for_env(subnets, task_env)
         if subnets_for_env:
-            task_for_running["task_subnets"] = subnets_for_env
+            task_for_running["subnets"] = subnets_for_env
         # Add this task to the results (handles "duplicates").
         add_task_for_running(task_for_running)
     return tasks_for_running
@@ -184,16 +184,6 @@ def get_aws_ecs_task_running(envs: Envs,
                 return sub_response
     if task_is_running:
         response["task_running_ids"] = [_get_task_running_id(item) for item in task_arns]
-#   # If this is the deploy task the approximate that last time it was run
-#   # by using the the create date of the Portal Access Key as a proxy for
-#   # when this task last ran since the entrypoint_deployment.bash script
-#   # creates this as its last step.
-#   if task_definition_type == "deploy":
-#       task_env = envs.get_associated_env(task_definition_arn)
-#       if task_env:
-#           portal_access_key_info = get_portal_access_key_info(task_env["full_name"])
-#           if portal_access_key_info:
-#               response["task_last_ran_at"] = portal_access_key_info["created_at"]
     return response
 
 
@@ -213,9 +203,10 @@ def get_aws_ecs_task_last_run(envs: Envs, cluster_arn: str, task_definition_arn:
     if task_definition_type == "deploy":
         task_env = envs.get_associated_env(task_definition_arn)
         if task_env:
-            portal_access_key_info = get_portal_access_key_info(task_env["full_name"])
+            portal_access_key_info = get_portal_access_key_info(task_env["full_name"], logged_in=True)
             if portal_access_key_info:
                 response["task_last_ran_at"] = portal_access_key_info["created_at"]
+                response["portal_access_key"] = portal_access_key_info["key"]  # Just FYI
     return response
 
 
