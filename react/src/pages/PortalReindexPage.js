@@ -694,7 +694,8 @@ const TasksRunningAcrossClusters = (props) => {
                     <i><b>Tasks running</b> across clusters for task definition:</i>
                     <b>&nbsp;&nbsp;{props.task.task_arn}</b>
                     &nbsp;<ExternalLink href={awsTaskLink(props.task.task_arn)} />
-                    <div style={{float: "right", verticalAlign: "top"}} className="pointer" onClick={tasks.refresh}>{Char.Refresh}</div>
+                    { !tasks.loading &&
+                        <div style={{float: "right", verticalAlign: "top"}} className="pointer" onClick={tasks.refresh}>{Char.Refresh}</div> }
                 </td>
             </tr>
             { tasks.loading ? <>
@@ -754,7 +755,9 @@ const TasksRunning = (props) => {
                     <i><b>Tasks running</b> in cluster:</i>
                     <b>&nbsp;&nbsp;{props.task.task_cluster_arn}</b>
                     &nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster_arn)} />
-                    <div style={{float: "right", verticalAlign: "top"}} className="pointer" onClick={tasks.refresh}>{Char.Refresh}</div>
+                    { !tasks.loading &&
+                        <div style={{float: "right", verticalAlign: "top"}} className="pointer" onClick={tasks.refresh}>{Char.Refresh}</div>
+                    }
                 </td>
             </tr>
             { tasks.loading ? <>
