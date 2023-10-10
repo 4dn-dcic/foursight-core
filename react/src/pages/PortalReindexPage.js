@@ -122,7 +122,7 @@ const PortalReindexPage = (props) => {
                 <ContentLoading />
             : <>
                 <div className="box thickborder" style={{marginTop: "2pt", marginBottom: "10pt"}}>
-                    <b>Select the Portal environment below to run this task for</b>.
+                    <i>Select the Portal environment below to run {taskName === "deploy" ? <>a reindex</> : <>this task</>} for</i>.
                     <span style={{float: "right"}} className="pointer" onClick={toggleShowDetails} id="tooltip-show-envs">
                         { isShowDetails() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b> }
                         <Tooltip id="tooltip-show-envs" position="top" size="small"
@@ -648,13 +648,15 @@ const WarningMultipleTasks = (props) => {
                 <b>Warning</b>: Multiple task definitions found for this environment.
                 <div style={{background: "darkred", height: "1px", marginTop: "4pt", marginBottom: "4pt"}} />
                 <table style={{fontSize: "inherit", color: "inherit"}}><tbody>
-                    <tr>
+                    <tr id={`tooltip-dup-${props.task.task_definition_arn}`}>
                         <td style={{paddingRight: "4pt"}}><b>{Char.RightArrow}</b></td>
                         <td><u><b>{props.task.task_definition_arn}</b></u>&nbsp;<small><ExternalLink href={awsTaskLink(props.task.task_definition_arn)} color={"inherit"} /></small></td>
+                        <Tooltip id={`tooltip-dup-${props.task.task_definition_arn}`} position="top" size="small"
+                            text={`Choosing this one because registration time is more recent.`} />
                     </tr>
                     <tr>
                         <td></td>
-                        <td><small>Registered At: {DateTime.Format(props.task?.registered_at)}</small></td>
+                        <td><small>Registered: {DateTime.Format(props.task?.registered_at)}</small></td>
                     </tr>
                     { props.task?.duplicates?.map((task, index) => <>
                         <tr>
@@ -667,7 +669,7 @@ const WarningMultipleTasks = (props) => {
                             <td></td>
                             <td>
                                 <small>
-                                    Registered At: {DateTime.Format(task?.registered_at)}
+                                    Registered: {DateTime.Format(task?.registered_at)}
                                 </small>
                             </td>
                         </tr>
