@@ -120,10 +120,9 @@ def collect_args(check_or_action_info, initial_args: Optional[dict] = None, verb
         if check_or_action_info.kwargs:
             print(f"Prompting for {kind} arguments for {name}:")
             for arg_name in check_or_action_info.kwargs:
-                arg_default = check_or_action_info.kwargs[arg_name]
-                value = input(f"Enter {kind} argument => "
-                              f"{arg_name} [default: {arg_default}]: ")
-                args[arg_name] = value
+                arg_value_default = check_or_action_info.kwargs[arg_name]
+                arg_value = input(f"Enter {kind} argument => {arg_name} [default: {arg_value_default}]: ")
+                args[arg_name] = arg_value if arg_value != "" else arg_value_default
         if verbose:
             if args:
                 print(f"{kind.title()} arguments for {name}:")
