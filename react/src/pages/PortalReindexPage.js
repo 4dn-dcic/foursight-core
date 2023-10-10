@@ -362,7 +362,13 @@ const ReindexButtonConfirmed = (props) => {
         </td><td style={{verticalAlign: "top", paddingLeft: "8pt"}}>
             <ReindexButton onClickReindex={props.onClickReindex} confirmed={true} />
         </td><td style={{verticalAlign: "top", paddingLeft: "0pt"}}>
-            <b style={{position: "relative", bottom: "-3pt", whiteSpace: "nowrap"}}>&nbsp;&nbsp;&nbsp;{Char.LeftArrow} Are you sure you want to reindex <u>{props.task.task_env.name}</u>?</b>
+            <b style={{position: "relative", bottom: "-3pt", whiteSpace: "nowrap"}}>&nbsp;&nbsp;&nbsp;{Char.LeftArrow}&nbsp;
+            { props.task.task_name == "deploy" ? <>
+                Are you sure you want to reindex <u>{props.task.task_env.name}</u>?
+            </>:<>
+                Are you sure you want to run this task for <u>{props.task.task_env.name}</u>?
+            </> }
+            </b>
         </td>
     </tr></tbody></table>
 }
