@@ -622,6 +622,13 @@ class ReactRoutes:
                                         task_definition_arn=task_definition_arn,
                                         check_other_clusters=True)
 
+    @route("/aws/ecs/task_last_run/{cluster_arn}/{task_definition_arn}", authorize=True)
+    def reactapi_route_aws_ecs_task_last_run(cluster_arn: str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+        from .aws_ecs_tasks import get_aws_ecs_task_last_run
+        return get_aws_ecs_task_last_run(app.core._envs,
+                                         cluster_arn=cluster_arn,
+                                         task_definition_arn=task_definition_arn)
+
     @route("/aws/ecs/tasks_running", authorize=True)
     def reactapi_route_aws_ecs_tasks_running() -> Response:  # noqa: implicit @staticmethod via @route
         from .aws_ecs_tasks import get_aws_ecs_tasks_running

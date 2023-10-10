@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "foursight-core"
-version = "4.5.0.3b26"  # TODO: To become 5.1.0
+version = "4.5.0.3b27"  # TODO: To become 5.1.0
 description = "Serverless Chalice Application for Monitoring"
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
@@ -12,6 +12,8 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
+boto3 = "^1.28.62"
+botocore = "^1.31.62"
 click = "^7.1.2"
 cron-descriptor = "^1.2.31"
 cryptography = "39.0.2" # Required for AWS Cognito JWT decode (PyJWKClient)
@@ -37,6 +39,8 @@ toml = ">=0.10.2,<1"
 tzlocal = "^5.0.1"
 
 [tool.poetry.dev-dependencies]
+boto3-stubs = "^1.28.62"
+botocore-stubs = "^1.31.62"
 chalice = "^1.21.4"
 flake8 = ">=3.9.2"
 flaky = "3.6.1"

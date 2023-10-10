@@ -1,5 +1,5 @@
 import React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Char from '../utils/Char'; 
 import DateTime from '../utils/DateTime';
@@ -11,6 +11,7 @@ import Tooltip from '../components/Tooltip';
 import useFetch from '../hooks/Fetch';
 import useFetchFunction from '../hooks/FetchFunction';
 import useHeader from '../hooks/Header';
+import Yaml from '../utils/Yaml';
 
 const region = "us-east-1";
 
@@ -43,7 +44,7 @@ function awsSubnetLink(id) {
 }
 
 function errorsExist(task) {
-    if (!task?.task_cluster_arn ||
+    if (!task?.cluster_arn ||
         !task?.task_vpc ||
         !task?.task_subnets ||
         !task?.task_security_group) {
@@ -53,11 +54,15 @@ function errorsExist(task) {
 }
 
 const useTaskStatus = (task, refresh) => {
-    return useFetch(`//aws/ecs/task_running/${task.task_cluster_arn}/${task.task_arn}`, {cache: true});
+    return useFetch(`//aws/ecs/task_running/${task.cluster_arn}/${task.task_definition_arn}`, {cache: true});
 }
 
 const useTaskStatusNoCache = (task, refresh) => {
-    return useFetch(`//aws/ecs/task_running/${task.task_cluster_arn}/${task.task_arn}`);
+    return useFetch(`//aws/ecs/task_running/${task.cluster_arn}/${task.task_definition_arn}`);
+}
+
+const useTaskStatusLastRun = (task, refresh) => {
+    return useFetch(`//aws/ecs/task_last_run/${task.cluster_arn}/${task.task_definition_arn}`);
 }
 
 const taskNames = [
@@ -78,7 +83,7 @@ const PortalReindexPage = (props) => {
     const tasks = useFetch(`//aws/ecs/tasks_for_running/${taskName}`, {
         onData: (data) => {
             setShowDetails(data.reduce((result, task) => {
-                result[task.task_arn] = false;
+                result[task.task_definition_arn] = false;
                 return result;
             }, {}));
             return data;
@@ -96,9 +101,9 @@ const PortalReindexPage = (props) => {
         for (const key of Object.keys(showDetails)) showDetails[key] = !showDetail;
         setShowDetails({...showDetails});
     }
-    const toggleShowDetail = (task) => { showDetails[task.task_arn] = !showDetails[task.task_arn]; setShowDetails({...showDetails}); }
-    const setShowDetail = (task) => { showDetails[task.task_arn] = true; setShowDetails({...showDetails}); }
-    const isShowDetail = (task) => showDetails[task.task_arn];
+    const toggleShowDetail = (task) => { showDetails[task.task_definition_arn] = !showDetails[task.task_definition_arn]; setShowDetails({...showDetails}); }
+    const setShowDetail = (task) => { showDetails[task.task_definition_arn] = true; setShowDetails({...showDetails}); }
+    const isShowDetail = (task) => showDetails[task.task_definition_arn];
 
     const onTaskChange = (taskName) => {
         setTaskName(taskName);
@@ -161,8 +166,8 @@ const ContentLoading = (props) => {
 const Content = (props) => {
 
     const [selectedTask, setSelectedTask] = useState();
-    const selectTask = (task) => { isSelectedTask(task) ? setSelectedTask(null) : setSelectedTask(task.task_arn); }
-    const isSelectedTask = (task) => selectedTask == task.task_arn;
+    const selectTask = (task) => { isSelectedTask(task) ? setSelectedTask(null) : setSelectedTask(task.task_definition_arn); }
+    const isSelectedTask = (task) => selectedTask == task.task_definition_arn;
     const unselectTask = () => setSelectedTask(null);
 
     const sortedTasks = props.tasks?.sort((a, b) => {
@@ -207,22 +212,22 @@ const PortalReindexBox = (props) => {
             <input
                 name="radio"
                 type="radio"
-                value={props.task?.task_arn}
+                value={props.task?.task_definition_arn}
                 checked={isSelectedTask()}
                 onChange={selectTask}
                 style={{marginTop:"10pt"}}
-                id={`tooltip-run-${props.task?.task_arn}`} />
-                <Tooltip id={`tooltip-run-${props.task?.task_arn}`} position="left" shape="squared" bold={true} size="small" text={"Click to run ..."} />
+                id={`tooltip-run-${props.task?.task_definition_arn}`} />
+                <Tooltip id={`tooltip-run-${props.task?.task_definition_arn}`} position="left" shape="squared" bold={true} size="small" text={"Click to run ..."} />
         </td>
         <td style={{verticalAlign: "top"}} onClick={selectTask}>
             <div className="box bigmarginbottom lighten" style={{cursor:"default"}}>
-                <span id={`tooltip-show-env-${props.task?.task_arn}`}>
+                <span id={`tooltip-show-env-${props.task?.task_definition_arn}`}>
                     <b onClick={toggleShowDetail} className="pointer" style={{color: "black", textDecoration: "underline"}}>{props.task?.task_env?.name}</b>
                     <small onClick={toggleShowDetail} className="pointer" style={{marginLeft:"4pt"}}>
                         {isShowDetail() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b>}
                     </small>
                 </span>
-                <Tooltip id={`tooltip-show-env-${props.task?.task_arn}`} position="top" size="small"
+                <Tooltip id={`tooltip-show-env-${props.task?.task_definition_arn}`} position="top" size="small"
                     text={`Click to ${isShowDetail() ? "hide" : "show"} details for task run.`} />
                 <small style={{float: "right"}}>
                     &nbsp;&nbsp;<ExternalLink href={props.task.task_env?.portal_url} />
@@ -237,7 +242,7 @@ const PortalReindexBox = (props) => {
                     </small>
                 }
                 <br />
-                <small id={`tooltip-${props.task.task_arn}`}> {props.task?.task_arn}&nbsp;<ExternalLink href={awsTaskRunLink(props.task?.task_arn)} /></small>
+                <small id={`tooltip-${props.task.task_definition_arn}`}> {props.task?.task_definition_arn}&nbsp;<ExternalLink href={awsTaskRunLink(props.task?.task_definition_arn)} /></small>
                 { isSelectedTask() &&
                     <ReindexButtonsBox task={props.task}
                         unselectTask={props.unselectTask}
@@ -246,7 +251,7 @@ const PortalReindexBox = (props) => {
                 }
                 { isShowDetail() && <DetailBox env={props.task?.task_env} task={props.task} /> }
                 <Warnings task={props.task} />
-                <Tooltip id={`tooltip-${props.task.task_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run."} />
+                <Tooltip id={`tooltip-${props.task.task_definition_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run."} />
             </div>
         </td></tr></tbody></table>
     </div>
@@ -256,10 +261,10 @@ const ReindexButtonsBox = (props) => {
     const running = useTaskStatusNoCache(props.task);
     const onClickIgnore = (e) => { e.stopPropagation(); e.preventDefault(); }
     if (errorsExist(props.task)) {
-        return <ReindexButtonsBoxDisabled />
+        return <ReindexButtonsBoxDisabled task={props.task} />
     }
     return <>
-        <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt"}} onClick={onClickIgnore}>
+        <div className="box" style={{background: "inherit", marginTop: "4pt", paddingTop: "8pt"}} onClick={onClickIgnore}>
             { running.loading ? <>
                  <ReindexButtonsTaskStatusLoading task={props.task} />
             </>:<>
@@ -277,7 +282,7 @@ const ReindexButtonsBox = (props) => {
 const ReindexButtonsBoxDisabled = (props) => {
     return <>
         <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt", color: "red"}}>
-            <b>Reindexing disabled due to errors.</b>
+            <b>{props.task?.task_definition_type == "deploy" ? <>Reindexing</> : <>Task run</>} disabled due to errors.</b>
         </div>
     </>
 }
@@ -285,7 +290,7 @@ const ReindexButtonsBoxDisabled = (props) => {
 const ReindexButtonsTaskStatusLoading = (props) => {
     return <>
         <table><tbody><tr><td>
-            <ReindexButton disabled={true} />
+            <ReindexButton task={props.task} disabled={true} />
         </td><td style={{paddingLeft: "8pt"}}>
             <StandardSpinner label="Fetching task status" />
         </td></tr></tbody></table>
@@ -302,12 +307,12 @@ const ReindexButtons = (props) => {
     const onClickReindex = (e) => {
         if (confirmed) {
             setRunning(true);
-            const url = `//aws/ecs/task_run/${props.task.task_cluster_arn}/${props.task.task_arn}`;
+            const url = `//aws/ecs/task_run/${props.task.cluster_arn}/${props.task.task_definition_arn}`;
             const payload = {
                 subnets: props.task.task_subnets,
                 security_group: props.task.task_security_group
             }
-            fetch(url, { delay: 3000, method: "POST", payload: payload, onDone: (result) => {
+            fetch(url, { method: "POST", payload: payload, onDone: (result) => {
                 setRunning(false);
                 setRunResult(result);
                 setRunDone(true);
@@ -318,30 +323,29 @@ const ReindexButtons = (props) => {
         }
         e.stopPropagation();
     }
-    const onClickRunDoneX = (e) => {
-        setRunDone(false);
-        setConfirmed(false);
-        props.unselectTask();
-    }
     const toggleShowDetail = (e) => props.toggleShowDetail(e);
     return <>
         { confirmed ? <>
-            { running ? <>
-                <StandardSpinner label="Kicking off task" />
-            </>:<>
+            { running ? <div style={{marginTop: "-2pt"}}>
+                <StandardSpinner label="Kicking off task"/>
+            </div>:<>
                 { runDone ? <>
-                    <b>Kicked off task {Char.RightArrow}</b> <small><u>{runResult?.data?.task_running_id}</u></small>&nbsp;
-                    <small><ExternalLink href={awsTaskRunningLink(props.task.task_cluster_arn, runResult?.data?.task_running_id)} /></small>
-                    <div className="pointer" onClick={onClickRunDoneX} style={{float: "right", marginRight: "4pt"}}><b>{Char.X}</b></div>
+                    <RunResult task={props.task}
+                        running={props.running}
+                        runDone={runDone}
+                        runResult={runResult}
+                        setConfirmed={setConfirmed}
+                        setRunDone={setRunDone}
+                        unselectTask={props.unselectTask} />
                 </>:<>
                     <ReindexButtonConfirmed task={props.task} onClickReindex={onClickReindex} onClickCancel={onClickCancel} running={props.running} />
                 </> }
             </> }
         </>: <>
-            <ReindexButton onClickReindex={onClickReindex} />
+            <ReindexButton task={props.task} onClickReindex={onClickReindex} />
         </> }
         { (!props.running.loading && props.running.data?.task_running) && <small style={{color: "red"}}>
-            <div style={{width: "100%", height: "2px", marginTop: "8pt", marginBottom: "8pt", background:"red"}} />
+            <SeparatorH color="red" />
             <b>Warning</b>: This task appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
                 <small className="pointer" onClick={toggleShowDetail}><b>
                     &nbsp;&nbsp;{Char.RightArrow}&nbsp;
@@ -355,15 +359,46 @@ const ReindexButtons = (props) => {
     </>
 }
 
+const RunResult = (props) => {
+    const [showJson, setShowJson] = useState(false);
+    const toggleShowJson = () => setShowJson(!showJson);
+    const onClickRunDoneX = (e) => {
+        props.setRunDone(false);
+        props.setConfirmed(false);
+        props.unselectTask();
+    }
+    const widthRef = useRef(null);
+    return <div ref={widthRef}>
+        <div className="pointer" onClick={onClickRunDoneX} style={{float: "right", marginRight: "2pt"}}><b>{Char.X}</b></div>
+        <div className="pointer" onClick={toggleShowJson}>
+            { props.runResult.data?.error ? <span style={{color: "red"}}>
+                <b>Error kicking off task ...</b>
+                <SeparatorH color="red" />
+                {props.runResult.data.error}
+            </span>:<>
+                <b>Kicked off task {Char.RightArrow}</b> <small><u>{props.runResult?.data?.task_running_id}</u></small>&nbsp;
+                <small><ExternalLink href={awsTaskRunningLink(props.task.cluster_arn, props.runResult?.data?.task_running_id)} /></small>
+            </> }
+            { showJson && <>
+                <SeparatorH />
+                <pre style={{background: "inherit", color: props.runResult.data?.error ? "red" : "inherit", wordWrap:"break-word", maxWidth: widthRef?.current?.offsetWidth}}>
+        
+                    {Yaml.Format(props.runResult.data)}
+                </pre>
+            </> }
+        </div>
+    </div>
+}
+
 const ReindexButtonConfirmed = (props) => {
     return <table><tbody><tr>
         <td style={{verticalAlign: "top"}}>
             <CancelButton onClickCancel={props.onClickCancel} />
         </td><td style={{verticalAlign: "top", paddingLeft: "8pt"}}>
-            <ReindexButton onClickReindex={props.onClickReindex} confirmed={true} />
+            <ReindexButton task={props.task} onClickReindex={props.onClickReindex} confirmed={true} />
         </td><td style={{verticalAlign: "top", paddingLeft: "0pt"}}>
             <b style={{position: "relative", bottom: "-3pt", whiteSpace: "nowrap"}}>&nbsp;&nbsp;&nbsp;{Char.LeftArrow}&nbsp;
-            { props.task.task_name == "deploy" ? <>
+            { props.task.task_definition_type == "deploy" ? <>
                 Are you sure you want to reindex <u>{props.task.task_env.name}</u>?
             </>:<>
                 Are you sure you want to run this task for <u>{props.task.task_env.name}</u>?
@@ -375,7 +410,7 @@ const ReindexButtonConfirmed = (props) => {
 
 const ReindexButton = (props) => {
     return <div className={`check-run-button ${props.disabled && "disabled"}`} style={{width: "fit-content", border: "1px solid inherit"}} onClick={props?.onClickReindex}>
-        { props.confirmed && <>&nbsp;Yes:</> }&nbsp;Reindex&nbsp;
+        { props.confirmed && <>&nbsp;Yes:</> }&nbsp;{ props.task?.task_definition_type == "deploy" ? <>Reindex</> : <>Run Task</> }&nbsp;
     </div>
 }
 
@@ -497,9 +532,9 @@ const NetworkDetails = (props) => {
     return <table style={{fontSize: "inherit"}}><tbody>
         <tr><td /><td width="800pt"/></tr> {/* dummy to make it expand to right */}
         <tr><td colSpan="2"> AWS Network
-            <span onClick={toggleShowNetworkNames} className="pointer" id={`tooltip-network-${props.task.task_arn}`} >
+            <span onClick={toggleShowNetworkNames} className="pointer" id={`tooltip-network-${props.task.task_definition_arn}`} >
                 &nbsp;{showNetworkNames ? <b>{Char.Diamond}</b> : <b>{Char.Trigram}</b>}
-                <Tooltip id={`tooltip-network-${props.task.task_arn}`} position="top" size="small" text={`Click to view ${showNetworkNames ? "IDs" : "names"}.`}/>
+                <Tooltip id={`tooltip-network-${props.task.task_definition_arn}`} position="top" size="small" text={`Click to view ${showNetworkNames ? "IDs" : "names"}.`}/>
             </span>
             <small style={{float: "right"}} className="pointer" onClick={toggleShowRunningTasks}>
                 {props.showRunningTasks ? <>Hide details {Char.DownArrow}</> : <b>More details {Char.UpArrow}</b>}
@@ -512,42 +547,42 @@ const NetworkDetails = (props) => {
             </td>
             <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
                 <span>
-                    {props.task?.task_cluster_arn}
-                    &nbsp;<small><ExternalLink href={awsClusterLink(props.task?.task_cluster_arn)} /></small>
+                    {props.task?.cluster_arn}
+                    &nbsp;<small><ExternalLink href={awsClusterLink(props.task?.cluster_arn)} /></small>
                 </span>
             </td>
         </tr>
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> VPC: </td>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
-                <span id={`tooltip-vpc-${props.task?.task_arn}`}>
+                <span id={`tooltip-vpc-${props.task?.task_definition_arn}`}>
                     {showNetworkNames ? props.task?.task_vpc?.name : props.task?.task_vpc?.id}
                     &nbsp;<small><ExternalLink href={awsVpcLink(props.task?.task_vpc?.id)} /></small>
                 </span>
             </td>
-            <Tooltip id={`tooltip-vpc-${props.task.task_arn}`} position="top" shape="squared" size="small"
+            <Tooltip id={`tooltip-vpc-${props.task.task_definition_arn}`} position="top" shape="squared" size="small"
                 text={showNetworkNames ? props.task?.task_vpc?.id : props.task?.task_vpc?.name} />
         </tr>
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Security: </td>
             <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
-                <span id={`tooltip-sg-${props.task?.task_arn}`}>
+                <span id={`tooltip-sg-${props.task?.task_definition_arn}`}>
                     {showNetworkNames ? props.task?.task_security_group?.name : props.task?.task_security_group?.id}
                     &nbsp;<small><ExternalLink href={awsSecurityGroupLink(props.task?.task_security_group?.id)} /></small>
                 </span>
             </td>
-            <Tooltip id={`tooltip-sg-${props.task.task_arn}`} position="top" shape="squared" size="small"
+            <Tooltip id={`tooltip-sg-${props.task.task_definition_arn}`} position="top" shape="squared" size="small"
                 text={showNetworkNames ? props.task?.task_security_group?.id : props.task?.task_security_group?.name} />
         </tr>
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Subnets: </td>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
                 { props.task?.task_subnets?.map(subnet => <>
-                    <span id={`tooltip-subnet-${props.task?.task_arn}-${subnet.id}`}>
+                    <span id={`tooltip-subnet-${props.task?.task_definition_arn}-${subnet.id}`}>
                         {showNetworkNames ? subnet.name : subnet.id}
                         &nbsp;<small><ExternalLink href={awsSubnetLink(subnet.id)} /></small>
                     </span> <br />
-                    <Tooltip id={`tooltip-subnet-${props.task?.task_arn}-${subnet.id}`} position="top" shape="squared" size="small"
+                    <Tooltip id={`tooltip-subnet-${props.task?.task_definition_arn}-${subnet.id}`} position="top" shape="squared" size="small"
                         text={showNetworkNames ? subnet.id : subnet.name} />
                 </>) }
             </td>
@@ -556,9 +591,11 @@ const NetworkDetails = (props) => {
 }
 
 const TaskStatusLine = (props) => {
-    const running = useTaskStatus(props.task);
+    const running = useTaskStatusNoCache(props.task);
+    const ran = useTaskStatusLastRun(props.task);
     const onRefresh = (e) => {
         running.refresh();
+        ran.refresh();
         e.stopPropagation();
     }
     const toggleShowRunningTasks = (e) => {
@@ -578,17 +615,17 @@ const TaskStatusLine = (props) => {
                     <b style={{color: "blue"}}>Idle<small>&nbsp;</small>{props.showRunningTasks ? Char.DownArrow : Char.UpArrow}</b>
                 </> }
             </span>
-            { running.data?.task_last_ran_at && <>
-                &nbsp;<b>|</b>&nbsp;<b>Approximate Last Run Time</b>: {DateTime.Format(running.data?.task_last_ran_at)}
+            { ran.data?.task_last_ran_at && <>
+                &nbsp;<b>|</b>&nbsp;<b>Approximate Last Run Time</b>: {DateTime.Format(ran.data?.task_last_ran_at)}
             </> }
-                &nbsp;<b>|</b>&nbsp;<b>Refresh</b>&nbsp;<b style={{position: "relative", top: "1px"}}>{Char.Refresh}</b>
-                { running.data?.other_cluster && <>
-                    <div className="box error" style={{color: "darkred", fontSize: "small", marginTop: "6pt"}} id={`tooltip-other-cluster-${props.task?.task_arn}`}>
-                        <b>Warning</b>: Task running in different cluster <b>{Char.RightArrow} {running.data?.cluster_arn}</b>
-                        &nbsp;<ExternalLink href={awsClusterLink(running.data?.cluster_arn)} color="darkred" />
-                        <Tooltip id={`tooltip-other-cluster-${props.task?.task_arn}`} position="top" size="small" text={`Different than ${props.task.cluster_arn}`}/>
-                    </div>
-                </> }
+            &nbsp;<b>|</b>&nbsp;<b>Refresh</b>&nbsp;<b style={{position: "relative", top: "1px"}}>{Char.Refresh}</b>
+            { running.data?.other_cluster && <>
+                <div className="box error" style={{color: "darkred", fontSize: "small", marginTop: "6pt"}} id={`tooltip-other-cluster-${props.task?.task_definition_arn}`}>
+                    <b>Warning</b>: Task running in different cluster <b>{Char.RightArrow} {running.data?.cluster_arn}</b>
+                    &nbsp;<ExternalLink href={awsClusterLink(running.data?.cluster_arn)} color="darkred" />
+                    <Tooltip id={`tooltip-other-cluster-${props.task?.task_definition_arn}`} position="top" size="small" text={`Different than ${props.task.cluster_arn}`}/>
+                </div>
+            </> }
         </span> }
     </div>
 }
@@ -612,7 +649,7 @@ const WarningMultipleTasks = (props) => {
                 <table style={{fontSize: "inherit", color: "inherit"}}><tbody>
                     <tr>
                         <td style={{paddingRight: "4pt"}}><b>{Char.RightArrow}</b></td>
-                        <td><u><b>{props.task.task_arn}</b></u>&nbsp;<small><ExternalLink href={awsTaskLink(props.task.task_arn)} color={"inherit"} /></small></td>
+                        <td><u><b>{props.task.task_definition_arn}</b></u>&nbsp;<small><ExternalLink href={awsTaskLink(props.task.task_definition_arn)} color={"inherit"} /></small></td>
                     </tr>
                     <tr>
                         <td></td>
@@ -622,7 +659,7 @@ const WarningMultipleTasks = (props) => {
                         <tr>
                             <td>{Char.RightArrow}</td>
                             <td>
-                                <u>{task.task_arn}</u>&nbsp;<small><ExternalLink href={awsTaskLink(task.task_arn)} color={"darkred"} /></small>
+                                <u>{task.task_definition_arn}</u>&nbsp;<small><ExternalLink href={awsTaskLink(task.task_definition_arn)} color={"darkred"} /></small>
                             </td>
                         </tr>
                         <tr>
@@ -642,7 +679,7 @@ const WarningMultipleTasks = (props) => {
 
 const WarningNoCluster = (props) => {
     return <>
-        { !props.task?.task_cluster_arn &&
+        { !props.task?.cluster_arn &&
             <div className="box bigmargin error"><small>
                 <b>Warning</b>: No cluster found.
             </small></div>
@@ -681,10 +718,10 @@ const WarningNoSecurityGroup = (props) => {
 }
 
 const TasksRunningAcrossClusters = (props) => {
-    const tasks = useFetch(`//aws/ecs/tasks_running?task_definition_arn=${props.task.task_arn}`);
+    const tasks = useFetch(`//aws/ecs/tasks_running?task_definition_arn=${props.task.task_definition_arn}`);
     const sortedTasks = tasks.data?.sort((a, b) => {
-        a = a.task_arn?.toLowerCase();
-        b = b.task_arn?.toLowerCase();
+        a = a.task_definition_arn?.toLowerCase();
+        b = b.task_definition_arn?.toLowerCase();
         return (a < b) ? -1 : ((a > b) ? 1 : 0);
     });
     return <div className="box darken">
@@ -692,8 +729,8 @@ const TasksRunningAcrossClusters = (props) => {
             <tr>
                 <td colSpan="2">
                     <i><b>Tasks running</b> across clusters for task definition:</i>
-                    <b>&nbsp;&nbsp;{props.task.task_arn}</b>
-                    &nbsp;<ExternalLink href={awsTaskLink(props.task.task_arn)} />
+                    <b>&nbsp;&nbsp;{props.task.task_definition_arn}</b>
+                    &nbsp;<ExternalLink href={awsTaskLink(props.task.task_definition_arn)} />
                     { !tasks.loading &&
                         <div style={{float: "right", verticalAlign: "top"}} className="pointer" onClick={tasks.refresh}>{Char.Refresh}</div> }
                 </td>
@@ -710,9 +747,9 @@ const TasksRunningAcrossClusters = (props) => {
                             <td style={{paddingRight: "4pt"}}>
                                 <b>Cluster</b>:
                             </td>
-                            <td style={{color: props.task.task_cluster_arn != task.cluster_arn ? "darkred" : "inherit"}}>
+                            <td style={{color: props.task.cluster_arn != task.cluster_arn ? "darkred" : "inherit"}}>
                                 <u style={{fontWeight: "bold"}}>{task.cluster_arn}</u>
-                                &nbsp;<ExternalLink href={awsClusterLink(task.cluster_arn)} color={props.task.task_cluster_arn != task.cluster_arn ? "darkred" : "inherit"}/>
+                                &nbsp;<ExternalLink href={awsClusterLink(task.cluster_arn)} color={props.task.cluster_arn != task.cluster_arn ? "darkred" : "inherit"}/>
                             </td>
                         </tr>
                         <tr style={{fontSize: "small"}}>
@@ -742,10 +779,10 @@ const TasksRunningAcrossClusters = (props) => {
 }
 
 const TasksRunning = (props) => {
-    const tasks = useFetch(`//aws/ecs/tasks_running?cluster_arn=${props.task.task_cluster_arn}`);
+    const tasks = useFetch(`//aws/ecs/tasks_running?cluster_arn=${props.task.cluster_arn}`);
     const sortedTasks = tasks.data?.sort((a, b) => {
-        a = a.task_arn?.toLowerCase();
-        b = b.task_arn?.toLowerCase();
+        a = a.task_definition_arn?.toLowerCase();
+        b = b.task_definition_arn?.toLowerCase();
         return (a < b) ? -1 : ((a > b) ? 1 : 0);
     });
     return <div className="box darken">
@@ -753,8 +790,8 @@ const TasksRunning = (props) => {
             <tr>
                 <td colSpan="2">
                     <i><b>Tasks running</b> in cluster:</i>
-                    <b>&nbsp;&nbsp;{props.task.task_cluster_arn}</b>
-                    &nbsp;<ExternalLink href={awsClusterLink(props.task.task_cluster_arn)} />
+                    <b>&nbsp;&nbsp;{props.task.cluster_arn}</b>
+                    &nbsp;<ExternalLink href={awsClusterLink(props.task.cluster_arn)} />
                     { !tasks.loading &&
                         <div style={{float: "right", verticalAlign: "top"}} className="pointer" onClick={tasks.refresh}>{Char.Refresh}</div>
                     }
@@ -772,7 +809,7 @@ const TasksRunning = (props) => {
                     }
                     <tr style={{fontSize: "small"}}>
                         <td style={{whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> <b>Task Definition</b>: </td>
-                        <td> <u style={{fontWeight: task.task_arn === props.task.task_arn ? "bold" : "inherit" }}>{task.task_arn}</u> <ExternalLink href={awsTaskLink(task.task_arn)} /></td>
+                        <td> <u style={{fontWeight: task.task_definition_arn === props.task.task_definition_arn ? "bold" : "inherit" }}>{task.task_definition_arn}</u> <ExternalLink href={awsTaskLink(task.task_definition_arn)} /></td>
                     </tr>
                     <tr style={{fontSize: "small"}}>
                         <td style={{verticalAlign: "top", whiteSpace: "nowrap", width: "1%", paddingRight: "4pt"}}> Tasks: </td>
