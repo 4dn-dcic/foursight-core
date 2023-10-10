@@ -22,6 +22,9 @@ def captured_output(capture: bool = True):
     of the with-clause with this context manager, pass False as an argument to this context manager. 
     """
 
+    if capture and "--debug" in sys.argv[1:]:
+        capture = False
+
     original_stdout = _real_stdout
     original_stderr = _real_stderr
     captured_output = io.StringIO()
