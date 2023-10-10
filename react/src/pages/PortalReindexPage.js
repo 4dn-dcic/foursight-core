@@ -53,15 +53,15 @@ function errorsExist(task) {
     return false;
 }
 
-const useTaskStatus = (task, refresh) => {
+const useTaskStatus = (task) => {
     return useFetch(`//aws/ecs/task_running/${task.cluster_arn}/${task.task_definition_arn}`, {cache: true});
 }
 
-const useTaskStatusNoCache = (task, refresh) => {
+const useTaskStatusNoCache = (task) => {
     return useFetch(`//aws/ecs/task_running/${task.cluster_arn}/${task.task_definition_arn}`);
 }
 
-const useTaskStatusLastRun = (task, refresh) => {
+const useTaskStatusLastRun = (task) => {
     return useFetch(`//aws/ecs/task_last_run/${task.cluster_arn}/${task.task_definition_arn}`);
 }
 
