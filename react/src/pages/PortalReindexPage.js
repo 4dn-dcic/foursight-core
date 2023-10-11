@@ -376,7 +376,7 @@ const RunResult = (props) => {
                 <SeparatorH color="red" />
                 {props.runResult.data.error}
             </span>:<>
-                <b>Kicked off task {Char.RightArrow}</b> <small><u>{props.runResult?.data?.task_running_id}</u></small>&nbsp;
+                <b>Kicked off {props.task.task_definition_type === "deploy" ? <>reindex</> : <>task</>} {Char.RightArrow}</b> <small><u>{props.runResult?.data?.task_running_id}</u></small>&nbsp;
                 <small><ExternalLink href={awsTaskRunningLink(props.task.cluster_arn, props.runResult?.data?.task_running_id)} /></small>
             </> }
             { showJson && <>
