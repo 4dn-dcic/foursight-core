@@ -241,7 +241,7 @@ def dict_to_keys_and_values(dictionary: dict, key_name: str = "Key", value_name:
     return result
 
 
-def longest_common_initial_substring(string_list: list) -> str:
+def find_common_prefix(string_list: list) -> str:
     """
     Returns the longest common initial substring among all of the strings in the given list.
     """

@@ -3,7 +3,7 @@ import json
 from typing import List, Optional, Tuple, Union
 import uuid
 from ...boto_s3 import boto_s3_client
-from .datetime_utils import convert_utc_datetime_to_utc_datetime_string
+from .datetime_utils import convert_datetime_to_utc_datetime_string
 
 
 def read_ingestion_submissions(bucket: str,
@@ -127,9 +127,9 @@ def read_ingestion_submissions(bucket: str,
     # Convert datatime objects to strings, here just for minor performance reason,
     # rather than doing it for all keys, just do the ones we are returning.
     for key in keys:
-        key["modified"] = convert_utc_datetime_to_utc_datetime_string(key["modified"])
+        key["modified"] = convert_datetime_to_utc_datetime_string(key["modified"])
         for file in key["files"]:
-            file["modified"] = convert_utc_datetime_to_utc_datetime_string(file["modified"])
+            file["modified"] = convert_datetime_to_utc_datetime_string(file["modified"])
 
     return {
         "paging": {

@@ -163,7 +163,7 @@ const GacComparePage = (props) => {
     let knownEnvs = Env.KnownEnvs();
 
     return <>
-        <div style={{width:"fit-content"}}>
+        <div style={{width:"fit-content",marginTop:"20pt"}}>
             <b>&nbsp;GAC Comparison</b>:&nbsp;&nbsp;
             <small>
                 { !showingRaw ? (<React.Fragment>
@@ -180,7 +180,7 @@ const GacComparePage = (props) => {
                 </span>
             </small>
             <div style={{marginBottom:"4px"}} />
-            <div id="cooked" className="boxstyle info">
+            <div id="cooked" className="box info">
                 <table width="100%">
                     <thead>
                     <tr style={{fontWeight:"bold"}}>

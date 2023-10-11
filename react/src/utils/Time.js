@@ -84,7 +84,8 @@ function FormatDuration(startDate, endDate = now(), verbose = false, fallback = 
 }
 
 function Ago(date, verbose = true, include_seconds = true) {
-    return FormatDuration(date, now(), verbose, null, null, "ago", include_seconds);
+    const result = FormatDuration(date, now(), verbose, null, null, "ago", include_seconds);
+    return result.trim() == "ago" ? "just now" : result;
 }
 
 function FromNow(date, verbose = true, include_seconds = true) {

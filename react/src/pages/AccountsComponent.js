@@ -7,6 +7,7 @@ import Char from '../utils/Char';
 import Client from '../utils/Client';
 import Clipboard from '../utils/Clipboard';
 import DateTime from '../utils/DateTime';
+import Env from '../utils/Env';
 import { ExternalLink } from '../Components';
 import Image from '../utils/Image';
 import Json from '../utils/Json';
@@ -71,7 +72,7 @@ const PortalAccessKeyStatus = ({ portalAccessKeyResponse }) => {
         }
     }
     else {
-        return <>No expiration</>
+        return <>Never expires</>
     }
 }
 
@@ -152,17 +153,19 @@ const Row = ({ title, value, additionalValue, externalLink, children, tooltip = 
     </tr>
 }
 
-const VersionRow = ({ title, version, show = true, using = null }) => {
+const VersionRow = ({ title, version, show = true, using = null, tooltip = null, children = null }) => {
     if (!show || !version) return <></>
     return <tr>
         <td style={{whiteSpace:"nowrap",paddingRight:"4pt"}}>{title}:</td>
-        <td>
+        <td id={tooltip}>
             { version ? <>
                 <b>{version}</b>
                 { using && <>
                     &nbsp;<b>{Char.Check}</b>
                 </> }
             </>:<>{Char.EmptySet}</>}
+            {children}
+            { tooltip && <Tooltip id={tooltip} text={tooltip} position="top" /> }
         </td>
     </tr>
 }
@@ -171,15 +174,16 @@ const SecretsDropdown = ({ header, account, name }) => {
     const [ showIdentity, setShowIdentity ] = useState(false);
     function toggleShowIdentity() { setShowIdentity(!showIdentity); }
     return <>
-        { isCurrentAccount(header, account) && <>
+        { isCurrentAccount(header, account) && <span id={`tooltip-gac-${name}`}>
             <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
             { showIdentity ? <>
-                <b onClick={toggleShowIdentity} className="pointer">Secrets {Char.DownArrow}</b>
+                <b onClick={toggleShowIdentity} className="pointer">GAC {Char.DownArrow}</b>
             </>:<>
-                <span onClick={toggleShowIdentity} className="pointer">Secrets <b>{Char.UpArrow}</b></span>
+                <span onClick={toggleShowIdentity} className="pointer">GAC <b>{Char.UpArrow}</b></span>
             </> }
             { showIdentity && <Secrets name={name} embedded={true} /> }
-        </> }
+        </span> }
+        <Tooltip id={`tooltip-gac-${name}`} text={`Global Application Configuration (AWS Secrets): ${name}`} position="right" shape="squared" />
     </>
 }
 
@@ -188,7 +192,11 @@ const KnownEnvsBox = ({ header, account }) => {
     return <>
         <div className="box" style={{background:"inherit",border:"1pt gray dotted",marginTop:"2pt",marginBottom:"2pt",padding:"4pt",color:"inherit"}}>
             {knownEnvs?.map(env => <span key={`${env.full_name}`}>
-                <b>{env.full_name}</b> (<span id={`tooltip-env-${env.full_name}`}>{env.public_name}</span>)<br />
+                <b>{env.full_name}</b>
+                   &nbsp;(<span id={`tooltip-env-${env.full_name}`}>{env.public_name}</span>)
+                   {Env.IsDefault(env) && <>&nbsp;{Char.RightArrow}&nbsp;Default</>}
+                   {Env.IsCurrent(env) && <>&nbsp;{Char.RightArrow}&nbsp;Current</>}
+                   <br />
                 <Tooltip id={`tooltip-env-${env.full_name}`} text={`Public name of environment.`} position="right" shape="squared" />
             </span> )}
         </div>
@@ -212,6 +220,7 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
     const [ showEcosystems, setShowEcosystems ] = useState(false);
     const [ showKnownEnvs, setShowKnownEnvs ] = useState(false);
     const [ showEnvVariables, setShowEnvVariables ] = useState(false);
+    const [ showHealth, setShowHealth ] = useState(false);
     const ecosystems = useFetch("/ecosystems", { cache: true });
     const info = useFetch("/info", { cache: true });
 
@@ -223,6 +232,7 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
     function toggleShowEcosystem() { setShowEcosystem(!showEcosystem); }
     function toggleShowEcosystems() { setShowEcosystems(!showEcosystems); }
     function toggleShowEnvVariables() { setShowEnvVariables(!showEnvVariables); }
+    function toggleShowHealth() { setShowHealth(!showHealth); }
 
     function awsIamLinkFromArn(arn) {
         const parts = arn?.split("/");
@@ -250,19 +260,26 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
         </Row>
         <Row title={account.get("foursight.package") === "foursight" ? "Fourfront" : "CGAP-Portal"} value={account.get("portal.url")} externalLink={account.get("portal.url")} small={false}>
             &nbsp;|&nbsp;
-            <small><a style={{color:"inherit"}} href={account.get("portal.health_ui_url")} rel="noreferrer" target="_blank">Health</a>&nbsp;</small>
-            <small>(<a style={{color:"inherit"}} href={account.get("portal.health_url")} rel="noreferrer" target="_blank">JSON</a>)</small>
-            &nbsp;
-            <ExternalLink
-                href={account.get("portal.health_ui_url")}
-                style={{marginLeft:"1pt"}} />
-            {account.get("portal.health.indexer") == "true" && <small title={account.get("portal.health.indexer_server")}>
-                &nbsp;| <a style={{color:"inherit"}} href={`${account.get("portal.url")}/indexing_status`} rel="noreferrer" target="_blank">Indexer</a>&nbsp;
+            <small>
+                { !showHealth ? <span id={`tooltip-health`}>
+                    <span onClick={toggleShowHealth} className="pointer">Health<b style={{marginLeft:"1px"}}>{Char.UpArrow}</b></span>
+                </span>:<span>
+                    <b onClick={toggleShowHealth} className="pointer">Health {Char.DownArrow}</b>
+                </span> }
+                <Tooltip id={`tooltip-health`} text={`Environment variable values.`} position="top" />
                 <ExternalLink
-                    href={`${account.get("portal.url")}/indexing_status?format=json`}
+                    href={account.get("portal.health_ui_url")}
+                    style={{marginLeft:"4pt"}} />
+            </small>
+
+            {account.get("portal.health.indexer") == "true" && <small title={account.get("portal.health.indexer_server")}>
+                &nbsp;| <a style={{color:"inherit"}} href={`${account.get("portal.url")}/indexing_status?format=json`} rel="noreferrer" target="_blank">Indexer</a>&nbsp;
+                <ExternalLink
+                    href={`${account.get("portal.url")}/indexing_status`}
                     style={{marginLeft:"1pt"}} />
             </small> }
             <SslCertificateLink url={account.get("portal.url")} />
+            { showHealth && <PortalHealthBox account={account} /> }
         </Row>
         <Row title="Elasticsearch" value={account.get("portal.elasticsearch")?.replace(/:443$/,"")}
              additionalValue={account.get("foursight.es_cluster")}
@@ -324,7 +341,7 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
                  </div>
             </> }
             { isCurrentAccount(header, account) && <>
-                { showEcosystems && <EcosystemsBox /> }
+                { showEcosystems && <EcosystemsBox bucket={account.get("foursight.s3.global_env_bucket")} /> }
             </> }
         </Row>
         <Row title="S3 Encryption" value={account.get("foursight.s3.has_encryption") ? "Yes" : "No"} showEmpty={true}
@@ -356,20 +373,22 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
                 </span>
                 <Tooltip id={"tooltip-aws-user-arn"} text={`Associated IAM ARN: ${info.data?.app?.credentials?.aws_user_arn}`} position="bottom" />
         </Row>
-        <Row title="Default Environment" value={account.get("foursight.default_env.full_name")} additionalValue={account.get("foursight.env_count") ? `${account.get("foursight.env_count")} total` : ""}>
+        <Row title="Environments" value={`Default: ${account.get("foursight.default_env.short_name")}`} xadditionalValue={account.get("foursight.env_count") ? `${account.get("foursight.env_count")} total` : ""}>
             { isCurrentAccount(header, account) && <>
+                &nbsp;|&nbsp;Current: {Env.Current(header)}
                 &nbsp;|&nbsp;
                 { !showKnownEnvs ? <>
-                    <span onClick={toggleShowKnownEnvs} className="pointer">Environments <b>{Char.UpArrow}</b></span>
+                    <span onClick={toggleShowKnownEnvs} className="pointer">All ({account.get("foursight.env_count")}) <b>{Char.UpArrow}</b></span>
                 </>:<>
-                    <b onClick={toggleShowKnownEnvs} className="pointer">Environments {Char.DownArrow}</b>
+                    <b onClick={toggleShowKnownEnvs} className="pointer">All ({account.get("foursight.env_count")}) {Char.DownArrow}</b>
                 </> }
                 &nbsp;|&nbsp;
-                { !showEnvVariables ? <>
+                { !showEnvVariables ? <span id={`tooltip-envvar`}>
                     <span onClick={toggleShowEnvVariables} className="pointer">Variables <b>{Char.UpArrow}</b></span>
-                </>:<>
+                </span>:<span>
                     <b onClick={toggleShowEnvVariables} className="pointer">Variables {Char.DownArrow}</b>
-                </> }
+                </span> }
+                <Tooltip id={`tooltip-envvar`} text={`Environment variable values.`} position="top" />
                 &nbsp;|&nbsp;
                 { !showEcosystem ? <>
                     { ecosystems.data?.current ?
@@ -380,8 +399,9 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
                         <b onClick={toggleShowEcosystem} className="pointer">Ecosystem: {ecosystems.data?.current?.replace(".ecosystem", "")}&nbsp;<b>{Char.DownArrow}</b></b>
                     :   <b onClick={toggleShowEcosystem} className="pointer">Ecosystem&nbsp;<b>{Char.DownArrow}</b></b> }
                 </> }
+                <ExternalLink href={`https://s3.console.aws.amazon.com/s3/object/${account.get('foursight.s3.global_env_bucket')}?region=us-east-1&prefix=${ecosystems.data?.current}`} style={{marginLeft:"4pt",position:"relative",bottom:"-1px"}} />
                 { showKnownEnvs && <> <KnownEnvsBox header={header} account={account} /> </>}
-                { showEcosystem && <EcosystemBox /> }
+                { showEcosystem && <EcosystemBox bucket={account.get("foursight.s3.global_env_bucket")} /> }
                 { showEnvVariables && <> <EnvVariablesBox header={header} account={account} /> </>}
             </> }
         </Row>
@@ -432,7 +452,7 @@ const AccountInfoRight = ({ account, header }) => {
         <VersionRow title="boto3" version={account.get("foursight.versions.boto3")} />
         <VersionRow title="botocore" version={account.get("foursight.versions.botocore")} />
         <VersionRow title="chalice" version={account.get("foursight.versions.chalice")} />
-        <VersionRow title="redis" version={account.get("foursight.versions.redis")} using={header.resources?.redis_running} />
+        <VersionRow title="redis" version={account.get("foursight.versions.redis")} using={account.get("foursight.redis_running")} />
         <VersionRow title="python" version={account.get("foursight.versions.python")} />
         <Separator />
         <VersionRow title="portal" version={account.get("portal.versions.portal")} />
@@ -445,6 +465,15 @@ const AccountInfoRight = ({ account, header }) => {
         <VersionRow title="elasticsearch" version={account.get("foursight.versions.elasticsearch")} />
         <VersionRow title="elasticsearch-dsl" version={account.get("foursight.versions.elasticsearch_dsl")} />
         <VersionRow title="redis-server" version={account.get("foursight.versions.redis_server")} />
+        { (account.get("portal.production_color") || account.get("portal.staging_color")) && <>
+            <Separator />
+            <VersionRow title="Portal Production" version={account.get("portal.production_color")} tooltip={account.get("portal.production_env.full_name")}>
+                &nbsp;&nbsp;<ExternalLink href={account.get("portal.production_url")} />
+            </VersionRow>
+            <VersionRow title="Portal Staging" version={account.get("portal.staging_color")} tooltip={account.get("portal.staging_env.full_name")}>
+                &nbsp;&nbsp;<ExternalLink href={account.get("portal.staging_url")} />
+            </VersionRow>
+        </> }
     </tbody></table>
 }
 
@@ -689,7 +718,7 @@ const EcosystemBox = () => {
     </>
 }
 
-const EcosystemsBox = () => {
+const EcosystemsBox = ({ bucket }) => {
     let ecosystems = useFetch("/ecosystems", { cache: true });
     const style={background:"inherit", border:"1pt gray dotted", marginTop:"2pt", marginBottom:"2pt", padding:"6pt", color:"inherit"};
     if (ecosystems.loading) {
@@ -708,16 +737,16 @@ const EcosystemsBox = () => {
     return <>
             { currentEcosystemData &&
                 <pre className="box" style={style} key={currentEcosystemName}>
-                    <b><u>{currentEcosystemName}</u></b>&nbsp;(<i>current</i>)<p />
+                    <b><u>{currentEcosystemName}</u></b><ExternalLink href={`https://s3.console.aws.amazon.com/s3/object/${bucket}?region=us-east-1&prefix=${currentEcosystemName}`} style={{marginLeft:"6pt"}} />&nbsp;(<i>current</i>)<p />
                     {Yaml.Format(currentEcosystemData)}
                 </pre>
             }
             { Object.keys(ecosystems.data).map((ecosystemName, index) => {
                 const ecosystemData = ecosystems.data[ecosystemName];
                 return <pre className="box" style={style} key={ecosystemName}>
-                    <b><u>{ecosystemName}</u></b><p />
+                    <b><u>{ecosystemName}</u></b><ExternalLink href={`https://s3.console.aws.amazon.com/s3/object/${bucket}?region=us-east-1&prefix=${ecosystemName}`} style={{marginLeft:"6pt"}} /><p />
                     {Yaml.Format(ecosystemData)}
-        </pre>
+                </pre>
             })}
     </>
 }
@@ -736,6 +765,12 @@ const EnvVariablesBox = () => {
                 </li>)}
             </ul>
         </> }
+    </pre>
+}
+
+const PortalHealthBox = ({ account }) => {
+    return <pre style={{fontSize:"small",background:"inherit",border:"1pt gray dotted",marginTop:"4pt",width:"524pt"}}>
+        {Yaml.Format(account?.data?.portal?.health)}
     </pre>
 }
 

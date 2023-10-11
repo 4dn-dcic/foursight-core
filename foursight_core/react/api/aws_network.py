@@ -77,7 +77,7 @@ def _filter_boto_description_list(description: dict,
         predicate_filter = lambda tag: tag and predicate.match(tag) is not None
     elif isinstance(predicate, Callable):
         predicate_filter = lambda tag: tag and predicate(tag)
-    else:
+    elif predicate is not None:
         raise Exception(f"Unknown predicate type {type(predicate)} passed to filter_boto_description.")
 
     if isinstance(description.get(name), list):

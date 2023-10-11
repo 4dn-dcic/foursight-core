@@ -30,20 +30,22 @@ class Auth:
         self._auth0_client = auth0_client
         self._auth0_secret = auth0_secret
         self._envs = envs
-        # acquired from identity or env variable locally
-        try:
-            self._redis = RedisBase(create_redis_client(
-                url=os.environ['REDIS_HOST'])
-            ) if 'REDIS_HOST' in os.environ else None
-        except redis.exceptions.ConnectionError:
-            PRINT('Cannot connect to Redis')
-            PRINT('This error is expected when deploying with remote (ElastiCache) Redis')
-            self._redis = None
+        self._redis = None
 
     def get_redis_handler(self):
         """
         Returns a handler to Redis or None if not in use
         """
+        if not self._redis:
+            # 2023-09-21: Moved this from __init__ to here;
+            # it speeds up provision/deploy from 4dn-cloud-infra.
+            try:
+                self._redis = RedisBase(create_redis_client(
+                    url=os.environ['REDIS_HOST'])
+                ) if 'REDIS_HOST' in os.environ else None
+            except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
+                PRINT('Cannot connect to Redis')
+                PRINT('This error is expected when deploying with remote (ElastiCache) Redis')
         return self._redis
 
     @classmethod

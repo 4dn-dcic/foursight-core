@@ -89,6 +89,14 @@ def route(*args, **kwargs):
     else:
         path = ROUTE_PREFIX + REACT_API_PATH_COMPONENT + path
 
+    # This "define_noenv_route" is for defining a version of the route which does not contain /{env}.
+    if "define_noenv_route" in kwargs:
+        if kwargs["define_noenv_route"] is True:
+            define_noenv_route = True
+        del kwargs["define_noenv_route"]
+    else:
+        define_noenv_route = False
+
     if path.endswith("/"):
         path = path[:-1]
     if not path.startswith("/"):
@@ -123,14 +131,19 @@ def route(*args, **kwargs):
             This is the function called on each actual route/endpoint (API) call.
             """
             try:
+                env = kwargs.get("env")
+                if env and env != "static" and app.core._envs and not app.core._envs.is_known_env(env):
+                    env = app.core.get_default_env()
                 if authorize:
                     # Note that the "env" argument in the kwargs is the environment name from the endpoint
                     # path; this does NOT have to be present in the endpoint path, BUT if it IS then it
                     # MUST be exactly named "env", otherwise we won't properly do per-env authorization.
-                    unauthorized_response = _authorize(app.current_request.to_dict(), kwargs.get("env"))
+                    unauthorized_response = _authorize(app.current_request.to_dict(), env)
                     if unauthorized_response:
                         return unauthorized_response
                 # Here we are authenticated and authorized and so we call the actual route function.
+                if define_noenv_route and not env:
+                    kwargs["env"] = app.core.get_default_env()
                 return wrapped_route_function(*args, **kwargs)
             except Exception as e:
                 # Common endpoint exception handling here.
@@ -141,6 +154,10 @@ def route(*args, **kwargs):
             kwargs["cors"] = _CORS
         PRINT(f"Registering Chalice endpoint: {' '.join(kwargs['methods'])} {path} -> {wrapped_route_function.__name__}")
         # This is the call that actually registers the Chalice route/endpoint.
+        if define_noenv_route:
+            noenv_path = path.replace("/{env}", "")
+            if noenv_path != path:
+                app.route(noenv_path, **kwargs)(route_function)
         return app.route(path, **kwargs)(route_function)
     return route_registration
 

@@ -6,6 +6,12 @@ foursight-core
 Change Log
 ----------
 
+5.0.0
+=====
+* Update to Python 3.11.
+* Minor UI updates.
+
+
 4.5.0
 =====
 * 2023-08
@@ -17,6 +23,7 @@ Change Log
     awards/labs for foursight-fourfront (previous oversight).
   * Fixed up users pages.
 * Added UI warning bar about inability to connect to ElasticSearch.
+* A few minor UI tweaks; one WRT showing ff_link (like pre-React version) for check results.
 
 
 4.4.0

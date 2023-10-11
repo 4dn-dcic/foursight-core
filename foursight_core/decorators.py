@@ -88,7 +88,7 @@ class Decorators(object):
             "github_url": get_github_url(func_package, func_file, func_line),
             "args": default_args,
             "kwargs": default_kwargs,
-            "function": func
+            "function": func.__name__
         }
         if associated_action:
             registry_record["action"] = associated_action

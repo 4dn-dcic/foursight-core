@@ -8,7 +8,7 @@ import useReadOnlyMode from './ReadOnlyMode';
 const ReadOnlyModeComponent = () => {
     const [ readOnlyMode, setReadOnlyMode ] = useReadOnlyMode();
     return <>
-        <img id={`tooltip-readonly`} alt="lock" src={readOnlyMode ? Image.Lock() : Image.Unlock()} style={{height:"35",cursor:"pointer"}} onClick={() => setReadOnlyMode(!readOnlyMode)} />
+        <img id={`tooltip-readonly`} alt="lock" src={readOnlyMode ? Image.Lock() : Image.Unlock()} style={{height:"20",cursor:"pointer"}} onClick={() => setReadOnlyMode(!readOnlyMode)} />
         <Tooltip id={`tooltip-readonly`} position="bottom" text={`You are in ${readOnlyMode ? 'readonly' : 'read/write'} mode. Click to enter ${readOnlyMode ? 'read/write' : 'readonly'} mode.`} />
     </>
 }

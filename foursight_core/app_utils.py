@@ -50,7 +50,7 @@ from .react.api.auth import Auth
 from .react.api.react_api import ReactApi
 from .react.api.datetime_utils import (
     convert_time_t_to_utc_datetime_string,
-    convert_utc_datetime_to_utc_datetime_string
+    convert_datetime_to_utc_datetime_string
 )
 from .routes import Routes
 from .route_prefixes import CHALICE_LOCAL
@@ -788,10 +788,10 @@ class AppUtilsCore(ReactApi, Routes):
                 lambda_tags = boto_lambda.list_tags(Resource=lambda_arn)["Tags"]
                 lambda_last_modified_tag = lambda_tags.get("last_modified")
                 if lambda_last_modified_tag:
-                    lambda_last_modified = convert_utc_datetime_to_utc_datetime_string(lambda_last_modified_tag)
+                    lambda_last_modified = convert_datetime_to_utc_datetime_string(lambda_last_modified_tag)
                 else:
                     lambda_last_modified = lambda_info["Configuration"]["LastModified"]
-                    lambda_last_modified = convert_utc_datetime_to_utc_datetime_string(lambda_last_modified)
+                    lambda_last_modified = convert_datetime_to_utc_datetime_string(lambda_last_modified)
                 return lambda_last_modified
         except Exception as e:
             logger.warning(f"Error getting lambda ({lambda_name}) last modified time: {e}")
@@ -868,7 +868,9 @@ class AppUtilsCore(ReactApi, Routes):
              "short_name": short_env_name(env),
              "full_name": full_env_name(env),
              "public_name": public_env_name(env) if public_env_name(env) else short_env_name(env),
-             "foursight_name": infer_foursight_from_env(envname=env)} for env in unique_environment_names]
+             "foursight_name": infer_foursight_from_env(envname=env),
+             "portal_url": self.get_portal_url(env)}
+            for env in unique_environment_names]
         return sorted(unique_annotated_environment_names, key=lambda key: key["public_name"])
 
     def view_foursight(self, request, environ, is_admin=False, domain="", context="/"):
@@ -1145,7 +1147,7 @@ class AppUtilsCore(ReactApi, Routes):
                 "first_name": user_record.get("first_name"),
                 "last_name": user_record.get("last_name"),
                 "uuid": user_record.get("uuid"),
-                "modified": convert_utc_datetime_to_utc_datetime_string(last_modified)})
+                "modified": convert_datetime_to_utc_datetime_string(last_modified)})
         users = sorted(users, key=lambda key: key["email_address"])
         template = self.jin_env.get_template('users.html')
         html_resp.body = template.render(

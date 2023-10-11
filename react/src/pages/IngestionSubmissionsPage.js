@@ -1,3 +1,4 @@
+import React from 'react';
 import Char from '../utils/Char';
 import DateTime from '../utils/DateTime';
 import { ExternalLink } from '../Components';
@@ -161,7 +162,9 @@ const IngestionSubmissionPage = (props) => {
             data={submissions}
             initialSort={"modified.desc"}>
             { submissions.map("list", (data, index) => (
-                <IngestionSubmissionRow data={data} bucket={bucket} columns={columns}
+                <IngestionSubmissionRow
+                    key={index}
+                    data={data} bucket={bucket} columns={columns}
                     rowIndex={index} offset={parseInt(args.get("offset"))}
                     isExpanded={isExpanded} toggleExpanded={toggleExpanded}
                     header={header} />
@@ -199,7 +202,7 @@ const IngestionSubmissionRow = ({ data, bucket, columns, rowIndex, offset, isExp
 
     return <>
         <tr>
-            { columns.map((column, index) => <td style={tdstyle(column)}>
+            { columns.map((column, index) => <td key={index} style={tdstyle(column)}>
                 <span onClick={() => toggleExpanded(rowIndex)} className="pointer">
                     {value(data, column)}
                 </span>
@@ -299,8 +302,7 @@ const FileInfoRow = ({ data, uuid, bucket, manifest, traceback, loading, prestyl
     }
 
     return <>
-        <table style={{width:"100%"}}><tr>
-        <td valign="top" style={{paddingLeft:"4pt"}}>
+        <table style={{width:"100%"}}><tbody><tr><td valign="top" style={{paddingLeft:"4pt", whiteSpace:"nowrap"}}>
             <div>
                 <b>Info</b> / <b>Files</b>
                 <small style={{float:"right"}}>
@@ -310,72 +312,91 @@ const FileInfoRow = ({ data, uuid, bucket, manifest, traceback, loading, prestyl
             </div>
             <pre style={{...prestyle}}>
                 { loading() ? <StandardSpinner condition={loading()} label={"Loading"} style={{paddingBottom:"4pt"}} /> : <>
-                    <table style={{width:"100%",fontSize:"inherit"}}><tr><td valign="top" width="2%" nowrap="1">
-                        <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Submitter:</td><td><b>{manifest.data?.manifest?.email}</b></td></tr>
-                        <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Upload Time:</td><td><b>{DateTime.Format(manifest.data?.manifest?.upload_time)}</b></td></tr>
-                        <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Source File:</td><td><b>{manifest.data?.manifest?.filename}</b></td></tr>
-                        { dataExists() && <>
-                            <tr>
-                                <td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}> Target Bucket:</td>
-                                <td>{dataBucket()}
-                                    <ExternalLink href={awsLink(dataBucket())} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Target UUID:</td>
-                                <td>{dataUuid()}
-                                    <ExternalLink href={awsLink(dataBucket(), dataUuid())} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Target File:</td>
-                                <td>{dataPath()}
-                                    <ExternalLink href={awsLink(dataBucket(), dataUuid(), dataPath())} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
-                                </td>
-                            </tr>
-                        </>}
-                        { manifest.data?.manifest?.parameters?.consortium && 
-                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Consortium:</td><td>{manifest.data?.manifest?.parameters.consortium}</td></tr>
-                        }
-                        { manifest.data?.manifest?.parameters?.submission_center && 
-                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Submission Center:</td><td>{manifest.data?.manifest?.parameters.submission_center}</td></tr>
-                        }
-                        { manifest.data?.manifest?.parameters?.project && 
-                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Project:</td><td>{manifest.data?.manifest?.parameters.project}</td></tr>
-                        }
-                        { manifest.data?.manifest?.parameters?.institution && 
-                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Institution:</td><td>{manifest.data?.manifest?.parameters.institution}</td></tr>
-                        }
-                        { manifest.data?.manifest?.parameters?.award && 
-                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Award:</td><td>{manifest.data?.manifest?.parameters.award}</td></tr>
-                        }
-                        { manifest.data?.manifest?.parameters?.lab && 
-                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Lab:</td><td>{manifest.data?.manifest?.parameters.lab}</td></tr>
-                        }
-                        { validateOnly() &&
-                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Validate Only:</td><td><b>{validateOnly() ? "Yes" : "No"}</b></td></tr>
-                        }
-                        { hasExceptions() &&
-                            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Exceptions:</td><td><b style={{color:"red"}}>{hasExceptions() ? "Yes" : "No"} <big>{Char.X}</big></b></td></tr>
-
-                        }
-                    </td>
-                    <td width="12pt"></td>
-                    <td style={{background:"var(--box-fg)", width:"1px"}}></td>
-                    <td width="12pt"></td>
-                    <td valign="top">
-                    <table style={{width:"100%",fontSize:"inherit"}}>
-                        <div style={{marginBottom:"4pt"}}><u><b>Ingestion Files</b></u>
-                            <ExternalLink href={awsLink(bucket, uuid)} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
-                        </div>
-                        { data.files.map((file, index) => <>
-                            {index > 0 && <br />}
-                            {file.file} ({formatFileSize(file.size)})<ExternalLink href={awsLink(bucket, uuid, file.file)} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
-                        </>)}
-                    </table></td></tr></table>
+                    <table style={{width:"100%",fontSize:"inherit"}}><tbody><tr>
+                        <td style={{whiteSpace:"nowrap",width:"10%"}} valign="top">
+                            <FileInfoRowLeft
+                                dataBucket={dataBucket}
+                                dataUuid={dataUuid}
+                                dataPath={dataPath}
+                                dataExists={dataExists}
+                                validateOnly={validateOnly}
+                                hasExceptions={hasExceptions}
+                                manifest={manifest} />
+                        </td>
+                        <td style={{whiteSpace: "nowrap", width: "12pt"}}></td>
+                        <td style={{whiteSpace: "nowrap", width: "1px", background: "var(--box-fg)"}}></td>
+                        <td style={{whiteSpace: "nowrap", width: "12pt"}}></td>
+                        <td valign="top">
+                            <FileInfoRowRight bucket={bucket} uuid={uuid} data={data} />
+                        </td>
+                    </tr></tbody></table>
                 </> }
             </pre>
-        </td></tr></table>
+        </td></tr></tbody></table>
+    </>
+}
+
+const FileInfoRowLeft = ({ dataBucket, dataUuid, dataPath, dataExists, validateOnly, hasExceptions, manifest }) => {
+    return <table style={{width:"100%",fontSize:"inherit"}}><tbody>
+        <tr><td style={{whiteSpace:"nowrap",paddingRight:"8pt"}}>Submitter:</td><td style={{whiteSpace:"nowrap"}}><b>{manifest.data?.manifest?.email}</b></td></tr>
+        <tr><td style={{whiteSpace:"nowrap",paddingRight:"8pt"}}>Upload Time:</td><td style={{whiteSpace:"nowrap"}}><b>{DateTime.Format(manifest.data?.manifest?.upload_time)}</b></td></tr>
+        <tr><td style={{whiteSpace:"nowrap",paddingRight:"8pt"}}>Source File:</td><td style={{whiteSpace:"nowrap"}}><b>{manifest.data?.manifest?.filename}</b></td></tr>
+        { dataExists() && <>
+            <tr>
+                <td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}> Target Bucket:</td>
+                <td style={{whiteSpace:"nowrap"}}>{dataBucket()}
+                    <ExternalLink href={awsLink(dataBucket())} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
+                </td>
+            </tr>
+            <tr>
+                <td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Target UUID:</td>
+                <td style={{whiteSpace:"nowrap"}}>{dataUuid()}
+                    <ExternalLink href={awsLink(dataBucket(), dataUuid())} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
+                </td>
+            </tr>
+            <tr>
+                <td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Target File:</td>
+                <td style={{whiteSpace:"nowrap"}}>{dataPath()}
+                    <ExternalLink href={awsLink(dataBucket(), dataUuid(), dataPath())} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
+                </td>
+            </tr>
+        </>}
+        { manifest.data?.manifest?.parameters?.consortium &&
+            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Consortium:</td><td style={{whiteSpace:"nowrap"}}>{manifest.data?.manifest?.parameters.consortium}</td></tr>
+        }
+        { manifest.data?.manifest?.parameters?.submission_center &&
+            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Submission Center:</td><td style={{whiteSpace:"nowrap"}}>{manifest.data?.manifest?.parameters.submission_center}</td></tr>
+        }
+        { manifest.data?.manifest?.parameters?.project &&
+            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Project:</td><td style={{whiteSpace:"nowrap"}}>{manifest.data?.manifest?.parameters.project}</td></tr>
+        }
+        { manifest.data?.manifest?.parameters?.institution &&
+            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Institution:</td><td style={{whiteSpace:"nowrap"}}>{manifest.data?.manifest?.parameters.institution}</td></tr>
+        }
+        { manifest.data?.manifest?.parameters?.award &&
+            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Award:</td><td style={{whiteSpace:"nowrap"}}>{manifest.data?.manifest?.parameters.award}</td></tr>
+        }
+        { manifest.data?.manifest?.parameters?.lab &&
+            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Lab:</td><td style={{whiteSpace:"nowrap"}}>{manifest.data?.manifest?.parameters.lab}</td></tr>
+        }
+        { validateOnly() &&
+            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Validate Only:</td><td style={{whiteSpace:"nowrap"}}><b>{validateOnly() ? "Yes" : "No"}</b></td></tr>
+        }
+        { hasExceptions() &&
+            <tr><td style={{whiteSpace:"nowrap",width:"2%",paddingRight:"8pt"}}>Exceptions:</td><td style={{whiteSpace:"nowrap"}}><b style={{color:"red"}}>{hasExceptions() ? "Yes" : "No"} <big>{Char.X}</big></b></td></tr>
+        }
+    </tbody></table>
+}
+
+const FileInfoRowRight = ({ bucket, uuid, data }) => {
+    return <>
+        <div style={{marginBottom:"4pt"}}><u><b>Ingestion Files</b></u>
+            <ExternalLink href={awsLink(bucket, uuid)} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
+        </div>
+        { data.files.map((file, index) => <React.Fragment key={index}>
+            {index > 0 && <br />}
+            {file.file} ({formatFileSize(file.size)})<ExternalLink href={awsLink(bucket, uuid, file.file)} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
+        </React.Fragment>)}
     </>
 }
 
@@ -387,7 +408,7 @@ const SummaryRow = ({ summary, uuid, bucket, prestyle }) => {
             <ExternalLink href={awsDataLink(bucket, uuid, summary.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{summary.data?.file}</i></small><br />
             <pre style={prestyle}>
                 { showSummary ? <>
-                    { summary?.data?.summary?.map((item, index) => <>{index > 0 && <br />}{item.trim()}</>)}
+                    { summary?.data?.summary?.map((item, index) => <React.Fragment key={index}>{index > 0 && <br />}{item.trim()}</React.Fragment>)}
                 </>:<>
                     <span onClick={toggleSummary} className="pointer">Click to show ...</span>
                 </>}

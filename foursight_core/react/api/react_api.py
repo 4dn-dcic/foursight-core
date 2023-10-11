@@ -42,7 +42,7 @@ from .cognito import get_cognito_oauth_config, handle_cognito_oauth_callback
 from .cookie_utils import create_delete_cookie_string, read_cookie, read_cookie_bool, read_cookie_int
 from .datetime_utils import (
     convert_uptime_to_datetime,
-    convert_utc_datetime_to_utc_datetime_string
+    convert_datetime_to_utc_datetime_string
 )
 from .encoding_utils import base64_decode_to_json
 from .gac import Gac
@@ -58,9 +58,9 @@ from .ingestion_utils import (
     read_ingestion_submission_validation_report
 )
 from .misc_utils import (
+    find_common_prefix,
     get_base_url,
     is_running_locally,
-    longest_common_initial_substring,
     name_value_list_to_dict,
     sort_dictionary_by_case_insensitive_keys
 )
@@ -419,7 +419,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 if data_portal["ssl_certificate"]:
                     data_portal["ssl_certificate"]["name"] = "Portal"
                     data_portal["ssl_certificate"]["exception"] = e
-        data["timestamp"] = convert_utc_datetime_to_utc_datetime_string(datetime.datetime.utcnow())
+        data["timestamp"] = convert_datetime_to_utc_datetime_string(datetime.datetime.utcnow())
         data["timezone"] = tzlocal.get_localzone_name()
         test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
         if auth.get("user_exception"):  # or test_mode_access_key_simulate_error:
@@ -477,7 +477,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "portal": {
                 "url": portal_url,
                 "health_url": portal_base_url + "/health?format=json",
-                "health_ui_url": portal_base_url + "/health"
+                "health_ui_url": portal_base_url + "/health",
             },
             "resources": {
                 "es": app.core.host,
@@ -498,6 +498,16 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 "buckets": self._get_known_buckets()
             }
         }
+        portal_production_color, portal_production_env = self._envs.get_production_color()
+        portal_staging_color, portal_staging_env = self._envs.get_staging_color()
+        if portal_production_color:
+            response["portal"]["production_color"] = portal_production_color
+            response["portal"]["production_env"] = portal_production_env
+            response["portal"]["production_url"] = app.core.get_portal_url(portal_production_env.get("full_name"))
+        if portal_staging_color:
+            response["portal"]["staging_color"] = portal_staging_color
+            response["portal"]["staging_env"] = portal_staging_env
+            response["portal"]["staging_url"] = app.core.get_portal_url(portal_staging_env.get("full_name"))
         if os.environ.get("S3_ENCRYPT_KEY"):
             response["s3"]["has_encryption"] = True
         return response
@@ -729,8 +739,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
             "groups": user.get("groups"),
             "roles": user.get("project_roles"),
             "status": user.get("status"),
-            "updated": convert_utc_datetime_to_utc_datetime_string(updated),
-            "created": convert_utc_datetime_to_utc_datetime_string(user.get("date_created"))
+            "updated": convert_datetime_to_utc_datetime_string(updated),
+            "created": convert_datetime_to_utc_datetime_string(user.get("date_created"))
         }
         institution = user.get("user_institution")
         project = user.get("project")
@@ -1160,7 +1170,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if check_results.get("action"):
             check_results["action_title"] = " ".join(check_results["action"].split("_")).title()
         check_datetime = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-        check_datetime = convert_utc_datetime_to_utc_datetime_string(check_datetime)
+        check_datetime = convert_datetime_to_utc_datetime_string(check_datetime)
         check_results["timestamp"] = check_datetime
         return self.create_success_response(check_results)
 
@@ -1254,7 +1264,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                         break
                 if uuid:
                     timestamp = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-                    timestamp = convert_utc_datetime_to_utc_datetime_string(timestamp)
+                    timestamp = convert_datetime_to_utc_datetime_string(timestamp)
                     results.append({
                         "check": check_name,
                         "title": check_title,
@@ -1299,7 +1309,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                     uuid = subitem.get("uuid")
                     if uuid:
                         timestamp = datetime.datetime.strptime(uuid, "%Y-%m-%dT%H:%M:%S.%f")
-                        timestamp = convert_utc_datetime_to_utc_datetime_string(timestamp)
+                        timestamp = convert_datetime_to_utc_datetime_string(timestamp)
                         subitem["timestamp"] = timestamp
         body = {
             "env": env,
@@ -1555,7 +1565,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
             return True
 
         def get_foursight_info(foursight_url: str, response: dict) -> Optional[str]:
-            response["foursight"] = {}
+            if not response.get("foursight"):
+                response["foursight"] = {}
+            if not response.get("portal"):
+                response["portal"] = {}
             if not foursight_url:
                 return None
             response["foursight"]["url"] = get_foursight_base_url(foursight_url)
@@ -1586,6 +1599,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             response["foursight"]["rds"] = foursight_header_json.get("resources", {}).get("rds")
             response["foursight"]["rds_name"] = foursight_header_json.get("resources", {}).get("rds_name")
             response["foursight"]["sqs_url"] = foursight_header_json.get("resources", {}).get("sqs")
+            response["foursight"]["redis_running"] = foursight_header_json.get("resources", {}).get("redis_running")
             foursight_header_json_s3 = foursight_header_json.get("s3")
             # TODO: Maybe eventually make separate API call (to get Portal Access Key info for any account)
             # so that we do not have to wait here within this API call for this synchronous API call.
@@ -1616,10 +1630,19 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 return None
             portal_url = get_portal_base_url(foursight_header_json_portal.get("url"))
             response["foursight"]["portal_url"] = portal_url
+            if foursight_header_json_portal.get("production_color"):
+                response["portal"]["production_color"] = foursight_header_json_portal["production_color"]
+                response["portal"]["production_env"] = foursight_header_json_portal["production_env"]
+                response["portal"]["production_url"] = foursight_header_json_portal["production_url"]
+            if foursight_header_json_portal.get("staging_color"):
+                response["portal"]["staging_color"] = foursight_header_json_portal["staging_color"]
+                response["portal"]["staging_env"] = foursight_header_json_portal["staging_env"]
+                response["portal"]["staging_url"] = foursight_header_json_portal["staging_url"]
             return portal_url
 
         def get_portal_info(portal_url: str, response: dict) -> Optional[str]:
-            response["portal"] = {}
+            if not response.get("portal"):
+                response["portal"] = {}
             if not portal_url:
                 return None
             response["portal"]["url"] = get_portal_base_url(portal_url)
@@ -1639,7 +1662,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             }
             portal_uptime = portal_health_json.get("uptime")
             portal_started = convert_uptime_to_datetime(portal_uptime)
-            response["portal"]["started"] = convert_utc_datetime_to_utc_datetime_string(portal_started)
+            response["portal"]["started"] = convert_datetime_to_utc_datetime_string(portal_started)
             response["portal"]["identity"] = portal_health_json.get("identity")
             response["portal"]["elasticsearch"] = portal_health_json.get("elasticsearch")
             response["portal"]["database"] = portal_health_json.get("database")
@@ -1859,8 +1882,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
         ecs = ECSUtils()
         clusters = ecs.list_ecs_clusters()
         clusters = [{"cluster_name": ecs_cluster_arn_to_name(arn), "cluster_arn": arn} for arn in clusters]
-        clusters = sorted(clusters, key=lambda item: item["cluster_name"])
-        return self.create_success_response(clusters)
+        return sorted(clusters, key=lambda item: item["cluster_name"])
 
     def reactapi_aws_ecs_cluster(self, cluster_arn: str) -> Response:
         # Given cluster_name may actually be either a cluster name or its ARN,
@@ -1901,8 +1923,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                                "expected": deployment.get("desiredCount")},
                     "rollout": {"state": deployment.get("rolloutState"),
                                 "reason": deployment.get("rolloutStateReason")},
-                    "created": convert_utc_datetime_to_utc_datetime_string(deployment.get("createdAt")),
-                    "updated": convert_utc_datetime_to_utc_datetime_string(deployment.get("updatedAt"))
+                    "created": convert_datetime_to_utc_datetime_string(deployment.get("createdAt")),
+                    "updated": convert_datetime_to_utc_datetime_string(deployment.get("updatedAt"))
                 }
                 if deployment_status and deployment_status.upper() == "PRIMARY":
                     deployments.insert(0, deployment_info)
@@ -1912,7 +1934,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                                                   and most_recent_update_at > most_recent_deployment_at)):
                 most_recent_deployment_at = most_recent_update_at
             if len(deployments) > 1:
-                task_name_common_prefix = longest_common_initial_substring(
+                task_name_common_prefix = find_common_prefix(
                         [deployment["task_name"] for deployment in deployments])
                 if task_name_common_prefix:
                     for deployment in deployments:
@@ -1928,30 +1950,29 @@ class ReactApi(ReactApiBase, ReactRoutes):
             })
         if len(response["services"]) > 1:
             service_name_common_prefix = (
-                longest_common_initial_substring([service["service_name"] for service in response["services"]]))
+                find_common_prefix([service["service_name"] for service in response["services"]]))
             if service_name_common_prefix:
                 for service in response["services"]:
                     service["service_display_name"] = service["service_name"][len(service_name_common_prefix):]
             task_name_common_prefix = (
-                longest_common_initial_substring([service["task_name"] for service in response["services"]]))
+                find_common_prefix([service["task_name"] for service in response["services"]]))
             if task_name_common_prefix:
                 for service in response["services"]:
                     service["task_display_name"] = service["task_name"][len(task_name_common_prefix):]
 
         if most_recent_deployment_at:
-            response["most_recent_deployment_at"] = convert_utc_datetime_to_utc_datetime_string(
+            response["most_recent_deployment_at"] = convert_datetime_to_utc_datetime_string(
                     most_recent_deployment_at)
         return self.create_success_response(response)
 
     def reactapi_aws_ecs_task_arns(self, latest: bool = True) -> Response:
         # If latest is True then only looks for the non-revisioned task ARNs.
         ecs = boto3.client('ecs')
-        task_definition_arns = ecs.list_task_definitions()['taskDefinitionArns']  # TODO: ecs_utils.list_ecs_tasks
+        task_arns = ecs.list_task_definitions()['taskDefinitionArns']  # TODO: ecs_utils.list_ecs_tasks
         if latest:
-            task_definition_arns = list(set([self._ecs_task_definition_arn_to_name(task_definition_arn)
-                                             for task_definition_arn in task_definition_arns]))
-        task_definition_arns.sort()
-        return task_definition_arns
+            task_arns = list(set([self._ecs_task_definition_arn_to_name(task_arn) for task_arn in task_arns]))
+        task_arns.sort()
+        return task_arns
 
     def reactapi_aws_ecs_tasks(self, latest: bool = True) -> Response:
         task_definitions = []
@@ -2059,12 +2080,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
             urllib.parse.unquote(args.get("sort", "modified.desc") if args else "modified.desc")))
 
     def reactapi_ingestion_submission_summary(self, request: dict, env: str,
-                                      uuid: str, args: Optional[dict] = None) -> Response:
+                                              uuid: str, args: Optional[dict] = None) -> Response:
         return self.create_success_response(
             read_ingestion_submission_summary(self._get_metadata_bundles_bucket(env, args), uuid))
 
     def reactapi_ingestion_submission_detail(self, request: dict, env: str,
-                                      uuid: str, args: Optional[dict] = None) -> Response:
+                                             uuid: str, args: Optional[dict] = None) -> Response:
         return self.create_success_response(
             read_ingestion_submission_detail(self._get_metadata_bundles_bucket(env, args), uuid))
 
