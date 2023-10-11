@@ -247,7 +247,7 @@ def find_common_prefix(string_list: list) -> str:
     """
     if not string_list:
         return ""
-    min_length = min(len(s) for s in string_list)
+    min_length = min(len(s) if s else 0 for s in string_list)
     for i in range(min_length):
         if any(string_list[j][i] != string_list[0][i] for j in range(1, len(string_list))):
             return string_list[0][:i]
