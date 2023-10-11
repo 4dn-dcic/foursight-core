@@ -22,7 +22,9 @@ def local_check_execution(app_utils):
     args = parse_args()
 
     if args.list:
-        list_checks(app_utils, args.list)
+        list_checks(app_utils, args.list,
+                    with_action=args.action,
+                    verbose=args.verbose)
     else:
         run_check_and_or_action(app_utils, args)
 
@@ -59,22 +61,35 @@ def parse_args():
         exit(1)
 
     if not args.env:
-        print("An AWS environment name is required; use the --env option.")
         env = guess_env()
         if env:
+            print(f"An AWS environment name is required via the --env option; guessing it is: {env}")
             confirm_interactively(f"Do you want to use this AWS environment name: {env}?", exit_if_no=True)
             args.env = env
         else:
+            print("An AWS environment name is required; use the --env option.")
             exit_with_no_action()
 
     return args
 
 
-def list_checks(app_utils, text: str) -> None:
+def list_checks(app_utils, text: str, with_action: bool = False, verbose: bool = False) -> None:
     with captured_output() as captured:
         checks = app_utils.check_handler.get_checks_info(text if text != "all" else None)
         for check in checks:
+            if with_action and not check.associated_action:
+                continue
             captured.uncaptured_print(check.qualified_name)
+            if verbose:
+                if check.kwargs:
+                    for arg_name in check.kwargs:
+                        arg_value_default = check.kwargs.get(arg_name)
+                        if arg_value_default:
+                            captured.uncaptured_print(f"- argument: {arg_name} [default: {arg_value_default}]")
+                        else:
+                            captured.uncaptured_print(f"- argument: {arg_name}")
+                if check.associated_action:
+                    captured.uncaptured_print(f"- action: {check.associated_action}")
 
 
 def run_check_and_or_action(app_utils, args) -> None:
