@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+5.1.0
+=====
+* New tasks page (initially to kick off Portal reindex).
+
+
 5.0.0
 =====
 * Update to Python 3.11.
