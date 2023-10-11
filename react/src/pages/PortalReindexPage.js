@@ -608,18 +608,20 @@ const TaskStatusLine = (props) => {
             <span style={{position: "relative", top: "2px"}}>&nbsp;<PuffSpinnerInline size="18" /></span>
         </> : <span className="pointer" onClick={onRefresh}>
             <b>Task Status</b>:&nbsp;
-            <span onClick={toggleShowRunningTasks}>
+            <span onClick={toggleShowRunningTasks} id={`tooltip-taskstatus-${props.task?.task_definition_arn}`}>
                 {running.data?.task_running ? <>
                     <b style={{color: "red"}}>Running<small>&nbsp;</small>{props.showRunningTasks ? Char.DownArrow : Char.UpArrow}</b>
                 </>:<>
                     <b style={{color: "blue"}}>Idle<small>&nbsp;</small>{props.showRunningTasks ? Char.DownArrow : Char.UpArrow}</b>
                 </> }
+                <Tooltip id={`tooltip-taskstatus-${props.task?.task_definition_arn}`} position="top" size="small" text={`Click to ${props.showRunningTasks ? "hide" : "show"} more on running tasks.`} />
             </span>
             { ran.data?.task_last_ran_at && <span id={`tooltip-last-run-time-${props.task?.task_definition_arn}`}>
                 &nbsp;<b>|</b>&nbsp;<b>Approximate Last Run Time</b>: {DateTime.Format(ran.data?.task_last_ran_at)}
                 <Tooltip id={`tooltip-last-run-time-${props.task?.task_definition_arn}`} position="top" size="small" text={`Based on last portal access key (${ran.data?.portal_access_key}) update.`}/>
             </span> }
-            &nbsp;<b>|</b>&nbsp;<b>Refresh</b>&nbsp;<b style={{position: "relative", top: "1px"}}>{Char.Refresh}</b>
+            <span id={`tooltip-refresh-${props.task?.task_definition_arn}`} >&nbsp;<b>|</b>&nbsp;<b>Refresh</b>&nbsp;<b style={{position: "relative", top: "1px"}}>{Char.Refresh}</b></span>
+            <Tooltip id={`tooltip-refresh-${props.task?.task_definition_arn}`} position="top" size="small" text="Click to refresh task status." />
             { running.data?.other_cluster && <>
                 <div className="box error" style={{color: "darkred", fontSize: "small", marginTop: "6pt"}} id={`tooltip-other-cluster-${props.task?.task_definition_arn}`}>
                     <b>Warning</b>: Task running in different cluster <b>{Char.RightArrow} {running.data?.cluster_arn}</b>

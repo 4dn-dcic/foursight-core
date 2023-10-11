@@ -480,8 +480,8 @@ const AccountInfoRight = ({ account, header }) => {
 export const AccountInfoCurrent = ({ bg = null, top = null }) => {
     const header = useHeader();
     const account = {
-        id: "current",
-        name: "current",
+        id: Server.IsLocal() ? "localhost" : "current",
+        name: Server.IsLocal() ? "localhost" : "current",
         stage: header.app?.stage
     }
     return <AccountInfo account={account} header={header} decrementAccountCount={() => {}} all={true} bg={bg} brighten={true} top={top} />
