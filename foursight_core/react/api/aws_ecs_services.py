@@ -3,9 +3,10 @@ from functools import lru_cache
 import re
 from typing import Optional, Tuple
 from .aws_ecs_tasks import _get_task_definition_type, _shorten_arn, _shorten_task_definition_arn
+from .envs import Envs
 
 
-def get_aws_ecs_services_for_update(cluster_arn: str, args: Optional[dict] = None) -> list[dict]:
+def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional[dict] = None) -> list[dict]:
 
     # Cache build info result just within this function,
     # i.e. for the purposes of the below services loop.
@@ -22,6 +23,7 @@ def get_aws_ecs_services_for_update(cluster_arn: str, args: Optional[dict] = Non
     sanity_checked = True
     previous_service = None
     for service in services:
+        service["env"] = envs.get_associated_env(service["task_definition_arn"])
         if sanity_check:
             log_group = service["build"].get("log_group")
             log_stream = service["build"].get("log_stream")
@@ -68,6 +70,7 @@ def get_aws_ecs_services_for_update_raw(cluster_arn: str) -> list[dict]:
                 "task_definition_arn": task_definition_arn,
                 "container_name": container_name,
                 "container_type": _get_container_type(container_name),
+                "has_multiple_containers": has_multiple_containers,
                 "image": {
                     "arn": image_arn,
                     "repo": image_repo,
