@@ -21,9 +21,11 @@ def get_aws_ecs_services_for_update(cluster_arn: str, args: Optional[dict] = Non
     previous_service = None
     for service in services:
         if sanity_check:
-            service["build"]["digest"] = get_build_digest(service["build"].get("log_group"), service["build"].get("log_stream"))
-        if service["build"].get("digest") != service["image"].get("digest"):
-            sanity_checked = False
+            log_group = service["build"].get("log_group")
+            log_stream = service["build"].get("log_stream")
+            service["build"]["digest"] = get_build_digest(log_group, log_stream)
+            if service["build"].get("digest") != service["image"].get("digest"):
+                sanity_checked = False
         if previous_service:
             if previous_service["build"] != service["build"] or previous_service["image"] != service["image"]:
                 builds_and_images_identical = False
