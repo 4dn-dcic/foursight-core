@@ -7,6 +7,8 @@ from .aws_ecs_tasks import _get_task_definition_type, _shorten_arn, _shorten_tas
 
 def get_aws_ecs_services_for_update(cluster_arn: str, args: Optional[dict] = None) -> list[dict]:
 
+    # Cache build info result just within this function,
+    # i.e. for the purposes of the below services loop.
     @lru_cache
     def get_build_digest(log_group: str, log_stream: str) -> Optional[str]:
         return get_aws_codebuild_digest(log_group, log_stream)
@@ -100,6 +102,7 @@ def get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
                     "github": most_recent_build.get("source", {}).get("location"),
                     "branch": most_recent_build["sourceVersion"],
                     "commit": most_recent_build["resolvedSourceVersion"],
+                    "who": most_recent_build["initiator"],
                     "log_group": most_recent_build["logs"]["groupName"],
                     "log_stream": most_recent_build["logs"]["streamName"]
                 }
