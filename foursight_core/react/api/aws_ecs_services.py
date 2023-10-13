@@ -121,10 +121,29 @@ def get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
         value = [item["value"] for item in environment_variables if item["name"] == name]
         return value[0] if len(value) == 1 else None
 
+    def create_record(build: dict) -> dict:
+        return {
+            "arn": _shorten_arn(build["arn"]),
+            "project": project,
+            "github": build.get("source", {}).get("location"),
+            "branch": build["sourceVersion"],
+            "commit": build["resolvedSourceVersion"],
+            "number": build["buildNumber"],
+            "initiator": _shorten_arn(build["initiator"]),
+            "status": build["buildStatus"],
+            "success": build["buildStatus"].lower() == "SUCCEEDED" or build["buildStatus"].lower() == "SUCCESS",
+            "finished": build["buildComplete"],
+            "started_at": datetime_string(build.get("startTime")),
+            "finished_at": datetime_string(build.get("endTime")),
+            "log_group": build["logs"]["groupName"],
+            "log_stream": build["logs"]["streamName"]
+        }
+
     codebuild = boto3.client("codebuild")
     projects =  codebuild.list_projects()["projects"]
     for project in projects:
         builds = codebuild.list_builds_for_project(projectName=project, sortOrder="DESCENDING")["ids"]
+        second_most_recent_build = None
         if len(builds) > 0:
             most_recent_build_id = builds[0]
             most_recent_build = codebuild.batch_get_builds(ids=[most_recent_build_id])["builds"][0]
@@ -132,22 +151,7 @@ def get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
             most_recent_build_image_repo = find_environment_variable(environment_variables, "IMAGE_REPO_NAME")
             most_recent_build_image_tag = find_environment_variable(environment_variables, "IMAGE_TAG")
             if most_recent_build_image_repo == image_repo and most_recent_build_image_tag == image_tag:
-                return {
-                    "arn": _shorten_arn(most_recent_build["arn"]),
-                    "project": project,
-                    "github": most_recent_build.get("source", {}).get("location"),
-                    "branch": most_recent_build["sourceVersion"],
-                    "commit": most_recent_build["resolvedSourceVersion"],
-                    "number": most_recent_build["buildNumber"],
-                    "initiator": _shorten_arn(most_recent_build["initiator"]),
-                    "status": most_recent_build["buildStatus"],
-                    "success": most_recent_build["buildStatus"] == "SUCCEEDED",
-                    "finished": most_recent_build["buildComplete"],
-                    "started_at": datetime_string(most_recent_build.get("startTime")),
-                    "finished_at": datetime_string(most_recent_build.get("endTime")),
-                    "log_group": most_recent_build["logs"]["groupName"],
-                    "log_stream": most_recent_build["logs"]["streamName"]
-                }
+                return create_record(most_recent_build)
 
 
 def get_aws_codebuild_digest(log_group: str, log_stream: str) -> Optional[str]:
