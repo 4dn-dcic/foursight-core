@@ -143,7 +143,6 @@ def get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
     projects =  codebuild.list_projects()["projects"]
     for project in projects:
         builds = codebuild.list_builds_for_project(projectName=project, sortOrder="DESCENDING")["ids"]
-        second_most_recent_build = None
         if len(builds) > 0:
             most_recent_build_id = builds[0]
             most_recent_build = codebuild.batch_get_builds(ids=[most_recent_build_id])["builds"][0]
