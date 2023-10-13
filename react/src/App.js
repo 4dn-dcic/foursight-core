@@ -25,6 +25,7 @@ import RedirectPage from './pages/RedirectPage';
 import SslCertificatesPage from './pages/SslCertificatesPage';
 import PortalAccessKeyPage from './pages/PortalAccessKeyPage';
 import PortalReindexPage from './pages/PortalReindexPage';
+import PortalRedeployPage from './pages/PortalRedeployPage';
 import UserPage from './pages/UserPage';
 import UserCreatePage from './pages/UserCreatePage';
 import UserEditPage from './pages/UserEditPage';
@@ -153,6 +154,11 @@ const App = () => {
                     <Route path="/api/react/:environ/portal/reindex" element={
                         <Page.AuthorizationRequired>
                             <PortalReindexPage />
+                        </Page.AuthorizationRequired>
+                    }/>
+                    <Route path="/api/react/:environ/portal/redeploy" element={
+                        <Page.AuthorizationRequired>
+                            <PortalRedeployPage />
                         </Page.AuthorizationRequired>
                     }/>
                     <Route path="/api/react/:environ/ingestion/submissions" element={
