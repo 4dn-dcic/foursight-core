@@ -58,7 +58,6 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
     def get_service_info(service_arn: str) -> dict:
         response = {}
         service_arn = _shorten_service_arn(service_arn, cluster_arn)
-        service_type = _get_service_type(service_arn)
         service_description = ecs.describe_services(cluster=cluster_arn, services=[service_arn])["services"][0]
         task_definition_arn = _shorten_task_definition_arn(service_description["taskDefinition"])
         task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)["taskDefinition"]
@@ -66,20 +65,14 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
         if len(container_definitions) > 0:
             has_multiple_containers = len(container_definitions) > 1
             container_definition = task_definition["containerDefinitions"][0]
-            container_name = container_definition["name"]
-            image_arn = container_definition["image"]
             response = {
-                "cluster_arn": cluster_arn,
-                "service_arn": service_arn,
-                "service_type": service_type,
+                "arn": service_arn,
+                "type": _get_service_type(service_arn),
                 "task_definition_arn": task_definition_arn,
-                "container_name": container_name,
-                "container_type": _get_container_type(container_name),
-                "has_multiple_containers": has_multiple_containers,
-                "image": {
-                    "arn": image_arn
-                }
+                "image": {"arn": container_definition["image"]}
             }
+            if has_multiple_containers:
+                response["warning_has_multiple_containers"] = True
         return response
 
     @lru_cache
@@ -143,8 +136,7 @@ def _get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
         if repo_name == image_repo:
             images = ecr.describe_images(repositoryName=repo_name)["imageDetails"]
             for image in images:
-                image_tags = image.get("imageTags", "")
-                if image_tag in image_tags:
+                if image_tag in image.get("imageTags", []):
                     return {
                         "id": image.get("registryId"),
                         "repo": image_repo,
@@ -218,10 +210,6 @@ def _shorten_service_arn(service_arn: str, cluster_arn: str) -> str:
 
 def _get_service_type(service_arn: str) -> str:
     return _get_task_definition_type(service_arn)
-
-
-def _get_container_type(container_name: str) -> str:
-    return _get_task_definition_type(container_name)
 
 
 def _get_image_repo_and_tag(image_arn: str) -> Tuple[Optional[str], Optional[str]]:
