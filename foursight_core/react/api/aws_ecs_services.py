@@ -3,6 +3,7 @@ from functools import lru_cache
 import re
 from typing import Optional, Tuple
 from .aws_ecs_tasks import _get_task_definition_type, _shorten_arn, _shorten_task_definition_arn
+from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
 
 
@@ -95,6 +96,25 @@ def get_aws_ecs_services_for_update_raw(cluster_arn: str) -> list[dict]:
     return response
 
 
+def get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
+    ecr = boto3.client("ecr")
+    repos = ecr.describe_repositories()["repositories"]
+    for repo in repos:
+        repo_name = repo["repositoryName"]
+        if repo_name == image_repo:
+            images = ecr.describe_images(repositoryName=repo_name)["imageDetails"]
+            for image in images:
+                image_tags = image.get("imageTags", "")
+                if image_tag in image_tags:
+                    return {
+                        "id": image.get("registryId"),
+                        "digest": image.get("imageDigest"),
+                        "size": image.get("imageSizeInBytes"),
+                        "pushed_at": datetime_string(image.get("imagePushedAt"))
+                    }
+        return None
+
+
 def get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
 
     def find_environment_variable(environment_variables: list[dict], name: str) -> Optional[str]:
@@ -113,34 +133,21 @@ def get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
             most_recent_build_image_tag = find_environment_variable(environment_variables, "IMAGE_TAG")
             if most_recent_build_image_repo == image_repo and most_recent_build_image_tag == image_tag:
                 return {
-                    "project": project,
                     "arn": _shorten_arn(most_recent_build["arn"]),
+                    "project": project,
                     "github": most_recent_build.get("source", {}).get("location"),
                     "branch": most_recent_build["sourceVersion"],
                     "commit": most_recent_build["resolvedSourceVersion"],
-                    "who": most_recent_build["initiator"],
+                    "number": most_recent_build["buildNumber"],
+                    "initiator": _shorten_arn(most_recent_build["initiator"]),
+                    "status": most_recent_build["buildStatus"],
+                    "success": most_recent_build["buildStatus"] == "SUCCEEDED",
+                    "finished": most_recent_build["buildComplete"],
+                    "started_at": datetime_string(most_recent_build.get("startTime")),
+                    "finished_at": datetime_string(most_recent_build.get("endTime")),
                     "log_group": most_recent_build["logs"]["groupName"],
                     "log_stream": most_recent_build["logs"]["streamName"]
                 }
-
-
-def get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
-    ecr = boto3.client("ecr")
-    repos = ecr.describe_repositories()["repositories"]
-    for repo in repos:
-        repo_name = repo["repositoryName"]
-        if repo_name == image_repo:
-            images = ecr.describe_images(repositoryName=repo_name)["imageDetails"]
-            for image in images:
-                image_tags = image.get("imageTags", "")
-                if image_tag in image_tags:
-                    return {
-                        "id": image.get("registryId"),
-                        "digest": image.get("imageDigest"),
-                        "size": image.get("imageSizeInBytes"),
-                        "pushed_at": str(image.get("imagePushedAt"))
-                    }
-        return None
 
 
 def get_aws_codebuild_digest(log_group: str, log_stream: str) -> Optional[str]:
