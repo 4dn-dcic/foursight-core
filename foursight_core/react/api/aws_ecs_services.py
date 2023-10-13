@@ -1,7 +1,9 @@
 import boto3
 from functools import lru_cache
 import re
-from typing import Optional, Tuple
+import time
+from typing import Callable, Optional, Tuple
+from dcicutils.task_utils import pmap
 from .aws_ecs_tasks import _get_task_definition_type, _shorten_arn, _shorten_task_definition_arn
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
@@ -13,7 +15,7 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
     # i.e. for the purposes of the below services loop.
     @lru_cache
     def get_build_digest(log_group: str, log_stream: str) -> Optional[str]:
-        return get_aws_codebuild_digest(log_group, log_stream)
+        return _get_aws_codebuild_digest(log_group, log_stream)
 
     def reorganize_response(services: dict) -> dict:
         if not services:
@@ -31,8 +33,10 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
             response["services"].append({**service})
         return response
 
+    started = time.time()
     sanity_check = args.get("sanity_check", "").lower() == "true" if args else False
-    services = get_aws_ecs_services_for_update_raw(cluster_arn)
+    parallel = args.get("parallel", "").lower() != "false" if args else True
+    services = _get_aws_ecs_services_for_update_raw(cluster_arn, parallel=parallel)
     builds_and_images_identical = True
     previous_service = None
     for service in services:
@@ -51,24 +55,26 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
         previous_service = service
     if builds_and_images_identical:
         services = reorganize_response(services)
+    duration = time.time() - started
+    minutes, seconds = divmod(duration, 60)
+    seconds, milliseconds = divmod(seconds, 1)
+    duration = f"{int(minutes):02d}:{int(seconds):02d}.{int(milliseconds * 1000):03d}"
+    if builds_and_images_identical:
+        services["duration"] = duration
+    else:
+        services[0]["duration"] = duration
     return services
 
 
-def get_aws_ecs_services_for_update_raw(cluster_arn: str) -> list[dict]:
+def _get_aws_ecs_services_for_update_raw(cluster_arn: str, parallel: bool = True) -> list[dict]:
 
-    # Cache build info result just within this function,
-    # i.e. for the purposes of the below services loop.
-    @lru_cache
-    def get_build_info(image_repo, image_tag):
-        return get_aws_codebuild_info(image_repo, image_tag)
-
-    response = []
     ecs = boto3.client("ecs")
-    services = ecs.list_services(cluster=cluster_arn).get("serviceArns", [])
-    for service in services:
-        service_arn = _shorten_service_arn(service, cluster_arn)
+
+    def get_service_info(service_arn: str) -> dict:
+        response = {}
+        service_arn = _shorten_service_arn(service_arn, cluster_arn)
         service_type = _get_service_type(service_arn)
-        service_description = ecs.describe_services(cluster=cluster_arn, services=[service])["services"][0]
+        service_description = ecs.describe_services(cluster=cluster_arn, services=[service_arn])["services"][0]
         task_definition_arn = _shorten_task_definition_arn(service_description["taskDefinition"])
         task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)["taskDefinition"]
         container_definitions = task_definition["containerDefinitions"]
@@ -77,9 +83,7 @@ def get_aws_ecs_services_for_update_raw(cluster_arn: str) -> list[dict]:
             container_definition = task_definition["containerDefinitions"][0]
             container_name = container_definition["name"]
             image_arn = container_definition["image"]
-            image_repo, image_tag = _get_image_info(image_arn)
-            build_info = get_build_info(image_repo, image_tag)
-            response.append({
+            response = {
                 "cluster_arn": cluster_arn,
                 "service_arn": service_arn,
                 "service_type": service_type,
@@ -88,17 +92,55 @@ def get_aws_ecs_services_for_update_raw(cluster_arn: str) -> list[dict]:
                 "container_type": _get_container_type(container_name),
                 "has_multiple_containers": has_multiple_containers,
                 "image": {
-                    "arn": image_arn,
-                    "repo": image_repo,
-                    "tag": image_tag,
-                    **get_aws_ecr_image_info(image_repo, image_tag)
-                },
-                "build": build_info
-            })
-    return response
+                    "arn": image_arn
+                }
+            }
+        return response
+
+    @lru_cache
+    def get_build_info(image_repo, image_tag):
+        # Cache image info result within this function; for the below services loop.
+        return _get_aws_codebuild_info(image_repo, image_tag)
+
+    @lru_cache
+    def get_image_info(image_repo, image_tag):
+        # Cache image info result within this function, for the below services loop.
+        return _get_aws_ecr_image_info(image_repo, image_tag)
+
+    def get_build_or_image_info(info: Tuple[str, Callable, str, str]) -> Tuple[str, dict]:
+        name = info[0]
+        function = info[1]
+        image_repo = info[2]
+        image_tag = info[3]
+        return (name, function(image_repo, image_tag))
+
+    service_arns = ecs.list_services(cluster=cluster_arn).get("serviceArns", [])
+    if parallel:
+        # For better performance we get each service info in parallel.  
+        # But, since, typically, the image/build info for each service will be exactly the same,
+        # we don't include the retrieval of these in the concurrently executed code since we will,
+        # typically, only need a single call to get this image/biuld info anyways; and including the
+        # retrieval of this would mess up the concurrency of the local caching of this image/build info.
+        services = [service for service in pmap(get_service_info, service_arns)]
+    else:
+        services = [get_service_info(service) for service in service_arns]
+    # Now get the image/build info for each service.
+    for service in services:
+        image_repo, image_tag = _get_image_repo_and_tag(service["image"]["arn"])
+        if image_repo and image_tag:
+            if parallel:
+                # Also why not get image and build info concurrently relative to each other.
+                info = {name: info for name, info
+                        in pmap(get_build_or_image_info, [("image", get_image_info, image_repo, image_tag),
+                                                          ("build", get_build_info, image_repo, image_tag)])}
+            else:
+                info = {"image": get_image_info(image_repo, image_tag), "build": get_build_info(image_repo, image_tag)}
+            service["image"] = {**service["image"], **info["image"]}
+            service["build"] = info["build"]
+    return services
 
 
-def get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
+def _get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
     ecr = boto3.client("ecr")
     repos = ecr.describe_repositories()["repositories"]
     for repo in repos:
@@ -110,14 +152,17 @@ def get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
                 if image_tag in image_tags:
                     return {
                         "id": image.get("registryId"),
+                        "repo": image_repo,
+                        "tag": image_tag,
                         "digest": image.get("imageDigest"),
                         "size": image.get("imageSizeInBytes"),
-                        "pushed_at": datetime_string(image.get("imagePushedAt"))
+                        "pushed_at": datetime_string(image.get("imagePushedAt")),
+                        "pulled_at": datetime_string(image.get("lastRecordedPullTime"))
                     }
-        return None
+    return None
 
 
-def get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
+def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
 
     def find_environment_variable(environment_variables: list[dict], name: str) -> Optional[str]:
         value = [item["value"] for item in environment_variables if item["name"] == name]
@@ -153,9 +198,10 @@ def get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
             most_recent_build_image_tag = find_environment_variable(environment_variables, "IMAGE_TAG")
             if most_recent_build_image_repo == image_repo and most_recent_build_image_tag == image_tag:
                 return create_record(most_recent_build)
+    return None
 
 
-def get_aws_codebuild_digest(log_group: str, log_stream: str) -> Optional[str]:
+def _get_aws_codebuild_digest(log_group: str, log_stream: str) -> Optional[str]:
     sha256_pattern = re.compile(r"sha256:([0-9a-f]{64})")
     logs = boto3.client("logs")
     log_events = logs.get_log_events(logGroupName=log_group, logStreamName=log_stream, startFromHead=True)["events"]
@@ -182,8 +228,7 @@ def _get_service_type(service_arn: str) -> str:
 def _get_container_type(container_name: str) -> str:
     return _get_task_definition_type(container_name)
 
-
-def _get_image_info(image_arn: str) -> Tuple[Optional[str], Optional[str]]:
+def _get_image_repo_and_tag(image_arn: str) -> Tuple[Optional[str], Optional[str]]:
     image_arn = _shorten_arn(image_arn)
     parts = image_arn.split(":")
     return (parts[0], parts[1]) if len(parts) == 2 else (None, None)
