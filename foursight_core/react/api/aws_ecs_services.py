@@ -17,7 +17,6 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
     def reorganize_response(services: dict) -> dict:
         if not services:
             return {}
-        import pdb ; pdb.set_trace()
         response = {
             "services": [],
             "image": services[0]["image"],
@@ -34,7 +33,6 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
     sanity_check = args.get("sanity_check", "").lower() == "true" if args else False
     services = get_aws_ecs_services_for_update_raw(cluster_arn)
     builds_and_images_identical = True
-    sanity_checked = True
     previous_service = None
     for service in services:
         service["env"] = envs.get_associated_env(service["task_definition_arn"])
@@ -42,8 +40,8 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
             log_group = service["build"].get("log_group")
             log_stream = service["build"].get("log_stream")
             service["build"]["digest"] = get_build_digest(log_group, log_stream)
-            if service["build"].get("digest") != service["image"].get("digest"):
-                sanity_checked = False
+            service["image"]["sanity_checked_with_build"] = (
+                service["build"].get("digest") == service["image"].get("digest"))
         if previous_service:
             if previous_service["build"] != service["build"] or previous_service["image"] != service["image"]:
                 builds_and_images_identical = False
