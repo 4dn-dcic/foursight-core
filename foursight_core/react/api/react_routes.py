@@ -649,8 +649,8 @@ class ReactRoutes:
 
     @route("/aws/codebuild/digest/{log_group}/{log_stream}", authorize=True)
     def reactapi_route_aws_codebuild_digest(log_group: str, log_stream: str) -> Response:  # noqa: implicit @staticmethod via @route
-        log_group = urllib.parse.unquote(log_group)
         from .aws_ecs_services import get_aws_codebuild_digest
+        log_group = urllib.parse.unquote(log_group)
         return {"digest": get_aws_codebuild_digest(log_group, log_stream)}
 
     @route("/aws/ecs/tasks/latest/details", authorize=True)

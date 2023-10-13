@@ -32,7 +32,6 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
                 service["image"] == previous_service["image"] and
                 service["env"] == previous_service["env"])
 
-    started = time.time()
     sanity_check = args.get("sanity_check", "").lower() == "true" if args else False
     parallel = args.get("parallel", "").lower() != "false" if args else True
     services = _get_aws_ecs_services_for_update_raw(cluster_arn, include_build_digest=sanity_check, parallel=parallel)
@@ -44,21 +43,10 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
             image_digest = service["image"].get("digest")
             build_digest = service["build"].get("digest")
             service["image"]["sanity_checked_with_build"] = image_digest == build_digest
-        if previous_service:
-            if not has_identitical_metadata(service, previous_service):
-                identical_metadata = False
+        if previous_service and not has_identitical_metadata(service, previous_service):
+            identical_metadata = False
         previous_service = service
-    if identical_metadata:
-        services = reorganize_response(services)
-    duration = time.time() - started
-    minutes, seconds = divmod(duration, 60)
-    seconds, milliseconds = divmod(seconds, 1)
-    duration = f"{int(minutes):02d}:{int(seconds):02d}.{int(milliseconds * 1000):03d}"
-    if identical_metadata:
-        services["duration"] = duration
-    else:
-        services[0]["duration"] = duration
-    return services
+    return reorganize_response(services) if identical_metadata else services
 
 
 def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
@@ -185,7 +173,7 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
             "number": build["buildNumber"],
             "initiator": _shorten_arn(build["initiator"]),
             "status": build["buildStatus"],
-            "success": build["buildStatus"].lower() == "SUCCEEDED" or build["buildStatus"].lower() == "SUCCESS",
+            "success": build["buildStatus"].upper() == "SUCCEEDED" or build["buildStatus"].upper() == "SUCCESS",
             "finished": build["buildComplete"],
             "started_at": datetime_string(build.get("startTime")),
             "finished_at": datetime_string(build.get("endTime")),
