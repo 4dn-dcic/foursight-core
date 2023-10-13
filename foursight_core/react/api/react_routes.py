@@ -642,6 +642,11 @@ class ReactRoutes:
         from .aws_ecs_tasks import aws_ecs_run_task
         return aws_ecs_run_task(cluster_arn, task_definition_arn, app.request_body())
 
+    @route("/aws/ecs/clusters_for_update", authorize=True)
+    def reactapi_route_aws_ecs_clusters_for_update() -> Response:  # noqa: implicit @staticmethod via @route
+        from .aws_ecs_services import get_aws_ecs_clusters_for_update
+        return get_aws_ecs_clusters_for_update(app.core._envs, args=app.request_args())
+
     @route("/aws/ecs/services_for_update/{cluster_arn}", authorize=True)
     def reactapi_route_aws_ecs_services_for_update(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
         from .aws_ecs_services import get_aws_ecs_services_for_update

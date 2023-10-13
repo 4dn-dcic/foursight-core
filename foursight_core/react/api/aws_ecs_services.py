@@ -3,9 +3,22 @@ from functools import lru_cache
 import re
 from typing import Callable, Optional, Tuple
 from dcicutils.task_utils import pmap
-from .aws_ecs_tasks import _get_task_definition_type, _shorten_arn, _shorten_task_definition_arn
+from .aws_ecs_tasks import _get_cluster_arns, _get_task_definition_type, _shorten_arn, _shorten_task_definition_arn
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
+
+
+def get_aws_ecs_clusters_for_update(envs: Envs, args: Optional[dict] = None) -> list[dict]:
+    response = []
+    cluster_arns = _get_cluster_arns()
+    for cluster_arn in cluster_arns:
+        cluster_env = envs.get_associated_env(cluster_arn)
+        if cluster_env:
+            response.append({
+                "cluster_arn": cluster_arn,
+                "env": cluster_env
+        })
+    return response
 
 
 def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional[dict] = None) -> list[dict]:

@@ -21,7 +21,8 @@ const PortalRedeployPage = (props) => {
     const clusterArn = "c4-ecs-blue-green-smaht-production-stack-SmahtProductiongreen-vqC6hBVe1hLv"
     const [args, setArgs] = useSearchParams();
 
-    const services = useFetch(`//aws/ecs/services_for_update/${clusterArn}`);
+    //const services = useFetch(`//aws/ecs/services_for_update/${clusterArn}`);
+    const services = useFetch("//aws/ecs/clusters_for_update");
 
     return <>
         <div className="container">

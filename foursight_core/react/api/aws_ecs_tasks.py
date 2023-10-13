@@ -86,7 +86,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
         # environment, as determined by the get_assocated_env function call, below.
         duplicate_tasks = [existing_task for existing_task in tasks_for_running
                            if existing_task["task_definition_type"] == task["task_definition_type"]
-                           and existing_task["task_env"] == task["task_env"]]
+                           and existing_task["env"] == task["env"]]
         if duplicate_tasks:
             # Since we are doing this as we go we are
             # guaranteed to get at most only one of these.
@@ -133,7 +133,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
         task_for_running = {
             "task_definition_arn": task_definition_arn,
             "task_definition_type": task_definition_type,
-            "task_env": task_env
+            "env": task_env
         }
         if vpc:
             task_for_running["vpc"] = vpc

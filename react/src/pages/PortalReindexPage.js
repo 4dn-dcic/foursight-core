@@ -171,8 +171,8 @@ const Content = (props) => {
     const unselectTask = () => setSelectedTask(null);
 
     const sortedTasks = props.tasks?.sort((a, b) => {
-        a = a.task_env?.name?.toLowerCase();
-        b = b.task_env?.name?.toLowerCase();
+        a = a.env?.name?.toLowerCase();
+        b = b.env?.name?.toLowerCase();
         return (a < b) ? -1 : ((a > b) ? 1 : 0);
     });
 
@@ -222,7 +222,7 @@ const PortalReindexBox = (props) => {
         <td style={{verticalAlign: "top"}} onClick={selectTask}>
             <div className="box bigmarginbottom lighten" style={{cursor:"default"}}>
                 <span id={`tooltip-show-env-${props.task?.task_definition_arn}`} className="pointer" onClick={toggleShowDetail}>
-                    <b style={{color: "black", textDecoration: "underline"}}>{props.task?.task_env?.name}</b>
+                    <b style={{color: "black", textDecoration: "underline"}}>{props.task?.env?.name}</b>
                     <small style={{marginLeft:"4pt"}}>
                         {isShowDetail() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b>}
                     </small>
@@ -230,14 +230,14 @@ const PortalReindexBox = (props) => {
                 <Tooltip id={`tooltip-show-env-${props.task?.task_definition_arn}`} position="top" size="small"
                     text={`Click to ${isShowDetail() ? "hide" : "show"} details for task run.`} />
                 <small style={{float: "right"}}>
-                    &nbsp;&nbsp;<ExternalLink href={props.task.task_env?.portal_url} />
+                    &nbsp;&nbsp;<ExternalLink href={props.task.env?.portal_url} />
                 </small>
-                { (props.task?.task_env?.is_production || props.task?.task_env?.is_staging || props.task?.task_env?.color) &&
-                    <small style={{float: "right", color: props.task?.task_env?.color == "blue" ? "blue" : (props.task?.task_env?.color == "green" ? "green" : "")}}>
-                        {props.task?.task_env?.is_production && <b>PRODUCTION</b>}
-                        {props.task?.task_env?.is_staging && <b>STAGING</b>}
-                        {props.task?.task_env?.color && <>
-                            &nbsp;({props.task?.task_env?.color?.toUpperCase()})
+                { (props.task?.env?.is_production || props.task?.env?.is_staging || props.task?.env?.color) &&
+                    <small style={{float: "right", color: props.task?.env?.color == "blue" ? "blue" : (props.task?.env?.color == "green" ? "green" : "")}}>
+                        {props.task?.env?.is_production && <b>PRODUCTION</b>}
+                        {props.task?.env?.is_staging && <b>STAGING</b>}
+                        {props.task?.env?.color && <>
+                            &nbsp;({props.task?.env?.color?.toUpperCase()})
                         </>}
                     </small>
                 }
@@ -249,7 +249,7 @@ const PortalReindexBox = (props) => {
                         isShowDetail={isShowDetail}
                         toggleShowDetail={toggleShowDetail} />
                 }
-                { isShowDetail() && <DetailBox env={props.task?.task_env} task={props.task} /> }
+                { isShowDetail() && <DetailBox env={props.task?.env} task={props.task} /> }
                 <Warnings task={props.task} />
                 <Tooltip id={`tooltip-${props.task.task_definition_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS task definition to be run."} />
             </div>
@@ -399,9 +399,9 @@ const ReindexButtonConfirmed = (props) => {
         </td><td style={{verticalAlign: "top", paddingLeft: "0pt"}}>
             <b style={{position: "relative", bottom: "-3pt", whiteSpace: "nowrap"}}>&nbsp;&nbsp;&nbsp;{Char.LeftArrow}&nbsp;
             { props.task.task_definition_type == "deploy" ? <>
-                Are you sure you want to reindex <u>{props.task.task_env.name}</u>?
+                Are you sure you want to reindex <u>{props.task.env.name}</u>?
             </>:<>
-                Are you sure you want to run this task for <u>{props.task.task_env.name}</u>?
+                Are you sure you want to run this task for <u>{props.task.env.name}</u>?
             </> }
             </b>
         </td>
@@ -497,7 +497,7 @@ const AccountDetails = (props) => {
         </tr>
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Environment: </td>
-            <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {props.task?.task_env?.full_name} </td>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {props.task?.env?.full_name} </td>
         </tr>
     </tbody></table>
 }
