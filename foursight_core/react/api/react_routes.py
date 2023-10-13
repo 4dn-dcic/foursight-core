@@ -1,4 +1,5 @@
 from chalice import Response
+import urllib.parse
 from dcicutils.misc_utils import ignored
 from ...app import app
 from .react_route_decorator import route, route_root
@@ -645,6 +646,12 @@ class ReactRoutes:
     def reactapi_route_aws_ecs_services_for_update(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
         from .aws_ecs_services import get_aws_ecs_services_for_update
         return get_aws_ecs_services_for_update(app.core._envs, cluster_arn, args=app.request_args())
+
+    @route("/aws/codebuild/digest/{log_group}/{log_stream}", authorize=True)
+    def reactapi_route_aws_codebuild_digest(log_group: str, log_stream: str) -> Response:  # noqa: implicit @staticmethod via @route
+        log_group = urllib.parse.unquote(log_group)
+        from .aws_ecs_services import get_aws_codebuild_digest
+        return {"digest": get_aws_codebuild_digest(log_group, log_stream)}
 
     @route("/aws/ecs/tasks/latest/details", authorize=True)
     def reactapi_route_aws_ecs_task() -> Response:  # noqa: implicit @staticmethod via @route
