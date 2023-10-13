@@ -1,7 +1,6 @@
 import boto3
 from functools import lru_cache
 import re
-import time
 from typing import Callable, Optional, Tuple
 from dcicutils.task_utils import pmap
 from .aws_ecs_tasks import _get_task_definition_type, _shorten_arn, _shorten_task_definition_arn
