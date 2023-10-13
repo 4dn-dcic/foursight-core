@@ -187,7 +187,6 @@ def get_aws_ecs_task_running(envs: Envs,
     return response
 
 
-                             
 def get_aws_ecs_task_last_run(envs: Envs, cluster_arn: str, task_definition_arn: str) -> dict:
     # If this is the deploy task the approximate that last time it was run by using the
     # create date of the Portal Access Key as a proxy for when this task last ran since
