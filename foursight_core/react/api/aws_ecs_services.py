@@ -32,8 +32,7 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
                 service["env"] == previous_service["env"])
 
     sanity_check = args.get("sanity_check", "").lower() == "true" if args else False
-    parallel = args.get("parallel", "").lower() != "false" if args else True
-    services = _get_aws_ecs_services_for_update_raw(cluster_arn, include_build_digest=sanity_check, parallel=parallel)
+    services = _get_aws_ecs_services_for_update_raw(cluster_arn, include_build_digest=sanity_check)
     identical_metadata = True
     previous_service = None
     for service in services:
@@ -48,9 +47,7 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
     return reorganize_response(services) if identical_metadata else services
 
 
-def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
-                                         include_build_digest: bool = False,
-                                         parallel: bool = True) -> list[dict]:
+def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest: bool = False) -> list[dict]:
 
     ecs = boto3.client("ecs")
 
@@ -102,26 +99,20 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
         return (name, function(image_repo, image_tag))
 
     service_arns = ecs.list_services(cluster=cluster_arn).get("serviceArns", [])
-    if parallel:
-        # For better performance we get each service info in parallel.
-        # But, since, typically, the image/build info for each service will be exactly the same,
-        # we don't include the retrieval of these in the concurrently executed code since we will,
-        # typically, only need a single call to get this image/biuld info anyways; and including the
-        # retrieval of this would mess up the concurrency of the local caching of this image/build info.
-        services = [service for service in pmap(get_service_info, service_arns)]
-    else:
-        services = [get_service_info(service_arn) for service_arn in service_arns]
+    # For better performance we get each service info in parallel.
+    # But, since, typically, the image/build info for each service will be exactly the same,
+    # we don't include the retrieval of these in the concurrently executed code since we will,
+    # typically, only need a single call to get this image/biuld info anyways; and including the
+    # retrieval of this would mess up the concurrency of the local caching of this image/build info.
+    # Also get the image and build info concurrently relative to each other.
+    services = [service for service in pmap(get_service_info, service_arns)]
     # Now get the image/build info for each service.
     for service in services:
         image_repo, image_tag = _get_image_repo_and_tag(service["image"]["arn"])
         if image_repo and image_tag:
-            if parallel:
-                # Also why not get image and build info concurrently relative to each other.
-                info = {name: info for name, info
-                        in pmap(get_build_or_image_info, [("image", get_image_info, image_repo, image_tag),
-                                                          ("build", get_build_info, image_repo, image_tag)])}
-            else:
-                info = {"image": get_image_info(image_repo, image_tag), "build": get_build_info(image_repo, image_tag)}
+            info = {name: info for name, info
+                    in pmap(get_build_or_image_info, [("image", get_image_info, image_repo, image_tag),
+                                                      ("build", get_build_info, image_repo, image_tag)])}
             service["image"] = {**service["image"], **info["image"]}
             service["build"] = info["build"]
     return services
