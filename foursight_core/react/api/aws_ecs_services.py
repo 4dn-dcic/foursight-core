@@ -44,7 +44,9 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
             service["image"]["sanity_checked_with_build"] = (
                 service["build"].get("digest") == service["image"].get("digest"))
         if previous_service:
-            if previous_service["build"] != service["build"] or previous_service["image"] != service["image"]:
+            if (previous_service["build"] != service["build"] or
+                previous_service["image"] != service["image"] or
+                previous_service["env"] != service["env"]):
                 builds_and_images_identical = False
         previous_service = service
     if builds_and_images_identical:
