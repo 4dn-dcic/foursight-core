@@ -14,8 +14,22 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
     def get_build_digest(log_group: str, log_stream: str) -> Optional[str]:
         return get_aws_codebuild_digest(log_group, log_stream)
 
-    def reorganize_services(services: dict) -> dict:
-        return services
+    def reorganize_response(services: dict) -> dict:
+        if not services:
+            return {}
+        import pdb ; pdb.set_trace()
+        response = {
+            "services": [],
+            "image": services[0]["image"],
+            "build": services[0]["build"],
+            "env": services[0]["env"]
+        }
+        for service in services:
+            del service["image"] 
+            del service["build"] 
+            del service["env"] 
+            response["services"].append({**service})
+        return response
 
     sanity_check = args.get("sanity_check", "").lower() == "true" if args else False
     services = get_aws_ecs_services_for_update_raw(cluster_arn)
@@ -34,7 +48,8 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
             if previous_service["build"] != service["build"] or previous_service["image"] != service["image"]:
                 builds_and_images_identical = False
         previous_service = service
-    services = reorganize_services(services)
+    if builds_and_images_identical:
+        services = reorganize_response(services)
     return services
 
 
