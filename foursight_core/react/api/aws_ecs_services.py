@@ -119,31 +119,40 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest:
 
 
 def _get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
+
+    def create_record(image_repo: str, image_tag: str, image: dict) -> dict:
+        return {
+            "id": image.get("registryId"),
+            "repo": image_repo,
+            "tag": image_tag,
+            "digest": image.get("imageDigest"),
+            "size": image.get("imageSizeInBytes"),
+            "pushed_at": datetime_string(image.get("imagePushedAt")),
+            "pulled_at": datetime_string(image.get("lastRecordedPullTime"))
+        }
+
     ecr = boto3.client("ecr")
     repos = ecr.describe_repositories()["repositories"]
     for repo in repos:
         repo_name = repo["repositoryName"]
         if repo_name == image_repo:
-            images = ecr.describe_images(repositoryName=repo_name)["imageDetails"]
-            for image in images:
-                if image_tag in image.get("imageTags", []):
-                    return {
-                        "id": image.get("registryId"),
-                        "repo": image_repo,
-                        "tag": image_tag,
-                        "digest": image.get("imageDigest"),
-                        "size": image.get("imageSizeInBytes"),
-                        "pushed_at": datetime_string(image.get("imagePushedAt")),
-                        "pulled_at": datetime_string(image.get("lastRecordedPullTime"))
-                    }
+            next_token = None
+            while True:
+                if next_token:
+                    images = ecr.describe_images(repositoryName=repo_name, nextToken=next_token)
+                else:
+                    images = ecr.describe_images(repositoryName=repo_name)
+                next_token = images.get("nextToken")
+                images = images["imageDetails"]
+                for image in images:
+                    if image_tag in image.get("imageTags", []):
+                        return create_record(image_repo, image_tag, image)
+                if not next_token:
+                    break
     return None
 
 
 def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
-
-    def find_environment_variable(environment_variables: list[dict], name: str) -> Optional[str]:
-        value = [item["value"] for item in environment_variables if item["name"] == name]
-        return value[0] if len(value) == 1 else None
 
     def create_record(build: dict) -> dict:
         return {
@@ -162,6 +171,10 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
             "log_group": build["logs"]["groupName"],
             "log_stream": build["logs"]["streamName"]
         }
+
+    def find_environment_variable(environment_variables: list[dict], name: str) -> Optional[str]:
+        value = [item["value"] for item in environment_variables if item["name"] == name]
+        return value[0] if len(value) == 1 else None
 
     codebuild = boto3.client("codebuild")
     projects = codebuild.list_projects()["projects"]
