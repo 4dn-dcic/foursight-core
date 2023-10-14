@@ -1,7 +1,7 @@
 import boto3
 from functools import lru_cache
 import re
-from typing import Callable, Optional, Tuple
+from typing import Callable, Generator, Optional, Tuple
 from dcicutils.task_utils import pmap
 from .aws_ecs_tasks import _get_cluster_arns, _get_task_definition_type, _shorten_arn, _shorten_task_definition_arn
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
@@ -17,7 +17,7 @@ def get_aws_ecs_clusters_for_update(envs: Envs, args: Optional[dict] = None) -> 
             response.append({
                 "cluster_arn": cluster_arn,
                 "env": cluster_env
-        })
+            })
     return response
 
 
@@ -52,7 +52,7 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional
         service["env"] = envs.get_associated_env(service["task_definition_arn"])
         if sanity_check:
             image_digest = service["image"].get("digest")
-            build_digest = service["build"].get("digest")
+            build_digest = service["build"].get("latest", {}).get("digest")
             service["image"]["sanity_checked_with_build"] = image_digest == build_digest
         if previous_service and not has_identitical_metadata(service, previous_service):
             identical_metadata = False
@@ -89,8 +89,8 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest:
         # Cache this result within the enclosing function; for the below services loop.
         build = _get_aws_codebuild_info(image_repo, image_tag)
         if include_build_digest:
-            log_group = build.get("log_group")
-            log_stream = build.get("log_stream")
+            log_group = build.get("latest", {}).get("log_group")
+            log_stream = build.get("latest", {}).get("log_stream")
             build["digest"] = get_build_digest(log_group, log_stream)
         return build
 
@@ -133,7 +133,7 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest:
 
 def _get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
 
-    def create_record(image_repo: str, image_tag: str, image: dict) -> dict:
+    def create_image_info(image_repo: str, image_tag: str, image: dict) -> dict:
         return {
             "id": image.get("registryId"),
             "repo": image_repo,
@@ -159,49 +159,123 @@ def _get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
                 images = images["imageDetails"]
                 for image in images:
                     if image_tag in image.get("imageTags", []):
-                        return create_record(image_repo, image_tag, image)
+                        return create_image_info(image_repo, image_tag, image)
                 if not next_token:
                     break
     return None
 
 
 def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
+    """
+    Returns a dictionary with info about the two most recent CodeBuild builds
+    for the given image repo and tag, or None if none found.
+    """
 
-    def create_record(build: dict) -> dict:
+    codebuild = boto3.client("codebuild")
+
+    def get_projects() -> list[str]:
+
+        projects = codebuild.list_projects()["projects"]
+
+        # If there is a project with the same name as the image_repo then look at that one first,
+        # or secondarily, prefer projects whose names contain the image_repo and/or image_tag;
+        # we do this just for performance, to try to reduce the number of boto calls we make.
+
+        def prefer_project(preferred_project: str):
+            projects.remove(preferred_project)
+            return [preferred_project, *projects]
+
+        preferred_project = [project for project in projects if project == image_repo]
+        if preferred_project:
+            return prefer_project(preferred_project[0])
+        preferred_project = [project for project in projects
+                             if image_repo.lower() in project.lower() and image_tag.lower() in project.lower()]
+        if preferred_project:
+            return prefer_project(preferred_project[0])
+        preferred_project = [project for project in projects if image_repo.lower() in project.lower()]
+        if preferred_project:
+            return prefer_project(preferred_project[0])
+        preferred_project = [project for project in projects if image_tag.lower() in project.lower()]
+        if preferred_project:
+            return prefer_project(preferred_project[0])
+        return projects
+
+    def get_relevant_builds(project: str) -> Generator[Optional[dict], None, None]:
+        # For efficiency, and the most common actual case, get builds two at a time; i.e. since we
+        # want to the two most recent (relevant) builds, and they are usually together at the start
+        # of the (list_build_for_projects) list ordered (descending) by build (creation) time.
+        next_token = None
+        while True:
+            if next_token:
+                build_ids = codebuild.list_builds_for_project(projectName=project,
+                                                              sortOrder="DESCENDING", nextToken=next_token)
+            else:
+                build_ids = codebuild.list_builds_for_project(projectName=project, sortOrder="DESCENDING")
+            next_token = build_ids.get("nextToken")
+            build_ids = build_ids["ids"]
+            for i in range(0, len(build_ids), 2):
+                if i + 1 < len(build_ids):
+                    build_details = codebuild.batch_get_builds(ids=[build_ids[i], build_ids[i + 1]])["builds"]
+                    build = get_relevant_build_info(build_details[0])
+                    if build:
+                        yield build
+                    build = get_relevant_build_info(build_details[1])
+                    if build:
+                        yield build
+                else:
+                    build_details = codebuild.batch_get_builds(ids=[build_ids[i]])["builds"]
+                    build = get_relevant_build_info(build_details[0])
+                    if build:
+                        yield build
+            if not next_token:
+                break
+
+    def get_relevant_build_info(build: dict) -> Optional[dict]:
+
+        def find_environment_variable(environment_variables: list[dict], name: str) -> Optional[str]:
+            value = [item["value"] for item in environment_variables if item["name"] == name]
+            return value[0] if len(value) == 1 else None
+
+        if build:
+            environment_variables = build.get("environment", {}).get("environmentVariables", {})
+            build_image_repo = find_environment_variable(environment_variables, "IMAGE_REPO_NAME")
+            build_image_tag = find_environment_variable(environment_variables, "IMAGE_TAG")
+            if build_image_repo == image_repo and build_image_tag == image_tag:
+                return create_build_info(build)
+        return None
+
+    def create_build_info(build: dict) -> dict:
         return {
             "arn": _shorten_arn(build["arn"]),
             "project": project,
+            "image_repo": image_repo,
+            "image_tag": image_tag,
             "github": build.get("source", {}).get("location"),
-            "branch": build["sourceVersion"],
-            "commit": build["resolvedSourceVersion"],
-            "number": build["buildNumber"],
-            "initiator": _shorten_arn(build["initiator"]),
-            "status": build["buildStatus"],
-            "success": build["buildStatus"].upper() == "SUCCEEDED" or build["buildStatus"].upper() == "SUCCESS",
-            "finished": build["buildComplete"],
+            "branch": build.get("sourceVersion"),
+            "commit": build.get("resolvedSourceVersion"),
+            "number": build.get("buildNumber"),
+            "initiator": _shorten_arn(build.get("initiator")),
+            "status": build.get("buildStatus"),
+            "success": build.get("buildStatus", "").upper() == "SUCCEEDED" or build["buildStatus"].upper() == "SUCCESS",
+            "finished": build.get("buildComplete"),
             "started_at": datetime_string(build.get("startTime")),
             "finished_at": datetime_string(build.get("endTime")),
-            "log_group": build["logs"]["groupName"],
-            "log_stream": build["logs"]["streamName"]
+            "log_group": build.get("logs", {}).get("groupName"),
+            "log_stream": build.get("logs", {}).get("streamName")
         }
 
-    def find_environment_variable(environment_variables: list[dict], name: str) -> Optional[str]:
-        value = [item["value"] for item in environment_variables if item["name"] == name]
-        return value[0] if len(value) == 1 else None
-
-    codebuild = boto3.client("codebuild")
-    projects = codebuild.list_projects()["projects"]
-    for project in projects:
-        builds = codebuild.list_builds_for_project(projectName=project, sortOrder="DESCENDING")["ids"]
-        if len(builds) > 0:
-            most_recent_build_id = builds[0]
-            most_recent_build = codebuild.batch_get_builds(ids=[most_recent_build_id])["builds"][0]
-            environment_variables = most_recent_build.get("environment", {}).get("environmentVariables", {})
-            most_recent_build_image_repo = find_environment_variable(environment_variables, "IMAGE_REPO_NAME")
-            most_recent_build_image_tag = find_environment_variable(environment_variables, "IMAGE_TAG")
-            if most_recent_build_image_repo == image_repo and most_recent_build_image_tag == image_tag:
-                return create_record(most_recent_build)
-    return None
+    response = None
+    for project in get_projects():
+        for build in get_relevant_builds(project):
+            if build:
+                if not response:
+                    response = {"latest": build}
+                else:
+                    response["previous"] = build
+                    break
+        if response and response.get("previous"):
+            break
+    return response
 
 
 def get_aws_codebuild_digest(log_group: str, log_stream: str) -> Optional[str]:
