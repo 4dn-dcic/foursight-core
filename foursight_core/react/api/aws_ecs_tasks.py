@@ -228,7 +228,7 @@ def get_aws_ecs_tasks_running(cluster_arn: Optional[str] = None,
         given_task_definition_arn = task_definition_arn
         tasks = ecs.describe_tasks(cluster=cluster_arn, tasks=task_arns).get("tasks")
         for task in tasks:
-            task_definition_arn = _shorten_task_definition_arn(task.get("taskDefinitionArn"))
+            task_definition_arn = _shortened_task_definition_arn(task.get("taskDefinitionArn"))
             if given_task_definition_arn and given_task_definition_arn != task_definition_arn:
                 continue
             task_definition_type = _get_task_definition_type(task_definition_arn)
@@ -317,12 +317,12 @@ def aws_ecs_run_task(cluster_arn: str, task_definition_arn: str, args: dict) -> 
 
 def _get_cluster_arns() -> list[str]:
     ecs = ECSUtils()
-    return sorted([_shorten_arn(item) for item in ecs.list_ecs_clusters()])
+    return sorted([_shortened_arn(item) for item in ecs.list_ecs_clusters()])
 
 
 def _get_task_definition_arns() -> list[str]:
     ecs = ECSUtils()
-    return sorted(list(set([_shorten_task_definition_arn(item) for item in ecs.list_ecs_tasks()])))
+    return sorted(list(set([_shortened_task_definition_arn(item) for item in ecs.list_ecs_tasks()])))
 
 
 def _get_task_arns(cluster_arn: str, task_definition_arn: str) -> list[str]:
@@ -330,19 +330,19 @@ def _get_task_arns(cluster_arn: str, task_definition_arn: str) -> list[str]:
     return ecs.list_tasks(cluster=cluster_arn, family=task_definition_arn).get("taskArns")
 
 
-def _shorten_arn(arn: str) -> str:
+def _shortened_arn(arn: str) -> str:
     arn_parts = arn.split("/", 1) if arn else []
     return arn_parts[1] if len(arn_parts) > 1 else arn
 
 
-def _shorten_task_definition_arn(task_definition_arn: str) -> str:
+def _shortened_task_definition_arn(task_definition_arn: str) -> str:
     """
     Given something like this:
     - arn:aws:ecs:us-east-1:466564410312:task-definition/c4-ecs-cgap-supertest-stack-CGAPDeployment-of2dr96JX1ds:1
     this function would return this:
     - c4-ecs-cgap-supertest-stack-CGAPDeployment-of2dr96JX1ds
     """
-    task_definition_arn = _shorten_arn(task_definition_arn)
+    task_definition_arn = _shortened_arn(task_definition_arn)
     arn_parts = task_definition_arn.rsplit(":", 1) if task_definition_arn else []
     return arn_parts[0] if len(arn_parts) > 1 else task_definition_arn
 

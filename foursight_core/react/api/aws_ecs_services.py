@@ -3,7 +3,7 @@ from functools import lru_cache
 import re
 from typing import Callable, Generator, Optional, Tuple, Union
 from dcicutils.task_utils import pmap
-from .aws_ecs_tasks import _get_cluster_arns, _get_task_definition_type, _shorten_arn, _shorten_task_definition_arn
+from .aws_ecs_tasks import _get_cluster_arns, _get_task_definition_type, _shortened_arn, _shortened_task_definition_arn
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
 
@@ -78,9 +78,9 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest:
 
     def get_service_info(service_arn: str) -> dict:
         response = {}
-        service_arn = _shorten_service_arn(service_arn, cluster_arn)
+        service_arn = _shortened_service_arn(service_arn, cluster_arn)
         service_description = ecs.describe_services(cluster=cluster_arn, services=[service_arn])["services"][0]
-        task_definition_arn = _shorten_task_definition_arn(service_description["taskDefinition"])
+        task_definition_arn = _shortened_task_definition_arn(service_description["taskDefinition"])
         task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)["taskDefinition"]
         container_definitions = task_definition["containerDefinitions"]
         if len(container_definitions) > 0:
@@ -261,7 +261,7 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
 
     def create_build_info(build: dict) -> dict:
         return {
-            "arn": _shorten_arn(build["arn"]),
+            "arn": _shortened_arn(build["arn"]),
             "project": project,
             "image_repo": image_repo,
             "image_tag": image_tag,
@@ -269,7 +269,7 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
             "branch": build.get("sourceVersion"),
             "commit": build.get("resolvedSourceVersion"),
             "number": build.get("buildNumber"),
-            "initiator": _shorten_arn(build.get("initiator")),
+            "initiator": _shortened_arn(build.get("initiator")),
             "status": build.get("buildStatus"),
             "success": build.get("buildStatus", "").upper() == "SUCCEEDED" or build["buildStatus"].upper() == "SUCCESS",
             "finished": build.get("buildComplete"),
@@ -306,8 +306,8 @@ def get_aws_codebuild_digest(log_group: str, log_stream: str) -> Optional[str]:
     return None
 
 
-def _shorten_service_arn(service_arn: str, cluster_arn: str) -> str:
-    service_arn = _shorten_arn(service_arn)
+def _shortened_service_arn(service_arn: str, cluster_arn: str) -> str:
+    service_arn = _shortened_arn(service_arn)
     if service_arn.startswith(f"{cluster_arn}/"):
         service_arn = service_arn.replace(f"{cluster_arn}/", "")
     return service_arn
@@ -318,6 +318,6 @@ def _get_service_type(service_arn: str) -> str:
 
 
 def _get_image_repo_and_tag(image_arn: str) -> Tuple[Optional[str], Optional[str]]:
-    image_arn = _shorten_arn(image_arn)
+    image_arn = _shortened_arn(image_arn)
     parts = image_arn.split(":")
     return (parts[0], parts[1]) if len(parts) == 2 else (None, None)
