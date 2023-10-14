@@ -216,9 +216,26 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
         return projects
 
     def get_relevant_builds(project: str) -> Generator[Optional[dict], None, None]:
+
         # For efficiency, and the most common actual case, get builds two at a time; i.e. since we
         # want to the two most recent (relevant) builds, and they are usually together at the start
-        # of the (list_build_for_projects) list ordered (descending) by build (creation) time.
+        # of the (list_build_for_projects) list ordered (descending) by build (creation) time;
+        # but of course, just in case, we need to handle the general case.
+
+        def get_relevant_build_info(build: dict) -> Optional[dict]:
+
+            def find_environment_variable(environment_variables: list[dict], name: str) -> Optional[str]:
+                value = [item["value"] for item in environment_variables if item["name"] == name]
+                return value[0] if len(value) == 1 else None
+
+            if build:
+                environment_variables = build.get("environment", {}).get("environmentVariables", {})
+                build_image_repo = find_environment_variable(environment_variables, "IMAGE_REPO_NAME")
+                build_image_tag = find_environment_variable(environment_variables, "IMAGE_TAG")
+                if build_image_repo == image_repo and build_image_tag == image_tag:
+                    return create_build_info(build)
+            return None
+
         next_token = None
         while True:
             if next_token:
@@ -244,20 +261,6 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
                         yield build
             if not next_token:
                 break
-
-    def get_relevant_build_info(build: dict) -> Optional[dict]:
-
-        def find_environment_variable(environment_variables: list[dict], name: str) -> Optional[str]:
-            value = [item["value"] for item in environment_variables if item["name"] == name]
-            return value[0] if len(value) == 1 else None
-
-        if build:
-            environment_variables = build.get("environment", {}).get("environmentVariables", {})
-            build_image_repo = find_environment_variable(environment_variables, "IMAGE_REPO_NAME")
-            build_image_tag = find_environment_variable(environment_variables, "IMAGE_TAG")
-            if build_image_repo == image_repo and build_image_tag == image_tag:
-                return create_build_info(build)
-        return None
 
     def create_build_info(build: dict) -> dict:
         return {
@@ -294,15 +297,20 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
 
 
 def get_aws_codebuild_digest(log_group: str, log_stream: str) -> Optional[str]:
-    sha256_pattern = re.compile(r"sha256:([0-9a-f]{64})")
+    # For some reason this (rarely-ish) intermittently fails with no error;
+    # the results just do not contain the digest; don't know why so try a few times.
     logs = boto3.client("logs")
-    log_events = logs.get_log_events(logGroupName=log_group, logStreamName=log_stream, startFromHead=True)["events"]
-    for log_event in log_events:
-        message = log_event.get("message")
-        if message and "digest" in message:
-            match = sha256_pattern.search(message)
-            if match:
-                return "sha256:" + match.group(1)
+    sha256_pattern = re.compile(r"sha256:([0-9a-f]{64})")
+    ntries = 3
+    while ntries > 0:
+        log_events = logs.get_log_events(logGroupName=log_group, logStreamName=log_stream, startFromHead=True)["events"]
+        for log_event in log_events:
+            message = log_event.get("message")
+            if message and "digest" in message:
+                match = sha256_pattern.search(message)
+                if match:
+                    return "sha256:" + match.group(1)
+        ntries -= 1
     return None
 
 
