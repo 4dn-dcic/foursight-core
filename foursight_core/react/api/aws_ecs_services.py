@@ -10,8 +10,7 @@ from .envs import Envs
 
 def get_aws_ecs_clusters_for_update(envs: Envs, args: Optional[dict] = None) -> list[dict]:
     response = []
-    cluster_arns = _get_cluster_arns()
-    for cluster_arn in cluster_arns:
+    for cluster_arn in _get_cluster_arns():
         cluster_env = envs.get_associated_env(cluster_arn)
         if cluster_env:
             response.append({
@@ -57,9 +56,9 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str,
                 service["env"] == previous_service["env"])
 
     sanity_check = args.get("sanity_check", "").lower() == "true" if args else False
-    services = _get_aws_ecs_services_for_update_raw(cluster_arn, include_build_digest=sanity_check)
     identical_metadata = True
     previous_service = None
+    services = _get_aws_ecs_services_for_update_raw(cluster_arn, include_build_digest=sanity_check)
     for service in services:
         service["env"] = envs.get_associated_env(service["task_definition_arn"])
         if sanity_check:
@@ -186,8 +185,8 @@ def _get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
             "id": image.get("registryId"),
             "repo": image_repo,
             "tag": image_tag,
-            "digest": image.get("imageDigest"),
             "size": image.get("imageSizeInBytes"),
+            "digest": image.get("imageDigest"),
             "pushed_at": datetime_string(image.get("imagePushedAt")),
             "pulled_at": datetime_string(image.get("lastRecordedPullTime"))
         }
