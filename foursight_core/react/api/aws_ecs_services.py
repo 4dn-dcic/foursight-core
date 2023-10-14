@@ -1,7 +1,7 @@
 import boto3
 from functools import lru_cache
 import re
-from typing import Callable, Generator, Optional, Tuple
+from typing import Callable, Generator, Optional, Tuple, Union
 from dcicutils.task_utils import pmap
 from .aws_ecs_tasks import _get_cluster_arns, _get_task_definition_type, _shorten_arn, _shorten_task_definition_arn
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
@@ -21,7 +21,19 @@ def get_aws_ecs_clusters_for_update(envs: Envs, args: Optional[dict] = None) -> 
     return response
 
 
-def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str, args: Optional[dict] = None) -> list[dict]:
+def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str,
+                                    args: Optional[dict] = None) -> Union[dict, list[dict]]:
+    """
+    Returns the list of AWS services (for possible update purposes) within the given cluster (ARN).
+    If all of the services have the same image, build, and environment info (which is typical/expected
+    use case), then a dictionary is returned within which is the list of services, as well as the image,
+    build, and environment info; otherwise a list is returned of the each service, within each of which
+    is the associated image, build, and environment info. If a "sanity_check" boolean argument is passed
+    in which is "true", then also included is the digest information for the build; this is not the default
+    since to get it we have to go read the build logs; there is another function (get_aws_codebuild_digest)
+    to get this specifically, so that (for example) this could be called asynchronously from a UI; this
+    digest information is useful to sanity check the the image and associated build digest match.
+    """
 
     def reorganize_response(services: dict) -> dict:
         if not services:
@@ -119,7 +131,7 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest:
     # retrieval of this would mess up the concurrency of the local caching of this image/build info.
     # Also get the image and build info concurrently relative to each other.
     services = [service for service in pmap(get_service_info, service_arns)]
-    # Now get the image/build info for each service.
+    # Now get the image/build info for each service; concurrently for performance only.
     for service in services:
         image_repo, image_tag = _get_image_repo_and_tag(service["image"]["arn"])
         if image_repo and image_tag:
@@ -132,6 +144,9 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest:
 
 
 def _get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
+    """
+    Returns AWS ECR image info for the given image repo and tag.
+    """
 
     def create_image_info(image_repo: str, image_tag: str, image: dict) -> dict:
         return {
