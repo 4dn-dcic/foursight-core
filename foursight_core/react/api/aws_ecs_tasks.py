@@ -85,7 +85,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
         # by the _get_task_definition_type function definition, above); and for the same
         # environment, as determined by the get_assocated_env function call, below.
         duplicate_tasks = [existing_task for existing_task in tasks_for_running
-                           if existing_task["task_definition_type"] == task["task_definition_type"]
+                           if existing_task["type"] == task["type"]
                            and existing_task["env"] == task["env"]]
         if duplicate_tasks:
             # Since we are doing this as we go we are
@@ -132,7 +132,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
         task_env = envs.get_associated_env(task_definition_arn)
         task_for_running = {
             "task_definition_arn": task_definition_arn,
-            "task_definition_type": task_definition_type,
+            "type": task_definition_type,
             "env": task_env
         }
         if vpc:
@@ -170,7 +170,7 @@ def get_aws_ecs_task_running(envs: Envs,
     response = {
         "cluster_arn": cluster_arn,
         "task_definition_arn": task_definition_arn,
-        "task_definition_type": task_definition_type,
+        "type": task_definition_type,
         "task_running": task_is_running
     }
     if not task_is_running and check_other_clusters:
@@ -197,7 +197,7 @@ def get_aws_ecs_task_last_run(envs: Envs, cluster_arn: str, task_definition_arn:
     response = {
         "cluster_arn": cluster_arn,
         "task_definition_arn": task_definition_arn,
-        "task_definition_type": task_definition_type,
+        "type": task_definition_type,
     }
     if task_definition_type == "deploy":
         task_env = envs.get_associated_env(task_definition_arn)

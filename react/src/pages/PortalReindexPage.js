@@ -282,7 +282,7 @@ const ReindexButtonsBox = (props) => {
 const ReindexButtonsBoxDisabled = (props) => {
     return <>
         <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt", color: "red"}}>
-            <b>{props.task?.task_definition_type == "deploy" ? <>Reindexing</> : <>Task run</>} disabled due to errors.</b>
+            <b>{props.task?.type == "deploy" ? <>Reindexing</> : <>Task run</>} disabled due to errors.</b>
         </div>
     </>
 }
@@ -376,7 +376,7 @@ const RunResult = (props) => {
                 <SeparatorH color="red" />
                 {props.runResult.data.error}
             </span>:<>
-                <b>Kicked off {props.task.task_definition_type === "deploy" ? <>reindex</> : <>task</>} {Char.RightArrow}</b> <small><u>{props.runResult?.data?.task_running_id}</u></small>&nbsp;
+                <b>Kicked off {props.task.type === "deploy" ? <>reindex</> : <>task</>} {Char.RightArrow}</b> <small><u>{props.runResult?.data?.task_running_id}</u></small>&nbsp;
                 <small><ExternalLink href={awsTaskRunningLink(props.task.cluster_arn, props.runResult?.data?.task_running_id)} /></small>
             </> }
             { showJson && <>
@@ -398,7 +398,7 @@ const ReindexButtonConfirmed = (props) => {
             <ReindexButton task={props.task} onClickReindex={props.onClickReindex} confirmed={true} />
         </td><td style={{verticalAlign: "top", paddingLeft: "0pt"}}>
             <b style={{position: "relative", bottom: "-3pt", whiteSpace: "nowrap"}}>&nbsp;&nbsp;&nbsp;{Char.LeftArrow}&nbsp;
-            { props.task.task_definition_type == "deploy" ? <>
+            { props.task.type == "deploy" ? <>
                 Are you sure you want to reindex <u>{props.task.env.name}</u>?
             </>:<>
                 Are you sure you want to run this task for <u>{props.task.env.name}</u>?
@@ -410,7 +410,7 @@ const ReindexButtonConfirmed = (props) => {
 
 const ReindexButton = (props) => {
     return <div className={`check-run-button ${props.disabled && "disabled"}`} style={{width: "fit-content", border: "1px solid inherit"}} onClick={props?.onClickReindex}>
-        { props.confirmed && <>&nbsp;Yes:</> }&nbsp;{ props.task?.task_definition_type == "deploy" ? <>Reindex</> : <>Run Task</> }&nbsp;
+        { props.confirmed && <>&nbsp;Yes:</> }&nbsp;{ props.task?.type == "deploy" ? <>Reindex</> : <>Run Task</> }&nbsp;
     </div>
 }
 
