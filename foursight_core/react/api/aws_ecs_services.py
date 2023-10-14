@@ -91,7 +91,7 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest:
         if include_build_digest:
             log_group = build.get("latest", {}).get("log_group")
             log_stream = build.get("latest", {}).get("log_stream")
-            build["digest"] = get_build_digest(log_group, log_stream)
+            build["latest"]["digest"] = get_build_digest(log_group, log_stream)
         return build
 
     @lru_cache
