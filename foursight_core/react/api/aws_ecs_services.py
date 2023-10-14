@@ -72,13 +72,41 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str,
     return reorganize_response(services) if identical_metadata else services
 
 
+def get_aws_codebuild_digest(log_group: str, log_stream: str) -> Optional[str]:
+    logs = boto3.client("logs")
+    sha256_pattern = re.compile(r"sha256:([0-9a-f]{64})")
+    # For some reason this (rarely-ish) intermittently fails with no error;
+    # the results just do not contain the digest; don't know why so try a few times.
+    ntries = 3
+    while ntries > 0:
+        log_events = logs.get_log_events(logGroupName=log_group, logStreamName=log_stream, startFromHead=True)["events"]
+        for log_event in log_events:
+            message = log_event.get("message")
+            if message and "digest" in message:
+                match = sha256_pattern.search(message)
+                if match:
+                    return "sha256:" + match.group(1)
+        ntries -= 1
+    return None
+
+
 def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest: bool = False) -> list[dict]:
 
     ecs = boto3.client("ecs")
 
     def get_service_info(service_arn: str) -> dict:
+
+        def get_service_type(service_arn: str) -> str:
+            return _get_task_definition_type(service_arn)
+
+        def shortened_service_arn(service_arn: str, cluster_arn: str) -> str:
+            service_arn = _shortened_arn(service_arn)
+            if service_arn.startswith(f"{cluster_arn}/"):
+                service_arn = service_arn.replace(f"{cluster_arn}/", "")
+            return service_arn
+
         response = {}
-        service_arn = _shortened_service_arn(service_arn, cluster_arn)
+        service_arn = shortened_service_arn(service_arn, cluster_arn)
         service_description = ecs.describe_services(cluster=cluster_arn, services=[service_arn])["services"][0]
         task_definition_arn = _shortened_task_definition_arn(service_description["taskDefinition"])
         task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)["taskDefinition"]
@@ -88,7 +116,7 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest:
             container_definition = task_definition["containerDefinitions"][0]
             response = {
                 "arn": service_arn,
-                "type": _get_service_type(service_arn),
+                "type": get_service_type(service_arn),
                 "task_definition_arn": task_definition_arn,
                 "image": {"arn": container_definition["image"]}
             }
@@ -123,6 +151,11 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest:
         image_tag = info[3]
         return (name, function(image_repo, image_tag))
 
+    def get_image_repo_and_tag(image_arn: str) -> Tuple[Optional[str], Optional[str]]:
+        image_arn = _shortened_arn(image_arn)
+        parts = image_arn.split(":")
+        return (parts[0], parts[1]) if len(parts) == 2 else (None, None)
+
     service_arns = ecs.list_services(cluster=cluster_arn).get("serviceArns", [])
     # For better performance we get each service info in parallel.
     # But, since, typically, the image/build info for each service will be exactly the same,
@@ -133,7 +166,7 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest:
     services = [service for service in pmap(get_service_info, service_arns)]
     # Now get the image/build info for each service; concurrently for performance only.
     for service in services:
-        image_repo, image_tag = _get_image_repo_and_tag(service["image"]["arn"])
+        image_repo, image_tag = get_image_repo_and_tag(service["image"]["arn"])
         if image_repo and image_tag:
             info = {name: info for name, info
                     in pmap(get_build_or_image_info, [("image", get_image_info, image_repo, image_tag),
@@ -294,38 +327,3 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
         if response and response.get("previous"):
             break
     return response
-
-
-def get_aws_codebuild_digest(log_group: str, log_stream: str) -> Optional[str]:
-    # For some reason this (rarely-ish) intermittently fails with no error;
-    # the results just do not contain the digest; don't know why so try a few times.
-    logs = boto3.client("logs")
-    sha256_pattern = re.compile(r"sha256:([0-9a-f]{64})")
-    ntries = 3
-    while ntries > 0:
-        log_events = logs.get_log_events(logGroupName=log_group, logStreamName=log_stream, startFromHead=True)["events"]
-        for log_event in log_events:
-            message = log_event.get("message")
-            if message and "digest" in message:
-                match = sha256_pattern.search(message)
-                if match:
-                    return "sha256:" + match.group(1)
-        ntries -= 1
-    return None
-
-
-def _shortened_service_arn(service_arn: str, cluster_arn: str) -> str:
-    service_arn = _shortened_arn(service_arn)
-    if service_arn.startswith(f"{cluster_arn}/"):
-        service_arn = service_arn.replace(f"{cluster_arn}/", "")
-    return service_arn
-
-
-def _get_service_type(service_arn: str) -> str:
-    return _get_task_definition_type(service_arn)
-
-
-def _get_image_repo_and_tag(image_arn: str) -> Tuple[Optional[str], Optional[str]]:
-    image_arn = _shortened_arn(image_arn)
-    parts = image_arn.split(":")
-    return (parts[0], parts[1]) if len(parts) == 2 else (None, None)
