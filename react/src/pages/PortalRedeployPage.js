@@ -489,7 +489,7 @@ const ImageDetails = (props) => {
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}} colSpan="2">
-                    Image Details
+                    <b>Image Details</b>
                 </td>
             </tr>
             <TSeparatorH double={true} />
@@ -565,7 +565,7 @@ const BuildDetails = (props) => {
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}} colSpan="2">
-                    Build Details {showPrevious && <>(latest)</>}
+                    <b>Build Details</b> {showPrevious && <>(latest)</>}
                     { props.services.data?.build?.previous &&
                         <small style={{float: "right", position: "relative", top: "2pt", right: "-2pt"}} className="pointer" onClick={toggleShowPrevious}>
                             <span>{showPrevious ? <>hide previous</> : <b>show previous</b>}</span>
@@ -633,7 +633,7 @@ const BuildInfo = (props) => {
             <tr>
                 <td style={tdlabel}> Branch: </td>
                 <td style={tdcontent}>
-                    {props.build?.branch}
+                    <b>{props.build?.branch}</b>
                     &nbsp;<ExternalLink href={`${props.build?.github}/tree/${props.build?.branch}`} nudgedown="1px" />
                 </td>
             </tr>
