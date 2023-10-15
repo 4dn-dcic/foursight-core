@@ -503,14 +503,15 @@ const ImageDetails = (props) => {
             <tr>
                 <td style={tdlabel}> ARN: </td>
                 <td style={tdcontent}>
-                    {props.services.data?.image?.arn}&nbsp;<ExternalLink href="todo" />
+                    {props.services.data?.image?.arn}
+                    &nbsp;<ExternalLink href={awsImageTagLink(header.app?.credentials?.aws_account_number, props.services.data?.image?.repo, props.services.data?.image?.digest)} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Repo: </td>
                 <td style={tdcontent}>
                     {props.services.data?.image?.repo}
-                    &nbsp;<ExternalLink href={awsImageRepoLink(header.app?.credentials?.aws_account_number, props.services.data?.image?.repo)} />
+                    &nbsp;<ExternalLink href={awsImageRepoLink(header.app?.credentials?.aws_account_number, props.services.data?.image?.repo)} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
