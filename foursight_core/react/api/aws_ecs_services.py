@@ -215,7 +215,7 @@ def _get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
 
 def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
     """
-    Returns a dictionary with info about the two most recent CodeBuild builds
+    Returns a dictionary with info about the three most recent CodeBuild builds
     for the given image repo and tag, or None if none found.
     """
 
@@ -250,12 +250,12 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
 
     def get_relevant_builds(project: str) -> Generator[Optional[dict], None, None]:
 
-        # For efficiency, and the most common actual case, get builds two at a time; i.e. since we
-        # want to the two most recent (relevant) builds, and they are usually together at the start
+        # For efficiency, and the most common actual case, get builds three at a time; i.e. since we
+        # want to the three most recent (relevant) builds, and they are usually together at the start
         # of the (list_build_for_projects) list ordered (descending) by build (creation) time;
         # but of course, just in case, we need to handle the general case.
 
-        def get_relevant_build_info(build: dict) -> Optional[dict]:
+        def get_relevant_build_info(build: Optional[dict]) -> Optional[dict]:
 
             def find_environment_variable(environment_variables: list[dict], name: str) -> Optional[str]:
                 value = [item["value"] for item in environment_variables if item["name"] == name]
@@ -278,8 +278,19 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
                 build_ids = codebuild.list_builds_for_project(projectName=project, sortOrder="DESCENDING")
             next_token = build_ids.get("nextToken")
             build_ids = build_ids["ids"]
-            for i in range(0, len(build_ids), 2):
-                if i + 1 < len(build_ids):
+            for i in range(0, len(build_ids), 3):
+                if i + 2 < len(build_ids):
+                    build_details = codebuild.batch_get_builds(ids=[build_ids[i], build_ids[i + 1], build_ids[i + 2]])["builds"]
+                    build = get_relevant_build_info(build_details[0])
+                    if build:
+                        yield build
+                    build = get_relevant_build_info(build_details[1])
+                    if build:
+                        yield build
+                    build = get_relevant_build_info(build_details[2])
+                    if build:
+                        yield build
+                elif i + 1 < len(build_ids):
                     build_details = codebuild.batch_get_builds(ids=[build_ids[i], build_ids[i + 1]])["builds"]
                     build = get_relevant_build_info(build_details[0])
                     if build:
@@ -321,9 +332,11 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
             if build:
                 if not response:
                     response = {"latest": build}
-                else:
+                elif not response.get("previous"):
                     response["previous"] = build
+                else:
+                    response["next_previous"] = build
                     break
-        if response and response.get("previous"):
+        if response and response.get("previous") and response.get("next_previous"):
             break
     return response

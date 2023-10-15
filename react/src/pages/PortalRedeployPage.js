@@ -570,7 +570,7 @@ const BuildDetails = (props) => {
             <tr>
                 <td style={{verticalAlign: "top"}} colSpan="2">
                     Build Details {showPrevious && <>(latest)</>}
-                    <small style={{float: "right", position: "relative", top: "2pt"}} className="pointer" onClick={toggleShowPrevious}>
+                    <small style={{float: "right", position: "relative", top: "2pt", right: "-2pt"}} className="pointer" onClick={toggleShowPrevious}>
                         <span>{showPrevious ? <>hide</> : <>show</>}</span> previous
                         <span style={{paddingLeft:"1pt"}}>{showPrevious ? <>{Char.DownArrow}</> : <>{Char.UpArrow}</>}</span>
                     </small>
