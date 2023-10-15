@@ -241,12 +241,8 @@ const RedeployButtons = (props) => {
     const onClickRedeploy = (e) => {
         if (confirmed) {
             setRunning(true);
-            const url = `//aws/ecs/task_run/${props.task.cluster_arn}/${props.task.task_definition_arn}`;
-            const payload = {
-                subnets: props.task.subnets,
-                security_group: props.task.security_group
-            }
-            fetch(url, { method: "POST", payload: payload, onDone: (result) => {
+            const url = `//aws/ecs/cluster_update/${props.cluster.cluster_arn}`;
+            fetch(url, { method: "POST", onDone: (result) => {
                 setRunning(false);
                 setRunResult(result);
                 setRunDone(true);
@@ -261,10 +257,10 @@ const RedeployButtons = (props) => {
     return <>
         { confirmed ? <>
             { running ? <div style={{marginTop: "-2pt"}}>
-                <StandardSpinner label="Kicking off task"/>
+                <StandardSpinner label="Kicking off cluster update"/>
             </div>:<>
                 { runDone ? <>
-                    <RunResult task={props.task}
+                    <RunResult cluster={props.cluster}
                         running={props.running}
                         runDone={runDone}
                         runResult={runResult}
@@ -276,7 +272,7 @@ const RedeployButtons = (props) => {
                 </> }
             </> }
         </>: <>
-            <RedeployButton task={props.task} onClickRedeploy={onClickRedeploy} />
+            <RedeployButton cluster={props.cluster} onClickRedeploy={onClickRedeploy} />
         </> }
     </>
 }
@@ -299,7 +295,7 @@ const RunResult = (props) => {
                 {props.runResult.data.error}
             </span>:<>
                 <b>Kicked off redeploy {Char.RightArrow}</b> <small><u>{props.runResult?.data?.task_running_id}</u></small>&nbsp;
-                <small><ExternalLink href={awsClusterLink(props.task.cluster_arn, props.runResult?.data?.task_running_id)} /></small>
+                <small><ExternalLink href={awsClusterLink(props.cluster.cluster_arn, props.runResult?.data?.task_running_id)} /></small>
             </> }
             { showJson && <>
                 <SeparatorH />
