@@ -128,7 +128,7 @@ const Content = (props) => {
 
     return <div className="box" style={{paddingTop: "12pt"}}>
         { sortedClusters?.map(cluster =>
-            <PortalReindexBox
+            <PortalRedeployBox
                 cluster={cluster}
                 selectedCluster={selectedCluster}
                 selectCluster={selectCluster}
@@ -141,7 +141,7 @@ const Content = (props) => {
     </div>
 }
 
-const PortalReindexBox = (props) => {
+const PortalRedeployBox = (props) => {
 
     const showDetailOnSelect = false;
     const [ showDetail, setShowDetail ] = useState(false);
@@ -194,7 +194,7 @@ const PortalReindexBox = (props) => {
                 <br />
                 <small id={`tooltip-${props.cluster.cluster_arn}`}> {props.cluster?.cluster_arn}&nbsp;<ExternalLink href={awsClusterLink(props.cluster?.cluster_arn)} /></small>
                 { isSelectedCluster() &&
-                    <ReindexButtonsBox cluster={props.cluster}
+                    <RedeployButtonsBox cluster={props.cluster}
                         unselectCluster={props.unselectCluster}
                         isShowDetail={isShowDetail}
                         toggleShowDetail={toggleShowDetail} />
@@ -206,11 +206,11 @@ const PortalReindexBox = (props) => {
     </div>
 }
 
-const ReindexButtonsBox = (props) => {
+const RedeployButtonsBox = (props) => {
     const onClickIgnore = (e) => { e.stopPropagation(); e.preventDefault(); }
     return <>
         <div className="box" style={{background: "inherit", marginTop: "4pt", paddingTop: "8pt"}} onClick={onClickIgnore}>
-            <ReindexButtons
+            <RedeployButtons
                 cluster={props.cluster}
                 unselectCluster={props.unselectCluster}
                 isShowDetail={props.isShowDetail}
@@ -219,7 +219,7 @@ const ReindexButtonsBox = (props) => {
     </>
 }
 
-const ReindexButtonsBoxDisabled = (props) => {
+const RedeployButtonsBoxDisabled = (props) => {
     return <>
         <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt", color: "red"}}>
             <b>Redeploy disabled due to errors.</b>
@@ -227,24 +227,24 @@ const ReindexButtonsBoxDisabled = (props) => {
     </>
 }
 
-const ReindexButtonsClusterStatusLoading = (props) => {
+const RedeployButtonsClusterStatusLoading = (props) => {
     return <>
         <table><tbody><tr><td>
-            <ReindexButton cluster={props.cluster} disabled={true} />
+            <RedeployButton cluster={props.cluster} disabled={true} />
         </td><td style={{paddingLeft: "8pt"}}>
             <StandardSpinner label="Fetching cluster status" />
         </td></tr></tbody></table>
     </>
 }
 
-const ReindexButtons = (props) => {
+const RedeployButtons = (props) => {
     const [confirmed, setConfirmed] = useState(false);
     const [running, setRunning] = useState(false);
     const [runDone, setRunDone] = useState(false);
     const [runResult, setRunResult] = useState(false);
     const fetch = useFetchFunction();
     const onClickCancel = (e) => { setConfirmed(false); e.stopPropagation(); }
-    const onClickReindex = (e) => {
+    const onClickRedeploy = (e) => {
         if (confirmed) {
             setRunning(true);
             const url = `//aws/ecs/task_run/${props.task.cluster_arn}/${props.task.task_definition_arn}`;
@@ -278,11 +278,11 @@ const ReindexButtons = (props) => {
                         setRunDone={setRunDone}
                         unselectCluster={props.unselectCluster} />
                 </>:<>
-                    <ReindexButtonConfirmed cluster={props.cluster} onClickReindex={onClickReindex} onClickCancel={onClickCancel} running={props.running} />
+                    <RedeployButtonConfirmed cluster={props.cluster} onClickRedeploy={onClickRedeploy} onClickCancel={onClickCancel} running={props.running} />
                 </> }
             </> }
         </>: <>
-            <ReindexButton task={props.task} onClickReindex={onClickReindex} />
+            <RedeployButton task={props.task} onClickRedeploy={onClickRedeploy} />
         </> }
     </>
 }
@@ -318,12 +318,12 @@ const RunResult = (props) => {
     </div>
 }
 
-const ReindexButtonConfirmed = (props) => {
+const RedeployButtonConfirmed = (props) => {
     return <table><tbody><tr>
         <td style={{verticalAlign: "top"}}>
             <CancelButton onClickCancel={props.onClickCancel} />
         </td><td style={{verticalAlign: "top", paddingLeft: "8pt"}}>
-            <ReindexButton cluster={props.cluster} onClickReindex={props.onClickReindex} confirmed={true} />
+            <RedeployButton cluster={props.cluster} onClickRedeploy={props.onClickRedeploy} confirmed={true} />
         </td><td style={{verticalAlign: "top", paddingLeft: "0pt"}}>
             <b style={{position: "relative", bottom: "-3pt", whiteSpace: "nowrap"}}>&nbsp;&nbsp;&nbsp;{Char.LeftArrow}&nbsp;
             { props.cluster.type == "deploy" ? <>
@@ -336,8 +336,8 @@ const ReindexButtonConfirmed = (props) => {
     </tr></tbody></table>
 }
 
-const ReindexButton = (props) => {
-    return <div className={`check-run-button ${props.disabled && "disabled"}`} style={{width: "fit-content", border: "1px solid inherit"}} onClick={props?.onClickReindex}>
+const RedeployButton = (props) => {
+    return <div className={`check-run-button ${props.disabled && "disabled"}`} style={{width: "fit-content", border: "1px solid inherit"}} onClick={props?.onClickRedeploy}>
         { props.confirmed && <>&nbsp;Yes:</> }&nbsp;Redeploy&nbsp;
     </div>
 }
@@ -599,8 +599,9 @@ const BuildInfo = (props) => {
             <tr>
                 <td style={tdlabel}> ID: </td>
                 <td style={tdcontent}>
-                    {props.build?.log_stream}
+                    <span id={`tooltip-buildno-${props.build?.number}`}>{props.build?.log_stream}</span>
                     &nbsp;<ExternalLink href={awsCodebuildLogLink(header.app?.credentials?.aws_account_number, props.build?.project, props.build?.log_group, props.build?.log_stream)} nudgedown="1px" />
+                    <Tooltip id={`tooltip-buildno-${props.build?.number}`} text={`Build number: ${props.build?.number}`} />
                 </td>
             </tr>
             <tr>
