@@ -8,6 +8,7 @@ import { ExternalLink } from '../Components';
 import Image from '../utils/Image';
 import { PuffSpinnerInline, StandardSpinner } from '../Spinners';
 import Tooltip from '../components/Tooltip';
+import Type from '../utils/Type';
 import useFetch from '../hooks/Fetch';
 import useFetchFunction from '../hooks/FetchFunction';
 import useHeader from '../hooks/Header';
@@ -29,8 +30,26 @@ function awsTaskDefinitionLink(id) {
 
 function awsCodebuildLogLink(account_number, project, log_group, log_stream) {
     return `https://${region}.console.aws.amazon.com/codesuite/codebuild/${account_number}/projects/${project}/build/${project}:${log_stream}/?region=${region}`;
-//        https://us-east-1.console.aws.amazon.com/codesuite/codebuild/643366669028/projects/fourfront-green/build/fourfront-green%3A942dd9b5-93ea-4dc0-8c27-461f590c2ff4/?region=us-east-1
-//        https://us-east-1.console.aws.amazon.com/codesuite/codebuild/643366669028/projects/fourfront-green/build/fourfront-green:942dd9b5-93ea-4dc0-8c27-461f590c2ff4?region=us-east-1
+}
+
+function awsCodebuildProjectLink(account_number, project) {
+    return `https://${region}.console.aws.amazon.com/codesuite/codebuild/${account_number}/projects/${project}/history`;
+}
+
+function awsImageRepoLink(account_number, project) {
+    return `https://${region}.console.aws.amazon.com/ecr/repositories/private/${account_number}/${project}`
+}
+
+function awsImageTagLink(account_number, repo, sha) {
+    return `https://${region}.console.aws.amazon.com/ecr/repositories/private/${account_number}/${repo}/_/image/${sha}/details`
+}
+
+function formatFileSize(bytes) {
+    if (!Type.IsInteger(bytes)) return "-";
+    if (bytes <= 1000) return `${bytes} bytes`;
+    const sizes = ["b", "K", "M", "G", "T"];
+    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    return (Math.round((bytes / Math.pow(1024, i)) * 100) / 100).toFixed(1) + sizes[i];
 }
 
 const PortalRedeployPage = (props) => {
@@ -259,7 +278,7 @@ const ReindexButtons = (props) => {
                         setRunDone={setRunDone}
                         unselectCluster={props.unselectCluster} />
                 </>:<>
-                    <ReindexButtonConfirmed task={props.task} onClickReindex={onClickReindex} onClickCancel={onClickCancel} running={props.running} />
+                    <ReindexButtonConfirmed cluster={props.cluster} onClickReindex={onClickReindex} onClickCancel={onClickCancel} running={props.running} />
                 </> }
             </> }
         </>: <>
@@ -281,11 +300,11 @@ const RunResult = (props) => {
         <div className="pointer" onClick={onClickRunDoneX} style={{float: "right", marginRight: "2pt"}}><b>{Char.X}</b></div>
         <div className="pointer" onClick={toggleShowJson}>
             { props.runResult.data?.error ? <span style={{color: "red"}}>
-                <b>Error kicking off task ...</b>
+                <b>Error kicking off redeploy ...</b>
                 <SeparatorH color="red" />
                 {props.runResult.data.error}
             </span>:<>
-                <b>Kicked off {props.task.type === "deploy" ? <>reindex</> : <>task</>} {Char.RightArrow}</b> <small><u>{props.runResult?.data?.task_running_id}</u></small>&nbsp;
+                <b>Kicked off redeploy {Char.RightArrow}</b> <small><u>{props.runResult?.data?.task_running_id}</u></small>&nbsp;
                 <small><ExternalLink href={awsClusterLink(props.task.cluster_arn, props.runResult?.data?.task_running_id)} /></small>
             </> }
             { showJson && <>
@@ -304,13 +323,13 @@ const ReindexButtonConfirmed = (props) => {
         <td style={{verticalAlign: "top"}}>
             <CancelButton onClickCancel={props.onClickCancel} />
         </td><td style={{verticalAlign: "top", paddingLeft: "8pt"}}>
-            <ReindexButton task={props.task} onClickReindex={props.onClickReindex} confirmed={true} />
+            <ReindexButton cluster={props.cluster} onClickReindex={props.onClickReindex} confirmed={true} />
         </td><td style={{verticalAlign: "top", paddingLeft: "0pt"}}>
             <b style={{position: "relative", bottom: "-3pt", whiteSpace: "nowrap"}}>&nbsp;&nbsp;&nbsp;{Char.LeftArrow}&nbsp;
-            { props.task.type == "deploy" ? <>
-                Are you sure you want to reindex <u>{props.task.env.name}</u>?
+            { props.cluster.type == "deploy" ? <>
+                Are you sure you want to redeploy <u>{props.cluster.env.name}</u>?
             </>:<>
-                Are you sure you want to run this task for <u>{props.task.env.name}</u>?
+                Are you sure you want to redeploy for <u>{props.cluster.env.name}</u>?
             </> }
             </b>
         </td>
@@ -319,7 +338,7 @@ const ReindexButtonConfirmed = (props) => {
 
 const ReindexButton = (props) => {
     return <div className={`check-run-button ${props.disabled && "disabled"}`} style={{width: "fit-content", border: "1px solid inherit"}} onClick={props?.onClickReindex}>
-        { props.confirmed && <>&nbsp;Yes:</> }&nbsp;{ props.task?.type == "deploy" ? <>Reindex</> : <>Run Cluster</> }&nbsp;
+        { props.confirmed && <>&nbsp;Yes:</> }&nbsp;Deploy&nbsp;
     </div>
 }
 
@@ -451,15 +470,18 @@ const ServicesDetails = (props) => {
 }
 
 const ImageAndBuildDetails = (props) => {
+    const digest = useFetch(`//aws/codebuild/digest/${encodeURIComponent(props.services.data?.build?.latest?.log_group)}/${props.services.data?.build?.latest?.log_stream}`);
+    const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
+    const tdcontent = {whiteSpace: "nowrap", width: "99%"};
     return <div className="box darken">
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}}>
-                    <BuildDetails services={props.services} />
+                    <BuildDetails services={props.services} digest={digest} />
                 </td>
                 <TSeparatorV />
                 <td style={{verticalAlign: "top"}}>
-                    <ImageDetails services={props.services} />
+                    <ImageDetails services={props.services} digest={digest} />
                 </td>
             </tr>
         </tbody></table>
@@ -467,18 +489,70 @@ const ImageAndBuildDetails = (props) => {
 }
 
 const ImageDetails = (props) => {
-    const ref = useRef();
+    const header = useHeader();
+    const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
+    const tdcontent = {whiteSpace: "nowrap", width: "99%"};
     return <div>
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
-                <td style={{verticalAlign: "top"}}>
+                <td style={{verticalAlign: "top"}} colSpan="2">
                     Image Details
                 </td>
             </tr>
             <TSeparatorH double={true} />
             <tr>
-                <td>
-                    {Yaml.Format(props.services.data?.image)}
+                <td style={tdlabel}> ARN: </td>
+                <td style={tdcontent}>
+                    {props.services.data?.image?.arn}&nbsp;<ExternalLink href="todo" />
+                </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Repo: </td>
+                <td style={tdcontent}>
+                    {props.services.data?.image?.repo}
+                    &nbsp;<ExternalLink href={awsImageRepoLink(header.app?.credentials?.aws_account_number, props.services.data?.image?.repo)} />
+                </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Tag: </td>
+                <td style={tdcontent}>
+                    {props.services.data?.image?.tag}
+                    &nbsp;<ExternalLink href={awsImageTagLink(header.app?.credentials?.aws_account_number, props.services.data?.image?.repo, props.services.data?.image?.digest)} />
+                </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Size: </td>
+                <td style={tdcontent}>
+                    <span id={`tooltip-${props.services.data?.image?.digest}`}>
+                    {formatFileSize(props.services.data?.image?.size)}
+                    </span>
+                    <Tooltip id={`tooltip-${props.services.data?.image?.digest}`} position="right" shape="squared" text={`${props.services.data?.image?.size} bytes`} />
+                </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Digest: </td>
+                <td style={tdcontent}>
+                    <span id={`image-digest-${props.services.data?.image?.id}`}>
+                        {props.services.data?.image?.digest?.replace("sha256:", "").substring(0, 32)} ...
+                        { props.digest.data?.digest && props.services.data?.image?.digest && <>
+                            { props.digest.data?.digest === props.services.data?.image?.digest ?
+                                <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
+                            :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
+                        </> }
+                    </span>
+                    <Tooltip id={`image-digest-${props.services.data?.image?.id}`} position="bottom" size="small" text={props.services.data?.image?.digest} />
+                </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Pulled: </td>
+                <td style={tdcontent}>
+                    {DateTime.Format(props.services.data?.image?.pulled_at)}
+                </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Pushed: </td>
+                <td style={tdcontent}>
+                    {DateTime.Format(props.services.data?.image?.pushed_at)}
                 </td>
             </tr>
         </tbody></table>
@@ -489,28 +563,31 @@ const BuildDetails = (props) => {
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
     const header = useHeader();
-
     return <div>
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
-                <td style={{whiteSpace: "nowrap", verticalAlign: "top"}} colSpan="2">
+                <td style={{verticalAlign: "top"}} colSpan="2">
                     Build Details
                 </td>
             </tr>
             <TSeparatorH double={true} />
             <tr>
-                <td style={tdlabel}> Project: </td>
+                <td style={tdlabel}> ID: </td>
                 <td style={tdcontent}>
-                    {props.services.data?.build?.latest?.project}&nbsp;<ExternalLink href="todo" />
+                    {props.services.data?.build?.latest?.log_stream}
+                    &nbsp;<ExternalLink href={awsCodebuildLogLink(header.app?.credentials?.aws_account_number, props.services.data?.build?.latest?.project, props.services.data?.build?.latest?.log_group, props.services.data?.build?.latest?.log_stream)} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
-                <td style={tdlabel}> Repo: </td>
-                <td style={tdcontent}> {props.services.data?.build?.latest?.image_repo} </td>
+                <td style={tdlabel}> Initiator: </td>
+                <td style={tdcontent}> {props.services.data?.build?.latest?.initiator} </td>
             </tr>
             <tr>
-                <td style={tdlabel}> Tag: </td>
-                <td style={tdcontent}> {props.services.data?.build?.latest?.image_tag} </td>
+                <td style={tdlabel}> Project: </td>
+                <td style={tdcontent}>
+                    {props.services.data?.build?.latest?.project}
+                    &nbsp;<ExternalLink href={awsCodebuildProjectLink(header.app?.credentials?.aws_account_number, props.services.data?.build?.latest?.project)} nudgedown="1px" />
+                </td>
             </tr>
             <tr>
                 <td style={tdlabel}> GitHub: </td>
@@ -534,8 +611,18 @@ const BuildDetails = (props) => {
                 </td>
             </tr>
             <tr>
-                <td style={tdlabel}> Initiator: </td>
-                <td style={tdcontent}> {props.services.data?.build?.latest?.initiator} </td>
+                <td style={tdlabel}> Digest: </td>
+                <td style={tdcontent}>
+                    <span id={props.digest.data?.digest}>
+                        {props.digest.data?.digest?.replace("sha256:", "").substring(0, 32)} ...
+                        { props.digest.data?.digest && props.services.data?.image?.digest && <>
+                            { props.digest.data?.digest === props.services.data?.image?.digest ?
+                                <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
+                            :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
+                        </> }
+                    </span>
+                    <Tooltip id={props.digest.data?.digest} position="bottom" size="small" text={props.digest.data?.digest} />
+                </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Started: </td>
@@ -544,13 +631,6 @@ const BuildDetails = (props) => {
             <tr>
                 <td style={tdlabel}> Finished: </td>
                 <td style={tdcontent}> {DateTime.Format(props.services.data?.build?.latest?.finished_at)} </td>
-            </tr>
-            <tr>
-                <td style={tdlabel}> Logs: </td>
-                <td style={tdcontent}>
-                    {props.services.data?.build?.latest?.log_stream}
-                    &nbsp;<ExternalLink href={awsCodebuildLogLink(header.app?.credentials?.aws_account_number, props.services.data?.build?.latest?.project, props.services.data?.build?.latest?.log_group, props.services.data?.build?.latest?.log_stream)} nudgedown="1px" />
-                </td>
             </tr>
         </tbody></table>
     </div>
