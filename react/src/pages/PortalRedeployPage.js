@@ -15,12 +15,22 @@ import Yaml from '../utils/Yaml';
 
 const region = "us-east-1";
 
-function awsClusterRunLink(id) {
-    return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${id}/run-task`;
-}
-
 function awsClusterLink(id) {
     return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${id}/services?region=${region}`;
+}
+
+function awsServiceLink(cluster_arn, service_arn) {
+    return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${cluster_arn}/services/${service_arn}/health?${region}`;
+}
+
+function awsTaskDefinitionLink(id) {
+    return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${id}`;
+}
+
+function awsCodebuildLogLink(account_number, project, log_group, log_stream) {
+    return `https://${region}.console.aws.amazon.com/codesuite/codebuild/${account_number}/projects/${project}/build/${project}:${log_stream}/?region=${region}`;
+//        https://us-east-1.console.aws.amazon.com/codesuite/codebuild/643366669028/projects/fourfront-green/build/fourfront-green%3A942dd9b5-93ea-4dc0-8c27-461f590c2ff4/?region=us-east-1
+//        https://us-east-1.console.aws.amazon.com/codesuite/codebuild/643366669028/projects/fourfront-green/build/fourfront-green:942dd9b5-93ea-4dc0-8c27-461f590c2ff4?region=us-east-1
 }
 
 const PortalRedeployPage = (props) => {
@@ -163,7 +173,7 @@ const PortalReindexBox = (props) => {
                     </small>
                 }
                 <br />
-                <small id={`tooltip-${props.cluster.cluster_arn}`}> {props.cluster?.cluster_arn}&nbsp;<ExternalLink href={awsClusterRunLink(props.cluster?.cluster_arn)} /></small>
+                <small id={`tooltip-${props.cluster.cluster_arn}`}> {props.cluster?.cluster_arn}&nbsp;<ExternalLink href={awsClusterLink(props.cluster?.cluster_arn)} /></small>
                 { isSelectedCluster() &&
                     <ReindexButtonsBox cluster={props.cluster}
                         unselectCluster={props.unselectCluster}
@@ -340,90 +350,210 @@ const SeparatorH = ({size = "1px", color = "black", top = "8pt", bottom = "8pt"}
 
 const DetailBox = (props) => {
     const header = useHeader();
+    const services = useFetch(`//aws/ecs/services_for_update/${props.cluster?.cluster_arn}`);
     return <div className="box bigmargin marginbottom" onClick={(e) => e.stopPropagation()}><small>
         <table style={{fontSize: "inherit"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}}>
-                    <AccountDetails task={props.task} />
+                    <ServicesDetails cluster={props.cluster} services={services} />
                 </td>
                 <TSeparatorV />
                 <td style={{verticalAlign: "top"}}>
-                    <EnvNamesDetails env={props.env} />
-                </td>
-                <TSeparatorV />
-                <td style={{verticalAlign: "top"}}>
-                    <NetworkDetails task={props.cluster} />
+                    <AccountDetails cluster={props.cluster} />
                 </td>
             </tr>
+            <TSpaceH />
+            { !services.loading &&
+                <tr>
+                    <td colSpan="5">
+                        <ImageAndBuildDetails services={services} />
+                    </td>
+                </tr>
+            }
         </tbody></table>
     </small></div>
 }
 
 const AccountDetails = (props) => {
     const header = useHeader();
+    const uniqueEnvNames = () => {
+        const env = {};
+        ["name", "short_name", "public_name", "foursight_name"].forEach(name => {
+            env[name] = props.cluster.env[name];
+        });
+        return Array.from(new Set(Object.values(env))).sort((a, b) => b.length - a.length);
+    }
     return <table style={{fontSize: "inherit"}}><tbody>
         <tr><td colSpan="2"> AWS Account </td></tr>
         <TSeparatorH double={true} />
-        <tr>
-            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Number: </td>
-            <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_number} </td>
-        </tr>
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Name: </td>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_name} </td>
         </tr>
         <tr>
-            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Environment: </td>
-            <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {props.task?.env?.full_name} </td>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Number: </td>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_number} </td>
         </tr>
-    </tbody></table>
-}
-
-const EnvNamesDetails = (props) => {
-    const uniqueEnvNames = () => {
-        const env = {};
-        ["name", "full_name", "short_name", "public_name", "foursight_name"].forEach(name => {
-             env[name] = props.env[name];
-        });
-        return Array.from(new Set(Object.values(env)))?.sort();
-    }
-    return <table style={{fontSize: "inherit"}}><tbody>
-        <tr><td colSpan="2" style={{whiteSpace: "nowrap"}}> Environment Aliases </td></tr>
-        <TSeparatorH double={true} />
+        { props.cluster.env?.is_production && <tr>
+            <td> Production: </td>
+            <td> Yes </td>
+        </tr> }
+        { props.cluster.env?.is_staging && <tr>
+            <td> Staging: </td>
+            <td> Yes </td>
+        </tr> }
         <tr>
-            <td colSpan="2" style={{whiteSpace: "nowrap"}}>
-                {uniqueEnvNames()?.map((env, index) => <>
-                    {index > 0 && <br />} {env}
-                </> )}
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Environment: </td>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
+                {props.cluster?.env?.full_name}
+                {uniqueEnvNames().map(env => <><br />{env}</>)}
             </td>
         </tr>
     </tbody></table>
 }
 
-const NetworkDetails = (props) => {
-    const [showNetworkNames, setShowNetworkNames] = useState(false);
-    const toggleShowNetworkNames = (e) => { setShowNetworkNames(!showNetworkNames); e.stopPropagation() }
+const ServicesDetails = (props) => {
     return <table style={{fontSize: "inherit"}}><tbody>
         <tr><td /><td width="800pt"/></tr> {/* dummy to make it expand to right */}
-        <tr><td colSpan="2"> AWS Network
-            <span onClick={toggleShowNetworkNames} className="pointer" id={`tooltip-network-${props.task.task_definition_arn}`} >
-                &nbsp;{showNetworkNames ? <b>{Char.Diamond}</b> : <b>{Char.Trigram}</b>}
-                <Tooltip id={`tooltip-network-${props.task.task_definition_arn}`} position="top" size="small" text={`Click to view ${showNetworkNames ? "IDs" : "names"}.`}/>
-            </span>
+        <tr><td colSpan="2"> AWS Services
         </td></tr>
         <TSeparatorH double={true} />
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}>
-                Cluster
+                Cluster:
             </td>
             <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
                 <span>
-                    {props.task?.cluster_arn}
-                    &nbsp;<small><ExternalLink href={awsClusterLink(props.task?.cluster_arn)} /></small>
+                    <b>{props.cluster?.cluster_arn}</b>
+                    &nbsp;<small><ExternalLink href={awsClusterLink(props.cluster?.cluster_arn)} /></small>
                 </span>
             </td>
         </tr>
+        { props.services.loading && <>
+            <tr>
+                <td> Services: </td>
+                <td> <span style={{position: "relative", top: "2px"}}>&nbsp;&nbsp;<PuffSpinnerInline size="16" /></span> </td>
+            </tr>
+        </> }
+        { props.services?.data?.services?.map((service, index) => <>
+            <tr>
+                <td style={{verticalAlign: "top"}}>
+                    Service:
+                </td>
+                <td style={{verticalAlign: "top"}}>
+                    <b>{service.type.toUpperCase()}</b>
+                    <br /> {service.arn}&nbsp;<small><ExternalLink href={awsServiceLink(props.cluster.cluster_arn, service.arn)} /></small>
+                    <br /> <i>Task Definition: {service.task_definition_arn}</i>&nbsp;<small><ExternalLink href={awsTaskDefinitionLink(service.task_definition_arn)} /></small>
+                </td>
+            </tr>
+        </>)}
     </tbody></table>
+}
+
+const ImageAndBuildDetails = (props) => {
+    return <div className="box darken">
+        <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+            <tr>
+                <td style={{verticalAlign: "top"}}>
+                    <BuildDetails services={props.services} />
+                </td>
+                <TSeparatorV />
+                <td style={{verticalAlign: "top"}}>
+                    <ImageDetails services={props.services} />
+                </td>
+            </tr>
+        </tbody></table>
+    </div>
+}
+
+const ImageDetails = (props) => {
+    const ref = useRef();
+    return <div>
+        <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+            <tr>
+                <td style={{verticalAlign: "top"}}>
+                    Image Details
+                </td>
+            </tr>
+            <TSeparatorH double={true} />
+            <tr>
+                <td>
+                    {Yaml.Format(props.services.data?.image)}
+                </td>
+            </tr>
+        </tbody></table>
+    </div>
+}
+
+const BuildDetails = (props) => {
+    const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
+    const tdcontent = {whiteSpace: "nowrap", width: "99%"};
+    const header = useHeader();
+
+    return <div>
+        <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+            <tr>
+                <td style={{whiteSpace: "nowrap", verticalAlign: "top"}} colSpan="2">
+                    Build Details
+                </td>
+            </tr>
+            <TSeparatorH double={true} />
+            <tr>
+                <td style={tdlabel}> Project: </td>
+                <td style={tdcontent}>
+                    {props.services.data?.build?.latest?.project}&nbsp;<ExternalLink href="todo" />
+                </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Repo: </td>
+                <td style={tdcontent}> {props.services.data?.build?.latest?.image_repo} </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Tag: </td>
+                <td style={tdcontent}> {props.services.data?.build?.latest?.image_tag} </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> GitHub: </td>
+                <td style={tdcontent}>
+                    {props.services.data?.build?.latest?.github}
+                    &nbsp;<ExternalLink href={props.services.data?.build?.latest?.github} nudgedown="1px" />
+                </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Branch: </td>
+                <td style={tdcontent}>
+                    {props.services.data?.build?.latest?.branch}
+                    &nbsp;<ExternalLink href={`${props.services.data?.build?.latest?.github}/tree/${props.services.data?.build?.latest?.branch}`} nudgedown="1px" />
+                </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Commit: </td>
+                <td style={tdcontent}>
+                    {props.services.data?.build?.latest?.commit}
+                    &nbsp;<ExternalLink href={`${props.services.data?.build?.latest?.github}/commit/${props.services.data?.build?.latest?.commit}`} nudgedown="1px" />
+                </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Initiator: </td>
+                <td style={tdcontent}> {props.services.data?.build?.latest?.initiator} </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Started: </td>
+                <td style={tdcontent}> {DateTime.Format(props.services.data?.build?.latest?.started_at)} </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Finished: </td>
+                <td style={tdcontent}> {DateTime.Format(props.services.data?.build?.latest?.finished_at)} </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Logs: </td>
+                <td style={tdcontent}>
+                    {props.services.data?.build?.latest?.log_stream}
+                    &nbsp;<ExternalLink href={awsCodebuildLogLink(header.app?.credentials?.aws_account_number, props.services.data?.build?.latest?.project, props.services.data?.build?.latest?.log_group, props.services.data?.build?.latest?.log_stream)} nudgedown="1px" />
+                </td>
+            </tr>
+        </tbody></table>
+    </div>
 }
 
 export default PortalRedeployPage;

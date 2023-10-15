@@ -48,6 +48,7 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str,
             del service["build"]
             del service["env"]
             response["services"].append({**service})
+        response["services"] = sorted(response["services"], key=lambda item: item["type"])
         return response
 
     def has_identitical_metadata(service: dict, previous_service: dict) -> bool:

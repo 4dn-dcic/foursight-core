@@ -447,17 +447,13 @@ const DetailBox = (props) => {
         <table style={{fontSize: "inherit"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}}>
-                    <AccountDetails task={props.task} />
-                </td>
-                <TSeparatorV />
-                <td style={{verticalAlign: "top"}}>
-                    <EnvNamesDetails env={props.env} />
-                </td>
-                <TSeparatorV />
-                <td style={{verticalAlign: "top"}}>
                     <NetworkDetails task={props.task}
                         showRunningTasks={showRunningTasks}
                         toggleShowRunningTasks={toggleShowRunningTasks} />
+                </td>
+                <TSeparatorV />
+                <td style={{verticalAlign: "top"}}>
+                    <AccountDetails task={props.task} />
                 </td>
             </tr>
             <TSeparatorH span="max" top="6pt" bottom="6pt" />
@@ -484,6 +480,13 @@ const DetailBox = (props) => {
 
 const AccountDetails = (props) => {
     const header = useHeader();
+    const uniqueEnvNames = () => {
+        const env = {};
+        ["name", "short_name", "public_name", "foursight_name"].forEach(name => {
+            env[name] = props.task.env[name];
+        });
+        return Array.from(new Set(Object.values(env)))?.sort((a, b) => b.length - a.length);
+    }
     return <table style={{fontSize: "inherit"}}><tbody>
         <tr><td colSpan="2"> AWS Account </td></tr>
         <TSeparatorH double={true} />
@@ -495,29 +498,19 @@ const AccountDetails = (props) => {
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Name: </td>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_name} </td>
         </tr>
+        { props.task.env?.is_production && <tr>
+            <td> Production: </td>
+            <td> Yes </td>
+        </tr> }
+        { props.task.env?.is_staging && <tr>
+            <td> Staging: </td>
+            <td> Yes </td>
+        </tr> }
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Environment: </td>
-            <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {props.task?.env?.full_name} </td>
-        </tr>
-    </tbody></table>
-}
-
-const EnvNamesDetails = (props) => {
-    const uniqueEnvNames = () => {
-        const env = {};
-        ["name", "full_name", "short_name", "public_name", "foursight_name"].forEach(name => {
-             env[name] = props.env[name];
-        });
-        return Array.from(new Set(Object.values(env)))?.sort();
-    }
-    return <table style={{fontSize: "inherit"}}><tbody>
-        <tr><td colSpan="2" style={{whiteSpace: "nowrap"}}> Environment Aliases </td></tr>
-        <TSeparatorH double={true} />
-        <tr>
-            <td colSpan="2" style={{whiteSpace: "nowrap"}}>
-                {uniqueEnvNames()?.map((env, index) => <>
-                    {index > 0 && <br />} {env}
-                </> )}
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
+                {props.task?.env?.full_name}
+                {uniqueEnvNames().map(env => <><br />{env}</>)}
             </td>
         </tr>
     </tbody></table>
@@ -537,7 +530,7 @@ const NetworkDetails = (props) => {
                 <Tooltip id={`tooltip-network-${props.task.task_definition_arn}`} position="top" size="small" text={`Click to view ${showNetworkNames ? "IDs" : "names"}.`}/>
             </span>
             <small style={{float: "right"}} className="pointer" onClick={toggleShowRunningTasks}>
-                {props.showRunningTasks ? <>Hide details {Char.DownArrow}</> : <b>More details {Char.UpArrow}</b>}
+                {props.showRunningTasks ? <>Tasks {Char.DownArrow}</> : <b>Tasks {Char.UpArrow}</b>}
             </small>
         </td></tr>
         <TSeparatorH double={true} />
@@ -547,8 +540,8 @@ const NetworkDetails = (props) => {
             </td>
             <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
                 <span>
-                    {props.task?.cluster_arn}
-                    &nbsp;<small><ExternalLink href={awsClusterLink(props.task?.cluster_arn)} /></small>
+                    <b>{props.task?.cluster_arn}</b>
+                    &nbsp;<small><ExternalLink href={awsClusterLink(props.task?.cluster_arn)} bold={true} /></small>
                 </span>
             </td>
         </tr>
