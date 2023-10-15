@@ -467,7 +467,7 @@ const ImageAndBuildDetails = (props) => {
     const image_tag = props.services.data?.image?.tag;
     const log_group = props.services.data?.build?.latest?.log_group;
     const log_stream = props.services.data?.build?.latest?.log_stream;
-    const digest = useFetch(`//aws/codebuild/digest/${props.services.data?.image?.tag}/${encodeURIComponent(props.services.data?.build?.latest?.log_group)}/${props.services.data?.build?.latest?.log_stream}`);
+    const digest = useFetch(`//aws/codebuild/digest/${image_tag}/${encodeURIComponent(log_group)}/${log_stream}`);
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
     return <div className="box darken">
