@@ -638,7 +638,7 @@ class ReactRoutes:
                                          task_definition_arn=app.request_arg("task_definition_arn"))
 
     @route("/aws/ecs/task_run/{cluster_arn}/{task_definition_arn}", method="POST", authorize=True)
-    def reactapi_route_aws_ecs_task_run(cluster_arn: str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+    def reactapi_route_aws_ecs_run_task(cluster_arn: str, task_definition_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
         from .aws_ecs_tasks import aws_ecs_run_task
         return aws_ecs_run_task(cluster_arn, task_definition_arn, app.request_body())
 
@@ -657,6 +657,11 @@ class ReactRoutes:
         from .aws_ecs_services import get_aws_codebuild_digest
         log_group = urllib.parse.unquote(log_group)
         return {"digest": get_aws_codebuild_digest(log_group, log_stream)}
+
+    @route("/aws/ecs/cluster_update/{cluster_arn}", authorize=True)
+    def reactapi_route_aws_ecs_update_cluster(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+        from .aws_ecs_services import aws_ecs_update_cluster
+        return aws_ecs_update_cluster(cluster_arn, app.request_body())
 
     @route("/aws/ecs/tasks/latest/details", authorize=True)
     def reactapi_route_aws_ecs_task() -> Response:  # noqa: implicit @staticmethod via @route

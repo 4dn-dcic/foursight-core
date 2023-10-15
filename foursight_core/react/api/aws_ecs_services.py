@@ -2,6 +2,7 @@ import boto3
 from functools import lru_cache
 import re
 from typing import Callable, Generator, Optional, Tuple, Union
+from dcicutils.ecs_utils import ECSUtils
 from dcicutils.task_utils import pmap
 from .aws_ecs_tasks import _get_cluster_arns, _get_task_definition_type, _shortened_arn, _shortened_task_definition_arn
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
@@ -91,6 +92,11 @@ def get_aws_codebuild_digest(log_group: str, log_stream: str) -> Optional[str]:
                     return "sha256:" + match.group(1)
         ntries -= 1
     return None
+
+
+def aws_ecs_update_cluster(cluster_arn: str, str, args: dict) -> dict:
+    ecs = ECSUtils()
+    return ecs.update_all_services(cluster_name=cluster_arn)
 
 
 def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest: bool = False) -> list[dict]:

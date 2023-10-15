@@ -7,6 +7,7 @@ import Duration from '../utils/Duration';
 import { ExternalLink } from '../Components'; 
 import Image from '../utils/Image';
 import { PuffSpinnerInline, StandardSpinner } from '../Spinners';
+import Str from '../utils/Str';
 import Time from '../utils/Time';
 import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
@@ -43,14 +44,6 @@ function awsImageRepoLink(account_number, project) {
 
 function awsImageTagLink(account_number, repo, sha) {
     return `https://${region}.console.aws.amazon.com/ecr/repositories/private/${account_number}/${repo}/_/image/${sha}/details`
-}
-
-function formatFileSize(bytes) {
-    if (!Type.IsInteger(bytes)) return "-";
-    if (bytes <= 1000) return `${bytes} bytes`;
-    const sizes = ["b", "K", "M", "G", "T"];
-    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    return (Math.round((bytes / Math.pow(1024, i)) * 100) / 100).toFixed(1) + sizes[i];
 }
 
 const PortalRedeployPage = (props) => {
@@ -526,7 +519,7 @@ const ImageDetails = (props) => {
                 <td style={tdlabel}> Size: </td>
                 <td style={tdcontent}>
                     <span id={`tooltip-${props.services.data?.image?.digest}`}>
-                    {formatFileSize(props.services.data?.image?.size)}
+                    {Str.FormatBytes(props.services.data?.image?.size)}
                     </span>
                     <Tooltip id={`tooltip-${props.services.data?.image?.digest}`} position="right" shape="squared" text={`${props.services.data?.image?.size} bytes`} />
                 </td>
